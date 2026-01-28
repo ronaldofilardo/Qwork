@@ -14,7 +14,7 @@ export async function GET(
 ) {
   try {
     // Verificar autenticação
-    const session = requireEmissor();
+    requireEmissor();
     const { loteId } = params;
 
     // Verificar se o lote existe e pertence ao emissor
@@ -31,8 +31,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    const lote = loteResult.rows[0];
 
     // Verificar se já existe laudo emitido
     const laudoResult = await query(

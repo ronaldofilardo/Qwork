@@ -235,11 +235,24 @@ export async function lerLaudo(laudoId: number): Promise<Buffer> {
     // Se temos chave remota nos metadados, usar diretamente
     if (metadata?.arquivo_remoto?.key) {
       const buffer = await downloadFromBackblaze(metadata.arquivo_remoto.key);
-      // Salvar localmente para cache
-      await fs.writeFile(localPath, buffer);
-      console.log(
-        `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via metadados) e salvo localmente`
-      );
+      // Salvar localmente para cache (skip em produção onde fs é read-only)
+      if (process.env.NODE_ENV !== 'production') {
+        try {
+          await fs.writeFile(localPath, buffer);
+          console.log(
+            `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via metadados) e salvo localmente`
+          );
+        } catch (writeErr) {
+          console.warn(
+            `[STORAGE] Não foi possível salvar laudo ${laudoId} localmente (filesystem read-only?):`,
+            writeErr
+          );
+        }
+      } else {
+        console.log(
+          `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via metadados) — cache local desabilitado em produção`
+        );
+      }
       return buffer;
     }
 
@@ -261,35 +274,49 @@ export async function lerLaudo(laudoId: number): Promise<Buffer> {
         );
         const buffer = await downloadFromBackblaze(chosenKey);
 
-        // Atualizar metadados locais para futuras requests
-        try {
-          const metaToWrite: LaudoMetadata = {
-            arquivo: `laudo-${laudoId}.pdf`,
-            hash: metadata?.hash || '',
-            criadoEm: metadata?.criadoEm || new Date().toISOString(),
-            arquivo_remoto: {
-              provider: 'backblaze',
-              bucket: process.env.BACKBLAZE_BUCKET || 'laudos-qwork',
-              key: chosenKey,
-              url: `${process.env.BACKBLAZE_S2_ENDPOINT || process.env.BACKBLAZE_ENDPOINT || ''}/${process.env.BACKBLAZE_BUCKET || 'laudos-qwork'}/${chosenKey}`,
-            },
-          };
-          await fs.writeFile(metaPath, JSON.stringify(metaToWrite, null, 2));
+        // Atualizar metadados locais para futuras requests (skip em produção)
+        if (process.env.NODE_ENV !== 'production') {
+          try {
+            const metaToWrite: LaudoMetadata = {
+              arquivo: `laudo-${laudoId}.pdf`,
+              hash: metadata?.hash || '',
+              criadoEm: metadata?.criadoEm || new Date().toISOString(),
+              arquivo_remoto: {
+                provider: 'backblaze',
+                bucket: process.env.BACKBLAZE_BUCKET || 'laudos-qwork',
+                key: chosenKey,
+                url: `${process.env.BACKBLAZE_S2_ENDPOINT || process.env.BACKBLAZE_ENDPOINT || ''}/${process.env.BACKBLAZE_BUCKET || 'laudos-qwork'}/${chosenKey}`,
+              },
+            };
+            await fs.writeFile(metaPath, JSON.stringify(metaToWrite, null, 2));
+            console.log(
+              `[STORAGE] Metadados locais atualizados com objeto remoto detectado para laudo ${laudoId}`
+            );
+          } catch (uErr) {
+            console.warn(
+              `[STORAGE] Falha ao persistir metadados do laudo ${laudoId}:`,
+              uErr
+            );
+          }
+
+          // Salvar local
+          try {
+            await fs.writeFile(localPath, buffer);
+            console.log(
+              `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via helper) e salvo localmente`
+            );
+          } catch (writeErr) {
+            console.warn(
+              `[STORAGE] Não foi possível salvar laudo ${laudoId} localmente:`,
+              writeErr
+            );
+          }
+        } else {
           console.log(
-            `[STORAGE] Metadados locais atualizados com objeto remoto detectado para laudo ${laudoId}`
-          );
-        } catch (uErr) {
-          console.warn(
-            `[STORAGE] Falha ao persistir metadados do laudo ${laudoId}:`,
-            uErr
+            `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via helper) — cache local desabilitado em produção`
           );
         }
 
-        // Salvar local e retornar
-        await fs.writeFile(localPath, buffer);
-        console.log(
-          `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via helper) e salvo localmente`
-        );
         return buffer;
       }
 
