@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "jest.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.js",
+    "**/*.jsx",
+    "app/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "__tests__/**/*",
+    "cypress/**/*"
+  ],
+  "exclude": ["node_modules", "dist", "build", ".next"]
+}

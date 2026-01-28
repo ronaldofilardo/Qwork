@@ -1,0 +1,33 @@
+{
+  "success": true,
+  "lote": {
+    "id": 4,
+    "codigo": "004-010126",
+    "titulo": "Lote 4",
+    "status": "ativo",
+    "empresa_id": 7,
+    "contratante_id": 2,
+    "empresa_nome": "Empresa Teste"
+  },
+  "estatisticas": {
+    "total_funcionarios": 1,
+    "funcionarios_concluidos": 1,
+    "funcionarios_pendentes": 0
+  },
+  "funcionarios": [
+    {
+      "cpf": "00000000000",
+      "nome": "Funcionario Teste",
+      "setor": "Operações",
+      "funcao": "Operador",
+      "nivel_cargo": "operacional",
+      "avaliacao": {
+        "id": 10,
+        "status": "concluida",
+        "data_inicio": "2026-01-09T09:00:00.000Z",
+        "data_conclusao": "2026-01-10T10:00:00.000Z"
+      },
+      "grupos": { "g1": 45, "g2": 30 }
+    }
+  ]
+}

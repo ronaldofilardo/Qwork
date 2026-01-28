@@ -1,0 +1,1130 @@
+'use client';
+
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useRouter, useParams } from 'next/navigation';
+import {
+  ArrowLeft,
+  Users,
+  CheckCircle,
+  Clock,
+  FileText,
+  Filter,
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import ModalInativarAvaliacao from '@/components/ModalInativarAvaliacao';
+import ModalResetarAvaliacao from '@/components/ModalResetarAvaliacao';
+
+// Função para normalizar strings (remove acentos e converte para minúsculas)
+function normalizeString(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+// Função para formatar data
+function formatDate(dateString: string | null): string {
+  if (!dateString) return '-';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+interface LoteInfo {
+  id: number;
+  codigo: string;
+  titulo: string;
+  tipo: string;
+  status: string;
+  criado_em: string;
+  liberado_em: string | null;
+  emitido_em?: string | null;
+}
+
+interface Estatisticas {
+  total_funcionarios: number;
+  funcionarios_concluidos: number;
+  funcionarios_pendentes: number;
+}
+
+interface Funcionario {
+  cpf: string;
+  nome: string;
+  setor: string;
+  funcao: string;
+  nivel_cargo: string | null;
+  avaliacao: {
+    id: number;
+    status: string;
+    data_inicio: string;
+    data_conclusao: string | null;
+    motivo_inativacao?: string | null;
+    inativada_em?: string | null;
+  };
+  grupos?: {
+    g1?: number;
+    g2?: number;
+    g3?: number;
+    g4?: number;
+    g5?: number;
+    g6?: number;
+    g7?: number;
+    g8?: number;
+    g9?: number;
+    g10?: number;
+  };
+}
+
+export default function DetalhesLotePage() {
+  const router = useRouter();
+  const params = useParams();
+  const loteId = params.id as string;
+
+  const [loading, setLoading] = useState(true);
+  const [lote, setLote] = useState<LoteInfo | null>(null);
+  const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null);
+  const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  const [filtroStatus, setFiltroStatus] = useState<
+    'todos' | 'concluida' | 'pendente'
+  >('todos');
+  const [busca, setBusca] = useState('');
+  const [buscaDebouncedValue, setBuscaDebouncedValue] = useState('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Modal de inativação
+  const [modalInativar, setModalInativar] = useState<{
+    avaliacaoId: number;
+    funcionarioNome: string;
+    funcionarioCpf: string;
+  } | null>(null);
+
+  // Modal de reset
+  const [modalResetar, setModalResetar] = useState<{
+    avaliacaoId: number;
+    funcionarioNome: string;
+    funcionarioCpf: string;
+  } | null>(null);
+
+  // Filtros por coluna
+  const [filtrosColuna, setFiltrosColuna] = useState<{
+    nome: string[];
+    cpf: string[];
+    nivel_cargo: string[];
+    status: string[];
+    g1: string[];
+    g2: string[];
+    g3: string[];
+    g4: string[];
+    g5: string[];
+    g6: string[];
+    g7: string[];
+    g8: string[];
+    g9: string[];
+    g10: string[];
+  }>({
+    nome: [],
+    cpf: [],
+    nivel_cargo: [],
+    status: [],
+    g1: [],
+    g2: [],
+    g3: [],
+    g4: [],
+    g5: [],
+    g6: [],
+    g7: [],
+    g8: [],
+    g9: [],
+    g10: [],
+  });
+
+  const loadLoteData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      if (!loteId) {
+        toast.error('ID do lote inválido');
+        router.push('/entidade/lotes');
+        return;
+      }
+
+      const response = await fetch(`/api/entidade/lote/${loteId}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        toast.error(errorData.error || 'Erro ao carregar dados do lote');
+        router.push('/entidade/lotes');
+        return;
+      }
+
+      const data = await response.json();
+      setLote(data.lote);
+      setEstatisticas(data.estatisticas);
+      setFuncionarios(data.funcionarios || []);
+    } catch (error) {
+      console.error('Erro ao carregar lote:', error);
+      toast.error('Erro ao conectar com o servidor');
+      router.push('/entidade/lotes');
+    } finally {
+      setLoading(false);
+    }
+  }, [loteId, router]);
+
+  useEffect(() => {
+    loadLoteData();
+  }, [loadLoteData]);
+
+  // Debounce para busca (300ms)
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setBuscaDebouncedValue(busca);
+    }, 300);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [busca]);
+
+  // Fechar dropdowns quando clicar fora
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('[id^="dropdown-"]') && !target.closest('button')) {
+        document.querySelectorAll('[id^="dropdown-"]').forEach((dropdown) => {
+          dropdown.classList.add('hidden');
+        });
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Função para classificar grupos (reutilizada do RH)
+  const renderClassificacao = useCallback(
+    (media: number | undefined, numeroGrupo: number) => {
+      if (media === undefined) return <span className="text-gray-400">-</span>;
+
+      const gruposPositivos = [2, 3, 5, 6];
+      const isPositivo = gruposPositivos.includes(numeroGrupo);
+
+      let colorClass = '';
+      let label = '';
+
+      if (isPositivo) {
+        // Grupos positivos: maior é melhor
+        if (media > 66) {
+          label = 'Excelente';
+          colorClass = 'bg-green-100 text-green-800';
+        } else if (media >= 33) {
+          label = 'Monitorar';
+          colorClass = 'bg-yellow-100 text-yellow-800';
+        } else {
+          label = 'Atenção';
+          colorClass = 'bg-red-100 text-red-800';
+        }
+      } else {
+        // Grupos negativos: menor é melhor
+        if (media < 33) {
+          label = 'Excelente';
+          colorClass = 'bg-green-100 text-green-800';
+        } else if (media <= 66) {
+          label = 'Monitorar';
+          colorClass = 'bg-yellow-100 text-yellow-800';
+        } else {
+          label = 'Atenção';
+          colorClass = 'bg-red-100 text-red-800';
+        }
+      }
+
+      return (
+        <span
+          className={`px-1 py-0.5 text-[11px] rounded-full font-medium whitespace-nowrap ${colorClass}`}
+        >
+          {label}
+        </span>
+      );
+    },
+    []
+  );
+
+  // Função auxiliar para obter apenas o label da classificação (para filtros)
+  const getClassificacaoLabel = useCallback(
+    (media: number | undefined, numeroGrupo: number): string => {
+      if (media === undefined) return '';
+
+      const gruposPositivos = [2, 3, 5, 6];
+      const isPositivo = gruposPositivos.includes(numeroGrupo);
+
+      if (isPositivo) {
+        if (media > 66) return 'Excelente';
+        if (media >= 33) return 'Monitorar';
+        return 'Atenção';
+      } else {
+        if (media < 33) return 'Excelente';
+        if (media <= 66) return 'Monitorar';
+        return 'Atenção';
+      }
+    },
+    []
+  );
+
+  // Obter valores únicos para filtros por coluna
+  const getValoresUnicos = useCallback(
+    (coluna: keyof typeof filtrosColuna) => {
+      // Para colunas de grupos, retornar as opções fixas
+      if (coluna.startsWith('g')) {
+        return ['Excelente', 'Monitorar', 'Atenção'];
+      }
+
+      const valores = funcionarios
+        .map((func) => {
+          switch (coluna) {
+            case 'nome':
+              return func.nome;
+            case 'cpf':
+              return func.cpf;
+            case 'nivel_cargo':
+              return func.nivel_cargo === 'operacional'
+                ? 'Operacional'
+                : func.nivel_cargo === 'gestao'
+                  ? 'Gestão'
+                  : '';
+            case 'status':
+              return func.avaliacao.status;
+            default:
+              return '';
+          }
+        })
+        .filter((valor, index, arr) => valor && arr.indexOf(valor) === index);
+      return valores.sort();
+    },
+    [funcionarios]
+  );
+
+  // Toggle filtro por coluna
+  const toggleFiltroColuna = useCallback(
+    (coluna: keyof typeof filtrosColuna, valor: string) => {
+      setFiltrosColuna((prev) => {
+        const newState = {
+          ...prev,
+          [coluna]: prev[coluna].includes(valor)
+            ? prev[coluna].filter((v) => v !== valor)
+            : [...prev[coluna], valor],
+        };
+        return newState;
+      });
+    },
+    []
+  );
+
+  // Limpar todos os filtros por coluna
+  const limparFiltrosColuna = useCallback(() => {
+    setFiltrosColuna({
+      nome: [],
+      cpf: [],
+      nivel_cargo: [],
+      status: [],
+      g1: [],
+      g2: [],
+      g3: [],
+      g4: [],
+      g5: [],
+      g6: [],
+      g7: [],
+      g8: [],
+      g9: [],
+      g10: [],
+    });
+  }, []);
+
+  const funcionariosFiltrados = useMemo(() => {
+    return funcionarios.filter((func) => {
+      // Filtro de status
+      if (
+        filtroStatus === 'concluida' &&
+        func.avaliacao.status !== 'concluida'
+      ) {
+        return false;
+      }
+      if (
+        filtroStatus === 'pendente' &&
+        func.avaliacao.status === 'concluida'
+      ) {
+        return false;
+      }
+
+      // Filtro de busca com debounce
+      if (buscaDebouncedValue.trim()) {
+        const termo = normalizeString(buscaDebouncedValue);
+        const nomeNormalizado = normalizeString(func.nome);
+        const setorNormalizado = normalizeString(func.setor);
+        const funcaoNormalizada = normalizeString(func.funcao);
+
+        if (
+          !nomeNormalizado.includes(termo) &&
+          !func.cpf.includes(termo) &&
+          !setorNormalizado.includes(termo) &&
+          !funcaoNormalizada.includes(termo)
+        ) {
+          return false;
+        }
+      }
+
+      // Filtros por coluna
+      if (
+        filtrosColuna.nome.length > 0 &&
+        !filtrosColuna.nome.includes(func.nome)
+      ) {
+        return false;
+      }
+      if (
+        filtrosColuna.cpf.length > 0 &&
+        !filtrosColuna.cpf.includes(func.cpf)
+      ) {
+        return false;
+      }
+
+      if (filtrosColuna.nivel_cargo.length > 0) {
+        const nivelDisplay =
+          func.nivel_cargo === 'operacional'
+            ? 'Operacional'
+            : func.nivel_cargo === 'gestao'
+              ? 'Gestão'
+              : '';
+        if (!filtrosColuna.nivel_cargo.includes(nivelDisplay)) {
+          return false;
+        }
+      }
+
+      if (
+        filtrosColuna.status.length > 0 &&
+        !filtrosColuna.status.includes(func.avaliacao.status)
+      ) {
+        return false;
+      }
+
+      // Filtros por grupos G1-G10
+      for (let i = 1; i <= 10; i++) {
+        const grupoKey = `g${i}` as keyof typeof filtrosColuna;
+        if (filtrosColuna[grupoKey].length > 0) {
+          const media = func.grupos?.[grupoKey as keyof typeof func.grupos];
+          const classificacao = getClassificacaoLabel(media, i);
+          if (!filtrosColuna[grupoKey].includes(classificacao)) {
+            return false;
+          }
+        }
+      }
+
+      return true;
+    });
+  }, [
+    funcionarios,
+    filtroStatus,
+    buscaDebouncedValue,
+    filtrosColuna,
+    getClassificacaoLabel,
+  ]);
+
+  // Componente de filtro por coluna
+  const FiltroColuna = ({
+    coluna,
+    titulo,
+  }: {
+    coluna: keyof typeof filtrosColuna;
+    titulo: string;
+  }) => {
+    const valores = getValoresUnicos(coluna);
+    const hasFiltros = filtrosColuna[coluna].length > 0;
+    const isGrupoColumn = coluna.startsWith('g');
+
+    return (
+      <div className="relative inline-block">
+        <button
+          className={`text-xs px-1 py-0.5 rounded ${
+            hasFiltros
+              ? 'bg-blue-600 text-white font-bold'
+              : 'text-gray-600 hover:bg-gray-200'
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById(`dropdown-${coluna}`);
+            if (dropdown) {
+              dropdown.classList.toggle('hidden');
+            }
+          }}
+          title={
+            isGrupoColumn
+              ? hasFiltros
+                ? `${filtrosColuna[coluna].length} filtro(s) ativo(s)`
+                : 'Filtrar'
+              : ''
+          }
+        >
+          {isGrupoColumn ? (
+            hasFiltros ? (
+              <span className="font-bold">{filtrosColuna[coluna].length}</span>
+            ) : (
+              <span>▼</span>
+            )
+          ) : (
+            <>
+              <span>🔽</span>
+              {titulo && <span>{titulo}</span>}
+              {hasFiltros && (
+                <span
+                  className={`${
+                    titulo ? 'ml-1' : ''
+                  } bg-blue-600 text-white rounded-full px-1 text-xs`}
+                >
+                  {filtrosColuna[coluna].length}
+                </span>
+              )}
+            </>
+          )}
+        </button>
+
+        <div
+          id={`dropdown-${coluna}`}
+          className="absolute top-full left-0 mt-1 w-40 bg-white border border-gray-300 rounded shadow-lg z-10 hidden max-h-60 overflow-y-auto"
+        >
+          <div className="p-2">
+            {hasFiltros && (
+              <div className="flex items-center justify-end mb-2 pb-2 border-b">
+                <button
+                  onClick={() => {
+                    setFiltrosColuna((prev) => ({ ...prev, [coluna]: [] }));
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  ✕ Limpar
+                </button>
+              </div>
+            )}
+            {valores.length === 0 ? (
+              <div className="text-sm text-gray-500 py-2">
+                Nenhum valor disponível
+              </div>
+            ) : (
+              valores.map((valor) => {
+                const isChecked = filtrosColuna[coluna].includes(valor);
+                return (
+                  <label
+                    key={valor}
+                    className="flex items-center gap-2 py-1 hover:bg-gray-50 cursor-pointer"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => toggleFiltroColuna(coluna, valor)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                    <span
+                      className="text-sm text-gray-700 truncate"
+                      title={valor}
+                    >
+                      {valor || '(vazio)'}
+                    </span>
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const gerarRelatorioFuncionario = async (cpf: string, nome: string) => {
+    if (!confirm(`Gerar relatório PDF de ${nome}?`)) return;
+
+    toast.loading('Gerando relatório...', { id: 'rel-individual' });
+    try {
+      const response = await fetch(
+        `/api/entidade/lote/${loteId}/relatorio-individual?cpf=${cpf}`
+      );
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-${nome.replace(/\s+/g, '-')}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Relatório gerado com sucesso!', { id: 'rel-individual' });
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao gerar relatório', { id: 'rel-individual' });
+    }
+  };
+
+  const abrirModalInativar = (
+    avaliacaoId: number,
+    nome: string,
+    cpf: string
+  ) => {
+    setModalInativar({
+      avaliacaoId,
+      funcionarioNome: nome,
+      funcionarioCpf: cpf,
+    });
+  };
+
+  const handleDownloadReport = async () => {
+    toast.loading('Gerando relatório...', { id: 'report' });
+    try {
+      const response = await fetch(`/api/entidade/lote/${loteId}/relatorio`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Erro ao gerar relatório');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-lote-${loteId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Relatório gerado com sucesso!', { id: 'report' });
+    } catch (error) {
+      console.error('Erro:', error);
+      toast.error('Erro ao gerar relatório', { id: 'report' });
+    }
+  };
+
+  // CSV data download removed (permanent removal of CSV functionality)
+  // Function intentionally disabled.
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Carregando detalhes do lote...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!lote || !estatisticas) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-gray-600">Lote não encontrado</p>
+          <button
+            onClick={() => router.push('/entidade/lotes')}
+            className="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover"
+          >
+            Voltar para Lotes
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-screen-2xl mx-auto px-4 py-6">
+          <button
+            onClick={() => router.push('/entidade/lotes')}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft size={20} />
+            Voltar para Lotes
+          </button>
+
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <h1 className="text-3xl font-bold text-gray-800">
+                  {lote.titulo}
+                </h1>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    lote.status === 'concluido'
+                      ? 'bg-green-100 text-green-800'
+                      : lote.status === 'enviado'
+                        ? 'bg-blue-100 text-blue-800'
+                        : 'bg-yellow-100 text-yellow-800'
+                  }`}
+                >
+                  {lote.status}
+                </span>
+              </div>
+              <p className="text-gray-600">Código: {lote.codigo}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Tipo: {lote.tipo} | Criado em: {formatDate(lote.criado_em)}
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleDownloadReport}
+                disabled={lote.status === 'criado'}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FileText size={18} />
+                Gerar Relatório
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-screen-2xl mx-auto px-4 py-8">
+        {/* Estatísticas */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <Users className="text-blue-500" size={32} />
+              <span className="text-3xl font-bold text-gray-900">
+                {estatisticas.total_funcionarios}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 font-medium">
+              Total de Funcionários
+            </p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <CheckCircle className="text-green-500" size={32} />
+              <span className="text-3xl font-bold text-gray-900">
+                {estatisticas.funcionarios_concluidos}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 font-medium">
+              Avaliações Concluídas
+            </p>
+            {estatisticas.total_funcionarios > 0 && (
+              <p className="text-xs text-gray-500 mt-1">
+                {Math.round(
+                  (estatisticas.funcionarios_concluidos /
+                    estatisticas.total_funcionarios) *
+                    100
+                )}
+                % de conclusão
+              </p>
+            )}
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+            <div className="flex items-center justify-between mb-2">
+              <Clock className="text-orange-500" size={32} />
+              <span className="text-3xl font-bold text-gray-900">
+                {estatisticas.funcionarios_pendentes}
+              </span>
+            </div>
+            <p className="text-sm text-gray-600 font-medium">
+              Avaliações Pendentes
+            </p>
+          </div>
+        </div>
+
+        {/* Ações do Lote */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                Ações do Lote
+              </h3>
+              <p className="text-sm text-gray-600">
+                Gerar relatórios e exportar dados
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={handleDownloadReport}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
+                <FileText size={18} />
+                Gerar Relatório PDF
+              </button>
+              {/* CSV download removed */}
+            </div>
+          </div>
+        </div>
+
+        {/* Filtros e Busca */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6 border border-gray-200">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Buscar Funcionário
+              </label>
+              <input
+                type="text"
+                value={busca}
+                onChange={(e) => setBusca(e.target.value)}
+                placeholder="Nome, CPF, setor ou função... (ignora acentos)"
+                className="w-full px-4 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              {busca !== buscaDebouncedValue && (
+                <div className="absolute right-3 top-10 transform">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Filter className="inline mr-1" size={16} />
+                Filtrar por Status
+              </label>
+              <select
+                value={filtroStatus}
+                onChange={(e) =>
+                  setFiltroStatus(
+                    e.target.value as 'todos' | 'concluida' | 'pendente'
+                  )
+                }
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+              >
+                <option value="todos">Todos</option>
+                <option value="concluida">Concluídas</option>
+                <option value="pendente">Pendentes</option>
+              </select>
+            </div>
+
+            <div className="self-end">
+              <button
+                onClick={limparFiltrosColuna}
+                className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg text-sm hover:bg-gray-200 transition-colors"
+                title="Limpar todos os filtros por coluna"
+              >
+                🧹 Limpar Filtros
+              </button>
+            </div>
+          </div>
+
+          <div className="mt-4 text-sm text-gray-600">
+            Exibindo {funcionariosFiltrados.length} de {funcionarios.length}{' '}
+            funcionários
+            {busca !== buscaDebouncedValue && (
+              <span className="ml-2 text-gray-500 italic">• Buscando...</span>
+            )}
+            {Object.values(filtrosColuna).some((arr) => arr.length > 0) && (
+              <span className="ml-2 text-blue-600">
+                • Filtros ativos:{' '}
+                {Object.values(filtrosColuna).reduce(
+                  (acc, arr) => acc + arr.length,
+                  0
+                )}{' '}
+                aplicado(s)
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Tabela de Funcionários */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm table-fixed">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    <div className="flex items-center justify-between">
+                      <span>Nome</span>
+                      <FiltroColuna coluna="nome" titulo="Nome" />
+                    </div>
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    <div className="flex items-center justify-between">
+                      <span>CPF</span>
+                      <FiltroColuna coluna="cpf" titulo="CPF" />
+                    </div>
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    <div className="flex items-center justify-between">
+                      <span>Nível</span>
+                      <FiltroColuna coluna="nivel_cargo" titulo="Nível" />
+                    </div>
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    <div className="flex items-center justify-between">
+                      <span>Status</span>
+                      <FiltroColuna coluna="status" titulo="Status" />
+                    </div>
+                  </th>
+                  <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-28">
+                    <div className="flex items-center justify-center">
+                      <span>Inativar</span>
+                    </div>
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Data Conclusão
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Motivo Inativação
+                  </th>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Data Inativação
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G1</span>
+                      <FiltroColuna coluna="g1" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G2</span>
+                      <FiltroColuna coluna="g2" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G3</span>
+                      <FiltroColuna coluna="g3" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G4</span>
+                      <FiltroColuna coluna="g4" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G5</span>
+                      <FiltroColuna coluna="g5" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G6</span>
+                      <FiltroColuna coluna="g6" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G7</span>
+                      <FiltroColuna coluna="g7" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G8</span>
+                      <FiltroColuna coluna="g8" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G9</span>
+                      <FiltroColuna coluna="g9" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
+                    <div className="flex flex-col items-center gap-1">
+                      <span>G10</span>
+                      <FiltroColuna coluna="g10" titulo="" />
+                    </div>
+                  </th>
+                  <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
+                    Ações
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {funcionariosFiltrados.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={19}
+                      className="px-6 py-12 text-center text-gray-500"
+                    >
+                      {busca ||
+                      filtroStatus !== 'todos' ||
+                      Object.values(filtrosColuna).some((arr) => arr.length > 0)
+                        ? 'Nenhum funcionário encontrado com os filtros aplicados'
+                        : 'Nenhum funcionário neste lote'}
+                    </td>
+                  </tr>
+                ) : (
+                  funcionariosFiltrados.map((func, idx) => (
+                    <tr
+                      key={`${func.cpf}-${func.avaliacao.id ?? idx}`}
+                      className="hover:bg-gray-50"
+                    >
+                      <td
+                        className="px-2 py-1 text-sm text-gray-900 max-w-[240px] truncate"
+                        title={func.nome}
+                      >
+                        {func.nome}
+                      </td>
+                      <td className="px-2 py-1 text-sm text-gray-500">
+                        {func.cpf}
+                      </td>
+                      <td className="px-2 py-1 text-sm text-gray-500">
+                        {func.nivel_cargo === 'operacional'
+                          ? 'Operacional'
+                          : func.nivel_cargo === 'gestao'
+                            ? 'Gestão'
+                            : '-'}
+                      </td>
+                      <td className="px-2 py-1 text-sm">
+                        <span
+                          className={`inline-flex px-1 py-0.5 text-[11px] font-semibold rounded-full ${
+                            func.avaliacao.status === 'concluida'
+                              ? 'bg-green-100 text-green-800'
+                              : func.avaliacao.status === 'em_andamento'
+                                ? 'bg-blue-100 text-blue-800'
+                                : func.avaliacao.status === 'inativada'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                          }`}
+                        >
+                          {func.avaliacao.status === 'concluida'
+                            ? 'Concluída'
+                            : func.avaliacao.status === 'em_andamento'
+                              ? 'Em Andamento'
+                              : func.avaliacao.status === 'inativada'
+                                ? 'Inativada'
+                                : 'Pendente'}
+                        </span>
+                      </td>
+                      <td className="px-2 py-1 text-sm text-center">
+                        <div className="flex gap-1 justify-center">
+                          {func.avaliacao.status !== 'concluida' &&
+                            func.avaliacao.status !== 'inativada' &&
+                            !lote?.emitido_em && (
+                              <button
+                                onClick={() =>
+                                  abrirModalInativar(
+                                    func.avaliacao.id,
+                                    func.nome,
+                                    func.cpf
+                                  )
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-red-600 text-white rounded text-xs hover:bg-red-700 transition-colors"
+                                title="Inativar avaliação"
+                              >
+                                🚫 Inativar
+                              </button>
+                            )}
+                          {/* Show Reset for any evaluation that is NOT inativada — backend will enforce single-reset and lote constraints */}
+                          {func.avaliacao.status !== 'inativada' &&
+                            lote?.status !== 'concluido' &&
+                            lote?.status !== 'concluded' &&
+                            lote?.status !== 'enviado_emissor' &&
+                            lote?.status !== 'a_emitir' &&
+                            lote?.status !== 'emitido' && (
+                              <button
+                                onClick={() =>
+                                  setModalResetar({
+                                    avaliacaoId: func.avaliacao.id,
+                                    funcionarioNome: func.nome,
+                                    funcionarioCpf: func.cpf,
+                                  })
+                                }
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-600 text-white rounded text-xs hover:bg-amber-700 transition-colors"
+                                title="Resetar avaliação (apagar todas as respostas)"
+                              >
+                                ↻ Reset
+                              </button>
+                            )}
+                        </div>
+                      </td>
+                      <td className="px-2 py-1 text-sm text-gray-500">
+                        {formatDate(func.avaliacao.data_conclusao)}
+                      </td>
+                      <td
+                        className="px-2 py-1 text-sm text-gray-500 max-w-[200px] truncate"
+                        title={func.avaliacao.motivo_inativacao || ''}
+                      >
+                        {func.avaliacao.motivo_inativacao || '-'}
+                      </td>
+                      <td className="px-2 py-1 text-sm text-gray-500">
+                        {formatDate(func.avaliacao.inativada_em)}
+                      </td>
+                      {/* Colunas G1-G10 */}
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((grupoNum) => (
+                        <td
+                          key={`g${grupoNum}`}
+                          className="px-1 py-1 text-center text-xs"
+                        >
+                          {renderClassificacao(
+                            func.grupos?.[
+                              `g${grupoNum}` as keyof typeof func.grupos
+                            ],
+                            grupoNum
+                          )}
+                        </td>
+                      ))}
+                      <td className="px-2 py-1 text-center">
+                        {func.avaliacao.status === 'concluida' && (
+                          <button
+                            onClick={() =>
+                              gerarRelatorioFuncionario(func.cpf, func.nome)
+                            }
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
+                            title="Gerar PDF"
+                          >
+                            <FileText size={14} />
+                            PDF
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de Inativação */}
+      {modalInativar && (
+        <ModalInativarAvaliacao
+          avaliacaoId={modalInativar.avaliacaoId}
+          funcionarioNome={modalInativar.funcionarioNome}
+          funcionarioCpf={modalInativar.funcionarioCpf}
+          _loteId={loteId}
+          onClose={() => setModalInativar(null)}
+          onSuccess={loadLoteData}
+        />
+      )}
+
+      {/* Modal de Reset */}
+      {modalResetar && (
+        <ModalResetarAvaliacao
+          avaliacaoId={modalResetar.avaliacaoId}
+          loteId={loteId}
+          funcionarioNome={modalResetar.funcionarioNome}
+          funcionarioCpf={modalResetar.funcionarioCpf}
+          basePath="/api/entidade"
+          onClose={() => setModalResetar(null)}
+          onSuccess={loadLoteData}
+        />
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,41 @@
+From d39fbb1584649c04aede51b00e3c8bbf54597917 Mon Sep 17 00:00:00 2001
+From: ronaldofilardo <ronaldofilardo@gmail.com>
+Date: Thu, 15 Jan 2026 14:54:44 -0300
+Subject: [PATCH] chore(seed): add seed to ensure admin (00000000000) with
+ password '123'
+
+---
+ database/seeds/seed_admin.sql | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
+ create mode 100644 database/seeds/seed_admin.sql
+
+diff --git a/database/seeds/seed_admin.sql b/database/seeds/seed_admin.sql
+new file mode 100644
+index 0000000..6ba64d8
+--- /dev/null
++++ b/database/seeds/seed_admin.sql
+@@ -0,0 +1,21 @@
++-- Seed: garante existência do admin do sistema
++BEGIN;
++
++INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, ativo, criado_em, atualizado_em)
++VALUES (
++  '00000000000',
++  'Admin',
++  'admin',
++  '$2a$10$7VOFZGC2.aJozBaascY3Zu6zWPEocQe0PWQ3Dd4laAT83cLN/F9Ya',
++  true,
++  CURRENT_TIMESTAMP,
++  CURRENT_TIMESTAMP
++)
++ON CONFLICT (cpf) DO UPDATE
++SET nome = EXCLUDED.nome,
++    perfil = EXCLUDED.perfil,
++    senha_hash = EXCLUDED.senha_hash,
++    ativo = EXCLUDED.ativo,
++    atualizado_em = CURRENT_TIMESTAMP;
++
++COMMIT;
+-- 
+2.49.0.windows.1
+
