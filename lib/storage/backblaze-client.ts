@@ -322,6 +322,96 @@ export async function checkBackblazeFileExists(key: string): Promise<boolean> {
 }
 
 /**
+ * Listar objetos no bucket com um determinado prefixo.
+ * Retorna array de chaves (string) ou [] se nenhum objeto encontrado.
+ */
+export async function listObjectsByPrefix(
+  prefix: string,
+  maxKeys = 100
+): Promise<string[]> {
+  try {
+    const config = getBackblazeConfig();
+    const { S3Client, ListObjectsV2Command } =
+      await import('@aws-sdk/client-s3');
+
+    const client = new S3Client({
+      endpoint: config.endpoint,
+      region: config.region,
+      credentials: {
+        accessKeyId: config.keyId,
+        secretAccessKey: config.applicationKey,
+      },
+      forcePathStyle: true,
+    });
+
+    const command = new ListObjectsV2Command({
+      Bucket: config.bucket,
+      Prefix: prefix,
+      MaxKeys: maxKeys,
+    });
+
+    const response = await client.send(command);
+    const keys: string[] = [];
+    if (response && response.Contents) {
+      for (const obj of response.Contents) {
+        if (obj.Key) keys.push(obj.Key);
+      }
+    }
+
+    return keys;
+  } catch (err) {
+    console.error('[BACKBLAZE] Erro listando objetos por prefixo:', err);
+    return [];
+  }
+}
+
+/**
+ * Helper: encontra o laudo mais recente para um determinado lote (se houver)
+ * Retorna a chave completa do objeto ou null se não encontrado
+ */
+export async function findLatestLaudoForLote(
+  loteId: number
+): Promise<string | null> {
+  const prefix = `laudos/lote-${loteId}/`;
+  const keys = await listObjectsByPrefix(prefix, 100);
+  if (!keys || keys.length === 0) return null;
+  keys.sort();
+  return keys[keys.length - 1];
+}
+
+/**
+ * Gerar URL assinada temporária para baixar um objeto privado
+ */
+export async function getPresignedUrl(
+  key: string,
+  expiresInSeconds = 300
+): Promise<string> {
+  const config = getBackblazeConfig();
+  const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
+  const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
+
+  const client = new S3Client({
+    endpoint: config.endpoint,
+    region: config.region,
+    credentials: {
+      accessKeyId: config.keyId,
+      secretAccessKey: config.applicationKey,
+    },
+    forcePathStyle: true,
+  });
+
+  const command = new GetObjectCommand({
+    Bucket: config.bucket,
+    Key: key,
+  });
+
+  const url = await getSignedUrl(client, command, {
+    expiresIn: expiresInSeconds,
+  });
+  return url;
+}
+
+/**
  * Deletar arquivo do Backblaze
  *
  * @param key - Chave (caminho) do arquivo no bucket

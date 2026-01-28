@@ -185,6 +185,41 @@ export const GET = async (
       });
     }
 
+    // Attempt to serve from Backblaze if object exists in remote bucket
+    try {
+      const metaPath = path.join(
+        process.cwd(),
+        'storage',
+        'laudos',
+        `laudo-${laudo.id}.json`
+      );
+      try {
+        const metaRaw = fs.readFileSync(metaPath, 'utf-8');
+        const meta = JSON.parse(metaRaw);
+        if (meta.arquivo_remoto?.key) {
+          // If a public URL is available, redirect to it; otherwise generate presigned URL
+          if (meta.arquivo_remoto.url) {
+            return NextResponse.redirect(meta.arquivo_remoto.url);
+          }
+          const { getPresignedUrl } =
+            await import('@/lib/storage/backblaze-client');
+          const signed = await getPresignedUrl(meta.arquivo_remoto.key, 300);
+          return NextResponse.redirect(signed);
+        }
+      } catch (metaErr) {
+        // No metadata — attempt to discover the latest file for the lote
+        const { findLatestLaudoForLote, getPresignedUrl } =
+          await import('@/lib/storage/backblaze-client');
+        const foundKey = await findLatestLaudoForLote(laudo.lote_id);
+        if (foundKey) {
+          const signed = await getPresignedUrl(foundKey, 300);
+          return NextResponse.redirect(signed);
+        }
+      }
+    } catch (err) {
+      console.error('[WARN] Falha ao tentar servir laudo via Backblaze:', err);
+    }
+
     console.warn(
       `[WARN] Arquivo do laudo ${laudoId} não encontrado em nenhum storage`
     );

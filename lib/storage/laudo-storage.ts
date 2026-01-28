@@ -12,6 +12,8 @@ import {
   uploadToBackblaze,
   downloadFromBackblaze,
   checkBackblazeFileExists,
+  findLatestLaudoForLote,
+  listObjectsByPrefix,
 } from './backblaze-client';
 
 export interface LaudoMetadata {
@@ -25,6 +27,25 @@ export interface LaudoMetadata {
     url: string;
     uploadedAt?: string;
   };
+}
+
+/**
+ * Buscar lote_id a partir do laudo_id no banco de dados
+ */
+async function buscarLoteIdDoLaudo(laudoId: number): Promise<number | null> {
+  try {
+    const { query } = await import('@/lib/db');
+    const result = await query('SELECT lote_id FROM laudos WHERE id = $1', [
+      laudoId,
+    ]);
+    return result.rows.length > 0 ? result.rows[0].lote_id : null;
+  } catch (error) {
+    console.error(
+      `[STORAGE] Erro ao buscar lote_id para laudo ${laudoId}:`,
+      error
+    );
+    return null;
+  }
 }
 
 /**
@@ -199,22 +220,87 @@ export async function lerLaudo(laudoId: number): Promise<Buffer> {
       'laudos',
       `laudo-${laudoId}.json`
     );
-    const metaContent = await fs.readFile(metaPath, 'utf-8');
-    const metadata: LaudoMetadata = JSON.parse(metaContent);
 
-    if (!metadata.arquivo_remoto?.key) {
-      throw new Error('Metadados não contêm informação de arquivo remoto');
+    let metadata: LaudoMetadata | null = null;
+    try {
+      const metaContent = await fs.readFile(metaPath, 'utf-8');
+      metadata = JSON.parse(metaContent);
+    } catch (metaErr) {
+      // metadados ausentes — we'll attempt to discover remote by prefix
+      console.warn(
+        `[STORAGE] Metadados locais ausentes ou inválidos para laudo ${laudoId}: ${metaErr}`
+      );
     }
 
-    const buffer = await downloadFromBackblaze(metadata.arquivo_remoto.key);
+    // Se temos chave remota nos metadados, usar diretamente
+    if (metadata?.arquivo_remoto?.key) {
+      const buffer = await downloadFromBackblaze(metadata.arquivo_remoto.key);
+      // Salvar localmente para cache
+      await fs.writeFile(localPath, buffer);
+      console.log(
+        `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via metadados) e salvo localmente`
+      );
+      return buffer;
+    }
 
-    // Salvar localmente para cache
-    await fs.writeFile(localPath, buffer);
-    console.log(
-      `[STORAGE] Laudo ${laudoId} baixado do Backblaze e salvo localmente`
-    );
+    // Fallback aprimorado: tentar encontrar objeto no bucket usando helper do cliente Backblaze
+    try {
+      // Buscar loteId do banco de dados
+      const loteId = await buscarLoteIdDoLaudo(laudoId);
+      if (!loteId) {
+        throw new Error(`Não foi possível obter lote_id para laudo ${laudoId}`);
+      }
+      console.log(
+        `[STORAGE] Tentando localizar objeto remoto por prefixo para lote ${loteId} usando helper`
+      );
+      const chosenKey = await findLatestLaudoForLote(loteId);
 
-    return buffer;
+      if (chosenKey) {
+        console.log(
+          `[STORAGE] Objeto remoto detectado: ${chosenKey} — tentando download`
+        );
+        const buffer = await downloadFromBackblaze(chosenKey);
+
+        // Atualizar metadados locais para futuras requests
+        try {
+          const metaToWrite: LaudoMetadata = {
+            arquivo: `laudo-${laudoId}.pdf`,
+            hash: metadata?.hash || '',
+            criadoEm: metadata?.criadoEm || new Date().toISOString(),
+            arquivo_remoto: {
+              provider: 'backblaze',
+              bucket: process.env.BACKBLAZE_BUCKET || 'laudos-qwork',
+              key: chosenKey,
+              url: `${process.env.BACKBLAZE_S2_ENDPOINT || process.env.BACKBLAZE_ENDPOINT || ''}/${process.env.BACKBLAZE_BUCKET || 'laudos-qwork'}/${chosenKey}`,
+            },
+          };
+          await fs.writeFile(metaPath, JSON.stringify(metaToWrite, null, 2));
+          console.log(
+            `[STORAGE] Metadados locais atualizados com objeto remoto detectado para laudo ${laudoId}`
+          );
+        } catch (uErr) {
+          console.warn(
+            `[STORAGE] Falha ao persistir metadados do laudo ${laudoId}:`,
+            uErr
+          );
+        }
+
+        // Salvar local e retornar
+        await fs.writeFile(localPath, buffer);
+        console.log(
+          `[STORAGE] Laudo ${laudoId} baixado do Backblaze (via helper) e salvo localmente`
+        );
+        return buffer;
+      }
+
+      throw new Error('Nenhum objeto remoto encontrado por prefixo');
+    } catch (lookupErr) {
+      console.error(
+        `[STORAGE] Falha ao encontrar/baixar por prefixo:`,
+        lookupErr
+      );
+      throw new Error(`Laudo ${laudoId} não encontrado em nenhum storage`);
+    }
   } catch (remoteError) {
     console.error(`[STORAGE] Falha ao ler do Backblaze:`, remoteError);
     throw new Error(`Laudo ${laudoId} não encontrado em nenhum storage`);
@@ -245,21 +331,47 @@ export async function laudoExists(laudoId: number): Promise<boolean> {
 
   // Verificar Backblaze
   try {
-    const metaPath = path.join(
-      process.cwd(),
-      'storage',
-      'laudos',
-      `laudo-${laudoId}.json`
-    );
-    const metaContent = await fs.readFile(metaPath, 'utf-8');
-    const metadata: LaudoMetadata = JSON.parse(metaContent);
+    // Tentar ler metadados; se falhar, continuamos para a busca por prefixo
+    let metadata: LaudoMetadata | null = null;
+    try {
+      const metaPath = path.join(
+        process.cwd(),
+        'storage',
+        'laudos',
+        `laudo-${laudoId}.json`
+      );
+      const metaContent = await fs.readFile(metaPath, 'utf-8');
+      metadata = JSON.parse(metaContent);
+    } catch (readMetaErr) {
+      console.warn(
+        `[STORAGE] Metadados ausentes para laudo ${laudoId}:`,
+        readMetaErr?.message || String(readMetaErr)
+      );
+      metadata = null;
+    }
 
-    if (!metadata.arquivo_remoto?.key) {
+    if (metadata?.arquivo_remoto?.key) {
+      return await checkBackblazeFileExists(metadata.arquivo_remoto.key);
+    }
+
+    // Se não houver metadados remotos, tentamos descobrir por prefixo
+    // Primeiro precisamos buscar o loteId do banco de dados
+    const loteId = await buscarLoteIdDoLaudo(laudoId);
+    if (!loteId) {
+      console.warn(
+        `[STORAGE] Não foi possível obter lote_id para laudo ${laudoId}`
+      );
       return false;
     }
 
-    return await checkBackblazeFileExists(metadata.arquivo_remoto.key);
-  } catch {
+    const prefix = `laudos/lote-${loteId}/`;
+    const keys = await listObjectsByPrefix(prefix, 5);
+    return keys && keys.length > 0;
+  } catch (err) {
+    console.error(
+      `[STORAGE] Erro verificando existência do laudo ${laudoId}:`,
+      err
+    );
     return false;
   }
 }
