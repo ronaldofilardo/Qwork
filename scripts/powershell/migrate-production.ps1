@@ -2,10 +2,11 @@
 # Aplica migrações necessárias para compatibilidade com código atual
 # Uso: ./migrate-production.ps1
 
-# Use $env:PROD_CONN_STRING if provided (allows running migrations against a specific Neon instance)
+# Use $env:PROD_CONN_STRING (required) to avoid embedding production credentials in the repo
 $connString = $env:PROD_CONN_STRING
 if (-not $connString -or $connString -eq "") {
-    $connString = "postgresql://neondb_owner:npg_8FNwPWA2mpcl@ep-holy-math-ac17vhfi-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+    Write-Error "PROD_CONN_STRING não definido. Defina a variável de ambiente PROD_CONN_STRING com a connection string do Neon."
+    exit 1
 }
 
 # Verifica se o psql está disponível
