@@ -2,7 +2,12 @@
 # Uso: ./sync-neon-db.ps1
 
 $schemaPath = "database/schema-clean-final.sql"
-$connString = "postgresql://neondb_owner:npg_NfJGO8vck9ob@ep-steep-credit-acckkvg4-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# Use PROD_CONN_STRING from environment to avoid hard-coded credentials
+$connString = $env:PROD_CONN_STRING
+if (-not $connString -or $connString -eq "") {
+    Write-Error "PROD_CONN_STRING não definido. Defina a variável de ambiente PROD_CONN_STRING com a connection string do Neon (ex.: postgresql://user:pass@host/db?sslmode=require)."
+    exit 1
+}
 
 # Verifica se o psql está disponível
 if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
@@ -17,7 +22,13 @@ if (-not (Test-Path $schemaPath)) {
 
 Write-Host "Aplicando $schemaPath no banco Neon..."
 
-$env:PGPASSWORD = "npg_NfJGO8vck9ob"
+# Use PGPASSWORD from environment if set; do NOT hard-code passwords in repo
+if ($env:PGPASSWORD) {
+    Write-Host "Usando PGPASSWORD provido via variável de ambiente."
+} else {
+    Write-Host "PGPASSWORD não definido. Configure PGPASSWORD se o seu cliente psql exigir uma senha."
+}
+
 psql $connString -f $schemaPath
 
 if ($LASTEXITCODE -eq 0) {

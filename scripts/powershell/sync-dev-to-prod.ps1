@@ -6,9 +6,18 @@ Write-Host "SINCRONIZAÇÃO DEV -> PROD" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 
-# URLs de conexão
-$localConnString = "postgresql://postgres:123456@localhost:5432/nr-bps_db"
-$prodConnString = "postgresql://neondb_owner:npg_J2QYqn5oxCzp@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+# URLs de conexão — usar variáveis de ambiente para evitar credenciais no repo
+$localConnString = $env:LOCAL_CONN_STRING
+$prodConnString = $env:PROD_CONN_STRING
+
+if (-not $localConnString -or $localConnString -eq "") {
+    Write-Error "LOCAL_CONN_STRING não definido. Defina LOCAL_CONN_STRING para o banco local (desenvolvimento)."
+    exit 1
+}
+if (-not $prodConnString -or $prodConnString -eq "") {
+    Write-Error "PROD_CONN_STRING não definido. Defina PROD_CONN_STRING para o Neon (produção)."
+    exit 1
+}
 
 # Arquivos temporários
 $tempDir = "temp_sync"
@@ -36,7 +45,8 @@ if (-not (Test-Path $tempDir)) {
 }
 
 Write-Host "1. Exportando schema do banco de desenvolvimento..." -ForegroundColor Yellow
-$env:PGPASSWORD = "123456"
+# Use LOCAL_PGPASSWORD if provided, otherwise rely on connection string or interactive auth
+if ($env:LOCAL_PGPASSWORD) { $env:PGPASSWORD = $env:LOCAL_PGPASSWORD } else { Write-Host "LOCAL_PGPASSWORD não definido; certifique-se que o acesso ao banco local funcione (pg_dump)." }
 pg_dump -h localhost -U postgres -d nr-bps_db --schema-only --no-owner --no-acl -f $schemaFile
 
 if ($LASTEXITCODE -ne 0) {
@@ -68,7 +78,8 @@ Write-Host "✅ Dados exportados" -ForegroundColor Green
 Write-Host ""
 Write-Host "3. Aplicando schema no banco de produção..." -ForegroundColor Yellow
 Write-Host "   (Isso irá recriar as tabelas e deixar o DB sem dados)" -ForegroundColor Gray
-$env:PGPASSWORD = "npg_J2QYqn5oxCzp"
+# Use PROD_PGPASSWORD if provided; prefer connection string with credentials
+if ($env:PROD_PGPASSWORD) { $env:PGPASSWORD = $env:PROD_PGPASSWORD } else { Write-Host "PROD_PGPASSWORD não definido; configure se necessário para autenticação no Neon." }
 
 # Primeiro, configurar o search_path e drop das tabelas existentes
 $dropScript = @"
