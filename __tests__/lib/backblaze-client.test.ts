@@ -91,7 +91,8 @@ describe('Backblaze client', () => {
     process.env.BACKBLAZE_S2_ENDPOINT = 'https://s3.test';
 
     // Simulate swapped variables: long secret placed in KEY_ID and short KeyID in APPLICATION_KEY
-    process.env.BACKBLAZE_KEY_ID = 'superlong-application-secret-that-looks-like-a-secret-xxxxxxxxxxxxxxxxxxxx';
+    process.env.BACKBLAZE_KEY_ID =
+      'superlong-application-secret-that-looks-like-a-secret-xxxxxxxxxxxxxxxxxxxx';
     process.env.BACKBLAZE_APPLICATION_KEY = '0052a8144c04121';
     process.env.BACKBLAZE_BUCKET = 'swap-bucket';
 
@@ -99,7 +100,9 @@ describe('Backblaze client', () => {
 
     const { S3Client } = await import('@aws-sdk/client-s3');
     // @ts-ignore
-    S3Client.prototype.send = jest.fn().mockResolvedValue({ ETag: '"etag-swapped"' });
+    S3Client.prototype.send = jest
+      .fn()
+      .mockResolvedValue({ ETag: '"etag-swapped"' });
 
     const buf = Buffer.from('pdfcontent');
     const res = await uploadToBackblaze(buf, 'path/to/file.pdf');
@@ -111,7 +114,9 @@ describe('Backblaze client', () => {
     expect(res.etag).toBe('"etag-swapped"');
 
     expect(warn).toHaveBeenCalledWith(
-      expect.stringContaining('Detected BACKBLAZE_KEY_ID and BACKBLAZE_APPLICATION_KEY appear to be swapped')
+      expect.stringContaining(
+        'Detected BACKBLAZE_KEY_ID and BACKBLAZE_APPLICATION_KEY appear to be swapped'
+      )
     );
 
     warn.mockRestore();
