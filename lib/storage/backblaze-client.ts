@@ -85,11 +85,11 @@ function getBackblazeConfig(): BackblazeConfig {
     [keyId, applicationKey] = [applicationKey, keyId];
   }
 
-  // Se a keyId parecer curta (p.ex. não corresponder ao padrão 0052...), avisar sobre usar Application Key ID (S3 compatível)
+  // Se a keyId parecer curta (p.ex. não corresponder ao padrão 0052...), falhar rápido com erro claro
   if (keyId && keyId.length < 20) {
     const masked = `${keyId.slice(0, 8)}...`;
-    console.warn(
-      `[BACKBLAZE] Aviso: BACKBLAZE keyId (${masked}) parece curto. Para S3 (S2) use Application Key ID (ex.: '0052...') e Application Key.`
+    throw new Error(
+      `[BACKBLAZE] Configuração inválida: BACKBLAZE_KEY_ID (${masked}) parece curto e provavelmente não é um Application Key ID (ex.: '0052...'). Verifique BACKBLAZE_KEY_ID e BACKBLAZE_APPLICATION_KEY em suas variáveis de ambiente.`
     );
   }
 
@@ -98,7 +98,7 @@ function getBackblazeConfig(): BackblazeConfig {
     looksLikeKeyId(applicationKey) && applicationKey.length <= 32;
   if (appLooksLikeKeyId) {
     throw new Error(
-      'Aparentemente BACKBLAZE_APPLICATION_KEY contém um Key ID (ex.: começa com 005...). Verifique se você copiou a *Application Key* (secret) e não o Key ID. Se você acidentalmente inverteu os valores, corrija suas variáveis de ambiente (BACKBLAZE_KEY_ID ↔ BACKBLAZE_APPLICATION_KEY).'
+      '[BACKBLAZE] Configuração inválida: BACKBLAZE_APPLICATION_KEY parece um Key ID (ex.: começa com 005...). Verifique se você não inverteu BACKBLAZE_KEY_ID e BACKBLAZE_APPLICATION_KEY. Corrija as variáveis de ambiente e reinicie a aplicação.'
     );
   }
 
