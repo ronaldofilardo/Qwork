@@ -67,6 +67,10 @@ export async function recalcularStatusLotePorId(
   // Using lote_id as lock key (hashcode for pg_advisory_xact_lock)
   await query('SELECT pg_advisory_xact_lock($1)', [loteId]);
   console.log(`[DEBUG] Advisory lock acquired for lote ${loteId}`);
+  // Log SKIP flag for observability (helps debugging local vs prod behavior)
+  console.log(
+    `[INFO] SKIP_IMMEDIATE_EMISSION=${process.env.SKIP_IMMEDIATE_EMISSION || 'false'}`
+  );
 
   // IMPORTANTE: 'iniciadas' inclui ambos 'iniciada' E 'em_andamento' para evitar encerramento prematuro
   const statsResult = await query(
@@ -172,10 +176,20 @@ export async function recalcularStatusLotePorId(
       );
       // Emitir laudo imediatamente (operação de sistema com bypass RLS)
       try {
-        if (
-          process.env.SKIP_IMMEDIATE_EMISSION === '1' ||
-          process.env.SKIP_IMMEDIATE_EMISSION === 'true'
-        ) {
+        const skipEnv = process.env.SKIP_IMMEDIATE_EMISSION;
+        let shouldSkip = skipEnv === '1' || skipEnv === 'true';
+
+        // Security: in PRODUCTION we ignore SKIP_IMMEDIATE_EMISSION to ensure laudos are
+        // emitted automatically — this prevents accidental misconfiguration from
+        // disabling automatic emissions in production.
+        if (process.env.NODE_ENV === 'production' && shouldSkip) {
+          console.warn(
+            `[WARN] SKIP_IMMEDIATE_EMISSION está definido em PRODUCTION — ignorando e forçando emissão imediata para lote ${loteId}`
+          );
+          shouldSkip = false;
+        }
+
+        if (shouldSkip) {
           console.log(
             `[INFO] SKIP_IMMEDIATE_EMISSION ativo — pulando emitirLaudoImediato (recalcularStatusLotePorId) para lote ${loteId}`
           );
