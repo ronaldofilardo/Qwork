@@ -128,6 +128,12 @@ NODE_ENV=test
 
 # Produção (usa Neon)
 NODE_ENV=production
+
+# Observação sobre emissão imediata
+# Por padrão o sistema executa a emissão imediata dos lotes assim que ficam 'concluido'.
+# Para pular essa emissão (apenas em casos de desenvolvimento) defina:
+# SKIP_IMMEDIATE_EMISSION=1
+# IMPORTANTE: Em produção o valor SKIP_IMMEDIATE_EMISSION será IGNORADO — o sistema sempre tenta emitir imediatamente.
 ```
 
 #### 🔐 Credenciais do Banco de Dados
