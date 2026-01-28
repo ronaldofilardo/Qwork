@@ -98,4 +98,40 @@ describe('/api/rh/laudos/[laudoId]/download remote', () => {
       'https://signed.example.com/laudo.pdf'
     );
   });
+
+  it('deve retornar 404 quando metadata e objeto remoto estiverem ausentes', async () => {
+    mockGetSession.mockResolvedValue({
+      cpf: '222',
+      nome: 'RH',
+      perfil: 'rh',
+      clinica_id: 1,
+    } as any);
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 15,
+          lote_id: 31,
+          codigo: '009-280126',
+          titulo: 'Lote 9',
+          clinica_id: null,
+        },
+      ],
+      rowCount: 1,
+    } as any);
+
+    mockFs.existsSync = jest.fn().mockReturnValue(false);
+    // Simulate readFileSync throws for metadata
+    mockFs.readFileSync = jest.fn(() => {
+      throw new Error('file not found');
+    });
+
+    // Override backblaze helper to return no object for the lote
+    const bb = require('@/lib/storage/backblaze-client');
+    bb.findLatestLaudoForLote = jest.fn().mockResolvedValue(null);
+
+    const res = await GET({} as Request, { params: { laudoId: '15' } } as any);
+    expect(res.status).toBe(404);
+    const json = await res.json();
+    expect(json.error).toBe('Arquivo do laudo não encontrado');
+  });
 });

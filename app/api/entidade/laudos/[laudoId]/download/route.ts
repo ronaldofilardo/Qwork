@@ -1,7 +1,6 @@
 import { requireEntity } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { lerLaudo } from '@/lib/storage/laudo-storage';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,22 +52,97 @@ export const GET = async (
     const laudo = laudoQuery.rows[0];
 
     // Usar storage manager que tenta local primeiro, depois Backblaze
+    // Modificado: em vez de fazer stream do buffer, redirecionar para presigned URL quando remoto
     try {
-      const fileBuffer = await lerLaudo(laudo.id);
-      const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+      // Tentar local primeiro
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const localPath = path.join(
+        process.cwd(),
+        'storage',
+        'laudos',
+        `laudo-${laudo.id}.pdf`
+      );
 
-      return new NextResponse(new Uint8Array(fileBuffer), {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${fileName}"`,
+      try {
+        const buffer = await fs.readFile(localPath);
+        const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        console.log(`[DOWNLOAD] Servindo laudo ${laudo.id} do storage local`);
+        return new NextResponse(new Uint8Array(buffer), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename=\"${fileName}\"`,
+          },
+        });
+      } catch {
+        console.warn(
+          `[DOWNLOAD] Arquivo local n\u00e3o encontrado para laudo ${laudo.id}, tentando Backblaze...`
+        );
+      }
+
+      // Tentar Backblaze via metadata ou discovery
+      const metaPath = path.join(
+        process.cwd(),
+        'storage',
+        'laudos',
+        `laudo-${laudo.id}.json`
+      );
+
+      let remoteKey: string | null = null;
+
+      // Tentar ler metadata primeiro
+      try {
+        const metaRaw = await fs.readFile(metaPath, 'utf-8');
+        const meta = JSON.parse(metaRaw);
+        if (meta.arquivo_remoto?.key) {
+          remoteKey = meta.arquivo_remoto.key;
+          console.log(
+            `[DOWNLOAD] Chave remota encontrada nos metadados: ${remoteKey}`
+          );
+        }
+      } catch (metaErr) {
+        console.warn(
+          `[DOWNLOAD] Metadados n\u00e3o encontrados para laudo ${laudo.id}, tentando discovery...`
+        );
+        // Discovery: buscar \u00faltimo arquivo no lote
+        const { findLatestLaudoForLote } =
+          await import('@/lib/storage/backblaze-client');
+        remoteKey = await findLatestLaudoForLote(laudo.lote_id);
+        if (remoteKey) {
+          console.log(
+            `[DOWNLOAD] Objeto remoto descoberto via helper: ${remoteKey}`
+          );
+        }
+      }
+
+      // Se encontramos chave remota, redirecionar para presigned URL
+      if (remoteKey) {
+        const { getPresignedUrl } =
+          await import('@/lib/storage/backblaze-client');
+        const presignedUrl = await getPresignedUrl(remoteKey, 900); // 15 min
+        console.log(
+          `[DOWNLOAD] Redirecionando para presigned URL (laudo ${laudo.id})`
+        );
+        return NextResponse.redirect(presignedUrl, 302);
+      }
+
+      // Se n\u00e3o encontramos em lugar nenhum
+      console.error(
+        `[DOWNLOAD] Laudo ${laudo.id} n\u00e3o encontrado em storage local nem Backblaze`
+      );
+      return NextResponse.json(
+        {
+          error: 'Arquivo PDF n\u00e3o dispon\u00edvel',
+          success: false,
         },
-      });
+        { status: 404 }
+      );
     } catch (storageError) {
       console.error('[DOWNLOAD] Erro ao ler laudo do storage:', storageError);
       return NextResponse.json(
         {
-          error: 'Arquivo PDF não disponível',
+          error: 'Arquivo PDF n\u00e3o dispon\u00edvel',
           success: false,
           detalhes:
             storageError instanceof Error

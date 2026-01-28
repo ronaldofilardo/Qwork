@@ -206,7 +206,7 @@ export const GET = async (
           const signed = await getPresignedUrl(meta.arquivo_remoto.key, 300);
           return NextResponse.redirect(signed);
         }
-      } catch (metaErr) {
+      } catch {
         // No metadata — attempt to discover the latest file for the lote
         const { findLatestLaudoForLote, getPresignedUrl } =
           await import('@/lib/storage/backblaze-client');

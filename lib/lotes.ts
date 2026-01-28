@@ -6,43 +6,6 @@
 import { query } from '@/lib/db';
 
 /**
- * Recalcula o status de um lote baseado no estado de suas avaliações ativas
- *
- * Lógica de status:
- * - 'concluido': Quando (número de avaliações concluídas + inativadas) é igual ao total de avaliações liberadas no lote
- * - 'ativo': Há avaliações concluídas ou iniciadas/em andamento (concluidasNum > 0 || iniciadasNum > 0)
- *
- * Nota: Avaliações com status 'inativada' são contabilizadas como concluídas para efeito de finalização do lote
- * Nota: Iniciadas inclui tanto 'iniciada' quanto 'em_andamento' para evitar encerramento prematuro
- *
- * @param avaliacaoId ID da avaliação que disparou o recálculo (para log)
- * @returns Promise<void>
- */
-export async function recalcularStatusLote(
-  avaliacaoId: number
-): Promise<{ novoStatus: string; loteFinalizado: boolean }> {
-  console.log(
-    `[DEBUG] recalcularStatusLote chamado para avaliacaoId: ${avaliacaoId}`
-  );
-
-  // Buscar o lote da avaliação
-  const loteResult = await query(
-    'SELECT lote_id FROM avaliacoes WHERE id = $1',
-    [avaliacaoId]
-  );
-  if (loteResult.rows.length === 0) {
-    console.log(`[DEBUG] Avaliação ${avaliacaoId} não encontrada`);
-    return { novoStatus: 'ativo', loteFinalizado: false };
-  }
-
-  const loteId = loteResult.rows[0].lote_id;
-  console.log(`[DEBUG] Lote encontrado: ${loteId}`);
-
-  // Delegar para a versão por Id (centraliza lógica e usa advisory lock)
-  return await recalcularStatusLotePorId(loteId);
-}
-
-/**
  * Recalcula o status de um lote diretamente pelo loteId (sem avaliacaoId)
  * Útil para operações que não têm contexto de uma avaliação específica
  *
@@ -256,4 +219,41 @@ export async function recalcularStatusLotePorId(
   }
 
   return { novoStatus, loteFinalizado };
+}
+
+/**
+ * Recalcula o status de um lote baseado no estado de suas avaliações ativas
+ *
+ * Lógica de status:
+ * - 'concluido': Quando (número de avaliações concluídas + inativadas) é igual ao total de avaliações liberadas no lote
+ * - 'ativo': Há avaliações concluídas ou iniciadas/em andamento (concluidasNum > 0 || iniciadasNum > 0)
+ *
+ * Nota: Avaliações com status 'inativada' são contabilizadas como concluídas para efeito de finalização do lote
+ * Nota: Iniciadas inclui tanto 'iniciada' quanto 'em_andamento' para evitar encerramento prematuro
+ *
+ * @param avaliacaoId ID da avaliação que disparou o recálculo (para log)
+ * @returns Promise<void>
+ */
+export async function recalcularStatusLote(
+  avaliacaoId: number
+): Promise<{ novoStatus: string; loteFinalizado: boolean }> {
+  console.log(
+    `[DEBUG] recalcularStatusLote chamado para avaliacaoId: ${avaliacaoId}`
+  );
+
+  // Buscar o lote da avaliação
+  const loteResult = await query(
+    'SELECT lote_id FROM avaliacoes WHERE id = $1',
+    [avaliacaoId]
+  );
+  if (loteResult.rows.length === 0) {
+    console.log(`[DEBUG] Avaliação ${avaliacaoId} não encontrada`);
+    return { novoStatus: 'ativo', loteFinalizado: false };
+  }
+
+  const loteId = loteResult.rows[0].lote_id;
+  console.log(`[DEBUG] Lote encontrado: ${loteId}`);
+
+  // Delegar para a versão por Id (centraliza lógica e usa advisory lock)
+  return await recalcularStatusLotePorId(loteId);
 }
