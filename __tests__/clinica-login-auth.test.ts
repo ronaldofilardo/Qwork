@@ -1,0 +1,363 @@
+import { NextRequest } from 'next/server';
+import { POST as loginHandler } from '@/app/api/auth/login/route';
+import { GET as configuracoesHandler } from '@/app/api/clinica/configuracoes/route';
+import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+
+// Mock do banco de dados
+jest.mock('@/lib/db', () => ({
+  query: jest.fn(),
+  getDatabaseInfo: jest.fn(() => 'test-db'),
+}));
+
+// Mock do bcrypt
+jest.mock('bcryptjs', () => ({
+  compare: jest.fn(),
+}));
+
+// Mock da sessão
+jest.mock('@/lib/session', () => ({
+  createSession: jest.fn(),
+  getSession: jest.fn(),
+}));
+
+const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockBcryptCompare = bcrypt.compare as jest.MockedFunction<
+  typeof bcrypt.compare
+>;
+const mockCreateSession = require('@/lib/session')
+  .createSession as jest.MockedFunction<any>;
+const mockGetSession = require('@/lib/session')
+  .getSession as jest.MockedFunction<any>;
+
+describe('Autenticação de Clínica - Perfil RH', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Login de Gestor de Clínica', () => {
+    it('deve autenticar gestor de clínica com sucesso', async () => {
+      const clinicaId = 1;
+      const gestorCpf = '12345678901';
+      const senha = 'senha123';
+
+      // Mock da busca do gestor em contratantes_senhas
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            cpf: gestorCpf,
+            senha_hash: 'hashed_password',
+            contratante_id: clinicaId,
+            nome: 'Dr. João Silva',
+            tipo: 'clinica',
+            ativa: true,
+            pagamento_confirmado: true,
+          },
+        ],
+        rowCount: 1,
+      });
+
+      // Mock da comparação de senha
+      mockBcryptCompare.mockResolvedValueOnce(true);
+
+      const request = new NextRequest('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ cpf: gestorCpf, senha }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const response = await loginHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.perfil).toBe('rh');
+      expect(data.redirectTo).toBe('/rh');
+
+      // Verificar se a sessão foi criada com clinica_id
+      expect(mockCreateSession).toHaveBeenCalledWith({
+        cpf: gestorCpf,
+        nome: 'Dr. João Silva',
+        perfil: 'rh',
+        contratante_id: clinicaId,
+        clinica_id: clinicaId,
+      });
+    });
+
+    it('deve rejeitar login de clínica inativa', async () => {
+      const gestorCpf = '12345678901';
+      const senha = 'senha123';
+
+      // Mock da busca do gestor com clínica inativa
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            cpf: gestorCpf,
+            senha_hash: 'hashed_password',
+            contratante_id: 1,
+            nome: 'Dr. João Silva',
+            tipo: 'clinica',
+            ativa: false, // Clínica inativa
+            pagamento_confirmado: true,
+          },
+        ],
+        rowCount: 1,
+      });
+
+      const request = new NextRequest('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ cpf: gestorCpf, senha }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const response = await loginHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.error).toContain('Contratante inativo');
+      expect(mockCreateSession).not.toHaveBeenCalled();
+    });
+
+    it('deve rejeitar senha incorreta para gestor de clínica', async () => {
+      const gestorCpf = '12345678901';
+      const senha = 'senha_errada';
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            cpf: gestorCpf,
+            senha_hash: 'hashed_password',
+            contratante_id: 1,
+            nome: 'Dr. João Silva',
+            tipo: 'clinica',
+            ativa: true,
+            pagamento_confirmado: true,
+          },
+        ],
+        rowCount: 1,
+      });
+
+      // Senha incorreta
+      mockBcryptCompare.mockResolvedValueOnce(false);
+
+      const request = new NextRequest('http://localhost/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ cpf: gestorCpf, senha }),
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const response = await loginHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.error).toBe('CPF ou senha inválidos');
+      expect(mockCreateSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Acesso a APIs de Clínica', () => {
+    it('deve permitir acesso às configurações da clínica com sessão válida', async () => {
+      const clinicaId = 1;
+
+      // Mock da sessão válida
+      mockGetSession.mockReturnValueOnce({
+        cpf: '12345678901',
+        nome: 'Dr. João Silva',
+        perfil: 'rh',
+        clinica_id: clinicaId,
+      });
+
+      // Mock da busca das configurações
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            clinica_id: clinicaId,
+            campos_customizados: {},
+            incluir_logo_relatorios: true,
+            formato_data_preferencial: 'dd/MM/yyyy',
+            cor_primaria: '#FF6B00',
+            cor_secundaria: '#0066CC',
+          },
+        ],
+        rowCount: 1,
+      });
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes'
+      );
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.clinica_id).toBe(clinicaId);
+      expect(data.incluir_logo_relatorios).toBe(true);
+    });
+
+    it('deve retornar configuração padrão quando não há configuração salva', async () => {
+      const clinicaId = 1;
+
+      mockGetSession.mockReturnValueOnce({
+        cpf: '12345678901',
+        nome: 'Dr. João Silva',
+        perfil: 'rh',
+        clinica_id: clinicaId,
+      });
+
+      // Mock sem configuração encontrada
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      });
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes'
+      );
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.clinica_id).toBe(clinicaId);
+      expect(data.campos_customizados).toEqual({});
+      expect(data.cor_primaria).toBe('#FF6B00');
+    });
+
+    it('deve rejeitar acesso sem sessão válida', async () => {
+      // Mock sem sessão
+      mockGetSession.mockReturnValueOnce(null);
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes'
+      );
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.erro).toBe('Não autenticado');
+    });
+
+    it('deve rejeitar acesso sem clinica_id na sessão', async () => {
+      // Mock sessão sem clinica_id
+      mockGetSession.mockReturnValueOnce({
+        cpf: '12345678901',
+        nome: 'Dr. João Silva',
+        perfil: 'rh',
+        clinica_id: undefined,
+      });
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes'
+      );
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(401);
+      expect(data.erro).toBe('Não autenticado');
+    });
+  });
+
+  describe('Controle de Acesso - Perfil RH', () => {
+    it('deve permitir que RH atualize configurações da clínica', async () => {
+      const clinicaId = 1;
+
+      mockGetSession.mockReturnValueOnce({
+        cpf: '12345678901',
+        nome: 'Dr. João Silva',
+        perfil: 'rh',
+        clinica_id: clinicaId,
+      });
+
+      // Mock da atualização
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            clinica_id: clinicaId,
+            campos_customizados: {},
+            incluir_logo_relatorios: false,
+            formato_data_preferencial: 'MM/dd/yyyy',
+            cor_primaria: '#00FF00',
+            cor_secundaria: '#FF0000',
+          },
+        ],
+        rowCount: 1,
+      });
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            incluir_logo_relatorios: false,
+            formato_data_preferencial: 'MM/dd/yyyy',
+            cor_primaria: '#00FF00',
+            cor_secundaria: '#FF0000',
+          }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.incluir_logo_relatorios).toBe(false);
+      expect(data.cor_primaria).toBe('#00FF00');
+    });
+
+    it('deve rejeitar atualização de configurações sem perfil adequado', async () => {
+      const clinicaId = 1;
+
+      // Mock sessão com perfil funcionário
+      mockGetSession.mockReturnValueOnce({
+        cpf: '12345678901',
+        nome: 'João Silva',
+        perfil: 'funcionario',
+        clinica_id: clinicaId,
+      });
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            incluir_logo_relatorios: false,
+          }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.erro).toBe('Acesso negado');
+    });
+
+    it('deve validar cores hexadecimais inválidas', async () => {
+      const clinicaId = 1;
+
+      mockGetSession.mockReturnValueOnce({
+        cpf: '12345678901',
+        nome: 'Dr. João Silva',
+        perfil: 'rh',
+        clinica_id: clinicaId,
+      });
+
+      const request = new NextRequest(
+        'http://localhost/api/clinica/configuracoes',
+        {
+          method: 'PUT',
+          body: JSON.stringify({
+            cor_primaria: 'invalid-color',
+          }),
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+
+      const response = await configuracoesHandler(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(data.erro).toContain('Cor primária inválida');
+    });
+  });
+});

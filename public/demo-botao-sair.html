@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração - Botão Sair</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#FF6B00',
+                            hover: '#F57C00',
+                        },
+                    },
+                },
+            },
+        }
+        
+        function simularLogout() {
+            if (confirm('Deseja realmente sair?')) {
+                alert('Logout realizado com sucesso!\nRedirecionando para a página de login...');
+                // Aqui seria o redirecionamento: window.location.href = '/login';
+            }
+        }
+    </script>
+    <style>
+        .demo-container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 demo-container">
+    <!-- HEADER ATUALIZADO - COM BOTÃO SAIR DESTACADO -->
+    <header class="bg-primary text-white shadow-lg sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <!-- Logo e Título - Lado Esquerdo -->
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl sm:text-2xl font-bold">Qwork</h1>
+                    <p class="text-xs sm:text-sm opacity-90 hidden sm:block">COPSOQ III - Avaliação Psicossocial</p>
+                </div>
+
+                <!-- Lado Direito - Desktop -->
+                <div class="hidden sm:flex items-center space-x-4">
+                    <!-- Navegação -->
+                    <nav class="flex gap-2">
+                        <button class="bg-white bg-opacity-20 text-white px-3 py-1 rounded-md hover:bg-opacity-30 transition-colors text-sm whitespace-nowrap">
+                            Dashboard RH
+                        </button>
+                    </nav>
+
+                    <!-- Info do usuário -->
+                    <div class="text-right">
+                        <p class="font-semibold text-sm">João Silva</p>
+                        <p class="text-xs opacity-90">RH</p>
+                    </div>
+
+                    <!-- Botão SAIR - Desktop -->
+                    <button
+                        onclick="simularLogout()"
+                        class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-bold shadow-lg border-2 border-red-400 transition-all duration-200 transform hover:scale-105"
+                        title="Sair - João Silva"
+                    >
+                        SAIR
+                    </button>
+                </div>
+
+                <!-- Lado Direito - Mobile -->
+                <div class="sm:hidden flex items-center space-x-2">
+                    <div class="text-right text-xs">
+                        <p class="font-semibold">João Silva</p>
+                        <p class="opacity-75">RH</p>
+                    </div>
+                    
+                    <!-- Botão SAIR - Mobile -->
+                    <button
+                        onclick="simularLogout()"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg font-bold shadow-lg border-2 border-red-400 text-xs min-w-[50px]"
+                        title="Sair - João Silva"
+                    >
+                        SAIR
+                    </button>
+                </div>
+            </div>
+
+            <!-- Menu de navegação mobile - abaixo -->
+            <div class="sm:hidden mt-3 pt-3 border-t border-white border-opacity-30">
+                <nav class="flex gap-2 justify-center">
+                    <button class="bg-white bg-opacity-20 text-white px-3 py-1 rounded text-xs hover:bg-opacity-30 transition-colors">
+                        Dashboard RH
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="flex-1 p-6">
+        <div class="max-w-4xl mx-auto">
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">🔴 Demonstração do Botão "SAIR"</h2>
+                
+                <div class="space-y-6">
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h3 class="text-lg font-semibold text-green-800 mb-2">✅ Implementação Concluída</h3>
+                        <p class="text-green-700">O botão "SAIR" foi implementado com sucesso em todas as páginas protegidas do sistema.</p>
+                    </div>
+
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-blue-800 mb-2">🖥️ Desktop</h4>
+                            <ul class="text-blue-700 text-sm space-y-1">
+                                <li>• Botão vermelho "SAIR" no canto superior direito</li>
+                                <li>• Localizado após as informações do usuário</li>
+                                <li>• Efeito hover com aumento de tamanho</li>
+                                <li>• Sempre visível e acessível</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <h4 class="font-semibold text-purple-800 mb-2">📱 Mobile</h4>
+                            <ul class="text-purple-700 text-sm space-y-1">
+                                <li>• Botão "SAIR" compacto no header</li>
+                                <li>• Ao lado do nome do usuário</li>
+                                <li>• Responsivo para telas pequenas</li>
+                                <li>• Fácil acesso com o polegar</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-yellow-800 mb-2">🎯 Funcionalidades</h4>
+                        <ul class="text-yellow-700 text-sm space-y-1">
+                            <li>• <strong>Clique no botão "SAIR"</strong> para testar a funcionalidade</li>
+                            <li>• Confirmação antes do logout</li>
+                            <li>• Redirecionamento automático para /login</li>
+                            <li>• Funciona em todos os perfis: funcionário, RH, admin, emissor</li>
+                            <li>• Aparece em todas as páginas protegidas</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-gray-800 mb-2">📋 Páginas com Botão "Sair"</h4>
+                        <div class="grid md:grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div>
+                                <p>• <strong>Funcionários:</strong> /dashboard</p>
+                                <p>• <strong>RH:</strong> /rh</p>
+                            </div>
+                            <div>
+                                <p>• <strong>Admin:</strong> /admin</p>
+                                <p>• <strong>Admin:</strong> /admin</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button 
+                            onclick="window.location.href='/login'"
+                            class="bg-primary hover:bg-primary-hover text-white px-6 py-3 rounded-lg font-semibold shadow-lg transition-colors"
+                        >
+                            🔐 Testar na Aplicação Real
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center py-4">
+        <p class="text-sm">Qwork - Sistema de Avaliação Psicossocial baseado no COPSOQ III</p>
+    </footer>
+</body>
+</html>

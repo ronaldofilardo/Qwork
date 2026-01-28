@@ -1,0 +1,242 @@
+/**
+ * Testes para /api/rh/laudos
+ *
+ * Funcionalidades testadas:
+ * 1. Listar laudos enviados para a clínica
+ * 2. Controle de acesso por perfil
+ * 3. Estrutura de resposta dos laudos
+ * 4. Filtros por clínica do usuário
+ */
+
+import { GET } from '@/app/api/rh/laudos/route';
+
+// Mock do módulo de banco de dados
+jest.mock('@/lib/db', () => ({
+  query: jest.fn(),
+}));
+
+jest.mock('@/lib/session', () => ({
+  getSession: jest.fn(),
+}));
+
+import { query } from '@/lib/db';
+import { getSession } from '@/lib/session';
+
+const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockGetSession = getSession as jest.MockedFunction<any>;
+
+describe('/api/rh/laudos', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Controle de Acesso', () => {
+    it('deve permitir acesso para perfil rh', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '11111111111',
+        nome: 'RH Teste',
+        perfil: 'rh',
+        clinica_id: 1,
+      });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+    });
+
+    it('deve permitir acesso para perfil admin', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '00000000000',
+        nome: 'Admin Teste',
+        perfil: 'admin',
+        clinica_id: 1,
+      });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+    });
+
+    it('deve permitir acesso para perfil master', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '99999999999',
+        nome: 'Master Teste',
+        perfil: 'master',
+        clinica_id: 1,
+      });
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Acesso negado');
+
+    it('deve bloquear acesso para perfil funcionario', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '22222222222',
+        nome: 'Func Teste',
+        perfil: 'funcionario',
+      });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Acesso negado');
+    });
+
+    it('deve bloquear acesso quando não há sessão', async () => {
+      mockGetSession.mockResolvedValue(null);
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Acesso negado');
+    });
+  });
+
+  describe('Listagem de Laudos', () => {
+    beforeEach(() => {
+      mockGetSession.mockResolvedValue({
+        cpf: '11111111111',
+        nome: 'RH Teste',
+        perfil: 'rh',
+        clinica_id: 1,
+      });
+    });
+
+    it('deve retornar lista vazia quando não há laudos', async () => {
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.laudos).toEqual([]);
+    });
+
+    it('deve retornar laudos enviados para a clínica', async () => {
+      const mockRows = [
+        {
+          laudo_id: 100,
+          lote_id: 10,
+          codigo: '001-301125',
+          titulo: 'Lote Teste',
+          empresa_nome: 'Empresa A',
+          clinica_nome: 'Clínica BPS',
+          emissor_nome: 'Dr. Emissor',
+          enviado_em: '2025-11-30T10:00:00Z',
+          status: 'emitido',
+          hash_pdf: 'hash123',
+        },
+      ];
+
+      mockQuery.mockResolvedValue({ rows: mockRows, rowCount: 1 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.laudos).toHaveLength(1);
+      expect(data.laudos[0]).toEqual({
+        id: 100,
+        lote_id: 10,
+        lote_codigo: '001-301125',
+        lote_titulo: 'Lote Teste',
+        empresa_nome: 'Empresa A',
+        status: 'emitido',
+        data_emissao: '2025-11-30T10:00:00Z',
+        arquivos: {
+          relatorio_lote: '/api/rh/laudos/100/download',
+        },
+      });
+    });
+
+    it('deve retornar múltiplos laudos ordenados por data decrescente', async () => {
+      const mockRows = [
+        {
+          laudo_id: 100,
+          lote_id: 10,
+          enviado_em: '2025-11-30T10:00:00Z',
+        },
+        {
+          laudo_id: 101,
+          lote_id: 11,
+          enviado_em: '2025-11-30T08:00:00Z',
+        },
+      ];
+
+      mockQuery.mockResolvedValue({ rows: mockRows, rowCount: 2 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(data.laudos).toHaveLength(2);
+      expect(data.laudos[0].data_emissao).toBe('2025-11-30T10:00:00Z');
+      expect(data.laudos[1].data_emissao).toBe('2025-11-30T08:00:00Z');
+    });
+
+    it('deve filtrar apenas laudos com status enviado', async () => {
+      // A query já filtra WHERE l.status = 'enviado'
+      const mockRows = [
+        {
+          laudo_id: 100,
+          lote_id: 10,
+          status: 'enviado',
+          enviado_em: '2025-11-30T10:00:00Z',
+        },
+      ];
+
+      mockQuery.mockResolvedValue({ rows: mockRows, rowCount: 1 });
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(data.laudos).toHaveLength(1);
+      expect(data.laudos[0].id).toBe(100);
+    });
+  });
+
+  describe('Tratamento de Erros', () => {
+    it('deve tratar erro de banco de dados', async () => {
+      mockGetSession.mockResolvedValue({
+        cpf: '11111111111',
+        nome: 'RH Teste',
+        perfil: 'rh',
+        clinica_id: 1,
+      });
+      mockQuery.mockRejectedValue(new Error('Erro de conexão'));
+
+      const mockRequest = { url: 'http://localhost:3000/api/rh/laudos' } as any;
+      const response = await GET(mockRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(500);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Erro interno do servidor');
+      expect(data.detalhes).toBe('Erro de conexão');
+    });
+  });
+});

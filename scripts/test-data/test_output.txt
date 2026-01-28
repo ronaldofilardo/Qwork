@@ -1,0 +1,13 @@
+
+> qwork@1.0.0 test C:\apps\NR-BPS-Popup
+> jest "--" "--passWithNoTests"
+
+No tests found, exiting with code 1
+Run with `--passWithNoTests` to exit with code 0
+In C:\apps\NR-BPS-Popup
+  177 files checked.
+  testMatch: **/__tests__/**/*.?([mc])[jt]s?(x), **/?(*.)+(spec|test).?([mc])[jt]s?(x) - 47 matches
+  testPathIgnorePatterns: \\node_modules\\, \\.next\\ - 132 matches
+  testRegex:  - 0 matches
+Pattern: --passWithNoTests - 0 matches
+ ELIFECYCLE  Test failed. See above for more details.

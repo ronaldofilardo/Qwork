@@ -1,0 +1,541 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Nova identidade visual QWork - Preto como base, Verde para ações */
+  --primary: #000000;
+  --primary-hover: #1a1a1a;
+  --primary-light: #2d2d2d;
+  
+  /* Verde do logo para botões e ações */
+  --accent: #9ACD32;
+  --accent-hover: #7BA428;
+  --accent-light: #B5E550;
+  
+  /* Cor laranja do QWork */
+  --orange: #FF6B00;
+  --orange-hover: #FF8533;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+html.modal-open {
+  overflow: hidden !important;
+  height: 100%;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Otimizações para mobile */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow-x: hidden;
+}
+
+.required::after {
+  content: " *";
+  color: #EF4444;
+}
+
+.print-only {
+  display: none;
+}
+
+/* Estilos específicos para impressão - Manter layout 100% fiel à tela */
+@media print {
+  /* Força impressão de cores e fundos */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Layout da página - otimizado para mobile */
+  @page {
+    margin: 0.5cm;
+    size: A4;
+  }
+
+  html, body {
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    position: static !important;
+    transform: none !important;
+  }
+}
+
+/* ========== MOBILE OPTIMIZATIONS ========== */
+
+/* Touch targets - mínimo 44px conforme Apple/Google guidelines */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe area helpers para iOS notch (usado em modais/fullscreen) */
+.safe-area {
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+
+/* Gestos e interações mobile */
+.swipe-container {
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.no-scroll {
+  touch-action: none;
+  -webkit-overflow-scrolling: auto;
+}
+
+/* Botões otimizados para mobile */
+.mobile-btn {
+  padding: 16px 24px;
+  font-size: 16px;
+  min-height: 48px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: rgba(0,0,0,0.1);
+}
+
+.mobile-btn:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
+}
+
+/* Cards responsivos */
+.mobile-card {
+  margin: 8px;
+  padding: 16px;
+  border-radius: 12px;
+}
+
+/* Navegação mobile */
+.mobile-nav {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  padding: 12px 16px;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+}
+
+/* Progress bars mobile */
+.mobile-progress {
+  height: 8px;
+  border-radius: 4px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.mobile-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary-hover) 100%);
+  transition: width 0.3s ease;
+}
+
+/* Form inputs mobile */
+.mobile-input {
+  font-size: 16px; /* Previne zoom no iOS */
+  padding: 14px 16px;
+  border-radius: 8px;
+  border: 2px solid #d1d5db;
+  transition: border-color 0.2s ease;
+}
+
+.mobile-input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+}
+
+/* Questionnaire specific styles */
+.question-mobile {
+  padding: 20px 16px;
+  margin: 0 8px 16px 8px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.question-mobile h3 {
+  font-size: 18px;
+  line-height: 1.4;
+  margin-bottom: 16px;
+  color: #1f2937;
+}
+
+/* Radio buttons mobile */
+.radio-mobile {
+  display: flex;
+  align-items: center;
+  padding: 14px 16px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 2px solid #f3f4f6;
+  background: #fafafa;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 56px;
+}
+
+.radio-mobile:hover {
+  border-color: #d1d5db;
+  background: #f9fafb;
+}
+
+.radio-mobile:active {
+  transform: scale(0.99);
+}
+
+.radio-mobile.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.radio-mobile input {
+  margin-right: 12px;
+  width: 20px;
+  height: 20px;
+}
+
+.radio-mobile label {
+  flex: 1;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  user-select: none;
+}
+
+.radio-mobile.selected label {
+  color: var(--primary);
+}
+
+/* Responsive breakpoints */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .mobile-hide {
+    display: none !important;
+  }
+  
+  .mobile-show {
+    display: block !important;
+  }
+  
+  /* Stack layout em mobile */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+  
+  .mobile-stack > * {
+    width: 100% !important;
+    margin-bottom: 12px;
+  }
+  
+  /* Texto responsivo */
+  h1 { font-size: 24px !important; }
+  h2 { font-size: 20px !important; }
+  h3 { font-size: 18px !important; }
+  
+  /* Botões full-width em mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+}
+
+  /* Container principal */
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif !important;
+    line-height: 1.5 !important;
+    color: #1f2937 !important;
+  }
+
+  /* Ocultar apenas elementos de impressão */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Reset completo para mobile REMOVIDO: substituído por regras específicas e não invasivas. */
+  /* Observação: regras globais que forçam position/transform/z-index breakam componentes fixed/absolute e 
+     impedem o comportamento esperado de modais e elementos responsivos. Use regras específicas quando 
+     necessário. */
+
+  /* Container principal forçado */
+  .max-w-4xl, .container {
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0.5rem !important;
+  }
+
+  /* Manter estrutura de cards/grupos - otimizado mobile */
+  .grupo-card {
+    page-break-inside: avoid !important;
+    margin-bottom: 1rem !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 0.5rem !important;
+    overflow: visible !important;
+    background: white !important;
+    box-shadow: none !important;
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    clear: both !important;
+    float: none !important;
+  }
+
+  /* Header do grupo - manter gradiente e cores - mobile friendly */
+  .grupo-header {
+    background: linear-gradient(to right, #FF6B00, #F57C00) !important;
+    color: white !important;
+    padding: 1rem !important;
+    border-radius: 0.5rem 0.5rem 0 0 !important;
+    position: static !important;
+    transform: none !important;
+    width: 100% !important;
+    display: block !important;
+  }
+
+  /* Título do grupo */
+  .grupo-titulo {
+    font-size: 1.25rem !important;
+    font-weight: bold !important;
+    color: white !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Badge de categoria */
+  .categoria-badge {
+    display: inline-block !important;
+    padding: 0.5rem 1rem !important;
+    border-radius: 9999px !important;
+    font-size: 0.875rem !important;
+    font-weight: bold !important;
+    color: white !important;
+    border: 2px solid white !important;
+  }
+
+  /* Cores específicas para categorias */
+  .categoria-baixo {
+    background-color: #10B981 !important;
+  }
+
+  .categoria-medio {
+    background-color: #F59E0B !important;
+  }
+
+  .categoria-alto {
+    background-color: #EF4444 !important;
+  }
+
+  /* Pontuação */
+  .pontuacao {
+    font-size: 1.125rem !important;
+    font-weight: 600 !important;
+    color: white !important;
+  }
+
+  /* Conteúdo do grupo */
+  .grupo-conteudo {
+    padding: 1.5rem !important;
+  }
+
+  /* Seções de explicação */
+  .secao-explicacao {
+    background-color: #dbeafe !important;
+    border-left: 4px solid #3b82f6 !important;
+    padding: 1rem !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Correções para a seção de Lotes - remove padrões estranhos e aumenta a área visível */
+  .lotes-container {
+    /* Remove qualquer background-image/padrão herdado */
+    background-image: none !important;
+    background-repeat: no-repeat !important;
+    background-size: auto !important;
+  }
+
+  .lotes-grid {
+    /* Garante visibilidade mínima no mobile e mais espaço em desktop */
+    min-height: 16rem !important; /* ~256px */
+  }
+
+  @media (min-width: 1024px) {
+    .lotes-grid {
+      min-height: 20rem !important; /* ~320px */
+    }
+  }
+
+  .secao-gestao {
+    background-color: #dcfce7 !important;
+    border-left: 4px solid #22c55e !important;
+    padding: 1rem !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .secao-recomendacao-baixo {
+    background-color: #dcfce7 !important;
+    border-left: 4px solid #22c55e !important;
+    padding: 1rem !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .secao-recomendacao-medio {
+    background-color: #fef3c7 !important;
+    border-left: 4px solid #f59e0b !important;
+    padding: 1rem !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  .secao-recomendacao-alto {
+    background-color: #fee2e2 !important;
+    border-left: 4px solid #ef4444 !important;
+    padding: 1rem !important;
+    border-radius: 0 0.5rem 0.5rem 0 !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Títulos das seções */
+  .secao-titulo {
+    font-weight: bold !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .secao-titulo-azul {
+    color: #1e40af !important;
+  }
+
+  .secao-titulo-verde {
+    color: #15803d !important;
+  }
+
+  .secao-titulo-amarelo {
+    color: #d97706 !important;
+  }
+
+  .secao-titulo-vermelho {
+    color: #dc2626 !important;
+  }
+
+  /* Texto das seções */
+  .secao-texto {
+    font-size: 0.875rem !important;
+    line-height: 1.5 !important;
+    white-space: pre-line !important;
+  }
+
+  .secao-texto-azul {
+    color: #1e3a8a !important;
+  }
+
+  .secao-texto-verde {
+    color: #14532d !important;
+  }
+
+  .secao-texto-amarelo {
+    color: #92400e !important;
+  }
+
+  .secao-texto-vermelho {
+    color: #991b1b !important;
+  }
+
+  /* Barra de progresso */
+  .progress-container {
+    background-color: #e5e7eb !important;
+    border-radius: 9999px !important;
+    height: 1rem !important;
+    overflow: hidden !important;
+    margin: 1rem 0 !important;
+  }
+
+  .progress-bar {
+    height: 100% !important;
+    border-radius: 9999px !important;
+    transition: width 0.5s ease !important;
+  }
+
+  /* Marcadores da barra */
+  .progress-markers {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: 0.25rem !important;
+  }
+
+  .progress-marker {
+    font-size: 0.75rem !important;
+    color: #6b7280 !important;
+  }
+
+  /* Ocultar botões na impressão */
+  .no-print {
+    display: none !important;
+  }
+
+  /* Mostrar conteúdo apenas na impressão */
+  .print-only {
+    display: block !important;
+  }
+
+  /* Quebras de página adequadas */
+  .grupo-card {
+    page-break-inside: avoid !important;
+  }
+
+  /* Gráfico Chart.js no PDF */
+  canvas {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    position: static !important;
+    transform: none !important;
+  }
+
+  /* Container do gráfico */
+  .w-full.bg-white.rounded-lg.shadow-lg {
+    width: 100% !important;
+    background: white !important;
+    border-radius: 0.5rem !important;
+    box-shadow: none !important;
+    margin-bottom: 1rem !important;
+    padding: 1rem !important;
+    position: static !important;
+    transform: none !important;
+  }
+
+  /* Classes Tailwind customizadas para impressão */
+  .print\:static { position: static !important; }
+  .print\:transform-none { transform: none !important; }
+  .print\:w-full { width: 100% !important; }
+  .print\:text-base { font-size: 1rem !important; }
+  .print\:flex-col { flex-direction: column !important; }
+  .print\:space-y-1 > * + * { margin-top: 0.25rem !important; }
+  .print\:space-x-0 > * + * { margin-left: 0 !important; }
+  .print\:justify-start { justify-content: flex-start !important; }
+  .print\:w-3 { width: 0.75rem !important; }
+  .print\:h-3 { height: 0.75rem !important; }

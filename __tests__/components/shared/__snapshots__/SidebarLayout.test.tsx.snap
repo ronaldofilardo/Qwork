@@ -1,0 +1,157 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`SidebarLayout snapshots renders collapsed layout and matches snapshot 1`] = `
+<div
+  class="h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-16"
+>
+  <div
+    class="p-4 border-b border-gray-200"
+  >
+    <div
+      class="flex items-center justify-between"
+    />
+  </div>
+  <nav
+    class="flex-1 overflow-y-auto py-4"
+  >
+    <button>
+      Item 1
+    </button>
+    <div
+      class="mt-2 px-4"
+    >
+      <button
+        class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-log-out"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m16 17 5-5-5-5"
+          />
+          <path
+            d="M21 12H9"
+          />
+          <path
+            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+          />
+        </svg>
+      </button>
+    </div>
+  </nav>
+</div>
+`;
+
+exports[`SidebarLayout snapshots renders default layout and matches snapshot 1`] = `
+<div
+  class="h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-64"
+>
+  <div
+    class="p-4 border-b border-gray-200"
+  >
+    <div
+      class="flex items-center justify-between"
+    >
+      <div>
+        <h1
+          class="text-lg font-bold text-gray-800"
+        >
+          QWork
+        </h1>
+        <p
+          class="text-xs text-gray-500"
+        >
+          Painel Teste
+        </p>
+      </div>
+    </div>
+  </div>
+  <div
+    class="p-4 border-b border-gray-200 bg-gray-50"
+  >
+    <div
+      class="flex items-center gap-3"
+    >
+      <div
+        class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center"
+      >
+        <span
+          class="text-primary-600"
+        >
+          🏥
+        </span>
+      </div>
+      <div
+        class="flex-1 min-w-0"
+      >
+        <p
+          class="text-sm font-semibold text-gray-800 truncate"
+        >
+          Usuário Teste
+        </p>
+        <p
+          class="text-xs text-gray-500"
+        >
+          Gestor Teste
+        </p>
+      </div>
+    </div>
+  </div>
+  <nav
+    class="flex-1 overflow-y-auto py-4"
+  >
+    <button>
+      Item 1
+    </button>
+    <button>
+      Item 2
+    </button>
+    <div
+      class="mt-2 px-4"
+    >
+      <button
+        class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-log-out"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m16 17 5-5-5-5"
+          />
+          <path
+            d="M21 12H9"
+          />
+          <path
+            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+          />
+        </svg>
+        <span
+          class="font-medium"
+        >
+          Sair
+        </span>
+      </button>
+    </div>
+  </nav>
+</div>
+`;

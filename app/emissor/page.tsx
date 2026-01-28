@@ -1,0 +1,734 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import toast from 'react-hot-toast';
+import { ModalEmergencia } from '@/components/emissor/ModalEmergencia';
+import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
+import { Loader2 } from 'lucide-react';
+interface Lote {
+  id: number;
+  codigo: string;
+  titulo: string;
+  tipo: string;
+  status: string;
+  empresa_nome: string;
+  clinica_nome: string;
+  liberado_em: string;
+  total_avaliacoes: number;
+  emissao_automatica?: boolean;
+  processamento_em?: string | null;
+  modo_emergencia?: boolean;
+  previsao_emissao?: {
+    data: string;
+    formatada: string;
+  } | null;
+  laudo: {
+    id: number;
+    observacoes: string;
+    status: string;
+    emitido_em: string | null;
+    enviado_em: string | null;
+    hash_pdf: string | null;
+  } | null;
+  notificacoes?: NotificacaoLote[];
+}
+
+interface NotificacaoLote {
+  id: string;
+  tipo: 'lote_liberado' | 'lote_finalizado';
+  mensagem: string;
+  data_evento: string;
+  visualizada: boolean;
+}
+
+interface LoteComNotificacao extends Lote {
+  processamento_em?: string | null;
+  modo_emergencia?: boolean;
+}
+
+export default function EmissorDashboard() {
+  const [lotes, setLotes] = useState<LoteComNotificacao[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [activeTab, setActiveTab] = useState<
+    'aguardando-envio' | 'laudo-para-emitir' | 'laudo-emitido' | 'cancelados'
+  >('aguardando-envio');
+  const router = useRouter();
+  const { mutate: reprocessarLaudo, isPending: isReprocessando } =
+    useReprocessarLaudo();
+
+  // Calcular tempo decorrido desde processamento_em
+  const calcularTempoDecorrido = (processamentoEm: string) => {
+    const inicio = new Date(processamentoEm);
+    const agora = new Date();
+    const diffMs = agora.getTime() - inicio.getTime();
+    const diffMinutos = Math.floor(diffMs / 60000);
+
+    if (diffMinutos < 1) return 'menos de 1 minuto';
+    if (diffMinutos === 1) return '1 minuto';
+    if (diffMinutos < 60) return `${diffMinutos} minutos`;
+
+    const diffHoras = Math.floor(diffMinutos / 60);
+    const minutosRestantes = diffMinutos % 60;
+
+    if (diffHoras === 1) {
+      return minutosRestantes > 0
+        ? `1 hora e ${minutosRestantes} minutos`
+        : '1 hora';
+    }
+
+    return minutosRestantes > 0
+      ? `${diffHoras} horas e ${minutosRestantes} minutos`
+      : `${diffHoras} horas`;
+  };
+
+  const fetchLotes = useCallback(
+    async (page: number, reset: boolean = false) => {
+      try {
+        if (reset) {
+          setError(null);
+          setLotes([]);
+          setCurrentPage(1);
+          setHasMore(true);
+        } else {
+          setLoadingMore(true);
+        }
+
+        const response = await fetch(`/api/emissor/lotes?page=${page}`);
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          // Processar lotes - sem dias_pendente
+          const newLotesComInfo: LoteComNotificacao[] = data.lotes.map(
+            (lote: Lote) => {
+              // Simular notificações para o lote
+              const notificacoes: NotificacaoLote[] = [];
+
+              // Notificação de lote liberado (sempre presente)
+              notificacoes.push({
+                id: `lote_liberado_${lote.id}`,
+                tipo: 'lote_liberado',
+                mensagem: `Lote "${lote.titulo}" foi liberado pela clínica`,
+                data_evento: lote.liberado_em,
+                visualizada: false,
+              });
+
+              // Notificação de lote finalizado (se aplicável)
+              if (lote.laudo?.status === 'enviado') {
+                notificacoes.push({
+                  id: `lote_finalizado_${lote.id}`,
+                  tipo: 'lote_finalizado',
+                  mensagem: `Lote "${lote.titulo}" foi finalizado e laudo enviado`,
+                  data_evento: lote.laudo.enviado_em || lote.liberado_em,
+                  visualizada: false,
+                });
+              }
+
+              return {
+                ...lote,
+                notificacoes,
+              };
+            }
+          );
+
+          if (reset) {
+            setLotes(newLotesComInfo);
+          } else {
+            setLotes((prev) => prev.concat(newLotesComInfo));
+          }
+
+          setCurrentPage(page);
+          if (data.lotes.length < data.limit) {
+            setHasMore(false);
+          }
+        } else {
+          const errorMsg = data.error || 'Erro ao carregar lotes';
+          setError(errorMsg);
+          toast.error(errorMsg);
+        }
+      } catch (err) {
+        const errorMsg =
+          err instanceof Error
+            ? err.message
+            : 'Erro ao conectar com o servidor';
+        setError(errorMsg);
+        toast.error(errorMsg);
+      } finally {
+        setLoading(false);
+        setLoadingMore(false);
+      }
+    },
+    [] // Removido calcularDiasPendente das dependências
+  );
+
+  useEffect(() => {
+    void fetchLotes(1, true);
+  }, [fetchLotes]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!loading && !loadingMore) {
+        void fetchLotes(currentPage, false);
+      }
+    }, 30000); // Poll every 30 seconds
+    return () => clearInterval(interval);
+  }, [currentPage, loading, loadingMore, fetchLotes]);
+
+  const getStatusColor = (lote: LoteComNotificacao) => {
+    // Se o lote está concluído mas o laudo foi enviado, tratar como finalizado
+    const effectiveStatus =
+      lote.status === 'concluido' && lote.laudo?.status === 'enviado'
+        ? 'finalizado'
+        : lote.status;
+
+    switch (effectiveStatus) {
+      case 'rascunho':
+        return 'border-gray-500 bg-gray-50';
+      case 'ativo':
+        return 'border-orange-500 bg-orange-50';
+      case 'concluido':
+        return 'border-blue-500 bg-blue-50';
+      case 'finalizado':
+        return 'border-green-500 bg-green-50';
+      case 'cancelado':
+        return 'border-red-500 bg-red-50';
+      default:
+        return 'border-gray-500 bg-gray-50';
+    }
+  };
+
+  const _getStatusIcon = (lote: LoteComNotificacao) => {
+    // Se o lote está concluído mas o laudo foi enviado, tratar como finalizado
+    const effectiveStatus =
+      lote.status === 'concluido' && lote.laudo?.status === 'enviado'
+        ? 'finalizado'
+        : lote.status;
+
+    switch (effectiveStatus) {
+      case 'rascunho':
+        return '⏳';
+      case 'ativo':
+        return '📝';
+      case 'concluido':
+        return '📋';
+      case 'finalizado':
+        return '✅';
+      case 'cancelado':
+        return '❌';
+      default:
+        return '📝';
+    }
+  };
+
+  // Filtrar lotes por aba ativa
+  const filteredLotes = lotes.filter((lote) => {
+    switch (activeTab) {
+      case 'aguardando-envio':
+        return lote.status === 'rascunho';
+      case 'laudo-para-emitir':
+        // Lotes concluídos que ainda não tiveram laudo enviado
+        // Inclui: sem laudo, laudo rascunho, laudo emitido (mas não enviado)
+        return (
+          lote.status === 'concluido' &&
+          (!lote.laudo || lote.laudo.status !== 'enviado')
+        );
+      case 'laudo-emitido':
+        // Lotes finalizados OU lotes concluídos com laudo enviado
+        return (
+          lote.status === 'finalizado' ||
+          (lote.status === 'concluido' && lote.laudo?.status === 'enviado')
+        );
+      case 'cancelados':
+        return lote.status === 'cancelado';
+      default:
+        return true;
+    }
+  });
+
+  const handleEmitirLaudo = (loteId: number) => {
+    router.push(`/emissor/laudo/${loteId}`);
+  };
+
+  const handleDownloadLaudo = async (lote: Lote) => {
+    if (!lote.laudo?.id) {
+      alert('Erro: ID do laudo inválido');
+      return;
+    }
+
+    try {
+      // Passar o ID do lote (o endpoint do emissor usa loteId na rota)
+      const response = await fetch(`/api/emissor/laudos/${lote.id}/download`);
+      if (!response.ok) {
+        const errorData = await response
+          .json()
+          .catch(() => ({ error: 'Erro na resposta do servidor' }));
+        alert(
+          `Erro ao baixar laudo: ${
+            errorData.error || 'Erro na resposta do servidor'
+          }`
+        );
+        return;
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `laudo-${lote.codigo}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      console.error('Erro ao fazer download:', downloadError);
+      alert('Erro ao fazer download do laudo');
+    }
+  };
+
+  const handleRefresh = () => {
+    setLoading(true);
+    void fetchLotes(1, true);
+  };
+
+  const handleLoadMore = () => {
+    void fetchLotes(currentPage + 1, false);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Carregando lotes...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header com botão de sair */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Dashboard do Emissor
+              </h1>
+              <p className="mt-2 text-gray-600">
+                Histórico completo dos lotes processados para emissão de laudos
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Atualizando...' : 'Atualizar'}
+              </button>
+              <button
+                onClick={async () => {
+                  await fetch('/api/auth/logout', { method: 'POST' });
+                  router.push('/login');
+                }}
+                className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+              >
+                Sair
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Abas */}
+        <div className="mb-6">
+          <div className="border-b border-gray-200">
+            <nav className="-mb-px flex space-x-8">
+              <button
+                onClick={() => setActiveTab('aguardando-envio')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'aguardando-envio'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                ⏳ Aguardando Envio
+              </button>
+              <button
+                onClick={() => setActiveTab('laudo-para-emitir')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'laudo-para-emitir'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                📝 Laudo para Emitir
+              </button>
+              <button
+                onClick={() => setActiveTab('laudo-emitido')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'laudo-emitido'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                ✅ Laudo Emitido
+              </button>
+              <button
+                onClick={() => setActiveTab('cancelados')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${
+                  activeTab === 'cancelados'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                ❌ Cancelados
+              </button>
+            </nav>
+          </div>
+        </div>
+
+        {error ? (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={handleRefresh}
+              className="bg-red-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+            >
+              Tentar Novamente
+            </button>
+          </div>
+        ) : filteredLotes.length === 0 ? (
+          <div className="bg-white rounded-lg shadow p-8 text-center">
+            <p className="text-gray-500">
+              Nenhum ciclo encontrado para esta categoria.
+            </p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg shadow">
+            <div className="p-6">
+              <div className="grid gap-4">
+                {filteredLotes.map((lote) => (
+                  <div
+                    key={lote.id}
+                    className={`border-l-4 rounded-r-lg p-4 ${getStatusColor(
+                      lote
+                    )}`}
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                          {lote.titulo} - Lote: {lote.codigo}
+                        </h3>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            lote.status === 'concluido' &&
+                            lote.laudo?.status === 'enviado'
+                              ? 'bg-green-100 text-green-800'
+                              : lote.status === 'finalizado'
+                                ? 'bg-green-100 text-green-800'
+                                : lote.status === 'concluido'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : lote.status === 'ativo'
+                                    ? 'bg-orange-100 text-orange-800'
+                                    : lote.status === 'cancelado'
+                                      ? 'bg-red-100 text-red-800'
+                                      : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {lote.status === 'concluido' &&
+                          lote.laudo?.status === 'enviado'
+                            ? 'Finalizado'
+                            : lote.status === 'finalizado'
+                              ? 'Finalizado'
+                              : lote.status === 'concluido'
+                                ? 'Concluído'
+                                : lote.status === 'ativo'
+                                  ? 'Ativo'
+                                  : lote.status === 'cancelado'
+                                    ? 'Cancelado'
+                                    : 'Rascunho'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">
+                          Empresa Cliente
+                        </p>
+                        <p className="text-sm text-gray-900">
+                          {lote.empresa_nome}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">
+                          Clínica Origem
+                        </p>
+                        <p className="text-sm text-gray-900">
+                          {lote.clinica_nome}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1 mb-4">
+                      <div className="text-sm text-gray-500">
+                        Recebido em{' '}
+                        {new Date(lote.liberado_em).toLocaleDateString('pt-BR')}{' '}
+                        às{' '}
+                        {new Date(lote.liberado_em).toLocaleTimeString(
+                          'pt-BR',
+                          { hour: '2-digit', minute: '2-digit' }
+                        )}
+                      </div>
+
+                      {lote.previsao_emissao && (
+                        <div className="text-sm text-gray-500">
+                          Previsão de emissão: {lote.previsao_emissao.formatada}
+                        </div>
+                      )}
+
+                      {lote.laudo?.emitido_em && (
+                        <div className="text-sm text-gray-500">
+                          Laudo emitido em{' '}
+                          {new Date(lote.laudo.emitido_em).toLocaleDateString(
+                            'pt-BR'
+                          )}{' '}
+                          às{' '}
+                          {new Date(lote.laudo.emitido_em).toLocaleTimeString(
+                            'pt-BR',
+                            { hour: '2-digit', minute: '2-digit' }
+                          )}
+                        </div>
+                      )}
+
+                      {lote.laudo?.enviado_em && (
+                        <div className="text-sm text-gray-500">
+                          Enviado em{' '}
+                          {new Date(lote.laudo.enviado_em).toLocaleDateString(
+                            'pt-BR'
+                          )}{' '}
+                          às{' '}
+                          {new Date(lote.laudo.enviado_em).toLocaleTimeString(
+                            'pt-BR',
+                            { hour: '2-digit', minute: '2-digit' }
+                          )}
+                        </div>
+                      )}
+
+                      {lote.laudo?.hash_pdf && (
+                        <div className="text-sm text-gray-500 flex items-center gap-2">
+                          <span>Hash PDF:</span>
+                          <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">
+                            {lote.laudo.hash_pdf}
+                          </code>
+
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const h = lote.laudo!.hash_pdf as string;
+                              navigator.clipboard
+                                .writeText(h)
+                                .then(() => toast.success('Hash copiado'))
+                                .catch(() => {
+                                  const ta = document.createElement('textarea');
+                                  ta.value = h;
+                                  document.body.appendChild(ta);
+                                  ta.select();
+                                  try {
+                                    document.execCommand('copy');
+                                    toast.success('Hash copiado');
+                                  } catch {
+                                    toast.error(
+                                      'Não foi possível copiar o hash'
+                                    );
+                                  }
+                                  document.body.removeChild(ta);
+                                });
+                            }}
+                            aria-label={`Copiar hash do laudo ${lote.codigo}`}
+                            title="Copiar hash completo"
+                            className="ml-1 inline-flex items-center gap-2 bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 focus:outline-none"
+                          >
+                            Copiar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Notificações do Lote */}
+                    {lote.notificacoes && lote.notificacoes.length > 0 && (
+                      <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                          Notificações
+                        </h4>
+                        <div className="space-y-2">
+                          {lote.notificacoes.map((notif) => (
+                            <div
+                              key={notif.id}
+                              className={`p-3 rounded-lg border ${
+                                notif.visualizada
+                                  ? 'bg-gray-50 border-gray-200'
+                                  : 'bg-blue-50 border-blue-200'
+                              }`}
+                            >
+                              <div className="flex items-start gap-2">
+                                <div
+                                  className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${
+                                    notif.tipo === 'lote_liberado'
+                                      ? 'bg-green-500'
+                                      : 'bg-purple-500'
+                                  }`}
+                                ></div>
+                                <div className="flex-1">
+                                  <p className="text-sm text-gray-800">
+                                    {notif.mensagem}
+                                  </p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    {new Date(
+                                      notif.data_evento
+                                    ).toLocaleDateString('pt-BR')}{' '}
+                                    às{' '}
+                                    {new Date(
+                                      notif.data_evento
+                                    ).toLocaleTimeString('pt-BR', {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })}
+                                  </p>
+                                </div>
+                                {!notif.visualizada && (
+                                  <div className="flex-shrink-0">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Indicador de processamento */}
+                    {lote.processamento_em && !lote.laudo && (
+                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-blue-900">
+                              Processamento em andamento
+                            </p>
+                            <p className="text-xs text-blue-700 mt-0.5">
+                              Iniciado há{' '}
+                              {calcularTempoDecorrido(lote.processamento_em)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Badge de modo emergência */}
+                    {lote.modo_emergencia && (
+                      <div className="mb-4">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
+                          <span>⚠️</span>
+                          Emissão de Emergência
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                      {/* Botão reprocessar - apenas para lotes concluídos sem laudo */}
+                      {lote.status === 'concluido' &&
+                        !lote.laudo &&
+                        !lote.processamento_em && (
+                          <button
+                            onClick={() =>
+                              reprocessarLaudo({ loteId: lote.id })
+                            }
+                            disabled={isReprocessando}
+                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors disabled:opacity-50"
+                          >
+                            {isReprocessando ? 'Processando...' : 'Reprocessar'}
+                          </button>
+                        )}
+
+                      {/* Botão emergência - apenas para emissores/admins, lotes concluídos sem laudo */}
+                      {lote.status === 'concluido' &&
+                        !lote.laudo &&
+                        !lote.processamento_em && (
+                          <ModalEmergencia
+                            loteId={lote.id}
+                            loteCodigo={lote.codigo}
+                            onSuccess={() => fetchLotes(currentPage, false)}
+                          />
+                        )}
+
+                      {/* Botão principal do lote */}
+                      <button
+                        onClick={() => {
+                          if (
+                            activeTab === 'laudo-emitido' &&
+                            lote.laudo?.status === 'enviado'
+                          ) {
+                            handleDownloadLaudo(lote);
+                          } else {
+                            handleEmitirLaudo(lote.id);
+                          }
+                        }}
+                        className={`px-4 py-2 ${
+                          lote.emissao_automatica
+                            ? 'bg-orange-600 hover:bg-orange-700'
+                            : 'bg-blue-600 hover:bg-blue-700'
+                        } text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 ${
+                          lote.emissao_automatica
+                            ? 'focus:ring-orange-500'
+                            : 'focus:ring-blue-500'
+                        } focus:ring-offset-2 transition-colors`}
+                      >
+                        {lote.emissao_automatica
+                          ? !lote.laudo
+                            ? 'Pré-visualização'
+                            : lote.laudo.status === 'enviado'
+                              ? 'Ver Laudo/Baixar PDF'
+                              : 'Ver Prévia (edição bloqueada)'
+                          : !lote.laudo
+                            ? 'Iniciar Laudo'
+                            : lote.laudo.status === 'enviado'
+                              ? 'Ver Laudo/Baixar PDF'
+                              : 'Abrir Laudo Biopsicossocial'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {hasMore && (
+          <div className="text-center mt-8">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="bg-blue-600 text-white px-6 py-3 rounded-md text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loadingMore ? 'Carregando...' : 'Carregar Mais'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

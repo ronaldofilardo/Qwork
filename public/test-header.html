@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Teste Header</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: {
+                            DEFAULT: '#FF6B00',
+                            hover: '#F57C00',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-gray-100">
+    <!-- Simulação do Header -->
+    <header class="bg-primary text-white shadow-lg">
+        <div class="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
+            <div class="flex justify-between items-center">
+                <!-- Logo e Título -->
+                <div class="flex-shrink-0">
+                    <h1 class="text-xl sm:text-2xl font-bold">Qwork</h1>
+                    <p class="text-xs sm:text-sm opacity-90 hidden sm:block">COPSOQ III - Avaliação Psicossocial</p>
+                </div>
+
+                <!-- Área direita com navegação, usuário e logout -->
+                <div class="flex items-center space-x-2 sm:space-x-4">
+                    <!-- Navegação -->
+                    <nav class="hidden sm:flex gap-2">
+                        <button class="bg-white bg-opacity-20 text-white px-3 py-1 rounded-md hover:bg-opacity-30 transition-colors text-sm whitespace-nowrap">
+                            Dashboard RH
+                        </button>
+                    </nav>
+
+                    <!-- Informações do usuário -->
+                    <div class="text-right hidden sm:block">
+                        <p class="font-semibold text-sm">João Silva</p>
+                        <p class="text-xs opacity-90">RH</p>
+                    </div>
+
+                    <!-- Botão de Logout - SEMPRE VISÍVEL -->
+                    <button
+                        onclick="alert('Logout clicado!')"
+                        class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-md transition-colors text-sm font-semibold shadow-lg border-2 border-red-600"
+                        title="Sair (João Silva)"
+                    >
+                        <span class="hidden sm:inline">Sair</span>
+                        <span class="sm:hidden">✕</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Menu mobile (navegação e usuário) -->
+            <div class="sm:hidden mt-3 pt-3 border-t border-white border-opacity-20">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-semibold text-sm">João Silva</p>
+                        <p class="text-xs opacity-90">RH</p>
+                    </div>
+                    <nav class="flex gap-2">
+                        <button class="bg-white bg-opacity-20 text-white px-2 py-1 rounded text-xs hover:bg-opacity-30 transition-colors">
+                            Dashboard RH
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="p-8">
+        <h2 class="text-2xl font-bold mb-4">Teste do Header com Botão Sair</h2>
+        <p class="mb-4">Este é um teste para verificar se o botão "Sair" está visível no header.</p>
+        <ul class="list-disc pl-6 space-y-2">
+            <li><strong>Desktop:</strong> O botão "Sair" deve aparecer com o texto "Sair" em vermelho</li>
+            <li><strong>Mobile:</strong> O botão "Sair" deve aparecer com o símbolo "✕" em vermelho</li>
+            <li><strong>Funcionalidade:</strong> Ao clicar, deve mostrar um alert "Logout clicado!"</li>
+        </ul>
+
+        <div class="mt-8 p-4 bg-blue-100 rounded">
+            <h3 class="font-bold mb-2">Instruções de teste:</h3>
+            <ol class="list-decimal pl-6 space-y-1">
+                <li>Redimensione a janela para testar responsividade</li>
+                <li>Clique no botão vermelho "Sair" no canto superior direito</li>
+                <li>Verifique se funciona tanto em desktop quanto em mobile</li>
+                <li>Depois acesse <a href="/login" class="text-blue-600 underline">a aplicação real</a> para testar</li>
+            </ol>
+        </div>
+    </div>
+</body>
+</html>

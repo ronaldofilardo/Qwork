@@ -1,0 +1,245 @@
+/**
+ * Biblioteca para gerenciamento de lotes de avaliação
+ * Centraliza a lógica de recálculo de status para evitar duplicação
+ */
+
+import { query } from '@/lib/db';
+
+/**
+ * Recalcula o status de um lote baseado no estado de suas avaliações ativas
+ *
+ * Lógica de status:
+ * - 'concluido': Quando (número de avaliações concluídas + inativadas) é igual ao total de avaliações liberadas no lote
+ * - 'ativo': Há avaliações concluídas ou iniciadas/em andamento (concluidasNum > 0 || iniciadasNum > 0)
+ *
+ * Nota: Avaliações com status 'inativada' são contabilizadas como concluídas para efeito de finalização do lote
+ * Nota: Iniciadas inclui tanto 'iniciada' quanto 'em_andamento' para evitar encerramento prematuro
+ *
+ * @param avaliacaoId ID da avaliação que disparou o recálculo (para log)
+ * @returns Promise<void>
+ */
+export async function recalcularStatusLote(
+  avaliacaoId: number
+): Promise<{ novoStatus: string; loteFinalizado: boolean }> {
+  console.log(
+    `[DEBUG] recalcularStatusLote chamado para avaliacaoId: ${avaliacaoId}`
+  );
+
+  // Buscar o lote da avaliação
+  const loteResult = await query(
+    'SELECT lote_id FROM avaliacoes WHERE id = $1',
+    [avaliacaoId]
+  );
+  if (loteResult.rows.length === 0) {
+    console.log(`[DEBUG] Avaliação ${avaliacaoId} não encontrada`);
+    return { novoStatus: 'ativo', loteFinalizado: false };
+  }
+
+  const loteId = loteResult.rows[0].lote_id;
+  console.log(`[DEBUG] Lote encontrado: ${loteId}`);
+
+  // Delegar para a versão por Id (centraliza lógica e usa advisory lock)
+  return await recalcularStatusLotePorId(loteId);
+}
+
+/**
+ * Recalcula o status de um lote diretamente pelo loteId (sem avaliacaoId)
+ * Útil para operações que não têm contexto de uma avaliação específica
+ *
+ * Regras importantes (claras e imutáveis para a máquina de estados):
+ * 1) Se todas as avaliações *liberadas* do lote estão inativadas => novoStatus = 'cancelado'
+ * 2) Se todas as avaliações liberadas estão concluídas (ou concluidas + inativadas == liberadas) => novoStatus = 'concluido' (dispara emissão)
+ * 3) Caso contrário => 'ativo'
+ *
+ * NÃO criar novos estados na máquina de estados; use apenas 'cancelado', 'concluido', 'ativo' (e 'emitido' quando aplicável via emissão).
+ *
+ * @param loteId ID do lote a ser recalculado
+ * @returns Promise<{novoStatus: string, loteFinalizado: boolean}>
+ */
+export async function recalcularStatusLotePorId(
+  loteId: number
+): Promise<{ novoStatus: string; loteFinalizado: boolean }> {
+  console.log(
+    `[DEBUG] recalcularStatusLotePorId chamado para loteId: ${loteId}`
+  );
+
+  // Acquire advisory lock to prevent concurrent processing
+  // Using lote_id as lock key (hashcode for pg_advisory_xact_lock)
+  await query('SELECT pg_advisory_xact_lock($1)', [loteId]);
+  console.log(`[DEBUG] Advisory lock acquired for lote ${loteId}`);
+
+  // IMPORTANTE: 'iniciadas' inclui ambos 'iniciada' E 'em_andamento' para evitar encerramento prematuro
+  const statsResult = await query(
+    `
+    SELECT
+      COUNT(a.id) as total_avaliacoes,
+      COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
+      COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+      COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
+      COUNT(a.id) FILTER (WHERE a.status = 'iniciada' OR a.status = 'em_andamento') as iniciadas,
+      COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
+    FROM avaliacoes a
+    WHERE a.lote_id = $1
+  `,
+    [loteId]
+  );
+
+  const {
+    total_avaliacoes,
+    ativas,
+    concluidas,
+    inativadas,
+    iniciadas,
+    liberadas,
+  } = statsResult.rows[0];
+  const totalAvaliacoes = parseInt(total_avaliacoes) || 0;
+  const ativasNum = parseInt(ativas) || 0;
+  const concluidasNum = parseInt(concluidas) || 0;
+  const inativadasNum = parseInt(inativadas) || 0;
+  const iniciadasNum = parseInt(iniciadas) || 0;
+  const liberadasNum = parseInt(liberadas) || 0;
+
+  console.log(
+    `[DEBUG] Recalculando lote ${loteId}: ${totalAvaliacoes} total, ${liberadasNum} liberadas, ${ativasNum} ativas, ${concluidasNum} concluídas, ${inativadasNum} inativadas, ${iniciadasNum} iniciadas`
+  );
+
+  // Lógica de status (precisão e precedência):
+  // 1) Se todas as avaliações do lote estiverem inativadas (total) => 'cancelado'
+  // 2) Se todas as avaliações *liberadas* estão inativadas e NÃO há concluídas => 'cancelado'
+  // 3) Se há avaliações concluídas e (concluídas + inativadas) == liberadas => 'concluido'
+  // 4) Se há concluidas > 0 ou iniciadas > 0 => 'ativo'
+  // 5) Caso contrário => 'ativo'
+  let novoStatus = 'ativo';
+
+  // 1) Todas avaliações inativadas (base total)
+  if (totalAvaliacoes > 0 && inativadasNum === totalAvaliacoes) {
+    novoStatus = 'cancelado';
+  }
+  // 2) Todas as avaliações liberadas estão inativadas e não há concluídas
+  else if (
+    liberadasNum > 0 &&
+    inativadasNum === liberadasNum &&
+    concluidasNum === 0
+  ) {
+    novoStatus = 'cancelado';
+  }
+  // 3) Concluir quando existe pelo menos UMA concluida e (concluidas + inativadas == liberadas)
+  else if (
+    liberadasNum > 0 &&
+    concluidasNum > 0 &&
+    concluidasNum + inativadasNum === liberadasNum
+  ) {
+    novoStatus = 'concluido';
+  }
+  // 4) Caso padrão: ativo se há qualquer concluída ou iniciada
+  else if (concluidasNum > 0 || iniciadasNum > 0) {
+    novoStatus = 'ativo';
+  }
+
+  // Verificar status atual do lote
+  const loteAtual = await query(
+    'SELECT status FROM lotes_avaliacao WHERE id = $1',
+    [loteId]
+  );
+
+  if (!loteAtual || loteAtual.rowCount === 0 || !loteAtual.rows[0]) {
+    console.warn(
+      `[WARN] Lote ${loteId} não encontrado na tabela lotes_avaliacao`
+    );
+    // Se o lote não existir, não tentamos atualizar nada
+    return { novoStatus, loteFinalizado: false };
+  }
+
+  const statusAtual = loteAtual.rows[0].status;
+
+  let loteFinalizado = false;
+  if (novoStatus !== statusAtual) {
+    if (novoStatus === 'concluido') {
+      // Atualizar status para concluido e emitir imediatamente
+      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
+        novoStatus,
+        loteId,
+      ]);
+      console.log(
+        `[INFO] Lote ${loteId} alterado para '${novoStatus}' - iniciando emissão imediata automática (recalcularStatusLotePorId)`
+      );
+      // Adicionar à fila de emissão com idempotência (INSERT...ON CONFLICT DO NOTHING)
+      await query(
+        `INSERT INTO fila_emissao (lote_id, tentativas, max_tentativas, proxima_tentativa)
+         VALUES ($1, 0, 3, NOW())
+         ON CONFLICT (lote_id) DO NOTHING`,
+        [loteId]
+      );
+      // Emitir laudo imediatamente (operação de sistema com bypass RLS)
+      try {
+        if (
+          process.env.SKIP_IMMEDIATE_EMISSION === '1' ||
+          process.env.SKIP_IMMEDIATE_EMISSION === 'true'
+        ) {
+          console.log(
+            `[INFO] SKIP_IMMEDIATE_EMISSION ativo — pulando emitirLaudoImediato (recalcularStatusLotePorId) para lote ${loteId}`
+          );
+        } else {
+          const { emitirLaudoImediato } = await import('@/lib/laudo-auto');
+          const sucesso = await emitirLaudoImediato(loteId);
+
+          if (sucesso) {
+            console.log(
+              `[INFO] ✓ Lote ${loteId}: emissão imediata concluída com sucesso (recalcularStatusLotePorId)`
+            );
+          } else {
+            console.error(
+              `[ERROR] ✗ Lote ${loteId}: emissão imediata falhou (recalcularStatusLotePorId) - verifique logs`
+            );
+            try {
+              await query(
+                `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
+                 VALUES ('falha_emissao_imediata', $1, $2, NOW())`,
+                [
+                  `Falha na emissão imediata do lote ${loteId} (via recalcularStatusLotePorId)`,
+                  loteId,
+                ]
+              );
+            } catch (notifErr) {
+              console.warn(
+                '[WARN] não foi possível registrar notificacao_admin:',
+                notifErr
+              );
+            }
+          }
+        }
+      } catch (err) {
+        console.error(
+          `[ERROR] Exceção crítica ao emitir laudo do lote ${loteId} (recalcularStatusLotePorId):`,
+          err instanceof Error ? err.message : String(err)
+        );
+        try {
+          await query(
+            `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
+             VALUES ('erro_critico_emissao', $1, $2, NOW())`,
+            [
+              `Erro crítico na emissão do lote ${loteId} (recalcularStatusLotePorId): ${err instanceof Error ? err.message : String(err)}`,
+              loteId,
+            ]
+          );
+        } catch (notifErr) {
+          console.warn(
+            '[WARN] não foi possível registrar notificacao_admin:',
+            notifErr
+          );
+        }
+      }
+      loteFinalizado = true;
+    } else {
+      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
+        novoStatus,
+        loteId,
+      ]);
+      console.log(
+        `[INFO] Lote ${loteId} alterado de '${statusAtual}' para '${novoStatus}'`
+      );
+    }
+  }
+
+  return { novoStatus, loteFinalizado };
+}

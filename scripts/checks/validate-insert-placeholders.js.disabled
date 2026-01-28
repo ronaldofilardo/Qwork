@@ -1,0 +1,112 @@
+#!/usr/bin/env node
+// Verificador simples para detectar INSERTs com mais colunas do que placeholders ($n)
+// Uso: node scripts/checks/validate-insert-placeholders.cjs
+
+const fs = require('fs');
+const path = require('path');
+
+const root = path.resolve(__dirname, '..', '..');
+const GLOB = ['app', 'lib', 'scripts', '__tests__'];
+const exts = ['.ts', '.tsx', '.js', '.jsx'];
+
+function readFiles(dir) {
+  const results = [];
+  const items = fs.readdirSync(dir, { withFileTypes: true });
+  for (const item of items) {
+    if (item.name === 'node_modules' || item.name === '.git') continue;
+    const full = path.join(dir, item.name);
+    if (item.isDirectory()) results.push(...readFiles(full));
+    else if (exts.includes(path.extname(item.name))) {
+      results.push(full);
+    }
+  }
+  return results;
+}
+
+function countParenthesisContent(s, startIdx) {
+  let depth = 0;
+  let i = startIdx;
+  for (; i < s.length; i++) {
+    if (s[i] === '(') depth++;
+    else if (s[i] === ')') {
+      depth--;
+      if (depth === 0) return s.slice(startIdx + 1, i);
+    }
+  }
+  return null;
+}
+
+function analyzeFile(file) {
+  const content = fs.readFileSync(file, 'utf8');
+  const lc = content.toLowerCase();
+  let idx = 0;
+  const findings = [];
+
+  while (true) {
+    const pos = lc.indexOf('insert into', idx);
+    if (pos === -1) break;
+
+    // try to parse columns list
+    const after = content.slice(pos);
+    const parenStart = after.indexOf('(');
+    const columns = countParenthesisContent(after, parenStart);
+    let valuesIdx = after.toLowerCase().indexOf('values');
+    if (columns && valuesIdx !== -1) {
+      const valuesStart = after.indexOf('(', valuesIdx);
+      const values = countParenthesisContent(after, valuesStart);
+      if (values) {
+        const colCount = columns.split(',').filter(Boolean).length;
+        const placeholderMatches = values.match(/\$\d+/g) || [];
+        const placeholderCount = placeholderMatches.length;
+        if (placeholderCount > 0 && placeholderCount < colCount) {
+          findings.push({
+            pos: pos + 1,
+            colCount,
+            placeholderCount,
+            columns: columns.trim(),
+            values: values.trim().slice(0, 200),
+          });
+        }
+      }
+    }
+
+    idx = pos + 10;
+  }
+
+  return findings;
+}
+
+let totalFindings = 0;
+for (const folder of GLOB) {
+  const dir = path.join(root, folder);
+  if (!fs.existsSync(dir)) continue;
+  const files = readFiles(dir);
+  for (const f of files) {
+    const findings = analyzeFile(f);
+    if (findings.length > 0) {
+      console.warn(
+        `\n[WARN] Arquivo: ${path.relative(root, f)} -> Possíveis INSERTs inconsistentes:`
+      );
+      findings.forEach((fn) => {
+        console.warn(
+          `  - pos ${fn.pos}: colunas=${fn.colCount}, placeholders=${fn.placeholderCount}`
+        );
+        console.warn(`    columns: ${fn.columns.slice(0, 200)}`);
+        console.warn(`    values: ${fn.values}`);
+      });
+      totalFindings += findings.length;
+    }
+  }
+}
+
+if (totalFindings === 0) {
+  console.log(
+    '\n✔ Nenhuma inconsistência óbvia detectada em INSERT placeholders.'
+  );
+  process.exit(0);
+} else {
+  console.error(
+    `\n✖ Detectadas ${totalFindings} possíveis inconsistências. Revise manualmente.`
+  );
+  process.exit(2);
+}

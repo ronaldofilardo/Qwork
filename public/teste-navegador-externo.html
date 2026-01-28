@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teste Botão SAIR - Navegador Externo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .teste-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .status {
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        font-weight: bold;
+      }
+      .sucesso {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+      }
+      .alerta {
+        background-color: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+      }
+      .btn-teste {
+        background-color: #ff6b00;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 5px;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 10px;
+        text-decoration: none;
+        display: inline-block;
+        transition: background-color 0.2s;
+      }
+      .btn-teste:hover {
+        background-color: #f57c00;
+      }
+      .instrucoes {
+        background-color: #e3f2fd;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #2196f3;
+      }
+      .checklist {
+        margin-top: 20px;
+      }
+      .checklist li {
+        margin: 10px 0;
+        padding: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="teste-container">
+      <h1>🔍 Teste do Botão "SAIR" - Navegador Externo</h1>
+
+      <div class="status sucesso">
+        ✅ Servidor rodando em: <strong>localhost:3000</strong>
+      </div>
+
+      <div class="instrucoes">
+        <h3>📋 Instruções para Teste no Navegador Externo</h3>
+        <ol>
+          <li><strong>Abra uma nova aba/janela</strong> no Chrome/Firefox</li>
+          <li>
+            <strong>Navegue para:</strong>
+            <code>http://localhost:3000/login</code>
+          </li>
+          <li>
+            <strong>Faça login com uma destas opções:</strong>
+            <ul>
+              <li>
+                <strong>ADMIN:</strong> CPF: <code>11111111111</code> | Senha:
+                <code>admin123</code>
+              </li>
+              <li>
+                <strong>RH:</strong> CPF: <code>22222222222</code> | Senha:
+                <code>rh123</code>
+              </li>
+              <li>
+                <strong>ADMIN:</strong> CPF: <code>00000000000</code> | Senha:
+                <code>123</code>
+              </li>
+              <li>
+                <strong>FUNCIONÁRIO:</strong> CPF: <code>87545772900</code> |
+                Senha: <code>func123</code>
+              </li>
+            </ul>
+          </li>
+          <li>
+            <strong>Após o login</strong>, procure pelo botão
+            <strong style="color: red">SAIR</strong> vermelho no canto superior
+            direito
+          </li>
+          <li><strong>Teste o botão</strong> clicando nele</li>
+        </ol>
+      </div>
+
+      <div class="checklist">
+        <h3>✓ Checklist de Verificação</h3>
+        <ul>
+          <li>□ O botão "SAIR" aparece no header?</li>
+          <li>□ O botão tem cor vermelha de fundo?</li>
+          <li>□ O botão está no canto superior direito?</li>
+          <li>□ O botão funciona ao ser clicado?</li>
+          <li>□ O logout redireciona para /login?</li>
+        </ul>
+      </div>
+
+      <div style="margin-top: 30px; text-align: center">
+        <a href="http://localhost:3000/login" class="btn-teste" target="_blank">
+          🚀 Abrir Aplicação em Nova Aba
+        </a>
+        <a
+          href="http://localhost:3000/demo-botao-sair.html"
+          class="btn-teste"
+          target="_blank"
+        >
+          🎨 Ver Demonstração Visual
+        </a>
+      </div>
+
+      <div class="status alerta" style="margin-top: 20px">
+        <strong>⚠️ Se o botão não aparecer:</strong><br />
+        1. Limpe o cache do navegador (Ctrl+Shift+R)<br />
+        2. Abra as ferramentas do desenvolvedor (F12)<br />
+        3. Vá na aba Console e procure por mensagens de erro<br />
+        4. Verifique se há mensagem "Header renderizado:" no console
+      </div>
+
+      <div
+        style="
+          margin-top: 20px;
+          padding: 15px;
+          background-color: #f8f9fa;
+          border-radius: 5px;
+        "
+      >
+        <h4>🔧 Debug Informações</h4>
+        <p><strong>Componente:</strong> components/Header.tsx</p>
+        <p><strong>Páginas com Header:</strong> /dashboard, /rh, /admin</p>
+        <p><strong>CSS:</strong> Estilos inline + Tailwind CSS</p>
+        <p>
+          <strong>IDs para Debug:</strong> #btn-sair-desktop, #btn-sair-mobile
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // Script para verificar se conseguimos acessar o localhost
+      fetch('http://localhost:3000/')
+        .then((response) => {
+          if (response.ok) {
+            console.log('✅ Servidor localhost:3000 acessível');
+          } else {
+            console.log('⚠️ Problema ao acessar servidor');
+          }
+        })
+        .catch((error) => {
+          console.log('❌ Servidor não acessível:', error);
+          document.querySelector('.sucesso').innerHTML =
+            '❌ Servidor não acessível - Verifique se está rodando';
+          document.querySelector('.sucesso').className = 'status alerta';
+        });
+    </script>
+  </body>
+</html>

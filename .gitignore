@@ -1,0 +1,59 @@
+# Node
+node_modules/
+
+# Next.js build
+.next/
+out/
+dist/
+
+# Environment files (keep examples only in repo)
+.env
+.env.local
+.env.*.local
+.env.vercel
+.env.production
+.env.*.production
+
+# Vercel / deployment
+.vercel/
+.vercelignore
+
+# Logs
+logs/
+*.log
+
+# Database
+*.sqlite
+*.db
+
+# Backups and temp
+tmp/
+temp/
+*.bak
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+
+# Editor
+.vscode/
+.idea/
+
+# Cache
+.cache/
+.next/cache/
+
+# Secrets, keys
+*.pem
+*.key
+*.crt
+
+# Build artifacts
+build/
+
+# uploads/storage
+storage/
+uploads/
