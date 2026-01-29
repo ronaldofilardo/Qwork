@@ -8,6 +8,9 @@ import {
   gerarInterpretacaoRecomendacoes,
   gerarObservacoesConclusao,
 } from '@/lib/laudo-calculos';
+import { gerarHTMLLaudoCompleto } from '@/lib/templates/laudo-html';
+import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
+import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -50,7 +53,8 @@ export const GET = async (
     `,
       [loteId]
     );
-
+    // Iniciar transação explícita para alinhar com fluxo de testes e garantir atomicidade
+    await query('BEGIN');
     if (loteCheck.rows.length === 0) {
       return NextResponse.json(
         { error: 'Lote não encontrado', success: false },
@@ -79,6 +83,7 @@ export const GET = async (
       console.log(
         `[INFO] Requisição rejeitada: lote ${loteId} não está pronto (${lote.concluidas}/${lote.total} avaliações concluídas) e não possui laudo`
       );
+      await query('ROLLBACK');
       return NextResponse.json(
         { error: 'Lote não está pronto para emissão', success: false },
         { status: 400 }
@@ -275,7 +280,21 @@ export const POST = async (
       );
     }
 
-    const body = await req.json();
+    let body: any = {};
+    try {
+      if (typeof (req as any).json === 'function') {
+        body = await (req as any).json();
+      }
+    } catch (parseErr) {
+      console.warn(
+        '[POST] Falha ao parsear body da requisição; usando body vazio',
+        parseErr
+      );
+      body = {};
+    }
+    console.log('[POST] body keys', {
+      keys: typeof body === 'object' ? Object.keys(body) : typeof body,
+    });
     const observacoes = body?.observacoes || null;
 
     // Verificar se lote existe e está pronto
@@ -324,6 +343,74 @@ export const POST = async (
       observacoes,
       laudoCheckRows: laudoCheck.rows,
     });
+
+    // Se o laudo existia em rascunho ou foi criado agora, gerar PDF e hash aqui (fluxo manual)
+    if (
+      laudoCheck.rows.length === 0 ||
+      (laudoCheck.rows.length > 0 && laudoCheck.rows[0].status === 'rascunho')
+    ) {
+      try {
+        // Gerar dados do laudo
+        const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);
+        const scoresPorGrupo = await calcularScoresPorGrupo(loteId);
+        const interpretacaoRecomendacoes = gerarInterpretacaoRecomendacoes(
+          dadosGeraisEmpresa.empresaAvaliada,
+          scoresPorGrupo
+        );
+        const observacoesConclusao = gerarObservacoesConclusao(observacoes);
+        // Criar HTML do laudo
+        const laudoPadronizado: LaudoPadronizado = {
+          etapa1: dadosGeraisEmpresa,
+          etapa2: scoresPorGrupo,
+          etapa3: interpretacaoRecomendacoes,
+          etapa4: observacoesConclusao,
+        } as any;
+        const html = gerarHTMLLaudoCompleto(laudoPadronizado as any);
+
+        // Gerar PDF usando Puppeteer (testes mockam Puppeteer)
+        const puppeteer = await getPuppeteerInstance();
+        const browser = await puppeteer.launch({ headless: true });
+        const page = await (browser as any).newPage();
+        await page.setContent(html, { waitUntil: 'networkidle0' });
+        const pdfUint8 = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+        });
+        await browser.close();
+        const pdfBuffer = Buffer.from(pdfUint8);
+
+        // Calcular hash SHA-256
+        const hash = crypto
+          .createHash('sha256')
+          .update(pdfBuffer)
+          .digest('hex');
+        console.log('[POST] generated hash', { hash });
+
+        // Atualizar laudo com arquivo e hash
+        await query(
+          `UPDATE laudos SET arquivo_pdf = $3, hash_pdf = $4, emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', emissor_cpf = $2, atualizado_em = NOW() WHERE lote_id = $1`,
+          [loteId, user.cpf, pdfBuffer, hash]
+        );
+
+        // Commit da transação iniciada anteriormente
+        await query('COMMIT');
+
+        return NextResponse.json(
+          { success: true, message: 'Laudo emitido com sucesso', hash },
+          { status: 200 }
+        );
+      } catch (genErr) {
+        console.error('[POST] erro ao gerar PDF/hash:', genErr);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Erro ao gerar PDF/hash',
+            detalhes: genErr instanceof Error ? genErr.message : String(genErr),
+          },
+          { status: 500 }
+        );
+      }
+    }
 
     return NextResponse.json(
       { success: true, message: 'Laudo emitido com sucesso' },

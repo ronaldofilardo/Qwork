@@ -23,6 +23,7 @@ const customJestConfig = {
     '\\.spec\\.ts$', // Ignorar arquivos *.spec.ts
   ],
   testMatch: [
+    '**/tests/**/*.(test|spec).(js|jsx|ts|tsx)',
     '**/__tests__/**/*.(test|spec).(js|jsx|ts|tsx)',
     '**/*.(test|spec).(js|jsx|ts|tsx)',
     '!**/docs/**', // Ignorar arquivos de documentação
