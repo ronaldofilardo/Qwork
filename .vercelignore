@@ -1,0 +1,48 @@
+# Test files
+
+**tests**
+_.test.ts
+_.test.tsx
+_.test.js
+_.test.jsx
+cypress
+cypress.config.ts
+
+# Development files
+
+.env.local
+.env.development
+\*.md
+SUMMARY.txt
+test-output.txt
+warnings.txt
+
+# Storage and logs
+
+storage
+logs
+backups
+
+# Scripts (keep only essential)
+
+scripts/powershell
+scripts/checks
+scripts/tests
+
+# Documentation
+
+docs
+
+# Specs
+
+specs
+
+# Database
+
+database/deprecated
+database/backups
+
+# Plans
+
+plans
+patches
