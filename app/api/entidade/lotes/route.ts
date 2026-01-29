@@ -58,6 +58,7 @@ export async function GET() {
     // BEFORE returning: para lotes cujo laudo existe mas o hash está nulo,
     // tentar recuperar o hash a partir do arquivo em disco (fallback não intrusivo).
     // Isso evita que a UI mostre 'N/A' para laudos que já possuem PDF no storage.
+    // IMPORTANTE: Não atualizamos o banco pois laudos emitidos são IMUTÁVEIS
     await Promise.all(
       lotesResult.rows.map(async (lote) => {
         if (lote.laudo_id && !lote.laudo_hash) {
@@ -74,13 +75,8 @@ export async function GET() {
             const crypto = await import('crypto');
             const h = crypto.createHash('sha256').update(buf).digest('hex');
 
-            // Persistir de forma idempotente e segura
-            await query(
-              `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
-              [lote.laudo_id, h]
-            );
-
-            // Atualizar o campo na linha retornada para a resposta sem necessitar de novo SELECT
+            // Apenas atualizar na resposta, NÃO no banco (imutabilidade)
+            // O hash deveria ter sido calculado na geração, mas para dados legados apenas mostramos
             lote.laudo_hash = h;
           } catch (err) {
             // arquivo ausente ou erro de IO → continuar sem falhar a API

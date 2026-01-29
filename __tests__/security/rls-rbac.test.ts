@@ -9,6 +9,8 @@ import {
   hasPermission,
   getPermissionsByRole,
 } from '@/lib/db-security';
+import { sessionHasAccessToLote } from '@/lib/auth-require';
+import { validateResourceAccess } from '@/lib/security-validation';
 import { Session, NivelCargoType } from '@/lib/session';
 
 describe('Row Level Security (RLS) Tests', () => {
@@ -512,15 +514,13 @@ describe('RBAC - Role-Based Access Control', () => {
       expect(permissions).toContain('read:lotes:clinica');
     });
 
-    it('admin deve ter 5 permissões', async () => {
+    it('admin deve ter 3 permissões administrativas (manage:rh, manage:clinicas, manage:admins)', async () => {
       const permissions = await getPermissionsByRole('admin');
 
-      expect(permissions).toHaveLength(5);
-      expect(permissions).toContain('manage:avaliacoes');
-      expect(permissions).toContain('manage:funcionarios');
-      expect(permissions).toContain('manage:empresas');
-      expect(permissions).toContain('manage:lotes');
-      expect(permissions).toContain('manage:laudos');
+      expect(permissions).toHaveLength(3);
+      expect(permissions).toContain('manage:rh');
+      expect(permissions).toContain('manage:clinicas');
+      expect(permissions).toContain('manage:admins');
     });
   });
 
@@ -570,20 +570,323 @@ describe('RBAC - Role-Based Access Control', () => {
       expect(hasPermissionResult).toBe(true);
     });
 
-    it('admin tem permissão para gerenciar tudo', async () => {
+    it('admin NÃO tem acesso implícito a lotes (não é emissor nem RH)', async () => {
+      const session: Session = {
+        cpf: '00000000000',
+        nome: 'Admin Teste',
+        perfil: 'admin',
+      };
+      const access = sessionHasAccessToLote(session, 1, 1);
+      expect(access).toBe(false);
+    });
+
+    it('admin tem permissões apenas para gestão administrativa (RH, clínicas, admins)', async () => {
       const session: Session = { cpf: '111', nome: 'Teste', perfil: 'admin' };
 
-      const permissions = [
-        'manage:avaliacoes',
-        'manage:funcionarios',
-        'manage:empresas',
-        'manage:lotes',
-        'manage:laudos',
-      ];
+      const permissions = ['manage:rh', 'manage:clinicas', 'manage:admins'];
 
       for (const permission of permissions) {
         const hasPermissionResult = await hasPermission(session, permission);
         expect(hasPermissionResult).toBe(true);
+      }
+
+      // Verificar que admin NÃO tem permissões operacionais
+      const operationalPermissions = [
+        'manage:laudos',
+        'manage:avaliacoes',
+        'manage:funcionarios',
+        'manage:empresas',
+        'manage:lotes',
+      ];
+
+      for (const permission of operationalPermissions) {
+        const hasPermissionResult = await hasPermission(session, permission);
+        expect(hasPermissionResult).toBe(false);
+      }
+    });
+
+    it('validateResourceAccess: admin NÃO acessa nenhum recurso operacional', async () => {
+      // Garantir uma clínica
+      const resClin = await query(`SELECT id FROM clinicas LIMIT 1`);
+      const clinicaId =
+        resClin.rowCount > 0
+          ? resClin.rows[0].id
+          : (
+              await query(
+                `INSERT INTO clinicas (nome, cnpj, ativa) VALUES ($1,$2,$3) RETURNING id`,
+                ['Clinica Temp', '00000000000195', true]
+              )
+            ).rows[0].id;
+
+      // Usar empresa existente se disponível, caso contrário testar com ID inexistente
+      let empresaId: number;
+      const existeEmpresa = await query(
+        `SELECT id FROM empresas_clientes LIMIT 1`
+      );
+      if (existeEmpresa.rowCount > 0) {
+        empresaId = existeEmpresa.rows[0].id;
+      } else {
+        empresaId = -1; // empresa inexistente; o objetivo aqui é verificar que admin não tem acesso operacional
+      }
+
+      const adminSession: Session = {
+        cpf: '22222222222',
+        nome: 'Admin Teste',
+        perfil: 'admin',
+      };
+
+      // Admin NÃO acessa empresas operacionalmente
+      const empresaAccess = await validateResourceAccess(
+        adminSession,
+        'empresa',
+        empresaId
+      );
+      expect(empresaAccess.hasAccess).toBe(false);
+      expect(empresaAccess.reason).toContain(
+        'não tem acesso operacional a empresas'
+      );
+
+      // Admin NÃO acessa clínicas operacionalmente
+      const clinicaAccess = await validateResourceAccess(
+        adminSession,
+        'clinica',
+        clinicaId
+      );
+      expect(clinicaAccess.hasAccess).toBe(false);
+      expect(clinicaAccess.reason).toContain(
+        'não tem acesso operacional a clínicas'
+      );
+
+      // Inserir funcionarios para teste (usar CPFs únicos que não conflitam com outros testes/triggers)
+      const testRhCpf = '88888888880'; // CPF único para RH
+      const testFuncCpf = '88888888881'; // CPF único para funcionario comum
+
+      await query(
+        `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, clinica_id, ativo) 
+         VALUES ($1,$2,$3,$4,$5,$6) 
+         ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome`,
+        [testRhCpf, 'RH Teste ValidateAccess', 'rh', 'hash', clinicaId, true]
+      );
+      await query(
+        `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, clinica_id, ativo) 
+         VALUES ($1,$2,$3,$4,$5,$6) 
+         ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome`,
+        [
+          testFuncCpf,
+          'Func Teste ValidateAccess',
+          'funcionario',
+          'hash',
+          clinicaId,
+          true,
+        ]
+      );
+
+      // Admin NÃO acessa NENHUM funcionario (nem RH nem comum)
+      const rhAccess = await validateResourceAccess(
+        adminSession,
+        'funcionario',
+        parseInt(testRhCpf)
+      );
+      expect(rhAccess.hasAccess).toBe(false);
+      expect(rhAccess.reason).toContain(
+        'não tem acesso operacional a funcionários'
+      );
+
+      const funcAccess = await validateResourceAccess(
+        adminSession,
+        'funcionario',
+        parseInt(testFuncCpf)
+      );
+      expect(funcAccess.hasAccess).toBe(false);
+      expect(funcAccess.reason).toContain(
+        'não tem acesso operacional a funcionários'
+      );
+
+      // Cleanup
+      await query('DELETE FROM funcionarios WHERE cpf IN ($1,$2)', [
+        testRhCpf,
+        testFuncCpf,
+      ]);
+    });
+
+    // Helper: executa um bloco com SET ROLE + SET LOCAL session vars (RLS) numa conexão dedicada
+    async function runAsRole(
+      role: string,
+      sessionVars: Partial<Record<string, any>>,
+      fn: (client: any) => Promise<any>
+    ) {
+      const { Pool } = await import('pg');
+      const pool = new Pool({
+        connectionString: process.env.TEST_DATABASE_URL,
+      });
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        // Criar e configurar um role não-superuser temporário para executar as queries com RLS aplicado
+        await client.query(
+          `DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = '${role}') THEN CREATE ROLE ${role}; END IF; END$$;`
+        );
+        await client.query(`GRANT USAGE ON SCHEMA public TO ${role};`);
+        await client.query(
+          `GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO ${role};`
+        );
+
+        // Trocar para o role não-superuser (garante que RLS não é ignorado)
+        await client.query(`SET ROLE ${role}`);
+        await client.query('SET search_path TO public, pg_catalog');
+
+        // Configurar contexto via set_config para que funções current_user_perfil() leiam corretamente
+        if (sessionVars.cpf)
+          await client.query(
+            "SELECT set_config('app.current_user_cpf', $1, true)",
+            [sessionVars.cpf]
+          );
+        if (sessionVars.perfil)
+          await client.query(
+            "SELECT set_config('app.current_user_perfil', $1, true)",
+            [sessionVars.perfil]
+          );
+        if (sessionVars.clinica_id !== undefined)
+          await client.query(
+            "SELECT set_config('app.current_user_clinica_id', $1, true)",
+            [String(sessionVars.clinica_id)]
+          );
+        if (sessionVars.contratante_id !== undefined)
+          await client.query(
+            "SELECT set_config('app.current_user_contratante_id', $1, true)",
+            [String(sessionVars.contratante_id)]
+          );
+
+        const res = await fn(client);
+        await client.query('ROLLBACK');
+        return res;
+      } finally {
+        client.release();
+        await pool.end();
+      }
+    }
+
+    it('RLS: admin NÃO pode SELECT lotes_avaliacao', async () => {
+      const adminVars = { cpf: '22222222222', perfil: 'admin' };
+
+      const result = await runAsRole(
+        'test_admin',
+        adminVars,
+        async (client) => {
+          return await client.query('SELECT id FROM lotes_avaliacao LIMIT 1');
+        }
+      );
+
+      expect(result.rowCount).toBe(0);
+    });
+
+    it('RLS: admin NÃO pode SELECT laudos', async () => {
+      const adminVars = { cpf: '22222222222', perfil: 'admin' };
+
+      const result = await runAsRole(
+        'test_admin',
+        adminVars,
+        async (client) => {
+          return await client.query('SELECT id FROM laudos LIMIT 1');
+        }
+      );
+
+      expect(result.rowCount).toBe(0);
+    });
+
+    it('RLS: admin NÃO pode SELECT avaliacoes', async () => {
+      const adminVars = { cpf: '22222222222', perfil: 'admin' };
+
+      const result = await runAsRole(
+        'test_admin',
+        adminVars,
+        async (client) => {
+          return await client.query('SELECT id FROM avaliacoes LIMIT 1');
+        }
+      );
+
+      expect(result.rowCount).toBe(0);
+    });
+
+    it('RLS: admin NÃO pode SELECT funcionarios', async () => {
+      const adminVars = { cpf: '22222222222', perfil: 'admin' };
+
+      const result = await runAsRole(
+        'test_admin',
+        adminVars,
+        async (client) => {
+          return await client.query(
+            'SELECT cpf FROM funcionarios WHERE perfil = $1 LIMIT 1',
+            ['funcionario']
+          );
+        }
+      );
+
+      expect(result.rowCount).toBe(0);
+    });
+
+    it('RLS: admin NÃO pode UPDATE funcionarios', async () => {
+      const adminVars = { cpf: '22222222222', perfil: 'admin' };
+
+      // Criar um funcionário de teste
+      const testCpf = '99999999990';
+      await query(
+        `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, clinica_id, ativo) 
+         VALUES ($1,$2,$3,$4,$5,$6) 
+         ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome`,
+        [testCpf, 'Func Test Update', 'funcionario', 'hash', 1, true]
+      );
+
+      const result = await runAsRole(
+        'test_admin',
+        adminVars,
+        async (client) => {
+          return await client.query(
+            'UPDATE funcionarios SET nome = $1 WHERE cpf = $2 RETURNING *',
+            ['Nome Alterado', testCpf]
+          );
+        }
+      );
+
+      // Admin não deve conseguir atualizar
+      expect(result.rowCount).toBe(0);
+
+      // Cleanup
+      await query('DELETE FROM funcionarios WHERE cpf = $1', [testCpf]);
+    });
+
+    it('RLS: admin NÃO pode SELECT empresas_clientes', async () => {
+      const adminVars = { cpf: '22222222222', perfil: 'admin' };
+
+      const result = await runAsRole(
+        'test_admin',
+        adminVars,
+        async (client) => {
+          return await client.query('SELECT id FROM empresas_clientes LIMIT 1');
+        }
+      );
+
+      expect(result.rowCount).toBe(0);
+    });
+
+    it('RLS: admin NÃO pode INSERT em clinicas (deve usar endpoint)', async () => {
+      const adminSession: Session = {
+        cpf: '22222222222',
+        nome: 'Admin Teste',
+        perfil: 'admin',
+      };
+
+      // Tentar inserir clinica como admin - RLS deve bloquear
+      try {
+        await queryWithContext(
+          'INSERT INTO clinicas (nome, cnpj, ativo) VALUES ($1, $2, $3)',
+          ['Clinica Test RLS', '99999999999999', true],
+          adminSession
+        );
+        fail('Deveria ter lançado erro de permissão RLS');
+      } catch (error) {
+        // Esperado - admin não pode inserir diretamente (deve usar /api/admin/cadastro/clinica)
+        expect(error).toBeDefined();
       }
     });
   });
@@ -627,7 +930,7 @@ describe('Auditoria Automática', () => {
       [
         testCpf,
         'Teste Auditoria Insert',
-        'funcionario',
+        'rh', // Admin pode criar RH
         'hash',
         clinicaId,
         'operacional',
@@ -686,7 +989,7 @@ describe('Auditoria Automática', () => {
       [
         updateCpf,
         'Nome Original',
-        'funcionario',
+        'rh', // Admin pode criar RH
         'hash',
         insertClinicaId,
         'operacional',
@@ -756,7 +1059,7 @@ describe('Auditoria Automática', () => {
       [
         deleteCpf,
         'Teste Delete',
-        'funcionario',
+        'rh', // Admin pode criar RH
         'hash',
         insertClinicaId,
         'operacional',

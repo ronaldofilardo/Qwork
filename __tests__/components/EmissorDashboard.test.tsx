@@ -491,8 +491,8 @@ describe.skip('Emissor Dashboard', () => {
         expect(
           screen.getByText('Enviado em 16/12/2025 às 12:00')
         ).toBeInTheDocument();
-        expect(screen.getByText('Hash PDF:')).toBeInTheDocument();
-        expect(screen.getByText('hash123456789')).toBeInTheDocument();
+        // Hash agora é exibido em seção própria com título "Hash SHA-256"
+        expect(screen.getByText(/Hash SHA-256/i)).toBeInTheDocument();
       },
       { timeout: 10000 }
     );

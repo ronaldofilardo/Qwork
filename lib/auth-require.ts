@@ -33,10 +33,10 @@ export function requireRole(allowedRoles: Perfil[]): Session {
 }
 
 /**
- * Requer perfil de emissor (ou admin)
+ * Requer perfil de emissor (APENAS emissor)
  */
 export function requireEmissor(): Session {
-  return requireRole(['emissor', 'admin']);
+  return requireRole(['emissor']);
 }
 
 /**
@@ -50,7 +50,8 @@ export function requireAdmin(): Session {
  * Requer perfil de RH ou gestor de entidade
  */
 export function requireRH(): Session {
-  return requireRole(['rh', 'gestor_entidade', 'admin']);
+  // RH endpoints devem ser acessíveis apenas por 'rh' ou 'gestor_entidade'
+  return requireRole(['rh', 'gestor_entidade']);
 }
 
 /**
@@ -61,12 +62,7 @@ export function sessionHasAccessToLote(
   loteId: number,
   contratanteId?: number
 ): boolean {
-  // Admin tem acesso a tudo
-  if (session.perfil === 'admin') {
-    return true;
-  }
-
-  // Emissor tem acesso a lotes concluídos/finalizados/ativos
+  // Emissor tem acesso a lotes concluídos/finalizados/ativos (RLS no banco)
   if (session.perfil === 'emissor') {
     return true; // RLS já filtra no banco
   }
@@ -79,6 +75,7 @@ export function sessionHasAccessToLote(
     return session.contratante_id === contratanteId;
   }
 
+  // Admin NÃO tem acesso operacional implícito a lotes (não é emissor nem RH)
   return false;
 }
 

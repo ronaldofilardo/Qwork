@@ -27,8 +27,8 @@ export async function POST(
         const serverSess = await getServerSession();
         if (serverSess && (serverSess as any).user) {
           session = (serverSess as any).user as any;
-          // Verificar permissão mínima
-          if (session.perfil !== 'emissor' && session.perfil !== 'admin') {
+          // Verificar permissão mínima - APENAS emissor
+          if (session.perfil !== 'emissor') {
             throw new AccessDeniedError(
               'Acesso negado. Apenas emissores podem usar modo emergência.'
             );
@@ -78,7 +78,28 @@ export async function POST(
       );
     }
 
-    const lote = loteResult.rows[0];
+    let lote = loteResult.rows[0];
+
+    // Tentar reconcluir automaticamente o lote antes de proceder com modo emergência.
+    // Corrige casos em que avaliações já satisfazem condição de conclusão mas o
+    // trigger não foi disparado (por exemplo, atualizações diretas ou operações externas).
+    try {
+      await query(
+        'SELECT fn_reconcluir_lote_for_emergencia($1) AS reconcluido',
+        [loteId]
+      );
+      const refreshed = await query(
+        `SELECT id, status, codigo, contratante_id, modo_emergencia
+         FROM lotes_avaliacao WHERE id = $1`,
+        [loteId]
+      );
+      if (refreshed.rows && refreshed.rows.length > 0) lote = refreshed.rows[0];
+    } catch (err) {
+      console.warn(
+        '[EMERGÊNCIA] Erro ao tentar reconcluir lote antes da emissão:',
+        err
+      );
+    }
 
     // Verificar se modo emergência já foi usado
     if (lote.modo_emergencia) {

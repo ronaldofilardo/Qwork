@@ -202,15 +202,42 @@ export async function gerarPdf(
     // 6. Calcular hash SHA-256 do PDF binário
     const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
 
-    // 7. Se includeHash=true, regenerar PDF com hash real no rodapé
+    // 7. Se includeHash=true, regenerar PDF com hash real no rodapé (com fallback)
     let finalPdfBuffer = pdfBuffer;
     if (options.includeHash !== false) {
       const htmlWithHash = options.html.replace('{{HASH_PDF}}', hash);
-      await (page as any).setContent(htmlWithHash, {
-        waitUntil: 'networkidle0',
-        timeout: 120000,
-      });
-      finalPdfBuffer = await (page as any).pdf(PDF_CONFIG);
+      try {
+        // Usar nova página para reduzir footprint de memória (evita problemas em páginas grandes)
+        const pageWithHash = await (browser as any).newPage();
+        try {
+          if (
+            typeof (pageWithHash as any).setDefaultNavigationTimeout ===
+            'function'
+          ) {
+            (pageWithHash as any).setDefaultNavigationTimeout(120000);
+          } else if (
+            typeof (pageWithHash as any).setDefaultTimeout === 'function'
+          ) {
+            (pageWithHash as any).setDefaultTimeout(120000);
+          }
+        } catch {}
+
+        await (pageWithHash as any).setContent(htmlWithHash, {
+          waitUntil: 'networkidle0',
+          timeout: 120000,
+        });
+        finalPdfBuffer = await (pageWithHash as any).pdf(PDF_CONFIG);
+        try {
+          await (pageWithHash as any).close();
+        } catch {}
+      } catch (e) {
+        // Fallback: se a regeneração falhar (ex.: memory, timeout), usar o PDF inicial
+        console.warn(
+          '[PDF-GENERATOR] Falha ao regenerar PDF com hash no rodapé; usando PDF inicial como fallback:',
+          e instanceof Error ? e.message : String(e)
+        );
+        // continuar com finalPdfBuffer já definido como pdfBuffer
+      }
 
       // Recalcular hash do PDF final (não usado atualmente, mas mantido para futuro)
       // const finalHash = crypto

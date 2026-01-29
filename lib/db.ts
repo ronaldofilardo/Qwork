@@ -194,6 +194,36 @@ const getDatabaseUrl = () => {
       // Se parsing falhar por outro motivo, não bloquear aqui
     }
 
+    // Ensure the TEST_DATABASE_URL includes credentials when running tests on localhost
+    try {
+      const parsed = new URL(process.env.TEST_DATABASE_URL);
+      // If username or password is missing, try common env vars or fallbacks
+      if (!parsed.username || !parsed.password) {
+        const user =
+          process.env.TEST_DB_USER ||
+          process.env.PGUSER ||
+          parsed.username ||
+          'postgres';
+        const pass =
+          process.env.TEST_DB_PASSWORD ||
+          process.env.PGPASSWORD ||
+          parsed.password ||
+          '123456';
+        parsed.username = user;
+        parsed.password = pass;
+        const patched = parsed.toString();
+        console.warn(
+          `[WARN] TEST_DATABASE_URL did not contain full credentials; using user/password from env or defaults. Using connection: ${patched.replace(/password=[^&\s]+/, 'password=***')}`
+        );
+        return patched;
+      }
+    } catch (err) {
+      console.warn(
+        '[WARN] Falha ao parsear TEST_DATABASE_URL para injetar credenciais automaticamente:',
+        err
+      );
+    }
+
     return process.env.TEST_DATABASE_URL;
   }
 

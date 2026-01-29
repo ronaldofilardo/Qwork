@@ -19,12 +19,63 @@ module.exports = async function globalSetup() {
       '[jest globalSetup] Não foi possível conectar ao DB de testes:',
       connErr.message
     );
-    console.warn(
-      '[jest globalSetup] Pulando aplicação de migrations e continuando (SKIP_TEST_DB_MIGRATIONS=1)'
-    );
-    // Sinalizar para os scripts que o DB não está acessível
-    process.env.SKIP_TEST_DB_MIGRATIONS = '1';
-    return;
+
+    // Se ativado, tentar levantar um container Postgres via Docker (opcional)
+    if (process.env.ENABLE_TEST_DB_DOCKER === '1') {
+      try {
+        console.log(
+          '[jest globalSetup] Tentando criar Postgres temporário via Docker (testcontainers)'
+        );
+        const { PostgreSqlContainer } = require('testcontainers');
+        const pgContainer = await new PostgreSqlContainer('postgres:15')
+          .withDatabase('nr-bps_db_test')
+          .withUsername(process.env.TEST_DB_USER || 'postgres')
+          .withPassword(process.env.TEST_DB_PASSWORD || 'postgres')
+          .start();
+
+        const host = pgContainer.getHost();
+        const port = pgContainer.getPort();
+        const username = pgContainer.getUsername();
+        const password = pgContainer.getPassword();
+        const dbName = pgContainer.getDatabase();
+
+        const newDbUrl = `postgresql://${username}:${password}@${host}:${port}/${dbName}`;
+        process.env.TEST_DATABASE_URL = newDbUrl;
+
+        // Persist container id for teardown
+        const infoPath = path.resolve(__dirname, '.test_container_info.json');
+        require('fs').writeFileSync(
+          infoPath,
+          JSON.stringify({ containerId: pgContainer.getId() })
+        );
+
+        console.log(
+          '[jest globalSetup] Test Postgres container started:',
+          newDbUrl.replace(/:[^@]+@/, ':***@')
+        );
+
+        // Recreate client with new URL
+        client = new Client({ connectionString: newDbUrl });
+        await client.connect();
+      } catch (dockerErr) {
+        console.warn(
+          '[jest globalSetup] Falha ao iniciar container Docker para DB de testes:',
+          dockerErr.message || dockerErr
+        );
+        console.warn(
+          '[jest globalSetup] Pulando aplicação de migrations e continuando (SKIP_TEST_DB_MIGRATIONS=1)'
+        );
+        process.env.SKIP_TEST_DB_MIGRATIONS = '1';
+        return;
+      }
+    } else {
+      console.warn(
+        '[jest globalSetup] Pulando aplicação de migrations e continuando (SKIP_TEST_DB_MIGRATIONS=1)'
+      );
+      // Sinalizar para os scripts que o DB não está acessível
+      process.env.SKIP_TEST_DB_MIGRATIONS = '1';
+      return;
+    }
   }
 
   try {

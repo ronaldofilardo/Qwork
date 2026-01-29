@@ -301,8 +301,8 @@ describe('Fluxo E2E: Entidade → Lote → Emissor → Laudo', () => {
       // Tentar inserir laudo com mesmo lote_id deve falhar (UNIQUE constraint)
       await expect(
         query(
-          `INSERT INTO laudos (lote_id, emissor_cpf, status, observacoes)
-           VALUES ($1, $2, 'rascunho', 'Tentativa de duplicação')`,
+          `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes)
+           VALUES ($1, $1, $2, 'rascunho', 'Tentativa de duplicação')`,
           [loteId, emissorCpf]
         )
       ).rejects.toThrow(

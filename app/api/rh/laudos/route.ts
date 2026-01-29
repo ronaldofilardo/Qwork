@@ -50,23 +50,6 @@ export const GET = async (_req: Request) => {
           { status: 403 }
         );
       }
-    } else if (user.perfil === 'admin') {
-      // Admin deve informar clinica_id via query se desejar filtrar por clínica
-      if (!clinicaId) {
-        const adminClinica = url.searchParams.get('clinica_id');
-        if (adminClinica) {
-          clinicaId = parseInt(adminClinica);
-        } else {
-          return NextResponse.json(
-            {
-              error:
-                'Admin deve fornecer clínica (clinica_id) via query para listar laudos',
-              success: false,
-            },
-            { status: 400 }
-          );
-        }
-      }
     } else {
       return NextResponse.json(
         { error: 'Acesso negado', success: false },

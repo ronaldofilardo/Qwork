@@ -65,11 +65,11 @@ describe('/api/rh/laudos', () => {
       expect(data.success).toBe(true);
     });
 
-    it('deve permitir acesso para perfil master', async () => {
+    it('deve permitir acesso para perfil admin (substituído para legacy master)', async () => {
       mockGetSession.mockResolvedValue({
         cpf: '99999999999',
-        nome: 'Master Teste',
-        perfil: 'master',
+        nome: 'Admin Substituto',
+        perfil: 'admin',
         clinica_id: 1,
       });
       mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
@@ -78,9 +78,8 @@ describe('/api/rh/laudos', () => {
       const response = await GET(mockRequest);
       const data = await response.json();
 
-      expect(response.status).toBe(403);
-      expect(data.success).toBe(false);
-      expect(data.error).toBe('Acesso negado');
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
 
     it('deve bloquear acesso para perfil funcionario', async () => {
       mockGetSession.mockResolvedValue({

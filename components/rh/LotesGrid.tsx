@@ -204,41 +204,48 @@ export function LotesGrid({
                     onDownloadLaudo(laudoAssociado);
                   }}
                   disabled={!temLaudo || downloadingLaudo === laudoAssociado.id}
-                  className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-3"
                 >
                   {downloadingLaudo === laudoAssociado.id
                     ? 'Baixando...'
                     : 'Ver Laudo/Baixar PDF'}
                 </button>
-                <p className="text-xs text-blue-600 mt-2 text-center flex items-center justify-center gap-2">
-                  <span>Hash:</span>
-                  <span className="font-mono text-[11px]">
-                    {laudoAssociado.hash
-                      ? `${laudoAssociado.hash.substring(0, 8)}...${laudoAssociado.hash.substring(
-                          laudoAssociado.hash.length - 6
-                        )}`
-                      : 'N/A'}
-                  </span>
 
-                  {laudoAssociado.hash && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard
-                          .writeText(laudoAssociado.hash)
-                          .then(() => toast.success('Hash copiado'))
-                          .catch(() =>
-                            toast.error('Não foi possível copiar o hash')
-                          );
-                      }}
-                      aria-label={`Copiar hash do laudo ${laudoAssociado.codigo}`}
-                      title="Copiar hash"
-                      className="ml-2 inline-flex items-center gap-2 bg-white border border-blue-200 rounded px-2 py-1 text-xs text-blue-600 hover:bg-blue-50 focus:outline-none"
-                    >
-                      Copiar
-                    </button>
+                {/* Hash de Integridade */}
+                <div className="bg-white p-2 rounded border border-blue-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-blue-800">
+                      🔒 Hash SHA-256
+                    </span>
+                    {laudoAssociado.hash && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard
+                            .writeText(laudoAssociado.hash)
+                            .then(() => toast.success('Hash copiado!'))
+                            .catch(() =>
+                              toast.error('Não foi possível copiar o hash')
+                            );
+                        }}
+                        aria-label={`Copiar hash do laudo ${laudoAssociado.codigo}`}
+                        title="Copiar hash completo"
+                        className="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:outline-none"
+                      >
+                        📋 Copiar
+                      </button>
+                    )}
+                  </div>
+                  {laudoAssociado.hash ? (
+                    <code className="text-[10px] font-mono text-gray-700 break-all block">
+                      {laudoAssociado.hash}
+                    </code>
+                  ) : (
+                    <div className="text-[10px] text-gray-500 italic">
+                      Não disponível (laudo gerado antes do sistema de hash)
+                    </div>
                   )}
-                </p>
+                </div>
               </div>
             )}
           </div>

@@ -321,8 +321,8 @@ export const POST = async (
       if (laudoCheck.rows.length === 0) {
         // Inserir novo laudo com status canônico 'enviado' e timestamps
         await query(
-          `INSERT INTO laudos (lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
-           VALUES ($1, $2, 'enviado', $3, NOW(), NOW(), NOW(), NOW())`,
+          `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
+           VALUES ($1, $1, $2, 'enviado', $3, NOW(), NOW(), NOW(), NOW())`,
           [loteId, user.cpf, observacoes]
         );
       } else {

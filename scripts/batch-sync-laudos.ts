@@ -144,11 +144,10 @@ async function main() {
   console.log('[SYNC] Batch sync concluído');
 }
 
-if (require.main === module) {
-  main().catch((e) => {
-    console.error('[SYNC] Erro não tratado:', e);
-    process.exit(1);
-  });
-}
+// Execute if run directly
+main().catch((e) => {
+  console.error('[SYNC] Erro não tratado:', e);
+  process.exit(1);
+});
 
 export { main };

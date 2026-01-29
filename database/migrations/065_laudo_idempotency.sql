@@ -50,6 +50,8 @@ ON public.laudos (lote_id, status);
 \echo '065.2 Índice de performance criado para laudos(lote_id, status)'
 
 -- Create function to safely upsert laudo (idempotent)
+-- Create function to safely upsert laudo (idempotent)
+-- Implementation updated: ensure laudo.id == lote_id by explicitly inserting with id = p_lote_id.
 CREATE OR REPLACE FUNCTION upsert_laudo(
     p_lote_id INTEGER,
     p_emissor_cpf CHAR(11),
@@ -59,9 +61,9 @@ CREATE OR REPLACE FUNCTION upsert_laudo(
 DECLARE
     v_laudo_id INTEGER;
 BEGIN
-    -- Try to insert, if conflict update
-    INSERT INTO laudos (lote_id, emissor_cpf, observacoes, status, criado_em, emitido_em)
-    VALUES (p_lote_id, p_emissor_cpf, p_observacoes, p_status, NOW(), NOW())
+    -- Try to insert with explicit id equal to lote_id; if conflict on lote_id, update existing record.
+    INSERT INTO laudos (id, lote_id, emissor_cpf, observacoes, status, criado_em, emitido_em, atualizado_em)
+    VALUES (p_lote_id, p_lote_id, p_emissor_cpf, p_observacoes, p_status, NOW(), NOW(), NOW())
     ON CONFLICT (lote_id) DO UPDATE
     SET 
         observacoes = EXCLUDED.observacoes,
@@ -69,14 +71,14 @@ BEGIN
         emitido_em = NOW(),
         atualizado_em = NOW()
     RETURNING id INTO v_laudo_id;
-    
+
     RETURN v_laudo_id;
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION upsert_laudo IS 'Cria ou atualiza laudo de forma idempotente (previne duplicação)';
+COMMENT ON FUNCTION upsert_laudo IS 'Cria ou atualiza laudo de forma idempotente (garante id = lote_id)';
 
-\echo '065.3 Função upsert_laudo() criada para emissão idempotente'
+\echo '065.3 Função upsert_laudo() criada para emissão idempotente (com id = lote_id)'
 
 -- Create trigger to prevent manual updates that could break idempotency
 CREATE OR REPLACE FUNCTION prevent_laudo_lote_id_change()

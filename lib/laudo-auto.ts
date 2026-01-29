@@ -51,7 +51,7 @@ export async function validarEmissorUnico(): Promise<{
   nome: string;
 } | null> {
   const emissor = await query(`
-    SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true
+    SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true AND cpf <> '00000000000' AND perfil <> 'admin'
   `);
 
   console.log(`[DEBUG] Emissores ativos encontrados: ${emissor.rows.length}`);
@@ -89,7 +89,7 @@ export async function validarEmissorUnico(): Promise<{
 export async function selecionarEmissorParaLote(_loteId: number) {
   try {
     const fallback = await query(
-      `SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true ORDER BY criado_em ASC LIMIT 1`
+      `SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true AND cpf <> '00000000000' AND perfil <> 'admin' ORDER BY criado_em ASC LIMIT 1`
     );
     if (fallback.rows.length === 1) return fallback.rows[0];
     return null;
@@ -123,22 +123,44 @@ export const gerarLaudoCompletoEmitirPDF = async function (
 ): Promise<number> {
   console.log(`[DEBUG] Gerando laudo completo para lote ${loteId}`);
 
+  // Sanitizar emissor: garantir que não seja o placeholder legacy '00000000000'
+  if (!emissorCPF || emissorCPF === '00000000000') {
+    console.warn(
+      `[WARN] Emissor inválido recebido (${emissorCPF}); tentando selecionar emissor válido automaticamente`
+    );
+    const selecionado = await selecionarEmissorParaLote(loteId);
+    if (selecionado && selecionado.cpf && selecionado.cpf !== '00000000000') {
+      console.log(`[INFO] Emissor alternativo selecionado: ${selecionado.cpf}`);
+      emissorCPF = selecionado.cpf;
+    } else {
+      await safeNotificacaoAdmin(
+        'sem_emissor_valido',
+        `Tentativa de gerar laudo para lote ${loteId} falhou: emissor inválido ou ausente (${emissorCPF})`
+      ).catch(() => {});
+      throw new Error(
+        'Emissor inválido: não é possível gerar laudo sem emissor válido'
+      );
+    }
+  }
+
   let browser = null;
 
   try {
     // Verificar se já existe laudo para este lote (não dependemos de coluna `arquivo_pdf` que foi removida)
     const laudoExistente = await query(
       `
-      SELECT id, status FROM laudos WHERE lote_id = $1
+      SELECT id, status, emitido_em FROM laudos WHERE lote_id = $1
     `,
       [loteId]
     );
 
     let laudoId: number;
     let needsGeneration = true;
+    let laudoAlreadyEmitted = false;
 
     if (laudoExistente.rows.length > 0) {
       laudoId = laudoExistente.rows[0].id;
+      laudoAlreadyEmitted = Boolean(laudoExistente.rows[0].emitido_em);
       // Verificar se o arquivo PDF existe no storage local para evitar regeneração desnecessária
       try {
         const fsCheck = await import('fs/promises');
@@ -199,35 +221,101 @@ export const gerarLaudoCompletoEmitirPDF = async function (
         );
         // Usar a mesma função de instância que seleciona @sparticuz/chromium em production
         const puppeteer = await getPuppeteerInstance();
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process',
-          ],
-          timeout: 30000,
-          userDataDir,
-        });
-        const page = await (browser as any).newPage();
-        await page.setContent(html, {
-          waitUntil: 'networkidle0',
-          timeout: 30000,
-        });
-        const pdfUint8Array = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-        });
-        pdfBuffer = Buffer.from(pdfUint8Array);
-        await browser.close();
-        browser = null;
+
+        // Tentativa com retry para lidar com instabilidades eventuais do navegador
+        const maxAttempts = 2;
+        let attempt = 0;
+        let lastErr: any = null;
+
+        while (attempt < maxAttempts) {
+          attempt += 1;
+          try {
+            console.log(
+              `[DEBUG] Puppeteer: tentativa ${attempt} para gerar PDF (lote ${loteId})`
+            );
+            browser = await puppeteer.launch({
+              headless: true,
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-web-security',
+                '--disable-features=IsolateOrigins,site-per-process',
+              ],
+              timeout: 30000,
+              userDataDir,
+            });
+
+            const page = await (browser as any).newPage();
+            // Aumentar timeout de navegação para evitar falhas por páginas complexas
+            try {
+              if (
+                typeof (page as any).setDefaultNavigationTimeout === 'function'
+              ) {
+                (page as any).setDefaultNavigationTimeout(120000);
+              } else if (
+                typeof (page as any).setDefaultTimeout === 'function'
+              ) {
+                (page as any).setDefaultTimeout(120000);
+              }
+            } catch {}
+
+            await page.setContent(html, {
+              waitUntil: 'networkidle0',
+              timeout: 120000,
+            });
+
+            const pdfUint8Array = await page.pdf({
+              format: 'A4',
+              printBackground: true,
+            });
+            pdfBuffer = Buffer.from(pdfUint8Array);
+
+            await browser.close();
+            browser = null;
+
+            console.log(
+              `[DEBUG] Puppeteer: PDF gerado com sucesso na tentativa ${attempt} (lote ${loteId})`
+            );
+            lastErr = null;
+            break;
+          } catch (err) {
+            lastErr = err;
+            console.error(
+              `[WARN] Falha na geração de PDF com Puppeteer na tentativa ${attempt} para lote ${loteId}:`,
+              err instanceof Error ? err.message : String(err)
+            );
+            if (browser) {
+              try {
+                await (browser as any).close();
+              } catch (_) {}
+              browser = null;
+            }
+            // Espera curta antes de tentar novamente
+            if (attempt < maxAttempts)
+              await new Promise((r) => setTimeout(r, 1000 * attempt));
+          }
+        }
+
+        if (lastErr) {
+          // Registrar notificação administrativa e propagar erro para que o caller trate
+          await safeNotificacaoAdmin(
+            'erro_geracao_pdf',
+            `Falha ao gerar PDF para lote ${loteId}: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+            loteId
+          ).catch(() => {});
+          throw lastErr;
+        }
       }
 
       // Calcular hash e salvar arquivo temporário
-      const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+      const shouldSkipHash =
+        process.env.SKIP_LAUDO_HASH === '1' ||
+        process.env.SKIP_LAUDO_HASH === 'true';
+      const hash = shouldSkipHash
+        ? ''
+        : crypto.createHash('sha256').update(pdfBuffer).digest('hex');
       const fs = await import('fs/promises');
       const pathMod = await import('path');
       const laudosDir = pathMod.join(process.cwd(), 'storage', 'laudos');
@@ -235,17 +323,17 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       const tempName = `laudo-temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;
       const tempPath = pathMod.join(laudosDir, tempName);
       await fs.writeFile(tempPath, pdfBuffer);
-      const metadata = {
+      const metadata: any = {
         arquivo: tempName,
-        hash,
         criadoEm: new Date().toISOString(),
       };
+      if (!shouldSkipHash) metadata.hash = hash;
       await fs.writeFile(
         pathMod.join(laudosDir, `${tempName}.json`),
         JSON.stringify(metadata)
       );
 
-      // Inserir laudo já com hash e timestamps (status 'enviado') USANDO CONEXÃO ISOLADA
+      // Inserir laudo já com timestamps (status 'enviado') USANDO CONEXÃO ISOLADA
       // para evitar que falhas posteriores na finalização do lote revertam a inserção do laudo.
       let laudoInsert;
       try {
@@ -258,20 +346,28 @@ export const gerarLaudoCompletoEmitirPDF = async function (
         try {
           await client.query('BEGIN');
           try {
-            laudoInsert = await client.query(
-              `INSERT INTO laudos (lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, hash_pdf, criado_em, atualizado_em)
-               VALUES ($1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), $3, NOW(), NOW()) RETURNING id`,
-              [loteId, emissorCPF, hash]
-            );
+            if (shouldSkipHash) {
+              laudoInsert = await client.query(
+                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
+                 VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
+                [loteId, emissorCPF]
+              );
+            } else {
+              laudoInsert = await client.query(
+                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, hash_pdf, criado_em, atualizado_em)
+                 VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), $3, NOW(), NOW()) RETURNING id`,
+                [loteId, emissorCPF, hash]
+              );
+            }
           } catch (insertErr: any) {
             if (insertErr && insertErr.code === '42703') {
-              // Coluna hash_pdf ausente — inserir sem hash
+              // Coluna hash_pdf ausente ou incompatibilidade — inserir sem hash
               console.warn(
                 `[WARN] Coluna hash_pdf ausente no DB; inserindo laudo sem hash (lote ${loteId})`
               );
               laudoInsert = await client.query(
-                `INSERT INTO laudos (lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
-                 VALUES ($1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
+                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
+                 VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
                 [loteId, emissorCPF]
               );
             } else {
@@ -376,15 +472,21 @@ export const gerarLaudoCompletoEmitirPDF = async function (
             await fs.writeFile(metaPath, JSON.stringify(metadata));
           }
 
-          // Persistir no banco de dados (trigger/constraint-friendly)
-          await query(
-            `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
-            [laudoId, recalculatedHash]
-          );
+          if (laudoAlreadyEmitted) {
+            console.log(
+              `[DEBUG] Laudo ${laudoId} já foi emitido anteriormente; pulando atualização de hash no DB por imutabilidade.`
+            );
+          } else {
+            // Persistir no banco de dados (trigger/constraint-friendly)
+            await query(
+              `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
+              [laudoId, recalculatedHash]
+            );
 
-          console.log(
-            `[DEBUG] Laudo ${laudoId} possuía PDF mas sem hash; hash recalculado e persistido (${recalculatedHash.substring(0, 8)}...)`
-          );
+            console.log(
+              `[DEBUG] Laudo ${laudoId} possuía PDF mas sem hash; hash recalculado e persistido (${recalculatedHash.substring(0, 8)}...)`
+            );
+          }
         } else {
           console.log(
             `[DEBUG] Laudo ${laudoId} já possui PDF e hash em DB; nada a fazer.`
@@ -398,24 +500,80 @@ export const gerarLaudoCompletoEmitirPDF = async function (
 
       // Se já existe o PDF local, garantir que o registro do laudo reflita emissão/envio
       try {
-        // Executar um bloco DO que captura exceções localmente para evitar abortar a transação
-        // caso triggers (como imutabilidade) lancem erro.
-        try {
-          const safeId = Number(laudoId);
-          await query(
-            `DO $do$\nBEGIN\n  UPDATE laudos\n  SET emitido_em = COALESCE(emitido_em, NOW()), enviado_em = COALESCE(enviado_em, NOW()), status = 'enviado', atualizado_em = NOW()\n  WHERE id = ${safeId};\nEXCEPTION WHEN OTHERS THEN\n  RAISE NOTICE 'Ignored failure updating laudo ${safeId}: %', SQLERRM;\nEND $do$;`
+        if (!laudoAlreadyEmitted) {
+          // Executar um bloco DO que captura exceções localmente para evitar abortar a transação
+          // caso triggers (como imutabilidade) lancem erro.
+          try {
+            const safeId = Number(laudoId);
+            await query(
+              `DO $do$\nBEGIN\n  UPDATE laudos\n  SET emitido_em = COALESCE(emitido_em, NOW()), enviado_em = COALESCE(enviado_em, NOW()), status = 'enviado', atualizado_em = NOW()\n  WHERE id = ${safeId};\nEXCEPTION WHEN OTHERS THEN\n  RAISE NOTICE 'Ignored failure updating laudo ${safeId}: %', SQLERRM;\nEND $do$;`
+            );
+          } catch (innerErr) {
+            console.warn(
+              `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'enviado' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
+            );
+          }
+          console.log(
+            `[DEBUG] Laudo ${laudoId} marcado como 'enviado' em DB (fallback para PDF existente) - operação isolada`
           );
-        } catch (innerErr) {
-          console.warn(
-            `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'enviado' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
+        } else {
+          console.log(
+            `[DEBUG] Laudo ${laudoId} já emitido; pulando marcação de 'enviado' no DB (fallback).`
           );
         }
-        console.log(
-          `[DEBUG] Laudo ${laudoId} marcado como 'enviado' em DB (fallback para PDF existente) - operação isolada`
-        );
       } catch (innerErr) {
         console.warn(
           `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'enviado' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
+        );
+      }
+
+      // Se não existe informação de arquivo remoto nos metadados, tentar upload assíncrono
+      try {
+        const fsUpload = await import('fs/promises');
+        const pathUpload = await import('path');
+        const metaPathUpload = pathUpload.join(
+          process.cwd(),
+          'storage',
+          'laudos',
+          `laudo-${laudoId}.json`
+        );
+        let metadataUpload: any = null;
+        try {
+          const metaRaw = await fsUpload.readFile(metaPathUpload, 'utf-8');
+          metadataUpload = JSON.parse(metaRaw);
+        } catch {}
+        if (!metadataUpload?.arquivo_remoto) {
+          const filePathUpload = pathUpload.join(
+            process.cwd(),
+            'storage',
+            'laudos',
+            `laudo-${laudoId}.pdf`
+          );
+          try {
+            const fileBufferUpload = await fsUpload.readFile(filePathUpload);
+            uploadLaudoToBackblaze(laudoId, loteId, fileBufferUpload)
+              .then(() =>
+                console.log(
+                  `[DEBUG] Upload para Backblaze iniciado para laudo ${laudoId} (fallback)`
+                )
+              )
+              .catch((err) =>
+                console.error(
+                  `[WARN] Erro no upload para Backblaze (laudo ${laudoId}):`,
+                  err
+                )
+              );
+          } catch (readErr) {
+            console.warn(
+              `[WARN] Não foi possível ler arquivo local para upload do laudo ${laudoId}:`,
+              readErr
+            );
+          }
+        }
+      } catch (uploadErr) {
+        console.warn(
+          `[WARN] Falha ao tentar disparar upload para laudo ${laudoId}:`,
+          uploadErr
         );
       }
 
@@ -499,11 +657,22 @@ export const gerarLaudoCompletoEmitirPDF = async function (
         );
       }
 
-      // Calcular hash SHA-256
-      const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
-      console.log(
-        `[DEBUG] Hash SHA-256 calculado: ${hash.substring(0, 16)}...`
-      );
+      // Calcular hash SHA-256 (opcional - SKIP_LAUDO_HASH)
+      const shouldSkipHash =
+        process.env.SKIP_LAUDO_HASH === '1' ||
+        process.env.SKIP_LAUDO_HASH === 'true';
+      const hash = shouldSkipHash
+        ? ''
+        : crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+      if (!shouldSkipHash) {
+        console.log(`
+        [DEBUG] Hash SHA-256 calculado: ${hash.substring(0, 16)}...`);
+      } else {
+        console.log(
+          '[DEBUG] SKIP_LAUDO_HASH ativo — hash não calculado para geração do laudo'
+        );
+      }
 
       // Salvar PDF localmente em storage/laudos e salvar metadados locais
       console.log(`[DEBUG] Gravando PDF localmente em storage/laudos...`);
@@ -511,11 +680,11 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       const path = await import('path');
 
       const fileName = `laudo-${laudoId}.pdf`;
-      const metadata = {
+      const metadata: any = {
         arquivo: fileName,
-        hash,
         criadoEm: new Date().toISOString(),
       };
+      if (!shouldSkipHash) metadata.hash = hash;
 
       // Guarda o caminho/identificador onde o arquivo foi salvo (local path)
       let savedPath: string | null = null;
@@ -537,37 +706,87 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       console.log(
         `[DEBUG] Atualizando laudo (metadados) no banco sem persistir arquivo binário...`
       );
-      try {
-        await query(
-          `
+
+      // Verificar se o laudo já foi emitido (imutabilidade)
+      if (laudoAlreadyEmitted) {
+        console.log(
+          `[INFO] Laudo ${laudoId} já foi emitido anteriormente; PDF regerado mas registro no DB não será atualizado (imutabilidade)`
+        );
+      } else {
+        try {
+          if (shouldSkipHash) {
+            await query(
+              `
+      UPDATE laudos
+      SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW()
+      WHERE id = $1
+    `,
+              [laudoId]
+            );
+          } else {
+            await query(
+              `
       UPDATE laudos
       SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', hash_pdf = $2, atualizado_em = NOW()
       WHERE id = $1
     `,
-          [laudoId, hash]
-        );
-      } catch (updateErr: any) {
-        // Se o banco não tem a coluna hash_pdf (código 42703), tentar atualizar sem o hash
-        if (updateErr && updateErr.code === '42703') {
-          console.warn(
-            `[WARN] Coluna hash_pdf ausente no DB; atualizando metadados do laudo sem hash (laudo ${laudoId})`
-          );
-          try {
-            await query(
-              `UPDATE laudos SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW() WHERE id = $1`,
-              [laudoId]
+              [laudoId, hash]
             );
-          } catch (fallbackErr) {
-            console.error(
-              `[ERROR] Falha ao atualizar metadados do laudo ${laudoId} (fallback):`,
-              fallbackErr
-            );
-            throw fallbackErr;
           }
-        } else {
-          // rethrow outros erros para que sejam tratados pelo handler externo
-          throw updateErr;
+        } catch (updateErr: any) {
+          // Se erro de imutabilidade (código 23506), logar e continuar
+          if (updateErr && updateErr.code === '23506') {
+            console.warn(
+              `[WARN] Laudo ${laudoId} protegido por imutabilidade; PDF regerado mas metadados no DB não atualizados`
+            );
+          }
+          // Se o banco não tem a coluna hash_pdf (código 42703), tentar atualizar sem o hash
+          else if (updateErr && updateErr.code === '42703') {
+            console.warn(
+              `[WARN] Coluna hash_pdf ausente no DB; atualizando metadados do laudo sem hash (laudo ${laudoId})`
+            );
+            try {
+              await query(
+                `UPDATE laudos SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW() WHERE id = $1`,
+                [laudoId]
+              );
+            } catch (fallbackErr: any) {
+              // Se também pegar imutabilidade aqui, logar e continuar
+              if (fallbackErr && fallbackErr.code === '23506') {
+                console.warn(
+                  `[WARN] Laudo ${laudoId} protegido por imutabilidade (fallback); continuando...`
+                );
+              } else {
+                console.error(
+                  `[ERROR] Falha ao atualizar metadados do laudo ${laudoId} (fallback):`,
+                  fallbackErr
+                );
+                throw fallbackErr;
+              }
+            }
+          } else {
+            // outros erros críticos
+            throw updateErr;
+          }
         }
+      }
+
+      // Tentar upload assíncrono para Backblaze (não bloqueia o fluxo)
+      try {
+        uploadLaudoToBackblaze(laudoId, loteId, pdfBuffer)
+          .then(() =>
+            console.log(
+              `[DEBUG] Upload para Backblaze iniciado para laudo ${laudoId}`
+            )
+          )
+          .catch((err) =>
+            console.error(
+              `[WARN] Erro no upload para Backblaze (laudo ${laudoId}):`,
+              err
+            )
+          );
+      } catch (e) {
+        console.warn(`[WARN] uploadLaudoToBackblaze não pôde ser iniciado:`, e);
       }
 
       console.log(
@@ -697,10 +916,36 @@ export async function emitirLaudoImediato(loteId: number): Promise<boolean> {
     );
 
     // Emitir laudo (gerar PDF + hash)
-    const laudoId = await gerarLaudoCompletoEmitirPDF(loteId, emissor.cpf);
-    console.log(
-      `[EMISSÃO IMEDIATA] gerarLaudoCompletoEmitirPDF retornou laudoId=${laudoId} para lote ${loteId}`
-    );
+    let laudoId: number;
+    try {
+      laudoId = await gerarLaudoCompletoEmitirPDF(loteId, emissor.cpf);
+      console.log(
+        `[EMISSÃO IMEDIATA] gerarLaudoCompletoEmitirPDF retornou laudoId=${laudoId} para lote ${loteId}`
+      );
+    } catch (genErr) {
+      console.error(
+        `[EMISSÃO IMEDIATA] Falha ao gerar laudo para lote ${loteId}:`,
+        genErr
+      );
+      try {
+        await safeNotificacaoAdmin(
+          'falha_geracao_laudo',
+          `Falha ao gerar laudo para lote ${loteId}: ${genErr instanceof Error ? genErr.message : String(genErr)}`,
+          loteId
+        );
+      } catch (notifErr) {
+        console.warn(
+          '[WARN] Falha ao registrar notificacao_admin de erro de geracao:',
+          notifErr
+        );
+      }
+      // Marcar lote como não processando e retornar false
+      await query(
+        'UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1',
+        [loteId]
+      );
+      return false;
+    }
 
     // Registrar auditoria. Tornar falhas nessas etapas
     // não-fatais para que a geração do PDF (o passo crítico) não seja reportada como

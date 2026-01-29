@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import {
+  getSession,
+  requireRHWithEmpresaAccess,
+  requireEntity,
+} from '@/lib/session';
 import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +12,10 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar sessão
     const session = getSession();
-    if (!session || (session.perfil !== 'rh' && session.perfil !== 'admin')) {
+    if (
+      !session ||
+      (session.perfil !== 'rh' && session.perfil !== 'gestor_entidade')
+    ) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
 
@@ -21,6 +28,35 @@ export async function GET(request: NextRequest) {
         { error: 'empresa_id é obrigatório' },
         { status: 400 }
       );
+    }
+
+    // Autorizar acesso: apenas RH ou gestor_entidade com acesso
+    if (session.perfil === 'rh') {
+      try {
+        await requireRHWithEmpresaAccess(Number(empresaId));
+      } catch {
+        return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      }
+    } else {
+      // gestor_entidade
+      try {
+        const entity = await requireEntity();
+        const empresaCheck = await query(
+          'SELECT contratante_id FROM empresas_clientes WHERE id = $1',
+          [parseInt(empresaId)]
+        );
+        if (empresaCheck.rows.length === 0) {
+          return NextResponse.json(
+            { error: 'Empresa não encontrada' },
+            { status: 404 }
+          );
+        }
+        if (empresaCheck.rows[0].contratante_id !== entity.contratante_id) {
+          return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+        }
+      } catch {
+        return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+      }
     }
 
     // Buscar anomalias usando função PostgreSQL (sem ORDER BY para evitar erros quando função não estiver atualizada)

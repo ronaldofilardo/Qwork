@@ -548,13 +548,7 @@ export async function getPermissionsByRole(
           'write:lotes:clinica',
         ],
         emissor: ['read:laudos', 'write:laudos', 'read:lotes:clinica'],
-        admin: [
-          'manage:avaliacoes',
-          'manage:funcionarios',
-          'manage:empresas',
-          'manage:lotes',
-          'manage:laudos',
-        ],
+        admin: ['manage:rh', 'manage:clinicas', 'manage:admins'],
       } as Record<string, string[]>;
 
       return fallback[roleName] || [];

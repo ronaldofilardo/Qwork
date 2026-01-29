@@ -17,7 +17,7 @@ INSERT INTO administradores (
   base_legal
 ) VALUES (
   '00000000000',
-  'Administrador Master',
+  'Administrador',
   'admin@bps.com.br',
   '$2a$10$AFmk4XTCxuL1pSChreTjSOk/eGzDspkMRj9qMa7TYJMisBbrigvlq',
   NULL, -- Admin global, não vinculado a clínica
