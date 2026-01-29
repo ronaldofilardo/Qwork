@@ -1,0 +1,2068 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "sanitizacao-codigo-obsoleto.test.ts"
+
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+FAIL __tests__/sanitizacao-codigo-obsoleto.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (jest.setup.js:131:13)
+
+    console.log
+      [dotenv@17.2.3] injecting env (13) from .env.local -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at Object.log (lib/db.ts:606:15)
+
+    console.log
+      [DEBUG] Query local (197ms): SELECT pg_get_functiondef(oid) as definition 
+               FROM pg_proc 
+               WHERE proname = 'fn_re...
+
+      at log (lib/db.ts:445:19)
+
+    console.log
+      [DEBUG] Query local (28ms): SELECT column_name 
+               FROM information_schema.columns 
+               WHERE table_name = 'laudos' A...
+
+      at log (lib/db.ts:445:19)
+
+    console.log
+      [DEBUG] Query local (4ms): SELECT column_name 
+               FROM information_schema.columns 
+               WHERE table_name = 'audit_log...
+
+      at log (lib/db.ts:445:19)
+
+  ÔùÅ Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto ÔÇ║ Placeholder: Sem 00000000000 em c├│digo novo ÔÇ║ lib/laudo-auto.ts n├úo deve ter placeholder 00000000000
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected substring: not "00000000000"
+    Received string:        "import { query } from '@/lib/db';
+    import {
+      gerarDadosGeraisEmpresa,
+      calcularScoresPorGrupo,
+      gerarInterpretacaoRecomendacoes,
+      gerarObservacoesConclusao,
+    } from '@/lib/laudo-calculos';
+    import {
+      gerarHTMLLaudoCompleto,
+      LaudoDadosCompletos,
+    } from '@/lib/templates/laudo-html';
+    import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
+    import crypto from 'crypto';
+    import { criarNotificacao } from '@/lib/notifications/create-notification';
+    import { enqueueEmissao } from '@/lib/emissao-queue';
+    import { uploadLaudoToBackblaze } from '@/lib/storage/laudo-storage';
+
+    // Helper defensivo para registrar notifica├º├Áes administrativas sem lan├ºar
+    async function safeNotificacaoAdmin(
+      tipo: string,
+      mensagem: string,
+      loteId?: number
+    ) {
+      try {
+        if (typeof loteId === 'number') {
+          await query(
+            `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
+             VALUES ($1, $2, $3, NOW())`,
+            [tipo, mensagem, loteId]
+          );
+        } else {
+          await query(
+            `INSERT INTO notificacoes_admin (tipo, mensagem, criado_em)
+             VALUES ($1, $2, NOW())`,
+            [tipo, mensagem]
+          );
+        }
+      } catch (err) {
+        console.warn(
+          `[WARN] n├úo foi poss├¡vel registrar notificacao_admin (${tipo}): ${err instanceof Error ? err.message : String(err)}`
+        );
+      }
+    }
+
+    // ==========================================
+    // FUN├ç├òES AUXILIARES
+    // ==========================================
+
+    export async function validarEmissorUnico(): Promise<{
+      cpf: string;
+      nome: string;
+    } | null> {
+      const emissor = await query(`
+        SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true AND cpf <> '00000000000' AND perfil <> 'admin'
+      `);
+
+      console.log(`[DEBUG] Emissores ativos encontrados: ${emissor.rows.length}`);
+
+      if (emissor.rows.length === 0) {
+        console.error(`[ERROR] Nenhum emissor ativo no sistema!`);
+        await safeNotificacaoAdmin(
+          'sem_emissor',
+          'Nenhum emissor ativo no sistema para emiss├úo autom├ítica de laudos'
+        );
+        return null;
+      }
+
+      if (emissor.rows.length > 1) {
+        console.error(
+          `[WARN] M├║ltiplos emissores ativos no sistema (retornando lista)`
+        );
+        // registrar apenas uma notifica├º├úo de observability (mantemos o alerta)
+        await safeNotificacaoAdmin(
+          'multiplos_emissores',
+          'M├║ltiplos emissores ativos detectados - monitorar'
+        );
+        // Em vez de bloquear aqui, retornar a lista para quem chamar escolher emissor com contexto
+        return emissor.rows[0];
+      }
+
+      return emissor.rows[0];
+    }
+
+    /**
+     * Seleciona um emissor para emiss├úo ÔÇö EMISSOR ├ë UM USU├üRIO GLOBAL (n├úo associado a clinica/empresa)
+     * - Regra: escolher o primeiro emissor ativo de forma determin├¡stica (ORDER BY criado_em)
+     * - N├úo tentar inferir por clinica/empresa ÔÇö emissores s├úo independentes por design
+     */
+    export async function selecionarEmissorParaLote(_loteId: number) {
+      try {
+        const fallback = await query(
+          `SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true AND cpf <> '00000000000' AND perfil <> 'admin' ORDER BY criado_em ASC LIMIT 1`
+        );
+        if (fallback.rows.length === 1) return fallback.rows[0];
+        return null;
+      } catch (err) {
+        console.error('[ERROR] selecionarEmissorParaLote falhou:', err);
+        return null;
+      }
+    }
+
+    // ==========================================
+    // FUN├ç├âO PRINCIPAL DE EMISS├âO
+    // ==========================================
+
+    function criarLaudoPadronizado(
+      dadosGeraisEmpresa: any,
+      scoresPorGrupo: any[],
+      interpretacaoRecomendacoes: any,
+      observacoesConclusao: any
+    ): LaudoDadosCompletos {
+      return {
+        etapa1: dadosGeraisEmpresa,
+        etapa2: scoresPorGrupo,
+        etapa3: interpretacaoRecomendacoes,
+        etapa4: observacoesConclusao,
+      };
+    }
+
+    export const gerarLaudoCompletoEmitirPDF = async function (
+      loteId: number,
+      emissorCPF: string
+    ): Promise<number> {
+      console.log(`[DEBUG] Gerando laudo completo para lote ${loteId}`);
+
+      // Sanitizar emissor: garantir que n├úo seja o placeholder legacy '00000000000'
+      if (!emissorCPF || emissorCPF === '00000000000') {
+        console.warn(
+          `[WARN] Emissor inv├ílido recebido (${emissorCPF}); tentando selecionar emissor v├ílido automaticamente`
+        );
+        const selecionado = await selecionarEmissorParaLote(loteId);
+        if (selecionado && selecionado.cpf && selecionado.cpf !== '00000000000') {
+          console.log(`[INFO] Emissor alternativo selecionado: ${selecionado.cpf}`);
+          emissorCPF = selecionado.cpf;
+        } else {
+          await safeNotificacaoAdmin(
+            'sem_emissor_valido',
+            `Tentativa de gerar laudo para lote ${loteId} falhou: emissor inv├ílido ou ausente (${emissorCPF})`
+          ).catch(() => {});
+          throw new Error(
+            'Emissor inv├ílido: n├úo ├® poss├¡vel gerar laudo sem emissor v├ílido'
+          );
+        }
+      }
+
+      let browser = null;
+
+      try {
+        // Verificar se j├í existe laudo para este lote (n├úo dependemos de coluna `arquivo_pdf` que foi removida)
+        const laudoExistente = await query(
+          `
+          SELECT id, status, emitido_em FROM laudos WHERE lote_id = $1
+        `,
+          [loteId]
+        );
+
+        let laudoId: number;
+        let needsGeneration = true;
+        let laudoAlreadyEmitted = false;
+
+        if (laudoExistente.rows.length > 0) {
+          laudoId = laudoExistente.rows[0].id;
+          laudoAlreadyEmitted = Boolean(laudoExistente.rows[0].emitido_em);
+          // Verificar se o arquivo PDF existe no storage local para evitar regenera├º├úo desnecess├íria
+          try {
+            const fsCheck = await import('fs/promises');
+            const pathCheck = await import('path');
+            const existingFile = pathCheck.join(
+              process.cwd(),
+              'storage',
+              'laudos',
+              `laudo-${laudoId}.pdf`
+            );
+            await fsCheck.access(existingFile);
+            needsGeneration = false;
+            console.log(
+              `[DEBUG] Laudo existente encontrado (ID: ${laudoId}) e arquivo presente em ${existingFile}`
+            );
+          } catch (err) {
+            console.log(
+              `[DEBUG] Laudo existente sem arquivo; ser├í gerado (ID: ${laudoId}) - erro: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        if (!laudoId) {
+          // Precisamos gerar o PDF e o hash ANTES de inserir o registro quando o laudo n├úo existe,
+          // para evitar triggers/constraints que bloqueiam updates posteriores em laudos 'enviados'.
+          console.log(
+            `[DEBUG] Laudo n├úo existente; gerando PDF e hash antes de inserir...`
+          );
+
+          // Gerar dados do laudo necess├írios para o template
+          const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);
+          const scoresPorGrupo = await calcularScoresPorGrupo(loteId);
+          const interpretacaoRecomendacoes = gerarInterpretacaoRecomendacoes(
+            dadosGeraisEmpresa.empresaAvaliada,
+            scoresPorGrupo
+          );
+          const observacoesConclusao = gerarObservacoesConclusao('');
+          const laudoPadronizado = criarLaudoPadronizado(
+            dadosGeraisEmpresa,
+            scoresPorGrupo,
+            interpretacaoRecomendacoes,
+            observacoesConclusao
+          );
+
+          // Gerar HTML e PDF (respeitar modo test)
+          const html = gerarHTMLLaudoCompleto(laudoPadronizado);
+          let pdfBuffer: Buffer;
+          if (process.env.NODE_ENV === 'test') {
+            pdfBuffer = Buffer.from(
+              `TEST_PDF_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+            );
+          } else {
+            const os = await import('os');
+            const pathMod = await import('path');
+            const userDataDir = pathMod.join(
+              os.tmpdir(),
+              `puppeteer_profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+            );
+            // Usar a mesma fun├º├úo de inst├óncia que seleciona @sparticuz/chromium em production
+            const puppeteer = await getPuppeteerInstance();
+
+            // Tentativa com retry para lidar com instabilidades eventuais do navegador
+            const maxAttempts = 2;
+            let attempt = 0;
+            let lastErr: any = null;
+
+            while (attempt < maxAttempts) {
+              attempt += 1;
+              try {
+                console.log(
+                  `[DEBUG] Puppeteer: tentativa ${attempt} para gerar PDF (lote ${loteId})`
+                );
+                browser = await puppeteer.launch({
+                  headless: true,
+                  args: [
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-gpu',
+                    '--disable-web-security',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                  ],
+                  timeout: 30000,
+                  userDataDir,
+                });
+
+                const page = await (browser as any).newPage();
+                // Aumentar timeout de navega├º├úo para evitar falhas por p├íginas complexas
+                try {
+                  if (
+                    typeof (page as any).setDefaultNavigationTimeout === 'function'
+                  ) {
+                    (page as any).setDefaultNavigationTimeout(120000);
+                  } else if (
+                    typeof (page as any).setDefaultTimeout === 'function'
+                  ) {
+                    (page as any).setDefaultTimeout(120000);
+                  }
+                } catch {}
+
+                await page.setContent(html, {
+                  waitUntil: 'networkidle0',
+                  timeout: 120000,
+                });
+
+                const pdfUint8Array = await page.pdf({
+                  format: 'A4',
+                  printBackground: true,
+                });
+                pdfBuffer = Buffer.from(pdfUint8Array);
+
+                await browser.close();
+                browser = null;
+
+                console.log(
+                  `[DEBUG] Puppeteer: PDF gerado com sucesso na tentativa ${attempt} (lote ${loteId})`
+                );
+                lastErr = null;
+                break;
+              } catch (err) {
+                lastErr = err;
+                console.error(
+                  `[WARN] Falha na gera├º├úo de PDF com Puppeteer na tentativa ${attempt} para lote ${loteId}:`,
+                  err instanceof Error ? err.message : String(err)
+                );
+                if (browser) {
+                  try {
+                    await (browser as any).close();
+                  } catch {}
+                  browser = null;
+                }
+                // Espera curta antes de tentar novamente
+                if (attempt < maxAttempts)
+                  await new Promise((r) => setTimeout(r, 1000 * attempt));
+              }
+            }
+
+            if (lastErr) {
+              // Registrar notifica├º├úo administrativa e propagar erro para que o caller trate
+              await safeNotificacaoAdmin(
+                'erro_geracao_pdf',
+                `Falha ao gerar PDF para lote ${loteId}: ${lastErr instanceof Error ? lastErr.message : String(lastErr)}`,
+                loteId
+              ).catch(() => {});
+              throw lastErr;
+            }
+          }
+
+          // Calcular hash e salvar arquivo tempor├írio
+          const shouldSkipHash =
+            process.env.SKIP_LAUDO_HASH === '1' ||
+            process.env.SKIP_LAUDO_HASH === 'true';
+          const hash = shouldSkipHash
+            ? ''
+            : crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+          const fs = await import('fs/promises');
+          const pathMod = await import('path');
+          const laudosDir = pathMod.join(process.cwd(), 'storage', 'laudos');
+          await fs.mkdir(laudosDir, { recursive: true });
+          const tempName = `laudo-temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.pdf`;
+          const tempPath = pathMod.join(laudosDir, tempName);
+          await fs.writeFile(tempPath, pdfBuffer);
+          const metadata: any = {
+            arquivo: tempName,
+            criadoEm: new Date().toISOString(),
+          };
+          if (!shouldSkipHash) metadata.hash = hash;
+          await fs.writeFile(
+            pathMod.join(laudosDir, `${tempName}.json`),
+            JSON.stringify(metadata)
+          );
+
+          // Inserir laudo j├í com timestamps (status 'enviado') USANDO CONEX├âO ISOLADA
+          // para evitar que falhas posteriores na finaliza├º├úo do lote revertam a inser├º├úo do laudo.
+          let laudoInsert;
+          try {
+            // Importar cliente pg localmente para n├úo depender do pool de query (isolamento)
+            const { Client } = await import('pg');
+            const client = new Client({
+              connectionString: process.env.DATABASE_URL,
+            });
+            await client.connect();
+            try {
+              await client.query('BEGIN');
+              try {
+                if (shouldSkipHash) {
+                  laudoInsert = await client.query(
+                    `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
+                     VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
+                    [loteId, emissorCPF]
+                  );
+                } else {
+                  laudoInsert = await client.query(
+                    `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, hash_pdf, criado_em, atualizado_em)
+                     VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), $3, NOW(), NOW()) RETURNING id`,
+                    [loteId, emissorCPF, hash]
+                  );
+                }
+              } catch (insertErr: any) {
+                if (insertErr && insertErr.code === '42703') {
+                  // Coluna hash_pdf ausente ou incompatibilidade ÔÇö inserir sem hash
+                  console.warn(
+                    `[WARN] Coluna hash_pdf ausente no DB; inserindo laudo sem hash (lote ${loteId})`
+                  );
+                  laudoInsert = await client.query(
+                    `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
+                     VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
+                    [loteId, emissorCPF]
+                  );
+                } else {
+                  throw insertErr;
+                }
+              }
+
+              await client.query('COMMIT');
+            } catch (txErr) {
+              try {
+                await client.query('ROLLBACK');
+              } catch (rbErr) {
+                console.error(
+                  '[ERROR] Falha ao rollback em client isolado:',
+                  rbErr
+                );
+              }
+              throw txErr;
+            } finally {
+              await client.end();
+            }
+          } catch (clientErr) {
+            // Se a inser├º├úo isolada falhar, propagar para o caller (emitirLaudoImediato tratar├í)
+            throw clientErr;
+          }
+
+          laudoId = laudoInsert.rows[0].id;
+
+          // Renomear arquivo tempor├írio para o nome definitivo baseado no id
+          const finalName = `laudo-${laudoId}.pdf`;
+          const finalPath = pathMod.join(laudosDir, finalName);
+          await fs.rename(tempPath, finalPath);
+          await fs
+            .rename(
+              pathMod.join(laudosDir, `${tempName}.json`),
+              pathMod.join(laudosDir, `laudo-${laudoId}.json`)
+            )
+            .catch(() => {});
+
+          console.log(`[DEBUG] Laudo criado com ID: ${laudoId} (status enviado)`);
+
+          // Upload ass├¡ncrono para Backblaze (n├úo bloqueia o fluxo)
+          uploadLaudoToBackblaze(laudoId, loteId, pdfBuffer)
+            .then(() =>
+              console.log(
+                `[DEBUG] Upload para Backblaze iniciado para laudo ${laudoId}`
+              )
+            )
+            .catch((err) =>
+              console.error(
+                `[WARN] Erro no upload para Backblaze (laudo ${laudoId}):`,
+                err
+              )
+            );
+
+          // J├í geramos tudo ÔÇö sem necessidade de gera├º├úo posterior
+          needsGeneration = false;
+        }
+
+        if (!needsGeneration) {
+          // J├í temos PDF ÔÇö n├úo h├í gera├º├úo necess├íria. Contudo, pode faltar o hash em DB
+          // (caso: arquivo presente via migra├º├úo/backfill ou gera├º├úo anterior sem persistir hash).
+          // Garantir que o hash exista no DB: se ausente, calculamos a partir do arquivo local e persistimos.
+          try {
+            const laudoMetaRow = await query(
+              `SELECT hash_pdf FROM laudos WHERE id = $1`,
+              [laudoId]
+            );
+            const existingHash = laudoMetaRow.rows[0]?.hash_pdf || null;
+
+            const fs = await import('fs/promises');
+            const path = await import('path');
+            const laudosDir = path.join(process.cwd(), 'storage', 'laudos');
+            const filePath = path.join(laudosDir, `laudo-${laudoId}.pdf`);
+
+            if (!existingHash) {
+              // Ler arquivo existente e calcular hash (idempotente)
+              const fileBuffer = await fs.readFile(filePath);
+              const recalculatedHash = crypto
+                .createHash('sha256')
+                .update(fileBuffer)
+                .digest('hex');
+
+              // Atualizar metadados locais (se n├úo existir JSON) para manter consist├¬ncia com gera├º├úo normal
+              const metaPath = path.join(laudosDir, `laudo-${laudoId}.json`);
+              try {
+                await fs.access(metaPath);
+                // meta existe ÔÇö atualizar campo hash se necess├írio
+                const raw = await fs.readFile(metaPath, 'utf-8');
+                const parsed = JSON.parse(raw || '{}');
+                if (parsed.hash !== recalculatedHash) {
+                  parsed.hash = recalculatedHash;
+                  await fs.writeFile(metaPath, JSON.stringify(parsed));
+                }
+              } catch {
+                // meta inexistente ÔÇö criar
+                const metadata = {
+                  arquivo: `laudo-${laudoId}.pdf`,
+                  hash: recalculatedHash,
+                  criadoEm: new Date().toISOString(),
+                };
+                await fs.writeFile(metaPath, JSON.stringify(metadata));
+              }
+
+              if (laudoAlreadyEmitted) {
+                console.log(
+                  `[DEBUG] Laudo ${laudoId} j├í foi emitido anteriormente; pulando atualiza├º├úo de hash no DB por imutabilidade.`
+                );
+              } else {
+                // Persistir no banco de dados (trigger/constraint-friendly)
+                await query(
+                  `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
+                  [laudoId, recalculatedHash]
+                );
+
+                console.log(
+                  `[DEBUG] Laudo ${laudoId} possu├¡a PDF mas sem hash; hash recalculado e persistido (${recalculatedHash.substring(0, 8)}...)`
+                );
+              }
+            } else {
+              console.log(
+                `[DEBUG] Laudo ${laudoId} j├í possui PDF e hash em DB; nada a fazer.`
+              );
+            }
+          } catch (err) {
+            console.warn(
+              `[WARN] Falha ao validar/persistir hash para laudo ${laudoId}: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+
+          // Se j├í existe o PDF local, garantir que o registro do laudo reflita emiss├úo/envio
+          try {
+            if (!laudoAlreadyEmitted) {
+              // Executar um bloco DO que captura exce├º├Áes localmente para evitar abortar a transa├º├úo
+              // caso triggers (como imutabilidade) lancem erro.
+              try {
+                const safeId = Number(laudoId);
+                await query(
+                  `DO $do$\\nBEGIN\\n  UPDATE laudos\\n  SET emitido_em = COALESCE(emitido_em, NOW()), enviado_em = COALESCE(enviado_em, NOW()), status = 'enviado', atualizado_em = NOW()\\n  WHERE id = ${safeId};\\nEXCEPTION WHEN OTHERS THEN\\n  RAISE NOTICE 'Ignored failure updating laudo ${safeId}: %', SQLERRM;\\nEND $do$;`
+                );
+              } catch (innerErr) {
+                console.warn(
+                  `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'enviado' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
+                );
+              }
+              console.log(
+                `[DEBUG] Laudo ${laudoId} marcado como 'enviado' em DB (fallback para PDF existente) - opera├º├úo isolada`
+              );
+            } else {
+              console.log(
+                `[DEBUG] Laudo ${laudoId} j├í emitido; pulando marca├º├úo de 'enviado' no DB (fallback).`
+              );
+            }
+          } catch (innerErr) {
+            console.warn(
+              `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'enviado' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
+            );
+          }
+
+          // Se n├úo existe informa├º├úo de arquivo remoto nos metadados, tentar upload ass├¡ncrono
+          try {
+            const fsUpload = await import('fs/promises');
+            const pathUpload = await import('path');
+            const metaPathUpload = pathUpload.join(
+              process.cwd(),
+              'storage',
+              'laudos',
+              `laudo-${laudoId}.json`
+            );
+            let metadataUpload: any = null;
+            try {
+              const metaRaw = await fsUpload.readFile(metaPathUpload, 'utf-8');
+              metadataUpload = JSON.parse(metaRaw);
+            } catch {}
+            if (!metadataUpload?.arquivo_remoto) {
+              const filePathUpload = pathUpload.join(
+                process.cwd(),
+                'storage',
+                'laudos',
+                `laudo-${laudoId}.pdf`
+              );
+              try {
+                const fileBufferUpload = await fsUpload.readFile(filePathUpload);
+                uploadLaudoToBackblaze(laudoId, loteId, fileBufferUpload)
+                  .then(() =>
+                    console.log(
+                      `[DEBUG] Upload para Backblaze iniciado para laudo ${laudoId} (fallback)`
+                    )
+                  )
+                  .catch((err) =>
+                    console.error(
+                      `[WARN] Erro no upload para Backblaze (laudo ${laudoId}):`,
+                      err
+                    )
+                  );
+              } catch (readErr) {
+                console.warn(
+                  `[WARN] N├úo foi poss├¡vel ler arquivo local para upload do laudo ${laudoId}:`,
+                  readErr
+                );
+              }
+            }
+          } catch (uploadErr) {
+            console.warn(
+              `[WARN] Falha ao tentar disparar upload para laudo ${laudoId}:`,
+              uploadErr
+            );
+          }
+
+          console.log(`[DEBUG] Laudo ${laudoId} j├í possui PDF; pulando gera├º├úo.`);
+        }
+
+        // Gerar dados do laudo (reutilizando fun├º├Áes existentes)`
+        console.log(`[DEBUG] Gerando dados gerais da empresa...`);
+        const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);
+        console.log(`[DEBUG] Dados gerais:`, dadosGeraisEmpresa);
+
+        console.log(`[DEBUG] Calculando scores por grupo...`);
+        const scoresPorGrupo = await calcularScoresPorGrupo(loteId);
+        console.log(`[DEBUG] Scores calculados:`, scoresPorGrupo.length, 'grupos');
+
+        const interpretacaoRecomendacoes = gerarInterpretacaoRecomendacoes(
+          dadosGeraisEmpresa.empresaAvaliada,
+          scoresPorGrupo
+        );
+        const observacoesConclusao = gerarObservacoesConclusao('');
+
+        if (needsGeneration) {
+          // Gerar HTML do laudo usando template padronizado
+          console.log(`[DEBUG] Gerando HTML do laudo...`);
+          const laudoPadronizado = criarLaudoPadronizado(
+            dadosGeraisEmpresa,
+            scoresPorGrupo,
+            interpretacaoRecomendacoes,
+            observacoesConclusao
+          );
+          const html = gerarHTMLLaudoCompleto(laudoPadronizado);
+
+          // Em ambiente de teste, evitar Puppeteer por estabilidade e performance
+          let pdfBuffer: Buffer;
+          if (process.env.NODE_ENV === 'test') {
+            console.log('[DEBUG] Em modo test: gerando PDF fict├¡cio sem Puppeteer');
+            pdfBuffer = Buffer.from(
+              `TEST_PDF_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+            );
+          } else {
+            // Gerar PDF usando Puppeteer com timeout e cleanup
+            console.log(`[DEBUG] Iniciando Puppeteer para gerar PDF...`);
+
+            const os = await import('os');
+            const pathMod = await import('path');
+            const userDataDir = pathMod.join(
+              os.tmpdir(),
+              `puppeteer_profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+            );
+            const puppeteer = await getPuppeteerInstance();
+            browser = await puppeteer.launch({
+              headless: true,
+              args: [
+                '--no-sandbox',
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--disable-web-security',
+                '--disable-features=IsolateOrigins,site-per-process',
+              ],
+              timeout: 30000,
+              userDataDir,
+            });
+
+            const page = await browser.newPage();
+            await page.setContent(html, {
+              waitUntil: 'networkidle0',
+              timeout: 30000,
+            });
+            const pdfUint8Array = await page.pdf({
+              format: 'A4',
+              printBackground: true,
+            });
+            pdfBuffer = Buffer.from(pdfUint8Array);
+
+            await browser.close();
+            browser = null;
+
+            console.log(
+              `[DEBUG] PDF gerado com sucesso, tamanho: ${pdfBuffer.length} bytes`
+            );
+          }
+
+          // Calcular hash SHA-256 (opcional - SKIP_LAUDO_HASH)
+          const shouldSkipHash =
+            process.env.SKIP_LAUDO_HASH === '1' ||
+            process.env.SKIP_LAUDO_HASH === 'true';
+          const hash = shouldSkipHash
+            ? ''
+            : crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+          if (!shouldSkipHash) {
+            console.log(`
+            [DEBUG] Hash SHA-256 calculado: ${hash.substring(0, 16)}...`);
+          } else {
+            console.log(
+              '[DEBUG] SKIP_LAUDO_HASH ativo ÔÇö hash n├úo calculado para gera├º├úo do laudo'
+            );
+          }
+
+          // Salvar PDF localmente em storage/laudos e salvar metadados locais
+          console.log(`[DEBUG] Gravando PDF localmente em storage/laudos...`);
+          const fs = await import('fs/promises');
+          const path = await import('path');
+
+          const fileName = `laudo-${laudoId}.pdf`;
+          const metadata: any = {
+            arquivo: fileName,
+            criadoEm: new Date().toISOString(),
+          };
+          if (!shouldSkipHash) metadata.hash = hash;
+
+          // Guarda o caminho/identificador onde o arquivo foi salvo (local path)
+          let savedPath: string | null = null;
+          const laudosDir = path.join(process.cwd(), 'storage', 'laudos');
+          await fs.mkdir(laudosDir, { recursive: true });
+          const filePath = path.join(laudosDir, fileName);
+          await fs.writeFile(filePath, pdfBuffer);
+          await fs.writeFile(
+            path.join(laudosDir, `laudo-${laudoId}.json`),
+            JSON.stringify(metadata)
+          );
+          savedPath = filePath;
+          console.log(
+            `[STORAGE] Laudo ${laudoId} gravado localmente em ${filePath}`
+          );
+
+          // Atualizar timestamps, status e hash no banco (SEM persistir bin├írio no banco)
+          // TODO: integrar com storage externo ou coluna de path no DB em integra├º├úo futura
+          console.log(
+            `[DEBUG] Atualizando laudo (metadados) no banco sem persistir arquivo bin├írio...`
+          );
+
+          // Verificar se o laudo j├í foi emitido (imutabilidade)
+          if (laudoAlreadyEmitted) {
+            console.log(
+              `[INFO] Laudo ${laudoId} j├í foi emitido anteriormente; PDF regerado mas registro no DB n├úo ser├í atualizado (imutabilidade)`
+            );
+          } else {
+            try {
+              if (shouldSkipHash) {
+                await query(
+                  `
+          UPDATE laudos
+          SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW()
+          WHERE id = $1
+        `,
+                  [laudoId]
+                );
+              } else {
+                await query(
+                  `
+          UPDATE laudos
+          SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', hash_pdf = $2, atualizado_em = NOW()
+          WHERE id = $1
+        `,
+                  [laudoId, hash]
+                );
+              }
+            } catch (updateErr: any) {
+              // Se erro de imutabilidade (c├│digo 23506), logar e continuar
+              if (updateErr && updateErr.code === '23506') {
+                console.warn(
+                  `[WARN] Laudo ${laudoId} protegido por imutabilidade; PDF regerado mas metadados no DB n├úo atualizados`
+                );
+              }
+              // Se o banco n├úo tem a coluna hash_pdf (c├│digo 42703), tentar atualizar sem o hash
+              else if (updateErr && updateErr.code === '42703') {
+                console.warn(
+                  `[WARN] Coluna hash_pdf ausente no DB; atualizando metadados do laudo sem hash (laudo ${laudoId})`
+                );
+                try {
+                  await query(
+                    `UPDATE laudos SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW() WHERE id = $1`,
+                    [laudoId]
+                  );
+                } catch (fallbackErr: any) {
+                  // Se tamb├®m pegar imutabilidade aqui, logar e continuar
+                  if (fallbackErr && fallbackErr.code === '23506') {
+                    console.warn(
+                      `[WARN] Laudo ${laudoId} protegido por imutabilidade (fallback); continuando...`
+                    );
+                  } else {
+                    console.error(
+                      `[ERROR] Falha ao atualizar metadados do laudo ${laudoId} (fallback):`,
+                      fallbackErr
+                    );
+                    throw fallbackErr;
+                  }
+                }
+              } else {
+                // outros erros cr├¡ticos
+                throw updateErr;
+              }
+            }
+          }
+
+          // Tentar upload ass├¡ncrono para Backblaze (n├úo bloqueia o fluxo)
+          try {
+            uploadLaudoToBackblaze(laudoId, loteId, pdfBuffer)
+              .then(() =>
+                console.log(
+                  `[DEBUG] Upload para Backblaze iniciado para laudo ${laudoId}`
+                )
+              )
+              .catch((err) =>
+                console.error(
+                  `[WARN] Erro no upload para Backblaze (laudo ${laudoId}):`,
+                  err
+                )
+              );
+          } catch (e) {
+            console.warn(`[WARN] uploadLaudoToBackblaze n├úo p├┤de ser iniciado:`, e);
+          }
+
+          console.log(
+            `[DEBUG] Laudo ${laudoId} emitido e salvo em ${savedPath ?? 'local/unknown'}`
+          );
+          return laudoId;
+        }
+
+        // Caso n├úo precise gerar, retornamos o id existente
+        return laudoId;
+      } catch (error) {
+        // Cleanup de Puppeteer em caso de erro
+        if (browser) {
+          try {
+            await browser.close();
+            console.log(`[DEBUG] Browser Puppeteer fechado ap├│s erro`);
+          } catch (closeError) {
+            console.error(`[ERROR] Falha ao fechar browser:`, closeError);
+          }
+        }
+        throw error;
+      }
+    };
+
+    // ==========================================
+    // EMISS├âO IMEDIATA (ao concluir lote)
+    // ==========================================
+    export async function emitirLaudoImediato(loteId: number): Promise<boolean> {
+      console.log(`[EMISS├âO IMEDIATA] Processando lote ${loteId} - entrada`);
+
+      try {
+        console.log(
+          `[EMISS├âO IMEDIATA] Iniciando fluxo s├¡ncrono para lote ${loteId}`
+        );
+
+        // BYPASS RLS: Esta ├® uma opera├º├úo de sistema dentro de uma transa├º├úo
+        // Usar BEGIN para garantir que SET LOCAL tenha efeito
+        await query('BEGIN');
+        await query('SET LOCAL row_security = off');
+
+        // Validar emissor ÔÇö preferimos emissor ├║nico; se n├úo houver, tentar sele├º├úo contextual por lote
+        let emissor = await validarEmissorUnico();
+        if (!emissor) {
+          emissor = await selecionarEmissorParaLote(loteId);
+          if (emissor) {
+            console.log(
+              '[EMISS├âO IMEDIATA] Emissor selecionado por contexto de lote:',
+              emissor.cpf
+            );
+          }
+        }
+
+        if (!emissor) {
+          await query('ROLLBACK');
+          console.error(
+            '[EMISS├âO IMEDIATA] Nenhum emissor ativo dispon├¡vel para emiss├úo imediata'
+          );
+          console.log('[EMISS├âO IMEDIATA] retornando false: nenhum emissor');
+          return false;
+        }
+
+        // Verificar se lote j├í foi emitido (usar lock para evitar races)
+        const lote = await query(
+          `SELECT id, codigo, clinica_id, empresa_id, contratante_id, emitido_em, processamento_em
+           FROM lotes_avaliacao WHERE id = $1 FOR UPDATE`,
+          [loteId]
+        );
+
+        if (lote.rows.length === 0) {
+          console.error(`[EMISS├âO IMEDIATA] Lote ${loteId} n├úo encontrado`);
+          console.log('[EMISS├âO IMEDIATA] retornando false: lote n├úo encontrado');
+          return false;
+        }
+
+        const loteRow = lote.rows[0];
+
+        // Verificar se j├í est├í sendo processado
+        if (loteRow.processamento_em) {
+          console.warn(
+            `[EMISS├âO IMEDIATA] Lote ${loteId} j├í est├í em processamento desde ${loteRow.processamento_em}`
+          );
+          return true; // Idempot├¬ncia: j├í est├í sendo processado
+        }
+
+        // Marcar como em processamento
+        await query(
+          `UPDATE lotes_avaliacao SET processamento_em = NOW() WHERE id = $1`,
+          [loteId]
+        );
+
+        // Fallback: garantir c├│digo do lote (persistir fallback no banco para observability)
+        if (!loteRow.codigo) {
+          const fallbackCodigo = `LOTE-${loteId}-TMP`;
+          console.warn(
+            `[EMISS├âO IMEDIATA] Lote ${loteId} sem codigo; gerando fallback ${fallbackCodigo} e persistindo`
+          );
+          try {
+            await query('UPDATE lotes_avaliacao SET codigo = $1 WHERE id = $2', [
+              fallbackCodigo,
+              loteId,
+            ]);
+            await safeNotificacaoAdmin(
+              'fallback_codigo',
+              `Codigo temporario ${fallbackCodigo} criado para lote ${loteId}`,
+              loteId
+            );
+            loteRow.codigo = fallbackCodigo;
+          } catch (uErr) {
+            console.error(
+              '[EMISS├âO IMEDIATA] Falha ao persistir fallback codigo:',
+              uErr
+            );
+          }
+        }
+
+        if (loteRow.emitido_em) {
+          console.log(
+            `[EMISS├âO IMEDIATA] Lote ${loteId} j├í foi emitido anteriormente`
+          );
+          return true; // Idempot├¬ncia: j├í foi emitido
+        }
+
+        // Marcar lote como emitido ANTES de gerar o laudo (para evitar trigger de imutabilidade)
+        await query(
+          `UPDATE lotes_avaliacao SET emitido_em = NOW(), processamento_em = NULL, status = 'finalizado' WHERE id = $1`,
+          [loteId]
+        );
+
+        // Emitir laudo (gerar PDF + hash)
+        let laudoId: number;
+        try {
+          laudoId = await gerarLaudoCompletoEmitirPDF(loteId, emissor.cpf);
+          console.log(
+            `[EMISS├âO IMEDIATA] gerarLaudoCompletoEmitirPDF retornou laudoId=${laudoId} para lote ${loteId}`
+          );
+        } catch (genErr) {
+          console.error(
+            `[EMISS├âO IMEDIATA] Falha ao gerar laudo para lote ${loteId}:`,
+            genErr
+          );
+          try {
+            await safeNotificacaoAdmin(
+              'falha_geracao_laudo',
+              `Falha ao gerar laudo para lote ${loteId}: ${genErr instanceof Error ? genErr.message : String(genErr)}`,
+              loteId
+            );
+          } catch (notifErr) {
+            console.warn(
+              '[WARN] Falha ao registrar notificacao_admin de erro de geracao:',
+              notifErr
+            );
+          }
+          // Marcar lote como n├úo processando e retornar false
+          await query(
+            'UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1',
+            [loteId]
+          );
+          return false;
+        }
+
+        // Registrar auditoria. Tornar falhas nessas etapas
+        // n├úo-fatais para que a gera├º├úo do PDF (o passo cr├¡tico) n├úo seja reportada como
+        // falha por erros secund├írios (audit/logging). Ainda registramos notifica├º├Áes
+        // de observability quando houver erros.
+        try {
+          // Registrar auditoria
+          await query(
+            `INSERT INTO auditoria_laudos (lote_id, laudo_id, emissor_cpf, emissor_nome, acao, status, ip_address, criado_em)
+             VALUES ($1, $2, $3, $4, 'emissao_automatica', 'emitido', $5, NOW())`,
+            [loteId, laudoId, emissor.cpf, emissor.nome, '127.0.0.1']
+          );
+
+          console.log(
+            `[EMISS├âO IMEDIATA] Ô£ô Lote ${loteId} emitido com sucesso (Laudo ID: ${laudoId})`
+          );
+
+          await query('COMMIT');
+          return true;
+        } catch (postErr) {
+          console.warn(
+            `[EMISS├âO IMEDIATA] Erro ao persistir marca├º├úo/auditoria do lote ${loteId}:`,
+            postErr instanceof Error ? postErr.message : String(postErr)
+          );
+
+          // Rollback em caso de erro
+          await query('ROLLBACK');
+
+          // Limpar flag de processamento em caso de erro
+          try {
+            await query(
+              `UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1`,
+              [loteId]
+            );
+          } catch (cleanupErr) {
+            console.error(
+              `[EMISS├âO IMEDIATA] Falha ao limpar processamento_em para lote ${loteId}:`,
+              cleanupErr
+            );
+          }
+
+          // Registrar notifica├º├úo para equipe operacional (n├úo bloquear a emiss├úo em si)
+          try {
+            await safeNotificacaoAdmin(
+              'erro_persistencia_pos_emissao',
+              `Laudo ${laudoId} gerado, mas falha ao persistir marca├º├úo/auditoria para lote ${loteId}: ${postErr instanceof Error ? postErr.message : String(postErr)}`,
+              loteId
+            );
+          } catch (notifErr) {
+            console.error(
+              `[EMISS├âO IMEDIATA] Falha ao registrar notificacao_admin ap├│s erro de persist├¬ncia:`,
+              notifErr
+            );
+          }
+
+          // Consideramos a gera├º├úo do laudo bem-sucedida ÔÇö retornar true para permitir reprocessos
+          return true;
+        }
+      } catch (error) {
+        // Limpar flag de processamento em caso de erro fatal
+        try {
+          await query(
+            `UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1`,
+            [loteId]
+          );
+        } catch (cleanupErr) {
+          console.error(
+            `[EMISS├âO IMEDIATA] Falha ao limpar processamento_em ap├│s erro fatal para lote ${loteId}:`,
+            cleanupErr
+          );
+        }
+
+        // Rollback da transa├º├úo em caso de erro
+        try {
+          await query('ROLLBACK');
+        } catch (rollbackErr) {
+          console.error('[EMISS├âO IMEDIATA] Erro ao fazer rollback:', rollbackErr);
+        }
+
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        console.error(
+          `[EMISS├âO IMEDIATA] Ô£ù Erro ao emitir lote ${loteId}:`,
+          errorMessage
+        );
+        if (errorStack) {
+          console.error(`[EMISS├âO IMEDIATA] Stack trace:`, errorStack);
+        }
+
+        // Detectar erros de Chromium/Puppeteer para retry
+        const isChromiumError =
+          errorMessage.includes('chromium') ||
+          errorMessage.includes('puppeteer') ||
+          errorMessage.includes('does not exist') ||
+          errorMessage.includes('brotli');
+
+        if (isChromiumError) {
+          console.log(
+            `[EMISS├âO IMEDIATA] Erro relacionado ao Chromium detectado para lote ${loteId}, tentando novamente em 3s...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, 3000));
+
+          // Retry uma ├║nica vez
+          try {
+            console.log(`[EMISS├âO IMEDIATA] RETRY: lote ${loteId}`);
+            await query('BEGIN');
+            await query('SET LOCAL row_security = off');
+            const emissor = await validarEmissorUnico();
+            if (emissor) {
+              // Marcar lote como emitido ANTES de gerar o laudo (retry)
+              await query(
+                `UPDATE lotes_avaliacao SET emitido_em = NOW() WHERE id = $1`,
+                [loteId]
+              );
+
+              const laudoId = await gerarLaudoCompletoEmitirPDF(
+                loteId,
+                emissor.cpf
+              );
+
+              await query(
+                `INSERT INTO auditoria_laudos (lote_id, laudo_id, emissor_cpf, emissor_nome, acao, status, ip_address, criado_em)
+                 VALUES ($1, $2, $3, $4, 'emissao_automatica_retry', 'emitido', $5, NOW())`,
+                [loteId, laudoId, emissor.cpf, emissor.nome, '127.0.0.1']
+              );
+              await query('COMMIT');
+              console.log(
+                `[EMISS├âO IMEDIATA] Ô£ô Lote ${loteId} emitido com sucesso ap├│s RETRY (Laudo ID: ${laudoId})`
+              );
+              return true;
+            }
+            await query('ROLLBACK');
+          } catch (retryErr) {
+            await query('ROLLBACK').catch(() => {});
+            console.error(
+              `[EMISS├âO IMEDIATA] RETRY falhou para lote ${loteId}:`,
+              retryErr instanceof Error ? retryErr.message : String(retryErr)
+            );
+          }
+        }
+
+        console.log(
+          `[EMISS├âO IMEDIATA] retornando false: exce├º├úo capturada durante emiss├úo - ${errorMessage}`
+        );
+
+        // Registrar erro detalhado
+        const errMsg = `Erro na emiss├úo imediata do lote ${loteId}: ${errorMessage}`;
+        await safeNotificacaoAdmin(
+          isChromiumError ? 'falha_emissao_chromium' : 'erro_emissao_auto',
+          errMsg,
+          loteId
+        );
+
+        // Enfileirar para tentativa de reprocessamento ass├¡ncrono
+        try {
+          await enqueueEmissao(loteId, errMsg);
+        } catch (enqueueErr) {
+          console.error(
+            '[EMISS├âO IMEDIATA] Falha ao adicionar ├á fila de reprocessamento:',
+            enqueueErr
+          );
+        }
+
+        return false;
+      }
+    }
+
+    // ==========================================
+    // CRON LEGADO REMOVIDO - EMISS├âO AGORA ├ë SEMPRE IMEDIATA
+    // ==========================================
+    // A fun├º├úo emitirLaudosAutomaticamente foi REMOVIDA.
+    // Emiss├úo de laudos ocorre IMEDIATAMENTE quando o lote fica 'concluido'
+    // via chamadas em:
+    // - lib/lotes.ts: recalcularStatusLote() e recalcularStatusLotePorId()
+    // - app/api/admin/reenviar-lote/route.ts
+    // - lib/auto-concluir-lotes.ts
+    //
+    // Se precisar reprocessar lotes pendentes manualmente, use:
+    // - app/api/emissor/reprocessar-emissao/[loteId]/route.ts
+
+    // ==========================================
+    // FASE 2: ENVIO AUTOM├üTICO (10 min ap├│s emiss├úo)
+    // ==========================================
+    async function enviarLaudoAutomatico(laudo: any) {
+      try {
+        console.log(
+          `[FASE 2] Enviando laudo do lote ${laudo.codigo} (ID: ${laudo.lote_id})`
+        );
+
+        // Ler arquivo local do laudo e validar hash (idempot├¬ncia)
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const laudosDir = path.join(process.cwd(), 'storage', 'laudos');
+        const filePath = path.join(laudosDir, `laudo-${laudo.laudo_id}.pdf`);
+
+        let fileBuffer: Buffer;
+        try {
+          fileBuffer = await fs.readFile(filePath);
+        } catch {
+          throw new Error(`Arquivo local do laudo n├úo encontrado (${filePath})`);
+        }
+
+        const hashCalculado = crypto
+          .createHash('sha256')
+          .update(fileBuffer)
+          .digest('hex');
+
+        // Comparar com o hash armazenado no banco (se presente) ÔÇö se houver diverg├¬ncia,
+        // registrar notifica├º├úo e abortar envio (poss├¡vel corrup├º├úo/inconsist├¬ncia)
+        if (laudo.hash_pdf && laudo.hash_pdf !== hashCalculado) {
+          console.error(
+            `[FASE 2] Hash do PDF n├úo coincide com hash registrado no DB (laudo ${laudo.laudo_id})`
+          );
+          await safeNotificacaoAdmin(
+            'hash_mismatch',
+            `Hash do arquivo PDF (calculado) n├úo corresponde ao hash persistido no DB para o laudo ${laudo.laudo_id}`,
+            laudo.lote_id
+          );
+
+          // Registrar auditoria de erro e n├úo prosseguir com envio
+          await query(
+            `INSERT INTO auditoria_laudos (lote_id, laudo_id, acao, status, ip_address, observacoes, criado_em)
+             VALUES ($1, $2, 'envio_automatico_erro', 'erro', $3, $4, NOW())`,
+            [
+              laudo.lote_id,
+              laudo.laudo_id,
+              '127.0.0.1',
+              'Hash mismatch entre arquivo e DB - abortando envio',
+            ]
+          );
+
+          return; // abortar envio
+        }
+
+        // Verificar metadados locais (se existirem) para confirmar integridade
+        try {
+          const metaRaw = await fs.readFile(
+            path.join(laudosDir, `laudo-${laudo.laudo_id}.json`),
+            'utf-8'
+          );
+          const meta = JSON.parse(metaRaw);
+          if (meta.hash && meta.hash !== hashCalculado) {
+            throw new Error(
+              'Hash do PDF n├úo coincide com metadados locais - arquivo pode estar corrompido'
+            );
+          }
+        } catch {
+          // Se n├úo existirem metadados, apenas logar aviso e prosseguir com o hash calculado
+          console.warn(
+            `[FASE 2] Aviso: metadados locais ausentes para laudo ${laudo.laudo_id} ou inv├ílidos`
+          );
+        }
+
+        // Marcar lote como enviado (usar laudo_enviado_em)
+        await query(
+          `UPDATE lotes_avaliacao SET laudo_enviado_em = NOW() WHERE id = $1 AND laudo_enviado_em IS NULL`,
+          [laudo.lote_id]
+        );
+
+        // Notificar destinat├írio (cl├¡nica ou contratante)
+        try {
+          if (laudo.clinica_id) {
+            await criarNotificacao({
+              tipo: 'laudo_enviado',
+              destinatario_id: laudo.clinica_id,
+              destinatario_tipo: 'clinica',
+              titulo: `Laudo do lote ${laudo.codigo} dispon├¡vel`,
+              mensagem: `O laudo do lote ${laudo.codigo} foi emitido e est├í dispon├¡vel para download.`,
+              dados_contexto: {
+                lote_id: laudo.lote_id,
+                laudo_id: laudo.laudo_id,
+                codigo: laudo.codigo,
+              },
+              link_acao: `/clinica/laudos`,
+              botao_texto: 'Ver Laudos',
+              prioridade: 'alta',
+            });
+          } else if (laudo.contratante_id) {
+            await criarNotificacao({
+              tipo: 'laudo_enviado',
+              destinatario_id: laudo.contratante_id,
+              destinatario_tipo: 'contratante',
+              titulo: `Laudo do lote ${laudo.codigo} dispon├¡vel`,
+              mensagem: `O laudo do lote ${laudo.codigo} foi emitido e est├í dispon├¡vel para download.`,
+              dados_contexto: {
+                lote_id: laudo.lote_id,
+                laudo_id: laudo.laudo_id,
+                codigo: laudo.codigo,
+              },
+              link_acao: `/entidade/laudos`,
+              botao_texto: 'Ver Laudos',
+              prioridade: 'alta',
+            });
+          } else if (laudo.empresa_id) {
+            // Buscar contratante via empresa
+            const empresa = await query(
+              `SELECT contratante_id FROM empresas_clientes WHERE id = $1`,
+              [laudo.empresa_id]
+            );
+
+            if (empresa.rows.length > 0 && empresa.rows[0].contratante_id) {
+              await criarNotificacao({
+                tipo: 'laudo_enviado',
+                destinatario_id: empresa.rows[0].contratante_id,
+                destinatario_tipo: 'contratante',
+                titulo: `Laudo do lote ${laudo.codigo} dispon├¡vel`,
+                mensagem: `O laudo do lote ${laudo.codigo} foi emitido e est├í dispon├¡vel para download.`,
+                dados_contexto: {
+                  lote_id: laudo.lote_id,
+                  laudo_id: laudo.laudo_id,
+                  codigo: laudo.codigo,
+                },
+                link_acao: `/entidade/laudos`,
+                botao_texto: 'Ver Laudos',
+                prioridade: 'alta',
+              });
+            }
+          }
+        } catch (notifError) {
+          console.error('[FASE 2] Erro ao criar notifica├º├úo:', notifError);
+          // N├úo interromper fluxo
+        }
+
+        // Atualizar laudo com status de enviado e registrar timestamps
+        await query(
+          `UPDATE laudos SET status = 'enviado', enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1`,
+          [laudo.laudo_id]
+        );
+
+        // Registrar auditoria
+        await query(
+          `INSERT INTO auditoria_laudos (lote_id, laudo_id, acao, status, ip_address, criado_em)
+           VALUES ($1, $2, 'envio_automatico', 'enviado', $3, NOW())`,
+          [laudo.lote_id, laudo.laudo_id, '127.0.0.1']
+        );
+
+        console.log(`[FASE 2] Ô£ô Laudo ${laudo.laudo_id} enviado com sucesso`);
+      } catch (error) {
+        console.error(`[FASE 2] Ô£ù Erro ao enviar laudo ${laudo.laudo_id}:`, error);
+
+        // Registrar erro
+        await safeNotificacaoAdmin(
+          'erro_envio_auto',
+          `Erro no envio do laudo ${laudo.laudo_id}: ${error instanceof Error ? error.message : String(error)}`,
+          laudo.lote_id
+        );
+
+        // Registrar auditoria de erro
+        await query(
+          `INSERT INTO auditoria_laudos (lote_id, laudo_id, acao, status, ip_address, observacoes, criado_em)
+           VALUES ($1, $2, 'envio_automatico_erro', 'erro', $3, $4, NOW())`,
+          [
+            laudo.lote_id,
+            laudo.laudo_id,
+            '127.0.0.1',
+            error instanceof Error ? error.message : String(error),
+          ]
+        );
+      }
+    }
+
+    /**
+     * Compat shim (DEPRECATED) para o cron legado de emiss├úo (FASE 1).
+     *
+     * Hist├│rico: a emiss├úo agora ├® IMEDIATA quando lote fica 'concluido'.
+     * Manter um wrapper compat├¡vel para n├úo quebrar chamadas/tests que aguardam
+     * a fun├º├úo legacy. O wrapper simplesmente delega para o fluxo imediato.
+     */
+    export async function emitirLaudosAutomaticamente() {
+      console.warn(
+        '[FASE 1 - CRON] emitirLaudosAutomaticamente() chamado ÔÇö wrapper de compatibilidade (deprecated)'
+      );
+
+      // Buscar lotes conclu├¡dos ainda n├úo emitidos (limite conservador)
+      const lotes = await query(`
+        SELECT id FROM lotes_avaliacao
+        WHERE status = 'concluido' AND emitido_em IS NULL
+        ORDER BY atualizado_em ASC
+        LIMIT 20
+      `);
+
+      if (!lotes.rows || lotes.rows.length === 0) {
+        console.log('[FASE 1 - CRON] Nenhum lote pendente para emiss├úo');
+        return;
+      }
+
+      for (const l of lotes.rows) {
+        try {
+          // Delegar para o fluxo imediato (idempotente)
+          // NOTE: manter sil├¬ncio em erros pontuais, mas registrar para observability
+          const sucesso = await emitirLaudoImediato(l.id);
+          if (!sucesso) {
+            console.warn(
+              `[FASE 1 - CRON] Emiss├úo imediata falhou para lote ${l.id}`
+            );
+          }
+        } catch (err) {
+          console.error('[FASE 1 - CRON] exce├º├úo ao processar lote', l.id, err);
+          await safeNotificacaoAdmin(
+            'falha_emissao_cron_compat',
+            `Erro ao processar lote ${l.id} via emitirLaudosAutomaticamente(): ${err instanceof Error ? err.message : String(err)}`,
+            l.id
+          );
+        }
+      }
+    }
+
+    export async function enviarLaudosAutomaticamente() {
+      console.log('[FASE 2 - CRON] Iniciando envio de laudos emitidos');
+
+      // Buscar laudos prontos para notifica├º├úo de envio (j├í foram gerados com status 'enviado')
+      // Verifica se o timestamp auto_emitir_em venceu e se laudo_enviado_em ainda ├® NULL
+      // Observa├º├úo: os PDFs s├úo armazenados localmente em storage/laudos e no Backblaze
+      const laudos = await query(`
+        SELECT 
+          la.id as lote_id,
+          la.codigo,
+          la.clinica_id,
+          la.empresa_id,
+          la.contratante_id,
+          la.emitido_em,
+          la.laudo_enviado_em,
+          la.auto_emitir_em,
+          l.id as laudo_id,
+          l.status,
+          l.hash_pdf
+        FROM lotes_avaliacao la
+        JOIN laudos l ON la.id = l.id
+        WHERE la.emitido_em IS NOT NULL
+          AND la.laudo_enviado_em IS NULL
+          AND la.auto_emitir_em IS NOT NULL
+          AND la.auto_emitir_em <= NOW()
+          AND la.status IN ('concluido', 'finalizado')
+          AND l.status = 'enviado'
+        ORDER BY la.auto_emitir_em ASC
+        LIMIT 10
+      `);
+
+      console.log(
+        `[FASE 2 - CRON] Encontrados ${laudos.rows.length} laudos para envio`
+      );
+
+      if (laudos.rows.length === 0) {
+        console.log('[FASE 2 - CRON] Nenhum laudo pronto para envio');
+        return;
+      }
+
+      for (const laudo of laudos.rows) {
+        await enviarLaudoAutomatico(laudo);
+      }
+    }
+    "
+
+      28 |         if (fs.existsSync(fullPath)) {
+      29 |           const content = fs.readFileSync(fullPath, 'utf-8');
+    > 30 |           expect(content).not.toContain('00000000000');
+         |                               ^
+      31 |         }
+      32 |       });
+      33 |     });
+
+      at Object.toContain (__tests__/sanitizacao-codigo-obsoleto.test.ts:30:31)
+
+  ÔùÅ Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto ÔÇ║ Puppeteer: Apenas em emissor ÔÇ║ Emissor /download n├úo deve gerar PDF on-demand
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected substring: not "/pdf"
+    Received string:        "import { requireRole } from '@/lib/session';
+    import { query } from '@/lib/db';
+    import { NextResponse } from 'next/server';
+
+    export const dynamic = 'force-dynamic';
+
+    export const GET = async (
+      req: Request,
+      { params }: { params: { loteId: string } }
+    ) => {
+      const user = await requireRole('emissor');
+      if (!user) {
+        return NextResponse.json(
+          { error: 'Acesso negado', success: false },
+          { status: 403 }
+        );
+      }
+
+      try {
+        const loteId = parseInt(params.loteId);
+        if (isNaN(loteId)) {
+          return NextResponse.json(
+            { error: 'ID do lote inv├ílido', success: false },
+            { status: 400 }
+          );
+        }
+
+        // Verificar se o laudo existe e pertence ao emissor
+        const laudoQuery = await query(
+          `
+          SELECT
+            l.id,
+            l.lote_id,
+            la.codigo,
+            la.titulo
+          FROM laudos l
+          JOIN lotes_avaliacao la ON l.lote_id = la.id
+          WHERE l.lote_id = $1 AND l.emissor_cpf = $2 AND l.status IN ('enviado','emitido')
+        `,
+          [loteId, user.cpf]
+        );
+
+        if (laudoQuery.rows.length === 0) {
+          return NextResponse.json(
+            { error: 'Laudo n├úo encontrado ou acesso negado', success: false },
+            { status: 404 }
+          );
+        }
+
+        const laudo = laudoQuery.rows[0];
+
+        // Tentar m├║ltiplas chaves (id, codigo, lote)
+        const fs = await import('fs/promises');
+        const path = await import('path');
+
+        const names = new Set<string>();
+        names.add(`laudo-${laudo.id}.pdf`);
+        if (laudo.codigo) names.add(`laudo-${laudo.codigo}.pdf`);
+        if (laudo.lote_id) names.add(`laudo-${laudo.lote_id}.pdf`);
+
+        // 1) tentar storage/local
+        for (const name of names) {
+          try {
+            const p = path.join(process.cwd(), 'storage', 'laudos', name);
+            const fileBuffer = await fs.readFile(p);
+            const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+            return new NextResponse(fileBuffer, {
+              headers: {
+                'Content-Type': 'application/pdf',
+                'Content-Disposition': `attachment; filename=\"${fileName}\"`,
+              },
+            });
+          } catch {
+            // continuar tentando
+          }
+        }
+
+        // Using local and public storage only.
+
+        // Se n├úo foi encontrado localmente, instruir uso de gera├º├úo client-side
+        // (Puppeteer/Chromium n├úo funciona confi├ívelmente na Vercel Free/Pro)
+        console.log(
+          `[INFO] PDF n├úo encontrado localmente para laudo ${loteId}. Retornando instru├º├úo para gera├º├úo client-side.`
+        );
+
+        return NextResponse.json(
+          {
+            success: false,
+            useClientSide: true,
+            error: 'PDF n├úo dispon├¡vel no servidor. Use gera├º├úo no navegador.',
+            message:
+              'Por favor, use o bot├úo \"Visualizar Laudo\" e depois \"Baixar PDF\" para gerar o PDF no seu navegador.',
+            htmlEndpoint: `/api/emissor/laudos/${loteId}/html`,
+            loteId: loteId,
+          },
+          { status: 200 }
+        );
+      } catch (error) {
+        console.error('Erro ao fazer download do laudo:', error);
+        return NextResponse.json(
+          {
+            error: 'Erro interno do servidor',
+            success: false,
+            detalhes: error instanceof Error ? error.message : 'Erro desconhecido',
+          },
+          { status: 500 }
+        );
+      }
+    };
+    "
+
+      189 |       // N├úo deve chamar /pdf endpoint para gerar on-demand
+      190 |       expect(downloadRoute).not.toContain('await fetch');
+    > 191 |       expect(downloadRoute).not.toContain('/pdf');
+          |                                 ^
+      192 |       // Deve retornar fallback client-side
+      193 |       expect(downloadRoute).toContain('useClientSide');
+      194 |     });
+
+      at Object.toContain (__tests__/sanitizacao-codigo-obsoleto.test.ts:191:33)
+
+  ÔùÅ Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto ÔÇ║ Migrations: Aplicadas e n├úo revertidas ÔÇ║ migration 093 deve estar aplicada
+
+    error: rela├º├úo "_prisma_migrations" n├úo existe
+
+      441 |         // No session: just execute the query normally
+      442 |         try {
+    > 443 |           const result = await client.query(text, params);
+          |                          ^
+      444 |           const duration = Date.now() - start;
+      445 |           console.log(
+      446 |             `[DEBUG] Query local (${duration}ms): ${text.substring(0, 100)}...`
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:443:26)
+      at Object.<anonymous> (__tests__/sanitizacao-codigo-obsoleto.test.ts:294:25)
+
+  ÔùÅ Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto ÔÇ║ Migrations: Aplicadas e n├úo revertidas ÔÇ║ migration 095 deve estar aplicada
+
+    error: rela├º├úo "_prisma_migrations" n├úo existe
+
+      441 |         // No session: just execute the query normally
+      442 |         try {
+    > 443 |           const result = await client.query(text, params);
+          |                          ^
+      444 |           const duration = Date.now() - start;
+      445 |           console.log(
+      446 |             `[DEBUG] Query local (${duration}ms): ${text.substring(0, 100)}...`
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:443:26)
+      at Object.<anonymous> (__tests__/sanitizacao-codigo-obsoleto.test.ts:305:25)
+
+  ÔùÅ Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto ÔÇ║ Migrations: Aplicadas e n├úo revertidas ÔÇ║ n├úo deve ter migrations rollback
+
+    error: rela├º├úo "_prisma_migrations" n├úo existe
+
+      441 |         // No session: just execute the query normally
+      442 |         try {
+    > 443 |           const result = await client.query(text, params);
+          |                          ^
+      444 |           const duration = Date.now() - start;
+      445 |           console.log(
+      446 |             `[DEBUG] Query local (${duration}ms): ${text.substring(0, 100)}...`
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:443:26)
+      at Object.<anonymous> (__tests__/sanitizacao-codigo-obsoleto.test.ts:316:25)
+
+  ÔùÅ Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto ÔÇ║ Testes: Sem refer├¬ncias a c├│digo removido ÔÇ║ n├úo deve ter testes para arquivo_pdf
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /arquivo_pdf.*removid[oa]/i
+    Received string:  "/**┬À
+     * Testes de Sanitiza├º├úo: Verificar remo├º├úo de c├│digo obsoleto┬À
+     * Garante que placeholders, c├│digo morto e padr├Áes antigos foram removidos┬À
+     * Refer├¬ncia: Todas as 11 corre├º├Áes┬À
+     */┬À┬À┬À
+    import fs from 'fs';┬À
+    import path from 'path';┬À
+    import { query } from '@/lib/db';┬À┬À┬À
+    describe('Sanitiza├º├úo: Remo├º├úo de C├│digo Obsoleto', () => {┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Placeholders hardcoded┬À
+      // ============================================================================┬À
+      describe('Placeholder: Sem 00000000000 em c├│digo novo', () => {┬À
+        const criticalFiles = [┬À
+          'app/api/emissor/laudos/[loteId]/pdf/route.ts',┬À
+          'app/api/emissor/laudos/[loteId]/download/route.ts',┬À
+          'app/api/rh/laudos/[laudoId]/download/route.ts',┬À
+          'app/api/entidade/lotes/route.ts',┬À
+          'lib/laudo-auto.ts',┬À
+        ];┬À┬À┬À
+        criticalFiles.forEach((filePath) => {┬À
+          it(`${filePath} n├úo deve ter placeholder 00000000000`, () => {┬À
+            const fullPath = path.join(process.cwd(), filePath);┬À┬À┬À
+            if (fs.existsSync(fullPath)) {┬À
+              const content = fs.readFileSync(fullPath, 'utf-8');┬À
+              expect(content).not.toContain('00000000000');┬À
+            }┬À
+          });┬À
+        });┬À┬À┬À
+        it('trigger n├úo deve usar placeholder', async () => {┬À
+          const functionDef = await query(┬À
+            `SELECT pg_get_functiondef(oid) as definition┬À┬À
+             FROM pg_proc┬À┬À
+             WHERE proname = 'fn_recalcular_status_lote_on_avaliacao_update'`┬À
+          );┬À┬À┬À
+          const definition = functionDef.rows[0]?.definition;┬À
+          expect(definition).not.toContain('00000000000');┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Refer├¬ncias a arquivo_pdf┬À
+      // ============================================================================┬À
+      describe('Coluna Removida: arquivo_pdf', () => {┬À
+        const endpointsLaudos = [┬À
+          'app/api/emissor/laudos/[loteId]/pdf/route.ts',┬À
+          'app/api/emissor/laudos/[loteId]/download/route.ts',┬À
+          'app/api/rh/laudos/[laudoId]/download/route.ts',┬À
+          'app/api/entidade/laudos/[laudoId]/download/route.ts',┬À
+        ];┬À┬À┬À
+        endpointsLaudos.forEach((filePath) => {┬À
+          it(`${filePath} n├úo deve referenciar arquivo_pdf`, () => {┬À
+            const fullPath = path.join(process.cwd(), filePath);┬À┬À┬À
+            if (fs.existsSync(fullPath)) {┬À
+              const content = fs.readFileSync(fullPath, 'utf-8');┬À┬À┬À
+              // Permitir em coment├írios explicativos┬À
+              const linesWithoutComments = content┬À
+                .split('\\n')┬À
+                .filter(┬À
+                  (line) =>┬À
+                    !line.trim().startsWith('//') && !line.trim().startsWith('*')┬À
+                )┬À
+                .join('\\n');┬À┬À┬À
+              expect(linesWithoutComments).not.toContain('arquivo_pdf');┬À
+            }┬À
+          });┬À
+        });┬À┬À┬À
+        it('tabela laudos n├úo deve ter coluna arquivo_pdf', async () => {┬À
+          const column = await query(┬À
+            `SELECT column_name┬À┬À
+             FROM information_schema.columns┬À┬À
+             WHERE table_name = 'laudos' AND column_name = 'arquivo_pdf'`┬À
+          );┬À┬À┬À
+          expect(column.rows.length).toBe(0);┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Schema antigo audit_logs┬À
+      // ============================================================================┬À
+      describe('Schema Obsoleto: audit_logs em portugu├¬s', () => {┬À
+        it('n├úo deve ter colunas em portugu├¬s no banco', async () => {┬À
+          const oldColumns = await query(┬À
+            `SELECT column_name┬À┬À
+             FROM information_schema.columns┬À┬À
+             WHERE table_name = 'audit_logs'┬À┬À
+             AND column_name IN ('acao', 'entidade', 'user_id', 'user_role', 'criado_em', 'dados')`┬À
+          );┬À┬À┬À
+          expect(oldColumns.rows.length).toBe(0);┬À
+        });┬À┬À┬À
+        const endpointsWithAudit = ['app/api/emissor/laudos/[loteId]/pdf/route.ts'];┬À┬À┬À
+        endpointsWithAudit.forEach((filePath) => {┬À
+          it(`${filePath} n├úo deve usar schema antigo de audit_logs`, () => {┬À
+            const fullPath = path.join(process.cwd(), filePath);┬À┬À┬À
+            if (fs.existsSync(fullPath)) {┬À
+              const content = fs.readFileSync(fullPath, 'utf-8');┬À┬À┬À
+              // Verificar que usa schema novo┬À
+              if (content.includes('audit_logs')) {┬À
+                expect(content).toContain('action');┬À
+                expect(content).toContain('resource');┬À
+                expect(content).toContain('user_cpf');┬À
+                expect(content).toContain('user_perfil');┬À┬À┬À
+                // N├úo deve usar antigo┬À
+                const insertMatches = content.match(┬À
+                  /INSERT INTO audit_logs[\\s\\S]*?\\)/g┬À
+                );┬À
+                if (insertMatches) {┬À
+                  insertMatches.forEach((insert) => {┬À
+                    expect(insert).not.toContain('acao');┬À
+                    expect(insert).not.toContain('entidade');┬À
+                    expect(insert).not.toContain('user_id');┬À
+                  });┬À
+                }┬À
+              }┬À
+            }┬À
+          });┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Imports de Puppeteer em endpoints errados┬À
+      // ============================================================================┬À
+      describe('Puppeteer: Apenas em emissor', () => {┬À
+        it('RH download n├úo deve importar puppeteer', () => {┬À
+          const rhRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/rh/laudos/[laudoId]/download/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(rhRoute).not.toContain('puppeteer');┬À
+          expect(rhRoute).not.toContain('getPuppeteerInstance');┬À
+        });┬À┬À┬À
+        it('Entidade download n├úo deve importar puppeteer', () => {┬À
+          const entidadeRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/entidade/laudos/[laudoId]/download/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(entidadeRoute).not.toContain('puppeteer');┬À
+          expect(entidadeRoute).not.toContain('getPuppeteerInstance');┬À
+        });┬À┬À┬À
+        it('Emissor /pdf deve ter puppeteer (emerg├¬ncia)', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(emissorRoute).toContain('getPuppeteerInstance');┬À
+        });┬À┬À┬À
+        it('Emissor /download n├úo deve gerar PDF on-demand', () => {┬À
+          const downloadRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/download/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          // N├úo deve chamar /pdf endpoint para gerar on-demand┬À
+          expect(downloadRoute).not.toContain('await fetch');┬À
+          expect(downloadRoute).not.toContain('/pdf');┬À
+          // Deve retornar fallback client-side┬À
+          expect(downloadRoute).toContain('useClientSide');┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: UPDATEs em laudos emitidos┬À
+      // ============================================================================┬À
+      describe('UPDATE Proibido: Laudos emitidos', () => {┬À
+        const endpointsLaudos = [┬À
+          'app/api/emissor/laudos/[loteId]/pdf/route.ts',┬À
+          'app/api/emissor/laudos/[loteId]/download/route.ts',┬À
+          'app/api/entidade/lotes/route.ts',┬À
+        ];┬À┬À┬À
+        endpointsLaudos.forEach((filePath) => {┬À
+          it(`${filePath} n├úo deve ter UPDATE laudos SET ap├│s emiss├úo`, () => {┬À
+            const fullPath = path.join(process.cwd(), filePath);┬À┬À┬À
+            if (fs.existsSync(fullPath)) {┬À
+              const content = fs.readFileSync(fullPath, 'utf-8');┬À┬À┬À
+              // Verificar se tem UPDATE laudos - se tiver, deve ter WHERE status = 'pendente'┬À
+              if (content.includes('UPDATE laudos')) {┬À
+                const updateMatches = content.match(┬À
+                  /UPDATE\\s+laudos[\\s\\S]{0,200}/gi┬À
+                );┬À
+                if (updateMatches) {┬À
+                  updateMatches.forEach((update) => {┬À
+                    // Se ├® UPDATE de hash ou atualizado_em, n├úo deve existir┬À
+                    if (┬À
+                      update.includes('hash_pdf') ||┬À
+                      update.includes('atualizado_em')┬À
+                    ) {┬À
+                      fail(`UPDATE em laudo encontrado em ${filePath}: ${update}`);┬À
+                    }┬À
+                  });┬À
+                }┬À
+              }┬À
+            }┬À
+          });┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Declara├º├Áes duplicadas┬À
+      // ============================================================================┬À
+      describe('Declara├º├Áes Duplicadas: fs, path, etc', () => {┬À
+        it('emissor PDF n├úo deve ter fs declarado duas vezes', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          const fsDeclarations = (┬À
+            emissorRoute.match(/const\\s+fs\\s*=\\s*await\\s+import\\(['\"]fs['\"]\\)/g) ||┬À
+            []┬À
+          ).length;┬À
+          expect(fsDeclarations).toBe(1);┬À
+        });┬À┬À┬À
+        it('emissor PDF n├úo deve ter path declarado duas vezes', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          const pathDeclarations = (┬À
+            emissorRoute.match(┬À
+              /const\\s+path\\s*=\\s*await\\s+import\\(['\"]path['\"]\\)/g┬À
+            ) || []┬À
+          ).length;┬À
+          expect(pathDeclarations).toBe(1);┬À
+        });┬À┬À┬À
+        it('emissor PDF n├úo deve ter storageDir declarado duas vezes', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          const storageDirDeclarations = (┬À
+            emissorRoute.match(/const\\s+storageDir\\s*=/g) || []┬À
+          ).length;┬À
+          expect(storageDirDeclarations).toBe(1);┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Migrations obsoletas┬À
+      // ============================================================================┬À
+      describe('Migrations: Aplicadas e n├úo revertidas', () => {┬À
+        it('migration 093 deve estar aplicada', async () => {┬À
+          const migration = await query(┬À
+            `SELECT migration_name, applied_at┬À┬À
+             FROM _prisma_migrations┬À┬À
+             WHERE migration_name LIKE '%093%'`┬À
+          );┬À┬À┬À
+          expect(migration.rows.length).toBeGreaterThan(0);┬À
+          expect(migration.rows[0].applied_at).toBeDefined();┬À
+        });┬À┬À┬À
+        it('migration 095 deve estar aplicada', async () => {┬À
+          const migration = await query(┬À
+            `SELECT migration_name, applied_at┬À┬À
+             FROM _prisma_migrations┬À┬À
+             WHERE migration_name LIKE '%095%'`┬À
+          );┬À┬À┬À
+          expect(migration.rows.length).toBeGreaterThan(0);┬À
+          expect(migration.rows[0].applied_at).toBeDefined();┬À
+        });┬À┬À┬À
+        it('n├úo deve ter migrations rollback', async () => {┬À
+          const rollbacks = await query(┬À
+            `SELECT migration_name┬À┬À
+             FROM _prisma_migrations┬À┬À
+             WHERE migration_name LIKE '%rollback%' OR migration_name LIKE '%revert%'`┬À
+          );┬À┬À┬À
+          expect(rollbacks.rows.length).toBe(0);┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Testes obsoletos┬À
+      // ============================================================================┬À
+      describe('Testes: Sem refer├¬ncias a c├│digo removido', () => {┬À
+        it('n├úo deve ter testes para arquivo_pdf', () => {┬À
+          const testFiles = fs.readdirSync(path.join(process.cwd(), '__tests__'));┬À┬À┬À
+          testFiles.forEach((testFile) => {┬À
+            if (testFile.endsWith('.test.ts') || testFile.endsWith('.test.tsx')) {┬À
+              const content = fs.readFileSync(┬À
+                path.join(process.cwd(), '__tests__', testFile),┬À
+                'utf-8'┬À
+              );┬À┬À┬À
+              // Se menciona arquivo_pdf, deve ser apenas em coment├írios de remo├º├úo┬À
+              if (content.includes('arquivo_pdf')) {┬À
+                expect(content).toMatch(/arquivo_pdf.*removid[oa]/i);┬À
+              }┬À
+            }┬À
+          });┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Coment├írios e documenta├º├úo atualizados┬À
+      // ============================================================================┬À
+      describe('Documenta├º├úo: Coment├írios atualizados', () => {┬À
+        it('emissor deve ter coment├írio sobre imutabilidade', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(emissorRoute).toContain('[IMUTABILIDADE]');┬À
+          expect(emissorRoute).toContain('n├úo pode ser regenerado');┬À
+        });┬À┬À┬À
+        it('entidade deve ter coment├írio sobre n├úo persistir hash', () => {┬À
+          const entidadeRoute = fs.readFileSync(┬À
+            path.join(process.cwd(), 'app/api/entidade/lotes/route.ts'),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(entidadeRoute).toContain('IMPORTANTE');┬À
+          expect(entidadeRoute).toContain('IMUT├üVEIS');┬À
+        });┬À┬À┬À
+        it('RH deve ter coment├írio sobre n├úo gerar PDF', () => {┬À
+          const rhRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/rh/laudos/[laudoId]/download/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(rhRoute).toContain('emitido pelo emissor');┬À
+        });┬À
+      });┬À┬À┬À
+      // ============================================================================┬À
+      // SANITIZA├ç├âO: Consist├¬ncia de naming┬À
+      // ============================================================================┬À
+      describe('Naming: Padr├Áes consistentes', () => {┬À
+        it('arquivos PDF devem seguir padr├úo laudo-{id}.pdf', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(emissorRoute).toContain('laudo-${laudo.id}.pdf');┬À
+        });┬À┬À┬À
+        it('metadata deve seguir padr├úo laudo-{id}.json', () => {┬À
+          const emissorRoute = fs.readFileSync(┬À
+            path.join(┬À
+              process.cwd(),┬À
+              'app/api/emissor/laudos/[loteId]/pdf/route.ts'┬À
+            ),┬À
+            'utf-8'┬À
+          );┬À┬À┬À
+          expect(emissorRoute).toContain('laudo-${laudo.id}.json');┬À
+        });┬À┬À┬À
+        it('storage deve ser em storage/laudos/', () => {┬À
+          const files = [┬À
+            'app/api/emissor/laudos/[loteId]/pdf/route.ts',┬À
+            'app/api/rh/laudos/[laudoId]/download/route.ts',┬À
+          ];┬À┬À┬À
+          files.forEach((filePath) => {┬À
+            const content = fs.readFileSync(┬À
+              path.join(process.cwd(), filePath),┬À
+              'utf-8'┬À
+            );┬À┬À┬À
+            expect(content).toContain(\"'storage', 'laudos'\");┬À
+          });┬À
+        });┬À
+      });┬À
+    });┬À
+    "
+
+      340 |           // Se menciona arquivo_pdf, deve ser apenas em coment├írios de remo├º├úo
+      341 |           if (content.includes('arquivo_pdf')) {
+    > 342 |             expect(content).toMatch(/arquivo_pdf.*removid[oa]/i);
+          |                             ^
+      343 |           }
+      344 |         }
+      345 |       });
+
+      at toMatch (__tests__/sanitizacao-codigo-obsoleto.test.ts:342:29)
+          at Array.forEach (<anonymous>)
+      at Object.forEach (__tests__/sanitizacao-codigo-obsoleto.test.ts:333:17)
+
+Test Suites: 1 failed, 1 total
+Tests:       6 failed, 27 passed, 33 total
+Snapshots:   0 total
+Time:        2.618 s
+Ran all test suites matching sanitizacao-codigo-obsoleto.test.ts.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.
