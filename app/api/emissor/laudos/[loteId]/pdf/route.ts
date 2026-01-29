@@ -276,7 +276,8 @@ export const GET = async (
       // Se o laudo já tem hash (imutabilidade), ignorar
       if (
         dbErr &&
-        (dbErr.code === '23506' || /imutabil/i.test(String(dbErr.message || '')))
+        (dbErr.code === '23506' ||
+          /imutabil/i.test(String(dbErr.message || '')))
       ) {
         console.warn(
           `[WARN] Não foi possível atualizar hash (laudo já emitido): ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`

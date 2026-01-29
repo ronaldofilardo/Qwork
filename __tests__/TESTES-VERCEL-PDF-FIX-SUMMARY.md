@@ -3,9 +3,11 @@
 ## Testes Criados/Atualizados
 
 ### 1. **emissor-download-client-side-fallback.test.ts** ✅
+
 **Foco:** Endpoint `/api/emissor/laudos/[loteId]/download`
 
 **Cenários testados:**
+
 - ✅ Retornar PDF quando existe no servidor (status 200, content-type application/pdf)
 - ✅ Incluir header content-disposition com nome correto
 - ✅ Retornar JSON com `useClientSide: true` quando PDF não existe
@@ -22,9 +24,11 @@
 ---
 
 ### 2. **emissor-page-client-pdf.test.tsx** ✅
+
 **Foco:** Componente `EmissorDashboard` (app/emissor/page.tsx)
 
 **Cenários testados:**
+
 - ✅ Download direto quando PDF existe
 - ✅ Usar geração client-side quando receber JSON com `useClientSide: true`
 - ✅ Fazer duas chamadas fetch (download → html)
@@ -45,11 +49,13 @@
 ---
 
 ### 3. **emissor-vercel-pdf-integration.test.ts** ✅
+
 **Foco:** Integração completa do sistema
 
 **Cenários testados:**
 
 #### Arquitetura
+
 - ✅ Endpoint `/download` existe com fallback
 - ✅ Endpoint `/html` existe e serve HTML
 - ✅ Endpoint `/pdf` existe para emergências
@@ -57,11 +63,13 @@
 - ✅ LaudoDownloadClient existe (componente legado)
 
 #### Fluxo de dados
+
 - ✅ `/download` retorna JSON apontando para `/html` quando PDF não existe
 - ✅ `/html` retorna HTML completo do laudo
 - ✅ EmissorDashboard detecta JSON e chama `gerarPDFClientSide`
 
 #### Implementação
+
 - ✅ Importa jsPDF e html2canvas dinamicamente
 - ✅ Cria iframe temporário invisível
 - ✅ Aguarda carregamento de imagens
@@ -71,25 +79,30 @@
 - ✅ Tem logs de debugging
 
 #### Segurança
+
 - ✅ Valida laudo.id antes de fetch
 - ✅ Captura erros na geração client-side
 - ✅ Exibe mensagem de erro amigável
 
 #### Restrições Puppeteer
+
 - ✅ `/download` NÃO usa Puppeteer
 - ✅ `/pdf` tem Puppeteer apenas para emergências
 - ✅ Emissor page prioriza client-side
 
 #### Documentação
+
 - ✅ Existe ANALYSIS-VERCEL-PDF-ISSUE.md
 - ✅ Existe IMPLEMENTATION-CLIENT-SIDE-PDF.md
 
 #### Dependências
+
 - ✅ package.json tem jsPDF
 - ✅ package.json tem html2canvas
 - ✅ package.json mantém @sparticuz/chromium (emergências)
 
 #### Vercel Compatibility
+
 - ✅ `/download` não escreve em filesystem
 - ✅ `gerarPDFClientSide` é 100% client-side (sem Node APIs)
 
@@ -98,7 +111,9 @@
 ---
 
 ### 4. **sanitizacao-codigo-obsoleto.test.ts** 🔄 ATUALIZADO
+
 **Alterações:**
+
 - ✅ Adicionado `app/api/emissor/laudos/[loteId]/download/route.ts` à lista de arquivos críticos
 - ✅ Teste de Puppeteer agora valida que `/download` NÃO usa Puppeteer
 - ✅ Novo teste: "/download não deve gerar PDF on-demand"
@@ -111,17 +126,20 @@
 ## Resumo Geral
 
 ### Arquivos de Teste
+
 1. ✅ `__tests__/emissor-download-client-side-fallback.test.ts` (NOVO)
 2. ✅ `__tests__/emissor-page-client-pdf.test.tsx` (NOVO)
 3. ✅ `__tests__/emissor-vercel-pdf-integration.test.ts` (NOVO)
 4. 🔄 `__tests__/sanitizacao-codigo-obsoleto.test.ts` (ATUALIZADO)
 
 ### Cobertura Total
+
 - **55 testes** criados/atualizados
 - **3 arquivos novos**
 - **1 arquivo atualizado**
 
 ### Áreas Testadas
+
 ✅ API Routes (download, html, pdf)
 ✅ Frontend Components (EmissorDashboard)
 ✅ Client-side PDF Generation (jsPDF + html2canvas)
@@ -136,6 +154,7 @@
 ### Próximos Passos Recomendados
 
 1. **Executar os testes:**
+
 ```bash
 # Executar apenas os novos testes
 pnpm test emissor-download-client-side-fallback
@@ -147,11 +166,13 @@ pnpm test sanitizacao-codigo-obsoleto
 ```
 
 2. **Validar cobertura:**
+
 ```bash
 pnpm test --coverage
 ```
 
 3. **Testes E2E (opcional):**
+
 ```bash
 pnpm cypress open
 # Criar teste E2E para download de laudo em produção Vercel

@@ -70,8 +70,12 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         click: jest.fn(),
       };
       jest.spyOn(document, 'createElement').mockReturnValue(mockLink as any);
-      jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as any);
-      jest.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink as any);
+      jest
+        .spyOn(document.body, 'appendChild')
+        .mockImplementation(() => mockLink as any);
+      jest
+        .spyOn(document.body, 'removeChild')
+        .mockImplementation(() => mockLink as any);
       global.URL.createObjectURL = jest.fn().mockReturnValue('blob:mock-url');
       global.URL.revokeObjectURL = jest.fn();
 
@@ -101,7 +105,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       await handleDownloadLaudo(lote);
 
-      expect(global.fetch).toHaveBeenCalledWith('/api/emissor/laudos/123/download');
+      expect(global.fetch).toHaveBeenCalledWith(
+        '/api/emissor/laudos/123/download'
+      );
       expect(mockLink.click).toHaveBeenCalled();
       expect(mockLink.download).toBe('laudo-LOTE-ABC.pdf');
     });
@@ -124,7 +130,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       const mockHtmlResponse = {
         ok: true,
-        text: jest.fn().mockResolvedValue('<html><body>Laudo Mock</body></html>'),
+        text: jest
+          .fn()
+          .mockResolvedValue('<html><body>Laudo Mock</body></html>'),
       };
 
       (global.fetch as jest.Mock)
@@ -148,7 +156,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
           const data = await response.json();
 
           if (data.useClientSide && data.htmlEndpoint) {
-            console.log('[INFO] PDF não disponível no servidor. Usando geração client-side...');
+            console.log(
+              '[INFO] PDF não disponível no servidor. Usando geração client-side...'
+            );
 
             const htmlResponse = await fetch(data.htmlEndpoint);
             if (!htmlResponse.ok) {
@@ -165,8 +175,14 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
       const result = await handleDownloadLaudo(lote);
 
       expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenNthCalledWith(1, '/api/emissor/laudos/123/download');
-      expect(global.fetch).toHaveBeenNthCalledWith(2, '/api/emissor/laudos/123/html');
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        1,
+        '/api/emissor/laudos/123/download'
+      );
+      expect(global.fetch).toHaveBeenNthCalledWith(
+        2,
+        '/api/emissor/laudos/123/html'
+      );
       expect(result).toEqual({
         clientSide: true,
         html: '<html><body>Laudo Mock</body></html>',
@@ -205,7 +221,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       const handleDownloadLaudo = async (lote: any) => {
         try {
-          const response = await fetch(`/api/emissor/laudos/${lote.id}/download`);
+          const response = await fetch(
+            `/api/emissor/laudos/${lote.id}/download`
+          );
           const contentType = response.headers.get('content-type');
 
           if (contentType?.includes('application/json')) {
@@ -225,7 +243,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         }
       };
 
-      await expect(handleDownloadLaudo(lote)).rejects.toThrow('Erro ao buscar HTML do laudo');
+      await expect(handleDownloadLaudo(lote)).rejects.toThrow(
+        'Erro ao buscar HTML do laudo'
+      );
       expect(global.alert).toHaveBeenCalledWith(
         'Erro ao fazer download do laudo: Erro ao buscar HTML do laudo'
       );
@@ -252,8 +272,12 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
       };
 
       jest.spyOn(document, 'createElement').mockReturnValue(mockIframe as any);
-      jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockIframe as any);
-      jest.spyOn(document.body, 'removeChild').mockImplementation(() => mockIframe as any);
+      jest
+        .spyOn(document.body, 'appendChild')
+        .mockImplementation(() => mockIframe as any);
+      jest
+        .spyOn(document.body, 'removeChild')
+        .mockImplementation(() => mockIframe as any);
 
       const mockPdf = {
         addImage: jest.fn(),
@@ -272,7 +296,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         const { jsPDF } = await import('jspdf');
         const html2canvas = (await import('html2canvas')).default;
 
-        console.log(`[PDF] Iniciando geração client-side para lote ${loteId}...`);
+        console.log(
+          `[PDF] Iniciando geração client-side para lote ${loteId}...`
+        );
 
         const iframe = document.createElement('iframe');
         iframe.style.position = 'absolute';
@@ -291,7 +317,11 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         const canvas = await html2canvas(doc.body, { scale: 2 });
         console.log('[PDF] Canvas capturado');
 
-        const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+        const pdf = new jsPDF({
+          orientation: 'portrait',
+          unit: 'mm',
+          format: 'a4',
+        });
         const imgData = canvas.toDataURL('image/png');
         pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
 
@@ -302,7 +332,11 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         console.log(`[SUCCESS] PDF gerado e baixado: ${filename}.pdf`);
       };
 
-      await gerarPDFClientSide('<html><body>Test</body></html>', 'laudo-123', 123);
+      await gerarPDFClientSide(
+        '<html><body>Test</body></html>',
+        'laudo-123',
+        123
+      );
 
       expect(mockIframe.contentDocument.write).toHaveBeenCalledWith(
         '<html><body>Test</body></html>'
@@ -313,7 +347,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         '[PDF] Iniciando geração client-side para lote 123...'
       );
-      expect(consoleSpy).toHaveBeenCalledWith('[SUCCESS] PDF gerado e baixado: laudo-123.pdf');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '[SUCCESS] PDF gerado e baixado: laudo-123.pdf'
+      );
 
       consoleSpy.mockRestore();
     });
@@ -336,8 +372,12 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
       };
 
       jest.spyOn(document, 'createElement').mockReturnValue(mockIframe as any);
-      jest.spyOn(document.body, 'appendChild').mockImplementation(() => mockIframe as any);
-      jest.spyOn(document.body, 'removeChild').mockImplementation(() => mockIframe as any);
+      jest
+        .spyOn(document.body, 'appendChild')
+        .mockImplementation(() => mockIframe as any);
+      jest
+        .spyOn(document.body, 'removeChild')
+        .mockImplementation(() => mockIframe as any);
 
       const gerarPDFClientSide = async (htmlContent: string) => {
         const iframe = document.createElement('iframe');
@@ -368,10 +408,14 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         return images.length;
       };
 
-      const imageCount = await gerarPDFClientSide('<html><img src="test1.png"/><img src="test2.png"/></html>');
+      const imageCount = await gerarPDFClientSide(
+        '<html><img src="test1.png"/><img src="test2.png"/></html>'
+      );
 
       expect(imageCount).toBe(2);
-      expect(mockIframe.contentDocument.querySelectorAll).toHaveBeenCalledWith('img');
+      expect(mockIframe.contentDocument.querySelectorAll).toHaveBeenCalledWith(
+        'img'
+      );
     });
   });
 
@@ -431,7 +475,9 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       await handleDownloadLaudo(lote);
 
-      expect(global.alert).toHaveBeenCalledWith('Erro: Laudo não disponível para download');
+      expect(global.alert).toHaveBeenCalledWith(
+        'Erro: Laudo não disponível para download'
+      );
     });
   });
 });

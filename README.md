@@ -311,6 +311,21 @@ vercel --prod
 - [🔧 Troubleshooting](docs/INDEX.md)
 - [📋 Checklist do Projeto](docs/checklists/CHECKLIST.md)
 - [📚 Índice de Documentação](docs/INDEX.md)
+- [⚙️ Configuração de Anexos em Produção](docs/CONFIGURACAO-PRODUCAO-ANEXOS.md)
+
+## 🔐 Variáveis de Ambiente Importantes
+
+### NEXT_PUBLIC_DISABLE_ANEXOS
+
+**Status:** ⚠️ Temporariamente habilitado  
+**Propósito:** Desabilitar upload obrigatório de anexos no cadastro de contratantes
+
+- **Desenvolvimento:** Configurada em `.env.local`
+- **Produção:** Deve ser configurada na Vercel (Settings → Environment Variables)
+
+⚠️ **IMPORTANTE:** Após alterar variáveis `NEXT_PUBLIC_*` na Vercel, é **obrigatório fazer um novo deploy** para que as mudanças tenham efeito (essas variáveis são incorporadas no bundle durante o build).
+
+📖 [Ver documentação completa sobre configuração de anexos](docs/CONFIGURACAO-PRODUCAO-ANEXOS.md)
 
 ## 📱 PWA - Instalação
 

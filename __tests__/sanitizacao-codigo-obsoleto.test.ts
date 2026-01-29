@@ -36,17 +36,19 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
 
       if (fs.existsSync(fullPath)) {
         const content = fs.readFileSync(fullPath, 'utf-8');
-        
+
         // Verificar que só usa em contexto de exclusão (WHERE cpf <> '00000000000' ou === para validação)
-        const lines = content.split('\n').filter(line => line.includes('00000000000'));
-        
-        lines.forEach(line => {
-          const isExclusionOrValidation = 
-            line.includes('<>') || 
-            line.includes('!==') || 
+        const lines = content
+          .split('\n')
+          .filter((line) => line.includes('00000000000'));
+
+        lines.forEach((line) => {
+          const isExclusionOrValidation =
+            line.includes('<>') ||
+            line.includes('!==') ||
             line.includes('===') ||
             line.includes('//'); // Comentário
-          
+
           expect(isExclusionOrValidation).toBe(true);
         });
       }

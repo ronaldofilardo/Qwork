@@ -130,7 +130,9 @@ describe('Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback'
       });
 
       // PDF não existe - rejeitar todas as tentativas de leitura
-      mockFsPromises.readFile.mockRejectedValue(new Error('ENOENT: file not found'));
+      mockFsPromises.readFile.mockRejectedValue(
+        new Error('ENOENT: file not found')
+      );
 
       const request = new NextRequest(
         `http://localhost:3000/api/emissor/laudos/${loteId}/download`
