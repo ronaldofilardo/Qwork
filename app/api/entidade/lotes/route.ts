@@ -44,7 +44,7 @@ export async function GET() {
       LEFT JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       LEFT JOIN contratantes_funcionarios cf ON cf.funcionario_id = f.id AND cf.vinculo_ativo = true
       LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
-      LEFT JOIN laudos l ON l.lote_id = la.id
+      LEFT JOIN laudos l ON l.id = la.id
       LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
       WHERE (cf.contratante_id = $1 OR la.contratante_id = $1)
         AND la.status != 'cancelado'

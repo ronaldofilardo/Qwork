@@ -20,7 +20,7 @@ async function main() {
         la.emitido_em,
         la.enviado_em
       FROM lotes_avaliacao l
-      JOIN laudos la ON la.lote_id = l.id
+      JOIN laudos la ON la.id = l.id
       WHERE la.emitido_em IS NOT NULL
         AND l.emitido_em IS NULL
       ORDER BY l.id

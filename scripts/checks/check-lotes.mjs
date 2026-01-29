@@ -12,7 +12,7 @@ async function checkLotes() {
         l.criado_em, l.emitido_em, l.enviado_em
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      LEFT JOIN laudos l ON la.id = l.lote_id
+      LEFT JOIN laudos l ON la.id = l.id
       WHERE la.codigo IN ('006', '007')
       GROUP BY la.id, la.codigo, la.titulo, l.id, l.status, l.emissor_cpf, l.criado_em, l.emitido_em, l.enviado_em
       ORDER BY la.id

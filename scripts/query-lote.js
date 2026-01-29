@@ -6,7 +6,7 @@ const pool = new Pool({ connectionString });
 (async () => {
   try {
     const res = await pool.query(
-      "select la.id as lote_id, la.codigo, la.contratante_id, la.empresa_id, l.id as laudo_id, l.status, l.enviado_em from lotes_avaliacao la left join laudos l on l.lote_id = la.id where la.codigo = '001-070126'"
+      "select la.id as lote_id, la.codigo, la.contratante_id, la.empresa_id, l.id as laudo_id, l.status, l.enviado_em from lotes_avaliacao la left join laudos l on l.id = la.id where la.codigo = '001-070126'"
     );
     console.log(res.rows);
   } catch (err) {

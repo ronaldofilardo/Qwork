@@ -50,13 +50,11 @@ describe('/api/rh/laudos/[laudoId]/download remote', () => {
 
     // Simulate metadata file exists and contains arquivo_remoto.key
     mockFs.existsSync = jest.fn().mockReturnValue(false);
-    mockFs.readFileSync = jest
-      .fn()
-      .mockReturnValue(
-        JSON.stringify({
-          arquivo_remoto: { key: 'laudos/lote-30/laudo-123.pdf' },
-        })
-      );
+    mockFs.readFileSync = jest.fn().mockReturnValue(
+      JSON.stringify({
+        arquivo_remoto: { key: 'laudos/lote-30/laudo-123.pdf' },
+      })
+    );
 
     const res = await GET({} as Request, { params: { laudoId: '30' } } as any);
 

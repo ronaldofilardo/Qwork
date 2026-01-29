@@ -117,7 +117,7 @@ export const GET = async (req: Request) => {
       FROM lotes_avaliacao la
       LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      LEFT JOIN laudos l ON la.id = l.lote_id
+      LEFT JOIN laudos l ON la.id = l.id
       WHERE la.empresa_id = $1 AND la.status = 'concluido'
         AND (l.id IS NULL OR l.status = 'rascunho')
       GROUP BY la.id, la.codigo, la.titulo, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, la.finalizado_em, f.nome, l.status, l.id

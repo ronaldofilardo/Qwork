@@ -57,7 +57,7 @@ export const GET = async (req: Request) => {
         l.enviado_em,
         l.hash_pdf
       FROM lotes_avaliacao la
-      LEFT JOIN laudos l ON l.lote_id = la.id
+      LEFT JOIN laudos l ON l.id = la.id
       LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON ec.clinica_id = c.id
       LEFT JOIN contratantes cont ON la.contratante_id = cont.id

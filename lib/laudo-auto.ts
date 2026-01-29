@@ -1128,7 +1128,7 @@ export async function enviarLaudosAutomaticamente() {
       l.status,
       l.hash_pdf
     FROM lotes_avaliacao la
-    JOIN laudos l ON la.id = l.lote_id
+    JOIN laudos l ON la.id = l.id
     WHERE la.emitido_em IS NOT NULL
       AND la.laudo_enviado_em IS NULL
       AND la.auto_emitir_em IS NOT NULL

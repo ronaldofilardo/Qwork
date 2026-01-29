@@ -21,7 +21,7 @@ def verificar_lotes_pendentes():
         cur.execute('''
             SELECT la.id, la.codigo, la.status, la.emitido_em, l.id as laudo_id, l.status as status_laudo
             FROM lotes_avaliacao la
-            LEFT JOIN laudos l ON la.id = l.lote_id
+            LEFT JOIN laudos l ON la.id = l.id
             WHERE la.status = 'concluido' AND (l.id IS NULL OR l.status = 'rascunho')
             ORDER BY la.finalizado_em DESC
             LIMIT 5;

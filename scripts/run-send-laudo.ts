@@ -17,7 +17,7 @@ async function main() {
     try {
       const res = await query(
         `SELECT la.id as lote_id, la.codigo, la.clinica_id, la.empresa_id, la.contratante_id, la.emitido_em, la.enviado_em, la.auto_emitir_em, l.id as laudo_id, l.status as status_l
-        FROM lotes_avaliacao la JOIN laudos l ON la.id = l.lote_id WHERE la.id = $1`,
+        FROM lotes_avaliacao la JOIN laudos l ON la.id = l.id WHERE la.id = $1`,
         [loteId]
       );
       if (res.rows.length === 0) {
