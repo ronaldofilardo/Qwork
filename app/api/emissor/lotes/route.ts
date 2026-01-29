@@ -130,65 +130,9 @@ export const GET = async (req: Request) => {
       };
     });
 
-    // Fallback: se laudo existe (e lote for concluído) mas hash não está no DB, tentar calcular a partir do arquivo
-    await Promise.all(
-      lotes.map(async (lote) => {
-        if (lote.laudo?.id && !lote.laudo.hash_pdf) {
-          // segurança extra: garantir que lote esteja de fato finalizado (evitar trabalhar com laudos em estado inválido)
-          if (!['concluido', 'finalizado'].includes(lote.status)) return;
-
-          // Se SKIP_LAUDO_HASH ativo, pular este processo de recalculo
-          const shouldSkipHash =
-            process.env.SKIP_LAUDO_HASH === '1' ||
-            process.env.SKIP_LAUDO_HASH === 'true';
-          if (shouldSkipHash) {
-            console.log(
-              `[DEBUG] SKIP_LAUDO_HASH ativo — pulando recalculo de hash para laudo ${lote.laudo.id}`
-            );
-            return;
-          }
-
-          try {
-            const fs = await import('fs/promises');
-            const path = await import('path');
-            const crypto = await import('crypto');
-            const filePath = path.join(
-              process.cwd(),
-              'storage',
-              'laudos',
-              `laudo-${lote.laudo.id}.pdf`
-            );
-            const buf = await fs.readFile(filePath);
-            const h = crypto.createHash('sha256').update(buf).digest('hex');
-            try {
-              await query(
-                `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
-                [lote.laudo.id, h]
-              );
-              lote.laudo.hash_pdf = h;
-            } catch (dbErr: any) {
-              // Tratamento especial para trigger de imutabilidade (não tentar sobrescrever laudos emitidos)
-              if (
-                dbErr &&
-                (dbErr.code === '23506' ||
-                  /imutabil/i.test(String(dbErr.message || '')))
-              ) {
-                console.warn(
-                  `[WARN] Não foi possível persistir hash para laudo ${lote.laudo.id} devido a imutabilidade (ignorado): ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`
-                );
-              } else {
-                throw dbErr;
-              }
-            }
-          } catch (err) {
-            // se arquivo não existir, ignorar — a geração normal cuidará disso
-            console.warn(
-              `Não foi possível calcular hash para laudo ${lote.laudo?.id}: ${err instanceof Error ? err.message : String(err)}`
-            );
-          }
-        }
-      })
-    );
+    // REMOVIDO: Cálculo de hash na listagem
+    // O hash deve ser calculado APENAS na emissão do laudo (endpoint /pdf)
+    // Calcular hash a cada listagem é ineficiente e causa erros de arquivos não encontrados
 
     // Detectar laudos inconsistentes: laudo existente para lote NÃO concluído — não devem existir em sistema
     try {

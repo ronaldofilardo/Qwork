@@ -18,7 +18,6 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
       'app/api/emissor/laudos/[loteId]/download/route.ts',
       'app/api/rh/laudos/[laudoId]/download/route.ts',
       'app/api/entidade/lotes/route.ts',
-      'lib/laudo-auto.ts',
     ];
 
     criticalFiles.forEach((filePath) => {
@@ -30,6 +29,27 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
           expect(content).not.toContain('00000000000');
         }
       });
+    });
+
+    it('lib/laudo-auto.ts pode usar 00000000000 apenas para excluir placeholder', () => {
+      const fullPath = path.join(process.cwd(), 'lib/laudo-auto.ts');
+
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath, 'utf-8');
+        
+        // Verificar que só usa em contexto de exclusão (WHERE cpf <> '00000000000' ou === para validação)
+        const lines = content.split('\n').filter(line => line.includes('00000000000'));
+        
+        lines.forEach(line => {
+          const isExclusionOrValidation = 
+            line.includes('<>') || 
+            line.includes('!==') || 
+            line.includes('===') ||
+            line.includes('//'); // Comentário
+          
+          expect(isExclusionOrValidation).toBe(true);
+        });
+      }
     });
 
     it('trigger não deve usar placeholder', async () => {

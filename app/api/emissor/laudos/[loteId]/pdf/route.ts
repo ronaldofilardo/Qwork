@@ -229,6 +229,15 @@ export const GET = async (
 
     await browser.close();
 
+    // Calcular hash SHA-256 do PDF
+    const crypto = await import('crypto');
+    const hash = crypto
+      .createHash('sha256')
+      .update(Buffer.from(pdfBuffer))
+      .digest('hex');
+
+    console.log(`[PDF] Hash calculado: ${hash}`);
+
     // PERSISTIR O PDF EM STORAGE PARA QUE O RH POSSA BAIXAR O MESMO ARQUIVO
     // (fs, path, storageDir, fileName, filePath já foram declarados acima)
     if (!fs.existsSync(storageDir)) {
@@ -248,12 +257,35 @@ export const GET = async (
       gerado_por_cpf: user.cpf,
       arquivo_local: fileName,
       tamanho_bytes: pdfBuffer.byteLength,
+      hash_sha256: hash,
     };
     fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2));
 
     console.log(
-      `[PERSISTIDO] PDF salvo: ${filePath} (${pdfBuffer.byteLength} bytes)`
+      `[PERSISTIDO] PDF salvo: ${filePath} (${pdfBuffer.byteLength} bytes, hash: ${hash})`
     );
+
+    // Atualizar hash no banco de dados
+    try {
+      await query(
+        `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
+        [laudo.id, hash]
+      );
+      console.log(`[DB] Hash persistido no banco para laudo ${laudo.id}`);
+    } catch (dbErr: any) {
+      // Se o laudo já tem hash (imutabilidade), ignorar
+      if (
+        dbErr &&
+        (dbErr.code === '23506' || /imutabil/i.test(String(dbErr.message || '')))
+      ) {
+        console.warn(
+          `[WARN] Não foi possível atualizar hash (laudo já emitido): ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`
+        );
+      } else {
+        // Outros erros devem ser logados mas não bloquear o download
+        console.error(`[ERROR] Erro ao persistir hash no banco:`, dbErr);
+      }
+    }
 
     // Nota: Não atualizamos atualizado_em pois laudos emitidos são imutáveis
     // O PDF é gerado on-demand sem modificar o registro do laudo
