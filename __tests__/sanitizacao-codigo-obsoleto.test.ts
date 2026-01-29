@@ -15,6 +15,7 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
   describe('Placeholder: Sem 00000000000 em código novo', () => {
     const criticalFiles = [
       'app/api/emissor/laudos/[loteId]/pdf/route.ts',
+      'app/api/emissor/laudos/[loteId]/download/route.ts',
       'app/api/rh/laudos/[laudoId]/download/route.ts',
       'app/api/entidade/lotes/route.ts',
       'lib/laudo-auto.ts',
@@ -49,6 +50,7 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
   describe('Coluna Removida: arquivo_pdf', () => {
     const endpointsLaudos = [
       'app/api/emissor/laudos/[loteId]/pdf/route.ts',
+      'app/api/emissor/laudos/[loteId]/download/route.ts',
       'app/api/rh/laudos/[laudoId]/download/route.ts',
       'app/api/entidade/laudos/[laudoId]/download/route.ts',
     ];
@@ -163,7 +165,7 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
       expect(entidadeRoute).not.toContain('getPuppeteerInstance');
     });
 
-    it('Emissor deve ter puppeteer', () => {
+    it('Emissor /pdf deve ter puppeteer (emergência)', () => {
       const emissorRoute = fs.readFileSync(
         path.join(
           process.cwd(),
@@ -174,6 +176,22 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
 
       expect(emissorRoute).toContain('getPuppeteerInstance');
     });
+
+    it('Emissor /download não deve gerar PDF on-demand', () => {
+      const downloadRoute = fs.readFileSync(
+        path.join(
+          process.cwd(),
+          'app/api/emissor/laudos/[loteId]/download/route.ts'
+        ),
+        'utf-8'
+      );
+
+      // Não deve chamar /pdf endpoint para gerar on-demand
+      expect(downloadRoute).not.toContain('await fetch');
+      expect(downloadRoute).not.toContain('/pdf');
+      // Deve retornar fallback client-side
+      expect(downloadRoute).toContain('useClientSide');
+    });
   });
 
   // ============================================================================
@@ -182,6 +200,7 @@ describe('Sanitização: Remoção de Código Obsoleto', () => {
   describe('UPDATE Proibido: Laudos emitidos', () => {
     const endpointsLaudos = [
       'app/api/emissor/laudos/[loteId]/pdf/route.ts',
+      'app/api/emissor/laudos/[loteId]/download/route.ts',
       'app/api/entidade/lotes/route.ts',
     ];
 

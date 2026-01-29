@@ -77,23 +77,23 @@ export const GET = async (
 
     // Using local and public storage only.
 
-    // Se não foi encontrado localmente, tentar gerar o PDF on-demand via rota de PDF
-    try {
-      const { GET: gerarPDF } = await import('../pdf/route');
-      console.log(
-        `[DEBUG] Arquivo não encontrado localmente para laudo ${loteId}; acionando geração on-demand via /pdf`
-      );
-      return await gerarPDF(req, { params: { loteId: String(loteId) } });
-    } catch (err) {
-      console.warn(
-        `[WARN] Falha ao gerar PDF on-demand para laudo ${loteId}: ${err instanceof Error ? err.message : String(err)}`
-      );
-    }
+    // Se não foi encontrado localmente, instruir uso de geração client-side
+    // (Puppeteer/Chromium não funciona confiávelmente na Vercel Free/Pro)
+    console.log(
+      `[INFO] PDF não encontrado localmente para laudo ${loteId}. Retornando instrução para geração client-side.`
+    );
 
-    // Not found
     return NextResponse.json(
-      { error: 'Arquivo do laudo não encontrado', success: false },
-      { status: 404 }
+      {
+        success: false,
+        useClientSide: true,
+        error: 'PDF não disponível no servidor. Use geração no navegador.',
+        message:
+          'Por favor, use o botão "Visualizar Laudo" e depois "Baixar PDF" para gerar o PDF no seu navegador.',
+        htmlEndpoint: `/api/emissor/laudos/${loteId}/html`,
+        loteId: loteId,
+      },
+      { status: 200 }
     );
   } catch (error) {
     console.error('Erro ao fazer download do laudo:', error);
