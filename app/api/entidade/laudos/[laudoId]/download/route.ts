@@ -101,7 +101,7 @@ export const GET = async (
             `[DOWNLOAD] Chave remota encontrada nos metadados: ${remoteKey}`
           );
         }
-      } catch (metaErr) {
+      } catch {
         console.warn(
           `[DOWNLOAD] Metadados n\u00e3o encontrados para laudo ${laudo.id}, tentando discovery...`
         );

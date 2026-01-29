@@ -258,6 +258,113 @@ export default function EmissorDashboard() {
     router.push(`/emissor/laudo/${loteId}`);
   };
 
+  // Helper function para geração client-side de PDF
+  const gerarPDFClientSide = async (
+    htmlContent: string,
+    filename: string,
+    loteId: number
+  ) => {
+    try {
+      // Importar dependências dinamicamente
+      const { jsPDF } = await import('jspdf');
+      const html2canvas = (await import('html2canvas')).default;
+
+      console.log(`[PDF] Iniciando geração client-side para lote ${loteId}...`);
+
+      // Criar iframe temporário para renderizar HTML
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'absolute';
+      iframe.style.left = '-9999px';
+      iframe.style.width = '210mm'; // A4 width
+      iframe.style.height = '297mm'; // A4 height
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) {
+        throw new Error('Não foi possível criar documento temporário');
+      }
+
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+
+      console.log('[PDF] HTML renderizado no iframe');
+
+      // Aguardar renderização completa
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Garantir que imagens base64 foram carregadas
+      const images = doc.querySelectorAll('img');
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete) {
+                resolve(true);
+              } else {
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+              }
+            })
+        )
+      );
+
+      console.log('[PDF] Imagens carregadas');
+
+      // Capturar canvas do HTML renderizado
+      const canvas = await html2canvas(doc.body, {
+        scale: 2, // Alta qualidade
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: 794, // A4 width em pixels (210mm @ 96dpi)
+        windowHeight: 1123, // A4 height em pixels (297mm @ 96dpi)
+      });
+
+      console.log('[PDF] Canvas capturado');
+
+      // Configurar PDF
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      // Calcular dimensões mantendo aspect ratio
+      const imgWidth = 210; // A4 width em mm
+      const pageHeight = 297; // A4 height em mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+
+      let position = 0;
+      const imgData = canvas.toDataURL('image/png');
+
+      // Adicionar imagem ao PDF (com paginação se necessário)
+      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      console.log('[PDF] PDF gerado, iniciando download...');
+
+      // Download do PDF
+      pdf.save(`${filename}.pdf`);
+
+      // Cleanup
+      document.body.removeChild(iframe);
+
+      console.log(`[SUCCESS] PDF gerado e baixado: ${filename}.pdf`);
+    } catch (pdfError) {
+      console.error('[PDF-ERROR] Erro ao gerar PDF client-side:', pdfError);
+      throw pdfError;
+    }
+  };
+
   const handleDownloadLaudo = async (lote: Lote) => {
     if (!lote.laudo?.id) {
       alert('Erro: ID do laudo inválido');
@@ -265,32 +372,68 @@ export default function EmissorDashboard() {
     }
 
     try {
-      // Passar o ID do lote (o endpoint do emissor usa loteId na rota)
+      // 1. Tentar download direto (se PDF existe no servidor)
       const response = await fetch(`/api/emissor/laudos/${lote.id}/download`);
-      if (!response.ok) {
-        const errorData = await response
-          .json()
-          .catch(() => ({ error: 'Erro na resposta do servidor' }));
-        alert(
-          `Erro ao baixar laudo: ${
-            errorData.error || 'Erro na resposta do servidor'
-          }`
-        );
+      const contentType = response.headers.get('content-type');
+
+      // 2. Verificar se recebeu PDF ou instrução para usar client-side
+      if (contentType?.includes('application/pdf')) {
+        // PDF disponível - fazer download direto
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `laudo-${lote.codigo || lote.id}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
         return;
       }
 
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `laudo-${lote.codigo}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      if (contentType?.includes('application/json')) {
+        // Resposta JSON - verificar se deve usar client-side
+        const data = await response.json();
+
+        if (data.useClientSide && data.htmlEndpoint) {
+          // 3. Usar geração client-side
+          console.log(
+            '[INFO] PDF não disponível no servidor. Usando geração client-side...'
+          );
+
+          // Buscar HTML do laudo
+          const htmlResponse = await fetch(data.htmlEndpoint);
+
+          if (!htmlResponse.ok) {
+            throw new Error('Erro ao buscar HTML do laudo');
+          }
+
+          const htmlContent = await htmlResponse.text();
+
+          // 4. Gerar PDF no navegador usando jsPDF + html2canvas
+          await gerarPDFClientSide(
+            htmlContent,
+            `laudo-${lote.codigo || lote.id}`,
+            lote.id
+          );
+
+          return;
+        }
+
+        // Erro genérico da API
+        alert(`Erro: ${data.error || 'Laudo não disponível'}`);
+        return;
+      }
+
+      // Resposta inesperada
+      throw new Error('Resposta inesperada do servidor');
     } catch (downloadError) {
       console.error('Erro ao fazer download:', downloadError);
-      alert('Erro ao fazer download do laudo');
+      const errorMessage =
+        downloadError instanceof Error
+          ? downloadError.message
+          : 'Erro desconhecido';
+      alert(`Erro ao fazer download do laudo: ${errorMessage}`);
     }
   };
 

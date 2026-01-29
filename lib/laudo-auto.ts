@@ -289,7 +289,7 @@ export const gerarLaudoCompletoEmitirPDF = async function (
             if (browser) {
               try {
                 await (browser as any).close();
-              } catch (_) {}
+              } catch {}
               browser = null;
             }
             // Espera curta antes de tentar novamente
