@@ -15,6 +15,9 @@ import {
   emitirLaudoImediato,
   emitirLaudosAutomaticamente,
   enviarLaudosAutomaticamente,
+  gerarLaudoCompletoEmitirPDF,
+  validarEmissorUnico,
+  selecionarEmissorParaLote,
 } from '@/lib/laudo-auto';
 
 // Mock de funções externas
@@ -30,6 +33,9 @@ jest.mock('puppeteer', () => ({
 }));
 jest.mock('@/lib/notifications/create-notification', () => ({
   criarNotificacao: jest.fn().mockResolvedValue({}),
+}));
+jest.mock('@/lib/storage/laudo-storage', () => ({
+  uploadLaudoToBackblaze: jest.fn().mockResolvedValue(undefined),
 }));
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
@@ -107,6 +113,89 @@ describe('Emissão Automática de Laudos - Fluxo Refatorado', () => {
         (call) => call[0] && call[0].includes('INSERT INTO laudos')
       );
       expect(laudoInsertCalls.length).toBeGreaterThan(0);
+
+      // Verifica que tentamos o upload para Backblaze (mock)
+      const { uploadLaudoToBackblaze } = require('@/lib/storage/laudo-storage');
+      expect(uploadLaudoToBackblaze).toHaveBeenCalled();
+    });
+
+    it('deve gerar e tentar upload quando laudo existente sem PDF local', async () => {
+      // 1) laudo existente será detectado
+      mockQuery
+        .mockResolvedValueOnce({ rows: [{ id: 777 }], rowCount: 1 }) // SELECT laudo existente
+        .mockResolvedValueOnce({ rows: [{ hash_pdf: null }], rowCount: 1 }) // SELECT hash_pdf
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE laudos (hash)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // DO update emitido
+
+      const laudoId = await gerarLaudoCompletoEmitirPDF(1, '00000000000');
+      expect(laudoId).toBe(777);
+
+      const { uploadLaudoToBackblaze } = require('@/lib/storage/laudo-storage');
+      expect(uploadLaudoToBackblaze).toHaveBeenCalled();
+    });
+
+    it('não deve tentar atualizar a DB quando laudo já estiver emitido (skip por imutabilidade)', async () => {
+      const fs = require('fs/promises');
+      const path = require('path');
+      const laudosDir = path.join(process.cwd(), 'storage', 'laudos');
+      await fs.mkdir(laudosDir, { recursive: true });
+      const laudoId = 777;
+      // criar arquivo local para simular laudo já gerado
+      await fs.writeFile(
+        path.join(laudosDir, `laudo-${laudoId}.pdf`),
+        'pdf-content'
+      );
+
+      // Mock: laudo existente e já emitido; hash ausente
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ id: laudoId, status: 'enviado', emitido_em: new Date() }],
+          rowCount: 1,
+        }) // SELECT laudo existente
+        .mockResolvedValueOnce({ rows: [{ hash_pdf: null }], rowCount: 1 }) // SELECT hash_pdf
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              empresaAvaliada: 'Empresa Teste',
+              total_avaliacoes: 10,
+              avaliacoes_concluidas: 10,
+              primeira_avaliacao: new Date(),
+              ultima_conclusao: new Date(),
+              codigo: 'LOTE-777',
+              liberado_em: new Date(),
+            },
+          ],
+          rowCount: 1,
+        }) // gerarDadosGeraisEmpresa
+        .mockResolvedValueOnce({
+          rows: [{ total: 10, operacional: 8, gestao: 2 }],
+          rowCount: 1,
+        }) // funcionariosResult
+        .mockResolvedValueOnce({
+          rows: [{ dominio: 'X', media: 50 }],
+          rowCount: 1,
+        }); // calcularScoresPorGrupo
+
+      const result = await gerarLaudoCompletoEmitirPDF(1, '53051173991');
+      expect(result).toBe(laudoId);
+
+      // Certificar que não houve tentativa de UPDATE do hash no DB
+      const attemptedHashUpdate = mockQuery.mock.calls.find(
+        (c) => c[0] && c[0].includes('UPDATE laudos SET hash_pdf')
+      );
+      expect(attemptedHashUpdate).toBeUndefined();
+
+      // E o upload foi acionado
+      const { uploadLaudoToBackblaze } = require('@/lib/storage/laudo-storage');
+      expect(uploadLaudoToBackblaze).toHaveBeenCalled();
+
+      // Cleanup
+      await fs
+        .unlink(path.join(laudosDir, `laudo-${laudoId}.pdf`))
+        .catch(() => {});
+      await fs
+        .unlink(path.join(laudosDir, `laudo-${laudoId}.json`))
+        .catch(() => {});
     });
 
     it('deve emitir mesmo com múltiplos emissores quando houver emissor na mesma clínica', async () => {
@@ -186,6 +275,18 @@ describe('Emissão Automática de Laudos - Fluxo Refatorado', () => {
       const resultado = await emitirLaudoImediato(1);
 
       expect(resultado).toBe(false);
+    });
+
+    it('deve ignorar admin/placeholder e retornar null em validarEmissorUnico quando não houver emissores válidos', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      const emissor = await validarEmissorUnico();
+      expect(emissor).toBeNull();
+    });
+
+    it('selecionarEmissorParaLote deve retornar null quando somente admin estiver presente (filtro exclui)', async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      const sel = await selecionarEmissorParaLote(1);
+      expect(sel).toBeNull();
     });
   });
 

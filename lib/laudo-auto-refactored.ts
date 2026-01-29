@@ -304,6 +304,7 @@ export async function emitirLaudosAutomaticamenteParaLote(
       const laudoResult = await tx.query(
         `
         INSERT INTO laudos (
+          id,
           lote_id, 
           emissor_cpf,
           status, 
@@ -312,7 +313,7 @@ export async function emitirLaudosAutomaticamenteParaLote(
           criado_em,
           atualizado_em
         )
-        VALUES ($1, $2, 'enviado', NOW(), NOW(), NOW(), NOW())
+        VALUES ($1, $1, $2, 'enviado', NOW(), NOW(), NOW(), NOW())
         RETURNING id
       `,
         [loteId, emissorCpf || 'sistema']

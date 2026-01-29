@@ -41,14 +41,14 @@ async function validarAcessoLote(
   await query(
     `
     INSERT INTO audit_logs (
-      acao, entidade, entidade_id, user_id, user_role, criado_em, dados
+      action, resource, resource_id, user_cpf, user_perfil, created_at, new_data
     )
     VALUES (
       'acesso_emissor_lote', 'lotes_avaliacao', $1, $2, $3, NOW(), $4
     )
     `,
     [
-      loteId,
+      loteId.toString(),
       userCpf,
       userRole,
       JSON.stringify({
@@ -83,10 +83,14 @@ export const GET = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
+  // APENAS EMISSOR pode gerar laudos
   const user = await requireRole('emissor');
   if (!user) {
     return NextResponse.json(
-      { error: 'Acesso negado', success: false },
+      {
+        error: 'Acesso negado. Apenas emissores podem gerar laudos.',
+        success: false,
+      },
       { status: 403 }
     );
   }
@@ -100,9 +104,9 @@ export const GET = async (
       );
     }
 
-    // Validar acesso ao lote e auditar (emissor é global, mas lote deve existir)
+    // Validar acesso ao lote
     try {
-      const _lote = await validarAcessoLote(loteId, user.cpf, user.perfil);
+      await validarAcessoLote(loteId, user.cpf, user.perfil);
     } catch (error) {
       return NextResponse.json(
         {
@@ -113,11 +117,11 @@ export const GET = async (
       );
     }
 
-    // Verificar se há laudo emitido para este lote
+    // Buscar laudo emitido por ESTE emissor
     const laudoCheck = await query(
       `
-      SELECT id, status FROM laudos
-      WHERE lote_id = $1 AND emissor_cpf = $2 AND status = 'emitido'
+      SELECT id, status, emissor_cpf FROM laudos
+      WHERE lote_id = $1 AND emissor_cpf = $2 AND status IN ('emitido','enviado')
     `,
       [loteId, user.cpf]
     );
@@ -133,6 +137,38 @@ export const GET = async (
       );
     }
 
+    const laudo = laudoCheck.rows[0];
+
+    // VERIFICAR SE O LAUDO JÁ FOI GERADO (IMUTABILIDADE)
+    // Uma vez gerado o PDF, não pode ser regenerado para garantir integridade
+    const fs = await import('fs');
+    const path = await import('path');
+
+    const storageDir = path.join(process.cwd(), 'storage', 'laudos');
+    const fileName = `laudo-${laudo.id}.pdf`;
+    const filePath = path.join(storageDir, fileName);
+
+    if (fs.existsSync(filePath)) {
+      console.log(
+        `[IMUTABILIDADE] Laudo ${laudo.id} já foi gerado. Bloqueando regeneração.`
+      );
+
+      // Retornar o PDF existente em vez de gerar novamente
+      const pdfBuffer = fs.readFileSync(filePath);
+      return new NextResponse(pdfBuffer, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="${fileName}"`,
+          'X-Laudo-Status': 'existente',
+          'X-Laudo-Imutavel': 'true',
+        },
+      });
+    }
+
+    console.log(
+      `[GERACAO] Iniciando geração do laudo ${laudo.id} (primeira vez)`
+    );
+
     // Gerar dados completos do laudo
     const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);
     const scoresPorGrupo = await calcularScoresPorGrupo(loteId);
@@ -141,7 +177,7 @@ export const GET = async (
       scoresPorGrupo
     );
 
-    // Buscar observações do laudo
+    // Buscar observações do laudo deste emissor
     const laudoResult = await query(
       `
       SELECT observacoes FROM laudos
@@ -193,20 +229,36 @@ export const GET = async (
 
     await browser.close();
 
-    // Gerar nome do arquivo
-    const fileName = `laudo-${loteId}-${Date.now()}.pdf`;
+    // PERSISTIR O PDF EM STORAGE PARA QUE O RH POSSA BAIXAR O MESMO ARQUIVO
+    // (fs, path, storageDir, fileName, filePath já foram declarados acima)
+    if (!fs.existsSync(storageDir)) {
+      fs.mkdirSync(storageDir, { recursive: true });
+    }
 
-    // Atualizar laudo com timestamp
-    await query(
-      `
-      UPDATE laudos
-      SET atualizado_em = NOW()
-      WHERE lote_id = $1 AND emissor_cpf = $2
-    `,
-      [loteId, user.cpf]
+    fs.writeFileSync(filePath, Buffer.from(pdfBuffer));
+
+    // Salvar metadata para facilitar buscas futuras
+    const metaFileName = `laudo-${laudo.id}.json`;
+    const metaFilePath = path.join(storageDir, metaFileName);
+    const metadata = {
+      laudo_id: laudo.id,
+      lote_id: loteId,
+      emissor_cpf: laudo.emissor_cpf,
+      gerado_em: new Date().toISOString(),
+      gerado_por_cpf: user.cpf,
+      arquivo_local: fileName,
+      tamanho_bytes: pdfBuffer.byteLength,
+    };
+    fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2));
+
+    console.log(
+      `[PERSISTIDO] PDF salvo: ${filePath} (${pdfBuffer.byteLength} bytes)`
     );
 
-    console.log(`PDF gerado: ${fileName}`);
+    // Nota: Não atualizamos atualizado_em pois laudos emitidos são imutáveis
+    // O PDF é gerado on-demand sem modificar o registro do laudo
+
+    console.log(`PDF gerado e persistido: ${fileName}`);
 
     // Retornar PDF para download
     return new NextResponse(Buffer.from(pdfBuffer), {

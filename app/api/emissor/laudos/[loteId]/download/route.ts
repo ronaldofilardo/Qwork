@@ -35,7 +35,7 @@ export const GET = async (
         la.titulo
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
-      WHERE l.lote_id = $1 AND l.emissor_cpf = $2 AND l.status = 'enviado'
+      WHERE l.lote_id = $1 AND l.emissor_cpf = $2 AND l.status IN ('enviado','emitido')
     `,
       [loteId, user.cpf]
     );
@@ -76,6 +76,19 @@ export const GET = async (
     }
 
     // Using local and public storage only.
+
+    // Se não foi encontrado localmente, tentar gerar o PDF on-demand via rota de PDF
+    try {
+      const { GET: gerarPDF } = await import('../pdf/route');
+      console.log(
+        `[DEBUG] Arquivo não encontrado localmente para laudo ${loteId}; acionando geração on-demand via /pdf`
+      );
+      return await gerarPDF(req, { params: { loteId: String(loteId) } });
+    } catch (err) {
+      console.warn(
+        `[WARN] Falha ao gerar PDF on-demand para laudo ${loteId}: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
 
     // Not found
     return NextResponse.json(

@@ -526,46 +526,72 @@ export default function EmissorDashboard() {
                           )}
                         </div>
                       )}
-
-                      {lote.laudo?.hash_pdf && (
-                        <div className="text-sm text-gray-500 flex items-center gap-2">
-                          <span>Hash PDF:</span>
-                          <code className="bg-gray-100 px-1 py-0.5 rounded text-xs font-mono">
-                            {lote.laudo.hash_pdf}
-                          </code>
-
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const h = lote.laudo!.hash_pdf as string;
-                              navigator.clipboard
-                                .writeText(h)
-                                .then(() => toast.success('Hash copiado'))
-                                .catch(() => {
-                                  const ta = document.createElement('textarea');
-                                  ta.value = h;
-                                  document.body.appendChild(ta);
-                                  ta.select();
-                                  try {
-                                    document.execCommand('copy');
-                                    toast.success('Hash copiado');
-                                  } catch {
-                                    toast.error(
-                                      'Não foi possível copiar o hash'
-                                    );
-                                  }
-                                  document.body.removeChild(ta);
-                                });
-                            }}
-                            aria-label={`Copiar hash do laudo ${lote.codigo}`}
-                            title="Copiar hash completo"
-                            className="ml-1 inline-flex items-center gap-2 bg-white border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 hover:bg-gray-50 focus:outline-none"
-                          >
-                            Copiar
-                          </button>
-                        </div>
-                      )}
                     </div>
+
+                    {/* Hash do Laudo - Seção destacada */}
+                    {lote.laudo && (
+                      <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-semibold text-blue-800 uppercase">
+                            🔒 Hash de Integridade (SHA-256)
+                          </span>
+                          {lote.laudo.hash_pdf && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const h = lote.laudo!.hash_pdf as string;
+                                navigator.clipboard
+                                  .writeText(h)
+                                  .then(() => toast.success('Hash copiado!'))
+                                  .catch(() => {
+                                    const ta =
+                                      document.createElement('textarea');
+                                    ta.value = h;
+                                    document.body.appendChild(ta);
+                                    ta.select();
+                                    try {
+                                      document.execCommand('copy');
+                                      toast.success('Hash copiado!');
+                                    } catch {
+                                      toast.error(
+                                        'Não foi possível copiar o hash'
+                                      );
+                                    }
+                                    document.body.removeChild(ta);
+                                  });
+                              }}
+                              aria-label={`Copiar hash do laudo ${lote.codigo}`}
+                              title="Copiar hash completo para área de transferência"
+                              className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                              📋 Copiar Hash
+                            </button>
+                          )}
+                        </div>
+                        <div className="bg-white p-2 rounded border border-blue-100">
+                          {lote.laudo.hash_pdf ? (
+                            <code className="text-xs font-mono text-gray-800 break-all block">
+                              {lote.laudo.hash_pdf}
+                            </code>
+                          ) : (
+                            <div className="text-xs text-gray-500 italic">
+                              Hash não disponível para este laudo
+                            </div>
+                          )}
+                        </div>
+                        {lote.laudo.hash_pdf ? (
+                          <p className="text-xs text-blue-600 mt-2">
+                            Use este hash para verificar a integridade do PDF do
+                            laudo
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500 mt-2">
+                            Este laudo foi gerado antes da implementação do
+                            hash. Regenere o laudo para obter o hash.
+                          </p>
+                        )}
+                      </div>
+                    )}
 
                     {/* Notificações do Lote */}
                     {lote.notificacoes && lote.notificacoes.length > 0 && (

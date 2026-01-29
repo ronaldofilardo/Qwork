@@ -50,6 +50,8 @@
     "migrate:all": "pnpm migrate:ativacao && pnpm migrate:tokens",
     "lgpd:auditar": "tsx scripts/auditar-cpfs.ts",
     "lgpd:migrar": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/lgpd-compliance-migration.sql",
+    "laudos:backfill-hash": "tsx scripts/backfill-laudos-hash.ts",
+    "migrate:hash-backfill": "tsx scripts/run-hash-migration.ts",
     "db:seed": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/seeds/seed_admin.sql",
     "db:seed:test": "psql -U postgres -h localhost -p 5432 -d nr-bps_db_test -f database/seeds/seed_admin.sql",
     "db:seed:clinic": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/seeds/seed_clinica_gestor.sql",
@@ -141,6 +143,7 @@
     "start-server-and-test": "^2.1.3",
     "tailwindcss": "^3.4.18",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "testcontainers": "^9.1.0"
   }
 }

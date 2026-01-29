@@ -47,7 +47,7 @@ describe('/api/rh/notificacoes', () => {
       expect(data.success).toBe(true);
     });
 
-    it('deve permitir acesso para perfil admin', async () => {
+    it('deve bloquear acesso para perfil admin', async () => {
       mockGetSession.mockResolvedValue({
         cpf: '00000000000',
         nome: 'Admin Teste',
@@ -59,8 +59,9 @@ describe('/api/rh/notificacoes', () => {
       const response = await GET(mockRequest);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
+      expect(response.status).toBe(403);
+      expect(data.success).toBe(false);
+      expect(data.error).toBe('Acesso negado');
     });
 
     it('deve bloquear acesso para perfil funcionario', async () => {

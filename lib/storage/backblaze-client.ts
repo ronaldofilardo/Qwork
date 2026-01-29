@@ -35,6 +35,15 @@ function getBackblazeConfig(): BackblazeConfig {
   if (provider === 's2') {
     endpoint = endpoint || process.env.BACKBLAZE_S2_ENDPOINT || '';
     region = region || process.env.BACKBLAZE_S2_REGION || '';
+
+    // Se região não foi especificada, extrair do endpoint
+    if (!region && endpoint) {
+      // Extrai 'us-east-005' de 'https://s3.us-east-005.backblazeb2.com'
+      const match = endpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/);
+      if (match) {
+        region = match[1];
+      }
+    }
   } else {
     // Comportamento legacy para Backblaze B2 S3-compatible
     endpoint = endpoint || 'https://s3.us-east-005.backblazeb2.com';
@@ -136,7 +145,7 @@ function getBackblazeConfig(): BackblazeConfig {
     v ? `${String(v).slice(0, 8)}...` : '(none)';
 
   console.log(
-    `[BACKBLAZE] Provider: ${provider}, endpoint: ${endpoint}, bucket: ${bucket}`
+    `[BACKBLAZE] Provider: ${provider}, endpoint: ${endpoint}, bucket: ${bucket}, region: ${region}`
   );
   console.log(
     `[BACKBLAZE] Key source: ${keySource}=${mask(keyId)}, AppKey source: ${appKeySource}=${mask(applicationKey)}`

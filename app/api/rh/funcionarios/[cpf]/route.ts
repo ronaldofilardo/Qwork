@@ -8,7 +8,10 @@ export async function GET(
 ) {
   try {
     const session = getSession();
-    if (!session || (session.perfil !== 'rh' && session.perfil !== 'admin')) {
+    if (
+      !session ||
+      (session.perfil !== 'rh' && session.perfil !== 'gestor_entidade')
+    ) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
 

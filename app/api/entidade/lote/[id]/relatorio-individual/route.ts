@@ -320,7 +320,7 @@ export async function GET(
 
       if (updateResult.rowCount === 0) {
         await query(
-          `INSERT INTO laudos (lote_id, emissor_cpf, status, relatorio_individual, hash_relatorio_individual, criado_em) VALUES ($1, $2, 'rascunho', $3, $4, NOW())`,
+          `INSERT INTO laudos (id, lote_id, emissor_cpf, status, relatorio_individual, hash_relatorio_individual, criado_em) VALUES ($1, $1, $2, 'rascunho', $3, $4, NOW())`,
           [loteId, session.cpf, pdfBuffer, hash]
         );
       }

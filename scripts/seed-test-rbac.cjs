@@ -10,6 +10,16 @@ async function seed() {
   try {
     await client.query('BEGIN');
 
+    // Limpar associações antigas de permissões do admin
+    await client.query(`
+      DELETE FROM public.role_permissions
+      WHERE role_id = (SELECT id FROM public.roles WHERE name = 'admin')
+      AND permission_id IN (
+        SELECT id FROM public.permissions 
+        WHERE name IN ('manage:avaliacoes', 'manage:funcionarios', 'manage:empresas', 'manage:lotes', 'manage:laudos')
+      );
+    `);
+
     // Create roles
     await client.query(`
       INSERT INTO public.roles (name, display_name, description) VALUES
@@ -46,11 +56,9 @@ async function seed() {
       'write:lotes:clinica',
       'read:laudos',
       'write:laudos',
-      'manage:avaliacoes',
-      'manage:funcionarios',
-      'manage:empresas',
-      'manage:lotes',
-      'manage:laudos',
+      'manage:rh',
+      'manage:clinicas',
+      'manage:admins',
     ];
 
     for (const name of permissions) {
@@ -78,13 +86,7 @@ async function seed() {
         'write:lotes:clinica',
       ],
       emissor: ['read:laudos', 'write:laudos', 'read:lotes:clinica'],
-      admin: [
-        'manage:avaliacoes',
-        'manage:funcionarios',
-        'manage:empresas',
-        'manage:lotes',
-        'manage:laudos',
-      ],
+      admin: ['manage:rh', 'manage:clinicas', 'manage:admins'],
     };
 
     for (const [role, perms] of Object.entries(roleToPermissions)) {

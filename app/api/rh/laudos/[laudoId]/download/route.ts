@@ -11,7 +11,7 @@ export const GET = async (
   { params }: { params: { laudoId: string } }
 ) => {
   const session = await Promise.resolve(getSession());
-  if (!session || (session.perfil !== 'rh' && session.perfil !== 'admin')) {
+  if (!session || (session.perfil !== 'rh' && session.perfil !== 'emissor')) {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
@@ -28,53 +28,25 @@ export const GET = async (
       );
     }
 
-    // Buscar laudo e validar que está enviado
-    // Tentamos primeiro selecionar campo arquivo_pdf (compatibilidade com versão que o tem)
-    let laudoQuery;
-    let arquivoPdfColumnAvailable = true;
-
-    try {
-      laudoQuery = await query(
-        `
-        SELECT
-          l.id,
-          l.lote_id,
-          l.arquivo_pdf,
-          l.hash_pdf,
-          la.codigo,
-          la.titulo,
-          la.clinica_id,
-          la.empresa_id
-        FROM laudos l
-        JOIN lotes_avaliacao la ON l.lote_id = la.id
-        WHERE l.id = $1 AND l.status = 'enviado'
-      `,
-        [laudoId]
-      );
-    } catch (err: any) {
-      // Se a coluna não existir (código 42703), fazemos fallback sem arquivo_pdf
-      if (err?.code === '42703') {
-        arquivoPdfColumnAvailable = false;
-        laudoQuery = await query(
-          `
-          SELECT
-            l.id,
-            l.lote_id,
-            l.hash_pdf,
-            la.codigo,
-            la.titulo,
-            la.clinica_id,
-            la.empresa_id
-          FROM laudos l
-          JOIN lotes_avaliacao la ON l.lote_id = la.id
-          WHERE l.id = $1 AND l.status = 'enviado'
-        `,
-          [laudoId]
-        );
-      } else {
-        throw err;
-      }
-    }
+    // Buscar laudo e validar que está enviado ou emitido
+    // Coluna arquivo_pdf foi removida em migration 070 — apenas usar storage de arquivos
+    const laudoQuery = await query(
+      `
+      SELECT
+        l.id,
+        l.lote_id,
+        l.status,
+        l.hash_pdf,
+        la.codigo,
+        la.titulo,
+        la.clinica_id,
+        la.empresa_id
+      FROM laudos l
+      JOIN lotes_avaliacao la ON l.lote_id = la.id
+      WHERE l.id = $1 AND l.status IN ('enviado', 'emitido')
+    `,
+      [laudoId]
+    );
 
     if (laudoQuery.rows.length === 0) {
       console.warn(
@@ -88,24 +60,13 @@ export const GET = async (
 
     const laudo = laudoQuery.rows[0];
     console.log(
-      `[DEBUG] Laudo encontrado: id=${laudo.id}, lote_id=${laudo.lote_id}, arquivoPdfColumn=${arquivoPdfColumnAvailable}`
+      `[DEBUG] Laudo encontrado: id=${laudo.id}, lote_id=${laudo.lote_id}, status=${laudo.status}`
     );
 
-    // Se a coluna arquivo_pdf está disponível e contém dados, retornar diretamente
-    if (arquivoPdfColumnAvailable && laudo.arquivo_pdf) {
-      const fileName = `laudo-${laudo.codigo}.pdf`;
-      return new NextResponse(Buffer.from(laudo.arquivo_pdf), {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${fileName}"`,
-        },
-      });
-    }
-
     // Verificar se o usuário tem acesso ao laudo
-    // Para RH, validar que o RH tem permissão de acesso à empresa do lote
-    if (user.perfil === 'admin') {
-      // Admins têm acesso a todos os laudos
+    // Emissor e RH (com acesso à empresa) podem acessar
+    if (user.perfil === 'emissor') {
+      // Emissor pode acessar conforme RLS/roles
     } else if (user.perfil === 'rh') {
       try {
         await requireRHWithEmpresaAccess(Number(laudo.empresa_id));
@@ -122,7 +83,7 @@ export const GET = async (
         );
       }
     } else {
-      // Perfis não-RH/Admin não têm acesso aqui
+      // Outros perfis não têm acesso aqui (admin NÃO tem acesso operacional)
       return NextResponse.json(
         { error: 'Acesso negado ao laudo', success: false },
         { status: 403 }
@@ -135,12 +96,28 @@ export const GET = async (
     if (laudo.codigo) candidateNames.add(`laudo-${laudo.codigo}.pdf`);
     if (laudo.lote_id) candidateNames.add(`laudo-${laudo.lote_id}.pdf`);
 
+    console.log(
+      `[DEBUG] Buscando arquivos para laudo ${laudo.id}:`,
+      Array.from(candidateNames)
+    );
+
     // 1) Procurar em storage/local
+    const storageDir = path.join(process.cwd(), 'storage', 'laudos');
+    console.log(`[DEBUG] Storage dir: ${storageDir}`);
+    console.log(`[DEBUG] Storage exists: ${fs.existsSync(storageDir)}`);
+
+    if (fs.existsSync(storageDir)) {
+      const files = fs.readdirSync(storageDir);
+      console.log(`[DEBUG] Arquivos em storage:`, files);
+    }
+
     for (const name of candidateNames) {
       const p = path.join(process.cwd(), 'storage', 'laudos', name);
+      console.log(`[DEBUG] Tentando: ${p}, existe: ${fs.existsSync(p)}`);
       if (fs.existsSync(p)) {
         const buf = fs.readFileSync(p);
         const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        console.log(`[SUCCESS] Arquivo encontrado: ${p} (${buf.length} bytes)`);
         return new NextResponse(buf, {
           headers: {
             'Content-Type': 'application/pdf',
@@ -221,10 +198,20 @@ export const GET = async (
     }
 
     console.warn(
-      `[WARN] Arquivo do laudo ${laudoId} não encontrado em nenhum storage`
+      `[WARN] Arquivo do laudo ${laudoId} não encontrado em storage`
     );
+
+    // REGRA DE NEGÓCIO CRÍTICA:
+    // Apenas o EMISSOR pode gerar laudos. O RH/clínica apenas baixa laudos já emitidos.
+    // Se o arquivo não existe, o emissor ainda não emitiu o laudo.
+
     return NextResponse.json(
-      { error: 'Arquivo do laudo não encontrado', success: false },
+      {
+        error:
+          'Arquivo do laudo não encontrado. O laudo deve ser emitido pelo emissor antes de poder ser baixado.',
+        success: false,
+        hint: 'Aguarde o emissor gerar e emitir o laudo.',
+      },
       { status: 404 }
     );
   } catch (error) {

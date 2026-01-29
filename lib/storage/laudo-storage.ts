@@ -100,6 +100,17 @@ export async function uploadLaudoToBackblaze(
   pdfBuffer: Buffer
 ): Promise<void> {
   try {
+    // Permite desabilitar uploads remotos temporariamente (teste/local)
+    if (
+      process.env.DISABLE_LAUDO_REMOTE === '1' ||
+      process.env.DISABLE_REMOTE_STORAGE === '1'
+    ) {
+      console.log(
+        '[STORAGE] Upload remoto de laudos desabilitado via DISABLE_LAUDO_REMOTE/DISABLE_REMOTE_STORAGE - pulando upload'
+      );
+      return;
+    }
+
     // Verificar se Backblaze está configurado
     const hasBackblazeConfig =
       (process.env.BACKBLAZE_KEY_ID && process.env.BACKBLAZE_APPLICATION_KEY) ||

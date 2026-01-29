@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export const POST = async (req: Request) => {
-  const user = await requireRole('admin');
+  const user = await requireRole(['rh', 'gestor_entidade']);
   if (!user) {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },

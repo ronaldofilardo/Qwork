@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export const GET = async (_req: Request) => {
   const session = await Promise.resolve(getSession());
-  if (!session || (session.perfil !== 'rh' && session.perfil !== 'admin')) {
+  if (!session || session.perfil !== 'rh') {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }

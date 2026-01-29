@@ -338,7 +338,7 @@ export function middleware(request: NextRequest) {
       }
     }
 
-    if (session && session.perfil !== 'rh' && session.perfil !== 'admin') {
+    if (session && session.perfil !== 'rh') {
       const maskedCpf =
         typeof session.cpf === 'string'
           ? `***${String(session.cpf).slice(-4)}`
@@ -362,11 +362,7 @@ export function middleware(request: NextRequest) {
       }
     }
 
-    if (
-      session &&
-      session.perfil !== 'gestor_entidade' &&
-      session.perfil !== 'admin'
-    ) {
+    if (session && session.perfil !== 'gestor_entidade') {
       const maskedCpf =
         typeof session.cpf === 'string'
           ? `***${String(session.cpf).slice(-4)}`

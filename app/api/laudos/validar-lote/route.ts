@@ -17,12 +17,11 @@ export async function GET(req: Request) {
   try {
     const user = await requireAuth();
 
-    // Apenas emissor, RH e admin podem validar laudos
-    if (!['emissor', 'rh', 'admin'].includes(user.perfil)) {
+    // Apenas emissor e RH podem validar laudos (admin NÃO é operacional aqui)
+    if (!['emissor', 'rh'].includes(user.perfil)) {
       return NextResponse.json(
         {
-          error:
-            'Acesso negado. Apenas emissores, RH e admin podem validar laudos.',
+          error: 'Acesso negado. Apenas emissores e RH podem validar laudos.',
         },
         { status: 403 }
       );

@@ -293,14 +293,16 @@ export async function POST(request: NextRequest) {
 
       // Se for clínica aprovada (tabela clinicas), deletar dependências primeiro
       if (tipoEntidade === 'clinica') {
-        // 1. Reatribuir referências em lotes e laudos para o administrador, para evitar FKs
+        // 1. Reatribuir referências em lotes e laudos para conta de sistema (evitar uso do admin como dono)
+        // Usar usuário placeholder '00000000000' para histórico/estado neutro
+        const SYSTEM_USER_CPF = '00000000000';
         await query(
           'UPDATE lotes_avaliacao SET liberado_por = $1 WHERE liberado_por IN (SELECT cpf FROM funcionarios WHERE clinica_id = $2)',
-          [session.cpf, clinicaId]
+          [SYSTEM_USER_CPF, clinicaId]
         );
         await query(
           'UPDATE laudos SET emissor_cpf = $1 WHERE emissor_cpf IN (SELECT cpf FROM funcionarios WHERE clinica_id = $2)',
-          [session.cpf, clinicaId]
+          [SYSTEM_USER_CPF, clinicaId]
         );
 
         // 2. Deletar funcionários associados à clínica
@@ -318,11 +320,11 @@ export async function POST(request: NextRequest) {
           // Reatribuir referências da entidade para o administrador
           await query(
             'UPDATE lotes_avaliacao SET liberado_por = $1 WHERE liberado_por IN (SELECT cpf FROM funcionarios WHERE contratante_id = $2)',
-            [session.cpf, clinica.contratante_id]
+            [SYSTEM_USER_CPF, clinica.contratante_id]
           );
           await query(
             'UPDATE laudos SET emissor_cpf = $1 WHERE emissor_cpf IN (SELECT cpf FROM funcionarios WHERE contratante_id = $2)',
-            [session.cpf, clinica.contratante_id]
+            [SYSTEM_USER_CPF, clinica.contratante_id]
           );
 
           // Deletar funcionários associados à entidade PRIMEIRO (evita triggers)

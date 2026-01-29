@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 // Server-Sent Events endpoint para notificações em tempo real
 export const GET = async (req: Request) => {
   const session = await Promise.resolve(getSession());
-  if (!session || (session.perfil !== 'rh' && session.perfil !== 'admin')) {
+  if (!session || session.perfil !== 'rh') {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
