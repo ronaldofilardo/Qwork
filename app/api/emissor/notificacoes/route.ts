@@ -36,7 +36,7 @@ export const GET = async (_req: Request) => {
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
       JOIN clinicas c ON ec.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      LEFT JOIN laudos l ON la.id = l.lote_id AND l.emissor_cpf = $1
+      LEFT JOIN laudos l ON la.id = l.id AND l.emissor_cpf = $1
       WHERE la.status IN ('ativo', 'finalizado')
       GROUP BY la.id, la.codigo, la.titulo, la.liberado_em, ec.nome, c.nome, l.status, l.id
       HAVING
