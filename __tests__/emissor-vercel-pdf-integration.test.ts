@@ -109,7 +109,9 @@ describe('Integração: Fix Vercel Chromium - Fallback Client-side', () => {
       );
 
       // Verificar detecção de content-type
-      expect(emissorPage).toContain("contentType?.includes('application/json')");
+      expect(emissorPage).toContain(
+        "contentType?.includes('application/json')"
+      );
       expect(emissorPage).toContain('data.useClientSide');
       expect(emissorPage).toContain('data.htmlEndpoint');
 

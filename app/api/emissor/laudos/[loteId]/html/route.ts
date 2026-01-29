@@ -113,31 +113,14 @@ export async function GET(
       );
     }
 
-    const avaliacoes = avaliacoesResult.rows;
-
-    // Buscar dados da empresa
-    const empresaResult = await query(
-      `SELECT e.nome, e.cnpj, e.endereco, e.cidade, e.estado, e.cep, c.nome as clinica_nome
-       FROM empresas e
-       LEFT JOIN clinicas c ON c.id = $1
-       WHERE e.id = $2`,
-      [lote.clinica_id, lote.empresa_id]
-    );
-
-    const empresa = empresaResult.rows[0] || { nome: 'Empresa' };
-
     // Gerar dados do laudo seguindo a mesma lógica de laudo-auto.ts
-    const dadosGeraisEmpresa = gerarDadosGeraisEmpresa(
-      empresa.nome || 'Empresa',
-      empresa.cnpj || '',
-      avaliacoesResult.rows.length,
-      lote.titulo || `Lote ${lote.codigo}`,
-      empresa.clinica_nome || 'Clínica'
-    );
+    const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(lote.id);
 
-    const scoresPorGrupo = calcularScoresPorGrupo(avaliacoes);
-    const interpretacaoRecomendacoes =
-      gerarInterpretacaoRecomendacoes(scoresPorGrupo);
+    const scoresPorGrupo = await calcularScoresPorGrupo(lote.id);
+    const interpretacaoRecomendacoes = gerarInterpretacaoRecomendacoes(
+      dadosGeraisEmpresa.empresaAvaliada,
+      scoresPorGrupo
+    );
     const observacoesConclusao = gerarObservacoesConclusao('');
 
     const laudoPadronizado = criarLaudoPadronizado(
