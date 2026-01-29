@@ -19,7 +19,7 @@ warnings.txt
 
 # Storage and logs
 
-storage
+/storage
 logs
 backups
 
