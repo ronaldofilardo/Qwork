@@ -1,7 +1,7 @@
-import pg from "pg";
-import { config } from "dotenv";
+import pg from 'pg';
+import { config } from 'dotenv';
 
-config({ path: ".env.development" });
+config({ path: '.env.development' });
 
 async function checkLote() {
   const { Pool } = pg;
@@ -17,7 +17,7 @@ async function checkLote() {
       LEFT JOIN laudos l ON la.id = l.id
       WHERE la.codigo = '004-161225'
     `);
-    console.log("Lote details:", res.rows);
+    console.log('Lote details:', res.rows);
   } catch (error) {
     console.error(error);
   } finally {

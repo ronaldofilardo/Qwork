@@ -1,29 +1,29 @@
-import { Pool } from "pg";
+import { Pool } from 'pg';
 
 if (
-  process.env.NODE_ENV === "test" ||
-  process.env.CI === "true" ||
+  process.env.NODE_ENV === 'test' ||
+  process.env.CI === 'true' ||
   process.env.CI
 ) {
   console.log(
-    "Skipping script scripts/checks/test_audit_manual in test/CI environment to avoid touching development DBs."
+    'Skipping script scripts/checks/test_audit_manual in test/CI environment to avoid touching development DBs.'
   );
   process.exit(0);
 }
 
 const pool = new Pool({
-  host: "localhost",
+  host: 'localhost',
   port: 5432,
-  database: "nr-bps_db",
-  user: "postgres",
-  password: "123456",
+  database: 'nr-bps_db',
+  user: 'postgres',
+  password: '123456',
 });
 
 async function checkLotes() {
   const client = await pool.connect();
 
   try {
-    console.log("Verificando se há lotes no banco...");
+    console.log('Verificando se há lotes no banco...');
 
     const countResult = await client.query(
       `SELECT COUNT(*) as total FROM lotes_avaliacao`
@@ -32,7 +32,7 @@ async function checkLotes() {
 
     if (parseInt(countResult.rows[0].total) === 0) {
       console.log(
-        "Nenhum lote encontrado. Verificando se o banco está populado..."
+        'Nenhum lote encontrado. Verificando se o banco está populado...'
       );
       return;
     }
@@ -53,10 +53,10 @@ async function checkLotes() {
       LIMIT 5
     `);
 
-    console.log("Resultado da análise dos lotes 006 e 007:");
+    console.log('Resultado da análise dos lotes 006 e 007:');
     console.table(result.rows);
   } catch (error) {
-    console.error("Erro:", error);
+    console.error('Erro:', error);
   } finally {
     client.release();
     await pool.end();

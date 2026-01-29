@@ -1,4 +1,4 @@
-import { query } from "./lib/db.ts";
+import { query } from './lib/db.ts';
 
 async function checkLotes() {
   try {
@@ -17,10 +17,10 @@ async function checkLotes() {
       GROUP BY la.id, la.codigo, la.titulo, l.id, l.status, l.emissor_cpf, l.criado_em, l.emitido_em, l.enviado_em
       ORDER BY la.id
     `);
-    console.log("Resultado da análise dos lotes 006 e 007:");
+    console.log('Resultado da análise dos lotes 006 e 007:');
     console.table(result.rows);
   } catch (error) {
-    console.error("Erro:", error);
+    console.error('Erro:', error);
   }
 }
 
