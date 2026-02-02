@@ -304,13 +304,18 @@ export async function POST(request: Request) {
     } catch (err: any) {
       // Fallback quando a coluna nivel_cargo ainda não existe no schema (ex.: ambiente não migrado)
       if (err?.code === '42703') {
-        console.warn('[LOGIN] nivel_cargo ausente no schema, tentando fallback sem a coluna');
+        console.warn(
+          '[LOGIN] nivel_cargo ausente no schema, tentando fallback sem a coluna'
+        );
         result = await query(
           'SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios WHERE cpf = $1',
           [cpf]
         );
         // Garantir que o código cliente possa ler nivel_cargo (nulo)
-        result.rows = result.rows.map((r: any) => ({ ...r, nivel_cargo: null }));
+        result.rows = result.rows.map((r: any) => ({
+          ...r,
+          nivel_cargo: null,
+        }));
       } else {
         throw err;
       }
@@ -495,7 +500,9 @@ export async function POST(request: Request) {
     } catch (err: any) {
       // Fallback quando a coluna contratante_id (ou clinica_id) não existe no schema
       if (err?.code === '42703') {
-        console.warn('[LOGIN] contratante_id ausente no schema, fallback sem contratante_id/clinica_id');
+        console.warn(
+          '[LOGIN] contratante_id ausente no schema, fallback sem contratante_id/clinica_id'
+        );
         funcDadosAdicionais = { rows: [] };
       } else {
         throw err;

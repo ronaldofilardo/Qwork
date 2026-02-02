@@ -1,0 +1,1365 @@
+
+InputObject
+-----------                                                                   
+-- Dumped from database version 17.7 (bdd1736)                                
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -                            
+-- *not* creating schema, since initdb creates it                             
+-- Name: nivel_cargo_enum; Type: TYPE; Schema: public; Owner: -               
+CREATE TYPE public.nivel_cargo_enum AS ENUM (                                 
+    'operacional',                                                            
+    'gestao'                                                                  
+    RETURN NULLIF(current_setting('app.current_user_cpf', TRUE), '');         
+    WHEN OTHERS THEN RETURN NULL;                                             
+    RETURN NULLIF(current_setting('app.current_user_perfil', TRUE), '');      
+    WHEN OTHERS THEN RETURN NULL;                                             
+  -- Só agir quando houve alteração de status                                 
+  -- Calcular estatísticas para o lote afetado                                
+  -- ✅ Se condição de conclusão for satisfeita, atualizar APENAS o status do …
+  -- ❌ NÃO EMITIR LAUDO AUTOMATICAMENTE                                       
+    -- Atualizar status do lote para 'concluido' (evitar writes desnecessário…
+    -- ✅ CRIAR NOTIFICAÇÃO para RH/Entidade (ao invés de emitir laudo)        
+    -- A notificação será criada pela função recalcularStatusLotePorId() em l…
+    -- que já tem essa lógica implementada corretamente                       
+    -- ❌ REMOVIDO: Chamada a upsert_laudo() ou qualquer lógica de emissão     
+    -- MOTIVO: Emissão deve ser MANUAL pelo Emissor após solicitação do RH/En…
+COMMENT ON FUNCTION public.fn_recalcular_status_lote_on_avaliacao_update() IS…
+APENAS atualiza status para concluido quando todas avaliações finalizadas.    
+NÃO EMITE LAUDO AUTOMATICAMENTE - emissão é manual pelo Emissor.';            
+  -- Reservar o mesmo ID para o laudo (em status rascunho) sem atribuir emiss…
+EXCEPTION                                                                     
+                                                                              
+                                                                              
+    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP       
+    clinica_id integer NOT NULL,                                              
+    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP       
+    nivel_cargo public.nivel_cargo_enum,                                      
+    CONSTRAINT funcionarios_clinica_check CHECK (((clinica_id IS NOT NULL) OR…
+    CONSTRAINT funcionarios_perfil_check CHECK (((perfil)::text = ANY (ARRAY[…
+    emissor_cpf character(11) NOT NULL,                                       
+    liberado_por character(11) NOT NULL,                                      
+    laudo_enviado_em timestamp without time zone,                             
+    finalizado_em timestamp without time zone,                                
+-- Name: vw_comparativo_empresas; Type: VIEW; Schema: public; Owner: -        
+CREATE VIEW public.vw_comparativo_empresas AS                                 
+ SELECT ec.clinica_id,                                                        
+    ec.id AS empresa_id,                                                      
+    ec.nome AS empresa_nome,                                                  
+    avg(                                                                      
+            WHEN (r.grupo = 1) THEN r.valor                                   
+        END) AS demandas_trabalho,                                            
+    avg(                                                                      
+            WHEN (r.grupo = 2) THEN r.valor                                   
+            ELSE NULL::integer                                                
+        END) AS organizacao_conteudo,                                         
+    avg(                                                                      
+            WHEN (r.grupo = 3) THEN r.valor                                   
+            ELSE NULL::integer                                                
+        END) AS relacoes_sociais,                                             
+    avg(                                                                      
+        CASE                                                                  
+            WHEN (r.grupo = 4) THEN r.valor                                   
+            ELSE NULL::integer                                                
+        END) AS lideranca,                                                    
+    avg(                                                                      
+        CASE                                                                  
+            WHEN (r.grupo = 5) THEN r.valor                                   
+            ELSE NULL::integer                                                
+        END) AS valores_organizacionais,                                      
+    avg(                                                                      
+        CASE                                                                  
+            WHEN (r.grupo = 6) THEN r.valor                                   
+            ELSE NULL::integer                                                
+        END) AS saude_bem_estar,                                              
+    avg(r.valor) AS score_geral,                                              
+    count(DISTINCT f.cpf) AS funcionarios_responderam,                        
+    count(r.valor) AS total_respostas                                         
+   FROM (((public.empresas_clientes ec                                        
+     JOIN public.funcionarios f ON ((ec.id = f.empresa_id)))                  
+     JOIN public.avaliacoes a ON ((f.cpf = a.funcionario_cpf)))               
+     JOIN public.respostas r ON ((a.id = r.avaliacao_id)))                    
+  WHERE (((a.status)::text = 'concluida'::text) AND (r.grupo <= 6))           
+  GROUP BY ec.clinica_id, ec.id, ec.nome                                      
+  ORDER BY ec.clinica_id, ec.nome;                                            
+-- Name: lotes_avaliacao id; Type: DEFAULT; Schema: public; Owner: -          
+ALTER TABLE ONLY public.lotes_avaliacao ALTER COLUMN id SET DEFAULT nextval('…
+-- Name: funcionarios funcionarios_nivel_cargo_check; Type: CHECK CONSTRAINT;…
+ALTER TABLE public.funcionarios                                               
+    ADD CONSTRAINT funcionarios_nivel_cargo_check CHECK (((((perfil)::text = …
+-- Name: lotes_avaliacao lotes_avaliacao_empresa_numero_ordem_unique; Type: C…
+    ADD CONSTRAINT lotes_avaliacao_empresa_numero_ordem_unique UNIQUE (empres…
+-- Name: idx_funcionarios_nivel_cargo; Type: INDEX; Schema: public; Owner: -  
+CREATE INDEX idx_funcionarios_nivel_cargo ON public.funcionarios USING btree …
+    ADD CONSTRAINT clinicas_empresas_clinica_id_fkey FOREIGN KEY (clinica_id)…
+ALTER TABLE ONLY public.lotes_avaliacao                                       
+    ADD CONSTRAINT lotes_avaliacao_liberado_por_fkey FOREIGN KEY (liberado_po…
+-- Name: avaliacoes admin_all_avaliacoes; Type: POLICY; Schema: public; Owner…
+CREATE POLICY admin_all_avaliacoes ON public.avaliacoes USING ((current_setti…
+-- Name: empresas_clientes admin_all_empresas; Type: POLICY; Schema: public; …
+CREATE POLICY admin_all_empresas ON public.empresas_clientes USING ((current_…
+-- Name: laudos admin_all_laudos; Type: POLICY; Schema: public; Owner: -      
+CREATE POLICY admin_all_laudos ON public.laudos USING ((current_setting('app.…
+-- Name: lotes_avaliacao admin_all_lotes; Type: POLICY; Schema: public; Owner…
+CREATE POLICY admin_all_lotes ON public.lotes_avaliacao USING ((current_setti…
+-- Name: respostas admin_all_respostas; Type: POLICY; Schema: public; Owner: -
+CREATE POLICY admin_all_respostas ON public.respostas USING ((current_setting…
+-- Name: resultados admin_all_resultados; Type: POLICY; Schema: public; Owner…
+CREATE POLICY admin_all_resultados ON public.resultados USING ((current_setti…
+CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR I…
+CREATE POLICY avaliacoes_own_update ON public.avaliacoes FOR UPDATE USING (((…
+-- Name: fila_emissao fila_emissao_admin_view; Type: POLICY; Schema: public; …
+CREATE POLICY fila_emissao_admin_view ON public.fila_emissao FOR SELECT USING…
+-- Name: POLICY fila_emissao_admin_view ON fila_emissao; Type: COMMENT; Schem…
+COMMENT ON POLICY fila_emissao_admin_view ON public.fila_emissao IS 'Admin po…
+-- Dumped from database version 17.5                                          
+-- Name: prioridade_notificacao; Type: TYPE; Schema: public; Owner: -         
+CREATE TYPE public.prioridade_notificacao AS ENUM (                           
+    'baixa',                                                                  
+    'media',                                                                  
+    'alta',                                                                   
+    'critica'                                                                 
+-- Name: tipo_notificacao; Type: TYPE; Schema: public; Owner: -               
+CREATE TYPE public.tipo_notificacao AS ENUM (                                 
+    'pre_cadastro_criado',                                                    
+    'valor_definido',                                                         
+    'contrato_aceito',                                                        
+    'pagamento_confirmado',                                                   
+    'contratacao_ativa',                                                      
+    'rejeicao_admin',                                                         
+    'cancelamento_gestor',                                                    
+    'sla_excedido',                                                           
+    'alerta_geral',                                                           
+    'emissao_solicitada_sucesso'                                              
+-- Name: arquivar_notificacoes_antigas(); Type: FUNCTION; Schema: public; Own…
+CREATE FUNCTION public.arquivar_notificacoes_antigas() RETURNS integer        
+  UPDATE notificacoes                                                         
+  SET arquivada = TRUE                                                        
+  WHERE lida = TRUE                                                           
+    AND criado_em < NOW() - INTERVAL '30 days'                                
+    AND arquivada = FALSE;                                                    
+  GET DIAGNOSTICS v_count = ROW_COUNT;                                        
+  RETURN v_count;                                                             
+  v_cpf TEXT;                                                                 
+  v_cpf := NULLIF(current_setting('app.current_user_cpf', TRUE), '');         
+  -- SECURITY: CPF is mandatory for RLS operations                            
+  IF v_cpf IS NULL THEN                                                       
+    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not set. Call SET LOCAL a…
+  -- Validate CPF format (11 digits)                                          
+  IF LENGTH(v_cpf) != 11 OR v_cpf !~ '^\d{11}$' THEN                          
+    RAISE EXCEPTION 'SECURITY: Invalid CPF format "%". Expected 11 digits.', …
+  RETURN v_cpf;                                                               
+  WHEN undefined_object THEN                                                  
+    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not configured in session…
+  WHEN SQLSTATE '22023' THEN -- invalid parameter value                       
+    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not configured in session…
+    perfil_usuario TEXT;                                                      
+    -- Tentar obter perfil da sessão                                          
+    BEGIN                                                                     
+        perfil_usuario := current_setting('app.current_user_perfil', true);   
+    EXCEPTION WHEN OTHERS THEN                                                
+        perfil_usuario := NULL;                                               
+    END;                                                                      
+    -- Se não houver perfil na sessão, retornar NULL (sem acesso)             
+    RETURN perfil_usuario;                                                    
+  -- SÃ³ agir quando houve alteraÃ§Ã£o de status                              
+  -- Calcular estatÃ­sticas para o lote afetado                               
+  -- Se condiÃ§Ã£o de conclusÃ£o for satisfeita, atualizar lote APENAS        
+  -- NOTA: EmissÃ£o de laudo Ã© 100% MANUAL - nÃ£o inserir em fila_emissao    
+  -- O RH/Entidade deve solicitar emissÃ£o via botÃ£o "Solicitar EmissÃ£o"    
+  -- O emissor entÃ£o emite o laudo manualmente no dashboard                  
+    -- Evitar writes desnecessÃ¡rios                                          
+    -- REMOVIDO: InserÃ§Ã£o automÃ¡tica em fila_emissao                       
+    -- Motivo: EmissÃ£o de laudo deve ser 100% MANUAL pelo emissor            
+    -- Fluxo correto:                                                         
+    --   1. RH/Entidade solicita emissÃ£o (POST /api/lotes/[loteId]/solicitar…
+    --   2. Lote aparece no dashboard do emissor                              
+    --   3. Emissor revisa e clica "Gerar Laudo" manualmente                  
+    --   4. Sistema gera PDF e hash                                           
+    --   5. Emissor revisa e envia                                            
+COMMENT ON FUNCTION public.fn_recalcular_status_lote_on_avaliacao_update() IS…
+  -- Inserir laudo com mesmo ID do lote (apenas reserva)                      
+-- Name: FUNCTION fn_reservar_id_laudo_on_lote_insert(); Type: COMMENT; Schem…
+COMMENT ON FUNCTION public.fn_reservar_id_laudo_on_lote_insert() IS 'Reserva …
+Laudo fica em status=rascunho atÃ© emissor gerar o PDF.                       
+Garante que laudo.id === lote.id sempre.';                                    
+-- Name: marcar_notificacoes_lidas(integer[], integer); Type: FUNCTION; Schem…
+CREATE FUNCTION public.marcar_notificacoes_lidas(p_notificacao_ids integer[],…
+  v_count INTEGER;                                                            
+  UPDATE notificacoes                                                         
+  SET lida = TRUE,                                                            
+      data_leitura = NOW()                                                    
+  WHERE id = ANY(p_notificacao_ids)                                           
+    AND destinatario_id = p_usuario_id                                        
+    AND lida = FALSE;                                                         
+  GET DIAGNOSTICS v_count = ROW_COUNT;                                        
+  RETURN v_count;                                                             
+-- Name: marcar_notificacoes_lidas(integer[], text); Type: FUNCTION; Schema: …
+CREATE FUNCTION public.marcar_notificacoes_lidas(p_notificacao_ids integer[],…
+  v_count INTEGER;                                                            
+  UPDATE notificacoes                                                         
+  SET lida = TRUE,                                                            
+      data_leitura = NOW()                                                    
+  WHERE id = ANY(p_notificacao_ids)                                           
+    AND destinatario_cpf = p_usuario_cpf                                      
+    AND lida = FALSE;                                                         
+  GET DIAGNOSTICS v_count = ROW_COUNT;                                        
+  RETURN v_count;                                                             
+-- Name: notificar_pre_cadastro_criado(); Type: FUNCTION; Schema: public; Own…
+CREATE FUNCTION public.notificar_pre_cadastro_criado() RETURNS trigger        
+  v_contratante_nome TEXT;                                                    
+  v_admin_record RECORD;                                                      
+  -- Buscar nome do contratante (corrigido de clinicas para contratantes)     
+  SELECT nome INTO v_contratante_nome                                         
+  FROM contratantes                                                           
+  WHERE id = NEW.contratante_id;                                              
+  -- Notificar todos os admins                                                
+  FOR v_admin_record IN                                                       
+    SELECT cpf FROM usuarios WHERE role = 'admin' AND ativo = TRUE            
+  LOOP                                                                        
+    INSERT INTO notificacoes (                                                
+      tipo, prioridade, destinatario_cpf, destinatario_tipo,                  
+      titulo, mensagem, dados_contexto, link_acao, botao_texto,               
+      contratacao_personalizada_id                                            
+    ) VALUES (                                                                
+      'pre_cadastro_criado',                                                  
+      'alta',                                                                 
+      v_admin_record.cpf,                                                     
+      'admin',                                                                
+      'Novo Pre-Cadastro: ' || v_contratante_nome,                            
+      'Um novo pre-cadastro de plano personalizado foi criado e aguarda defin…
+      jsonb_build_object(                                                     
+        'contratacao_id', NEW.id,                                             
+        'contratante_nome', v_contratante_nome,                               
+        'numero_funcionarios', NEW.numero_funcionarios_estimado               
+      ),                                                                      
+      '/admin/contratacao/pendentes',                                         
+      'Definir Valor',                                                        
+      NEW.id                                                                  
+  END LOOP;                                                                   
+-- Name: notificar_sla_excedido(); Type: FUNCTION; Schema: public; Owner: -   
+CREATE FUNCTION public.notificar_sla_excedido() RETURNS trigger               
+  v_contratante_nome TEXT;                                                    
+  v_horas_decorridas NUMERIC;                                                 
+  -- Calcular horas desde criaÃ§Ã£o                                           
+  v_horas_decorridas := EXTRACT(EPOCH FROM (NOW() - NEW.criado_em)) / 3600;   
+  IF v_horas_decorridas > 48 AND NEW.status = 'aguardando_valor_admin' THEN   
+    -- Buscar nome do contratante                                             
+    SELECT nome_fantasia INTO v_contratante_nome                              
+    FROM clinicas                                                             
+    WHERE id = NEW.contratante_id;                                            
+    -- Notificar admins sobre SLA excedido                                    
+    INSERT INTO notificacoes (                                                
+      tipo, prioridade, destinatario_id, destinatario_tipo,                   
+      titulo, mensagem, dados_contexto, link_acao, botao_texto,               
+      contratacao_personalizada_id                                            
+    SELECT                                                                    
+      'sla_excedido',                                                         
+      'critica',                                                              
+      u.id,                                                                   
+      'admin',                                                                
+      'ðŸš¨ SLA Excedido: ' || v_contratante_nome,                            
+      'PrÃ©-cadastro aguardando definiÃ§Ã£o de valor hÃ¡ mais de 48 horas. AÃ…
+      jsonb_build_object(                                                     
+        'contratacao_id', NEW.id,                                             
+        'horas_decorridas', ROUND(v_horas_decorridas, 1),                     
+        'contratante_nome', v_contratante_nome                                
+      ),                                                                      
+      '/admin/contratacao/pendentes',                                         
+      'Definir Valor Agora',                                                  
+      NEW.id                                                                  
+    FROM usuarios u                                                           
+    WHERE u.role = 'admin' AND u.ativo = TRUE;                                
+-- Name: notificar_valor_definido(); Type: FUNCTION; Schema: public; Owner: - 
+CREATE FUNCTION public.notificar_valor_definido() RETURNS trigger             
+    AS $_$                                                                    
+  v_contratante_nome TEXT;                                                    
+  v_gestor_cpf TEXT;                                                          
+  -- Buscar dados do contratante (corrigido de clinicas para contratantes)    
+  SELECT nome, responsavel_cpf INTO v_contratante_nome, v_gestor_cpf          
+  FROM contratantes                                                           
+  WHERE id = NEW.contratante_id;                                              
+  -- Notificar gestor do contratante                                          
+  INSERT INTO notificacoes (                                                  
+    tipo, prioridade, destinatario_cpf, destinatario_tipo,                    
+    titulo, mensagem, dados_contexto, link_acao, botao_texto,                 
+    contratacao_personalizada_id                                              
+  ) VALUES (                                                                  
+    'valor_definido',                                                         
+    'media',                                                                  
+    v_gestor_cpf,                                                             
+    'gestor_entidade',                                                        
+    'Valor Definido para Plano Personalizado',                                
+    'O valor do seu plano personalizado foi definido. Valor por funcionario: …
+      TO_CHAR(NEW.valor_por_funcionario, 'FM999G999G990D00') ||               
+      '. Total estimado: R$ ' || TO_CHAR(NEW.valor_total_estimado, 'FM999G999…
+    jsonb_build_object(                                                       
+      'contratacao_id', NEW.id,                                               
+      'valor_por_funcionario', NEW.valor_por_funcionario,                     
+      'valor_total_estimado', NEW.valor_total_estimado                        
+    ),                                                                        
+    '/entidade/contratacao/' || NEW.id,                                       
+    'Ver Contrato',                                                           
+    NEW.id                                                                    
+$_$;                                                                          
+  v_count INTEGER;                                                            
+    LANGUAGE plpgsql SECURITY DEFINER                                         
+  RETURN NEW;                                                                 
+DECLARE                                                                       
+  );                                                                          
+    AS $_$                                                                    
+DECLARE                                                                       
+BEGIN                                                                         
+$_$;                                                                          
+    LANGUAGE plpgsql                                                          
+DECLARE                                                                       
+END;                                                                          
+DECLARE                                                                       
+BEGIN                                                                         
+END;                                                                          
+    LANGUAGE plpgsql                                                          
+    AS $$                                                                     
+DECLARE                                                                       
+BEGIN                                                                         
+                                                                              
+                                                                              
+                                                                              
+  RETURN NEW;                                                                 
+END;                                                                          
+$$;                                                                           
+    LANGUAGE plpgsql                                                          
+    AS $$                                                                     
+DECLARE                                                                       
+BEGIN                                                                         
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+  RETURN NEW;                                                                 
+END;                                                                          
+$$;                                                                           
+    LANGUAGE plpgsql                                                          
+    AS $$                                                                     
+DECLARE                                                                       
+BEGIN                                                                         
+  END IF;                                                                     
+    )                                                                         
+    );                                                                        
+  END IF;                                                                     
+END;                                                                          
+$$;                                                                           
+    LANGUAGE plpgsql                                                          
+    AS $$                                                                     
+DECLARE                                                                       
+BEGIN                                                                         
+  END IF;                                                                     
+END;                                                                          
+$$;                                                                           
+    inativada_em timestamp with time zone,                                    
+    motivo_inativacao text,                                                   
+-- Name: COLUMN avaliacoes.inativada_em; Type: COMMENT; Schema: public; Owner…
+COMMENT ON COLUMN public.avaliacoes.inativada_em IS 'Timestamp quando a avali…
+-- Name: COLUMN avaliacoes.motivo_inativacao; Type: COMMENT; Schema: public; …
+COMMENT ON COLUMN public.avaliacoes.motivo_inativacao IS 'Motivo informado pe…
+    nome_fantasia text                                                        
+-- Name: COLUMN clinicas.nome_fantasia; Type: COMMENT; Schema: public; Owner:…
+COMMENT ON COLUMN public.clinicas.nome_fantasia IS 'Nome fantasia/razÃ£o exib…
+    contratante_id integer,                                                   
+    representante_nome text,                                                  
+    representante_fone character varying(30),                                 
+    representante_email character varying(100),                               
+    CONSTRAINT empresas_clientes_parent_check CHECK ((((clinica_id IS NOT NUL…
+-- Name: COLUMN empresas_clientes.representante_nome; Type: COMMENT; Schema: …
+COMMENT ON COLUMN public.empresas_clientes.representante_nome IS 'Nome do rep…
+-- Name: COLUMN empresas_clientes.representante_fone; Type: COMMENT; Schema: …
+COMMENT ON COLUMN public.empresas_clientes.representante_fone IS 'Telefone do…
+-- Name: COLUMN empresas_clientes.representante_email; Type: COMMENT; Schema:…
+COMMENT ON COLUMN public.empresas_clientes.representante_email IS 'Email do r…
+    nivel_cargo character varying(50),                                        
+    ultima_avaliacao_id integer,                                              
+    ultimo_lote_codigo character varying(20),                                 
+    ultima_avaliacao_data_conclusao timestamp without time zone,              
+    ultima_avaliacao_status character varying(20),                            
+    ultimo_motivo_inativacao text,                                            
+    data_ultimo_lote timestamp without time zone,                             
+    data_nascimento date,                                                     
+    contratante_id integer,                                                   
+    indice_avaliacao integer DEFAULT 0 NOT NULL,                              
+    usuario_tipo public.usuario_tipo_enum NOT NULL,                           
+    CONSTRAINT funcionarios_nivel_cargo_check CHECK (((((perfil)::text = 'fun…
+-- Name: COLUMN funcionarios.ultima_avaliacao_id; Type: COMMENT; Schema: publ…
+COMMENT ON COLUMN public.funcionarios.ultima_avaliacao_id IS 'ID da Ãºltima a…
+-- Name: COLUMN funcionarios.data_ultimo_lote; Type: COMMENT; Schema: public;…
+COMMENT ON COLUMN public.funcionarios.data_ultimo_lote IS 'Data/hora da Ãºlti…
+-- Name: COLUMN funcionarios.indice_avaliacao; Type: COMMENT; Schema: public;…
+COMMENT ON COLUMN public.funcionarios.indice_avaliacao IS 'NÃºmero sequencial…
+-- Name: equipe_administrativa; Type: VIEW; Schema: public; Owner: -          
+CREATE VIEW public.equipe_administrativa AS                                   
+ SELECT id,                                                                   
+    cpf,                                                                      
+    nome,                                                                     
+    email,                                                                    
+    usuario_tipo,                                                             
+    perfil,                                                                   
+            WHEN (usuario_tipo = 'admin'::public.usuario_tipo_enum) THEN 'Adm…
+            WHEN (usuario_tipo = 'emissor'::public.usuario_tipo_enum) THEN 'E…
+            ELSE 'Outro'::text                                                
+        END AS papel_descricao,                                               
+    clinica_id,                                                               
+    ativo,                                                                    
+    criado_em,                                                                
+    atualizado_em                                                             
+   FROM public.funcionarios                                                   
+  WHERE (usuario_tipo = ANY (ARRAY['admin'::public.usuario_tipo_enum, 'emisso…
+-- Name: VIEW equipe_administrativa; Type: COMMENT; Schema: public; Owner: -  
+COMMENT ON VIEW public.equipe_administrativa IS 'View semÃ¢ntica para equipe …
+Inclui administradores do sistema e emissores de laudos.                      
+Facilita auditoria e gestÃ£o de acessos especiais.';                          
+-- Name: funcionarios_operacionais; Type: VIEW; Schema: public; Owner: -      
+CREATE VIEW public.funcionarios_operacionais AS                               
+ SELECT id,                                                                   
+    cpf,                                                                      
+    nome,                                                                     
+    email,                                                                    
+    usuario_tipo,                                                             
+    perfil,                                                                   
+            WHEN (usuario_tipo = 'funcionario_clinica'::public.usuario_tipo_e…
+            WHEN (usuario_tipo = 'funcionario_entidade'::public.usuario_tipo_…
+            ELSE 'Outro'::text                                                
+        END AS tipo_funcionario_descricao,                                    
+    empresa_id,                                                               
+    clinica_id,                                                               
+    contratante_id,                                                           
+    setor,                                                                    
+    funcao,                                                                   
+    nivel_cargo,                                                              
+    data_nascimento,                                                          
+    matricula,                                                                
+    turno,                                                                    
+    escala,                                                                   
+    ativo,                                                                    
+    criado_em,                                                                
+    atualizado_em                                                             
+   FROM public.funcionarios                                                   
+  WHERE (usuario_tipo = ANY (ARRAY['funcionario_clinica'::public.usuario_tipo…
+-- Name: VIEW funcionarios_operacionais; Type: COMMENT; Schema: public; Owner…
+COMMENT ON VIEW public.funcionarios_operacionais IS 'View semÃ¢ntica para fun…
+Exclui gestores, admins e emissores.                                          
+Facilita queries de RH e relatÃ³rios de funcionÃ¡rios.';                      
+-- Name: gestores; Type: VIEW; Schema: public; Owner: -                       
+CREATE VIEW public.gestores AS                                                
+ SELECT id,                                                                   
+    cpf,                                                                      
+    nome,                                                                     
+    email,                                                                    
+    usuario_tipo,                                                             
+    perfil,                                                                   
+            WHEN (usuario_tipo = 'gestor_rh'::public.usuario_tipo_enum) THEN …
+            WHEN (usuario_tipo = 'gestor_entidade'::public.usuario_tipo_enum)…
+            ELSE 'Outro'::text                                                
+        END AS tipo_gestor_descricao,                                         
+    clinica_id,                                                               
+    contratante_id,                                                           
+    ativo,                                                                    
+    criado_em,                                                                
+    atualizado_em                                                             
+   FROM public.funcionarios                                                   
+  WHERE (usuario_tipo = ANY (ARRAY['gestor_rh'::public.usuario_tipo_enum, 'ge…
+-- Name: VIEW gestores; Type: COMMENT; Schema: public; Owner: -               
+COMMENT ON VIEW public.gestores IS 'View semÃ¢ntica para todos os gestores do…
+Inclui gestores de RH (clÃ­nicas) e gestores de entidades.                    
+Facilita queries que precisam apenas de gestores administrativos.';           
+    emissor_cpf character(11),                                                
+    hash_pdf character varying(64),                                           
+    job_id bigint,                                                            
+    arquivo_remoto_provider character varying(32),                            
+    arquivo_remoto_bucket character varying(255),                             
+    arquivo_remoto_key character varying(1024),                               
+    arquivo_remoto_url text,                                                  
+    CONSTRAINT chk_laudos_emitido_em_emissor_cpf CHECK (((emitido_em IS NULL)…
+    CONSTRAINT laudos_id_equals_lote_id CHECK ((id = lote_id)),               
+-- Name: TABLE laudos; Type: COMMENT; Schema: public; Owner: -                
+COMMENT ON TABLE public.laudos IS 'Laudos psicolÃ³gicos emitidos por emissore…
+IMPORTANTE: Laudos sÃ£o criados APENAS pelo emissor no momento da emissÃ£o.   
+NÃƒO devem ser criados antecipadamente em status rascunho.                    
+Fluxo correto:                                                                
+1. RH/Entidade solicita emissÃ£o (POST /api/lotes/[loteId]/solicitar-emissao) 
+2. Lote aparece no dashboard do emissor                                       
+3. Emissor clica "Gerar Laudo" (POST /api/emissor/laudos/[loteId])            
+4. Sistema cria registro em laudos E gera PDF+hash                            
+5. Emissor revisa e envia';                                                   
+-- Name: COLUMN laudos.hash_pdf; Type: COMMENT; Schema: public; Owner: -      
+COMMENT ON COLUMN public.laudos.hash_pdf IS 'Hash SHA-256 do PDF do laudo ger…
+-- Name: CONSTRAINT laudos_id_equals_lote_id ON laudos; Type: COMMENT; Schema…
+COMMENT ON CONSTRAINT laudos_id_equals_lote_id ON public.laudos IS 'Garante q…
+    id integer DEFAULT public.fn_next_lote_id() NOT NULL,                     
+    clinica_id integer,                                                       
+    liberado_por character(11),                                               
+    contratante_id integer,                                                   
+    hash_pdf character varying(64),                                           
+    emitido_em timestamp with time zone,                                      
+    enviado_em timestamp with time zone,                                      
+    cancelado_automaticamente boolean DEFAULT false,                          
+    motivo_cancelamento text,                                                 
+    modo_emergencia boolean DEFAULT false,                                    
+    motivo_emergencia text,                                                   
+    setor_id integer,                                                         
+-- Name: COLUMN lotes_avaliacao.liberado_por; Type: COMMENT; Schema: public; …
+COMMENT ON COLUMN public.lotes_avaliacao.liberado_por IS 'CPF do gestor que l…
+-- Name: COLUMN lotes_avaliacao.hash_pdf; Type: COMMENT; Schema: public; Owne…
+COMMENT ON COLUMN public.lotes_avaliacao.hash_pdf IS 'Hash SHA-256 do PDF do …
+-- Name: COLUMN lotes_avaliacao.emitido_em; Type: COMMENT; Schema: public; Ow…
+COMMENT ON COLUMN public.lotes_avaliacao.emitido_em IS 'Data/hora em que o la…
+-- Name: COLUMN lotes_avaliacao.enviado_em; Type: COMMENT; Schema: public; Ow…
+COMMENT ON COLUMN public.lotes_avaliacao.enviado_em IS 'Data/hora em que o la…
+-- Name: COLUMN lotes_avaliacao.cancelado_automaticamente; Type: COMMENT; Sch…
+COMMENT ON COLUMN public.lotes_avaliacao.cancelado_automaticamente IS 'Indica…
+-- Name: COLUMN lotes_avaliacao.motivo_cancelamento; Type: COMMENT; Schema: p…
+COMMENT ON COLUMN public.lotes_avaliacao.motivo_cancelamento IS 'Motivo do ca…
+-- Name: COLUMN lotes_avaliacao.modo_emergencia; Type: COMMENT; Schema: publi…
+COMMENT ON COLUMN public.lotes_avaliacao.modo_emergencia IS 'Indica se laudo …
+-- Name: COLUMN lotes_avaliacao.motivo_emergencia; Type: COMMENT; Schema: pub…
+COMMENT ON COLUMN public.lotes_avaliacao.motivo_emergencia IS 'Justificativa …
+-- Name: notificacoes; Type: TABLE; Schema: public; Owner: -                  
+CREATE TABLE public.notificacoes (                                            
+    tipo public.tipo_notificacao NOT NULL,                                    
+    prioridade public.prioridade_notificacao DEFAULT 'media'::public.priorida…
+    destinatario_cpf text NOT NULL,                                           
+    destinatario_tipo text NOT NULL,                                          
+    titulo text NOT NULL,                                                     
+    dados_contexto jsonb,                                                     
+    link_acao text,                                                           
+    botao_texto text,                                                         
+    lida boolean DEFAULT false,                                               
+    data_leitura timestamp without time zone,                                 
+    arquivada boolean DEFAULT false,                                          
+    contratacao_personalizada_id integer,                                     
+    criado_em timestamp without time zone DEFAULT now(),                      
+    expira_em timestamp without time zone,                                    
+    CONSTRAINT notificacao_destinatario_valido CHECK ((length(destinatario_cp…
+    CONSTRAINT notificacoes_destinatario_tipo_check CHECK ((destinatario_tipo…
+-- Name: TABLE notificacoes; Type: COMMENT; Schema: public; Owner: -          
+COMMENT ON TABLE public.notificacoes IS 'Sistema de notificacoes em tempo rea…
+-- Name: COLUMN notificacoes.dados_contexto; Type: COMMENT; Schema: public; O…
+COMMENT ON COLUMN public.notificacoes.dados_contexto IS 'JSONB com dados adic…
+-- Name: COLUMN notificacoes.expira_em; Type: COMMENT; Schema: public; Owner:…
+COMMENT ON COLUMN public.notificacoes.expira_em IS 'Data de expiracao da noti…
+    mensagem text NOT NULL,                                                   
+-- Name: notificacoes_id_seq; Type: SEQUENCE; Schema: public; Owner: -        
+CREATE SEQUENCE public.notificacoes_id_seq                                    
+-- Name: notificacoes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner:…
+ALTER SEQUENCE public.notificacoes_id_seq OWNED BY public.notificacoes.id;    
+    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,      
+    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,      
+);                                                                            
+);                                                                            
+    AS integer                                                                
+    START WITH 1                                                              
+    INCREMENT BY 1                                                            
+    NO MINVALUE                                                               
+    NO MAXVALUE                                                               
+    CACHE 1;                                                                  
+-- Name: usuarios; Type: TABLE; Schema: public; Owner: -                      
+CREATE TABLE public.usuarios (                                                
+    id integer NOT NULL,                                                      
+    cpf text NOT NULL,                                                        
+    nome text,                                                                
+    role text DEFAULT 'admin'::text NOT NULL,                                 
+    ativo boolean DEFAULT true,                                               
+    criado_em timestamp without time zone DEFAULT now()                       
+);                                                                            
+-- Name: TABLE usuarios; Type: COMMENT; Schema: public; Owner: -              
+COMMENT ON TABLE public.usuarios IS 'Tabela de usuÃ¡rios do sistema (mÃ­nima …
+-- Name: usuarios_id_seq; Type: SEQUENCE; Schema: public; Owner: -            
+CREATE SEQUENCE public.usuarios_id_seq                                        
+    AS integer                                                                
+    START WITH 1                                                              
+    INCREMENT BY 1                                                            
+    NO MINVALUE                                                               
+    NO MAXVALUE                                                               
+    CACHE 1;                                                                  
+-- Name: usuarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -   
+ALTER SEQUENCE public.usuarios_id_seq OWNED BY public.usuarios.id;            
+-- Name: usuarios_resumo; Type: VIEW; Schema: public; Owner: -                
+CREATE VIEW public.usuarios_resumo AS                                         
+ SELECT usuario_tipo,                                                         
+    count(*) AS total,                                                        
+    count(*) FILTER (WHERE (ativo = true)) AS ativos,                         
+    count(*) FILTER (WHERE (ativo = false)) AS inativos,                      
+    count(DISTINCT clinica_id) FILTER (WHERE (clinica_id IS NOT NULL)) AS cli…
+    count(DISTINCT contratante_id) FILTER (WHERE (contratante_id IS NOT NULL)…
+    count(DISTINCT empresa_id) FILTER (WHERE (empresa_id IS NOT NULL)) AS emp…
+   FROM public.funcionarios                                                   
+  WHERE (usuario_tipo IS NOT NULL)                                            
+  GROUP BY usuario_tipo                                                       
+  ORDER BY                                                                    
+        CASE usuario_tipo                                                     
+            WHEN 'admin'::public.usuario_tipo_enum THEN 1                     
+            WHEN 'emissor'::public.usuario_tipo_enum THEN 2                   
+            WHEN 'gestor_rh'::public.usuario_tipo_enum THEN 3                 
+            WHEN 'gestor_entidade'::public.usuario_tipo_enum THEN 4           
+            WHEN 'funcionario_clinica'::public.usuario_tipo_enum THEN 5       
+            WHEN 'funcionario_entidade'::public.usuario_tipo_enum THEN 6      
+        END;                                                                  
+-- Name: VIEW usuarios_resumo; Type: COMMENT; Schema: public; Owner: -        
+COMMENT ON VIEW public.usuarios_resumo IS 'View analÃ­tica com resumo estatÃ­…
+Ãštil para dashboards administrativos e relatÃ³rios gerenciais.';             
+-- Name: v_auditoria_emissoes; Type: VIEW; Schema: public; Owner: -           
+CREATE VIEW public.v_auditoria_emissoes AS                                    
+ SELECT l.id AS laudo_id,                                                     
+    l.lote_id,                                                                
+    la.codigo AS lote_codigo,                                                 
+    la.contratante_id,                                                        
+    la.empresa_id,                                                            
+    fe.solicitado_por AS solicitante_cpf,                                     
+    fe.tipo_solicitante AS solicitante_perfil,                                
+    fe.solicitado_em,                                                         
+    l.emissor_cpf,                                                            
+    l.emitido_em,                                                             
+    l.status AS laudo_status,                                                 
+    la.status AS lote_status,                                                 
+    l.hash_pdf,                                                               
+    al.acao AS ultima_acao,                                                   
+    al.criado_em AS auditoria_em                                              
+   FROM (((public.laudos l                                                    
+     JOIN public.lotes_avaliacao la ON ((l.lote_id = la.id)))                 
+     LEFT JOIN public.fila_emissao fe ON ((l.lote_id = fe.lote_id)))          
+     LEFT JOIN LATERAL ( SELECT auditoria_laudos.acao,                        
+            auditoria_laudos.criado_em                                        
+           FROM public.auditoria_laudos                                       
+          WHERE (auditoria_laudos.lote_id = l.lote_id)                        
+          ORDER BY auditoria_laudos.criado_em DESC                            
+         LIMIT 1) al ON (true))                                               
+  ORDER BY l.emitido_em DESC NULLS LAST;                                      
+-- Name: VIEW v_auditoria_emissoes; Type: COMMENT; Schema: public; Owner: -   
+COMMENT ON VIEW public.v_auditoria_emissoes IS 'View consolidada para auditor…
+-- Name: vw_funcionarios_por_lote; Type: VIEW; Schema: public; Owner: -       
+CREATE VIEW public.vw_funcionarios_por_lote AS                                
+ SELECT f.cpf,                                                                
+    f.nome,                                                                   
+    f.setor,                                                                  
+    f.funcao,                                                                 
+    f.matricula,                                                              
+    f.turno,                                                                  
+    f.escala,                                                                 
+    f.empresa_id,                                                             
+    f.clinica_id,                                                             
+    a.id AS avaliacao_id,                                                     
+    a.status AS status_avaliacao,                                             
+    a.envio AS data_conclusao,                                                
+    a.inicio AS data_inicio,                                                  
+    a.inativada_em AS data_inativacao,                                        
+    a.motivo_inativacao,                                                      
+    a.lote_id                                                                 
+   FROM (public.funcionarios f                                                
+     LEFT JOIN public.avaliacoes a ON ((f.cpf = a.funcionario_cpf)))          
+  WHERE (((f.perfil)::text = 'funcionario'::text) AND (f.ativo = true));      
+-- Name: VIEW vw_funcionarios_por_lote; Type: COMMENT; Schema: public; Owner:…
+COMMENT ON VIEW public.vw_funcionarios_por_lote IS 'View que combina dados de…
+-- Name: vw_notificacoes_nao_lidas; Type: VIEW; Schema: public; Owner: -      
+CREATE VIEW public.vw_notificacoes_nao_lidas AS                               
+ SELECT destinatario_cpf,                                                     
+    destinatario_tipo,                                                        
+    count(*) AS total_nao_lidas,                                              
+    count(*) FILTER (WHERE (prioridade = 'critica'::public.prioridade_notific…
+    count(*) FILTER (WHERE (prioridade = 'alta'::public.prioridade_notificaca…
+    max(criado_em) AS ultima_notificacao                                      
+   FROM public.notificacoes                                                   
+  WHERE ((lida = false) AND (arquivada = false))                              
+  GROUP BY destinatario_cpf, destinatario_tipo;                               
+-- Name: notificacoes id; Type: DEFAULT; Schema: public; Owner: -             
+ALTER TABLE ONLY public.notificacoes ALTER COLUMN id SET DEFAULT nextval('pub…
+-- Name: usuarios id; Type: DEFAULT; Schema: public; Owner: -                 
+ALTER TABLE ONLY public.usuarios ALTER COLUMN id SET DEFAULT nextval('public.…
+-- Name: notificacoes notificacoes_pkey; Type: CONSTRAINT; Schema: public; Ow…
+ALTER TABLE ONLY public.notificacoes                                          
+    ADD CONSTRAINT notificacoes_pkey PRIMARY KEY (id);                        
+-- Name: usuarios usuarios_cpf_key; Type: CONSTRAINT; Schema: public; Owner: -
+ALTER TABLE ONLY public.usuarios                                              
+    ADD CONSTRAINT usuarios_cpf_key UNIQUE (cpf);                             
+-- Name: usuarios usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: -   
+ALTER TABLE ONLY public.usuarios                                              
+    ADD CONSTRAINT usuarios_pkey PRIMARY KEY (id);                            
+-- Name: idx_avaliacoes_inativada_em; Type: INDEX; Schema: public; Owner: -   
+CREATE INDEX idx_avaliacoes_inativada_em ON public.avaliacoes USING btree (in…
+-- Name: idx_clinicas_contratante_id_unique; Type: INDEX; Schema: public; Own…
+CREATE UNIQUE INDEX idx_clinicas_contratante_id_unique ON public.clinicas USI…
+-- Name: idx_contratantes_senhas_contratante_id; Type: INDEX; Schema: public;…
+CREATE INDEX idx_contratantes_senhas_contratante_id ON public.contratantes_se…
+-- Name: idx_funcionarios_contratante_id; Type: INDEX; Schema: public; Owner:…
+CREATE INDEX idx_funcionarios_contratante_id ON public.funcionarios USING btr…
+-- Name: idx_funcionarios_data_ultimo_lote; Type: INDEX; Schema: public; Owne…
+CREATE INDEX idx_funcionarios_data_ultimo_lote ON public.funcionarios USING b…
+-- Name: idx_funcionarios_indice_avaliacao; Type: INDEX; Schema: public; Owne…
+CREATE INDEX idx_funcionarios_indice_avaliacao ON public.funcionarios USING b…
+-- Name: idx_funcionarios_pendencias; Type: INDEX; Schema: public; Owner: -   
+CREATE INDEX idx_funcionarios_pendencias ON public.funcionarios USING btree (…
+-- Name: idx_funcionarios_perfil_entities; Type: INDEX; Schema: public; Owner…
+CREATE INDEX idx_funcionarios_perfil_entities ON public.funcionarios USING bt…
+-- Name: idx_funcionarios_tipo_clinica; Type: INDEX; Schema: public; Owner: - 
+CREATE INDEX idx_funcionarios_tipo_clinica ON public.funcionarios USING btree…
+-- Name: idx_funcionarios_tipo_contratante; Type: INDEX; Schema: public; Owne…
+CREATE INDEX idx_funcionarios_tipo_contratante ON public.funcionarios USING b…
+-- Name: idx_funcionarios_ultima_avaliacao; Type: INDEX; Schema: public; Owne…
+CREATE INDEX idx_funcionarios_ultima_avaliacao ON public.funcionarios USING b…
+-- Name: idx_funcionarios_ultima_avaliacao_status; Type: INDEX; Schema: publi…
+CREATE INDEX idx_funcionarios_ultima_avaliacao_status ON public.funcionarios …
+-- Name: idx_funcionarios_usuario_tipo; Type: INDEX; Schema: public; Owner: - 
+CREATE INDEX idx_funcionarios_usuario_tipo ON public.funcionarios USING btree…
+-- Name: idx_funcionarios_usuario_tipo_ativo; Type: INDEX; Schema: public; Ow…
+CREATE INDEX idx_funcionarios_usuario_tipo_ativo ON public.funcionarios USING…
+-- Name: idx_laudos_arquivo_remoto_key; Type: INDEX; Schema: public; Owner: - 
+CREATE INDEX idx_laudos_arquivo_remoto_key ON public.laudos USING btree (arqu…
+-- Name: idx_laudos_job_id; Type: INDEX; Schema: public; Owner: -             
+CREATE INDEX idx_laudos_job_id ON public.laudos USING btree (job_id);         
+-- Name: idx_lotes_avaliacao_emitido_em; Type: INDEX; Schema: public; Owner: -
+CREATE INDEX idx_lotes_avaliacao_emitido_em ON public.lotes_avaliacao USING b…
+-- Name: idx_lotes_avaliacao_liberado_por; Type: INDEX; Schema: public; Owner…
+CREATE INDEX idx_lotes_avaliacao_liberado_por ON public.lotes_avaliacao USING…
+-- Name: idx_lotes_avaliacao_status_emitido; Type: INDEX; Schema: public; Own…
+CREATE INDEX idx_lotes_avaliacao_status_emitido ON public.lotes_avaliacao USI…
+-- Name: idx_lotes_cancelados_auto; Type: INDEX; Schema: public; Owner: -     
+CREATE INDEX idx_lotes_cancelados_auto ON public.lotes_avaliacao USING btree …
+-- Name: idx_lotes_pronto_emissao; Type: INDEX; Schema: public; Owner: -      
+CREATE INDEX idx_lotes_pronto_emissao ON public.lotes_avaliacao USING btree (…
+-- Name: idx_notificacoes_contratacao; Type: INDEX; Schema: public; Owner: -  
+CREATE INDEX idx_notificacoes_contratacao ON public.notificacoes USING btree …
+-- Name: idx_notificacoes_criado_em; Type: INDEX; Schema: public; Owner: -    
+CREATE INDEX idx_notificacoes_criado_em ON public.notificacoes USING btree (c…
+-- Name: idx_notificacoes_destinatario; Type: INDEX; Schema: public; Owner: - 
+CREATE INDEX idx_notificacoes_destinatario ON public.notificacoes USING btree…
+-- Name: idx_notificacoes_nao_lidas; Type: INDEX; Schema: public; Owner: -    
+CREATE INDEX idx_notificacoes_nao_lidas ON public.notificacoes USING btree (d…
+-- Name: idx_notificacoes_tipo; Type: INDEX; Schema: public; Owner: -         
+CREATE INDEX idx_notificacoes_tipo ON public.notificacoes USING btree (tipo); 
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+-- Name: TRIGGER trg_reservar_id_laudo_on_lote_insert ON lotes_avaliacao; Typ…
+                                                                              
+COMMENT ON TRIGGER trg_reservar_id_laudo_on_lote_insert ON public.lotes_avali…
+                                                                              
+Laudo fica em status=rascunho atÃ© emissor processar.';                       
+                                                                              
+                                                                              
+-- Name: contratacao_personalizada trigger_notificar_pre_cadastro; Type: TRIG…
+                                                                              
+CREATE TRIGGER trigger_notificar_pre_cadastro AFTER INSERT ON public.contrata…
+                                                                              
+                                                                              
+-- Name: contratacao_personalizada trigger_notificar_valor_definido; Type: TR…
+                                                                              
+CREATE TRIGGER trigger_notificar_valor_definido AFTER UPDATE ON public.contra…
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+    ADD CONSTRAINT clinicas_empresas_clinica_id_fkey FOREIGN KEY (clinica_id)…
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+-- Name: empresas_clientes empresas_clientes_contratante_id_fkey; Type: FK CO…
+                                                                              
+    ADD CONSTRAINT empresas_clientes_contratante_id_fkey FOREIGN KEY (contrat…
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+ALTER TABLE ONLY public.empresas_clientes                                     
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+-- Name: funcionarios fk_funcionarios_contratante; Type: FK CONSTRAINT; Schem…
+                                                                              
+    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) R…
+                                                                              
+                                                                              
+-- Name: funcionarios fk_funcionarios_ultima_avaliacao; Type: FK CONSTRAINT; …
+                                                                              
+    ADD CONSTRAINT fk_funcionarios_ultima_avaliacao FOREIGN KEY (ultima_avali…
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+ALTER TABLE ONLY public.funcionarios                                          
+                                                                              
+                                                                              
+                                                                              
+ALTER TABLE ONLY public.funcionarios                                          
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+    ADD CONSTRAINT lotes_avaliacao_liberado_por_fkey FOREIGN KEY (liberado_po…
+                                                                              
+                                                                              
+-- Name: CONSTRAINT lotes_avaliacao_liberado_por_fkey ON lotes_avaliacao; Typ…
+                                                                              
+COMMENT ON CONSTRAINT lotes_avaliacao_liberado_por_fkey ON public.lotes_avali…
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+-- Name: notificacoes notificacoes_contratacao_personalizada_id_fkey; Type: F…
+                                                                              
+ALTER TABLE ONLY public.notificacoes                                          
+    ADD CONSTRAINT notificacoes_contratacao_personalizada_id_fkey FOREIGN KEY…
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR I…
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+CREATE POLICY avaliacoes_own_update ON public.avaliacoes FOR UPDATE USING (((…
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+-- Name: notificacoes; Type: ROW SECURITY; Schema: public; Owner: -           
+--                                                                            
+                                                                              
+ALTER TABLE public.notificacoes ENABLE ROW LEVEL SECURITY;                    
+                                                                              
+--                                                                            
+-- Name: notificacoes notificacoes_gestor_own; Type: POLICY; Schema: public; …
+--                                                                            
+                                                                              
+CREATE POLICY notificacoes_gestor_own ON public.notificacoes FOR SELECT USING…
+                                                                              
+                                                                              
+--                                                                            
+-- Name: notificacoes notificacoes_gestor_update; Type: POLICY; Schema: publi…
+--                                                                            
+                                                                              
+CREATE POLICY notificacoes_gestor_update ON public.notificacoes FOR UPDATE US…
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+                                                                              
+                                                                              
+--                                                                            
+--                                                                            
+                                                                              
+

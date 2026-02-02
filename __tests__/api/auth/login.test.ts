@@ -1331,17 +1331,39 @@ describe('/api/auth/login', () => {
       });
 
       mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('rate_limiting')) return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        if (sql.includes('contratantes_senhas')) return Promise.resolve({ rows: [], rowCount: 0 });
-        if (sql.includes('SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios')) {
+        if (sql.includes('rate_limiting'))
+          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
+        if (sql.includes('contratantes_senhas'))
+          return Promise.resolve({ rows: [], rowCount: 0 });
+        if (
+          sql.includes(
+            'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios'
+          )
+        ) {
           const err: any = new Error('column "nivel_cargo" does not exist');
           err.code = '42703';
           throw err;
         }
-        if (sql.includes('SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios')) {
-          return Promise.resolve({ rows: [{ cpf: '88888888888', nome: 'Fallback User', perfil: 'funcionario', senha_hash: '$2a$10$hash', ativo: true }], rowCount: 1 });
+        if (
+          sql.includes(
+            'SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios'
+          )
+        ) {
+          return Promise.resolve({
+            rows: [
+              {
+                cpf: '88888888888',
+                nome: 'Fallback User',
+                perfil: 'funcionario',
+                senha_hash: '$2a$10$hash',
+                ativo: true,
+              },
+            ],
+            rowCount: 1,
+          });
         }
-        if (sql.includes('responsavel_cpf')) return Promise.resolve({ rows: [], rowCount: 0 });
+        if (sql.includes('responsavel_cpf'))
+          return Promise.resolve({ rows: [], rowCount: 0 });
         return Promise.resolve({ rows: [], rowCount: 0 });
       });
 
@@ -1355,12 +1377,14 @@ describe('/api/auth/login', () => {
       expect(data.success).toBe(true);
       expect(data.nivelCargo).toBeNull();
 
-      expect(mockCreateSession).toHaveBeenCalledWith(expect.objectContaining({
-        cpf: '88888888888',
-        nome: 'Fallback User',
-        perfil: 'funcionario',
-        nivelCargo: null,
-      }));
+      expect(mockCreateSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cpf: '88888888888',
+          nome: 'Fallback User',
+          perfil: 'funcionario',
+          nivelCargo: null,
+        })
+      );
     });
 
     it('deve tolerar ausência da coluna contratante_id e prosseguir sem contratante_id', async () => {
@@ -1370,17 +1394,38 @@ describe('/api/auth/login', () => {
       });
 
       mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('rate_limiting')) return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        if (sql.includes('contratantes_senhas')) return Promise.resolve({ rows: [], rowCount: 0 });
-        if (sql.includes('SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios')) {
-          return Promise.resolve({ rows: [{ cpf: '99999999999', nome: 'NoContratante User', perfil: 'funcionario', senha_hash: '$2a$10$hash', ativo: true, nivel_cargo: 'operacional' }], rowCount: 1 });
+        if (sql.includes('rate_limiting'))
+          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
+        if (sql.includes('contratantes_senhas'))
+          return Promise.resolve({ rows: [], rowCount: 0 });
+        if (
+          sql.includes(
+            'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios'
+          )
+        ) {
+          return Promise.resolve({
+            rows: [
+              {
+                cpf: '99999999999',
+                nome: 'NoContratante User',
+                perfil: 'funcionario',
+                senha_hash: '$2a$10$hash',
+                ativo: true,
+                nivel_cargo: 'operacional',
+              },
+            ],
+            rowCount: 1,
+          });
         }
-        if (sql.includes('SELECT contratante_id, clinica_id FROM funcionarios')) {
+        if (
+          sql.includes('SELECT contratante_id, clinica_id FROM funcionarios')
+        ) {
           const err: any = new Error('column "contratante_id" does not exist');
           err.code = '42703';
           throw err;
         }
-        if (sql.includes('responsavel_cpf')) return Promise.resolve({ rows: [], rowCount: 0 });
+        if (sql.includes('responsavel_cpf'))
+          return Promise.resolve({ rows: [], rowCount: 0 });
         return Promise.resolve({ rows: [], rowCount: 0 });
       });
 
@@ -1394,13 +1439,18 @@ describe('/api/auth/login', () => {
       expect(data.success).toBe(true);
 
       // Verificar que a sessão foi criada e que contratante_id é undefined
-      expect(mockCreateSession).toHaveBeenCalledWith(expect.objectContaining({
-        cpf: '99999999999',
-        nome: 'NoContratante User',
-        perfil: 'funcionario',
-        nivelCargo: 'operacional',
-      }));
-      const lastArg = mockCreateSession.mock.calls[mockCreateSession.mock.calls.length - 1][0];
+      expect(mockCreateSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          cpf: '99999999999',
+          nome: 'NoContratante User',
+          perfil: 'funcionario',
+          nivelCargo: 'operacional',
+        })
+      );
+      const lastArg =
+        mockCreateSession.mock.calls[
+          mockCreateSession.mock.calls.length - 1
+        ][0];
       expect(lastArg.contratante_id).toBeUndefined();
       expect(lastArg.clinica_id).toBeUndefined();
     });
