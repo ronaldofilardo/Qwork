@@ -46,7 +46,6 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     }
 
     planoPersonalizadoId = planoResult.rows[0].id;
-    console.log(
       '✓ Usando plano personalizado existente:',
       planoPersonalizadoId
     );
@@ -81,7 +80,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
   });
 
   it('Etapa 1: Contratante cadastra-se com plano personalizado', async () => {
-    console.log('\n=== ETAPA 1: CADASTRO DO CONTRATANTE ===');
+    // \n=== ETAPA 1: CADASTRO DO CONTRATANTE ===
 
     const formData = new FormData();
     formData.append('tipo', 'clinica');
@@ -134,12 +133,10 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     expect(data.contratante.status).toBe('pendente');
 
     contratanteId = data.id;
-    console.log('✓ Contratante cadastrado com sucesso! ID:', contratanteId);
-    console.log('✓ Status:', data.contratante.status);
   });
 
   it('Etapa 2: Verificar pré-cadastro criado com status aguardando_valor_admin', async () => {
-    console.log('\n=== ETAPA 2: VERIFICAR PRÉ-CADASTRO ===');
+    // \n=== ETAPA 2: VERIFICAR PRÉ-CADASTRO ===
 
     const result = await query(
       'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
@@ -153,16 +150,13 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     expect(contratacao.numero_funcionarios_estimado).toBe(3000);
 
     contratacaoId = contratacao.id;
-    console.log('✓ Pré-cadastro encontrado! ID:', contratacaoId);
-    console.log('✓ Status:', contratacao.status);
-    console.log(
       '✓ Funcionários estimados:',
       contratacao.numero_funcionarios_estimado
     );
   });
 
   it('Etapa 3: Admin define valor e gera link da proposta', async () => {
-    console.log('\n=== ETAPA 3: ADMIN DEFINE VALOR E GERA LINK ===');
+    // \n=== ETAPA 3: ADMIN DEFINE VALOR E GERA LINK ===
 
     const response = await fetch(
       'http://localhost:3000/api/admin/personalizado/definir-valor',
@@ -189,10 +183,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
 
     token = data.data.token;
 
-    console.log('✓ Link da proposta gerado!');
-    console.log('✓ Token:', token);
-    console.log('✓ Valor total:', data.data.proposta_info.valor_total);
-    console.log('✓ Link:', data.data.link_proposta);
+    // ✓ Link da proposta gerado!
 
     // Verificar status atualizado
     const contratacaoAtualizada = await query(
@@ -201,11 +192,12 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     );
 
     expect(contratacaoAtualizada.rows[0].status).toBe('valor_definido');
-    console.log('✓ Status da contratação atualizado para: valor_definido');
+    // ✓ Status da contratação atualizado para: valor_definido
+
   });
 
   it('Etapa 4: Buscar proposta através do token', async () => {
-    console.log('\n=== ETAPA 4: BUSCAR PROPOSTA PELO TOKEN ===');
+    // \n=== ETAPA 4: BUSCAR PROPOSTA PELO TOKEN ===
 
     const response = await fetch(`http://localhost:3000/api/proposta/${token}`);
     const data = await response.json();
@@ -216,14 +208,12 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     expect(data.numero_funcionarios).toBe(3000);
     expect(data.valor_total).toBe(46500);
 
-    console.log('✓ Proposta encontrada!');
-    console.log('✓ Contratante:', data.contratante_nome);
-    console.log('✓ Funcionários:', data.numero_funcionarios);
-    console.log('✓ Valor total:', data.valor_total);
+    // ✓ Proposta encontrada!
+
   });
 
   it('Etapa 5: Contratante aceita proposta', async () => {
-    console.log('\n=== ETAPA 5: ACEITAR PROPOSTA ===');
+    // \n=== ETAPA 5: ACEITAR PROPOSTA ===
 
     const response = await fetch('http://localhost:3000/api/proposta/aceitar', {
       method: 'POST',
@@ -242,9 +232,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
 
     contratoId = data.contrato_id;
 
-    console.log('✓ Proposta aceita!');
-    console.log('✓ Contrato ID:', contratoId);
-    console.log('✓ Redirect URL:', data.redirect_url);
+    // ✓ Proposta aceita!
 
     // Verificar contrato criado
     const contratoResult = await query(
@@ -254,11 +242,10 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     expect(contratoResult.rows.length).toBe(1);
     expect(contratoResult.rows[0].status).toBe('aguardando_aceite');
 
-    console.log('✓ Contrato criado com status:', contratoResult.rows[0].status);
   });
 
   it('Etapa 6: Verificar status final da contratação', async () => {
-    console.log('\n=== ETAPA 6: VERIFICAR STATUS FINAL ===');
+    // \n=== ETAPA 6: VERIFICAR STATUS FINAL ===
 
     const result = await query(
       'SELECT status FROM contratacao_personalizada WHERE id = $1',
@@ -266,10 +253,9 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     );
 
     expect(result.rows[0].status).toBe('aguardando_aceite_contrato');
-    console.log('✓ Status da contratação:', result.rows[0].status);
 
-    console.log('\n=== ✓ FLUXO COMPLETO VALIDADO COM SUCESSO ===');
-    console.log(
+    // \n=== ✓ FLUXO COMPLETO VALIDADO COM SUCESSO ===
+
       'Próximo passo: Contratante aceita contrato → Simulador de pagamento → Liberação de login'
     );
   });

@@ -1,12 +1,15 @@
 # Checklist para Desenvolvimento da Landing Page do QWork
 
+## 0. Preparação do Ambiente
+
+- [ ] Criar pasta separada para a landing page: C:\apps\QWork-LP
+- [ ] Inicializar projeto Next.js + TypeScript + Tailwind CSS na pasta QWork-LP
+- [ ] Configurar dependências básicas (Lucide React, Framer Motion, etc.)
+
 ## Fase 1 - Preparação
 
 - [ ] Definir conteúdo para todas as seções da landing page
-- [ ] Coletar depoimentos de clientes (nome, cargo, empresa, foto, texto)
-- [ ] Criar wireframes e protótipos da landing page
-- [ ] Gravar video de demo do sistema (2-3 minutos)
-- [ ] Coletar logos das empresas clientes
+- [ ] Criar wireframes e protótipos da landing page (inspirados em PawCare e Alivve)
 - [ ] Definir dados de planos e preços
 - [ ] Preparar perguntas frequentes (FAQ) e respostas
 - [ ] Configurar conta no Google Analytics 4
@@ -24,7 +27,6 @@
 - [ ] Implementar seção "Por que Escolher o QWork?"
 - [ ] Implementar seção de funcionalidades principais
 - [ ] Implementar seção de planos e preços
-- [ ] Implementar seção de depoimentos
 - [ ] Implementar seção "Como Funciona?"
 - [ ] Implementar FAQ section
 - [ ] Implementar Call to Action final
@@ -35,7 +37,6 @@
 - [ ] Criar `components/landing/HeroSection.tsx`
 - [ ] Criar `components/landing/FeaturesSection.tsx`
 - [ ] Criar `components/landing/PricingSection.tsx`
-- [ ] Criar `components/landing/TestimonialsSection.tsx`
 - [ ] Criar `components/landing/HowItWorksSection.tsx`
 - [ ] Criar `components/landing/FAQSection.tsx`
 - [ ] Criar `components/landing/CTASection.tsx`
@@ -43,7 +44,6 @@
 ### Utilitários
 
 - [ ] Criar `lib/landing/pricing.ts` - dados de planos
-- [ ] Criar `lib/landing/testimonials.ts` - dados de depoimentos
 - [ ] Criar `lib/landing/faq.ts` - dados de perguntas frequentes
 
 ### Funcionalidades Interativas
@@ -51,7 +51,8 @@
 - [ ] Implementar formulário de cadastro rápido
 - [ ] Implementar validação de formulários com Zod
 - [ ] Criar API Route para enviar emails de lead (`app/api/leads/route.ts`)
-- [ ] Implementar modal de demo com vídeo
+- [ ] Implementar modal de login integrado
+- [ ] Integrar com o sistema de autenticação existente
 - [ ] Implementar calculadora de preço
 - [ ] Adicionar pixel do Facebook
 - [ ] Adicionar Google Analytics 4
@@ -83,7 +84,6 @@
 ### Testes de Usabilidade
 
 - [ ] Testar envio de formulários
-- [ ] Testar abertura do modal de demo
 - [ ] Testar calculadora de preço
 - [ ] Verificar links na página
 
@@ -129,7 +129,6 @@
 
 ### Atualizações
 
-- [ ] Atualizar depoimentos com clientes novos
 - [ ] Adicionar novas funcionalidades ao sistema
 - [ ] Ajustar preços e planos
 - [ ] Atualizar conteúdo com informações novas
@@ -166,7 +165,6 @@
 - [ ] Toda a página é responsiva em diferentes dispositivos
 - [ ] Todos os links são funcionais
 - [ ] Formulários enviam emails corretamente
-- [ ] Modal de demo abre e fecha corretamente
 - [ ] Calculadora de preço retorna resultados precisos
 - [ ] Analytics e pixel do Facebook estão configurados
 - [ ] Pontuação Lighthouse é > 90 em todas as categorias

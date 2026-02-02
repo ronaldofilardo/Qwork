@@ -1,18 +1,43 @@
 global.TextEncoder = require('util').TextEncoder;
 global.TextDecoder = require('util').TextDecoder;
 
-import { POST } from '@/app/api/avaliacao/save/route';
-import * as db from '@/lib/db';
-import * as session from '@/lib/session';
-
-jest.mock('@/lib/db');
+jest.mock('@/lib/db', () => ({
+  query: jest.fn(),
+  getDatabaseUrl: jest.fn(() => process.env.TEST_DATABASE_URL),
+}));
 jest.mock('@/lib/session');
+jest.mock('@/lib/db-security', () => ({
+  queryWithContext: jest.fn(),
+}));
+jest.mock('@/lib/lotes', () => ({
+  recalcularStatusLote: jest.fn(),
+}));
+jest.mock('@/lib/calculate', () => ({
+  calcularResultados: jest.fn(() => [
+    { grupo: 1, dominio: 'Demanda', score: 75, categoria: 'medio' },
+  ]),
+}));
 jest.mock('@/lib/questoes', () => ({
   grupos: [
-    { id: 1, itens: [{ id: 'Q1' }, { id: 'Q2' }] },
-    { id: 2, itens: [{ id: 'Q3' }, { id: 'Q13' }] },
+    {
+      id: 1,
+      itens: [{ id: 'Q1' }, { id: 'Q2' }],
+      dominio: 'Demanda',
+      tipo: 'normal',
+    },
+    {
+      id: 2,
+      itens: [{ id: 'Q3' }, { id: 'Q13' }],
+      dominio: 'Controle',
+      tipo: 'normal',
+    },
   ],
 }));
+
+import { POST } from '@/app/api/avaliacao/save/route';
+import * as db from '@/lib/db';
+import * as dbSecurity from '@/lib/db-security';
+import * as session from '@/lib/session';
 
 describe('API /api/avaliacao/save', () => {
   beforeEach(() => {
@@ -26,9 +51,14 @@ describe('API /api/avaliacao/save', () => {
       perfil: 'funcionario',
     });
     (db.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 }) // Busca avaliação existente
-      .mockResolvedValue({}) // Upsert respostas
-      .mockResolvedValue({}); // Update final
+      .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: null }], rowCount: 1 }) // Busca avaliação existente
+      .mockResolvedValue({ rows: [], rowCount: 1 }) // INSERT respostas
+      .mockResolvedValueOnce({ rows: [{ total: '2' }], rowCount: 1 }); // COUNT respostas (< 37)
+
+    (dbSecurity.queryWithContext as jest.Mock).mockResolvedValue({
+      rows: [],
+      rowCount: 1,
+    }); // UPDATE com context
 
     const mockRequest = {
       json: jest.fn().mockResolvedValue({
@@ -42,12 +72,11 @@ describe('API /api/avaliacao/save', () => {
 
     await POST(mockRequest as any);
 
-    // Verifica se o UPDATE foi chamado com grupo_atual = 2 (próximo grupo)
-    expect(db.query).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'UPDATE avaliacoes SET grupo_atual = $1, status = $2'
-      ),
-      [2, 'em_andamento', 1]
+    // Verifica se o queryWithContext foi chamado para UPDATE
+    expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      [2, 'em_andamento', 1],
+      expect.objectContaining({ cpf: '123' })
     );
   });
 
@@ -58,9 +87,14 @@ describe('API /api/avaliacao/save', () => {
       perfil: 'funcionario',
     });
     (db.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 })
-      .mockResolvedValue({})
-      .mockResolvedValue({});
+      .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: null }], rowCount: 1 })
+      .mockResolvedValue({ rows: [], rowCount: 1 })
+      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 });
+
+    (dbSecurity.queryWithContext as jest.Mock).mockResolvedValue({
+      rows: [],
+      rowCount: 1,
+    });
 
     const mockRequest = {
       json: jest.fn().mockResolvedValue({
@@ -71,12 +105,11 @@ describe('API /api/avaliacao/save', () => {
 
     await POST(mockRequest as any);
 
-    // Verifica se o UPDATE foi chamado com grupo_atual = 1 (mesmo grupo)
-    expect(db.query).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'UPDATE avaliacoes SET grupo_atual = $1, status = $2'
-      ),
-      [1, 'em_andamento', 1]
+    // Verifica se o queryWithContext foi chamado mantendo o mesmo grupo
+    expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      [1, 'em_andamento', 1],
+      expect.objectContaining({ cpf: '123' })
     );
   });
 
@@ -87,9 +120,14 @@ describe('API /api/avaliacao/save', () => {
       perfil: 'funcionario',
     });
     (db.query as jest.Mock)
-      .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 })
-      .mockResolvedValue({})
-      .mockResolvedValue({});
+      .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: null }], rowCount: 1 })
+      .mockResolvedValue({ rows: [], rowCount: 1 })
+      .mockResolvedValueOnce({ rows: [{ total: '1' }], rowCount: 1 });
+
+    (dbSecurity.queryWithContext as jest.Mock).mockResolvedValue({
+      rows: [],
+      rowCount: 1,
+    });
 
     const mockRequest = {
       json: jest.fn().mockResolvedValue({
@@ -101,11 +139,10 @@ describe('API /api/avaliacao/save', () => {
     await POST(mockRequest as any);
 
     // Verifica se o status sempre é atualizado para 'em_andamento'
-    expect(db.query).toHaveBeenCalledWith(
-      expect.stringContaining(
-        'UPDATE avaliacoes SET grupo_atual = $1, status = $2'
-      ),
-      expect.arrayContaining([1, 'em_andamento', 1])
+    expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+      expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      expect.arrayContaining([1, 'em_andamento', 1]),
+      expect.objectContaining({ cpf: '123' })
     );
   });
 });

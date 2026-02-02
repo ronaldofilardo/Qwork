@@ -141,14 +141,12 @@ export function LiberarLoteModal({
         setShowSuccess(true);
         setEntidadeResponse(response);
 
-        // chamar onSuccess após 1.5s sem loteId único (notificar caller)
-        setTimeout(() => {
-          if (onSuccess) {
-            // quando vários lotes são criados, não há um único id; passar -1 para indicar sucesso
-            onSuccess(-1);
-          }
-          handleClose();
-        }, 1500);
+        // Fechar modal imediatamente e notificar o caller
+        if (onSuccess) {
+          // quando vários lotes são criados, não há um único id; passar -1 para indicar sucesso
+          onSuccess(-1);
+        }
+        handleClose();
       }
 
       return;
@@ -183,13 +181,11 @@ export function LiberarLoteModal({
     if (response.success && response.lote) {
       setShowSuccess(true);
 
-      // Call onSuccess callback after 1.5 seconds
-      setTimeout(() => {
-        if (onSuccess) {
-          onSuccess(response.lote!.id);
-        }
-        handleClose();
-      }, 1500);
+      // Fechar modal imediatamente e notificar o caller
+      if (onSuccess) {
+        onSuccess(response.lote!.id);
+      }
+      handleClose();
     }
   };
 
@@ -615,4 +611,3 @@ export function LiberarLoteModal({
     </div>
   );
 }
-

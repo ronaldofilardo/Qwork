@@ -9,7 +9,6 @@
  * 5. Funções auxiliares de cálculo estatístico
  */
 
-
 import assert from 'assert';
 import {
   calcularScoresPorGrupo,

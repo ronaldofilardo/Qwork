@@ -107,8 +107,6 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
     const response = await POST(req);
     const data = await response.json();
 
-    console.log('Response fixo:', data);
-
     expect(response.status).toBe(201);
     expect(data.contratante.status).toBe('aguardando_pagamento');
 
@@ -158,8 +156,6 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
 
     const response = await POST(req);
     const data = await response.json();
-
-    console.log('Response personalizado:', data);
 
     expect(response.status).toBe(201);
     expect(data.contratante.status).toBe('pendente');

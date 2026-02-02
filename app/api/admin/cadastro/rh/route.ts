@@ -90,11 +90,11 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
-    // Inserir novo RH
+    // Inserir novo RH com usuario_tipo='gestor_rh' (separação lógica)
     const result = await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha, perfil, clinica_id, ativo)
-       VALUES ($1, $2, $3, $4, 'rh', $5, true)
-       RETURNING cpf, nome, email, perfil, clinica_id, ativo`,
+      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
+       VALUES ($1, $2, $3, $4, 'rh', 'gestor_rh', $5, true)
+       RETURNING cpf, nome, email, perfil, usuario_tipo, clinica_id, ativo`,
       [cpfLimpo, nome, email, senhaHash, clinica_id]
     );
 

@@ -19,23 +19,33 @@ import { EmpresaHeader, TabNavigation, LotesGrid } from '@/components/rh';
 
 // Lazy load de componentes grandes
 const ModalInserirFuncionario = dynamic(
-  () => import('@/components/ModalInserirFuncionario')
+  () => import('@/components/ModalInserirFuncionario'),
+  { ssr: false }
 );
 const EditEmployeeModal = dynamic(
-  () => import('@/components/EditEmployeeModal')
+  () => import('@/components/EditEmployeeModal'),
+  { ssr: false }
 );
-const RelatorioSetor = dynamic(() => import('@/components/RelatorioSetor'));
+const RelatorioSetor = dynamic(() => import('@/components/RelatorioSetor'), {
+  ssr: false,
+});
 const DetalhesFuncionario = dynamic(
-  () => import('@/components/DetalhesFuncionario')
+  () => import('@/components/DetalhesFuncionario'),
+  { ssr: false }
 );
 const FuncionariosSection = dynamic(
-  () => import('@/components/funcionarios/FuncionariosSection')
+  () => import('@/components/funcionarios/FuncionariosSection'),
+  { ssr: false }
 );
-const LaudosSection = dynamic(() => import('@/components/LaudosSection'));
-const LiberarLoteModal = dynamic(() =>
-  import('@/components/modals/LiberarLoteModal').then((mod) => ({
-    default: mod.LiberarLoteModal,
-  }))
+const LaudosSection = dynamic(() => import('@/components/LaudosSection'), {
+  ssr: false,
+});
+const LiberarLoteModal = dynamic(
+  () =>
+    import('@/components/modals/LiberarLoteModal').then((mod) => ({
+      default: mod.LiberarLoteModal,
+    })),
+  { ssr: false }
 );
 
 interface Session {

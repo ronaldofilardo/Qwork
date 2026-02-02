@@ -1,10 +1,36 @@
+/**
+ * @fileoverview Teste de integração E2E do fluxo completo de cadastro
+ * @description Valida fluxo: cadastro → contrato gerado → aceite → simulador → iniciar pagamento
+ */
+
+import type { Response } from '@/types/api';
+import type { Contrato } from '@/types/contrato';
+import type { SimuladorData } from '@/types/simulador';
 import '@testing-library/jest-dom';
 import { query } from '@/lib/db';
 
+/**
+ * @test Suite de integração para fluxo completo de cadastro e pagamento
+ * @description Testa desde a criação de contratante até o início do pagamento
+ */
 describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulador', () => {
   let planoId: number;
   let contratanteId: number;
   let contratoId: number | null = null;
+
+  beforeEach(async () => {
+    // Limpar dados de testes anteriores se existirem
+    if (contratoId) {
+      await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
+      contratoId = null;
+    }
+    if (contratanteId) {
+      await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
+        contratanteId,
+      ]);
+      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    }
+  });
 
   beforeAll(async () => {
     const planoRes = await query(
@@ -32,10 +58,18 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
     }
   });
 
+  /**
+   * @test Valida fluxo completo E2E de cadastro até início de pagamento
+   * @description Testa:
+   * 1. Criar contratante e contrato não aceito
+   * 2. Consultar contrato (deve estar não aceito)
+   * 3. Aceitar contrato (retorna URL do simulador)
+   * 4. Abrir simulador com contrato aceito
+   * 5. Iniciar pagamento
+   * 6. Validar pagamento registrado no banco
+   */
   test('Cadastro cria contrato, aceitar permite abrir simulador e iniciar pagamento', async () => {
-    // Emular POST /api/cadastro/contratante
-    // Em vez de chamar o endpoint de cadastro (upload de arquivos pode falhar no ambiente de teste),
-    // criar o contratante diretamente e criar o contrato conforme comportamento esperado do fluxo.
+    // Arrange - Criar contratante diretamente (em vez de POST /api/cadastro/contratante)
     const cnpj = `E2E${Math.floor(Math.random() * 1000000000)}`;
     const contratanteRes = await query(
       `INSERT INTO contratantes (
@@ -61,7 +95,7 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
       [contratanteId]
     );
 
-    // Criar contrato pendente de aceite (o que o endpoint de cadastro faria para planos fixos)
+    // Criar contrato pendente de aceite
     const contratoInsert = await query(
       `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, aceito, conteudo)
        VALUES ($1, $2, $3, $4, 'aguardando_pagamento', false, $5) RETURNING id`,
@@ -70,22 +104,25 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
 
     contratoId = contratoInsert.rows[0].id;
 
-    // Consultar contrato e validar que não está aceito
+    // Act 1 - Consultar contrato e validar que não está aceito
     const { GET: getContrato } = await import('@/app/api/contratos/[id]/route');
 
     const getReq: any = { params: { id: String(contratoId) } };
-
-    // Passar o segundo argumento com params conforme assinatura do App Router
     const getRes: any = await getContrato(getReq, {
       params: { id: String(contratoId) },
     });
-    expect(getRes.status).toBe(200);
-    const getData = await getRes.json();
+
+    // Assert 1 - Contrato não aceito
+    expect(getRes.status).toBe(200, 'GET contrato deve retornar 200');
+    const getData: Response<{ contrato: Contrato }> = await getRes.json();
     expect(getData.success).toBe(true);
     expect(getData.contrato).toBeDefined();
-    expect(getData.contrato.aceito).toBe(false);
+    expect(getData.contrato.aceito).toBe(
+      false,
+      'Contrato deve estar não aceito inicialmente'
+    );
 
-    // Aceitar contrato (mock do módulo de sessão para autorização)
+    // Act 2 - Aceitar contrato (mock do módulo de sessão para autorização)
     jest.resetModules();
     jest.doMock('@/lib/session', () => ({
       getSession: () => ({
@@ -102,9 +139,14 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
     };
 
     const aceitarRes: any = await contratosPost(aceitarReq);
-    const aceitarData = await aceitarRes.json();
-    console.log('[DEBUG aceitar response]', aceitarRes.status, aceitarData);
-    expect(aceitarRes.status).toBe(200);
+    const aceitarData: Response<{ simulador_url: string }> =
+      await aceitarRes.json();
+
+    // Assert 2 - Aceite bem-sucedido
+    expect(aceitarRes.status).toBe(
+      200,
+      'POST aceitar contrato deve retornar 200'
+    );
     expect(aceitarData.success).toBe(true);
     expect(aceitarData.simulador_url).toBeTruthy();
 
@@ -112,7 +154,7 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
     jest.resetModules();
     jest.dontMock('@/lib/session');
 
-    // Abrir simulador (GET) com contrato aceito
+    // Act 3 - Abrir simulador (GET) com contrato aceito
     const simuladorUrl = new URL(
       'http://localhost' + aceitarData.simulador_url
     );
@@ -122,11 +164,16 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
       nextUrl: new URL(`http://localhost${aceitarData.simulador_url}`),
     };
     const simuladorRes: any = await simuladorGET(simuladorReq);
-    expect(simuladorRes.status).toBe(200);
-    const simuladorData = await simuladorRes.json();
-    expect(simuladorData.valor_total).toBeGreaterThan(0);
 
-    // Iniciar pagamento usando contrato aceito
+    // Assert 3 - Simulador acessível
+    expect(simuladorRes.status).toBe(200, 'GET simulador deve retornar 200');
+    const simuladorData: SimuladorData = await simuladorRes.json();
+    expect(simuladorData.valor_total).toBeGreaterThan(
+      0,
+      'Simulador deve retornar valor total > 0'
+    );
+
+    // Act 4 - Iniciar pagamento usando contrato aceito
     const { POST: iniciarPagamento } =
       await import('@/app/api/pagamento/iniciar/route');
     const iniciarReq: any = {
@@ -136,15 +183,24 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
       }),
     };
     const iniciarRes: any = await iniciarPagamento(iniciarReq);
-    expect(iniciarRes.status).toBe(200);
-    const iniciarData = await iniciarRes.json();
+    const iniciarData: Response<{ pagamento_id: number }> =
+      await iniciarRes.json();
+
+    // Assert 4 - Pagamento iniciado
+    expect(iniciarRes.status).toBe(
+      200,
+      'POST iniciar pagamento deve retornar 200'
+    );
     expect(iniciarData.success).toBe(true);
     expect(iniciarData.pagamento_id).toBeDefined();
 
-    // Validar pagamento registrado
+    // Assert 5 - Validar pagamento registrado no banco
     const pagamentoDb = await query('SELECT * FROM pagamentos WHERE id = $1', [
       iniciarData.pagamento_id,
     ]);
-    expect(pagamentoDb.rows.length).toBe(1);
+    expect(pagamentoDb.rows.length).toBe(
+      1,
+      'Pagamento deve estar registrado no banco'
+    );
   }, 20000);
 });

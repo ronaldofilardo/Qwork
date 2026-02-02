@@ -1,23 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Building2,
-  Bell,
-  ChevronDown,
-  FileText,
-  Users,
-  FolderOpen,
-  User,
-} from 'lucide-react';
+import { Building2, ChevronDown, FileText, Users, User } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
 interface EntidadeSidebarProps {
   counts?: {
     funcionarios?: number;
-    notificacoes?: number;
-    laudos?: number;
     lotes?: number;
     pendencias?: number;
     desligamentos?: number;
@@ -126,24 +116,6 @@ export default function EntidadeSidebar({
           </div>
         )}
       </div>
-
-      {/* Seção Laudos */}
-      <MenuItem
-        icon={FolderOpen}
-        label="Laudos"
-        count={counts.laudos}
-        isActive={pathname === '/entidade/laudos'}
-        onClick={() => router.push('/entidade/laudos')}
-      />
-
-      {/* Seção Notificações */}
-      <MenuItem
-        icon={Bell}
-        label="Notificações"
-        count={counts.notificacoes}
-        isActive={pathname === '/entidade/notificacoes'}
-        onClick={() => router.push('/entidade/notificacoes')}
-      />
 
       {/* Seção Informações da Conta */}
       <MenuItem

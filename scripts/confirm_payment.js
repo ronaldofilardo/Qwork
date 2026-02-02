@@ -1,14 +1,25 @@
 (async () => {
   try {
-    const base = 'http://localhost:3000';
+    const pagamentoId = parseInt(process.argv[2], 10);
+    const metodoPagamento = process.argv[3] || 'parcelado';
+    const numeroParcelas = parseInt(process.argv[4], 10) || 1;
+
+    if (!pagamentoId) {
+      console.error(
+        'Uso: node confirm_payment.js <PagamentoID> [MetodoPagamento] [NumeroParcelas]'
+      );
+      process.exit(1);
+    }
+
+    const base = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const res = await fetch(`${base}/api/pagamento/confirmar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        pagamento_id: 5,
-        metodo_pagamento: 'parcelado',
+        pagamento_id: pagamentoId,
+        metodo_pagamento: metodoPagamento,
         plataforma_nome: 'simulador',
-        numero_parcelas: 4,
+        numero_parcelas: numeroParcelas,
       }),
     });
     const text = await res.text().catch(() => null);

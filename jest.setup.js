@@ -32,6 +32,19 @@ if (process.env.NODE_ENV === 'test') {
   // Carregar .env.test se não estiver carregado
   require('dotenv').config({ path: '.env.test' });
 
+  // ⚠️ CRÍTICO: Remover DATABASE_URL para evitar uso do banco de produção (Neon)
+  // Durante testes, dotenv pode carregar .env.local que contém DATABASE_URL do Neon
+  // Isso DEVE ser removido para forçar uso de TEST_DATABASE_URL
+  if (
+    process.env.DATABASE_URL &&
+    process.env.DATABASE_URL.includes('neon.tech')
+  ) {
+    console.log(
+      '🛡️ [jest.setup] Removendo DATABASE_URL de produção do ambiente de testes'
+    );
+    delete process.env.DATABASE_URL;
+  }
+
   // Validar que TEST_DATABASE_URL está definido e aponta para banco de testes
   if (!process.env.TEST_DATABASE_URL) {
     throw new Error(

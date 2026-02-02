@@ -58,40 +58,20 @@ async function updateLotesStatus(cpf: string) {
 
     if (novoStatus !== lote.status) {
       // Atualizar status do lote
+      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
+        novoStatus,
+        lote.id,
+      ]);
+      console.log(
+        `[INFO] Lote ${lote.codigo} alterado de '${lote.status}' para '${novoStatus}'`
+      );
+
+      // REMOVIDO: Emissão automática de laudo
+      // Agora o laudo só é emitido quando o EMISSOR decidir manualmente
+      // O RH/Entidade deve usar o botão "Solicitar Emissão" e aguardar o emissor processar
       if (novoStatus === 'concluido') {
-        await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
-          novoStatus,
-          lote.id,
-        ]);
         console.log(
-          `[INFO] Lote ${lote.codigo} alterado para '${novoStatus}' - iniciando emissão imediata`
-        );
-        // Emitir laudo imediatamente
-        try {
-          const { emitirLaudoImediato } = await import('@/lib/laudo-auto');
-          const sucesso = await emitirLaudoImediato(lote.id);
-          if (sucesso) {
-            console.log(
-              `[INFO] ✓ Lote ${lote.codigo}: emissão imediata concluída com sucesso`
-            );
-          } else {
-            console.error(
-              `[ERROR] ✗ Lote ${lote.codigo}: emissão imediata falhou`
-            );
-          }
-        } catch (err) {
-          console.error(
-            `[ERROR] Exceção crítica ao emitir laudo do lote ${lote.codigo}:`,
-            err instanceof Error ? err.message : String(err)
-          );
-        }
-      } else {
-        await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
-          novoStatus,
-          lote.id,
-        ]);
-        console.log(
-          `[INFO] Lote ${lote.codigo} alterado de '${lote.status}' para '${novoStatus}'`
+          `[INFO] Lote ${lote.codigo} está concluído e pronto para solicitação de emissão manual`
         );
       }
     }

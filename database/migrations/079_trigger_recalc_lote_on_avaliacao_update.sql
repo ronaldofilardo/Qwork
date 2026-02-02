@@ -25,17 +25,24 @@ BEGIN
   FROM avaliacoes
   WHERE lote_id = NEW.lote_id;
 
-  -- Se condição de conclusão for satisfeita, atualizar lote e inserir na fila de emissão
+  -- Se condição de conclusão for satisfeita, atualizar lote APENAS
+  -- NOTA: Emissão de laudo é 100% MANUAL - não inserir em fila_emissao
+  -- O RH/Entidade deve solicitar emissão via botão "Solicitar Emissão"
+  -- O emissor então emite o laudo manualmente no dashboard
   IF v_liberadas > 0 AND v_concluidas > 0 AND (v_concluidas + v_inativadas) = v_liberadas THEN
     -- Evitar writes desnecessários
     UPDATE lotes_avaliacao
     SET status = 'concluido', atualizado_em = NOW()
     WHERE id = NEW.lote_id AND status IS DISTINCT FROM 'concluido';
 
-    -- Enfileirar emissão (idempotente)
-    INSERT INTO fila_emissao (lote_id, tentativas, max_tentativas, proxima_tentativa)
-    VALUES (NEW.lote_id, 0, 3, NOW())
-    ON CONFLICT (lote_id) DO NOTHING;
+    -- REMOVIDO: Inserção automática em fila_emissao
+    -- Motivo: Emissão de laudo deve ser 100% MANUAL pelo emissor
+    -- Fluxo correto:
+    --   1. RH/Entidade solicita emissão (POST /api/lotes/[loteId]/solicitar-emissao)
+    --   2. Lote aparece no dashboard do emissor
+    --   3. Emissor revisa e clica "Gerar Laudo" manualmente
+    --   4. Sistema gera PDF e hash
+    --   5. Emissor revisa e envia
   END IF;
 
   RETURN NEW;

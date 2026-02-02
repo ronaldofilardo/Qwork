@@ -123,8 +123,6 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
   });
 
   test('4. Deve confirmar pagamento e criar conta automaticamente', async () => {
-    console.log('DEBUG TEST: pagamentoId =', pagamentoId);
-    console.log('DEBUG TEST: contratanteId =', contratanteId);
 
     // Simular confirmação de pagamento via handler de rota (evita necessidade de servidor HTTP na suíte)
     const { POST: confirmarPagamento } =
@@ -135,7 +133,6 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
       metodo_pagamento: 'boleto',
       numero_parcelas: 2,
     };
-    console.log('DEBUG TEST: request body =', JSON.stringify(requestBody));
 
     const mockRequest = new Request(
       'http://localhost/api/pagamento/confirmar',
@@ -150,13 +147,12 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
     if (response.status !== 200) {
       try {
         const body = await response.json();
-        console.log('DEBUG: confirmarPagamento response body:', body);
       } catch (e) {
         try {
           const text = await response.text();
-          console.log('DEBUG: confirmarPagamento response text:', text);
         } catch (e) {
-          console.log('DEBUG: confirmarPagamento response (no body)');
+          // DEBUG: confirmarPagamento response (no body)
+
         }
       }
     }
@@ -203,7 +199,6 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
 
     // Deve ter 1 notificação (parcela 2, pois parcela 1 já está paga)
     if (notificacoesResult.rows.length !== 1) {
-      console.log(
         'DEBUG: notificacoesResult.rows:',
         JSON.stringify(notificacoesResult.rows, null, 2)
       );
@@ -220,7 +215,6 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
         : notif.dados_contexto;
     expect(dadosContexto.contratante_id).toBe(contratanteId);
     // Deve existir pelo menos uma notificação com esse contrato (pode haver ruído de outras operações)
-    console.log('DEBUG: contratanteId (test variable):', contratanteId);
     const found = notificacoesResult.rows.some((r) => {
       try {
         const ctx =
@@ -233,7 +227,6 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
       }
     });
     if (!found) {
-      console.log(
         'DEBUG: notificacoesResult rows (parsed dados_contexto):',
         notificacoesResult.rows.map((r) => {
           try {

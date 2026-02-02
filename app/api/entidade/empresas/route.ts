@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export async function GET() {
 
     // Buscar empresas associadas à entidade do gestor
     // Nota: empresas_clientes usa clinica_id, não contratante_id
-    const empresasResult = await query(
+    const empresasResult = await queryAsGestorEntidade(
       `SELECT
         ec.id,
         ec.nome,

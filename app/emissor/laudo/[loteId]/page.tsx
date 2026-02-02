@@ -6,6 +6,7 @@ import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { LaudoPadronizado } from '@/lib/laudo-tipos';
 import QworkLogo from '@/components/QworkLogo';
+import ModalUploadLaudo from '@/components/modals/ModalUploadLaudo';
 
 interface Lote {
   id: number;
@@ -26,6 +27,8 @@ export default function EditarLaudo() {
   const [_emissaoAutomatica, setEmissaoAutomatica] = useState(false);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [isPrevia, setIsPrevia] = useState(false);
+  const [gerandoLaudo, setGerandoLaudo] = useState(false);
+  const [modalUploadOpen, setModalUploadOpen] = useState(false);
 
   const fetchLaudo = useCallback(async () => {
     try {
@@ -55,6 +58,40 @@ export default function EditarLaudo() {
     fetchLaudo();
   }, [loteId, router, fetchLaudo]);
 
+  const handleGerarLaudo = async () => {
+    if (!lote) return;
+
+    try {
+      setGerandoLaudo(true);
+      toast.loading('Gerando laudo...', { id: 'gerar-laudo' });
+
+      const response = await fetch(`/api/emissor/laudos/${loteId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.dismiss('gerar-laudo');
+        toast.success('Laudo gerado com sucesso!');
+        // Recarregar a página para mostrar o laudo gerado
+        await fetchLaudo();
+      } else {
+        toast.dismiss('gerar-laudo');
+        toast.error(data.error || 'Erro ao gerar laudo');
+      }
+    } catch (error) {
+      console.error('Erro ao gerar laudo:', error);
+      toast.dismiss('gerar-laudo');
+      toast.error('Erro ao conectar com o servidor');
+    } finally {
+      setGerandoLaudo(false);
+    }
+  };
+
   const handleDownloadLaudo = async () => {
     try {
       toast.loading('Baixando laudo...', { id: 'download-laudo' });
@@ -82,6 +119,17 @@ export default function EditarLaudo() {
       toast.dismiss('download-laudo');
       toast.error('Erro ao fazer download do laudo');
     }
+  };
+
+  const handleOpenUploadModal = () => {
+    setModalUploadOpen(true);
+  };
+
+  const handleUploadSuccess = async (laudoId: number) => {
+    setModalUploadOpen(false);
+    toast.success(`Laudo ${laudoId} emitido com sucesso!`);
+    // Recarregar para mostrar laudo emitido
+    await fetchLaudo();
   };
 
   if (loading) {
@@ -114,14 +162,73 @@ export default function EditarLaudo() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-3 py-4">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <button
             onClick={() => router.push('/emissor')}
-            className="text-blue-600 hover:text-blue-800 mb-2 inline-flex items-center text-sm"
+            className="text-blue-600 hover:text-blue-800 inline-flex items-center text-sm"
           >
             ← Voltar ao Dashboard
           </button>
+
+          {isPrevia && (
+            <div className="flex gap-3">
+              <button
+                onClick={handleOpenUploadModal}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2.5 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-md flex items-center gap-2"
+              >
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  />
+                </svg>
+                Upload de Laudo
+              </button>
+              <button
+                onClick={handleGerarLaudo}
+                disabled={gerandoLaudo}
+                className="bg-gradient-to-r from-green-600 to-green-700 text-white px-6 py-2.5 rounded-lg font-semibold hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {gerandoLaudo ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    Gerar Automaticamente
+                  </>
+                )}
+              </button>
+            </div>
+          )}
         </div>
+
+        {mensagem && (
+          <div className="mb-4 bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg">
+            <p className="text-sm font-medium">{mensagem}</p>
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow-lg p-6">
           {/* Cabeçalho Visual - Padrão BPS */}
@@ -140,7 +247,7 @@ export default function EditarLaudo() {
 
           {/* Seção Etapa 1 - Dados Gerais da Empresa */}
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-3 pb-1 border-b-2 border-orange-400">
+            <h2 className="text-xl font-bold text-gray-900 mb-3 pb-1 border-b-2 border-gray-600">
               1. DADOS GERAIS DA EMPRESA AVALIADA
             </h2>
             <div className="bg-gray-50 rounded-lg p-4 space-y-2">
@@ -214,39 +321,39 @@ export default function EditarLaudo() {
           {/* Seção Etapa 2 - Tabela de Scores por Grupo */}
           {laudoPadronizado.etapa2 && (
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-3 pb-1 border-b-2 border-orange-400">
+              <h2 className="text-xl font-bold text-gray-900 mb-3 pb-1 border-b-2 border-gray-600">
                 2. SCORES MÉDIOS POR GRUPO DE QUESTÕES (escala 0-100)
               </h2>
 
               <div className="overflow-x-auto">
                 <table className="min-w-full border-collapse">
                   <thead>
-                    <tr className="bg-gradient-to-r from-orange-500 to-orange-600">
+                    <tr className="bg-gradient-to-r from-gray-800 to-gray-700">
                       <th
-                        className="border border-orange-400 px-3 py-2 text-center text-xs font-bold text-white"
+                        className="border border-gray-500 px-3 py-2 text-center text-xs font-bold text-white"
                         style={{ minWidth: '60px' }}
                       >
                         Grupo
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-left text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-left text-xs font-bold text-white">
                         Domínio
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-left text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-left text-xs font-bold text-white">
                         Descrição
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-center text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-center text-xs font-bold text-white">
                         Tipo
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-center text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-center text-xs font-bold text-white">
                         x̄ - s
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-center text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-center text-xs font-bold text-white">
                         Média Geral
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-center text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-center text-xs font-bold text-white">
                         x̄ + s
                       </th>
-                      <th className="border border-orange-400 px-2 py-1.5 text-center text-xs font-bold text-white">
+                      <th className="border border-gray-500 px-2 py-1.5 text-center text-xs font-bold text-white">
                         Categoria de Risco
                       </th>
                     </tr>
@@ -255,12 +362,10 @@ export default function EditarLaudo() {
                     {laudoPadronizado.etapa2.map((score, index) => (
                       <tr
                         key={score.grupo}
-                        className={
-                          index % 2 === 0 ? 'bg-orange-50' : 'bg-white'
-                        }
+                        className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}
                       >
                         <td className="border border-gray-300 px-3 py-2 text-center">
-                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-orange-100 text-orange-700 text-sm font-bold">
+                          <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-200 text-gray-900 text-sm font-bold">
                             {score.grupo}
                           </div>
                         </td>
@@ -325,13 +430,13 @@ export default function EditarLaudo() {
                 </table>
               </div>
 
-              <div className="mt-2 bg-gray-50 rounded p-2 border-l-4 border-orange-400">
+              <div className="mt-2 bg-gray-50 rounded p-2 border-l-4 border-gray-500">
                 <p className="text-xs text-gray-700">
                   <strong>x̄</strong> = média, <strong>s</strong> = desvio-padrão
                 </p>
               </div>
 
-              <div className="mt-4 bg-orange-50 rounded-lg p-4 border-l-4 border-orange-400">
+              <div className="mt-4 bg-gray-50 rounded-lg p-4 border-l-4 border-gray-500">
                 <p className="text-sm text-gray-800 leading-relaxed text-justify">
                   A amostragem acima descrita foi submetida à avaliação
                   psicossocial para verificação de seu estado de saúde mental,
@@ -346,7 +451,7 @@ export default function EditarLaudo() {
           {/* Seção Etapa 3 - Interpretação e Recomendações */}
           {laudoPadronizado.etapa3 && (
             <div className="mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-2 border-b-2 border-orange-400">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-2 border-b-2 border-gray-600">
                 3. INTERPRETAÇÃO E RECOMENDAÇÕES
               </h2>
 
@@ -364,7 +469,7 @@ export default function EditarLaudo() {
                 {/* Excelente - Verde */}
                 {laudoPadronizado.etapa3.gruposExcelente &&
                   laudoPadronizado.etapa3.gruposExcelente.length > 0 && (
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-5 border-2 border-green-300 shadow-md">
+                    <div className="rounded-lg p-5">
                       <div className="flex items-center mb-3">
                         <span className="text-2xl mr-2">🟢</span>
                         <h4 className="font-bold text-green-800 text-base">
@@ -448,7 +553,7 @@ export default function EditarLaudo() {
                 {/* Monitorar - Amarelo */}
                 {laudoPadronizado.etapa3.gruposMonitoramento &&
                   laudoPadronizado.etapa3.gruposMonitoramento.length > 0 && (
-                    <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-5 border-2 border-yellow-300 shadow-md">
+                    <div className="rounded-lg p-5">
                       <div className="flex items-center mb-3">
                         <span className="text-2xl mr-2">🟡</span>
                         <h4 className="font-bold text-yellow-800 text-base">
@@ -529,7 +634,7 @@ export default function EditarLaudo() {
                 {/* Atenção Necessária - Laranja/Vermelho */}
                 {laudoPadronizado.etapa3.gruposAltoRisco &&
                   laudoPadronizado.etapa3.gruposAltoRisco.length > 0 && (
-                    <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-5 border-2 border-red-300 shadow-md">
+                    <div className="rounded-lg p-5">
                       <div className="flex items-center mb-3">
                         <span className="text-2xl mr-2">🔴</span>
                         <h4 className="font-bold text-red-800 text-base">
@@ -623,7 +728,7 @@ export default function EditarLaudo() {
           {/* Seção Etapa 4 - Observações e Conclusão */}
           {laudoPadronizado.etapa4 && (
             <div className="mb-10">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-2 border-b-2 border-orange-400">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6 pb-2 border-b-2 border-gray-600">
                 4. OBSERVAÇÕES E CONCLUSÃO
               </h2>
 
@@ -826,6 +931,15 @@ export default function EditarLaudo() {
           )}
         </div>
       </div>
+
+      {/* Modal de Upload */}
+      <ModalUploadLaudo
+        loteId={loteId}
+        loteCodigo={lote?.codigo || ''}
+        isOpen={modalUploadOpen}
+        onClose={() => setModalUploadOpen(false)}
+        onSuccess={handleUploadSuccess}
+      />
     </div>
   );
 }

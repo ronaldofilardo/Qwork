@@ -48,7 +48,6 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
 
     if (planoRes.rows.length > 0) {
       planoPersonalizadoId = planoRes.rows[0].id;
-      console.log(
         '✓ Usando plano personalizado existente:',
         planoPersonalizadoId
       );
@@ -59,7 +58,6 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
          RETURNING id`
       );
       planoPersonalizadoId = newPlanoRes.rows[0].id;
-      console.log('✓ Plano personalizado criado:', planoPersonalizadoId);
     }
   });
 
@@ -93,7 +91,6 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
   });
 
   it('deve cadastrar clínica com plano personalizado sem erro de trigger', async () => {
-    console.log(
       '\n=== SIMULAÇÃO: CADASTRO DE CLÍNICA COM PLANO PERSONALIZADO ===\n'
     );
 
@@ -161,12 +158,10 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
       },
     };
 
-    console.log('→ Enviando cadastro da clínica...');
+    // → Enviando cadastro da clínica...
+
     const cadastroResponse = await cadastroPost(mockRequest);
     const cadastroData = await cadastroResponse.json();
-
-    console.log('→ Status da resposta:', cadastroResponse.status);
-    console.log('→ Dados retornados:', JSON.stringify(cadastroData, null, 2));
 
     // Verificações
     expect(cadastroResponse.status).toBe(201);
@@ -175,7 +170,6 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     expect(cadastroData.contratante.tipo).toBe('clinica');
 
     contratanteId = cadastroData.contratante.id;
-    console.log('✓ Clínica cadastrada com sucesso! ID:', contratanteId);
 
     // Verificar criação em contratacao_personalizada
     const contratacaoRes = await query(
@@ -187,9 +181,8 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     expect(contratacaoRes.rows[0].status).toBe('aguardando_valor_admin');
     expect(contratacaoRes.rows[0].numero_funcionarios_estimado).toBe(2000);
 
-    console.log('✓ Registro em contratacao_personalizada criado:');
-    console.log('  - Status:', contratacaoRes.rows[0].status);
-    console.log(
+    // ✓ Registro em contratacao_personalizada criado:
+
       '  - Funcionários estimados:',
       contratacaoRes.rows[0].numero_funcionarios_estimado
     );
@@ -202,10 +195,9 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     );
 
     if (notifRes.rows.length > 0) {
-      console.log('✓ Notificações criadas para admins:', notifRes.rows.length);
-      console.log('  - Título:', notifRes.rows[0].titulo);
     }
 
-    console.log('\n=== ✓ SIMULAÇÃO CONCLUÍDA COM SUCESSO ===\n');
+    // \n=== ✓ SIMULAÇÃO CONCLUÍDA COM SUCESSO ===\n
+
   });
 });

@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { requireEntity } from '@/lib/session';
 import { validarCPF, limparCPF } from '@/lib/cpf-utils';
 import bcrypt from 'bcryptjs';
@@ -16,7 +16,7 @@ export async function GET() {
 
     // Query com isolamento: apenas funcionários vinculados ao contratante_id da entidade
     // IMPORTANTE: Não retornar funcionários de outras entidades ou de clínicas
-    const funcionarios = await query(
+    const funcionarios = await queryAsGestorEntidade(
       `
       SELECT
         f.id,
@@ -143,7 +143,7 @@ export async function POST(request: Request) {
     }
 
     // Verificar se funcionário já existe
-    const existingFunc = await query(
+    const existingFunc = await queryAsGestorEntidade(
       'SELECT cpf FROM funcionarios WHERE cpf = $1',
       [cpfLimpo]
     );
@@ -174,14 +174,15 @@ export async function POST(request: Request) {
       nivel_cargo || null,
       turno || null,
       escala || null,
+      'funcionario_entidade',
     ];
 
-    const result = await query(
+    const result = await queryAsGestorEntidade(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
         contratante_id, matricula, nivel_cargo, turno, escala, ativo,
-        empresa_id, clinica_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true, NULL, NULL)
+        empresa_id, clinica_id, usuario_tipo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true, NULL, NULL, $14)
       RETURNING id, cpf, nome, email, setor, funcao, data_nascimento, contratante_id`,
       insertParams
     );
@@ -189,18 +190,18 @@ export async function POST(request: Request) {
     // Vincular explicitamente ao contratante em contratantes_funcionarios
     const newId = result.rows[0].id;
     try {
-      const vinc = await query(
+      const vinc = await queryAsGestorEntidade(
         'SELECT * FROM contratantes_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
         [newId, contratanteId]
       );
 
       if (vinc.rows.length > 0) {
-        await query(
+        await queryAsGestorEntidade(
           'UPDATE contratantes_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
           [newId, contratanteId]
         );
       } else {
-        await query(
+        await queryAsGestorEntidade(
           'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
           [newId, contratanteId, 'entidade']
         );

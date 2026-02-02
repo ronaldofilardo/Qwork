@@ -35,10 +35,8 @@ describe('API Public Contratante - Correção valor_personalizado', () => {
       expect(result.rows).toBeDefined();
       expect(Array.isArray(result.rows)).toBe(true);
 
-      console.log(
         '[TEST] Query da API public/contratante executada com sucesso'
       );
-      console.log('[TEST] Número de registros retornados:', result.rows.length);
 
       if (result.rows.length > 0) {
         const row = result.rows[0];
@@ -47,7 +45,6 @@ describe('API Public Contratante - Correção valor_personalizado', () => {
         expect(row).toHaveProperty('nome');
         // Verificar que NÃO tem valor_personalizado
         expect(row).not.toHaveProperty('valor_personalizado');
-        console.log('[TEST] Colunas retornadas:', Object.keys(row));
       }
     });
 
@@ -73,14 +70,12 @@ describe('API Public Contratante - Correção valor_personalizado', () => {
         expect(contratante.tipo).toBeDefined();
         expect(contratante.nome).toBeDefined();
 
-        console.log('[TEST] Dados do contratante retornados corretamente:', {
           id: contratante.id,
           tipo: contratante.tipo,
           nome: contratante.nome,
           status: contratante.status,
         });
       } else {
-        console.log(
           '[TEST] Nenhum contratante encontrado no banco de teste (esperado)'
         );
       }
@@ -128,7 +123,8 @@ describe('API Public Contratante - Correção valor_personalizado', () => {
       // Verificar que NÃO tem valor_personalizado
       expect(contratante).not.toHaveProperty('valor_personalizado');
 
-      console.log('[TEST] Estrutura da resposta da API validada');
+      // [TEST] Estrutura da resposta da API validada
+
     });
   });
 });

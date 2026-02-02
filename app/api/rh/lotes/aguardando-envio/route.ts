@@ -1,5 +1,5 @@
 import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
-import { queryWithContext } from '@/lib/db-security';
+import { queryAsGestorRH } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -54,7 +54,7 @@ export const GET = async (req: Request) => {
     }
 
     // Verificar se o usuário tem acesso à empresa
-    const empresaCheck = await queryWithContext<{
+    const empresaCheck = await queryAsGestorRH<{
       id: number;
       clinica_id: number;
     }>(
@@ -96,7 +96,7 @@ export const GET = async (req: Request) => {
     }
 
     // Buscar lotes aguardando envio (status = 'concluido')
-    const lotesQuery = await queryWithContext(
+    const lotesQuery = await queryAsGestorRH(
       `
       SELECT
         la.id,

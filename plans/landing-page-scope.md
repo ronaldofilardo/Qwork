@@ -6,6 +6,14 @@ O QWork é um sistema de avaliação psicossocial baseado no questionário COPSO
 
 A landing page tem como objetivo principal capturar leads e converter visitantes em clientes, apresentando os benefícios do sistema de forma clara e atraente.
 
+## 1.1 Arquitetura
+
+A landing page será desenvolvida em uma pasta **completamente isolada** do sistema QWork principal:
+
+- **Pasta de Desenvolvimento**: C:\apps\QWork-LP
+- **Stack Tecnológica**: Next.js + Tailwind CSS (mesma do QWork, mas em projeto separado)
+- **Integração**: Apenas para login e cadastro (via API do QWork)
+
 ## 2. Objetivos da Landing Page
 
 ### Principais Objetivos:
@@ -43,41 +51,60 @@ A landing page tem como objetivo principal capturar leads e converter visitantes
 
 ### 4.1 Layout Geral
 
-- **Design Responsivo**: Adaptável a dispositivos móveis e desktops
-- **Navegação Simples**: Menú com links para seções principais (Início, Funcionalidades, Preços, Depoimentos, Contato)
-- **Header Fixo**: Logo do QWork, botão de login e CTA de cadastro
+- **Design Responsivo**: Adaptável a dispositivos móveis e desktops (inspirado em PawCare e Alivve)
+- **Navegação Simples**: Menú com links para seções principais (Início, Funcionalidades, Preços, Dúvidas, Contato)
+- **Header Fixo**: Logo do QWork, botão de login e CTA de cadastro (amarelo/verde contrastante)
+- **Área de Login/Cadastro**:
+  - Modal de login integrado na landing page
+  - Formulário de login com CPF e senha
+  - Botão para cadastro de empresa
+  - Integração com o sistema de autenticação existente
 - **Footer**: Links importantes, redes sociais e informações de contato
+- **Espaçamento Adequado**: Uso de padding e margin para criar seções claramente definidas
+- **Cards de Conteúdo**: Seções em forma de cards com sombras leves para destacar conteúdo
 
 ### 4.2 Seções Principais
 
 #### 1. Hero Section (Seção Principal)
 
-- **Título Principal**: "Sistema de Avaliação Psicossocial para Empresas"
+- **Título Principal**: "Avaliação de Saúde Mental no Trabalho e Riscos Psicossociais"
 - **Subtítulo**: "Identifique riscos ocupacionais, previna absenteísmo e melhore a saúde mental da sua equipe com o QWork"
 - **CTAs**:
-  - "Comece Gratuitamente" (direciona para cadastro)
-  - "Ver Demo" (abre modal com vídeo)
-- **Visual**: Imagem ou vídeo mostrando o dashboard do QWork
+  - "Comece agora" (direciona para cadastro - botão amarelo/verde contrastante com seta para direita)
+- **Visual**: Imagem ou vídeo mostrando o laudo individual do QWork (inspirado no design de PawCare)
 - **Características Destacadas**:
+  - Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)
   - PWA Offline
   - Multi-perfil
   - Relatórios em PDF/Excel
   - Contratação Automática
+- **Estatísticas**: Cards com dados quantitativos (ex: "96% de satisfação", "+200 empresas atendidas", "4.9/5 avaliações")
 
 #### 2. Por que Escolher o QWork?
 
-- **Benefícios Clave**:
-  - **Prevenção**: Identifique riscos psicológicos antes que se tornem problemas
-  - **Compliance**: Gerencie riscos de acordo com a Legislação Trabalhista
+- **Benefícios Clave (Cards com Ícones)**:
+  - **Conformidade**: Laudo de Identificação e Mapeamento de Riscos Psicossociais conforme NR-1 / GRO e diretrizes do MTE
+  - **Prevenção**: Identifique 10 grupos de fatores de risco psicossociais antes que se tornem problemas
+  - **Compliance**: Gerencie riscos de acordo com a Legislação Trabalhista (NR-1, NR-10, NR-12)
   - **Eficiência**: Automatize processos e reduza custos operacionais
-  - **Insights**: Obtenha relatórios detalhados para tomada de decisão
-- **Ícones e Descrições**: Cada benefício com ícone e texto explicativo
+  - **Insights**: Nosso Laudo atende as exigências legais
+
 - **Dados Quantitativos**: "Reduza absenteísmo em até 30%" ou "Aumente a produtividade em 20%"
 
 #### 3. Funcionalidades Principais
 
-- **Sistema de Avaliação**: 10 grupos de avaliação com 70 itens (COPSOQ III + módulos JZ e EF)
-- **Dashboard Analítico**: Gráficos, semáforo de riscos e métricas em tempo real
+- **Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)**: Laudo técnico completo conforme normas regulamentadoras do MTE
+- **Avaliação de Fatores de Risco Psicossociais**: 37 itens (COPSOQ III reduzido + módulos Jogos de Aposta e Endividamente Financeiro)
+  - Demanda e sobrecarga de trabalho
+  - Organização e conteúdo do trabalho
+  - Relações interpessoais
+  - Interface trabalho-indivíduo
+  - Valores no trabalho
+  - Personalidade
+  - Saúde e bem-estar
+  - Comportamentos ofensivos
+  - Jogos de apostas
+  - Endividamento financeiro
 - **Gerenciamento de Equipe**: Cadastro de funcionários, importação via Excel
 - **Processo de Contratação Automático**:
   - Seleção de planos (Fixo ou Personalizado)
@@ -89,21 +116,11 @@ A landing page tem como objetivo principal capturar leads e converter visitantes
 
 #### 4. Planos e Preços
 
-- **Planos Disponíveis**:
-  - **Plano Básico**: Para pequenas empresas (até 50 funcionários)
-  - **Plano Profissional**: Para empresas de médio porte (até 200 funcionários)
-  - **Plano Enterprise**: Para grandes empresas (acima de 200 funcionários)
-- **Planos Personalizados**: Opção para empresas com necessidades específicas
-- **Preços Claros**: Mostrar valores por funcionário/month
-- **CTAs**: "Escolher Plano" ou "Contatar Vendas"
-- **Garantia**: "30 dias de garantia satisfatória"
-
-#### 5. Depoimentos
-
-- **Depoimentos de Clientes**: Fotos, nomes, cargos e empresas
-- **Histórias de Sucesso**: Cases detalhados de empresas que usam o QWork
-- **Resultados Alcançados**: "Reduziu absenteísmo em 25%", "Aumentou satisfação do colaborador em 40%"
-- **Logos das Empresas**: Marca de empresas que já usam o sistema
+- **Planos Personalizados**: Opção para empresas com necessidades específicas (cards com sombras e destaque)
+- **Preços Claros**: Mostrar valores por funcionário/month (destaque em cor amarelo/verde)
+- **CTAs**: "Escolher Plano" ou "Contatar Vendas" (botões contrastantes com seta para direita)
+- **Características dos Planos**: Lista de benefícios com ícones de check
+- **Guarantee**: "Satisfação garantida" (se aplicável)
 
 #### 6. Como Funciona?
 
@@ -167,6 +184,15 @@ A landing page tem como objetivo principal capturar leads e converter visitantes
 - **Ícones**: Lucide React (biblioteca já usada no projeto)
 - **Imagens**: Screenshots do sistema, fotos de colaboradores em ambiente de trabalho
 - **Vídeos**: Demo curta do sistema em funcionamento
+
+### 5.4 Inspirações de Layout (PawCare e Alivve)
+
+- **Hero Section**: Foco em um título claro e CTA destacado, com imagem/video de alta qualidade
+- **Seções de Valor**: Cards com ícones e textos curtos, facilitando a leitura
+- **CTAs**: Botões com cor de ação contrastante, posicionados estrategicamente
+- **Conteúdo Escaneável**: Uso de títulos hierárquicos, listas e espaçamento adequado
+- **Design Responsivo**: Adaptável a dispositivos móveis e desktops
+- **Identidade Visual Consistente**: Cores, fontes e elementos repetidos em todas as seções
 
 ## 6. Tecnologias e Implementação
 

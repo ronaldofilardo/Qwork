@@ -27,6 +27,10 @@ interface LoteAvaliacao {
   laudo_enviado_em?: string;
   laudo_hash?: string;
   emissor_nome?: string;
+  // Informações de solicitação de emissão
+  solicitado_por?: string;
+  solicitado_em?: string;
+  tipo_solicitante?: string;
 }
 
 export default function LotesPage() {
@@ -164,15 +168,23 @@ export default function LotesPage() {
             {lotes.map((lote) => {
               // Verificar se existe um laudo disponível de acordo com a máquina de estados:
               // - O lote deve estar 'concluido' ou 'finalizado'
-              // - O laudo associado deve ter status 'enviado'
+              // - Considerar laudo disponível quando:
+              //   * status = 'enviado' (enviado ao contratante),
+              //   * ou status = 'emitido' (gerado pelo emissor),
+              //   * ou hash presente (arquivo disponível)
               const temLaudo = !!(
                 lote.laudo_id &&
-                lote.laudo_status === 'enviado' &&
+                (lote.laudo_status === 'enviado' ||
+                  lote.laudo_status === 'emitido' ||
+                  Boolean(lote.laudo_hash)) &&
                 (lote.status === 'concluido' || lote.status === 'finalizado')
               );
 
               const isPronto = lote.pode_emitir_laudo || temLaudo || false;
               const isCanceled = lote.status === 'cancelado';
+
+              // Verificar se há solicitação de emissão pendente
+              const emissaoSolicitada = !!(lote.solicitado_em && !temLaudo);
 
               return (
                 <div
@@ -299,6 +311,27 @@ export default function LotesPage() {
                     📋 Relatório por Setor
                   </button>
 
+                  {/* Seção de Emissão Solicitada */}
+                  {emissaoSolicitada && (
+                    <div className="p-3 bg-blue-50 rounded border border-blue-200 mb-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium text-blue-800">
+                          📄 Emissão Solicitada
+                        </span>
+                      </div>
+                      <p className="text-xs text-blue-700 mb-1">
+                        A emissão do laudo foi solicitada em{' '}
+                        {formatDateTime(lote.solicitado_em)}. O laudo está sendo
+                        processado pelo emissor.
+                      </p>
+                      {lote.solicitado_por && (
+                        <p className="text-xs text-blue-600">
+                          Solicitado por: {lote.solicitado_por}
+                        </p>
+                      )}
+                    </div>
+                  )}
+
                   {/* Seção de Laudo (igual à clínica) */}
                   {temLaudo ? (
                     <div className="p-3 bg-blue-50 rounded border border-blue-200">
@@ -307,7 +340,9 @@ export default function LotesPage() {
                           📄 Laudo disponível
                         </span>
                         <span className="text-xs text-blue-600">
-                          {formatDateTime(lote.laudo_enviado_em)}
+                          {formatDateTime(
+                            lote.laudo_enviado_em || lote.laudo_emitido_em
+                          )}
                         </span>
                       </div>
                       <p className="text-xs text-blue-700 mb-2">

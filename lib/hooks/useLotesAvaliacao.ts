@@ -14,6 +14,10 @@ export interface LoteAvaliacao {
   pode_emitir_laudo?: boolean;
   motivos_bloqueio?: string[];
   taxa_conclusao?: number;
+  // Informações de solicitação de emissão
+  solicitado_por?: string;
+  solicitado_em?: string;
+  tipo_solicitante?: string;
 }
 
 /**

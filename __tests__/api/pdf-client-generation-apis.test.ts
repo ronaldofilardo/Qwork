@@ -10,6 +10,7 @@ import { GET as exportFuncionariosCSV } from '@/app/api/entidade/lote/[id]/funci
 
 // Mocks devem estar no topo
 jest.mock('@/lib/db', () => ({
+  query: jest.fn(),
   db: {
     query: jest.fn(),
   },
@@ -18,6 +19,27 @@ jest.mock('@/lib/db', () => ({
 jest.mock('@/lib/auth-require', () => ({
   requireEmissor: jest.fn(),
   requireEntidadeOrRH: jest.fn(),
+  requireRH: jest.fn(),
+}));
+
+// Mockar funções de laudo e template para testes unitários (sanitização)
+jest.mock('@/lib/laudo-calculos', () => ({
+  gerarDadosGeraisEmpresa: jest.fn().mockResolvedValue({
+    empresaAvaliada: { id: 1, nome: 'Empresa Teste' },
+  }),
+  calcularScoresPorGrupo: jest
+    .fn()
+    .mockResolvedValue({ grupo1: { media: 0.9 } }),
+  gerarInterpretacaoRecomendacoes: jest
+    .fn()
+    .mockReturnValue({ texto: 'Interpretação' }),
+  gerarObservacoesConclusao: jest.fn().mockReturnValue('Observações'),
+}));
+
+jest.mock('@/lib/templates/laudo-html', () => ({
+  gerarHTMLLaudoCompleto: jest
+    .fn()
+    .mockReturnValue('<html><body>Laudo</body></html>'),
 }));
 
 describe('API: Laudo HTML Generation', () => {
@@ -27,14 +49,14 @@ describe('API: Laudo HTML Generation', () => {
 
   it('deve retornar HTML do laudo para emissor autorizado', async () => {
     const { requireEmissor } = require('@/lib/auth-require');
-    const { db } = require('@/lib/db');
+    const { query } = require('@/lib/db');
 
     requireEmissor.mockResolvedValue({
       user: { cpf: '12345678901', role: 'emissor' },
     });
 
-    // Mock de dados do banco
-    db.query
+    // Mock de dados do banco (lote, laudo, avaliacoes)
+    query
       .mockResolvedValueOnce({
         rows: [
           {
@@ -60,12 +82,13 @@ describe('API: Laudo HTML Generation', () => {
       .mockResolvedValueOnce({
         rows: [
           {
-            dados_laudo: {
-              etapa1: { empresa: 'Empresa Teste' },
-              etapa2: [],
-              etapa3: {},
-              etapa4: {},
-            },
+            id: 1,
+            funcionario_cpf: '98765432100',
+            status: 'concluida',
+            funcionario_nome: 'João Silva',
+            funcao: 'Operador',
+            setor: 'TI',
+            respostas: [{ grupo: 1, item: 1, valor: 1 }],
           },
         ],
       });
@@ -75,6 +98,16 @@ describe('API: Laudo HTML Generation', () => {
     );
     const response = await getLaudoHTML(req, { params: { loteId: '1' } });
 
+    if (response.status !== 200) {
+      try {
+        const jsonBody = await response.json();
+        console.error('DEBUG RESPONSE JSON:', jsonBody);
+      } catch (e) {
+        const textBody = await response.text();
+        console.error('DEBUG RESPONSE TEXT:', textBody);
+      }
+    }
+
     expect(response.status).toBe(200);
     expect(response.headers.get('Content-Type')).toContain('text/html');
     expect(response.headers.get('X-Lote-Id')).toBe('1');
@@ -82,13 +115,13 @@ describe('API: Laudo HTML Generation', () => {
 
   it('deve retornar 404 se laudo não existir', async () => {
     const { requireEmissor } = require('@/lib/auth-require');
-    const { db } = require('@/lib/db');
+    const { query } = require('@/lib/db');
 
     requireEmissor.mockResolvedValue({
       user: { cpf: '12345678901', role: 'emissor' },
     });
 
-    db.query
+    query
       .mockResolvedValueOnce({
         rows: [{ id: 1, codigo: 'LOTE-001' }],
       })
@@ -113,14 +146,20 @@ describe('API: Relatório Individual HTML Generation', () => {
   });
 
   it('deve retornar HTML do relatório para entidade autorizada', async () => {
-    const { requireEntidadeOrRH } = require('@/lib/auth-require');
-    const { db } = require('@/lib/db');
+    const { requireEntidadeOrRH, requireRH } = require('@/lib/auth-require');
+    const { query } = require('@/lib/db');
 
+    // Mock both helpers used in route - requireRH delegates to either RH or entidade
     requireEntidadeOrRH.mockResolvedValue({
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 1 },
     });
+    requireRH.mockReturnValue({
+      perfil: 'gestor_entidade',
+      cpf: '12345678901',
+      clinica_id: 1,
+    });
 
-    db.query
+    query
       .mockResolvedValueOnce({
         rows: [
           {
@@ -170,14 +209,19 @@ describe('API: Relatório Individual HTML Generation', () => {
   });
 
   it('deve retornar 400 se avaliação não foi concluída', async () => {
-    const { requireEntidadeOrRH } = require('@/lib/auth-require');
-    const { db } = require('@/lib/db');
+    const { requireEntidadeOrRH, requireRH } = require('@/lib/auth-require');
+    const { query } = require('@/lib/db');
 
     requireEntidadeOrRH.mockResolvedValue({
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 1 },
     });
+    requireRH.mockResolvedValue({
+      perfil: 'gestor_entidade',
+      cpf: '12345678901',
+      clinica_id: 1,
+    });
 
-    db.query
+    query
       .mockResolvedValueOnce({
         rows: [{ id: 1, clinica_id: 1, empresa_id: 1 }],
       })
@@ -209,14 +253,19 @@ describe('API: Export Funcionários CSV', () => {
   });
 
   it('deve retornar CSV com funcionários do lote', async () => {
-    const { requireEntidadeOrRH } = require('@/lib/auth-require');
-    const { db } = require('@/lib/db');
+    const { requireEntidadeOrRH, requireRH } = require('@/lib/auth-require');
+    const { query } = require('@/lib/db');
 
     requireEntidadeOrRH.mockResolvedValue({
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 1 },
     });
+    requireRH.mockReturnValue({
+      perfil: 'gestor_entidade',
+      cpf: '12345678901',
+      clinica_id: 1,
+    });
 
-    db.query
+    query
       .mockResolvedValueOnce({
         rows: [
           {
@@ -263,14 +312,19 @@ describe('API: Export Funcionários CSV', () => {
   });
 
   it('deve retornar 403 para acesso não autorizado', async () => {
-    const { requireEntidadeOrRH } = require('@/lib/auth-require');
-    const { db } = require('@/lib/db');
+    const { requireEntidadeOrRH, requireRH } = require('@/lib/auth-require');
+    const { query } = require('@/lib/db');
 
     requireEntidadeOrRH.mockResolvedValue({
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 2 }, // Clínica diferente
     });
+    requireRH.mockReturnValue({
+      perfil: 'gestor_entidade',
+      cpf: '12345678901',
+      clinica_id: 2,
+    });
 
-    db.query.mockResolvedValueOnce({
+    query.mockResolvedValueOnce({
       rows: [
         {
           id: 1,
@@ -285,6 +339,14 @@ describe('API: Export Funcionários CSV', () => {
       'http://localhost:3000/api/entidade/lote/1/funcionarios/export'
     );
     const response = await exportFuncionariosCSV(req, { params: { id: '1' } });
+
+    if (response.status !== 403) {
+      try {
+        console.error('DEBUG CSV JSON:', await response.json());
+      } catch (e) {
+        console.error('DEBUG CSV TEXT:', await response.text());
+      }
+    }
 
     expect(response.status).toBe(403);
   });

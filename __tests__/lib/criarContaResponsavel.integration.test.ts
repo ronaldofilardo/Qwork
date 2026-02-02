@@ -75,6 +75,10 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
         contratante.responsavel_cpf,
       ]);
       expect(f.rows.length).toBeGreaterThanOrEqual(0);
+      if (f.rows.length > 0) {
+        expect(f.rows[0].usuario_tipo).toBe('gestor_entidade');
+        expect(f.rows[0].perfil).toBe('gestor_entidade');
+      }
     } finally {
       // Cleanup
       await db
@@ -169,6 +173,13 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
       expect(s.rows.length).toBeGreaterThan(0);
       // senha deve existir e ter hash atualizado (length > 0)
       expect(s.rows[0].senha_hash.length).toBeGreaterThan(0);
+
+      const f = await db.query('SELECT * FROM funcionarios WHERE cpf = $1', [
+        contratante.responsavel_cpf,
+      ]);
+      if (f.rows.length > 0) {
+        expect(f.rows[0].usuario_tipo).toBe('gestor_entidade');
+      }
     } finally {
       // Cleanup
       await db

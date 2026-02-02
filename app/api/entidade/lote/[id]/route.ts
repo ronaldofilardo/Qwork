@@ -30,7 +30,7 @@ export async function GET(
     // Buscar informações do lote e verificar se pertence à entidade do usuário
     const loteResult = await query(
       `
-      SELECT DISTINCT
+      SELECT
         la.id,
         la.codigo,
         la.titulo,
@@ -38,11 +38,27 @@ export async function GET(
         la.status,
         la.criado_em,
         la.liberado_em,
-        la.emitido_em
+        la.emitido_em,
+        CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
+        fe.solicitado_em as emissao_solicitado_em,
+        CASE 
+          WHEN l.id IS NOT NULL AND (l.status = 'enviado' OR l.hash_pdf IS NOT NULL) 
+          THEN true 
+          ELSE false 
+        END as tem_laudo,
+        l.id as laudo_id,
+        l.status as laudo_status,
+        l.emissor_cpf,
+        l.hash_pdf
       FROM lotes_avaliacao la
-      JOIN avaliacoes a ON a.lote_id = la.id
-      JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE la.id = $1 AND f.contratante_id = $2
+      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN laudos l ON l.lote_id = la.id
+      WHERE la.id = $1 
+        AND EXISTS (
+          SELECT 1 FROM avaliacoes a 
+          JOIN funcionarios f ON a.funcionario_cpf = f.cpf 
+          WHERE a.lote_id = la.id AND f.contratante_id = $2
+        )
       LIMIT 1
     `,
       [loteId, session.contratante_id]

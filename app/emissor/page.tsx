@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { ModalEmergencia } from '@/components/emissor/ModalEmergencia';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
-import { Loader2 } from 'lucide-react';
 interface Lote {
   id: number;
   codigo: string;
@@ -17,8 +16,10 @@ interface Lote {
   liberado_em: string;
   total_avaliacoes: number;
   emissao_automatica?: boolean;
-  processamento_em?: string | null;
   modo_emergencia?: boolean;
+  solicitado_por?: string | null;
+  solicitado_em?: string | null;
+  tipo_solicitante?: string | null;
   previsao_emissao?: {
     data: string;
     formatada: string;
@@ -30,6 +31,8 @@ interface Lote {
     emitido_em: string | null;
     enviado_em: string | null;
     hash_pdf: string | null;
+    _emitido?: boolean;
+    emissor_nome?: string;
   } | null;
   notificacoes?: NotificacaoLote[];
 }
@@ -43,7 +46,6 @@ interface NotificacaoLote {
 }
 
 interface LoteComNotificacao extends Lote {
-  processamento_em?: string | null;
   modo_emergencia?: boolean;
 }
 
@@ -55,36 +57,11 @@ export default function EmissorDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [activeTab, setActiveTab] = useState<
-    'aguardando-envio' | 'laudo-para-emitir' | 'laudo-emitido' | 'cancelados'
-  >('aguardando-envio');
+    'laudo-para-emitir' | 'laudo-emitido' | 'cancelados'
+  >('laudo-para-emitir');
   const router = useRouter();
   const { mutate: reprocessarLaudo, isPending: isReprocessando } =
     useReprocessarLaudo();
-
-  // Calcular tempo decorrido desde processamento_em
-  const calcularTempoDecorrido = (processamentoEm: string) => {
-    const inicio = new Date(processamentoEm);
-    const agora = new Date();
-    const diffMs = agora.getTime() - inicio.getTime();
-    const diffMinutos = Math.floor(diffMs / 60000);
-
-    if (diffMinutos < 1) return 'menos de 1 minuto';
-    if (diffMinutos === 1) return '1 minuto';
-    if (diffMinutos < 60) return `${diffMinutos} minutos`;
-
-    const diffHoras = Math.floor(diffMinutos / 60);
-    const minutosRestantes = diffMinutos % 60;
-
-    if (diffHoras === 1) {
-      return minutosRestantes > 0
-        ? `1 hora e ${minutosRestantes} minutos`
-        : '1 hora';
-    }
-
-    return minutosRestantes > 0
-      ? `${diffHoras} horas e ${minutosRestantes} minutos`
-      : `${diffHoras} horas`;
-  };
 
   const fetchLotes = useCallback(
     async (page: number, reset: boolean = false) => {
@@ -232,20 +209,17 @@ export default function EmissorDashboard() {
   // Filtrar lotes por aba ativa
   const filteredLotes = lotes.filter((lote) => {
     switch (activeTab) {
-      case 'aguardando-envio':
-        return lote.status === 'rascunho';
       case 'laudo-para-emitir':
-        // Lotes concluídos que ainda não tiveram laudo enviado
-        // Inclui: sem laudo, laudo rascunho, laudo emitido (mas não enviado)
+        // Apenas lotes CONCLUÍDOS que ainda NÃO têm laudo emitido
+        // Laudo é considerado emitido quando tem hash_pdf OU status='enviado'
         return (
-          lote.status === 'concluido' &&
-          (!lote.laudo || lote.laudo.status !== 'enviado')
+          lote.status === 'concluido' && (!lote.laudo || !lote.laudo._emitido)
         );
       case 'laudo-emitido':
-        // Lotes finalizados OU lotes concluídos com laudo enviado
+        // Lotes finalizados OU lotes concluídos com laudo emitido (hash ou status enviado)
         return (
           lote.status === 'finalizado' ||
-          (lote.status === 'concluido' && lote.laudo?.status === 'enviado')
+          (lote.status === 'concluido' && lote.laudo?._emitido)
         );
       case 'cancelados':
         return lote.status === 'cancelado';
@@ -255,6 +229,15 @@ export default function EmissorDashboard() {
   });
 
   const handleEmitirLaudo = (loteId: number) => {
+    // Se já existe laudo, apenas visualizar
+    const lote = lotes.find((l) => l.id === loteId);
+    if (lote?.laudo) {
+      router.push(`/emissor/laudo/${loteId}`);
+      return;
+    }
+
+    // Navegar para a página de preview do laudo
+    // O emissor verá o preview e poderá clicar em "Gerar Laudo" manualmente
     router.push(`/emissor/laudo/${loteId}`);
   };
 
@@ -497,16 +480,6 @@ export default function EmissorDashboard() {
           <div className="border-b border-gray-200">
             <nav className="-mb-px flex space-x-8">
               <button
-                onClick={() => setActiveTab('aguardando-envio')}
-                className={`py-2 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === 'aguardando-envio'
-                    ? 'border-primary text-primary'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                }`}
-              >
-                ⏳ Aguardando Envio
-              </button>
-              <button
                 onClick={() => setActiveTab('laudo-para-emitir')}
                 className={`py-2 px-1 border-b-2 font-medium text-sm ${
                   activeTab === 'laudo-para-emitir'
@@ -636,6 +609,20 @@ export default function EmissorDashboard() {
                         )}
                       </div>
 
+                      {lote.solicitado_em && lote.solicitado_por && (
+                        <div className="text-sm text-blue-600 font-medium">
+                          🚀 Emissão solicitada por {lote.solicitado_por} em{' '}
+                          {new Date(lote.solicitado_em).toLocaleDateString(
+                            'pt-BR'
+                          )}{' '}
+                          às{' '}
+                          {new Date(lote.solicitado_em).toLocaleTimeString(
+                            'pt-BR',
+                            { hour: '2-digit', minute: '2-digit' }
+                          )}
+                        </div>
+                      )}
+
                       {lote.previsao_emissao && (
                         <div className="text-sm text-gray-500">
                           Previsão de emissão: {lote.previsao_emissao.formatada}
@@ -656,6 +643,12 @@ export default function EmissorDashboard() {
                         </div>
                       )}
 
+                      {lote.laudo?.emissor_nome && (
+                        <div className="text-sm text-blue-700 font-medium">
+                          Emissor: {lote.laudo.emissor_nome}
+                        </div>
+                      )}
+
                       {lote.laudo?.enviado_em && (
                         <div className="text-sm text-gray-500">
                           Enviado em{' '}
@@ -672,7 +665,7 @@ export default function EmissorDashboard() {
                     </div>
 
                     {/* Hash do Laudo - Seção destacada */}
-                    {lote.laudo && (
+                    {lote.laudo && lote.laudo._emitido && (
                       <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-xs font-semibold text-blue-800 uppercase">
@@ -789,24 +782,6 @@ export default function EmissorDashboard() {
                       </div>
                     )}
 
-                    {/* Indicador de processamento */}
-                    {lote.processamento_em && !lote.laudo && (
-                      <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium text-blue-900">
-                              Processamento em andamento
-                            </p>
-                            <p className="text-xs text-blue-700 mt-0.5">
-                              Iniciado há{' '}
-                              {calcularTempoDecorrido(lote.processamento_em)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
                     {/* Badge de modo emergência */}
                     {lote.modo_emergencia && (
                       <div className="mb-4">
@@ -818,10 +793,9 @@ export default function EmissorDashboard() {
                     )}
 
                     <div className="flex justify-end gap-2">
-                      {/* Botão reprocessar - apenas para lotes concluídos sem laudo */}
+                      {/* Botão reprocessar - apenas para lotes concluídos sem laudo EMITIDO */}
                       {lote.status === 'concluido' &&
-                        !lote.laudo &&
-                        !lote.processamento_em && (
+                        (!lote.laudo || !lote.laudo._emitido) && (
                           <button
                             onClick={() =>
                               reprocessarLaudo({ loteId: lote.id })
@@ -833,10 +807,9 @@ export default function EmissorDashboard() {
                           </button>
                         )}
 
-                      {/* Botão emergência - apenas para emissores/admins, lotes concluídos sem laudo */}
+                      {/* Botão emergência - apenas para emissores/admins, lotes concluídos sem laudo EMITIDO */}
                       {lote.status === 'concluido' &&
-                        !lote.laudo &&
-                        !lote.processamento_em && (
+                        (!lote.laudo || !lote.laudo._emitido) && (
                           <ModalEmergencia
                             loteId={lote.id}
                             loteCodigo={lote.codigo}
@@ -845,39 +818,55 @@ export default function EmissorDashboard() {
                         )}
 
                       {/* Botão principal do lote */}
-                      <button
-                        onClick={() => {
-                          if (
-                            activeTab === 'laudo-emitido' &&
-                            lote.laudo?.status === 'enviado'
-                          ) {
-                            handleDownloadLaudo(lote);
-                          } else {
-                            handleEmitirLaudo(lote.id);
-                          }
-                        }}
-                        className={`px-4 py-2 ${
-                          lote.emissao_automatica
-                            ? 'bg-orange-600 hover:bg-orange-700'
-                            : 'bg-blue-600 hover:bg-blue-700'
-                        } text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 ${
-                          lote.emissao_automatica
-                            ? 'focus:ring-orange-500'
-                            : 'focus:ring-blue-500'
-                        } focus:ring-offset-2 transition-colors`}
-                      >
-                        {lote.emissao_automatica
-                          ? !lote.laudo
-                            ? 'Pré-visualização'
-                            : lote.laudo.status === 'enviado'
-                              ? 'Ver Laudo/Baixar PDF'
-                              : 'Ver Prévia (edição bloqueada)'
-                          : !lote.laudo
-                            ? 'Iniciar Laudo'
-                            : lote.laudo.status === 'enviado'
-                              ? 'Ver Laudo/Baixar PDF'
-                              : 'Abrir Laudo Biopsicossocial'}
-                      </button>
+                      {(() => {
+                        const laudoDisponivelParaDownload = Boolean(
+                          lote.laudo &&
+                          (lote.laudo._emitido ||
+                            lote.laudo.status === 'enviado' ||
+                            lote.laudo.hash_pdf)
+                        );
+
+                        const laudoFoiEmitido = Boolean(
+                          lote.laudo && lote.laudo._emitido
+                        );
+
+                        const label = laudoDisponivelParaDownload
+                          ? 'Laudo Psicossocial'
+                          : lote.emissao_automatica
+                            ? !laudoFoiEmitido
+                              ? 'Pré-visualização'
+                              : lote.laudo.status === 'enviado'
+                                ? 'Ver Laudo/Baixar PDF'
+                                : 'Ver Prévia (edição bloqueada)'
+                            : !laudoFoiEmitido
+                              ? 'Iniciar Laudo'
+                              : lote.laudo.status === 'enviado'
+                                ? 'Ver Laudo/Baixar PDF'
+                                : 'Abrir Laudo Biopsicossocial';
+
+                        return (
+                          <button
+                            onClick={() => {
+                              if (laudoDisponivelParaDownload) {
+                                handleDownloadLaudo(lote);
+                              } else {
+                                handleEmitirLaudo(lote.id);
+                              }
+                            }}
+                            className={`px-4 py-2 ${
+                              lote.emissao_automatica
+                                ? 'bg-orange-600 hover:bg-orange-700'
+                                : 'bg-blue-600 hover:bg-blue-700'
+                            } text-white rounded-md text-sm font-medium focus:outline-none focus:ring-2 ${
+                              lote.emissao_automatica
+                                ? 'focus:ring-orange-500'
+                                : 'focus:ring-blue-500'
+                            } focus:ring-offset-2 transition-colors flex items-center gap-2`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}

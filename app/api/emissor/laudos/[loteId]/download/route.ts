@@ -40,14 +40,46 @@ export const GET = async (
       [loteId, user.cpf]
     );
 
-    if (laudoQuery.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Laudo não encontrado ou acesso negado', success: false },
-        { status: 404 }
-      );
-    }
+    let laudo;
 
-    const laudo = laudoQuery.rows[0];
+    if (laudoQuery.rows.length === 0) {
+      // Não há registro no DB, mas pode haver arquivo local
+      // Buscar informações do lote para verificar permissão
+      const loteQuery = await query(
+        `SELECT id, codigo, titulo, emissor_cpf FROM lotes_avaliacao WHERE id = $1`,
+        [loteId]
+      );
+
+      if (loteQuery.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Lote não encontrado', success: false },
+          { status: 404 }
+        );
+      }
+
+      const loteInfo = loteQuery.rows[0];
+
+      // Validar que o emissor tem permissão (ou se não há emissor definido ainda, permitir)
+      if (loteInfo.emissor_cpf && loteInfo.emissor_cpf !== user.cpf) {
+        return NextResponse.json(
+          {
+            error: 'Acesso negado: laudo pertence a outro emissor',
+            success: false,
+          },
+          { status: 403 }
+        );
+      }
+
+      // Usar dados do lote como fallback
+      laudo = {
+        id: loteInfo.id,
+        lote_id: loteInfo.id,
+        codigo: loteInfo.codigo,
+        titulo: loteInfo.titulo,
+      };
+    } else {
+      laudo = laudoQuery.rows[0];
+    }
 
     // Tentar múltiplas chaves (id, codigo, lote)
     const fs = await import('fs/promises');
@@ -64,6 +96,7 @@ export const GET = async (
         const p = path.join(process.cwd(), 'storage', 'laudos', name);
         const fileBuffer = await fs.readFile(p);
         const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        console.log(`[INFO] Servindo arquivo local de laudo: ${p}`);
         return new NextResponse(fileBuffer, {
           headers: {
             'Content-Type': 'application/pdf',

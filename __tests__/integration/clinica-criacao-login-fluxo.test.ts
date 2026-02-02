@@ -119,7 +119,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     contratanteId = contratanteResult.rows[0].id as number;
     expect(contratanteId).toBeDefined();
-    console.log(`[TESTE] Contratante criado: ID=${contratanteId}`);
 
     // ============================================================================
     // PASSO 2: Simular confirmação de pagamento e ativação
@@ -140,7 +139,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     });
 
     expect(activationResult.success).toBe(true);
-    console.log(`[TESTE] Contratante ativado: ${activationResult.message}`);
 
     // ============================================================================
     // VALIDAÇÃO 1: Verificar que a clínica foi criada
@@ -157,13 +155,11 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     expect(clinicaCheck.rows[0].contratante_id).toBe(contratanteId);
 
     const clinicaId = clinicaCheck.rows[0].id;
-    console.log(`[TESTE] ✅ Clínica criada: ID=${clinicaId}`);
 
     // ============================================================================
     // PASSO 3: Criar conta do responsável (RH)
     // ============================================================================
     await criarContaResponsavel(contratanteId);
-    console.log(`[TESTE] Conta RH criada para CPF ${cpfResponsavel}`);
 
     // ============================================================================
     // VALIDAÇÃO 2: Verificar que funcionário RH tem clinica_id definido
@@ -189,7 +185,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       expect(funcionario.perfil).toBe('rh');
       expect(funcionario.contratante_id).toBe(contratanteId);
       expect(funcionario.clinica_id).toBe(clinicaId);
-      console.log(
         `[TESTE] ✅ Funcionário RH criado: clinica_id=${funcionario.clinica_id}`
       );
     }
@@ -211,7 +206,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     const senhaEsperada = cnpjClinica.slice(-6); // '665544'
     const senhaValida = await bcrypt.compare(senhaEsperada, senhaHash);
     expect(senhaValida).toBe(true);
-    console.log(`[TESTE] ✅ Senha RH válida (últimos 6 dígitos do CNPJ)`);
 
     // Simular busca de clínica no login (como em app/api/auth/login/route.ts)
     const loginClinicaCheck = await query(
@@ -221,7 +215,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     expect(loginClinicaCheck.rows.length).toBe(1);
     expect(loginClinicaCheck.rows[0].id).toBe(clinicaId);
-    console.log(`[TESTE] ✅ Login encontraria clinica_id=${clinicaId}`);
 
     // ============================================================================
     // VALIDAÇÃO 4: Simular requireClinica() middleware
@@ -237,7 +230,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     expect(session1.clinica_id).toBeDefined();
     expect(session1.clinica_id).toBe(clinicaId);
-    console.log(`[TESTE] ✅ Sessão ideal: clinica_id=${session1.clinica_id}`);
 
     // Cenário 2: Sessão SEM clinica_id (fallback via contratante_id)
     const session2 = {
@@ -259,7 +251,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     expect(fallbackCheck.rows.length).toBe(1);
     expect(fallbackCheck.rows[0].tipo).toBe('clinica');
     expect(fallbackCheck.rows[0].ativa).toBe(true);
-    console.log(
       `[TESTE] ✅ Fallback requireClinica() mapearia clinica_id=${fallbackCheck.rows[0].id}`
     );
 
@@ -288,7 +279,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     expect(empresaResult.rows.length).toBe(1);
     const empresaId = empresaResult.rows[0].id;
-    console.log(`[TESTE] ✅ Empresa cliente criada: ID=${empresaId}`);
 
     // Cleanup empresa
     await query('DELETE FROM empresas_clientes WHERE id = $1', [empresaId]);
@@ -296,14 +286,18 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     // ============================================================================
     // SUCESSO: Fluxo completo validado
     // ============================================================================
-    console.log('\n[TESTE] ✅✅✅ FLUXO COMPLETO VALIDADO ✅✅✅');
-    console.log('1. Pagamento confirmado → Clínica criada automaticamente');
-    console.log('2. Conta RH criada com clinica_id definido');
-    console.log('3. Login RH mapeia clinica_id na sessão');
-    console.log(
+    // \n[TESTE] ✅✅✅ FLUXO COMPLETO VALIDADO ✅✅✅
+
+    // 1. Pagamento confirmado → Clínica criada automaticamente
+
+    // 2. Conta RH criada com clinica_id definido
+
+    // 3. Login RH mapeia clinica_id na sessão
+
       '4. requireClinica() funciona (com e sem clinica_id na sessão)'
     );
-    console.log('5. RH consegue criar empresas clientes\n');
+    // 5. RH consegue criar empresas clientes\n
+
   });
 
   test('EDGE CASE: Contratante entidade NÃO cria clínica', async () => {
@@ -350,7 +344,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     );
 
     expect(clinicaCheck.rows.length).toBe(0);
-    console.log(
       '[TESTE] ✅ Entidade não criou clínica (comportamento correto)'
     );
 
@@ -366,7 +359,8 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     expect(funcionarioCheck.rows.length).toBe(1);
     expect(funcionarioCheck.rows[0].perfil).toBe('gestor_entidade');
     expect(funcionarioCheck.rows[0].clinica_id).toBeNull();
-    console.log('[TESTE] ✅ Gestor entidade sem clinica_id (correto)');
+    // [TESTE] ✅ Gestor entidade sem clinica_id (correto)
+
   });
 
   test('IDEMPOTÊNCIA: Ativar contratante múltiplas vezes não duplica clínica', async () => {
@@ -423,7 +417,8 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     );
 
     expect(parseInt(clinicaCheck.rows[0].total)).toBe(1);
-    console.log('[TESTE] ✅ ON CONFLICT evitou duplicação de clínica');
+    // [TESTE] ✅ ON CONFLICT evitou duplicação de clínica
+
   });
 
   test('REGRESSÃO: criarContaResponsavel atualiza clinica_id em funcionário existente', async () => {
@@ -483,7 +478,6 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       [cpfResponsavel]
     );
     expect(checkAfter.rows[0].clinica_id).toBe(initialClinicaId);
-    console.log(
       '[TESTE] ✅ criarContaResponsavel é idempotente para funcionário existente'
     );
   });

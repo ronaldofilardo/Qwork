@@ -1,5 +1,5 @@
 import { query } from '../lib/db.js';
-import { emitirLaudoImediato } from './laudo-auto';
+// REMOVIDO: import { emitirLaudoImediato } - não mais necessário pois emissão é manual
 
 /**
  * Configurações para conclusão automática de lotes
@@ -73,24 +73,12 @@ async function concluirLoteAutomaticamente(lote: {
 
     console.log(`[AUTO-CONCLUIR] ✅ Lote ${lote.codigo} concluído com sucesso`);
 
-    // Tentar emitir imediatamente (sem agendamento/cron)
-    try {
-      const emitted = await emitirLaudoImediato(lote.id);
-      if (emitted) {
-        console.log(
-          `[AUTO-CONCLUIR] ✅ Emissão imediata bem-sucedida para lote ${lote.codigo}`
-        );
-      } else {
-        console.warn(
-          `[AUTO-CONCLUIR] ⚠️ Emissão imediata falhou para lote ${lote.codigo}`
-        );
-      }
-    } catch (err) {
-      console.error(
-        `[AUTO-CONCLUIR] ❌ Erro ao emitir imediatamente para lote ${lote.codigo}:`,
-        err
-      );
-    }
+    // REMOVIDO: Emissão automática de laudo
+    // Agora o laudo só é emitido quando o EMISSOR decidir manualmente
+    // O lote fica com status='concluido' e aguarda solicitação de emissão pelo RH/Entidade
+    console.log(
+      `[AUTO-CONCLUIR] 📋 Lote ${lote.codigo} está pronto para solicitação de emissão manual pelo RH/Entidade`
+    );
 
     // Registrar no log de auditoria
     await query(
@@ -104,7 +92,7 @@ async function concluirLoteAutomaticamente(lote: {
         'conclusao_automatica',
         'lotes_avaliacao',
         lote.id.toString(),
-        `Lote ${lote.codigo} concluído automaticamente (${lote.total_avaliacoes} avaliações). Emissão tentativa imediata.`,
+        `Lote ${lote.codigo} concluído automaticamente (${lote.total_avaliacoes} avaliações). Aguardando solicitação de emissão manual.`,
       ]
     );
   } catch (error) {

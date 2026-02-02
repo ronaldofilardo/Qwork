@@ -36,7 +36,7 @@ export const GET = async (
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.id = $1 
-        AND l.status = 'enviado'
+        AND l.status IN ('enviado', 'emitido')
         AND la.contratante_id = $2
     `,
       [laudoId, contratanteId]

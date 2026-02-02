@@ -118,7 +118,8 @@ describe('Testes de Auditoria - Empresas Clientes', () => {
         text.includes('audit_logs') &&
         text.includes('resource')
       ) {
-        console.log('Returning count mock');
+        // Returning count mock
+
         return { rows: [{ count: '3' }], rowCount: 1 };
       }
       return { rows: [], rowCount: 0 };

@@ -93,4 +93,4 @@ describe('Entidade Lotes - cards compactos', () => {
     expect(screen.queryByText(/Funcionários \(/)).not.toBeInTheDocument();
   });
 });
-
+

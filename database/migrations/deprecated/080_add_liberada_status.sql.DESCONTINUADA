@@ -1,0 +1,29 @@
+-- Migration: Adicionar status 'liberada' para avaliações
+-- Data: 2026-01-30
+-- Descrição: Adiciona o status 'liberada' ao enum status_avaliacao para distinguir
+--            avaliações criadas mas não iniciadas pelo funcionário
+
+BEGIN;
+
+-- Adicionar o valor 'liberada' ao enum existente
+-- Se 'iniciada' não existe, adicionar ambos
+DO $$
+BEGIN
+    -- Adicionar 'liberada' se não existir
+    IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'status_avaliacao' AND e.enumlabel = 'liberada') THEN
+        ALTER TYPE status_avaliacao ADD VALUE 'liberada';
+    END IF;
+    
+    -- Adicionar 'iniciada' se não existir
+    IF NOT EXISTS (SELECT 1 FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'status_avaliacao' AND e.enumlabel = 'iniciada') THEN
+        ALTER TYPE status_avaliacao ADD VALUE 'iniciada';
+    END IF;
+END$$;
+
+-- Não há avaliações antigas para atualizar em dev, skip este passo
+-- (Em produção, precisaria migrar dados antigos)
+
+-- Adicionar comentário explicativo
+COMMENT ON TYPE status_avaliacao IS 'Status de avaliações: liberada (criada mas não acessada), iniciada (primeiro acesso), em_andamento (progresso), concluida (finalizada), inativada (cancelada)';
+
+COMMIT;

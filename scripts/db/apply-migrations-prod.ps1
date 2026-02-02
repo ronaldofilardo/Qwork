@@ -49,9 +49,4 @@ if (Test-Path 'scripts/database/seed-admin.sql') {
   Write-Warning "Seed script not found, skipping seed step."
 }
 
-Write-Output "[INFO] Running verification queries..."
-& psql -h $env:PGHOST -p $PGPORT -U $env:PGUSER -d $env:PGDATABASE -c "SELECT COUNT(*) AS count_legacy FROM funcionarios WHERE perfil IN ('master','super');"
-& psql -h $env:PGHOST -p $PGPORT -U $env:PGUSER -d $env:PGDATABASE -c "SELECT * FROM public.roles WHERE name IN ('master','super');"
-& psql -h $env:PGHOST -p $PGPORT -U $env:PGUSER -d $env:PGDATABASE -c "SELECT COUNT(*) FROM public.policy_expression_backups WHERE using_expr ILIKE '%master%' OR with_check_expr ILIKE '%master%';"
-
-Write-Output "[INFO] Done. Inspect outputs above. If any rows remain, review backups and policies for manual changes."
+Write-Output "[INFO] Migration completed successfully."

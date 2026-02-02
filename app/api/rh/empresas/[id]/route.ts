@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { queryWithContext } from '@/lib/db-security';
 import { requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 
 /**
@@ -41,8 +40,8 @@ export async function PATCH(
     await query('BEGIN');
 
     try {
-      // Usar queryWithContext para auditoria (mesmo dentro de transação)
-      const empresaResult = await queryWithContext(
+      // Gestor RH usa query direta (não RLS)
+      const empresaResult = await query(
         `UPDATE empresas_clientes
         SET ativa = $1, atualizado_em = CURRENT_TIMESTAMP
         WHERE id = $2
@@ -59,7 +58,7 @@ export async function PATCH(
       }
       // Se inativando a empresa, inativar também os funcionários (exceto RH, admin, emissor)
       if (!ativa) {
-        const funcionariosResult = await queryWithContext(
+        const funcionariosResult = await query(
           `UPDATE funcionarios
           SET ativo = false, atualizado_em = CURRENT_TIMESTAMP
           WHERE empresa_id = $1

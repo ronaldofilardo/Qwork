@@ -1,5 +1,12 @@
+/**
+ * E2E: Emissão de laudo (integração)
+ *
+ * NOTA: Emissão automática foi REMOVIDA.
+ * Este teste usa gerarLaudoCompletoEmitirPDF diretamente para gerar o PDF.
+ */
+
 import { query } from '@/lib/db';
-import { emitirLaudoImediato } from '@/lib/laudo-auto';
+import { gerarLaudoCompletoEmitirPDF } from '@/lib/laudo-auto';
 import { beforeAll, afterAll, describe, it, expect } from '@jest/globals';
 
 describe('E2E: Emissão de laudo (integração)', () => {
@@ -123,17 +130,22 @@ describe('E2E: Emissão de laudo (integração)', () => {
   });
 
   it('deve emitir laudo completo e gravar PDF + registros DB', async () => {
-    const result = await emitirLaudoImediato(loteId);
-    expect(result).toBe(true);
+    // NOTA: Usando gerarLaudoCompletoEmitirPDF diretamente (emissão automática removida)
+    const result = await gerarLaudoCompletoEmitirPDF(loteId, emissorCpf);
+    expect(result).toBeTruthy();
+    laudoId = result;
 
-    // Verificar que laudo foi criado
+    // Verificar que laudo foi criado com status 'emitido'
     const resLaudo = await query(
-      `SELECT id, hash_pdf FROM laudos WHERE lote_id = $1`,
+      `SELECT id, hash_pdf, status, emitido_em, enviado_em FROM laudos WHERE lote_id = $1`,
       [loteId]
     );
     expect(resLaudo.rows.length).toBeGreaterThan(0);
     laudoId = resLaudo.rows[0].id;
     expect(resLaudo.rows[0].hash_pdf).toBeTruthy();
+    expect(resLaudo.rows[0].status).toBe('emitido'); // Status deve ser 'emitido'
+    expect(resLaudo.rows[0].emitido_em).not.toBeNull();
+    expect(resLaudo.rows[0].enviado_em).toBeNull(); // Ainda não foi enviado
 
     // Verificar que lote foi marcado como emitido
     const resLote = await query(

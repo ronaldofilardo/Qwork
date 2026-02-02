@@ -2,9 +2,16 @@ import { POST } from '../app/api/pagamento/confirmar/route';
 
 (async () => {
   try {
+    const pagamentoId = parseInt(process.argv[2], 10);
+
+    if (!pagamentoId) {
+      console.error('Uso: node callConfirmThis.ts <PagamentoID>');
+      process.exit(1);
+    }
+
     const req = {
       json: async () => ({
-        pagamento_id: 2,
+        pagamento_id: pagamentoId,
         metodo_pagamento: 'pix',
         plataforma_id: null,
         plataforma_nome: 'test',

@@ -1,20 +1,31 @@
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: '.env.local' });
 
 (async () => {
   const client = new Client({
-    connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+    connectionString:
+      process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL,
   });
 
   try {
     await client.connect();
     await client.query('BEGIN');
 
-    // Dados do gestor RH
-    const cpf = '54666444041';
-    const nome = 'Ronaldo Tstes';
-    const email = 'ronaldo.tstes@example.com';
-    const clinicaId = 53; // Deve ser a clinica_id do RH
+    // Dados do gestor RH via argumentos
+    const cpf = process.argv[2];
+    const nome = process.argv[3] || 'Gestor RH';
+    const email = process.argv[4] || null;
+    const clinicaId = parseInt(process.argv[5], 10);
+
+    if (!cpf || cpf.length !== 11 || !clinicaId) {
+      console.error(
+        'Uso: node createGestorRH.cjs <CPF> <Nome> <Email> <ClinicaID>'
+      );
+      process.exit(1);
+    }
 
     // Senha padrão: '123456'
     const defaultPassword = '123456';

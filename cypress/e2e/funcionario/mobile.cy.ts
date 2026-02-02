@@ -39,14 +39,14 @@ describe('Funcionário - Fluxo Mobile', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     // Verificar que radio buttons são clicáveis em mobile
     cy.get('input[type="radio"]')
       .first()
       .should('be.visible')
       .click({ force: true });
-    cy.contains('1 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('1 de 37', { timeout: 5000 }).should('be.visible');
   });
 
   it('deve exibir uma questão por vez em mobile', () => {
@@ -71,7 +71,7 @@ describe('Funcionário - Fluxo Mobile', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     // Responder 3 questões
     for (let i = 0; i < 3; i++) {
@@ -79,13 +79,13 @@ describe('Funcionário - Fluxo Mobile', () => {
       cy.wait(500);
     }
 
-    cy.contains('3 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('3 de 37', { timeout: 5000 }).should('be.visible');
 
     // Recarregar
     cy.reload();
 
     // Verificar progresso mantido
-    cy.contains('3 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('3 de 37', { timeout: 10000 }).should('be.visible');
   });
 
   it('deve funcionar em diferentes tamanhos de mobile', () => {
@@ -116,10 +116,10 @@ describe('Funcionário - Fluxo Mobile', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains(/\d+ de 70/, { timeout: 10000 }).should('be.visible');
+    cy.contains(/\d+ de 37/, { timeout: 10000 }).should('be.visible');
 
     // Barra de progresso deve estar no topo e visível
-    cy.contains(/\d+ de 70/)
+    cy.contains(/\d+ de 37/)
       .should('be.visible')
       .then(($el: any) => {
         const rect = $el[0].getBoundingClientRect();
@@ -135,7 +135,7 @@ describe('Funcionário - Fluxo Mobile', () => {
 
     // Clicar no label deve selecionar o radio
     cy.contains('Nunca').click();
-    cy.contains('1 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('1 de 37', { timeout: 5000 }).should('be.visible');
   });
 
   it('deve funcionar com orientação landscape', () => {
@@ -144,9 +144,9 @@ describe('Funcionário - Fluxo Mobile', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
     cy.get('input[type="radio"]').first().click({ force: true });
-    cy.contains('1 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('1 de 37', { timeout: 5000 }).should('be.visible');
   });
 
   it('deve suportar gestos de swipe (se implementado)', () => {
@@ -175,7 +175,7 @@ describe('Funcionário - Fluxo Mobile', () => {
     cy.visit('/avaliacao?id=1');
 
     // Verificar que a página carrega rápido
-    cy.contains('0 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 5000 }).should('be.visible');
 
     // Responder múltiplas questões rapidamente
     const start = Date.now();

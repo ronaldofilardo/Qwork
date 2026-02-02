@@ -1,0 +1,632 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`Regressão Visual - Botões Especiais BotaoSolicitarEmissao deve manter estrutura visual consistente 1`] = `
+<div
+  class="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-sm"
+>
+  <div
+    class="flex items-start gap-4 mb-4"
+  >
+    <div
+      class="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center"
+    >
+      <span
+        class="text-3xl"
+      >
+        ✅
+      </span>
+    </div>
+    <div
+      class="flex-1"
+    >
+      <h3
+        class="text-xl font-bold text-gray-900 mb-1"
+      >
+        Lote Concluído
+      </h3>
+      <p
+        class="text-sm text-gray-700 leading-relaxed"
+      >
+        Todas as avaliações foram finalizadas. Você pode solicitar a emissão do laudo agora.
+      </p>
+      <p
+        class="text-xs text-gray-600 mt-2"
+      >
+        O laudo será gerado automaticamente após a solicitação e enviado ao emissor responsável.
+      </p>
+    </div>
+  </div>
+  <button
+    class="   w-full px-6 py-4    bg-gradient-to-r from-green-600 to-emerald-600    text-white rounded-lg    hover:from-green-700 hover:to-emerald-700   active:from-green-800 active:to-emerald-800   transition-all duration-200   font-bold text-lg   disabled:from-gray-400 disabled:to-gray-500   disabled:cursor-not-allowed   disabled:opacity-60   flex items-center justify-center gap-3   shadow-md hover:shadow-lg   transform hover:scale-[1.02] active:scale-[0.98]   "
+  >
+    <span
+      class="text-2xl"
+    >
+      🚀
+    </span>
+    <span>
+      Solicitar Emissão do Laudo
+    </span>
+  </button>
+</div>
+`;
+
+exports[`Regressão Visual - Botões Especiais BotaoSolicitarEmissao deve ter estado quando laudo já emitido: laudo-emitido 1`] = `
+<div
+  class="mt-6 p-6 bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-xl shadow-sm"
+>
+  <div
+    class="flex items-start gap-4"
+  >
+    <div
+      class="flex-shrink-0 w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center"
+    >
+      <span
+        class="text-3xl"
+      >
+        ✅
+      </span>
+    </div>
+    <div
+      class="flex-1"
+    >
+      <h3
+        class="text-xl font-bold text-gray-900 mb-1"
+      >
+        Laudo Emitido
+      </h3>
+      <p
+        class="text-sm text-gray-700"
+      >
+        O laudo deste lote já foi emitido
+        .
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Regressão Visual - Botões Especiais LiberarAvaliacoes deve manter estrutura visual consistente 1`] = `
+<div
+  class="flex flex-wrap gap-3 mt-6"
+>
+  <button
+    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition disabled:opacity-70"
+  >
+    Liberar Avaliações para Todos Funcionários Ativos
+  </button>
+</div>
+`;
+
+exports[`Regressão Visual - Componentes Admin CentroOperacoes deve manter estrutura visual consistente 1`] = `
+<div
+  class="flex items-center justify-center min-h-[400px]"
+>
+  <div
+    class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+  />
+</div>
+`;
+
+exports[`Regressão Visual - Componentes Clínica Clínica Sidebar deve manter estrutura visual consistente 1`] = `
+<div
+  class="h-screen bg-white border-r border-gray-200 flex flex-col transition-all w-64"
+>
+  <div
+    class="p-4 border-b border-gray-200"
+  >
+    <div
+      class="flex items-center justify-between"
+    >
+      <div>
+        <h1
+          class="text-lg font-bold text-gray-800"
+        >
+          QWork
+        </h1>
+        <p
+          class="text-xs text-gray-500"
+        >
+          Painel Clínica
+        </p>
+      </div>
+      <button
+        class="p-2 hover:bg-gray-100 rounded-md transition-colors"
+        title="Recolher menu"
+      >
+        <span />
+      </button>
+    </div>
+  </div>
+  <div
+    class="p-4 border-b border-gray-200 bg-gray-50"
+  >
+    <div
+      class="flex items-center gap-3"
+    >
+      <div
+        class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center"
+      >
+        <span
+          class="text-primary-600"
+        >
+          🏥
+        </span>
+      </div>
+      <div
+        class="flex-1 min-w-0"
+      >
+        <p
+          class="text-sm font-semibold text-gray-800 truncate"
+        >
+          Gestor
+        </p>
+        <p
+          class="text-xs text-gray-500"
+        >
+          Gestor de Clínica
+        </p>
+      </div>
+    </div>
+  </div>
+  <nav
+    class="flex-1 overflow-y-auto py-4"
+  >
+    <button
+      class="w-full flex items-center justify-between px-4 py-3 text-left transition-colors text-gray-700 hover:bg-gray-100 border-l-4 border-transparent"
+    >
+      <div
+        class="flex items-center gap-3"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-building2 lucide-building-2"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M10 12h4"
+          />
+          <path
+            d="M10 8h4"
+          />
+          <path
+            d="M14 21v-3a2 2 0 0 0-4 0v3"
+          />
+          <path
+            d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"
+          />
+          <path
+            d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"
+          />
+        </svg>
+        <span
+          class="font-medium"
+        >
+          Empresas Clientes
+        </span>
+      </div>
+    </button>
+    <button
+      class="w-full flex items-center justify-between px-4 py-3 text-left transition-colors text-gray-700 hover:bg-gray-100 border-l-4 border-transparent"
+    >
+      <div
+        class="flex items-center gap-3"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-folder-open"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"
+          />
+        </svg>
+        <span
+          class="font-medium"
+        >
+          Laudos
+        </span>
+      </div>
+    </button>
+    <button
+      class="w-full flex items-center justify-between px-4 py-3 text-left transition-colors text-gray-700 hover:bg-gray-100 border-l-4 border-transparent"
+    >
+      <div
+        class="flex items-center gap-3"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-bell"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M10.268 21a2 2 0 0 0 3.464 0"
+          />
+          <path
+            d="M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326"
+          />
+        </svg>
+        <span
+          class="font-medium"
+        >
+          Notificações
+        </span>
+      </div>
+    </button>
+    <button
+      class="w-full flex items-center justify-between px-4 py-3 text-left transition-colors text-gray-700 hover:bg-gray-100 border-l-4 border-transparent"
+    >
+      <div
+        class="flex items-center gap-3"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-user"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"
+          />
+          <circle
+            cx="12"
+            cy="7"
+            r="4"
+          />
+        </svg>
+        <span
+          class="font-medium"
+        >
+          Informações da Conta
+        </span>
+      </div>
+    </button>
+    <div
+      class="mt-2 px-4"
+    >
+      <button
+        class="w-full flex items-center gap-3 px-4 py-3 text-red-600 hover:bg-red-50 rounded-md transition-colors"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-log-out"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m16 17 5-5-5-5"
+          />
+          <path
+            d="M21 12H9"
+          />
+          <path
+            d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+          />
+        </svg>
+        <span
+          class="font-medium"
+        >
+          Sair
+        </span>
+      </button>
+    </div>
+  </nav>
+</div>
+`;
+
+exports[`Regressão Visual - Componentes Clínica LaudosSection deve manter estrutura visual consistente 1`] = `
+<div
+  class="bg-white rounded-lg shadow-md p-6"
+>
+  <div
+    class="animate-pulse"
+  >
+    <div
+      class="h-6 bg-gray-200 rounded w-1/4 mb-4"
+    />
+    <div
+      class="space-y-3"
+    >
+      <div
+        class="h-4 bg-gray-200 rounded"
+      />
+      <div
+        class="h-4 bg-gray-200 rounded w-3/4"
+      />
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Regressão Visual - Componentes RH DetalhesFuncionario deve manter estrutura visual consistente 1`] = `
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+>
+  <div
+    class="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+  >
+    <div
+      class="p-8 text-center"
+    >
+      <div
+        class="text-4xl mb-4"
+      >
+        ⏳
+      </div>
+      <p
+        class="text-gray-600"
+      >
+        Carregando...
+      </p>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Regressão Visual - Componentes RH GerenciarEmpresas deve manter estrutura visual consistente 1`] = `
+<div
+  class="min-h-screen bg-gray-50 p-4"
+>
+  <div
+    class="max-w-6xl mx-auto"
+  >
+    <div
+      class="bg-white rounded-lg shadow-md p-6"
+    >
+      <div
+        class="flex justify-between items-center mb-6"
+      >
+        <h1
+          class="text-2xl font-bold text-gray-800"
+        >
+          Gerenciar Empresas Clientes
+        </h1>
+        <button
+          class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+          disabled=""
+        >
+          Nova Empresa
+        </button>
+      </div>
+      <div
+        class="text-center py-8"
+      >
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"
+        />
+        <p
+          class="mt-2 text-gray-600"
+        >
+          Carregando empresas...
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Regressão Visual - Componentes RH ResultadosChart deve manter estrutura visual consistente 1`] = `
+<div
+  class="flex items-center justify-center h-64 text-gray-500"
+>
+  Nenhum dado disponível para exibir o gráfico
+</div>
+`;
+
+exports[`Regressão Visual - Modais EditEmployeeModal deve manter estrutura visual consistente 1`] = `null`;
+
+exports[`Regressão Visual - Modais ModalInativarAvaliacao deve manter estrutura visual consistente 1`] = `
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[9999] p-4"
+>
+  <div
+    class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+  >
+    <div
+      class="p-6"
+    >
+      <h2
+        class="text-xl font-bold text-gray-800 mb-4"
+      >
+        ⚠️ Inativar Avaliação
+      </h2>
+      <div
+        class="text-center py-8"
+      >
+        <div
+          class="text-4xl mb-4"
+        >
+          ⏳
+        </div>
+        <p
+          class="text-gray-600"
+        >
+          Validando...
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`Regressão Visual - Modais ModalInserirFuncionario deve manter estrutura visual consistente 1`] = `null`;
+
+exports[`Regressão Visual - Modais ModalResetarAvaliacao deve manter estrutura visual consistente 1`] = `
+<div
+  class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+>
+  <div
+    class="bg-white rounded-lg shadow-xl max-w-md w-full"
+  >
+    <div
+      class="flex items-center justify-between p-4 border-b border-gray-200"
+    >
+      <div
+        class="flex items-center gap-2"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-triangle-alert text-amber-600"
+          fill="none"
+          height="24"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"
+          />
+          <path
+            d="M12 9v4"
+          />
+          <path
+            d="M12 17h.01"
+          />
+        </svg>
+        <h2
+          class="text-lg font-semibold text-gray-900"
+        >
+          Resetar Avaliação
+        </h2>
+      </div>
+      <button
+        class="text-gray-400 hover:text-gray-600 transition-colors"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-x"
+          fill="none"
+          height="20"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="20"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M18 6 6 18"
+          />
+          <path
+            d="m6 6 12 12"
+          />
+        </svg>
+      </button>
+    </div>
+    <form
+      class="p-4 space-y-4"
+    >
+      <div
+        class="bg-amber-50 border border-amber-200 rounded-lg p-3"
+      >
+        <p
+          class="text-sm text-amber-800"
+        >
+          <strong>
+            Atenção:
+          </strong>
+           Esta ação irá apagar permanentemente todas as respostas do funcionário
+           
+          <strong />
+           (CPF: 
+          ).
+        </p>
+        <p
+          class="text-sm text-amber-800 mt-2"
+        >
+          Após o reset, o funcionário poderá responder a avaliação novamente desde o início.
+        </p>
+      </div>
+      <div
+        class="space-y-2"
+      >
+        <label
+          class="block text-sm font-medium text-gray-700"
+          for="motivo"
+        >
+          Motivo do reset 
+          <span
+            class="text-red-600"
+          >
+            *
+          </span>
+        </label>
+        <textarea
+          class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none disabled:bg-gray-100 disabled:cursor-not-allowed"
+          id="motivo"
+          minlength="5"
+          placeholder="Explique o motivo para resetar esta avaliação (mínimo 5 caracteres)"
+          required=""
+          rows="4"
+        />
+        <p
+          class="text-xs text-gray-500"
+        >
+          0
+          /255 caracteres (mínimo 5)
+        </p>
+      </div>
+      <div
+        class="flex gap-3 pt-2"
+      >
+        <button
+          class="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          type="button"
+        >
+          Cancelar
+        </button>
+        <button
+          class="flex-1 px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled=""
+          type="submit"
+        >
+          Resetar Avaliação
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+`;

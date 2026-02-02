@@ -209,8 +209,6 @@ describe('Entidade account-info plano fields', () => {
     const resp = await GET();
     const data = await resp.json();
 
-    console.log('DEBUG-CONTRATO-DATA:', JSON.stringify(data, null, 2));
-
     expect(data.contrato.pagamento_resumo).toBeDefined();
     expect(data.contrato.pagamento_resumo.totalPago).toBe(500);
     expect(data.contrato.pagamento_resumo.restante).toBe(1500);

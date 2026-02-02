@@ -72,8 +72,6 @@ describe('Integração: confirmação idempotente e reversão de pagamento', () 
 
     const res1: any = await POST(req);
 
-    console.log('[TEST DEBUG] res1.status:', res1.status);
-
     try {
       const body = await res1.json();
       console.error(

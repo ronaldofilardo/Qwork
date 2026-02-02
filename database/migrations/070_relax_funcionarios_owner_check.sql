@@ -10,7 +10,7 @@ ALTER TABLE funcionarios
   ADD CONSTRAINT funcionarios_owner_check CHECK (
     (clinica_id IS NOT NULL AND entidade_id IS NULL)
     OR (entidade_id IS NOT NULL AND clinica_id IS NULL)
-    OR (perfil IN ('emissor', 'master', 'gestor_entidade'))
+    OR (perfil IN ('emissor', 'gestor_entidade'))
   ) NOT VALID;
 
 COMMENT ON CONSTRAINT funcionarios_owner_check ON funcionarios IS 'Permite gestor_entidade sem clinica_id (NOT VALID para migração incremental)';

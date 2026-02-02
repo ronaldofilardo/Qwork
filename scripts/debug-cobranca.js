@@ -1,7 +1,12 @@
 import { query } from '../lib/db.js';
 
 (async () => {
-  const cnpj = '02494916000170';
+  const cnpj = process.argv[2];
+
+  if (!cnpj) {
+    console.error('Uso: node debug-cobranca.js <CNPJ>');
+    process.exit(1);
+  }
   try {
     const sql = `SELECT
       ct.id as contratante_id,

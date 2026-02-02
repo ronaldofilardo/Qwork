@@ -75,13 +75,11 @@ describe('Integração: cadastro -> contrato aceito -> iniciar pagamento', () =>
       contratanteId,
       contratoId,
     ]);
-    console.log('[E2E DEBUG] contratanteRes:', contratanteRes.rows[0]);
 
     const contratoValidate = await query(
       `SELECT id, aceito FROM contratos WHERE id = $1 AND contratante_id = $2`,
       [contratoId, contratanteId]
     );
-    console.log('[E2E DEBUG] contratoValidate:', contratoValidate.rows[0]);
 
     // Tentar inserir pagamento diretamente para ver se há erro de constraint/trigger
     try {
@@ -90,7 +88,6 @@ describe('Integração: cadastro -> contrato aceito -> iniciar pagamento', () =>
          VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`,
         [contratanteId, contratoId, 250.0, 25.0, 10, 'pendente', 'avista']
       );
-      console.log('[E2E DEBUG] insertRes:', insertRes.rows[0]);
     } catch (err: any) {
       console.error('[E2E DEBUG] insert error:', err);
     }
@@ -105,7 +102,6 @@ describe('Integração: cadastro -> contrato aceito -> iniciar pagamento', () =>
 
     const res: any = await POST(fakeReq);
     const body = await res.json();
-    console.log('[E2E DEBUG] response body:', body);
 
     expect(res.status).toBe(200);
     expect(body.success).toBe(true);

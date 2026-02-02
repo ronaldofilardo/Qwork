@@ -114,8 +114,13 @@ if (process.env.TEST_DATABASE_URL) {
   }
 }
 
-// VALIDAÇÃO CRÍTICA: Bloquear nr-bps_db em ambiente de teste
-if (environment === 'test' || isRunningTests) {
+// VALIDAÇÃO CRÍTICA: Bloquear acesso ao banco de produção em testes
+// Durante build, desabilitar validações estritas
+const isNextBuild =
+  process.env.npm_lifecycle_event === 'build' ||
+  process.env.npm_lifecycle_script?.includes('next build');
+
+if ((environment === 'test' || isRunningTests) && !isNextBuild) {
   // Verificar TODAS as variáveis de ambiente que possam conter connection strings
   const suspectVars = [
     process.env.DATABASE_URL,
@@ -124,17 +129,27 @@ if (environment === 'test' || isRunningTests) {
   ].filter(Boolean);
 
   for (const url of suspectVars) {
+    // Se estamos em testes e TEST_DATABASE_URL está definida, preferimos o banco de testes
+    // e ignoramos a presença de DATABASE_URL/LOCAL_DATABASE_URL no .env.local para evitar
+    // erros quando desenvolvedores têm o DATABASE_URL de produção localmente.
     if (
-      url &&
-      (url.includes('/nr-bps_db') || url.includes('/nr-bps-db')) &&
-      !url.includes('_test')
+      (environment === 'test' || isRunningTests) &&
+      hasTestDatabaseUrl &&
+      (url === process.env.DATABASE_URL ||
+        url === process.env.LOCAL_DATABASE_URL)
     ) {
+      // Pulando checagem desse valor específico pois TEST_DATABASE_URL será usada para conexões em testes
+      continue;
+    }
+
+    // Bloquear uso de banco Neon Cloud (produção) em testes
+    if (url && url.includes('neon.tech') && !url.includes('_test')) {
       throw new Error(
-        `🚨 ERRO CRÍTICO DE SEGURANÇA: Detectada tentativa de usar banco de DESENVOLVIMENTO em ambiente de TESTES!\n` +
-          `URL suspeita: ${url}\n` +
+        `🚨 ERRO CRÍTICO DE SEGURANÇA: Detectada tentativa de usar banco de PRODUÇÃO (Neon Cloud) em TESTES!\n` +
+          `URL suspeita: ${url.substring(0, 50)}...\n` +
           `Ambiente: ${environment}\n` +
           `JEST_WORKER_ID: ${process.env.JEST_WORKER_ID}\n` +
-          `\nTestes DEVEM usar exclusivamente nr-bps_db_test via TEST_DATABASE_URL.\n` +
+          `\nTestes DEVEM usar exclusivamente banco local de testes via TEST_DATABASE_URL.\n` +
           `Consulte TESTING-POLICY.md para mais informações.`
       );
     }
@@ -142,7 +157,7 @@ if (environment === 'test' || isRunningTests) {
 }
 
 // Validações de isolamento de ambiente
-if (environment === 'test' && !hasTestDatabaseUrl) {
+if (environment === 'test' && !hasTestDatabaseUrl && !isNextBuild) {
   throw new Error(
     'ERRO DE CONFIGURAÇÃO: Ambiente detectado como "test" mas TEST_DATABASE_URL não está definida. ' +
       'Isso pode causar testes rodando no banco de desenvolvimento!'
@@ -442,9 +457,14 @@ export async function query<T = any>(
         try {
           const result = await client.query(text, params);
           const duration = Date.now() - start;
-          console.log(
-            `[DEBUG] Query local (${duration}ms): ${text.substring(0, 100)}...`
-          );
+
+          // Log apenas queries lentas (>500ms)
+          if (duration > 500) {
+            console.log(
+              `[SLOW QUERY] (${duration}ms): ${text.substring(0, 100)}...`
+            );
+          }
+
           return {
             rows: result.rows,
             rowCount: result.rowCount || 0,
@@ -1607,16 +1627,17 @@ export async function criarContaResponsavel(
       session
     );
 
-    // Determinar perfil: entidades -> gestor_entidade, outros -> rh
-    const perfilToSet =
-      contratanteData.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
+    // Determinar usuario_tipo: entidades -> gestor_entidade, outros -> gestor_rh
+    const usuarioTipo =
+      contratanteData.tipo === 'entidade' ? 'gestor_entidade' : 'gestor_rh';
+    const perfilToSet = usuarioTipo; // manter compat temporária
 
     if (f.rows.length > 0) {
       const fid = f.rows[0].id;
 
-      // Para perfil RH (clínicas), buscar clinica_id vinculada ao contratante
+      // Para usuario_tipo gestor_rh (clínicas), buscar clinica_id vinculada ao contratante
       let clinicaId = null;
-      if (perfilToSet === 'rh') {
+      if (usuarioTipo === 'gestor_rh') {
         try {
           const clinicaResult = await query(
             'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
@@ -1711,14 +1732,15 @@ export async function criarContaResponsavel(
       }
 
       await query(
-        `UPDATE funcionarios SET nome = $1, email = $2, perfil = $3, contratante_id = $4, clinica_id = $5, ativo = true, senha_hash = $6, atualizado_em = CURRENT_TIMESTAMP WHERE id = $7`,
+        `UPDATE funcionarios SET nome = $1, email = $2, perfil = $3, usuario_tipo = $4, contratante_id = $5, clinica_id = $6, ativo = true, senha_hash = $7, atualizado_em = CURRENT_TIMESTAMP WHERE id = $8`,
         [
           contratanteData.responsavel_nome || 'Gestor',
           contratanteData.responsavel_email || null,
-          perfilToSet,
+          perfilToSet, // manter perfil para compat temporária
+          usuarioTipo, // novo campo
           contratanteData.id,
           clinicaId,
-          defaultPassword,
+          hashed,
           fid,
         ],
         session
@@ -1744,16 +1766,16 @@ export async function criarContaResponsavel(
       }
       if (DEBUG_DB)
         console.debug(
-          `[CRIAR_CONTA] Atualizado funcionario id=${fid} perfil=${perfilToSet}`
+          `[CRIAR_CONTA] Atualizado funcionario id=${fid} usuario_tipo=${usuarioTipo}`
         );
     } else {
       // Inserir novo funcionario
       const nivelCargo = null; // manter null para perfis não-funcionarios
       const empresaId = null;
 
-      // Para perfil RH (clínicas), buscar clinica_id vinculada ao contratante
+      // Para usuario_tipo gestor_rh (clínicas), buscar clinica_id vinculada ao contratante
       let clinicaId = null;
-      if (perfilToSet === 'rh') {
+      if (usuarioTipo === 'gestor_rh') {
         try {
           const clinicaResult = await query(
             'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
@@ -1845,14 +1867,15 @@ export async function criarContaResponsavel(
       }
 
       const insertRes = await query(
-        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, nivel_cargo, contratante_id, clinica_id, empresa_id, criado_em, atualizado_em)
-         VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id`,
+        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, ativo, nivel_cargo, contratante_id, clinica_id, empresa_id, criado_em, atualizado_em)
+         VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id`,
         [
           contratanteData.responsavel_cpf,
           contratanteData.responsavel_nome || 'Gestor',
           contratanteData.responsavel_email || null,
-          defaultPassword,
-          perfilToSet,
+          hashed,
+          perfilToSet, // manter perfil para compatibilidade temporária
+          usuarioTipo, // novo campo
           nivelCargo,
           contratanteData.id,
           clinicaId,
@@ -1869,7 +1892,7 @@ export async function criarContaResponsavel(
 
       if (DEBUG_DB)
         console.debug(
-          `[CRIAR_CONTA] Funcionario criado id=${fid} perfil=${perfilToSet}`
+          `[CRIAR_CONTA] Funcionario criado id=${fid} usuario_tipo=${usuarioTipo}`
         );
     }
   } catch (err) {
@@ -2003,12 +2026,14 @@ export async function criarEmissorIndependente(
       email, 
       senha_hash, 
       perfil, 
+      usuario_tipo,
       clinica_id,
       ativo,
+      indice_avaliacao,
       criado_em,
       atualizado_em
     )
-    VALUES ($1, $2, $3, $4, 'emissor', NULL, true, NOW(), NOW())
+    VALUES ($1, $2, $3, $4, 'emissor', 'emissor', NULL, true, 0, NOW(), NOW())
     RETURNING cpf, nome, email, clinica_id`,
     [cpfLimpo, nome, email, senhaHash],
     session

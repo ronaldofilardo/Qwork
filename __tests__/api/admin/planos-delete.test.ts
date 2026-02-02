@@ -90,8 +90,6 @@ describe('API DELETE /api/admin/planos/[id] - exclusão segura de planos', () =>
     const data = await res.json();
 
     // DEBUG: log response body when failing
-    console.log('DEBUG response body:', data);
-    console.log('DEBUG mockQuery.calls:', mockQuery.mock.calls);
 
     expect(res.status).toBe(403);
     expect(data.error).toMatch(/Senha do admin inválida/);

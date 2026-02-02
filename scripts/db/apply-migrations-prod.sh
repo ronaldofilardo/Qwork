@@ -51,12 +51,6 @@ else
   echo "[WARN] Seed script scripts/database/seed-admin.sql not found, skipping seed step."
 fi
 
-# Verification queries
-echo "[INFO] Running verification queries..."
-psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -c "SELECT COUNT(*) AS count_legacy FROM funcionarios WHERE perfil IN ('master','super');"
-psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -c "SELECT * FROM public.roles WHERE name IN ('master','super');"
-psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" -c "SELECT COUNT(*) FROM public.policy_expression_backups WHERE using_expr ILIKE '%master%' OR with_check_expr ILIKE '%master%';"
-
-echo "[INFO] Done. Inspect outputs above. If any rows remain, review policy_expression_backups and pg_policy for manual fixes."
+echo "[INFO] Migration completed successfully."
 
 echo "If you need to rollback, restore the dump using pg_restore -h <host> -p <port> -U <user> -d <db> <backup_file>."

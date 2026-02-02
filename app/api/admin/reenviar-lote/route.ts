@@ -85,18 +85,9 @@ export const POST = async (req: Request) => {
       [codigoLote]
     );
 
-    // Tentar emitir imediatamente após marcar como concluído
-    let emitido = false;
-    try {
-      const { emitirLaudoImediato } = await import('@/lib/laudo-auto');
-      emitido = await emitirLaudoImediato(lote.id);
-    } catch (err) {
-      console.error('Erro ao tentar emissão imediata após reenviar lote:', err);
-    }
-
     return NextResponse.json({
       success: true,
-      message: `Lote ${codigoLote} marcado como concluído e ${emitido ? 'emitido' : 'pronto para emissão (falha na emissão imediata)'}!`,
+      message: `Lote ${codigoLote} marcado como concluído e pronto para emissão!`,
       lote: {
         id: lote.id,
         codigo: lote.codigo,
@@ -106,7 +97,6 @@ export const POST = async (req: Request) => {
         avaliacoes_concluidas: lote.avaliacoes_concluidas,
         total_avaliacoes_ativas: totalAvaliacoesAtivas,
         avaliacoes_inativadas: lote.avaliacoes_inativadas,
-        emitido_imediato: emitido,
       },
     });
   } catch (error) {

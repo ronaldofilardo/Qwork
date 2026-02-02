@@ -14,6 +14,7 @@ if (!dbUrl) {
 const sqlFile = path.join(
   process.cwd(),
   'database',
+  'legacy-fixes',
   'fix-detectar-anomalias-indice-final.sql'
 );
 if (!fs.existsSync(sqlFile)) {

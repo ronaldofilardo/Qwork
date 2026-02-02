@@ -47,6 +47,7 @@ export async function GET(
     );
 
     if (loteResult.rows.length === 0) {
+      console.log(`[404] Lote ${loteId} não encontrado`);
       return NextResponse.json(
         { error: 'Lote não encontrado' },
         { status: 404 }
@@ -54,6 +55,7 @@ export async function GET(
     }
 
     const lote = loteResult.rows[0];
+    console.log(`[INFO] Lote encontrado: ${lote.codigo} - ${lote.titulo}`);
 
     // Verificar se já existe laudo emitido
     const laudoResult = await query(
@@ -64,6 +66,7 @@ export async function GET(
     );
 
     if (laudoResult.rows.length === 0) {
+      console.log(`[404] Laudo não emitido para lote ${loteId}`);
       return NextResponse.json(
         { error: 'Laudo ainda não foi emitido para este lote' },
         { status: 404 }
@@ -71,6 +74,9 @@ export async function GET(
     }
 
     const laudo = laudoResult.rows[0];
+    console.log(
+      `[INFO] Laudo encontrado: ${laudo.id} - status: ${laudo.status}`
+    );
 
     // Buscar avaliações finalizadas do lote
     const avaliacoesResult = await query(
@@ -78,40 +84,39 @@ export async function GET(
         a.id,
         a.funcionario_cpf,
         a.status,
-        a.finalizado_em,
         f.nome as funcionario_nome,
-        f.cargo,
-        f.data_nascimento,
-        f.tempo_servico_anos,
-        f.tempo_servico_meses,
+        f.funcao,
         f.setor,
         (
           SELECT json_agg(
             json_build_object(
-              'pergunta_id', r.pergunta_id,
-              'resposta', r.resposta,
-              'grupo', p.grupo,
-              'peso', p.peso
+              'grupo', r.grupo,
+              'item', r.item,
+              'valor', r.valor
             )
-            ORDER BY p.grupo, p.ordem
+            ORDER BY r.grupo, r.item
           )
           FROM respostas r
-          JOIN perguntas p ON r.pergunta_id = p.id
           WHERE r.avaliacao_id = a.id
         ) as respostas
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND a.status = 'finalizada'
+      WHERE a.lote_id = $1 AND a.status = 'concluida'
       ORDER BY f.nome`,
       [loteId]
     );
 
     if (avaliacoesResult.rows.length === 0) {
+      console.log(`[404] Nenhuma avaliação concluída para lote ${loteId}`);
       return NextResponse.json(
-        { error: 'Nenhuma avaliação finalizada encontrada para este lote' },
+        { error: 'Nenhuma avaliação concluída encontrada para este lote' },
         { status: 404 }
       );
     }
+
+    console.log(
+      `[INFO] ${avaliacoesResult.rows.length} avaliações finalizadas encontradas`
+    );
 
     // Gerar dados do laudo seguindo a mesma lógica de laudo-auto.ts
     const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(lote.id);

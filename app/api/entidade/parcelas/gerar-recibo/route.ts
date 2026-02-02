@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { createHash } from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
@@ -97,7 +97,10 @@ export async function POST(request: Request) {
       WHERE table_name = 'recibos' AND table_schema = 'public'
       LIMIT 1
     `;
-    const recibosColsCheck = await query(recibosColsCheckQuery, []);
+    const recibosColsCheck = await queryAsGestorEntidade(
+      recibosColsCheckQuery,
+      []
+    );
     if (!recibosColsCheck || recibosColsCheck.rows.length === 0) {
       console.warn(
         '[HANDLER entidade] tabela `recibos` não existe. Cancelando geração de recibo.'
@@ -126,7 +129,10 @@ export async function POST(request: Request) {
 
     let reciboExistenteResult: any;
     try {
-      reciboExistenteResult = await query(reciboExistenteQuery, [pagamento_id]);
+      reciboExistenteResult = await queryAsGestorEntidade(
+        reciboExistenteQuery,
+        [pagamento_id]
+      );
       console.log(
         'DEBUG entidade reciboExistente rows:',
         reciboExistenteResult.rows.length
@@ -194,7 +200,10 @@ export async function POST(request: Request) {
 
     let dadosResult: any;
     try {
-      dadosResult = await query(dadosQuery, [contratanteId, pagamento_id]);
+      dadosResult = await queryAsGestorEntidade(dadosQuery, [
+        contratanteId,
+        pagamento_id,
+      ]);
       console.log('[HANDLER entidade] Dados query executed successfully');
     } catch (err) {
       console.error('DEBUG entidade dadosQuery error:', err?.stack || err);
@@ -311,8 +320,10 @@ export async function POST(request: Request) {
       FROM recibos
       WHERE EXTRACT(YEAR FROM criado_em) = $1
     `;
-    const sequenciaResult = await query(sequenciaQuery, [anoAtual]);
-    const sequencia = parseInt(sequenciaResult.rows[0].count) + 1;
+    const sequenciaResult = await queryAsGestorEntidade(sequenciaQuery, [
+      anoAtual,
+    ]);
+    const sequencia = parseInt(String(sequenciaResult.rows[0].count)) + 1;
     const numero_recibo = `REC-${anoAtual}-${String(sequencia).padStart(5, '0')}`;
 
     // Gerar conteúdo do recibo (texto simples para hash e persistência)
@@ -366,7 +377,7 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}
       WHERE table_name = 'recibos' AND table_schema = 'public'
       ORDER BY column_name
     `;
-    const reciboColsResult = await query(reciboColsQuery, []);
+    const reciboColsResult = await queryAsGestorEntidade(reciboColsQuery, []);
     const availableColumns = reciboColsResult.rows.map(
       (r: any) => r.column_name
     );
@@ -424,7 +435,10 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}
 
     let insertReciboResult: any;
     try {
-      insertReciboResult = await query(insertReciboQuery, values);
+      insertReciboResult = await queryAsGestorEntidade(
+        insertReciboQuery,
+        values
+      );
     } catch (err) {
       console.error(
         'DEBUG entidade insertReciboQuery error, query:',

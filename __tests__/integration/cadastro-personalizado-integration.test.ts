@@ -167,8 +167,6 @@ describe('Integração - Cadastro Plano Personalizado', () => {
     const response = await POST(req);
     const data = await response.json();
 
-    console.log('Cadastro response', { status: response.status, body: data });
-
     expect(response.status).toBe(201);
     expect(data.contratante.status).toBe('pendente');
 

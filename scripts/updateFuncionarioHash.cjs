@@ -1,14 +1,23 @@
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: '.env.local' });
 
 (async () => {
   const client = new Client({
-    connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+    connectionString:
+      process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL,
   });
   try {
     await client.connect();
-    const cpf = '87545772920';
-    const plain = '000184';
+    const cpf = process.argv[2];
+    const plain = process.argv[3];
+
+    if (!cpf || !plain) {
+      console.error('Uso: node updateFuncionarioHash.cjs <CPF> <Senha>');
+      process.exit(1);
+    }
     const hash = await bcrypt.hash(plain, 10);
     console.log('Gerado hash:', hash.substring(0, 30) + '...');
     const upd = await client.query(

@@ -33,14 +33,12 @@ export const POST = async (
         la.id,
         la.codigo,
         la.status,
-        la.auto_emitir_em,
-        la.auto_emitir_agendado,
         COUNT(a.id) as total_avaliacoes,
         COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1
-      GROUP BY la.id, la.codigo, la.status, la.auto_emitir_em, la.auto_emitir_agendado
+      GROUP BY la.id, la.codigo, la.status
     `,
       [loteId]
     );
@@ -124,9 +122,8 @@ export const POST = async (
       );
     }
 
-    // Emitir imediatamente (reprocessamento manual)
-    const { emitirLaudoImediato } = await import('@/lib/laudo-auto');
-    const emitted = await emitirLaudoImediato(loteId);
+    // TODO: Emissão automática foi removida - implementar novo fluxo
+    const emitted = false;
 
     if (!emitted) {
       return NextResponse.json(

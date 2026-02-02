@@ -135,11 +135,9 @@ export async function requireAuth(): Promise<Session> {
   const session = getSession();
 
   if (!session) {
-    console.log('[DEBUG] requireAuth: Sessão não encontrada');
     throw new Error('Não autenticado');
   }
 
-  console.log('[DEBUG] requireAuth: Sessão válida para', session.cpf);
   return Promise.resolve(session);
 }
 
@@ -310,10 +308,6 @@ export async function requireEntity(): Promise<
     );
     throw new Error('Entidade inativa. Entre em contato com o suporte.');
   }
-
-  console.log(
-    `[DEBUG] requireEntity: Acesso autorizado para gestor ${session.cpf} da entidade ${session.contratante_id}`
-  );
 
   return session as Session & { contratante_id: number };
 }

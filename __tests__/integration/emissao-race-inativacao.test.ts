@@ -145,7 +145,7 @@ describe('Emissão imediata - corrida de inativação', () => {
     );
 
     expect(laudos.rows.length).toBeGreaterThan(0);
-    expect(laudos.rows[0].status).toBe('enviado');
+    expect(laudos.rows[0].status).toBe('emitido'); // Laudo emitido, não enviado automaticamente
     expect(laudos.rows[0].emitido_em).not.toBeNull();
   });
 });

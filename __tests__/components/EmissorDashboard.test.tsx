@@ -78,13 +78,12 @@ describe.skip('Emissor Dashboard', () => {
     };
 
     const mockFetchImplementation = jest.fn(() => {
-      console.log('Mock fetch chamado!');
+      // Mock fetch chamado!
       return Promise.resolve({
         ok: true,
         status: 200,
         statusText: 'OK',
         json: () => {
-          console.log('Mock json() chamado, retornando:', mockJsonResponse);
           return Promise.resolve(mockJsonResponse);
         },
         headers: new Headers(),
@@ -108,11 +107,9 @@ describe.skip('Emissor Dashboard', () => {
     renderWithQueryClient(<EmissorDashboard />);
 
     // Debugging: verificar se fetch foi chamado
-    console.log(
       'Fetch foi chamado?',
       mockFetchImplementation.mock.calls.length
     );
-    console.log('Fetch calls:', mockFetchImplementation.mock.calls);
 
     await waitFor(
       () => {

@@ -62,7 +62,7 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     // ==================================================
     // ETAPA 1: Cadastro inicial com plano fixo
     // ==================================================
-    console.log('\n=== ETAPA 1: Cadastro Inicial ===');
+    // \n=== ETAPA 1: Cadastro Inicial ===
 
     const { POST: cadastroPost } =
       await import('@/app/api/cadastro/contratante/route');
@@ -137,17 +137,14 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     }
 
     if (cadastroData && cadastroData.contratante) {
-      console.log(
         `✓ Contratante criado: ID ${contratanteId}, status: ${cadastroData.contratante.status}`
       );
-      console.log(`✓ Simulador URL: ${cadastroData.simulador_url}`);
     } else {
       // Buscar status diretamente do banco se não veio pela API
       const contratanteRow = await query(
         'SELECT status FROM contratantes WHERE id = $1',
         [contratanteId]
       );
-      console.log(
         `✓ Contratante criado: ID ${contratanteId}, status: ${contratanteRow.rows[0].status}`
       );
     }
@@ -155,7 +152,7 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     // ==================================================
     // ETAPA 2: Simular FALHA no primeiro pagamento
     // ==================================================
-    console.log('\n=== ETAPA 2: Tentativa de Pagamento (FALHA SIMULADA) ===');
+    // \n=== ETAPA 2: Tentativa de Pagamento (FALHA SIMULADA) ===
 
     // Criar contrato (que seria criado no simulador)
     const contratoRes = await query(
@@ -177,15 +174,14 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
       [contratanteId]
     );
 
-    console.log(
       `✓ Contrato criado: ID ${contratoId}, status: pendente_pagamento`
     );
-    console.log('✗ Pagamento falhou (simulado)');
+    // ✗ Pagamento falhou (simulado)
 
     // ==================================================
     // ETAPA 3: Verificar status e obter link de retry
     // ==================================================
-    console.log('\n=== ETAPA 3: Verificação de Pagamento ===');
+    // \n=== ETAPA 3: Verificação de Pagamento ===
 
     const { GET: verificarGet } =
       await import('@/app/api/contratante/verificar-pagamento/route');
@@ -225,15 +221,13 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     expect(verificarData.payment_link).toBeTruthy();
     expect(verificarData.payment_link).toContain('retry=true');
 
-    console.log(
       `✓ Status verificado: needs_payment = ${verificarData.needs_payment}`
     );
-    console.log(`✓ Link de retry gerado: ${verificarData.payment_link}`);
 
     // ==================================================
     // ETAPA 4: Gerar link formal de pagamento
     // ==================================================
-    console.log('\n=== ETAPA 4: Gerar Link de Pagamento ===');
+    // \n=== ETAPA 4: Gerar Link de Pagamento ===
 
     const { POST: gerarLinkPost } =
       await import('@/app/api/pagamento/gerar-link-plano-fixo/route');
@@ -255,15 +249,13 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     expect(gerarLinkData.payment_link).toBeTruthy();
     expect(gerarLinkData.payment_info.valor_total).toBe(500); // 20 * 25
 
-    console.log(`✓ Link gerado: ${gerarLinkData.payment_link}`);
-    console.log(
       `✓ Valor total: R$ ${gerarLinkData.payment_info.valor_total.toFixed(2)}`
     );
 
     // ==================================================
     // ETAPA 5: Processar pagamento com sucesso (RETRY)
     // ==================================================
-    console.log('\n=== ETAPA 5: Processar Pagamento (RETRY) ===');
+    // \n=== ETAPA 5: Processar Pagamento (RETRY) ===
 
     // Iniciar pagamento (criar registro)
     const { POST: iniciarPost } =
@@ -347,13 +339,10 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
       pagamentoId = confirmarData.pagamento_id;
     }
 
-    console.log(`✓ Pagamento processado: ID ${pagamentoId}`);
-    console.log(`✓ Recibo gerado: ID ${reciboId}`);
-
     // ==================================================
     // ETAPA 6: Verificar se status foi atualizado
     // ==================================================
-    console.log('\n=== ETAPA 6: Verificação Final ===');
+    // \n=== ETAPA 6: Verificação Final ===
 
     // Verificar contratante (poll para lidar com ativação assíncrona)
     let contratanteCheck;
@@ -375,7 +364,6 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
           contratanteCheck.rows[0].pagamento_confirmado)
     ).toBe(true);
 
-    console.log(
       `✓ Contratante ativado: status = ${contratanteCheck.rows[0].status}`
     );
 
@@ -388,8 +376,6 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     expect(contratoCheck.rows[0].status).toBe('aprovado');
     expect(contratoCheck.rows[0].aceito).toBe(true);
 
-    console.log(`✓ Contrato ativado: status = ${contratoCheck.rows[0].status}`);
-
     // Verificar pagamento
     const pagamentoCheck = await query(
       `SELECT status, detalhes_parcelas FROM pagamentos WHERE id = $1`,
@@ -401,10 +387,8 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     expect(Array.isArray(pagamentoCheck.rows[0].detalhes_parcelas)).toBe(true);
     expect(pagamentoCheck.rows[0].detalhes_parcelas.length).toBe(3);
 
-    console.log(
       `✓ Pagamento confirmado: status = ${pagamentoCheck.rows[0].status}`
     );
-    console.log(
       `✓ Parcelas: ${pagamentoCheck.rows[0].detalhes_parcelas.length}x`
     );
 
@@ -414,9 +398,6 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
 
     expect(parcela1.status).toBe('pago'); // Primeira parcela paga
     expect(parcela2.status).toBe('pendente'); // Demais pendentes
-
-    console.log(`  - Parcela 1: ${parcela1.status}`);
-    console.log(`  - Parcela 2: ${parcela2.status}`);
 
     // Verificar acesso liberado
     const verificarFinalRequest = {
@@ -431,21 +412,27 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     expect(verificarFinalData.access_granted).toBe(true);
     expect(verificarFinalData.needs_payment).toBe(false);
 
-    console.log(`✓ Acesso liberado: ${verificarFinalData.access_granted}`);
-    console.log(`✓ Mensagem: ${verificarFinalData.message}`);
-
     // ==================================================
     // RESUMO DO FLUXO
     // ==================================================
-    console.log('\n=== RESUMO DO FLUXO E2E ===');
-    console.log('1. ✓ Cadastro inicial realizado');
-    console.log('2. ✗ Primeiro pagamento falhou (simulado)');
-    console.log('3. ✓ Status verificado: pagamento pendente');
-    console.log('4. ✓ Link de retry gerado');
-    console.log('5. ✓ Pagamento processado com sucesso');
-    console.log('6. ✓ Todos os status atualizados');
-    console.log('7. ✓ Acesso liberado ao sistema');
-    console.log('\n✅ FLUXO COMPLETO EXECUTADO COM SUCESSO!\n');
+    // \n=== RESUMO DO FLUXO E2E ===
+
+    // 1. ✓ Cadastro inicial realizado
+
+    // 2. ✗ Primeiro pagamento falhou (simulado)
+
+    // 3. ✓ Status verificado: pagamento pendente
+
+    // 4. ✓ Link de retry gerado
+
+    // 5. ✓ Pagamento processado com sucesso
+
+    // 6. ✓ Todos os status atualizados
+
+    // 7. ✓ Acesso liberado ao sistema
+
+    // \n✅ FLUXO COMPLETO EXECUTADO COM SUCESSO!\n
+
   });
 
   it('deve bloquear acesso antes do pagamento', async () => {

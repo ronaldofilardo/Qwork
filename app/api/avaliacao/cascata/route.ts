@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { query } from "@/lib/db";
-import { requireAuth } from "@/lib/session";
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { requireAuth } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
@@ -8,9 +8,9 @@ export async function POST(request: Request) {
     const _session = await requireAuth();
     const { respostas } = await request.json();
 
-    if (!respostas || typeof respostas !== "object") {
+    if (!respostas || typeof respostas !== 'object') {
       return NextResponse.json(
-        { error: "Respostas são obrigatórias" },
+        { error: 'Respostas são obrigatórias' },
         { status: 400 }
       );
     }
@@ -44,22 +44,22 @@ export async function POST(request: Request) {
         let condicaoAtendida = false;
 
         switch (operador) {
-          case "gt":
+          case 'gt':
             condicaoAtendida = valorResposta > valor_condicao;
             break;
-          case "gte":
+          case 'gte':
             condicaoAtendida = valorResposta >= valor_condicao;
             break;
-          case "lt":
+          case 'lt':
             condicaoAtendida = valorResposta < valor_condicao;
             break;
-          case "lte":
+          case 'lte':
             condicaoAtendida = valorResposta <= valor_condicao;
             break;
-          case "eq":
+          case 'eq':
             condicaoAtendida = valorResposta === valor_condicao;
             break;
-          case "ne":
+          case 'ne':
             condicaoAtendida = valorResposta !== valor_condicao;
             break;
         }
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     // Lógicas especiais de cascata
 
     // 1. Questões de violência (57-58): aparecem se houve assédio sexual (Q56 > 0)
-    const assedioSexual = respostas["Q56"];
+    const assedioSexual = respostas['Q56'];
     if (assedioSexual && assedioSexual > 0) {
       questoesVisiveis.add(57);
       questoesVisiveis.add(58);
@@ -106,16 +106,15 @@ export async function POST(request: Request) {
       success: true,
       questoesVisiveis: Array.from(questoesVisiveis).sort((a, b) => a - b),
       totalVisiveis: questoesVisiveis.size,
-      totalPossiveis: 70,
+      totalPossiveis: 37,
       visibilidadePorCategoria: visibilidade,
       condicoesAvaliadas: condicoesResult.rows.length,
     });
   } catch (error) {
-    console.error("Erro ao avaliar condições de cascata:", error);
+    console.error('Erro ao avaliar condições de cascata:', error);
     return NextResponse.json(
-      { error: "Erro ao avaliar condições" },
+      { error: 'Erro ao avaliar condições' },
       { status: 500 }
     );
   }
 }
-

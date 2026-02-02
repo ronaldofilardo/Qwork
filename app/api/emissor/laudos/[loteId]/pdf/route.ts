@@ -265,28 +265,15 @@ export const GET = async (
       `[PERSISTIDO] PDF salvo: ${filePath} (${pdfBuffer.byteLength} bytes, hash: ${hash})`
     );
 
-    // Atualizar hash no banco de dados
-    try {
-      await query(
-        `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
-        [laudo.id, hash]
-      );
-      console.log(`[DB] Hash persistido no banco para laudo ${laudo.id}`);
-    } catch (dbErr: any) {
-      // Se o laudo já tem hash (imutabilidade), ignorar
-      if (
-        dbErr &&
-        (dbErr.code === '23506' ||
-          /imutabil/i.test(String(dbErr.message || '')))
-      ) {
-        console.warn(
-          `[WARN] Não foi possível atualizar hash (laudo já emitido): ${dbErr instanceof Error ? dbErr.message : String(dbErr)}`
-        );
-      } else {
-        // Outros erros devem ser logados mas não bloquear o download
-        console.error(`[ERROR] Erro ao persistir hash no banco:`, dbErr);
-      }
-    }
+    // [IMUTABILIDADE]
+    // Não atualizar o registro do laudo diretamente neste endpoint para evitar violar a política
+    // de imutabilidade do laudo. Se desejarmos persistir o hash, isso deve ser feito por um fluxo
+    // controlado (por exemplo, via `lib/laudo-auto` ou um job específico) que trate as triggers e
+    // as constraints de forma segura.
+    // Ex.: INSERT/UPDATE seguro em contexto que seta app.current_user_* e usa DO block para evitar aborts.
+    console.log(
+      '[IMUTABILIDADE] Não modificando registro do laudo (hash) neste endpoint.'
+    );
 
     // Nota: Não atualizamos atualizado_em pois laudos emitidos são imutáveis
     // O PDF é gerado on-demand sem modificar o registro do laudo

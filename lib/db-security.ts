@@ -1,6 +1,7 @@
 import { query } from './db';
 import { getSession, Session } from './session';
 import { TypeValidators } from './types/enums';
+import { queryAsGestor, isGestor } from './db-gestor';
 
 // Re-export query for convenience
 export { query };
@@ -20,92 +21,38 @@ function isValidCPF(cpf: string): boolean {
 }
 
 /**
- * Valida contexto de sessão para prevenir injeção
+ * FASE 3: Valida contexto de sessão usando usuario_tipo unificado
  */
 async function validateSessionContext(
   cpf: string,
-  perfil: string
+  usuario_tipo: string
 ): Promise<boolean> {
   try {
-    // Nota: apenas gestores de entidade usam `contratantes_senhas`.
-    // RH são funcionários da clínica e devem ser validados em `funcionarios`.
-    if (perfil === 'gestor_entidade') {
-      const result = await query(
-        'SELECT cs.cpf FROM contratantes_senhas cs JOIN contratantes c ON c.id = cs.contratante_id WHERE cs.cpf = $1 AND c.ativa = true',
-        [cpf]
-      );
-      if (result.rows.length === 0) {
-        console.error(
-          `[validateSessionContext] Gestor de entidade não encontrado ou inativo: CPF=${cpf}, Perfil=${perfil}`
-        );
-        return false;
-      }
-
-      return true;
-    }
-
-    // Para RH: podem estar em funcionarios OU serem gestores via contratantes_senhas (quando são gestores de clínica)
-    if (perfil === 'rh') {
-      // Tentar em funcionarios primeiro
-      const funcResult = await query(
-        'SELECT cpf, perfil, ativo FROM funcionarios WHERE cpf = $1 AND perfil = $2',
-        [cpf, perfil]
-      );
-
-      if (funcResult.rows.length > 0) {
-        const funcionario = funcResult.rows[0];
-        if (!funcionario.ativo) {
-          console.error(
-            `[validateSessionContext] Funcionário RH inativo: CPF=${cpf}`
-          );
-          return false;
-        }
-        return true;
-      }
-
-      // Se não encontrou em funcionarios, verificar se é gestor de contratante tipo 'clinica'
-      const gestorResult = await query(
-        `SELECT cs.cpf FROM contratantes_senhas cs 
-         JOIN contratantes c ON c.id = cs.contratante_id 
-         WHERE cs.cpf = $1 AND c.tipo = 'clinica' AND c.ativa = true`,
-        [cpf]
-      );
-
-      if (gestorResult.rows.length > 0) {
-        return true;
-      }
-
-      console.error(
-        `[validateSessionContext] RH não encontrado nem em funcionarios nem em contratantes: CPF=${cpf}`
-      );
-      return false;
-    }
-
-    // Para demais perfis operacionais, verificar apenas em `funcionarios`
+    // Validação unificada: todos os usuários estão em funcionarios
     const result = await query(
-      'SELECT cpf, perfil, ativo, clinica_id FROM funcionarios WHERE cpf = $1',
-      [cpf]
+      `SELECT cpf, usuario_tipo, ativo, clinica_id, contratante_id 
+       FROM funcionarios 
+       WHERE cpf = $1 AND usuario_tipo = $2`,
+      [cpf, usuario_tipo]
     );
 
-    // Deve existir exatamente um registro ativo
     if (result.rows.length === 0) {
       console.error(
-        `[validateSessionContext] Funcionário não encontrado: CPF=${cpf}, Perfil=${perfil}`
+        `[validateSessionContext] Usuário não encontrado: CPF=${cpf}, Tipo=${usuario_tipo}`
       );
       return false;
     }
 
-    const funcionario = result.rows[0];
+    const user = result.rows[0];
 
-    // Verificar se está ativo
-    if (!funcionario.ativo) {
-      console.error(`[validateSessionContext] Funcionário inativo: CPF=${cpf}`);
+    if (!user.ativo) {
+      console.error(`[validateSessionContext] Usuário inativo: CPF=${cpf}`);
       return false;
     }
 
     return true;
   } catch (error) {
-    console.error('[validateSessionContext] Erro ao validar contexto:', error);
+    console.error('[validateSessionContext] Erro:', error);
     return false;
   }
 }
@@ -122,47 +69,84 @@ export async function queryWithContext<T = Record<string, unknown>>(
   try {
     const session = getSession();
 
+    // 🔒 SEGURANÇA: Validação obrigatória de sessão para queries sensíveis
+    if (!session) {
+      // Permitir queries sem sessão apenas em contextos específicos (ex: login, health check)
+      console.warn('[queryWithContext] Query executada sem contexto de sessão');
+
+      // Em produção, queries sensíveis devem sempre ter sessão
+      if (
+        process.env.NODE_ENV === 'production' &&
+        text.toLowerCase().includes('where')
+      ) {
+        throw new Error(
+          'SEGURANÇA: Sessão obrigatória para queries com filtros'
+        );
+      }
+    }
+
     // Se há sessão, configurar contexto para RLS
     if (session) {
-      // Validar e sanitizar valores
+      // 🔒 SEGURANÇA: Validar e sanitizar valores com rigor
       const cpf = session.cpf.replace(/[^0-9]/g, '');
       const perfil = session.perfil.toLowerCase().replace(/[^a-z_]/g, '');
 
-      // Validações de segurança
+      // Validações de segurança OBRIGATÓRIAS
       if (!cpf || cpf.length !== 11) {
-        throw new Error('CPF inválido na sessão');
+        throw new Error('SEGURANÇA: CPF inválido na sessão');
       }
 
       if (!isValidCPF(cpf)) {
-        throw new Error('Formato de CPF inválido');
+        throw new Error('SEGURANÇA: Formato de CPF inválido');
       }
 
       if (!perfil || !isValidPerfil(perfil)) {
-        throw new Error('Perfil inválido na sessão');
+        throw new Error('SEGURANÇA: Perfil inválido na sessão');
       }
 
-      // Validar que o usuário existe no banco com esse CPF e perfil
-      // Em desenvolvimento local podemos pular esta validação para facilitar testes
-      const isProduction = process.env.NODE_ENV === 'production';
-      let isValid = true;
-      if (isProduction) {
-        isValid = await validateSessionContext(cpf, perfil);
+      // 🔒 SEGURANÇA: Configurar variáveis de contexto primeiro
+      await query('SELECT set_config($1, $2, false)', [
+        'app.current_user_cpf',
+        cpf,
+      ]);
+      await query('SELECT set_config($1, $2, false)', [
+        'app.current_perfil',
+        perfil,
+      ]);
+
+      // FASE 3: Buscar usuario_tipo correspondente ao perfil da sessão
+      // Mapeamento: perfil (sessão) → usuario_tipo (banco)
+      let usuarioTipoParaValidacao: string;
+      if (perfil === 'rh') {
+        usuarioTipoParaValidacao = 'gestor_rh';
+      } else if (perfil === 'gestor_entidade') {
+        usuarioTipoParaValidacao = 'gestor_entidade';
+      } else if (perfil === 'funcionario') {
+        // Pode ser funcionario_clinica ou funcionario_entidade
+        // Validar se existe com qualquer um dos tipos
+        const checkFunc = await query(
+          'SELECT usuario_tipo FROM funcionarios WHERE cpf = $1 AND usuario_tipo IN ($2, $3)',
+          [cpf, 'funcionario_clinica', 'funcionario_entidade']
+        );
+        usuarioTipoParaValidacao =
+          checkFunc.rows.length > 0
+            ? checkFunc.rows[0].usuario_tipo
+            : 'funcionario_clinica';
       } else {
-        // Ambiente de desenvolvimento: tentar validar, mas não bloquear se ocorrer erro
-        try {
-          isValid = await validateSessionContext(cpf, perfil);
-        } catch (err) {
-          console.warn(
-            '[queryWithContext] Validação de contexto falhou (dev) — prosseguindo:',
-            err
-          );
-          isValid = true;
-        }
+        // admin, emissor mantém mesmo nome
+        usuarioTipoParaValidacao = perfil;
       }
+
+      // Validar que o usuário existe no banco com esse CPF e usuario_tipo
+      // 🔒 SEGURANÇA: Validação obrigatória em qualquer ambiente
+      const isValid = await validateSessionContext(
+        cpf,
+        usuarioTipoParaValidacao
+      );
 
       if (!isValid) {
         throw new Error(
-          'Contexto de sessão inválido: usuário não encontrado ou inativo'
+          'SEGURANÇA: Contexto de sessão inválido - usuário não encontrado ou inativo'
         );
       }
 
@@ -176,29 +160,35 @@ export async function queryWithContext<T = Record<string, unknown>>(
         perfil,
       ]);
 
-      // Obter identificadores de contexto: clinica_id para RH e contratante_id para gestores de entidade
+      // FASE 3: Obter identificadores de contexto baseado em usuario_tipo
       let clinicaId: string | null = null;
       let contratanteId: string | null = null;
+      let usuarioTipo: string | null = null;
 
-      if (perfil === 'rh') {
-        // Para RH, usar clinica_id da sessão
-        if (session.clinica_id) {
-          clinicaId = session.clinica_id.toString();
+      // Buscar dados do usuário para determinar tipo e vínculos
+      const userData = await query(
+        'SELECT usuario_tipo, clinica_id, contratante_id FROM funcionarios WHERE cpf = $1',
+        [cpf]
+      );
+
+      if (userData.rows.length > 0) {
+        const user = userData.rows[0];
+        usuarioTipo = user.usuario_tipo;
+
+        if (user.clinica_id) {
+          clinicaId = user.clinica_id.toString();
         }
-      } else if (perfil === 'gestor_entidade') {
-        // Para gestores de entidade, usar contratante_id da sessão
-        if (session.contratante_id) {
-          contratanteId = session.contratante_id.toString();
+        if (user.contratante_id) {
+          contratanteId = user.contratante_id.toString();
         }
-      } else {
-        // Para funcionários, obter clinica_id do banco (quando aplicável)
-        const clinicaResult = await query(
-          'SELECT clinica_id FROM funcionarios WHERE cpf = $1 AND perfil = $2',
-          [cpf, perfil]
-        );
-        if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
-          clinicaId = clinicaResult.rows[0].clinica_id.toString();
-        }
+      }
+
+      // FASE 3: Definir variáveis de contexto para RLS com usuario_tipo
+      if (usuarioTipo) {
+        await query('SELECT set_config($1, $2, false)', [
+          'app.current_user_tipo',
+          usuarioTipo,
+        ]);
       }
 
       if (clinicaId) {
@@ -208,7 +198,7 @@ export async function queryWithContext<T = Record<string, unknown>>(
         }
 
         await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_clinica_id',
+          'app.current_clinica_id',
           clinicaId,
         ]);
       }
@@ -219,9 +209,19 @@ export async function queryWithContext<T = Record<string, unknown>>(
         }
 
         await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_contratante_id',
+          'app.current_contratante_id',
           contratanteId,
         ]);
+      }
+
+      // 🔒 SEGURANÇA: Validar RLS APÓS configurar todas as variáveis
+      try {
+        await query('SELECT validar_sessao_rls()');
+      } catch (validationError: any) {
+        console.error('[SEGURANÇA] Validação RLS falhou:', validationError);
+        throw new Error(
+          `SEGURANÇA: ${validationError.message || 'Sessão RLS inválida'}`
+        );
       }
     }
 
@@ -592,5 +592,46 @@ export async function hasPermission(
   } catch (error) {
     console.error('[hasPermission] Erro ao verificar permissão:', error);
     return false;
+  }
+}
+
+/**
+ * Query unificada com detecção automática de tipo de usuário
+ *
+ * - GESTORES (RH e Entidade): usa queryAsGestor() sem RLS
+ * - FUNCIONÁRIOS: usa queryWithContext() com RLS
+ *
+ * Esta é a função recomendada para novos endpoints que precisam
+ * suportar tanto gestores quanto funcionários.
+ *
+ * @param text SQL query
+ * @param params Query parameters
+ * @returns Query result
+ */
+export async function queryWithSecurity<T = Record<string, unknown>>(
+  text: string,
+  params?: unknown[]
+): Promise<{ rows: T[]; rowCount: number }> {
+  const session = getSession();
+
+  if (!session) {
+    // Sem sessão: usar query direta (ex: health checks, login)
+    console.warn('[queryWithSecurity] Query sem sessão - usando query direta');
+    return query(text, params);
+  }
+
+  // Detectar tipo de usuário e rotear para função apropriada
+  if (isGestor(session.perfil)) {
+    // Gestores: validação via contratantes, sem RLS
+    console.log(
+      `[queryWithSecurity] Roteando para queryAsGestor (perfil: ${session.perfil})`
+    );
+    return queryAsGestor<T>(text, params);
+  } else {
+    // Funcionários e outros: validação via funcionarios com RLS
+    console.log(
+      `[queryWithSecurity] Roteando para queryWithContext (perfil: ${session.perfil})`
+    );
+    return queryWithContext<T>(text, params);
   }
 }

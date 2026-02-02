@@ -36,7 +36,7 @@ interface CentroOperacoesProps {
   onNavigate?: (url: string) => void;
 }
 
-type TabDominio = 'todos' | 'financeiro' | 'lotes';
+type TabDominio = 'lotes' | 'laudos';
 
 export default function CentroOperacoes({
   tipoUsuario,
@@ -44,7 +44,7 @@ export default function CentroOperacoes({
 }: CentroOperacoesProps) {
   const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
   const [loading, setLoading] = useState(true);
-  const [tabAtiva, setTabAtiva] = useState<TabDominio>('todos');
+  const [tabAtiva, setTabAtiva] = useState<TabDominio>('lotes');
   const [expandidas, setExpandidas] = useState<Set<number>>(new Set());
 
   const carregarNotificacoes = useCallback(async () => {
@@ -105,20 +105,14 @@ export default function CentroOperacoes({
   };
 
   const filtrarPorDominio = (notifs: Notificacao[]) => {
-    if (tabAtiva === 'todos') return notifs;
-
-    if (tabAtiva === 'financeiro') {
+    if (tabAtiva === 'lotes') {
       return notifs.filter((n) =>
-        ['parcela_pendente', 'parcela_vencendo', 'quitacao_completa'].includes(
-          n.tipo
-        )
+        ['lote_concluido_aguardando_laudo'].includes(n.tipo)
       );
     }
 
-    if (tabAtiva === 'lotes') {
-      return notifs.filter((n) =>
-        ['lote_concluido_aguardando_laudo', 'laudo_enviado'].includes(n.tipo)
-      );
+    if (tabAtiva === 'laudos') {
+      return notifs.filter((n) => ['laudo_enviado'].includes(n.tipo));
     }
 
     return notifs;
@@ -166,15 +160,11 @@ export default function CentroOperacoes({
 
   const notificacoesFiltradas = filtrarPorDominio(notificacoes);
   const contadores = {
-    total: notificacoes.length,
-    financeiro: notificacoes.filter((n) =>
-      ['parcela_pendente', 'parcela_vencendo', 'quitacao_completa'].includes(
-        n.tipo
-      )
-    ).length,
     lotes: notificacoes.filter((n) =>
-      ['lote_concluido_aguardando_laudo', 'laudo_enviado'].includes(n.tipo)
+      ['lote_concluido_aguardando_laudo'].includes(n.tipo)
     ).length,
+    laudos: notificacoes.filter((n) => ['laudo_enviado'].includes(n.tipo))
+      .length,
   };
 
   if (loading) {
@@ -199,26 +189,6 @@ export default function CentroOperacoes({
       <div className="border-b border-gray-200">
         <nav className="flex gap-4">
           <button
-            onClick={() => setTabAtiva('todos')}
-            className={`px-4 py-2 border-b-2 font-medium transition-colors ${
-              tabAtiva === 'todos'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Todos ({contadores.total})
-          </button>
-          <button
-            onClick={() => setTabAtiva('financeiro')}
-            className={`px-4 py-2 border-b-2 font-medium transition-colors ${
-              tabAtiva === 'financeiro'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Financeiro ({contadores.financeiro})
-          </button>
-          <button
             onClick={() => setTabAtiva('lotes')}
             className={`px-4 py-2 border-b-2 font-medium transition-colors ${
               tabAtiva === 'lotes'
@@ -227,6 +197,16 @@ export default function CentroOperacoes({
             }`}
           >
             Lotes ({contadores.lotes})
+          </button>
+          <button
+            onClick={() => setTabAtiva('laudos')}
+            className={`px-4 py-2 border-b-2 font-medium transition-colors ${
+              tabAtiva === 'laudos'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            Laudos ({contadores.laudos})
           </button>
         </nav>
       </div>

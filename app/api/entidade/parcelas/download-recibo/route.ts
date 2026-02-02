@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
@@ -41,7 +41,7 @@ export async function GET(request: Request) {
       LIMIT 1
     `;
 
-    const reciboResult = await query(reciboQuery, [reciboId]);
+    const reciboResult = await queryAsGestorEntidade(reciboQuery, [reciboId]);
 
     if (reciboResult.rows.length === 0) {
       return NextResponse.json(
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
 
     // Tentar ler arquivo do disco
     if (recibo.conteudo_pdf_path) {
-      const filePath = join(process.cwd(), recibo.conteudo_pdf_path);
+      const filePath = join(process.cwd(), String(recibo.conteudo_pdf_path));
 
       if (existsSync(filePath)) {
         const fileBuffer = await readFile(filePath);
@@ -68,7 +68,7 @@ export async function GET(request: Request) {
           status: 200,
           headers: {
             'Content-Type': 'text/plain; charset=utf-8',
-            'Content-Disposition': `attachment; filename="${recibo.numero_recibo}.txt"`,
+            'Content-Disposition': `attachment; filename="${String(recibo.numero_recibo)}.txt"`,
           },
         });
       }
@@ -76,11 +76,11 @@ export async function GET(request: Request) {
 
     // Fallback: usar conteudo_texto do banco
     if (recibo.conteudo_texto) {
-      return new NextResponse(recibo.conteudo_texto, {
+      return new NextResponse(String(recibo.conteudo_texto), {
         status: 200,
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
-          'Content-Disposition': `attachment; filename="${recibo.numero_recibo}.txt"`,
+          'Content-Disposition': `attachment; filename="${String(recibo.numero_recibo)}.txt"`,
         },
       });
     }

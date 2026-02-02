@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRH } from '@/lib/auth-require';
+import { requireGestor } from '@/lib/auth-require';
 import { query } from '@/lib/db';
 import { gerarHTMLRelatorioIndividual } from '@/lib/templates/relatorio-individual-html';
 
@@ -13,8 +13,8 @@ export async function GET(
   { params }: { params: { id: string; avaliacaoId: string } }
 ) {
   try {
-    // Verificar autenticação (requireRH aceita entidade e RH)
-    const session = requireRH();
+    // Verificar autenticação (gestor de entidade ou gestor RH)
+    const session = requireGestor();
     const { id: loteId, avaliacaoId } = params;
 
     // Verificar acesso ao lote

@@ -9,7 +9,10 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/admin/gestores-rh
  *
- * Lista todos os gestores RH do sistema
+ * Lista todos os gestores RH do sistema.
+ *
+ * NOTA: Gestores RH são armazenados em `funcionarios` com
+ * `usuario_tipo = 'gestor_rh'` para separação lógica clara.
  */
 export async function GET() {
   try {
@@ -20,6 +23,8 @@ export async function GET() {
         f.cpf,
         f.nome,
         f.email,
+        f.usuario_tipo,
+        f.perfil,
         f.ativo,
         f.clinica_id,
         c.nome as clinica_nome,
@@ -28,8 +33,8 @@ export async function GET() {
       FROM funcionarios f
       LEFT JOIN clinicas c ON c.id = f.clinica_id
       LEFT JOIN empresas_clientes ec ON ec.clinica_id = f.clinica_id
-      WHERE f.perfil = 'rh'
-      GROUP BY f.cpf, f.nome, f.email, f.ativo, f.clinica_id, c.nome, f.criado_em
+      WHERE f.usuario_tipo = 'gestor_rh'
+      GROUP BY f.cpf, f.nome, f.email, f.usuario_tipo, f.perfil, f.ativo, f.clinica_id, c.nome, f.criado_em
       ORDER BY c.nome, f.nome
     `);
 

@@ -1,5 +1,6 @@
 import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
+import { queryAsGestorRH } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
 
 // Interfaces para tipagem
@@ -160,8 +161,8 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // Obter próximo número de ordem do lote
-    const numeroOrdemResult = await query<NumeroOrdemResult>(
+    // Obter próximo número de ordem do lote (usar contexto de gestor RH para set_config e auditoria)
+    const numeroOrdemResult = await queryAsGestorRH<NumeroOrdemResult>(
       `SELECT obter_proximo_numero_ordem($1) as numero_ordem`,
       [empresaId]
     );
@@ -169,8 +170,8 @@ export const POST = async (req: Request) => {
 
     console.log(`[INFO] Gerando lote ${numeroOrdem} para empresa ${empresaId}`);
 
-    // Usar função de elegibilidade para determinar quais funcionários devem ser incluídos
-    const elegibilidadeResult = await query<FuncionarioElegivel>(
+    // Usar função de elegibilidade para determinar quais funcionários devem ser incluídos (contexto do gestor)
+    const elegibilidadeResult = await queryAsGestorRH<FuncionarioElegivel>(
       `SELECT * FROM calcular_elegibilidade_lote($1, $2)`,
       [empresaId, numeroOrdem]
     );
@@ -179,6 +180,14 @@ export const POST = async (req: Request) => {
 
     console.log(
       `[INFO] ${funcionariosElegiveis.length} funcionários elegíveis encontrados pela função de índice`
+    );
+    console.log(
+      `[DEBUG] Funcionários elegíveis:`,
+      funcionariosElegiveis.map((f) => ({
+        cpf: f.funcionario_cpf,
+        nome: f.funcionario_nome,
+        motivo: f.motivo_inclusao,
+      }))
     );
 
     // Aplicar filtros adicionais se fornecidos (retroativos ou por tipo)
@@ -192,7 +201,7 @@ export const POST = async (req: Request) => {
       );
     } else if (dataFiltro && dataFiltro !== 'all') {
       // Filtro adicional por data de criação
-      const dataFiltroResult = await query<{ cpf: string }>(
+      const dataFiltroResult = await queryAsGestorRH<{ cpf: string }>(
         `
         SELECT cpf FROM funcionarios
         WHERE cpf = ANY($1::char(11)[]) AND criado_em > $2
@@ -216,7 +225,7 @@ export const POST = async (req: Request) => {
     // Filtro por tipo de lote (operacional/gestão)
     if (tipo && tipo !== 'completo') {
       const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-      const nivelFiltroResult = await query<{ cpf: string }>(
+      const nivelFiltroResult = await queryAsGestorRH<{ cpf: string }>(
         `
         SELECT cpf FROM funcionarios
         WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2
@@ -239,6 +248,13 @@ export const POST = async (req: Request) => {
 
     const funcionarios = funcionariosElegiveis;
 
+    console.log(
+      `[DEBUG] Funcionários após todos os filtros: ${funcionarios.length}`
+    );
+    console.log(
+      `[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}, LoteReferencia: ${loteReferenciaId}`
+    );
+
     if (funcionarios.length === 0) {
       return NextResponse.json(
         {
@@ -251,13 +267,17 @@ export const POST = async (req: Request) => {
     }
 
     // Gerar código do lote automaticamente
-    const codigoResult = await query<CodigoResult>(
+    const codigoResult = await queryAsGestorRH<CodigoResult>(
       `SELECT gerar_codigo_lote() as codigo`
     );
     const codigo = codigoResult.rows[0].codigo;
 
-    // Criar o lote com numero_ordem
-    const loteResult = await query<LoteResult>(
+    // ✅ CORREÇÃO: Remover transação explícita para evitar rollback completo em caso de erro na reserva do laudo
+    // Cada query roda em autocommit (como no fluxo Entidade), tornando o sistema mais resiliente
+    // Se a reserva do laudo falhar (trigger ou concorrência), o lote e avaliações não são perdidos
+
+    // Criar o lote - Gestores RH usam query direta (não RLS)
+    const loteResult = await queryAsGestorRH<LoteResult>(
       `
         INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -279,6 +299,24 @@ export const POST = async (req: Request) => {
 
     const lote = loteResult.rows[0];
 
+    // IMPORTANTE: Reservar ID do laudo igual ao ID do lote
+    // Isso garante que laudo.id === lote.id sempre
+    // O laudo será preenchido quando emissor clicar "Gerar Laudo"
+    // ✅ Se falhar (trigger/concorrência), não afeta o lote já criado
+    try {
+      await queryAsGestorRH(
+        `INSERT INTO laudos (id, lote_id, status, criado_em, atualizado_em)
+         VALUES ($1, $1, 'rascunho', NOW(), NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [lote.id]
+      );
+    } catch (laudoReservaErr: any) {
+      // Log mas não aborta - emissor criará laudo na emissão se necessário
+      console.warn(
+        `[WARN] Falha ao reservar laudo para lote ${lote.id}: ${laudoReservaErr.message}`
+      );
+    }
+
     // NÃO criar laudo automaticamente ao Iniciar Ciclo
     // Laudo será criado apenas quando emissor efetivamente emitir via /api/emissor/laudos/[loteId]
     // Isso evita laudos "rascunho" ficarem travados no sistema
@@ -287,6 +325,7 @@ export const POST = async (req: Request) => {
     const agora = new Date().toISOString();
     let avaliacoesCriadas = 0;
     const detalhes = [];
+    const errosDetalhados = [];
     const resumoInclusao = {
       novos: 0,
       atrasados: 0,
@@ -298,11 +337,11 @@ export const POST = async (req: Request) => {
 
     for (const func of funcionarios) {
       try {
-        await query(
+        await queryAsGestorRH(
           `
-          INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id)
-          VALUES ($1, 'iniciada', $2, $3)
-        `,
+            INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id)
+            VALUES ($1, 'iniciada', $2, $3)
+          `,
           [func.funcionario_cpf, agora, lote.id]
         );
 
@@ -330,102 +369,64 @@ export const POST = async (req: Request) => {
         });
       } catch (error) {
         console.error(
-          `Erro ao criar avaliação para ${func.funcionario_cpf}:`,
+          `[ERRO] Falha ao criar avaliação para ${func.funcionario_cpf} (${func.funcionario_nome}):`,
           error
         );
+        const mensagemErro =
+          error instanceof Error ? error.message : 'Erro desconhecido';
+        errosDetalhados.push({
+          cpf: func.funcionario_cpf,
+          nome: func.funcionario_nome,
+          erro: mensagemErro,
+        });
         detalhes.push({
           cpf: func.funcionario_cpf,
           nome: func.funcionario_nome,
           motivo_inclusao: func.motivo_inclusao,
           status: 'erro',
-          erro: error instanceof Error ? error.message : 'Erro desconhecido',
+          erro: mensagemErro,
         });
       }
     }
 
-    // Atualizar status do lote se necessário
+    // ✅ CORREÇÃO: Sem transação explícita, o lote já foi criado
+    // Se nenhuma avaliação for criada, apenas retornar erro (lote permanece sem avaliações)
     if (avaliacoesCriadas === 0) {
-      await query(
-        `UPDATE lotes_avaliacao SET status = 'cancelado' WHERE id = $1`,
-        [lote.id]
+      console.error(
+        `[ERRO CRÍTICO] Nenhuma avaliação foi criada para lote ${lote.id}.`
+      );
+      console.error('[ERRO] Detalhes dos erros:', errosDetalhados);
+
+      return NextResponse.json(
+        {
+          error:
+            'Falha ao criar avaliações. Nenhum funcionário pôde ser incluído no lote.',
+          success: false,
+          loteId: lote.id, // Retorna id do lote criado para auditoria
+          detalhes:
+            errosDetalhados.length > 0
+              ? `Erros encontrados: ${errosDetalhados.map((e) => `${e.nome} (${e.cpf}): ${e.erro}`).join('; ')}`
+              : 'Nenhuma avaliação foi criada com sucesso',
+          funcionarios_com_erro: errosDetalhados,
+        },
+        { status: 500 }
       );
     }
 
-    // Registrar auditoria da liberação do lote
-    try {
-      await query(
-        `INSERT INTO audit_logs (user_cpf, action, resource, resource_id, details, ip_address)
-         VALUES ($1, $2, $3, $4, $5, $6)`,
-        [
-          user.cpf,
-          'liberar_lote',
-          'lotes_avaliacao',
-          lote.id,
-          JSON.stringify({
-            empresa_id: empresaId,
-            empresa_nome: empresaCheck.rows[0].nome,
-            tipo: tipo || 'completo',
-            titulo: titulo || `Lote ${lote.numero_ordem} - ${codigo}`,
-            descricao: descricao || null,
-            data_filtro: dataFiltro || null,
-            lote_referencia_id: loteReferenciaId || null,
-            codigo: lote.codigo,
-            numero_ordem: lote.numero_ordem,
-            avaliacoes_criadas: avaliacoesCriadas,
-            total_funcionarios: funcionarios.length,
-            resumo_inclusao: {
-              novos: resumoInclusao.novos,
-              atrasados: resumoInclusao.atrasados,
-              mais_de_1_ano: resumoInclusao.mais_de_1_ano,
-              regulares: resumoInclusao.regulares,
-              criticas: resumoInclusao.criticas,
-              altas: resumoInclusao.altas,
-            },
-          }),
-          req.headers.get('x-forwarded-for') ||
-            req.headers.get('x-real-ip') ||
-            'unknown',
-        ]
-      );
-    } catch (auditError) {
-      console.error('Erro ao registrar auditoria:', auditError);
-      // Não falhar a operação por erro de auditoria
-    }
-
+    // Retornar sucesso com dados do lote criado
     return NextResponse.json({
       success: true,
-      message: `Lote ${lote.numero_ordem} (${codigo}) liberado com sucesso!`,
-      lote: {
-        id: lote.id,
-        codigo: lote.codigo,
-        numero_ordem: lote.numero_ordem,
-        titulo: titulo || `Lote ${lote.numero_ordem} - ${codigo}`,
-        tipo: tipo || 'completo',
-        loteReferenciaId: loteReferenciaId || null,
-        liberado_em: lote.liberado_em,
-      },
-      estatisticas: {
-        avaliacoesCriadas,
-        totalFuncionarios: funcionarios.length,
-        empresa: empresaCheck.rows[0].nome,
-      },
-      resumoInclusao: {
-        funcionarios_novos: resumoInclusao.novos,
-        indices_atrasados: resumoInclusao.atrasados,
-        mais_de_1_ano_sem_avaliacao: resumoInclusao.mais_de_1_ano,
-        renovacoes_regulares: resumoInclusao.regulares,
-        prioridade_critica: resumoInclusao.criticas,
-        prioridade_alta: resumoInclusao.altas,
-        mensagem: `Incluindo automaticamente: ${
-          resumoInclusao.criticas + resumoInclusao.altas
-        } funcionários com pendências prioritárias (${
-          resumoInclusao.criticas
-        } críticas, ${resumoInclusao.altas} altas)`,
-      },
+      loteId: lote.id,
+      codigo: lote.codigo,
+      numero_ordem: lote.numero_ordem,
+      liberado_em: lote.liberado_em,
+      avaliacoes_criadas: avaliacoesCriadas,
+      total_funcionarios: funcionarios.length,
+      resumo_inclusao: resumoInclusao,
       detalhes,
     } as const);
   } catch (error) {
-    console.error('Erro ao Iniciar Ciclo:', error);
+    console.error('[ERRO] Erro ao Iniciar Ciclo:', error);
     return NextResponse.json(
       {
         error: 'Erro interno do servidor',

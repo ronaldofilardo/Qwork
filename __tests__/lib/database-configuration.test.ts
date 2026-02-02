@@ -158,7 +158,7 @@ describe('Database Configuration Tests', () => {
 
     test('should throw error when using development database in tests', () => {
       process.env.TEST_DATABASE_URL =
-        'postgres://postgres:123456@localhost:5432/nr-bps_db';
+        'postgresql://postgres:123456@localhost:5432/nr-bps_db';
 
       // Force enable for testing
       forceEnableTestDatabaseGuard();
@@ -192,7 +192,7 @@ describe('Database Configuration Tests', () => {
 
     test('should identify development database correctly', () => {
       process.env.LOCAL_DATABASE_URL =
-        'postgres://postgres:123456@localhost:5432/nr-bps_db';
+        'postgresql://postgres:123456@localhost:5432/nr-bps_db';
       delete process.env.TEST_DATABASE_URL;
 
       const info = getDatabaseInfo();

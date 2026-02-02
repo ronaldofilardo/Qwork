@@ -68,11 +68,11 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
-    // Inserir novo admin (sem clinica_id, sem empresa_id)
+    // Inserir novo admin (sem clinica_id, sem empresa_id, usuario_tipo='admin')
     const result = await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha, perfil, ativo)
-       VALUES ($1, $2, $3, $4, 'admin', true)
-       RETURNING cpf, nome, email, perfil, ativo`,
+      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, ativo)
+       VALUES ($1, $2, $3, $4, 'admin', 'admin', true)
+       RETURNING cpf, nome, email, perfil, usuario_tipo, ativo`,
       [cpfLimpo, nome, email, senhaHash]
     );
 

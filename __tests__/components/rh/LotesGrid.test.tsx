@@ -83,6 +83,24 @@ describe('LotesGrid', () => {
     expect(screen.getByText('Emissor: Dr. João Silva')).toBeInTheDocument();
   });
 
+  it('deve exibir laudo disponível quando apenas emitido_em estiver presente', () => {
+    const laudosEmitido = [
+      {
+        id: 2,
+        lote_id: 2,
+        emissor_nome: 'Dra. Maria',
+        emitido_em: '2024-01-20T09:15:00Z',
+        hash: 'def456',
+        codigo: 'LAU-002',
+      },
+    ];
+
+    render(<LotesGrid {...defaultProps} laudos={laudosEmitido} />);
+
+    expect(screen.getByText('📄 Laudo disponível')).toBeInTheDocument();
+    expect(screen.getByText('Emissor: Dra. Maria')).toBeInTheDocument();
+  });
+
   it('deve copiar hash quando botão de copiar é pressionado', () => {
     render(<LotesGrid {...defaultProps} />);
 

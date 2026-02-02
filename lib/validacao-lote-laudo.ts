@@ -41,10 +41,10 @@ export async function validarLoteParaLaudo(
     SELECT 
       l.id,
       l.status,
-      COUNT(a.id) as total_avaliacoes,
+      COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_avaliacoes,
       COUNT(a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
       COUNT(a.id) FILTER (WHERE a.status = 'inativada') as avaliacoes_inativadas,
-      COUNT(a.id) FILTER (WHERE a.status != 'inativada') as avaliacoes_ativas
+      COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento', 'concluida')) as avaliacoes_ativas
     FROM lotes_avaliacao l
     LEFT JOIN avaliacoes a ON l.id = a.lote_id
     WHERE l.id = $1
@@ -85,14 +85,28 @@ export async function validarLoteParaLaudo(
     motivos.push('Lote não possui avaliações ativas');
   }
 
-  // 4. Validar se todas as avaliações ativas estão concluídas
-  if (avaliacoesConcluidas < avaliacoesAtivas) {
-    const pendentes = avaliacoesAtivas - avaliacoesConcluidas;
-    motivos.push(
-      `${pendentes} avaliação${pendentes > 1 ? 'ões' : ''} ativa${
-        pendentes > 1 ? 's' : ''
-      } ainda não concluída${pendentes > 1 ? 's' : ''}`
-    );
+  // 4. Validar se todas as avaliações liberadas estão concluídas ou inativadas
+  const avaliacoesLiberadas = avaliacoesConcluidas + avaliacoesInativadas;
+  const avaliacoesPendentes = totalAvaliacoes - avaliacoesLiberadas;
+
+  if (
+    avaliacoesPendentes > 0 ||
+    (avaliacoesAtivas > 0 && avaliacoesConcluidas === 0)
+  ) {
+    if (avaliacoesPendentes > 0) {
+      motivos.push(
+        `${avaliacoesPendentes} avaliação${avaliacoesPendentes > 1 ? 'ões' : ''} ainda não concluída${avaliacoesPendentes > 1 ? 's' : ''} ou inativada${avaliacoesPendentes > 1 ? 's' : ''}`
+      );
+    } else {
+      const pendentes = avaliacoesAtivas - avaliacoesConcluidas;
+      if (pendentes > 0) {
+        motivos.push(
+          `${pendentes} avaliação${pendentes > 1 ? 'ões' : ''} ativa${
+            pendentes > 1 ? 's' : ''
+          } ainda não concluída${pendentes > 1 ? 's' : ''}`
+        );
+      }
+    }
   }
 
   // 5. Calcular taxa de conclusão

@@ -70,7 +70,7 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
   });
 
   it('deve redirecionar para /sucesso-cadastro após aceitar proposta', async () => {
-    console.log('\n=== TESTE: REDIRECIONAMENTO APÓS ACEITE ===\n');
+    // \n=== TESTE: REDIRECIONAMENTO APÓS ACEITE ===\n
 
     // Mock session
     jest.mock('@/lib/session', () => ({
@@ -92,9 +92,6 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    console.log('→ Status:', response.status);
-    console.log('→ Resposta:', JSON.stringify(data, null, 2));
-
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.redirect_url).toBeDefined();
@@ -104,8 +101,6 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
     expect(data.redirect_url).toContain(`id=${contratanteId}`);
     expect(data.redirect_url).toContain('contrato_id=');
     expect(data.redirect_url).toContain('origem=personalizado');
-
-    console.log('✓ URL de redirecionamento correta:', data.redirect_url);
 
     // Validar criação do contrato
     expect(data.contrato_id).toBeDefined();
@@ -120,7 +115,6 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
     expect(contratoResult.rows[0].status).toBe('aguardando_aceite');
     expect(contratoResult.rows[0].contratante_id).toBe(contratanteId);
 
-    console.log('✓ Contrato criado:', {
       id: contratoId,
       status: contratoResult.rows[0].status,
       contratante_id: contratoResult.rows[0].contratante_id,
@@ -133,13 +127,19 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
     );
 
     expect(contratacaoResult.rows[0].status).toBe('aguardando_aceite_contrato');
-    console.log('✓ Status atualizado: aguardando_aceite_contrato');
+    // ✓ Status atualizado: aguardando_aceite_contrato
 
-    console.log('\n=== ✅ FLUXO DE REDIRECIONAMENTO VALIDADO ===');
-    console.log('📝 Próximos passos do usuário:');
-    console.log('  1. Acessa /sucesso-cadastro');
-    console.log('  2. Aceita contrato padrão');
-    console.log('  3. Confirma pagamento no simulador');
-    console.log('  4. Login liberado automaticamente');
+    // \n=== ✅ FLUXO DE REDIRECIONAMENTO VALIDADO ===
+
+    // 📝 Próximos passos do usuário:
+
+    //   1. Acessa /sucesso-cadastro
+
+    //   2. Aceita contrato padrão
+
+    //   3. Confirma pagamento no simulador
+
+    //   4. Login liberado automaticamente
+
   });
 });

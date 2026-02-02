@@ -1,13 +1,13 @@
-import { requireAuth } from "@/lib/session";
-import { query } from "@/lib/db";
-import { NextResponse } from "next/server";
+import { requireAuth } from '@/lib/session';
+import { query } from '@/lib/db';
+import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 export const GET = async (request: Request) => {
   try {
     const user = await requireAuth();
     if (!user) {
-      return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
     const url = new URL(request.url);
@@ -53,14 +53,28 @@ export const GET = async (request: Request) => {
       [avaliacaoId]
     );
 
-    return NextResponse.json({
-      avaliacaoId,
-      respostas: respostasRes.rows,
-      total: respostasRes.rows.length,
-    }, { status: 200 });
+    console.log(
+      '[DEBUG /api/avaliacao/respostas-all] avaliacaoId:',
+      avaliacaoId
+    );
+    console.log(
+      '[DEBUG /api/avaliacao/respostas-all] respostas encontradas:',
+      respostasRes.rows.length
+    );
 
+    return NextResponse.json(
+      {
+        avaliacaoId,
+        respostas: respostasRes.rows,
+        total: respostasRes.rows.length,
+      },
+      { status: 200 }
+    );
   } catch (error) {
-    console.error("Erro em respostas-all:", error);
-    return NextResponse.json({ error: "Erro interno", respostas: [], total: 0 }, { status: 500 });
+    console.error('Erro em respostas-all:', error);
+    return NextResponse.json(
+      { error: 'Erro interno', respostas: [], total: 0 },
+      { status: 500 }
+    );
   }
 };
