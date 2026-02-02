@@ -1323,5 +1323,86 @@ describe('/api/auth/login', () => {
       // Verificar que createSession não foi chamado
       expect(mockCreateSession).not.toHaveBeenCalled();
     });
+
+    it('deve tolerar ausência da coluna nivel_cargo no schema e realizar login (fallback)', async () => {
+      (mockRequest.json as jest.Mock).mockResolvedValue({
+        cpf: '88888888888',
+        senha: '123',
+      });
+
+      mockQuery.mockImplementation((sql: string) => {
+        if (sql.includes('rate_limiting')) return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
+        if (sql.includes('contratantes_senhas')) return Promise.resolve({ rows: [], rowCount: 0 });
+        if (sql.includes('SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios')) {
+          const err: any = new Error('column "nivel_cargo" does not exist');
+          err.code = '42703';
+          throw err;
+        }
+        if (sql.includes('SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios')) {
+          return Promise.resolve({ rows: [{ cpf: '88888888888', nome: 'Fallback User', perfil: 'funcionario', senha_hash: '$2a$10$hash', ativo: true }], rowCount: 1 });
+        }
+        if (sql.includes('responsavel_cpf')) return Promise.resolve({ rows: [], rowCount: 0 });
+        return Promise.resolve({ rows: [], rowCount: 0 });
+      });
+
+      mockCompare.mockResolvedValue(true);
+      mockCreateSession.mockResolvedValue();
+
+      const response = await POST(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.nivelCargo).toBeNull();
+
+      expect(mockCreateSession).toHaveBeenCalledWith(expect.objectContaining({
+        cpf: '88888888888',
+        nome: 'Fallback User',
+        perfil: 'funcionario',
+        nivelCargo: null,
+      }));
+    });
+
+    it('deve tolerar ausência da coluna contratante_id e prosseguir sem contratante_id', async () => {
+      (mockRequest.json as jest.Mock).mockResolvedValue({
+        cpf: '99999999999',
+        senha: '123',
+      });
+
+      mockQuery.mockImplementation((sql: string) => {
+        if (sql.includes('rate_limiting')) return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
+        if (sql.includes('contratantes_senhas')) return Promise.resolve({ rows: [], rowCount: 0 });
+        if (sql.includes('SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios')) {
+          return Promise.resolve({ rows: [{ cpf: '99999999999', nome: 'NoContratante User', perfil: 'funcionario', senha_hash: '$2a$10$hash', ativo: true, nivel_cargo: 'operacional' }], rowCount: 1 });
+        }
+        if (sql.includes('SELECT contratante_id, clinica_id FROM funcionarios')) {
+          const err: any = new Error('column "contratante_id" does not exist');
+          err.code = '42703';
+          throw err;
+        }
+        if (sql.includes('responsavel_cpf')) return Promise.resolve({ rows: [], rowCount: 0 });
+        return Promise.resolve({ rows: [], rowCount: 0 });
+      });
+
+      mockCompare.mockResolvedValue(true);
+      mockCreateSession.mockResolvedValue();
+
+      const response = await POST(mockRequest as NextRequest);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+
+      // Verificar que a sessão foi criada e que contratante_id é undefined
+      expect(mockCreateSession).toHaveBeenCalledWith(expect.objectContaining({
+        cpf: '99999999999',
+        nome: 'NoContratante User',
+        perfil: 'funcionario',
+        nivelCargo: 'operacional',
+      }));
+      const lastArg = mockCreateSession.mock.calls[mockCreateSession.mock.calls.length - 1][0];
+      expect(lastArg.contratante_id).toBeUndefined();
+      expect(lastArg.clinica_id).toBeUndefined();
+    });
   });
 });

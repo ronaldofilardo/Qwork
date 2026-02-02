@@ -295,10 +295,26 @@ export async function POST(request: Request) {
     console.log(
       `[LOGIN] CPF não encontrado em contratantes_senhas, buscando em funcionarios...`
     );
-    const result = await query(
-      'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios WHERE cpf = $1',
-      [cpf]
-    );
+    let result: any;
+    try {
+      result = await query(
+        'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios WHERE cpf = $1',
+        [cpf]
+      );
+    } catch (err: any) {
+      // Fallback quando a coluna nivel_cargo ainda não existe no schema (ex.: ambiente não migrado)
+      if (err?.code === '42703') {
+        console.warn('[LOGIN] nivel_cargo ausente no schema, tentando fallback sem a coluna');
+        result = await query(
+          'SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios WHERE cpf = $1',
+          [cpf]
+        );
+        // Garantir que o código cliente possa ler nivel_cargo (nulo)
+        result.rows = result.rows.map((r: any) => ({ ...r, nivel_cargo: null }));
+      } else {
+        throw err;
+      }
+    }
 
     console.log(
       `Login attempt for CPF: ${cpf}, found: ${result.rows.length > 0}`
@@ -470,10 +486,21 @@ export async function POST(request: Request) {
     let clinicaId: number | undefined = undefined;
 
     // Buscar campos adicionais (contratante_id, clinica_id) da tabela funcionarios
-    const funcDadosAdicionais = await query(
-      `SELECT contratante_id, clinica_id FROM funcionarios WHERE cpf = $1`,
-      [cpf]
-    );
+    let funcDadosAdicionais: any;
+    try {
+      funcDadosAdicionais = await query(
+        `SELECT contratante_id, clinica_id FROM funcionarios WHERE cpf = $1`,
+        [cpf]
+      );
+    } catch (err: any) {
+      // Fallback quando a coluna contratante_id (ou clinica_id) não existe no schema
+      if (err?.code === '42703') {
+        console.warn('[LOGIN] contratante_id ausente no schema, fallback sem contratante_id/clinica_id');
+        funcDadosAdicionais = { rows: [] };
+      } else {
+        throw err;
+      }
+    }
 
     if (funcDadosAdicionais.rows.length > 0) {
       contratanteId = funcDadosAdicionais.rows[0].contratante_id;
