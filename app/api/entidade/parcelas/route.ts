@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { calcularParcelas } from '@/lib/parcelas-helper';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,9 @@ export async function GET() {
       LIMIT 1
     `;
 
-    const contratoResult = await query(contratoQuery, [contratanteId]);
+    const contratoResult = await queryAsGestorEntidade(contratoQuery, [
+      contratanteId,
+    ]);
 
     if (contratoResult.rows.length === 0) {
       return NextResponse.json(
@@ -65,7 +67,9 @@ export async function GET() {
       LIMIT 1
     `;
 
-    const pagamentosResult = await query(pagamentosQuery, [contratanteId]);
+    const pagamentosResult = await queryAsGestorEntidade(pagamentosQuery, [
+      contratanteId,
+    ]);
 
     if (pagamentosResult.rows.length === 0) {
       return NextResponse.json({
@@ -86,18 +90,18 @@ export async function GET() {
             : pagamento.detalhes_parcelas;
       } else if (
         pagamento.numero_parcelas &&
-        parseInt(pagamento.numero_parcelas) > 0
+        parseInt(String(pagamento.numero_parcelas)) > 0
       ) {
         // Gerar parcelas padrão baseado no status do pagamento e na vigência do contrato
-        const numParcelas = parseInt(pagamento.numero_parcelas);
+        const numParcelas = parseInt(String(pagamento.numero_parcelas));
         const dataInicial = new Date(
-          contrato.contratacao_at || pagamento.criado_em
+          String(contrato.contratacao_at || pagamento.criado_em)
         );
         // regra: primeira parcela vence 1 dia antes da contratação
         dataInicial.setDate(dataInicial.getDate() - 1);
 
         const calc = calcularParcelas({
-          valorTotal: parseFloat(pagamento.valor),
+          valorTotal: parseFloat(String(pagamento.valor)),
           numeroParcelas: numParcelas,
           dataInicial,
         });
@@ -106,8 +110,9 @@ export async function GET() {
         const isPago = pagamento.status === 'pago';
         if (isPago) {
           calc[0].pago = true;
-          calc[0].data_pagamento =
-            pagamento.data_pagamento || pagamento.criado_em;
+          calc[0].data_pagamento = String(
+            pagamento.data_pagamento || pagamento.criado_em
+          );
           calc[0].status = 'pago';
         }
 
@@ -120,22 +125,22 @@ export async function GET() {
         }));
       } else if (
         !pagamento.numero_parcelas ||
-        parseInt(pagamento.numero_parcelas) === 1
+        parseInt(String(pagamento.numero_parcelas)) === 1
       ) {
         // Pagamento à vista
         const dataVenc = contrato.contratacao_at
-          ? new Date(contrato.contratacao_at)
-          : new Date(pagamento.criado_em);
+          ? new Date(String(contrato.contratacao_at))
+          : new Date(String(pagamento.criado_em));
         if (contrato.contratacao_at) dataVenc.setDate(dataVenc.getDate() - 1);
 
         detalhes_parcelas.push({
           numero: 1,
-          valor: parseFloat(pagamento.valor),
+          valor: parseFloat(String(pagamento.valor)),
           data_vencimento: dataVenc.toISOString().split('T')[0],
           pago: pagamento.status === 'pago',
           data_pagamento:
             pagamento.status === 'pago'
-              ? pagamento.data_pagamento || pagamento.criado_em
+              ? String(pagamento.data_pagamento || pagamento.criado_em)
               : null,
         });
       }
@@ -146,7 +151,7 @@ export async function GET() {
     // Verificar existência da tabela `recibos` antes de tentar consultá-la
     let recibosMap = new Map();
     try {
-      const recibosColsRes = await query(
+      const recibosColsRes = await queryAsGestorEntidade(
         `SELECT column_name FROM information_schema.columns WHERE table_name = 'recibos' AND column_name IN ('numero_recibo','conteudo_pdf_path','criado_em','hash_pdf')`
       );
       const recibosExists =
@@ -165,7 +170,7 @@ export async function GET() {
           ORDER BY r.criado_em
         `;
 
-        const recibosResult = await query(recibosQuery, [
+        const recibosResult = await queryAsGestorEntidade(recibosQuery, [
           pagamento.pagamento_id,
         ]);
         // Como não temos parcela_numero, usar o primeiro recibo encontrado para a parcela 1
@@ -209,7 +214,7 @@ export async function GET() {
     return NextResponse.json({
       contrato_id: contrato.id,
       contratacao_at: contrato.contratacao_at,
-      valor_total: parseFloat(contrato.valor_total),
+      valor_total: parseFloat(String(contrato.valor_total)),
       numero_funcionarios: contrato.numero_funcionarios,
       pagamento_id: pagamento.pagamento_id,
       metodo: pagamento.metodo,

@@ -239,7 +239,7 @@ export function gerarHTMLRelatorioLote(dados: RelatorioLoteData): string {
     </div>
     
     <div class="capa-slogan">
-      ${QWORK_BRANDING.logo.slogan}
+      Avaliação de Saúde e Bem-Estar
     </div>
   </div>
 

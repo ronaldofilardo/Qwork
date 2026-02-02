@@ -9,7 +9,6 @@ jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
 }))
 
-
 jest.mock('@/lib/questoes', () => ({
   grupos: [
     { id: 1, dominio: 'Demandas no Trabalho', tipo: 'negativa' },

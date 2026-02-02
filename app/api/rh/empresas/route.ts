@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { queryWithContext } from '@/lib/db-security';
+import { query } from '@/lib/db';
 import { requireClinica } from '@/lib/session';
 import { normalizeCNPJ, validarCNPJ } from '@/lib/validators';
 
@@ -48,8 +48,8 @@ export async function GET() {
 
     // requireClinica já garante que session.clinica_id exista e que a clínica seja válida
 
-    // RLS filtra automaticamente por clinica_id do RH
-    const result = await queryWithContext(
+    // Buscar empresas da clínica diretamente
+    const result = await query(
       `SELECT id, nome, cnpj, email, ativa, criado_em,
                       telefone, endereco, cidade, estado, cep,
               (SELECT COUNT(*) FROM funcionarios WHERE empresa_id = empresas_clientes.id AND ativo = true) as total_funcionarios,
@@ -58,7 +58,8 @@ export async function GET() {
         FROM empresas_clientes
         WHERE ativa = true AND clinica_id = $1
         ORDER BY nome`,
-      [session.clinica_id]
+      [session.clinica_id],
+      session
     );
 
     return NextResponse.json(result.rows);
@@ -187,8 +188,8 @@ export async function POST(request: Request) {
     }
 
     // RLS garante que INSERT só pode ocorrer na clínica do RH
-    // queryWithContext registra user_cpf, user_perfil, new_data para auditoria
-    const result = await queryWithContext(
+    // Passar session para que app.current_user_cpf seja definido para auditoria
+    const result = await query(
       `INSERT INTO empresas_clientes 
        (nome, cnpj, email, telefone, endereco, cidade, estado, cep, clinica_id, representante_nome, representante_fone, representante_email, ativa)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
@@ -206,7 +207,8 @@ export async function POST(request: Request) {
         representante_nome.trim(),
         representante_fone.replace(/\D/g, ''),
         representante_email?.trim() || null,
-      ]
+      ],
+      session
     );
 
     return NextResponse.json(result.rows[0], { status: 201 });

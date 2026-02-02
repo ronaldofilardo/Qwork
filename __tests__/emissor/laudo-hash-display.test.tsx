@@ -391,10 +391,11 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
     expect(screen.queryByText('💾 Salvar Rascunho')).not.toBeInTheDocument();
     expect(screen.queryByText('✓ Emitir Laudo')).not.toBeInTheDocument();
 
-    // Verificar que a mensagem de bloqueio é exibida
-    expect(
-      screen.getByText(/Este laudo está programado para emissão automática/)
-    ).toBeInTheDocument();
+    // Verificar que a mensagem de bloqueio é exibida (pode aparecer em múltiplos locais)
+    const matches = screen.getAllByText(
+      /Este laudo está programado para emissão automática/
+    );
+    expect(matches.length).toBeGreaterThan(0);
 
     // Textarea deve estar desabilitada
     const textarea = screen.getByPlaceholderText(

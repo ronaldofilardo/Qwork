@@ -1,10 +1,12 @@
 /**
  * E2E: Imutabilidade após laudo emitido
  * - Depois de emitir o laudo, tentativas de alterar lote ou avaliações devem falhar
+ *
+ * NOTA: Teste usa gerarLaudoCompletoEmitirPDF diretamente, sem emissão automática.
  */
 
 import { query } from '@/lib/db';
-import { emitirLaudoImediato } from '@/lib/laudo-auto';
+import { gerarLaudoCompletoEmitirPDF } from '@/lib/laudo-auto';
 import { recalcularStatusLote } from '@/lib/lotes';
 
 jest.setTimeout(60000);

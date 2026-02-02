@@ -3,10 +3,7 @@
 
 BEGIN;
 
--- 1) Ensure no remaining legacy profiles (safety)
-UPDATE public.funcionarios SET perfil = 'admin' WHERE perfil = 'master';
-
--- 2) Normalize data to comply with new constraints
+-- 1) Normalize data to comply with new constraints
 -- 2a) Ensure funcionarios with perfil='funcionario' have a nivel_cargo
 UPDATE public.funcionarios
 SET nivel_cargo = 'operacional'
@@ -34,8 +31,8 @@ ALTER TABLE public.funcionarios DROP CONSTRAINT IF EXISTS funcionarios_clinica_c
 ALTER TABLE public.funcionarios DROP CONSTRAINT IF EXISTS funcionarios_perfil_check;
 ALTER TABLE public.funcionarios DROP CONSTRAINT IF EXISTS funcionarios_nivel_cargo_check;
 
--- 4) Recreate constraints aligned with access model:
--- - perfil must be one of the allowed set (no 'master')
+-- 2) Recreate constraints aligned with access model:
+-- - perfil must be one of the allowed set
 -- - only RH requires a non-null clinica_id
 -- - nivel_cargo only allowed for 'funcionario' and must be not null for them
 

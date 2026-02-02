@@ -103,7 +103,7 @@ describe('Modo Offline e PWA', () => {
     cy.wait(1000);
 
     // Verificar que a UI não quebrou
-    cy.contains(/de 70/).should('be.visible');
+    cy.contains(/de 37/).should('be.visible');
   });
 
   it('deve sincronizar respostas ao voltar online', () => {

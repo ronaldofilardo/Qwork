@@ -307,27 +307,26 @@ describe('Fluxo Completo de Lotes de Avaliação', () => {
     const novoStatus =
       concluidasNum === ativasNum && ativasNum > 0 ? 'concluido' : 'ativo';
 
+    // Migration 130/131: Sistema agora é 100% MANUAL - apenas atualiza status
     await query(
       `
       UPDATE lotes_avaliacao
-      SET status = $1, auto_emitir_em = NOW() + INTERVAL '10 minutes', auto_emitir_agendado = true
+      SET status = $1
       WHERE id = $2
     `,
       [novoStatus, loteId]
     );
 
-    // Verificar status final
+    // Verificar status final (colunas auto_emitir_* foram removidas)
     const statusFinal = await query(
       `
-      SELECT status, auto_emitir_agendado, auto_emitir_em
+      SELECT status
       FROM lotes_avaliacao WHERE id = $1
     `,
       [loteId]
     );
 
     expect(statusFinal.rows[0].status).toBe('concluido');
-    expect(statusFinal.rows[0].auto_emitir_agendado).toBe(true);
-    expect(statusFinal.rows[0].auto_emitir_em).toBeTruthy();
   });
 
   it('deve aparecer na categoria correta no emissor', async () => {
@@ -347,34 +346,10 @@ describe('Fluxo Completo de Lotes de Avaliação', () => {
     expect(categoria.rows[0].categoria_emissor).toBe('laudo-para-emitir');
   });
 
-  it('deve processar emissão automática quando agendado', async () => {
-    // Simular processamento do cron (definir auto_emitir_em no passado)
-    await query(
-      `
-      UPDATE lotes_avaliacao
-      SET auto_emitir_em = NOW() - INTERVAL '1 minute'
-      WHERE id = $1
-    `,
-      [loteId]
-    );
-
-    // Verificar se seria processado pelo cron
-    const prontoParaEmissao = await query(
-      `
-      SELECT id, codigo
-      FROM lotes_avaliacao
-      WHERE id = $1
-        AND status = 'concluido'
-        AND auto_emitir_em <= NOW()
-        AND auto_emitir_agendado = true
-        AND id NOT IN (
-          SELECT lote_id FROM laudos WHERE status = 'enviado'
-        )
-    `,
-      [loteId]
-    );
-
-    expect(prontoParaEmissao.rows.length).toBe(1);
-    expect(prontoParaEmissao.rows[0].id).toBe(loteId);
+  // ⚠️ TESTE OBSOLETO - Não há mais emissão automática (Migration 130/131)
+  it.skip('deve processar emissão automática quando agendado', async () => {
+    // Este teste foi descontinuado - sistema agora é 100% manual
+    // Emissor deve gerar laudos explicitamente via POST /api/emissor/laudos/[loteId]
+    // Ver: __tests__/correcoes-31-01-2026/remocao-automacao.test.ts
   });
 });

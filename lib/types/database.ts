@@ -121,6 +121,13 @@ export interface FuncionarioComAvaliacao extends Omit<
 export interface LoteInfo extends Omit<LoteAvaliacao, 'liberado_por'> {
   liberado_por_nome?: string;
   empresa_nome: string;
+  laudo_id?: number | null;
+  laudo_status?: string | null;
+  laudo_emitido_em?: string | null;
+  laudo_enviado_em?: string | null;
+  emissao_solicitada?: boolean;
+  emissao_solicitado_em?: string | null;
+  tem_laudo?: boolean;
 }
 
 /**

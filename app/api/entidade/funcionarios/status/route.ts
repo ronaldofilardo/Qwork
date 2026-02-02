@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from 'next/server';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { requireEntity } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -23,7 +23,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verificar se o funcionário pertence à entidade
-    const funcionarioResult = await query(
+    const funcionarioResult = await queryAsGestorEntidade(
       'SELECT id, cpf, nome, ativo FROM funcionarios WHERE cpf = $1 AND contratante_id = $2',
       [cpf, contratanteId]
     );
@@ -46,14 +46,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Atualizar status
-    await query('UPDATE funcionarios SET ativo = $1 WHERE cpf = $2', [
-      ativo,
-      cpf,
-    ]);
+    await queryAsGestorEntidade(
+      'UPDATE funcionarios SET ativo = $1 WHERE cpf = $2',
+      [ativo, cpf]
+    );
 
     // Se inativando, inativar também todas as avaliações pendentes
     if (!ativo) {
-      await query(
+      await queryAsGestorEntidade(
         `UPDATE avaliacoes
          SET status = 'inativada',
              motivo_inativacao = 'Funcionário inativado pela entidade',
@@ -64,11 +64,11 @@ export async function PATCH(request: NextRequest) {
       );
 
       console.log(
-        `[AUDIT] Funcionário ${cpf} (${funcionario.nome}) inativado pela entidade ${contratanteId} por ${session.cpf}`
+        `[AUDIT] Funcionário ${cpf} (${String(funcionario.nome)}) inativado pela entidade ${contratanteId} por ${session.cpf}`
       );
     } else {
       console.log(
-        `[AUDIT] Funcionário ${cpf} (${funcionario.nome}) reativado pela entidade ${contratanteId} por ${session.cpf}`
+        `[AUDIT] Funcionário ${cpf} (${String(funcionario.nome)}) reativado pela entidade ${contratanteId} por ${session.cpf}`
       );
     }
 

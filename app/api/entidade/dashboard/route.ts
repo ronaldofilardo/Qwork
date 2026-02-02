@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { requireEntity } from '@/lib/session';
 
 /**
@@ -16,7 +16,7 @@ export async function GET() {
     const contratanteId = session.contratante_id;
 
     // Buscar estatísticas gerais
-    const stats = await query(
+    const stats = await queryAsGestorEntidade(
       `
       SELECT
         COUNT(DISTINCT CASE WHEN a.status != 'inativada' THEN a.id END) as total_avaliacoes,
@@ -31,7 +31,7 @@ export async function GET() {
     );
 
     // Buscar resultados por grupo
-    const resultados = await query(
+    const resultados = await queryAsGestorEntidade(
       `
       SELECT
         r.grupo,
@@ -52,7 +52,7 @@ export async function GET() {
     );
 
     // Distribuição por categoria
-    const distribuicao = await query(
+    const distribuicao = await queryAsGestorEntidade(
       `
       SELECT
         r.categoria,

@@ -1,5 +1,5 @@
 import { requireAuth } from '@/lib/session';
-import { query } from '@/lib/db';
+import { query, transaction } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -164,14 +164,32 @@ export async function POST(req: Request) {
     // Inativar a avaliação com validação adicional
     let result;
     try {
-      result = await query(
-        `UPDATE avaliacoes
-         SET status = 'inativada',
-             motivo_inativacao = $2,
-             inativada_em = NOW(),
-             atualizado_em = NOW()
-         WHERE id = $1 AND status != 'inativada'`,
-        [avaliacao_id, motivo.trim()]
+      // Criar objeto de sessão para o contexto da transação
+      const _session = {
+        cpf: user.cpf,
+        perfil: user.perfil,
+        clinica_id: user.clinica_id || null,
+      };
+
+      // Executar UPDATE dentro de uma transação com contexto de sessão
+      result = await transaction(
+        async (txClient) => {
+          return await txClient.query(
+            `UPDATE avaliacoes
+           SET status = 'inativada',
+               motivo_inativacao = $2,
+               inativada_em = NOW(),
+               atualizado_em = NOW()
+           WHERE id = $1 AND status != 'inativada'`,
+            [avaliacao_id, motivo.trim()]
+          );
+        },
+        {
+          cpf: user.cpf,
+          perfil: user.perfil,
+          nome: user.cpf,
+          clinica_id: user.clinica_id,
+        }
       );
     } catch (dbErr: any) {
       console.error('Erro ao executar UPDATE avaliacoes:', dbErr);

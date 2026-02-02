@@ -1,8 +1,8 @@
 import { GET as getAcessosRH } from '@/app/api/admin/auditorias/acessos-rh/route';
 import { GET as getAcessosFuncionarios } from '@/app/api/admin/auditorias/acessos-funcionarios/route';
 import { GET as getAvaliacoes } from '@/app/api/admin/auditorias/avaliacoes/route';
-import { GET as getLotes } from '@/app/api/admin/auditorias/lotes/route';
-import { GET as getLaudos } from '@/app/api/admin/auditorias/laudos/route';
+// REMOVIDO: import { GET as getLotes } from '@/app/api/admin/auditorias/lotes/route';
+// REMOVIDO: import { GET as getLaudos } from '@/app/api/admin/auditorias/laudos/route';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
 
@@ -134,76 +134,11 @@ describe('APIs de Auditoria', () => {
     });
   });
 
-  describe('/api/admin/auditorias/lotes', () => {
-    it('deve retornar auditoria de lotes', async () => {
-      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
-      mockQuery.mockResolvedValue({
-        rows: [
-          {
-            lote_id: 50,
-            lote_nome: 'Lote Janeiro 2024',
-            clinica_id: 1,
-            clinica_nome: 'Clínica Teste',
-            empresa_id: 5,
-            empresa_nome: 'Empresa XYZ',
-            criado_por_cpf: '12345678909',
-            criado_por_nome: 'Maria RH',
-            status: 'ativo',
-            total_funcionarios: 25,
-            avaliacoes_pendentes: 5,
-            avaliacoes_em_andamento: 10,
-            avaliacoes_concluidas: 10,
-            criado_em: '2024-01-01T00:00:00.000Z',
-          },
-        ],
-        rowCount: 1,
-      });
+  // REMOVIDO: Testes de /api/admin/auditorias/lotes
+  // Admin não deve ter acesso a dados operacionais (lotes, laudos)
 
-      const response = await getLotes();
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.lotes).toHaveLength(1);
-      expect(data.lotes[0].total_funcionarios).toBe(25);
-      expect(data.lotes[0].status).toBe('ativo');
-    });
-  });
-
-  describe('/api/admin/auditorias/laudos', () => {
-    it('deve retornar auditoria de laudos', async () => {
-      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
-      mockQuery.mockResolvedValue({
-        rows: [
-          {
-            laudo_id: 200,
-            hash_pdf: 'abc123def456',
-            empresa_id: 5,
-            empresa_nome: 'Empresa XYZ',
-            clinica_id: 1,
-            clinica_nome: 'Clínica Teste',
-            lote_id: 50,
-            lote_nome: 'Lote Janeiro 2024',
-            emitido_por_cpf: '99999999999',
-            emitido_por_nome: 'Carlos Emissor',
-            data_emissao: '2024-01-15T10:00:00.000Z',
-            total_funcionarios_analisados: 20,
-            possui_pdf: true,
-          },
-        ],
-        rowCount: 1,
-      });
-
-      const response = await getLaudos();
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.laudos).toHaveLength(1);
-      expect(data.laudos[0].hash_pdf).toBe('abc123def456');
-      expect(data.laudos[0].possui_pdf).toBe(true);
-    });
-  });
+  // REMOVIDO: Testes de /api/admin/auditorias/laudos
+  // Admin não deve ter acesso a dados operacionais (lotes, laudos)
 
   describe('Tratamento de erros', () => {
     it('deve retornar erro 500 em caso de falha no banco', async () => {

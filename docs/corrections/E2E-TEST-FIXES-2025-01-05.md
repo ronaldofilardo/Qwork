@@ -164,7 +164,7 @@ npx tsx scripts/insert-login-test-data.ts
 
 ### 5. Estabilização de Timeouts e Seletores ⚠️
 
-**Problema**: Seletores baseados em texto frágil ("Bem-vindo", "0 de 70")
+**Problema**: Seletores baseados em texto frágil ("Bem-vindo", "0 de 37")
 
 **Arquivos Problemáticos** (50+ matches):
 

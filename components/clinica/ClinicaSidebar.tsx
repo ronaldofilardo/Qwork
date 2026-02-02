@@ -1,15 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, Bell, User, FolderOpen } from 'lucide-react';
+import { Building2, User, Bell } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
 interface ClinicaSidebarProps {
   counts?: {
     empresas?: number;
-    notificacoes?: number;
+    lotes?: number;
     laudos?: number;
+    notificacoes?: number;
   };
   userName?: string;
 }
@@ -73,21 +74,18 @@ export default function ClinicaSidebar({
         onClick={() => router.push('/rh/empresas')}
       />
 
-      {/* Seção Laudos */}
-      <MenuItem
-        icon={FolderOpen}
-        label="Laudos"
-        count={counts.laudos}
-        isActive={pathname === '/rh/laudos'}
-        onClick={() => router.push('/rh/laudos')}
-      />
-
       {/* Seção Notificações */}
       <MenuItem
         icon={Bell}
         label="Notificações"
-        count={counts.notificacoes}
-        isActive={pathname === '/rh/notificacoes'}
+        count={
+          counts.notificacoes || (counts.lotes || 0) + (counts.laudos || 0)
+        }
+        isActive={
+          pathname?.startsWith('/rh/notificacoes') ||
+          pathname === '/rh/lotes' ||
+          pathname === '/rh/laudos'
+        }
         onClick={() => router.push('/rh/notificacoes')}
       />
 

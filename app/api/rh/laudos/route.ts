@@ -3,7 +3,7 @@ import {
   requireRHWithEmpresaAccess,
   requireClinica,
 } from '@/lib/session';
-import { queryWithContext } from '@/lib/db-security';
+import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -66,7 +66,7 @@ export const GET = async (_req: Request) => {
 
     // Se foi informado empresa_id, validar acesso e usar a clínica desta empresa no filtro
     if (empresaId) {
-      const empresaCheck = await queryWithContext(
+      const empresaCheck = await query(
         `
         SELECT ec.id, ec.clinica_id
         FROM empresas_clientes ec
@@ -112,7 +112,7 @@ export const GET = async (_req: Request) => {
     params.push(limit);
 
     // Buscar laudos enviados para a clínica do usuário (com filtro opcional por empresa)
-    const laudosQuery = await queryWithContext(
+    const laudosQuery = await query(
       `
       SELECT
         l.id as laudo_id,

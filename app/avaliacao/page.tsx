@@ -42,6 +42,12 @@ export default function NovaAvaliacaoPage() {
 
         // Carrega as questões baseadas no nível do cargo
         const questoesPorNivel = getQuestoesPorNivel(userNivelCargo);
+        console.log('[DEBUG] userNivelCargo:', userNivelCargo);
+        console.log(
+          '[DEBUG] questoesPorNivel grupos:',
+          questoesPorNivel.length
+        );
+
         const todasQuestoesCarregadas = questoesPorNivel.flatMap((grupo) =>
           grupo.itens.map((item) => ({
             grupoId: grupo.id,
@@ -50,6 +56,10 @@ export default function NovaAvaliacaoPage() {
             texto: item.texto,
             inversa: item.invertida || false,
           }))
+        );
+        console.log(
+          '[DEBUG] todasQuestoesCarregadas:',
+          todasQuestoesCarregadas.length
         );
         setTodasQuestoes(todasQuestoesCarregadas);
 
@@ -81,12 +91,25 @@ export default function NovaAvaliacaoPage() {
 
         setAvaliacaoId(avaliacaoIdToUse);
 
+        console.log('[DEBUG] avaliacaoIdToUse:', avaliacaoIdToUse);
+
         // Busca respostas já respondidas
         const resp = await fetch(
           `/api/avaliacao/respostas-all?avaliacaoId=${avaliacaoIdToUse}`
         );
+        console.log(
+          '[DEBUG] API URL:',
+          `/api/avaliacao/respostas-all?avaliacaoId=${avaliacaoIdToUse}`
+        );
+
         if (resp.ok) {
           const data = await resp.json();
+          console.log('[DEBUG] API retornou avaliacaoId:', data.avaliacaoId);
+          console.log(
+            '[DEBUG] API retornou respostas.length:',
+            data.respostas.length
+          );
+
           const map: { [key: string]: number } = {};
           data.respostas.forEach((r: RespostaData) => {
             map[r.item] = r.valor;
@@ -100,6 +123,13 @@ export default function NovaAvaliacaoPage() {
 
           const proximo = todasQuestoesCarregadas.findIndex(
             (q) => !respondidas.includes(String(q.itemId))
+          );
+
+          console.log('[DEBUG] respondidas:', respondidas.length);
+          console.log('[DEBUG] proximo index:', proximo);
+          console.log(
+            '[DEBUG] todasQuestoesCarregadas length:',
+            todasQuestoesCarregadas.length
           );
 
           setCurrentIndex(
@@ -146,16 +176,20 @@ export default function NovaAvaliacaoPage() {
       });
 
       if (saveResponse.ok) {
+        const data = await saveResponse.json();
+
+        // Verificar se a avaliação foi concluída automaticamente (37 respostas)
+        if (data.completed) {
+          console.log('✅ Avaliação concluída automaticamente!');
+          setIsFinished(true);
+          return;
+        }
+
         setRespostas((prev) => ({ ...prev, [questaoAtual.itemId]: valor }));
         const proximoIndex = currentIndex + 1;
 
         if (proximoIndex >= todasQuestoes.length) {
-          // Finalizar avaliação
-          await fetch('/api/avaliacao/finalizar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ avaliacaoId }),
-          }).catch((err) => console.warn('Erro ao finalizar avaliação:', err));
+          // Última questão respondida - avaliação será concluída automaticamente
           setIsFinished(true);
         } else {
           setCurrentIndex(proximoIndex);

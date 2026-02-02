@@ -117,6 +117,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validar matrículas únicas no arquivo (ignorar valores nulos/vazios)
+    const matriculas = rows
+      .map((r) => r.matricula)
+      .filter((m) => m && m.trim().length > 0);
+    const matriculasDuplicadas = matriculas.filter(
+      (m, i) => matriculas.indexOf(m) !== i
+    );
+    if (matriculasDuplicadas.length > 0) {
+      const uniqueDups = Array.from(new Set(matriculasDuplicadas));
+      return NextResponse.json(
+        {
+          error: `Matrículas duplicadas no arquivo: ${uniqueDups.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Validar linhas individualmente e montar inserts
     const errors: string[] = [];
     const toInsert: FuncionarioImportRow[] = [];
@@ -150,6 +167,27 @@ export async function POST(request: Request) {
         { error: `CPFs já existentes no sistema: ${exists}` },
         { status: 409 }
       );
+    }
+
+    // Verificar matrículas já existentes no banco (ignorar valores nulos/vazios)
+    const matriculasParaVerificar = toInsert
+      .map((r) => r.matricula)
+      .filter((m) => m && m.trim().length > 0);
+
+    if (matriculasParaVerificar.length > 0) {
+      const existMatriculaResult = await query(
+        'SELECT matricula FROM funcionarios WHERE matricula = ANY($1) AND matricula IS NOT NULL',
+        [matriculasParaVerificar]
+      );
+      if (existMatriculaResult.rows.length > 0) {
+        const existsMatriculas = existMatriculaResult.rows
+          .map((r: any) => r.matricula)
+          .join(', ');
+        return NextResponse.json(
+          { error: `Matrículas já existentes no sistema: ${existsMatriculas}` },
+          { status: 409 }
+        );
+      }
     }
 
     // Normalizar e validar datas antes de inserir
@@ -199,8 +237,8 @@ export async function POST(request: Request) {
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
         await query(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, clinica_id, empresa_id, ativo, matricula, nivel_cargo, turno, escala)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',$8,$9,true,$10,$11,$12,$13)`,
+          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, clinica_id, empresa_id, ativo, matricula, nivel_cargo, turno, escala, usuario_tipo)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',$8,$9,true,$10,$11,$12,$13,'funcionario_clinica')`,
           [
             r.cpf,
             r.nome,
@@ -215,7 +253,8 @@ export async function POST(request: Request) {
             r.nivel_cargo || null,
             r.turno || null,
             r.escala || null,
-          ]
+          ],
+          session
         );
         created++;
       }
@@ -237,6 +276,41 @@ export async function POST(request: Request) {
         'Erro ao inserir funcionários em massa:',
         err && (err as any).message ? (err as any).message : err
       );
+
+      // Tratar erros específicos de constraint
+      const error = err as any;
+
+      // Erro de CPF duplicado
+      if (error.code === '23505' && error.constraint?.includes('cpf')) {
+        const match = error.detail?.match(/Key \(cpf\)=\(([^)]+)\)/);
+        const cpf = match ? match[1] : 'desconhecido';
+        return NextResponse.json(
+          { error: `CPF ${cpf} já existe no sistema` },
+          { status: 409 }
+        );
+      }
+
+      // Erro de matrícula duplicada
+      if (error.code === '23505' && error.constraint?.includes('matricula')) {
+        const match = error.detail?.match(/Key \(matricula\)=\(([^)]+)\)/);
+        const matricula = match ? match[1] : 'desconhecida';
+        return NextResponse.json(
+          { error: `Matrícula ${matricula} já existe no sistema` },
+          { status: 409 }
+        );
+      }
+
+      // Erro de email duplicado
+      if (error.code === '23505' && error.constraint?.includes('email')) {
+        const match = error.detail?.match(/Key \(email\)=\(([^)]+)\)/);
+        const email = match ? match[1] : 'desconhecido';
+        return NextResponse.json(
+          { error: `Email ${email} já existe no sistema` },
+          { status: 409 }
+        );
+      }
+
+      // Outros erros
       return NextResponse.json(
         { error: 'Erro ao inserir funcionários' },
         { status: 500 }

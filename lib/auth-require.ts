@@ -47,10 +47,26 @@ export function requireAdmin(): Session {
 }
 
 /**
- * Requer perfil de RH ou gestor de entidade
+ * Requer perfil de RH (gestor de clínica) - APENAS rh
+ * Para gestores de entidade, use requireGestorEntidade()
  */
 export function requireRH(): Session {
-  // RH endpoints devem ser acessíveis apenas por 'rh' ou 'gestor_entidade'
+  return requireRole(['rh']);
+}
+
+/**
+ * Requer perfil de gestor de entidade - APENAS gestor_entidade
+ * Para gestores RH, use requireRH()
+ */
+export function requireGestorEntidade(): Session {
+  return requireRole(['gestor_entidade']);
+}
+
+/**
+ * Requer perfil de gestor (RH ou Entidade) - para endpoints comuns
+ * Use com cautela - prefira requireRH() ou requireGestorEntidade() quando possível
+ */
+export function requireGestor(): Session {
   return requireRole(['rh', 'gestor_entidade']);
 }
 

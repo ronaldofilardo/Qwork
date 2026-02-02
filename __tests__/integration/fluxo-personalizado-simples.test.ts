@@ -35,7 +35,6 @@ describe('Fluxo Personalizado Simplificado', () => {
       planoId = newPlano.rows[0].id;
     }
 
-    console.log('✅ Plano personalizado ID:', planoId);
   });
 
   beforeEach(async () => {
@@ -81,7 +80,6 @@ describe('Fluxo Personalizado Simplificado', () => {
 
     contratanteId = cadastroRes.rows[0].id;
     expect(contratanteId).toBeDefined();
-    console.log('✅ Contratante cadastrado:', contratanteId);
 
     // Criar entrada em contratacao_personalizada
     await query(
@@ -121,7 +119,6 @@ describe('Fluxo Personalizado Simplificado', () => {
     );
 
     const contratoId = contratoRes.rows[0].id;
-    console.log('✅ Contrato criado:', contratoId);
 
     // Verificar valores
     const verificaContratacao = await query(
@@ -159,7 +156,7 @@ describe('Fluxo Personalizado Simplificado', () => {
       [contratanteId]
     );
 
-    console.log('✅ Pagamento confirmado');
+    // ✅ Pagamento confirmado
 
     // ==== ETAPA 4: LOGIN LIBERADO ====
     // Simular criação de senha via bcrypt
@@ -180,7 +177,7 @@ describe('Fluxo Personalizado Simplificado', () => {
 
     expect(verificaSenha.rows.length).toBe(1);
     expect(verificaSenha.rows[0].cpf).toBe(cpfTest);
-    console.log('✅ Login liberado com sucesso');
+    // ✅ Login liberado com sucesso
 
     // ==== VERIFICAÇÃO FINAL ====
     const estadoFinal = await query(
@@ -207,8 +204,8 @@ describe('Fluxo Personalizado Simplificado', () => {
     expect(estado.aceito).toBe(true);
     expect(estado.tem_senha).toBe(true);
 
-    console.log('\n🎉 FLUXO COMPLETO VALIDADO COM SUCESSO!\n');
-    console.log('Estado Final:', {
+    // \n🎉 FLUXO COMPLETO VALIDADO COM SUCESSO!\n
+
       status: estado.status,
       ativa: estado.ativa,
       pagamento_confirmado: estado.pagamento_confirmado,
@@ -239,6 +236,7 @@ describe('Fluxo Personalizado Simplificado', () => {
     );
     await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTest]);
     await query('COMMIT');
-    console.log('✅ Limpeza concluída');
+    // ✅ Limpeza concluída
+
   });
 });

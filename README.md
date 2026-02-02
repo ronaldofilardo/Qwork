@@ -8,7 +8,7 @@ Sistema de avaliação psicossocial baseado no questionário COPSOQ III (versão
 - **100% Serverless** - Deploy na Vercel
 - **Autenticação Segura** - Sessão via cookies httpOnly
 - **Multi-perfil** - Funcionário, RH, Admin, Emissor, Gestor Entidade
-- **10 Grupos de Avaliação** - 70 itens + módulos JZ e EF
+- **10 Grupos de Avaliação** - 37 itens (COPSOQ III reduzido + módulos JZ e EF)
 - **Dashboard Analítico** - Gráficos e semáforo de riscos
 - **Exportação** - PDF e Excel
 - **Sistema de Contratação Completo** - Planos, Contratos, Pagamentos

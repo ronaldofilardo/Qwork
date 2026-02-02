@@ -33,7 +33,8 @@ describe('Correção de Autenticação', () => {
       const senhaCorreta = await bcrypt.compare(ADMIN_SENHA, admin.senha_hash);
       expect(senhaCorreta).toBe(true);
 
-      console.log('[TEST] Hash da senha admin verificado com sucesso');
+      // [TEST] Hash da senha admin verificado com sucesso
+
     });
 
     it('deve rejeitar senha incorreta', async () => {
@@ -49,7 +50,8 @@ describe('Correção de Autenticação', () => {
       );
       expect(senhaIncorreta).toBe(false);
 
-      console.log('[TEST] Senha incorreta rejeitada corretamente');
+      // [TEST] Senha incorreta rejeitada corretamente
+
     });
   });
 
@@ -71,7 +73,8 @@ describe('Correção de Autenticação', () => {
       const senhaInvalida = await bcrypt.compare('senha_errada', senhaHash);
       expect(senhaInvalida).toBe(false);
 
-      console.log('[TEST] Validação de senha bcrypt funcionando corretamente');
+      // [TEST] Validação de senha bcrypt funcionando corretamente
+
     });
 
     it('deve funcionar com diferentes formatos de entrada', async () => {
@@ -90,7 +93,6 @@ describe('Correção de Autenticação', () => {
       );
       expect(senhaTrimValida).toBe(true);
 
-      console.log(
         '[TEST] Validação de senha com trim funcionando corretamente'
       );
     });
@@ -114,7 +116,8 @@ describe('Correção de Autenticação', () => {
       expect(admin.criado_em).toBeTruthy();
       expect(admin.atualizado_em).toBeTruthy();
 
-      console.log('[TEST] Integridade do usuário admin verificada');
+      // [TEST] Integridade do usuário admin verificada
+
     });
 
     it('deve ser o único usuário com perfil admin', async () => {
@@ -125,7 +128,8 @@ describe('Correção de Autenticação', () => {
 
       expect(parseInt(result.rows[0].total_admins)).toBe(1);
 
-      console.log('[TEST] Verificado que há apenas um usuário admin');
+      // [TEST] Verificado que há apenas um usuário admin
+
     });
   });
 });

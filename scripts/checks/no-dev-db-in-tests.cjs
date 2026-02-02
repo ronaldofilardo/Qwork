@@ -36,8 +36,17 @@ for (const file of files) {
     continue;
   }
 
+  // Skip database-environment.test.ts as it validates environment configuration
+  if (file.includes('database-environment.test.ts')) {
+    continue;
+  }
+
   const content = fs.readFileSync(file, 'utf8');
-  if (content.includes('nr-bps_db') || content.includes('nr-bps-db')) {
+  // Use regex to match nr-bps_db but NOT nr-bps_db_test
+  if (
+    /nr-bps_db(?!_test)/.test(content) ||
+    /nr-bps-db(?!-test)/.test(content)
+  ) {
     offenders.push(file);
   }
 }

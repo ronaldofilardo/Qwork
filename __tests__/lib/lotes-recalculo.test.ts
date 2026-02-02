@@ -4,23 +4,12 @@
  * - Tratamento correto de avaliações 'em_andamento' (não encerrar prematuramente)
  * - Exclusão de avaliações inativadas do cálculo
  * - Transições de status corretas
+ *
+ * NOTA: Emissão automática foi REMOVIDA. Lotes ficam 'concluido' e vão para fila_emissao.
  */
 
 jest.mock('@/lib/db', () => ({
   query: jest.fn(),
-}));
-
-jest.mock('@/lib/auto-laudo-trigger', () => ({
-  triggerAutoLaudoCron: jest.fn(),
-}));
-
-// Mock de emissão imediata
-jest.mock('@/lib/laudo-auto', () => ({
-  emitirLaudoImediato: jest.fn().mockResolvedValue(true),
-  gerarLaudoCompletoEmitirPDF: jest.fn().mockResolvedValue(123),
-  validarEmissorUnico: jest
-    .fn()
-    .mockResolvedValue({ cpf: '99999999999', nome: 'Emissor Mock' }),
 }));
 
 import { query } from '@/lib/db';
@@ -137,9 +126,7 @@ describe('lib/lotes - Recálculo de Status', () => {
       );
       expect(concludedUpdates.length).toBeGreaterThan(0);
 
-      // Emissão imediata também deve ter sido solicitada
-      const { emitirLaudoImediato } = require('@/lib/laudo-auto');
-      expect(emitirLaudoImediato).toHaveBeenCalledWith(1);
+      // NOTA: emissão automática foi removida.
     });
 
     it('deve concluir lote quando todas ativas estão concluídas (ignorando inativadas)', async () => {
@@ -187,9 +174,7 @@ describe('lib/lotes - Recálculo de Status', () => {
       );
       expect(updateCalls.length).toBeGreaterThan(0);
 
-      // Verificar que a função de emissão imediata foi chamada (mockada)
-      const { emitirLaudoImediato } = require('@/lib/laudo-auto');
-      expect(emitirLaudoImediato).toHaveBeenCalledWith(1);
+      // NOTA: emissão automática foi removida.
     });
 
     it('não deve concluir lote se há 1 avaliação em_andamento mesmo com outras concluídas', async () => {
@@ -374,9 +359,7 @@ describe('lib/lotes - Recálculo de Status', () => {
 
       // Verifica que a query correta foi chamada with both statuses
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining(
-          "a.status = 'iniciada' OR a.status = 'em_andamento'"
-        ),
+        expect.stringContaining("a.status IN ('iniciada', 'em_andamento')"),
         [1]
       );
     });
@@ -594,6 +577,10 @@ describe('lib/lotes - Recálculo de Status', () => {
     });
   });
 
+  // SUITE REMOVIDA: SKIP_IMMEDIATE_EMISSION behavior
+  // Emissão automática foi completamente removida do sistema.
+  // Lotes ficam 'concluido' e vão para fila_emissao, sem emissão automática.
+  /*
   describe('SKIP_IMMEDIATE_EMISSION behavior', () => {
     it('quando SKIP_IMMEDIATE_EMISSION=1 não chama emitirLaudoImediato (modo dev)', async () => {
       process.env.SKIP_IMMEDIATE_EMISSION = '1';
@@ -684,4 +671,5 @@ describe('lib/lotes - Recálculo de Status', () => {
       warnSpy.mockRestore();
     });
   });
+  */ // FIM da suite comentada SKIP_IMMEDIATE_EMISSION
 });

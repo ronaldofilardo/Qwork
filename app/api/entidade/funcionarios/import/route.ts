@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireEntity } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import {
   parseXlsxBufferToRows,
   parseDateCell,
@@ -78,6 +78,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validar matrículas únicas no arquivo (ignorar valores nulos/vazios)
+    const matriculas = rows
+      .map((r) => r.matricula)
+      .filter((m) => m && m.trim().length > 0);
+    const matriculasDuplicadas = matriculas.filter(
+      (m, i) => matriculas.indexOf(m) !== i
+    );
+    if (matriculasDuplicadas.length > 0) {
+      const uniqueDups = Array.from(new Set(matriculasDuplicadas));
+      return NextResponse.json(
+        {
+          error: `Matrículas duplicadas no arquivo: ${uniqueDups.join(', ')}`,
+        },
+        { status: 400 }
+      );
+    }
+
     // Validar linhas individualmente e montar inserts
     const errors: string[] = [];
     const toInsert: FuncionarioImportRow[] = [];
@@ -101,7 +118,7 @@ export async function POST(request: Request) {
 
     // Verificar CPFs já existentes no banco
     const cpfs = toInsert.map((r) => r.cpf);
-    const existResult = await query(
+    const existResult = await queryAsGestorEntidade(
       'SELECT cpf FROM funcionarios WHERE cpf = ANY($1)',
       [cpfs]
     );
@@ -111,6 +128,27 @@ export async function POST(request: Request) {
         { error: `CPFs já existentes no sistema: ${exists}` },
         { status: 409 }
       );
+    }
+
+    // Verificar matrículas já existentes no banco (ignorar valores nulos/vazios)
+    const matriculasParaVerificar = toInsert
+      .map((r) => r.matricula)
+      .filter((m) => m && m.trim().length > 0);
+
+    if (matriculasParaVerificar.length > 0) {
+      const existMatriculaResult = await queryAsGestorEntidade(
+        'SELECT matricula FROM funcionarios WHERE matricula = ANY($1) AND matricula IS NOT NULL',
+        [matriculasParaVerificar]
+      );
+      if (existMatriculaResult.rows.length > 0) {
+        const existsMatriculas = existMatriculaResult.rows
+          .map((r: any) => r.matricula)
+          .join(', ');
+        return NextResponse.json(
+          { error: `Matrículas já existentes no sistema: ${existsMatriculas}` },
+          { status: 409 }
+        );
+      }
     }
 
     // Normalizar e validar datas antes de inserir
@@ -154,14 +192,14 @@ export async function POST(request: Request) {
     }
 
     // Inserir em transação
-    await query('BEGIN');
+    await queryAsGestorEntidade('BEGIN');
     try {
       let created = 0;
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
-        await query(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, contratante_id, ativo, matricula, nivel_cargo, turno, escala)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',$8,true,$9,$10,$11,$12)`,
+        await queryAsGestorEntidade(
+          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, contratante_id, ativo, matricula, nivel_cargo, turno, escala, usuario_tipo)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',$8,true,$9,$10,$11,$12,'funcionario_entidade')`,
           [
             r.cpf,
             r.nome,
@@ -180,7 +218,7 @@ export async function POST(request: Request) {
         created++;
       }
 
-      await query('COMMIT');
+      await queryAsGestorEntidade('COMMIT');
 
       const maskedCpf =
         typeof session.cpf === 'string'
@@ -192,11 +230,46 @@ export async function POST(request: Request) {
 
       return NextResponse.json({ success: true, created });
     } catch (err) {
-      await query('ROLLBACK');
+      await queryAsGestorEntidade('ROLLBACK');
       console.error(
         'Erro ao inserir funcionários em massa:',
-        err && err.message ? err.message : err
+        err && (err as any).message ? (err as any).message : err
       );
+
+      // Tratar erros específicos de constraint
+      const error = err as any;
+
+      // Erro de CPF duplicado
+      if (error.code === '23505' && error.constraint?.includes('cpf')) {
+        const match = error.detail?.match(/Key \(cpf\)=\(([^)]+)\)/);
+        const cpf = match ? match[1] : 'desconhecido';
+        return NextResponse.json(
+          { error: `CPF ${cpf} já existe no sistema` },
+          { status: 409 }
+        );
+      }
+
+      // Erro de matrícula duplicada
+      if (error.code === '23505' && error.constraint?.includes('matricula')) {
+        const match = error.detail?.match(/Key \(matricula\)=\(([^)]+)\)/);
+        const matricula = match ? match[1] : 'desconhecida';
+        return NextResponse.json(
+          { error: `Matrícula ${matricula} já existe no sistema` },
+          { status: 409 }
+        );
+      }
+
+      // Erro de email duplicado
+      if (error.code === '23505' && error.constraint?.includes('email')) {
+        const match = error.detail?.match(/Key \(email\)=\(([^)]+)\)/);
+        const email = match ? match[1] : 'desconhecido';
+        return NextResponse.json(
+          { error: `Email ${email} já existe no sistema` },
+          { status: 409 }
+        );
+      }
+
+      // Outros erros
       return NextResponse.json(
         { error: 'Erro ao inserir funcionários' },
         { status: 500 }

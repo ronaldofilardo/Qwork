@@ -152,13 +152,21 @@ export default function AvaliacaoGrupoPage() {
                 respostas: respostasArray,
               }),
             });
+
             if (!response.ok) throw new Error('Erro ao salvar respostas');
+
+            const data = await response.json();
+
+            // Se a avaliação foi concluída automaticamente (37 respostas)
+            if (data.completed) {
+              clearGrupoRetomadaFromStorage();
+              router.push('/dashboard');
+              return;
+            }
+
+            // Caso contrário, continua para próximo grupo
             if (grupoId < totalGrupos) {
               router.push(`/avaliacao/grupo/${grupoId + 1}`);
-            } else {
-              await fetch('/api/avaliacao/finalizar', { method: 'POST' });
-              clearGrupoRetomadaFromStorage();
-              router.push('/avaliacao/concluida');
             }
           } catch (err: unknown) {
             if (err instanceof Error) {
@@ -214,14 +222,18 @@ export default function AvaliacaoGrupoPage() {
         throw new Error('Erro ao salvar respostas');
       }
 
-      // Navegar para próximo grupo ou finalizar
+      const data = await response.json();
+
+      // Se a avaliação foi concluída automaticamente (37 respostas)
+      if (data.completed) {
+        clearGrupoRetomadaFromStorage();
+        router.push('/dashboard');
+        return;
+      }
+
+      // Navegar para próximo grupo
       if (grupoId < totalGrupos) {
         router.push(`/avaliacao/grupo/${grupoId + 1}`);
-      } else {
-        // Finalizar avaliação
-        await fetch('/api/avaliacao/finalizar', { method: 'POST' });
-        clearGrupoRetomadaFromStorage();
-        router.push('/avaliacao/concluida');
       }
     } catch (err: unknown) {
       if (err instanceof Error) {

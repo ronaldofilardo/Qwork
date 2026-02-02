@@ -2,6 +2,10 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// Força renderização dinâmica - não pré-renderizar durante build
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET() {
   // Só permite execução em ambiente de teste real
   if (process.env.NODE_ENV !== 'test' || !process.env.JEST_WORKER_ID) {

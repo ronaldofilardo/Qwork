@@ -163,13 +163,11 @@ export async function POST(
         '0.0.0.0',
     ]);
 
-    // NOTA: Não atualizamos o lote antes de emitir (gatilho DB bloqueia alterações em lotes concluídos não emitidos).
-    // Chamamos a emissão imediata primeiro e, em caso de sucesso, marcamos o lote como modo_emergencia.
+    // NOTA: Emissão automática foi removida
+    console.error(`[EMERGÊNCIA] Emissão automática foi desativada`);
 
-    // Emitir laudo IMEDIATAMENTE (como quando lote é concluído normalmente)
-    console.log(`[EMERGÊNCIA] Iniciando emissão imediata para lote ${loteId}`);
-    const { emitirLaudoImediato } = await import('@/lib/laudo-auto');
-    const sucesso = await emitirLaudoImediato(loteId);
+    // TODO: Implementar novo fluxo de emissão manual
+    const sucesso = false;
 
     if (!sucesso) {
       console.error(`[EMERGÊNCIA] Falha na emissão imediata do lote ${loteId}`);

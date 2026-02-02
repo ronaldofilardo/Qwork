@@ -7,9 +7,22 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
+import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
+  // 🔒 SEGURANÇA: Aplicar rate limiting (5 tentativas em 5 minutos)
+  const rateLimitResult = rateLimit(RATE_LIMIT_CONFIGS.auth)(request as any);
+  if (rateLimitResult) {
+    console.warn(
+      '[LOGIN] Rate limit excedido:',
+      request.headers.get('x-forwarded-for') ||
+        request.headers.get('x-real-ip') ||
+        'unknown'
+    );
+    return rateLimitResult;
+  }
+
   const contextoRequisicao = extrairContextoRequisicao(request);
 
   try {
@@ -32,8 +45,11 @@ export async function POST(request: Request) {
       `SELECT cs.cpf, cs.senha_hash, c.id as contratante_id, c.responsavel_nome as nome, 
               c.tipo, c.ativa, c.pagamento_confirmado
        FROM contratantes_senhas cs
-       JOIN contratantes c ON c.responsavel_cpf = cs.cpf
-       WHERE cs.cpf = $1`,
+       -- Usar contratante_id armazenado na tabela de senhas para evitar ambiguidades
+       JOIN contratantes c ON c.id = cs.contratante_id
+       WHERE cs.cpf = $1
+       ORDER BY c.ativa DESC
+       LIMIT 1`,
       [cpf]
     );
 
@@ -108,62 +124,64 @@ export async function POST(request: Request) {
 
       // Verificar senha (NÃO loggar a senha em texto claro por segurança)
       console.log('[LOGIN] Comparando senha recebida contra hash (gestor)');
-      let senhaValida = await bcrypt.compare(senha, gestor.senha_hash);
+
+      // 🔒 SEGURANÇA: Verificar se senha requer reset
+      if (gestor.senha_hash.startsWith('RESET_REQUIRED_')) {
+        return NextResponse.json(
+          {
+            error: 'Sua senha precisa ser redefinida por motivos de segurança.',
+            codigo: 'RESET_SENHA_OBRIGATORIO',
+            contratante_id: gestor.contratante_id,
+          },
+          { status: 403 }
+        );
+      }
+
+      // 🔒 SEGURANÇA: Rejeitar placeholders (não devem existir mais)
+      if (gestor.senha_hash.startsWith('PLACEHOLDER_')) {
+        console.error(
+          '[SEGURANÇA] Tentativa de login com senha placeholder detectada!'
+        );
+        await registrarAuditoria({
+          entidade_tipo: 'login',
+          entidade_id: gestor.contratante_id,
+          acao: 'login_falha',
+          usuario_cpf: cpf,
+          metadados: { alerta: 'CRÍTICO - Placeholder em produção' },
+          ...contextoRequisicao,
+        });
+
+        return NextResponse.json(
+          { error: 'Erro de segurança. Contate o administrador.' },
+          { status: 500 }
+        );
+      }
+
+      const senhaValida = await bcrypt.compare(senha, gestor.senha_hash);
       console.log(`[LOGIN] Senha válida para gestor (bcrypt): ${senhaValida}`);
 
-      // Fallbacks para contratantes_senhas (placeholder ou texto plano)
       if (!senhaValida) {
-        const senhaTrim = typeof senha === 'string' ? senha.trim() : senha;
-
-        // 1) Placeholder format used in some migration scripts: 'PLACEHOLDER_<senha>'
-        if (gestor.senha_hash === `PLACEHOLDER_${senhaTrim}`) {
-          const novoHash = await bcrypt.hash(senhaTrim, 10);
-          await query(
-            'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE cpf = $2',
-            [novoHash, cpf]
-          );
-          senhaValida = true;
-          console.log(
-            '[LOGIN] Senha do gestor migrada a partir de PLACEHOLDER para bcrypt'
-          );
-        }
-
-        // 2) Texto plano armazenado (inseguro) — migrar para bcrypt
-        if (!senhaValida && gestor.senha_hash === senhaTrim) {
-          const novoHash = await bcrypt.hash(senhaTrim, 10);
-          await query(
-            'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE cpf = $2',
-            [novoHash, cpf]
-          );
-          senhaValida = true;
-          console.log(
-            '[LOGIN] Senha do gestor migrada a partir de texto plano para bcrypt'
+        // Registrar falha de autenticação (não deve interromper o fluxo se a auditoria falhar)
+        try {
+          await registrarAuditoria({
+            entidade_tipo: 'login',
+            entidade_id: gestor.contratante_id,
+            acao: 'login_falha',
+            usuario_cpf: cpf,
+            metadados: { motivo: 'senha_invalida' },
+            ...contextoRequisicao,
+          });
+        } catch (err) {
+          console.warn(
+            '[LOGIN] Falha ao registrar auditoria (senha_invalida):',
+            err
           );
         }
 
-        if (!senhaValida) {
-          // Registrar falha de autenticação (não deve interromper o fluxo se a auditoria falhar)
-          try {
-            await registrarAuditoria({
-              entidade_tipo: 'login',
-              entidade_id: gestor.contratante_id,
-              acao: 'login_falha',
-              usuario_cpf: cpf,
-              metadados: { motivo: 'senha_invalida' },
-              ...contextoRequisicao,
-            });
-          } catch (err) {
-            console.warn(
-              '[LOGIN] Falha ao registrar auditoria (senha_invalida):',
-              err
-            );
-          }
-
-          return NextResponse.json(
-            { error: 'CPF ou senha inválidos' },
-            { status: 401 }
-          );
-        }
+        return NextResponse.json(
+          { error: 'CPF ou senha inválidos' },
+          { status: 401 }
+        );
       }
 
       // Criar sessão para gestor: mapear clínica para perfil 'rh'

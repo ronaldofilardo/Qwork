@@ -1,7 +1,6 @@
 import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
-import { queryWithContext } from '@/lib/db-security';
+import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { validarLotesParaLaudo } from '@/lib/validacao-lote-laudo';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +54,7 @@ export const GET = async (req: Request) => {
     }
 
     // Verificar se o usuário tem acesso à empresa
-    const empresaCheck = await queryWithContext<{
+    const empresaCheck = await query<{
       id: number;
       clinica_id: number;
     }>(
@@ -96,8 +95,11 @@ export const GET = async (req: Request) => {
       );
     }
 
-    // Buscar lotes da empresa
-    const lotesQuery = await queryWithContext(
+    // Buscar lotes da empresa através da relação clinica_id
+    // empresaCheck.rows[0].clinica_id contém o clinica_id da empresa
+    const clinicaId = empresaCheck.rows[0].clinica_id;
+
+    const lotesQuery = await query(
       `
       SELECT
         la.id,
@@ -111,16 +113,21 @@ export const GET = async (req: Request) => {
         f.nome as liberado_por_nome,
         COUNT(a.id) as total_avaliacoes,
         COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
-        COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
+        COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
+        fe.solicitado_por,
+        fe.solicitado_em,
+        fe.tipo_solicitante
       FROM lotes_avaliacao la
       LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      WHERE la.empresa_id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.codigo, la.titulo, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome
+      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      WHERE la.clinica_id = $1 
+        AND la.empresa_id = $2
+      GROUP BY la.id, la.codigo, la.titulo, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY la.liberado_em DESC
-      LIMIT $2
+      LIMIT $3
     `,
-      [empresaId, limit]
+      [clinicaId, empresaId, limit]
     );
 
     const lotes = lotesQuery.rows.map((lote: any) => ({
@@ -135,22 +142,43 @@ export const GET = async (req: Request) => {
       total_avaliacoes: parseInt(lote.total_avaliacoes),
       avaliacoes_concluidas: parseInt(lote.avaliacoes_concluidas),
       avaliacoes_inativadas: parseInt(lote.avaliacoes_inativadas),
+      solicitado_por: lote.solicitado_por,
+      solicitado_em: lote.solicitado_em,
+      tipo_solicitante: lote.tipo_solicitante,
     }));
 
-    // Validar quais lotes podem emitir laudo (critérios completos do backend)
-    const loteIds = lotes.map((l: any) => l.id);
-    const validacoes = await validarLotesParaLaudo(loteIds);
+    // Validar quais lotes podem emitir laudo usando a função SQL
+    const lotesComValidacao = [];
+    for (const lote of lotes) {
+      try {
+        const validacao = await query(
+          `SELECT * FROM validar_lote_pre_laudo($1)`,
+          [lote.id]
+        );
 
-    // Adicionar informações de validação aos lotes
-    const lotesComValidacao = lotes.map((lote: any) => {
-      const validacao = validacoes.get(lote.id);
-      return {
-        ...lote,
-        pode_emitir_laudo: validacao?.pode_emitir_laudo || false,
-        motivos_bloqueio: validacao?.motivos_bloqueio || [],
-        taxa_conclusao: validacao?.detalhes.taxa_conclusao || 0,
-      };
-    });
+        const resultado = validacao.rows[0] || {
+          valido: false,
+          alertas: ['Erro ao validar lote'],
+          funcionarios_pendentes: 0,
+          detalhes: {},
+        };
+
+        lotesComValidacao.push({
+          ...lote,
+          pode_emitir_laudo: resultado.valido || false,
+          motivos_bloqueio: resultado.alertas || [],
+          taxa_conclusao: resultado.detalhes?.taxa_conclusao || 0,
+        });
+      } catch (validationError) {
+        console.error(`Erro ao validar lote ${lote.id}:`, validationError);
+        lotesComValidacao.push({
+          ...lote,
+          pode_emitir_laudo: false,
+          motivos_bloqueio: ['Erro ao validar lote'],
+          taxa_conclusao: 0,
+        });
+      }
+    }
 
     return NextResponse.json({
       success: true,

@@ -62,6 +62,14 @@ export default function Dashboard() {
           : null,
       }));
 
+      console.log('[Dashboard] Avaliações carregadas:', {
+        total: todas.length,
+        concluidas: todas.filter((a) => a.status === 'concluida').length,
+        disponiveis: todas.filter(
+          (a) => a.status === 'iniciada' || a.status === 'em_andamento'
+        ).length,
+      });
+
       setAvaliacoes(todas);
       setLoading(false);
     }
@@ -71,7 +79,7 @@ export default function Dashboard() {
   if (loading) return <div className="p-10 text-center">Carregando...</div>;
 
   const avaliacoesDisponiveis = avaliacoes.filter(
-    (a) => a.status !== 'concluida'
+    (a) => a.status === 'iniciada' || a.status === 'em_andamento'
   );
 
   return (
@@ -117,7 +125,7 @@ export default function Dashboard() {
                     href={`/avaliacao?id=${a.id}`}
                     className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold"
                   >
-                    {a.status === 'em_andamento' ? 'Continuar' : 'Iniciar'}{' '}
+                    {a.status === 'iniciada' ? 'Iniciar' : 'Continuar'}{' '}
                     Avaliação
                   </Link>
                 </div>
@@ -139,16 +147,18 @@ export default function Dashboard() {
                   className="bg-white rounded-xl shadow p-6 flex justify-between items-center"
                 >
                   <div>
-                    <p className="font-bold">Avaliação #{a.id}</p>
+                    <p className="font-bold text-green-600">
+                      ✓ Avaliação #{a.id} Concluída
+                    </p>
                     <p className="text-sm text-gray-600">
-                      Concluída em {a.fim || 'data não registrada'}
+                      Finalizada em {a.fim || 'processando...'}
                     </p>
                   </div>
                   <Link
                     href={`/avaliacao/concluida?avaliacao_id=${a.id}`}
-                    className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold"
+                    className="inline-block bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
                   >
-                    Ver comprovante
+                    Ver Comprovante
                   </Link>
                 </div>
               ))}

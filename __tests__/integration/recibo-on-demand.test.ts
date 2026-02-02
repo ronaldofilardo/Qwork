@@ -8,7 +8,8 @@ import { getSession } from '@/lib/session';
 
 const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
 mockGetSession.mockImplementation(() => {
-  console.log('MOCK getSession called');
+  // MOCK getSession called
+
   return {
     perfil: 'gestor_entidade',
     contratante_id: 1,
@@ -178,7 +179,6 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
     );
     const gerarBody = await gerarRes.json();
     // always log body for debugging to capture error details
-    console.log(
       'DBG gerarRecibo (contrato) status',
       gerarRes.status,
       'body:',
@@ -491,7 +491,6 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
     const gerarRes: any = await gerarReciboPOST(gerarRequest as any);
     const gerarBody = await gerarRes.json();
 
-    console.log(
       'DBG POLÍTICA - contrato não aceito:',
       gerarRes.status,
       gerarBody
@@ -562,7 +561,6 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
     const gerarRes: any = await gerarParcelaRh(gerarRequest as any);
     const gerarBody = await gerarRes.json();
 
-    console.log(
       'DBG POLÍTICA - pagamento pendente:',
       gerarRes.status,
       gerarBody

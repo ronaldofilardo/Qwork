@@ -12,7 +12,6 @@ import {
 import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
 import crypto from 'crypto';
 import { criarNotificacao } from '@/lib/notifications/create-notification';
-import { enqueueEmissao } from '@/lib/emissao-queue';
 import { uploadLaudoToBackblaze } from '@/lib/storage/laudo-storage';
 
 // Helper defensivo para registrar notificações administrativas sem lançar
@@ -51,7 +50,7 @@ export async function validarEmissorUnico(): Promise<{
   nome: string;
 } | null> {
   const emissor = await query(`
-    SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true AND cpf <> '00000000000' AND perfil <> 'admin'
+    SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true
   `);
 
   console.log(`[DEBUG] Emissores ativos encontrados: ${emissor.rows.length}`);
@@ -89,7 +88,7 @@ export async function validarEmissorUnico(): Promise<{
 export async function selecionarEmissorParaLote(_loteId: number) {
   try {
     const fallback = await query(
-      `SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true AND cpf <> '00000000000' AND perfil <> 'admin' ORDER BY criado_em ASC LIMIT 1`
+      `SELECT cpf, nome FROM funcionarios WHERE perfil = 'emissor' AND ativo = true ORDER BY criado_em ASC LIMIT 1`
     );
     if (fallback.rows.length === 1) return fallback.rows[0];
     return null;
@@ -123,19 +122,19 @@ export const gerarLaudoCompletoEmitirPDF = async function (
 ): Promise<number> {
   console.log(`[DEBUG] Gerando laudo completo para lote ${loteId}`);
 
-  // Sanitizar emissor: garantir que não seja o placeholder legacy '00000000000'
-  if (!emissorCPF || emissorCPF === '00000000000') {
+  // Validar que emissor foi fornecido
+  if (!emissorCPF) {
     console.warn(
-      `[WARN] Emissor inválido recebido (${emissorCPF}); tentando selecionar emissor válido automaticamente`
+      `[WARN] Emissor não fornecido; tentando selecionar emissor válido automaticamente`
     );
     const selecionado = await selecionarEmissorParaLote(loteId);
-    if (selecionado && selecionado.cpf && selecionado.cpf !== '00000000000') {
-      console.log(`[INFO] Emissor alternativo selecionado: ${selecionado.cpf}`);
+    if (selecionado?.cpf) {
+      console.log(`[INFO] Emissor selecionado: ${selecionado.cpf}`);
       emissorCPF = selecionado.cpf;
     } else {
       await safeNotificacaoAdmin(
         'sem_emissor_valido',
-        `Tentativa de gerar laudo para lote ${loteId} falhou: emissor inválido ou ausente (${emissorCPF})`
+        `Tentativa de gerar laudo para lote ${loteId} falhou: emissor ausente`
       ).catch(() => {});
       throw new Error(
         'Emissor inválido: não é possível gerar laudo sem emissor válido'
@@ -345,37 +344,118 @@ export const gerarLaudoCompletoEmitirPDF = async function (
         await client.connect();
         try {
           await client.query('BEGIN');
+          // Configurar contexto RLS para o cliente isolado (SET LOCAL não aceita parâmetros)
+          await client.query(
+            `SET LOCAL app.current_user_cpf = '${emissorCPF}'`
+          );
+          await client.query(`SET LOCAL app.current_user_perfil = 'emissor'`);
+          await client.query(`SET LOCAL app.system_bypass = 'true'`);
+
+          // Flag para indicar que fizemos ROLLBACK manualmente (evitar COMMIT)
+          let rolledBack = false;
+
           try {
             if (shouldSkipHash) {
               laudoInsert = await client.query(
-                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
-                 VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
+                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, criado_em, atualizado_em)
+                 VALUES ($1, $1, $2, 'emitido', 'Laudo gerado pelo emissor', NOW(), NOW(), NOW()) RETURNING id`,
                 [loteId, emissorCPF]
               );
             } else {
               laudoInsert = await client.query(
-                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, hash_pdf, criado_em, atualizado_em)
-                 VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), $3, NOW(), NOW()) RETURNING id`,
+                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, hash_pdf, criado_em, atualizado_em)
+                 VALUES ($1, $1, $2, 'emitido', 'Laudo gerado pelo emissor', NOW(), $3, NOW(), NOW()) RETURNING id`,
                 [loteId, emissorCPF, hash]
               );
             }
           } catch (insertErr: any) {
-            if (insertErr && insertErr.code === '42703') {
+            // Tratar duplicates / condições de corrida onde outro processo inseriu o laudo simultaneamente
+            const errMsg = String(insertErr?.message || '');
+
+            if (
+              (insertErr && insertErr.code === '42703') ||
+              errMsg.includes('column "hash_pdf" does not exist')
+            ) {
               // Coluna hash_pdf ausente ou incompatibilidade — inserir sem hash
               console.warn(
                 `[WARN] Coluna hash_pdf ausente no DB; inserindo laudo sem hash (lote ${loteId})`
               );
               laudoInsert = await client.query(
-                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, enviado_em, criado_em, atualizado_em)
-                 VALUES ($1, $1, $2, 'enviado', 'Laudo gerado automaticamente pelo sistema', NOW(), NOW(), NOW(), NOW()) RETURNING id`,
+                `INSERT INTO laudos (id, lote_id, emissor_cpf, status, observacoes, emitido_em, criado_em, atualizado_em)
+                 VALUES ($1, $1, $2, 'emitido', 'Laudo gerado pelo emissor', NOW(), NOW(), NOW()) RETURNING id`,
                 [loteId, emissorCPF]
               );
+            } else if (
+              errMsg.includes('Laudo with id') ||
+              (insertErr &&
+                (insertErr.code === '23505' || insertErr.code === 'P0001'))
+            ) {
+              // Outro processo já criou o laudo simultaneamente — recuperar o id existente
+              console.warn(
+                `[WARN] Inserção do laudo falhou por duplicidade; buscando laudo existente para lote ${loteId}`
+              );
+
+              // Reverter a transação atual antes de executar selects (evitar estado 'aborted')
+              try {
+                await client.query('ROLLBACK');
+                rolledBack = true;
+              } catch (rbErr) {
+                console.error(
+                  '[ERROR] Falha ao executar ROLLBACK após duplicidade:',
+                  rbErr
+                );
+                throw insertErr; // não podemos continuar sem rollback
+              }
+
+              const existing = await client.query(
+                `SELECT id FROM laudos WHERE id = $1 OR lote_id = $1 LIMIT 1`,
+                [loteId]
+              );
+              if (existing.rows.length > 0) {
+                laudoInsert = existing;
+                console.log(
+                  ` [INFO] Encontrado laudo existente com id ${existing.rows[0].id} para lote ${loteId}`
+                );
+              } else {
+                // Se não encontrado, não sabemos o que aconteceu — propagar
+                throw insertErr;
+              }
+
+              // Se encontramos um laudo existente, podemos tentar garantir que
+              // o arquivo temporário seja movido para o local definitivo, se possível.
+              // Isso melhora UX quando um processo concorrente criou o registro mas nós
+              // ainda temos o PDF gerado localmente.
+              try {
+                const existingId = existing.rows[0].id;
+                const finalName = `laudo-${existingId}.pdf`;
+                const _finalPath = pathMod.join(laudosDir, finalName);
+
+                // IMPORTANT: To preserve laudo immutability, do NOT write or overwrite
+                // the existing final file or DB. We generated a temp file, but if the
+                // laudo already exists, we should remove our temp and return existing id.
+                await fs.unlink(tempPath).catch(() => {});
+                await fs
+                  .unlink(pathMod.join(laudosDir, `${tempName}.json`))
+                  .catch(() => {});
+
+                console.log(
+                  `[INFO] Laudo já existente (id ${existingId}); temp removido e mantendo imutabilidade`
+                );
+              } catch (cleanupErr) {
+                console.warn(
+                  `[WARN] Falha ao remover arquivos temporários após detectar laudo existente: ${cleanupErr instanceof Error ? cleanupErr.message : String(cleanupErr)}`
+                );
+              }
+
+              laudoInsert = existing;
             } else {
               throw insertErr;
             }
           }
 
-          await client.query('COMMIT');
+          if (!rolledBack) {
+            await client.query('COMMIT');
+          }
         } catch (txErr) {
           try {
             await client.query('ROLLBACK');
@@ -399,7 +479,24 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       // Renomear arquivo temporário para o nome definitivo baseado no id
       const finalName = `laudo-${laudoId}.pdf`;
       const finalPath = pathMod.join(laudosDir, finalName);
-      await fs.rename(tempPath, finalPath);
+      try {
+        await fs.rename(tempPath, finalPath);
+      } catch (renameMainErr: any) {
+        console.warn(
+          `[WARN] Falha ao renomear temp → final (${renameMainErr?.code}). Tentando fallback por cópia...`
+        );
+        try {
+          await fs.copyFile(tempPath, finalPath);
+          await fs.unlink(tempPath).catch(() => {});
+          console.log(`[INFO] Arquivo copiado para ${finalPath} como fallback`);
+        } catch (copyErr) {
+          console.error(
+            `[ERROR] Não foi possível mover nem copiar o PDF temporário para destino: ${copyErr instanceof Error ? copyErr.message : String(copyErr)}`
+          );
+          // Não propagar: o laudo foi criado no DB e iremos confiar no registro existente
+        }
+      }
+
       await fs
         .rename(
           pathMod.join(laudosDir, `${tempName}.json`),
@@ -407,7 +504,9 @@ export const gerarLaudoCompletoEmitirPDF = async function (
         )
         .catch(() => {});
 
-      console.log(`[DEBUG] Laudo criado com ID: ${laudoId} (status enviado)`);
+      console.log(
+        `[DEBUG] Laudo criado com ID: ${laudoId} (status emitido - aguardando envio manual)`
+      );
 
       // Upload assíncrono para Backblaze (não bloqueia o fluxo)
       uploadLaudoToBackblaze(laudoId, loteId, pdfBuffer)
@@ -477,10 +576,20 @@ export const gerarLaudoCompletoEmitirPDF = async function (
               `[DEBUG] Laudo ${laudoId} já foi emitido anteriormente; pulando atualização de hash no DB por imutabilidade.`
             );
           } else {
+            // Criar session para o emissor
+            const emissorSession = {
+              cpf: emissorCPF,
+              nome: 'Emissor',
+              perfil: 'emissor' as const,
+              clinica_id: null,
+              contratante_id: null,
+            };
+
             // Persistir no banco de dados (trigger/constraint-friendly)
             await query(
               `UPDATE laudos SET hash_pdf = $2, atualizado_em = NOW() WHERE id = $1 AND (hash_pdf IS NULL OR hash_pdf = '')`,
-              [laudoId, recalculatedHash]
+              [laudoId, recalculatedHash],
+              emissorSession
             );
 
             console.log(
@@ -506,7 +615,7 @@ export const gerarLaudoCompletoEmitirPDF = async function (
           try {
             const safeId = Number(laudoId);
             await query(
-              `DO $do$\nBEGIN\n  UPDATE laudos\n  SET emitido_em = COALESCE(emitido_em, NOW()), enviado_em = COALESCE(enviado_em, NOW()), status = 'enviado', atualizado_em = NOW()\n  WHERE id = ${safeId};\nEXCEPTION WHEN OTHERS THEN\n  RAISE NOTICE 'Ignored failure updating laudo ${safeId}: %', SQLERRM;\nEND $do$;`
+              `DO $do$\nBEGIN\n  UPDATE laudos\n  SET emitido_em = COALESCE(emitido_em, NOW()), status = COALESCE(NULLIF(status, 'rascunho'), 'emitido'), atualizado_em = NOW()\n  WHERE id = ${safeId};\nEXCEPTION WHEN OTHERS THEN\n  RAISE NOTICE 'Ignored failure updating laudo ${safeId}: %', SQLERRM;\nEND $do$;`
             );
           } catch (innerErr) {
             console.warn(
@@ -514,16 +623,16 @@ export const gerarLaudoCompletoEmitirPDF = async function (
             );
           }
           console.log(
-            `[DEBUG] Laudo ${laudoId} marcado como 'enviado' em DB (fallback para PDF existente) - operação isolada`
+            `[DEBUG] Laudo ${laudoId} marcado como 'emitido' em DB (fallback para PDF existente) - operação isolada`
           );
         } else {
           console.log(
-            `[DEBUG] Laudo ${laudoId} já emitido; pulando marcação de 'enviado' no DB (fallback).`
+            `[DEBUG] Laudo ${laudoId} já emitido; pulando atualização no DB (fallback).`
           );
         }
       } catch (innerErr) {
         console.warn(
-          `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'enviado' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
+          `[WARN] Falha inesperada ao tentar marcar laudo ${laudoId} como 'emitido' (ignorando): ${innerErr instanceof Error ? innerErr.message : String(innerErr)}`
         );
       }
 
@@ -606,56 +715,48 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       );
       const html = gerarHTMLLaudoCompleto(laudoPadronizado);
 
-      // Em ambiente de teste, evitar Puppeteer por estabilidade e performance
-      let pdfBuffer: Buffer;
-      if (process.env.NODE_ENV === 'test') {
-        console.log('[DEBUG] Em modo test: gerando PDF fictício sem Puppeteer');
-        pdfBuffer = Buffer.from(
-          `TEST_PDF_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-        );
-      } else {
-        // Gerar PDF usando Puppeteer com timeout e cleanup
-        console.log(`[DEBUG] Iniciando Puppeteer para gerar PDF...`);
+      // SEMPRE usar Puppeteer para geração de PDF
+      // Removida lógica de teste com PDF fictício - geração deve ser consistente
+      console.log(`[DEBUG] Iniciando Puppeteer para gerar PDF...`);
 
-        const os = await import('os');
-        const pathMod = await import('path');
-        const userDataDir = pathMod.join(
-          os.tmpdir(),
-          `puppeteer_profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-        );
-        const puppeteer = await getPuppeteerInstance();
-        browser = await puppeteer.launch({
-          headless: true,
-          args: [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--disable-web-security',
-            '--disable-features=IsolateOrigins,site-per-process',
-          ],
-          timeout: 30000,
-          userDataDir,
-        });
+      const os = await import('os');
+      const pathMod = await import('path');
+      const userDataDir = pathMod.join(
+        os.tmpdir(),
+        `puppeteer_profile_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+      );
+      const puppeteer = await getPuppeteerInstance();
+      browser = await puppeteer.launch({
+        headless: true,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process',
+        ],
+        timeout: 30000,
+        userDataDir,
+      });
 
-        const page = await browser.newPage();
-        await page.setContent(html, {
-          waitUntil: 'networkidle0',
-          timeout: 30000,
-        });
-        const pdfUint8Array = await page.pdf({
-          format: 'A4',
-          printBackground: true,
-        });
-        pdfBuffer = Buffer.from(pdfUint8Array);
+      const page = await browser.newPage();
+      await page.setContent(html, {
+        waitUntil: 'networkidle0',
+        timeout: 30000,
+      });
+      const pdfUint8Array = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+      });
+      const pdfBuffer = Buffer.from(pdfUint8Array);
 
-        await browser.close();
-        browser = null;
+      await browser.close();
+      browser = null;
 
-        console.log(
-          `[DEBUG] PDF gerado com sucesso, tamanho: ${pdfBuffer.length} bytes`
-        );
-      }
+      console.log(
+        `[DEBUG] PDF gerado com sucesso, tamanho: ${pdfBuffer.length} bytes`
+      );
 
       // Calcular hash SHA-256 (opcional - SKIP_LAUDO_HASH)
       const shouldSkipHash =
@@ -713,24 +814,35 @@ export const gerarLaudoCompletoEmitirPDF = async function (
           `[INFO] Laudo ${laudoId} já foi emitido anteriormente; PDF regerado mas registro no DB não será atualizado (imutabilidade)`
         );
       } else {
+        // Criar objeto session para o emissor
+        const emissorSession = {
+          cpf: emissorCPF,
+          nome: 'Emissor',
+          perfil: 'emissor' as const,
+          clinica_id: null,
+          contratante_id: null,
+        };
+
         try {
           if (shouldSkipHash) {
             await query(
               `
       UPDATE laudos
-      SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW()
+      SET emitido_em = NOW(), status = 'emitido', emissor_cpf = $2, atualizado_em = NOW()
       WHERE id = $1
     `,
-              [laudoId]
+              [laudoId, emissorCPF],
+              emissorSession
             );
           } else {
             await query(
               `
       UPDATE laudos
-      SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', hash_pdf = $2, atualizado_em = NOW()
+      SET emitido_em = NOW(), status = 'emitido', hash_pdf = $2, emissor_cpf = $3, atualizado_em = NOW()
       WHERE id = $1
     `,
-              [laudoId, hash]
+              [laudoId, hash, emissorCPF],
+              emissorSession
             );
           }
         } catch (updateErr: any) {
@@ -747,8 +859,9 @@ export const gerarLaudoCompletoEmitirPDF = async function (
             );
             try {
               await query(
-                `UPDATE laudos SET emitido_em = NOW(), enviado_em = NOW(), status = 'enviado', atualizado_em = NOW() WHERE id = $1`,
-                [laudoId]
+                `UPDATE laudos SET emitido_em = NOW(), status = 'emitido', emissor_cpf = $2, atualizado_em = NOW() WHERE id = $1`,
+                [laudoId, emissorCPF],
+                emissorSession
               );
             } catch (fallbackErr: any) {
               // Se também pegar imutabilidade aqui, logar e continuar
@@ -811,325 +924,16 @@ export const gerarLaudoCompletoEmitirPDF = async function (
   }
 };
 
-// ==========================================
-// EMISSÃO IMEDIATA (ao concluir lote)
-// ==========================================
-export async function emitirLaudoImediato(loteId: number): Promise<boolean> {
-  console.log(`[EMISSÃO IMEDIATA] Processando lote ${loteId} - entrada`);
+// Função emitirLaudoImediato REMOVIDA - Emissão automática foi descontinuada.
+// Use o fluxo manual: RH/Entidade solicita → Emissor revisa → Emissor emite.
 
-  try {
-    console.log(
-      `[EMISSÃO IMEDIATA] Iniciando fluxo síncrono para lote ${loteId}`
-    );
-
-    // BYPASS RLS: Esta é uma operação de sistema dentro de uma transação
-    // Usar BEGIN para garantir que SET LOCAL tenha efeito
-    await query('BEGIN');
-    await query('SET LOCAL row_security = off');
-
-    // Validar emissor — preferimos emissor único; se não houver, tentar seleção contextual por lote
-    let emissor = await validarEmissorUnico();
-    if (!emissor) {
-      emissor = await selecionarEmissorParaLote(loteId);
-      if (emissor) {
-        console.log(
-          '[EMISSÃO IMEDIATA] Emissor selecionado por contexto de lote:',
-          emissor.cpf
-        );
-      }
-    }
-
-    if (!emissor) {
-      await query('ROLLBACK');
-      console.error(
-        '[EMISSÃO IMEDIATA] Nenhum emissor ativo disponível para emissão imediata'
-      );
-      console.log('[EMISSÃO IMEDIATA] retornando false: nenhum emissor');
-      return false;
-    }
-
-    // Verificar se lote já foi emitido (usar lock para evitar races)
-    const lote = await query(
-      `SELECT id, codigo, clinica_id, empresa_id, contratante_id, emitido_em, processamento_em
-       FROM lotes_avaliacao WHERE id = $1 FOR UPDATE`,
-      [loteId]
-    );
-
-    if (lote.rows.length === 0) {
-      console.error(`[EMISSÃO IMEDIATA] Lote ${loteId} não encontrado`);
-      console.log('[EMISSÃO IMEDIATA] retornando false: lote não encontrado');
-      return false;
-    }
-
-    const loteRow = lote.rows[0];
-
-    // Verificar se já está sendo processado
-    if (loteRow.processamento_em) {
-      console.warn(
-        `[EMISSÃO IMEDIATA] Lote ${loteId} já está em processamento desde ${loteRow.processamento_em}`
-      );
-      return true; // Idempotência: já está sendo processado
-    }
-
-    // Marcar como em processamento
-    await query(
-      `UPDATE lotes_avaliacao SET processamento_em = NOW() WHERE id = $1`,
-      [loteId]
-    );
-
-    // Fallback: garantir código do lote (persistir fallback no banco para observability)
-    if (!loteRow.codigo) {
-      const fallbackCodigo = `LOTE-${loteId}-TMP`;
-      console.warn(
-        `[EMISSÃO IMEDIATA] Lote ${loteId} sem codigo; gerando fallback ${fallbackCodigo} e persistindo`
-      );
-      try {
-        await query('UPDATE lotes_avaliacao SET codigo = $1 WHERE id = $2', [
-          fallbackCodigo,
-          loteId,
-        ]);
-        await safeNotificacaoAdmin(
-          'fallback_codigo',
-          `Codigo temporario ${fallbackCodigo} criado para lote ${loteId}`,
-          loteId
-        );
-        loteRow.codigo = fallbackCodigo;
-      } catch (uErr) {
-        console.error(
-          '[EMISSÃO IMEDIATA] Falha ao persistir fallback codigo:',
-          uErr
-        );
-      }
-    }
-
-    if (loteRow.emitido_em) {
-      console.log(
-        `[EMISSÃO IMEDIATA] Lote ${loteId} já foi emitido anteriormente`
-      );
-      return true; // Idempotência: já foi emitido
-    }
-
-    // Marcar lote como emitido ANTES de gerar o laudo (para evitar trigger de imutabilidade)
-    await query(
-      `UPDATE lotes_avaliacao SET emitido_em = NOW(), processamento_em = NULL, status = 'finalizado' WHERE id = $1`,
-      [loteId]
-    );
-
-    // Emitir laudo (gerar PDF + hash)
-    let laudoId: number;
-    try {
-      laudoId = await gerarLaudoCompletoEmitirPDF(loteId, emissor.cpf);
-      console.log(
-        `[EMISSÃO IMEDIATA] gerarLaudoCompletoEmitirPDF retornou laudoId=${laudoId} para lote ${loteId}`
-      );
-    } catch (genErr) {
-      console.error(
-        `[EMISSÃO IMEDIATA] Falha ao gerar laudo para lote ${loteId}:`,
-        genErr
-      );
-      try {
-        await safeNotificacaoAdmin(
-          'falha_geracao_laudo',
-          `Falha ao gerar laudo para lote ${loteId}: ${genErr instanceof Error ? genErr.message : String(genErr)}`,
-          loteId
-        );
-      } catch (notifErr) {
-        console.warn(
-          '[WARN] Falha ao registrar notificacao_admin de erro de geracao:',
-          notifErr
-        );
-      }
-      // Marcar lote como não processando e retornar false
-      await query(
-        'UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1',
-        [loteId]
-      );
-      return false;
-    }
-
-    // Registrar auditoria. Tornar falhas nessas etapas
-    // não-fatais para que a geração do PDF (o passo crítico) não seja reportada como
-    // falha por erros secundários (audit/logging). Ainda registramos notificações
-    // de observability quando houver erros.
-    try {
-      // Registrar auditoria
-      await query(
-        `INSERT INTO auditoria_laudos (lote_id, laudo_id, emissor_cpf, emissor_nome, acao, status, ip_address, criado_em)
-         VALUES ($1, $2, $3, $4, 'emissao_automatica', 'emitido', $5, NOW())`,
-        [loteId, laudoId, emissor.cpf, emissor.nome, '127.0.0.1']
-      );
-
-      console.log(
-        `[EMISSÃO IMEDIATA] ✓ Lote ${loteId} emitido com sucesso (Laudo ID: ${laudoId})`
-      );
-
-      await query('COMMIT');
-      return true;
-    } catch (postErr) {
-      console.warn(
-        `[EMISSÃO IMEDIATA] Erro ao persistir marcação/auditoria do lote ${loteId}:`,
-        postErr instanceof Error ? postErr.message : String(postErr)
-      );
-
-      // Rollback em caso de erro
-      await query('ROLLBACK');
-
-      // Limpar flag de processamento em caso de erro
-      try {
-        await query(
-          `UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1`,
-          [loteId]
-        );
-      } catch (cleanupErr) {
-        console.error(
-          `[EMISSÃO IMEDIATA] Falha ao limpar processamento_em para lote ${loteId}:`,
-          cleanupErr
-        );
-      }
-
-      // Registrar notificação para equipe operacional (não bloquear a emissão em si)
-      try {
-        await safeNotificacaoAdmin(
-          'erro_persistencia_pos_emissao',
-          `Laudo ${laudoId} gerado, mas falha ao persistir marcação/auditoria para lote ${loteId}: ${postErr instanceof Error ? postErr.message : String(postErr)}`,
-          loteId
-        );
-      } catch (notifErr) {
-        console.error(
-          `[EMISSÃO IMEDIATA] Falha ao registrar notificacao_admin após erro de persistência:`,
-          notifErr
-        );
-      }
-
-      // Consideramos a geração do laudo bem-sucedida — retornar true para permitir reprocessos
-      return true;
-    }
-  } catch (error) {
-    // Limpar flag de processamento em caso de erro fatal
-    try {
-      await query(
-        `UPDATE lotes_avaliacao SET processamento_em = NULL WHERE id = $1`,
-        [loteId]
-      );
-    } catch (cleanupErr) {
-      console.error(
-        `[EMISSÃO IMEDIATA] Falha ao limpar processamento_em após erro fatal para lote ${loteId}:`,
-        cleanupErr
-      );
-    }
-
-    // Rollback da transação em caso de erro
-    try {
-      await query('ROLLBACK');
-    } catch (rollbackErr) {
-      console.error('[EMISSÃO IMEDIATA] Erro ao fazer rollback:', rollbackErr);
-    }
-
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    const errorStack = error instanceof Error ? error.stack : undefined;
-    console.error(
-      `[EMISSÃO IMEDIATA] ✗ Erro ao emitir lote ${loteId}:`,
-      errorMessage
-    );
-    if (errorStack) {
-      console.error(`[EMISSÃO IMEDIATA] Stack trace:`, errorStack);
-    }
-
-    // Detectar erros de Chromium/Puppeteer para retry
-    const isChromiumError =
-      errorMessage.includes('chromium') ||
-      errorMessage.includes('puppeteer') ||
-      errorMessage.includes('does not exist') ||
-      errorMessage.includes('brotli');
-
-    if (isChromiumError) {
-      console.log(
-        `[EMISSÃO IMEDIATA] Erro relacionado ao Chromium detectado para lote ${loteId}, tentando novamente em 3s...`
-      );
-      await new Promise((resolve) => setTimeout(resolve, 3000));
-
-      // Retry uma única vez
-      try {
-        console.log(`[EMISSÃO IMEDIATA] RETRY: lote ${loteId}`);
-        await query('BEGIN');
-        await query('SET LOCAL row_security = off');
-        const emissor = await validarEmissorUnico();
-        if (emissor) {
-          // Marcar lote como emitido ANTES de gerar o laudo (retry)
-          await query(
-            `UPDATE lotes_avaliacao SET emitido_em = NOW() WHERE id = $1`,
-            [loteId]
-          );
-
-          const laudoId = await gerarLaudoCompletoEmitirPDF(
-            loteId,
-            emissor.cpf
-          );
-
-          await query(
-            `INSERT INTO auditoria_laudos (lote_id, laudo_id, emissor_cpf, emissor_nome, acao, status, ip_address, criado_em)
-             VALUES ($1, $2, $3, $4, 'emissao_automatica_retry', 'emitido', $5, NOW())`,
-            [loteId, laudoId, emissor.cpf, emissor.nome, '127.0.0.1']
-          );
-          await query('COMMIT');
-          console.log(
-            `[EMISSÃO IMEDIATA] ✓ Lote ${loteId} emitido com sucesso após RETRY (Laudo ID: ${laudoId})`
-          );
-          return true;
-        }
-        await query('ROLLBACK');
-      } catch (retryErr) {
-        await query('ROLLBACK').catch(() => {});
-        console.error(
-          `[EMISSÃO IMEDIATA] RETRY falhou para lote ${loteId}:`,
-          retryErr instanceof Error ? retryErr.message : String(retryErr)
-        );
-      }
-    }
-
-    console.log(
-      `[EMISSÃO IMEDIATA] retornando false: exceção capturada durante emissão - ${errorMessage}`
-    );
-
-    // Registrar erro detalhado
-    const errMsg = `Erro na emissão imediata do lote ${loteId}: ${errorMessage}`;
-    await safeNotificacaoAdmin(
-      isChromiumError ? 'falha_emissao_chromium' : 'erro_emissao_auto',
-      errMsg,
-      loteId
-    );
-
-    // Enfileirar para tentativa de reprocessamento assíncrono
-    try {
-      await enqueueEmissao(loteId, errMsg);
-    } catch (enqueueErr) {
-      console.error(
-        '[EMISSÃO IMEDIATA] Falha ao adicionar à fila de reprocessamento:',
-        enqueueErr
-      );
-    }
-
-    return false;
-  }
-}
-
-// ==========================================
-// CRON LEGADO REMOVIDO - EMISSÃO AGORA É SEMPRE IMEDIATA
-// ==========================================
-// A função emitirLaudosAutomaticamente foi REMOVIDA.
-// Emissão de laudos ocorre IMEDIATAMENTE quando o lote fica 'concluido'
-// via chamadas em:
-// - lib/lotes.ts: recalcularStatusLote() e recalcularStatusLotePorId()
-// - app/api/admin/reenviar-lote/route.ts
-// - lib/auto-concluir-lotes.ts
-//
-// Se precisar reprocessar lotes pendentes manualmente, use:
-// - app/api/emissor/reprocessar-emissao/[loteId]/route.ts
+// Função emitirLaudosAutomaticamente REMOVIDA - Emissão automática foi descontinuada.
+// Use o fluxo manual: RH/Entidade solicita → Emissor revisa → Emissor emite.
 
 // ==========================================
 // FASE 2: ENVIO AUTOMÁTICO (10 min após emissão)
 // ==========================================
-async function enviarLaudoAutomatico(laudo: any) {
+async function _enviarLaudoAutomatico(laudo: any) {
   try {
     console.log(
       `[FASE 2] Enviando laudo do lote ${laudo.codigo} (ID: ${laudo.lote_id})`
@@ -1307,93 +1111,23 @@ async function enviarLaudoAutomatico(laudo: any) {
   }
 }
 
-/**
- * Compat shim (DEPRECATED) para o cron legado de emissão (FASE 1).
- *
- * Histórico: a emissão agora é IMEDIATA quando lote fica 'concluido'.
- * Manter um wrapper compatível para não quebrar chamadas/tests que aguardam
- * a função legacy. O wrapper simplesmente delega para o fluxo imediato.
- */
-export async function emitirLaudosAutomaticamente() {
-  console.warn(
-    '[FASE 1 - CRON] emitirLaudosAutomaticamente() chamado — wrapper de compatibilidade (deprecated)'
-  );
-
-  // Buscar lotes concluídos ainda não emitidos (limite conservador)
-  const lotes = await query(`
-    SELECT id FROM lotes_avaliacao
-    WHERE status = 'concluido' AND emitido_em IS NULL
-    ORDER BY atualizado_em ASC
-    LIMIT 20
-  `);
-
-  if (!lotes.rows || lotes.rows.length === 0) {
-    console.log('[FASE 1 - CRON] Nenhum lote pendente para emissão');
-    return;
-  }
-
-  for (const l of lotes.rows) {
-    try {
-      // Delegar para o fluxo imediato (idempotente)
-      // NOTE: manter silêncio em erros pontuais, mas registrar para observability
-      const sucesso = await emitirLaudoImediato(l.id);
-      if (!sucesso) {
-        console.warn(
-          `[FASE 1 - CRON] Emissão imediata falhou para lote ${l.id}`
-        );
-      }
-    } catch (err) {
-      console.error('[FASE 1 - CRON] exceção ao processar lote', l.id, err);
-      await safeNotificacaoAdmin(
-        'falha_emissao_cron_compat',
-        `Erro ao processar lote ${l.id} via emitirLaudosAutomaticamente(): ${err instanceof Error ? err.message : String(err)}`,
-        l.id
-      );
-    }
-  }
-}
-
-export async function enviarLaudosAutomaticamente() {
-  console.log('[FASE 2 - CRON] Iniciando envio de laudos emitidos');
-
-  // Buscar laudos prontos para notificação de envio (já foram gerados com status 'enviado')
-  // Verifica se o timestamp auto_emitir_em venceu e se laudo_enviado_em ainda é NULL
-  // Observação: os PDFs são armazenados localmente em storage/laudos e no Backblaze
-  const laudos = await query(`
-    SELECT 
-      la.id as lote_id,
-      la.codigo,
-      la.clinica_id,
-      la.empresa_id,
-      la.contratante_id,
-      la.emitido_em,
-      la.laudo_enviado_em,
-      la.auto_emitir_em,
-      l.id as laudo_id,
-      l.status,
-      l.hash_pdf
-    FROM lotes_avaliacao la
-    JOIN laudos l ON la.id = l.id
-    WHERE la.emitido_em IS NOT NULL
-      AND la.laudo_enviado_em IS NULL
-      AND la.auto_emitir_em IS NOT NULL
-      AND la.auto_emitir_em <= NOW()
-      AND la.status IN ('concluido', 'finalizado')
-      AND l.status = 'enviado'
-    ORDER BY la.auto_emitir_em ASC
-    LIMIT 10
-  `);
-
-  console.log(
-    `[FASE 2 - CRON] Encontrados ${laudos.rows.length} laudos para envio`
-  );
-
-  if (laudos.rows.length === 0) {
-    console.log('[FASE 2 - CRON] Nenhum laudo pronto para envio');
-    return;
-  }
-
-  for (const laudo of laudos.rows) {
-    await enviarLaudoAutomatico(laudo);
-  }
-}
+// =====================================================
+// FUNÇÕES DE EMISSÃO/ENVIO AUTOMÁTICO - REMOVIDAS
+// =====================================================
+//
+// As funções abaixo eram parte do fluxo de emissão automática que foi
+// descontinuado. Emissão agora é 100% MANUAL pelo emissor.
+//
+// Funções removidas:
+// - emitirLaudosAutomaticamente()
+// - enviarLaudosAutomaticamente()
+// - processarFilaEmissao()
+// - emitirLaudoImediato()
+//
+// Fluxo atual:
+// 1. RH/Entidade solicita emissão (POST /api/lotes/[loteId]/solicitar-emissao)
+// 2. Emissor vê lote no dashboard
+// 3. Emissor clica manualmente (POST /api/emissor/laudos/[loteId])
+// 4. Sistema chama gerarLaudoCompletoEmitirPDF() diretamente
+//
+// =====================================================

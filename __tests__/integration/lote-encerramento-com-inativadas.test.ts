@@ -82,15 +82,15 @@ describe.skip('Integração: Encerramento de Lote com Avaliações Inativadas (I
         return Promise.resolve({ rows: [{ id: 1 }], rowCount: 1 });
       }
 
-      // Buscar respostas (70 completas)
+      // Buscar respostas (37 completas)
       if (queryCallIndex === 2) {
         return Promise.resolve({
-          rows: Array.from({ length: 70 }, (_, i) => ({
+          rows: Array.from({ length: 37 }, (_, i) => ({
             grupo: Math.floor(i / 10) + 1,
             item: `q${i + 1}`,
             valor: 2,
           })),
-          rowCount: 70,
+          rowCount: 37,
         });
       }
 
@@ -199,12 +199,12 @@ describe.skip('Integração: Encerramento de Lote com Avaliações Inativadas (I
 
       if (queryCallIndex === 2) {
         return Promise.resolve({
-          rows: Array.from({ length: 70 }, (_, i) => ({
+          rows: Array.from({ length: 37 }, (_, i) => ({
             grupo: Math.floor(i / 10) + 1,
             item: `q${i + 1}`,
             valor: 2,
           })),
-          rowCount: 70,
+          rowCount: 37,
         });
       }
 
@@ -296,12 +296,12 @@ describe.skip('Integração: Encerramento de Lote com Avaliações Inativadas (I
 
       if (queryCallIndex === 2) {
         return Promise.resolve({
-          rows: Array.from({ length: 70 }, (_, i) => ({
+          rows: Array.from({ length: 37 }, (_, i) => ({
             grupo: Math.floor(i / 10) + 1,
             item: `q${i + 1}`,
             valor: 2,
           })),
-          rowCount: 70,
+          rowCount: 37,
         });
       }
 

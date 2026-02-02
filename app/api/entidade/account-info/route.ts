@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { calcularParcelas, getResumoPagamento } from '@/lib/parcelas-helper';
 
 export const dynamic = 'force-dynamic';
@@ -37,7 +37,9 @@ export async function GET() {
       LIMIT 1
     `;
 
-    const entidadeResult = await query(entidadeQuery, [contratanteId]);
+    const entidadeResult = await queryAsGestorEntidade(entidadeQuery, [
+      contratanteId,
+    ]);
 
     if (entidadeResult.rows.length === 0) {
       return NextResponse.json(
@@ -49,7 +51,7 @@ export async function GET() {
     const entidade = entidadeResult.rows[0];
 
     // Buscar contrato ativo (detectar colunas de preço disponíveis no esquema `planos`)
-    const planColsRes = await query(
+    const planColsRes = await queryAsGestorEntidade(
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`
     );
     const availablePlanCols = planColsRes.rows.map((r: any) => r.column_name);
@@ -89,7 +91,9 @@ export async function GET() {
       LIMIT 1
     `;
 
-    const contratoResult = await query(contratoQuery, [contratanteId]);
+    const contratoResult = await queryAsGestorEntidade(contratoQuery, [
+      contratanteId,
+    ]);
     let contrato =
       contratoResult.rows.length > 0 ? contratoResult.rows[0] : null;
 
@@ -98,7 +102,7 @@ export async function GET() {
     if (!contrato) {
       try {
         // Fallback: buscar contratos_planos com seleção dinâmica de colunas de preço
-        const planColsRes2 = await query(
+        const planColsRes2 = await queryAsGestorEntidade(
           `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`
         );
         const availablePlanCols2 = planColsRes2.rows.map(
@@ -135,7 +139,9 @@ export async function GET() {
           LIMIT 1
         `;
 
-        const cpRes = await query(contratoPlanoQuery, [contratanteId]);
+        const cpRes = await queryAsGestorEntidade(contratoPlanoQuery, [
+          contratanteId,
+        ]);
         if (cpRes.rows.length > 0) {
           contrato = cpRes.rows[0];
         }
@@ -162,7 +168,7 @@ export async function GET() {
       LIMIT 5
     `;
 
-    const pagamentosResult = (await query(pagamentosQuery, [
+    const pagamentosResult = (await queryAsGestorEntidade(pagamentosQuery, [
       contratanteId,
     ])) || { rows: [] };
     const pagamentosRaw = pagamentosResult.rows || [];
@@ -171,7 +177,7 @@ export async function GET() {
     // (mantém compatibilidade com mocks de teste que retornam column_name)
     let recibosExists = false;
     try {
-      const recibosColsRes = await query(
+      const recibosColsRes = await queryAsGestorEntidade(
         `SELECT column_name FROM information_schema.columns WHERE table_name = 'recibos' AND column_name IN ('criado_em')`
       );
       recibosExists =
@@ -242,7 +248,7 @@ export async function GET() {
         let recibo = null;
         if (recibosExists) {
           try {
-            const reciboRes = await query(
+            const reciboRes = await queryAsGestorEntidade(
               `SELECT id, numero_recibo FROM recibos WHERE pagamento_id = $1 ORDER BY criado_em DESC LIMIT 1`,
               [pag.id]
             );
@@ -296,7 +302,7 @@ export async function GET() {
         vigencia_fim = fim.toISOString();
       } else if (contrato && contrato.criado_em) {
         // fallback: usar data de criação do contrato se não houver pagamento
-        vigencia_inicio = contrato.criado_em;
+        vigencia_inicio = String(contrato.criado_em);
         const d = new Date(vigencia_inicio);
         const fim = new Date(d);
         fim.setDate(fim.getDate() + 364);
@@ -329,7 +335,7 @@ export async function GET() {
 
     const contratoValorTotal =
       contrato && contrato.valor_total
-        ? parseFloat(contrato.valor_total)
+        ? parseFloat(String(contrato.valor_total))
         : null;
     const restanteCalc =
       contratoValorTotal != null
@@ -372,10 +378,10 @@ export async function GET() {
             plano_nome: contrato.plano_nome,
             plano_tipo: contrato.plano_tipo,
             plano_preco_unitario: plano_preco_unitario
-              ? parseFloat(plano_preco_unitario)
+              ? parseFloat(String(plano_preco_unitario))
               : null,
             valor_total: contrato.valor_total
-              ? parseFloat(contrato.valor_total)
+              ? parseFloat(String(contrato.valor_total))
               : null,
             numero_funcionarios: contrato.numero_funcionarios,
             status: contrato_status_display, // Status ajustado baseado em pagamentos

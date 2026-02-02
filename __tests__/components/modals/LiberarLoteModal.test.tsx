@@ -45,7 +45,9 @@ describe('LiberarLoteModal', () => {
     render(<LiberarLoteModal {...defaultProps} />);
 
     expect(screen.getByRole('dialog')).toBeInTheDocument();
-    expect(screen.getByText('Iniciar Ciclo de Coletas Avaliativas')).toBeInTheDocument();
+    expect(
+      screen.getByText('Iniciar Ciclo de Coletas Avaliativas')
+    ).toBeInTheDocument();
     expect(screen.getByText('Empresa Teste')).toBeInTheDocument();
   });
 
@@ -182,6 +184,9 @@ describe('LiberarLoteModal', () => {
       expect(screen.getAllByText(/001-010126/).length).toBeGreaterThanOrEqual(
         1
       );
+      // Após sucesso deve chamar onSuccess e fechar o modal
+      expect(mockOnSuccess).toHaveBeenCalledWith(1);
+      expect(mockOnClose).toHaveBeenCalled();
     });
   });
 
@@ -448,4 +453,3 @@ describe('LiberarLoteModal', () => {
     ).toBeInTheDocument();
   });
 });
-

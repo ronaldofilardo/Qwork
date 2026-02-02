@@ -1,5 +1,5 @@
 import { requireEntity } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -25,33 +25,18 @@ export const POST = async (req: Request) => {
 
     const contratanteId = session.contratante_id as number;
 
-    // Verificar se o gestor (cpf da sessão) existe na tabela `funcionarios`.
-    // Observação: Gestor de entidade NÃO é criado como funcionário no fluxo normal,
-    // então, se não existir, manteremos `liberado_por` como NULL para evitar violação de FK.
-    let gestorEstaFuncionario = false;
-    try {
-      const gestorCheck = await query(
-        `SELECT 1 FROM funcionarios WHERE cpf = $1`,
-        [session.cpf]
-      );
-      gestorEstaFuncionario = gestorCheck.rowCount > 0;
-    } catch (err) {
-      console.error(
-        'Erro ao verificar existência do gestor em funcionarios:',
-        err
-      );
-      // Em caso de erro, consideramos como não sendo funcionário para não tentar criar registros inválidos
-      gestorEstaFuncionario = false;
-    }
+    // ✅ PADRONIZAÇÃO: Gestor sempre registrado como liberado_por
+    // O CPF do gestor autenticado é usado mesmo que não seja funcionário formal
+    // Isso garante rastreabilidade e consistência com o fluxo RH
 
     // Buscar as empresas que têm funcionários vinculados a esta entidade
-    const empresasRes = await query(
+    const empresasRes = await queryAsGestorEntidade(
       `SELECT DISTINCT empresa_id FROM funcionarios WHERE contratante_id = $1 AND empresa_id IS NOT NULL AND ativo = true`,
       [contratanteId]
     );
 
     // Verificar se existem funcionários vinculados diretamente à entidade (empresa_id IS NULL)
-    const hasEntidadeFuncsRes = await query(
+    const hasEntidadeFuncsRes = await queryAsGestorEntidade(
       `SELECT 1 FROM funcionarios WHERE contratante_id = $1 AND empresa_id IS NULL AND ativo = true LIMIT 1`,
       [contratanteId]
     );
@@ -63,7 +48,7 @@ export const POST = async (req: Request) => {
 
       // Validar lote de referência quando fornecido (deve pertencer à mesma empresa)
       if (loteReferenciaId) {
-        const loteRefCheck = await query(
+        const loteRefCheck = await queryAsGestorEntidade(
           `SELECT id, empresa_id FROM lotes_avaliacao WHERE id = $1 AND empresa_id = $2`,
           [loteReferenciaId, empresaId]
         );
@@ -74,7 +59,7 @@ export const POST = async (req: Request) => {
       }
 
       // Verificar empresa e obter clinica
-      const empresaCheck = await query(
+      const empresaCheck = await queryAsGestorEntidade(
         `SELECT ec.id, ec.nome, ec.clinica_id FROM empresas_clientes ec WHERE ec.id = $1 AND ec.ativa = true`,
         [empresaId]
       );
@@ -84,22 +69,33 @@ export const POST = async (req: Request) => {
       }
 
       // Próximo número de ordem por empresa
-      const numeroOrdemResult = await query(
+      const numeroOrdemResult = await queryAsGestorEntidade(
         `SELECT obter_proximo_numero_ordem($1) as numero_ordem`,
         [empresaId]
       );
       const numeroOrdem = numeroOrdemResult.rows[0].numero_ordem;
 
       // Calcular elegibilidade usando função existente por empresa
-      const elegibilidadeResult = await query(
+      const elegibilidadeResult = await queryAsGestorEntidade(
         `SELECT * FROM calcular_elegibilidade_lote($1, $2)`,
         [empresaId, numeroOrdem]
       );
       let funcionariosElegiveis = elegibilidadeResult.rows;
 
+      console.log(
+        `[ENTIDADE-EMPRESA] Empresa ${String(empresaId)}: ${funcionariosElegiveis.length} funcionários elegíveis`
+      );
+      console.log(
+        `[DEBUG] Elegíveis:`,
+        funcionariosElegiveis.map((f: any) => ({
+          cpf: f.funcionario_cpf,
+          nome: f.funcionario_nome,
+        }))
+      );
+
       // Aplicar filtros adicionais (dataFiltro / tipo)
       if (dataFiltro && dataFiltro !== 'all') {
-        const dataFiltroResult = await query(
+        const dataFiltroResult = await queryAsGestorEntidade(
           `SELECT cpf FROM funcionarios WHERE cpf = ANY($1::char(11)[]) AND criado_em > $2`,
           [funcionariosElegiveis.map((f: any) => f.funcionario_cpf), dataFiltro]
         );
@@ -111,7 +107,7 @@ export const POST = async (req: Request) => {
 
       if (tipo && tipo !== 'completo') {
         const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-        const nivelFiltroResult = await query(
+        const nivelFiltroResult = await queryAsGestorEntidade(
           `SELECT cpf FROM funcionarios WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2`,
           [
             funcionariosElegiveis.map((f: any) => f.funcionario_cpf),
@@ -124,6 +120,11 @@ export const POST = async (req: Request) => {
         );
       }
 
+      console.log(
+        `[ENTIDADE-EMPRESA] Após filtros: ${funcionariosElegiveis.length} funcionários`
+      );
+      console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
+
       if (funcionariosElegiveis.length === 0) {
         resultados.push({
           empresaId,
@@ -135,27 +136,39 @@ export const POST = async (req: Request) => {
       }
 
       // Gerar código do lote
-      const codigoResult = await query(`SELECT gerar_codigo_lote() as codigo`);
+      const codigoResult = await queryAsGestorEntidade(
+        `SELECT gerar_codigo_lote() as codigo`
+      );
       const codigo = codigoResult.rows[0].codigo;
 
-      // Criar lote para esta empresa (sem agendamento automático de emissão)
-      const loteResult = await query(
-        `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING id, codigo, liberado_em, numero_ordem`,
+      // ✅ CORREÇÃO: Entity usa contratante_id (não clinica_id/empresa_id)
+      // XOR constraint exige: contratante_id OU clinica_id (não ambos)
+      // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
+      const loteResult = await queryAsGestorEntidade(
+        `INSERT INTO lotes_avaliacao (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7) RETURNING id, codigo, liberado_em, numero_ordem`,
         [
           codigo,
-          empresaCheck.rows[0].clinica_id,
-          empresaId,
-          titulo || `Lote ${numeroOrdem} - ${codigo}`,
+          contratanteId,
+          titulo || `Lote ${String(numeroOrdem)} - ${String(codigo)}`,
           descricao ||
-            `Lote ${numeroOrdem} liberado para ${empresaCheck.rows[0].nome}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis.`,
+            `Lote ${String(numeroOrdem)} liberado para entidade ${contratanteId}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis da empresa ${String(empresaCheck.rows[0].nome)}.`,
           tipo || 'completo',
-          'ativo',
-          gestorEstaFuncionario ? session.cpf : null,
+          session.cpf,
           numeroOrdem,
         ]
       );
 
       const lote = loteResult.rows[0];
+
+      // IMPORTANTE: Reservar ID do laudo igual ao ID do lote
+      // Isso garante que laudo.id === lote.id sempre
+      // O laudo será preenchido quando emissor clicar "Gerar Laudo"
+      await queryAsGestorEntidade(
+        `INSERT INTO laudos (id, lote_id, status, criado_em, atualizado_em)
+         VALUES ($1, $1, 'rascunho', NOW(), NOW())
+         ON CONFLICT (id) DO NOTHING`,
+        [lote.id]
+      );
 
       // Criar avaliações para cada funcionário
       const agora = new Date().toISOString();
@@ -163,7 +176,7 @@ export const POST = async (req: Request) => {
 
       for (const func of funcionariosElegiveis) {
         try {
-          await query(
+          await queryAsGestorEntidade(
             `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id) VALUES ($1, 'iniciada', $2, $3)`,
             [func.funcionario_cpf, agora, lote.id]
           );
@@ -179,7 +192,7 @@ export const POST = async (req: Request) => {
 
       // Registrar auditoria da liberação do lote para a empresa
       try {
-        await query(
+        await queryAsGestorEntidade(
           `INSERT INTO audit_logs (user_cpf, action, resource, resource_id, details, ip_address)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [
@@ -189,13 +202,15 @@ export const POST = async (req: Request) => {
             lote.id,
             JSON.stringify({
               empresa_id: empresaId,
-              empresa_nome: empresaCheck.rows[0].nome,
+              empresa_nome: String(empresaCheck.rows[0].nome),
               tipo: tipo || 'completo',
-              titulo: titulo || `Lote ${lote.numero_ordem} - ${codigo}`,
+              titulo:
+                titulo ||
+                `Lote ${String(lote.numero_ordem)} - ${String(codigo)}`,
               descricao: descricao || null,
               data_filtro: dataFiltro || null,
               lote_referencia_id: loteReferenciaId || null,
-              codigo: lote.codigo,
+              codigo: String(lote.codigo),
               numero_ordem: lote.numero_ordem,
               avaliacoes_criadas: avaliacoesCriadas,
               total_funcionarios: funcionariosElegiveis.length,
@@ -227,7 +242,7 @@ export const POST = async (req: Request) => {
     // Se houver funcionários vinculados diretamente à entidade, processar um lote "da entidade"
     if (hasEntidadeFuncsRes.rowCount > 0) {
       // Usar nome do contratante para exibir
-      const contratanteRes = await query(
+      const contratanteRes = await queryAsGestorEntidade(
         `SELECT nome FROM contratantes WHERE id = $1`,
         [contratanteId]
       );
@@ -235,22 +250,33 @@ export const POST = async (req: Request) => {
         contratanteRes.rowCount > 0 ? contratanteRes.rows[0].nome : 'Entidade';
 
       // Próximo numero de ordem para lotes sem empresa (usamos empresa_id IS NULL)
-      const numeroOrdemResult = await query(
+      const numeroOrdemResult = await queryAsGestorEntidade(
         `SELECT COALESCE(MAX(numero_ordem), 0) + 1 as numero_ordem FROM lotes_avaliacao WHERE empresa_id IS NULL`
       );
       const numeroOrdem = numeroOrdemResult.rows[0].numero_ordem;
 
       // Calcular elegibilidade para contratante usando função nova
-      const elegibilidadeResult = await query(
+      const elegibilidadeResult = await queryAsGestorEntidade(
         `SELECT * FROM calcular_elegibilidade_lote_contratante($1::integer, $2::integer)`,
         [contratanteId, numeroOrdem]
       );
 
       let funcionariosElegiveis = elegibilidadeResult.rows;
 
+      console.log(
+        `[ENTIDADE-CONTRATANTE] Contratante ${contratanteId}: ${funcionariosElegiveis.length} funcionários elegíveis`
+      );
+      console.log(
+        `[DEBUG] Elegíveis:`,
+        funcionariosElegiveis.map((f: any) => ({
+          cpf: f.funcionario_cpf,
+          nome: f.funcionario_nome,
+        }))
+      );
+
       // Aplicar mesmos filtros adicionais (dataFiltro / tipo)
       if (dataFiltro && dataFiltro !== 'all') {
-        const dataFiltroResult = await query(
+        const dataFiltroResult = await queryAsGestorEntidade(
           `SELECT cpf FROM funcionarios WHERE cpf = ANY($1::char(11)[]) AND criado_em > $2`,
           [funcionariosElegiveis.map((f: any) => f.funcionario_cpf), dataFiltro]
         );
@@ -262,7 +288,7 @@ export const POST = async (req: Request) => {
 
       if (tipo && tipo !== 'completo') {
         const nivelDesejado = tipo === 'operacional' ? 'operacional' : 'gestao';
-        const nivelFiltroResult = await query(
+        const nivelFiltroResult = await queryAsGestorEntidade(
           `SELECT cpf FROM funcionarios WHERE cpf = ANY($1::char(11)[]) AND nivel_cargo = $2`,
           [
             funcionariosElegiveis.map((f: any) => f.funcionario_cpf),
@@ -275,26 +301,31 @@ export const POST = async (req: Request) => {
         );
       }
 
+      console.log(
+        `[ENTIDADE-CONTRATANTE] Após filtros: ${funcionariosElegiveis.length} funcionários`
+      );
+      console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
+
       if (funcionariosElegiveis.length > 0) {
-        const codigoResult = await query(
+        const codigoResult = await queryAsGestorEntidade(
           `SELECT gerar_codigo_lote() as codigo`
         );
         const codigo = codigoResult.rows[0].codigo;
 
-        const loteResult = await query(
-          `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id, codigo, liberado_em, numero_ordem`,
+        // ✅ CORREÇÃO: Lote de entidade usa apenas contratante_id
+        // XOR constraint: contratante_id (não clinica_id/empresa_id)
+        // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
+        const loteResult = await queryAsGestorEntidade(
+          `INSERT INTO lotes_avaliacao (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
+           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7) RETURNING id, codigo, liberado_em, numero_ordem`,
           [
             codigo,
-            null, // clinica_id NULL para lotes de entidade
-            null, // empresa_id NULL para lotes de entidade
-            contratanteId, // contratante_id para lotes de entidade
-            titulo || `Lote ${numeroOrdem} - ${codigo}`,
+            contratanteId,
+            titulo || `Lote ${String(numeroOrdem)} - ${String(codigo)}`,
             descricao ||
-              `Lote ${numeroOrdem} liberado para ${contratanteNome}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis.`,
+              `Lote ${String(numeroOrdem)} liberado para ${String(contratanteNome)}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis vinculados diretamente à entidade.`,
             tipo || 'completo',
-            'ativo',
-            gestorEstaFuncionario ? session.cpf : null,
+            session.cpf,
             numeroOrdem,
           ]
         );
@@ -306,7 +337,7 @@ export const POST = async (req: Request) => {
 
         for (const func of funcionariosElegiveis) {
           try {
-            await query(
+            await queryAsGestorEntidade(
               `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id) VALUES ($1, 'iniciada', $2, $3)`,
               [func.funcionario_cpf, agora, lote.id]
             );
@@ -322,7 +353,7 @@ export const POST = async (req: Request) => {
 
         // Registrar auditoria da liberação do lote (contratante)
         try {
-          await query(
+          await queryAsGestorEntidade(
             `INSERT INTO audit_logs (user_cpf, action, resource, resource_id, details, ip_address)
              VALUES ($1, $2, $3, $4, $5, $6)`,
             [
@@ -334,7 +365,9 @@ export const POST = async (req: Request) => {
                 contratante_id: contratanteId,
                 contratante_nome: contratanteNome,
                 tipo: tipo || 'completo',
-                titulo: titulo || `Lote ${lote.numero_ordem} - ${codigo}`,
+                titulo:
+                  titulo ||
+                  `Lote ${String(lote.numero_ordem)} - ${String(codigo)}`,
                 descricao: descricao || null,
                 data_filtro: dataFiltro || null,
                 codigo: lote.codigo,

@@ -20,10 +20,10 @@ const FUNCIONARIO_ROUTES = [
   '/avaliacao',
 ];
 
-// Rotas específicas para gestores RH
+// Rotas específicas para gestores RH (clínica)
 const RH_ROUTES = ['/rh', '/api/rh'];
 
-// Rotas específicas para gestores de entidade
+// Rotas específicas para gestores de entidade (contratante)
 const ENTIDADE_ROUTES = ['/entidade', '/api/entidade'];
 
 // Rotas que requerem MFA (admin)
@@ -251,15 +251,6 @@ export function middleware(request: NextRequest) {
         return new NextResponse('Sessão inválida', { status: 401 });
       }
     }
-
-    // Log de acesso para auditoria (sem expor IP ou CPF completo)
-    const maskedCpf =
-      typeof session?.cpf === 'string'
-        ? `***${String(session.cpf).slice(-4)}`
-        : session?.cpf;
-    console.log(
-      `[SECURITY] Acesso autorizado a ${pathname} (sessao: ${maskedCpf})`
-    );
   }
 
   // Verificações adicionais de segregação de funções
@@ -305,8 +296,7 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  // Verificações opcionais: impedir funcionários de acessar rotas de gestores
-  // (já parcialmente coberto pelas SENSITIVE_ROUTES, mas podemos reforçar)
+  // Verificação de segregação: apenas RH acessa rotas RH
   if (RH_ROUTES.some((route) => pathname.startsWith(route))) {
     const sessionCookie = request.cookies.get('bps-session')?.value;
     let session: any = null;
@@ -338,13 +328,15 @@ export function middleware(request: NextRequest) {
       }
     }
 
+    // APENAS perfil 'rh' pode acessar rotas /rh e /api/rh
+    // gestor_entidade deve usar /entidade e /api/entidade
     if (session && session.perfil !== 'rh') {
       const maskedCpf =
         typeof session.cpf === 'string'
           ? `***${String(session.cpf).slice(-4)}`
           : session.cpf;
       console.error(
-        `[SECURITY] Usuário com perfil ${session.perfil} (${maskedCpf}) tentou acessar rota RH ${pathname}`
+        `[SECURITY] Usuário com perfil ${session.perfil} (${maskedCpf}) tentou acessar rota RH ${pathname}. Apenas gestores RH (clínica) têm acesso.`
       );
       return new NextResponse('Acesso negado', { status: 403 });
     }

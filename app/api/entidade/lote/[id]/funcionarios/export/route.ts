@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRH } from '@/lib/auth-require';
+import { requireGestor } from '@/lib/auth-require';
 import { query } from '@/lib/db';
 
 export async function GET(
@@ -12,8 +12,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticação (requireRH aceita entidade e RH)
-    const session = requireRH();
+    // Verificar autenticação (gestor de entidade ou gestor RH)
+    const session = requireGestor();
     const { id: loteId } = params;
 
     // Verificar acesso ao lote

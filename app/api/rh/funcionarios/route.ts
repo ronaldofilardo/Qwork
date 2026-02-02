@@ -184,8 +184,8 @@ export async function POST(request: Request) {
     await query(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        clinica_id, empresa_id, contratante_id, matricula, nivel_cargo, turno, escala, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11, $12, $13, $14, true)`,
+        clinica_id, empresa_id, contratante_id, matricula, nivel_cargo, turno, escala, ativo, usuario_tipo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11, $12, $13, $14, true, $15)`,
       [
         cpf,
         nome,
@@ -201,7 +201,9 @@ export async function POST(request: Request) {
         nivel_cargo || null,
         turno || null,
         escala || null,
-      ]
+        'funcionario_clinica',
+      ],
+      session
     );
     console.log(
       `[AUDIT] Funcionário ${cpf} (${nome}) criado pela clínica ${clinicaId} para empresa ${empresa_id} por ${session.cpf}`

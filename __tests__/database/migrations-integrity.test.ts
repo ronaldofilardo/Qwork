@@ -198,7 +198,8 @@ describe('Migrations de Correção - Integridade', () => {
       `);
 
       if (avaliacao.rows.length === 0) {
-        console.log('Sem lotes disponíveis para teste');
+        // Sem lotes disponíveis para teste
+
         return;
       }
 

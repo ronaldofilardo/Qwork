@@ -17,6 +17,7 @@ interface LotesGridProps {
   onLoteClick: (loteId: number) => void;
   onRelatorioSetor: (loteId: number) => void;
   onDownloadLaudo: (laudo: any) => void;
+  onRefresh?: () => void;
 }
 
 /**
@@ -29,6 +30,7 @@ export function LotesGrid({
   onLoteClick,
   onRelatorioSetor,
   onDownloadLaudo,
+  onRefresh: _onRefresh,
 }: LotesGridProps) {
   if (lotes.length === 0) {
     return (
@@ -54,10 +56,17 @@ export function LotesGrid({
         // - e o lote está 'concluido' ou 'finalizado'
         const temLaudo = Boolean(
           laudoAssociado &&
-          (laudoAssociado.enviado_em || laudoAssociado.status === 'enviado') &&
+          (laudoAssociado.enviado_em ||
+            // Considerar laudos emitidos (novo fluxo) ou quando hash está presente
+            (laudoAssociado as any).emitido_em ||
+            laudoAssociado.status === 'emitido' ||
+            laudoAssociado.hash) &&
           (lote.status === 'concluido' || lote.status === 'finalizado')
         );
         const isPronto = lote.pode_emitir_laudo || temLaudo;
+
+        // Verificar se há solicitação de emissão pendente
+        const emissaoSolicitada = !!(lote.solicitado_em && !temLaudo);
 
         return (
           <div
@@ -175,6 +184,31 @@ export function LotesGrid({
               📋 Relatório por Setor
             </button>
 
+            {/* Seção de Emissão Solicitada */}
+            {emissaoSolicitada && (
+              <div className="p-3 bg-blue-50 rounded border border-blue-200 mb-4">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-sm font-medium text-blue-800">
+                    📄 Emissão Solicitada
+                  </span>
+                </div>
+                <p className="text-xs text-blue-700 mb-1">
+                  A emissão do laudo foi solicitada em{' '}
+                  {new Date(lote.solicitado_em!).toLocaleDateString('pt-BR')} às{' '}
+                  {new Date(lote.solicitado_em!).toLocaleTimeString('pt-BR', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })}
+                  . O laudo está sendo processado pelo emissor.
+                </p>
+                {lote.solicitado_por && (
+                  <p className="text-xs text-blue-600">
+                    Solicitado por: {lote.solicitado_por}
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Laudo associado (visível somente se realmente disponível) */}
             {temLaudo && laudoAssociado && (
               <div className="p-3 bg-blue-50 rounded border border-blue-200">
@@ -183,11 +217,14 @@ export function LotesGrid({
                     📄 Laudo disponível
                   </span>
                   <span className="text-xs text-blue-600">
-                    {laudoAssociado.enviado_em
+                    {laudoAssociado.enviado_em ||
+                    (laudoAssociado as any).emitido_em
                       ? `${new Date(
-                          laudoAssociado.enviado_em
+                          laudoAssociado.enviado_em ||
+                            (laudoAssociado as any).emitido_em
                         ).toLocaleDateString('pt-BR')} às ${new Date(
-                          laudoAssociado.enviado_em
+                          laudoAssociado.enviado_em ||
+                            (laudoAssociado as any).emitido_em
                         ).toLocaleTimeString('pt-BR', {
                           hour: '2-digit',
                           minute: '2-digit',

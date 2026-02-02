@@ -151,7 +151,6 @@ describe('API Cadastro Contratante - Integração', () => {
         ) RETURNING id`,
         [mockCNPJ]
       );
-      console.log('Contratante inserido:', insertResult.rows[0]);
 
       // Testar diretamente a função createContratante (que é chamada pela API)
       const { createContratante } = await import('@/lib/db');

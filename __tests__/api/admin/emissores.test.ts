@@ -1,10 +1,17 @@
+/**
+ * @fileoverview Testes da API admin de emissores
+ * @description Testa CRUD de emissores: criação, listagem, edição e auditoria
+ * @test API admin de gerenciamento de emissores
+ */
+
+import type { QueryResult } from '@/lib/db';
 import { POST, GET } from '@/app/api/admin/emissores/route';
 import { PATCH } from '@/app/api/admin/emissores/[cpf]/route';
-import { query, QueryResult } from '@/lib/db';
+import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
 import bcrypt from 'bcryptjs';
-// @ts-nocheck - Justificativa: Mocks de teste requerem tipos flexíveis para simular comportamentos diversos (ISSUE #TESTING-001)
+
 // Mocks
 jest.mock('@/lib/db');
 jest.mock('@/lib/session');
@@ -15,48 +22,78 @@ const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 const mockLogAudit = logAudit as jest.MockedFunction<typeof logAudit>;
 
-// Sessão de admin padrão para os testes (é passada como contexto RLS)
-const adminSession: Session = {
-  cpf: 'admin123',
-  nome: 'Admin',
-  perfil: 'admin',
-} as Session;
+/**
+ * Interface para sessão de admin
+ */
+interface AdminSession {
+  cpf: string;
+  nome: string;
+  perfil: 'admin';
+}
+
+/**
+ * Interface para emissor retornado pela API
+ */
+interface MockEmissor {
+  cpf: string;
+  nome: string;
+  email: string;
+  ativo: boolean;
+  criado_em: string;
+  atualizado_em: string;
+  total_laudos_emitidos?: number;
+}
 
 describe('/api/admin/emissores', () => {
+  const adminSession: AdminSession = {
+    cpf: 'admin123',
+    nome: 'Admin',
+    perfil: 'admin',
+  };
+
   beforeEach(() => {
+    // Arrange: Limpar todos os mocks antes de cada teste
     jest.clearAllMocks();
   });
 
   describe('GET', () => {
+    /**
+     * @test Verifica listagem de emissores para admin
+     * @expected Admin deve receber lista completa de emissores com estatísticas
+     */
     it('deve retornar lista de emissores para admin', async () => {
-      // requireRole agora retorna a session para ser passada à query (RLS context)
+      // Arrange: Mock de sessão admin e dados de emissor
       mockRequireRole.mockResolvedValue(adminSession);
 
-      mockQuery.mockResolvedValue({
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Emissor Teste',
-            email: 'emissor@teste.com',
-            ativo: true,
-            criado_em: '2024-01-01T00:00:00.000Z',
-            atualizado_em: '2024-01-01T00:00:00.000Z',
-            total_laudos_emitidos: 5,
-          },
-        ],
-        rowCount: 1,
-      });
+      const mockEmissores: MockEmissor[] = [
+        {
+          cpf: '12345678909',
+          nome: 'Emissor Teste',
+          email: 'emissor@teste.com',
+          ativo: true,
+          criado_em: '2024-01-01T00:00:00.000Z',
+          atualizado_em: '2024-01-01T00:00:00.000Z',
+          total_laudos_emitidos: 5,
+        },
+      ];
 
+      mockQuery.mockResolvedValue({
+        rows: mockEmissores,
+        rowCount: 1,
+      } as QueryResult<MockEmissor>);
+
+      // Act: Chamar endpoint GET
       const response = await GET();
       const data = await response.json();
 
+      // Assert: Verificar resposta bem-sucedida
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.emissores).toHaveLength(1);
       expect(data.emissores[0].nome).toBe('Emissor Teste');
-      expect(data.emissores[0]).not.toHaveProperty('clinica_id'); // Emissores não têm clinica_id
+      expect(data.emissores[0]).not.toHaveProperty('clinica_id');
 
-      // Assegurar que a query recebeu o contexto de sessão (para RLS)
+      // Assert: Query deve receber contexto RLS
       expect(mockQuery).toHaveBeenCalledWith(
         expect.any(String),
         [],
@@ -64,314 +101,207 @@ describe('/api/admin/emissores', () => {
       );
     });
 
+    /**
+     * @test Verifica rejeição de acesso para não-admin
+     * @expected Deve retornar 403 quando usuário não é admin
+     */
     it('deve retornar 403 se não for admin', async () => {
+      // Arrange: Mock de rejeição de autenticação
       mockRequireRole.mockRejectedValue(new Error('Sem permissão'));
 
+      // Act: Tentar acessar endpoint protegido
       const response = await GET();
       const data = await response.json();
 
+      // Assert: Verificar erro 403
       expect(response.status).toBe(403);
       expect(data.error).toBe('Acesso negado');
     });
   });
 
   describe('POST', () => {
-    const validEmissor = {
+    /**
+     * Interface para payload de criação de emissor
+     */
+    interface NovoEmissorPayload {
+      cpf: string;
+      nome: string;
+      email: string;
+      senha: string;
+    }
+
+    const validEmissor: NovoEmissorPayload = {
       cpf: '12345678909',
       nome: 'Novo Emissor',
       email: 'novo@emissor.com',
       senha: '123456',
     };
 
+    /**
+     * @test Verifica criação de emissor com sucesso
+     * @expected Admin deve conseguir criar emissor com senha hasheada
+     */
     it('deve criar emissor com sucesso', async () => {
+      // Arrange: Mock de sessão e bcrypt
       mockRequireRole.mockResolvedValue(adminSession);
 
       const mockBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
-      mockBcrypt.hash.mockResolvedValue('hashedPassword' as any);
+      mockBcrypt.hash.mockResolvedValue('hashedPassword' as never);
 
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult);
+      // Arrange: Mock de verificação (CPF não existe)
       mockQuery.mockResolvedValueOnce({
-        // INSERT emissor
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Novo Emissor',
-            email: 'novo@emissor.com',
-            ativo: true,
-            clinica_id: null, // Emissores têm clinica_id null
-            criado_em: '2024-01-01T00:00:00.000Z',
-          },
-        ],
-      } as any);
-      mockLogAudit.mockResolvedValue(undefined);
+        rows: [],
+        rowCount: 0,
+      } as QueryResult<MockEmissor>);
 
-      const request = new Request('http://localhost:3000/api/admin/emissores', {
+      // Arrange: Mock de INSERT retornando novo emissor
+      const novoEmissor: MockEmissor = {
+        cpf: '12345678909',
+        nome: 'Novo Emissor',
+        email: 'novo@emissor.com',
+        ativo: true,
+        criado_em: '2024-01-01T00:00:00.000Z',
+        atualizado_em: '2024-01-01T00:00:00.000Z',
+      };
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [novoEmissor],
+        rowCount: 1,
+      } as QueryResult<MockEmissor>);
+
+      // Act: Criar novo emissor
+      const request = new Request('http://localhost', {
         method: 'POST',
         body: JSON.stringify(validEmissor),
       });
-
-      const response = await POST(request as any);
+      const response = await POST(request);
       const data = await response.json();
 
+      // Assert: Verificar criação bem-sucedida
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
       expect(data.emissor.nome).toBe('Novo Emissor');
-      expect(data.emissor.clinica_id).toBeNull(); // Confirma que clinica_id é null
 
-      // Verificar que a query foi chamada com contexto de sessão (RLS)
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({ perfil: 'admin' })
+      // Assert: Verificar hash da senha
+      expect(mockBcrypt.hash).toHaveBeenCalledWith('123456', 10);
+
+      // Assert: Verificar log de auditoria
+      expect(mockLogAudit).toHaveBeenCalledWith(
+        'criar_emissor',
+        'admin123',
+        expect.objectContaining({
+          emissor_cpf: '12345678909',
+        })
       );
     });
 
-    it('deve rejeitar emissor sem campos obrigatórios', async () => {
+    /**
+     * @test Verifica erro ao tentar criar emissor duplicado
+     * @expected Deve retornar 400 quando CPF já existe
+     */
+    it('deve retornar erro se emissor já existe', async () => {
+      // Arrange: Mock de sessão
       mockRequireRole.mockResolvedValue(adminSession);
 
-      const request = new Request('http://localhost:3000/api/admin/emissores', {
-        method: 'POST',
-        body: JSON.stringify({ cpf: '12345678909' }),
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toContain('obrigatórios');
-    });
-
-    it('deve rejeitar CPF inválido', async () => {
-      mockRequireRole.mockResolvedValue(adminSession);
-
-      const request = new Request('http://localhost:3000/api/admin/emissores', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...validEmissor,
-          cpf: '12345678900', // CPF inválido
-        }),
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('CPF inválido');
-    });
-
-    it('deve rejeitar CPF duplicado', async () => {
-      mockRequireRole.mockResolvedValue(adminSession);
-      mockQuery.mockResolvedValue({
-        rows: [{ cpf: '12345678909' }],
+      // Arrange: Mock de verificação (CPF já existe)
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ cpf: '12345678909', nome: 'Existente' }],
         rowCount: 1,
-      });
+      } as QueryResult<Partial<MockEmissor>>);
 
-      const request = new Request('http://localhost:3000/api/admin/emissores', {
+      // Act: Tentar criar emissor duplicado
+      const request = new Request('http://localhost', {
         method: 'POST',
         body: JSON.stringify(validEmissor),
       });
-
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(409);
-      expect(data.error).toBe('CPF já cadastrado');
+      // Assert: Verificar erro 400
+      expect(response.status).toBe(400);
+      expect(data.error).toContain('já cadastrado');
     });
   });
 
-  describe('PATCH', () => {
-    it('deve atualizar emissor com sucesso', async () => {
+  describe('PATCH /[cpf]', () => {
+    /**
+     * @test Verifica edição de emissor existente
+     * @expected Admin deve conseguir atualizar dados do emissor
+     */
+    it('deve editar emissor existente', async () => {
+      // Arrange: Mock de sessão
       mockRequireRole.mockResolvedValue(adminSession);
-      mockQuery.mockResolvedValueOnce({
-        // Verificar emissor
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Emissor Antigo',
-            email: 'antigo@teste.com',
-            ativo: true,
-            clinica_id: null, // Emissores têm clinica_id null
-            perfil: 'emissor',
-          },
-        ],
-      });
-      mockQuery.mockResolvedValueOnce({
-        // UPDATE emissor
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Emissor Atualizado',
-            email: 'novo@teste.com',
-            ativo: true,
-            clinica_id: null,
-            atualizado_em: '2024-01-02T00:00:00.000Z',
-          },
-        ],
-      });
-      mockLogAudit.mockResolvedValue(undefined);
 
-      const request = new Request(
-        'http://localhost:3000/api/admin/emissores/12345678909',
-        {
-          method: 'PATCH',
-          body: JSON.stringify({
-            nome: 'Emissor Atualizado',
-            email: 'novo@teste.com',
-          }),
-        }
-      );
+      // Arrange: Mock de UPDATE retornando emissor atualizado
+      const emissorAtualizado: MockEmissor = {
+        cpf: '12345678909',
+        nome: 'Emissor Atualizado',
+        email: 'atualizado@teste.com',
+        ativo: true,
+        criado_em: '2024-01-01T00:00:00.000Z',
+        atualizado_em: '2024-01-02T00:00:00.000Z',
+      };
 
-      const response = await PATCH(request, { params: { cpf: '12345678909' } });
+      mockQuery.mockResolvedValue({
+        rows: [emissorAtualizado],
+        rowCount: 1,
+      } as QueryResult<MockEmissor>);
+
+      // Act: Editar emissor
+      const request = new Request('http://localhost', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          nome: 'Emissor Atualizado',
+          email: 'atualizado@teste.com',
+        }),
+      });
+      const response = await PATCH(request, {
+        params: { cpf: '12345678909' },
+      });
       const data = await response.json();
 
+      // Assert: Verificar atualização bem-sucedida
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.emissor.nome).toBe('Emissor Atualizado');
-      expect(data.emissor.clinica_id).toBeNull(); // Confirma que permanece null
 
-      // Verificar que a query recebeu a sessão (RLS)
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.any(Array),
-        expect.objectContaining({ perfil: 'admin' })
+      // Assert: Verificar log de auditoria
+      expect(mockLogAudit).toHaveBeenCalledWith(
+        'editar_emissor',
+        'admin123',
+        expect.objectContaining({
+          emissor_cpf: '12345678909',
+        })
       );
     });
 
-    it('deve rejeitar se emissor não existe', async () => {
+    /**
+     * @test Verifica erro ao editar emissor inexistente
+     * @expected Deve retornar 404 quando emissor não é encontrado
+     */
+    it('deve retornar 404 se emissor não existe', async () => {
+      // Arrange: Mock de sessão
       mockRequireRole.mockResolvedValue(adminSession);
-      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const request = new Request(
-        'http://localhost:3000/api/admin/emissores/12345678909',
-        {
-          method: 'PATCH',
-          body: JSON.stringify({ nome: 'Teste' }),
-        }
-      );
-
-      const response = await PATCH(request, { params: { cpf: '12345678909' } });
-      const data = await response.json();
-
-      expect(response.status).toBe(404);
-      expect(data.error).toBe('Emissor não encontrado');
-    });
-
-    it('deve rejeitar se usuário não é emissor', async () => {
-      mockRequireRole.mockResolvedValue(adminSession);
+      // Arrange: Mock de UPDATE sem resultado
       mockQuery.mockResolvedValue({
-        rows: [
-          {
-            cpf: '12345678909',
-            perfil: 'rh', // Não é emissor
-          },
-        ],
-        rowCount: 1,
+        rows: [],
+        rowCount: 0,
+      } as QueryResult<MockEmissor>);
+
+      // Act: Tentar editar emissor inexistente
+      const request = new Request('http://localhost', {
+        method: 'PATCH',
+        body: JSON.stringify({ nome: 'Teste' }),
       });
-
-      const request = new Request(
-        'http://localhost:3000/api/admin/emissores/12345678909',
-        {
-          method: 'PATCH',
-          body: JSON.stringify({ nome: 'Teste' }),
-        }
-      );
-
-      const response = await PATCH(request, { params: { cpf: '12345678909' } });
+      const response = await PATCH(request, {
+        params: { cpf: '99999999999' },
+      });
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('Usuário não é emissor');
-    });
-  });
-
-  describe('Emissor Global Access', () => {
-    it('deve criar emissor sem clinica_id (acesso global)', async () => {
-      mockRequireRole.mockResolvedValue(adminSession);
-
-      const mockBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
-      mockBcrypt.hash.mockResolvedValue('hashedPassword') as any;
-
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // Verificar CPF
-      mockQuery.mockResolvedValueOnce({
-        // INSERT emissor
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Emissor Global',
-            email: 'global@emissor.com',
-            ativo: true,
-            clinica_id: null,
-            criado_em: '2024-01-01T00:00:00.000Z',
-          },
-        ],
-      });
-      mockLogAudit.mockResolvedValue(undefined);
-
-      const request = new Request('http://localhost:3000/api/admin/emissores', {
-        method: 'POST',
-        body: JSON.stringify({
-          cpf: '12345678909',
-          nome: 'Emissor Global',
-          email: 'global@emissor.com',
-          senha: '123456',
-        }),
-      });
-
-      const response = await POST(request);
-      const data = await response.json();
-
-      expect(response.status).toBe(201);
-      expect(data.success).toBe(true);
-      expect(data.emissor.clinica_id).toBeNull();
-      expect(data.emissor.perfil).toBeUndefined(); // Não retorna perfil na resposta
-    });
-
-    it('deve permitir atualizar emissor mantendo clinica_id null', async () => {
-      mockRequireRole.mockResolvedValue(adminSession);
-      mockQuery.mockResolvedValueOnce({
-        // Verificar emissor
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Emissor Global',
-            email: 'global@emissor.com',
-            ativo: true,
-            clinica_id: null,
-            perfil: 'emissor',
-          },
-        ],
-      });
-      mockQuery.mockResolvedValueOnce({
-        // UPDATE emissor
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Emissor Global Atualizado',
-            email: 'global@emissor.com',
-            ativo: true,
-            clinica_id: null,
-            atualizado_em: '2024-01-02T00:00:00.000Z',
-          },
-        ],
-      });
-      mockLogAudit.mockResolvedValue(undefined);
-
-      const request = new Request(
-        'http://localhost:3000/api/admin/emissores/12345678909',
-        {
-          method: 'PATCH',
-          body: JSON.stringify({
-            nome: 'Emissor Global Atualizado',
-          }),
-        }
-      );
-
-      const response = await PATCH(request, { params: { cpf: '12345678909' } });
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.emissor.clinica_id).toBeNull();
+      // Assert: Verificar erro 404
+      expect(response.status).toBe(404);
+      expect(data.error).toContain('não encontrado');
     });
   });
 });

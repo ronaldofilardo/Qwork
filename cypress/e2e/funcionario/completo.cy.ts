@@ -30,7 +30,7 @@ describe('Funcionário - Fluxo Completo de Avaliação', () => {
 
     // 4. Deve abrir página de avaliação
     cy.url().should('include', '/avaliacao');
-    cy.contains(/de 70/, { timeout: 10000 }).should('be.visible');
+    cy.contains(/de 37/, { timeout: 10000 }).should('be.visible');
   });
 
   it('deve responder questões e salvar automaticamente', () => {
@@ -39,17 +39,17 @@ describe('Funcionário - Fluxo Completo de Avaliação', () => {
     cy.visit('/avaliacao?id=1');
 
     // Verificar que está na primeira questão
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     // Responder primeira questão (clicar em uma opção)
     cy.get('input[type="radio"]').first().click();
 
     // Verificar que progresso foi atualizado
-    cy.contains('1 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('1 de 37', { timeout: 5000 }).should('be.visible');
 
     // Responder segunda questão
     cy.get('input[type="radio"]').first().click();
-    cy.contains('2 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('2 de 37', { timeout: 5000 }).should('be.visible');
   });
 
   it('deve retomar avaliação após recarregar página', () => {
@@ -58,38 +58,38 @@ describe('Funcionário - Fluxo Completo de Avaliação', () => {
     cy.visit('/avaliacao?id=1');
 
     // Responder 5 questões
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     for (let i = 0; i < 5; i++) {
       cy.get('input[type="radio"]').first().click();
       cy.wait(500); // Aguardar salvamento
     }
 
-    cy.contains('5 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('5 de 37', { timeout: 5000 }).should('be.visible');
 
     // Recarregar página
     cy.reload();
 
     // Verificar que progresso foi mantido
-    cy.contains('5 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('5 de 37', { timeout: 10000 }).should('be.visible');
 
     // Continuar respondendo
     cy.get('input[type="radio"]').first().click();
-    cy.contains('6 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('6 de 37', { timeout: 5000 }).should('be.visible');
   });
 
   it('deve avançar automaticamente sem botão "Próxima"', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     // Não deve haver botão "Próxima"
     cy.contains('button', /próxima|avançar/i).should('not.exist');
 
     // Clicar em uma resposta deve avançar automaticamente
     cy.get('input[type="radio"]').first().click();
-    cy.contains('1 de 70', { timeout: 5000 }).should('be.visible');
+    cy.contains('1 de 37', { timeout: 5000 }).should('be.visible');
   });
 
   it('deve exibir apenas uma questão por vez', () => {
@@ -129,7 +129,7 @@ describe('Funcionário - Fluxo Completo de Avaliação', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     for (let i = 0; i < 3; i++) {
       cy.get('input[type="radio"]').first().click();
@@ -145,17 +145,17 @@ describe('Funcionário - Fluxo Completo de Avaliação', () => {
 
     // Deve retomar na questão 4
     cy.url().should('include', '/avaliacao');
-    cy.contains('3 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('3 de 37', { timeout: 10000 }).should('be.visible');
   });
 
   it('deve finalizar avaliação após responder 37 questões', () => {
     cy.login(funcionarioCPF, funcionarioSenha);
     cy.visit('/avaliacao?id=1');
 
-    cy.contains('0 de 70', { timeout: 10000 }).should('be.visible');
+    cy.contains('0 de 37', { timeout: 10000 }).should('be.visible');
 
     // Responder todas as 37 questões
-    for (let i = 0; i < 70; i++) {
+    for (let i = 0; i < 37; i++) {
       cy.get('input[type="radio"]', { timeout: 10000 }).first().click();
       cy.wait(300);
     }
@@ -179,7 +179,7 @@ describe('Funcionário - Fluxo Completo de Avaliação', () => {
 
     // Deve ainda estar autenticado e na avaliação
     cy.url().should('include', '/avaliacao');
-    cy.contains(/de 70/).should('be.visible');
+    cy.contains(/de 37/).should('be.visible');
   });
 
   it('deve impedir acesso à avaliação sem login', () => {

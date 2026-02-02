@@ -68,7 +68,7 @@ export function getPDFFooterTemplate(additionalInfo?: string): string {
         letter-spacing: 0.05em;
         margin-bottom: 2px;
       ">
-        ${QWORK_BRANDING.logo.slogan}
+        Avaliação de Saúde e Bem-Estar
       </div>
       ${
         additionalInfo

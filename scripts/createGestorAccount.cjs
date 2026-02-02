@@ -1,15 +1,23 @@
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
+const dotenv = require('dotenv');
+
+dotenv.config({ path: '.env.local' });
 
 (async () => {
   const client = new Client({
-    connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db',
+    connectionString:
+      process.env.LOCAL_DATABASE_URL || process.env.DATABASE_URL,
   });
   try {
     await client.connect();
     await client.query('BEGIN');
 
-    const cpf = '04703084945';
+    const cpf = process.argv[2];
+    if (!cpf || cpf.length !== 11) {
+      console.error('Uso: node createGestorAccount.cjs <CPF>');
+      process.exit(1);
+    }
 
     // Buscar contratante pelo responsavel
     const contratanteRes = await client.query(

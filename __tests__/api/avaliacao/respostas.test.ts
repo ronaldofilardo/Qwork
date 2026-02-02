@@ -17,11 +17,27 @@ jest.mock('@/lib/db', () => ({
   query: jest.fn(),
 }));
 
+jest.mock('@/lib/db-security', () => ({
+  queryWithContext: jest.fn(),
+}));
+
+jest.mock('@/lib/lotes', () => ({
+  recalcularStatusLote: jest.fn(),
+}));
+
+jest.mock('@/lib/calculate', () => ({
+  calcularResultados: jest.fn(),
+}));
+
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 
 const mockGetSession = getSession as jest.MockedFunction<any>;
 const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQueryWithContext = queryWithContext as jest.MockedFunction<
+  typeof queryWithContext
+>;
 
 describe('/api/avaliacao/respostas', () => {
   beforeEach(() => {

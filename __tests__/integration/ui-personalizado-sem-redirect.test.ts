@@ -42,7 +42,7 @@ describe('✅ Validação UI - Plano Personalizado Sem Redirecionamento', () => 
   });
 
   it('deve retornar requires_payment=false e mensagem adequada para plano personalizado', async () => {
-    console.log('\n=== TESTE: RESPOSTA API PARA PLANO PERSONALIZADO ===\n');
+    // \n=== TESTE: RESPOSTA API PARA PLANO PERSONALIZADO ===\n
 
     const { POST } = await import('@/app/api/cadastro/contratante/route');
 
@@ -101,9 +101,6 @@ describe('✅ Validação UI - Plano Personalizado Sem Redirecionamento', () => 
     const response = await POST(mockRequest);
     const data = await response.json();
 
-    console.log('→ Status:', response.status);
-    console.log('→ Resposta:', JSON.stringify(data, null, 2));
-
     // Validações
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
@@ -115,17 +112,29 @@ describe('✅ Validação UI - Plano Personalizado Sem Redirecionamento', () => 
     // ✅ Deve ter mensagem de aguardando análise
     expect(data.message).toContain('Aguarde análise do administrador');
 
-    console.log('\n✅ VALIDAÇÕES:');
-    console.log('  ✓ requires_payment: false');
-    console.log('  ✓ simulador_url: null');
-    console.log('  ✓ Mensagem: "Aguarde análise do administrador"');
-    console.log('\n📱 COMPORTAMENTO ESPERADO NA UI:');
-    console.log('  1. Modal NÃO redireciona para /sucesso-cadastro');
-    console.log('  2. Modal NÃO redireciona para simulador');
-    console.log('  3. Modal exibe mensagem de sucesso com:');
-    console.log('     - "Dados enviados para análise"');
-    console.log('     - "Receberá link por email"');
-    console.log('     - "Tempo de resposta: 48h"');
-    console.log('  4. Botão "Fechar" volta para tela de login');
+    // \n✅ VALIDAÇÕES:
+
+    //   ✓ requires_payment: false
+
+    //   ✓ simulador_url: null
+
+    //   ✓ Mensagem: "Aguarde análise do administrador"
+
+    // \n📱 COMPORTAMENTO ESPERADO NA UI:
+
+    //   1. Modal NÃO redireciona para /sucesso-cadastro
+
+    //   2. Modal NÃO redireciona para simulador
+
+    //   3. Modal exibe mensagem de sucesso com:
+
+    //      - "Dados enviados para análise"
+
+    //      - "Receberá link por email"
+
+    //      - "Tempo de resposta: 48h"
+
+    //   4. Botão "Fechar" volta para tela de login
+
   });
 });

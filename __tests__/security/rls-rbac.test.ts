@@ -242,7 +242,7 @@ describe('Row Level Security (RLS) Tests', () => {
       await query(`SET LOCAL app.current_user_perfil = 'admin'`);
 
       const result = await query(
-        "SELECT COUNT(*) as count FROM funcionarios WHERE perfil = 'rh'"
+        "SELECT COUNT(*) as count FROM funcionarios WHERE usuario_tipo = 'gestor_rh'"
       );
 
       expect(parseInt(result.rows[0].count)).toBeGreaterThanOrEqual(1);
@@ -254,7 +254,7 @@ describe('Row Level Security (RLS) Tests', () => {
         `
         SELECT COUNT(*) as count 
         FROM funcionarios 
-        WHERE perfil = 'rh' AND clinica_id = $1
+        WHERE usuario_tipo = 'gestor_rh' AND clinica_id = $1
       `,
         [clinicaId]
       );
@@ -269,7 +269,7 @@ describe('Row Level Security (RLS) Tests', () => {
         `
         SELECT COUNT(*) as count 
         FROM funcionarios 
-        WHERE perfil = 'rh' AND clinica_id != $1
+        WHERE usuario_tipo = 'gestor_rh' AND clinica_id != $1
       `,
         [clinicaId]
       );

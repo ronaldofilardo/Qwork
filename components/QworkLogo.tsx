@@ -50,7 +50,7 @@ export default function QworkLogo({
           className={`${sloganSize[size]} text-gray-600 font-medium mt-1 text-center tracking-wide`}
           style={{ letterSpacing: '0.05em' }}
         >
-          {QWORK_BRANDING.logo.slogan}
+          Avaliação de Saúde e Bem-Estar
         </span>
       )}
     </div>
@@ -123,7 +123,7 @@ export function getLogoHTMLForPDF(options: {
           text-align: ${position};
           letter-spacing: 0.05em;
         ">
-          ${QWORK_BRANDING.logo.slogan}
+          Avaliação de Saúde e Bem-Estar
         </p>
       `
           : ''

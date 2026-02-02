@@ -52,7 +52,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     }
 
     planoPersonalizadoId = planoResult.rows[0].id;
-    console.log('✓ Plano personalizado ID:', planoPersonalizadoId);
 
     // Limpar dados anteriores
     await query('BEGIN');
@@ -70,7 +69,8 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     ]);
     await query('COMMIT');
 
-    console.log('✓ Banco limpo para teste E2E');
+    // ✓ Banco limpo para teste E2E
+
   });
 
   afterAll(async () => {
@@ -89,7 +89,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
   });
 
   it('ETAPA 1: Contratante preenche formulário e recebe confirmação "em análise"', async () => {
-    console.log('\n=== ETAPA 1: CADASTRO DO CONTRATANTE ===\n');
+    // \n=== ETAPA 1: CADASTRO DO CONTRATANTE ===\n
 
     const formData = new FormData();
     formData.append('tipo', 'clinica');
@@ -139,9 +139,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    console.log('→ Status:', response.status);
-    console.log('→ Resposta:', JSON.stringify(data, null, 2));
-
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
     expect(data.contratante.tipo).toBe('clinica');
@@ -149,7 +146,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     expect(data.message).toContain('Aguarde análise do administrador');
 
     contratanteId = data.id;
-    console.log('✓ Contratante criado - ID:', contratanteId);
 
     // Verificar contratacao_personalizada
     const contratacaoResult = await query(
@@ -162,12 +158,12 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     expect(contratacaoResult.rows[0].numero_funcionarios_estimado).toBe(3000);
 
     contratacaoId = contratacaoResult.rows[0].id;
-    console.log('✓ Contratação personalizada criada - ID:', contratacaoId);
-    console.log('✓ Status: aguardando_valor_admin');
+    // ✓ Status: aguardando_valor_admin
+
   });
 
   it('ETAPA 2: Admin define valor e gera link de proposta', async () => {
-    console.log('\n=== ETAPA 2: ADMIN DEFINE VALOR E GERA LINK ===\n');
+    // \n=== ETAPA 2: ADMIN DEFINE VALOR E GERA LINK ===\n
 
     const { POST } =
       await import('@/app/api/admin/personalizado/definir-valor/route');
@@ -187,9 +183,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    console.log('→ Status:', response.status);
-    console.log('→ Resposta:', JSON.stringify(data, null, 2));
-
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.link_proposta).toBeDefined();
@@ -198,9 +191,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     const urlMatch = data.link_proposta.match(/\/proposta\/([^?]+)/);
     expect(urlMatch).toBeTruthy();
     tokenProposta = urlMatch![1];
-
-    console.log('✓ Link de proposta gerado:', data.link_proposta);
-    console.log('✓ Token extraído:', tokenProposta);
 
     // Verificar atualização no banco
     const contratacaoAtualizada = await query(
@@ -217,12 +207,14 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     );
     expect(contratacaoAtualizada.rows[0].link_enviado).toBe(data.link_proposta);
 
-    console.log('✓ Status atualizado: valor_definido');
-    console.log('✓ Valor total: R$ 46.500,00 (3000 × R$ 15,50)');
+    // ✓ Status atualizado: valor_definido
+
+    // ✓ Valor total: R$ 46.500,00 (3000 × R$ 15,50)
+
   });
 
   it('ETAPA 3: Contratante acessa link e visualiza proposta', async () => {
-    console.log('\n=== ETAPA 3: CONTRATANTE ACESSA PROPOSTA ===\n');
+    // \n=== ETAPA 3: CONTRATANTE ACESSA PROPOSTA ===\n
 
     const { GET } = await import('@/app/api/proposta/[token]/route');
     const request = new (await import('next/server')).NextRequest(
@@ -232,9 +224,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     const response = await GET(request, { params: { token: tokenProposta } });
     const data = await response.json();
 
-    console.log('→ Status:', response.status);
-    console.log('→ Proposta:', JSON.stringify(data, null, 2));
-
     expect(response.status).toBe(200);
     expect(data.valido).toBe(true);
     expect(data.contratacao_id).toBe(contratacaoId);
@@ -242,15 +231,20 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     expect(data.valor_por_funcionario).toBe(15.5);
     expect(data.valor_total).toBe(46500.0);
 
-    console.log('✓ Proposta válida e acessível');
-    console.log('✓ Dados exibidos ao contratante:');
-    console.log('  - Funcionários: 3000');
-    console.log('  - Valor/func: R$ 15,50');
-    console.log('  - Total: R$ 46.500,00');
+    // ✓ Proposta válida e acessível
+
+    // ✓ Dados exibidos ao contratante:
+
+    //   - Funcionários: 3000
+
+    //   - Valor/func: R$ 15,50
+
+    //   - Total: R$ 46.500,00
+
   });
 
   it('ETAPA 4: Contratante aceita proposta e é redirecionado para contrato', async () => {
-    console.log('\n=== ETAPA 4: ACEITE DA PROPOSTA ===\n');
+    // \n=== ETAPA 4: ACEITE DA PROPOSTA ===\n
 
     const { POST } = await import('@/app/api/proposta/aceitar/route');
     const request = new (await import('next/server')).NextRequest(
@@ -267,9 +261,6 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     const response = await POST(request);
     const data = await response.json();
 
-    console.log('→ Status:', response.status);
-    console.log('→ Resposta:', JSON.stringify(data, null, 2));
-
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.redirect_url).toContain('/sucesso-cadastro');
@@ -278,9 +269,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     expect(data.redirect_url).toContain('origem=personalizado');
 
     contratoId = data.contrato_id;
-    console.log('✓ Proposta aceita com sucesso');
-    console.log('✓ Contrato criado - ID:', contratoId);
-    console.log('✓ Redirect URL:', data.redirect_url);
+    // ✓ Proposta aceita com sucesso
 
     // Verificar criação do contrato
     const contratoResult = await query(
@@ -298,11 +287,11 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     );
     expect(contratacaoResult.rows[0].status).toBe('aguardando_aceite_contrato');
 
-    console.log('✓ Status: aguardando_aceite_contrato');
+    // ✓ Status: aguardando_aceite_contrato
+
   });
 
   it('ETAPA 5: Sistema exibe página de sucesso com contrato e simulador', async () => {
-    console.log(
       '\n=== ETAPA 5: VERIFICAÇÃO DO FLUXO CONTRATO + SIMULADOR ===\n'
     );
 
@@ -318,24 +307,28 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     expect(contrato.numero_funcionarios).toBe(3000);
     expect(parseFloat(contrato.valor_total)).toBe(46500.0);
 
-    console.log('✓ Contrato disponível para aceite:');
-    console.log('  - ID:', contratoId);
-    console.log('  - Status: aguardando_aceite');
-    console.log('  - Contratante:', contratanteId);
-    console.log('  - Valor: R$ 46.500,00');
+    // ✓ Contrato disponível para aceite:
+
+    //   - Status: aguardando_aceite
+
+    //   - Valor: R$ 46.500,00
 
     // Verificar URL que seria exibida
     const expectedUrl = `/sucesso-cadastro?id=${contratanteId}&contrato_id=${contratoId}&origem=personalizado`;
-    console.log('✓ URL de redirecionamento:', expectedUrl);
-    console.log('✓ Página /sucesso-cadastro irá:');
-    console.log('  1. Exibir modal de contrato padrão');
-    console.log('  2. Após aceite → Atualizar contrato.aceito = true');
-    console.log('  3. Exibir simulador de pagamento');
-    console.log('  4. Após pagamento → Liberar login');
+    // ✓ Página /sucesso-cadastro irá:
+
+    //   1. Exibir modal de contrato padrão
+
+    //   2. Após aceite → Atualizar contrato.aceito = true
+
+    //   3. Exibir simulador de pagamento
+
+    //   4. Após pagamento → Liberar login
+
   });
 
   it('RESUMO: Validar estado final do fluxo', async () => {
-    console.log('\n=== 📊 RESUMO DO FLUXO E2E ===\n');
+    // \n=== 📊 RESUMO DO FLUXO E2E ===\n
 
     // Contratante
     const contratanteResult = await query(
@@ -344,11 +337,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     );
     const contratante = contratanteResult.rows[0];
 
-    console.log('📋 CONTRATANTE:');
-    console.log('  - ID:', contratante.id);
-    console.log('  - Nome:', contratante.nome);
-    console.log('  - Status:', contratante.status);
-    console.log('  - Tipo:', contratante.tipo);
+    // 📋 CONTRATANTE:
 
     // Contratação Personalizada
     const contratacaoResult = await query(
@@ -357,19 +346,15 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     );
     const contratacao = contratacaoResult.rows[0];
 
-    console.log('\n💼 CONTRATAÇÃO PERSONALIZADA:');
-    console.log('  - ID:', contratacao.id);
-    console.log('  - Status:', contratacao.status);
-    console.log('  - Funcionários:', contratacao.numero_funcionarios_estimado);
-    console.log(
+    // \n💼 CONTRATAÇÃO PERSONALIZADA:
+
       '  - Valor/func: R$',
       parseFloat(contratacao.valor_por_funcionario).toFixed(2)
     );
-    console.log(
       '  - Total: R$',
       parseFloat(contratacao.valor_total_estimado).toFixed(2)
     );
-    console.log('  - Link enviado:', contratacao.link_enviado ? 'Sim' : 'Não');
+    //   - Link enviado:', contratacao.link_enviado ? 'Sim' : 'Não
 
     // Contrato
     const contratoResult = await query(
@@ -378,19 +363,19 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     );
     const contrato = contratoResult.rows[0];
 
-    console.log('\n📄 CONTRATO:');
-    console.log('  - ID:', contrato.id);
-    console.log('  - Status:', contrato.status);
-    console.log('  - Aceito:', contrato.aceito);
-    console.log('  - Funcionários:', contrato.numero_funcionarios);
-    console.log('  - Valor: R$', parseFloat(contrato.valor_total).toFixed(2));
+    // \n📄 CONTRATO:
 
-    console.log('\n✅ FLUXO E2E VALIDADO COM SUCESSO!');
-    console.log('\n📝 PRÓXIMOS PASSOS (fora deste teste):');
-    console.log('  1. Usuário acessa /sucesso-cadastro');
-    console.log('  2. Aceita contrato padrão');
-    console.log('  3. Confirma pagamento no simulador');
-    console.log('  4. Login é liberado automaticamente');
+    // \n✅ FLUXO E2E VALIDADO COM SUCESSO!
+
+    // \n📝 PRÓXIMOS PASSOS (fora deste teste):
+
+    //   1. Usuário acessa /sucesso-cadastro
+
+    //   2. Aceita contrato padrão
+
+    //   3. Confirma pagamento no simulador
+
+    //   4. Login é liberado automaticamente
 
     expect(contratacao.status).toBe('aguardando_aceite_contrato');
     expect(contrato.status).toBe('aguardando_aceite');

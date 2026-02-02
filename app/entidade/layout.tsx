@@ -18,30 +18,16 @@ export default function EntidadeLayout({
 }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [notificacoesCount, setNotificacoesCount] = useState<number>(0);
-  const [laudosCount, setLaudosCount] = useState<number>(0);
   const [lotesCount, setLotesCount] = useState<number>(0);
   const [funcionariosCount, setFuncionariosCount] = useState<number>(0);
   const router = useRouter();
 
   const loadCounts = useCallback(async () => {
     try {
-      const [notifRes, laudosRes, lotesRes, funcRes] = await Promise.all([
-        fetch('/api/entidade/notificacoes'),
-        fetch('/api/entidade/laudos'),
+      const [lotesRes, funcRes] = await Promise.all([
         fetch('/api/entidade/lotes'),
         fetch('/api/entidade/funcionarios'),
       ]);
-
-      if (notifRes.ok) {
-        const data = await notifRes.json();
-        setNotificacoesCount(data.totalNaoLidas || 0);
-      }
-
-      if (laudosRes.ok) {
-        const data = await laudosRes.json();
-        setLaudosCount(data.laudos?.length || 0);
-      }
 
       if (lotesRes.ok) {
         const data = await lotesRes.json();
@@ -101,8 +87,6 @@ export default function EntidadeLayout({
       <EntidadeSidebar
         counts={{
           funcionarios: funcionariosCount,
-          notificacoes: notificacoesCount,
-          laudos: laudosCount,
           lotes: lotesCount,
         }}
         userName={session?.nome}

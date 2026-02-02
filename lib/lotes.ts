@@ -35,7 +35,7 @@ export async function recalcularStatusLotePorId(
     `[INFO] SKIP_IMMEDIATE_EMISSION=${process.env.SKIP_IMMEDIATE_EMISSION || 'false'}`
   );
 
-  // IMPORTANTE: 'iniciadas' inclui ambos 'iniciada' E 'em_andamento' para evitar encerramento prematuro
+  // IMPORTANTE: 'iniciadas' inclui 'iniciada' E 'em_andamento' para evitar encerramento prematuro
   const statsResult = await query(
     `
     SELECT
@@ -43,7 +43,7 @@ export async function recalcularStatusLotePorId(
       COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
       COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
       COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
-      COUNT(a.id) FILTER (WHERE a.status = 'iniciada' OR a.status = 'em_andamento') as iniciadas,
+      COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as iniciadas,
       COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
     FROM avaliacoes a
     WHERE a.lote_id = $1
@@ -120,91 +120,74 @@ export async function recalcularStatusLotePorId(
   const statusAtual = loteAtual.rows[0].status;
 
   let loteFinalizado = false;
+
+  // Lote já concluído - verificar se precisa notificar
+  if (statusAtual === 'concluido' && novoStatus === 'concluido') {
+    console.log(
+      `[INFO] Lote ${loteId} já está em status 'concluido' - mantendo status`
+    );
+    loteFinalizado = true;
+  }
+
   if (novoStatus !== statusAtual) {
     if (novoStatus === 'concluido') {
-      // Atualizar status para concluido e emitir imediatamente
+      // ✅ Atualizar status do lote para 'concluido'
       await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
         novoStatus,
         loteId,
       ]);
       console.log(
-        `[INFO] Lote ${loteId} alterado para '${novoStatus}' - iniciando emissão imediata automática (recalcularStatusLotePorId)`
+        `[INFO] Lote ${loteId} alterado para '${novoStatus}' - pronto para solicitação de emissão`
       );
-      // Adicionar à fila de emissão com idempotência (INSERT...ON CONFLICT DO NOTHING)
-      await query(
-        `INSERT INTO fila_emissao (lote_id, tentativas, max_tentativas, proxima_tentativa)
-         VALUES ($1, 0, 3, NOW())
-         ON CONFLICT (lote_id) DO NOTHING`,
-        [loteId]
-      );
-      // Emitir laudo imediatamente (operação de sistema com bypass RLS)
+
+      // ✅ CRIAR NOTIFICAÇÃO: Avisar RH/Entidade que lote está pronto para solicitar emissão
       try {
-        const skipEnv = process.env.SKIP_IMMEDIATE_EMISSION;
-        let shouldSkip = skipEnv === '1' || skipEnv === 'true';
-
-        // Security: in PRODUCTION we ignore SKIP_IMMEDIATE_EMISSION to ensure laudos are
-        // emitted automatically — this prevents accidental misconfiguration from
-        // disabling automatic emissions in production.
-        if (process.env.NODE_ENV === 'production' && shouldSkip) {
-          console.warn(
-            `[WARN] SKIP_IMMEDIATE_EMISSION está definido em PRODUCTION — ignorando e forçando emissão imediata para lote ${loteId}`
-          );
-          shouldSkip = false;
-        }
-
-        if (shouldSkip) {
-          console.log(
-            `[INFO] SKIP_IMMEDIATE_EMISSION ativo — pulando emitirLaudoImediato (recalcularStatusLotePorId) para lote ${loteId}`
-          );
-        } else {
-          const { emitirLaudoImediato } = await import('@/lib/laudo-auto');
-          const sucesso = await emitirLaudoImediato(loteId);
-
-          if (sucesso) {
-            console.log(
-              `[INFO] ✓ Lote ${loteId}: emissão imediata concluída com sucesso (recalcularStatusLotePorId)`
-            );
-          } else {
-            console.error(
-              `[ERROR] ✗ Lote ${loteId}: emissão imediata falhou (recalcularStatusLotePorId) - verifique logs`
-            );
-            try {
-              await query(
-                `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
-                 VALUES ('falha_emissao_imediata', $1, $2, NOW())`,
-                [
-                  `Falha na emissão imediata do lote ${loteId} (via recalcularStatusLotePorId)`,
-                  loteId,
-                ]
-              );
-            } catch (notifErr) {
-              console.warn(
-                '[WARN] não foi possível registrar notificacao_admin:',
-                notifErr
-              );
-            }
-          }
-        }
-      } catch (err) {
-        console.error(
-          `[ERROR] Exceção crítica ao emitir laudo do lote ${loteId} (recalcularStatusLotePorId):`,
-          err instanceof Error ? err.message : String(err)
+        // Buscar dados do lote para criar notificação contextualizada
+        const loteInfo = await query(
+          `SELECT la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id,
+                  COUNT(a.id) as total_avaliacoes
+           FROM lotes_avaliacao la
+           LEFT JOIN funcionarios f ON f.cpf = la.liberado_por
+           LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
+           WHERE la.id = $1
+           GROUP BY la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id`,
+          [loteId]
         );
-        try {
+
+        if (loteInfo.rows.length > 0) {
+          const lote = loteInfo.rows[0];
+          const destinatarioTipo =
+            lote.perfil === 'rh' ? 'gestor_entidade' : 'gestor_entidade';
+
           await query(
-            `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
-             VALUES ('erro_critico_emissao', $1, $2, NOW())`,
+            `INSERT INTO notificacoes (
+               tipo, prioridade, destinatario_cpf, destinatario_tipo,
+               titulo, mensagem, lote_id, criado_em
+             ) VALUES (
+               'lote_aguardando_solicitacao_emissao', 'alta', $1, $2,
+               'Lote Concluído - Pronto para Emissão',
+               'O lote ' || $3 || ' foi concluído com ' || $4 || ' avaliações finalizadas. Você pode solicitar a emissão do laudo.',
+               $5, NOW()
+             )`,
             [
-              `Erro crítico na emissão do lote ${loteId} (recalcularStatusLotePorId): ${err instanceof Error ? err.message : String(err)}`,
+              lote.liberado_por,
+              destinatarioTipo,
+              lote.codigo,
+              lote.total_avaliacoes,
               loteId,
             ]
           );
-        } catch (notifErr) {
-          console.warn(
-            '[WARN] não foi possível registrar notificacao_admin:',
-            notifErr
+
+          console.log(
+            `[INFO] Notificação criada para ${lote.liberado_por} (${destinatarioTipo}) - Lote ${lote.codigo} concluído com ${lote.total_avaliacoes} avaliações`
           );
         }
+      } catch (notifErr) {
+        console.error(
+          `[ERROR] Erro ao criar notificação para lote ${loteId}:`,
+          notifErr
+        );
+        // Não bloquear o fluxo principal
       }
       loteFinalizado = true;
     } else {

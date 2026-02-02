@@ -84,7 +84,7 @@ export async function POST(
       `
       SELECT id, emitido_em
       FROM laudos
-      WHERE lote_id = $1 AND status = 'enviado'
+      WHERE lote_id = $1 AND status IN ('enviado', 'emitido')
       ORDER BY emitido_em DESC
       LIMIT 1
       `,

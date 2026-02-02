@@ -403,7 +403,8 @@ describe('E2E: Cadastro Contratante - Plano Fixo', () => {
       expect(funcionario.rows.length).toBe(1);
       expect(funcionario.rows[0].perfil).toBe('gestor_entidade');
 
-      console.log('✅ Fluxo completo validado com sucesso!');
+      // ✅ Fluxo completo validado com sucesso!
+
     });
   });
 });

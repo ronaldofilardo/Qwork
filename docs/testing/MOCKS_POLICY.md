@@ -320,10 +320,302 @@ Este padrão deve ser atualizado quando:
 - Melhorias significativas são descobertas
 - Novos tipos de mock são necessários
 
+## Padrões de Qualidade de Código de Teste
+
+### Análise de Qualidade (Janeiro 2026)
+
+Baseado na análise de 494 testes do projeto, identificamos características que diferenciam os melhores testes (score 85-100) dos que precisam de melhoria (score 30-40).
+
+### As 10 Características Essenciais
+
+#### 1. JSDoc Completo e Descritivo (+20 pontos)
+
+**Obrigatório**: Todo arquivo de teste deve ter JSDoc completo no início.
+
+```typescript
+/**
+ * Testes de [Módulo/Funcionalidade]
+ *
+ * @description
+ * [Breve descrição do que é testado e por quê]
+ *
+ * Cobertura:
+ * - [Funcionalidade 1]
+ * - [Funcionalidade 2]
+ * - [Caso de borda X]
+ *
+ * @see {@link /caminho/arquivo.ts} - Arquivo testado
+ */
+```
+
+**Exemplo Real:**
+
+```typescript
+/**
+ * Testes de Row Level Security (RLS) e RBAC
+ *
+ * @description
+ * Validam isolamento de dados por perfil e permissões granulares
+ *
+ * Cobertura:
+ * - Isolamento por perfil (Funcionário, RH, Admin)
+ * - Permissões baseadas em papel
+ * - Políticas RLS no PostgreSQL
+ *
+ * @see {@link /lib/db-security.ts} - Funções de segurança
+ */
+```
+
+#### 2. Type Imports Explícitos (+15 pontos)
+
+**Obrigatório**: Separar imports de tipos dos imports de valores.
+
+```typescript
+// ✅ CORRETO
+import type { QueryResult } from 'pg';
+import type { Session, NivelCargoType } from '@/lib/session';
+import { query } from '@/lib/db';
+
+// ❌ ERRADO
+import { query, QueryResult } from '@/lib/db';
+```
+
+**Regra Simples**: Use `import type` para tipos, interfaces e type aliases. Use `import` normal para funções, classes e valores.
+
+#### 3. beforeEach com jest.clearAllMocks() (+15 pontos)
+
+**Obrigatório**: Todo describe deve ter beforeEach limpando mocks.
+
+```typescript
+describe('Módulo de Teste', () => {
+  // ✅ SEMPRE presente
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  // beforeAll para dados que não mudam entre testes
+  beforeAll(async () => {
+    // Setup único
+  });
+
+  // afterAll para cleanup
+  afterAll(async () => {
+    // Limpeza final
+  });
+});
+```
+
+**Por quê**: Mocks não limpos causam interferência entre testes e resultados não determinísticos.
+
+#### 4. Mocks Fortemente Tipados (+5 pontos)
+
+**Recomendado**: Usar jest.mocked para tipagem correta.
+
+```typescript
+// ✅ CORRETO
+import { query } from '@/lib/db';
+import type { QueryResult } from 'pg';
+
+jest.mock('@/lib/db');
+
+const mockQuery = jest.mocked(query, true);
+
+mockQuery.mockResolvedValueOnce({
+  rows: [{ id: 1 }],
+  rowCount: 1,
+} as QueryResult<any>);
+
+// ❌ EVITAR
+const mockQuery = require('@/lib/db').query;
+mockQuery.mockResolvedValue({ rows: [] });
+```
+
+#### 5. Comentários Arrange-Act-Assert
+
+**Recomendado**: Estruturar testes com comentários AAA claros.
+
+```typescript
+it('deve processar pagamento com sucesso', async () => {
+  // Arrange: Preparar dados e mocks
+  const mockPaymentData = { amount: 100, method: 'card' };
+  mockProcessPayment.mockResolvedValueOnce({ success: true });
+
+  // Act: Executar a função sendo testada
+  const result = await paymentService.process(mockPaymentData);
+
+  // Assert: Verificar resultado esperado
+  expect(result.success).toBe(true);
+  expect(mockProcessPayment).toHaveBeenCalledWith(mockPaymentData);
+  expect(mockProcessPayment).toHaveBeenCalledTimes(1);
+});
+```
+
+#### 6. Organização Visual com Emojis
+
+**Recomendado**: Usar emojis para categorizar testes visualmente.
+
+```typescript
+describe('🔒 Segurança de Senhas', () => {
+  describe('🚫 Bloqueios', () => {
+    test('❌ DELETE direto deve ser BLOQUEADO', async () => {});
+    test('❌ DELETE sem WHERE deve ser BLOQUEADO', async () => {});
+  });
+
+  describe('✅ Operações Autorizadas', () => {
+    test('✅ Deleção autorizada deve SUCEDER', async () => {});
+  });
+});
+```
+
+**Emojis Recomendados**:
+
+- 🔒 Segurança
+- 🚫 Bloqueios/Rejeições
+- ✅ Sucessos
+- ❌ Falhas Esperadas
+- 🔄 Fluxos Completos
+- 📊 Dados
+- 🎯 Validações
+- ⚠️ Casos de Borda
+
+#### 7. Nomes Descritivos de Testes
+
+**Obrigatório**: Testes devem ter nomes que descrevem comportamento completo.
+
+```typescript
+// ✅ CORRETO - Descreve comportamento completo
+it('deve marcar lote como concluído quando todas avaliações ativas forem concluídas', async () => {});
+it('NÃO deve permitir acesso a dados de outros funcionários', async () => {});
+
+// ❌ ERRADO - Vago
+it('testa lote', async () => {});
+it('funciona', async () => {});
+```
+
+**Template**: `deve [ação] quando [condição]` ou `NÃO deve [ação] quando [condição]`
+
+#### 8. Sem console.log em Produção (+10 pontos)
+
+**Obrigatório**: Remover todos os console.log de testes.
+
+```typescript
+// ❌ ERRADO
+it('teste', async () => {
+  const data = await api.fetch();
+  console.log('API response:', data); // NÃO FAZER
+  expect(data).toBeDefined();
+});
+
+// ✅ CORRETO
+it('teste', async () => {
+  const data = await api.fetch();
+  expect(data).toBeDefined();
+});
+```
+
+**Exceção**: Debug temporário (deve ser removido antes do commit).
+
+#### 9. Evitar @ts-nocheck (+20 pontos)
+
+**Obrigatório**: Evitar @ts-nocheck sem justificativa documentada.
+
+```typescript
+// ❌ ERRADO - Sem justificativa
+// @ts-nocheck
+import { Component } from './component';
+
+// ✅ ACEITÁVEL - Com justificativa e TODO
+// @ts-nocheck
+// TODO: Remover quando biblioteca X for atualizada para suportar TypeScript 5
+// Issue: #123
+import { LegacyLibrary } from 'old-lib';
+```
+
+#### 10. Estrutura Hierárquica Clara
+
+**Obrigatório**: Organizar testes em describes aninhados por funcionalidade.
+
+```typescript
+describe('Módulo Principal', () => {
+  describe('Cenário 1: Casos de Sucesso', () => {
+    it('deve fazer X quando condição Y', () => {});
+    it('deve fazer A quando condição B', () => {});
+  });
+
+  describe('Cenário 2: Validações de Entrada', () => {
+    it('deve rejeitar entrada inválida X', () => {});
+    it('deve rejeitar entrada inválida Y', () => {});
+  });
+
+  describe('Cenário 3: Casos de Borda', () => {
+    it('deve lidar com lista vazia', () => {});
+    it('deve lidar com valores nulos', () => {});
+  });
+});
+```
+
+### Checklist de Qualidade por Teste
+
+Use este checklist ao criar ou revisar testes:
+
+```typescript
+// ✅ CHECKLIST DE QUALIDADE
+
+// [ ] 1. JSDoc completo no topo do arquivo
+// [ ] 2. Imports separados (type vs valores)
+// [ ] 3. Mocks declarados no topo, após imports
+// [ ] 4. beforeEach(() => jest.clearAllMocks())
+// [ ] 5. Estrutura describe/it organizada
+// [ ] 6. Comentários AAA nos testes complexos
+// [ ] 7. Nomes descritivos (deve X quando Y)
+// [ ] 8. Sem console.log
+// [ ] 9. Sem @ts-nocheck injustificado
+// [ ] 10. afterAll para cleanup de dados
+```
+
+### Métricas de Qualidade
+
+**Score de Qualidade do Teste** (0-100):
+
+- JSDoc completo: +20
+- Type imports: +15
+- beforeEach presente: +15
+- Sem @ts-nocheck: +20
+- Sem console.log: +10
+- Estrutura describe: +10
+- Usa it/test: +10
+- **Score mínimo aceitável**: 70/100
+
+**Ferramentas**:
+
+```bash
+# Analisar qualidade de todos os testes
+pnpm quality:tests-analyze
+
+# Ver relatório detalhado
+cat __tests__/quality-report.json
+```
+
+### Exemplos de Referência
+
+**Testes Exemplares (Score 100/100)**:
+
+- `tests/api/emissor/laudos/hash-sha256-laudo.test.ts` - Template perfeito
+- `__tests__/lib/recalculo-emissao-inativadas.test.ts` - Lógica complexa bem documentada
+- `__tests__/seguranca/protecao-senhas.test.ts` - Segurança e bloqueios
+
+**Documentação Completa**:
+
+- **Características Detalhadas**: `__tests__/TOP10-CHARACTERISTICS.md`
+- **Referência Rápida**: `__tests__/QUICK-REFERENCE.md`
+- **Inventário Completo**: `__tests__/INVENTORY.md`
+
 ## Documentação Relacionada
 
 - **Exemplo Prático**: `docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx`
 - **Helpers de Teste**: `__tests__/lib/test-helpers.ts`
 - **Validador Automático**: `scripts/validate-mock-policy.cjs`
-- **Convenções Gerais**: `CONVENCOES.md` (seção Testes)</content>
+- **Análise de Qualidade**: `scripts/analyze-test-quality.cjs`
+- **Guia de Sanitização**: `__tests__/SANITIZATION-GUIDE.md`
+- **Características Top 10**: `__tests__/TOP10-CHARACTERISTICS.md`</content>
   <parameter name="filePath">c:\apps\QWork\docs\testing\MOCKS_POLICY.md

@@ -30,7 +30,7 @@ describe('/api/entidade/lotes', () => {
       contratante_id: 1,
     });
 
-    // Mock da consulta
+    // Mock da consulta principal (lotes)
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -39,10 +39,21 @@ describe('/api/entidade/lotes', () => {
           titulo: 'Lote Teste',
           tipo: 'completo',
           status: 'ativo',
-          data_criacao: '2025-11-29T10:00:00Z',
-          data_envio: '2025-12-01T10:00:00Z',
-          total_funcionarios: 5,
-          funcionarios_concluidos: 3,
+          criado_em: '2025-11-29T10:00:00Z',
+          liberado_em: '2025-12-01T10:00:00Z',
+          liberado_por_nome: 'João Silva',
+          total_avaliacoes: 5,
+          avaliacoes_concluidas: 3,
+          avaliacoes_inativadas: 0,
+          laudo_id: null,
+          laudo_status: null,
+          laudo_emitido_em: null,
+          laudo_enviado_em: null,
+          laudo_hash: null,
+          emissor_nome: null,
+          solicitado_por: null,
+          solicitado_em: null,
+          tipo_solicitante: null,
         },
       ],
     });
@@ -53,8 +64,8 @@ describe('/api/entidade/lotes', () => {
     expect(response.status).toBe(200);
     expect(data.lotes).toHaveLength(1);
     expect(data.lotes[0].codigo).toBe('001-291125');
-    expect(data.lotes[0].total_funcionarios).toBe(5);
-    expect(data.lotes[0].funcionarios_concluidos).toBe(3);
+    expect(data.lotes[0].total_avaliacoes).toBe(5);
+    expect(data.lotes[0].avaliacoes_concluidas).toBe(3);
   });
 
   it('deve retornar erro 401 quando não há sessão', async () => {
@@ -111,11 +122,19 @@ describe('/api/entidade/lotes', () => {
           status: 'concluido',
           criado_em: '2025-11-29T10:00:00Z',
           liberado_em: '2025-12-01T10:00:00Z',
+          liberado_por_nome: 'João Silva',
           total_avaliacoes: 5,
           avaliacoes_concluidas: 5,
           avaliacoes_inativadas: 0,
           laudo_id: 10,
           laudo_status: 'enviado',
+          laudo_emitido_em: '2025-12-02T10:00:00Z',
+          laudo_enviado_em: '2025-12-02T11:00:00Z',
+          laudo_hash: 'hash123',
+          emissor_nome: 'Maria Santos',
+          solicitado_por: null,
+          solicitado_em: null,
+          tipo_solicitante: null,
         },
       ],
     });
@@ -155,11 +174,19 @@ describe('/api/entidade/lotes', () => {
           status: 'concluido',
           criado_em: '2025-11-29T10:00:00Z',
           liberado_em: '2025-12-01T10:00:00Z',
+          liberado_por_nome: 'João Silva',
           total_avaliacoes: 5,
           avaliacoes_concluidas: 5,
           avaliacoes_inativadas: 0,
           laudo_id: null,
           laudo_status: null,
+          laudo_emitido_em: null,
+          laudo_enviado_em: null,
+          laudo_hash: null,
+          emissor_nome: null,
+          solicitado_por: null,
+          solicitado_em: null,
+          tipo_solicitante: null,
         },
       ],
     });

@@ -80,7 +80,7 @@ function gerarEstilosCSS(): string {
         color: #111827;
         margin-bottom: 10px;
         padding-bottom: 4px;
-        border-bottom: 2px solid #fb923c;
+        border-bottom: 2px solid #4b5563;
       }
 
       .subsection-title {
@@ -145,23 +145,15 @@ function gerarEstilosCSS(): string {
 
       .resumo-card {
         padding: 18px;
-        border-radius: 8px;
-        border: 2px solid;
       }
 
       .resumo-card-verde {
-        background: linear-gradient(to bottom right, #f0fdf4, #dcfce7);
-        border-color: #86efac;
       }
 
       .resumo-card-amarelo {
-        background: linear-gradient(to bottom right, #fefce8, #fef9c3);
-        border-color: #fde047;
       }
 
       .resumo-card-vermelho {
-        background: linear-gradient(to bottom right, #fef2f2, #fee2e2);
-        border-color: #fca5a5;
       }
 
       .conclusao {
@@ -275,7 +267,7 @@ function gerarSecaoEtapa1(etapa1: DadosGeraisEmpresa): string {
 function gerarSecaoEtapa2(etapa2: ScoreGrupo[]): string {
   const linhasTabela = etapa2
     .map((score, index) => {
-      const bgColor = index % 2 === 0 ? '#fff7ed' : '#ffffff';
+      const bgColor = index % 2 === 0 ? '#f9fafb' : '#ffffff';
       const badgeColor =
         score.classificacaoSemaforo === 'verde'
           ? '#dcfce7'
@@ -298,7 +290,7 @@ function gerarSecaoEtapa2(etapa2: ScoreGrupo[]): string {
       return `
       <tr style="background-color: ${bgColor};">
         <td style="border: 1px solid #d1d5db; padding: 4px 6px; text-align: center; font-size: 7pt;">
-          <div class="grupo-badge" style="background-color: #fed7aa; color: #c2410c;">${score.grupo}</div>
+          <div class="grupo-badge" style="background-color: #e5e7eb; color: #1f2937;">${score.grupo}</div>
         </td>
         <td style="border: 1px solid #d1d5db; font-size: 6.5pt; color: #111827;">${score.dominio}</td>
         <td style="border: 1px solid #d1d5db; font-size: 6.5pt; color: #4b5563;">${score.descricao}</td>
@@ -326,15 +318,15 @@ function gerarSecaoEtapa2(etapa2: ScoreGrupo[]): string {
       
       <table class="compact-table" style="width: 100%; border-collapse: collapse; font-size: 7pt; margin-top: 6px;">
         <thead>
-          <tr style="background: linear-gradient(to right, #f97316, #ea580c);">
-            <th style="border: 1px solid #fb923c; text-align: center; color: white; font-weight: bold; font-size: 6.5pt; min-width: 36px;">Grupo</th>
-            <th style="border: 1px solid #fb923c; text-align: left; color: white; font-weight: bold; font-size: 6.5pt;">Domínio</th>
-            <th style="border: 1px solid #fb923c; text-align: left; color: white; font-weight: bold; font-size: 6.5pt;">Descrição</th>
-            <th style="border: 1px solid #fb923c; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">Tipo</th>
-            <th style="border: 1px solid #fb923c; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">x̄ - s</th>
-            <th style="border: 1px solid #fb923c; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">Média Geral</th>
-            <th style="border: 1px solid #fb923c; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">x̄ + s</th>
-            <th style="border: 1px solid #fb923c; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">Categoria de Risco</th>
+          <tr style="background: linear-gradient(to right, #1f2937, #374151);">
+            <th style="border: 1px solid #6b7280; text-align: center; color: white; font-weight: bold; font-size: 6.5pt; min-width: 36px;">Grupo</th>
+            <th style="border: 1px solid #6b7280; text-align: left; color: white; font-weight: bold; font-size: 6.5pt;">Domínio</th>
+            <th style="border: 1px solid #6b7280; text-align: left; color: white; font-weight: bold; font-size: 6.5pt;">Descrição</th>
+            <th style="border: 1px solid #6b7280; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">Tipo</th>
+            <th style="border: 1px solid #6b7280; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">x̄ - s</th>
+            <th style="border: 1px solid #6b7280; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">Média Geral</th>
+            <th style="border: 1px solid #6b7280; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">x̄ + s</th>
+            <th style="border: 1px solid #6b7280; text-align: center; color: white; font-weight: bold; font-size: 6.5pt;">Categoria de Risco</th>
           </tr>
         </thead>
         <tbody>
@@ -346,7 +338,7 @@ function gerarSecaoEtapa2(etapa2: ScoreGrupo[]): string {
         <p style="font-size: 7pt;"><strong>x̄</strong> = média, <strong>s</strong> = desvio-padrão</p>
       </div>
 
-      <div style="margin-top: 15px; padding: 10px; background-color: #f9fafb; border-radius: 4px; border-left: 4px solid #fb923c;">
+      <div style="margin-top: 15px; padding: 10px; background-color: #f9fafb; border-radius: 4px; border-left: 4px solid #6b7280;">
         <p style="font-size: 9pt; line-height: 1.4; color: #374151; text-align: justify;">
           A amostragem acima descrita foi submetida à avaliação psicossocial para verificação de seu estado de saúde mental, como condição necessária à realização do trabalho. Durante o período da avaliação, foi possível identificar os pontos acima descritos.
         </p>
@@ -398,7 +390,7 @@ function gerarCardsEtapa3(etapa3: InterpretacaoRecomendacoes): string {
           ${etapa3.gruposExcelente
             .map(
               (g) => `
-            <div style="margin-bottom: 8px;">
+            <div style="margin-bottom: 8px; page-break-inside: avoid;">
               <p style="color: #15803d; font-size: 9pt; font-weight: bold; margin-bottom: 2px;">${g.grupo}. ${g.dominio}</p>
               <p style="color: #15803d; font-size: 8pt; line-height: 1.3;">${g.acaoRecomendada}</p>
             </div>
@@ -438,7 +430,7 @@ function gerarCardsEtapa3(etapa3: InterpretacaoRecomendacoes): string {
           ${etapa3.gruposMonitoramento
             .map(
               (g) => `
-            <div style="margin-bottom: 8px;">
+            <div style="margin-bottom: 8px; page-break-inside: avoid;">
               <p style="color: #a16207; font-size: 9pt; font-weight: bold; margin-bottom: 2px;">${g.grupo}. ${g.dominio}</p>
               <p style="color: #a16207; font-size: 8pt; line-height: 1.3;">${g.acaoRecomendada}</p>
             </div>
@@ -479,7 +471,7 @@ function gerarCardsEtapa3(etapa3: InterpretacaoRecomendacoes): string {
           ${etapa3.gruposAltoRisco
             .map(
               (g) => `
-            <div style="margin-bottom: 8px;">
+            <div style="margin-bottom: 8px; page-break-inside: avoid;">
               <p style="color: #b91c1c; font-size: 9pt; font-weight: bold; margin-bottom: 2px;">${g.grupo}. ${g.dominio}</p>
               <p style="color: #b91c1c; font-size: 8pt; line-height: 1.3;">${g.acaoRecomendada}</p>
             </div>

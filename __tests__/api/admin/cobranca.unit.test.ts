@@ -45,7 +45,6 @@ describe('API /api/admin/cobranca', () => {
     );
     const res = await GET(req as any);
     const data = await res.json();
-    console.log('Resposta da API:', data);
 
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);

@@ -8,7 +8,7 @@ import { NextRequest } from 'next/server';
 
 describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
   it('deve retornar pré-cadastros personalizados pendentes', async () => {
-    console.log('\n=== TESTE DIAGNÓSTICO: API NOVOS CADASTROS ===\n');
+    // \n=== TESTE DIAGNÓSTICO: API NOVOS CADASTROS ===\n
 
     // Mock de sessão admin
     jest.mock('@/lib/session', () => ({
@@ -38,8 +38,6 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
       LIMIT 5
     `);
 
-    console.log('📊 DADOS NO BANCO:', JSON.stringify(dbResult.rows, null, 2));
-
     // Testar a API
     const { GET } = await import('@/app/api/admin/novos-cadastros/route');
 
@@ -49,23 +47,15 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
     const response = await GET(request);
     const data = await response.json();
 
-    console.log('\n📡 RESPOSTA DA API:');
-    console.log('Status:', response.status);
-    console.log('Total contratantes:', data.contratantes?.length || 0);
+    // \n📡 RESPOSTA DA API:
 
     if (data.contratantes && data.contratantes.length > 0) {
-      console.log('\n✅ CONTRATANTES RETORNADOS:');
+      // \n✅ CONTRATANTES RETORNADOS:
+
       data.contratantes.forEach((c: any) => {
-        console.log(`\n  - ID: ${c.id}`);
-        console.log(`    Nome: ${c.nome}`);
-        console.log(`    Status: ${c.status}`);
-        console.log(`    Tipo: ${c.tipo}`);
         if (c.contratacao_personalizada_id) {
-          console.log(
             `    🔥 PERSONALIZADO ID: ${c.contratacao_personalizada_id}`
           );
-          console.log(`    Status Personalizado: ${c.contratacao_status}`);
-          console.log(`    Funcionários: ${c.numero_funcionarios_estimado}`);
         }
       });
     }
@@ -83,16 +73,13 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
         c.contratacao_status === 'aguardando_valor_admin'
     );
 
-    console.log(
       `\n🔥 Total de personalizados pendentes: ${personalizados.length}`
     );
 
     if (personalizados.length > 0) {
-      console.log(
         '✅ SUCESSO! API está retornando pré-cadastros personalizados'
       );
     } else {
-      console.log(
         '⚠️ ATENÇÃO: Nenhum personalizado pendente encontrado na resposta da API'
       );
     }

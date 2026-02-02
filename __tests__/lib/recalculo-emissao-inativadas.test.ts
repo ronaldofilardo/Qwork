@@ -1,27 +1,26 @@
 /**
- * Testes para recálculo de status de lote e emissão imediata
+ * Testes para recálculo de status de lote
  * Cobre especialmente o caso em que avaliações inativadas são contadas
- * como parte do total, e a emissão deve ocorrer quando (concluídas + inativadas) = total
+ * como parte do total.
+ *
+ * NOTA: Emissão automática foi REMOVIDA do sistema.
+ * Lote fica 'concluido' e vai para fila_emissao, mas NÃO emite automaticamente.
  */
 
 import { query } from '@/lib/db';
 import { recalcularStatusLote, recalcularStatusLotePorId } from '@/lib/lotes';
 import type { QueryResult } from 'pg';
-import { emitirLaudoImediato } from '@/lib/laudo-auto';
 
 jest.mock('@/lib/db');
-jest.mock('@/lib/laudo-auto', () => ({
-  emitirLaudoImediato: jest.fn().mockResolvedValue(true),
-}));
 
 const mockQuery = jest.mocked(query, true);
 
-describe('Recalculo de status e emissão imediata (inativadas)', () => {
+describe('Recalculo de status (sem emissão automática)', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deve marcar lote como concluído e chamar emitirLaudoImediato quando ativas=concluidas>0 (inativadas presentes)', async () => {
+  it('deve marcar lote como concluído quando ativas=concluidas>0 (inativadas presentes)', async () => {
     // 1) SELECT lote_id FROM avaliacoes WHERE id = $1
     mockQuery.mockResolvedValueOnce({
       rows: [{ lote_id: 42 }],
@@ -54,7 +53,6 @@ describe('Recalculo de status e emissão imediata (inativadas)', () => {
       rowCount: 1,
     } as unknown as QueryResult<unknown>);
 
-    // emitirLaudoImediato will be dynamically imported and should be called
     await recalcularStatusLote(1001);
 
     expect(mockQuery).toHaveBeenCalled();
@@ -67,10 +65,10 @@ describe('Recalculo de status e emissão imediata (inativadas)', () => {
     );
     expect(updateCalls.length).toBeGreaterThan(0);
 
-    expect(emitirLaudoImediato).toHaveBeenCalledWith(42);
+    // NOTA: emissão automática foi removida. Lote fica 'concluido' apenas.
   });
 
-  it('recalcularStatusLotePorId deve marcar concluído e emitir quando (concluidas + inativadas) = total', async () => {
+  it('recalcularStatusLotePorId deve marcar concluído quando (concluidas + inativadas) = total', async () => {
     // stats for loteId 77: total 4, ativas 2, concluidas 2, iniciadas 0 -> concluido
     mockQuery.mockResolvedValueOnce({
       rows: [
@@ -100,7 +98,7 @@ describe('Recalculo de status e emissão imediata (inativadas)', () => {
     const res = await recalcularStatusLotePorId(77);
     expect(res.novoStatus).toBe('concluido');
     expect(res.loteFinalizado).toBe(true);
-    expect(emitirLaudoImediato).toHaveBeenCalledWith(77);
+    // NOTA: emissão automática foi removida.
   });
 
   it('deve cancelar lote se todas avaliações forem inativadas (ativas = 0)', async () => {
@@ -132,6 +130,6 @@ describe('Recalculo de status e emissão imediata (inativadas)', () => {
     const res = await recalcularStatusLotePorId(99);
     expect(res.novoStatus).toBe('cancelado');
     expect(res.loteFinalizado).toBe(false);
-    expect(emitirLaudoImediato).not.toHaveBeenCalledWith(99);
+    // NOTA: emissão automática foi removida.
   });
 });

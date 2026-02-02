@@ -10,6 +10,7 @@ import React, {
 import { useRouter, useParams } from 'next/navigation';
 import ModalInativarAvaliacao from '@/components/ModalInativarAvaliacao';
 import ModalResetarAvaliacao from '@/components/ModalResetarAvaliacao';
+import toast from 'react-hot-toast';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -18,6 +19,18 @@ function normalizeString(str: string): string {
     .replace(/[\u0300-\u036f]/g, '') // Remover diacríticos
     .toLowerCase()
     .trim();
+}
+
+// Função para formatar data
+function formatDate(dateString: string): string {
+  const date = new Date(dateString);
+  return date.toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 interface LoteInfo {
@@ -31,6 +44,15 @@ interface LoteInfo {
   liberado_por_nome: string | null;
   empresa_nome: string;
   emitido_em?: string | null;
+  laudo_id?: number | null;
+  laudo_status?: string | null;
+  laudo_emitido_em?: string | null;
+  laudo_enviado_em?: string | null;
+  emissao_solicitada?: boolean;
+  emissao_solicitado_em?: string | null;
+  tem_laudo?: boolean;
+  emissor_nome?: string;
+  hash_pdf?: string;
 }
 
 interface Estatisticas {
@@ -1019,6 +1041,178 @@ export default function DetalhesLotePage() {
                 )}
               </div>
             </div>
+
+            {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído, sem laudo e sem solicitação */}
+            {lote &&
+              lote.status === 'concluido' &&
+              !lote.emissao_solicitada &&
+              !lote.tem_laudo && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-lg">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                        <span className="text-2xl">✅</span>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 mb-1">
+                          Lote Concluído
+                        </h4>
+                        <p className="text-sm text-gray-700">
+                          Todas as avaliações foram finalizadas. Você pode
+                          solicitar a emissão do laudo.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={async () => {
+                        const confirmado = confirm(
+                          `Confirma a solicitação de emissão do laudo para o lote ${lote.codigo}?\n\nO laudo será gerado e enviado para o emissor responsável.`
+                        );
+                        if (!confirmado) return;
+
+                        try {
+                          const response = await fetch(
+                            `/api/lotes/${lote.id}/solicitar-emissao`,
+                            {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                            }
+                          );
+                          const data = await response.json();
+                          if (!response.ok)
+                            throw new Error(
+                              data.error || 'Erro ao solicitar emissão'
+                            );
+                          toast.success('Emissão solicitada com sucesso!');
+                          setTimeout(() => loadLoteData(), 1500);
+                        } catch (error: any) {
+                          toast.error(
+                            error.message || 'Erro ao solicitar emissão'
+                          );
+                        }
+                      }}
+                      className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all font-semibold text-base flex items-center justify-center gap-2 shadow-md"
+                    >
+                      <span className="text-xl">🚀</span>
+                      <span>Solicitar Emissão do Laudo</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+            {/* Mensagem quando emissão já foi solicitada */}
+            {lote && lote.emissao_solicitada && !lote.tem_laudo && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">📋</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 mb-1">
+                        Emissão Solicitada
+                      </h4>
+                      <p className="text-sm text-gray-700">
+                        A emissão do laudo foi solicitada em{' '}
+                        {lote.emissao_solicitado_em
+                          ? formatDate(lote.emissao_solicitado_em)
+                          : 'data não disponível'}
+                        . O laudo está sendo processado pelo emissor.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mensagem quando laudo já foi emitido */}
+            {lote && lote.tem_laudo && (
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="p-4 bg-gradient-to-r from-purple-50 to-violet-50 border-2 border-purple-300 rounded-lg">
+                  <div className="flex items-start gap-3 mb-4">
+                    <div className="flex-shrink-0 w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                      <span className="text-2xl">✅</span>
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-gray-900 mb-1">
+                        Laudo Emitido
+                      </h4>
+                      <p className="text-sm text-gray-700 mb-2">
+                        O laudo deste lote já foi emitido{' '}
+                        {lote.laudo_status === 'enviado' ? 'e enviado' : ''}.
+                        {lote.emitido_em &&
+                          ` Emitido em ${formatDate(lote.emitido_em)}`}
+                      </p>
+                      {lote.emissor_nome && (
+                        <p className="text-xs text-purple-700">
+                          Emissor: {lote.emissor_nome}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Bot\u00e3o Download Laudo */}
+                  {lote.laudo_id && (
+                    <button
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(
+                            `/api/rh/laudos/${lote.laudo_id}/download`
+                          );
+                          if (!response.ok)
+                            throw new Error('Erro ao baixar laudo');
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `Laudo_${lote.codigo}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                          toast.success('Laudo baixado com sucesso!');
+                        } catch {
+                          toast.error('Erro ao baixar laudo');
+                        }
+                      }}
+                      className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
+                    >
+                      📄 Ver Laudo / Baixar PDF
+                    </button>
+                  )}
+
+                  {/* Hash de Integridade */}
+                  {lote.hash_pdf && (
+                    <div className="bg-white p-3 rounded-lg border border-purple-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-purple-800 uppercase">
+                          🔒 Hash de Integridade (SHA-256)
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard
+                              .writeText(lote.hash_pdf!)
+                              .then(() => toast.success('Hash copiado!'))
+                              .catch(() => toast.error('Erro ao copiar hash'));
+                          }}
+                          className="inline-flex items-center gap-1 bg-purple-600 text-white px-2 py-1 rounded text-xs hover:bg-purple-700"
+                        >
+                          📋 Copiar
+                        </button>
+                      </div>
+                      <code className="text-[10px] font-mono text-gray-700 break-all block">
+                        {lote.hash_pdf}
+                      </code>
+                      <p className="text-xs text-purple-600 mt-2">
+                        Use este hash para verificar a autenticidade e
+                        integridade do PDF
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

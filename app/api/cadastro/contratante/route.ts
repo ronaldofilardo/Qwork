@@ -657,6 +657,10 @@ export async function POST(request: NextRequest) {
       JSON.stringify({
         event: 'cadastro_contratante_error',
         error: String(error),
+        code: (error as any)?.code,
+        constraint: (error as any)?.constraint,
+        detail: (error as any)?.detail,
+        hint: (error as any)?.hint,
         stack: error instanceof Error ? error.stack : undefined,
       })
     );

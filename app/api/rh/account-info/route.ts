@@ -7,9 +7,7 @@ export const dynamic = 'force-dynamic';
 
 export const GET = async () => {
   try {
-    // EXCEÇÃO: Admin pode acessar esta rota para auditorias financeiras
-    // (consulta informações de contrato/parcelas, não operações de clínica)
-    const session = await requireRole(['rh', 'admin']);
+    const session = await requireRole(['rh']);
 
     // Determinar clinica_id: preferir sessão, senão buscar pelo CPF
     let clinicaId = session.clinica_id;

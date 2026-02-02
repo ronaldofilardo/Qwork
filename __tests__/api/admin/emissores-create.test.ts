@@ -237,9 +237,10 @@ describe('API /api/admin/emissores/create', () => {
     expect(data.error).toContain('gestor RH');
 
     // Cleanup
-    await query("DELETE FROM funcionarios WHERE cpf = $1 AND perfil = 'rh'", [
-      '88800000999',
-    ]);
+    await query(
+      "DELETE FROM funcionarios WHERE cpf = $1 AND usuario_tipo = 'gestor_rh'",
+      ['88800000999']
+    );
   });
 
   it('deve retornar 409 se CPF já existir', async () => {

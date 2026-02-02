@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,7 +20,7 @@ export async function GET() {
     }
 
     // Detectar dinamicamente quais colunas de preço existem na tabela `planos`
-    const planColsRes = await query(
+    const planColsRes = await queryAsGestorEntidade(
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`
     );
     const availablePlanCols = planColsRes.rows.map((r: any) => r.column_name);
@@ -53,7 +53,9 @@ export async function GET() {
       LIMIT 1
     `;
 
-    const res = await query(contratoPlanoQuery, [contratanteId]);
+    const res = await queryAsGestorEntidade(contratoPlanoQuery, [
+      contratanteId,
+    ]);
     if (res.rows.length === 0) {
       return NextResponse.json(null);
     }
@@ -64,18 +66,18 @@ export async function GET() {
     let vigencia_inicio: string | null = null;
     let vigencia_fim: string | null = null;
     try {
-      const pagamentoRes = await query(
+      const pagamentoRes = await queryAsGestorEntidade(
         `SELECT data_pagamento FROM pagamentos WHERE contratante_id = $1 AND status = 'pago' AND data_pagamento IS NOT NULL ORDER BY data_pagamento DESC LIMIT 1`,
         [contratanteId]
       );
       if (pagamentoRes.rows.length > 0) {
-        vigencia_inicio = pagamentoRes.rows[0].data_pagamento;
+        vigencia_inicio = String(pagamentoRes.rows[0].data_pagamento);
         const d = new Date(vigencia_inicio);
         const fim = new Date(d);
         fim.setDate(fim.getDate() + 364);
         vigencia_fim = fim.toISOString();
       } else if (row.criado_em) {
-        vigencia_inicio = row.criado_em;
+        vigencia_inicio = String(row.criado_em);
         const d = new Date(vigencia_inicio);
         const fim = new Date(d);
         fim.setDate(fim.getDate() + 364);
@@ -96,14 +98,14 @@ export async function GET() {
       plano_preco_unitario: (() => {
         const v =
           row.plano_valor_por_funcionario ||
-          row.plano_valor_base ||
           row.plano_preco ||
+          row.plano_valor_base ||
           row.plano_valor_fixo_anual;
-        return v == null ? null : parseFloat(v);
+        return v == null ? null : parseFloat(String(v));
       })(),
-      valor_total: row.valor_total ? parseFloat(row.valor_total) : null,
+      valor_total: row.valor_total ? parseFloat(String(row.valor_total)) : null,
       numero_funcionarios: row.numero_funcionarios
-        ? parseInt(row.numero_funcionarios, 10)
+        ? parseInt(String(row.numero_funcionarios), 10)
         : null,
       criado_em: row.criado_em,
       status: 'ativo',

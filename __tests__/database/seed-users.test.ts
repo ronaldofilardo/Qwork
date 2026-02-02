@@ -28,8 +28,9 @@ jest.mock('bcryptjs', () => ({
 describe('Seed Users Script', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    process.env.LOCAL_DATABASE_URL =
-      'postgresql://test:test@localhost:5432/test';
+    process.env.TEST_DATABASE_URL =
+      'postgresql://postgres:123456@localhost:5432/nr-bps_db_test';
+    process.env.LOCAL_DATABASE_URL = '';
   });
 
   it('deve criar apenas o admin sem associações', async () => {

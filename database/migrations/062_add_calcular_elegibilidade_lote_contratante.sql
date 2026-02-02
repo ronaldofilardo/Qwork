@@ -1,4 +1,4 @@
--- Migration: 062_add_calcular_elegibilidade_lote_contratante.sql
+﻿-- Migration: 062_add_calcular_elegibilidade_lote_contratante.sql
 -- Description: Add function calcular_elegibilidade_lote_contratante for entity lot eligibility calculation
 -- Date: 2026-01-02
 
@@ -21,10 +21,10 @@ BEGIN
     f.cpf AS funcionario_cpf,
     f.nome AS funcionario_nome,
     CASE
-      WHEN f.indice_avaliacao = 0 THEN 'Funcionário novo (nunca avaliado)'
-      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'Índice atrasado (faltou ' || (p_numero_lote_atual - 1 - f.indice_avaliacao)::TEXT || ' lote(s))'
-      WHEN f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'Mais de 1 ano sem avaliação'
-      ELSE 'Renovação regular'
+      WHEN f.indice_avaliacao = 0 THEN 'Funcionario novo (nunca avaliado)'
+      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'Indice atrasado (faltou ' || (p_numero_lote_atual - 1 - f.indice_avaliacao)::TEXT || ' lote(s))'
+      WHEN f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'Mais de 1 ano sem avaliacao'
+      ELSE 'Renovacao regular' 
     END AS motivo_inclusao,
     f.indice_avaliacao AS indice_atual,
     f.data_ultimo_lote,
@@ -34,32 +34,32 @@ BEGIN
     END AS dias_sem_avaliacao,
     CASE
       WHEN f.indice_avaliacao = 0 THEN 'ALTA'
-      WHEN f.indice_avaliacao < p_numero_lote_atual - 2 THEN 'CRÍTICA'
+      WHEN f.indice_avaliacao < p_numero_lote_atual - 2 THEN 'CRITICA'
       WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'ALTA'
-      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'MÉDIA'
+      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'MEDIA'
       ELSE 'NORMAL'
     END AS prioridade
   FROM funcionarios f
   WHERE
     f.contratante_id = p_contratante_id
-    AND f.empresa_id IS NULL  -- Funcionários diretamente vinculados à entidade
+    AND f.empresa_id IS NULL  -- FuncionÃ¡rios diretamente vinculados Ã  entidade
     AND f.ativo = true
     AND (
-      -- Critério 1: Funcionário novo (índice 0)
+      -- CritÃ©rio 1: FuncionÃ¡rio novo (Ã­ndice 0)
       f.indice_avaliacao = 0
       OR
-      -- Critério 2: Índice incompleto (faltou lote anterior)
+      -- CritÃ©rio 2: Ãndice incompleto (faltou lote anterior)
       f.indice_avaliacao < p_numero_lote_atual - 1
       OR
-      -- Critério 3: Mais de 1 ano sem avaliação
+      -- CritÃ©rio 3: Mais de 1 ano sem avaliaÃ§Ã£o
       (f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year')
     )
   ORDER BY
-    -- Ordenar por prioridade: CRÍTICA > ALTA > MÉDIA > NORMAL
+    -- Ordenar por prioridade: CRÃTICA > ALTA > MÃ‰DIA > NORMAL
     CASE prioridade
-      WHEN 'CRÍTICA' THEN 1
+      WHEN 'CRÃTICA' THEN 1
       WHEN 'ALTA' THEN 2
-      WHEN 'MÉDIA' THEN 3
+      WHEN 'MÃ‰DIA' THEN 3
       ELSE 4
     END,
     f.indice_avaliacao ASC, -- Mais atrasados primeiro
@@ -68,3 +68,4 @@ END;
 $$ LANGUAGE plpgsql;
 
 COMMENT ON FUNCTION calcular_elegibilidade_lote_contratante (INTEGER, INTEGER) IS 'Calcula quais funcionarios devem ser incluidos no proximo lote de entidade com base em indice, data (>1 ano) e novos funcionarios';
+

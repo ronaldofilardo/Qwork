@@ -1,5 +1,5 @@
 import { requireClinica } from '@/lib/session';
-import { queryWithContext } from '@/lib/db-security';
+import { queryAsGestorRH } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,7 @@ export const GET = async (_req: Request) => {
     const limit = parseInt(url.searchParams.get('limit') || '50');
 
     // Buscar laudos da clínica
-    const laudosQuery = await queryWithContext(
+    const laudosQuery = await queryAsGestorRH(
       `
       SELECT 
         l.id as laudo_id,

@@ -13,6 +13,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 
+// Força renderização dinâmica - não pré-renderizar durante build
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 interface GerarReciboRequest {
   contrato_id?: number;
   pagamento_id: number;

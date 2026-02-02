@@ -473,7 +473,8 @@ Status: Aguardando Aceite do Contratante`;
       expect(funcionario.rows.length).toBe(1);
       expect(funcionario.rows[0].perfil).toBe('clinica');
 
-      console.log('✅ Fluxo personalizado completo validado com sucesso!');
+      // ✅ Fluxo personalizado completo validado com sucesso!
+
     });
 
     it('deve validar valores financeiros corretos', async () => {

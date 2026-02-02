@@ -342,7 +342,6 @@ describe('Inserção Individual de Funcionários', () => {
 
       const response = await POST(request);
       const data = await response.json();
-      console.log('[TEST DEBUG] response:', response.status, data);
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
@@ -375,7 +374,6 @@ describe('Inserção Individual de Funcionários', () => {
 
       const response = await POST(request);
       const data = await response.json();
-      console.log('[TEST DEBUG] no-pass response:', response.status, data);
 
       expect(mockBcryptHash).toHaveBeenCalledWith('123456', 10);
     });

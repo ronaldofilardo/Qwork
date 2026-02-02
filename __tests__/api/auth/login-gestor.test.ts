@@ -64,9 +64,6 @@ describe('/api/auth/login - gestor entidade', () => {
     const data = await response.json();
 
     // debug
-    console.log('LOGIN TEST RESPONSE', data);
-    console.log('mockQuery.calls:', mockQuery.mock.calls.length);
-    console.log(
       'mockQuery.results:',
       mockQuery.mock.results.map((r) => r && r.value)
     );

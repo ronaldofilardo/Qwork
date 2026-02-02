@@ -23,7 +23,6 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGet.mockImplementation((key: string) => {
-      console.log('mockGet called with key:', key);
       if (key === 'contratante_id') return '1';
       if (key === 'plano_id') return '1';
       if (key === 'numero_funcionarios') return '10';
@@ -31,9 +30,9 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
     });
     // Mock fetch para interceptar todas as chamadas
     mockFetch.mockImplementation((url: string) => {
-      console.log('Mock fetch called with URL:', url);
       if (url.includes('/api/pagamento/simulador')) {
-        console.log('Returning simulador data');
+        // Returning simulador data
+
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -50,7 +49,8 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
         } as Response);
       }
       if (url.includes('/api/pagamento/processar')) {
-        console.log('Mocking processar call');
+        // Mocking processar call
+
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -61,7 +61,6 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
         } as Response);
       }
       // Para outras URLs, retorna uma resposta padrão
-      console.log('Returning default response for URL:', url);
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({}),

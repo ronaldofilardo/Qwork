@@ -244,7 +244,6 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
 
       const response = await POST(request);
       const data = await response.json();
-      console.log('[TEST DEBUG] response body:', data);
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);

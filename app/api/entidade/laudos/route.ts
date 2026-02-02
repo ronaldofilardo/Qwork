@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse, NextRequest } from 'next/server';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { requireEntity } from '@/lib/session';
 
 /**
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Buscar laudos com paginação
-    const laudos = await query(
+    const laudos = await queryAsGestorEntidade(
       `
       SELECT
         l.id,
@@ -57,7 +57,7 @@ export async function GET(request: NextRequest) {
     );
 
     // Contar total de laudos
-    const countResult = await query(
+    const countResult = await queryAsGestorEntidade(
       `
       SELECT COUNT(DISTINCT l.id) as total
       FROM laudos l
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
       params
     );
 
-    const total = parseInt(countResult.rows[0]?.total || '0');
+    const total = parseInt(String(countResult.rows[0]?.total || '0'));
     const totalPages = Math.ceil(total / limit);
 
     // Transformar os dados para incluir informações dos arquivos

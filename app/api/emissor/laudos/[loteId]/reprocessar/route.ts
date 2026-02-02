@@ -52,33 +52,15 @@ export async function POST(
     }
 
     // Verificar estado do lote
-    let loteResult;
-    try {
-      loteResult = await query(
-        `
-        SELECT 
-          id, status, codigo, contratante_id, processamento_em
-        FROM lotes_avaliacao
-        WHERE id = $1
-      `,
-        [loteId]
-      );
-    } catch (err) {
-      // Fallback: se a coluna processamento_em não existir (DB antigo), selecione NULL para manter compatibilidade
-      if (err instanceof Error && /processamento_em/.test(err.message)) {
-        loteResult = await query(
-          `
-          SELECT
-            id, status, codigo, contratante_id, NULL as processamento_em
-          FROM lotes_avaliacao
-          WHERE id = $1
-        `,
-          [loteId]
-        );
-      } else {
-        throw err;
-      }
-    }
+    const loteResult = await query(
+      `
+      SELECT 
+        id, status, codigo, contratante_id
+      FROM lotes_avaliacao
+      WHERE id = $1
+    `,
+      [loteId]
+    );
 
     if (!loteResult.rows || loteResult.rows.length === 0) {
       return NextResponse.json(
@@ -93,17 +75,6 @@ export async function POST(
     if (lote.status !== 'concluido') {
       return NextResponse.json(
         { error: `Lote não está concluído (status: ${lote.status})` },
-        { status: 400 }
-      );
-    }
-
-    // Verificar se já está em processamento
-    if (lote.processamento_em) {
-      return NextResponse.json(
-        {
-          error: 'Lote já está em processamento',
-          processamento_iniciado_em: lote.processamento_em,
-        },
         { status: 400 }
       );
     }

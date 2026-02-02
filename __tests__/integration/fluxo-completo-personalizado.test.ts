@@ -103,7 +103,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
   });
 
   it('deve completar todo o fluxo: cadastro → aprovação admin → pagamento → login', async () => {
-    console.log('\n=== ETAPA 1: CADASTRO DA EMPRESA ===');
+    // \n=== ETAPA 1: CADASTRO DA EMPRESA ===
 
     // 1. CADASTRO DA EMPRESA COM PLANO PERSONALIZADO
     const { POST: cadastroPost } =
@@ -173,7 +173,6 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     const cadastroResponse = await cadastroPost(mockRequest);
     const cadastroData = await cadastroResponse.json();
 
-    console.log('Resposta cadastro:', {
       status: cadastroResponse.status,
       data: cadastroData,
     });
@@ -193,12 +192,11 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     expect(contratacaoRes.rows.length).toBe(1);
     expect(contratacaoRes.rows[0].status).toBe('aguardando_valor_admin');
 
-    console.log(
       '✓ Empresa cadastrada com sucesso, aguardando definição de valores pelo admin'
     );
 
     // 2. ADMIN DEFINE VALORES E GERA LINK
-    console.log('\n=== ETAPA 2: ADMIN DEFINE VALORES E GERA LINK ===');
+    // \n=== ETAPA 2: ADMIN DEFINE VALORES E GERA LINK ===
 
     // Simular diretamente no banco ao invés de chamar a API (simplificado para o teste)
     const valorPorFuncionario = 50.0;
@@ -247,10 +245,8 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const linkPagamento = `${baseUrl}/pagamento/personalizado/${paymentToken}`;
 
-    console.log(
       '✓ Valores definidos: R$ 50,00/funcionário × 150 = R$ 7.500,00'
     );
-    console.log('✓ Link de pagamento gerado:', linkPagamento);
 
     // Verificar atualização em contratacao_personalizada
     const contratacaoAtualizada = await query(
@@ -274,7 +270,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     expect(contratoRes.rows[0].valor_total).toBe('7500.00');
 
     // 3. SIMULAR ACESSO AO LINK E PAGAMENTO
-    console.log('\n=== ETAPA 3: ACESSO AO LINK E CONFIRMAÇÃO DE PAGAMENTO ===');
+    // \n=== ETAPA 3: ACESSO AO LINK E CONFIRMAÇÃO DE PAGAMENTO ===
 
     // Simular confirmação de pagamento diretamente no banco
     // (em produção seria através da API de pagamento)
@@ -310,10 +306,10 @@ describe('Fluxo Completo - Plano Personalizado', () => {
       [contratanteId]
     );
 
-    console.log('✓ Pagamento confirmado com sucesso');
+    // ✓ Pagamento confirmado com sucesso
 
     // 4. VERIFICAR LIBERAÇÃO DE LOGIN
-    console.log('\n=== ETAPA 4: VERIFICAÇÃO DE LIBERAÇÃO DE LOGIN ===');
+    // \n=== ETAPA 4: VERIFICAÇÃO DE LIBERAÇÃO DE LOGIN ===
 
     // Verificar se pode criar senha para o contratante
     const contratanteFinal = await query(
@@ -348,17 +344,24 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     expect(senhaRes.rows.length).toBe(1);
 
-    console.log('✓ Login liberado com sucesso');
+    // ✓ Login liberado com sucesso
 
     // RESUMO FINAL
-    console.log('\n=== RESUMO DO FLUXO COMPLETO ===');
-    console.log('1. ✓ Empresa cadastrada (status: pendente)');
-    console.log('2. ✓ Admin definiu valores: R$ 7.500,00');
-    console.log('3. ✓ Link de pagamento gerado');
-    console.log('4. ✓ Pagamento confirmado');
-    console.log('5. ✓ Contrato ativado');
-    console.log('6. ✓ Login liberado');
-    console.log('\n🎉 FLUXO COMPLETO EXECUTADO COM SUCESSO!\n');
+    // \n=== RESUMO DO FLUXO COMPLETO ===
+
+    // 1. ✓ Empresa cadastrada (status: pendente)
+
+    // 2. ✓ Admin definiu valores: R$ 7.500,00
+
+    // 3. ✓ Link de pagamento gerado
+
+    // 4. ✓ Pagamento confirmado
+
+    // 5. ✓ Contrato ativado
+
+    // 6. ✓ Login liberado
+
+    // \n🎉 FLUXO COMPLETO EXECUTADO COM SUCESSO!\n
 
     // Verificação final de todos os estados
     const verificacaoFinal = await query(
@@ -393,6 +396,5 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     expect(estadoFinal.contrato_aceito).toBe(true);
     expect(estadoFinal.tem_senha).toBe(true);
 
-    console.log('Estado final validado:', estadoFinal);
   });
 });

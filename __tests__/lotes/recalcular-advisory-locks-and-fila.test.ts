@@ -10,18 +10,20 @@ describe('RecalcularStatus: advisory lock and fila idempotency', () => {
 
     const codigo = 'TEST-COD-1-' + Math.floor(Math.random() * 1000000);
     const loteRes = await query(
-      "INSERT INTO lotes_avaliacao (clinica_id, status, codigo, titulo) VALUES ($1, 'ativo', $2,'Lote Teste') RETURNING id",
+      "INSERT INTO lotes_avaliacao (clinica_id, status, codigo, titulo) VALUES ($1, 'rascunho', $2,'Lote Teste') RETURNING id",
       [clinicaId, codigo]
     );
     const loteId = loteRes.rows[0].id;
 
-    // Create one avaliacao concluded (counts as 'liberada' cohort)
+    // Create one avaliacao concluded (counts towards completion)
+    // Note: Inserting with 'concluida' may trigger auto-completion by trigger,
+    // so we explicitly call recalcularStatusLotePorId to test idempotency
     await query(
       "INSERT INTO avaliacoes (lote_id, funcionario_cpf, status) VALUES ($1, '00000000000', 'concluida')",
       [loteId]
     );
 
-    // Call recalcularStatus twice
+    // Call recalcularStatus twice - should insert fila_emissao only once
     await recalcularStatusLotePorId(loteId);
     await recalcularStatusLotePorId(loteId);
 
@@ -38,7 +40,7 @@ describe('RecalcularStatus: advisory lock and fila idempotency', () => {
       loteId,
     ]);
     await query(
-      "UPDATE lotes_avaliacao SET status = 'ativo', emitido_em = NULL, processamento_em = NULL WHERE id = $1",
+      // Migration 130: processamento_em foi removida - sistema agora \u00e9 100% manual\n      \"UPDATE lotes_avaliacao SET status = 'ativo', emitido_em = NULL WHERE id = $1\",
       [loteId]
     );
     await query('DELETE FROM laudos WHERE lote_id = $1', [loteId]);

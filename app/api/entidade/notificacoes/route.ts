@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { requireEntity } from '@/lib/session';
 
 /**
@@ -13,7 +13,7 @@ export async function GET() {
     const contratanteId = session.contratante_id;
 
     // Buscar notificações de lotes concluídos (últimos 7 dias)
-    const lotesConcluidos = await query(
+    const lotesConcluidos = await queryAsGestorEntidade(
       `
       SELECT
         'lote_concluido' as tipo,
@@ -38,7 +38,7 @@ export async function GET() {
     );
 
     // Buscar notificações de laudos enviados (últimos 7 dias)
-    const laudosEnviados = await query(
+    const laudosEnviados = await queryAsGestorEntidade(
       `
       SELECT
         'laudo_enviado' as tipo,
@@ -65,21 +65,23 @@ export async function GET() {
     const notificacoes = [
       ...lotesConcluidos.rows.map((n) => ({
         ...n,
-        mensagem: `Lote ${n.codigo} concluído com ${n.avaliacoes_concluidas} avaliações`,
+        mensagem: `Lote ${String(n.codigo)} concluído com ${String(n.avaliacoes_concluidas)} avaliações`,
         data_evento: n.data_conclusao,
       })),
       ...laudosEnviados.rows.map((n) => ({
         ...n,
-        mensagem: `Laudo ${n.codigo} enviado por ${n.emissor_nome || 'emissor'}`,
+        mensagem: `Laudo ${String(n.codigo)} enviado por ${String(n.emissor_nome) || 'emissor'}`,
+        data_evento: n.data_evento,
       })),
     ].sort(
       (a, b) =>
-        new Date(b.data_evento).getTime() - new Date(a.data_evento).getTime()
+        new Date(String(b.data_evento)).getTime() -
+        new Date(String(a.data_evento)).getTime()
     );
 
     // Contar não lidas (últimas 24h)
     const totalNaoLidas = notificacoes.filter((n) => {
-      const dataEvento = new Date(n.data_evento);
+      const dataEvento = new Date(String(n.data_evento));
       const horasAtras = (Date.now() - dataEvento.getTime()) / (1000 * 60 * 60);
       return horasAtras < 24;
     }).length;

@@ -1,3 +1,11 @@
+/**
+ * @fileoverview Testes para API de cobrança administrativa - fallback de valores
+ * @description Valida que a API GET /api/admin/cobranca retorna corretamente
+ * o valor_pago do pagamento registrado quando cp.valor_pago é nulo
+ */
+
+import type { Response } from '@/types/api';
+import type { CobrancaData } from '@/types/cobranca';
 import { query } from '@/lib/db';
 import { createTestContratante } from '../helpers/test-data-factory';
 
@@ -5,13 +13,26 @@ import { createTestContratante } from '../helpers/test-data-factory';
 jest.mock('@/lib/session', () => ({
   requireRole: jest.fn(() =>
     Promise.resolve({ cpf: '00000000000', perfil: 'admin' })
-  ),
+  ) as jest.MockedFunction<() => Promise<{ cpf: string; perfil: string }>>,
 }));
 
+/**
+ * @test Suite de testes para GET /api/admin/cobranca
+ * @description Verifica o comportamento de fallback quando cp.valor_pago é nulo
+ */
 describe('GET /api/admin/cobranca - fallback to pagamento.valor', () => {
   let contratanteId: number;
   let pagamentoId: number;
   const cnpj = '99999999000101';
+
+  beforeEach(async () => {
+    // Limpar dados de testes anteriores
+    await query(
+      'DELETE FROM pagamentos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      [cnpj]
+    );
+    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpj]);
+  });
 
   beforeAll(async () => {
     contratanteId = await createTestContratante({
@@ -44,25 +65,36 @@ describe('GET /api/admin/cobranca - fallback to pagamento.valor', () => {
   });
 
   afterAll(async () => {
+    // Cleanup - remover dados de teste
     await query('DELETE FROM pagamentos WHERE id = $1', [pagamentoId]);
     await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
   });
 
+  /**
+   * @test Valida fallback de valor_pago quando cp.valor_pago é nulo
+   * @description Quando cp.valor_pago é nulo, a API deve retornar o valor
+   * do registro pagamentos.valor (1800.00 no teste)
+   */
   it('retorna valor_pago igual ao pagamento registrado quando cp.valor_pago é nulo', async () => {
+    // Arrange - Importar rota
     const { GET } = await import('@/app/api/admin/cobranca/route');
 
+    // Act - Chamar API
     const resp = await GET(
       new Request(`http://localhost/api/admin/cobranca?cnpj=${cnpj}`)
     );
-    const data = await resp.json();
-    console.log('Cobranca API response:', data);
+    const data: Response<{ contratos: CobrancaData[] }> = await resp.json();
 
-    expect(data.success).toBe(true);
+    // Assert - Validar resposta
+    expect(data.success).toBe(true, 'API deve retornar success=true');
     const found = data.contratos.find(
-      (c: any) => c.cnpj.replace(/\D/g, '') === cnpj
+      (c: CobrancaData) => c.cnpj.replace(/\D/g, '') === cnpj
     );
     expect(found).toBeDefined();
-    // O valor deve ser o do pagamento (1800)
-    expect(Number(found.valor_pago)).toBeCloseTo(1800);
+    expect(Number(found?.valor_pago)).toBeCloseTo(
+      1800,
+      2,
+      'Valor deve ser o do pagamento (1800.00)'
+    );
   });
 });

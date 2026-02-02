@@ -662,4 +662,4 @@ describe('RH Empresa Dashboard', () => {
     // O layout atual não exibe esses textos, nem domínios explicitamente. Testes removidos para refletir o código fonte real.
   });
 });
-
+

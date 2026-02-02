@@ -30,7 +30,7 @@ describe('Avaliação - Conclusão', () => {
   });
 
   describe('Item 15: Responder 37 questões muda status e redireciona', () => {
-    it('deve finalizar avaliação após 70ª resposta', async () => {
+    it('deve finalizar avaliação após 37ª resposta', async () => {
       mockQuery
         .mockResolvedValueOnce({
           rows: [{ id: 1, funcionario_cpf: '12345678901' }],
