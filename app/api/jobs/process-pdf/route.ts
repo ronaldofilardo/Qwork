@@ -36,6 +36,19 @@ const PDF_SERVICE_CONFIG = {
 const BASE_URL = process.env.BASE_URL || (process.env.HOST ? `https://${process.env.HOST}` : 'http://localhost:3000');
 
 export async function POST(request: NextRequest) {
+  // ENDPOINT DESABILITADO - Migrado para processamento local via emissor
+  // O emissor local agora processa toda geração de PDFs (laudos e recibos)
+  // Este endpoint não é mais necessário em produção (Vercel)
+  return NextResponse.json(
+    { 
+      error: 'Endpoint desabilitado',
+      message: 'Processamento de PDFs migrado para emissor local. Este endpoint não é mais utilizado.',
+      status: 410
+    }, 
+    { status: 410 }
+  );
+
+  /* CÓDIGO ORIGINAL COMENTADO - NÃO USAR
   try {
     // Verificar autenticação (Bearer token ou cron secret)
     const authHeader = request.headers.get('authorization');
@@ -153,10 +166,21 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+  */
 }
 
-// Permitir GET para health check
+// GET também desabilitado
 export async function GET(_request: NextRequest) {
+  return NextResponse.json(
+    { 
+      error: 'Endpoint desabilitado',
+      message: 'Processamento de PDFs migrado para emissor local.',
+      status: 410
+    }, 
+    { status: 410 }
+  );
+
+  /* CÓDIGO ORIGINAL COMENTADO
   try {
     const result = await query(
       `SELECT 
@@ -178,4 +202,5 @@ export async function GET(_request: NextRequest) {
       { status: 500 }
     );
   }
+  */
 }
