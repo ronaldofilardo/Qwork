@@ -38,7 +38,7 @@ export async function GET(
         la.status,
         la.criado_em,
         la.liberado_em,
-        la.emitido_em,
+        l.emitido_em as laudo_emitido_em,
         CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
         fe.solicitado_em as emissao_solicitado_em,
         CASE 
