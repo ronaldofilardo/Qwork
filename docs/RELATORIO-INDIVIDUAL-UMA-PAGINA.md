@@ -49,6 +49,7 @@ Criar um relatório individual compacto que caiba em **uma única página A4**, 
 ## 🎨 Características do Layout
 
 ### Seções
+
 1. **Título** (centralizado, fonte 18pt)
 2. **Dados do Funcionário** (fonte 10pt)
    - Nome, CPF, Matrícula
@@ -63,6 +64,7 @@ Criar um relatório individual compacto que caiba em **uma única página A4**, 
 5. **Rodapé** (fonte 8pt, cinza)
 
 ### Cores das Classificações
+
 - **VERDE** (#166534): Resultado favorável
 - **AMARELO** (#854D0E): Resultado intermediário
 - **VERMELHO** (#991B1B): Resultado que requer atenção
@@ -70,15 +72,18 @@ Criar um relatório individual compacto que caiba em **uma única página A4**, 
 ## 🔧 Implementação Técnica
 
 ### Arquivo
+
 - `app/api/entidade/lote/[id]/relatorio-individual/route.ts`
 - `app/api/rh/relatorio-individual-pdf/route.ts`
 
 ### Tecnologia
+
 - **jsPDF** (geração programática)
 - **Sem jspdf-autotable** (layout manual mais compacto)
 - **Sem Puppeteer/Chromium**
 
 ### Fluxo
+
 1. Busca dados da avaliação concluída
 2. Calcula médias por grupo usando `buildGruposFromRespostas`
 3. Cria PDF com `new jsPDF()`
@@ -89,12 +94,14 @@ Criar um relatório individual compacto que caiba em **uma única página A4**, 
 ## ✅ O Que Foi Removido
 
 ### Do PDF
+
 - ❌ Tabelas detalhadas de questões
 - ❌ Valores individuais das respostas
 - ❌ Textos completos das perguntas
 - ❌ Múltiplas páginas
 
 ### Do Sistema
+
 - ❌ `lib/infrastructure/pdf/generators/pdf-generator.ts`
 - ❌ `lib/templates/relatorio-individual-html.ts`
 - ❌ `__tests__/lib/pdf-generator*.test.ts`
@@ -103,14 +110,14 @@ Criar um relatório individual compacto que caiba em **uma única página A4**, 
 
 ## 📊 Comparação
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Páginas | 3-5 páginas | **1 página** |
-| Tempo de geração | ~2-3s | **~200-500ms** |
-| Tamanho arquivo | ~150-300KB | **~20-40KB** |
-| Dependências | Puppeteer + Chromium | jsPDF apenas |
-| Detalhamento | Completo | Resumo |
-| Deploy | Complexo | Simples |
+| Aspecto          | Antes                | Depois         |
+| ---------------- | -------------------- | -------------- |
+| Páginas          | 3-5 páginas          | **1 página**   |
+| Tempo de geração | ~2-3s                | **~200-500ms** |
+| Tamanho arquivo  | ~150-300KB           | **~20-40KB**   |
+| Dependências     | Puppeteer + Chromium | jsPDF apenas   |
+| Detalhamento     | Completo             | Resumo         |
+| Deploy           | Complexo             | Simples        |
 
 ## 🧪 Testes
 
@@ -149,11 +156,12 @@ GET /api/rh/relatorio-individual-pdf?lote_id={loteId}&cpf={cpf}
 ✅ **Custo**: Menor uso de recursos serverless  
 ✅ **Simplicidade**: Código mais simples e manutenível  
 ✅ **Deploy**: Sem necessidade de binários Chromium  
-✅ **Usabilidade**: Uma página fácil de imprimir/compartilhar  
+✅ **Usabilidade**: Uma página fácil de imprimir/compartilhar
 
 ## 🚀 Próximos Passos (Opcional)
 
 Se necessário adicionar mais informações no futuro:
+
 - Adicionar gráficos de barras com cores
 - Incluir logo da empresa
 - Criar versão "detalhada" opcional (multi-página)

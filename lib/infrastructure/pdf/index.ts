@@ -39,7 +39,7 @@ export {
   formatarTamanho,
   type PdfGenerationOptions,
   type PdfGenerationResult,
-} from './generators/pdf-generator';
+} from '@/lib/pdf-generator';
 
 export { downloadLaudoPDF } from './generators/pdf-laudo-generator';
 

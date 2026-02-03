@@ -17,7 +17,9 @@ describe('Relatório Individual - Geração com jsPDF (Uma Página)', () => {
     const content = fs.readFileSync(routePath, 'utf-8');
 
     expect(content).toMatch(/import\s+jsPDF\s+from\s+['"]jspdf['"]/);
-    expect(content).toMatch(/import\s+{\s*applyPlugin\s*}\s+from\s+['"]jspdf-autotable['"]/);
+    expect(content).toMatch(
+      /import\s+{\s*applyPlugin\s*}\s+from\s+['"]jspdf-autotable['"]/
+    );
   });
 
   it('não deve importar Puppeteer ou módulos HTML', () => {
