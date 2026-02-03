@@ -107,9 +107,10 @@ export async function recalcularStatusLotePorId(
     }
 
     // Verificar status atual do lote
-    const loteAtual = await q('SELECT status FROM lotes_avaliacao WHERE id = $1', [
-      loteId,
-    ]);
+    const loteAtual = await q(
+      'SELECT status FROM lotes_avaliacao WHERE id = $1',
+      [loteId]
+    );
 
     if (!loteAtual || loteAtual.rowCount === 0 || !loteAtual.rows[0]) {
       console.warn(

@@ -14,9 +14,6 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 
-
-
-
 export function POST(request: NextRequest) {
   // ENDPOINT DESABILITADO - Migrado para processamento local via emissor
   // O emissor local agora processa toda geração de PDFs (laudos e recibos)

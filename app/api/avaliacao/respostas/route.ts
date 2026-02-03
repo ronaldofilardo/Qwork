@@ -167,7 +167,9 @@ export async function POST(request: Request) {
             [numero_ordem, session.cpf]
           );
 
-          console.log(`[RESPOSTAS] ✅ Funcionário atualizado dentro da transação`);
+          console.log(
+            `[RESPOSTAS] ✅ Funcionário atualizado dentro da transação`
+          );
         }
 
         console.log(
