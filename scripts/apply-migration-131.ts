@@ -1,9 +1,9 @@
 /**
  * Script: Aplicar Migration 131 no Neon (Produção)
- * 
+ *
  * Adiciona colunas emitido_em, enviado_em e outras colunas faltantes
  * na tabela lotes_avaliacao do banco de produção (Neon).
- * 
+ *
  * Uso:
  *   pnpm tsx scripts/apply-migration-131.ts
  */
@@ -28,14 +28,19 @@ async function applyMigration131() {
     process.exit(1);
   }
 
-  console.log('📊 Banco de dados:', dbUrl.includes('neon.tech') ? 'Neon (Produção)' : 'Outro');
+  console.log(
+    '📊 Banco de dados:',
+    dbUrl.includes('neon.tech') ? 'Neon (Produção)' : 'Outro'
+  );
   console.log('');
 
   // Perguntar confirmação se for produção
   if (dbUrl.includes('neon.tech')) {
-    console.log('⚠️  ATENÇÃO: Você está prestes a modificar o banco de PRODUÇÃO!');
+    console.log(
+      '⚠️  ATENÇÃO: Você está prestes a modificar o banco de PRODUÇÃO!'
+    );
     console.log('');
-    
+
     // Em produção real, você pode adicionar um prompt de confirmação aqui
     // Para CI/CD, comentar essa verificação ou usar variável de ambiente
   }
@@ -53,13 +58,20 @@ async function applyMigration131() {
 
     console.log(`   Colunas encontradas: ${checkColumns.rows.length}/6`);
     checkColumns.rows.forEach((col: any) => {
-      console.log(`   - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`);
+      console.log(
+        `   - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`
+      );
     });
     console.log('');
 
     // 2. Ler arquivo de migration
     console.log('2️⃣  Lendo arquivo de migration...');
-    const migrationPath = join(process.cwd(), 'database', 'migrations', '131_add_emitido_enviado_columns_node.sql');
+    const migrationPath = join(
+      process.cwd(),
+      'database',
+      'migrations',
+      '131_add_emitido_enviado_columns_node.sql'
+    );
     const migrationSQL = readFileSync(migrationPath, 'utf-8');
     console.log(`   ✓ Migration carregada (${migrationSQL.length} caracteres)`);
     console.log('');
@@ -90,7 +102,9 @@ async function applyMigration131() {
     console.log('');
     console.log('   Detalhes:');
     validateColumns.rows.forEach((col: any) => {
-      console.log(`   - ${col.column_name.padEnd(20)} | ${col.data_type.padEnd(25)} | nullable: ${col.is_nullable.padEnd(3)} | default: ${col.column_default || 'NULL'}`);
+      console.log(
+        `   - ${col.column_name.padEnd(20)} | ${col.data_type.padEnd(25)} | nullable: ${col.is_nullable.padEnd(3)} | default: ${col.column_default || 'NULL'}`
+      );
     });
     console.log('');
 
@@ -116,25 +130,26 @@ async function applyMigration131() {
     console.log('='.repeat(60));
     console.log('');
     console.log('Próximos passos:');
-    console.log('1. Testar endpoint: POST /api/lotes/[loteId]/solicitar-emissao');
+    console.log(
+      '1. Testar endpoint: POST /api/lotes/[loteId]/solicitar-emissao'
+    );
     console.log('2. Verificar geração de laudos no emissor');
     console.log('3. Validar que emitido_em e enviado_em estão sendo populados');
     console.log('');
-
   } catch (error: any) {
     console.error('');
     console.error('❌ ERRO ao aplicar migration:');
     console.error('');
     console.error(error.message);
-    
+
     if (error.position) {
       console.error(`   Posição do erro: ${error.position}`);
     }
-    
+
     if (error.hint) {
       console.error(`   Dica: ${error.hint}`);
     }
-    
+
     console.error('');
     process.exit(1);
   }

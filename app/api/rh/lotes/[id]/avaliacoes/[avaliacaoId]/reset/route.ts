@@ -88,11 +88,7 @@ export async function POST(
       try {
         await requireRHWithEmpresaAccess(lote.empresa_id);
       } catch (permError) {
-        await query('ROLLBACK');
-        console.log(
-          '[DEBUG] requireRHWithEmpresaAccess falhou para reset:',
-          permError
-        );
+        await query('ROLLBACK').catch(() => {});
         return NextResponse.json(
           {
             error: 'Você não tem permissão para resetar avaliações neste lote',
@@ -104,7 +100,7 @@ export async function POST(
         );
       }
 
-      // Validate batch status - must NOT be concluded or sent to emissor
+      // Validate batch status - must NOT be sent to emissor, have laudo, or have emission requested
       const invalidStatuses = [
         'concluded',
         'concluido',
@@ -112,12 +108,41 @@ export async function POST(
         'a_emitir',
         'emitido',
       ];
-      if (invalidStatuses.includes(lote.status)) {
+
+      // Verificar se a emissão do laudo foi solicitada
+      const emissaoSolicitadaResult = await query(
+        `SELECT COUNT(*) as count FROM fila_emissao WHERE lote_id = $1`,
+        [loteId]
+      );
+
+      const emissaoSolicitada =
+        parseInt(emissaoSolicitadaResult.rows[0].count) > 0;
+
+      // Verificar se o lote já foi emitido
+      const loteEmitidoResult = await query(
+        `SELECT emitido_em FROM lotes_avaliacao WHERE id = $1`,
+        [loteId]
+      );
+
+      const loteEmitido = !!loteEmitidoResult.rows[0].emitido_em;
+
+      // Permitir reset se lote está 'concluido' mas não foi solicitada emissão e não foi emitido
+      if (
+        (lote.status === 'concluido' || lote.status === 'concluded') &&
+        !emissaoSolicitada &&
+        !loteEmitido
+      ) {
+        // Permitir reset
+      } else if (
+        invalidStatuses.includes(lote.status) ||
+        emissaoSolicitada ||
+        loteEmitido
+      ) {
         await query('ROLLBACK');
         return NextResponse.json(
           {
             error:
-              'Não é possível resetar avaliação: lote já foi concluído, enviado ao emissor ou possui laudo',
+              'Não é possível resetar avaliação: lote já foi enviado ao emissor, possui laudo ou emissão já foi solicitada',
             success: false,
             loteStatus: lote.status,
           },

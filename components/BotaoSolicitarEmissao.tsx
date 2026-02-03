@@ -20,7 +20,6 @@ import toast from 'react-hot-toast';
 
 interface BotaoSolicitarEmissaoProps {
   loteId: number;
-  loteCodigo: string;
   loteStatus: string;
   laudoId?: number | null;
   laudoStatus?: string | null;
@@ -32,7 +31,6 @@ interface BotaoSolicitarEmissaoProps {
 
 export function BotaoSolicitarEmissao({
   loteId,
-  loteCodigo,
   loteStatus,
   laudoId,
   laudoStatus,
@@ -59,7 +57,7 @@ export function BotaoSolicitarEmissao({
   const handleSolicitar = async () => {
     // Confirmação antes de solicitar
     const confirmado = confirm(
-      `Confirma a solicitação de emissão do laudo para o lote ${loteCodigo}?\n\n` +
+      `Confirma a solicitação de emissão do laudo para o lote #${loteId}?\n\n` +
         'O laudo será gerado e enviado para o emissor responsável.'
     );
 

@@ -135,21 +135,15 @@ export const POST = async (req: Request) => {
         continue;
       }
 
-      // Gerar código do lote
-      const codigoResult = await queryAsGestorEntidade(
-        `SELECT gerar_codigo_lote() as codigo`
-      );
-      const codigo = codigoResult.rows[0].codigo;
-
       // ✅ CORREÇÃO: Entity usa contratante_id (não clinica_id/empresa_id)
       // XOR constraint exige: contratante_id OU clinica_id (não ambos)
       // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
+      // Usa apenas ID (sem geração de codigo)
       const loteResult = await queryAsGestorEntidade(
-        `INSERT INTO lotes_avaliacao (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7) RETURNING id, codigo, liberado_em, numero_ordem`,
+        `INSERT INTO lotes_avaliacao (contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, $4, 'ativo', $5, $6) RETURNING id, liberado_em, numero_ordem`,
         [
-          codigo,
           contratanteId,
-          titulo || `Lote ${String(numeroOrdem)} - ${String(codigo)}`,
+          titulo || `Lote ${String(numeroOrdem)}`,
           descricao ||
             `Lote ${String(numeroOrdem)} liberado para entidade ${contratanteId}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis da empresa ${String(empresaCheck.rows[0].nome)}.`,
           tipo || 'completo',
@@ -210,7 +204,7 @@ export const POST = async (req: Request) => {
               descricao: descricao || null,
               data_filtro: dataFiltro || null,
               lote_referencia_id: loteReferenciaId || null,
-              codigo: String(lote.codigo),
+              id: lote.id,
               numero_ordem: lote.numero_ordem,
               avaliacoes_criadas: avaliacoesCriadas,
               total_funcionarios: funcionariosElegiveis.length,
@@ -232,7 +226,6 @@ export const POST = async (req: Request) => {
         empresaNome: empresaCheck.rows[0].nome,
         created: true,
         loteId: lote.id,
-        codigo: lote.codigo,
         numero_ordem: lote.numero_ordem,
         avaliacoesCriadas,
         funcionariosConsiderados: funcionariosElegiveis.length,
@@ -308,7 +301,7 @@ export const POST = async (req: Request) => {
 
       if (funcionariosElegiveis.length > 0) {
         const codigoResult = await queryAsGestorEntidade(
-          `SELECT gerar_codigo_lote() as codigo`
+          `SELECT usar apenas ID do lote() as codigo`
         );
         const codigo = codigoResult.rows[0].codigo;
 
@@ -370,7 +363,6 @@ export const POST = async (req: Request) => {
                   `Lote ${String(lote.numero_ordem)} - ${String(codigo)}`,
                 descricao: descricao || null,
                 data_filtro: dataFiltro || null,
-                codigo: lote.codigo,
                 numero_ordem: lote.numero_ordem,
                 avaliacoes_criadas: avaliacoesCriadas,
                 total_funcionarios: funcionariosElegiveis.length,
@@ -392,7 +384,6 @@ export const POST = async (req: Request) => {
           empresaNome: contratanteNome,
           created: true,
           loteId: lote.id,
-          codigo: lote.codigo,
           numero_ordem: lote.numero_ordem,
           avaliacoesCriadas,
           funcionariosConsiderados: funcionariosElegiveis.length,

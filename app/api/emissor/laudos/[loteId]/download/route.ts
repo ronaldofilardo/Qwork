@@ -46,7 +46,7 @@ export const GET = async (
       // Não há registro no DB, mas pode haver arquivo local
       // Buscar informações do lote para verificar permissão
       const loteQuery = await query(
-        `SELECT id, codigo, titulo, emissor_cpf FROM lotes_avaliacao WHERE id = $1`,
+        `SELECT id, titulo, emissor_cpf FROM lotes_avaliacao WHERE id = $1`,
         [loteId]
       );
 
@@ -74,7 +74,6 @@ export const GET = async (
       laudo = {
         id: loteInfo.id,
         lote_id: loteInfo.id,
-        codigo: loteInfo.codigo,
         titulo: loteInfo.titulo,
       };
     } else {
@@ -87,7 +86,7 @@ export const GET = async (
 
     const names = new Set<string>();
     names.add(`laudo-${laudo.id}.pdf`);
-    if (laudo.codigo) names.add(`laudo-${laudo.codigo}.pdf`);
+    if (laudo.codigo) names.add(`laudo-${laudo.id}.pdf`);
     if (laudo.lote_id) names.add(`laudo-${laudo.lote_id}.pdf`);
 
     // 1) tentar storage/local

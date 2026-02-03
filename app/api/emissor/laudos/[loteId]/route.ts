@@ -36,7 +36,7 @@ export const GET = async (
     // Verificar se o lote existe e está pronto
     const loteCheck = await query(
       `
-      SELECT la.id, la.codigo, la.status,
+      SELECT la.id, la.status,
              COALESCE(ec.nome, cont.nome) as empresa_nome, 
              COALESCE(c.nome, cont.nome) as clinica_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
@@ -137,7 +137,6 @@ export const GET = async (
         success: true,
         lote: {
           id: lote.id,
-          codigo: lote.codigo,
           empresa_nome: lote.empresa_nome,
           clinica_nome: lote.clinica_nome,
           status: lote.status,
@@ -184,7 +183,6 @@ export const GET = async (
       success: true,
       lote: {
         id: lote.id,
-        codigo: lote.codigo,
         empresa_nome: lote.empresa_nome,
         clinica_nome: lote.clinica_nome,
         status: lote.status,
@@ -364,7 +362,7 @@ export const POST = async (
     // Verificar se o lote existe e está pronto
     const loteCheck = await query(
       `
-      SELECT la.id, la.codigo, la.status, 
+      SELECT la.id, la.status, 
              COALESCE(ec.nome, cont.nome) as empresa_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
              COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,

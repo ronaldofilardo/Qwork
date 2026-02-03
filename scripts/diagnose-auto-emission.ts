@@ -11,13 +11,15 @@ async function diagnoseAutoEmission() {
 
   try {
     // 1. Verificar se trigger existe
-    console.log('1️⃣  Verificando trigger trg_reservar_id_laudo_on_lote_insert...');
+    console.log(
+      '1️⃣  Verificando trigger trg_reservar_id_laudo_on_lote_insert...'
+    );
     const triggerCheck = await query(`
       SELECT tgname, tgrelid::regclass AS table_name, pg_get_triggerdef(oid) AS definition
       FROM pg_trigger
       WHERE tgname = 'trg_reservar_id_laudo_on_lote_insert'
     `);
-    
+
     if (triggerCheck.rowCount > 0) {
       console.log('   ❌ TRIGGER EXISTE (PROBLEMA CONFIRMADO)');
       console.table(triggerCheck.rows);
@@ -27,13 +29,15 @@ async function diagnoseAutoEmission() {
     console.log('');
 
     // 2. Verificar função
-    console.log('2️⃣  Verificando função fn_reservar_id_laudo_on_lote_insert...');
+    console.log(
+      '2️⃣  Verificando função fn_reservar_id_laudo_on_lote_insert...'
+    );
     const funcCheck = await query(`
       SELECT proname, pg_get_functiondef(oid) AS definition
       FROM pg_proc
       WHERE proname = 'fn_reservar_id_laudo_on_lote_insert'
     `);
-    
+
     if (funcCheck.rowCount > 0) {
       console.log('   ❌ FUNÇÃO EXISTE (trigger ainda pode disparar)');
     } else {
@@ -52,7 +56,7 @@ async function diagnoseAutoEmission() {
       ORDER BY id DESC
       LIMIT 10
     `);
-    
+
     console.log(`   Encontrados: ${orphanLaudos.rowCount} laudos órfãos`);
     if (orphanLaudos.rowCount > 0) {
       console.table(orphanLaudos.rows);
@@ -69,27 +73,35 @@ async function diagnoseAutoEmission() {
         AND l.id IS NULL
       LIMIT 10
     `);
-    
-    console.log(`   Encontrados: ${hashWithoutLaudo.rowCount} lotes com hash mas sem laudo`);
+
+    console.log(
+      `   Encontrados: ${hashWithoutLaudo.rowCount} lotes com hash mas sem laudo`
+    );
     if (hashWithoutLaudo.rowCount > 0) {
       console.table(hashWithoutLaudo.rows);
     }
     console.log('');
 
     // 5. Verificar trigger de recálculo (migration 150)
-    console.log('5️⃣  Verificando função de recálculo (deve estar sem fila_emissao)...');
+    console.log(
+      '5️⃣  Verificando função de recálculo (deve estar sem fila_emissao)...'
+    );
     const funcRecalc = await query(`
       SELECT pg_get_functiondef(oid) AS definition
       FROM pg_proc
       WHERE proname = 'fn_recalcular_status_lote_on_avaliacao_update'
     `);
-    
+
     if (funcRecalc.rowCount > 0) {
       const def = funcRecalc.rows[0].definition;
       if (def.includes('fila_emissao')) {
-        console.log('   ❌ FUNÇÃO AINDA INSERE EM fila_emissao (migration 150 NÃO aplicada)');
+        console.log(
+          '   ❌ FUNÇÃO AINDA INSERE EM fila_emissao (migration 150 NÃO aplicada)'
+        );
       } else {
-        console.log('   ✅ Função não insere em fila_emissao (migration 150 aplicada)');
+        console.log(
+          '   ✅ Função não insere em fila_emissao (migration 150 aplicada)'
+        );
       }
     }
     console.log('');
@@ -98,22 +110,26 @@ async function diagnoseAutoEmission() {
     console.log('='.repeat(60));
     console.log('RESUMO DO DIAGNÓSTICO:');
     console.log('='.repeat(60));
-    
+
     const hasTrigger = triggerCheck.rowCount > 0;
     const hasOrphans = orphanLaudos.rowCount > 0;
     const hasHashWithoutLaudo = hashWithoutLaudo.rowCount > 0;
-    
+
     if (hasTrigger || hasOrphans || hasHashWithoutLaudo) {
       console.log('');
       console.log('⚠️  PROBLEMAS IDENTIFICADOS:');
       if (hasTrigger) {
-        console.log('   - Trigger automático AINDA EXISTE (migration 151 não aplicada)');
+        console.log(
+          '   - Trigger automático AINDA EXISTE (migration 151 não aplicada)'
+        );
       }
       if (hasOrphans) {
         console.log(`   - ${orphanLaudos.rowCount} laudos órfãos em rascunho`);
       }
       if (hasHashWithoutLaudo) {
-        console.log(`   - ${hashWithoutLaudo.rowCount} lotes com hash sem laudo válido`);
+        console.log(
+          `   - ${hashWithoutLaudo.rowCount} lotes com hash sem laudo válido`
+        );
       }
       console.log('');
       console.log('✅ SOLUÇÃO:');
@@ -127,7 +143,6 @@ async function diagnoseAutoEmission() {
       console.log('✅ Todas migrations 15x foram aplicadas corretamente!');
     }
     console.log('');
-
   } catch (error: any) {
     console.error('');
     console.error('❌ Erro ao executar diagnóstico:', error.message);

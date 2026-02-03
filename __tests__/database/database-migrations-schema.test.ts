@@ -130,12 +130,10 @@ describe('Database Migrations - Validação de Schema', () => {
   });
 
   describe('Migration 103 - Colunas de Avaliação em Funcionários', () => {
-    it('deve ter coluna ultimo_lote_codigo', async () => {
+    it('não deve ter coluna ultimo_lote_codigo', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [
-          { column_name: 'ultimo_lote_codigo', data_type: 'character varying' },
-        ],
-        rowCount: 1,
+        rows: [],
+        rowCount: 0,
       } as any);
 
       const result = await query(`
@@ -144,7 +142,7 @@ describe('Database Migrations - Validação de Schema', () => {
         WHERE table_name = 'funcionarios' AND column_name = 'ultimo_lote_codigo'
       `);
 
-      expect(result.rows).toHaveLength(1);
+      expect(result.rows).toHaveLength(0);
     });
 
     it('deve ter colunas ultima_avaliacao_data_conclusao e ultima_avaliacao_status', async () => {
@@ -290,7 +288,7 @@ describe('Data Integrity - Validação Pós-Migrações', () => {
       `
       SELECT 
         id, cpf, nome, data_nascimento, contratante_id,
-        ultimo_lote_codigo, ultima_avaliacao_data_conclusao, 
+        ultima_avaliacao_data_conclusao, 
         ultima_avaliacao_status, ultimo_motivo_inativacao, data_ultimo_lote
       FROM funcionarios
       WHERE contratante_id = $1

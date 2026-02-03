@@ -107,7 +107,7 @@ export default function EditarLaudo() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `laudo-${lote?.codigo || loteId}.pdf`;
+      a.download = `laudo-${lote.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -935,7 +935,7 @@ export default function EditarLaudo() {
       {/* Modal de Upload */}
       <ModalUploadLaudo
         loteId={loteId}
-        loteCodigo={lote?.codigo || ''}
+        loteCodigo={lote?.id?.toString() || ''}
         isOpen={modalUploadOpen}
         onClose={() => setModalUploadOpen(false)}
         onSuccess={handleUploadSuccess}

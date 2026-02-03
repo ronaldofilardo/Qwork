@@ -41,7 +41,8 @@ describe('E2E: Emissão de laudo (integração)', () => {
 
     // Criar lote
     const resLote = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, clinica_id, empresa_id, liberado_por, status, numero_ordem) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
+      `INSERT INTO lotes_avaliacao (titulo, clinica_id, empresa_id, liberado_por, status, numero_ordem) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      // parâmetros ajustados mais abaixo (ver uso específico do teste)
       [`L-E2E-${ts}`, 'Lote E2E', clinicaId, empresaId, emissorCpf, 'ativo', 1]
     );
     loteId = resLote.rows[0].id;

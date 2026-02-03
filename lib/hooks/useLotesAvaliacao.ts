@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 
 export interface LoteAvaliacao {
   id: number;
-  codigo: string;
   titulo: string;
   tipo: string;
   liberado_em: string;

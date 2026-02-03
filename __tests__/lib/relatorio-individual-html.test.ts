@@ -12,7 +12,7 @@ describe('gerarHTMLRelatorioIndividual', () => {
         funcao: 'Analista',
         matricula: 'A1',
       },
-      lote: { id: 1, codigo: 'L1', titulo: 'Lote 1' },
+      lote: { id: 1, titulo: 'Lote 1' },
       envio: '01/02/2026, 10:00:00',
       grupos: [
         {

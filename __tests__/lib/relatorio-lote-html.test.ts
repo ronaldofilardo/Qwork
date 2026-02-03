@@ -3,7 +3,7 @@ import { gerarHTMLRelatorioLote } from '@/lib/templates/relatorio-lote-html';
 describe('Template relatorio lote - compact', () => {
   it('deve gerar HTML com logo menor e % ao lado do valor', () => {
     const dados = {
-      lote: { codigo: '013-180126', titulo: 'Lote Teste' },
+      lote: { titulo: 'Lote Teste' },
       empresa: 'ACME Ltda',
       totalFuncionarios: 1,
       funcionarios: [

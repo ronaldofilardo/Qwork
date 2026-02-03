@@ -179,7 +179,7 @@ export async function POST(
           user.nome || `${user.perfil} sem nome`,
           request.headers.get('x-forwarded-for') ||
             request.headers.get('x-real-ip'),
-          `Solicitação manual de emissão por ${user.perfil} - Lote ${lote.codigo}`,
+          `Solicitação manual de emissão por ${user.perfil} - Lote ${lote.id}`,
         ]
       );
 
@@ -225,10 +225,10 @@ export async function POST(
            $1,
            $2,
            'Solicitação de emissão registrada',
-           'Solicitação de emissão registrada para lote ' || $3 || '. O laudo será gerado pelo emissor quando disponível.',
-           jsonb_build_object('lote_id', $4::integer, 'lote_codigo', $3)
+           'Solicitação de emissão registrada para lote #' || $4 || '. O laudo será gerado pelo emissor quando disponível.',
+           jsonb_build_object('lote_id', $4::integer)
          )`,
-        [user.cpf, destinatarioTipo, lote.codigo, loteId]
+        [user.cpf, destinatarioTipo, loteId, loteId]
       );
 
       console.log(
@@ -241,7 +241,6 @@ export async function POST(
           'Solicitação de emissão registrada com sucesso. O laudo será gerado pelo emissor.',
         lote: {
           id: lote.id,
-          codigo: lote.codigo,
         },
       });
     } catch (emissaoError) {

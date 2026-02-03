@@ -158,7 +158,6 @@ export async function GET(req: Request) {
         bloqueante,
         lote: {
           id: lote.id,
-          codigo: lote.codigo,
           numero_ordem: lote.numero_ordem,
           titulo: lote.titulo,
           empresa: lote.empresa_nome,

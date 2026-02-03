@@ -14,12 +14,12 @@ export const POST = async (req: Request) => {
   }
 
   try {
-    const { codigoLote } = await req.json();
+    const { loteId } = await req.json();
 
-    if (!codigoLote) {
+    if (!loteId) {
       return NextResponse.json(
         {
-          error: 'Código do lote é obrigatório',
+          error: 'ID do lote é obrigatório',
           success: false,
         },
         { status: 400 }
@@ -31,7 +31,6 @@ export const POST = async (req: Request) => {
       `
       SELECT
         la.id,
-        la.codigo,
         la.status,
         la.titulo,
         COUNT(a.id) as total_avaliacoes,
@@ -39,16 +38,16 @@ export const POST = async (req: Request) => {
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      WHERE la.codigo = $1
-      GROUP BY la.id, la.codigo, la.status, la.titulo
+      WHERE la.id = $1
+      GROUP BY la.id, la.status, la.titulo
     `,
-      [codigoLote]
+      [loteId]
     );
 
     if (loteCheck.rows.length === 0) {
       return NextResponse.json(
         {
-          error: `Lote ${codigoLote} não encontrado`,
+          error: `Lote ${loteId} não encontrado`,
           success: false,
         },
         { status: 404 }
@@ -67,7 +66,7 @@ export const POST = async (req: Request) => {
     if (!podeFinalizar) {
       return NextResponse.json(
         {
-          error: `Lote ${codigoLote} não pode ser finalizado. Avaliações concluídas: ${lote.avaliacoes_concluidas}/${totalAvaliacoesAtivas}`,
+          error: `Lote ${loteId} não pode ser finalizado. Avaliações concluídas: ${lote.avaliacoes_concluidas}/${totalAvaliacoesAtivas}`,
           success: false,
           dados: lote,
         },
@@ -80,17 +79,16 @@ export const POST = async (req: Request) => {
       `
       UPDATE lotes_avaliacao
       SET status = 'concluido', finalizado_em = NOW(), atualizado_em = NOW()
-      WHERE codigo = $1
+      WHERE id = $1
     `,
-      [codigoLote]
+      [loteId]
     );
 
     return NextResponse.json({
       success: true,
-      message: `Lote ${codigoLote} marcado como concluído e pronto para emissão!`,
+      message: `Lote ${loteId} marcado como concluído e pronto para emissão!`,
       lote: {
         id: lote.id,
-        codigo: lote.codigo,
         titulo: lote.titulo,
         status_anterior: lote.status,
         status_novo: 'concluido',

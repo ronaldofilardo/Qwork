@@ -7,7 +7,6 @@ import { ModalEmergencia } from '@/components/emissor/ModalEmergencia';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
 interface Lote {
   id: number;
-  codigo: string;
   titulo: string;
   tipo: string;
   status: string;
@@ -366,7 +365,7 @@ export default function EmissorDashboard() {
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `laudo-${lote.codigo || lote.id}.pdf`;
+        a.download = `laudo-${lote.id}.pdf`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -396,7 +395,7 @@ export default function EmissorDashboard() {
           // 4. Gerar PDF no navegador usando jsPDF + html2canvas
           await gerarPDFClientSide(
             htmlContent,
-            `laudo-${lote.codigo || lote.id}`,
+            `laudo-${lote.id}`,
             lote.id
           );
 
@@ -543,7 +542,7 @@ export default function EmissorDashboard() {
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {lote.titulo} - Lote: {lote.codigo}
+                          {lote.titulo} - Lote: {lote.id}
                         </h3>
                       </div>
                       <div className="text-right">
@@ -696,7 +695,7 @@ export default function EmissorDashboard() {
                                     document.body.removeChild(ta);
                                   });
                               }}
-                              aria-label={`Copiar hash do laudo ${lote.codigo}`}
+                              aria-label={`Copiar hash do laudo ${lote.id}`}
                               title="Copiar hash completo para área de transferência"
                               className="inline-flex items-center gap-1 bg-blue-600 text-white px-3 py-1 rounded text-xs font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
                             >
@@ -812,7 +811,7 @@ export default function EmissorDashboard() {
                         (!lote.laudo || !lote.laudo._emitido) && (
                           <ModalEmergencia
                             loteId={lote.id}
-                            loteCodigo={lote.codigo}
+                            loteCodigo={lote.id}
                             onSuccess={() => fetchLotes(currentPage, false)}
                           />
                         )}

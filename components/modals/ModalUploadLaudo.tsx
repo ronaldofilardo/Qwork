@@ -219,7 +219,7 @@ export default function ModalUploadLaudo({
               Upload de Laudo
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Lote: <span className="font-semibold">{loteCodigo}</span>
+              Lote: <span className="font-semibold">#{loteId}</span>
             </p>
           </div>
           <button

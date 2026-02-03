@@ -5,7 +5,6 @@ import { X, AlertTriangle } from 'lucide-react';
 
 interface ModalEmergenciaProps {
   loteId: number;
-  loteCodigo: string;
   onSuccess?: () => void;
   onClose?: () => void;
 }
@@ -17,7 +16,6 @@ interface ModalEmergenciaProps {
  */
 export function ModalEmergencia({
   loteId,
-  loteCodigo,
   onSuccess,
   onClose,
 }: ModalEmergenciaProps) {
@@ -137,7 +135,7 @@ export function ModalEmergencia({
 
             <div>
               <p className="text-sm text-gray-600 mb-2">
-                <strong>Lote:</strong> {loteCodigo} (ID: {loteId})
+                <strong>Lote #</strong> {loteId}
               </p>
             </div>
 

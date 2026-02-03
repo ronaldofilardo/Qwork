@@ -155,7 +155,7 @@ export async function POST(
     // Informações do Lote
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Código: ${lote.codigo}`, 14, 35);
+    doc.text(`Código: ${lote.id}`, 14, 35);
     doc.text(`Título: ${lote.titulo}`, 14, 42);
     doc.text(`Status: ${lote.status}`, 14, 56);
 
@@ -223,7 +223,7 @@ export async function POST(
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="relatorio-lote-${lote.codigo}.pdf"`,
+        'Content-Disposition': `attachment; filename="relatorio-lote-${lote.id}.pdf"`,
       },
     });
   } catch (error) {

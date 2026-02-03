@@ -184,7 +184,7 @@ export async function GET(
         f.funcao,
         f.matricula,
         ec.nome as empresa_nome,
-        la.codigo as lote_codigo,
+        la.id as lote_id,
         la.titulo as lote_titulo,
         la.clinica_id as lote_clinica_id,
         la.contratante_id as lote_contratante_id
@@ -214,7 +214,7 @@ export async function GET(
       // Logs adicionais para diagnóstico
       try {
         const loteInfo = await query(
-          `SELECT id, codigo, clinica_id, contratante_id FROM lotes_avaliacao WHERE id = $1`,
+          `SELECT id, clinica_id, contratante_id FROM lotes_avaliacao WHERE id = $1`,
           [loteId]
         );
         const funcInfo = await query(
@@ -283,7 +283,6 @@ export async function GET(
       },
       lote: {
         id: loteId,
-        codigo: avaliacao.lote_codigo,
         titulo: avaliacao.lote_titulo,
       },
       envio: avaliacao.envio,
@@ -338,7 +337,7 @@ export async function GET(
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Código do Lote: ${dadosRelatorio.lote.codigo}`, 14, yPos);
+    doc.text(`Lote #${dadosRelatorio.lote.id}`, 14, yPos);
     yPos += 5;
     doc.text(`Título: ${dadosRelatorio.lote.titulo}`, 14, yPos);
     yPos += 5;

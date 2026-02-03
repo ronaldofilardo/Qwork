@@ -28,7 +28,7 @@ async function concluirLoteAutomaticamente(lote: {
   total_avaliacoes: number;
 }): Promise<void> {
   console.log(
-    `[AUTO-CONCLUIR] 🔄 Concluindo lote ${lote.codigo} (ID: ${lote.id}) - ${lote.total_avaliacoes} avaliações`
+    `[AUTO-CONCLUIR] 🔄 Concluindo lote ${lote.id} (ID: ${lote.id}) - ${lote.total_avaliacoes} avaliações`
   );
 
   try {
@@ -49,7 +49,7 @@ async function concluirLoteAutomaticamente(lote: {
       parseInt(verificacaoFinal.rows[0].finalizadas)
     ) {
       console.log(
-        `[AUTO-CONCLUIR] ⚠️ Lote ${lote.codigo} não pode mais ser concluído (condições mudaram)`
+        `[AUTO-CONCLUIR] ⚠️ Lote ${lote.id} não pode mais ser concluído (condições mudaram)`
       );
       return;
     }
@@ -71,13 +71,13 @@ async function concluirLoteAutomaticamente(lote: {
       [lote.id]
     );
 
-    console.log(`[AUTO-CONCLUIR] ✅ Lote ${lote.codigo} concluído com sucesso`);
+    console.log(`[AUTO-CONCLUIR] ✅ Lote ${lote.id} concluído com sucesso`);
 
     // REMOVIDO: Emissão automática de laudo
     // Agora o laudo só é emitido quando o EMISSOR decidir manualmente
     // O lote fica com status='concluido' e aguarda solicitação de emissão pelo RH/Entidade
     console.log(
-      `[AUTO-CONCLUIR] 📋 Lote ${lote.codigo} está pronto para solicitação de emissão manual pelo RH/Entidade`
+      `[AUTO-CONCLUIR] 📋 Lote ${lote.id} está pronto para solicitação de emissão manual pelo RH/Entidade`
     );
 
     // Registrar no log de auditoria
@@ -92,12 +92,12 @@ async function concluirLoteAutomaticamente(lote: {
         'conclusao_automatica',
         'lotes_avaliacao',
         lote.id.toString(),
-        `Lote ${lote.codigo} concluído automaticamente (${lote.total_avaliacoes} avaliações). Aguardando solicitação de emissão manual.`,
+        `Lote ${lote.id} concluído automaticamente (${lote.total_avaliacoes} avaliações). Aguardando solicitação de emissão manual.`,
       ]
     );
   } catch (error) {
     console.error(
-      `[AUTO-CONCLUIR] ❌ Erro ao concluir lote ${lote.codigo}:`,
+      `[AUTO-CONCLUIR] ❌ Erro ao concluir lote ${lote.id}:`,
       error
     );
     throw error;
@@ -159,7 +159,7 @@ export async function verificarEConcluirLotesAutomaticamente(): Promise<number> 
         concluidosComSucesso++;
       } catch (error) {
         console.error(
-          `[AUTO-CONCLUIR] ❌ Falha ao concluir lote ${lote.codigo}:`,
+          `[AUTO-CONCLUIR] ❌ Falha ao concluir lote ${lote.id}:`,
           error
         );
         // Continua processando outros lotes mesmo se um falhar

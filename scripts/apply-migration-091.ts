@@ -2,7 +2,6 @@ import { config } from 'dotenv';
 import { loadEnv } from './load-env';
 loadEnv();
 
-
 import fs from 'fs';
 import { Client } from 'pg';
 

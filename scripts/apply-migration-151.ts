@@ -13,7 +13,12 @@ async function applyMigration151() {
 
   try {
     console.log('📄 Lendo migration...');
-    const migrationPath = join(process.cwd(), 'database', 'migrations', '151_remove_auto_laudo_creation_trigger.sql');
+    const migrationPath = join(
+      process.cwd(),
+      'database',
+      'migrations',
+      '151_remove_auto_laudo_creation_trigger.sql'
+    );
     const migrationSQL = readFileSync(migrationPath, 'utf-8');
     console.log(`   ✓ Migration carregada (${migrationSQL.length} caracteres)`);
     console.log('');
@@ -30,7 +35,6 @@ async function applyMigration151() {
     console.log('   - Função removida');
     console.log('   - Laudos órfãos limpos');
     console.log('');
-
   } catch (error: any) {
     console.error('❌ Erro:', error.message);
     process.exit(1);

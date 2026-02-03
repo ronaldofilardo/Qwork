@@ -78,8 +78,8 @@ describe('Regras de finalização de lote (mínimo)', () => {
   test('Lote é concluído quando todas avaliações estão concluídas', async () => {
     const codigo = `LF1-${Date.now()}`.slice(0, 20);
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, empresa_id, clinica_id, tipo, status) VALUES ($1,$2,$3,$4,'completo','rascunho') RETURNING id`,
-      [codigo, 'Lote Final 1', empresaId, clinicaId]
+      `INSERT INTO lotes_avaliacao (titulo, empresa_id, clinica_id, tipo, status) VALUES ($1,$2,$3,'completo','rascunho') RETURNING id`,
+      ['Lote Final 1', empresaId, clinicaId]
     );
     loteId = loteResult.rows[0].id;
 

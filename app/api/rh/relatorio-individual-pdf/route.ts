@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
         f.funcao,
         f.matricula,
         ec.nome as empresa_nome,
-        la.codigo as lote_codigo,
+        la.id as lote_id,
         la.titulo as lote_titulo
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
@@ -116,8 +116,7 @@ export async function GET(request: NextRequest) {
         matricula: avaliacao.matricula,
       },
       lote: {
-        id: loteId,
-        codigo: avaliacao.lote_codigo,
+        id: parseInt(loteId),
         titulo: avaliacao.lote_titulo,
       },
       envio: avaliacao.envio,
@@ -172,7 +171,7 @@ export async function GET(request: NextRequest) {
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Código do Lote: ${dadosRelatorio.lote.codigo}`, 14, yPos);
+    doc.text(`Lote #${dadosRelatorio.lote.id}`, 14, yPos);
     yPos += 5;
     doc.text(`Título: ${dadosRelatorio.lote.titulo}`, 14, yPos);
     yPos += 5;

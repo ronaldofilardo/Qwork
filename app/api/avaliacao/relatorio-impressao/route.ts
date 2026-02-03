@@ -567,13 +567,12 @@ export async function GET(request: NextRequest) {
     if (loteIdParam) {
       // Buscar informações do lote
       const loteResult = await query(
-        'SELECT codigo, titulo FROM lotes_avaliacao WHERE id = $1',
+        'SELECT id, titulo FROM lotes_avaliacao WHERE id = $1',
         [loteIdParam]
       );
       if (loteResult.rows.length > 0) {
         dadosRelatorio.lote = {
           id: loteIdParam,
-          codigo: (loteResult.rows[0] as Record<string, any>).codigo,
           titulo: (loteResult.rows[0] as Record<string, any>).titulo,
         };
       }

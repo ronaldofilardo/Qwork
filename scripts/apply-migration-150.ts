@@ -13,7 +13,12 @@ async function applyMigration150() {
 
   try {
     console.log('📄 Lendo migration...');
-    const migrationPath = join(process.cwd(), 'database', 'migrations', '150_remove_auto_emission_trigger.sql');
+    const migrationPath = join(
+      process.cwd(),
+      'database',
+      'migrations',
+      '150_remove_auto_emission_trigger.sql'
+    );
     const migrationSQL = readFileSync(migrationPath, 'utf-8');
     console.log(`   ✓ Migration carregada (${migrationSQL.length} caracteres)`);
     console.log('');
@@ -26,9 +31,10 @@ async function applyMigration150() {
     console.log('');
 
     console.log('✅ MIGRATION 150 CONCLUÍDA!');
-    console.log('   Função de recálculo atualizada (não insere mais em fila_emissao)');
+    console.log(
+      '   Função de recálculo atualizada (não insere mais em fila_emissao)'
+    );
     console.log('');
-
   } catch (error: any) {
     console.error('❌ Erro:', error.message);
     process.exit(1);

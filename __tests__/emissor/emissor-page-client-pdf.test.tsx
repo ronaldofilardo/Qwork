@@ -95,7 +95,7 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
           const url = window.URL.createObjectURL(blob);
           const a = document.createElement('a');
           a.href = url;
-          a.download = `laudo-${lote.codigo || lote.id}.pdf`;
+          a.download = `laudo-${lote.id}.pdf`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);

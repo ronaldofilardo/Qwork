@@ -124,7 +124,6 @@ export const GET = async (req: Request) => {
 
     const lotes = lotesQuery.rows.map((lote: any) => ({
       id: lote.id,
-      codigo: lote.codigo,
       titulo: lote.titulo,
       tipo: lote.tipo,
       status: lote.status,

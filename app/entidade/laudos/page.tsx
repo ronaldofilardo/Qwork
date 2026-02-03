@@ -6,7 +6,7 @@ import { FolderOpen, FileText } from 'lucide-react';
 interface Laudo {
   id: number;
   lote_id: number;
-  lote_codigo: string;
+  lote_id: number;
   lote_titulo: string;
   status: string;
   data_emissao?: string;

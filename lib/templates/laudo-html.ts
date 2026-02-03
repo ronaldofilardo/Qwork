@@ -207,7 +207,7 @@ function gerarEstilosCSS(): string {
         size: A4;
         
         @bottom-center {
-          content: "Página " counter(page) " de " counter(pages) " | Lote: ${'{{LOTE_CODIGO}}'} | Data de Emissão: ${'{{DATA_EMISSAO}}'}";
+          content: "Página " counter(page) " de " counter(pages) " | Lote #${'{{LOTE_ID}}'} | Data de Emissão: ${'{{DATA_EMISSAO}}'}";
           font-size: 8pt;
           color: #6b7280;
           font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -594,7 +594,7 @@ export function gerarHTMLLaudoCompleto(
   `;
 
   // Substituir placeholders no CSS com valores reais
-  html = html.replace('{{LOTE_CODIGO}}', etapa1.loteCodigo || '');
+  html = html.replace('{{LOTE_ID}}', etapa1.loteId?.toString() || '');
   html = html.replace('{{DATA_EMISSAO}}', formattedDataEmissao);
 
   return html;

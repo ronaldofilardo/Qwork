@@ -34,11 +34,12 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 3,
-        avaliacoes_finalizadas: 3
+        avaliacoes_finalizadas: 3,
       };
 
       // Lógica: todas as avaliações devem estar finalizadas
-      const estaPronto = lotePronto.total_avaliacoes === lotePronto.avaliacoes_finalizadas;
+      const estaPronto =
+        lotePronto.total_avaliacoes === lotePronto.avaliacoes_finalizadas;
 
       expect(estaPronto).toBe(true);
     });
@@ -50,10 +51,11 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 3,
-        avaliacoes_finalizadas: 2
+        avaliacoes_finalizadas: 2,
       };
 
-      const estaPronto = loteNaoPronto.total_avaliacoes === loteNaoPronto.avaliacoes_finalizadas;
+      const estaPronto =
+        loteNaoPronto.total_avaliacoes === loteNaoPronto.avaliacoes_finalizadas;
 
       expect(estaPronto).toBe(false);
     });
@@ -65,7 +67,7 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 0,
-        avaliacoes_finalizadas: 0
+        avaliacoes_finalizadas: 0,
       };
 
       // Lotes vazios não devem ser processados
@@ -77,7 +79,9 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
     it('deve calcular prazo correto para emissão', () => {
       const prazoMinutos = 10;
       const agora = new Date();
-      const prazoEsperado = new Date(agora.getTime() + (prazoMinutos * 60 * 1000));
+      const prazoEsperado = new Date(
+        agora.getTime() + prazoMinutos * 60 * 1000
+      );
 
       // Simular cálculo do prazo
       const prazoCalculado = new Date();
@@ -96,12 +100,12 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
       const prazosInvalidos = [-1, 0, 61, 120];
       const prazosValidos = [1, 10, 30, 60];
 
-      prazosInvalidos.forEach(prazo => {
+      prazosInvalidos.forEach((prazo) => {
         const isInvalido = prazo < 1 || prazo > 60;
         expect(isInvalido).toBe(true);
       });
 
-      prazosValidos.forEach(prazo => {
+      prazosValidos.forEach((prazo) => {
         const isValido = prazo >= 1 && prazo <= 60;
         expect(isValido).toBe(true);
       });
@@ -127,11 +131,11 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
       const statusFinalizados = ['concluida', 'inativada'];
       const statusNaoFinalizados = ['iniciada', 'em_andamento', 'rascunho'];
 
-      statusFinalizados.forEach(status => {
+      statusFinalizados.forEach((status) => {
         expect(['concluida', 'inativada']).toContain(status);
       });
 
-      statusNaoFinalizados.forEach(status => {
+      statusNaoFinalizados.forEach((status) => {
         expect(['concluida', 'inativada']).not.toContain(status);
       });
     });
@@ -162,15 +166,15 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
       const lote = {
         id: 1,
         codigo: '001-TEST',
-        total_avaliacoes: 3
+        total_avaliacoes: 3,
       };
 
       const prazoEmissao = new Date();
       prazoEmissao.setMinutes(prazoEmissao.getMinutes() + 10);
 
-      const mensagemEsperada = `Lote ${lote.codigo} concluído automaticamente (${lote.total_avaliacoes} avaliações). Emissão agendada para ${prazoEmissao.toISOString()}`;
+      const mensagemEsperada = `Lote ${lote.id} concluído automaticamente (${lote.total_avaliacoes} avaliações). Emissão agendada para ${prazoEmissao.toISOString()}`;
 
-      expect(mensagemEsperada).toContain(lote.codigo);
+      expect(mensagemEsperada).toContain(lote.id.toString());
       expect(mensagemEsperada).toContain(lote.total_avaliacoes.toString());
       expect(mensagemEsperada).toContain('concluído automaticamente');
       expect(mensagemEsperada).toContain('Emissão agendada');
@@ -183,7 +187,7 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
         action: 'conclusao_automatica',
         resource: 'lotes_avaliacao',
         resource_id: '1',
-        details: 'Lote concluído automaticamente'
+        details: 'Lote concluído automaticamente',
       };
 
       expect(acaoSistema.user_cpf).toBe('SYSTEM');

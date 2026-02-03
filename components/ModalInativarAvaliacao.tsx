@@ -26,6 +26,7 @@ interface ValidacaoResponse {
     lote_codigo?: string | null;
     lote_ordem?: number | null;
     lote_emitido?: boolean;
+    lote_emissao_solicitada?: boolean;
   };
 }
 
@@ -247,6 +248,27 @@ export default function ModalInativarAvaliacao({
                         avaliações são consideradas imutáveis para garantir
                         integridade e rastreabilidade. Se você acredita que há
                         um erro crítico, contate o suporte técnico.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Aviso se emissão do laudo foi solicitada - inativação é proibida */}
+              {validacao.avaliacao?.lote_emissao_solicitada && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+                  <div className="flex items-start">
+                    <div className="text-2xl mr-3">🔒</div>
+                    <div className="flex-1">
+                      <h3 className="font-bold text-red-800 mb-2">
+                        Impossível Inativar - Emissão Solicitada
+                      </h3>
+                      <p className="text-sm text-red-700">
+                        A emissão do laudo para este lote já foi solicitada.
+                        Depois de solicitar, as avaliações são consideradas
+                        imutáveis para garantir integridade e rastreabilidade do
+                        laudo. Se você acredita que há um erro crítico, contate
+                        o suporte técnico.
                       </p>
                     </div>
                   </div>

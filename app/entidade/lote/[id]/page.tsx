@@ -685,7 +685,7 @@ export default function DetalhesLotePage() {
                   {lote.status}
                 </span>
               </div>
-              <p className="text-gray-600">Código: {lote.codigo}</p>
+              <p className="text-gray-600">Código: {lote.id}</p>
               <p className="text-sm text-gray-500 mt-1">
                 Tipo: {lote.tipo} | Criado em: {formatDate(lote.criado_em)}
               </p>
@@ -803,7 +803,7 @@ export default function DetalhesLotePage() {
                   <button
                     onClick={async () => {
                       const confirmado = confirm(
-                        `Confirma a solicitação de emissão do laudo para o lote ${lote.codigo}?\n\nO laudo será gerado e enviado para o emissor responsável.`
+                        `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nO laudo será gerado e enviado para o emissor responsável.`
                       );
                       if (!confirmado) return;
 
@@ -904,7 +904,7 @@ export default function DetalhesLotePage() {
                       const url = window.URL.createObjectURL(blob);
                       const a = document.createElement('a');
                       a.href = url;
-                      a.download = `Laudo_${lote.codigo}.pdf`;
+                      a.download = `Laudo_${lote.id}.pdf`;
                       document.body.appendChild(a);
                       a.click();
                       window.URL.revokeObjectURL(url);

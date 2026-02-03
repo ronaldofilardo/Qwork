@@ -65,7 +65,7 @@ export default function LaudosSection({
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `laudo-${laudo.codigo}.pdf`;
+      a.download = `laudo-${laudo.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -137,7 +137,7 @@ export default function LaudosSection({
                     {laudo.titulo}
                   </h4>
                   <p className="text-sm text-gray-600 mb-2">
-                    Lote: {laudo.codigo}
+                    Lote: {laudo.id}
                   </p>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">

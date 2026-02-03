@@ -49,7 +49,6 @@ export interface EmpresaCliente {
  */
 export interface LoteAvaliacao {
   id: number;
-  codigo: string;
   titulo: string;
   descricao?: string;
   tipo: 'completo' | 'operacional' | 'gestao';

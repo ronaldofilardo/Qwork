@@ -52,7 +52,7 @@ export async function POST(req: Request) {
         a.lote_id,
         a.status,
         f.nome AS funcionario_nome,
-        la.codigo AS lote_codigo,
+        la.id AS lote_id_ref,
         la.numero_ordem AS lote_ordem,
         la.emitido_em
       FROM avaliacoes a
@@ -79,12 +79,31 @@ export async function POST(req: Request) {
       );
     }
 
-    // Bloquear inativação se lote já foi emitido (laudos gerados → imutabilidade)
+    // Bloquear inativação se lote já foi emitido ou emissão foi solicitada (princípio da imutabilidade)
     if (avaliacao.emitido_em) {
       return NextResponse.json(
         {
           error:
             'Não é possível inativar avaliações de lote já emitido — laudo gerado e avaliações são imutáveis',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Verificar se a emissão do laudo foi solicitada
+    const emissaoSolicitadaResult = await query(
+      `SELECT COUNT(*) as count FROM fila_emissao WHERE lote_id = $1`,
+      [avaliacao.lote_id]
+    );
+
+    const emissaoSolicitada =
+      parseInt(emissaoSolicitadaResult.rows[0].count) > 0;
+
+    if (emissaoSolicitada) {
+      return NextResponse.json(
+        {
+          error:
+            'Não é possível inativar avaliações de lote com emissão de laudo solicitada — avaliações são imutáveis após solicitação',
         },
         { status: 400 }
       );
@@ -119,7 +138,7 @@ export async function POST(req: Request) {
           },
           avaliacao: {
             id: avaliacao.id,
-            lote_codigo: avaliacao.lote_codigo,
+            lote_id: avaliacao.lote_id,
             lote_ordem: avaliacao.lote_ordem,
           },
           pode_forcar: true,
@@ -223,8 +242,8 @@ export async function POST(req: Request) {
     // Registrar log de auditoria
     const tipoAcao = forcar ? 'INATIVACAO_FORCADA' : 'INATIVACAO_NORMAL';
     const descricaoAuditoria = forcar
-      ? `Inativação FORÇADA de avaliação consecutiva. Funcionário: ${avaliacao.funcionario_nome} (${avaliacao.funcionario_cpf}). Lote: ${avaliacao.lote_codigo}. Motivo: ${motivo}. Validação: ${validacao?.motivo || 'N/A'}`
-      : `Inativação de avaliação. Funcionário: ${avaliacao.funcionario_nome} (${avaliacao.funcionario_cpf}). Lote: ${avaliacao.lote_codigo}. Motivo: ${motivo}`;
+      ? `Inativação FORÇADA de avaliação consecutiva. Funcionário: ${avaliacao.funcionario_nome} (${avaliacao.funcionario_cpf}). Lote #${avaliacao.lote_id}. Motivo: ${motivo}. Validação: ${validacao?.motivo || 'N/A'}`
+      : `Inativação de avaliação. Funcionário: ${avaliacao.funcionario_nome} (${avaliacao.funcionario_cpf}). Lote #${avaliacao.lote_id}. Motivo: ${motivo}`;
 
     await query(
       `INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, details)
@@ -280,7 +299,7 @@ export async function POST(req: Request) {
           nome: avaliacao.funcionario_nome,
         },
         lote: {
-          codigo: avaliacao.lote_codigo,
+          id: avaliacao.lote_id,
           ordem: avaliacao.lote_ordem,
           novoStatus: loteUpdateInfo.novoStatus || null,
         },
@@ -334,7 +353,7 @@ export async function GET(req: Request) {
         a.status,
         f.nome AS funcionario_nome,
         f.indice_avaliacao,
-        la.codigo AS lote_codigo,
+        la.id AS lote_id_ref,
         la.numero_ordem AS lote_ordem,
         la.emitido_em
       FROM avaliacoes a
@@ -372,7 +391,7 @@ export async function GET(req: Request) {
       }
     }
 
-    // Bloquear definitivamente quando o lote já foi emitido (laudo gerado)
+    // Bloquear definitivamente quando o lote já foi emitido ou emissão foi solicitada
     if (avaliacao.emitido_em) {
       validacao = {
         permitido: false,
@@ -380,6 +399,24 @@ export async function GET(req: Request) {
           'O laudo deste lote já foi emitido. Após emissão, as avaliações são imutáveis para preservar integridade do laudo.',
         ultima_inativacao_lote: null,
       };
+    } else {
+      // Verificar se a emissão do laudo foi solicitada
+      const emissaoSolicitadaResult = await query(
+        `SELECT COUNT(*) as count FROM fila_emissao WHERE lote_id = $1`,
+        [avaliacao.lote_id]
+      );
+
+      const emissaoSolicitada =
+        parseInt(emissaoSolicitadaResult.rows[0].count) > 0;
+
+      if (emissaoSolicitada) {
+        validacao = {
+          permitido: false,
+          motivo:
+            'A emissão do laudo para este lote já foi solicitada. Após solicitação, as avaliações são imutáveis para preservar integridade do laudo.',
+          ultima_inativacao_lote: null,
+        };
+      }
     }
 
     // Verificar se é prioridade alta (baseado no índice de avaliação)
@@ -434,9 +471,10 @@ export async function GET(req: Request) {
         avaliacao: {
           id: avaliacao.id,
           status: avaliacao.status,
-          lote_codigo: avaliacao.lote_codigo,
+          lote_id: avaliacao.lote_id,
           lote_ordem: avaliacao.lote_ordem,
           lote_emitido: !!avaliacao.emitido_em,
+          lote_emissao_solicitada: !!emissaoSolicitada,
         },
         funcionario: {
           cpf: avaliacao.funcionario_cpf,

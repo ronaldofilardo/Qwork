@@ -277,7 +277,7 @@ export default function DetalhesLotePage() {
   const gerarRelatorioLote = async () => {
     if (!lote) return;
 
-    if (!confirm(`Gerar relatório PDF do lote ${lote.codigo}?`)) return;
+    if (!confirm(`Gerar relatório PDF do lote ${lote.id}?`)) return;
 
     try {
       // Nova API usando Puppeteer (server-side)
@@ -298,7 +298,7 @@ export default function DetalhesLotePage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `relatorio-lote-${lote.codigo}.pdf`;
+      a.download = `relatorio-lote-${lote.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -922,7 +922,7 @@ export default function DetalhesLotePage() {
               <div className="flex-1">
                 <div className="mb-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Código: {lote.codigo}
+                    Código: {lote.id}
                   </span>
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
@@ -1066,7 +1066,7 @@ export default function DetalhesLotePage() {
                     <button
                       onClick={async () => {
                         const confirmado = confirm(
-                          `Confirma a solicitação de emissão do laudo para o lote ${lote.codigo}?\n\nO laudo será gerado e enviado para o emissor responsável.`
+                          `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nO laudo será gerado e enviado para o emissor responsável.`
                         );
                         if (!confirmado) return;
 
@@ -1165,7 +1165,7 @@ export default function DetalhesLotePage() {
                           const url = window.URL.createObjectURL(blob);
                           const a = document.createElement('a');
                           a.href = url;
-                          a.download = `Laudo_${lote.codigo}.pdf`;
+                          a.download = `Laudo_${lote.id}.pdf`;
                           document.body.appendChild(a);
                           a.click();
                           window.URL.revokeObjectURL(url);
