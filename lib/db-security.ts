@@ -21,24 +21,26 @@ function isValidCPF(cpf: string): boolean {
 }
 
 /**
- * FASE 3: Valida contexto de sessão usando usuario_tipo unificado
+ * FASE 3: Valida contexto de sessão usando perfil (não usuario_tipo)
+ * usuario_tipo é usado para diferenciação interna, mas session.perfil é o que vem do login
  */
 async function validateSessionContext(
   cpf: string,
-  usuario_tipo: string
+  perfil: string
 ): Promise<boolean> {
   try {
-    // Validação unificada: todos os usuários estão em funcionarios
+    // Validação: todos os usuários estão em funcionarios
+    // Importante: usar 'perfil' (que vem da sessão de login), não 'usuario_tipo' (enum interno)
     const result = await query(
-      `SELECT cpf, usuario_tipo, ativo, clinica_id, contratante_id 
+      `SELECT cpf, perfil, ativo, clinica_id, contratante_id 
        FROM funcionarios 
-       WHERE cpf = $1 AND usuario_tipo = $2`,
-      [cpf, usuario_tipo]
+       WHERE cpf = $1 AND perfil = $2`,
+      [cpf, perfil]
     );
 
     if (result.rows.length === 0) {
       console.error(
-        `[validateSessionContext] Usuário não encontrado: CPF=${cpf}, Tipo=${usuario_tipo}`
+        `[validateSessionContext] Usuário não encontrado: CPF=${cpf}, Perfil=${perfil}`
       );
       return false;
     }
