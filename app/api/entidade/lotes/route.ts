@@ -150,15 +150,19 @@ export async function GET() {
           return {
             ...lote,
             // Suporte robusto para variações no retorno da função SQL
-            // (pode ser 'pode_emitir' ou 'pode_emitir_laudo')
+            // Prioridade: valido > pode_emitir > pode_emitir_laudo
             pode_emitir_laudo: !!(
+              validacao?.valido ??
               validacao?.pode_emitir ??
               validacao?.pode_emitir_laudo ??
               false
             ),
-            // Motivos podem vir em 'motivos_bloqueio' ou 'motivos'
+            // Motivos podem vir em 'alertas', 'motivos_bloqueio' ou 'motivos'
             motivos_bloqueio:
-              validacao?.motivos_bloqueio || validacao?.motivos || [],
+              validacao?.alertas ||
+              validacao?.motivos_bloqueio ||
+              validacao?.motivos ||
+              [],
             // Taxa de conclusão pode estar no topo ou dentro de 'detalhes'
             taxa_conclusao:
               validacao?.taxa_conclusao ||
