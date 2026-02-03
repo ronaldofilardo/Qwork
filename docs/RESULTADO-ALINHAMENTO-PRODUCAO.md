@@ -9,15 +9,17 @@
 ## 📋 CHECKLIST DE VALIDAÇÃO
 
 ### ✅ 1. Backblaze Storage (Laudos)
+
 - **Status**: ✅ CONFIRMADO FUNCIONANDO
 - **Evidência**: User confirmou "em tests locais o storage do laudo funcionou perfeitamente"
-- **Credenciais**: 
+- **Credenciais**:
   - BACKBLAZE_KEY_ID=005... ✅
   - BACKBLAZE_APPLICATION_KEY=K005... ✅
   - Bucket: laudos-qwork ✅
   - Endpoint: https://s3.us-east-005.backblazeb2.com ✅
 
 ### ✅ 2. Cron Jobs Removidos
+
 - **Status**: ✅ CONFIRMADO DESABILITADO
 - **Evidência**: User confirmou "executado, ou seja, desabilitado"
 - **Endpoints Desabilitados**:
@@ -25,30 +27,35 @@
   - `/api/jobs/process-pdf` → HTTP 410 ✅ (aplicado agora)
 
 ### ✅ 3. Emissor Local
+
 - **Status**: ✅ CONFIGURADO
 - **Arquitetura**: Emissor conecta direto ao Neon Production Database
-- **Database URL**: postgresql://neondb_owner:npg_***@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb ✅
+- **Database URL**: postgresql://neondb*owner:npg*\*\*\*@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb ✅
 - **PDF Generation**: Puppeteer local (sem timeout do Vercel) ✅
 - **Upload**: Gera PDF local → upload para Backblaze ✅
 
 ### ⚠️ 4. Migrations Críticas Aplicadas
 
 #### ✅ Migration 150 (remove_auto_emission_trigger)
+
 - **Status**: ✅ APLICADA NO NEON
 - **Evidência**: Schema diff mostra comentários "NÃO EMITIR LAUDO AUTOMATICAMENTE"
 - **Função**: `fn_recalcular_status_lote_on_avaliacao_update()` não insere em fila_emissao ✅
 
 #### ✅ Migration 151 (remove_auto_laudo_creation_trigger)
+
 - **Status**: ✅ APLICADA AGORA
 - **Ação**: Removido trigger `trg_reservar_id_laudo_on_lote_insert` ✅
 - **Ação**: Removida função `fn_reservar_id_laudo_on_lote_insert()` ✅
 - **Ação**: Deletados laudos rascunho órfãos (0 rows) ✅
 
 #### ✅ Migration 152 (add_tipo_notificacao_emissao_solicitada)
+
 - **Status**: ✅ APLICADA AGORA
 - **Ação**: Adicionado enum value 'emissao_solicitada_sucesso' ✅
 
 #### ✅ Migration 153 (restore_manual_emission_requests)
+
 - **Status**: ✅ APLICADA AGORA (adaptada)
 - **Ação**: Restauradas solicitações manuais da auditoria (0 rows - nenhuma órfã) ✅
 
@@ -57,6 +64,7 @@
 **Total**: 1386 linhas diferentes (após aplicar 151-153)
 
 #### Tabelas/Views APENAS no LOCAL (9):
+
 1. `equipe_administrativa`
 2. `funcionarios_operacionais`
 3. `gestores`
@@ -68,11 +76,13 @@
 9. `vw_notificacoes_nao_lidas`
 
 #### Tabelas/Views APENAS no NEON (1):
+
 1. `vw_comparativo_empresas`
 
 **Análise**: Essas tabelas parecem ser de migrations da série 200+ (refatoração de usuários/perfis). Precisam ser avaliadas se são **críticas para produção**.
 
 #### Coluna Faltante no NEON:
+
 - **laudos.hash_pdf** - Não existe no Neon (schema mais antigo)
 
 ---
@@ -88,7 +98,7 @@
 
 2. Emissor LOCAL vê solicitações no dashboard
    └─> GET /api/emissor/dashboard (conecta ao Neon via DATABASE_URL)
-   
+
 3. Emissor clica "Gerar Laudo"
    └─> POST /api/emissor/laudos/[loteId] (roda LOCALMENTE)
        ├─> Puppeteer gera PDF (sem timeout)
@@ -102,6 +112,7 @@
 ```
 
 ### ✅ Garantias Implementadas
+
 1. **❌ Sem cron jobs** - Vercel não executa nada automaticamente
 2. **❌ Sem auto-emission** - Triggers removidos (migrations 150-151)
 3. **❌ Sem auto-laudo creation** - Não cria laudos rascunho antecipadamente
@@ -142,6 +153,7 @@ trg_reservar_id_laudo_on_lote_insert → fn_reservar_id_laudo_on_lote_insert()
 ## ⚠️ PRÓXIMAS AÇÕES RECOMENDADAS
 
 ### 🔴 CRÍTICO
+
 1. **Avaliar migrations série 200+**
    - Verificar se `usuarios`, `notificacoes`, etc são necessárias para produção
    - Se SIM: aplicar migrations 200-202 no Neon
@@ -152,6 +164,7 @@ trg_reservar_id_laudo_on_lote_insert → fn_reservar_id_laudo_on_lote_insert()
    - Importante para validação de integridade de PDFs
 
 ### 🟡 MÉDIO
+
 3. **Teste End-to-End Completo**
    - [ ] RH cria lote e solicita emissão (online)
    - [ ] Emissor vê solicitação no dashboard (local)
@@ -164,6 +177,7 @@ trg_reservar_id_laudo_on_lote_insert → fn_reservar_id_laudo_on_lote_insert()
    - Aplicação automática com rollback em caso de erro
 
 ### 🟢 BAIXO
+
 5. **Monitoramento em Produção**
    - Logs de emissão de laudos
    - Uso de Backblaze (bandwidth, storage)
@@ -173,19 +187,20 @@ trg_reservar_id_laudo_on_lote_insert → fn_reservar_id_laudo_on_lote_insert()
 
 ## 📈 RESUMO EXECUTIVO
 
-| Item | Status | Observações |
-|------|--------|-------------|
-| Backblaze Storage | ✅ OK | Testado e funcionando |
-| Cron Jobs | ✅ DESABILITADO | Endpoints retornam HTTP 410 |
-| Emissor Local | ✅ CONFIGURADO | Conecta ao Neon direto |
-| Migration 150 | ✅ APLICADA | Sem auto-emission |
-| Migration 151 | ✅ APLICADA | Sem auto-laudo creation |
-| Migration 152 | ✅ APLICADA | Tipo notificação OK |
-| Migration 153 | ✅ APLICADA | Solicitações restauradas |
-| Schema Alignment | ⚠️ PARCIAL | 1386 diferenças (série 200+) |
-| Triggers | ✅ CORRETOS | Sem automação indevida |
+| Item              | Status          | Observações                  |
+| ----------------- | --------------- | ---------------------------- |
+| Backblaze Storage | ✅ OK           | Testado e funcionando        |
+| Cron Jobs         | ✅ DESABILITADO | Endpoints retornam HTTP 410  |
+| Emissor Local     | ✅ CONFIGURADO  | Conecta ao Neon direto       |
+| Migration 150     | ✅ APLICADA     | Sem auto-emission            |
+| Migration 151     | ✅ APLICADA     | Sem auto-laudo creation      |
+| Migration 152     | ✅ APLICADA     | Tipo notificação OK          |
+| Migration 153     | ✅ APLICADA     | Solicitações restauradas     |
+| Schema Alignment  | ⚠️ PARCIAL      | 1386 diferenças (série 200+) |
+| Triggers          | ✅ CORRETOS     | Sem automação indevida       |
 
 ### Conclusão
+
 O sistema **ESTÁ PRONTO** para operar em produção com a arquitetura híbrida (emissor local + Vercel online). As migrations críticas (150-153) foram aplicadas, garantindo que não há emissão automática de laudos. As diferenças de schema restantes (série 200+) precisam ser avaliadas, mas **NÃO bloqueiam o funcionamento atual**.
 
 **Risco**: 🟡 MÉDIO - Sistema funcional, mas pode ter features incompletas se migrations 200+ forem críticas.

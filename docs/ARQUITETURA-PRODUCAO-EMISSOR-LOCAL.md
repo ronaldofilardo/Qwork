@@ -36,6 +36,7 @@ Devido a limitações de timeout/memória da Vercel para geração de laudos em 
 ## 🔄 FLUXO COMPLETO DE EMISSÃO
 
 ### 1️⃣ **RH/Entidade (Online - Vercel)**
+
 ```
 1. Criar lote de avaliação
 2. Psicólogo completa avaliações
@@ -46,6 +47,7 @@ Devido a limitações de timeout/memória da Vercel para geração de laudos em 
 ```
 
 ### 2️⃣ **Emissor (Local - Conectado ao Neon)**
+
 ```
 1. Abre dashboard local: http://localhost:3000/emissor
    → Conectado ao Neon via DATABASE_URL
@@ -64,6 +66,7 @@ Devido a limitações de timeout/memória da Vercel para geração de laudos em 
 ```
 
 ### 3️⃣ **Usuários (Online - Vercel)**
+
 ```
 1. RH/Entidade/Psicólogo: Visualizar/baixar laudo
    → GET /api/laudos/[id]/download
@@ -117,6 +120,7 @@ pnpm dev
 ### ✅ **DESABILITADOS COMPLETAMENTE**
 
 **Motivo:**
+
 - Geração de laudos é LOCAL (emissor)
 - Geração de recibos pode rodar localmente também
 - Recálculos automáticos são via **TRIGGER DO BANCO** (não cron)
@@ -124,6 +128,7 @@ pnpm dev
 **vercel.json NÃO tem seção `crons`** (confirmado ✅)
 
 **Dashboard Vercel → Settings → Cron Jobs:**
+
 - ✅ Verificar se está vazio (sem cron configurado)
 - ✅ Se houver, deletar todos
 
@@ -165,6 +170,7 @@ export async function recalcularStatusLotePorId(loteId: number) {
 ```
 
 **Usado em:**
+
 - `POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar`
 - `POST /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar`
 - Outras operações que alteram status de avaliações
@@ -184,17 +190,20 @@ export async function recalcularStatusLotePorId(loteId: number) {
 ## ⚠️ LIMITAÇÕES E CUIDADOS
 
 ### 🔴 **Emissor DEVE ter acesso local:**
+
 - Máquina com Chrome/Chromium instalado
 - Conexão estável com Neon Cloud
 - Credenciais Backblaze configuradas
 - `pnpm dev` rodando
 
 ### 🟡 **Se emissor estiver offline:**
+
 - RH/Entidade pode solicitar emissão (vai para fila)
 - Emissão só será processada quando emissor abrir dashboard local
 - Usuários NÃO conseguem visualizar laudos não emitidos
 
 ### 🟢 **Fallback Futuro (Opcional):**
+
 ```typescript
 // Pode-se implementar:
 // - Queue Redis/BullMQ para processar laudos em batch
@@ -238,11 +247,13 @@ pnpm dev | Select-String "LAUDO|UPLOAD|BACKBLAZE"
 Se no futuro a Vercel aumentar limites ou você migrar para AWS Lambda:
 
 1. **Configurar Puppeteer serverless:**
+
    ```typescript
-   executablePath: await chromium.executablePath
+   executablePath: await chromium.executablePath;
    ```
 
 2. **Aumentar timeout Vercel:**
+
    ```json
    // vercel.json
    "functions": {
