@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  experimental: {
+    serverComponentsExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+  },
   eslint: {
     // Temporarily ignore ESLint during `next build` to avoid flooding build logs
     // with pre-existing @typescript-eslint warnings. Lint should run in CI and
