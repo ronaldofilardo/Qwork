@@ -15,7 +15,7 @@ const MockEntidadeLoteCard = ({
     onClick={onClick}
   >
     <h3>{lote.titulo}</h3>
-    <p>{lote.codigo}</p>
+    <p>{`Lote #${lote.id}`}</p>
     <button data-testid={`report-btn-${lote.id}`} onClick={onReportClick}>
       Gerar Relatório
     </button>

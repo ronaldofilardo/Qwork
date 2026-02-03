@@ -45,7 +45,6 @@ export const GET = async (req: Request) => {
       `
       SELECT
         la.id,
-        la.codigo,
         la.titulo,
         la.tipo,
         la.status as lote_status,
@@ -75,7 +74,7 @@ export const GET = async (req: Request) => {
       LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
-      GROUP BY la.id, la.codigo, la.titulo, la.tipo, la.status, la.liberado_em, la.modo_emergencia, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+      GROUP BY la.id, la.titulo, la.tipo, la.status, la.liberado_em, la.modo_emergencia, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
           WHEN la.status = 'ativo' THEN 1
@@ -245,7 +244,6 @@ export const GET = async (req: Request) => {
 
         return {
           id: lote.id,
-          codigo: lote.codigo,
           titulo: lote.titulo,
           tipo: lote.tipo,
           status: lote.lote_status,

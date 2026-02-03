@@ -193,20 +193,9 @@ export async function gerarDadosGeraisEmpresa(
   const lote = loteResult.rows[0];
 
   // Validação defensiva: garantir que temos dados mínimos
-  // Non-invasive fallback: em alguns cenários de teste/integração o lote pode
-  // chegar sem `codigo`. Para evitar falhas silenciosas, geramos um código
-  // temporário e prosseguimos — isso mantém o comportamento de produção
-  // inalterado quando `codigo` estiver presente.
-  if (!lote.codigo) {
-    console.warn(
-      `[WARN] Lote ${loteId} sem 'codigo' — gerando código temporário para permitir emissão (fallback non-invasive)`
-    );
-    lote.codigo = `LOTE-${loteId}-TMP`;
-  }
-
   if (!lote.empresa_nome) {
     console.warn(
-      `[WARN] Lote ${loteId} (${lote.codigo}) sem empresa/contratante associado`
+      `[WARN] Lote ${loteId} (${lote.id}) sem empresa/contratante associado`
     );
   }
 
@@ -253,7 +242,6 @@ export async function gerarDadosGeraisEmpresa(
       operacional: parseInt(funcs.operacional),
       gestao: parseInt(funcs.gestao),
     },
-    loteCodigo: lote.codigo,
   };
 }
 

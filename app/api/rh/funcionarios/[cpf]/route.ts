@@ -42,7 +42,7 @@ export async function GET(
     // Buscar histórico de avaliações
     const avaliacoesResult = await query(
       `SELECT a.id, a.status, a.inicio, a.envio, a.data_inativacao, a.motivo_inativacao,
-              l.codigo as lote_codigo, l.titulo as lote_titulo, l.numero_ordem, l.liberado_em,
+              l.id as lote_id, l.titulo as lote_titulo, l.numero_ordem, l.liberado_em,
               CASE 
                 WHEN a.status = 'concluida' THEN 'concluída'
                 WHEN a.status = 'inativada' THEN 'inativada'

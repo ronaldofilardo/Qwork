@@ -8,7 +8,6 @@ import toast from 'react-hot-toast';
 
 interface LoteAvaliacao {
   id: number;
-  codigo: string;
   titulo: string;
   tipo: string;
   status: string;
@@ -98,7 +97,7 @@ export default function LotesPage() {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `laudo-${lote.codigo}.pdf`;
+      a.download = `laudo-${lote.id}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -197,7 +196,7 @@ export default function LotesPage() {
                   onClick={() => !isCanceled && handleLoteClick(lote.id)}
                   role="button"
                   tabIndex={0}
-                  aria-label={`Ver detalhes do lote ${lote.codigo}`}
+                  aria-label={`Ver detalhes do lote ${lote.id}`}
                 >
                   {/* Header do Card */}
                   <div className="mb-4">
@@ -219,9 +218,7 @@ export default function LotesPage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">
-                      Código: {lote.codigo}
-                    </p>
+                    <p className="text-sm text-gray-600">Lote #{lote.id}</p>
                     <p className="text-xs text-gray-500">
                       {formatDateTime(lote.liberado_em)}
                     </p>
@@ -395,7 +392,7 @@ export default function LotesPage() {
                                     document.body.removeChild(ta);
                                   });
                               }}
-                              aria-label={`Copiar hash do laudo ${lote.codigo}`}
+                              aria-label={`Copiar hash do laudo ${lote.id}`}
                               title="Copiar hash completo"
                               className="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:outline-none"
                             >

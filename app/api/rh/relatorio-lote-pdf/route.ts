@@ -142,7 +142,7 @@ export async function GET(request: NextRequest) {
     // Preparar dados para o template
     const dadosRelatorio = {
       lote: {
-        codigo: lote.codigo,
+        id: lote.id,
         titulo: lote.titulo,
       },
       empresa: lote.empresa_nome,
@@ -175,7 +175,7 @@ export async function GET(request: NextRequest) {
       printBackground: true,
       displayHeaderFooter: true,
       headerTemplate: getPDFHeaderTemplate(
-        `Lote ${lote.codigo} - ${lote.empresa_nome}`
+        `Lote ${lote.id} - ${lote.empresa_nome}`
       ),
       footerTemplate: getPDFFooterTemplate(),
       margin: {
@@ -189,7 +189,7 @@ export async function GET(request: NextRequest) {
     await browser.close();
 
     // Retornar PDF
-    const nomeArquivo = `relatorio-lote-${lote.codigo}.pdf`;
+    const nomeArquivo = `relatorio-lote-${lote.id}.pdf`;
 
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {

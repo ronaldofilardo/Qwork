@@ -55,8 +55,8 @@ describe('Consistência de timestamp entre storage e DB para laudos', () => {
     loteCodigo = `TS-${Date.now().toString().slice(-6)}`;
 
     const loteRes = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, empresa_id, clinica_id, tipo, status, liberado_por) VALUES ($1, 'Lote TS', $2, $3, 'completo', 'rascunho', $4) RETURNING id`,
-      [loteCodigo, empresaId, clinicaId, emissorCpf]
+      `INSERT INTO lotes_avaliacao (titulo, empresa_id, clinica_id, tipo, status, liberado_por) VALUES ('Lote TS', $1, $2, 'completo', 'rascunho', $3) RETURNING id`,
+      [empresaId, clinicaId, emissorCpf]
     );
     loteId = loteRes.rows[0].id;
 

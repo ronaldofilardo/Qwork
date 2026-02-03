@@ -183,7 +183,7 @@ export async function POST(
         String(loteId),
         session.cpf,
         session.perfil,
-        JSON.stringify({ codigo_lote: lote.codigo }),
+        JSON.stringify({ lote_id: lote.id }),
       ]
     );
 
@@ -194,7 +194,7 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: 'Reprocessamento solicitado',
-      lote: { id: loteId, codigo: lote.codigo },
+      lote: { id: loteId },
       fila_item_id: filaItemId,
     });
   } catch (error) {

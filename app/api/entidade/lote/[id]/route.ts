@@ -32,7 +32,6 @@ export async function GET(
       `
       SELECT
         la.id,
-        la.codigo,
         la.titulo,
         la.tipo,
         la.status,

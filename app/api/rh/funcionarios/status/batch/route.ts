@@ -8,7 +8,7 @@ async function updateLotesStatus(cpf: string) {
   // Buscar lotes que têm avaliações deste funcionário
   const lotesResult = await query(
     `
-    SELECT DISTINCT la.id, la.status, la.codigo
+    SELECT DISTINCT la.id, la.status
     FROM lotes_avaliacao la
     JOIN avaliacoes a ON la.id = a.lote_id
     WHERE a.funcionario_cpf = $1
@@ -38,13 +38,13 @@ async function updateLotesStatus(cpf: string) {
     const concluidasNum = parseInt(concluidas) || 0;
 
     console.log(
-      `[DEBUG] Lote ${lote.codigo}: ${ativasNum} ativas, ${concluidasNum} concluídas, status atual: ${lote.status}`
+      `[DEBUG] Lote ${lote.id}: ${ativasNum} ativas, ${concluidasNum} concluídas, status atual: ${lote.status}`
     );
 
     // Não alterar status manuais (cancelado, finalizado)
     if (['cancelado', 'finalizado'].includes(lote.status)) {
       console.log(
-        `[INFO] Lote ${lote.codigo} possui status manual '${lote.status}', não será alterado`
+        `[INFO] Lote ${lote.id} possui status manual '${lote.status}', não será alterado`
       );
       continue;
     }
@@ -64,7 +64,7 @@ async function updateLotesStatus(cpf: string) {
         lote.id,
       ]);
       console.log(
-        `[INFO] Lote ${lote.codigo} alterado de '${lote.status}' para '${novoStatus}'`
+        `[INFO] Lote ${lote.id} alterado de '${lote.status}' para '${novoStatus}'`
       );
 
       // REMOVIDO: Emissão automática de laudo
@@ -72,7 +72,7 @@ async function updateLotesStatus(cpf: string) {
       // O RH/Entidade deve usar o botão "Solicitar Emissão" e aguardar o emissor processar
       if (novoStatus === 'concluido') {
         console.log(
-          `[INFO] Lote ${lote.codigo} está concluído e pronto para solicitação de emissão manual`
+          `[INFO] Lote ${lote.id} está concluído e pronto para solicitação de emissão manual`
         );
       }
     }

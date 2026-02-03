@@ -13,7 +13,12 @@ async function applyMigration152() {
 
   try {
     console.log('📄 Lendo migration...');
-    const migrationPath = join(process.cwd(), 'database', 'migrations', '152_add_tipo_notificacao_emissao_solicitada.sql');
+    const migrationPath = join(
+      process.cwd(),
+      'database',
+      'migrations',
+      '152_add_tipo_notificacao_emissao_solicitada.sql'
+    );
     const migrationSQL = readFileSync(migrationPath, 'utf-8');
     console.log(`   ✓ Migration carregada (${migrationSQL.length} caracteres)`);
     console.log('');
@@ -26,9 +31,10 @@ async function applyMigration152() {
     console.log('');
 
     console.log('✅ MIGRATION 152 CONCLUÍDA!');
-    console.log('   Tipo de notificação "emissao_solicitada_sucesso" adicionado');
+    console.log(
+      '   Tipo de notificação "emissao_solicitada_sucesso" adicionado'
+    );
     console.log('');
-
   } catch (error: any) {
     console.error('❌ Erro:', error.message);
     process.exit(1);

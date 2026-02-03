@@ -43,7 +43,7 @@ export function gerarHTMLRelatorioLote(dados: RelatorioLoteData): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Relatório do Lote ${lote.codigo}</title>
+  <title>Relatório do Lote ${lote.id}</title>
   <style>
     ${basePDFStyles}
     
@@ -217,7 +217,7 @@ export function gerarHTMLRelatorioLote(dados: RelatorioLoteData): string {
     </div>
     
     <h1>Relatório de Avaliações</h1>
-    <h2>Lote ${lote.codigo}</h2>
+    <h2>Lote ${lote.id}</h2>
     
     <div class="capa-info">
       <div class="capa-info-item">

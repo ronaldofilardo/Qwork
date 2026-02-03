@@ -33,7 +33,7 @@ describe('Página de Detalhes do Lote', () => {
     success: true,
     lote: {
       id: 1,
-      codigo: 'LOT-001',
+
       titulo: 'Lote de Teste',
       descricao: 'Descrição do lote',
       tipo: 'completo',
@@ -168,7 +168,6 @@ describe('Página de Detalhes do Lote', () => {
             success: true,
             lote: {
               id: 1,
-              codigo: 'LOT-001',
               titulo: 'Lote Emitido',
               descricao: 'Lote com laudo emitido',
               tipo: 'completo',

@@ -320,7 +320,7 @@ export async function GET(request: NextRequest) {
     <div class="info-grid">
       <div class="info-item">
         <label>Lote</label>
-        <value>${lote.codigo}</value>
+        <value>${lote.id}</value>
       </div>
       <div class="info-item">
         <label>Empresa</label>
@@ -537,7 +537,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="relatorio-setor-${setor}-lote-${lote.codigo}.pdf"`,
+        'Content-Disposition': `attachment; filename="relatorio-setor-${setor}-lote-${lote.id}.pdf"`,
       },
     });
   } catch (error) {

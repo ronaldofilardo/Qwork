@@ -34,13 +34,13 @@ export async function GET(request: Request) {
     const funcionariosResult = await query(
       `SELECT cpf, nome, data_nascimento, setor, funcao, email, matricula, nivel_cargo, turno, escala, ativo, criado_em, atualizado_em,
               indice_avaliacao, data_ultimo_lote,
-              ultima_avaliacao_id, ultimo_lote_codigo, ultima_avaliacao_data_conclusao, ultima_avaliacao_status, ultimo_motivo_inativacao,
+              ultima_avaliacao_id, ultima_avaliacao_data_conclusao, ultima_avaliacao_status, ultimo_motivo_inativacao,
               -- Data e lote da última inativação
               (
                 SELECT MAX(a2.inativada_em) FROM avaliacoes a2 WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada'
               ) as ultima_inativacao_em,
               (
-                SELECT l.codigo FROM avaliacoes a2 JOIN lotes_avaliacao l ON a2.lote_id = l.id WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL ORDER BY a2.inativada_em DESC LIMIT 1
+                SELECT l.id FROM avaliacoes a2 JOIN lotes_avaliacao l ON a2.lote_id = l.id WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL ORDER BY a2.inativada_em DESC LIMIT 1
               ) as ultima_inativacao_lote,
               -- Verificar se tem avaliação concluída há menos de 12 meses (mesmo critério da função de elegibilidade)
               CASE 

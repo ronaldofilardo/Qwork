@@ -87,7 +87,7 @@ export function useLaudos(empresaId: string) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `laudo-${laudo.codigo || 'sem-codigo'}.pdf`;
+      a.download = `laudo-${laudo.id}.pdf`;
       a.style.display = 'none';
 
       document.body.appendChild(a);

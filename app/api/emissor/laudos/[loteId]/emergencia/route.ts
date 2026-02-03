@@ -148,7 +148,7 @@ export async function POST(
       String(loteId),
       session.cpf,
       session.perfil,
-      JSON.stringify({ motivo: motivo.trim(), codigo_lote: lote.codigo }),
+      JSON.stringify({ motivo: motivo.trim(), lote_id: lote.id }),
       request.headers.get('x-forwarded-for') ||
         request.headers.get('x-real-ip') ||
         '0.0.0.0',
@@ -157,7 +157,7 @@ export async function POST(
       String(loteId),
       session.cpf,
       session.perfil,
-      JSON.stringify({ motivo: motivo.trim(), codigo_lote: lote.codigo }),
+      JSON.stringify({ motivo: motivo.trim(), lote_id: lote.id }),
       request.headers.get('x-forwarded-for') ||
         request.headers.get('x-real-ip') ||
         '0.0.0.0',
@@ -246,7 +246,6 @@ export async function POST(
           message: 'Laudo emitido com sucesso em modo de emergência.',
           lote: {
             id: loteId,
-            codigo: lote.codigo,
             modo_emergencia: true,
             emitido_em: laudo.emitido_em,
             enviado_em: laudo.enviado_em,
@@ -264,7 +263,7 @@ export async function POST(
         success: true,
         message:
           'Emissão iniciada (modo emergência), mas ainda não há registro de laudo. Verifique logs.',
-        lote: { id: loteId, codigo: lote.codigo, modo_emergencia: true },
+        lote: { id: loteId, modo_emergencia: true },
       });
     } else {
       console.error(`[EMERGÊNCIA] Falha na emissão imediata do lote ${loteId}`);

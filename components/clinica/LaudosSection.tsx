@@ -6,7 +6,6 @@ import { FolderOpen, FileText, Download } from 'lucide-react';
 interface Laudo {
   id: number;
   lote_id: number;
-  lote_codigo: string;
   lote_titulo: string;
   empresa_nome?: string;
   status: string;
@@ -162,7 +161,7 @@ export default function LaudosSection() {
                     <td className="py-3 px-4">
                       <div>
                         <p className="text-sm font-medium text-gray-900">
-                          {laudo.lote_codigo}
+                          Lote #{laudo.lote_id}
                         </p>
                         <p className="text-xs text-gray-500">
                           {laudo.lote_titulo}

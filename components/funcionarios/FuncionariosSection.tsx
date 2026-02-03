@@ -51,7 +51,7 @@ interface Funcionario {
   }>;
   // Campos denormalizados de última avaliação
   ultima_avaliacao_id?: number | null;
-  ultimo_lote_codigo?: string | null;
+  ultimo_lote_id?: number | null;
   ultima_avaliacao_data_conclusao?: string | null;
   ultima_avaliacao_status?: 'concluida' | 'inativada' | null;
   ultimo_motivo_inativacao?: string | null;
@@ -528,7 +528,7 @@ export default function FuncionariosSection({
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
                       {/* Considere várias fontes para determinar se houve avaliação */}
-                      {funcionario.ultimo_lote_codigo ||
+                      {funcionario.ultimo_lote_id ||
                       funcionario.ultima_avaliacao_status ||
                       funcionario.ultima_avaliacao_data_conclusao ||
                       funcionario.data_ultimo_lote ||
@@ -540,7 +540,7 @@ export default function FuncionariosSection({
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-900">
-                              {funcionario.ultimo_lote_codigo || '—'}
+                              {funcionario.ultimo_lote_id || '—'}
                             </span>
                             <span
                               className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${

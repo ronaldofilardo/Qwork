@@ -148,7 +148,6 @@ export const POST = async (
       expiresIn: 3600, // 1 hora
       lote: {
         id: lote.id,
-        codigo: lote.codigo,
       },
     });
   } catch (error) {

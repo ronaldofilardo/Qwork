@@ -46,7 +46,6 @@ export interface MockEmpresa {
  */
 export interface MockLote {
   id: number;
-  codigo: string;
   titulo: string;
   tipo: string;
   liberado_em: string;
@@ -62,7 +61,6 @@ export interface MockLote {
 export interface MockLaudo {
   id: number;
   lote_id: number;
-  codigo: string;
   titulo: string;
   empresa_nome: string;
   clinica_nome: string;

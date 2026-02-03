@@ -32,7 +32,6 @@ export async function GET() {
         f.ativo,
         f.criado_em,
         f.ultima_avaliacao_id,
-        f.ultimo_lote_codigo,
         f.ultima_avaliacao_data_conclusao,
         f.ultima_avaliacao_status,
         f.ultimo_motivo_inativacao,
@@ -52,9 +51,9 @@ export async function GET() {
         MAX(a.envio) as ultima_avaliacao,
         -- Data da última inativação (se houver)
         MAX(a.inativada_em) FILTER (WHERE a.status = 'inativada') as ultima_inativacao_em,
-        -- Código do lote da última inativação (se houver)
+        -- ID do lote da última inativação (se houver)
         (
-          SELECT l.codigo FROM avaliacoes a2
+          SELECT l.id FROM avaliacoes a2
           JOIN lotes_avaliacao l ON a2.lote_id = l.id
           WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL
           ORDER BY a2.inativada_em DESC
@@ -67,7 +66,7 @@ export async function GET() {
         AND f.clinica_id IS NULL
         AND f.perfil <> 'gestor_entidade'
       GROUP BY f.id, f.cpf, f.nome, f.email, f.setor, f.funcao, f.matricula, f.nivel_cargo, f.turno, f.escala, f.ativo, f.criado_em,
-               f.ultima_avaliacao_id, f.ultimo_lote_codigo, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao, f.data_ultimo_lote
+               f.ultima_avaliacao_id, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao, f.data_ultimo_lote
       ORDER BY f.nome
     `,
       [contratanteId]

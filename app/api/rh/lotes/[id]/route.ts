@@ -24,7 +24,6 @@ export const GET = async (
       `
       SELECT
         la.id,
-        la.codigo,
         la.titulo,
         la.descricao,
         la.tipo,
@@ -131,7 +130,6 @@ export const GET = async (
         id: lote.id,
         empresa_id: lote.empresa_id,
         empresa_nome: lote.empresa_nome,
-        codigo: lote.codigo,
         titulo: lote.titulo,
         descricao: lote.descricao,
         tipo: lote.tipo,

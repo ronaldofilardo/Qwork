@@ -183,7 +183,7 @@ export const POST = async (
         'lote_reprocessamento',
         loteId,
         'Reprocessamento solicitado',
-        `O lote ${lote.codigo} foi colocado na fila para reprocessamento. O sistema tentará emitir o laudo novamente em breve.`,
+        `O lote ${lote.id} foi colocado na fila para reprocessamento. O sistema tentará emitir o laudo novamente em breve.`,
         user.cpf,
       ]
     );
@@ -197,7 +197,6 @@ export const POST = async (
       message: 'Lote colocado na fila para reprocessamento',
       lote: {
         id: lote.id,
-        codigo: lote.codigo,
         status: lote.status,
       },
     });

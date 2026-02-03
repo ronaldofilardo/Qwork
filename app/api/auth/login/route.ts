@@ -115,7 +115,7 @@ export async function POST(request: Request) {
           {
             error:
               'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
-            codigo: 'PAGAMENTO_PENDENTE',
+            
             contratante_id: gestor.contratante_id,
           },
           { status: 403 }
@@ -130,7 +130,7 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             error: 'Sua senha precisa ser redefinida por motivos de segurança.',
-            codigo: 'RESET_SENHA_OBRIGATORIO',
+            
             contratante_id: gestor.contratante_id,
           },
           { status: 403 }
@@ -431,7 +431,7 @@ export async function POST(request: Request) {
           {
             error:
               'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
-            codigo: 'PAGAMENTO_PENDENTE',
+            
             contratante_id: contratante.id,
           },
           { status: 403 }

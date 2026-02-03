@@ -66,7 +66,6 @@ export async function getLoteInfo(
     `
     SELECT 
       la.id,
-      la.codigo,
       la.titulo,
       la.descricao,
       la.tipo,

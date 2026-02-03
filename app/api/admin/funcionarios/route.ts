@@ -34,7 +34,7 @@ export async function GET(request: Request) {
         f.empresa_id, ec.nome as empresa_nome,
         f.criado_em, f.atualizado_em,
         a.id as avaliacao_id, a.inicio as avaliacao_inicio, a.envio as avaliacao_envio, a.status as avaliacao_status,
-        la.id as lote_id, la.codigo as lote_codigo
+        la.id as lote_id
       FROM funcionarios f
       LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
       LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
@@ -90,7 +90,6 @@ export async function GET(request: Request) {
           envio: row.avaliacao_envio,
           status: row.avaliacao_status,
           lote_id: row.lote_id,
-          lote_codigo: row.lote_codigo,
         });
       }
     }

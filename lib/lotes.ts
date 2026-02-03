@@ -175,14 +175,14 @@ export async function recalcularStatusLotePorId(
               [
                 lote.liberado_por,
                 destinatarioTipo,
-                lote.codigo,
+                lote.id,
                 lote.total_avaliacoes,
                 loteId,
               ]
             );
 
             console.log(
-              `[INFO] Notificação criada para ${String(lote.liberado_por)} (${String(destinatarioTipo)}) - Lote ${String(lote.codigo)} concluído com ${String(lote.total_avaliacoes)} avaliações`
+              `[INFO] Notificação criada para ${String(lote.liberado_por)} (${String(destinatarioTipo)}) - Lote #${String(lote.id)} concluído com ${String(lote.total_avaliacoes)} avaliações`
             );
           }
         } catch (notifErr) {

@@ -18,7 +18,7 @@ export async function GET(
 
     // Verificar acesso ao lote
     const loteResult = await query(
-      `SELECT la.id, la.codigo, la.titulo, la.clinica_id, la.empresa_id
+      `SELECT la.id, la.titulo, la.clinica_id, la.empresa_id
        FROM lotes_avaliacao la
        WHERE la.id = $1`,
       [loteId]
@@ -129,7 +129,7 @@ export async function GET(
 
     // Retornar CSV
     const timestamp = new Date().toISOString().slice(0, 10);
-    const filename = `funcionarios-lote-${lote.codigo}-${timestamp}.csv`;
+    const filename = `funcionarios-lote-${lote.id}-${timestamp}.csv`;
 
     return new NextResponse(csvWithBom, {
       status: 200,

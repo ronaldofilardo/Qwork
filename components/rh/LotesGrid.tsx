@@ -81,7 +81,7 @@ export function LotesGrid({
             }}
             tabIndex={0}
             role="button"
-            aria-label={`Ver detalhes do lote ${lote.codigo}`}
+            aria-label={`Ver detalhes do lote ${lote.id}`}
           >
             <div className="mb-4">
               <div className="flex items-center justify-between mb-1">
@@ -95,7 +95,7 @@ export function LotesGrid({
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-600">Código: {lote.codigo}</p>
+              <p className="text-sm text-gray-600">Código: {lote.id}</p>
               <p className="text-xs text-gray-500">
                 Liberado em{' '}
                 {new Date(lote.liberado_em).toLocaleDateString('pt-BR')} às{' '}

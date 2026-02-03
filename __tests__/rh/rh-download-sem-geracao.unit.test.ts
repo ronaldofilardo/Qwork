@@ -167,7 +167,7 @@ describe('Endpoint RH Download - Apenas Download, Sem Geração', () => {
         'utf-8'
       );
 
-      expect(routeCode).toContain('laudo-${laudo.codigo}.pdf');
+      expect(routeCode).toContain('laudo-${laudo.id}.pdf');
     });
 
     it('deve buscar por laudo-{lote_id}.pdf', () => {

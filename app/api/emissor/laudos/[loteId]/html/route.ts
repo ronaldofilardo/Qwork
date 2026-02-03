@@ -55,7 +55,7 @@ export async function GET(
     }
 
     const lote = loteResult.rows[0];
-    console.log(`[INFO] Lote encontrado: ${lote.codigo} - ${lote.titulo}`);
+    console.log(`[INFO] Lote encontrado: ${lote.id} - ${lote.titulo}`);
 
     // Verificar se já existe laudo emitido
     const laudoResult = await query(

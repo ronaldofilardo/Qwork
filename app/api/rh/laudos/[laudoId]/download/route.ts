@@ -93,7 +93,7 @@ export const GET = async (
     // Tentar múltiplas chaves locais e externas (id, codigo, lote)
     const candidateNames = new Set<string>();
     candidateNames.add(`laudo-${laudo.id}.pdf`);
-    if (laudo.codigo) candidateNames.add(`laudo-${laudo.codigo}.pdf`);
+    if (laudo.codigo) candidateNames.add(`laudo-${laudo.id}.pdf`);
     if (laudo.lote_id) candidateNames.add(`laudo-${laudo.lote_id}.pdf`);
 
     console.log(

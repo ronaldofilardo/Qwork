@@ -10,13 +10,13 @@ async function checkRecalcFunction() {
       FROM pg_proc
       WHERE proname = 'fn_recalcular_status_lote_on_avaliacao_update'
     `);
-    
+
     if (res.rowCount > 0) {
       console.log('Definição da função:');
       console.log('='.repeat(80));
       console.log(res.rows[0].definition);
       console.log('='.repeat(80));
-      
+
       const def = res.rows[0].definition;
       if (def.includes('fila_emissao')) {
         console.log('❌ FUNÇÃO AINDA INSERE EM fila_emissao');

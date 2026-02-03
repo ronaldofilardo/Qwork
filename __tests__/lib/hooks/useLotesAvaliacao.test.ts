@@ -11,7 +11,7 @@ describe('useLotesAvaliacao', () => {
   const mockLotes = [
     {
       id: 1,
-      codigo: 'LOTE-001',
+      /* codigo removido */
       titulo: 'Lote Teste',
       tipo: 'periodico',
       liberado_em: '2024-01-01',

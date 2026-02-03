@@ -936,7 +936,7 @@ export const gerarLaudoCompletoEmitirPDF = async function (
 async function _enviarLaudoAutomatico(laudo: any) {
   try {
     console.log(
-      `[FASE 2] Enviando laudo do lote ${laudo.codigo} (ID: ${laudo.lote_id})`
+      `[FASE 2] Enviando laudo do lote ${laudo.id} (ID: ${laudo.lote_id})`
     );
 
     // Ler arquivo local do laudo e validar hash (idempotência)
@@ -1016,12 +1016,11 @@ async function _enviarLaudoAutomatico(laudo: any) {
           tipo: 'laudo_enviado',
           destinatario_id: laudo.clinica_id,
           destinatario_tipo: 'clinica',
-          titulo: `Laudo do lote ${laudo.codigo} disponível`,
-          mensagem: `O laudo do lote ${laudo.codigo} foi emitido e está disponível para download.`,
+          titulo: `Laudo do lote ${laudo.id} disponível`,
+          mensagem: `O laudo do lote ${laudo.id} foi emitido e está disponível para download.`,
           dados_contexto: {
             lote_id: laudo.lote_id,
             laudo_id: laudo.laudo_id,
-            codigo: laudo.codigo,
           },
           link_acao: `/clinica/laudos`,
           botao_texto: 'Ver Laudos',
@@ -1032,12 +1031,11 @@ async function _enviarLaudoAutomatico(laudo: any) {
           tipo: 'laudo_enviado',
           destinatario_id: laudo.contratante_id,
           destinatario_tipo: 'contratante',
-          titulo: `Laudo do lote ${laudo.codigo} disponível`,
-          mensagem: `O laudo do lote ${laudo.codigo} foi emitido e está disponível para download.`,
+          titulo: `Laudo do lote ${laudo.id} disponível`,
+          mensagem: `O laudo do lote ${laudo.id} foi emitido e está disponível para download.`,
           dados_contexto: {
             lote_id: laudo.lote_id,
             laudo_id: laudo.laudo_id,
-            codigo: laudo.codigo,
           },
           link_acao: `/entidade/laudos`,
           botao_texto: 'Ver Laudos',
@@ -1055,12 +1053,11 @@ async function _enviarLaudoAutomatico(laudo: any) {
             tipo: 'laudo_enviado',
             destinatario_id: empresa.rows[0].contratante_id,
             destinatario_tipo: 'contratante',
-            titulo: `Laudo do lote ${laudo.codigo} disponível`,
-            mensagem: `O laudo do lote ${laudo.codigo} foi emitido e está disponível para download.`,
+            titulo: `Laudo do lote ${laudo.id} disponível`,
+            mensagem: `O laudo do lote ${laudo.id} foi emitido e está disponível para download.`,
             dados_contexto: {
               lote_id: laudo.lote_id,
               laudo_id: laudo.laudo_id,
-              codigo: laudo.codigo,
             },
             link_acao: `/entidade/laudos`,
             botao_texto: 'Ver Laudos',

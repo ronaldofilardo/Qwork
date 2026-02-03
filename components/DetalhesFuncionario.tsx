@@ -15,7 +15,7 @@ interface Avaliacao {
   envio: string | null;
   data_inativacao: string | null;
   motivo_inativacao: string | null;
-  lote_codigo: string;
+  lote_id: number;
   lote_titulo: string;
   numero_ordem: number;
   liberado_em: string;
@@ -307,7 +307,7 @@ export default function DetalhesFuncionario({
                             {avaliacao.lote_titulo}
                           </div>
                           <div className="text-xs text-gray-500 font-mono">
-                            {avaliacao.lote_codigo}
+                            Lote #{avaliacao.lote_id}
                           </div>
                         </div>
                         <span

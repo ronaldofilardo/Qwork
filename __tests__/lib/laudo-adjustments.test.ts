@@ -13,7 +13,7 @@ const laudoPadronizado = {
     totalFuncionariosAvaliados: 10,
     percentualConclusao: 100,
     amostra: { operacional: 8, gestao: 2 },
-    loteCodigo: 'LT-TEST-123',
+    loteId: 123,
   },
   etapa2: [
     {

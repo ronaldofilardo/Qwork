@@ -266,28 +266,22 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // Gerar código do lote automaticamente
-    const codigoResult = await queryAsGestorRH<CodigoResult>(
-      `SELECT gerar_codigo_lote() as codigo`
-    );
-    const codigo = codigoResult.rows[0].codigo;
-
     // ✅ CORREÇÃO: Remover transação explícita para evitar rollback completo em caso de erro na reserva do laudo
     // Cada query roda em autocommit (como no fluxo Entidade), tornando o sistema mais resiliente
     // Se a reserva do laudo falhar (trigger ou concorrência), o lote e avaliações não são perdidos
 
     // Criar o lote - Gestores RH usam query direta (não RLS)
+    // Usa apenas ID (sem geração de codigo)
     const loteResult = await queryAsGestorRH<LoteResult>(
       `
-        INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-        RETURNING id, codigo, liberado_em, numero_ordem
+        INSERT INTO lotes_avaliacao (clinica_id, empresa_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING id, liberado_em, numero_ordem
       `,
       [
-        codigo,
         empresaCheck.rows[0].clinica_id,
         empresaId,
-        titulo || `Lote ${numeroOrdem} - ${codigo}`,
+        titulo || `Lote ${numeroOrdem} - #${numeroOrdem}`,
         descricao ||
           `Lote ${numeroOrdem} liberado para ${empresaCheck.rows[0].nome}. Inclui ${funcionarios.length} funcionário(s) elegíveis.`,
         tipo || 'completo',
@@ -417,7 +411,6 @@ export const POST = async (req: Request) => {
     return NextResponse.json({
       success: true,
       loteId: lote.id,
-      codigo: lote.codigo,
       numero_ordem: lote.numero_ordem,
       liberado_em: lote.liberado_em,
       avaliacoes_criadas: avaliacoesCriadas,
