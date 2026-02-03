@@ -60,8 +60,8 @@ describe('Fluxo Completo de Lotes de Avaliação', () => {
 
         const rhInsert = await query(
           `
-          INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, clinica_id, ativo)
-          VALUES ($1, 'RH Teste Fluxo', $2, '$2a$10$test', 'rh', $3, true)
+          INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
+          VALUES ($1, 'RH Teste Fluxo', $2, '$2a$10$test', 'rh', 'funcionario_clinica', $3, true)
           ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome, clinica_id = EXCLUDED.clinica_id, ativo = true
           RETURNING cpf
         `,
@@ -73,8 +73,8 @@ describe('Fluxo Completo de Lotes de Avaliação', () => {
         funcionarioCpf = funcCpf;
         await query(
           `
-          INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, clinica_id, empresa_id, ativo, nivel_cargo)
-          VALUES ($1, 'Funcionário Teste', $2, '$2a$10$test', 'funcionario', $3, $4, true, 'operacional')
+          INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, empresa_id, ativo, nivel_cargo)
+          VALUES ($1, 'Funcionário Teste', $2, '$2a$10$test', 'funcionario', 'funcionario_clinica', $3, $4, true, 'operacional')
           ON CONFLICT (cpf) DO NOTHING
         `,
           [
