@@ -4,6 +4,8 @@ import { query } from '@/lib/db';
 import { requireRole, requireClinica, requireEntity } from '@/lib/session';
 import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
 import { gerarHTMLRelatorioIndividual } from '@/lib/templates/relatorio-individual-html';
+import fs from 'fs';
+import path from 'path';
 import { grupos } from '@/lib/questoes';
 import crypto from 'crypto';
 
@@ -277,6 +279,49 @@ export async function GET(
     // Gerar PDF com Puppeteer (garantir fechamento do browser em finally)
     let browser: any = null;
     let pdfBuffer: Buffer;
+
+    // Diagnostic: checar presença dos arquivos bin do @sparticuz/chromium em locais prováveis
+    try {
+      const cwd = process.cwd();
+      console.debug('[DEBUG] relatorio-individual: process.cwd=', cwd);
+
+      const pnpmDir = path.join(cwd, 'node_modules', '.pnpm');
+      try {
+        const pnpmEntries = fs.existsSync(pnpmDir)
+          ? fs.readdirSync(pnpmDir).filter((e) => e.includes('@sparticuz+chromium'))
+          : [];
+        console.debug(
+          '[DEBUG] relatorio-individual: pnpm entries matching @sparticuz+chromium=',
+          pnpmEntries
+        );
+      } catch (e) {
+        console.debug(
+          '[DEBUG] relatorio-individual: unable to read node_modules/.pnpm',
+          e?.message
+        );
+      }
+
+      const candidates = [
+        path.join(cwd, 'node_modules', '.pnpm', '@sparticuz+chromium@143.0.4', 'node_modules', '@sparticuz', 'chromium', 'bin'),
+        path.join(cwd, 'node_modules', '.pnpm'),
+        path.join(cwd, 'node_modules', '@sparticuz', 'chromium', 'bin'),
+      ];
+
+      for (const p of candidates) {
+        try {
+          const exists = fs.existsSync(p);
+          console.debug(`[DEBUG] relatorio-individual: candidate=${p} exists=${exists}`);
+          if (exists) {
+            const files = fs.readdirSync(p);
+            console.debug(`[DEBUG] relatorio-individual: files in ${p} = ${JSON.stringify(files)}`);
+          }
+        } catch (e) {
+          console.debug(`[DEBUG] relatorio-individual: error checking ${p}: ${e?.message}`);
+        }
+      }
+    } catch (diagErr) {
+      console.debug('[DEBUG] relatorio-individual: diagnostic error', diagErr);
+    }
 
     try {
       const puppeteer = await getPuppeteerInstance();
