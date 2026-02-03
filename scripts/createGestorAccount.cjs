@@ -2,7 +2,7 @@ const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 
-dotenv.config({ path: '.env.local' });
+require('./load-env.cjs').loadEnv();
 
 (async () => {
   const client = new Client({

@@ -1,5 +1,7 @@
 import { config } from 'dotenv';
-config({ path: '.env.local' });
+import { loadEnv } from './load-env';
+loadEnv();
+
 
 import fs from 'fs';
 import { Client } from 'pg';

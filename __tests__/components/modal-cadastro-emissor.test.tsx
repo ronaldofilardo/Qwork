@@ -308,6 +308,43 @@ describe('ModalCadastroEmissor', () => {
     expect(mockOnSuccess).not.toHaveBeenCalled();
   });
 
+  it('deve exibir mensagem clara quando API retornar MFA_REQUIRED', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue({
+      ok: false,
+      json: async () => ({
+        error: 'MFA_REQUIRED',
+        message: 'Autenticação de dois fatores requerida',
+      }),
+    });
+
+    render(
+      <ModalCadastroEmissor
+        isOpen={true}
+        onClose={mockOnClose}
+        onSuccess={mockOnSuccess}
+      />
+    );
+
+    const cpfInput = screen.getByLabelText(/CPF/i);
+    const nomeInput = screen.getByLabelText(/Nome Completo/i);
+    const emailInput = screen.getByLabelText(/Email/i);
+
+    fireEvent.change(cpfInput, { target: { value: '11122233344' } });
+    fireEvent.change(nomeInput, { target: { value: 'Emissor Teste' } });
+    fireEvent.change(emailInput, { target: { value: 'emissor@teste.com' } });
+
+    const submitButton = screen.getByRole('button', { name: /Criar Emissor/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Autenticação de dois fatores requerida')
+      ).toBeInTheDocument();
+    });
+
+    expect(mockOnSuccess).not.toHaveBeenCalled();
+  });
+
   it('deve fechar modal ao clicar em fechar', () => {
     render(
       <ModalCadastroEmissor

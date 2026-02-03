@@ -3,11 +3,11 @@
  * Chama o handler diretamente sem precisar do servidor Next.js
  */
 
-import { config } from 'dotenv';
+import { loadEnv } from './load-env';
 import { resolve } from 'path';
 
 // Carregar .env.local
-config({ path: resolve(process.cwd(), '.env.local') });
+loadEnv();
 
 // Importar handler diretamente
 import { POST } from '../app/api/pagamento/confirmar/route';

@@ -1,8 +1,8 @@
-import { config } from 'dotenv';
+import { loadEnv } from './load-env';
 import { resolve } from 'path';
 
 // Carregar .env.local
-config({ path: resolve(process.cwd(), '.env.local') });
+loadEnv();
 
 async function testarConfirmacaoPagamento() {
   const url = 'http://localhost:3000/api/pagamento/confirmar';

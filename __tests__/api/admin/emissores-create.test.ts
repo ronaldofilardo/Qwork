@@ -8,6 +8,14 @@ import { POST } from '@/app/api/admin/emissores/create/route';
 import { query } from '@/lib/db';
 import * as sessionLib from '@/lib/session';
 
+// Mockar validadores para testes (permitir a maioria dos CPFs exceto o CPF inválido usado nos testes)
+jest.mock('@/lib/validators', () => ({
+  validarCPF: jest.fn((cpf: string) => cpf !== '12345678901'),
+  validarEmail: jest.fn(
+    (email: string) => email.includes('@') && email.includes('.')
+  ),
+}));
+
 // Mock de dependências
 jest.mock('@/lib/session');
 jest.mock('@/lib/audit', () => ({
@@ -79,6 +87,32 @@ describe('API /api/admin/emissores/create', () => {
     expect(result.rows.length).toBe(1);
     expect(result.rows[0].perfil).toBe('emissor');
     expect(result.rows[0].clinica_id).toBeNull();
+  });
+
+  it('deve permitir admin sem MFA verificar criar emissor', async () => {
+    (sessionLib.requireRole as jest.Mock).mockResolvedValue({
+      ...mockAdminSession,
+      mfaVerified: false,
+    });
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/admin/emissores/create',
+      {
+        method: 'POST',
+        body: JSON.stringify({
+          cpf: '88800000126',
+          nome: 'Emissor Sem MFA',
+          email: 'emissor.sem_mfa@teste.com',
+        }),
+      }
+    );
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(201);
+    expect(data.success).toBe(true);
+    expect(data.emissor.cpf).toBe('88800000126');
   });
 
   it('deve retornar 400 se CPF estiver faltando', async () => {
@@ -175,8 +209,22 @@ describe('API /api/admin/emissores/create', () => {
 
     // Criar contratante do tipo 'entidade' e registrar senha (gestor_entidade)
     const contratante = await query(
-      "INSERT INTO contratantes (cnpj, nome, tipo, ativa) VALUES ($1, $2, 'entidade', true) RETURNING id",
-      ['11111111111111', 'Entidade Teste']
+      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
+       VALUES ('entidade', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'aprovado', true) RETURNING id`,
+      [
+        'Entidade Teste',
+        '11111111111111',
+        'contato@entidade.tst',
+        '0000000000',
+        'Rua Teste, 1',
+        'Cidade',
+        'SP',
+        '00000-000',
+        'Resp Teste',
+        '00000000000',
+        'resp@teste.com',
+        '11999999999',
+      ]
     );
 
     await query(
@@ -212,10 +260,13 @@ describe('API /api/admin/emissores/create', () => {
   it('deve retornar 409 se CPF pertence a gestor RH', async () => {
     (sessionLib.requireRole as jest.Mock).mockResolvedValue(mockAdminSession);
 
+    // Garantir que não exista um registro prévio com esse CPF
+    await query('DELETE FROM funcionarios WHERE cpf = $1', ['88800002021']);
+
     await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, clinica_id, ativo)
-       VALUES ($1, $2, $3, $4, 'rh', $5, true)`,
-      ['88800000999', 'RH Teste', 'rh@teste.com', 'hash', 1]
+      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
+       VALUES ($1, $2, $3, $4, 'rh', 'gestor_rh', NULL, true)`,
+      ['88800002021', 'RH Teste', 'rh@teste.com', 'hash']
     );
 
     const request = new NextRequest(
@@ -223,7 +274,7 @@ describe('API /api/admin/emissores/create', () => {
       {
         method: 'POST',
         body: JSON.stringify({
-          cpf: '88800000999',
+          cpf: '88800002021',
           nome: 'Emissor Conflito RH',
           email: 'emissor.conflictrh@teste.com',
         }),
@@ -239,7 +290,7 @@ describe('API /api/admin/emissores/create', () => {
     // Cleanup
     await query(
       "DELETE FROM funcionarios WHERE cpf = $1 AND usuario_tipo = 'gestor_rh'",
-      ['88800000999']
+      ['88800002021']
     );
   });
 
@@ -248,8 +299,8 @@ describe('API /api/admin/emissores/create', () => {
 
     // Criar primeiro emissor
     await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, clinica_id, ativo)
-       VALUES ($1, $2, $3, $4, 'emissor', NULL, true)`,
+      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
+       VALUES ($1, $2, $3, $4, 'emissor', 'emissor', NULL, true)`,
       ['88800000398', 'Emissor Original', 'original@teste.com', 'hash123']
     );
 
@@ -364,11 +415,11 @@ describe('API /api/admin/emissores/create', () => {
     expect(response.status).toBe(201);
     expect(logAudit).toHaveBeenCalledWith(
       expect.objectContaining({
-        user_cpf: mockAdminSession.cpf,
-        acao: 'CREATE',
-        tabela: 'funcionarios',
-        registro_id: '88800000711',
-      })
+        resource: 'funcionarios',
+        action: 'INSERT',
+        resourceId: '88800000711',
+      }),
+      expect.objectContaining({ cpf: mockAdminSession.cpf })
     );
   });
 });

@@ -1,5 +1,5 @@
 const pg = require('pg');
-require('dotenv').config({ path: '.env.local' });
+require('./load-env.cjs').loadEnv();
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,

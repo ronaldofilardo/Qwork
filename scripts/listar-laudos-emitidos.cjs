@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '.env.local' });
+require('../load-env.cjs').loadEnv();
 const { Pool } = require('pg');
 
 const pool = new Pool({

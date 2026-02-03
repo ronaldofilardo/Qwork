@@ -1,6 +1,6 @@
 // Verificar todas as avaliações do CPF 16841540069
 const { Pool } = require('pg');
-require('dotenv').config({ path: '.env.local' });
+require('./load-env.cjs').loadEnv();
 
 async function check() {
   const pool = new Pool({
