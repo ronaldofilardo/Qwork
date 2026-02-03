@@ -72,24 +72,28 @@ export default function NovaAvaliacaoPage() {
         if (idFromUrl) {
           // Se tem ID na URL, verificar se não está concluída
           avaliacaoIdToUse = parseInt(idFromUrl);
-          
+
           // Buscar status específico dessa avaliação
           const checkRes = await fetch(`/api/avaliacao/todas`);
           const checkData = await checkRes.json();
           const avaliacaoEspecifica = checkData.avaliacoes.find(
             (a: any) => a.id === avaliacaoIdToUse
           );
-          
+
           // Se já está concluída, redirecionar para página de conclusão
           if (avaliacaoEspecifica?.status === 'concluida') {
-            console.log(`[AVALIAÇÃO] Avaliação #${avaliacaoIdToUse} já está concluída, redirecionando...`);
+            console.log(
+              `[AVALIAÇÃO] Avaliação #${avaliacaoIdToUse} já está concluída, redirecionando...`
+            );
             window.location.href = `/avaliacao/concluida?avaliacao_id=${avaliacaoIdToUse}`;
             return;
           }
-          
+
           // Se foi inativada, não permitir acesso
           if (avaliacaoEspecifica?.status === 'inativada') {
-            console.log(`[AVALIAÇÃO] Avaliação #${avaliacaoIdToUse} foi inativada`);
+            console.log(
+              `[AVALIAÇÃO] Avaliação #${avaliacaoIdToUse} foi inativada`
+            );
             alert('Esta avaliação foi inativada e não pode mais ser acessada.');
             window.location.href = '/dashboard';
             return;
@@ -121,13 +125,15 @@ export default function NovaAvaliacaoPage() {
         const avaliacaoAtual = verificacaoData.avaliacoes.find(
           (a: any) => a.id === avaliacaoIdToUse
         );
-        
+
         if (avaliacaoAtual) {
           console.log(`[AVALIAÇÃO] Status atual: ${avaliacaoAtual.status}`);
-          
+
           // Double-check: se concluída, redirecionar
           if (avaliacaoAtual.status === 'concluida') {
-            console.warn('[AVALIAÇÃO] Detectado status "concluida" - redirecionando');
+            console.warn(
+              '[AVALIAÇÃO] Detectado status "concluida" - redirecionando'
+            );
             window.location.href = `/avaliacao/concluida?avaliacao_id=${avaliacaoIdToUse}`;
             return;
           }

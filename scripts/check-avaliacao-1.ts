@@ -8,18 +8,21 @@ async function checkAvaliacao1() {
        FROM avaliacoes 
        WHERE id = 1`
     );
-    
+
     console.log('🔍 Avaliação #1:', JSON.stringify(result.rows[0], null, 2));
-    
+
     // Verificar total de respostas
     const respostasResult = await query(
       `SELECT COUNT(DISTINCT (grupo, item)) as total 
        FROM respostas 
        WHERE avaliacao_id = 1`
     );
-    
-    console.log('📊 Total de respostas únicas:', respostasResult.rows[0]?.total);
-    
+
+    console.log(
+      '📊 Total de respostas únicas:',
+      respostasResult.rows[0]?.total
+    );
+
     // Verificar se lote foi atualizado
     if (result.rows[0]?.lote_id) {
       const loteResult = await query(
@@ -28,9 +31,12 @@ async function checkAvaliacao1() {
          WHERE id = $1`,
         [result.rows[0].lote_id]
       );
-      console.log('📦 Status do lote:', JSON.stringify(loteResult.rows[0], null, 2));
+      console.log(
+        '📦 Status do lote:',
+        JSON.stringify(loteResult.rows[0], null, 2)
+      );
     }
-    
+
     process.exit(0);
   } catch (error) {
     console.error('❌ Erro:', error);
