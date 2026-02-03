@@ -88,9 +88,14 @@ export async function gerarPdf(opts: GerarPdfOptions) {
     }
 
     if (tipo === 'relatorio' || tipo === 'generic') {
-      return pdfMod.gerarPdfRelatorio(html, filename.replace(/[^a-zA-Z0-9.-]/g, '_'));
+      return pdfMod.gerarPdfRelatorio(
+        html,
+        filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+      );
     }
   }
 
-  throw new Error('gerarPdf: tipo ' + String(tipo) + ' não suportado por este wrapper');
+  throw new Error(
+    'gerarPdf: tipo ' + String(tipo) + ' não suportado por este wrapper'
+  );
 }

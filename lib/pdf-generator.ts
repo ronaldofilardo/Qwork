@@ -15,7 +15,21 @@ export type PdfGenerationOptions = {
   storageDir?: string;
 };
 
-export async function gerarPdfRecibo(html: string, numeroRecibo: string): Promise<PdfGenerationResult> {
+export function calcularHash(buffer: Buffer): string {
+  return crypto.createHash('sha256').update(buffer).digest('hex');
+}
+
+function stripHtml(input: string) {
+  return input
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export async function gerarPdfRecibo(
+  html: string,
+  numeroRecibo: string
+): Promise<PdfGenerationResult> {
   // Geração simples usando jsPDF (texto plano do HTML)
   const doc = new JsPDF({ unit: 'pt', format: 'a4' } as any);
   const text = stripHtml(html).slice(0, 20000);
@@ -31,7 +45,13 @@ export async function gerarPdfRecibo(html: string, numeroRecibo: string): Promis
   const now = new Date();
   const year = now.getFullYear();
   const month = now.toLocaleString('pt-BR', { month: 'long' });
-  const storageDir = path.join(process.cwd(), 'storage', 'recibos', String(year), month.toLowerCase());
+  const storageDir = path.join(
+    process.cwd(),
+    'storage',
+    'recibos',
+    String(year),
+    month.toLowerCase()
+  );
   const filename = `recibo-${numeroRecibo}.pdf`;
   const localPath = path.join(storageDir, filename);
 
@@ -50,7 +70,10 @@ export async function gerarPdfRecibo(html: string, numeroRecibo: string): Promis
   };
 }
 
-export async function gerarPdfFromUrl(url: string, filename = 'document.pdf'): Promise<PdfGenerationResult> {
+export async function gerarPdfFromUrl(
+  url: string,
+  filename = 'document.pdf'
+): Promise<PdfGenerationResult> {
   // Fetch HTML and generate a PDF
   // Use global fetch if available
   let res: any;
@@ -65,16 +88,18 @@ export async function gerarPdfFromUrl(url: string, filename = 'document.pdf'): P
   const html = await res.text();
 
   // Reuse gerarPdfRecibo logic (but no receipt number)
-  const result = await gerarPdfRecibo(html, filename.replace(/[^a-zA-Z0-9.-]/g, '_'));
+  const result = await gerarPdfRecibo(
+    html,
+    filename.replace(/[^a-zA-Z0-9.-]/g, '_')
+  );
   return result;
 }
 
-export async function gerarPdfRelatorio(html: string, filename = 'relatorio.pdf'): Promise<PdfGenerationResult> {
+export async function gerarPdfRelatorio(
+  html: string,
+  filename = 'relatorio.pdf'
+): Promise<PdfGenerationResult> {
   return gerarPdfRecibo(html, filename.replace(/[^a-zA-Z0-9.-]/g, '_'));
-}
-
-export function calcularHash(buffer: Buffer): string {
-  return crypto.createHash('sha256').update(buffer).digest('hex');
 }
 
 export function verificarHash(buffer: Buffer, hash: string): boolean {
@@ -87,8 +112,4 @@ export function formatarTamanho(bytes: number): string {
   if (kb < 1024) return `${kb.toFixed(1)} KB`;
   const mb = kb / 1024;
   return `${mb.toFixed(1)} MB`;
-}
-
-function stripHtml(input: string) {
-  return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }

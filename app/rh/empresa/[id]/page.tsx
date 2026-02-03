@@ -533,6 +533,7 @@ export default function EmpresaDashboardPage() {
           empresaId={parseInt(empresaId)}
           empresaNome={empresa.nome}
           onSuccess={(loteId) => {
+            setShowLiberarModal(false);
             fetchLotes();
             router.push(`/rh/empresa/${empresaId}/lote/${loteId}`);
           }}

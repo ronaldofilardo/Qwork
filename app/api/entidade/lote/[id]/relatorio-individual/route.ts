@@ -387,8 +387,7 @@ export async function GET(
       yPos += 7;
     }
 
-    // Rodapé em todas as páginas
-    const pageCount = (doc as any).internal.getNumberOfPages();
+    // Rodapé simples (uma página)
     doc.setPage(1);
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');

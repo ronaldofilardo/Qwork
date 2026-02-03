@@ -15,8 +15,22 @@ describe('gerarHTMLRelatorioIndividual', () => {
       lote: { id: 1, codigo: 'L1', titulo: 'Lote 1' },
       envio: '01/02/2026, 10:00:00',
       grupos: [
-        { id: 1, titulo: 'Grupo 1', dominio: 'Demandas', media: '62.5', classificacao: 'amarelo', corClassificacao: '#f59e0b' },
-        { id: 2, titulo: 'Grupo 2', dominio: 'Organização', media: '95', classificacao: 'verde', corClassificacao: '#166534' },
+        {
+          id: 1,
+          titulo: 'Grupo 1',
+          dominio: 'Demandas',
+          media: '62.5',
+          classificacao: 'amarelo',
+          corClassificacao: '#f59e0b',
+        },
+        {
+          id: 2,
+          titulo: 'Grupo 2',
+          dominio: 'Organização',
+          media: '95',
+          classificacao: 'verde',
+          corClassificacao: '#166534',
+        },
       ],
     } as any);
 

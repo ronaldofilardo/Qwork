@@ -184,10 +184,12 @@ describe('LiberarLoteModal', () => {
       expect(screen.getAllByText(/001-010126/).length).toBeGreaterThanOrEqual(
         1
       );
-      // Após sucesso deve chamar onSuccess e fechar o modal
+      // Após sucesso deve chamar onSuccess
       expect(mockOnSuccess).toHaveBeenCalledWith(1);
-      expect(mockOnClose).toHaveBeenCalled();
     });
+
+    // Verificar que o modal permanece aberto para mostrar a mensagem de sucesso
+    expect(mockOnClose).not.toHaveBeenCalled();
   });
 
   it('deve exibir mensagem de erro em caso de falha', () => {
@@ -368,6 +370,10 @@ describe('LiberarLoteModal', () => {
       ).toBeInTheDocument();
       expect(screen.getByText(/Empresa X/)).toBeInTheDocument();
     });
+
+    // Verificar que o modal permanece aberto para mostrar a mensagem de sucesso
+    expect(mockOnSuccess).toHaveBeenCalledWith(-1);
+    expect(mockOnClose).not.toHaveBeenCalled();
   });
 
   it('deve exibir detalhes de erro quando nenhuma empresa cria lotes em modo entidade', async () => {

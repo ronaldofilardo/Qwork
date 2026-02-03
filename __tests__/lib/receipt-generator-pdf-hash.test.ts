@@ -36,7 +36,10 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       // Setup mocks
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // Recibo não existe
-        .mockResolvedValueOnce({ rows: [{ id: 1, aceito: true, hash_contrato: 'abc123def456' }], rowCount: 1 })
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, aceito: true, hash_contrato: 'abc123def456' }],
+          rowCount: 1,
+        })
         .mockResolvedValueOnce({
           // Contratante
           rows: [
