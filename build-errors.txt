@@ -1,0 +1,8 @@
+
+> qwork2026@1.0.0 build C:\apps\QWork
+> next build
+
+  Ôû▓ Next.js 14.2.33
+  - Environments: .env.local, .env
+
+   Creating an optimized production build ...

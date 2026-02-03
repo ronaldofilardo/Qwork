@@ -2,12 +2,26 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole, requireClinica, requireEntity } from '@/lib/session';
-import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
-import { gerarHTMLRelatorioIndividual } from '@/lib/templates/relatorio-individual-html';
-import fs from 'fs';
-import path from 'path';
+import jsPDF from 'jspdf';
+import { applyPlugin } from 'jspdf-autotable';
 import { grupos } from '@/lib/questoes';
-import crypto from 'crypto';
+
+// Garantir que o plugin AutoTable seja aplicado ao jsPDF
+try {
+  applyPlugin(jsPDF);
+} catch (err) {
+  console.warn('Aviso: não foi possível aplicar jspdf-autotable ao jsPDF:', err);
+}
+
+// Extend jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable?: {
+      finalY: number;
+    };
+  }
+}
 
 // Exported helper to build grupos processados from respostas rows
 export function buildGruposFromRespostas(
@@ -273,121 +287,118 @@ export async function GET(
       grupos: gruposProcessados.sort((a, b) => a.id - b.id),
     };
 
-    // Gerar HTML
-    const html = gerarHTMLRelatorioIndividual(dadosRelatorio);
+    // Gerar PDF com jsPDF
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let yPos = 20;
 
-    // Gerar PDF com Puppeteer (garantir fechamento do browser em finally)
-    let browser: any = null;
-    let pdfBuffer: Buffer;
+    // Título principal
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório Individual de Avaliação', pageWidth / 2, yPos, {
+      align: 'center',
+    });
+    yPos += 15;
 
-    // Diagnostic: checar presença dos arquivos bin do @sparticuz/chromium em locais prováveis
-    try {
-      const cwd = process.cwd();
-      console.debug('[DEBUG] relatorio-individual: process.cwd=', cwd);
+    // Informações do Funcionário
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dados do Funcionário', 14, yPos);
+    yPos += 7;
 
-      const pnpmDir = path.join(cwd, 'node_modules', '.pnpm');
-      try {
-        const pnpmEntries = fs.existsSync(pnpmDir)
-          ? fs.readdirSync(pnpmDir).filter((e) => e.includes('@sparticuz+chromium'))
-          : [];
-        console.debug(
-          '[DEBUG] relatorio-individual: pnpm entries matching @sparticuz+chromium=',
-          pnpmEntries
-        );
-      } catch (e) {
-        console.debug(
-          '[DEBUG] relatorio-individual: unable to read node_modules/.pnpm',
-          e?.message
-        );
-      }
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Nome: ${dadosRelatorio.funcionario.nome}`, 14, yPos);
+    yPos += 5;
+    doc.text(`CPF: ${dadosRelatorio.funcionario.cpf}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Matrícula: ${dadosRelatorio.funcionario.matricula || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Empresa: ${dadosRelatorio.funcionario.empresa || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Setor: ${dadosRelatorio.funcionario.setor || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Função: ${dadosRelatorio.funcionario.funcao || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Nível: ${dadosRelatorio.funcionario.perfil}`, 14, yPos);
+    yPos += 10;
 
-      const candidates = [
-        path.join(cwd, 'node_modules', '.pnpm', '@sparticuz+chromium@143.0.4', 'node_modules', '@sparticuz', 'chromium', 'bin'),
-        path.join(cwd, 'node_modules', '.pnpm'),
-        path.join(cwd, 'node_modules', '@sparticuz', 'chromium', 'bin'),
-      ];
+    // Informações do Lote
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dados da Avaliação', 14, yPos);
+    yPos += 7;
 
-      for (const p of candidates) {
-        try {
-          const exists = fs.existsSync(p);
-          console.debug(`[DEBUG] relatorio-individual: candidate=${p} exists=${exists}`);
-          if (exists) {
-            const files = fs.readdirSync(p);
-            console.debug(`[DEBUG] relatorio-individual: files in ${p} = ${JSON.stringify(files)}`);
-          }
-        } catch (e) {
-          console.debug(`[DEBUG] relatorio-individual: error checking ${p}: ${e?.message}`);
-        }
-      }
-    } catch (diagErr) {
-      console.debug('[DEBUG] relatorio-individual: diagnostic error', diagErr);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Código do Lote: ${dadosRelatorio.lote.codigo}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Título: ${dadosRelatorio.lote.titulo}`, 14, yPos);
+    yPos += 5;
+    const dataEnvio = dadosRelatorio.envio
+      ? new Date(dadosRelatorio.envio).toLocaleString('pt-BR')
+      : '-';
+    doc.text(`Data de Conclusão: ${dataEnvio}`, 14, yPos);
+    yPos += 12;
+
+    // Resultados por Grupo (compacto - apenas resumo)
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resultados por Domínio', 14, yPos);
+    yPos += 8;
+
+    // Mostrar grupos de forma compacta (sem tabelas detalhadas)
+    for (const grupo of dadosRelatorio.grupos) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      
+      // Texto do grupo
+      const textoGrupo = `${grupo.dominio} - Grupo ${grupo.id} - ${grupo.titulo}`;
+      doc.text(textoGrupo, 14, yPos);
+      yPos += 5;
+
+      // Classificação com cor
+      doc.setFont('helvetica', 'normal');
+      const classificacaoTexto = grupo.classificacao.toUpperCase();
+      
+      // Converter cor hex para RGB
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+      };
+      
+      const rgb = hexToRgb(grupo.corClassificacao);
+      doc.setTextColor(rgb.r, rgb.g, rgb.b);
+      doc.text(`Média: ${grupo.media} - ${classificacaoTexto}`, 14, yPos);
+      doc.setTextColor(0, 0, 0);
+      yPos += 7;
     }
 
-    try {
-      const puppeteer = await getPuppeteerInstance();
-      browser = await puppeteer.launch({
-        headless: true,
-        args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--disable-web-security',
-          '--disable-features=IsolateOrigins,site-per-process',
-        ],
-      });
-      const page = await (browser as any).newPage();
-      await (page as any).setContent(html, { waitUntil: 'networkidle0' });
+    // Rodapé em todas as páginas
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    doc.setPage(1);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Gerado em ${new Date().toLocaleString('pt-BR')}`,
+      pageWidth / 2,
+      doc.internal.pageSize.height - 10,
+      { align: 'center' }
+    );
+    doc.setTextColor(0, 0, 0);
 
-      pdfBuffer = await (page as any).pdf({
-        format: 'A4',
-        printBackground: true,
-        margin: { top: '15mm', right: '12mm', bottom: '15mm', left: '12mm' },
-      });
-    } finally {
-      if (browser) {
-        try {
-          await browser.close();
-        } catch (err) {
-          console.error('Erro ao fechar browser Puppeteer:', err);
-        }
-      }
-    }
-
-    // Persistir PDF no laudos (relatorio_individual) e gravar hash
-    try {
-      const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
-
-      const updateResult = await query(
-        `UPDATE laudos SET relatorio_individual = $1, hash_relatorio_individual = $2, atualizado_em = NOW() WHERE lote_id = $3 RETURNING id`,
-        [pdfBuffer, hash, loteId]
-      );
-
-      if (updateResult.rowCount === 0) {
-        await query(
-          `INSERT INTO laudos (id, lote_id, emissor_cpf, status, relatorio_individual, hash_relatorio_individual, criado_em) VALUES ($1, $1, $2, 'rascunho', $3, $4, NOW())`,
-          [loteId, session.cpf, pdfBuffer, hash]
-        );
-      }
-    } catch (err: any) {
-      // Detectar coluna inexistente (código 42703) e registrar instrução clara para desenvolvedores
-      if (
-        err &&
-        (err.code === '42703' || err.message?.includes('relatorio_individual'))
-      ) {
-        console.error(
-          'Erro ao salvar relatorio individual em laudos: coluna ausente (relatorio_individual). Verifique se as migrations foram aplicadas. Para corrigir localmente execute: pnpm db:migrate (ou node scripts/fix-missing-laudo-columns.js)'
-        );
-      } else {
-        console.error('Erro ao salvar relatorio individual em laudos:', err);
-      }
-      // Não falhar a geração do PDF em caso de problema ao persistir - o PDF ainda será retornado ao usuário
-    }
+    // Gerar buffer do PDF
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
     // Retornar PDF
     const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(/\s+/g, '-')}-${avaliacao.lote_codigo}.pdf`;
 
-    return new NextResponse(Buffer.from(pdfBuffer), {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
@@ -400,26 +411,6 @@ export async function GET(
     );
 
     const message = error instanceof Error ? error.message : String(error);
-
-    // Erros relacionados ao Chromium normalmente indicam configuração/deploy incorreto
-    if (
-      message.includes('brotli') ||
-      message.includes('@sparticuz') ||
-      message.includes('Chromium não disponível') ||
-      message.includes('CHROME_MISSING') ||
-      message.includes('Could not find Chrome') ||
-      message.includes('Could not find Chromium')
-    ) {
-      return NextResponse.json(
-        {
-          error: 'Serviço de geração de PDF temporariamente indisponível',
-          details: message,
-          hint:
-            "Verifique se '@sparticuz/chromium' foi instalado durante o deploy (postinstall) ou execute a instalação do Chromium para Puppeteer durante o build (ex.: usar script 'vercel-build' que chama 'node scripts/install-puppeteer-chrome.js'). Alternativamente, defina SPARTICUZ_CHROMIUM_BIN ou PUPPETEER_EXECUTABLE_PATH apontando para o binário.",
-        },
-        { status: 503 }
-      );
-    }
 
     return NextResponse.json(
       {
