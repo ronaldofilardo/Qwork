@@ -76,7 +76,6 @@ export async function getLoteInfo(
       f.nome as liberado_por_nome,
       la.empresa_id,
       ec.nome as empresa_nome,
-      la.emitido_em,
       l.id as laudo_id,
       l.status as laudo_status,
       l.emitido_em as laudo_emitido_em,
