@@ -353,10 +353,25 @@ export async function GET(
       'Erro ao gerar PDF do relatório individual (entidade):',
       error
     );
+
+    const message = error instanceof Error ? error.message : String(error);
+
+    // Erros relacionados ao Chromium normalmente indicam configuração/deploy incorreto
+    if (message.includes('brotli') || message.includes('@sparticuz') || message.includes('Chromium não disponível')) {
+      return NextResponse.json(
+        {
+          error: 'Serviço de geração de PDF temporariamente indisponível',
+          details: message,
+          hint: "Verifique se '@sparticuz/chromium' foi instalado durante o deploy (postinstall) e se os arquivos binários estão presentes; verifique também env SPARTICUZ_CHROMIUM_BIN",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: 'Erro ao gerar PDF do relatório individual',
-        details: error instanceof Error ? error.message : 'Unknown error',
+        details: message,
       },
       { status: 500 }
     );

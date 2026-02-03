@@ -31,37 +31,72 @@ const isVercelProduction = process.env.VERCEL === '1';
 export async function getPuppeteerInstance() {
   if (isVercelProduction) {
     // Ambiente serverless - usar chromium otimizado
-    const chromium = await import('@sparticuz/chromium');
-    const puppeteerCore = await import('puppeteer-core');
+    try {
+      const chromium = await import('@sparticuz/chromium');
+      const puppeteerCore = await import('puppeteer-core');
 
-    return {
-      launch: async (options: Record<string, unknown>) => {
-        // Prefer robust handling across chromium module shapes and versions
-        const chromiumAny: any = chromium;
-        const executablePath =
-          (await chromiumAny.executablePath?.()) ||
-          (await chromiumAny.default?.executablePath?.());
-        const args = chromiumAny.args || chromiumAny.default?.args || [];
+      return {
+        launch: async (options: Record<string, unknown>) => {
+          // Prefer robust handling across chromium module shapes and versions
+          const chromiumAny: any = chromium;
 
-        const launchOptions: Record<string, unknown> = {
-          ...options,
-        };
+          // Tentar obter executablePath do pacote @sparticuz/chromium
+          let executablePath: string | undefined;
+          try {
+            executablePath =
+              (await chromiumAny.executablePath?.()) ||
+              (await chromiumAny.default?.executablePath?.());
+          } catch (err) {
+            console.error('[PDF] Erro ao obter executablePath do @sparticuz/chromium:', err);
+          }
 
-        // Merge args from provided options with chromium args when possible
-        if (Array.isArray(launchOptions.args)) {
-          launchOptions.args = [
-            ...((launchOptions.args as string[]) || []),
-            ...args,
-          ];
-        } else if (args.length > 0) {
-          launchOptions.args = args;
-        }
+          const args = chromiumAny.args || chromiumAny.default?.args || [];
 
-        if (executablePath) launchOptions.executablePath = executablePath;
+          const launchOptions: Record<string, unknown> = {
+            ...options,
+          };
 
-        return puppeteerCore.default.launch(launchOptions);
-      },
-    };
+          // Merge args from provided options with chromium args when possible
+          if (Array.isArray(launchOptions.args)) {
+            launchOptions.args = [
+              ...((launchOptions.args as string[]) || []),
+              ...args,
+            ];
+          } else if (args.length > 0) {
+            launchOptions.args = args;
+          }
+
+          if (executablePath) {
+            launchOptions.executablePath = executablePath;
+            return puppeteerCore.default.launch(launchOptions);
+          }
+
+          // Fallback: tentar usar puppeteer completo (pode não funcionar em serverless) para dar melhor erro
+          try {
+            const puppeteer = await import('puppeteer');
+            console.warn('[PDF] ExecutablePath do @sparticuz/chromium não encontrado. Tentando fallback com puppeteer...');
+            return puppeteer.default.launch(launchOptions);
+          } catch (fallbackErr) {
+            console.error('[PDF] Fallback com puppeteer falhou:', fallbackErr);
+            throw new Error(
+              "Chromium não disponível no ambiente serverless. Verifique se '@sparticuz/chromium' foi instalado corretamente e se os arquivos de binário (brotli) foram incluídos na build. Sugestões: 1) adicionar um script 'postinstall' para executar 'require('@sparticuz/chromium').install()' durante a build; 2) definir a variável de ambiente SPARTICUZ_CHROMIUM_BIN apontando para os arquivos do pacote; 3) executar testes locais com 'pnpm run check-puppeteer' para validar."
+            );
+          }
+        },
+      };
+    } catch (err: any) {
+      console.error('[PDF] Erro ao importar @sparticuz/chromium:', err);
+      // Se importar falhar, tentar usar puppeteer como fallback local (pode falhar em Vercel)
+      try {
+        const puppeteer = await import('puppeteer');
+        return puppeteer.default;
+      } catch (puppErr) {
+        console.error('[PDF] Não foi possível obter instância de Puppeteer:', puppErr);
+        throw new Error(
+          "Falha ao inicializar Chromium para geração de PDF. Verifique dependências e a configuração de build (see README: installing @sparticuz/chromium)."
+        );
+      }
+    }
   } else {
     // Ambiente local - usar puppeteer padrão
     const puppeteer = await import('puppeteer');

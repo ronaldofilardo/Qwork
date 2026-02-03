@@ -63,6 +63,8 @@
     "db:check:orphaned-clinicas": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/fixes/fix_orphaned_clinica_ids.sql",
     "db:seed:all": "node scripts/db-seed-all.js",
     "prepare": "husky",
+    "postinstall": "node scripts/install-sparticuz-chromium.js",
+    "check-puppeteer": "tsx scripts/check-puppeteer.ts",
     "clean:root": "powershell -ExecutionPolicy Bypass -File scripts/cleanup-root.ps1",
     "check-backblaze": "tsx scripts/check-backblaze.mts"
   },
