@@ -78,9 +78,15 @@ export default function Dashboard() {
 
   if (loading) return <div className="p-10 text-center">Carregando...</div>;
 
+  // Filtra avaliações disponíveis (não concluídas e não inativadas)
   const avaliacoesDisponiveis = avaliacoes.filter(
     (a) => a.status === 'iniciada' || a.status === 'em_andamento'
   );
+
+  console.log('[Dashboard] Avaliações disponíveis para iniciar:', {
+    total: avaliacoesDisponiveis.length,
+    ids: avaliacoesDisponiveis.map((a) => `#${a.id} (${a.status})`),
+  });
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
