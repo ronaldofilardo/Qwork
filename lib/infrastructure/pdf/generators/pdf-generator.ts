@@ -30,15 +30,22 @@ const isVercelProduction = process.env.VERCEL === '1';
  */
 export async function getPuppeteerInstance() {
   if (isVercelProduction) {
-    // Ambiente serverless - usar @sparticuz/chromium (binários incluídos no pacote)
+    // Ambiente serverless - usar @sparticuz/chromium com download em runtime se necessário
     const chromium = await import('@sparticuz/chromium');
     const puppeteerCore = await import('puppeteer-core');
 
     return {
       launch: async (options: Record<string, unknown>) => {
-        // @sparticuz/chromium fornece executablePath e args otimizados para Lambda/Vercel
-        const executablePath = await chromium.default.executablePath();
+        // Forçar download para /tmp - evita problemas com Vercel pruning node_modules
+        // setGraphicsMode desabilita modo headless para reduzir dependências
+        chromium.default.setGraphicsMode = false;
+
+        const executablePath = await chromium.default.executablePath({
+          cacheDir: '/tmp/chromium-cache',
+        });
         const chromiumArgs = chromium.default.args;
+
+        console.debug('[DEBUG] getPuppeteerInstance: executablePath=', executablePath);
 
         const launchOptions: Record<string, unknown> = {
           ...options,
