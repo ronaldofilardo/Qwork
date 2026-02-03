@@ -30,88 +30,31 @@ const isVercelProduction = process.env.VERCEL === '1';
  */
 export async function getPuppeteerInstance() {
   if (isVercelProduction) {
-    // Ambiente serverless - usar chromium otimizado
-    try {
-      const chromium = await import('@sparticuz/chromium');
-      const puppeteerCore = await import('puppeteer-core');
+    // Ambiente serverless - usar @sparticuz/chromium (binários incluídos no pacote)
+    const chromium = await import('@sparticuz/chromium');
+    const puppeteerCore = await import('puppeteer-core');
 
-      return {
-        launch: async (options: Record<string, unknown>) => {
-          // Prefer robust handling across chromium module shapes and versions
-          const chromiumAny: any = chromium;
+    return {
+      launch: async (options: Record<string, unknown>) => {
+        // @sparticuz/chromium fornece executablePath e args otimizados para Lambda/Vercel
+        const executablePath = await chromium.default.executablePath();
+        const chromiumArgs = chromium.default.args;
 
-          // Tentar obter executablePath do pacote @sparticuz/chromium
-          let executablePath: string | undefined;
-          try {
-            executablePath =
-              (await chromiumAny.executablePath?.()) ||
-              (await chromiumAny.default?.executablePath?.());
-          } catch (err) {
-            console.error('[PDF] Erro ao obter executablePath do @sparticuz/chromium:', err);
-          }
+        const launchOptions: Record<string, unknown> = {
+          ...options,
+          executablePath,
+        };
 
-          const args = chromiumAny.args || chromiumAny.default?.args || [];
+        // Merge chromium args com args fornecidos
+        if (Array.isArray(launchOptions.args)) {
+          launchOptions.args = [...(launchOptions.args as string[]), ...chromiumArgs];
+        } else {
+          launchOptions.args = chromiumArgs;
+        }
 
-          const launchOptions: Record<string, unknown> = {
-            ...options,
-          };
-
-          // Merge args from provided options with chromium args when possible
-          if (Array.isArray(launchOptions.args)) {
-            launchOptions.args = [
-              ...((launchOptions.args as string[]) || []),
-              ...args,
-            ];
-          } else if (args.length > 0) {
-            launchOptions.args = args;
-          }
-
-          if (executablePath) {
-            launchOptions.executablePath = executablePath;
-            return puppeteerCore.default.launch(launchOptions);
-          }
-
-          // Fallback: tentar usar puppeteer completo (pode não funcionar em serverless) para dar melhor erro
-          try {
-            const puppeteer = await import('puppeteer');
-            console.warn('[PDF] ExecutablePath do @sparticuz/chromium não encontrado. Tentando fallback com puppeteer...');
-            // Tentar lançar e capturar erro específico de falta de Chrome
-            try {
-              return await puppeteer.default.launch(launchOptions);
-            } catch (puppErr: any) {
-              const msg = puppErr?.message || String(puppErr);
-              if (msg.includes('Could not find Chrome') || msg.includes('Could not find Chromium') || msg.includes('executablePath')) {
-                // Erro específico: Chrome ausente
-                console.error('[PDF] Puppeteer reportou ausência do Chrome:', msg);
-                const err = new Error('CHROME_MISSING: ' + msg);
-                (err as any).code = 'CHROME_MISSING';
-                throw err;
-              }
-              console.error('[PDF] Fallback com puppeteer falhou:', puppErr);
-              throw puppErr;
-            }
-          } catch (fallbackErr) {
-            console.error('[PDF] Fallback com puppeteer falhou:', fallbackErr);
-            // Mensagem final com instruções acionáveis
-            throw new Error(
-              "Chromium não disponível no ambiente serverless. Sugestões: 1) executar no build: 'node scripts/install-sparticuz-chromium.js' e 'node scripts/install-puppeteer-chrome.js' ; 2) definir as vars SPARTICUZ_CHROMIUM_BIN ou PUPPETEER_EXECUTABLE_PATH apontando para o binário; 3) ver logs de build para confirmar postinstall."
-            );
-          }
-        },
-      };
-    } catch (err: any) {
-      console.error('[PDF] Erro ao importar @sparticuz/chromium:', err);
-      // Se importar falhar, tentar usar puppeteer como fallback local (pode falhar em Vercel)
-      try {
-        const puppeteer = await import('puppeteer');
-        return puppeteer.default;
-      } catch (puppErr) {
-        console.error('[PDF] Não foi possível obter instância de Puppeteer:', puppErr);
-        throw new Error(
-          "Falha ao inicializar Chromium para geração de PDF. Verifique dependências e a configuração de build (see README: installing @sparticuz/chromium)."
-        );
-      }
-    }
+        return puppeteerCore.default.launch(launchOptions);
+      },
+    };
   } else {
     // Ambiente local - usar puppeteer padrão
     const puppeteer = await import('puppeteer');
