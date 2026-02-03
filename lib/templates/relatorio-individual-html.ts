@@ -30,6 +30,17 @@ export interface RelatorioIndividualData {
   }>;
 }
 
+// Pequena função de escape para evitar injeção em templates HTML
+function escapeHtml(s: any) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 export function gerarHTMLRelatorioIndividual(dados: RelatorioIndividualData) {
   const { funcionario, lote, envio, grupos } = dados;
 
@@ -39,13 +50,11 @@ export function gerarHTMLRelatorioIndividual(dados: RelatorioIndividualData) {
       return `
         <div class="grupo">
           <div class="grupo-titulo">${escapeHtml(g.dominio)} - Grupo ${g.id} - ${escapeHtml(
-        g.titulo
-      )}</div>
+            g.titulo
+          )}</div>
           <div class="grupo-media" style="color:${cor}">Média: ${String(
-        g.media
-      )} - ${
-        (g.classificacao || '').toUpperCase() || ''
-      }</div>
+            g.media
+          )} - ${(g.classificacao || '').toUpperCase() || ''}</div>
         </div>`;
     })
     .join('\n');
@@ -96,15 +105,4 @@ export function gerarHTMLRelatorioIndividual(dados: RelatorioIndividualData) {
   <footer>Gerado em ${new Date().toLocaleString('pt-BR')}</footer>
 </body>
 </html>`;
-}
-
-// Pequena função de escape para evitar injeção em templates HTML
-function escapeHtml(s: any) {
-  if (s == null) return '';
-  return String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
 }
