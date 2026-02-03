@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { queryWithContext } from '@/lib/db-security';
+import { transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 import { recalcularStatusLote } from '@/lib/lotes';
 import { calcularResultados } from '@/lib/calculate';
@@ -73,81 +73,111 @@ export async function POST(request: Request) {
         `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} COMPLETA! Marcando como concluída...`
       );
 
-      try {
-        // Buscar todas as respostas para calcular resultados
-        const todasRespostasResult = await query(
-          `SELECT DISTINCT ON (r.grupo, r.item) r.grupo, r.item, r.valor
-           FROM respostas r
-           WHERE r.avaliacao_id = $1
-           ORDER BY r.grupo, r.item, r.id DESC`,
+      // ✅ Envolver TODA a lógica de conclusão em transactionWithContext
+      await transactionWithContext(async (queryTx) => {
+        try {
+          // Buscar todas as respostas para calcular resultados
+          const todasRespostasResult = await queryTx(
+            `SELECT DISTINCT ON (r.grupo, r.item) r.grupo, r.item, r.valor
+             FROM respostas r
+             WHERE r.avaliacao_id = $1
+             ORDER BY r.grupo, r.item, r.id DESC`,
+            [avaliacaoId]
+          );
+
+          // Organizar respostas por grupo
+          const respostasPorGrupo = new Map<
+            number,
+            Array<{ item: string; valor: number }>
+          >();
+          todasRespostasResult.rows.forEach((r: any) => {
+            if (!respostasPorGrupo.has(r.grupo)) {
+              respostasPorGrupo.set(r.grupo, []);
+            }
+            respostasPorGrupo
+              .get(r.grupo)!
+              .push({ item: r.item, valor: r.valor });
+          });
+
+          // Criar mapa de tipos de grupos (incluindo dominio e tipo)
+          const gruposTipo = new Map(
+            grupos.map((g) => [g.id, { dominio: g.dominio, tipo: g.tipo }])
+          );
+
+          // Calcular resultados
+          const todosResultados = calcularResultados(
+            respostasPorGrupo,
+            gruposTipo
+          );
+
+          // Salvar resultados no banco
+          for (const resultado of todosResultados) {
+            await queryTx(
+              `INSERT INTO resultados (avaliacao_id, grupo, dominio, score, categoria)
+             VALUES ($1, $2, $3, $4, $5)
+             ON CONFLICT (avaliacao_id, grupo) DO UPDATE SET score = EXCLUDED.score, categoria = EXCLUDED.categoria`,
+              [
+                avaliacaoId,
+                resultado.grupo,
+                resultado.dominio,
+                resultado.score,
+                resultado.categoria,
+              ]
+            );
+          }
+
+          console.log(`[RESPOSTAS] ✅ Resultados calculados e salvos`);
+        } catch (resultError) {
+          console.error(
+            `[RESPOSTAS] ⚠️ Erro ao calcular resultados, mas continuando conclusão:`,
+            resultError
+          );
+          // Não bloquear a conclusão da avaliação por erro no cálculo
+        }
+
+        // Marcar como concluída (SEMPRE executar, mesmo se houver erro nos resultados)
+        await queryTx(
+          `UPDATE avaliacoes 
+           SET status = 'concluida', envio = NOW(), atualizado_em = NOW() 
+           WHERE id = $1`,
           [avaliacaoId]
         );
 
-        // Organizar respostas por grupo
-        const respostasPorGrupo = new Map<
-          number,
-          Array<{ item: string; valor: number }>
-        >();
-        todasRespostasResult.rows.forEach((r: any) => {
-          if (!respostasPorGrupo.has(r.grupo)) {
-            respostasPorGrupo.set(r.grupo, []);
-          }
-          respostasPorGrupo
-            .get(r.grupo)!
-            .push({ item: r.item, valor: r.valor });
-        });
-
-        // Criar mapa de tipos de grupos (incluindo dominio e tipo)
-        const gruposTipo = new Map(
-          grupos.map((g) => [g.id, { dominio: g.dominio, tipo: g.tipo }])
+        console.log(
+          `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída`
         );
 
-        // Calcular resultados
-        const todosResultados = calcularResultados(
-          respostasPorGrupo,
-          gruposTipo
+        // Buscar lote_id
+        const loteResult = await queryTx(
+          `SELECT la.id as lote_id, la.numero_ordem 
+           FROM avaliacoes a
+           JOIN lotes_avaliacao la ON a.lote_id = la.id
+           WHERE a.id = $1`,
+          [avaliacaoId]
         );
 
-        // Salvar resultados no banco
-        for (const resultado of todosResultados) {
-          await query(
-            `INSERT INTO resultados (avaliacao_id, grupo, dominio, score, categoria)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (avaliacao_id, grupo) DO UPDATE SET score = EXCLUDED.score, categoria = EXCLUDED.categoria`,
-            [
-              avaliacaoId,
-              resultado.grupo,
-              resultado.dominio,
-              resultado.score,
-              resultado.categoria,
-            ]
+        if (loteResult.rows.length > 0) {
+          const { numero_ordem } = loteResult.rows[0];
+
+          // Atualizar índice do funcionário
+          await queryTx(
+            `UPDATE funcionarios 
+             SET indice_avaliacao = $1, data_ultimo_lote = NOW() 
+             WHERE cpf = $2`,
+            [numero_ordem, session.cpf]
           );
+
+          console.log(`[RESPOSTAS] ✅ Funcionário atualizado dentro da transação`);
         }
 
-        console.log(`[RESPOSTAS] ✅ Resultados calculados e salvos`);
-      } catch (resultError) {
-        console.error(
-          `[RESPOSTAS] ⚠️ Erro ao calcular resultados, mas continuando conclusão:`,
-          resultError
+        console.log(
+          `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída dentro da transação`
         );
-        // Não bloquear a conclusão da avaliação por erro no cálculo
-      }
+      });
 
-      // Marcar como concluída (SEMPRE executar, mesmo se houver erro nos resultados)
-      await queryWithContext(
-        `UPDATE avaliacoes 
-         SET status = 'concluida', envio = NOW(), atualizado_em = NOW() 
-         WHERE id = $1`,
-        [avaliacaoId]
-      );
-
-      console.log(
-        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída`
-      );
-
-      // Buscar lote_id
+      // Chamar recalcularStatusLote APÓS a transação de conclusão
       const loteResult = await query(
-        `SELECT la.id as lote_id, la.numero_ordem 
+        `SELECT la.id as lote_id
          FROM avaliacoes a
          JOIN lotes_avaliacao la ON a.lote_id = la.id
          WHERE a.id = $1`,
@@ -155,19 +185,8 @@ export async function POST(request: Request) {
       );
 
       if (loteResult.rows.length > 0) {
-        const { lote_id, numero_ordem } = loteResult.rows[0];
-
-        // Atualizar índice do funcionário
-        await query(
-          `UPDATE funcionarios 
-           SET indice_avaliacao = $1, data_ultimo_lote = NOW() 
-           WHERE cpf = $2`,
-          [numero_ordem, session.cpf]
-        );
-
-        // Recalcular status do lote e notificar liberador
+        const { lote_id } = loteResult.rows[0];
         await recalcularStatusLote(avaliacaoId);
-
         console.log(`[RESPOSTAS] ✅ Lote ${lote_id} recalculado`);
       }
 
