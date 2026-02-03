@@ -93,7 +93,6 @@ describe.skip('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
-
       // Mock - insert recibo
       mockQuery.mockResolvedValueOnce({
         rows: [
@@ -143,7 +142,10 @@ describe.skip('receipt-generator', () => {
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       // 1.1) contrato (aceito)
-      mockQuery.mockResolvedValueOnce({ rows: [{ id: 1, aceito: true }], rowCount: 1 } as any);
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ id: 1, aceito: true }],
+        rowCount: 1,
+      } as any);
 
       // 2) contratante
       mockQuery.mockResolvedValueOnce({

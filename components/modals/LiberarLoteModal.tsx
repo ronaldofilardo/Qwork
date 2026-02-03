@@ -141,12 +141,11 @@ export function LiberarLoteModal({
         setShowSuccess(true);
         setEntidadeResponse(response);
 
-        // Fechar modal imediatamente e notificar o caller
+        // Notificar o caller - deixar a página pai decidir se fecha o modal
         if (onSuccess) {
           // quando vários lotes são criados, não há um único id; passar -1 para indicar sucesso
           onSuccess(-1);
         }
-        handleClose();
       }
 
       return;
@@ -181,11 +180,10 @@ export function LiberarLoteModal({
     if (response.success && response.lote) {
       setShowSuccess(true);
 
-      // Fechar modal imediatamente e notificar o caller
+      // Notificar o caller - deixar a página pai decidir se fecha o modal
       if (onSuccess) {
         onSuccess(response.lote!.id);
       }
-      handleClose();
     }
   };
 

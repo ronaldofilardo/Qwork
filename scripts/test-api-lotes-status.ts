@@ -53,14 +53,22 @@ async function testarAPI() {
         console.log(`\n📋 Campos retornados pela função SQL:`);
         console.log(`   - valido: ${validacao.valido}`);
         console.log(`   - bloqueante: ${validacao.bloqueante}`);
-        console.log(`   - funcionarios_pendentes: ${validacao.funcionarios_pendentes}`);
+        console.log(
+          `   - funcionarios_pendentes: ${validacao.funcionarios_pendentes}`
+        );
 
         console.log(`\n✅ Resultado da lógica corrigida:`);
-        console.log(`   pode_emitir_laudo: ${podeEmitir ? '✅ true' : '❌ false'}`);
-        console.log(`   Status no card: ${podeEmitir ? '✅ Pronto' : '⚠️ Pendente'}`);
+        console.log(
+          `   pode_emitir_laudo: ${podeEmitir ? '✅ true' : '❌ false'}`
+        );
+        console.log(
+          `   Status no card: ${podeEmitir ? '✅ Pronto' : '⚠️ Pendente'}`
+        );
 
         if (!podeEmitir && validacao.valido) {
-          console.log(`\n❌ ERRO: validacao.valido é true mas podeEmitir é false!`);
+          console.log(
+            `\n❌ ERRO: validacao.valido é true mas podeEmitir é false!`
+          );
         } else if (podeEmitir) {
           console.log(`\n✅ OK: Lote concluído será exibido como "Pronto"`);
         }

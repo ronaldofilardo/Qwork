@@ -53,10 +53,16 @@ async function debugLotesStatus() {
         const resultado = validacao.rows[0];
         console.log(`\n✅ Validação:`);
         console.log(`   - Válido: ${resultado.valido ? '✅ SIM' : '❌ NÃO'}`);
-        console.log(`   - Bloqueante: ${resultado.bloqueante ? '⚠️ SIM' : '✅ NÃO'}`);
-        console.log(`   - Funcionários pendentes: ${resultado.funcionarios_pendentes}`);
-        console.log(`   - Taxa de conclusão: ${resultado.detalhes?.taxa_conclusao}%`);
-        
+        console.log(
+          `   - Bloqueante: ${resultado.bloqueante ? '⚠️ SIM' : '✅ NÃO'}`
+        );
+        console.log(
+          `   - Funcionários pendentes: ${resultado.funcionarios_pendentes}`
+        );
+        console.log(
+          `   - Taxa de conclusão: ${resultado.detalhes?.taxa_conclusao}%`
+        );
+
         if (resultado.alertas && resultado.alertas.length > 0) {
           console.log(`   - Alertas:`);
           resultado.alertas.forEach((alerta: string) => {
@@ -66,8 +72,9 @@ async function debugLotesStatus() {
 
         // Verificar o que deveria aparecer no card
         const isPronto = resultado.valido;
-        console.log(`\n🎯 Status no card deveria ser: ${isPronto ? '✅ Pronto' : '⚠️ Pendente'}`);
-
+        console.log(
+          `\n🎯 Status no card deveria ser: ${isPronto ? '✅ Pronto' : '⚠️ Pendente'}`
+        );
       } catch (validacaoError) {
         console.error(`❌ Erro ao validar lote ${lote.id}:`, validacaoError);
       }
@@ -75,7 +82,6 @@ async function debugLotesStatus() {
 
     console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n`);
     console.log('✅ Verificação concluída!\n');
-
   } catch (error) {
     console.error('❌ Erro ao debugar lotes:', error);
     process.exit(1);
