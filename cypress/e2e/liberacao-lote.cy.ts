@@ -46,6 +46,17 @@ describe('Fluxo de Liberação de Lote', () => {
       },
     }).as('getLotes');
 
+    // Mock do endpoint de login (garante que o fluxo de login prossiga e gere /api/auth/session)
+    cy.intercept('POST', '/api/auth/login', (req) => {
+      req.reply({
+        statusCode: 200,
+        body: {
+          redirectTo: `/rh/empresa/${empresaId}?tab=lotes`,
+          perfil: 'rh',
+        },
+      });
+    }).as('postLogin');
+
     // Login e navegação
     cy.visit('/login');
     cy.get('input[name="cpf"]').type('12345678901');
@@ -250,6 +261,25 @@ describe('Fluxo de Liberação de Lote', () => {
       cy.contains('Lote liberado com sucesso!').should('be.visible');
       cy.contains('001-010126').should('be.visible');
       cy.contains('Lote nº: 1').should('be.visible');
+    });
+
+    it('fecha modal e navega para a página do lote após sucesso (fluxo RH)', () => {
+      cy.intercept('POST', '/api/rh/liberar-lote', {
+        statusCode: 200,
+        body: {
+          success: true,
+          lote: { id: 42, codigo: '002-420126', numero_ordem: 1 },
+        },
+      }).as('liberarNav');
+
+      cy.contains('button', 'Iniciar Ciclo').click();
+      cy.wait('@liberarNav');
+
+      // Deve navegar para a página do lote recém-criado
+      cy.url().should('include', '/rh/empresa/1/lote/42');
+
+      // Modal deve ser fechado
+      cy.get('[role="dialog"]').should('not.exist');
     });
 
     it('deve exibir mensagem de erro em caso de falha', () => {
