@@ -411,7 +411,9 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
         ).toBeNull();
 
         // Deve ter recarregado lotes (fazer chamada ao endpoint de lotes)
-        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/rh/lotes?empresa_id=1'));
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/api/rh/lotes?empresa_id=1')
+        );
       });
     });
   });

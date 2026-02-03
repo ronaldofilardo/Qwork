@@ -13,7 +13,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Carregar variáveis de ambiente
-dotenv.config({ path: join(__dirname, '..', '.env.local') });
+require('./load-env.cjs').loadEnv();
 
 const { Pool } = pg;
 

@@ -321,10 +321,9 @@ describe('Ciclo Completo: Funcionário → Avaliação → Reset → Emissão', 
 
     it('deve voltar lote para ativo após reset', async () => {
       // Lote volta para ativo pois agora tem avaliação pendente
-      await query(
-        `UPDATE lotes_avaliacao SET status = 'ativo' WHERE id = $1`,
-        [loteId]
-      );
+      await query(`UPDATE lotes_avaliacao SET status = 'ativo' WHERE id = $1`, [
+        loteId,
+      ]);
 
       const loteCheck = await query(
         `SELECT status FROM lotes_avaliacao WHERE id = $1`,
@@ -466,10 +465,7 @@ describe('Ciclo Completo: Funcionário → Avaliação → Reset → Emissão', 
 
     it('não deve permitir regenerar laudo (imutabilidade)', async () => {
       // Tentar gerar novamente
-      const novoLaudoId = await gerarLaudoCompletoEmitirPDF(
-        loteId,
-        emissorCpf
-      );
+      const novoLaudoId = await gerarLaudoCompletoEmitirPDF(loteId, emissorCpf);
 
       // Deve retornar mesmo ID (não regenera)
       expect(novoLaudoId).toBe(laudoId);

@@ -1,7 +1,7 @@
-import { config } from 'dotenv';
+import { loadEnv } from './load-env';
 import { getDatabaseInfo, testConnection } from '../lib/db';
 
-config({ path: '.env.local' });
+loadEnv();
 
 async function main() {
   console.log('[DB-INFO]', getDatabaseInfo());

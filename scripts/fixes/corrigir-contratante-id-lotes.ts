@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });
+import { loadEnv } from '../load-env';
+loadEnv();
 import { query } from '@/lib/db';
 
 async function main() {

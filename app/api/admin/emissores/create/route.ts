@@ -15,8 +15,8 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    // Verificar permissão de admin
-    const session = await requireRole('admin');
+    // Verificar permissão de admin (não requer MFA para criação de emissores)
+    const session = await requireRole('admin', false);
 
     const body = await request.json();
     const cpfRaw = body.cpf?.toString?.() ?? '';

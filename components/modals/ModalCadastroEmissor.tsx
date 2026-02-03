@@ -112,7 +112,14 @@ export function ModalCadastroEmissor({
           onClose();
         }, 3000);
       } else {
-        setError(data.error || 'Erro ao criar emissor');
+        if (data?.error === 'MFA_REQUIRED') {
+          setError(
+            data?.message ||
+              'Autenticação de dois fatores requerida. Verifique a MFA do administrador e tente novamente.'
+          );
+        } else {
+          setError(data?.error || 'Erro ao criar emissor');
+        }
       }
     } catch (err) {
       console.error('Erro ao criar emissor:', err);

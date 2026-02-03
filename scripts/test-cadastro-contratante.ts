@@ -3,10 +3,10 @@
  * Testa se todas as dependências estão corretas após migrations
  */
 
-import { config } from 'dotenv';
+import { loadEnv } from './load-env';
 import { resolve } from 'path';
 
-config({ path: resolve(process.cwd(), '.env.local') });
+loadEnv();
 
 async function testarCadastroContratante() {
   const url = 'http://localhost:3000/api/cadastro/contratante';
