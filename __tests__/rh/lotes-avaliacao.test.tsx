@@ -340,5 +340,35 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
       // Verifica que não houve erro (o alert de erro não foi chamado)
       // Nota: O mock da API retorna sucesso, então não deve haver erro
     });
+
+    it('fecha modal e navega para detalhes do lote após sucesso (fluxo RH)', async () => {
+      const user = userEvent.setup();
+      render(<EmpresaDashboardPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
+
+      // Submeter o formulário sem preencher campos adicionais
+      await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
+
+      await waitFor(() => {
+        // API foi chamada e retornou sucesso com lote.id = 2 (mock)
+        expect(mockFetch).toHaveBeenCalledWith(
+          '/api/rh/liberar-lote',
+          expect.objectContaining({ method: 'POST' })
+        );
+
+        // Espera que a página navegue para a rota do lote
+        expect(mockRouter.push).toHaveBeenCalledWith('/rh/empresa/1/lote/2');
+
+        // E que o modal não esteja mais visível
+        expect(
+          screen.queryByText('Iniciar Ciclo de Coletas Avaliativas')
+        ).toBeNull();
+      });
+    });
   });
 });
