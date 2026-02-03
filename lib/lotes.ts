@@ -62,15 +62,15 @@ export async function recalcularStatusLotePorId(
       iniciadas,
       liberadas,
     } = statsResult.rows[0];
-    const totalAvaliacoes = parseInt(total_avaliacoes) || 0;
-    const ativasNum = parseInt(ativas) || 0;
-    const concluidasNum = parseInt(concluidas) || 0;
-    const inativadasNum = parseInt(inativadas) || 0;
-    const iniciadasNum = parseInt(iniciadas) || 0;
-    const liberadasNum = parseInt(liberadas) || 0;
+    const totalAvaliacoes = parseInt(String(total_avaliacoes), 10) || 0;
+    const ativasNum = parseInt(String(ativas), 10) || 0;
+    const concluidasNum = parseInt(String(concluidas), 10) || 0;
+    const inativadasNum = parseInt(String(inativadas), 10) || 0;
+    const iniciadasNum = parseInt(String(iniciadas), 10) || 0;
+    const liberadasNum = parseInt(String(liberadas), 10) || 0;
 
     console.log(
-      `[DEBUG] Recalculando lote ${loteId}: ${totalAvaliacoes} total, ${liberadasNum} liberadas, ${ativasNum} ativas, ${concluidasNum} concluídas, ${inativadasNum} inativadas, ${iniciadasNum} iniciadas`
+      `[DEBUG] Recalculando lote ${String(loteId)}: ${String(totalAvaliacoes)} total, ${String(liberadasNum)} liberadas, ${String(ativasNum)} ativas, ${String(concluidasNum)} concluídas, ${String(inativadasNum)} inativadas, ${String(iniciadasNum)} iniciadas`
     );
 
     // Lógica de status (precisão e precedência):
@@ -181,7 +181,7 @@ export async function recalcularStatusLotePorId(
             );
 
             console.log(
-              `[INFO] Notificação criada para ${lote.liberado_por} (${destinatarioTipo}) - Lote ${lote.codigo} concluído com ${lote.total_avaliacoes} avaliações`
+              `[INFO] Notificação criada para ${String(lote.liberado_por)} (${String(destinatarioTipo)}) - Lote ${String(lote.codigo)} concluído com ${String(lote.total_avaliacoes)} avaliações`
             );
           }
         } catch (notifErr) {
@@ -198,7 +198,7 @@ export async function recalcularStatusLotePorId(
           loteId,
         ]);
         console.log(
-          `[INFO] Lote ${loteId} alterado de '${statusAtual}' para '${novoStatus}'`
+          `[INFO] Lote ${String(loteId)} alterado de '${String(statusAtual)}' para '${String(novoStatus)}'`
         );
       }
     }

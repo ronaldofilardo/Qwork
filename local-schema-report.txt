@@ -1,0 +1,296 @@
+==========================================
+COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
+==========================================
+
+1. TABELAS EXISTENTES:
+--------------------
+ schemaname |           tablename            
+------------+--------------------------------
+ public     | analise_estatistica
+ public     | audit_access_denied
+ public     | audit_logs
+ public     | auditoria
+ public     | auditoria_laudos
+ public     | avaliacao_resets
+ public     | avaliacoes
+ public     | backup_lotes_migracao_20260130
+ public     | clinicas
+ public     | clinicas_empresas
+ public     | contratacao_personalizada
+ public     | contratantes
+ public     | contratantes_senhas
+ public     | contratos
+ public     | contratos_planos
+ public     | emissao_queue
+ public     | empresas_clientes
+ public     | fila_emissao
+ public     | funcionarios
+ public     | laudo_arquivos_remotos
+ public     | laudo_downloads
+ public     | laudo_generation_jobs
+ public     | laudos
+ public     | lote_id_allocator
+ public     | lotes_avaliacao
+ public     | mfa_codes
+ public     | migration_guidelines
+ public     | notificacoes
+ public     | notificacoes_admin
+ public     | pagamentos
+ public     | permissions
+ public     | planos
+ public     | policy_expression_backups
+ public     | questao_condicoes
+ public     | recibos
+ public     | relatorio_templates
+ public     | respostas
+ public     | resultados
+ public     | role_permissions
+ public     | roles
+ public     | usuarios
+(41 linhas)
+
+
+2. ENUMS DEFINIDOS:
+--------------------
+       enum_name        |                                                                                           values                                                                                           
+------------------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ perfil_usuario_enum    | funcionario, rh, admin, emissor
+ prioridade_notificacao | baixa, media, alta, critica
+ status_aprovacao_enum  | pendente, aprovado, rejeitado, em_reanalise, aguardando_pagamento, aguardando_contrato, contrato_gerado, pagamento_confirmado
+ status_avaliacao       | pendente, em_andamento, concluida, liberada, iniciada
+ status_avaliacao_enum  | iniciada, em_andamento, concluida, inativada
+ status_laudo           | rascunho, emitido, enviado
+ status_laudo_enum      | rascunho, emitido, enviado
+ status_lote            | ativo, cancelado, finalizado, concluido, rascunho
+ status_lote_enum       | ativo, cancelado, finalizado, concluido, rascunho
+ tipo_contratante_enum  | clinica, entidade
+ tipo_lote_enum         | completo, operacional, gestao
+ tipo_notificacao       | pre_cadastro_criado, valor_definido, contrato_aceito, pagamento_confirmado, contratacao_ativa, rejeicao_admin, cancelamento_gestor, sla_excedido, alerta_geral, emissao_solicitada_sucesso
+ tipo_plano             | personalizado, fixo
+ usuario_tipo_enum      | funcionario_clinica, funcionario_entidade, gestor_rh, gestor_entidade, admin, emissor
+(14 linhas)
+
+
+3. ESTRUTURA DA TABELA funcionarios:
+------------------------------------
+           column_name           |          data_type          |     udt_name      | is_nullable |              column_default              
+---------------------------------+-----------------------------+-------------------+-------------+------------------------------------------
+ id                              | integer                     | int4              | NO          | nextval('funcionarios_id_seq'::regclass)
+ cpf                             | character                   | bpchar            | NO          | 
+ nome                            | character varying           | varchar           | NO          | 
+ setor                           | character varying           | varchar           | YES         | 
+ funcao                          | character varying           | varchar           | YES         | 
+ email                           | character varying           | varchar           | YES         | 
+ senha_hash                      | text                        | text              | NO          | 
+ perfil                          | character varying           | varchar           | YES         | 'funcionario'::character varying
+ ativo                           | boolean                     | bool              | YES         | true
+ criado_em                       | timestamp without time zone | timestamp         | YES         | CURRENT_TIMESTAMP
+ atualizado_em                   | timestamp without time zone | timestamp         | YES         | CURRENT_TIMESTAMP
+ clinica_id                      | integer                     | int4              | YES         | 
+ empresa_id                      | integer                     | int4              | YES         | 
+ matricula                       | character varying           | varchar           | YES         | 
+ turno                           | character varying           | varchar           | YES         | 
+ escala                          | character varying           | varchar           | YES         | 
+ nivel_cargo                     | character varying           | varchar           | YES         | 
+ ultima_avaliacao_id             | integer                     | int4              | YES         | 
+ ultimo_lote_codigo              | character varying           | varchar           | YES         | 
+ ultima_avaliacao_data_conclusao | timestamp without time zone | timestamp         | YES         | 
+ ultima_avaliacao_status         | character varying           | varchar           | YES         | 
+ ultimo_motivo_inativacao        | text                        | text              | YES         | 
+ data_ultimo_lote                | timestamp without time zone | timestamp         | YES         | 
+ data_nascimento                 | date                        | date              | YES         | 
+ contratante_id                  | integer                     | int4              | YES         | 
+ indice_avaliacao                | integer                     | int4              | NO          | 0
+ usuario_tipo                    | USER-DEFINED                | usuario_tipo_enum | NO          | 
+(27 linhas)
+
+
+4. ESTRUTURA DA TABELA avaliacoes:
+----------------------------------
+    column_name    |          data_type          |  udt_name   | is_nullable |             column_default             
+-------------------+-----------------------------+-------------+-------------+----------------------------------------
+ id                | integer                     | int4        | NO          | nextval('avaliacoes_id_seq'::regclass)
+ funcionario_cpf   | character                   | bpchar      | NO          | 
+ inicio            | timestamp without time zone | timestamp   | YES         | CURRENT_TIMESTAMP
+ envio             | timestamp without time zone | timestamp   | YES         | 
+ status            | character varying           | varchar     | YES         | 'iniciada'::character varying
+ grupo_atual       | integer                     | int4        | YES         | 1
+ criado_em         | timestamp without time zone | timestamp   | YES         | CURRENT_TIMESTAMP
+ atualizado_em     | timestamp without time zone | timestamp   | YES         | CURRENT_TIMESTAMP
+ lote_id           | integer                     | int4        | YES         | 
+ inativada_em      | timestamp with time zone    | timestamptz | YES         | 
+ motivo_inativacao | text                        | text        | YES         | 
+(11 linhas)
+
+
+5. ESTRUTURA DA TABELA laudos:
+------------------------------
+       column_name       |          data_type          | udt_name  | is_nullable |           column_default           
+-------------------------+-----------------------------+-----------+-------------+------------------------------------
+ id                      | integer                     | int4      | NO          | nextval('laudos_id_seq'::regclass)
+ lote_id                 | integer                     | int4      | NO          | 
+ emissor_cpf             | character                   | bpchar    | YES         | 
+ observacoes             | text                        | text      | YES         | 
+ status                  | character varying           | varchar   | YES         | 'rascunho'::character varying
+ criado_em               | timestamp without time zone | timestamp | YES         | CURRENT_TIMESTAMP
+ emitido_em              | timestamp without time zone | timestamp | YES         | 
+ enviado_em              | timestamp without time zone | timestamp | YES         | 
+ atualizado_em           | timestamp without time zone | timestamp | YES         | CURRENT_TIMESTAMP
+ hash_pdf                | character varying           | varchar   | YES         | 
+ job_id                  | bigint                      | int8      | YES         | 
+ arquivo_remoto_provider | character varying           | varchar   | YES         | 
+ arquivo_remoto_bucket   | character varying           | varchar   | YES         | 
+ arquivo_remoto_key      | character varying           | varchar   | YES         | 
+ arquivo_remoto_url      | text                        | text      | YES         | 
+(15 linhas)
+
+
+6. ESTRUTURA DA TABELA lotes_avaliacao:
+---------------------------------------
+        column_name        |          data_type          |  udt_name   | is_nullable |        column_default         
+---------------------------+-----------------------------+-------------+-------------+-------------------------------
+ id                        | integer                     | int4        | NO          | fn_next_lote_id()
+ codigo                    | character varying           | varchar     | NO          | 
+ clinica_id                | integer                     | int4        | YES         | 
+ empresa_id                | integer                     | int4        | YES         | 
+ titulo                    | character varying           | varchar     | NO          | 
+ descricao                 | text                        | text        | YES         | 
+ tipo                      | character varying           | varchar     | YES         | 'completo'::character varying
+ status                    | character varying           | varchar     | YES         | 'rascunho'::character varying
+ liberado_por              | character                   | bpchar      | YES         | 
+ liberado_em               | timestamp without time zone | timestamp   | YES         | CURRENT_TIMESTAMP
+ criado_em                 | timestamp without time zone | timestamp   | YES         | CURRENT_TIMESTAMP
+ atualizado_em             | timestamp without time zone | timestamp   | YES         | CURRENT_TIMESTAMP
+ contratante_id            | integer                     | int4        | YES         | 
+ hash_pdf                  | character varying           | varchar     | YES         | 
+ numero_ordem              | integer                     | int4        | NO          | 1
+ emitido_em                | timestamp with time zone    | timestamptz | YES         | 
+ enviado_em                | timestamp with time zone    | timestamptz | YES         | 
+ cancelado_automaticamente | boolean                     | bool        | YES         | false
+ motivo_cancelamento       | text                        | text        | YES         | 
+ modo_emergencia           | boolean                     | bool        | YES         | false
+ motivo_emergencia         | text                        | text        | YES         | 
+ processamento_em          | timestamp without time zone | timestamp   | YES         | 
+ setor_id                  | integer                     | int4        | YES         | 
+(23 linhas)
+
+
+7. VIEWS MATERIALIZADAS:
+------------------------
+ schemaname | matviewname 
+------------+-------------
+(0 linha)
+
+
+8. FUNCTIONS E TRIGGERS:
+------------------------
+ schema |                  function_name                   |                                                                                                              result_type                                                                                                              |                                                                                  arguments                                                                                   
+--------+--------------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ public | armor                                            | text                                                                                                                                                                                                                                  | bytea
+ public | armor                                            | text                                                                                                                                                                                                                                  | bytea, text[], text[]
+ public | arquivar_notificacoes_antigas                    | integer                                                                                                                                                                                                                               | 
+ public | atualizar_data_modificacao                       | trigger                                                                                                                                                                                                                               | 
+ public | audit_bypassrls_session                          | void                                                                                                                                                                                                                                  | 
+ public | audit_trigger_func                               | trigger                                                                                                                                                                                                                               | 
+ public | audit_trigger_function                           | trigger                                                                                                                                                                                                                               | 
+ public | calcular_elegibilidade_lote                      | TABLE(funcionario_cpf character, funcionario_nome character varying, motivo_inclusao character varying, indice_atual integer, data_ultimo_lote timestamp without time zone, dias_sem_avaliacao integer, prioridade character varying) | p_empresa_id integer, p_numero_lote_atual integer
+ public | calcular_elegibilidade_lote_contratante          | TABLE(funcionario_cpf character, funcionario_nome character varying, motivo_inclusao character varying, indice_atual integer, data_ultimo_lote timestamp without time zone, dias_sem_avaliacao integer, prioridade character varying) | p_contratante_id integer, p_numero_lote_atual integer
+ public | calcular_hash_pdf                                | text                                                                                                                                                                                                                                  | pdf_data bytea
+ public | calcular_vigencia_fim                            | date                                                                                                                                                                                                                                  | data_inicio date
+ public | check_laudo_immutability                         | trigger                                                                                                                                                                                                                               | 
+ public | check_resposta_immutability                      | trigger                                                                                                                                                                                                                               | 
+ public | check_resultado_immutability                     | trigger                                                                                                                                                                                                                               | 
+ public | crypt                                            | text                                                                                                                                                                                                                                  | text, text
+ public | current_user_clinica_id                          | integer                                                                                                                                                                                                                               | 
+ public | current_user_clinica_id_optional                 | integer                                                                                                                                                                                                                               | 
+ public | current_user_contratante_id                      | integer                                                                                                                                                                                                                               | 
+ public | current_user_contratante_id_optional             | integer                                                                                                                                                                                                                               | 
+ public | current_user_cpf                                 | text                                                                                                                                                                                                                                  | 
+ public | current_user_perfil                              | text                                                                                                                                                                                                                                  | 
+ public | dearmor                                          | bytea                                                                                                                                                                                                                                 | text
+ public | decrypt                                          | bytea                                                                                                                                                                                                                                 | bytea, bytea, text
+ public | decrypt_iv                                       | bytea                                                                                                                                                                                                                                 | bytea, bytea, bytea, text
+ public | detectar_anomalia_score                          | TABLE(is_anomalous boolean, reason text, adjusted_score numeric)                                                                                                                                                                      | p_score numeric, p_tipo character varying, p_grupo integer
+ public | detectar_anomalias_indice                        | TABLE(funcionario_cpf character, funcionario_nome character varying, tipo_anomalia character varying, detalhes text, severidade character varying)                                                                                    | p_empresa_id integer
+ public | diagnosticar_lote_emissao                        | TABLE(campo text, valor text, status_ok boolean, mensagem text)                                                                                                                                                                       | p_lote_id integer
+ public | digest                                           | bytea                                                                                                                                                                                                                                 | bytea, text
+ public | digest                                           | bytea                                                                                                                                                                                                                                 | text, text
+ public | encrypt                                          | bytea                                                                                                                                                                                                                                 | bytea, bytea, text
+ public | encrypt_iv                                       | bytea                                                                                                                                                                                                                                 | bytea, bytea, bytea, text
+ public | execute_maintenance                              | void                                                                                                                                                                                                                                  | p_description text, p_sql text
+ public | fn_buscar_solicitante_laudo                      | TABLE(cpf character varying, nome character varying, perfil character varying, solicitado_em timestamp without time zone)                                                                                                             | p_laudo_id integer
+ public | fn_next_lote_id                                  | bigint                                                                                                                                                                                                                                | 
+ public | fn_recalcular_status_lote_on_avaliacao_update    | trigger                                                                                                                                                                                                                               | 
+ public | fn_relatorio_emissoes_periodo                    | TABLE(solicitante_cpf character varying, solicitante_perfil character varying, total_solicitacoes bigint, total_sucessos bigint, total_erros bigint, taxa_sucesso numeric)                                                            | p_data_inicio timestamp without time zone, p_data_fim timestamp without time zone
+ public | fn_reservar_id_laudo_on_lote_insert              | trigger                                                                                                                                                                                                                               | 
+ public | gen_random_bytes                                 | bytea                                                                                                                                                                                                                                 | integer
+ public | gen_random_uuid                                  | uuid                                                                                                                                                                                                                                  | 
+ public | gen_salt                                         | text                                                                                                                                                                                                                                  | text
+ public | gen_salt                                         | text                                                                                                                                                                                                                                  | text, integer
+ public | gerar_codigo_lote                                | character varying                                                                                                                                                                                                                     | 
+ public | gerar_dados_relatorio                            | TABLE(secao character varying, tipo_dados character varying, dados jsonb, metadados jsonb)                                                                                                                                            | p_clinica_id integer, p_template_id integer DEFAULT 1, p_empresa_id integer DEFAULT NULL::integer, p_data_inicio date DEFAULT NULL::date, p_data_fim date DEFAULT NULL::date
+ public | gerar_hash_auditoria                             | character varying                                                                                                                                                                                                                     | p_entidade_tipo character varying, p_entidade_id integer, p_acao character varying, p_dados jsonb, p_timestamp timestamp with time zone
+ public | gerar_numero_recibo                              | text                                                                                                                                                                                                                                  | 
+ public | get_contratante_funcionario                      | TABLE(contratante_id integer, contratante_nome character varying, contratante_tipo tipo_contratante_enum, contratante_ativo boolean)                                                                                                  | p_funcionario_id integer
+ public | get_resultados_por_empresa                       | TABLE(empresa_id integer, empresa_nome character varying, grupo integer, dominio character varying, media_score numeric, categoria character varying, total_respostas bigint)                                                         | p_clinica_id integer, p_empresa_id integer DEFAULT NULL::integer
+ public | hmac                                             | bytea                                                                                                                                                                                                                                 | bytea, bytea, text
+ public | hmac                                             | bytea                                                                                                                                                                                                                                 | text, text, text
+ public | is_admin_or_master                               | boolean                                                                                                                                                                                                                               | 
+ public | is_valid_perfil                                  | boolean                                                                                                                                                                                                                               | p_perfil text
+ public | log_access_denied                                | void                                                                                                                                                                                                                                  | p_user text, p_action text, p_resource text, p_reason text
+ public | lote_pode_ser_processado                         | boolean                                                                                                                                                                                                                               | p_lote_id integer
+ public | marcar_notificacoes_lidas                        | integer                                                                                                                                                                                                                               | p_notificacao_ids integer[], p_usuario_id integer
+ public | marcar_notificacoes_lidas                        | integer                                                                                                                                                                                                                               | p_notificacao_ids integer[], p_usuario_cpf text
+ public | notificar_pre_cadastro_criado                    | trigger                                                                                                                                                                                                                               | 
+ public | notificar_sla_excedido                           | trigger                                                                                                                                                                                                                               | 
+ public | notificar_valor_definido                         | trigger                                                                                                                                                                                                                               | 
+ public | obter_proximo_numero_ordem                       | integer                                                                                                                                                                                                                               | p_empresa_id integer
+ public | pgp_armor_headers                                | SETOF record                                                                                                                                                                                                                          | text, OUT key text, OUT value text
+ public | pgp_key_id                                       | text                                                                                                                                                                                                                                  | bytea
+ public | pgp_pub_decrypt                                  | text                                                                                                                                                                                                                                  | bytea, bytea, text, text
+ public | pgp_pub_decrypt                                  | text                                                                                                                                                                                                                                  | bytea, bytea
+ public | pgp_pub_decrypt                                  | text                                                                                                                                                                                                                                  | bytea, bytea, text
+ public | pgp_pub_decrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, bytea
+ public | pgp_pub_decrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, bytea, text
+ public | pgp_pub_decrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, bytea, text, text
+ public | pgp_pub_encrypt                                  | bytea                                                                                                                                                                                                                                 | text, bytea, text
+ public | pgp_pub_encrypt                                  | bytea                                                                                                                                                                                                                                 | text, bytea
+ public | pgp_pub_encrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, bytea, text
+ public | pgp_pub_encrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, bytea
+ public | pgp_sym_decrypt                                  | text                                                                                                                                                                                                                                  | bytea, text, text
+ public | pgp_sym_decrypt                                  | text                                                                                                                                                                                                                                  | bytea, text
+ public | pgp_sym_decrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, text, text
+ public | pgp_sym_decrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, text
+ public | pgp_sym_encrypt                                  | bytea                                                                                                                                                                                                                                 | text, text
+ public | pgp_sym_encrypt                                  | bytea                                                                                                                                                                                                                                 | text, text, text
+ public | pgp_sym_encrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, text
+ public | pgp_sym_encrypt_bytea                            | bytea                                                                                                                                                                                                                                 | bytea, text, text
+ public | prevent_laudo_lote_id_change                     | trigger                                                                                                                                                                                                                               | 
+ public | prevent_lote_mutation_during_emission            | trigger                                                                                                                                                                                                                               | 
+ public | prevent_lote_status_change_after_emission        | trigger                                                                                                                                                                                                                               | 
+ public | prevent_modification_after_emission              | trigger                                                                                                                                                                                                                               | 
+ public | prevent_modification_avaliacao_when_lote_emitted | trigger                                                                                                                                                                                                                               | 
+ public | prevent_modification_lote_when_laudo_emitted     | trigger                                                                                                                                                                                                                               | 
+ public | prevent_mutation_during_emission                 | trigger                                                                                                                                                                                                                               | 
+ public | safe_drop_policy                                 | void                                                                                                                                                                                                                                  | p_policy_name text, p_table_name text
+ public | set_updated_at_column                            | trigger                                                                                                                                                                                                                               | 
+ public | trg_enforce_laudo_id_equals_lote                 | trigger                                                                                                                                                                                                                               | 
+ public | trigger_gerar_numero_recibo                      | trigger                                                                                                                                                                                                                               | 
+ public | update_contratantes_senhas_updated_at            | trigger                                                                                                                                                                                                                               | 
+ public | update_contratantes_updated_at                   | trigger                                                                                                                                                                                                                               | 
+ public | upsert_laudo                                     | integer                                                                                                                                                                                                                               | p_lote_id integer, p_emissor_cpf character, p_observacoes text, p_status text DEFAULT 'enviado'::text
+ public | user_has_permission                              | boolean                                                                                                                                                                                                                               | permission_name text
+ public | validar_lote_pre_laudo                           | TABLE(valido boolean, alertas text[], funcionarios_pendentes integer, detalhes jsonb, bloqueante boolean)                                                                                                                             | p_lote_id integer
+ public | validar_sessao_rls                               | boolean                                                                                                                                                                                                                               | 
+ public | validate_policy_table_match                      | boolean                                                                                                                                                                                                                               | p_policy_name text, p_table_name text
+ public | validate_rh_clinica                              | boolean                                                                                                                                                                                                                               | 
+ public | verificar_cancelamento_automatico_lote           | trigger                                                                                                                                                                                                                               | 
+ public | verificar_conclusao_lote                         | trigger                                                                                                                                                                                                                               | 
+ public | verificar_inativacao_consecutiva                 | TABLE(permitido boolean, motivo text, total_inativacoes_consecutivas integer, ultima_inativacao_lote character varying)                                                                                                               | p_funcionario_cpf character, p_lote_id integer
+ public | verificar_integridade_recibo                     | TABLE(id integer, hash_armazenado character, hash_calculado character, integro boolean)                                                                                                                                               | recibo_id integer
+(102 linhas)
+
+
+==========================================
+FIM DO RELAT├ôRIO
+==========================================

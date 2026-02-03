@@ -1,0 +1,30 @@
+id|integer||not null|nextval('funcionarios_id_seq'::regclass)|plain|||
+cpf|character(11)||not null||extended|||
+nome|character varying(100)||not null||extended|||
+setor|character varying(50)||||extended|||
+funcao|character varying(50)||||extended|||
+email|character varying(100)||||extended|||
+senha_hash|text||not null||extended|||
+perfil|character varying(20)|||'funcionario'::character varying|extended|||
+ativo|boolean|||true|plain|||
+criado_em|timestamp without time zone|||CURRENT_TIMESTAMP|plain|||
+atualizado_em|timestamp without time zone|||CURRENT_TIMESTAMP|plain|||
+clinica_id|integer||||plain|||
+empresa_id|integer||||plain|||
+matricula|character varying(20)||||extended|||
+turno|character varying(50)||||extended|||
+escala|character varying(50)||||extended|||
+nivel_cargo|nivel_cargo_enum||||plain|||
+data_nascimento|date||||plain|||Data de nascimento do funcion├írio (YYYY-MM-DD)
+incluido_em|timestamp without time zone|||CURRENT_TIMESTAMP|plain|||Data e hora em que o funcion├írio foi inclu├¡do no sistema
+inativado_em|timestamp without time zone||||plain|||Data e hora em que o funcion├írio foi inativado
+inativado_por|character varying(11)||||extended|||CPF do usu├írio que inativou o funcion├írio
+data_admissao|date||||plain|||Data de admiss├úo do funcion├írio na empresa
+ultima_avaliacao_id|integer||||plain|||ID da ├║ltima avalia├º├úo conclu├¡da ou inativada (denormalizado para performance)
+ultimo_lote_codigo|character varying(20)||||extended|||C├│digo do lote da ├║ltima avalia├º├úo (denormalizado)
+ultima_avaliacao_data_conclusao|timestamp without time zone||||plain|||Data de conclus├úo da ├║ltima avalia├º├úo (denormalizado)
+ultima_avaliacao_status|character varying(20)||||extended|||Status da ├║ltima avalia├º├úo: concluida ou inativada (denormalizado)
+ultimo_motivo_inativacao|text||||extended|||Motivo de inativa├º├úo quando ultima_avaliacao_status = inativada
+indice_avaliacao|integer||not null|0|plain|||N├║mero sequencial da ├║ltima avalia├º├úo conclu├¡da pelo funcion├írio (0 = nunca fez)
+data_ultimo_lote|timestamp without time zone||||plain|||Data/hora da ├║ltima avalia├º├úo v├ílida conclu├¡da (usado para verificar prazo de 1 ano)
+contratante_id|integer||||plain|||

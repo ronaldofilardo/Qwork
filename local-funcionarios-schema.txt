@@ -1,0 +1,27 @@
+id|integer||not null|nextval('funcionarios_id_seq'::regclass)|plain|||
+cpf|character(11)||not null||extended|||
+nome|character varying(100)||not null||extended|||
+setor|character varying(50)||||extended|||
+funcao|character varying(50)||||extended|||
+email|character varying(100)||||extended|||
+senha_hash|text||not null||extended|||
+perfil|character varying(20)|||'funcionario'::character varying|extended|||
+ativo|boolean|||true|plain|||
+criado_em|timestamp without time zone|||CURRENT_TIMESTAMP|plain|||
+atualizado_em|timestamp without time zone|||CURRENT_TIMESTAMP|plain|||
+clinica_id|integer||||plain|||
+empresa_id|integer||||plain|||
+matricula|character varying(20)||||extended|||
+turno|character varying(50)||||extended|||
+escala|character varying(50)||||extended|||
+nivel_cargo|character varying(50)||||extended|||
+ultima_avaliacao_id|integer||||plain|||ID da ├â┬║ltima avalia├â┬º├â┬úo conclu├â┬¡da ou inativada (denormalizado para performance)
+ultimo_lote_codigo|character varying(20)||||extended|||
+ultima_avaliacao_data_conclusao|timestamp without time zone||||plain|||
+ultima_avaliacao_status|character varying(20)||||extended|||
+ultimo_motivo_inativacao|text||||extended|||
+data_ultimo_lote|timestamp without time zone||||plain|||Data/hora da ├â┬║ltima avalia├â┬º├â┬úo v├â┬ílida conclu├â┬¡da (usado para verificar prazo de 1 ano)
+data_nascimento|date||||plain|||
+contratante_id|integer||||plain|||
+indice_avaliacao|integer||not null|0|plain|||N├â┬║mero sequencial da ├â┬║ltima avalia├â┬º├â┬úo conclu├â┬¡da pelo funcion├â┬írio (0 = nunca fez)
+usuario_tipo|usuario_tipo_enum||not null||plain|||

@@ -397,9 +397,9 @@ export async function queryWithEmpresaFilter<T = unknown>(
  * Executa múltiplas queries em uma transação com contexto de segurança
  * Útil para operações que precisam de atomicidade e RLS
  */
-export async function transactionWithContext(
-  callback: (query: typeof queryWithContext) => Promise<void>
-): Promise<void> {
+export async function transactionWithContext<T = void>(
+  callback: (query: typeof queryWithContext) => Promise<T>
+): Promise<T> {
   try {
     const session = getSession();
 
@@ -463,13 +463,14 @@ export async function transactionWithContext(
       }
     }
 
-    // Executar callback com queries
-    await callback(async (text, params) => {
+    // Executar callback com queries e capturar resultado
+    const result = await callback(async (text, params) => {
       return await query(text, params);
     });
 
     // Commit
     await query('COMMIT');
+    return result;
   } catch (error) {
     // Rollback em caso de erro
     try {

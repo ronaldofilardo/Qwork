@@ -1,0 +1,29 @@
+column_name|data_type|column_default|is_nullable
+id|integer|nextval('funcionarios_id_seq'::regclass)|NO
+cpf|character||NO
+nome|character varying||NO
+setor|character varying||YES
+funcao|character varying||YES
+email|character varying||YES
+senha_hash|text||NO
+perfil|character varying|'funcionario'::character varying|YES
+ativo|boolean|true|YES
+criado_em|timestamp without time zone|CURRENT_TIMESTAMP|YES
+atualizado_em|timestamp without time zone|CURRENT_TIMESTAMP|YES
+clinica_id|integer||YES
+empresa_id|integer||YES
+matricula|character varying||YES
+turno|character varying||YES
+escala|character varying||YES
+nivel_cargo|character varying||YES
+ultima_avaliacao_id|integer||YES
+ultimo_lote_codigo|character varying||YES
+ultima_avaliacao_data_conclusao|timestamp without time zone||YES
+ultima_avaliacao_status|character varying||YES
+ultimo_motivo_inativacao|text||YES
+data_ultimo_lote|timestamp without time zone||YES
+data_nascimento|date||YES
+contratante_id|integer||YES
+indice_avaliacao|integer|0|NO
+usuario_tipo|USER-DEFINED||NO
+(27 linhas)

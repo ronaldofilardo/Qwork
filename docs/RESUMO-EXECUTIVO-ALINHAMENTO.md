@@ -38,6 +38,7 @@
 **Problema:** Não há confirmação se todas as 302 migrations foram aplicadas no Neon.
 
 **Ação Imediata:**
+
 ```powershell
 # Executar script de comparação
 .\scripts\compare-schemas.ps1
@@ -47,10 +48,12 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 ```
 
 **Migrations Críticas:**
+
 - `150_remove_auto_emission_trigger.sql` - Remove emissão automática
 - `151_remove_auto_laudo_creation_trigger.sql` - Remove criação automática de laudos
 
 **Se NÃO aplicadas:**
+
 ```bash
 psql $env:DATABASE_URL -f database/migrations/150_remove_auto_emission_trigger.sql
 psql $env:DATABASE_URL -f database/migrations/151_remove_auto_laudo_creation_trigger.sql
@@ -61,6 +64,7 @@ psql $env:DATABASE_URL -f database/migrations/151_remove_auto_laudo_creation_tri
 **Problema:** Não foi confirmado se há cron jobs configurados no Dashboard Vercel.
 
 **Ação Imediata:**
+
 1. Acessar: https://vercel.com/ronaldofilardo/qwork/settings/cron-jobs
 2. Verificar se há cron jobs configurados
 3. **DELETAR TODOS** (se houver)
@@ -72,6 +76,7 @@ psql $env:DATABASE_URL -f database/migrations/151_remove_auto_laudo_creation_tri
 **Problema:** Código detecta possível inversão de credenciais.
 
 **Ação Imediata:**
+
 ```powershell
 # Verificar ordem correta
 echo $env:BACKBLAZE_KEY_ID        # Deve começar com "005" (curto)
@@ -79,6 +84,7 @@ echo $env:BACKBLAZE_APPLICATION_KEY # Deve ser longo (32+ chars)
 ```
 
 **Ordem Correta:**
+
 ```env
 BACKBLAZE_KEY_ID=005abc123...              # ID curto
 BACKBLAZE_APPLICATION_KEY=K005xyz789...    # Chave longa
@@ -150,22 +156,30 @@ pnpm dev
 ## 📋 **SCRIPTS CRIADOS**
 
 ### 1. Comparação de Schemas
+
 **Arquivo:** `scripts/compare-schemas.ps1`
+
 ```powershell
 .\scripts\compare-schemas.ps1
 ```
+
 **Saída:**
+
 - `schema-comparison/schema-local-*.sql`
 - `schema-comparison/schema-neon-*.sql`
 - `schema-comparison/schema-diff-*.txt` (se houver diferenças)
 - `schema-comparison/schema-report-*.md` (relatório completo)
 
 ### 2. Verificação de Migrations no Neon
+
 **Arquivo:** `scripts/verify-neon-migrations.sql`
+
 ```powershell
 psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 ```
+
 **Saída:**
+
 - Estatísticas de migrations
 - Status das migrations 150/151
 - Verificação de triggers
@@ -177,7 +191,9 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 ## 📚 **DOCUMENTAÇÃO CRIADA**
 
 ### 1. Arquitetura de Produção
+
 **Arquivo:** `docs/ARQUITETURA-PRODUCAO-EMISSOR-LOCAL.md`
+
 - Decisão arquitetural (emissor local)
 - Fluxo completo de emissão
 - Configuração necessária
@@ -185,7 +201,9 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 - Recálculos automáticos via trigger
 
 ### 2. Checklist de Alinhamento
+
 **Arquivo:** `docs/CHECKLIST-ALINHAMENTO-PRODUCAO.md`
+
 - Database schema & migrations
 - Geração de relatórios
 - Upload Backblaze
@@ -200,6 +218,7 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 ### 1. **Cron jobs na Vercel afetarão outras funções?**
 
 **Resposta:** NÃO. Os únicos cron jobs identificados são:
+
 - `/api/system/auto-laudo` - Emissão automática (DESABILITADO - retorna HTTP 410)
 - `/api/jobs/process-pdf` - Geração de recibos (pode rodar localmente também)
 
@@ -211,7 +230,8 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 
 ### 3. **E se o emissor estiver offline?**
 
-**Resposta:** 
+**Resposta:**
+
 - RH/Entidade consegue solicitar emissão (vai para fila)
 - Emissão será processada quando emissor abrir o dashboard
 - Usuários não conseguem visualizar laudos não emitidos (apenas os já emitidos)
@@ -219,12 +239,14 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 ### 4. **Por que não gerar laudos no Vercel?**
 
 **Resposta:** Puppeteer com Chrome headless consome muita memória/tempo. Vercel tem limites:
+
 - Free: 1GB RAM, 10s timeout
 - Pro: 3GB RAM, 60s timeout (não suficiente para laudos complexos)
 
 ### 5. **Storage Backblaze é confiável?**
 
 **Resposta:** SIM. Testes locais validaram:
+
 - Upload funcionando corretamente
 - Download online operacional
 - Integridade de arquivos (hash SHA256)
@@ -239,20 +261,20 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 ✅ **Validação de arquitetura emissor local**  
 ✅ **Desabilitamento de cron jobs (seguro)**  
 ✅ **Scripts de verificação criados**  
-✅ **Documentação completa gerada**  
+✅ **Documentação completa gerada**
 
 ---
 
 ## 🚦 **STATUS FINAL**
 
-| Componente | Status | Ação |
-|------------|--------|------|
-| **Database Migrations** | ⚠️ Verificar | Executar scripts |
-| **Puppeteer (PDF)** | ✅ Correto | Nenhuma |
-| **Backblaze Storage** | ✅ Testado | Nenhuma |
-| **Cron Jobs** | ⚠️ Verificar | Deletar no Dashboard |
-| **Emissor Local** | ✅ Validado | Configurar .env.local |
-| **Recálculos Auto** | ✅ Funcionando | Nenhuma (via trigger) |
+| Componente              | Status         | Ação                  |
+| ----------------------- | -------------- | --------------------- |
+| **Database Migrations** | ⚠️ Verificar   | Executar scripts      |
+| **Puppeteer (PDF)**     | ✅ Correto     | Nenhuma               |
+| **Backblaze Storage**   | ✅ Testado     | Nenhuma               |
+| **Cron Jobs**           | ⚠️ Verificar   | Deletar no Dashboard  |
+| **Emissor Local**       | ✅ Validado    | Configurar .env.local |
+| **Recálculos Auto**     | ✅ Funcionando | Nenhuma (via trigger) |
 
 ---
 
@@ -266,6 +288,7 @@ psql $env:DATABASE_URL -f scripts/verify-neon-migrations.sql
 4. **Emissor:** Verificar `.env.local` (DATABASE_URL do Neon)
 
 **Logs úteis:**
+
 ```powershell
 # Emissor local
 pnpm dev | Select-String "LAUDO|UPLOAD|BACKBLAZE"
@@ -301,5 +324,6 @@ Antes de considerar concluído:
 **Última atualização:** 02/02/2026  
 **Status:** ✅ Pronto para validação  
 **Documentos de referência:**
+
 - `docs/ARQUITETURA-PRODUCAO-EMISSOR-LOCAL.md`
 - `docs/CHECKLIST-ALINHAMENTO-PRODUCAO.md`

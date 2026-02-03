@@ -13,38 +13,21 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import {
-  getNextPendingJobs,
-  markJobCompleted,
-  markJobFailed,
-  generatePdfViaExternalService,
-  createReciboNotification,
-} from '@/lib/pdf-service';
-import crypto from 'crypto';
 
-const PDF_SERVICE_CONFIG = {
-  provider:
-    (process.env.PDF_SERVICE_PROVIDER as
-      | 'local'
-      | 'pdfshift'
-      | 'cloudconvert') || 'local',
-  apiKey: process.env.PDF_SERVICE_API_KEY,
-  apiUrl: process.env.PDF_SERVICE_API_URL,
-};
 
-const BASE_URL = process.env.BASE_URL || (process.env.HOST ? `https://${process.env.HOST}` : 'http://localhost:3000');
 
-export async function POST(request: NextRequest) {
+
+export function POST(request: NextRequest) {
   // ENDPOINT DESABILITADO - Migrado para processamento local via emissor
   // O emissor local agora processa toda geração de PDFs (laudos e recibos)
   // Este endpoint não é mais necessário em produção (Vercel)
   return NextResponse.json(
-    { 
+    {
       error: 'Endpoint desabilitado',
-      message: 'Processamento de PDFs migrado para emissor local. Este endpoint não é mais utilizado.',
-      status: 410
-    }, 
+      message:
+        'Processamento de PDFs migrado para emissor local. Este endpoint não é mais utilizado.',
+      status: 410,
+    },
     { status: 410 }
   );
 
@@ -170,13 +153,13 @@ export async function POST(request: NextRequest) {
 }
 
 // GET também desabilitado
-export async function GET(_request: NextRequest) {
+export function GET(_request: NextRequest) {
   return NextResponse.json(
-    { 
+    {
       error: 'Endpoint desabilitado',
       message: 'Processamento de PDFs migrado para emissor local.',
-      status: 410
-    }, 
+      status: 410,
+    },
     { status: 410 }
   );
 
