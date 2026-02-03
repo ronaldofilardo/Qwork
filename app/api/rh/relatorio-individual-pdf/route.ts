@@ -14,7 +14,10 @@ import { applyPlugin } from 'jspdf-autotable';
 try {
   applyPlugin(jsPDF);
 } catch (err) {
-  console.warn('Aviso: não foi possível aplicar jspdf-autotable ao jsPDF:', err);
+  console.warn(
+    'Aviso: não foi possível aplicar jspdf-autotable ao jsPDF:',
+    err
+  );
 }
 
 // Extend jsPDF type to include autoTable
@@ -146,7 +149,11 @@ export async function GET(request: NextRequest) {
     yPos += 5;
     doc.text(`CPF: ${dadosRelatorio.funcionario.cpf}`, 14, yPos);
     yPos += 5;
-    doc.text(`Matrícula: ${dadosRelatorio.funcionario.matricula || '-'}`, 14, yPos);
+    doc.text(
+      `Matrícula: ${dadosRelatorio.funcionario.matricula || '-'}`,
+      14,
+      yPos
+    );
     yPos += 5;
     doc.text(`Empresa: ${dadosRelatorio.funcionario.empresa || '-'}`, 14, yPos);
     yPos += 5;
@@ -185,7 +192,7 @@ export async function GET(request: NextRequest) {
     for (const grupo of dadosRelatorio.grupos) {
       doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      
+
       // Texto do grupo
       const textoGrupo = `${grupo.dominio} - Grupo ${grupo.id} - ${grupo.titulo}`;
       doc.text(textoGrupo, 14, yPos);
@@ -194,17 +201,19 @@ export async function GET(request: NextRequest) {
       // Classificação com cor
       doc.setFont('helvetica', 'normal');
       const classificacaoTexto = grupo.classificacao.toUpperCase();
-      
+
       // Converter cor hex para RGB
       const hexToRgb = (hex: string) => {
         const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-          r: parseInt(result[1], 16),
-          g: parseInt(result[2], 16),
-          b: parseInt(result[3], 16)
-        } : { r: 0, g: 0, b: 0 };
+        return result
+          ? {
+              r: parseInt(result[1], 16),
+              g: parseInt(result[2], 16),
+              b: parseInt(result[3], 16),
+            }
+          : { r: 0, g: 0, b: 0 };
       };
-      
+
       const rgb = hexToRgb(grupo.corClassificacao);
       doc.setTextColor(rgb.r, rgb.g, rgb.b);
       doc.text(`Média: ${grupo.media} - ${classificacaoTexto}`, 14, yPos);

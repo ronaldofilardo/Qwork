@@ -10,7 +10,7 @@
  * - Auditoria completa
  */
 
-import { query } from '@/lib/infrastructure/database';
+import { query } from '@/lib/db';
 import type { Session } from '@/lib/session';
 import { gerarHtmlReciboTemplate } from '../templates/recibo-template';
 
