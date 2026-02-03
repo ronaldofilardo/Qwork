@@ -75,11 +75,26 @@ export async function getPuppeteerInstance() {
           try {
             const puppeteer = await import('puppeteer');
             console.warn('[PDF] ExecutablePath do @sparticuz/chromium não encontrado. Tentando fallback com puppeteer...');
-            return puppeteer.default.launch(launchOptions);
+            // Tentar lançar e capturar erro específico de falta de Chrome
+            try {
+              return await puppeteer.default.launch(launchOptions);
+            } catch (puppErr: any) {
+              const msg = puppErr?.message || String(puppErr);
+              if (msg.includes('Could not find Chrome') || msg.includes('Could not find Chromium') || msg.includes('executablePath')) {
+                // Erro específico: Chrome ausente
+                console.error('[PDF] Puppeteer reportou ausência do Chrome:', msg);
+                const err = new Error('CHROME_MISSING: ' + msg);
+                (err as any).code = 'CHROME_MISSING';
+                throw err;
+              }
+              console.error('[PDF] Fallback com puppeteer falhou:', puppErr);
+              throw puppErr;
+            }
           } catch (fallbackErr) {
             console.error('[PDF] Fallback com puppeteer falhou:', fallbackErr);
+            // Mensagem final com instruções acionáveis
             throw new Error(
-              "Chromium não disponível no ambiente serverless. Verifique se '@sparticuz/chromium' foi instalado corretamente e se os arquivos de binário (brotli) foram incluídos na build. Sugestões: 1) adicionar um script 'postinstall' para executar 'require('@sparticuz/chromium').install()' durante a build; 2) definir a variável de ambiente SPARTICUZ_CHROMIUM_BIN apontando para os arquivos do pacote; 3) executar testes locais com 'pnpm run check-puppeteer' para validar."
+              "Chromium não disponível no ambiente serverless. Sugestões: 1) executar no build: 'node scripts/install-sparticuz-chromium.js' e 'node scripts/install-puppeteer-chrome.js' ; 2) definir as vars SPARTICUZ_CHROMIUM_BIN ou PUPPETEER_EXECUTABLE_PATH apontando para o binário; 3) ver logs de build para confirmar postinstall."
             );
           }
         },

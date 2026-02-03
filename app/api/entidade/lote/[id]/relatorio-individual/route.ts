@@ -357,12 +357,20 @@ export async function GET(
     const message = error instanceof Error ? error.message : String(error);
 
     // Erros relacionados ao Chromium normalmente indicam configuração/deploy incorreto
-    if (message.includes('brotli') || message.includes('@sparticuz') || message.includes('Chromium não disponível')) {
+    if (
+      message.includes('brotli') ||
+      message.includes('@sparticuz') ||
+      message.includes('Chromium não disponível') ||
+      message.includes('CHROME_MISSING') ||
+      message.includes('Could not find Chrome') ||
+      message.includes('Could not find Chromium')
+    ) {
       return NextResponse.json(
         {
           error: 'Serviço de geração de PDF temporariamente indisponível',
           details: message,
-          hint: "Verifique se '@sparticuz/chromium' foi instalado durante o deploy (postinstall) e se os arquivos binários estão presentes; verifique também env SPARTICUZ_CHROMIUM_BIN",
+          hint:
+            "Verifique se '@sparticuz/chromium' foi instalado durante o deploy (postinstall) ou execute a instalação do Chromium para Puppeteer durante o build (ex.: usar script 'vercel-build' que chama 'node scripts/install-puppeteer-chrome.js'). Alternativamente, defina SPARTICUZ_CHROMIUM_BIN ou PUPPETEER_EXECUTABLE_PATH apontando para o binário.",
         },
         { status: 503 }
       );
