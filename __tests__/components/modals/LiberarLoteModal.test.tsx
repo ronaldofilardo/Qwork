@@ -192,6 +192,32 @@ describe('LiberarLoteModal', () => {
     expect(mockOnClose).not.toHaveBeenCalled();
   });
 
+  it('quando resposta RH tem sucesso mas sem lote, deve notificar onSuccess com -1', async () => {
+    const user = userEvent.setup();
+
+    mockLiberarLote.mockResolvedValueOnce({ success: true });
+
+    (useLiberarLoteModule.useLiberarLote as jest.Mock).mockReturnValue({
+      liberarLote: mockLiberarLote,
+      loading: false,
+      error: null,
+      result: { success: true, message: 'Processado sem lote' },
+      reset: mockReset,
+    });
+
+    render(<LiberarLoteModal {...defaultProps} />);
+
+    const submitButton = screen.getByRole('button', { name: /Iniciar Ciclo/ });
+    await user.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockOnSuccess).toHaveBeenCalledWith(-1);
+    });
+
+    // Modal permanece aberto até que o pai decida fechar
+    expect(mockOnClose).not.toHaveBeenCalled();
+  });
+
   it('deve exibir mensagem de erro em caso de falha', () => {
     (useLiberarLoteModule.useLiberarLote as jest.Mock).mockReturnValue({
       liberarLote: mockLiberarLote,

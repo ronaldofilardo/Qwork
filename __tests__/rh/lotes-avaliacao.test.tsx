@@ -370,5 +370,49 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
         ).toBeNull();
       });
     });
+
+    it('quando resposta RH não traz lote (loteId = -1), fecha modal sem navegar', async () => {
+      const user = userEvent.setup();
+      render(<EmpresaDashboardPage />);
+
+      await waitFor(() => {
+        expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
+
+      // Preparar resposta da API sem lote
+      mockFetch.mockImplementationOnce(async (url: string) => {
+        if (url === '/api/rh/liberar-lote') {
+          return {
+            ok: true,
+            json: async () => ({ success: true }),
+          } as Response;
+        }
+        return Promise.reject(new Error('URL inesperada'));
+      });
+
+      await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          '/api/rh/liberar-lote',
+          expect.objectContaining({ method: 'POST' })
+        );
+
+        // Não deve navegar quando loteId === -1
+        expect(mockRouter.push).not.toHaveBeenCalledWith(
+          expect.stringContaining('/lote/')
+        );
+
+        // Modal deve ter sido fechado
+        expect(
+          screen.queryByText('Iniciar Ciclo de Coletas Avaliativas')
+        ).toBeNull();
+
+        // Deve ter recarregado lotes (fazer chamada ao endpoint de lotes)
+        expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining('/api/rh/lotes?empresa_id=1'));
+      });
+    });
   });
 });

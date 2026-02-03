@@ -177,12 +177,13 @@ export function LiberarLoteModal({
 
     const response = await rhHook.liberarLote(params);
 
-    if (response.success && response.lote) {
+    if (response && response.success) {
       setShowSuccess(true);
 
       // Notificar o caller - deixar a página pai decidir se fecha o modal
       if (onSuccess) {
-        onSuccess(response.lote!.id);
+        // Se o backend não enviar o objeto 'lote', passar -1 para indicar sucesso sem id
+        onSuccess((response as any).lote?.id ?? -1);
       }
     }
   };
