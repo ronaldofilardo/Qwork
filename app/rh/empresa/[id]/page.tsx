@@ -533,9 +533,13 @@ export default function EmpresaDashboardPage() {
           empresaId={parseInt(empresaId)}
           empresaNome={empresa.nome}
           onSuccess={(loteId) => {
-            setShowLiberarModal(false);
+            // Manter consistência com fluxo Entidade: recarregar antes de fechar para que a mensagem de sucesso seja vista
             fetchLotes();
-            router.push(`/rh/empresa/${empresaId}/lote/${loteId}`);
+            setShowLiberarModal(false);
+            // Quando loteId for -1 (indica sucesso sem um único lote), não navegar — apenas recarregar
+            if (typeof loteId === 'number' && loteId > 0) {
+              router.push(`/rh/empresa/${empresaId}/lote/${loteId}`);
+            }
           }}
         />
       )}
