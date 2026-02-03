@@ -34,15 +34,52 @@ export async function getPuppeteerInstance() {
     const chromium = await import('@sparticuz/chromium');
     const puppeteerCore = await import('puppeteer-core');
 
+    // Defensive wrapper: some builds / snapshots might attempt to call executablePath with an object
+    // (e.g. { cacheDir: '...' }) which is not supported by the package's TypeScript defs.
+    // Wrap the method at runtime to tolerate non-string inputs and call original accordingly.
+    try {
+      const origExec = (chromium.default as any).executablePath.bind(chromium.default);
+      (chromium.default as any).executablePath = async (input?: any) => {
+        if (input && typeof input !== 'string') {
+          console.debug('[DEBUG] chromium.executablePath: received non-string input, ignoring and using default behavior');
+          return origExec();
+        }
+        return origExec(input);
+      };
+    } catch (e) {
+      console.debug('[DEBUG] getPuppeteerInstance: could not wrap executablePath', e?.message || e);
+    }
+
     return {
       launch: async (options: Record<string, unknown>) => {
         // Forçar download para /tmp - evita problemas com Vercel pruning node_modules
-        // setGraphicsMode desabilita modo headless para reduzir dependências
         chromium.default.setGraphicsMode = false;
 
-        const executablePath = await chromium.default.executablePath({
-          cacheDir: '/tmp/chromium-cache',
-        });
+        let executablePath: string;
+        try {
+          executablePath = await chromium.default.executablePath();
+        } catch (err: any) {
+          console.debug('[DEBUG] getPuppeteerInstance: default executablePath() failed', err?.message);
+
+          // Tentar baixar o 'pack' diretamente dos releases do GitHub
+          try {
+            // Obter versão do pacote @sparticuz/chromium instalado
+            const { createRequire } = await import('module');
+            const req = createRequire(import.meta.url);
+            const chromiumPkg = req('@sparticuz/chromium/package.json');
+            const version = chromiumPkg.version;
+            const arch = 'x64';
+            const downloadUrl = `https://github.com/Sparticuz/chromium/releases/download/v${version}/chromium-v${version}-pack.${arch}.tar`;
+
+            console.debug('[DEBUG] getPuppeteerInstance: attempting remote download from', downloadUrl);
+
+            executablePath = await chromium.default.executablePath(downloadUrl);
+          } catch (innerErr) {
+            console.error('[ERROR] getPuppeteerInstance: failed to download chromium pack', innerErr);
+            throw innerErr;
+          }
+        }
+
         const chromiumArgs = chromium.default.args;
 
         console.debug('[DEBUG] getPuppeteerInstance: executablePath=', executablePath);
