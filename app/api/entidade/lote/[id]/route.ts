@@ -73,16 +73,16 @@ export async function GET(
 
     const lote = loteResult.rows[0];
 
-    // Buscar estatísticas
+    // Buscar estatísticas (excluindo avaliações inativadas dos pendentes)
     const statsResult = await query(
       `
       SELECT
         COUNT(DISTINCT f.id) as total_funcionarios,
         COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN f.id END) as funcionarios_concluidos,
-        COUNT(DISTINCT CASE WHEN a.status != 'concluida' THEN f.id END) as funcionarios_pendentes
+        COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND f.contratante_id = $2
+      WHERE a.lote_id = $1 AND f.contratante_id = $2 AND a.status != 'inativada'
     `,
       [loteId, session.contratante_id]
     );

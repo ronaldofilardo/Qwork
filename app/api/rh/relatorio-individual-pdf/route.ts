@@ -1,14 +1,31 @@
 /**
  * API para gerar PDF de relatório individual
- * Usa Puppeteer (server-side) em vez de jsPDF (client-side)
+ * Usa jsPDF para geração rápida e simplificada
  */
 
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
-import { gerarHTMLRelatorioIndividual } from '@/lib/templates/relatorio-individual-html';
+import jsPDF from 'jspdf';
+import { applyPlugin } from 'jspdf-autotable';
+
+// Garantir que o plugin AutoTable seja aplicado ao jsPDF
+try {
+  applyPlugin(jsPDF);
+} catch (err) {
+  console.warn('Aviso: não foi possível aplicar jspdf-autotable ao jsPDF:', err);
+}
+
+// Extend jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable?: {
+      finalY: number;
+    };
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,38 +121,112 @@ export async function GET(request: NextRequest) {
       grupos: gruposProcessados.sort((a, b) => a.id - b.id),
     };
 
-    // Gerar HTML
-    const html = gerarHTMLRelatorioIndividual(dadosRelatorio);
+    // Gerar PDF com jsPDF
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
+    let yPos = 20;
 
-    // Gerar PDF com Puppeteer
-    const puppeteer = await getPuppeteerInstance();
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-      ],
+    // Título principal
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório Individual de Avaliação', pageWidth / 2, yPos, {
+      align: 'center',
     });
+    yPos += 15;
 
-    const page = await (browser as any).newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
+    // Informações do Funcionário
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dados do Funcionário', 14, yPos);
+    yPos += 7;
 
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      margin: {
-        top: '15mm',
-        right: '12mm',
-        bottom: '15mm',
-        left: '12mm',
-      },
-    });
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Nome: ${dadosRelatorio.funcionario.nome}`, 14, yPos);
+    yPos += 5;
+    doc.text(`CPF: ${dadosRelatorio.funcionario.cpf}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Matrícula: ${dadosRelatorio.funcionario.matricula || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Empresa: ${dadosRelatorio.funcionario.empresa || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Setor: ${dadosRelatorio.funcionario.setor || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Função: ${dadosRelatorio.funcionario.funcao || '-'}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Nível: ${dadosRelatorio.funcionario.perfil}`, 14, yPos);
+    yPos += 10;
 
-    await browser.close();
+    // Informações do Lote
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Dados da Avaliação', 14, yPos);
+    yPos += 7;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Código do Lote: ${dadosRelatorio.lote.codigo}`, 14, yPos);
+    yPos += 5;
+    doc.text(`Título: ${dadosRelatorio.lote.titulo}`, 14, yPos);
+    yPos += 5;
+    const dataEnvio = dadosRelatorio.envio
+      ? new Date(dadosRelatorio.envio).toLocaleString('pt-BR')
+      : '-';
+    doc.text(`Data de Conclusão: ${dataEnvio}`, 14, yPos);
+    yPos += 12;
+
+    // Resultados por Grupo (compacto - apenas resumo)
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Resultados por Domínio', 14, yPos);
+    yPos += 8;
+
+    // Mostrar grupos de forma compacta (sem tabelas detalhadas)
+    for (const grupo of dadosRelatorio.grupos) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      
+      // Texto do grupo
+      const textoGrupo = `${grupo.dominio} - Grupo ${grupo.id} - ${grupo.titulo}`;
+      doc.text(textoGrupo, 14, yPos);
+      yPos += 5;
+
+      // Classificação com cor
+      doc.setFont('helvetica', 'normal');
+      const classificacaoTexto = grupo.classificacao.toUpperCase();
+      
+      // Converter cor hex para RGB
+      const hexToRgb = (hex: string) => {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+          r: parseInt(result[1], 16),
+          g: parseInt(result[2], 16),
+          b: parseInt(result[3], 16)
+        } : { r: 0, g: 0, b: 0 };
+      };
+      
+      const rgb = hexToRgb(grupo.corClassificacao);
+      doc.setTextColor(rgb.r, rgb.g, rgb.b);
+      doc.text(`Média: ${grupo.media} - ${classificacaoTexto}`, 14, yPos);
+      doc.setTextColor(0, 0, 0);
+      yPos += 7;
+    }
+
+    // Rodapé
+    doc.setPage(1);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text(
+      `Gerado em ${new Date().toLocaleString('pt-BR')}`,
+      pageWidth / 2,
+      doc.internal.pageSize.height - 10,
+      { align: 'center' }
+    );
+    doc.setTextColor(0, 0, 0);
+
+    // Gerar buffer do PDF
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
     // Retornar PDF
     const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(
@@ -143,7 +234,7 @@ export async function GET(request: NextRequest) {
       '-'
     )}-${avaliacao.lote_codigo}.pdf`;
 
-    return new NextResponse(Buffer.from(pdfBuffer), {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
