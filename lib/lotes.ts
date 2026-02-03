@@ -4,6 +4,7 @@
  */
 
 import { query } from '@/lib/db';
+import { transactionWithContext } from '@/lib/db-security';
 
 /**
  * Recalcula o status de um lote diretamente pelo loteId (sem avaliacaoId)
@@ -26,182 +27,184 @@ export async function recalcularStatusLotePorId(
     `[DEBUG] recalcularStatusLotePorId chamado para loteId: ${loteId}`
   );
 
-  // Acquire advisory lock to prevent concurrent processing
-  // Using lote_id as lock key (hashcode for pg_advisory_xact_lock)
-  await query('SELECT pg_advisory_xact_lock($1)', [loteId]);
-  console.log(`[DEBUG] Advisory lock acquired for lote ${loteId}`);
-  // Log SKIP flag for observability (helps debugging local vs prod behavior)
-  console.log(
-    `[INFO] SKIP_IMMEDIATE_EMISSION=${process.env.SKIP_IMMEDIATE_EMISSION || 'false'}`
-  );
+  // Executar todo o recálculo dentro de uma transação que garante contexto RLS
+  return await transactionWithContext(async (q) => {
+    // Acquire advisory lock to prevent concurrent processing (transaction-scoped)
+    await q('SELECT pg_advisory_xact_lock($1)', [loteId]);
+    console.log(`[DEBUG] Advisory lock acquired for lote ${loteId}`);
 
-  // IMPORTANTE: 'iniciadas' inclui 'iniciada' E 'em_andamento' para evitar encerramento prematuro
-  const statsResult = await query(
-    `
-    SELECT
-      COUNT(a.id) as total_avaliacoes,
-      COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
-      COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
-      COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
-      COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as iniciadas,
-      COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
-    FROM avaliacoes a
-    WHERE a.lote_id = $1
-  `,
-    [loteId]
-  );
-
-  const {
-    total_avaliacoes,
-    ativas,
-    concluidas,
-    inativadas,
-    iniciadas,
-    liberadas,
-  } = statsResult.rows[0];
-  const totalAvaliacoes = parseInt(total_avaliacoes) || 0;
-  const ativasNum = parseInt(ativas) || 0;
-  const concluidasNum = parseInt(concluidas) || 0;
-  const inativadasNum = parseInt(inativadas) || 0;
-  const iniciadasNum = parseInt(iniciadas) || 0;
-  const liberadasNum = parseInt(liberadas) || 0;
-
-  console.log(
-    `[DEBUG] Recalculando lote ${loteId}: ${totalAvaliacoes} total, ${liberadasNum} liberadas, ${ativasNum} ativas, ${concluidasNum} concluídas, ${inativadasNum} inativadas, ${iniciadasNum} iniciadas`
-  );
-
-  // Lógica de status (precisão e precedência):
-  // 1) Se todas as avaliações do lote estiverem inativadas (total) => 'cancelado'
-  // 2) Se todas as avaliações *liberadas* estão inativadas e NÃO há concluídas => 'cancelado'
-  // 3) Se há avaliações concluídas e (concluídas + inativadas) == liberadas => 'concluido'
-  // 4) Se há concluidas > 0 ou iniciadas > 0 => 'ativo'
-  // 5) Caso contrário => 'ativo'
-  let novoStatus = 'ativo';
-
-  // 1) Todas avaliações inativadas (base total)
-  if (totalAvaliacoes > 0 && inativadasNum === totalAvaliacoes) {
-    novoStatus = 'cancelado';
-  }
-  // 2) Todas as avaliações liberadas estão inativadas e não há concluídas
-  else if (
-    liberadasNum > 0 &&
-    inativadasNum === liberadasNum &&
-    concluidasNum === 0
-  ) {
-    novoStatus = 'cancelado';
-  }
-  // 3) Concluir quando existe pelo menos UMA concluida e (concluidas + inativadas == liberadas)
-  else if (
-    liberadasNum > 0 &&
-    concluidasNum > 0 &&
-    concluidasNum + inativadasNum === liberadasNum
-  ) {
-    novoStatus = 'concluido';
-  }
-  // 4) Caso padrão: ativo se há qualquer concluída ou iniciada
-  else if (concluidasNum > 0 || iniciadasNum > 0) {
-    novoStatus = 'ativo';
-  }
-
-  // Verificar status atual do lote
-  const loteAtual = await query(
-    'SELECT status FROM lotes_avaliacao WHERE id = $1',
-    [loteId]
-  );
-
-  if (!loteAtual || loteAtual.rowCount === 0 || !loteAtual.rows[0]) {
-    console.warn(
-      `[WARN] Lote ${loteId} não encontrado na tabela lotes_avaliacao`
-    );
-    // Se o lote não existir, não tentamos atualizar nada
-    return { novoStatus, loteFinalizado: false };
-  }
-
-  const statusAtual = loteAtual.rows[0].status;
-
-  let loteFinalizado = false;
-
-  // Lote já concluído - verificar se precisa notificar
-  if (statusAtual === 'concluido' && novoStatus === 'concluido') {
+    // Log SKIP flag for observability (helps debugging local vs prod behavior)
     console.log(
-      `[INFO] Lote ${loteId} já está em status 'concluido' - mantendo status`
+      `[INFO] SKIP_IMMEDIATE_EMISSION=${process.env.SKIP_IMMEDIATE_EMISSION || 'false'}`
     );
-    loteFinalizado = true;
-  }
 
-  if (novoStatus !== statusAtual) {
-    if (novoStatus === 'concluido') {
-      // ✅ Atualizar status do lote para 'concluido'
-      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
-        novoStatus,
-        loteId,
-      ]);
-      console.log(
-        `[INFO] Lote ${loteId} alterado para '${novoStatus}' - pronto para solicitação de emissão`
-      );
+    // IMPORTANTE: 'iniciadas' inclui 'iniciada' E 'em_andamento' para evitar encerramento prematuro
+    const statsResult = await q(
+      `
+      SELECT
+        COUNT(a.id) as total_avaliacoes,
+        COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
+        COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as iniciadas,
+        COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
+      FROM avaliacoes a
+      WHERE a.lote_id = $1
+    `,
+      [loteId]
+    );
 
-      // ✅ CRIAR NOTIFICAÇÃO: Avisar RH/Entidade que lote está pronto para solicitar emissão
-      try {
-        // Buscar dados do lote para criar notificação contextualizada
-        const loteInfo = await query(
-          `SELECT la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id,
-                  COUNT(a.id) as total_avaliacoes
-           FROM lotes_avaliacao la
-           LEFT JOIN funcionarios f ON f.cpf = la.liberado_por
-           LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
-           WHERE la.id = $1
-           GROUP BY la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id`,
-          [loteId]
-        );
+    const {
+      total_avaliacoes,
+      ativas,
+      concluidas,
+      inativadas,
+      iniciadas,
+      liberadas,
+    } = statsResult.rows[0];
+    const totalAvaliacoes = parseInt(total_avaliacoes) || 0;
+    const ativasNum = parseInt(ativas) || 0;
+    const concluidasNum = parseInt(concluidas) || 0;
+    const inativadasNum = parseInt(inativadas) || 0;
+    const iniciadasNum = parseInt(iniciadas) || 0;
+    const liberadasNum = parseInt(liberadas) || 0;
 
-        if (loteInfo.rows.length > 0) {
-          const lote = loteInfo.rows[0];
-          const destinatarioTipo =
-            lote.perfil === 'rh' ? 'gestor_entidade' : 'gestor_entidade';
+    console.log(
+      `[DEBUG] Recalculando lote ${loteId}: ${totalAvaliacoes} total, ${liberadasNum} liberadas, ${ativasNum} ativas, ${concluidasNum} concluídas, ${inativadasNum} inativadas, ${iniciadasNum} iniciadas`
+    );
 
-          await query(
-            `INSERT INTO notificacoes (
-               tipo, prioridade, destinatario_cpf, destinatario_tipo,
-               titulo, mensagem, lote_id, criado_em
-             ) VALUES (
-               'lote_aguardando_solicitacao_emissao', 'alta', $1, $2,
-               'Lote Concluído - Pronto para Emissão',
-               'O lote ' || $3 || ' foi concluído com ' || $4 || ' avaliações finalizadas. Você pode solicitar a emissão do laudo.',
-               $5, NOW()
-             )`,
-            [
-              lote.liberado_por,
-              destinatarioTipo,
-              lote.codigo,
-              lote.total_avaliacoes,
-              loteId,
-            ]
-          );
+    // Lógica de status (precisão e precedência):
+    // 1) Se todas as avaliações do lote estiverem inativadas (total) => 'cancelado'
+    // 2) Se todas as avaliações *liberadas* estão inativadas e NÃO há concluídas => 'cancelado'
+    // 3) Se há avaliações concluídas e (concluídas + inativadas) == liberadas => 'concluido'
+    // 4) Se há concluidas > 0 ou iniciadas > 0 => 'ativo'
+    // 5) Caso contrário => 'ativo'
+    let novoStatus = 'ativo';
 
-          console.log(
-            `[INFO] Notificação criada para ${lote.liberado_por} (${destinatarioTipo}) - Lote ${lote.codigo} concluído com ${lote.total_avaliacoes} avaliações`
-          );
-        }
-      } catch (notifErr) {
-        console.error(
-          `[ERROR] Erro ao criar notificação para lote ${loteId}:`,
-          notifErr
-        );
-        // Não bloquear o fluxo principal
-      }
-      loteFinalizado = true;
-    } else {
-      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
-        novoStatus,
-        loteId,
-      ]);
-      console.log(
-        `[INFO] Lote ${loteId} alterado de '${statusAtual}' para '${novoStatus}'`
-      );
+    // 1) Todas avaliações inativadas (base total)
+    if (totalAvaliacoes > 0 && inativadasNum === totalAvaliacoes) {
+      novoStatus = 'cancelado';
     }
-  }
+    // 2) Todas as avaliações liberadas estão inativadas e não há concluídas
+    else if (
+      liberadasNum > 0 &&
+      inativadasNum === liberadasNum &&
+      concluidasNum === 0
+    ) {
+      novoStatus = 'cancelado';
+    }
+    // 3) Concluir quando existe pelo menos UMA concluida e (concluidas + inativadas == liberadas)
+    else if (
+      liberadasNum > 0 &&
+      concluidasNum > 0 &&
+      concluidasNum + inativadasNum === liberadasNum
+    ) {
+      novoStatus = 'concluido';
+    }
+    // 4) Caso padrão: ativo se há qualquer concluída ou iniciada
+    else if (concluidasNum > 0 || iniciadasNum > 0) {
+      novoStatus = 'ativo';
+    }
 
-  return { novoStatus, loteFinalizado };
+    // Verificar status atual do lote
+    const loteAtual = await q('SELECT status FROM lotes_avaliacao WHERE id = $1', [
+      loteId,
+    ]);
+
+    if (!loteAtual || loteAtual.rowCount === 0 || !loteAtual.rows[0]) {
+      console.warn(
+        `[WARN] Lote ${loteId} não encontrado na tabela lotes_avaliacao`
+      );
+      // Se o lote não existir, não tentamos atualizar nada
+      return { novoStatus, loteFinalizado: false };
+    }
+
+    const statusAtual = loteAtual.rows[0].status;
+
+    let loteFinalizado = false;
+
+    // Lote já concluído - verificar se precisa notificar
+    if (statusAtual === 'concluido' && novoStatus === 'concluido') {
+      console.log(
+        `[INFO] Lote ${loteId} já está em status 'concluido' - mantendo status`
+      );
+      loteFinalizado = true;
+    }
+
+    if (novoStatus !== statusAtual) {
+      if (novoStatus === 'concluido') {
+        // ✅ Atualizar status do lote para 'concluido'
+        await q('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
+          novoStatus,
+          loteId,
+        ]);
+        console.log(
+          `[INFO] Lote ${loteId} alterado para '${novoStatus}' - pronto para solicitação de emissão`
+        );
+
+        // ✅ CRIAR NOTIFICAÇÃO: Avisar RH/Entidade que lote está pronto para solicitar emissão
+        try {
+          // Buscar dados do lote para criar notificação contextualizada
+          const loteInfo = await q(
+            `SELECT la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id,
+                    COUNT(a.id) as total_avaliacoes
+             FROM lotes_avaliacao la
+             LEFT JOIN funcionarios f ON f.cpf = la.liberado_por
+             LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
+             WHERE la.id = $1
+             GROUP BY la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id`,
+            [loteId]
+          );
+
+          if (loteInfo.rows.length > 0) {
+            const lote = loteInfo.rows[0];
+            const destinatarioTipo =
+              lote.perfil === 'rh' ? 'gestor_entidade' : 'gestor_entidade';
+
+            await q(
+              `INSERT INTO notificacoes (
+                 tipo, prioridade, destinatario_cpf, destinatario_tipo,
+                 titulo, mensagem, lote_id, criado_em
+               ) VALUES (
+                 'lote_aguardando_solicitacao_emissao', 'alta', $1, $2,
+                 'Lote Concluído - Pronto para Emissão',
+                 'O lote ' || $3 || ' foi concluído com ' || $4 || ' avaliações finalizadas. Você pode solicitar a emissão do laudo.',
+                 $5, NOW()
+               )`,
+              [
+                lote.liberado_por,
+                destinatarioTipo,
+                lote.codigo,
+                lote.total_avaliacoes,
+                loteId,
+              ]
+            );
+
+            console.log(
+              `[INFO] Notificação criada para ${lote.liberado_por} (${destinatarioTipo}) - Lote ${lote.codigo} concluído com ${lote.total_avaliacoes} avaliações`
+            );
+          }
+        } catch (notifErr) {
+          console.error(
+            `[ERROR] Erro ao criar notificação para lote ${loteId}:`,
+            notifErr
+          );
+          // Não bloquear o fluxo principal
+        }
+        loteFinalizado = true;
+      } else {
+        await q('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
+          novoStatus,
+          loteId,
+        ]);
+        console.log(
+          `[INFO] Lote ${loteId} alterado de '${statusAtual}' para '${novoStatus}'`
+        );
+      }
+    }
+
+    return { novoStatus, loteFinalizado };
+  });
 }
 
 /**
