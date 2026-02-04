@@ -99,35 +99,44 @@ export const GET = async (req: Request) => {
     // empresaCheck.rows[0].clinica_id contém o clinica_id da empresa
     const clinicaId = empresaCheck.rows[0].clinica_id;
 
-    const lotesQuery = await query(
-      `
-      SELECT
-        la.id,
-        la.descricao,
-        la.tipo,
-        la.status,
-        la.liberado_em,
-        la.liberado_por,
-        f.nome as liberado_por_nome,
-        ec.nome as empresa_nome,
-        la.hash_pdf,
-        COUNT(a.id) as total_avaliacoes,
-        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
-        COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
-        fe.solicitado_por,
-        fe.solicitado_em,
-        fe.tipo_solicitante
-      FROM lotes_avaliacao la
-      LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
-      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-      LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
-      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome, ec.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
-      ORDER BY la.liberado_em DESC
-      LIMIT $1
-    `,
-      [limit]
-    );
+    console.log(`[DEBUG /api/rh/lotes] user=${user?.cpf || 'unknown'} empresa_id=${empresaId} clinica_id=${clinicaId}`);
+
+    let lotesQuery;
+    try {
+      lotesQuery = await query(
+        `
+        SELECT
+          la.id,
+          la.descricao,
+          la.tipo,
+          la.status,
+          la.liberado_em,
+          la.liberado_por,
+          f.nome as liberado_por_nome,
+          ec.nome as empresa_nome,
+          la.hash_pdf,
+          COUNT(a.id) as total_avaliacoes,
+          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+          COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
+          fe.solicitado_por,
+          fe.solicitado_em,
+          fe.tipo_solicitante
+        FROM lotes_avaliacao la
+        LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
+        LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
+        LEFT JOIN avaliacoes a ON la.id = a.lote_id
+        LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
+        GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome, ec.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+        ORDER BY la.liberado_em DESC
+        LIMIT $1
+      `,
+        [limit]
+      );
+      console.log(`[DEBUG /api/rh/lotes] query returned rows=${lotesQuery.rowCount}`);
+    } catch (err) {
+      console.error('[ERROR /api/rh/lotes] query failed:', err, err instanceof Error ? err.stack : null);
+      return NextResponse.json({ error: 'Erro ao buscar lotes' }, { status: 500, headers: { 'X-Lotes-Error': 'query_failed' } });
+    }
 
     const lotes = lotesQuery.rows.map((lote: any) => ({
       id: lote.id,
@@ -147,7 +156,9 @@ export const GET = async (req: Request) => {
       tipo_solicitante: lote.tipo_solicitante,
     }));
 
-    // Validar quais lotes podem emitir laudo usando a função SQL
+    const response = NextResponse.json({ lotes });
+    response.headers.set('X-Lotes-Count', String(lotes.length));
+    return response;
     const lotesComValidacao = [];
     for (const lote of lotes) {
       try {
