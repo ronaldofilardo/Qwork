@@ -51,6 +51,8 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
 
     mockQuery
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // BEGIN
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.current_user_cpf
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.current_user_perfil
       .mockResolvedValueOnce({ rowCount: 0, rows: [] } as QueryResult<unknown>) // loteCheck
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>); // ROLLBACK
 
@@ -75,10 +77,20 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
 
     mockQuery
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // BEGIN
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.current_user_cpf
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.current_user_perfil
       .mockResolvedValueOnce({
         rows: [{ id: 1, empresa_id: 2, status: 'ativo', contratante_id: 99 }],
         rowCount: 1,
       } as QueryResult<unknown>) // loteCheck
+      .mockResolvedValueOnce({
+        rows: [{ count: '0' }],
+        rowCount: 1,
+      } as QueryResult<unknown>) // emissaoSolicitada check
+      .mockResolvedValueOnce({
+        rows: [{ emitido_em: null }],
+        rowCount: 1,
+      } as QueryResult<unknown>) // loteEmitido check
       .mockResolvedValueOnce({
         rows: [
           {
@@ -95,10 +107,9 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
         rows: [{ count: '3' }],
         rowCount: 1,
       } as QueryResult<unknown>) // count respostas
-      .mockResolvedValueOnce({ rows: [], rowCount: 3 } as QueryResult<unknown>) // delete
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.allow_reset
+      .mockResolvedValueOnce({ rows: [], rowCount: 3 } as QueryResult<unknown>) // delete respostas
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as QueryResult<unknown>) // update avaliacao
-      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // requester select (no funcionario exists)
-
       .mockResolvedValueOnce({
         rows: [{ id: 'uuid-123', created_at: '2026-01-16T13:00:00Z' }],
         rowCount: 1,

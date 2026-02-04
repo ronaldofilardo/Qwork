@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 describe('Entidade Lotes - cards compactos', () => {
-  it('mostra botão Ver Detalhes e navega ao clicar', async () => {
+  it('mostra card clicável e navega ao clicar', async () => {
     (global as any).fetch = jest.fn().mockImplementation((url: string) => {
       if (url.includes('/api/entidade/lotes')) {
         return Promise.resolve({
@@ -26,9 +26,14 @@ describe('Entidade Lotes - cards compactos', () => {
                   titulo: 'Lote Teste Card',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo',
-                  total_funcionarios: 1,
-                  funcionarios_concluidos: 0,
-                  data_criacao: new Date().toISOString(),
+                  liberado_em: new Date().toISOString(),
+                  liberado_por_nome: 'João Silva',
+                  total_avaliacoes: 1,
+                  avaliacoes_concluidas: 0,
+                  avaliacoes_inativadas: 0,
+                  pode_emitir_laudo: false,
+                  motivos_bloqueio: [],
+                  taxa_conclusao: 0,
                 },
               ],
             }),
@@ -44,12 +49,12 @@ describe('Entidade Lotes - cards compactos', () => {
       expect(screen.getByText('Ciclos de Coletas Avaliativas')).toBeInTheDocument()
     );
 
-    // Botão Ver Detalhes deve existir
-    const verBtn = screen.getByRole('button', { name: /Ver Detalhes/i });
-    expect(verBtn).toBeInTheDocument();
+    // Card deve ser clicável (LotesGrid usa aria-label)
+    const card = screen.getByLabelText('Ver detalhes do lote 1');
+    expect(card).toBeInTheDocument();
 
     // Clicar deve navegar para detalhe
-    fireEvent.click(verBtn);
+    fireEvent.click(card);
     expect(mockRouter.push).toHaveBeenCalledWith('/entidade/lote/1');
   });
 
@@ -66,9 +71,14 @@ describe('Entidade Lotes - cards compactos', () => {
                   titulo: 'Lote Sem Expansao',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo',
-                  total_funcionarios: 1,
-                  funcionarios_concluidos: 0,
-                  data_criacao: new Date().toISOString(),
+                  liberado_em: new Date().toISOString(),
+                  liberado_por_nome: 'João Silva',
+                  total_avaliacoes: 1,
+                  avaliacoes_concluidas: 0,
+                  avaliacoes_inativadas: 0,
+                  pode_emitir_laudo: false,
+                  motivos_bloqueio: [],
+                  taxa_conclusao: 0,
                 },
               ],
             }),
@@ -84,11 +94,13 @@ describe('Entidade Lotes - cards compactos', () => {
       expect(screen.getByText('Ciclos de Coletas Avaliativas')).toBeInTheDocument()
     );
 
-    // Clicar no título não deve revelar seção de funcionários
-    fireEvent.click(screen.getByText('Lote Sem Expansao'));
+    // Clicar no card não deve revelar seção de funcionários (LotesGrid não tem expansão)
+    const card = screen.getByLabelText('Ver detalhes do lote 2');
+    fireEvent.click(card);
 
-    // Verifica que não há seção de Funcionários presente na página
+    // Verifica que não há seção de Funcionários presente na página (deve navegar)
     expect(screen.queryByText(/Funcionários \(/)).not.toBeInTheDocument();
+    expect(mockRouter.push).toHaveBeenCalledWith('/entidade/lote/2');
   });
 });
 
