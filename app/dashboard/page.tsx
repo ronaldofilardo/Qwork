@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 
 interface Avaliacao {
   id: number;
+  lote_id?: number;
   status: string;
   inicio: string;
   fim?: string;
@@ -13,6 +14,7 @@ interface Avaliacao {
 
 interface AvaliacaoAPI {
   id: number;
+  lote_id?: number;
   status: string;
   inicio: string;
   envio: string | null;
@@ -42,6 +44,7 @@ export default function Dashboard() {
       // Processa todas as avaliações
       const todas: Avaliacao[] = data.avaliacoes.map((a: AvaliacaoAPI) => ({
         id: a.id,
+        lote_id: a.lote_id,
         // Mantém o status original para distinguir entre 'iniciada' e 'em_andamento'
         status: a.status,
         total_respostas: a.total_respostas || 0,
@@ -127,6 +130,9 @@ export default function Dashboard() {
                 >
                   <div>
                     <p className="font-bold">Avaliação #{a.id}</p>
+                    {a.lote_id && (
+                      <p className="text-xs text-gray-500">Lote #{a.lote_id}</p>
+                    )}
                     <p className="text-sm text-gray-600">
                       Liberada em {a.inicio}
                     </p>
@@ -160,6 +166,9 @@ export default function Dashboard() {
                     <p className="font-bold text-green-600">
                       ✓ Avaliação #{a.id} Concluída
                     </p>
+                    {a.lote_id && (
+                      <p className="text-xs text-gray-500">Lote #{a.lote_id}</p>
+                    )}
                     <p className="text-sm text-gray-600">
                       Finalizada em {a.fim || 'processando...'}
                     </p>

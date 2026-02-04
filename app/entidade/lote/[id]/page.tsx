@@ -1030,6 +1030,9 @@ export default function DetalhesLotePage() {
             <table className="w-full text-sm table-fixed">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-16">
+                    ID
+                  </th>
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Nome</span>
@@ -1137,7 +1140,7 @@ export default function DetalhesLotePage() {
                 {funcionariosFiltrados.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={19}
+                      colSpan={20}
                       className="px-6 py-12 text-center text-gray-500"
                     >
                       {busca ||
@@ -1153,6 +1156,9 @@ export default function DetalhesLotePage() {
                       key={`${func.cpf}-${func.avaliacao.id ?? idx}`}
                       className="hover:bg-gray-50"
                     >
+                      <td className="px-2 py-1 text-sm text-gray-600 font-mono">
+                        #{func.avaliacao.id}
+                      </td>
                       <td
                         className="px-2 py-1 text-sm text-gray-900 max-w-[240px] truncate"
                         title={func.nome}
