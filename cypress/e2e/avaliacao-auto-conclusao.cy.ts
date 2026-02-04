@@ -7,9 +7,15 @@ describe('Avaliação - auto conclusão e redirecionamento', () => {
     });
 
     // Interceptar POST de respostas e retornar completed = true (wildcard URL)
-    cy.intercept({ method: 'POST', url: '**/api/avaliacao/respostas**' }, (req) => {
-      req.reply({ statusCode: 200, body: { success: true, completed: true } });
-    }).as('postResposta');
+    cy.intercept(
+      { method: 'POST', url: '**/api/avaliacao/respostas**' },
+      (req) => {
+        req.reply({
+          statusCode: 200,
+          body: { success: true, completed: true },
+        });
+      }
+    ).as('postResposta');
 
     // Usar viewport mobile para garantir versão mobile da UI
     cy.viewport('iphone-6');

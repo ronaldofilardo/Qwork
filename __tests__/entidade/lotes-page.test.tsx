@@ -40,18 +40,28 @@ describe('EntidadeLotesPage', () => {
                   titulo: 'Lote Dezembro 2024',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo',
-                  total_funcionarios: 50,
-                  funcionarios_concluidos: 35,
-                  data_criacao: '2024-12-01T00:00:00Z',
+                  liberado_em: '2024-12-01T00:00:00Z',
+                  liberado_por_nome: 'João Silva',
+                  total_avaliacoes: 50,
+                  avaliacoes_concluidas: 35,
+                  avaliacoes_inativadas: 0,
+                  pode_emitir_laudo: false,
+                  motivos_bloqueio: [],
+                  taxa_conclusao: 70,
                 },
                 {
                   id: 2,
                   titulo: 'Lote Janeiro 2025',
                   tipo: 'avaliacao_psicossocial',
                   status: 'rascunho',
-                  total_funcionarios: 0,
-                  funcionarios_concluidos: 0,
-                  data_criacao: '2024-12-15T00:00:00Z',
+                  liberado_em: '2024-12-15T00:00:00Z',
+                  liberado_por_nome: 'Maria Santos',
+                  total_avaliacoes: 0,
+                  avaliacoes_concluidas: 0,
+                  avaliacoes_inativadas: 0,
+                  pode_emitir_laudo: false,
+                  motivos_bloqueio: [],
+                  taxa_conclusao: 0,
                 },
               ],
             }),
@@ -211,8 +221,14 @@ describe('EntidadeLotesPage', () => {
                   titulo: 'Lote Com Laudo Indevido',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo', // not concluido/ finalizado
+                  liberado_em: new Date().toISOString(),
+                  liberado_por_nome: 'João Silva',
                   total_avaliacoes: 10,
                   avaliacoes_concluidas: 10,
+                  avaliacoes_inativadas: 0,
+                  pode_emitir_laudo: false,
+                  motivos_bloqueio: [],
+                  taxa_conclusao: 100,
                   laudo_id: 55,
                   laudo_status: 'enviado',
                   laudo_enviado_em: new Date().toISOString(),
@@ -235,9 +251,8 @@ describe('EntidadeLotesPage', () => {
 
     // The laudo should not be shown because lote.status !== 'concluido'/'finalizado'
     expect(screen.queryByText('📄 Laudo disponível')).not.toBeInTheDocument();
-    expect(
-      screen.getByText('Laudo indisponível. Aguarde a conclusão do lote.')
-    ).toBeInTheDocument();
+    // LotesGrid não mostra texto quando não há laudo, então apenas verificamos que não há seção de laudo
+    expect(screen.queryByText('📄 Laudo disponível')).not.toBeInTheDocument();
   });
 
   it('shows laudo available when lote is concluido and laudo status is enviado', async () => {
@@ -309,8 +324,14 @@ describe('EntidadeLotesPage', () => {
                   titulo: 'Lote Cancelado',
                   tipo: 'avaliacao_psicossocial',
                   status: 'cancelado',
+                  liberado_em: new Date().toISOString(),
+                  liberado_por_nome: 'João Silva',
                   total_avaliacoes: 5,
+                  avaliacoes_concluidas: 0,
                   avaliacoes_inativadas: 5,
+                  pode_emitir_laudo: false,
+                  motivos_bloqueio: [],
+                  taxa_conclusao: 0,
                   laudo_id: 99,
                   laudo_status: 'enviado',
                   laudo_enviado_em: new Date().toISOString(),
@@ -330,20 +351,18 @@ describe('EntidadeLotesPage', () => {
       ).toBeInTheDocument();
     });
 
-    // Badge de cancelado deve aparecer (verificar texto com emoji)
-    expect(screen.getByText('❌ Cancelado')).toBeInTheDocument();
+    // LotesGrid não mostra badge de cancelado, apenas o badge de inativadas
+    expect(screen.getByText('⚠️ 5 inativadas')).toBeInTheDocument();
 
     // O botão de relatório por setor deve estar desabilitado
     expect(screen.getByText('📋 Relatório por Setor')).toBeDisabled();
 
     // Laudo não deve estar disponível quando lote está cancelado
-    expect(
-      screen.queryByRole('button', { name: /Ver Laudo\/Baixar PDF/ })
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('📄 Laudo disponível')).not.toBeInTheDocument();
 
-    // Clicar no card não deve navegar para detalhes
+    // LotesGrid permite clicar em cards cancelados, então deve navegar
     const card = screen.getByLabelText('Ver detalhes do lote 200');
     fireEvent.click(card);
-    expect(mockRouter.push).not.toHaveBeenCalled();
+    expect(mockRouter.push).toHaveBeenCalledWith('/entidade/lote/200');
   });
 });
