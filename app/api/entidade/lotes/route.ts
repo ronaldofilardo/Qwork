@@ -19,42 +19,53 @@ export async function GET() {
 
     // Buscar lotes associados aos funcionários da entidade ou lotes diretamente da entidade
     // Inclui informações de validação e laudos (igual à API da clínica)
-    const lotesResult = await query(
-      `
-      SELECT DISTINCT
-        la.id,
-        la.tipo,
-        la.status,
-        la.criado_em,
-        la.liberado_em,
-        f2.nome as liberado_por_nome,
-        COUNT(DISTINCT a.id) as total_avaliacoes,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
-        COUNT(DISTINCT CASE WHEN a.status = 'inativada' THEN a.id END) as avaliacoes_inativadas,
-        -- Informações de laudo
-        l.id as laudo_id,
-        l.status as laudo_status,
-        l.emitido_em as laudo_emitido_em,
-        l.enviado_em as laudo_enviado_em,
-        l.hash_pdf as laudo_hash,
-        f3.nome as emissor_nome,
-        -- Informações de solicitação de emissão
-        fe.solicitado_por,
-        fe.solicitado_em,
-        fe.tipo_solicitante
-      FROM lotes_avaliacao la
-      LEFT JOIN avaliacoes a ON a.lote_id = la.id
-      LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
-      LEFT JOIN laudos l ON l.lote_id = la.id
-      LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
-      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
-      GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome,
-               l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
-               fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
-      ORDER BY la.criado_em DESC
-    `,
-      []
+    console.log(
+      `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, contratante_id: session.contratante_id || null })}`
     );
+
+    let lotesResult;
+    try {
+      lotesResult = await query(
+        `
+        SELECT DISTINCT
+          la.id,
+          la.tipo,
+          la.status,
+          la.criado_em,
+          la.liberado_em,
+          f2.nome as liberado_por_nome,
+          COUNT(DISTINCT a.id) as total_avaliacoes,
+          COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
+          COUNT(DISTINCT CASE WHEN a.status = 'inativada' THEN a.id END) as avaliacoes_inativadas,
+          -- Informações de laudo
+          l.id as laudo_id,
+          l.status as laudo_status,
+          l.emitido_em as laudo_emitido_em,
+          l.enviado_em as laudo_enviado_em,
+          l.hash_pdf as laudo_hash,
+          f3.nome as emissor_nome,
+          -- Informações de solicitação de emissão
+          fe.solicitado_por,
+          fe.solicitado_em,
+          fe.tipo_solicitante
+        FROM lotes_avaliacao la
+        LEFT JOIN avaliacoes a ON a.lote_id = la.id
+        LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
+        LEFT JOIN laudos l ON l.lote_id = la.id
+        LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
+        LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
+        GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome,
+                 l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
+                 fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+        ORDER BY la.criado_em DESC
+      `,
+        []
+      );
+      console.log(`[DEBUG /api/entidade/lotes] query returned rows=${lotesResult.rowCount}`);
+    } catch (err) {
+      console.error('[ERROR /api/entidade/lotes] query failed:', err, err instanceof Error ? err.stack : null);
+      return NextResponse.json({ error: 'Erro ao buscar lotes' }, { status: 500, headers: { 'X-Lotes-Error': 'query_failed' } });
+    }
 
     // BEFORE returning: para lotes cujo laudo existe mas o hash está nulo,
     // tentar recuperar o hash a partir do arquivo em disco (fallback não intrusivo).
@@ -181,6 +192,9 @@ export async function GET() {
     const response = NextResponse.json({
       lotes: lotesComValidacao,
     });
+
+    // Anexar contagem para debug remoto
+    response.headers.set('X-Lotes-Count', String(lotesComValidacao.length));
 
     // Forçar sem cache
     response.headers.set(
