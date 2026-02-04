@@ -44,7 +44,6 @@ SELECT
     COUNT(DISTINCT a.id) AS total_avaliacoes,
     COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) AS avaliacoes_concluidas,
     l.hash_pdf,
-    l.arquivo_remoto_url,
     l.enviado_em AS laudo_enviado_em,
     l.emitido_em AS laudo_emitido_em
 FROM lotes_avaliacao la
@@ -65,7 +64,6 @@ GROUP BY
     ec.cnpj,
     c.nome,
     l.hash_pdf,
-    l.arquivo_remoto_url,
     l.enviado_em,
     l.emitido_em;
 
