@@ -246,7 +246,8 @@ export default function NovaAvaliacaoPage() {
         // Verificar se a avaliação foi concluída automaticamente (37 respostas)
         if (data.completed) {
           console.log('✅ Avaliação concluída automaticamente!');
-          setIsFinished(true);
+          // Redirecionar imediatamente para a página de comprovante (em vez de apenas marcar isFinished)
+          window.location.href = `/avaliacao/concluida?avaliacao_id=${avaliacaoId}`;
           return;
         }
 
