@@ -19,10 +19,16 @@ describe('Lotes route - não expõe laudos antes de lote concluído', () => {
   });
 
   it('deve ignorar laudo se lote não estiver concluído e não expor hash', async () => {
-    mockRequireRole.mockResolvedValue({ cpf: '53051173991', perfil: 'emissor' } as any);
+    mockRequireRole.mockResolvedValue({
+      cpf: '53051173991',
+      perfil: 'emissor',
+    } as any);
 
     // totalQuery
-    mockQuery.mockResolvedValueOnce({ rows: [{ total: 1 }], rowCount: 1 } as any);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ total: 1 }],
+      rowCount: 1,
+    } as any);
 
     // lotesQuery: retorna um lote com laudo_id mas status 'ativo'
     mockQuery.mockResolvedValueOnce({
@@ -33,7 +39,7 @@ describe('Lotes route - não expõe laudos antes de lote concluído', () => {
           tipo: 'padrao',
           lote_status: 'ativo',
           liberado_em: null,
-          auto_emitir_em: null,
+          // auto_emitir_em: removido pela Migration 302
           modo_emergencia: false,
           empresa_nome: 'Empresa X',
           clinica_nome: 'Clinica Y',
@@ -52,7 +58,10 @@ describe('Lotes route - não expõe laudos antes de lote concluído', () => {
     // The invalid laudos detection query (SELECT l.id AS laudo_id ... la.status NOT IN (...))
     mockQuery.mockImplementation(async (sql: string, params?: any[]) => {
       if (sql && sql.includes('WHERE la.id = ANY')) {
-        return { rows: [{ laudo_id: 42, lote_id: 3, lote_status: 'ativo' }], rowCount: 1 } as any;
+        return {
+          rows: [{ laudo_id: 42, lote_id: 3, lote_status: 'ativo' }],
+          rowCount: 1,
+        } as any;
       }
       return { rows: [], rowCount: 0 } as any;
     });

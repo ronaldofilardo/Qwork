@@ -15,7 +15,7 @@
  */
 
 import { query } from '@/lib/db';
-import { uniqueCode } from './helpers/test-data-factory';
+import { uniqueCode } from '../helpers/test-data-factory';
 
 describe('Fluxo E2E: Entidade → Lote → Emissor → Laudo', () => {
   let contratanteId: number;
@@ -186,19 +186,17 @@ describe('Fluxo E2E: Entidade → Lote → Emissor → Laudo', () => {
       expect(check.rows[0].status).toBe('concluida');
     });
 
-    it('deve atualizar lote para concluido', async () => {
+    it('deve atualizar lote para concluido (Migration 302: auto_emitir removido)', async () => {
       await query(
-        `UPDATE lotes_avaliacao SET status = 'concluido', auto_emitir_agendado = true, auto_emitir_em = NOW() + INTERVAL '5 seconds'
-         WHERE id = $1`,
+        `UPDATE lotes_avaliacao SET status = 'concluido' WHERE id = $1`,
         [loteId]
       );
 
       const check = await query(
-        `SELECT status, auto_emitir_agendado FROM lotes_avaliacao WHERE id = $1`,
+        `SELECT status FROM lotes_avaliacao WHERE id = $1`,
         [loteId]
       );
       expect(check.rows[0].status).toBe('concluido');
-      expect(check.rows[0].auto_emitir_agendado).toBe(true);
     });
   });
 
@@ -398,24 +396,22 @@ describe('Fluxo E2E: Entidade → Lote → Emissor → Laudo', () => {
   });
 
   describe('8. Comparação com Fluxo Clínica (parcial)', () => {
-    it('deve ter comportamento equivalente ao fluxo clínica (snapshot parcial — ignora nível empresa)', async () => {
-      // Este teste valida os pontos críticos do comportamento (status, emissão automática, contagem de avaliações e laudos).
-      // Observação: o fluxo de entidade não tem nível de empresas — por isso a comparação é parcial e foca em equivalência de comportamento.
+    it('deve ter comportamento equivalente ao fluxo clínica (snapshot parcial — ignora nível empresa) - Migration 302: auto_emitir removido', async () => {
+      // Este teste valida os pontos críticos do comportamento (status, contagem de avaliações e laudos).
+      // Migration 302: auto_emitir_agendado removido - emissão é MANUAL após solicitação do RH/Entidade
       const entidadeLote = await query(
         `SELECT 
           status, 
-          auto_emitir_agendado, 
           (SELECT COUNT(*) FROM avaliacoes WHERE lote_id = $1 AND status = 'concluida')::integer as avaliacoes_concluidas,
-          (SELECT COUNT(*) FROM laudos WHERE lote_id = $1)::integer as laudos_gerados
+          (SELECT COUNT(*) FROM laudos WHERE lote_id = $1 AND hash_pdf IS NOT NULL)::integer as laudos_gerados
          FROM lotes_avaliacao WHERE id = $1`,
         [loteId]
       );
 
       const snapshot = {
         status: 'concluido',
-        auto_emitir_agendado: true,
         avaliacoes_concluidas: 1,
-        laudos_gerados: 1,
+        laudos_gerados: 0, // Laudo só é gerado após solicitação manual e emissão pelo emissor
       };
 
       expect(entidadeLote.rows[0]).toMatchObject(snapshot);

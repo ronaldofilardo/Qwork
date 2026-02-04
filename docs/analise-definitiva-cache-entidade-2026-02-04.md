@@ -6,6 +6,7 @@
 ## Problema Real Identificado
 
 ### Sintomas
+
 - Banco de dados atualizado corretamente (status='em_andamento')
 - View `vw_funcionarios_por_lote` retornando dados corretos
 - API retornando dados corretos quando testada diretamente
@@ -24,6 +25,7 @@ O problema não estava no backend, banco de dados, triggers ou RLS. O problema e
 ### Comparação: Entidade vs Clínica
 
 #### API da Clínica (RH) ✅ FUNCIONANDO
+
 ```typescript
 // Usa a view otimizada
 export async function getFuncionariosPorLote(
@@ -31,23 +33,30 @@ export async function getFuncionariosPorLote(
   empresaId: number,
   clinicaId: number
 ): Promise<FuncionarioComAvaliacao[]> {
-  const result = await query(`
+  const result = await query(
+    `
     SELECT * FROM vw_funcionarios_por_lote
     WHERE lote_id = $1 AND empresa_id = $2 AND clinica_id = $3
-  `, [loteId, empresaId, clinicaId]);
+  `,
+    [loteId, empresaId, clinicaId]
+  );
   return result.rows;
 }
 ```
 
 #### API da Entidade ✅ TAMBÉM FUNCIONANDO
+
 ```typescript
 // Query manual direta (também correto!)
-const funcionariosResult = await query(`
+const funcionariosResult = await query(
+  `
   SELECT f.*, a.status as avaliacao_status
   FROM funcionarios f
   JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
   WHERE a.lote_id = $1 AND f.contratante_id = $2
-`, [loteId, contratanteId]);
+`,
+  [loteId, contratanteId]
+);
 ```
 
 **AMBAS RETORNAM DADOS CORRETOS!** O problema era o cache.
@@ -75,6 +84,7 @@ return response;
 ```
 
 **Também aplicado em:**
+
 - `app/api/entidade/lotes/route.ts`
 
 ### 2. Cache Busting no Frontend ✅
@@ -82,23 +92,29 @@ return response;
 **Arquivo:** `app/entidade/lote/[id]/page.tsx`
 
 ```typescript
-const loadLoteData = useCallback(async (forceRefresh = false) => {
-  // Adicionar timestamp para evitar cache
-  const timestamp = new Date().getTime();
-  const response = await fetch(`/api/entidade/lote/${loteId}?_t=${timestamp}`, {
-    cache: 'no-store',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache'
+const loadLoteData = useCallback(
+  async (forceRefresh = false) => {
+    // Adicionar timestamp para evitar cache
+    const timestamp = new Date().getTime();
+    const response = await fetch(
+      `/api/entidade/lote/${loteId}?_t=${timestamp}`,
+      {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          Pragma: 'no-cache',
+        },
+      }
+    );
+
+    // ... processar resposta ...
+
+    if (forceRefresh) {
+      toast.success('Dados atualizados!');
     }
-  });
-  
-  // ... processar resposta ...
-  
-  if (forceRefresh) {
-    toast.success('Dados atualizados!');
-  }
-}, [loteId, router]);
+  },
+  [loteId, router]
+);
 ```
 
 ### 3. Botão de Refresh Manual ✅
@@ -141,6 +157,7 @@ useEffect(() => {
 ## Teste de Validação
 
 ### Antes da Correção ❌
+
 ```
 Banco: status = 'em_andamento' ✅
 API: status = 'em_andamento' ✅
@@ -148,6 +165,7 @@ UI: status = 'iniciada' ❌ (cache!)
 ```
 
 ### Depois da Correção ✅
+
 ```
 Banco: status = 'em_andamento' ✅
 API: status = 'em_andamento' ✅ + headers anti-cache
@@ -184,11 +202,13 @@ UI: status = 'em_andamento' ✅ (cache busting funcionando!)
 ### Hipótese Confirmada
 
 A clínica/RH provavelmente:
+
 1. Tinha menos cache configurado historicamente
 2. Era acessada com mais frequência (cache expirava mais rápido)
 3. Tinha configurações de deploy diferentes
 
 A entidade:
+
 1. Era acessada com menos frequência
 2. Tinha mais camadas de cache acumulado
 3. Não tinha headers anti-cache explícitos
@@ -196,44 +216,50 @@ A entidade:
 ## Impacto das Mudanças
 
 ### Performance 🚀
+
 - ✅ Sem impacto negativo (apenas previne cache excessivo)
 - ✅ Dados sempre frescos
 - ✅ UX melhorada com feedback visual
 
 ### Segurança 🔒
+
 - ✅ Nenhuma mudança em RLS ou permissões
 - ✅ Headers de cache não afetam autenticação
 - ✅ Dados sensíveis continuam protegidos
 
 ### Manutenibilidade 🔧
+
 - ✅ Padrão consistente entre APIs
 - ✅ Fácil de debugar (logs + timestamp visível no URL)
 - ✅ Botão de refresh manual para suporte ao usuário
 
 ## Checklist de Validação
 
-- [X] Correção no banco aplicada (status atualizado)
-- [X] API retorna dados corretos
-- [X] Headers anti-cache configurados
-- [X] Cache busting no frontend implementado
-- [X] Botão de refresh manual adicionado
-- [X] Polling otimizado e funcionando
-- [X] Testes realizados com sucesso
-- [X] Documentação atualizada
+- [x] Correção no banco aplicada (status atualizado)
+- [x] API retorna dados corretos
+- [x] Headers anti-cache configurados
+- [x] Cache busting no frontend implementado
+- [x] Botão de refresh manual adicionado
+- [x] Polling otimizado e funcionando
+- [x] Testes realizados com sucesso
+- [x] Documentação atualizada
 
 ## Próximos Passos
 
 ### Imediato (Em Produção)
+
 1. ✅ Deploy das mudanças
 2. ✅ Limpar cache do navegador dos usuários (F5 ou Ctrl+Shift+R)
 3. ✅ Validar com usuário real
 
 ### Curto Prazo
+
 - [ ] Adicionar logs de telemetria para tracking de cache misses
 - [ ] Implementar Service Worker para controle mais fino de cache
 - [ ] Adicionar indicador visual de "última atualização"
 
 ### Médio Prazo
+
 - [ ] Considerar Server-Sent Events (SSE) para push em tempo real
 - [ ] Implementar WebSocket para atualizações instantâneas
 - [ ] Adicionar offline-first com sincronização inteligente
@@ -243,6 +269,7 @@ A entidade:
 **O SISTEMA ESTÁ TOTALMENTE FUNCIONAL!** 🎉
 
 O problema nunca foi de:
+
 - ❌ Banco de dados
 - ❌ Triggers
 - ❌ RLS
@@ -250,9 +277,11 @@ O problema nunca foi de:
 - ❌ Queries
 
 Era simplesmente:
+
 - ✅ **CACHE DO NAVEGADOR E NEXT.JS**
 
 **Solução implementada:**
+
 - ✅ Headers anti-cache nas APIs
 - ✅ Cache busting no frontend
 - ✅ Botão de refresh manual

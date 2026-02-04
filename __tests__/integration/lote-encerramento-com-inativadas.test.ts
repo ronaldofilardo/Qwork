@@ -17,10 +17,6 @@ jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
 }));
 
-jest.mock('@/lib/auto-laudo-trigger', () => ({
-  triggerAutoLaudoCron: jest.fn(),
-}));
-
 jest.mock('@/lib/calculate', () => ({
   calcularResultados: jest.fn(),
 }));
@@ -174,13 +170,14 @@ describe.skip('Integração: Encerramento de Lote com Avaliações Inativadas (I
     );
     expect(statsCalls.length).toBeGreaterThan(0);
 
-    // Verifica que NÃO foi feito UPDATE para 'concluido'
+    // Verifica que NÃO foi feito UPDATE para 'concluido' (sistema antigo verificava auto_emitir_agendado)
+    // Migration 302: auto_emitir_agendado removido - lote permanece 'ativo' até todas avaliações finalizarem
     const updateConcluidoCalls = mockQuery.mock.calls.filter(
       (call) =>
         call[0] &&
         typeof call[0] === 'string' &&
         call[0].includes('UPDATE lotes_avaliacao') &&
-        call[0].includes('auto_emitir_agendado')
+        call[0].includes("status = 'concluido'")
     );
     expect(updateConcluidoCalls.length).toBe(0);
   });
@@ -274,13 +271,14 @@ describe.skip('Integração: Encerramento de Lote com Avaliações Inativadas (I
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
 
-    // Verifica que lote foi concluído e emissão agendada
+    // Verifica que lote foi concluído (sistema antigo agendava emissão automática)
+    // Migration 302: auto_emitir_agendado removido - lote agora fica 'concluido' aguardando solicitação manual
     const updateConcluidoCalls = mockQuery.mock.calls.filter(
       (call) =>
         call[0] &&
         typeof call[0] === 'string' &&
         call[0].includes('UPDATE lotes_avaliacao') &&
-        call[0].includes('auto_emitir_agendado = true')
+        call[0].includes("status = 'concluido'")
     );
     expect(updateConcluidoCalls.length).toBeGreaterThan(0);
   });
