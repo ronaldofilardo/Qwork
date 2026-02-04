@@ -94,7 +94,10 @@ export default function ModalInativarAvaliacao({
         return;
       }
 
-      alert(data.mensagem || '✅ Avaliação inativada com sucesso!');
+      // Suportar ambos os formatos de resposta: message (entidade) e mensagem (RH)
+      const successMessage =
+        data.message || data.mensagem || '✅ Avaliação inativada com sucesso!';
+      alert(successMessage);
       onSuccess();
       onClose();
     } catch (error) {
