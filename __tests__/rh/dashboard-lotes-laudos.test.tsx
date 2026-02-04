@@ -35,7 +35,6 @@ jest.mock('react-chartjs-2', () => ({
 const mockLotes: MockLote[] = [
   {
     id: 1,
-    codigo: 'LOTE001',
     titulo: 'Avaliação Trimestral Q1',
     tipo: 'completo',
     liberado_em: '2025-01-15T10:00:00Z',
@@ -46,7 +45,6 @@ const mockLotes: MockLote[] = [
   },
   {
     id: 2,
-    codigo: 'LOTE002',
     titulo: 'Avaliação Gestão 2025',
     tipo: 'gestao',
     liberado_em: '2025-02-01T14:30:00Z',
@@ -61,7 +59,6 @@ const mockLaudos: MockLaudo[] = [
   {
     id: 1,
     lote_id: 1,
-    codigo: 'LOTE001',
     titulo: 'Laudo Avaliação Trimestral Q1',
     empresa_nome: 'Empresa Teste',
     clinica_nome: 'Clínica Qwork',

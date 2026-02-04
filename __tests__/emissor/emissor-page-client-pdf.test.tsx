@@ -82,7 +82,6 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
       // Simular função handleDownloadLaudo
       const lote = {
         id: 123,
-        codigo: 'LOTE-ABC',
         laudo: { id: 456 },
       };
 
@@ -141,7 +140,6 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       const lote = {
         id: 123,
-        codigo: 'LOTE-XYZ',
         laudo: { id: 789 },
       };
 
@@ -215,7 +213,6 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       const lote = {
         id: 123,
-        codigo: 'LOTE-ERROR',
         laudo: { id: 999 },
       };
 
@@ -426,7 +423,6 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
     it('deve mostrar alerta quando laudo não tem ID', async () => {
       const lote = {
         id: 123,
-        codigo: 'LOTE-NO-LAUDO',
         laudo: null, // Sem laudo
       };
 
@@ -456,7 +452,6 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
 
       const lote = {
         id: 123,
-        codigo: 'LOTE-ERROR',
         laudo: { id: 456 },
       };
 

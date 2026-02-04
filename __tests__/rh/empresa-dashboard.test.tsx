@@ -146,7 +146,6 @@ describe('RH Empresa Dashboard', () => {
                 {
                   id: 101,
                   titulo: '5a avaliação',
-                  codigo: '002-181225',
                   liberado_em: new Date().toISOString(),
                   total_avaliacoes: 5,
                   avaliacoes_concluidas: 2,
@@ -662,4 +661,4 @@ describe('RH Empresa Dashboard', () => {
     // O layout atual não exibe esses textos, nem domínios explicitamente. Testes removidos para refletir o código fonte real.
   });
 });
-
+

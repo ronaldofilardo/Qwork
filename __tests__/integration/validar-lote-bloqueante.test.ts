@@ -53,8 +53,8 @@ describe('validar_lote_pre_laudo - bloqueante logic', () => {
 
   it('marca bloqueante quando nao ha avaliacoes concluidas', async () => {
     const lote = await query(
-      `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,$3,'Lote Val','ativo',$4,'completo',1) RETURNING id`,
-      [`VAL-${Date.now()}`, clinicaId, empresaId, funcionarioCpf]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,'ativo',$3,'completo',1) RETURNING id`,
+      [clinicaId, empresaId, funcionarioCpf]
     );
     loteId = lote.rows[0].id;
 
@@ -110,8 +110,8 @@ describe('validar_lote_pre_laudo - bloqueante logic', () => {
   it('nao marca bloqueante quando ha apenas warnings (inativacoes)', async () => {
     // criar lote com avaliações, algumas inativadas mas com concluidas > 0 e sem funcionarios pendentes
     const lote = await query(
-      `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,$3,'Lote Val2','ativo',$4,'completo',2) RETURNING id`,
-      [`VAL2-${Date.now()}`, clinicaId, empresaId, funcionarioCpf]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,'ativo',$3,'completo',2) RETURNING id`,
+      [clinicaId, empresaId, funcionarioCpf]
     );
     const lote2 = lote.rows[0].id;
 

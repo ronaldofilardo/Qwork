@@ -22,7 +22,7 @@ WHERE cs.cpf IN ('87545772920', '16543102047');
 \echo '[2] Lotes criados (liberado_por):'
 SELECT 
     la.id,
-    la.codigo,
+    
     la.titulo,
     la.status,
     la.liberado_por,
@@ -35,7 +35,7 @@ FROM lotes_avaliacao la
 LEFT JOIN contratantes c ON la.contratante_id = c.id
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.liberado_por IN ('87545772920', '16543102047')
-GROUP BY la.id, la.codigo, la.titulo, la.status, la.liberado_por, la.contratante_id, c.nome, la.clinica_id, la.empresa_id
+GROUP BY la.id,  la.titulo, la.status, la.liberado_por, la.contratante_id, c.nome, la.clinica_id, la.empresa_id
 ORDER BY la.id DESC;
 
 -- 3. Verificar laudos emitidos por esses CPFs
@@ -43,8 +43,7 @@ ORDER BY la.id DESC;
 \echo '[3] Laudos emitidos (emissor_cpf):'
 SELECT 
     l.id,
-    l.lote_id,
-    la.codigo as lote_codigo,
+    l.lote_idas lote_codigo,
     l.status,
     l.emissor_cpf,
     l.emitido_em,
@@ -61,8 +60,7 @@ ORDER BY l.id DESC;
 \echo '[4] Avaliações nos lotes desses gestores:'
 SELECT 
     a.id,
-    a.lote_id,
-    la.codigo as lote_codigo,
+    a.lote_idas lote_codigo,
     a.funcionario_cpf,
     a.status,
     COUNT(r.id) as total_respostas
@@ -70,7 +68,7 @@ FROM avaliacoes a
 JOIN lotes_avaliacao la ON a.lote_id = la.id
 LEFT JOIN respostas r ON r.avaliacao_id = a.id
 WHERE la.liberado_por IN ('87545772920', '16543102047')
-GROUP BY a.id, a.lote_id, la.codigo, a.funcionario_cpf, a.status
+GROUP BY a.id, a.lote_id,  a.funcionario_cpf, a.status
 ORDER BY a.lote_id DESC, a.id
 LIMIT 20;
 
@@ -79,7 +77,7 @@ LIMIT 20;
 \echo '[5] Lotes sem contratante_id que deveriam ter:'
 SELECT 
     la.id,
-    la.codigo,
+    
     la.liberado_por,
     la.contratante_id,
     cs.contratante_id as gestor_contratante_id

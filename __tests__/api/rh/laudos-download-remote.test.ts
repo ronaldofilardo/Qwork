@@ -40,7 +40,6 @@ describe('/api/rh/laudos/[laudoId]/download remote', () => {
         {
           id: 30,
           lote_id: 30,
-          codigo: '008-280126',
           titulo: 'Lote 8',
           clinica_id: null,
         },
@@ -76,7 +75,6 @@ describe('/api/rh/laudos/[laudoId]/download remote', () => {
         {
           id: 30,
           lote_id: 30,
-          codigo: '008-280126',
           titulo: 'Lote 8',
           clinica_id: null,
         },
@@ -109,7 +107,6 @@ describe('/api/rh/laudos/[laudoId]/download remote', () => {
         {
           id: 15,
           lote_id: 31,
-          codigo: '009-280126',
           titulo: 'Lote 9',
           clinica_id: null,
         },

@@ -49,16 +49,25 @@ export interface EmpresaCliente {
  */
 export interface LoteAvaliacao {
   id: number;
-  titulo: string;
   descricao?: string;
   tipo: 'completo' | 'operacional' | 'gestao';
-  status: 'ativo' | 'cancelado' | 'finalizado' | 'concluido';
+  status:
+    | 'rascunho'
+    | 'ativo'
+    | 'concluido'
+    | 'emissao_solicitada'
+    | 'emissao_em_andamento'
+    | 'laudo_emitido'
+    | 'cancelado'
+    | 'finalizado';
   liberado_em: string;
   liberado_por: string;
   empresa_id: number;
   clinica_id: number;
   laudo_enviado_em?: string;
   emitido_em?: string;
+  // Hash SHA-256 do PDF gerado para o lote (quando aplicável)
+  hash_pdf?: string | null;
 }
 
 /**
@@ -124,6 +133,7 @@ export interface LoteInfo extends Omit<LoteAvaliacao, 'liberado_por'> {
   laudo_status?: string | null;
   laudo_emitido_em?: string | null;
   laudo_enviado_em?: string | null;
+  hash_pdf?: string | null;
   emissao_solicitada?: boolean;
   emissao_solicitado_em?: string | null;
   tem_laudo?: boolean;

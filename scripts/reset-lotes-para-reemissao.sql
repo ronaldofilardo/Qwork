@@ -64,7 +64,7 @@ COMMIT;
 -- Verificar resultado
 SELECT 
   la.id as lote_id,
-  la.codigo,
+  
   la.status as lote_status,
   fe.id as fila_id,
   fe.solicitado_em,

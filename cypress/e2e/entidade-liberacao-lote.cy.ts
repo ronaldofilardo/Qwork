@@ -14,7 +14,6 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
   const mockLotes = [
     {
       id: 1,
-      codigo: 'ENT-001',
       titulo: 'Lote Teste 1',
       tipo: 'completo',
       status: 'enviado',
@@ -25,7 +24,6 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
     },
     {
       id: 2,
-      codigo: 'ENT-002',
       titulo: 'Lote Teste 2',
       tipo: 'completo',
       status: 'criado',
@@ -188,7 +186,6 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
             message: 'Lote 1 (001-010126) liberado com sucesso!',
             lote: {
               id: 1,
-              codigo: '001-010126',
               numero_ordem: 1,
               titulo: 'Lote 1 - 001-010126',
               tipo: 'completo',
@@ -225,7 +222,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
           statusCode: 200,
           body: {
             success: true,
-            lote: { id: 1, codigo: '001', numero_ordem: 1 },
+            lote: { id: 1, numero_ordem: 1 },
           },
         });
       }).as('liberarLoteComDetalhes');
@@ -244,7 +241,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
           statusCode: 200,
           body: {
             success: true,
-            lote: { id: 1, codigo: '001', numero_ordem: 1 },
+            lote: { id: 1, numero_ordem: 1 },
           },
         });
       }).as('liberarLoteComFiltro');
@@ -266,7 +263,6 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
               empresaNome: 'Empresa Teste',
               created: true,
               loteId: 1,
-              codigo: '001-010126',
               numero_ordem: 1,
               avaliacoesCriadas: 5,
               funcionariosConsiderados: 5,
@@ -320,7 +316,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
         statusCode: 200,
         body: {
           success: true,
-          lote: { id: 1, codigo: '001-010126' },
+          lote: { id: 1 },
         },
       }).as('liberarLoteNavegacao');
 
@@ -368,7 +364,6 @@ describe('Interação com Cards de Lote - Entidade', () => {
   const mockLotes = [
     {
       id: 1,
-      codigo: 'ENT-001',
       titulo: 'Lote Teste 1',
       tipo: 'completo',
       status: 'enviado',
@@ -379,7 +374,6 @@ describe('Interação com Cards de Lote - Entidade', () => {
     },
     {
       id: 2,
-      codigo: 'ENT-002',
       titulo: 'Lote Teste 2',
       tipo: 'operacional',
       status: 'criado',

@@ -32,7 +32,7 @@ export interface DadosGeraisEmpresa {
     operacional: number;
     gestao: number;
   };
-  loteCodigo: string;
+  // loteCodigo removido - usar apenas lote.id (alinhado com laudo.id)
 }
 
 export interface InterpretacaoRecomendacoes {

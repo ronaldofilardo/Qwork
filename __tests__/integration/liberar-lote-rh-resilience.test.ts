@@ -166,8 +166,8 @@ describe('Integration: Liberar lote RH - resistência à corrida (resilience)', 
 
     // Inserir lote com id 13 para simular id já ocupado
     await query(
-      `INSERT INTO lotes_avaliacao (id, codigo, clinica_id, empresa_id, titulo, descricao, tipo, status, liberado_por, numero_ordem, liberado_em)
-      VALUES ($1, 'LOTE-RESILIENCE-13', $2, $3, 'Lote Resilience', 'Lote para teste de resiliência', 'completo', 'ativo', '99999999999', 1, NOW())
+      `INSERT INTO lotes_avaliacao (id, clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem, liberado_em)
+      VALUES ($1, $2, $3, 'Lote para teste de resiliência', 'completo', 'ativo', '99999999999', 1, NOW())
       ON CONFLICT (id) DO NOTHING`,
       [13, clinicaId, empresaId]
     );

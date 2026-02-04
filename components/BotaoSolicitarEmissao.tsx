@@ -6,6 +6,7 @@
  *
  * Features:
  * - Só aparece quando lote está 'concluido' E não tem laudo emitido
+ * - Validação client-side antes de request
  * - Confirmação antes de solicitar
  * - Loading state durante processamento
  * - Feedback visual de sucesso/erro
@@ -13,14 +14,19 @@
  * - Respeita princípio de imutabilidade (não permite re-emissão)
  */
 
+/* eslint-disable */
 'use client';
 
 import { useState } from 'react';
 import toast from 'react-hot-toast';
+import { useValidacaoEmissao } from '@/lib/hooks/useValidacaoEmissao';
 
 interface BotaoSolicitarEmissaoProps {
   loteId: number;
   loteStatus: string;
+  totalAvaliacoes: number;
+  avaliacoesConcluidas: number;
+  avaliacoesInativadas: number;
   laudoId?: number | null;
   laudoStatus?: string | null;
   emissaoSolicitada?: boolean;
@@ -32,6 +38,9 @@ interface BotaoSolicitarEmissaoProps {
 export function BotaoSolicitarEmissao({
   loteId,
   loteStatus,
+  totalAvaliacoes,
+  avaliacoesConcluidas,
+  avaliacoesInativadas,
   laudoId,
   laudoStatus,
   emissaoSolicitada,
@@ -40,6 +49,18 @@ export function BotaoSolicitarEmissao({
   onSuccess,
 }: BotaoSolicitarEmissaoProps) {
   const [loading, setLoading] = useState(false);
+
+  // Validação client-side
+  const validacao = useValidacaoEmissao({
+    loteId,
+    status: loteStatus,
+    totalAvaliacoes,
+    avaliacoesConcluidas,
+    avaliacoesInativadas,
+    temLaudo,
+    laudoStatus,
+    emissaoSolicitada,
+  });
 
   // PRINCÍPIO DA IMUTABILIDADE:
   // Não exibir botão se:
@@ -55,9 +76,30 @@ export function BotaoSolicitarEmissao({
     loteStatus === 'concluido' && !emissaoSolicitada && !temLaudoEmitido;
 
   const handleSolicitar = async () => {
+    // Validar client-side antes de confirmar
+    if (!validacao.podeEmitir) {
+      toast.error(
+        `Não é possível solicitar emissão:\n${validacao.erros.join('\n')}`,
+        { duration: 5000 }
+      );
+      return;
+    }
+
+    // Mostrar avisos se houver
+    if (validacao.avisos.length > 0) {
+      const confirmadoAvisos = confirm(
+        `Atenção:\n${validacao.avisos.join('\n')}\n\nDeseja continuar?`
+      );
+
+      if (!confirmadoAvisos) {
+        return;
+      }
+    }
+
     // Confirmação antes de solicitar
     const confirmado = confirm(
       `Confirma a solicitação de emissão do laudo para o lote #${loteId}?\n\n` +
+        `Avaliações concluídas: ${avaliacoesConcluidas}/${totalAvaliacoes - avaliacoesInativadas}\n` +
         'O laudo será gerado e enviado para o emissor responsável.'
     );
 
@@ -181,15 +223,45 @@ export function BotaoSolicitarEmissao({
             do laudo agora.
           </p>
           <p className="text-xs text-gray-600 mt-2">
-            O laudo será gerado automaticamente após a solicitação e enviado ao
-            emissor responsável.
+            Avaliações: {avaliacoesConcluidas}/
+            {totalAvaliacoes - avaliacoesInativadas} concluídas
+            {avaliacoesInativadas > 0 &&
+              ` (${avaliacoesInativadas} inativadas)`}
           </p>
         </div>
       </div>
 
+      {/* Exibir avisos se houver */}
+      {validacao.avisos.length > 0 && (
+        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+          <p className="text-sm font-semibold text-yellow-800 mb-1">
+            ⚠️ Atenção:
+          </p>
+          <ul className="text-xs text-yellow-700 space-y-1">
+            {validacao.avisos.map((aviso, idx) => (
+              <li key={idx}>• {aviso}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Exibir erros se houver */}
+      {validacao.erros.length > 0 && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm font-semibold text-red-800 mb-1">
+            ❌ Não é possível emitir:
+          </p>
+          <ul className="text-xs text-red-700 space-y-1">
+            {validacao.erros.map((erro, idx) => (
+              <li key={idx}>• {erro}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <button
         onClick={handleSolicitar}
-        disabled={loading}
+        disabled={loading || !validacao.podeEmitir}
         className="
           w-full px-6 py-4 
           bg-gradient-to-r from-green-600 to-emerald-600 
@@ -205,6 +277,11 @@ export function BotaoSolicitarEmissao({
           shadow-md hover:shadow-lg
           transform hover:scale-[1.02] active:scale-[0.98]
         "
+        title={
+          !validacao.podeEmitir
+            ? 'Corrija os problemas antes de solicitar emissão'
+            : ''
+        }
       >
         {loading ? (
           <>

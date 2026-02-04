@@ -30,6 +30,21 @@ declare module 'jspdf' {
   }
 }
 
+// Tipagem local utilizada no relatório (similar ao implementado para entidade)
+interface _GrupoRelatorio {
+  id: number;
+  titulo: string;
+  dominio: string;
+  media: string;
+  classificacao: string;
+  corClassificacao: string;
+  respostas: Array<{
+    item: string;
+    valor: number;
+    texto: string;
+  }>;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await requireRole('rh');
@@ -63,7 +78,8 @@ export async function GET(request: NextRequest) {
         f.matricula,
         ec.nome as empresa_nome,
         la.id as lote_id,
-        la.titulo as lote_titulo
+        la.descricao as lote_descricao,
+        la.hash_pdf as lote_hash_pdf
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       JOIN empresas_clientes ec ON f.empresa_id = ec.id
@@ -117,7 +133,8 @@ export async function GET(request: NextRequest) {
       },
       lote: {
         id: parseInt(loteId),
-        titulo: avaliacao.lote_titulo,
+        descricao: avaliacao.lote_descricao,
+        hash_pdf: (avaliacao as any).lote_hash_pdf || null,
       },
       envio: avaliacao.envio,
       grupos: gruposProcessados.sort((a, b) => a.id - b.id),
@@ -173,8 +190,21 @@ export async function GET(request: NextRequest) {
     doc.setFont('helvetica', 'normal');
     doc.text(`Lote #${dadosRelatorio.lote.id}`, 14, yPos);
     yPos += 5;
-    doc.text(`Título: ${dadosRelatorio.lote.titulo}`, 14, yPos);
+    doc.text(
+      `Lote: ${dadosRelatorio.lote.descricao || dadosRelatorio.lote.id}`,
+      14,
+      yPos
+    );
     yPos += 5;
+
+    // Inserir hash do lote (quando disponível)
+    if (dadosRelatorio.lote.hash_pdf) {
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Hash: ${dadosRelatorio.lote.hash_pdf}`, 14, yPos);
+      yPos += 6;
+    }
+
     const dataEnvio = dadosRelatorio.envio
       ? new Date(dadosRelatorio.envio).toLocaleString('pt-BR')
       : '-';
@@ -237,10 +267,7 @@ export async function GET(request: NextRequest) {
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
     // Retornar PDF
-    const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(
-      /\s+/g,
-      '-'
-    )}-${avaliacao.lote_codigo}.pdf`;
+    const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(/\s+/g, '-')}-lote-${dadosRelatorio.lote.id}.pdf`;
 
     return new NextResponse(pdfBuffer, {
       headers: {

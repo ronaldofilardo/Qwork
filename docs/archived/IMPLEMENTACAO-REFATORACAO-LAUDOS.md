@@ -216,7 +216,7 @@ node scripts/processar-fila-emissao.ts
 ```typescript
 {
   loteId: number;
-  loteCodigo: string;
+  // loteCodigo: removido
   onSuccess?: () => void;
   onClose?: () => void;
 }
@@ -264,7 +264,7 @@ node scripts/processar-fila-emissao.ts
 {
   lote: {
     id: number;
-    codigo: string;
+    // codigo: removido
     status: 'ativo' | 'concluido' | 'finalizado' | 'cancelado';
     processamento_em?: string | null;
   };

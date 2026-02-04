@@ -63,7 +63,7 @@ AND (hash_pdf IS NULL OR hash_pdf <> 'CCF0EF2ACB403E14801366373373439A6C217DD3EC
 
 -- 3) Auditoria: registrar quem e por que (alterar user_cpf se necessário)
 INSERT INTO audit_logs (action, resource, resource_id, new_data, user_cpf, user_perfil, created_at)
-SELECT 'hash_injetado', 'laudos', l.id::text, jsonb_build_object('lote_codigo', la.codigo, 'hash', l.hash_pdf, 'motivo', 'injeção manual solicitada'), '00000000000', 'admin', NOW()
+SELECT 'hash_injetado', 'laudos', l.id::text, jsonb_build_object('lote_codigo',  'hash', l.hash_pdf, 'motivo', 'injeção manual solicitada'), '00000000000', 'admin', NOW()
 FROM laudos l
 JOIN lotes_avaliacao la ON la.id = l.lote_id
 WHERE la.codigo IN ('002-070126','001-070126')
@@ -77,7 +77,7 @@ WHERE la.codigo IN ('002-070126','001-070126')
   );
 
 -- 4) Verificação: retornar as linhas afetadas
-SELECT l.id, l.lote_id, la.codigo, l.hash_pdf
+SELECT l.id, l.lote_id,  l.hash_pdf
 FROM laudos l
 JOIN lotes_avaliacao la ON la.id = l.lote_id
 WHERE la.codigo IN ('002-070126','001-070126');

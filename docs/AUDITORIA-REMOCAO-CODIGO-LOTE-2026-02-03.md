@@ -179,7 +179,7 @@ WHERE proname = 'gerar_codigo_lote';
    ```ts
    export interface LoteAvaliacao {
      id: number;
-     // codigo: string; ❌ REMOVER
+     // // codigo: removido ❌ REMOVER
      titulo: string;
      // ...
    }
@@ -208,7 +208,6 @@ WHERE proname = 'gerar_codigo_lote';
 // ANTES:
 const mockLote = {
   id: 1,
-  codigo: 'LOTE-001',
   titulo: 'Teste',
 };
 

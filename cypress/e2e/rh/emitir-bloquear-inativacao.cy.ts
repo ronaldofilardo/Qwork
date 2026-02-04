@@ -16,7 +16,6 @@ describe('RH - Emissão e Bloqueio de Inativação (E2E)', () => {
         lotes: [
           {
             id: 1,
-            codigo: 'LOT-E2E-EMITIDO',
             titulo: 'Lote Emitido E2E',
             tipo: 'completo',
             status: 'emitido',
@@ -33,7 +32,6 @@ describe('RH - Emissão e Bloqueio de Inativação (E2E)', () => {
         success: true,
         lote: {
           id: 1,
-          codigo: 'LOT-E2E-EMITIDO',
           titulo: 'Lote Emitido E2E',
           tipo: 'completo',
           status: 'emitido',

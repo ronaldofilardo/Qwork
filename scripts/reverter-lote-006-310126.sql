@@ -21,11 +21,10 @@ SELECT
     l.emitido_em,
     l.enviado_em,
     l.emissor_cpf,
-    la.id as lote_id,
-    la.codigo as lote_codigo
+    la.id as lote_idas lote_codigo
 FROM laudos l
 JOIN lotes_avaliacao la ON l.lote_id = la.id
-WHERE la.codigo = '006-310126';
+WHERE la.id = 0 -- FIXME: substituir por ID correto;
 
 -- 3. Deletar o laudo (se existir)
 -- CUIDADO: Isso irá deletar permanentemente o laudo
@@ -75,13 +74,13 @@ AND NOT EXISTS (
 -- 6. Verificar resultado final
 SELECT 
     la.id,
-    la.codigo,
+    
     la.status,
     COUNT(l.id) as laudos_count
 FROM lotes_avaliacao la
 LEFT JOIN laudos l ON l.lote_id = la.id
-WHERE la.codigo = '006-310126'
-GROUP BY la.id, la.codigo, la.status;
+WHERE la.id = 0 -- FIXME: substituir por ID correto
+GROUP BY la.id,  la.status;
 
 -- Se tudo estiver correto, execute: COMMIT;
 -- Se houver problemas, execute: ROLLBACK;

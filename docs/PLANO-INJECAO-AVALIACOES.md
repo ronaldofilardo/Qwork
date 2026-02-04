@@ -253,7 +253,7 @@ node scripts/injetar-avaliacoes-aleatorias.mjs
 ```sql
 SELECT
   la.id,
-  la.codigo,
+  
   la.titulo,
   la.status,
   la.numero_ordem,

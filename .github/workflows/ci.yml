@@ -1,0 +1,344 @@
+name: CI/CD Pipeline - Quality Gates
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+
+jobs:
+  # ============================================================
+  # JOB 1: Linting e Type-checking
+  # ============================================================
+  lint-and-typecheck:
+    name: 🔍 Lint & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm lint:ci
+        continue-on-error: false
+
+      - name: Run TypeScript type-check
+        run: pnpm type-check
+
+      - name: Check forbidden patterns
+        run: pnpm quality:tests
+
+  # ============================================================
+  # JOB 2: Testes Unitários
+  # ============================================================
+  unit-tests:
+    name: 🧪 Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nr-bps_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+        run: |
+          pnpm db:seed:test || echo "Seed failed, continuing..."
+
+      - name: Run unit tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+          NODE_ENV: test
+        run: pnpm test:unit
+        continue-on-error: false
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ./coverage/lcov.info
+          flags: unit
+          name: unit-tests
+
+  # ============================================================
+  # JOB 3: Testes de Integração
+  # ============================================================
+  integration-tests:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nr-bps_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+        run: |
+          pnpm db:seed:test || echo "Seed failed, continuing..."
+
+      - name: Run integration tests
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+          NODE_ENV: test
+        run: pnpm test -- __tests__/integration --runInBand
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: integration-test-results
+          path: |
+            __tests__/integration/*.log
+            logs/
+
+  # ============================================================
+  # JOB 4: E2E Tests (Cypress) - Fluxos Críticos
+  # ============================================================
+  e2e-critical-flows:
+    name: 🎯 E2E Critical Flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nr-bps_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup test database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+        run: |
+          pnpm db:seed:test || echo "Seed failed, continuing..."
+
+      - name: Run Cypress E2E - Fluxo Cadastro Entidade/Senha
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+          NODE_ENV: test
+        run: |
+          pnpm cypress run --spec "cypress/e2e/fluxo-cadastro-entidade-senha.cy.ts"
+
+      - name: Run Cypress E2E - Fluxo Funcionário/Lote/Emissão
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+          NODE_ENV: test
+        run: |
+          pnpm cypress run --spec "cypress/e2e/fluxo-funcionario-lote-emissao.cy.ts"
+
+      - name: Upload Cypress screenshots
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v3
+        if: failure()
+        with:
+          name: cypress-videos
+          path: cypress/videos
+
+  # ============================================================
+  # JOB 5: Build Validation
+  # ============================================================
+  build:
+    name: 🏗️ Build & Deploy Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [lint-and-typecheck, unit-tests]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build project
+        env:
+          NODE_ENV: production
+        run: pnpm build:prod
+
+      - name: Check build output
+        run: |
+          if [ ! -d ".next" ]; then
+            echo "❌ Build failed - .next directory not found"
+            exit 1
+          fi
+          echo "✅ Build successful"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-output
+          path: .next/
+          retention-days: 7
+
+  # ============================================================
+  # JOB 6: Quality Report
+  # ============================================================
+  quality-report:
+    name: 📊 Quality Report
+    runs-on: ubuntu-latest
+    needs:
+      [
+        lint-and-typecheck,
+        unit-tests,
+        integration-tests,
+        e2e-critical-flows,
+        build,
+      ]
+    if: always()
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate quality summary
+        run: |
+          echo "## 🎯 Quality Gates Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Lint & Type Check | ${{ needs.lint-and-typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Critical Flows | ${{ needs.e2e-critical-flows.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check if all jobs passed
+        if: |
+          needs.lint-and-typecheck.result != 'success' ||
+          needs.unit-tests.result != 'success' ||
+          needs.integration-tests.result != 'success' ||
+          needs.e2e-critical-flows.result != 'success' ||
+          needs.build.result != 'success'
+        run: |
+          echo "❌ One or more quality gates failed"
+          exit 1
+
+      - name: Success notification
+        if: success()
+        run: |
+          echo "✅ All quality gates passed!"
+          echo "🚀 Ready for deployment"

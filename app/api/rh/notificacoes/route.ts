@@ -39,8 +39,6 @@ export const GET = async (_req: Request) => {
         a.id as id_referencia,
         a.id as avaliacao_id,
         la.id as lote_id,
-        la.codigo,
-        la.titulo,
         ec.nome as empresa_nome,
         a.envio as data_evento,
         COUNT(*) OVER () as total_count
@@ -58,8 +56,6 @@ export const GET = async (_req: Request) => {
         l.id as id_referencia,
         NULL as avaliacao_id,
         l.lote_id,
-        la.codigo,
-        la.titulo,
         ec.nome as empresa_nome,
         l.enviado_em as data_evento,
         COUNT(*) OVER () as total_count
@@ -80,9 +76,7 @@ export const GET = async (_req: Request) => {
         n.id as id_referencia,
         NULL as avaliacao_id,
         NULL as lote_id,
-        NULL as codigo,
-        'Laudo Emitido Automaticamente' as titulo,
-        NULL as empresa_nome,
+        'Sistema' as empresa_nome,
         n.criado_em as data_evento,
         COUNT(*) OVER () as total_count
       FROM notificacoes n
@@ -106,15 +100,13 @@ export const GET = async (_req: Request) => {
       id: `${notif.tipo}_${notif.id_referencia}`,
       tipo: notif.tipo,
       lote_id: notif.lote_id,
-      codigo: notif.codigo,
-      titulo: notif.titulo,
       empresa_nome: notif.empresa_nome,
       data_evento: notif.data_evento,
       mensagem:
         notif.tipo === 'avaliacao_concluida'
-          ? `Nova avaliação concluída no lote "${notif.titulo}"`
+          ? `Nova avaliação concluída no lote ID: ${notif.lote_id}`
           : notif.tipo === 'laudo_enviado'
-            ? `Laudo enviado para o lote "${notif.titulo}"`
+            ? `Laudo enviado para o lote ID: ${notif.lote_id}`
             : `Laudo foi emitido e enviado automaticamente.`,
     }));
 

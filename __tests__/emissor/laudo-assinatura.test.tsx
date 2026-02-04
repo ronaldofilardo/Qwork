@@ -70,7 +70,6 @@ describe.skip('Página do Laudo do Emissor - Assinatura gov.br', () => {
 
   const mockLote = {
     id: 123,
-    codigo: 'LOTE-001',
     empresa_nome: 'Empresa Teste',
     clinica_nome: 'Clínica Teste',
   };

@@ -985,7 +985,7 @@ import toast from 'react-hot-toast';
 
 interface Props {
   loteId: number;
-  loteCodigo: string;
+  // loteCodigo: removido
   loteStatus: string;
   onSuccess?: () => void;
 }

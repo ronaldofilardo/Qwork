@@ -93,7 +93,7 @@ describe('/api/rh/funcionarios/status', () => {
           rowCount: 2,
         }) // UPDATE avaliacoes retorna avaliações inativadas
         .mockResolvedValueOnce({
-          rows: [{ id: 1, status: 'ativo', codigo: 'LOTE-001' }],
+          rows: [{ id: 1, status: 'ativo' }],
           rowCount: 1,
         }) // lotes afetados
         .mockResolvedValueOnce({

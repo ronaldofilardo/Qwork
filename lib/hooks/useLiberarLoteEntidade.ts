@@ -17,7 +17,6 @@ export interface LoteEntidadeResponse {
 }
 
 export interface LiberarLoteEntidadeParams {
-  titulo?: string;
   descricao?: string;
   tipo?: 'completo' | 'operacional' | 'gestao';
   dataFiltro?: string;

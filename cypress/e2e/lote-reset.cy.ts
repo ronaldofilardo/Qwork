@@ -43,7 +43,7 @@ describe('Lote — Resetar avaliação (fluxo)', () => {
     // Preparar duas respostas sequenciais: antes -> 'concluida', depois -> 'iniciada'
     const initial = {
       success: true,
-      lote: { id: 4, codigo: '004-010126', titulo: 'Lote 4', status: 'ativo' },
+      lote: { id: 4, titulo: 'Lote 4', status: 'ativo' },
       estatisticas: {},
       funcionarios: [
         {

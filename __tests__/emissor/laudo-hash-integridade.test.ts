@@ -16,9 +16,6 @@ describe('Integridade do Hash SHA-256 do Laudo', () => {
   let funcionarioCpf: string;
   // Usado pelo teste de status para limpeza pós-teste
   let testAvaliacaoId: number | undefined;
-  // Códigos de lote únicos para isolamento entre execuções
-  let loteCodigo1: string;
-  let loteCodigo2: string;
 
   beforeAll(async () => {
     // Definir contexto de sessão padrão para operações que exigem app.current_user_*
@@ -102,10 +99,10 @@ describe('Integridade do Hash SHA-256 do Laudo', () => {
 
     // Criar lote inicialmente como 'rascunho' (marcaremos como 'concluido' após concluir a avaliação)
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, empresa_id, clinica_id, tipo, status, liberado_por)
-       VALUES ($1, 'Lote Teste Hash', $2, $3, 'completo', 'rascunho', $4)
+      `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status, liberado_por)
+       VALUES ($1, $2, 'completo', 'rascunho', $3)
        RETURNING id`,
-      [loteCodigo1, empresaId, clinicaId, emissorCpf],
+      [empresaId, clinicaId, emissorCpf],
       sysSession
     );
     loteId = loteResult.rows[0].id;

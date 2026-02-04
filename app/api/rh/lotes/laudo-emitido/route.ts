@@ -100,8 +100,6 @@ export const GET = async (req: Request) => {
       `
       SELECT
         la.id,
-        la.codigo,
-        la.titulo,
         la.descricao,
         la.tipo,
         la.status,
@@ -124,7 +122,7 @@ export const GET = async (req: Request) => {
       LEFT JOIN laudos l ON la.id = l.id
       LEFT JOIN funcionarios fe ON l.emissor_cpf = fe.cpf
       WHERE la.empresa_id = $1 AND l.status IN ('emitido', 'enviado')
-      GROUP BY la.id, la.codigo, la.titulo, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, la.finalizado_em, f.nome, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, fe.nome
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, la.finalizado_em, f.nome, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, fe.nome
       ORDER BY l.enviado_em DESC, l.emitido_em DESC
       LIMIT $2
     `,
@@ -133,7 +131,6 @@ export const GET = async (req: Request) => {
 
     const lotes = lotesQuery.rows.map((lote: any) => ({
       id: lote.id,
-      titulo: lote.titulo,
       tipo: lote.tipo,
       status: lote.status,
       liberado_em: lote.liberado_em,

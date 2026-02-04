@@ -24,7 +24,6 @@ describe('useLiberarLote Hook', () => {
       message: 'Lote liberado com sucesso',
       lote: {
         id: 1,
-        codigo: '001-010126',
         numero_ordem: 1,
         titulo: 'Lote 1',
         tipo: 'completo',
@@ -154,7 +153,6 @@ describe('useLiberarLote Hook', () => {
       success: true,
       lote: {
         id: 1,
-        codigo: '001-010126',
         numero_ordem: 1,
         titulo: 'Lote 1',
         tipo: 'completo',
@@ -247,4 +245,4 @@ describe('useLiberarLote Hook', () => {
     });
   });
 });
-
+

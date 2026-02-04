@@ -37,7 +37,6 @@ describe('Indicadores Visuais para Avaliações Inativadas - Dashboard Empresa',
       const mockLotes = [
         {
           id: 1,
-          codigo: '001-TEST',
           titulo: 'Lote Teste',
           total_avaliacoes: 10,
           avaliacoes_concluidas: 8,
@@ -107,7 +106,6 @@ describe('Indicadores Visuais para Avaliações Inativadas - Dashboard Empresa',
       const mockLotes = [
         {
           id: 1,
-          codigo: '001-TEST',
           titulo: 'Lote Teste',
           total_avaliacoes: 10,
           avaliacoes_concluidas: 10,
@@ -179,7 +177,6 @@ describe('Indicadores Visuais para Avaliações Inativadas - Dashboard Empresa',
       const mockLotes = [
         {
           id: 1,
-          codigo: '001-TEST',
           titulo: 'Lote Teste',
           total_avaliacoes: 10,
           avaliacoes_concluidas: 7,
@@ -255,7 +252,6 @@ describe('Indicadores Visuais para Avaliações Inativadas - Dashboard Empresa',
       const mockLotes = [
         {
           id: 1,
-          codigo: '001-TEST',
           titulo: 'Lote Teste',
           total_avaliacoes: 15,
           avaliacoes_concluidas: 10,
@@ -329,7 +325,6 @@ describe('Indicadores Visuais para Avaliações Inativadas - Dashboard Empresa',
       const mockLotes = [
         {
           id: 1,
-          codigo: '001-TEST',
           titulo: 'Lote Teste',
           total_avaliacoes: 10,
           avaliacoes_concluidas: 8,
@@ -399,7 +394,6 @@ describe('Indicadores Visuais para Avaliações Inativadas - Dashboard Empresa',
       const mockLotes = [
         {
           id: 1,
-          codigo: '001-TEST',
           titulo: 'Lote Teste',
           total_avaliacoes: 10,
           avaliacoes_concluidas: 6,

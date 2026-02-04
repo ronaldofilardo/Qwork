@@ -136,7 +136,10 @@ export async function GET(
     );
 
     // Gerar HTML do laudo
-    const htmlContent = gerarHTMLLaudoCompleto(laudoPadronizado);
+    const htmlContent = gerarHTMLLaudoCompleto({
+      loteId: parseInt(loteId),
+      ...laudoPadronizado,
+    });
 
     // Retornar HTML com headers apropriados
     return new NextResponse(htmlContent, {

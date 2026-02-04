@@ -8,39 +8,38 @@
  * 4. Compatibilidade com dados antigos
  */
 
-import { NextRequest } from 'next/server'
-import { GET } from '@/app/api/emissor/lotes/route'
-import { requireRole } from '@/lib/session'
-import { query } from '@/lib/db'
+import { NextRequest } from 'next/server';
+import { GET } from '@/app/api/emissor/lotes/route';
+import { requireRole } from '@/lib/session';
+import { query } from '@/lib/db';
 
-jest.mock('@/lib/session')
-jest.mock('@/lib/db')
+jest.mock('@/lib/session');
+jest.mock('@/lib/db');
 
-const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>
-const mockQuery = query as jest.MockedFunction<typeof query>
+const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
+const mockQuery = query as jest.MockedFunction<typeof query>;
 
 describe('/api/emissor/lotes - Remoção de Hash', () => {
-  let mockRequest: Partial<NextRequest>
+  let mockRequest: Partial<NextRequest>;
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.clearAllMocks();
     mockRequireRole.mockResolvedValue({
       cpf: '99999999999',
       nome: 'Emissor',
       perfil: 'emissor',
-    })
+    });
     mockRequest = {
       url: 'http://localhost:3000/api/emissor/lotes',
-    }
-  })
+    };
+  });
 
   it('deve funcionar sem coluna hash_arquivo no SELECT', async () => {
     mockQuery.mockResolvedValue({
       rows: [
         {
           id: 1,
-          codigo: '001-291125',
-          titulo: 'Lote Teste',
+          // codigo e titulo removidos - usar apenas ID
           tipo: 'completo',
           liberado_em: '2025-11-29T10:00:00Z',
           empresa_nome: 'Empresa Teste',
@@ -55,24 +54,23 @@ describe('/api/emissor/lotes - Remoção de Hash', () => {
         },
       ],
       rowCount: 1,
-    } as any)
+    } as any);
 
-    const response = await GET(mockRequest as NextRequest)
-    const data = await response.json()
+    const response = await GET(mockRequest as NextRequest);
+    const data = await response.json();
 
-    expect(response.status).toBe(200)
-    expect(data.success).toBe(true)
-    expect(data.lotes[0]).not.toHaveProperty('hash_arquivo')
-    expect(data.lotes[0].laudo).not.toHaveProperty('hash_arquivo')
-  })
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.lotes[0]).not.toHaveProperty('hash_arquivo');
+    expect(data.lotes[0].laudo).not.toHaveProperty('hash_arquivo');
+  });
 
   it('deve funcionar com dados que não têm hash_arquivo', async () => {
     mockQuery.mockResolvedValue({
       rows: [
         {
           id: 1,
-          codigo: '001-291125',
-          titulo: 'Lote Antigo',
+          // codigo e titulo removidos
           tipo: 'completo',
           liberado_em: '2025-11-29T10:00:00Z',
           empresa_nome: 'Empresa Teste',
@@ -87,23 +85,22 @@ describe('/api/emissor/lotes - Remoção de Hash', () => {
         },
       ],
       rowCount: 1,
-    } as any)
+    } as any);
 
-    const response = await GET(mockRequest as NextRequest)
-    const data = await response.json()
+    const response = await GET(mockRequest as NextRequest);
+    const data = await response.json();
 
-    expect(data.lotes[0].laudo.status).toBe('emitido')
-    expect(data.lotes[0].laudo.emitido_em).toBe('2025-11-30T10:00:00Z')
-    expect(data.lotes[0].laudo).not.toHaveProperty('hash_arquivo')
-  })
+    expect(data.lotes[0].laudo.status).toBe('emitido');
+    expect(data.lotes[0].laudo.emitido_em).toBe('2025-11-30T10:00:00Z');
+    expect(data.lotes[0].laudo).not.toHaveProperty('hash_arquivo');
+  });
 
   it('deve manter compatibilidade com estrutura de resposta', async () => {
     mockQuery.mockResolvedValue({
       rows: [
         {
           id: 1,
-          codigo: '001-291125',
-          titulo: 'Lote Completo',
+          // codigo e titulo removidos
           tipo: 'completo',
           liberado_em: '2025-11-29T10:00:00Z',
           empresa_nome: 'Empresa Teste',
@@ -118,27 +115,28 @@ describe('/api/emissor/lotes - Remoção de Hash', () => {
         },
       ],
       rowCount: 1,
-    } as any)
+    } as any);
 
-    const response = await GET(mockRequest as NextRequest)
-    const data = await response.json()
+    const response = await GET(mockRequest as NextRequest);
+    const data = await response.json();
 
-    expect(data.lotes[0]).toHaveProperty('id')
-    expect(data.lotes[0]).toHaveProperty('codigo')
-    expect(data.lotes[0]).toHaveProperty('titulo')
-    expect(data.lotes[0]).toHaveProperty('empresa_nome')
-    expect(data.lotes[0]).toHaveProperty('clinica_nome')
-    expect(data.lotes[0]).toHaveProperty('liberado_em')
-    expect(data.lotes[0]).toHaveProperty('laudo')
+    expect(data.lotes[0]).toHaveProperty('id');
+    // Campos removidos: codigo, titulo
+    expect(data.lotes[0]).not.toHaveProperty('codigo');
+    expect(data.lotes[0]).not.toHaveProperty('titulo');
+    expect(data.lotes[0]).toHaveProperty('empresa_nome');
+    expect(data.lotes[0]).toHaveProperty('clinica_nome');
+    expect(data.lotes[0]).toHaveProperty('liberado_em');
+    expect(data.lotes[0]).toHaveProperty('laudo');
 
-    expect(data.lotes[0].laudo).toHaveProperty('id')
-    expect(data.lotes[0].laudo).toHaveProperty('observacoes')
-    expect(data.lotes[0].laudo).toHaveProperty('status')
-    expect(data.lotes[0].laudo).toHaveProperty('emitido_em')
-    expect(data.lotes[0].laudo).toHaveProperty('enviado_em')
+    expect(data.lotes[0].laudo).toHaveProperty('id');
+    expect(data.lotes[0].laudo).toHaveProperty('observacoes');
+    expect(data.lotes[0].laudo).toHaveProperty('status');
+    expect(data.lotes[0].laudo).toHaveProperty('emitido_em');
+    expect(data.lotes[0].laudo).toHaveProperty('enviado_em');
 
     // Verificar que hash_arquivo não está presente
-    expect(data.lotes[0]).not.toHaveProperty('hash_arquivo')
-    expect(data.lotes[0].laudo).not.toHaveProperty('hash_arquivo')
-  })
-})
+    expect(data.lotes[0]).not.toHaveProperty('hash_arquivo');
+    expect(data.lotes[0].laudo).not.toHaveProperty('hash_arquivo');
+  });
+});

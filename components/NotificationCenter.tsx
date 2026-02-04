@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Bell, X, FileText, Clock } from 'lucide-react';
 interface Notificacao {
   id: number;
-  codigo: string;
+  // codigo: removido
   titulo: string;
   empresa_nome: string;
   clinica_nome: string;
@@ -168,11 +168,6 @@ export default function NotificationCenter({
                           <p className="text-sm font-semibold text-gray-900 mb-1.5 leading-tight">
                             {notif.mensagem}
                           </p>
-                          <div className="inline-flex items-center px-2 py-0.5 bg-gray-100 rounded-md mb-2">
-                            <p className="text-xs font-medium text-gray-700">
-                              {notif.codigo}
-                            </p>
-                          </div>
                           <div className="flex items-center gap-2 text-xs text-gray-600">
                             <span className="font-medium truncate max-w-[180px]">
                               {notif.empresa_nome}

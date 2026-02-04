@@ -78,7 +78,7 @@ describe('Regras de finalização de lote (mínimo)', () => {
   test('Lote é concluído quando todas avaliações estão concluídas', async () => {
     const codigo = `LF1-${Date.now()}`.slice(0, 20);
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (titulo, empresa_id, clinica_id, tipo, status) VALUES ($1,$2,$3,'completo','rascunho') RETURNING id`,
+      `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status) VALUES ($1,$2,'completo','rascunho') RETURNING id`,
       ['Lote Final 1', empresaId, clinicaId]
     );
     loteId = loteResult.rows[0].id;
@@ -99,10 +99,9 @@ describe('Regras de finalização de lote (mínimo)', () => {
   });
 
   test('Lote é cancelado quando todas avaliações estão inativadas', async () => {
-    const codigo = `LF2-${Date.now()}`.slice(0, 20);
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, empresa_id, clinica_id, tipo, status) VALUES ($1,$2,$3,$4,'completo','rascunho') RETURNING id`,
-      [codigo, 'Lote Cancel 1', empresaId, clinicaId]
+      `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status) VALUES ($1,$2,'completo','rascunho') RETURNING id`,
+      [empresaId, clinicaId]
     );
     const testLoteId = loteResult.rows[0].id;
 
@@ -126,10 +125,9 @@ describe('Regras de finalização de lote (mínimo)', () => {
   });
 
   test('Lote é concluído quando (concluídas + inativadas) == total', async () => {
-    const codigo = `LF3-${Date.now()}`.slice(0, 20);
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, empresa_id, clinica_id, tipo, status) VALUES ($1,$2,$3,$4,'completo','rascunho') RETURNING id`,
-      [codigo, 'Lote Final 2', empresaId, clinicaId]
+      `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status) VALUES ($1,$2,'completo','rascunho') RETURNING id`,
+      [empresaId, clinicaId]
     );
     const testLoteId = loteResult.rows[0].id;
 
@@ -154,10 +152,9 @@ describe('Regras de finalização de lote (mínimo)', () => {
   });
 
   test('Lote não é concluído se existir avaliação pendente (ex.: inativada + pendente)', async () => {
-    const codigo = `LF4-${Date.now()}`.slice(0, 20);
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, empresa_id, clinica_id, tipo, status) VALUES ($1,$2,$3,$4,'completo','rascunho') RETURNING id`,
-      [codigo, 'Lote Final 3', empresaId, clinicaId]
+      `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status) VALUES ($1,$2,'completo','rascunho') RETURNING id`,
+      [empresaId, clinicaId]
     );
     const testLoteId = loteResult.rows[0].id;
 

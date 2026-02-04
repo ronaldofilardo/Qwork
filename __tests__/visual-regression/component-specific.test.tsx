@@ -166,10 +166,13 @@ describe('Regressão Visual - Modais', () => {
         require('@/components/ModalInativarAvaliacao').default;
       const { container } = render(
         <ModalInativarAvaliacao
-          isOpen={true}
+          avaliacaoId={123}
+          funcionarioNome="João Silva"
+          funcionarioCpf="12345678900"
+          _loteId="1"
+          contexto="rh"
           onClose={jest.fn()}
-          onConfirm={jest.fn()}
-          avaliacaoId="123"
+          onSuccess={jest.fn()}
         />
       );
 
@@ -181,10 +184,13 @@ describe('Regressão Visual - Modais', () => {
         require('@/components/ModalInativarAvaliacao').default;
       const { container } = render(
         <ModalInativarAvaliacao
-          isOpen={true}
+          avaliacaoId={123}
+          funcionarioNome="João Silva"
+          funcionarioCpf="12345678900"
+          _loteId="1"
+          contexto="rh"
           onClose={jest.fn()}
-          onConfirm={jest.fn()}
-          avaliacaoId="123"
+          onSuccess={jest.fn()}
         />
       );
 
@@ -268,7 +274,6 @@ describe('Regressão Visual - Botões Especiais', () => {
       const { container } = render(
         <BotaoSolicitarEmissao
           loteId={123}
-          loteCodigo="LOTE-001"
           loteStatus="concluido"
           laudoId={null}
           laudoStatus={null}
@@ -288,7 +293,6 @@ describe('Regressão Visual - Botões Especiais', () => {
       const { container } = render(
         <BotaoSolicitarEmissao
           loteId={123}
-          loteCodigo="LOTE-001"
           loteStatus="concluido"
           laudoId={456}
           laudoStatus="emitido"

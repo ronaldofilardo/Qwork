@@ -22,7 +22,7 @@ const STATUS_AVALIACOES_FINALIZADAS = ['concluida', 'inativada'] as const;
  */
 async function concluirLoteAutomaticamente(lote: {
   id: number;
-  codigo: string;
+  // codigo: removido
   empresa_id: number;
   clinica_id: number;
   total_avaliacoes: number;
@@ -121,7 +121,7 @@ export async function verificarEConcluirLotesAutomaticamente(): Promise<number> 
       `
       SELECT
         la.id,
-        la.codigo,
+        
         la.empresa_id,
         la.clinica_id,
         COUNT(a.id) as total_avaliacoes,
@@ -132,7 +132,7 @@ export async function verificarEConcluirLotesAutomaticamente(): Promise<number> 
         AND la.id NOT IN (
           SELECT lote_id FROM laudos WHERE status IN ('emitido', 'enviado')
         )
-      GROUP BY la.id, la.codigo, la.empresa_id, la.clinica_id
+      GROUP BY la.id,  la.empresa_id, la.clinica_id
       HAVING COUNT(a.id) >= $3
          AND COUNT(a.id) = COUNT(CASE WHEN a.status = ANY($2) THEN 1 END)
       ORDER BY la.criado_em ASC

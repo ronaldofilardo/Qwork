@@ -53,8 +53,8 @@ Implementação completa da remoção de referências a 'codigo' de lote em todo
 
 ### 🔵 BIBLIOTECAS & INTERFACES (4 arquivos) ✅
 
-1. ✅ [lib/types/database.ts](../lib/types/database.ts) - Removido `codigo: string;`
-2. ✅ [lib/hooks/useLotesAvaliacao.ts](../lib/hooks/useLotesAvaliacao.ts) - Removido `codigo: string;`
+1. ✅ [lib/types/database.ts](../lib/types/database.ts) - Removido `// codigo: removido`
+2. ✅ [lib/hooks/useLotesAvaliacao.ts](../lib/hooks/useLotesAvaliacao.ts) - Removido `// codigo: removido`
 3. ✅ [lib/templates/laudo-html.ts](../lib/templates/laudo-html.ts) - Alterado `{{LOTE_CODIGO}}` → `{{LOTE_ID}}`
 4. ✅ [lib/audit-integration-examples.ts](../lib/audit-integration-examples.ts) - Removido de queries
 
@@ -75,7 +75,7 @@ Implementação completa da remoção de referências a 'codigo' de lote em todo
 **ANTES:**
 
 ```sql
-SELECT la.id, la.codigo, la.titulo FROM lotes_avaliacao la
+SELECT la.id,  la.titulo FROM lotes_avaliacao la
 ```
 
 **DEPOIS:**
@@ -91,7 +91,7 @@ SELECT la.id, la.titulo FROM lotes_avaliacao la
 ```typescript
 export interface LoteAvaliacao {
   id: number;
-  codigo: string; // ❌
+  // codigo: removido // ❌
   titulo: string;
 }
 ```

@@ -34,7 +34,7 @@ FROM lotes_avaliacao;
 -- 6. Exibir exemplos de lotes com laudo enviado
 SELECT
     la.id,
-    la.codigo,
+    
     la.titulo,
     la.status as status_lote,
     la.laudo_enviado_em,

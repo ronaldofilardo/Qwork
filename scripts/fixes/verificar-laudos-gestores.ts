@@ -5,7 +5,7 @@ async function verificarLaudos() {
     SELECT 
       l.id,
       l.lote_id,
-      la.codigo,
+      
       la.liberado_por,
       l.emissor_cpf,
       l.status,

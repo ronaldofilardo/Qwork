@@ -18,7 +18,7 @@ export async function GET(
 
     // Verificar acesso ao lote
     const loteResult = await query(
-      `SELECT la.id, la.titulo, la.clinica_id, la.empresa_id
+      `SELECT la.id, la.clinica_id, la.empresa_id
        FROM lotes_avaliacao la
        WHERE la.id = $1`,
       [loteId]

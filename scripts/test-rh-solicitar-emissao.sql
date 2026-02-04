@@ -4,7 +4,7 @@
 -- 1. Verificar lotes disponíveis para RH solicitar emissão
 SELECT 
     la.id as lote_id,
-    la.codigo,
+    
     la.titulo,
     la.status,
     ec.nome as empresa_nome,
@@ -23,7 +23,7 @@ LEFT JOIN laudos l ON l.lote_id = la.id
 LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
 WHERE la.status = 'concluido'
   AND la.empresa_id IS NOT NULL  -- Lotes de clínica
-GROUP BY la.id, la.codigo, la.titulo, la.status, ec.nome, c.nome, l.id, fe.id
+GROUP BY la.id,  la.titulo, la.status, ec.nome, c.nome, l.id, fe.id
 HAVING COUNT(a.id) = COUNT(CASE WHEN a.status = 'concluida' THEN 1 END)
 ORDER BY la.id DESC
 LIMIT 5;
@@ -35,7 +35,7 @@ LIMIT 5;
 -- Exemplo: Lote 15
 SELECT 
     la.id,
-    la.codigo,
+    
     la.titulo,
     la.descricao,
     la.tipo,

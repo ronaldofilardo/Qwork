@@ -59,6 +59,10 @@ export async function POST(
     // Start transaction
     await query('BEGIN');
 
+    // Configurar contexto de segurança para auditoria
+    await query(`SET LOCAL app.current_user_cpf = '${user.cpf}'`);
+    await query(`SET LOCAL app.current_user_perfil = '${user.perfil}'`);
+
     try {
       // Buscar informações do lote primeiro
       const loteCheck = await query(
@@ -98,18 +102,12 @@ export async function POST(
         );
       }
 
-      // Validate batch status - must NOT be sent to emissor, have laudo, or have emission requested
-      const invalidStatuses = [
-        'concluded',
-        'concluido',
-        'enviado_emissor',
-        'a_emitir',
-        'emitido',
-      ];
+      // Validate batch status - must NOT have emission requested or laudo emitted
+      // Permitir reset enquanto emissão não foi solicitada, independentemente do status
 
       // Verificar se a emissão do laudo foi solicitada
       const emissaoSolicitadaResult = await query(
-        `SELECT COUNT(*) as count FROM fila_emissao WHERE lote_id = $1`,
+        `SELECT COUNT(*) as count FROM v_fila_emissao WHERE lote_id = $1`,
         [loteId]
       );
 
@@ -124,25 +122,17 @@ export async function POST(
 
       const loteEmitido = !!loteEmitidoResult.rows[0].emitido_em;
 
-      // Permitir reset se lote está 'concluido' mas não foi solicitada emissão e não foi emitido
-      if (
-        (lote.status === 'concluido' || lote.status === 'concluded') &&
-        !emissaoSolicitada &&
-        !loteEmitido
-      ) {
-        // Permitir reset
-      } else if (
-        invalidStatuses.includes(lote.status) ||
-        emissaoSolicitada ||
-        loteEmitido
-      ) {
+      // Bloquear apenas se emissão foi solicitada OU lote foi emitido (princípio da imutabilidade)
+      if (emissaoSolicitada || loteEmitido) {
         await query('ROLLBACK');
         return NextResponse.json(
           {
             error:
-              'Não é possível resetar avaliação: lote já foi enviado ao emissor, possui laudo ou emissão já foi solicitada',
+              'Não é possível resetar avaliação: emissão do laudo já foi solicitada ou laudo já foi emitido (princípio da imutabilidade)',
             success: false,
             loteStatus: lote.status,
+            emissaoSolicitada,
+            loteEmitido,
           },
           { status: 409 }
         );
@@ -205,6 +195,9 @@ export async function POST(
 
       const respostasCount = parseInt(countResult.rows[0].count);
 
+      // Autorizar reset (flag para trigger de imutabilidade)
+      await query(`SET LOCAL app.allow_reset = true`);
+
       // Delete all responses (hard delete as per requirement)
       await query(
         `
@@ -226,8 +219,7 @@ export async function POST(
       );
 
       // Insert immutable audit record
-      // Note: We temporarily disable RLS insert policy by using a function or direct INSERT with superuser context
-      // For now, direct insert (assuming API has appropriate DB permissions)
+      // Use COALESCE to handle cases where gestor_entidade is not in funcionarios table
       const auditResult = await query(
         `
         INSERT INTO avaliacao_resets (
@@ -241,15 +233,22 @@ export async function POST(
         SELECT 
           $1,
           $2,
-          f.id,
+          COALESCE(f.id, $6),  -- Use funcionario.id if exists, otherwise use contratante_id
           'gestor_entidade',
           $3,
           $4
-        FROM funcionarios f
-        WHERE f.cpf = $5
+        FROM (SELECT $5::VARCHAR AS cpf) u
+        LEFT JOIN funcionarios f ON f.cpf = u.cpf
         RETURNING id, created_at
       `,
-        [avaliacaoId, loteId, reason.trim(), respostasCount, user.cpf]
+        [
+          avaliacaoId,
+          loteId,
+          reason.trim(),
+          respostasCount,
+          user.cpf,
+          user.contratante_id || -1,
+        ]
       );
 
       const resetRecord = auditResult.rows[0];

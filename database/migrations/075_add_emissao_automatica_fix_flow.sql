@@ -220,7 +220,7 @@ DROP VIEW IF EXISTS vw_metricas_emissao_laudos;
 CREATE OR REPLACE VIEW vw_metricas_emissao_laudos AS
 SELECT
   la.id,
-  la.codigo,
+  
   la.status,
   la.liberado_em,
   la.atualizado_em as concluido_em,
@@ -247,7 +247,7 @@ DROP VIEW IF EXISTS vw_alertas_emissao_laudos;
 CREATE OR REPLACE VIEW vw_alertas_emissao_laudos AS
 SELECT
   la.id,
-  la.codigo,
+  
   la.status,
   CASE
     WHEN la.status = 'concluido' AND la.emitido_em IS NULL AND la.atualizado_em < NOW() - INTERVAL '5 minutes' THEN 'CRITICO: Lote concluído há mais de 5min sem emissão'

@@ -54,8 +54,7 @@ export async function POST(
     // 2. Buscar informações do lote
     const loteResult = await query(
       `SELECT 
-        id, 
-        codigo, 
+        id,
         status, 
         clinica_id, 
         empresa_id, 
@@ -169,32 +168,72 @@ export async function POST(
            status, 
            emissor_cpf, 
            emissor_nome,
+           solicitado_por,
+           tipo_solicitante,
            ip_address,
            observacoes
          )
-         VALUES ($1, 'solicitacao_manual', 'pendente', $2, $3, $4, $5)`,
+         VALUES ($1, 'solicitacao_manual', 'pendente', $2, $3, $4, $5, $6, $7)`,
         [
           loteId,
           user.cpf,
           user.nome || `${user.perfil} sem nome`,
+          user.cpf, // solicitado_por
+          user.perfil, // tipo_solicitante
           request.headers.get('x-forwarded-for') ||
             request.headers.get('x-real-ip'),
           `Solicitação manual de emissão por ${user.perfil} - Lote ${lote.id}`,
         ]
       );
 
-      // 8. Adicionar lote à fila de emissão (para UI mostrar status "Emissão Solicitada")
-      await query(
-        `INSERT INTO fila_emissao (
-           lote_id, 
-           solicitado_por, 
-           solicitado_em, 
-           tipo_solicitante
+      // 8. Registrar solicitação de emissão em auditoria_laudos
+      // (substituiu a antiga fila_emissao - migration 201)
+      // Usar INSERT com verificação prévia otimizada (migration 202)
+      const insertResult = await query(
+        `WITH existing AS (
+           SELECT id, tentativas
+           FROM auditoria_laudos
+           WHERE lote_id = $1
+             AND acao = 'solicitar_emissao'
+             AND solicitado_por = $2
+             AND status IN ('pendente', 'reprocessando')
+           FOR UPDATE SKIP LOCKED
+           LIMIT 1
+         ),
+         updated AS (
+           UPDATE auditoria_laudos
+           SET tentativas = tentativas + 1,
+               criado_em = NOW()
+           WHERE id = (SELECT id FROM existing)
+           RETURNING id, tentativas, TRUE as is_update
+         ),
+         inserted AS (
+           INSERT INTO auditoria_laudos (
+             lote_id,
+             acao,
+             status,
+             solicitado_por,
+             tipo_solicitante,
+             criado_em
+           )
+           SELECT $1, 'solicitar_emissao', 'pendente', $2, $3, NOW()
+           WHERE NOT EXISTS (SELECT 1 FROM existing)
+           RETURNING id, tentativas, FALSE as is_update
          )
-         VALUES ($1, $2, NOW(), $3)
-         ON CONFLICT (lote_id) DO NOTHING`,
+         SELECT * FROM updated
+         UNION ALL
+         SELECT * FROM inserted`,
         [loteId, user.cpf, user.perfil]
       );
+
+      const result = insertResult.rows[0];
+      if (result?.is_update) {
+        console.log(
+          `[INFO] Solicitação duplicada atualizada para lote ${loteId} (tentativa #${result.tentativas})`
+        );
+      } else {
+        console.log(`[INFO] Nova solicitação registrada para lote ${loteId}`);
+      }
 
       // 9. Registrar solicitação (NÃO emite automaticamente)
       // O laudo será gerado manualmente pelo EMISSOR quando ele clicar no botão
@@ -224,11 +263,17 @@ export async function POST(
            'media'::prioridade_notificacao,
            $1,
            $2,
-           'Solicitação de emissão registrada',
-           'Solicitação de emissão registrada para lote #' || $4 || '. O laudo será gerado pelo emissor quando disponível.',
-           jsonb_build_object('lote_id', $4::integer)
+           $3,
+           $4,
+           jsonb_build_object('lote_id', $5::integer)
          )`,
-        [user.cpf, destinatarioTipo, loteId, loteId]
+        [
+          user.cpf,
+          destinatarioTipo,
+          'Solicitação de emissão registrada',
+          `Solicitação de emissão registrada para lote #${loteId}. O laudo será gerado pelo emissor quando disponível.`,
+          loteId,
+        ]
       );
 
       console.log(

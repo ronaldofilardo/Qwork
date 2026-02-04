@@ -23,7 +23,6 @@ describe('Entidade Lotes - cards compactos', () => {
               lotes: [
                 {
                   id: 1,
-                  codigo: 'LOT-001',
                   titulo: 'Lote Teste Card',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo',
@@ -64,7 +63,6 @@ describe('Entidade Lotes - cards compactos', () => {
               lotes: [
                 {
                   id: 2,
-                  codigo: 'LOT-002',
                   titulo: 'Lote Sem Expansao',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo',
@@ -93,4 +91,4 @@ describe('Entidade Lotes - cards compactos', () => {
     expect(screen.queryByText(/Funcionários \(/)).not.toBeInTheDocument();
   });
 });
-
+

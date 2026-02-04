@@ -96,7 +96,7 @@ CREATE OR REPLACE VIEW v_auditoria_emissoes AS
 SELECT 
     l.id AS laudo_id,
     l.lote_id,
-    la.codigo AS lote_codigo,
+    
     la.contratante_id,
     la.empresa_id,
     

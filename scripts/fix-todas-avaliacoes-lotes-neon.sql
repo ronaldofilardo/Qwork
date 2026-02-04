@@ -19,14 +19,13 @@ SELECT
     a.lote_id,
     a.funcionario_cpf,
     a.status,
-    COUNT(DISTINCT (r.grupo, r.item)) as respostas_unicas,
-    la.codigo as lote_codigo,
+    COUNT(DISTINCT (r.grupo, r.item)) as respostas_unicasas lote_codigo,
     la.tipo as lote_tipo
 FROM avaliacoes a
 JOIN lotes_avaliacao la ON la.id = a.lote_id
 LEFT JOIN respostas r ON r.avaliacao_id = a.id
 WHERE a.status NOT IN ('concluida', 'inativada')
-GROUP BY a.id, a.lote_id, a.funcionario_cpf, a.status, la.codigo, la.tipo
+GROUP BY a.id, a.lote_id, a.funcionario_cpf, a.status,  la.tipo
 HAVING COUNT(DISTINCT (r.grupo, r.item)) >= 37;
 
 SELECT 
@@ -63,7 +62,7 @@ RETURNING a.id, a.lote_id, a.funcionario_cpf, a.status, a.envio;
 CREATE TEMP TABLE lotes_para_atualizar AS
 SELECT 
     la.id,
-    la.codigo,
+    
     la.status as status_atual,
     la.tipo,
     COUNT(a.id) as total_avaliacoes,
@@ -73,7 +72,7 @@ FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.status IN ('ativo', 'em_andamento', 'rascunho')
   AND a.status NOT IN ('inativada')
-GROUP BY la.id, la.codigo, la.status, la.tipo
+GROUP BY la.id,  la.status, la.tipo
 HAVING COUNT(a.id) > 0 
    AND COUNT(CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN 1 END) = 0;
 
@@ -94,7 +93,7 @@ SET
     atualizado_em = NOW()
 FROM lotes_para_atualizar lpa
 WHERE la.id = lpa.id
-RETURNING la.id, la.codigo, la.status, la.tipo;
+RETURNING la.id,  la.status, la.tipo;
 
 -- ====================================================================================
 -- VERIFICAÇÃO FINAL
@@ -120,7 +119,7 @@ FROM (
 
 SELECT 
     la.id,
-    la.codigo,
+    
     la.status,
     la.tipo,
     COUNT(a.id) as total_avaliacoes,

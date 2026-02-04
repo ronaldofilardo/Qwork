@@ -37,8 +37,6 @@ export const GET = async (
         l.lote_id,
         l.status,
         l.hash_pdf,
-        la.codigo,
-        la.titulo,
         la.clinica_id,
         la.empresa_id
       FROM laudos l
@@ -116,7 +114,7 @@ export const GET = async (
       console.log(`[DEBUG] Tentando: ${p}, existe: ${fs.existsSync(p)}`);
       if (fs.existsSync(p)) {
         const buf = fs.readFileSync(p);
-        const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        const fileName = `laudo-${laudo.id}.pdf`;
         console.log(`[SUCCESS] Arquivo encontrado: ${p} (${buf.length} bytes)`);
         return new NextResponse(buf, {
           headers: {
@@ -134,7 +132,7 @@ export const GET = async (
       const p = path.join(process.cwd(), 'public', 'laudos', name);
       if (fs.existsSync(p)) {
         const buf = fs.readFileSync(p);
-        const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        const fileName = `laudo-${laudo.id}.pdf`;
         return new NextResponse(buf, {
           headers: {
             'Content-Type': 'application/pdf',

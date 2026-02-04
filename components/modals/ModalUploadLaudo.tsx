@@ -12,7 +12,7 @@ import {
 
 interface ModalUploadLaudoProps {
   loteId: number;
-  loteCodigo: string;
+  // loteCodigo removido - usar apenas loteId
   isOpen: boolean;
   onClose: () => void;
   onSuccess: (laudoId: number) => void;
@@ -37,7 +37,7 @@ const MAX_FILE_SIZE = 1048576; // 1 MB
 
 export default function ModalUploadLaudo({
   loteId,
-  loteCodigo,
+  // loteCodigo removido
   isOpen,
   onClose,
   onSuccess,

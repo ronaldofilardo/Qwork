@@ -13,14 +13,13 @@ async function auditAllEvaluations() {
       a.envio,
       a.lote_id,
       l.numero_ordem,
-      l.codigo as lote_codigo,
       COUNT(DISTINCT (r.grupo, r.item)) as total_respostas,
       f.nome as funcionario_nome
     FROM avaliacoes a
     LEFT JOIN respostas r ON a.id = r.avaliacao_id
     LEFT JOIN lotes_avaliacao l ON a.lote_id = l.id
     LEFT JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-    GROUP BY a.id, a.funcionario_cpf, a.status, a.inicio, a.envio, a.lote_id, l.numero_ordem, l.codigo, f.nome
+    GROUP BY a.id, a.funcionario_cpf, a.status, a.inicio, a.envio, a.lote_id, l.numero_ordem, f.nome
     ORDER BY a.id
   `);
 
@@ -62,9 +61,7 @@ async function auditAllEvaluations() {
       console.log(
         `   Funcionário: ${av.funcionario_nome} (${av.funcionario_cpf})`
       );
-      console.log(
-        `   Lote: #${av.lote_id} - ${av.lote_codigo} (ordem ${av.numero_ordem})`
-      );
+      console.log(`   Lote: #${av.lote_id} (ordem ${av.numero_ordem})`);
       console.log(`   Status atual: ${av.status}`);
       console.log(`   Respostas: ${av.total_respostas}/37`);
       console.log(`   Início: ${av.inicio}`);

@@ -124,16 +124,10 @@ describe('Fluxo Completo de Emissão de Laudos', () => {
       const nextLoteId = nextIdResult.rows[0].next_id;
 
       const loteResult = await query(
-        `INSERT INTO lotes_avaliacao (id, codigo, titulo, tipo, status, clinica_id, empresa_id, criado_em)
-         VALUES ($1, $2, $3, 'completo', 'ativo', $4, $5, NOW())
-         RETURNING id, codigo, status`,
-        [
-          nextLoteId,
-          `TEST-${Date.now()}`,
-          'Lote de Teste - Emissão de Laudos',
-          testClinicaId,
-          testEmpresaId,
-        ]
+        `INSERT INTO lotes_avaliacao (id, tipo, status, clinica_id, empresa_id, criado_em)
+         VALUES ($1, 'completo', 'ativo', $2, $3, NOW())
+         RETURNING id, status`,
+        [nextLoteId, testClinicaId, testEmpresaId]
       );
 
       testLoteId = loteResult.rows[0].id;
@@ -242,7 +236,7 @@ describe('Fluxo Completo de Emissão de Laudos', () => {
 
     it('deve aparecer na query do dashboard do emissor', async () => {
       const dashboardResult = await query(
-        `SELECT la.id, la.codigo
+        `SELECT la.id
          FROM lotes_avaliacao la
          LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
          LEFT JOIN laudos l ON l.lote_id = la.id
@@ -349,7 +343,7 @@ describe('Fluxo Completo de Emissão de Laudos', () => {
   describe('6. Visibilidade no Dashboard do Emissor', () => {
     it('deve aparecer na aba "Laudos Emitidos"', async () => {
       const emitidosResult = await query(
-        `SELECT la.id, la.codigo, l.emitido_em
+        `SELECT la.id, l.emitido_em
          FROM lotes_avaliacao la
          INNER JOIN laudos l ON l.lote_id = la.id
          WHERE la.status != 'cancelado'

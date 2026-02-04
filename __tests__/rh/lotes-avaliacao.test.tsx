@@ -122,7 +122,6 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
               lotes: [
                 {
                   id: 1,
-                  codigo: '001-291125',
                   titulo: 'Avaliação Trimestral Q4 2025',
                   tipo: 'completo',
                   status: 'ativo',
@@ -152,7 +151,6 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
               success: true,
               lote: {
                 id: 2,
-                codigo: '002-291125',
                 titulo: 'Novo Ciclo Criado',
                 tipo: 'completo',
                 status: 'ativo',

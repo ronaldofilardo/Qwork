@@ -58,7 +58,7 @@ ORDER BY f.contratante_id;
 \echo '4. LOTES DE AVALIAÇÃO (contratante_id):'
 SELECT 
     la.id,
-    la.codigo,
+    
     la.contratante_id,
     la.status,
     c.nome as empresa

@@ -79,8 +79,7 @@ describe('Aba Desligamentos - EmpresaDashboardPage', () => {
           inicio: '2024-01-15T00:00:00Z',
           envio: '2024-01-20T00:00:00Z',
           status: 'concluida',
-          lote_id: 1,
-          lote_codigo: 'LOTE-001'
+          lote_id: 1
         }
       ]
     },
@@ -103,16 +102,14 @@ describe('Aba Desligamentos - EmpresaDashboardPage', () => {
           inicio: '2024-02-01T00:00:00Z',
           envio: null,
           status: 'inativada',
-          lote_id: 2,
-          lote_codigo: 'LOTE-002'
+          lote_id: 2
         },
         {
           id: 3,
           inicio: '2024-03-01T00:00:00Z',
           envio: '2024-03-15T00:00:00Z',
           status: 'concluida',
-          lote_id: 3,
-          lote_codigo: 'LOTE-003'
+          lote_id: 3
         }
       ]
     }

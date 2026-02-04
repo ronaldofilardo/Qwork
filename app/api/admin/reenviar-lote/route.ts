@@ -32,14 +32,13 @@ export const POST = async (req: Request) => {
       SELECT
         la.id,
         la.status,
-        la.titulo,
         COUNT(a.id) as total_avaliacoes,
         COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1
-      GROUP BY la.id, la.status, la.titulo
+      GROUP BY la.id, la.status
     `,
       [loteId]
     );
@@ -89,7 +88,6 @@ export const POST = async (req: Request) => {
       message: `Lote ${loteId} marcado como concluído e pronto para emissão!`,
       lote: {
         id: lote.id,
-        titulo: lote.titulo,
         status_anterior: lote.status,
         status_novo: 'concluido',
         avaliacoes_concluidas: lote.avaliacoes_concluidas,

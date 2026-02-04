@@ -59,9 +59,9 @@ describe('Backfill de Hashes - Script e Trigger', () => {
 
     // Criar lote
     const loteRes = await query(
-      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, codigo, titulo, status) 
-       VALUES ($1, $2, $3, 'Lote Backfill Test', 'finalizado') RETURNING id`,
-      [clinicaId, empresaId, `BF-${ts.toString().slice(-6)}`]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status) 
+       VALUES ($1, $2, 'finalizado') RETURNING id`,
+      [clinicaId, empresaId]
     );
     loteId = loteRes.rows[0].id;
   });
@@ -98,13 +98,9 @@ describe('Backfill de Hashes - Script e Trigger', () => {
       const ts = Date.now() + Math.floor(Math.random() * 1000);
       // Criar lote específico para este teste
       const loteRes = await query(
-        `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, codigo, titulo, status) 
-         VALUES ($1, $2, $3, 'Lote Test Hash', 'finalizado') RETURNING id`,
-        [
-          clinicaId,
-          empresaId,
-          `TH-${ts}-${Math.random().toString(36).slice(2, 7)}`,
-        ]
+        `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status) 
+         VALUES ($1, $2, 'finalizado') RETURNING id`,
+        [clinicaId, empresaId]
       );
       testLoteId = loteRes.rows[0].id;
 

@@ -182,11 +182,11 @@ describe('Fluxo Completo de Lotes de Avaliação', () => {
         // Criar lote inicialmente como rascunho
         const loteResult = await query(
           `
-          INSERT INTO lotes_avaliacao (codigo, titulo, clinica_id, empresa_id, liberado_por, descricao)
-          VALUES ($1, 'Lote Teste Fluxo', $2, $3, $4, 'Teste de fluxo completo')
+          INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, descricao)
+          VALUES ($1, $2, $3, 'Teste de fluxo completo')
           RETURNING id
         `,
-          [`FLUXO-${timestamp}`, clinicaId, empresaId, rhCpf]
+          [clinicaId, empresaId, rhCpf]
         );
         loteId = loteResult.rows[0].id;
 

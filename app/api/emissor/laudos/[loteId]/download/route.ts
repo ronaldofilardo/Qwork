@@ -30,9 +30,7 @@ export const GET = async (
       `
       SELECT
         l.id,
-        l.lote_id,
-        la.codigo,
-        la.titulo
+        l.lote_id
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.lote_id = $1 AND l.emissor_cpf = $2 AND l.status IN ('enviado','emitido')
@@ -74,7 +72,6 @@ export const GET = async (
       laudo = {
         id: loteInfo.id,
         lote_id: loteInfo.id,
-        titulo: loteInfo.titulo,
       };
     } else {
       laudo = laudoQuery.rows[0];
@@ -86,7 +83,6 @@ export const GET = async (
 
     const names = new Set<string>();
     names.add(`laudo-${laudo.id}.pdf`);
-    if (laudo.codigo) names.add(`laudo-${laudo.id}.pdf`);
     if (laudo.lote_id) names.add(`laudo-${laudo.lote_id}.pdf`);
 
     // 1) tentar storage/local
@@ -94,7 +90,7 @@ export const GET = async (
       try {
         const p = path.join(process.cwd(), 'storage', 'laudos', name);
         const fileBuffer = await fs.readFile(p);
-        const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        const fileName = `laudo-${laudo.id}.pdf`;
         console.log(`[INFO] Servindo arquivo local de laudo: ${p}`);
         return new NextResponse(fileBuffer, {
           headers: {

@@ -27,14 +27,12 @@ interface FuncionarioElegivel {
 
 interface LoteResult {
   id: number;
-  codigo: string;
+  // codigo removido - apenas ID é usado
   liberado_em: string;
   numero_ordem: number;
 }
 
-interface CodigoResult {
-  codigo: string;
-}
+// CodigoResult removido - não usado mais
 
 interface NumeroOrdemResult {
   numero_ordem: number;
@@ -54,10 +52,9 @@ export const POST = async (req: Request) => {
   }
 
   try {
-    const { empresaId, titulo, descricao, dataFiltro, loteReferenciaId, tipo } =
+    const { empresaId, descricao, dataFiltro, loteReferenciaId, tipo } =
       (await req.json()) as {
         empresaId: number;
-        titulo?: string;
         descricao?: string;
         dataFiltro?: string;
         loteReferenciaId?: number;
@@ -274,14 +271,13 @@ export const POST = async (req: Request) => {
     // Usa apenas ID (sem geração de codigo)
     const loteResult = await queryAsGestorRH<LoteResult>(
       `
-        INSERT INTO lotes_avaliacao (clinica_id, empresa_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id, liberado_em, numero_ordem
       `,
       [
         empresaCheck.rows[0].clinica_id,
         empresaId,
-        titulo || `Lote ${numeroOrdem} - #${numeroOrdem}`,
         descricao ||
           `Lote ${numeroOrdem} liberado para ${empresaCheck.rows[0].nome}. Inclui ${funcionarios.length} funcionário(s) elegíveis.`,
         tipo || 'completo',

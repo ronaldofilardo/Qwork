@@ -40,7 +40,6 @@ global.fetch = jest.fn();
 describe('Exibição do Hash SHA-256 na Interface', () => {
   const mockLote = {
     id: 16,
-    codigo: '001-141225',
     empresa_nome: 'Empresa Teste',
     clinica_nome: 'Clínica Teste',
   };
@@ -272,7 +271,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           operacional: 1,
           gestao: 1,
         },
-        loteCodigo: 'LOTE-001',
       },
       etapa2: [],
       etapa3: {
@@ -336,7 +334,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           operacional: 1,
           gestao: 1,
         },
-        loteCodigo: 'LOTE-001',
       },
       etapa2: [],
       etapa3: {
@@ -370,7 +367,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           success: true,
           lote: {
             id: 50,
-            codigo: '050-141225',
             empresa_nome: 'Empresa Bloqueada',
             clinica_nome: 'Clínica Bloq',
           },

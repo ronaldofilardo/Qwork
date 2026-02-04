@@ -2314,7 +2314,7 @@ BEGIN
 
     -- Buscar prÃ³ximo sequencial para a data
 
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
 
     INTO sequencial
 
@@ -4583,8 +4583,7 @@ BEGIN
   WHERE id = p_lote_id;
 
   -- Buscar lote anterior (ordem - 1) e contar avaliacoes anteriores
-  SELECT la.numero_ordem, a.status, la.codigo
-  INTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
+  SELECT la.numero_ordem, a.statusINTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
   FROM lotes_avaliacao la
   LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.funcionario_cpf = p_funcionario_cpf
   WHERE la.empresa_id = v_empresa_id
@@ -8154,7 +8153,7 @@ ALTER SEQUENCE public.usuarios_id_seq OWNED BY public.usuarios.id;
 CREATE VIEW public.v_auditoria_emissoes AS
  SELECT l.id AS laudo_id,
     l.lote_id,
-    la.codigo AS lote_codigo,
+    
     fe.solicitado_por AS solicitante_cpf,
     fe.tipo_solicitante AS solicitante_perfil,
     fe.solicitado_em,

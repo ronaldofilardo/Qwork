@@ -17,7 +17,7 @@ async function corrigirEmissorIncorreto() {
     SELECT 
       l.id,
       l.lote_id,
-      la.codigo,
+      
       la.liberado_por as gestor_cpf,
       l.emissor_cpf,
       l.status,
@@ -65,7 +65,7 @@ async function corrigirEmissorIncorreto() {
     SELECT 
       l.id,
       l.lote_id,
-      la.codigo,
+      
       la.liberado_por as gestor_cpf,
       l.emissor_cpf,
       CASE 

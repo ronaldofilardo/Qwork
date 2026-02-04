@@ -60,6 +60,10 @@ export async function POST(
     await query('BEGIN');
 
     try {
+      // Configurar contexto de segurança para auditoria
+      await query(`SET LOCAL app.current_user_cpf = '${user.cpf}'`);
+      await query(`SET LOCAL app.current_user_perfil = '${user.perfil}'`);
+
       // Check batch belongs to user's contratante and get status
       // Verificar posse do lote: para gestor_entidade a autoridade vem do lote.contratante_id
       const loteCheck = await query(
@@ -87,22 +91,35 @@ export async function POST(
 
       const lote = loteCheck.rows[0];
 
-      // Validate batch status - must NOT be concluded or sent to emissor
-      const invalidStatuses = [
-        'concluded',
-        'concluido',
-        'enviado_emissor',
-        'a_emitir',
-        'emitido',
-      ];
-      if (invalidStatuses.includes(lote.status)) {
+      // Validate batch status - must NOT have emission requested or laudo emitted
+      // Permitir reset enquanto emissão não foi solicitada, independentemente do status
+
+      // Verificar se a emissão do laudo foi solicitada
+      const emissaoSolicitadaResult = await query(
+        `SELECT COUNT(*) as count FROM v_fila_emissao WHERE lote_id = $1`,
+        [loteId]
+      );
+      const emissaoSolicitada =
+        parseInt(emissaoSolicitadaResult.rows[0].count) > 0;
+
+      // Verificar se o lote já foi emitido
+      const loteEmitidoResult = await query(
+        `SELECT emitido_em FROM lotes_avaliacao WHERE id = $1`,
+        [loteId]
+      );
+      const loteEmitido = !!loteEmitidoResult.rows[0].emitido_em;
+
+      // Bloquear apenas se emissão foi solicitada OU lote foi emitido (princípio da imutabilidade)
+      if (emissaoSolicitada || loteEmitido) {
         await query('ROLLBACK');
         return NextResponse.json(
           {
             error:
-              'Não é possível resetar avaliação: lote já foi concluído, enviado ao emissor ou possui laudo',
+              'Não é possível resetar avaliação: emissão do laudo já foi solicitada ou laudo já foi emitido (princípio da imutabilidade)',
             success: false,
             loteStatus: lote.status,
+            emissaoSolicitada,
+            loteEmitido,
           },
           { status: 409 }
         );
@@ -163,6 +180,9 @@ export async function POST(
 
       const respostasCount = parseInt(countResult.rows[0].count);
 
+      // Autorizar reset (flag para trigger de imutabilidade)
+      await query(`SET LOCAL app.allow_reset = true`);
+
       // Delete all responses (hard delete as per requirement)
       await query(
         `
@@ -183,34 +203,8 @@ export async function POST(
         [avaliacaoId]
       );
 
-      // Determine requester_id: prefer funcionario.id when present, otherwise use contratante_id for gestor_entidade
-      let requesterId: number | null = null;
-
-      // Try to find a matching funcionario (in case this gestor is also a registered funcionario)
-      const requesterQuery = await query(
-        'SELECT id FROM funcionarios WHERE cpf = $1',
-        [user.cpf]
-      );
-      if (requesterQuery.rowCount > 0) {
-        requesterId = requesterQuery.rows[0].id;
-      } else if (user.contratante_id) {
-        // Use contratante_id as requester identifier for gestor_entidade (requested_by_role will disambiguate)
-        requesterId = user.contratante_id as number;
-      }
-
-      if (!requesterId) {
-        await query('ROLLBACK');
-        return NextResponse.json(
-          {
-            error:
-              'Não foi possível identificar o usuário requisitante para auditoria',
-            success: false,
-          },
-          { status: 500 }
-        );
-      }
-
       // Insert immutable audit record
+      // Use COALESCE to handle cases where gestor_entidade is not in funcionarios table
       const auditResult = await query(
         `
         INSERT INTO avaliacao_resets (
@@ -221,10 +215,25 @@ export async function POST(
           reason,
           respostas_count
         )
-        VALUES ($1, $2, $3, 'gestor_entidade', $4, $5)
+        SELECT 
+          $1,
+          $2,
+          COALESCE(f.id, $6),  -- Use funcionario.id if exists, otherwise use contratante_id
+          'gestor_entidade',
+          $3,
+          $4
+        FROM (SELECT $5::VARCHAR AS cpf) u
+        LEFT JOIN funcionarios f ON f.cpf = u.cpf
         RETURNING id, created_at
       `,
-        [avaliacaoId, loteId, requesterId, reason.trim(), respostasCount]
+        [
+          avaliacaoId,
+          loteId,
+          reason.trim(),
+          respostasCount,
+          user.cpf,
+          user.contratante_id || -1,
+        ]
       );
 
       const resetRecord = auditResult.rows[0];

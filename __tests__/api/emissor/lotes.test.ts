@@ -113,7 +113,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Lote Teste',
             tipo: 'completo',
             lote_status: 'concluido',
@@ -155,7 +154,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 2,
-            codigo: '002-291125',
             titulo: 'Lote Disponível',
             tipo: 'completo',
             liberado_em: '2025-11-29T11:00:00Z',
@@ -198,7 +196,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 3,
-            codigo: '003-291125',
             titulo: 'Lote Arquivo Local',
             tipo: 'completo',
             liberado_em: '2025-11-29T12:00:00Z',
@@ -257,7 +254,6 @@ describe('/api/emissor/lotes', () => {
             rows: [
               {
                 id: 4,
-                codigo: '004-291125',
                 titulo: 'Lote sem DB mas com arquivo',
                 tipo: 'completo',
                 liberado_em: '2025-11-29T13:00:00Z',
@@ -337,7 +333,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Lote com Laudo',
             tipo: 'completo',
             liberado_em: '2025-11-29T10:00:00Z',
@@ -369,7 +364,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Concluído',
             tipo: 'completo',
             liberado_em: '2025-11-29T10:00:00Z',
@@ -384,7 +378,6 @@ describe('/api/emissor/lotes', () => {
           },
           {
             id: 2,
-            codigo: '002-291125',
             titulo: 'Emitido',
             tipo: 'completo',
             liberado_em: '2025-11-29T11:00:00Z',
@@ -428,7 +421,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Lote 1',
             tipo: 'completo',
             liberado_em: '2025-11-29T10:00:00Z',
@@ -444,7 +436,6 @@ describe('/api/emissor/lotes', () => {
           },
           {
             id: 2,
-            codigo: '002-291125',
             titulo: 'Lote 2',
             tipo: 'operacional',
             liberado_em: '2025-11-29T11:00:00Z',
@@ -472,7 +463,7 @@ describe('/api/emissor/lotes', () => {
       // Verificar estrutura do primeiro lote
       const lote = data.lotes[0];
       expect(lote).toHaveProperty('id');
-      expect(lote).toHaveProperty('codigo');
+      // codigo removido
       expect(lote).toHaveProperty('titulo');
       expect(lote).toHaveProperty('tipo');
       expect(lote).toHaveProperty('empresa_nome');
@@ -549,7 +540,6 @@ describe('/api/emissor/lotes', () => {
         rows: [
           {
             id: 3,
-            codigo: '003-291125',
             titulo: 'Lote Ativo',
             tipo: 'completo',
             lote_status: 'ativo',
@@ -565,7 +555,6 @@ describe('/api/emissor/lotes', () => {
           },
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Lote Concluído',
             tipo: 'completo',
             lote_status: 'concluido',

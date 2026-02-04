@@ -64,14 +64,14 @@ VALUES (
 -- 7. Verificar resultado final
 SELECT 
     la.id, 
-    la.codigo, 
+     
     la.status, 
     COUNT(l.id) as laudos_count,
     la.atualizado_em
 FROM lotes_avaliacao la
 LEFT JOIN laudos l ON l.lote_id = la.id
 WHERE la.id = 25
-GROUP BY la.id, la.codigo, la.status, la.atualizado_em;
+GROUP BY la.id,  la.status, la.atualizado_em;
 
 -- 8. Verificar notificações
 SELECT id, tipo, titulo, criado_em, lida

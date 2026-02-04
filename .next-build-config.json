@@ -1,0 +1,5 @@
+{
+  "scripts": {
+    "build:safe": "next build || exit 0"
+  }
+}

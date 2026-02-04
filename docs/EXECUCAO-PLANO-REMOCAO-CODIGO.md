@@ -99,7 +99,7 @@ Lote #{avaliacao.lote_id}
 ```typescript
 // ❌ ANTES
 interface Laudo {
-  lote_codigo: string;
+  lote_// codigo: removido
 }
 {laudo.lote_codigo}
 
@@ -127,7 +127,7 @@ Lote #{funcionario.ultimo_lote_id || '—'}
 ```typescript
 // ❌ ANTES
 interface Props {
-  loteCodigo: string;
+  // loteCodigo: removido
 }
 Lote: <span>{loteCodigo}</span>
 
@@ -207,7 +207,7 @@ a.download = `Laudo_${lote.id}.pdf`
 ```typescript
 // ❌ ANTES
 interface Laudo {
-  lote_codigo: string;
+  lote_// codigo: removido
 }
 <p>{laudo.lote_codigo}</p>
 
@@ -277,7 +277,7 @@ const mensagemEsperada = `Lote #${lote.id} concluído automaticamente`;
 
 ```typescript
 // ❌ ANTES
-{ id: 1, codigo: 'LOTE001', titulo: 'Teste' }
+{ id: 1, titulo: 'Teste' }
 
 // ✅ DEPOIS
 { id: 1, titulo: 'Teste' }
@@ -287,7 +287,7 @@ const mensagemEsperada = `Lote #${lote.id} concluído automaticamente`;
 
 ```typescript
 // ❌ ANTES
-expect(lote.codigo).toBe('001-030226');
+// codigo removido
 
 // ✅ DEPOIS
 expect(lote.id).toBe(1);

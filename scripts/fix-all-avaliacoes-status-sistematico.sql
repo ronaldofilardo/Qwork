@@ -31,8 +31,7 @@ SELECT
     apc.id,
     apc.funcionario_cpf,
     f.nome as funcionario_nome,
-    apc.lote_id,
-    la.codigo as lote_codigo,
+    apc.lote_idas lote_codigo,
     apc.status_atual,
     apc.total_respostas,
     apc.respostas_unicas,
@@ -66,8 +65,7 @@ SELECT
     f.nome as funcionario_nome,
     a.status as novo_status,
     a.envio as data_envio,
-    apc.total_respostas,
-    la.codigo as lote_codigo
+    apc.total_respostasas lote_codigo
 FROM avaliacoes_para_corrigir apc
 JOIN avaliacoes a ON a.id = apc.id
 JOIN funcionarios f ON f.cpf = apc.funcionario_cpf
@@ -77,7 +75,7 @@ ORDER BY apc.id;
 -- 6. IMPACTO nos lotes
 SELECT 
     la.id as lote_id,
-    la.codigo,
+    
     la.titulo,
     la.status as lote_status,
     CASE 
@@ -91,7 +89,7 @@ SELECT
 FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.id IN (SELECT DISTINCT lote_id FROM avaliacoes_para_corrigir)
-GROUP BY la.id, la.codigo, la.titulo, la.status, la.empresa_id, la.contratante_id
+GROUP BY la.id,  la.titulo, la.status, la.empresa_id, la.contratante_id
 ORDER BY la.id;
 
 COMMIT;

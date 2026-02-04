@@ -39,7 +39,6 @@ describe('API Emissor Lotes - Sistema Automático', () => {
           rows: [
             {
               id: 1,
-              codigo: '001-161225',
               titulo: 'Lote Manual',
               tipo: 'completo',
               lote_status: 'concluido',
@@ -56,7 +55,6 @@ describe('API Emissor Lotes - Sistema Automático', () => {
             },
             {
               id: 2,
-              codigo: '002-161225',
               titulo: 'Lote Automático',
               tipo: 'completo',
               lote_status: 'concluido',
@@ -148,7 +146,6 @@ describe('API Emissor Lotes - Sistema Automático', () => {
         rows: [
           {
             id: 42,
-            codigo: '042-261225',
             titulo: 'Lote Com Laudo Sem Hash',
             tipo: 'completo',
             lote_status: 'finalizado',

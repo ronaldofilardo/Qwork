@@ -15,11 +15,15 @@ jest.mock('@/lib/session', () => ({
 
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth } from '@/lib/session';
+import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
 import { POST } from '@/app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequireRHWithEmpresaAccess =
+  requireRHWithEmpresaAccess as jest.MockedFunction<
+    typeof requireRHWithEmpresaAccess
+  >;
 
 describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
   beforeEach(() => {
@@ -79,35 +83,6 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
       expect(data.error).toBe('Acesso negado');
     });
 
-        rows: [{ id: 'uuid-123', created_at: '2026-01-16T12:00:00Z' }],
-        rowCount: 1,
-      });
-
-      // Mock COMMIT
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
-
-      const request = new Request(
-        'http://localhost:3000/api/rh/lotes/1/avaliacoes/1/reset',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            reason: 'Funcionário solicitou refazer a avaliação',
-          }),
-        }
-      );
-
-      const response = await POST(request, {
-        params: { id: '1', avaliacaoId: '1' },
-      });
-
-      expect(response.status).toBe(200);
-      const data = await response.json();
-      expect(data.success).toBe(true);
-      expect(data.message).toContain('resetada com sucesso');
-      expect(data.respostasDeleted).toBe(10);
-    });
-
     it('deve rejeitar se motivo não for fornecido', async () => {
       mockRequireAuth.mockResolvedValue({
         cpf: '11111111111',
@@ -142,6 +117,13 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
       mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // BEGIN
+
+      // Mock SET LOCAL app.current_user_cpf
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Mock SET LOCAL app.current_user_perfil
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       mockQuery.mockResolvedValueOnce({
         rows: [{ id: 1, clinica_id: 1, status: 'concluido', empresa_id: 100 }],
         rowCount: 1,
@@ -174,6 +156,9 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
 
       // Mock count respostas
       mockQuery.mockResolvedValueOnce({ rows: [{ count: '10' }], rowCount: 1 });
+
+      // Mock SET LOCAL app.allow_reset
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
       // Mock delete respostas
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 10 });
@@ -220,6 +205,13 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
       mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // BEGIN
+
+      // Mock SET LOCAL app.current_user_cpf
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Mock SET LOCAL app.current_user_perfil
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
       mockQuery.mockResolvedValueOnce({
         rows: [{ id: 1, clinica_id: 1, status: 'concluido', empresa_id: 100 }],
         rowCount: 1,

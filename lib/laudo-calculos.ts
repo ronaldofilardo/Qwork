@@ -161,8 +161,8 @@ export async function gerarDadosGeraisEmpresa(
   const loteResult = await query(
     `
     SELECT
-      la.titulo,
-      la.codigo,
+      la.descricao,
+      
       la.liberado_em,
       COALESCE(ec.nome, cont.nome) as empresa_nome,
       COALESCE(ec.cnpj, cont.cnpj) as cnpj,
@@ -181,7 +181,7 @@ export async function gerarDadosGeraisEmpresa(
     LEFT JOIN contratantes cont ON la.contratante_id = cont.id
     LEFT JOIN avaliacoes a ON la.id = a.lote_id
     WHERE la.id = $1
-    GROUP BY la.id, la.titulo, la.codigo, la.liberado_em, ec.nome, ec.cnpj, ec.endereco, ec.cidade, ec.estado, ec.cep, c.nome, cont.nome, cont.cnpj, cont.endereco, cont.cidade, cont.estado, cont.cep
+    GROUP BY la.id, la.descricao, la.liberado_em, ec.nome, ec.cnpj, ec.endereco, ec.cidade, ec.estado, ec.cep, c.nome, cont.nome, cont.cnpj, cont.endereco, cont.cidade, cont.estado, cont.cep
   `,
     [loteId]
   );

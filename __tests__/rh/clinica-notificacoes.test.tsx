@@ -48,7 +48,6 @@ describe('Clinica - Notificações', () => {
                   id: 'n1',
                   tipo: 'laudo_enviado',
                   lote_id: 1,
-                  codigo: 'LOTE1',
                   titulo: 'Lote 1',
                   empresa_nome: 'Empresa Teste',
                   data_evento: new Date().toISOString(),

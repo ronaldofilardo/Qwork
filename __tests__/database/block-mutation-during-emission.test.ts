@@ -10,7 +10,7 @@ describe('Trigger: block mutations during emission', () => {
 
     const codigo = 'TEST-CODIGO-' + Math.floor(Math.random() * 1000000);
     const loteRes = await query(
-      "INSERT INTO lotes_avaliacao (clinica_id, status, codigo, titulo) VALUES ($1, 'concluido', $2, 'Teste Lote') RETURNING id",
+      "INSERT INTO lotes_avaliacao (clinica_id, status) VALUES ($1, 'concluido') RETURNING id",
       [clinicaId, codigo]
     );
     const loteId = loteRes.rows[0].id;

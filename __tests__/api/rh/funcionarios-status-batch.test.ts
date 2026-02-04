@@ -252,7 +252,7 @@ describe('/api/rh/funcionarios/status/batch', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE funcionarios
         .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE avaliacoes
         .mockResolvedValueOnce({
-          rows: [{ id: 1, status: 'ativo', codigo: 'LOTE-001' }],
+          rows: [{ id: 1, status: 'ativo' }],
           rowCount: 1,
         }) // lotes afetados
         .mockResolvedValueOnce({

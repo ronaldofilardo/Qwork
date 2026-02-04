@@ -2,8 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  output: 'standalone',
+  // Skip generating static error pages
   experimental: {
     serverComponentsExternalPackages: ['@sparticuz/chromium', 'puppeteer-core'],
+    skipTrailingSlashRedirect: true,
   },
   eslint: {
     // Temporarily ignore ESLint during `next build` to avoid flooding build logs

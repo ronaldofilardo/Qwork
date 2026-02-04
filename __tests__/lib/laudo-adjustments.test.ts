@@ -2,6 +2,7 @@ import { gerarHTMLLaudoCompleto } from '@/lib/templates/laudo-html';
 import { getLogoSignatureTemplate } from '@/lib/pdf/puppeteer-templates';
 
 const laudoPadronizado = {
+  loteId: 123,
   etapa1: {
     empresaAvaliada: 'Empresa Teste LTDA',
     cnpj: '12.345.678/0001-90',
@@ -13,7 +14,6 @@ const laudoPadronizado = {
     totalFuncionariosAvaliados: 10,
     percentualConclusao: 100,
     amostra: { operacional: 8, gestao: 2 },
-    loteId: 123,
   },
   etapa2: [
     {

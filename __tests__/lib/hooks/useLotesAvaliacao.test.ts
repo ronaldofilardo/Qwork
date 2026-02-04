@@ -123,7 +123,7 @@ describe('useLotesAvaliacao', () => {
 
     const novosLotes = [
       ...mockLotes,
-      { ...mockLotes[0], id: 2, codigo: 'LOTE-002' },
+      { ...mockLotes[0], id: 2 },
     ];
 
     act(() => {

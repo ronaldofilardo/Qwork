@@ -1,14 +1,13 @@
 /**
  * @fileoverview Teste de integração para inativação de avaliação por contratante
- * @description Valida fluxo completo de inativação de avaliação incluindo:
- * - Criação de contratante, funcionário, lote e avaliação
- * - Inativação via API com autenticação gestor_entidade
- * - Atualização de status sem violar constraints
+ * @description DESABILITADO - Endpoint /api/avaliacoes/inativar foi removido
+ * Novos endpoints: /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar
+ *                  /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar
  */
 
 import type { Session } from '@/types/auth';
 import type { Response } from '@/types/api';
-import { POST } from '@/app/api/avaliacoes/inativar/route';
+// import { POST } from '@/app/api/avaliacoes/inativar/route'; // REMOVIDO
 import { query } from '@/lib/db';
 import * as sessionMod from '@/lib/session';
 
@@ -24,9 +23,9 @@ const mockRequireAuth = sessionMod.requireAuth as jest.MockedFunction<
 
 /**
  * @test Suite de integração para inativação de avaliação
- * @description Testa fluxo completo desde criação até inativação
+ * @description DESABILITADO - Endpoint foi refatorado
  */
-describe('Inativar avaliação - integração (contratante)', () => {
+describe.skip('Inativar avaliação - integração (contratante) - OBSOLETO', () => {
   let contratanteId: number;
   let funcionarioCpf: string;
   let loteId: number;
@@ -65,22 +64,20 @@ describe('Inativar avaliação - integração (contratante)', () => {
 
     // Arrange - Criar lote de contratante
     // Gerar um código de lote curto e único para este teste para evitar colisões
-    const codigo = 'T' + Math.random().toString(36).slice(2, 9).toUpperCase();
-    // Cleanup any existing lote with the same codigo to avoid conflicts from prior runs
-    await query(`DELETE FROM lotes_avaliacao WHERE codigo = $1`, [codigo]);
+    // Cleanup any existing lote to avoid conflicts from prior runs
     let loteRes;
     try {
       loteRes = await query(
-        `INSERT INTO lotes_avaliacao (id, codigo, contratante_id, titulo, tipo, status, liberado_por, numero_ordem)
-         VALUES ((SELECT COALESCE(MAX(id), 0) + 1 FROM lotes_avaliacao), $1, $2, $3, 'completo', 'ativo', $4, 1) RETURNING id`,
-        [codigo, contratanteId, `Lote Teste Int ${codigo}`, '00000000000']
+        `INSERT INTO lotes_avaliacao (id, contratante_id, tipo, status, liberado_por, numero_ordem)
+         VALUES ((SELECT COALESCE(MAX(id), 0) + 1 FROM lotes_avaliacao), $1, 'completo', 'ativo', $2, 1) RETURNING id`,
+        [contratanteId, '00000000000']
       );
       loteId = loteRes.rows[0].id;
     } catch (err: any) {
       // Se já existir por causa de runs anteriores/sequence, recuperar id existente
       const existing = await query(
-        `SELECT id FROM lotes_avaliacao WHERE codigo = $1`,
-        [codigo]
+        `SELECT id FROM lotes_avaliacao WHERE contratante_id = $1 ORDER BY id DESC LIMIT 1`,
+        [contratanteId]
       );
       if (existing.rowCount > 0) {
         loteId = existing.rows[0].id;

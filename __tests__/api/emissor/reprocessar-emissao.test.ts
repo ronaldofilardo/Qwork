@@ -30,7 +30,6 @@ describe.skip('POST /api/emissor/reprocessar-emissao/[loteId]', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-010125',
             status: 'concluido',
             auto_emitir_agendado: true,
             auto_emitir_em: new Date(),
@@ -81,7 +80,6 @@ describe.skip('POST /api/emissor/reprocessar-emissao/[loteId]', () => {
       rows: [
         {
           id: 1,
-          codigo: '001-010125',
           status: 'ativo',
           auto_emitir_agendado: true,
         },
@@ -111,7 +109,6 @@ describe.skip('POST /api/emissor/reprocessar-emissao/[loteId]', () => {
       rows: [
         {
           id: 1,
-          codigo: '001-010125',
           status: 'concluido',
           auto_emitir_agendado: false,
           total_avaliacoes: 10,
@@ -144,7 +141,6 @@ describe.skip('POST /api/emissor/reprocessar-emissao/[loteId]', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-010125',
             status: 'concluido',
             auto_emitir_agendado: true,
             total_avaliacoes: 10,
@@ -181,7 +177,6 @@ describe.skip('POST /api/emissor/reprocessar-emissao/[loteId]', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-010125',
             status: 'concluido',
             auto_emitir_agendado: true,
             total_avaliacoes: 10,

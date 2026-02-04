@@ -52,7 +52,7 @@ BEGIN
     data_atual := TO_CHAR(CURRENT_DATE, 'DDMMYY');
 
     -- Buscar próximo sequencial para a data
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
     INTO sequencial
     FROM lotes_avaliacao la
     WHERE la.codigo LIKE '%-' || data_atual;

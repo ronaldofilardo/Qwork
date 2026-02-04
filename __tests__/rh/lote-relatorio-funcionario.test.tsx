@@ -27,7 +27,6 @@ global.confirm = jest.fn();
 // Mock dos dados
 const mockLote = {
   id: 1,
-  codigo: 'LOTE001',
   titulo: 'Lote de Teste',
   descricao: 'Descrição do lote',
   tipo: 'completo',

@@ -7,21 +7,21 @@
 -- ===========================
 -- 1) PREVIEW: listar lote(s) e registros relacionados
 -- ===========================
-SELECT la.id AS lote_id, la.codigo, la.titulo, la.status, la.liberado_por, la.clinica_id, la.empresa_id, la.liberado_em
+SELECT la.id AS lote_id,  la.titulo, la.status, la.liberado_por, la.clinica_id, la.empresa_id, la.liberado_em
 FROM lotes_avaliacao la
-WHERE la.codigo = '001-040126';
+WHERE la.id = 0 -- FIXME: substituir por ID correto;
 
 SELECT la.id AS lote_id, a.id AS avaliacao_id, a.funcionario_cpf, a.status, a.inicio, a.envio
 FROM avaliacoes a
 JOIN lotes_avaliacao la ON la.id = a.lote_id
-WHERE la.codigo = '001-040126'
+WHERE la.id = 0 -- FIXME: substituir por ID correto
 ORDER BY a.id;
 
 SELECT DISTINCT f.id, f.cpf, f.nome, f.indice_avaliacao, f.data_ultimo_lote
 FROM funcionarios f
 JOIN lotes_avaliacao_funcionarios laf ON laf.funcionario_id = f.id
 JOIN lotes_avaliacao la ON la.id = laf.lote_id
-WHERE la.codigo = '001-040126';
+WHERE la.id = 0 -- FIXME: substituir por ID correto;
 
 SELECT COUNT(*) AS respostas_count
 FROM respostas r
@@ -64,7 +64,7 @@ WITH afetados AS (
   SELECT DISTINCT f.id FROM funcionarios f
   JOIN lotes_avaliacao_funcionarios laf ON laf.funcionario_id = f.id
   JOIN lotes_avaliacao la ON la.id = laf.lote_id
-  WHERE la.codigo = '001-040126'
+  WHERE la.id = 0 -- FIXME: substituir por ID correto
 )
 SELECT f.id, f.cpf, f.nome, f.indice_avaliacao, f.data_ultimo_lote
 FROM funcionarios f
@@ -126,7 +126,7 @@ WITH afetados AS (
   SELECT DISTINCT f.id FROM funcionarios f
   JOIN lotes_avaliacao_funcionarios laf ON laf.funcionario_id = f.id
   JOIN lotes_avaliacao la ON la.id = laf.lote_id
-  WHERE la.codigo = '001-040126'
+  WHERE la.id = 0 -- FIXME: substituir por ID correto
 )
 UPDATE funcionarios
 SET indice_avaliacao = 0,

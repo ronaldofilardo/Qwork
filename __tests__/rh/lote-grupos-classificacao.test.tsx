@@ -15,7 +15,7 @@ import DetalhesLotePage from '@/app/rh/empresa/[id]/lote/[loteId]/page';
  */
 interface MockLote {
   id: number;
-  codigo: string;
+  // codigo: removido
   titulo: string;
   descricao: string;
   tipo: string;
@@ -69,7 +69,6 @@ jest.mock('next/navigation', () => ({
 describe('DetalhesLotePage - Classificação de Risco por Grupo', () => {
   const mockLote: MockLote = {
     id: 1,
-    codigo: 'LOTE001',
     titulo: 'Lote de Teste',
     descricao: 'Descrição do lote',
     tipo: 'completo',

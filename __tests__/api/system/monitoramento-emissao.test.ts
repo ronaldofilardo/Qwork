@@ -134,14 +134,12 @@ describe('API /api/system/monitoramento-emissao', () => {
           rows: [
             {
               id: 1,
-              codigo: 'LOTE-001',
               tipo_alerta:
                 'CRITICO: Lote concluído há mais de 5min sem emissão',
               idade_conclusao_segundos: 400,
             },
             {
               id: 2,
-              codigo: 'LOTE-002',
               tipo_alerta: 'CRITICO: Lote emitido há mais de 5min sem envio',
               idade_conclusao_segundos: 350,
             },
@@ -172,8 +170,8 @@ describe('API /api/system/monitoramento-emissao', () => {
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // alertasCriticos
         .mockResolvedValueOnce({
           rows: [
-            { id: 1, codigo: 'LOTE-001', idade_segundos: 120 },
-            { id: 2, codigo: 'LOTE-002', idade_segundos: 90 },
+            { id: 1, idade_segundos: 120 },
+            { id: 2, idade_segundos: 90 },
           ],
           rowCount: 2,
         }) // lotesPendentesEmissao
@@ -200,7 +198,6 @@ describe('API /api/system/monitoramento-emissao', () => {
           rows: [
             {
               id: 1,
-              codigo: 'LOTE-001',
               idade_emissao_segundos: 300,
               atraso_envio_segundos: -300, // Ainda não venceu
             },
@@ -232,7 +229,6 @@ describe('API /api/system/monitoramento-emissao', () => {
           rows: [
             {
               id: 1,
-              codigo: 'LOTE-001',
               emitido_em: new Date(),
               enviado_em: new Date(),
               latencia_emissao_seg: 45,

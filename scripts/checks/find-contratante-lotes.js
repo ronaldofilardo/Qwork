@@ -26,7 +26,7 @@ async function findContratanteELotes() {
       `
       SELECT DISTINCT
         la.id,
-        la.codigo,
+        
         la.titulo,
         la.tipo,
         la.status,
@@ -43,7 +43,7 @@ async function findContratanteELotes() {
       JOIN contratantes_funcionarios cf ON cf.funcionario_id = f.id
       LEFT JOIN usuarios u ON la.liberado_por = u.id
       WHERE cf.contratante_id = $1 AND cf.vinculo_ativo = true
-      GROUP BY la.id, la.codigo, la.titulo, la.tipo, la.status, la.criado_em, la.liberado_em, u.nome
+      GROUP BY la.id,  la.titulo, la.tipo, la.status, la.criado_em, la.liberado_em, u.nome
       ORDER BY la.criado_em DESC
     `,
       [contratante.id]

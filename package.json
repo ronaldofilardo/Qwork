@@ -72,7 +72,10 @@
     "vercel-build": "next build",
     "check-puppeteer": "tsx scripts/check-puppeteer.ts",
     "clean:root": "powershell -ExecutionPolicy Bypass -File scripts/cleanup-root.ps1",
-    "check-backblaze": "tsx scripts/check-backblaze.mts"
+    "check-backblaze": "tsx scripts/check-backblaze.mts",
+    "db:sync": "powershell -ExecutionPolicy Bypass -File scripts/sync-database.ps1",
+    "db:sync:force": "powershell -ExecutionPolicy Bypass -File scripts/sync-database.ps1 -Force",
+    "db:sync:quick": "powershell -ExecutionPolicy Bypass -File scripts/sync-database.ps1 -SkipBackup -SkipValidation"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

@@ -70,7 +70,6 @@ describe('/api/entidade/liberar-lote', () => {
       rows: [
         {
           id: 777,
-          codigo: 'ENT-001',
           liberado_em: new Date().toISOString(),
           numero_ordem: 5,
         },

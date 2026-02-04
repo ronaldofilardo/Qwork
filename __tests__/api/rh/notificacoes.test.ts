@@ -121,7 +121,6 @@ describe('/api/rh/notificacoes', () => {
           tipo: 'avaliacao_concluida',
           id_referencia: 1,
           lote_id: 10,
-          codigo: '001-301125',
           titulo: 'Lote Teste',
           empresa_nome: 'Empresa A',
           data_evento: '2025-11-30T10:00:00Z',
@@ -143,7 +142,7 @@ describe('/api/rh/notificacoes', () => {
       expect(data.notificacoes[0].id).toBe('avaliacao_concluida_1');
       expect(data.notificacoes[0].tipo).toBe('avaliacao_concluida');
       expect(data.notificacoes[0].lote_id).toBe(10);
-      expect(data.notificacoes[0].codigo).toBe('001-301125');
+      // codigo removido
       expect(data.notificacoes[0].titulo).toBe('Lote Teste');
       expect(data.notificacoes[0].empresa_nome).toBe('Empresa A');
       expect(data.notificacoes[0].mensagem).toBe(
@@ -158,7 +157,6 @@ describe('/api/rh/notificacoes', () => {
           tipo: 'avaliacao_concluida',
           id_referencia: 10,
           lote_id: 10,
-          codigo: '001-301125',
           titulo: 'Lote Teste',
           empresa_nome: 'Empresa A',
           data_evento: '2025-11-30T10:00:00Z',
@@ -187,7 +185,6 @@ describe('/api/rh/notificacoes', () => {
           tipo: 'laudo_enviado',
           id_referencia: 100,
           lote_id: 10,
-          codigo: '001-301125',
           titulo: 'Lote Teste',
           empresa_nome: 'Empresa A',
           data_evento: '2025-11-30T10:00:00Z',
@@ -244,7 +241,6 @@ describe('/api/rh/notificacoes', () => {
         tipo: 'avaliacao_concluida',
         id_referencia: i,
         lote_id: 10,
-        codigo: '001-301125',
         titulo: 'Lote Teste',
         empresa_nome: 'Empresa A',
         data_evento: '2025-11-30T10:00:00Z',

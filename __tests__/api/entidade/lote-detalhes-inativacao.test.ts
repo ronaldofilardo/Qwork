@@ -26,7 +26,6 @@ describe('GET /api/entidade/lote/[id] - Exibição de dados de inativação', ()
       rows: [
         {
           id: 1,
-          codigo: 'TST-001',
           titulo: 'Lote Teste',
           tipo: 'completo',
           status: 'concluido',

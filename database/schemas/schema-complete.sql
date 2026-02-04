@@ -121,7 +121,7 @@ BEGIN
 
     -- Buscar prÃ³ximo sequencial para a data
 
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
 
     INTO sequencial
 

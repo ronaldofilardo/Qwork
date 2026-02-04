@@ -195,9 +195,7 @@ describe('Correção: Imutabilidade de Laudos', () => {
       const result = await query(`
         SELECT 
           l.id,
-          l.status,
-          la.codigo
-        FROM laudos l
+          l.statusFROM laudos l
         LEFT JOIN lotes_avaliacao la ON la.id = l.lote_id
         WHERE l.status = 'enviado'
           AND l.hash_pdf IS NULL

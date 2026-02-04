@@ -50,7 +50,7 @@ async function buscarLaudosSemHash() {
     SELECT 
       l.id,
       l.lote_id,
-      la.codigo,
+      
       l.status,
       l.emitido_em
     FROM laudos l

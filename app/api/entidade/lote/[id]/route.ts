@@ -32,7 +32,6 @@ export async function GET(
       `
       SELECT
         la.id,
-        la.titulo,
         la.tipo,
         la.status,
         la.criado_em,
@@ -50,7 +49,7 @@ export async function GET(
         l.emissor_cpf,
         l.hash_pdf
       FROM lotes_avaliacao la
-      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
       WHERE la.id = $1 
         AND EXISTS (

@@ -111,7 +111,7 @@ interface NotificacaoClinica {
   id: string;
   tipo: "avaliacao_concluida" | "lote_concluido" | "laudo_enviado";
   lote_id: number;
-  codigo: string;
+  // codigo: removido
   titulo: string;
   empresa_nome: string;
   data_evento: string;

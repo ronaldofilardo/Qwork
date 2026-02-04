@@ -54,6 +54,38 @@ export async function POST(request: Request) {
       );
     }
 
+    // Se houver respostas e a avaliação ainda estiver 'iniciada', atualizar para 'em_andamento'
+    try {
+      const statusRes = await query(
+        `SELECT status FROM avaliacoes WHERE id = $1`,
+        [avaliacaoId]
+      );
+      const currentStatus = statusRes.rows[0]?.status;
+      if (currentStatus === 'iniciada') {
+        // Atualizar status dentro de contexto transacional com segurança
+        await transactionWithContext(async (queryTx) => {
+          await queryTx(
+            `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1`,
+            [avaliacaoId]
+          );
+        });
+        console.log(
+          `[RESPOSTAS] ✅ Atualizado status da avaliação ${avaliacaoId} para 'em_andamento'`
+        );
+      }
+    } catch (statusErr: any) {
+      // Log detalhado do erro para diagnóstico
+      console.error(
+        '[RESPOSTAS] ❌ Erro ao atualizar status para em_andamento:',
+        {
+          message: statusErr?.message,
+          code: statusErr?.code,
+          detail: statusErr?.detail,
+          avaliacaoId,
+        }
+      );
+    }
+
     // ✅ VERIFICAR SE COMPLETOU 37 RESPOSTAS (AUTO-CONCLUSÃO)
     const countResult = await query(
       `SELECT COUNT(DISTINCT (grupo, item)) as total

@@ -146,8 +146,7 @@ describe('Correção Sistêmica - Status de Avaliações', () => {
       // Buscar lotes que tenham avaliações
       const lotes = await query(
         `
-        SELECT DISTINCT la.id, la.codigo
-        FROM lotes_avaliacao la
+        SELECT DISTINCT la.idFROM lotes_avaliacao la
         JOIN avaliacoes a ON a.lote_id = la.id
         WHERE la.status = 'concluido'
         LIMIT 5
@@ -177,7 +176,7 @@ describe('Correção Sistêmica - Status de Avaliações', () => {
         `
         SELECT 
           la.id,
-          la.codigo,
+          
           la.status,
           COUNT(a.id) as total_avaliacoes,
           COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as concluidas,
@@ -185,7 +184,7 @@ describe('Correção Sistêmica - Status de Avaliações', () => {
         FROM lotes_avaliacao la
         JOIN avaliacoes a ON a.lote_id = la.id
         WHERE la.status != 'cancelado'
-        GROUP BY la.id, la.codigo, la.status
+        GROUP BY la.id,  la.status
         HAVING 
           COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) + 
           COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) = 
@@ -218,14 +217,14 @@ describe('Correção Sistêmica - Status de Avaliações', () => {
         `
         SELECT 
           la.id,
-          la.codigo,
+          
           la.status,
           COUNT(a.id) as total_avaliacoes,
           COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as concluidas
         FROM lotes_avaliacao la
         LEFT JOIN avaliacoes a ON a.lote_id = la.id
         WHERE la.id = 17
-        GROUP BY la.id, la.codigo, la.status
+        GROUP BY la.id,  la.status
       `
       );
 

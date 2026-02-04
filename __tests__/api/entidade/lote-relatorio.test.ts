@@ -46,7 +46,6 @@ describe('POST /api/entidade/lote/[id]/relatorio', () => {
       rows: [
         {
           id: 10,
-          codigo: '003-250126',
           titulo: 'Lote 3',
           tipo: 'padrao',
           status: 'concluido',
@@ -84,5 +83,52 @@ describe('POST /api/entidade/lote/[id]/relatorio', () => {
     const jsPDF = require('jspdf').default;
     const instance = jsPDF();
     expect(instance.autoTable).toHaveBeenCalledTimes(1);
+  });
+
+  it('processa corretamente quando lote possui hash_pdf (não deve falhar)', async () => {
+    mockGetSession.mockReturnValue({
+      perfil: 'gestor_entidade',
+      contratante_id: 77,
+      cpf: '52998224725',
+    });
+
+    // 1) lote query com hash_pdf
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 10,
+          titulo: 'Lote 3',
+          tipo: 'padrao',
+          status: 'concluido',
+          hash_pdf: 'abc123def4567890',
+        },
+      ],
+    });
+
+    // 2) laudo query vazio
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    // 3) funcionarios query
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          nome: 'Func A',
+          cpf: '07752435074',
+          setor: 'Operacional',
+          funcao: 'estagio',
+          nivel_cargo: 'gestao',
+          avaliacao_status: 'concluida',
+          data_conclusao: '2026-01-25T00:00:00Z',
+        },
+      ],
+    });
+
+    const req = new Request('http://localhost/api/entidade/lote/10/relatorio', {
+      method: 'POST',
+    });
+    const res = await POST(req, { params: { id: '10' } } as any);
+
+    // Response should be a PDF buffer (no error)
+    expect((res as any).headers.get('Content-Type')).toBe('application/pdf');
   });
 });

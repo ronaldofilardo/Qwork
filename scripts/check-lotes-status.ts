@@ -5,12 +5,12 @@ async function checkLotesStatus() {
     console.log('[CHECK] Verificando lotes existentes...');
 
     const lotes = await query(
-      'SELECT id, codigo, status FROM lotes_avaliacao ORDER BY id DESC LIMIT 10'
+      'SELECT id, status FROM lotes_avaliacao ORDER BY id DESC LIMIT 10'
     );
 
     console.log('[CHECK] Lotes encontrados:', lotes.rows.length);
     lotes.rows.forEach((lote) => {
-      console.log(`  - ID ${lote.id}: ${lote.codigo} (${lote.status})`);
+      console.log(`  - ID ${lote.id}: ${lote.status}`);
     });
 
     console.log('\n[CHECK] Verificando sequence...');

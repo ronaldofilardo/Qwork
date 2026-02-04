@@ -1523,7 +1523,7 @@ BEGIN
 
     -- Buscar prÃ³ximo sequencial para a data
 
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
 
     INTO sequencial
 
@@ -3084,8 +3084,7 @@ BEGIN
   WHERE id = p_lote_id;
 
   -- Buscar lote anterior (ordem - 1) e status da avaliacao correspondente (se existir) no mesmo contexto
-  SELECT la.numero_ordem, a.status, la.codigo
-  INTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
+  SELECT la.numero_ordem, a.statusINTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
   FROM lotes_avaliacao la
   LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.funcionario_cpf = p_funcionario_cpf
   WHERE la.numero_ordem = v_lote_atual_ordem - 1
@@ -5665,7 +5664,7 @@ COMMENT ON VIEW public.suspicious_activity IS 'Detecta atividades suspeitas: usu
 CREATE VIEW public.v_auditoria_emissoes AS
  SELECT l.id AS laudo_id,
     l.lote_id,
-    la.codigo AS lote_codigo,
+    
     la.contratante_id,
     la.empresa_id,
     fe.solicitado_por AS solicitante_cpf,
@@ -5728,7 +5727,7 @@ COMMENT ON VIEW public.v_relatorio_emissoes_usuario IS 'Relatório estatístico 
 
 CREATE VIEW public.vw_alertas_emissao_laudos AS
  SELECT la.id,
-    la.codigo,
+    
     la.status,
         CASE
             WHEN (((la.status)::text = 'concluido'::text) AND (la.emitido_em IS NULL) AND (la.atualizado_em < (now() - '00:05:00'::interval))) THEN 'CRITICO: Lote concluÃ­do hÃ¡ mais de 5min sem emissÃ£o'::text
@@ -5763,7 +5762,7 @@ COMMENT ON VIEW public.vw_alertas_emissao_laudos IS 'Alertas de lotes com proble
 
 CREATE VIEW public.vw_alertas_lotes_stuck AS
  SELECT la.id AS lote_id,
-    la.codigo,
+    
     la.status,
     COALESCE(ec.nome, cont.nome) AS empresa_nome,
     COALESCE(c.nome, cont.nome) AS clinica_nome,
@@ -5789,7 +5788,7 @@ CREATE VIEW public.vw_alertas_lotes_stuck AS
      LEFT JOIN public.contratantes cont ON ((la.contratante_id = cont.id)))
      LEFT JOIN public.avaliacoes a ON ((la.id = a.lote_id)))
   WHERE (((la.status)::text = ANY ((ARRAY['ativo'::character varying, 'concluido'::character varying, 'finalizado'::character varying])::text[])) AND (la.atualizado_em < (now() - '48:00:00'::interval)))
-  GROUP BY la.id, la.codigo, la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
+  GROUP BY la.id,  la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
 
 
 ALTER VIEW public.vw_alertas_lotes_stuck OWNER TO postgres;
@@ -6146,7 +6145,7 @@ COMMENT ON VIEW public.vw_lotes_por_contratante IS 'MÃ©tricas agregadas de lot
 
 CREATE VIEW public.vw_metricas_emissao_laudos AS
  SELECT la.id,
-    la.codigo,
+    
     la.status,
     la.liberado_em,
     la.atualizado_em AS concluido_em,

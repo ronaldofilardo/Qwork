@@ -38,8 +38,6 @@ describe('RhLaudosPage', () => {
                 {
                   id: 1,
                   lote_id: 101,
-                  lote_codigo: 'LOTE-001',
-                  lote_titulo: 'Avaliação Dezembro 2024',
                   empresa_nome: 'Empresa Teste 1',
                   status: 'enviado',
                   data_emissao: '2024-12-15',
@@ -50,8 +48,6 @@ describe('RhLaudosPage', () => {
                 {
                   id: 2,
                   lote_id: 102,
-                  lote_codigo: 'LOTE-002',
-                  lote_titulo: 'Avaliação Janeiro 2025',
                   empresa_nome: 'Empresa Teste 2',
                   status: 'pendente',
                   data_emissao: null,

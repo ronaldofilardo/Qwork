@@ -202,9 +202,9 @@ describe('Rastreabilidade de Emissão Manual - Funcionalidade', () => {
       await query(
         `
         INSERT INTO auditoria_laudos (
-          lote_id, acao, status, emissor_cpf, emissor_nome, observacoes
+          lote_id, acao, status, emissor_cpf, emissor_nome, solicitado_por, tipo_solicitante, observacoes
         )
-        VALUES ($1, 'solicitacao_manual', 'pendente', $2, 'Gestor Teste', 'Solicitação manual de emissão')
+        VALUES ($1, 'solicitacao_manual', 'pendente', $2, 'Gestor Teste', $2, 'gestor_entidade', 'Solicitação manual de emissão')
       `,
         [loteId, cpfSolicitante]
       );
@@ -344,9 +344,9 @@ describe('Rastreabilidade de Emissão Manual - Integração E2E', () => {
       await query(
         `
         INSERT INTO auditoria_laudos (
-          lote_id, acao, status, emissor_cpf, emissor_nome, observacoes
+          lote_id, acao, status, emissor_cpf, emissor_nome, solicitado_por, tipo_solicitante, observacoes
         )
-        VALUES ($1, 'solicitacao_manual', 'pendente', $2, 'Gestor E2E', 
+        VALUES ($1, 'solicitacao_manual', 'pendente', $2, 'Gestor E2E', $2, 'gestor_entidade',
                 'Solicitação E2E teste de rastreabilidade')
       `,
         [loteId, cpfGestor]

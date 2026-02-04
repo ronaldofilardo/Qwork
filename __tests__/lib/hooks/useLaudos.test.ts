@@ -24,7 +24,6 @@ describe('useLaudos', () => {
       {
         id: 1,
         lote_id: 1,
-        codigo: 'LAU-001',
         titulo: 'Laudo Janeiro',
         empresa_nome: 'Empresa Teste',
         clinica_nome: 'Clínica Teste',
@@ -76,7 +75,6 @@ describe('useLaudos', () => {
     const mockLaudo = {
       id: 1,
       lote_id: 1,
-      codigo: 'LAU-001',
       titulo: 'Laudo Teste',
       empresa_nome: 'Empresa Teste',
       clinica_nome: 'Clínica Teste',

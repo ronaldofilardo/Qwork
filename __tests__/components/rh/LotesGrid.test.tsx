@@ -6,7 +6,6 @@ const mockLotes = [
   {
     id: 1,
     titulo: 'Lote Janeiro 2024',
-    codigo: 'LOT-001',
     liberado_em: '2024-01-15T10:00:00Z',
     total_avaliacoes: 10,
     avaliacoes_concluidas: 8,
@@ -15,7 +14,6 @@ const mockLotes = [
   {
     id: 2,
     titulo: 'Lote Fevereiro 2024',
-    codigo: 'LOT-002',
     liberado_em: '2024-02-15T10:00:00Z',
     total_avaliacoes: 5,
     avaliacoes_concluidas: 5,
@@ -31,7 +29,6 @@ const mockLaudos = [
     emissor_nome: 'Dr. João Silva',
     enviado_em: '2024-02-20T14:30:00Z',
     hash: 'abc123',
-    codigo: 'LAU-001',
   },
 ];
 
@@ -48,20 +45,17 @@ describe('LotesGrid', () => {
   it('deve renderizar lista de lotes', () => {
     render(<LotesGrid {...defaultProps} />);
 
-    expect(screen.getByText('Lote Janeiro 2024')).toBeInTheDocument();
-    expect(screen.getByText('Lote Fevereiro 2024')).toBeInTheDocument();
-    expect(screen.getByText('Código: LOT-001')).toBeInTheDocument();
-    expect(screen.getByText('Código: LOT-002')).toBeInTheDocument();
+    // A apresentação atual usa apenas ID no card (Lote ID)
+    expect(screen.getByLabelText('Ver detalhes do lote 1')).toBeInTheDocument();
+    expect(screen.getByLabelText('Ver detalhes do lote 2')).toBeInTheDocument();
   });
 
   it('deve chamar onLoteClick quando lote é clicado', () => {
     const mockOnLoteClick = jest.fn();
     render(<LotesGrid {...defaultProps} onLoteClick={mockOnLoteClick} />);
 
-    const loteElement = screen.getByText('Lote Janeiro 2024').closest('div');
-    if (loteElement) {
-      fireEvent.click(loteElement);
-    }
+    const loteCard = screen.getByLabelText('Ver detalhes do lote 1');
+    fireEvent.click(loteCard);
 
     expect(mockOnLoteClick).toHaveBeenCalledWith(1);
   });
@@ -91,7 +85,6 @@ describe('LotesGrid', () => {
         emissor_nome: 'Dra. Maria',
         emitido_em: '2024-01-20T09:15:00Z',
         hash: 'def456',
-        codigo: 'LAU-002',
       },
     ];
 
@@ -163,5 +156,37 @@ describe('LotesGrid', () => {
 
     // Segundo lote: 5 total - 0 inativada = 5 ativas consideradas
     expect(screen.getAllByText('5')).toHaveLength(3); // Uma para total, uma para concluídas, outra para ativas
+  });
+
+  it('deve exibir hash do lote quando presente e permitir copiar', () => {
+    const lotesWithHash = [
+      {
+        id: 3,
+        titulo: 'Lote Com Hash',
+        liberado_em: '2024-03-15T10:00:00Z',
+        total_avaliacoes: 3,
+        avaliacoes_concluidas: 3,
+        avaliacoes_inativadas: 0,
+        empresa_nome: 'Empresa',
+        hash_pdf: 'lotehash123456',
+      },
+    ];
+
+    render(
+      <LotesGrid {...defaultProps} lotes={lotesWithHash as any} laudos={[]} />
+    );
+
+    expect(screen.getByText('🔒 Hash SHA-256')).toBeInTheDocument();
+
+    Object.assign(navigator, {
+      clipboard: { writeText: jest.fn().mockResolvedValue(undefined) },
+    });
+
+    const copyButton = screen.getByTitle('Copiar hash do lote');
+    expect(copyButton).toBeInTheDocument();
+    copyButton.click();
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+      'lotehash123456'
+    );
   });
 });

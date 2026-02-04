@@ -202,7 +202,7 @@ export default function LotesPage() {
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-1">
                       <h5 className="font-semibold text-gray-800 text-base">
-                        {lote.titulo}
+                        Lote ID: {lote.id}
                       </h5>
                       <div className="flex items-center gap-2">
                         {lote.avaliacoes_inativadas > 0 && (
@@ -218,7 +218,6 @@ export default function LotesPage() {
                         )}
                       </div>
                     </div>
-                    <p className="text-sm text-gray-600">Lote #{lote.id}</p>
                     <p className="text-xs text-gray-500">
                       {formatDateTime(lote.liberado_em)}
                     </p>

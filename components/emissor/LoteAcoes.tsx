@@ -7,7 +7,7 @@ import { StatusLoteBadge } from './StatusLoteBadge';
 interface LoteAcoesProps {
   lote: {
     id: number;
-    codigo: string;
+    // codigo: removido
     status: 'ativo' | 'concluido' | 'finalizado' | 'cancelado';
     processamento_em?: string | null;
   };

@@ -24,7 +24,6 @@ export const GET = async (
       `
       SELECT
         la.id,
-        la.titulo,
         la.descricao,
         la.tipo,
         la.status,
@@ -51,7 +50,7 @@ export const GET = async (
       FROM lotes_avaliacao la
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
-      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
       LEFT JOIN funcionarios f2 ON l.emissor_cpf = f2.cpf
       WHERE la.id = $1 AND ec.ativa = true
@@ -130,7 +129,6 @@ export const GET = async (
         id: lote.id,
         empresa_id: lote.empresa_id,
         empresa_nome: lote.empresa_nome,
-        titulo: lote.titulo,
         descricao: lote.descricao,
         tipo: lote.tipo,
         status: lote.status,

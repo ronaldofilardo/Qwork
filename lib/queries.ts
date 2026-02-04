@@ -66,7 +66,6 @@ export async function getLoteInfo(
     `
     SELECT 
       la.id,
-      la.titulo,
       la.descricao,
       la.tipo,
       la.status,
@@ -79,6 +78,7 @@ export async function getLoteInfo(
       l.status as laudo_status,
       l.emitido_em as laudo_emitido_em,
       l.enviado_em as laudo_enviado_em,
+      la.hash_pdf as hash_pdf,
       CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
       fe.solicitado_em as emissao_solicitado_em,
       CASE WHEN l.id IS NOT NULL AND l.status != 'rascunho' THEN true ELSE false END as tem_laudo
@@ -86,9 +86,10 @@ export async function getLoteInfo(
     LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
     JOIN empresas_clientes ec ON la.empresa_id = ec.id
     LEFT JOIN laudos l ON l.lote_id = la.id
-    LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+    LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
     WHERE la.id = $1 
       AND la.empresa_id = $2
+      AND la.status != 'cancelado'
       AND ec.clinica_id = $3
   `,
     [loteId, empresaId, clinicaId]
@@ -114,7 +115,7 @@ export async function getLoteEstatisticas(loteId: number) {
       COUNT(a.id) as total_avaliacoes,
       COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
       COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
-      COUNT(CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN 1 END) as avaliacoes_pendentes
+      COUNT(CASE WHEN a.status = 'iniciada' OR a.status = 'em_andamento' THEN 1 END) as avaliacoes_pendentes
     FROM avaliacoes a
     WHERE a.lote_id = $1
   `,

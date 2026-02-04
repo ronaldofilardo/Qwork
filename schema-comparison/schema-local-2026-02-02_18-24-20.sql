@@ -283,19 +283,32 @@ CREATE TYPE public.usuario_tipo_enum AS ENUM (
 
 CREATE FUNCTION public.arquivar_notificacoes_antigas() RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_count INTEGER;
-BEGIN
-  UPDATE notificacoes
-  SET arquivada = TRUE
-  WHERE lida = TRUE
-    AND criado_em < NOW() - INTERVAL '30 days'
-    AND arquivada = FALSE;
-  
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count;
-END;
+    AS $$
+
+DECLARE
+
+  v_count INTEGER;
+
+BEGIN
+
+  UPDATE notificacoes
+
+  SET arquivada = TRUE
+
+  WHERE lida = TRUE
+
+    AND criado_em < NOW() - INTERVAL '30 days'
+
+    AND arquivada = FALSE;
+
+  
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN v_count;
+
+END;
+
 $$;
 
 
@@ -305,11 +318,16 @@ $$;
 
 CREATE FUNCTION public.atualizar_data_modificacao() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  NEW.atualizado_em := CURRENT_TIMESTAMP;
-  RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+  NEW.atualizado_em := CURRENT_TIMESTAMP;
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -319,27 +337,48 @@ $$;
 
 CREATE FUNCTION public.audit_bypassrls_session() RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-BEGIN
-  -- Log session start with BYPASSRLS role
-  IF current_user IN ('dba_maintenance', 'postgres', 'neondb_owner') THEN
-    INSERT INTO audit_logs (
-      user_cpf,
-      user_perfil,
-      action,
-      resource,
-      details,
-      ip_address
-    ) VALUES (
-      current_user,
-      'dba_bypassrls',
-      'SESSION_START',
-      'BYPASSRLS',
-      'Role: ' || current_user || ', Database: ' || current_database(),
-      inet_client_addr()
-    );
-  END IF;
-END;
+    AS $$
+
+BEGIN
+
+  -- Log session start with BYPASSRLS role
+
+  IF current_user IN ('dba_maintenance', 'postgres', 'neondb_owner') THEN
+
+    INSERT INTO audit_logs (
+
+      user_cpf,
+
+      user_perfil,
+
+      action,
+
+      resource,
+
+      details,
+
+      ip_address
+
+    ) VALUES (
+
+      current_user,
+
+      'dba_bypassrls',
+
+      'SESSION_START',
+
+      'BYPASSRLS',
+
+      'Role: ' || current_user || ', Database: ' || current_database(),
+
+      inet_client_addr()
+
+    );
+
+  END IF;
+
+END;
+
 $$;
 
 
@@ -356,51 +395,96 @@ COMMENT ON FUNCTION public.audit_bypassrls_session() IS 'Audits BYPASSRLS sessio
 
 CREATE FUNCTION public.audit_trigger_func() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-BEGIN
-    IF (TG_OP = 'DELETE') THEN
-        INSERT INTO public.audit_logs (
-            user_cpf, user_perfil, action, resource, resource_id, old_data, details
-        ) VALUES (
-            NULLIF(current_user_cpf(), ''),
-            NULLIF(current_user_perfil(), ''),
-            'DELETE',
-            TG_TABLE_NAME,
-            OLD.id::TEXT,
-            row_to_json(OLD),
-            'Record deleted'
-        );
-        RETURN OLD;
-    ELSIF (TG_OP = 'UPDATE') THEN
-        INSERT INTO public.audit_logs (
-            user_cpf, user_perfil, action, resource, resource_id, old_data, new_data, details
-        ) VALUES (
-            NULLIF(current_user_cpf(), ''),
-            NULLIF(current_user_perfil(), ''),
-            'UPDATE',
-            TG_TABLE_NAME,
-            NEW.id::TEXT,
-            row_to_json(OLD),
-            row_to_json(NEW),
-            'Record updated'
-        );
-        RETURN NEW;
-    ELSIF (TG_OP = 'INSERT') THEN
-        INSERT INTO public.audit_logs (
-            user_cpf, user_perfil, action, resource, resource_id, new_data, details
-        ) VALUES (
-            NULLIF(current_user_cpf(), ''),
-            NULLIF(current_user_perfil(), ''),
-            'INSERT',
-            TG_TABLE_NAME,
-            NEW.id::TEXT,
-            row_to_json(NEW),
-            'Record created'
-        );
-        RETURN NEW;
-    END IF;
-    RETURN NULL;
-END;
+    AS $$
+
+BEGIN
+
+    IF (TG_OP = 'DELETE') THEN
+
+        INSERT INTO public.audit_logs (
+
+            user_cpf, user_perfil, action, resource, resource_id, old_data, details
+
+        ) VALUES (
+
+            NULLIF(current_user_cpf(), ''),
+
+            NULLIF(current_user_perfil(), ''),
+
+            'DELETE',
+
+            TG_TABLE_NAME,
+
+            OLD.id::TEXT,
+
+            row_to_json(OLD),
+
+            'Record deleted'
+
+        );
+
+        RETURN OLD;
+
+    ELSIF (TG_OP = 'UPDATE') THEN
+
+        INSERT INTO public.audit_logs (
+
+            user_cpf, user_perfil, action, resource, resource_id, old_data, new_data, details
+
+        ) VALUES (
+
+            NULLIF(current_user_cpf(), ''),
+
+            NULLIF(current_user_perfil(), ''),
+
+            'UPDATE',
+
+            TG_TABLE_NAME,
+
+            NEW.id::TEXT,
+
+            row_to_json(OLD),
+
+            row_to_json(NEW),
+
+            'Record updated'
+
+        );
+
+        RETURN NEW;
+
+    ELSIF (TG_OP = 'INSERT') THEN
+
+        INSERT INTO public.audit_logs (
+
+            user_cpf, user_perfil, action, resource, resource_id, new_data, details
+
+        ) VALUES (
+
+            NULLIF(current_user_cpf(), ''),
+
+            NULLIF(current_user_perfil(), ''),
+
+            'INSERT',
+
+            TG_TABLE_NAME,
+
+            NEW.id::TEXT,
+
+            row_to_json(NEW),
+
+            'Record created'
+
+        );
+
+        RETURN NEW;
+
+    END IF;
+
+    RETURN NULL;
+
+END;
+
 $$;
 
 
@@ -417,73 +501,140 @@ COMMENT ON FUNCTION public.audit_trigger_func() IS 'Trigger de auditoria que per
 
 CREATE FUNCTION public.audit_trigger_function() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-    current_user_cpf_val TEXT;
-    current_user_perfil_val TEXT;
-    record_id TEXT;
-BEGIN
-    -- Obter valores do contexto da sessÃ£o
-    current_user_cpf_val := NULLIF(current_setting('app.current_user_cpf', TRUE), '');
-    current_user_perfil_val := NULLIF(current_setting('app.current_user_perfil', TRUE), '');
-
-    -- Se nÃ£o houver CPF no contexto, marcar como sistema
-    IF current_user_cpf_val IS NULL THEN
-        current_user_cpf_val := '00000000000';
-    END IF;
-
-    IF current_user_perfil_val IS NULL THEN
-        current_user_perfil_val := 'system';
-    END IF;
-
-    -- Determinar o ID do registro baseado na operaÃ§Ã£o
-    IF TG_OP = 'DELETE' THEN
-        -- Para DELETE, usar o ID da linha OLD
-        CASE TG_TABLE_NAME
-            WHEN 'funcionarios' THEN record_id := OLD.cpf::TEXT;
-            WHEN 'avaliacoes' THEN record_id := OLD.id::TEXT;
-            WHEN 'empresas_clientes' THEN record_id := OLD.id::TEXT;
-            WHEN 'lotes_avaliacao' THEN record_id := OLD.id::TEXT;
-            WHEN 'laudos' THEN record_id := OLD.id::TEXT;
-            WHEN 'respostas' THEN record_id := OLD.id::TEXT;
-            WHEN 'resultados' THEN record_id := OLD.id::TEXT;
-            ELSE record_id := 'unknown';
-        END CASE;
-    ELSE
-        -- Para INSERT/UPDATE, usar o ID da linha NEW
-        CASE TG_TABLE_NAME
-            WHEN 'funcionarios' THEN record_id := NEW.cpf::TEXT;
-            WHEN 'avaliacoes' THEN record_id := NEW.id::TEXT;
-            WHEN 'empresas_clientes' THEN record_id := NEW.id::TEXT;
-            WHEN 'lotes_avaliacao' THEN record_id := NEW.id::TEXT;
-            WHEN 'laudos' THEN record_id := NEW.id::TEXT;
-            WHEN 'respostas' THEN record_id := NEW.id::TEXT;
-            WHEN 'resultados' THEN record_id := NEW.id::TEXT;
-            ELSE record_id := 'unknown';
-        END CASE;
-    END IF;
-
-    -- Registrar a operaÃ§Ã£o
-    IF TG_OP = 'INSERT' THEN
-        INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, new_data)
-        VALUES (current_user_cpf_val, current_user_perfil_val, 'INSERT', TG_TABLE_NAME, record_id, row_to_json(NEW));
-
-    ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, old_data, new_data)
-        VALUES (current_user_cpf_val, current_user_perfil_val, 'UPDATE', TG_TABLE_NAME, record_id, row_to_json(OLD), row_to_json(NEW));
-
-    ELSIF TG_OP = 'DELETE' THEN
-        INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, old_data)
-        VALUES (current_user_cpf_val, current_user_perfil_val, 'DELETE', TG_TABLE_NAME, record_id, row_to_json(OLD));
-    END IF;
-
-    -- Retornar a linha apropriada
-    IF TG_OP = 'DELETE' THEN
-        RETURN OLD;
-    ELSE
-        RETURN NEW;
-    END IF;
-END;
+    AS $$
+
+DECLARE
+
+    current_user_cpf_val TEXT;
+
+    current_user_perfil_val TEXT;
+
+    record_id TEXT;
+
+BEGIN
+
+    -- Obter valores do contexto da sessÃ£o
+
+    current_user_cpf_val := NULLIF(current_setting('app.current_user_cpf', TRUE), '');
+
+    current_user_perfil_val := NULLIF(current_setting('app.current_user_perfil', TRUE), '');
+
+
+
+    -- Se nÃ£o houver CPF no contexto, marcar como sistema
+
+    IF current_user_cpf_val IS NULL THEN
+
+        current_user_cpf_val := '00000000000';
+
+    END IF;
+
+
+
+    IF current_user_perfil_val IS NULL THEN
+
+        current_user_perfil_val := 'system';
+
+    END IF;
+
+
+
+    -- Determinar o ID do registro baseado na operaÃ§Ã£o
+
+    IF TG_OP = 'DELETE' THEN
+
+        -- Para DELETE, usar o ID da linha OLD
+
+        CASE TG_TABLE_NAME
+
+            WHEN 'funcionarios' THEN record_id := OLD.cpf::TEXT;
+
+            WHEN 'avaliacoes' THEN record_id := OLD.id::TEXT;
+
+            WHEN 'empresas_clientes' THEN record_id := OLD.id::TEXT;
+
+            WHEN 'lotes_avaliacao' THEN record_id := OLD.id::TEXT;
+
+            WHEN 'laudos' THEN record_id := OLD.id::TEXT;
+
+            WHEN 'respostas' THEN record_id := OLD.id::TEXT;
+
+            WHEN 'resultados' THEN record_id := OLD.id::TEXT;
+
+            ELSE record_id := 'unknown';
+
+        END CASE;
+
+    ELSE
+
+        -- Para INSERT/UPDATE, usar o ID da linha NEW
+
+        CASE TG_TABLE_NAME
+
+            WHEN 'funcionarios' THEN record_id := NEW.cpf::TEXT;
+
+            WHEN 'avaliacoes' THEN record_id := NEW.id::TEXT;
+
+            WHEN 'empresas_clientes' THEN record_id := NEW.id::TEXT;
+
+            WHEN 'lotes_avaliacao' THEN record_id := NEW.id::TEXT;
+
+            WHEN 'laudos' THEN record_id := NEW.id::TEXT;
+
+            WHEN 'respostas' THEN record_id := NEW.id::TEXT;
+
+            WHEN 'resultados' THEN record_id := NEW.id::TEXT;
+
+            ELSE record_id := 'unknown';
+
+        END CASE;
+
+    END IF;
+
+
+
+    -- Registrar a operaÃ§Ã£o
+
+    IF TG_OP = 'INSERT' THEN
+
+        INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, new_data)
+
+        VALUES (current_user_cpf_val, current_user_perfil_val, 'INSERT', TG_TABLE_NAME, record_id, row_to_json(NEW));
+
+
+
+    ELSIF TG_OP = 'UPDATE' THEN
+
+        INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, old_data, new_data)
+
+        VALUES (current_user_cpf_val, current_user_perfil_val, 'UPDATE', TG_TABLE_NAME, record_id, row_to_json(OLD), row_to_json(NEW));
+
+
+
+    ELSIF TG_OP = 'DELETE' THEN
+
+        INSERT INTO audit_logs (user_cpf, user_perfil, action, resource, resource_id, old_data)
+
+        VALUES (current_user_cpf_val, current_user_perfil_val, 'DELETE', TG_TABLE_NAME, record_id, row_to_json(OLD));
+
+    END IF;
+
+
+
+    -- Retornar a linha apropriada
+
+    IF TG_OP = 'DELETE' THEN
+
+        RETURN OLD;
+
+    ELSE
+
+        RETURN NEW;
+
+    END IF;
+
+END;
+
 $$;
 
 
@@ -493,56 +644,106 @@ $$;
 
 CREATE FUNCTION public.calcular_elegibilidade_lote(p_empresa_id integer, p_numero_lote_atual integer) RETURNS TABLE(funcionario_cpf character, funcionario_nome character varying, motivo_inclusao character varying, indice_atual integer, data_ultimo_lote timestamp without time zone, dias_sem_avaliacao integer, prioridade character varying)
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    f.cpf AS funcionario_cpf,
-    f.nome AS funcionario_nome,
-    CASE 
-      WHEN f.indice_avaliacao = 0 THEN 'Funcionario novo (nunca avaliado)'
-      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'Indice atrasado (faltou ' || (p_numero_lote_atual - 1 - f.indice_avaliacao)::TEXT || ' lote(s))'
-      WHEN f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'Mais de 1 ano sem avaliacao'
-      ELSE 'RenovaÃ§Ã£o regular'
-    END::varchar(100) AS motivo_inclusao,
-    f.indice_avaliacao AS indice_atual,
-    f.data_ultimo_lote,
-    CASE 
-      WHEN f.data_ultimo_lote IS NOT NULL THEN EXTRACT(DAY FROM NOW() - f.data_ultimo_lote)::INTEGER
-      ELSE NULL
-    END AS dias_sem_avaliacao,
-    CASE 
-      WHEN f.indice_avaliacao = 0 THEN 'ALTA'
-      WHEN f.indice_avaliacao < p_numero_lote_atual - 2 THEN 'CRITICA'
-      WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'ALTA'
-      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'MEDIA'
-      ELSE 'NORMAL'
-    END::varchar(20) AS prioridade
-  FROM funcionarios f
-  WHERE 
-    f.empresa_id = p_empresa_id
-    AND f.ativo = true
-    AND (
-      -- CritÃ©rio 1: FuncionÃ¡rio novo (Ã­ndice 0)
-      f.indice_avaliacao = 0
-      OR
-      -- CritÃ©rio 2: ï¿½ndice incompleto (faltou lote anterior)
-      f.indice_avaliacao < p_numero_lote_atual - 1
-      OR
-      -- CritÃ©rio 3: Mais de 1 ano sem avaliaÃ§Ã£o
-      (f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year')
-    )
-  ORDER BY 
-    -- Ordenar por prioridade: CRITICA > ALTA > MEDIA > NORMAL
-    CASE prioridade
-      WHEN 'CRITICA' THEN 1
-      WHEN 'ALTA' THEN 2
-      WHEN 'MEDIA' THEN 3
-      ELSE 4
-    END,
-    f.indice_avaliacao ASC, -- Mais atrasados primeiro
-    f.nome ASC;
-END;
+    AS $$
+
+BEGIN
+
+  RETURN QUERY
+
+  SELECT 
+
+    f.cpf AS funcionario_cpf,
+
+    f.nome AS funcionario_nome,
+
+    CASE 
+
+      WHEN f.indice_avaliacao = 0 THEN 'Funcionario novo (nunca avaliado)'
+
+      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'Indice atrasado (faltou ' || (p_numero_lote_atual - 1 - f.indice_avaliacao)::TEXT || ' lote(s))'
+
+      WHEN f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'Mais de 1 ano sem avaliacao'
+
+      ELSE 'RenovaÃ§Ã£o regular'
+
+    END::varchar(100) AS motivo_inclusao,
+
+    f.indice_avaliacao AS indice_atual,
+
+    f.data_ultimo_lote,
+
+    CASE 
+
+      WHEN f.data_ultimo_lote IS NOT NULL THEN EXTRACT(DAY FROM NOW() - f.data_ultimo_lote)::INTEGER
+
+      ELSE NULL
+
+    END AS dias_sem_avaliacao,
+
+    CASE 
+
+      WHEN f.indice_avaliacao = 0 THEN 'ALTA'
+
+      WHEN f.indice_avaliacao < p_numero_lote_atual - 2 THEN 'CRITICA'
+
+      WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'ALTA'
+
+      WHEN f.indice_avaliacao < p_numero_lote_atual - 1 THEN 'MEDIA'
+
+      ELSE 'NORMAL'
+
+    END::varchar(20) AS prioridade
+
+  FROM funcionarios f
+
+  WHERE 
+
+    f.empresa_id = p_empresa_id
+
+    AND f.ativo = true
+
+    AND (
+
+      -- CritÃ©rio 1: FuncionÃ¡rio novo (Ã­ndice 0)
+
+      f.indice_avaliacao = 0
+
+      OR
+
+      -- CritÃ©rio 2: ï¿½ndice incompleto (faltou lote anterior)
+
+      f.indice_avaliacao < p_numero_lote_atual - 1
+
+      OR
+
+      -- CritÃ©rio 3: Mais de 1 ano sem avaliaÃ§Ã£o
+
+      (f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year')
+
+    )
+
+  ORDER BY 
+
+    -- Ordenar por prioridade: CRITICA > ALTA > MEDIA > NORMAL
+
+    CASE prioridade
+
+      WHEN 'CRITICA' THEN 1
+
+      WHEN 'ALTA' THEN 2
+
+      WHEN 'MEDIA' THEN 3
+
+      ELSE 4
+
+    END,
+
+    f.indice_avaliacao ASC, -- Mais atrasados primeiro
+
+    f.nome ASC;
+
+END;
+
 $$;
 
 
@@ -559,54 +760,102 @@ COMMENT ON FUNCTION public.calcular_elegibilidade_lote(p_empresa_id integer, p_n
 
 CREATE FUNCTION public.calcular_elegibilidade_lote_contratante(p_contratante_id integer, p_numero_lote_atual integer) RETURNS TABLE(funcionario_cpf character, funcionario_nome character varying, motivo_inclusao character varying, indice_atual integer, data_ultimo_lote timestamp without time zone, dias_sem_avaliacao integer, prioridade character varying)
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT 
-    f.cpf AS funcionario_cpf,
-    f.nome AS funcionario_nome,
-    (CASE 
-      WHEN f.indice_avaliacao = 0 THEN 'Funcionario novo (nunca avaliado)'
-      WHEN f.indice_avaliacao <= p_numero_lote_atual - 1 THEN 'Indice atrasado (faltou ' || (p_numero_lote_atual - 1 - f.indice_avaliacao)::TEXT || ' lote(s))'
-      WHEN f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'Mais de 1 ano sem avaliacao'
-      ELSE 'Renovacao regular'
-    END)::VARCHAR(100) AS motivo_inclusao,
-    f.indice_avaliacao AS indice_atual,
-    f.data_ultimo_lote,
-    CASE 
-      WHEN f.data_ultimo_lote IS NOT NULL THEN EXTRACT(DAY FROM NOW() - f.data_ultimo_lote)::INTEGER
-      ELSE NULL
-    END AS dias_sem_avaliacao,
-    (CASE 
-      WHEN f.indice_avaliacao <= p_numero_lote_atual - 2 THEN 'CRITICA'
-      WHEN f.indice_avaliacao = 0 THEN 'ALTA'
-      WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'ALTA'
-      WHEN f.indice_avaliacao <= p_numero_lote_atual - 1 THEN 'MEDIA'
-      ELSE 'NORMAL'
-    END)::VARCHAR(20) AS prioridade
-  FROM funcionarios f
-  WHERE 
-    f.contratante_id = p_contratante_id
-    AND f.ativo = true
-    AND f.perfil = 'funcionario'
-    AND (
-      f.indice_avaliacao = 0
-      OR
-      f.indice_avaliacao <= p_numero_lote_atual - 1
-      OR
-      (f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year')
-    )
-  ORDER BY 
-    CASE 
-      WHEN f.indice_avaliacao <= p_numero_lote_atual - 2 THEN 1
-      WHEN f.indice_avaliacao = 0 THEN 2
-      WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 3
-      WHEN f.indice_avaliacao <= p_numero_lote_atual - 1 THEN 4
-      ELSE 5
-    END,
-    f.indice_avaliacao ASC,
-    f.nome ASC;
-END;
+    AS $$
+
+BEGIN
+
+  RETURN QUERY
+
+  SELECT 
+
+    f.cpf AS funcionario_cpf,
+
+    f.nome AS funcionario_nome,
+
+    (CASE 
+
+      WHEN f.indice_avaliacao = 0 THEN 'Funcionario novo (nunca avaliado)'
+
+      WHEN f.indice_avaliacao <= p_numero_lote_atual - 1 THEN 'Indice atrasado (faltou ' || (p_numero_lote_atual - 1 - f.indice_avaliacao)::TEXT || ' lote(s))'
+
+      WHEN f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'Mais de 1 ano sem avaliacao'
+
+      ELSE 'Renovacao regular'
+
+    END)::VARCHAR(100) AS motivo_inclusao,
+
+    f.indice_avaliacao AS indice_atual,
+
+    f.data_ultimo_lote,
+
+    CASE 
+
+      WHEN f.data_ultimo_lote IS NOT NULL THEN EXTRACT(DAY FROM NOW() - f.data_ultimo_lote)::INTEGER
+
+      ELSE NULL
+
+    END AS dias_sem_avaliacao,
+
+    (CASE 
+
+      WHEN f.indice_avaliacao <= p_numero_lote_atual - 2 THEN 'CRITICA'
+
+      WHEN f.indice_avaliacao = 0 THEN 'ALTA'
+
+      WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 'ALTA'
+
+      WHEN f.indice_avaliacao <= p_numero_lote_atual - 1 THEN 'MEDIA'
+
+      ELSE 'NORMAL'
+
+    END)::VARCHAR(20) AS prioridade
+
+  FROM funcionarios f
+
+  WHERE 
+
+    f.contratante_id = p_contratante_id
+
+    AND f.ativo = true
+
+    AND f.perfil = 'funcionario'
+
+    AND (
+
+      f.indice_avaliacao = 0
+
+      OR
+
+      f.indice_avaliacao <= p_numero_lote_atual - 1
+
+      OR
+
+      (f.data_ultimo_lote IS NULL OR f.data_ultimo_lote < NOW() - INTERVAL '1 year')
+
+    )
+
+  ORDER BY 
+
+    CASE 
+
+      WHEN f.indice_avaliacao <= p_numero_lote_atual - 2 THEN 1
+
+      WHEN f.indice_avaliacao = 0 THEN 2
+
+      WHEN f.data_ultimo_lote < NOW() - INTERVAL '1 year' THEN 3
+
+      WHEN f.indice_avaliacao <= p_numero_lote_atual - 1 THEN 4
+
+      ELSE 5
+
+    END,
+
+    f.indice_avaliacao ASC,
+
+    f.nome ASC;
+
+END;
+
 $$;
 
 
@@ -623,10 +872,14 @@ COMMENT ON FUNCTION public.calcular_elegibilidade_lote_contratante(p_contratante
 
 CREATE FUNCTION public.calcular_hash_pdf(pdf_data bytea) RETURNS text
     LANGUAGE plpgsql IMMUTABLE
-    AS $$
-BEGIN
-  RETURN encode(digest(pdf_data, 'sha256'), 'hex');
-END;
+    AS $$
+
+BEGIN
+
+  RETURN encode(digest(pdf_data, 'sha256'), 'hex');
+
+END;
+
 $$;
 
 
@@ -643,11 +896,16 @@ COMMENT ON FUNCTION public.calcular_hash_pdf(pdf_data bytea) IS 'Calcula hash SH
 
 CREATE FUNCTION public.calcular_vigencia_fim(data_inicio date) RETURNS date
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    -- VigÃªncia de 364 dias a partir da data de inÃ­cio
-    RETURN data_inicio + INTERVAL '364 days';
-END;
+    AS $$
+
+BEGIN
+
+    -- VigÃªncia de 364 dias a partir da data de inÃ­cio
+
+    RETURN data_inicio + INTERVAL '364 days';
+
+END;
+
 $$;
 
 
@@ -664,43 +922,80 @@ COMMENT ON FUNCTION public.calcular_vigencia_fim(data_inicio date) IS 'Calcula d
 
 CREATE FUNCTION public.check_laudo_immutability() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  -- Permitir INSERT sempre
-  IF (TG_OP = 'INSERT') THEN
-    RETURN NEW;
-  END IF;
-
-  -- Para UPDATE, verificar se o laudo foi emitido
-  IF (TG_OP = 'UPDATE' AND OLD.emitido_em IS NOT NULL) THEN
-    -- Permitir atualização APENAS do hash_pdf quando está NULL ou vazio
-    -- E apenas se nenhum outro campo foi alterado
-    IF (OLD.hash_pdf IS NULL OR OLD.hash_pdf = '') AND
-       (NEW.hash_pdf IS NOT NULL AND NEW.hash_pdf != '') AND
-       -- Verificar que NENHUM outro campo mudou
-       OLD.lote_id = NEW.lote_id AND
-       OLD.emissor_cpf = NEW.emissor_cpf AND
-       OLD.status = NEW.status AND
-       OLD.observacoes = NEW.observacoes AND
-       (OLD.emitido_em = NEW.emitido_em OR (OLD.emitido_em IS NULL AND NEW.emitido_em IS NULL)) AND
-       (OLD.enviado_em = NEW.enviado_em OR (OLD.enviado_em IS NULL AND NEW.enviado_em IS NULL)) THEN
-      -- Permitir apenas esta atualização específica
-      RETURN NEW;
-    END IF;
-
-    -- Qualquer outra tentativa de modificação é bloqueada
-    RAISE EXCEPTION 'Não é permitido modificar laudos já emitidos. Laudo ID: %', OLD.id
-      USING HINT = 'Laudos emitidos são imutáveis para garantir integridade documental.';
-  END IF;
-
-  -- DELETE não é permitido para laudos emitidos
-  IF (TG_OP = 'DELETE' AND OLD.emitido_em IS NOT NULL) THEN
-    RAISE EXCEPTION 'Não é permitido deletar laudos já emitidos. Laudo ID: %', OLD.id
-      USING HINT = 'Laudos emitidos são imutáveis para garantir integridade documental.';
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+  -- Permitir INSERT sempre
+
+  IF (TG_OP = 'INSERT') THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  -- Para UPDATE, verificar se o laudo foi emitido
+
+  IF (TG_OP = 'UPDATE' AND OLD.emitido_em IS NOT NULL) THEN
+
+    -- Permitir atualização APENAS do hash_pdf quando está NULL ou vazio
+
+    -- E apenas se nenhum outro campo foi alterado
+
+    IF (OLD.hash_pdf IS NULL OR OLD.hash_pdf = '') AND
+
+       (NEW.hash_pdf IS NOT NULL AND NEW.hash_pdf != '') AND
+
+       -- Verificar que NENHUM outro campo mudou
+
+       OLD.lote_id = NEW.lote_id AND
+
+       OLD.emissor_cpf = NEW.emissor_cpf AND
+
+       OLD.status = NEW.status AND
+
+       OLD.observacoes = NEW.observacoes AND
+
+       (OLD.emitido_em = NEW.emitido_em OR (OLD.emitido_em IS NULL AND NEW.emitido_em IS NULL)) AND
+
+       (OLD.enviado_em = NEW.enviado_em OR (OLD.enviado_em IS NULL AND NEW.enviado_em IS NULL)) THEN
+
+      -- Permitir apenas esta atualização específica
+
+      RETURN NEW;
+
+    END IF;
+
+
+
+    -- Qualquer outra tentativa de modificação é bloqueada
+
+    RAISE EXCEPTION 'Não é permitido modificar laudos já emitidos. Laudo ID: %', OLD.id
+
+      USING HINT = 'Laudos emitidos são imutáveis para garantir integridade documental.';
+
+  END IF;
+
+
+
+  -- DELETE não é permitido para laudos emitidos
+
+  IF (TG_OP = 'DELETE' AND OLD.emitido_em IS NOT NULL) THEN
+
+    RAISE EXCEPTION 'Não é permitido deletar laudos já emitidos. Laudo ID: %', OLD.id
+
+      USING HINT = 'Laudos emitidos são imutáveis para garantir integridade documental.';
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -717,25 +1012,44 @@ COMMENT ON FUNCTION public.check_laudo_immutability() IS 'Garante imutabilidade 
 
 CREATE FUNCTION public.check_resposta_immutability() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-DECLARE
-  v_status TEXT;
-BEGIN
-  IF TG_OP IN ('UPDATE', 'DELETE') THEN
-    SELECT status INTO v_status FROM avaliacoes WHERE id = OLD.avaliacao_id;
-    IF v_status = 'concluida' THEN
-      RAISE EXCEPTION 'Não é permitido modificar respostas de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
-        USING HINT = 'Respostas de avaliações concluídas são imutáveis para garantir integridade dos dados.', ERRCODE = '23506';
-    END IF;
-    IF TG_OP = 'DELETE' THEN
-      RETURN OLD;
-    ELSE
-      RETURN NEW;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_status TEXT;
+
+BEGIN
+
+  IF TG_OP IN ('UPDATE', 'DELETE') THEN
+
+    SELECT status INTO v_status FROM avaliacoes WHERE id = OLD.avaliacao_id;
+
+    IF v_status = 'concluida' THEN
+
+      RAISE EXCEPTION 'Não é permitido modificar respostas de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
+
+        USING HINT = 'Respostas de avaliações concluídas são imutáveis para garantir integridade dos dados.', ERRCODE = '23506';
+
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN
+
+      RETURN OLD;
+
+    ELSE
+
+      RETURN NEW;
+
+    END IF;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -752,34 +1066,62 @@ COMMENT ON FUNCTION public.check_resposta_immutability() IS 'Bloqueia UPDATE/DEL
 
 CREATE FUNCTION public.check_resultado_immutability() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-DECLARE
-  v_status TEXT;
-BEGIN
-  IF TG_OP IN ('UPDATE', 'DELETE') THEN
-    SELECT status INTO v_status FROM avaliacoes WHERE id = OLD.avaliacao_id;
-    IF v_status = 'concluida' THEN
-      RAISE EXCEPTION 'Não é permitido modificar resultados de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
-        USING HINT = 'Resultados de avaliações concluídas são imutáveis para garantir integridade dos dados.', ERRCODE = '23506';
-    END IF;
-    IF TG_OP = 'DELETE' THEN
-      RETURN OLD;
-    ELSE
-      RETURN NEW;
-    END IF;
-  END IF;
-
-  IF TG_OP = 'INSERT' THEN
-    SELECT status INTO v_status FROM avaliacoes WHERE id = NEW.avaliacao_id;
-    IF v_status = 'concluida' THEN
-      RAISE EXCEPTION 'Não é permitido adicionar resultados a avaliações já concluídas. Avaliação ID: %', NEW.avaliacao_id
-        USING HINT = 'Finalize a avaliação antes de tentar adicionar resultados novamente.', ERRCODE = '23506';
-    END IF;
-    RETURN NEW;
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_status TEXT;
+
+BEGIN
+
+  IF TG_OP IN ('UPDATE', 'DELETE') THEN
+
+    SELECT status INTO v_status FROM avaliacoes WHERE id = OLD.avaliacao_id;
+
+    IF v_status = 'concluida' THEN
+
+      RAISE EXCEPTION 'Não é permitido modificar resultados de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
+
+        USING HINT = 'Resultados de avaliações concluídas são imutáveis para garantir integridade dos dados.', ERRCODE = '23506';
+
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN
+
+      RETURN OLD;
+
+    ELSE
+
+      RETURN NEW;
+
+    END IF;
+
+  END IF;
+
+
+
+  IF TG_OP = 'INSERT' THEN
+
+    SELECT status INTO v_status FROM avaliacoes WHERE id = NEW.avaliacao_id;
+
+    IF v_status = 'concluida' THEN
+
+      RAISE EXCEPTION 'Não é permitido adicionar resultados a avaliações já concluídas. Avaliação ID: %', NEW.avaliacao_id
+
+        USING HINT = 'Finalize a avaliação antes de tentar adicionar resultados novamente.', ERRCODE = '23506';
+
+    END IF;
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -796,31 +1138,56 @@ COMMENT ON FUNCTION public.check_resultado_immutability() IS 'Bloqueia modifica�
 
 CREATE FUNCTION public.current_user_clinica_id() RETURNS integer
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-DECLARE
-  v_id TEXT;
-BEGIN
-  v_id := NULLIF(current_setting('app.current_user_clinica_id', TRUE), '');
-  
-  -- SECURITY: For RH perfil, clinica_id is mandatory
-  IF v_id IS NULL AND current_user_perfil() = 'rh' THEN
-    RAISE EXCEPTION 'SECURITY: app.current_user_clinica_id not set for perfil RH.';
-  END IF;
-  
-  RETURN v_id::INTEGER;
-EXCEPTION
-  WHEN undefined_object THEN
-    -- For non-RH users, NULL is acceptable
-    IF current_user_perfil() = 'rh' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_clinica_id not configured for RH.';
-    END IF;
-    RETURN NULL;
-  WHEN SQLSTATE '22023' THEN
-    IF current_user_perfil() = 'rh' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_clinica_id not configured for RH.';
-    END IF;
-    RETURN NULL;
-END;
+    AS $$
+
+DECLARE
+
+  v_id TEXT;
+
+BEGIN
+
+  v_id := NULLIF(current_setting('app.current_user_clinica_id', TRUE), '');
+
+  
+
+  -- SECURITY: For RH perfil, clinica_id is mandatory
+
+  IF v_id IS NULL AND current_user_perfil() = 'rh' THEN
+
+    RAISE EXCEPTION 'SECURITY: app.current_user_clinica_id not set for perfil RH.';
+
+  END IF;
+
+  
+
+  RETURN v_id::INTEGER;
+
+EXCEPTION
+
+  WHEN undefined_object THEN
+
+    -- For non-RH users, NULL is acceptable
+
+    IF current_user_perfil() = 'rh' THEN
+
+      RAISE EXCEPTION 'SECURITY: app.current_user_clinica_id not configured for RH.';
+
+    END IF;
+
+    RETURN NULL;
+
+  WHEN SQLSTATE '22023' THEN
+
+    IF current_user_perfil() = 'rh' THEN
+
+      RAISE EXCEPTION 'SECURITY: app.current_user_clinica_id not configured for RH.';
+
+    END IF;
+
+    RETURN NULL;
+
+END;
+
 $$;
 
 
@@ -828,8 +1195,10 @@ $$;
 -- Name: FUNCTION current_user_clinica_id(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.current_user_clinica_id() IS 'Returns current user clinica_id from session context.
-   RAISES EXCEPTION if not set for perfil RH (prevents NULL bypass).
+COMMENT ON FUNCTION public.current_user_clinica_id() IS 'Returns current user clinica_id from session context.
+
+   RAISES EXCEPTION if not set for perfil RH (prevents NULL bypass).
+
    Returns NULL for other perfis (acceptable).';
 
 
@@ -839,13 +1208,20 @@ COMMENT ON FUNCTION public.current_user_clinica_id() IS 'Returns current user cl
 
 CREATE FUNCTION public.current_user_clinica_id_optional() RETURNS integer
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-BEGIN
-    RETURN NULLIF(current_setting('app.current_user_clinica_id', TRUE), '')::INTEGER;
-EXCEPTION 
-    WHEN OTHERS THEN 
-        RETURN NULL;
-END;
+    AS $$
+
+BEGIN
+
+    RETURN NULLIF(current_setting('app.current_user_clinica_id', TRUE), '')::INTEGER;
+
+EXCEPTION 
+
+    WHEN OTHERS THEN 
+
+        RETURN NULL;
+
+END;
+
 $$;
 
 
@@ -862,31 +1238,56 @@ COMMENT ON FUNCTION public.current_user_clinica_id_optional() IS 'Retorna o clin
 
 CREATE FUNCTION public.current_user_contratante_id() RETURNS integer
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-DECLARE
-  v_id TEXT;
-BEGIN
-  v_id := NULLIF(current_setting('app.current_user_contratante_id', TRUE), '');
-  
-  -- SECURITY: For gestor_entidade perfil, contratante_id is mandatory
-  IF v_id IS NULL AND current_user_perfil() = 'gestor_entidade' THEN
-    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor_entidade.';
-  END IF;
-  
-  RETURN v_id::INTEGER;
-EXCEPTION
-  WHEN undefined_object THEN
-    -- For non-gestor users, NULL is acceptable
-    IF current_user_perfil() = 'gestor_entidade' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
-    END IF;
-    RETURN NULL;
-  WHEN SQLSTATE '22023' THEN
-    IF current_user_perfil() = 'gestor_entidade' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
-    END IF;
-    RETURN NULL;
-END;
+    AS $$
+
+DECLARE
+
+  v_id TEXT;
+
+BEGIN
+
+  v_id := NULLIF(current_setting('app.current_user_contratante_id', TRUE), '');
+
+  
+
+  -- SECURITY: For gestor_entidade perfil, contratante_id is mandatory
+
+  IF v_id IS NULL AND current_user_perfil() = 'gestor_entidade' THEN
+
+    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor_entidade.';
+
+  END IF;
+
+  
+
+  RETURN v_id::INTEGER;
+
+EXCEPTION
+
+  WHEN undefined_object THEN
+
+    -- For non-gestor users, NULL is acceptable
+
+    IF current_user_perfil() = 'gestor_entidade' THEN
+
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+
+    END IF;
+
+    RETURN NULL;
+
+  WHEN SQLSTATE '22023' THEN
+
+    IF current_user_perfil() = 'gestor_entidade' THEN
+
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+
+    END IF;
+
+    RETURN NULL;
+
+END;
+
 $$;
 
 
@@ -894,8 +1295,10 @@ $$;
 -- Name: FUNCTION current_user_contratante_id(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.current_user_contratante_id() IS 'Returns current user contratante_id from session context.
-   RAISES EXCEPTION if not set for perfil gestor_entidade (prevents NULL bypass).
+COMMENT ON FUNCTION public.current_user_contratante_id() IS 'Returns current user contratante_id from session context.
+
+   RAISES EXCEPTION if not set for perfil gestor_entidade (prevents NULL bypass).
+
    Returns NULL for other perfis (acceptable).';
 
 
@@ -926,29 +1329,52 @@ COMMENT ON FUNCTION public.current_user_contratante_id_optional() IS 'Retorna o 
 
 CREATE FUNCTION public.current_user_cpf() RETURNS text
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $_$
-DECLARE
-  v_cpf TEXT;
-BEGIN
-  v_cpf := NULLIF(current_setting('app.current_user_cpf', TRUE), '');
-  
-  -- SECURITY: CPF is mandatory for RLS operations
-  IF v_cpf IS NULL THEN
-    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not set. Call SET LOCAL app.current_user_cpf before query.';
-  END IF;
-  
-  -- Validate CPF format (11 digits)
-  IF LENGTH(v_cpf) != 11 OR v_cpf !~ '^\d{11}$' THEN
-    RAISE EXCEPTION 'SECURITY: Invalid CPF format "%". Expected 11 digits.', v_cpf;
-  END IF;
-  
-  RETURN v_cpf;
-EXCEPTION
-  WHEN undefined_object THEN
-    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not configured in session.';
-  WHEN SQLSTATE '22023' THEN -- invalid parameter value
-    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not configured in session.';
-END;
+    AS $_$
+
+DECLARE
+
+  v_cpf TEXT;
+
+BEGIN
+
+  v_cpf := NULLIF(current_setting('app.current_user_cpf', TRUE), '');
+
+  
+
+  -- SECURITY: CPF is mandatory for RLS operations
+
+  IF v_cpf IS NULL THEN
+
+    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not set. Call SET LOCAL app.current_user_cpf before query.';
+
+  END IF;
+
+  
+
+  -- Validate CPF format (11 digits)
+
+  IF LENGTH(v_cpf) != 11 OR v_cpf !~ '^\d{11}$' THEN
+
+    RAISE EXCEPTION 'SECURITY: Invalid CPF format "%". Expected 11 digits.', v_cpf;
+
+  END IF;
+
+  
+
+  RETURN v_cpf;
+
+EXCEPTION
+
+  WHEN undefined_object THEN
+
+    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not configured in session.';
+
+  WHEN SQLSTATE '22023' THEN -- invalid parameter value
+
+    RAISE EXCEPTION 'SECURITY: app.current_user_cpf not configured in session.';
+
+END;
+
 $_$;
 
 
@@ -956,8 +1382,10 @@ $_$;
 -- Name: FUNCTION current_user_cpf(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.current_user_cpf() IS 'Returns current user CPF from session context. 
-   RAISES EXCEPTION if not set (prevents NULL bypass).
+COMMENT ON FUNCTION public.current_user_cpf() IS 'Returns current user CPF from session context. 
+
+   RAISES EXCEPTION if not set (prevents NULL bypass).
+
    Validates CPF format (11 digits).';
 
 
@@ -967,20 +1395,34 @@ COMMENT ON FUNCTION public.current_user_cpf() IS 'Returns current user CPF from 
 
 CREATE FUNCTION public.current_user_perfil() RETURNS text
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-DECLARE
-    perfil_usuario TEXT;
-BEGIN
-    -- Tentar obter perfil da sessão
-    BEGIN
-        perfil_usuario := current_setting('app.current_user_perfil', true);
-    EXCEPTION WHEN OTHERS THEN
-        perfil_usuario := NULL;
-    END;
-    
-    -- Se não houver perfil na sessão, retornar NULL (sem acesso)
-    RETURN perfil_usuario;
-END;
+    AS $$
+
+DECLARE
+
+    perfil_usuario TEXT;
+
+BEGIN
+
+    -- Tentar obter perfil da sessão
+
+    BEGIN
+
+        perfil_usuario := current_setting('app.current_user_perfil', true);
+
+    EXCEPTION WHEN OTHERS THEN
+
+        perfil_usuario := NULL;
+
+    END;
+
+    
+
+    -- Se não houver perfil na sessão, retornar NULL (sem acesso)
+
+    RETURN perfil_usuario;
+
+END;
+
 $$;
 
 
@@ -988,8 +1430,10 @@ $$;
 -- Name: FUNCTION current_user_perfil(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.current_user_perfil() IS 'Returns current user perfil from session context.
-   RAISES EXCEPTION if not set (prevents NULL bypass).
+COMMENT ON FUNCTION public.current_user_perfil() IS 'Returns current user perfil from session context.
+
+   RAISES EXCEPTION if not set (prevents NULL bypass).
+
    Validates perfil is in allowed list.';
 
 
@@ -999,64 +1443,122 @@ COMMENT ON FUNCTION public.current_user_perfil() IS 'Returns current user perfil
 
 CREATE FUNCTION public.detectar_anomalia_score(p_score numeric, p_tipo character varying, p_grupo integer) RETURNS TABLE(is_anomalous boolean, reason text, adjusted_score numeric)
     LANGUAGE plpgsql
-    AS $$
-
-BEGIN
-
-    -- Scores fora do range válido (0-100)
-
-    IF p_score < 0 OR p_score > 100 THEN
-
-        RETURN QUERY SELECT true, 'Score fora do intervalo válido', GREATEST(0, LEAST(100, p_score));
-
-        RETURN;
-
-    END IF;
-
-    
-
-    -- Scores negativos em escalas positivas
-
-    IF p_score < 0 AND p_tipo = 'positiva' THEN
-
-        RETURN QUERY SELECT true, 'Score negativo em escala positiva', 0::DECIMAL;
-
-        RETURN;
-
-    END IF;
-
-    
-
-    -- Padrões suspeitos (todas respostas iguais)
-
-    IF p_score IN (0, 25, 50, 75, 100) THEN
-
-        RETURN QUERY SELECT true, 'Possível padrão de resposta uniforme', p_score;
-
-        RETURN;
-
-    END IF;
-
-    
-
-    -- Grupos específicos
-
-    IF p_grupo = 8 AND p_score > 0 THEN
-
-        RETURN QUERY SELECT true, 'Comportamentos ofensivos detectados', GREATEST(p_score, 25);
-
-        RETURN;
-
-    END IF;
-
-    
-
-    -- Score normal
-
-    RETURN QUERY SELECT false, 'Score normal'::TEXT, p_score;
-
-END;
-
+    AS $$
+
+
+
+BEGIN
+
+
+
+    -- Scores fora do range válido (0-100)
+
+
+
+    IF p_score < 0 OR p_score > 100 THEN
+
+
+
+        RETURN QUERY SELECT true, 'Score fora do intervalo válido', GREATEST(0, LEAST(100, p_score));
+
+
+
+        RETURN;
+
+
+
+    END IF;
+
+
+
+    
+
+
+
+    -- Scores negativos em escalas positivas
+
+
+
+    IF p_score < 0 AND p_tipo = 'positiva' THEN
+
+
+
+        RETURN QUERY SELECT true, 'Score negativo em escala positiva', 0::DECIMAL;
+
+
+
+        RETURN;
+
+
+
+    END IF;
+
+
+
+    
+
+
+
+    -- Padrões suspeitos (todas respostas iguais)
+
+
+
+    IF p_score IN (0, 25, 50, 75, 100) THEN
+
+
+
+        RETURN QUERY SELECT true, 'Possível padrão de resposta uniforme', p_score;
+
+
+
+        RETURN;
+
+
+
+    END IF;
+
+
+
+    
+
+
+
+    -- Grupos específicos
+
+
+
+    IF p_grupo = 8 AND p_score > 0 THEN
+
+
+
+        RETURN QUERY SELECT true, 'Comportamentos ofensivos detectados', GREATEST(p_score, 25);
+
+
+
+        RETURN;
+
+
+
+    END IF;
+
+
+
+    
+
+
+
+    -- Score normal
+
+
+
+    RETURN QUERY SELECT false, 'Score normal'::TEXT, p_score;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -1066,93 +1568,180 @@ $$;
 
 CREATE FUNCTION public.detectar_anomalias_indice(p_empresa_id integer) RETURNS TABLE(funcionario_cpf character, funcionario_nome character varying, tipo_anomalia character varying, detalhes text, severidade character varying)
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  RETURN QUERY
-  SELECT * FROM (
-    -- Anomalia 1: Mais de 3 inativacoes consecutivas (padrao suspeito)
-    SELECT 
-      f.cpf,
-      f.nome,
-    'INATIVACOES CONSECUTIVAS'::varchar(50) AS tipo_anomalia,
-    ('Funcionario tem ' || COUNT(a.id) || ' inativacoes consecutivas nos ultimos lotes. ' ||
-    'Possivel padrao de desistencia ou problemas sistemicos.')::text AS detalhes,
-    'CRITICA'::varchar(20) AS severidade
-    FROM funcionarios f
-    JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
-    JOIN lotes_avaliacao la ON a.lote_id = la.id
-    WHERE 
-      f.empresa_id = p_empresa_id
-      AND a.status = 'inativada'
-      AND la.numero_ordem >= (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - 3
-    GROUP BY f.cpf, f.nome
-    HAVING COUNT(a.id) >= 3
-    
-    UNION ALL
-    
-    -- Anomalia 2: Indice muito atrasado (>5 lotes de diferenca)
-    SELECT 
-      f.cpf,
-      f.nome,
-      'INDICE ATRASADO'::varchar(50) AS tipo_anomalia,
-      ('Funcionario tem indice ' || f.indice_avaliacao || ' mas o lote atual e ' || 
-      (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) || '. ' ||
-      'Diferenca de ' || ((SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - f.indice_avaliacao) || ' lotes.')::text AS detalhes,
-      (CASE 
-        WHEN ((SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - f.indice_avaliacao) > 10 THEN 'CRITICA'
-        WHEN ((SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - f.indice_avaliacao) > 5 THEN 'ALTA'
-        ELSE 'MEDIA'
-      END)::varchar(20) AS severidade
-    FROM funcionarios f
-    WHERE 
-      f.empresa_id = p_empresa_id
-      AND f.ativo = true
-      AND f.indice_avaliacao > 0
-      AND f.indice_avaliacao < (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - 5
-    
-    UNION ALL
-    
-    -- Anomalia 3: Mais de 2 anos sem avaliacao (violacao critica)
-    SELECT 
-      f.cpf,
-      f.nome,
-      'PRAZO EXCEDIDO'::varchar(50) AS tipo_anomalia,
-      ('Funcionario esta ha ' || ROUND(EXTRACT(DAY FROM NOW() - f.data_ultimo_lote) / 365.0, 1) || ' anos sem avaliacao valida. ' ||
-      'Violacao critica da obrigatoriedade de renovacao anual.')::text AS detalhes,
-      'CRITICA'::varchar(20) AS severidade
-    FROM funcionarios f
-    WHERE 
-      f.empresa_id = p_empresa_id
-      AND f.ativo = true
-      AND f.data_ultimo_lote IS NOT NULL
-      AND f.data_ultimo_lote < NOW() - INTERVAL '2 years'
-    
-    UNION ALL
-    
-    -- Anomalia 4: Funcionario ativo com indice 0 por muito tempo (>6 meses)
-    SELECT 
-      f.cpf,
-      f.nome,
-    'NUNCA AVALIADO'::varchar(50) AS tipo_anomalia,
-    ('Funcionario esta ha ' || ROUND(EXTRACT(DAY FROM NOW() - f.criado_em) / 30.0, 1) || ' meses sem realizar primeira avaliacao. ' ||
-    'Pode indicar erro no processo de liberacao de lotes.')::text AS detalhes,
-    'ALTA'::varchar(20) AS severidade
-    FROM funcionarios f
-    WHERE 
-      f.empresa_id = p_empresa_id
-      AND f.ativo = true
-      AND f.indice_avaliacao = 0
-      AND f.criado_em < NOW() - INTERVAL '6 months'
-  ) AS anom
-  ORDER BY 
-    CASE 
-      WHEN anom.severidade = 'CRITICA' THEN 1
-      WHEN anom.severidade = 'ALTA' THEN 2
-      WHEN anom.severidade = 'MEDIA' THEN 3
-      ELSE 4
-    END,
-    anom.nome;
-END;
+    AS $$
+
+BEGIN
+
+  RETURN QUERY
+
+  SELECT * FROM (
+
+    -- Anomalia 1: Mais de 3 inativacoes consecutivas (padrao suspeito)
+
+    SELECT 
+
+      f.cpf,
+
+      f.nome,
+
+    'INATIVACOES CONSECUTIVAS'::varchar(50) AS tipo_anomalia,
+
+    ('Funcionario tem ' || COUNT(a.id) || ' inativacoes consecutivas nos ultimos lotes. ' ||
+
+    'Possivel padrao de desistencia ou problemas sistemicos.')::text AS detalhes,
+
+    'CRITICA'::varchar(20) AS severidade
+
+    FROM funcionarios f
+
+    JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
+
+    JOIN lotes_avaliacao la ON a.lote_id = la.id
+
+    WHERE 
+
+      f.empresa_id = p_empresa_id
+
+      AND a.status = 'inativada'
+
+      AND la.numero_ordem >= (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - 3
+
+    GROUP BY f.cpf, f.nome
+
+    HAVING COUNT(a.id) >= 3
+
+    
+
+    UNION ALL
+
+    
+
+    -- Anomalia 2: Indice muito atrasado (>5 lotes de diferenca)
+
+    SELECT 
+
+      f.cpf,
+
+      f.nome,
+
+      'INDICE ATRASADO'::varchar(50) AS tipo_anomalia,
+
+      ('Funcionario tem indice ' || f.indice_avaliacao || ' mas o lote atual e ' || 
+
+      (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) || '. ' ||
+
+      'Diferenca de ' || ((SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - f.indice_avaliacao) || ' lotes.')::text AS detalhes,
+
+      (CASE 
+
+        WHEN ((SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - f.indice_avaliacao) > 10 THEN 'CRITICA'
+
+        WHEN ((SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - f.indice_avaliacao) > 5 THEN 'ALTA'
+
+        ELSE 'MEDIA'
+
+      END)::varchar(20) AS severidade
+
+    FROM funcionarios f
+
+    WHERE 
+
+      f.empresa_id = p_empresa_id
+
+      AND f.ativo = true
+
+      AND f.indice_avaliacao > 0
+
+      AND f.indice_avaliacao < (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE empresa_id = p_empresa_id) - 5
+
+    
+
+    UNION ALL
+
+    
+
+    -- Anomalia 3: Mais de 2 anos sem avaliacao (violacao critica)
+
+    SELECT 
+
+      f.cpf,
+
+      f.nome,
+
+      'PRAZO EXCEDIDO'::varchar(50) AS tipo_anomalia,
+
+      ('Funcionario esta ha ' || ROUND(EXTRACT(DAY FROM NOW() - f.data_ultimo_lote) / 365.0, 1) || ' anos sem avaliacao valida. ' ||
+
+      'Violacao critica da obrigatoriedade de renovacao anual.')::text AS detalhes,
+
+      'CRITICA'::varchar(20) AS severidade
+
+    FROM funcionarios f
+
+    WHERE 
+
+      f.empresa_id = p_empresa_id
+
+      AND f.ativo = true
+
+      AND f.data_ultimo_lote IS NOT NULL
+
+      AND f.data_ultimo_lote < NOW() - INTERVAL '2 years'
+
+    
+
+    UNION ALL
+
+    
+
+    -- Anomalia 4: Funcionario ativo com indice 0 por muito tempo (>6 meses)
+
+    SELECT 
+
+      f.cpf,
+
+      f.nome,
+
+    'NUNCA AVALIADO'::varchar(50) AS tipo_anomalia,
+
+    ('Funcionario esta ha ' || ROUND(EXTRACT(DAY FROM NOW() - f.criado_em) / 30.0, 1) || ' meses sem realizar primeira avaliacao. ' ||
+
+    'Pode indicar erro no processo de liberacao de lotes.')::text AS detalhes,
+
+    'ALTA'::varchar(20) AS severidade
+
+    FROM funcionarios f
+
+    WHERE 
+
+      f.empresa_id = p_empresa_id
+
+      AND f.ativo = true
+
+      AND f.indice_avaliacao = 0
+
+      AND f.criado_em < NOW() - INTERVAL '6 months'
+
+  ) AS anom
+
+  ORDER BY 
+
+    CASE 
+
+      WHEN anom.severidade = 'CRITICA' THEN 1
+
+      WHEN anom.severidade = 'ALTA' THEN 2
+
+      WHEN anom.severidade = 'MEDIA' THEN 3
+
+      ELSE 4
+
+    END,
+
+    anom.nome;
+
+END;
+
 $$;
 
 
@@ -1169,41 +1758,76 @@ COMMENT ON FUNCTION public.detectar_anomalias_indice(p_empresa_id integer) IS 'D
 
 CREATE FUNCTION public.diagnosticar_lote_emissao(p_lote_id integer) RETURNS TABLE(campo text, valor text, status_ok boolean, mensagem text)
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_lote RECORD;
-  v_avaliacoes RECORD;
-BEGIN
-  -- Buscar dados do lote
-  SELECT * INTO v_lote FROM lotes_avaliacao WHERE id = p_lote_id;
-  
-  IF NOT FOUND THEN
-    RETURN QUERY SELECT 'lote'::TEXT, 'NOT_FOUND'::TEXT, false, 'Lote nÃ£o encontrado'::TEXT;
-    RETURN;
-  END IF;
-
-  -- Buscar estatÃ­sticas de avaliaÃ§Ãµes
-  SELECT
-    COUNT(*) as total,
-    COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
-    COUNT(*) FILTER (WHERE status = 'inativada') as inativadas,
-    COUNT(*) FILTER (WHERE status IN ('iniciada', 'em_andamento')) as pendentes
-  INTO v_avaliacoes
-  FROM avaliacoes WHERE lote_id = p_lote_id;
-
-  -- Retornar diagnÃ³stico
-  RETURN QUERY SELECT 'status'::TEXT, v_lote.status::TEXT, true, 'Status do lote'::TEXT;
-  RETURN QUERY SELECT 'avaliacoes_total'::TEXT, v_avaliacoes.total::TEXT, v_avaliacoes.total > 0, 'Total de avaliaÃ§Ãµes'::TEXT;
-  RETURN QUERY SELECT 'avaliacoes_concluidas'::TEXT, v_avaliacoes.concluidas::TEXT, v_avaliacoes.concluidas > 0, 'AvaliaÃ§Ãµes concluÃ­das'::TEXT;
-  RETURN QUERY SELECT 'avaliacoes_pendentes'::TEXT, v_avaliacoes.pendentes::TEXT, v_avaliacoes.pendentes = 0, 'AvaliaÃ§Ãµes pendentes'::TEXT;
-  RETURN QUERY SELECT 'emitido_em'::TEXT, COALESCE(v_lote.emitido_em::TEXT, 'NULL'), v_lote.emitido_em IS NOT NULL, 'Data de emissÃ£o'::TEXT;
-  RETURN QUERY SELECT 'enviado_em'::TEXT, COALESCE(v_lote.enviado_em::TEXT, 'NULL'), v_lote.enviado_em IS NOT NULL, 'Data de envio'::TEXT;
-  RETURN QUERY SELECT 'auto_emitir_agendado'::TEXT, v_lote.auto_emitir_agendado::TEXT, v_lote.auto_emitir_agendado, 'Flag de agendamento'::TEXT;
-  RETURN QUERY SELECT 'auto_emitir_em'::TEXT, COALESCE(v_lote.auto_emitir_em::TEXT, 'NULL'), v_lote.auto_emitir_em IS NOT NULL, 'Data agendada'::TEXT;
-  RETURN QUERY SELECT 'cancelado_auto'::TEXT, COALESCE(v_lote.cancelado_automaticamente::TEXT, 'false'), NOT COALESCE(v_lote.cancelado_automaticamente, false), 'Cancelamento automÃ¡tico'::TEXT;
-  
-  RETURN;
-END;
+    AS $$
+
+DECLARE
+
+  v_lote RECORD;
+
+  v_avaliacoes RECORD;
+
+BEGIN
+
+  -- Buscar dados do lote
+
+  SELECT * INTO v_lote FROM lotes_avaliacao WHERE id = p_lote_id;
+
+  
+
+  IF NOT FOUND THEN
+
+    RETURN QUERY SELECT 'lote'::TEXT, 'NOT_FOUND'::TEXT, false, 'Lote nÃ£o encontrado'::TEXT;
+
+    RETURN;
+
+  END IF;
+
+
+
+  -- Buscar estatÃ­sticas de avaliaÃ§Ãµes
+
+  SELECT
+
+    COUNT(*) as total,
+
+    COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
+
+    COUNT(*) FILTER (WHERE status = 'inativada') as inativadas,
+
+    COUNT(*) FILTER (WHERE status IN ('iniciada', 'em_andamento')) as pendentes
+
+  INTO v_avaliacoes
+
+  FROM avaliacoes WHERE lote_id = p_lote_id;
+
+
+
+  -- Retornar diagnÃ³stico
+
+  RETURN QUERY SELECT 'status'::TEXT, v_lote.status::TEXT, true, 'Status do lote'::TEXT;
+
+  RETURN QUERY SELECT 'avaliacoes_total'::TEXT, v_avaliacoes.total::TEXT, v_avaliacoes.total > 0, 'Total de avaliaÃ§Ãµes'::TEXT;
+
+  RETURN QUERY SELECT 'avaliacoes_concluidas'::TEXT, v_avaliacoes.concluidas::TEXT, v_avaliacoes.concluidas > 0, 'AvaliaÃ§Ãµes concluÃ­das'::TEXT;
+
+  RETURN QUERY SELECT 'avaliacoes_pendentes'::TEXT, v_avaliacoes.pendentes::TEXT, v_avaliacoes.pendentes = 0, 'AvaliaÃ§Ãµes pendentes'::TEXT;
+
+  RETURN QUERY SELECT 'emitido_em'::TEXT, COALESCE(v_lote.emitido_em::TEXT, 'NULL'), v_lote.emitido_em IS NOT NULL, 'Data de emissÃ£o'::TEXT;
+
+  RETURN QUERY SELECT 'enviado_em'::TEXT, COALESCE(v_lote.enviado_em::TEXT, 'NULL'), v_lote.enviado_em IS NOT NULL, 'Data de envio'::TEXT;
+
+  RETURN QUERY SELECT 'auto_emitir_agendado'::TEXT, v_lote.auto_emitir_agendado::TEXT, v_lote.auto_emitir_agendado, 'Flag de agendamento'::TEXT;
+
+  RETURN QUERY SELECT 'auto_emitir_em'::TEXT, COALESCE(v_lote.auto_emitir_em::TEXT, 'NULL'), v_lote.auto_emitir_em IS NOT NULL, 'Data agendada'::TEXT;
+
+  RETURN QUERY SELECT 'cancelado_auto'::TEXT, COALESCE(v_lote.cancelado_automaticamente::TEXT, 'false'), NOT COALESCE(v_lote.cancelado_automaticamente, false), 'Cancelamento automÃ¡tico'::TEXT;
+
+  
+
+  RETURN;
+
+END;
+
 $$;
 
 
@@ -1220,56 +1844,106 @@ COMMENT ON FUNCTION public.diagnosticar_lote_emissao(p_lote_id integer) IS 'Fun�
 
 CREATE FUNCTION public.execute_maintenance(p_description text, p_sql text) RETURNS void
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-DECLARE
-  v_start_time TIMESTAMP;
-  v_rows_affected INTEGER;
-BEGIN
-  -- Only allow BYPASSRLS roles
-  IF current_user NOT IN ('dba_maintenance', 'postgres', 'neondb_owner') THEN
-    RAISE EXCEPTION 'SECURITY: execute_maintenance() requires BYPASSRLS role';
-  END IF;
-  
-  v_start_time := clock_timestamp();
-  
-  -- Audit before
-  INSERT INTO audit_logs (
-    user_cpf,
-    user_perfil,
-    action,
-    resource,
-    details
-  ) VALUES (
-    current_user,
-    'dba_bypassrls',
-    'MAINTENANCE_START',
-    'SQL',
-    'Description: ' || p_description || E'\nSQL: ' || p_sql
-  );
-  
-  -- Execute
-  EXECUTE p_sql;
-  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
-  
-  -- Audit after
-  INSERT INTO audit_logs (
-    user_cpf,
-    user_perfil,
-    action,
-    resource,
-    details
-  ) VALUES (
-    current_user,
-    'dba_bypassrls',
-    'MAINTENANCE_COMPLETE',
-    'SQL',
-    'Description: ' || p_description || 
-    E'\nRows affected: ' || v_rows_affected ||
-    E'\nDuration: ' || (clock_timestamp() - v_start_time)
-  );
-  
-  RAISE NOTICE 'Maintenance completed: % (% rows affected)', p_description, v_rows_affected;
-END;
+    AS $$
+
+DECLARE
+
+  v_start_time TIMESTAMP;
+
+  v_rows_affected INTEGER;
+
+BEGIN
+
+  -- Only allow BYPASSRLS roles
+
+  IF current_user NOT IN ('dba_maintenance', 'postgres', 'neondb_owner') THEN
+
+    RAISE EXCEPTION 'SECURITY: execute_maintenance() requires BYPASSRLS role';
+
+  END IF;
+
+  
+
+  v_start_time := clock_timestamp();
+
+  
+
+  -- Audit before
+
+  INSERT INTO audit_logs (
+
+    user_cpf,
+
+    user_perfil,
+
+    action,
+
+    resource,
+
+    details
+
+  ) VALUES (
+
+    current_user,
+
+    'dba_bypassrls',
+
+    'MAINTENANCE_START',
+
+    'SQL',
+
+    'Description: ' || p_description || E'\nSQL: ' || p_sql
+
+  );
+
+  
+
+  -- Execute
+
+  EXECUTE p_sql;
+
+  GET DIAGNOSTICS v_rows_affected = ROW_COUNT;
+
+  
+
+  -- Audit after
+
+  INSERT INTO audit_logs (
+
+    user_cpf,
+
+    user_perfil,
+
+    action,
+
+    resource,
+
+    details
+
+  ) VALUES (
+
+    current_user,
+
+    'dba_bypassrls',
+
+    'MAINTENANCE_COMPLETE',
+
+    'SQL',
+
+    'Description: ' || p_description || 
+
+    E'\nRows affected: ' || v_rows_affected ||
+
+    E'\nDuration: ' || (clock_timestamp() - v_start_time)
+
+  );
+
+  
+
+  RAISE NOTICE 'Maintenance completed: % (% rows affected)', p_description, v_rows_affected;
+
+END;
+
 $$;
 
 
@@ -1277,8 +1951,10 @@ $$;
 -- Name: FUNCTION execute_maintenance(p_description text, p_sql text); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.execute_maintenance(p_description text, p_sql text) IS 'Executes maintenance SQL with full audit trail.
-   Usage: SELECT execute_maintenance(''Fix data'', ''UPDATE table...'');
+COMMENT ON FUNCTION public.execute_maintenance(p_description text, p_sql text) IS 'Executes maintenance SQL with full audit trail.
+
+   Usage: SELECT execute_maintenance(''Fix data'', ''UPDATE table...'');
+
    Only accessible to BYPASSRLS roles.';
 
 
@@ -1288,25 +1964,44 @@ COMMENT ON FUNCTION public.execute_maintenance(p_description text, p_sql text) I
 
 CREATE FUNCTION public.fn_buscar_solicitante_laudo(p_laudo_id integer) RETURNS TABLE(cpf character varying, nome character varying, perfil character varying, solicitado_em timestamp without time zone)
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        fe.solicitado_por,
-        COALESCE(
-            f.nome, 
-            cs.nome, 
-            'Usuário Desconhecido'
-        ) AS nome,
-        fe.tipo_solicitante,
-        fe.solicitado_em
-    FROM laudos l
-    INNER JOIN fila_emissao fe ON l.lote_id = fe.lote_id
-    LEFT JOIN funcionarios f ON fe.solicitado_por = f.cpf
-    LEFT JOIN contratantes_senhas cs ON fe.solicitado_por = cs.cpf
-    WHERE l.id = p_laudo_id
-    AND fe.solicitado_por IS NOT NULL;
-END;
+    AS $$
+
+BEGIN
+
+    RETURN QUERY
+
+    SELECT 
+
+        fe.solicitado_por,
+
+        COALESCE(
+
+            f.nome, 
+
+            cs.nome, 
+
+            'Usuário Desconhecido'
+
+        ) AS nome,
+
+        fe.tipo_solicitante,
+
+        fe.solicitado_em
+
+    FROM laudos l
+
+    INNER JOIN fila_emissao fe ON l.lote_id = fe.lote_id
+
+    LEFT JOIN funcionarios f ON fe.solicitado_por = f.cpf
+
+    LEFT JOIN contratantes_senhas cs ON fe.solicitado_por = cs.cpf
+
+    WHERE l.id = p_laudo_id
+
+    AND fe.solicitado_por IS NOT NULL;
+
+END;
+
 $$;
 
 
@@ -1323,16 +2018,26 @@ COMMENT ON FUNCTION public.fn_buscar_solicitante_laudo(p_laudo_id integer) IS 'R
 
 CREATE FUNCTION public.fn_next_lote_id() RETURNS bigint
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_next bigint;
-BEGIN
-  UPDATE lote_id_allocator
-  SET last_id = last_id + 1
-  RETURNING last_id INTO v_next;
-
-  RETURN v_next;
-END;
+    AS $$
+
+DECLARE
+
+  v_next bigint;
+
+BEGIN
+
+  UPDATE lote_id_allocator
+
+  SET last_id = last_id + 1
+
+  RETURNING last_id INTO v_next;
+
+
+
+  RETURN v_next;
+
+END;
+
 $$;
 
 
@@ -1342,48 +2047,90 @@ $$;
 
 CREATE FUNCTION public.fn_recalcular_status_lote_on_avaliacao_update() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_liberadas int;
-  v_concluidas int;
-  v_inativadas int;
-BEGIN
-  -- SÃ³ agir quando houve alteraÃ§Ã£o de status
-  IF TG_OP <> 'UPDATE' OR NEW.status IS NOT DISTINCT FROM OLD.status THEN
-    RETURN NEW;
-  END IF;
-
-  -- Calcular estatÃ­sticas para o lote afetado
-  SELECT
-    COUNT(*) FILTER (WHERE status != 'rascunho')::int,
-    COUNT(*) FILTER (WHERE status = 'concluida')::int,
-    COUNT(*) FILTER (WHERE status = 'inativada')::int
-  INTO v_liberadas, v_concluidas, v_inativadas
-  FROM avaliacoes
-  WHERE lote_id = NEW.lote_id;
-
-  -- Se condiÃ§Ã£o de conclusÃ£o for satisfeita, atualizar lote APENAS
-  -- NOTA: EmissÃ£o de laudo Ã© 100% MANUAL - nÃ£o inserir em fila_emissao
-  -- O RH/Entidade deve solicitar emissÃ£o via botÃ£o "Solicitar EmissÃ£o"
-  -- O emissor entÃ£o emite o laudo manualmente no dashboard
-  IF v_liberadas > 0 AND v_concluidas > 0 AND (v_concluidas + v_inativadas) = v_liberadas THEN
-    -- Evitar writes desnecessÃ¡rios
-    UPDATE lotes_avaliacao
-    SET status = 'concluido', atualizado_em = NOW()
-    WHERE id = NEW.lote_id AND status IS DISTINCT FROM 'concluido';
-
-    -- REMOVIDO: InserÃ§Ã£o automÃ¡tica em fila_emissao
-    -- Motivo: EmissÃ£o de laudo deve ser 100% MANUAL pelo emissor
-    -- Fluxo correto:
-    --   1. RH/Entidade solicita emissÃ£o (POST /api/lotes/[loteId]/solicitar-emissao)
-    --   2. Lote aparece no dashboard do emissor
-    --   3. Emissor revisa e clica "Gerar Laudo" manualmente
-    --   4. Sistema gera PDF e hash
-    --   5. Emissor revisa e envia
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_liberadas int;
+
+  v_concluidas int;
+
+  v_inativadas int;
+
+BEGIN
+
+  -- SÃ³ agir quando houve alteraÃ§Ã£o de status
+
+  IF TG_OP <> 'UPDATE' OR NEW.status IS NOT DISTINCT FROM OLD.status THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  -- Calcular estatÃ­sticas para o lote afetado
+
+  SELECT
+
+    COUNT(*) FILTER (WHERE status != 'rascunho')::int,
+
+    COUNT(*) FILTER (WHERE status = 'concluida')::int,
+
+    COUNT(*) FILTER (WHERE status = 'inativada')::int
+
+  INTO v_liberadas, v_concluidas, v_inativadas
+
+  FROM avaliacoes
+
+  WHERE lote_id = NEW.lote_id;
+
+
+
+  -- Se condiÃ§Ã£o de conclusÃ£o for satisfeita, atualizar lote APENAS
+
+  -- NOTA: EmissÃ£o de laudo Ã© 100% MANUAL - nÃ£o inserir em fila_emissao
+
+  -- O RH/Entidade deve solicitar emissÃ£o via botÃ£o "Solicitar EmissÃ£o"
+
+  -- O emissor entÃ£o emite o laudo manualmente no dashboard
+
+  IF v_liberadas > 0 AND v_concluidas > 0 AND (v_concluidas + v_inativadas) = v_liberadas THEN
+
+    -- Evitar writes desnecessÃ¡rios
+
+    UPDATE lotes_avaliacao
+
+    SET status = 'concluido', atualizado_em = NOW()
+
+    WHERE id = NEW.lote_id AND status IS DISTINCT FROM 'concluido';
+
+
+
+    -- REMOVIDO: InserÃ§Ã£o automÃ¡tica em fila_emissao
+
+    -- Motivo: EmissÃ£o de laudo deve ser 100% MANUAL pelo emissor
+
+    -- Fluxo correto:
+
+    --   1. RH/Entidade solicita emissÃ£o (POST /api/lotes/[loteId]/solicitar-emissao)
+
+    --   2. Lote aparece no dashboard do emissor
+
+    --   3. Emissor revisa e clica "Gerar Laudo" manualmente
+
+    --   4. Sistema gera PDF e hash
+
+    --   5. Emissor revisa e envia
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -1400,27 +2147,48 @@ COMMENT ON FUNCTION public.fn_recalcular_status_lote_on_avaliacao_update() IS 'R
 
 CREATE FUNCTION public.fn_relatorio_emissoes_periodo(p_data_inicio timestamp without time zone, p_data_fim timestamp without time zone) RETURNS TABLE(solicitante_cpf character varying, solicitante_perfil character varying, total_solicitacoes bigint, total_sucessos bigint, total_erros bigint, taxa_sucesso numeric)
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        fe.solicitado_por,
-        fe.tipo_solicitante,
-        COUNT(*) AS total_solicitacoes,
-        COUNT(CASE WHEN l.status IN ('emitido', 'enviado') THEN 1 END) AS total_sucessos,
-        COUNT(CASE WHEN fe.erro IS NOT NULL OR fe.tentativas >= fe.max_tentativas THEN 1 END) AS total_erros,
-        ROUND(
-            (COUNT(CASE WHEN l.status IN ('emitido', 'enviado') THEN 1 END)::NUMERIC / 
-             NULLIF(COUNT(*), 0)::NUMERIC) * 100, 
-            2
-        ) AS taxa_sucesso
-    FROM fila_emissao fe
-    LEFT JOIN laudos l ON fe.lote_id = l.lote_id
-    WHERE fe.solicitado_em BETWEEN p_data_inicio AND p_data_fim
-    AND fe.solicitado_por IS NOT NULL
-    GROUP BY fe.solicitado_por, fe.tipo_solicitante
-    ORDER BY total_solicitacoes DESC;
-END;
+    AS $$
+
+BEGIN
+
+    RETURN QUERY
+
+    SELECT 
+
+        fe.solicitado_por,
+
+        fe.tipo_solicitante,
+
+        COUNT(*) AS total_solicitacoes,
+
+        COUNT(CASE WHEN l.status IN ('emitido', 'enviado') THEN 1 END) AS total_sucessos,
+
+        COUNT(CASE WHEN fe.erro IS NOT NULL OR fe.tentativas >= fe.max_tentativas THEN 1 END) AS total_erros,
+
+        ROUND(
+
+            (COUNT(CASE WHEN l.status IN ('emitido', 'enviado') THEN 1 END)::NUMERIC / 
+
+             NULLIF(COUNT(*), 0)::NUMERIC) * 100, 
+
+            2
+
+        ) AS taxa_sucesso
+
+    FROM fila_emissao fe
+
+    LEFT JOIN laudos l ON fe.lote_id = l.lote_id
+
+    WHERE fe.solicitado_em BETWEEN p_data_inicio AND p_data_fim
+
+    AND fe.solicitado_por IS NOT NULL
+
+    GROUP BY fe.solicitado_por, fe.tipo_solicitante
+
+    ORDER BY total_solicitacoes DESC;
+
+END;
+
 $$;
 
 
@@ -1437,15 +2205,24 @@ COMMENT ON FUNCTION public.fn_relatorio_emissoes_periodo(p_data_inicio timestamp
 
 CREATE FUNCTION public.fn_reservar_id_laudo_on_lote_insert() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-BEGIN
-  -- Inserir laudo com mesmo ID do lote (apenas reserva)
-  INSERT INTO laudos (id, lote_id, status, criado_em, atualizado_em)
-  VALUES (NEW.id, NEW.id, 'rascunho', NOW(), NOW())
-  ON CONFLICT (id) DO NOTHING;
-  
-  RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+  -- Inserir laudo com mesmo ID do lote (apenas reserva)
+
+  INSERT INTO laudos (id, lote_id, status, criado_em, atualizado_em)
+
+  VALUES (NEW.id, NEW.id, 'rascunho', NOW(), NOW())
+
+  ON CONFLICT (id) DO NOTHING;
+
+  
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -1453,8 +2230,10 @@ $$;
 -- Name: FUNCTION fn_reservar_id_laudo_on_lote_insert(); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.fn_reservar_id_laudo_on_lote_insert() IS 'Reserva ID do laudo (igual ao ID do lote) quando lote Ã© criado.
-Laudo fica em status=rascunho atÃ© emissor gerar o PDF.
+COMMENT ON FUNCTION public.fn_reservar_id_laudo_on_lote_insert() IS 'Reserva ID do laudo (igual ao ID do lote) quando lote Ã© criado.
+
+Laudo fica em status=rascunho atÃ© emissor gerar o PDF.
+
 Garante que laudo.id === lote.id sempre.';
 
 
@@ -1464,46 +2243,86 @@ Garante que laudo.id === lote.id sempre.';
 
 CREATE FUNCTION public.gerar_codigo_lote() RETURNS character varying
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    data_atual VARCHAR(6);
-
-    sequencial INT;
-
-    codigo VARCHAR(20);
-
-BEGIN
-
-    -- Formato: 001-DDMMYY (ex: 001-291125)
-
-    data_atual := TO_CHAR(CURRENT_DATE, 'DDMMYY');
-
-
-
-    -- Buscar prÃ³ximo sequencial para a data
-
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
-
-    INTO sequencial
-
-    FROM lotes_avaliacao la
-
-    WHERE la.codigo LIKE '%-' || data_atual;
-
-
-
-    -- Formatar cÃ³digo com zeros Ã  esquerda
-
-    codigo := LPAD(sequencial::TEXT, 3, '0') || '-' || data_atual;
-
-
-
-    RETURN codigo;
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    data_atual VARCHAR(6);
+
+
+
+    sequencial INT;
+
+
+
+    codigo VARCHAR(20);
+
+
+
+BEGIN
+
+
+
+    -- Formato: 001-DDMMYY (ex: 001-291125)
+
+
+
+    data_atual := TO_CHAR(CURRENT_DATE, 'DDMMYY');
+
+
+
+
+
+
+
+    -- Buscar prÃ³ximo sequencial para a data
+
+
+
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
+
+
+
+    INTO sequencial
+
+
+
+    FROM lotes_avaliacao la
+
+
+
+    WHERE la.codigo LIKE '%-' || data_atual;
+
+
+
+
+
+
+
+    -- Formatar cÃ³digo com zeros Ã  esquerda
+
+
+
+    codigo := LPAD(sequencial::TEXT, 3, '0') || '-' || data_atual;
+
+
+
+
+
+
+
+    RETURN codigo;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -1513,238 +2332,470 @@ $$;
 
 CREATE FUNCTION public.gerar_dados_relatorio(p_clinica_id integer, p_template_id integer DEFAULT 1, p_empresa_id integer DEFAULT NULL::integer, p_data_inicio date DEFAULT NULL::date, p_data_fim date DEFAULT NULL::date) RETURNS TABLE(secao character varying, tipo_dados character varying, dados jsonb, metadados jsonb)
     LANGUAGE plpgsql
-    AS $$
-
-DECLARE
-
-    template_config RECORD;
-
-BEGIN
-
-    -- Buscar configuração do template
-
-    SELECT * INTO template_config FROM relatorio_templates WHERE id = p_template_id;
-
-    
-
-    -- Seção: Resumo Executivo
-
-    RETURN QUERY
-
-    SELECT 
-
-        'resumo_executivo'::VARCHAR as secao,
-
-        'estatisticas_gerais'::VARCHAR as tipo_dados,
-
-        jsonb_build_object(
-
-            'total_funcionarios', COUNT(DISTINCT f.cpf),
-
-            'total_avaliacoes', COUNT(a.id),
-
-            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluida' THEN 1 END),
-
-            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2)
-
-        ) as dados,
-
-        jsonb_build_object(
-
-            'periodo', COALESCE(p_data_inicio::TEXT, '2024-01-01') || ' a ' || COALESCE(p_data_fim::TEXT, CURRENT_DATE::TEXT),
-
-            'clinica_id', p_clinica_id,
-
-            'empresa_filtro', CASE WHEN p_empresa_id IS NOT NULL THEN 'específica' ELSE 'todas' END
-
-        ) as metadados
-
-    FROM funcionarios f
-
-    LEFT JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
-
-    LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
-
-    WHERE f.clinica_id = p_clinica_id 
-
-        AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
-
-        AND (p_data_inicio IS NULL OR a.created_at >= p_data_inicio)
-
-        AND (p_data_fim IS NULL OR a.created_at <= p_data_fim);
-
-    
-
-    -- Seção: Análise por Domínios
-
-    RETURN QUERY
-
-    SELECT 
-
-        'analise_dominios'::VARCHAR as secao,
-
-        'scores_por_grupo'::VARCHAR as tipo_dados,
-
-        jsonb_agg(
-
-            jsonb_build_object(
-
-                'grupo', grupo_num,
-
-                'dominio', dominio_nome,
-
-                'score_medio', score_medio,
-
-                'categoria', categoria,
-
-                'total_respostas', total_respostas
-
-            )
-
-        ) as dados,
-
-        jsonb_build_object(
-
-            'metodologia', 'COPSOQ-III',
-
-            'escala', '0-100',
-
-            'interpretacao', 'alto=75+, medio=50-74, baixo=0-49'
-
-        ) as metadados
-
-    FROM (
-
-        SELECT 
-
-            r.grupo as grupo_num,
-
-            CASE r.grupo
-
-                WHEN 1 THEN 'Demandas no Trabalho'
-
-                WHEN 2 THEN 'Organização e Conteúdo'
-
-                WHEN 3 THEN 'Relações Sociais'
-
-                WHEN 4 THEN 'Liderança'
-
-                WHEN 5 THEN 'Valores Organizacionais'
-
-                WHEN 6 THEN 'Saúde e Bem-estar'
-
-                WHEN 7 THEN 'Comportamentos Ofensivos'
-
-                WHEN 8 THEN 'Jogos de Apostas'
-
-                WHEN 9 THEN 'Endividamento'
-
-                ELSE 'Outros'
-
-            END as dominio_nome,
-
-            ROUND(AVG(r.valor), 2) as score_medio,
-
-            CASE 
-
-                WHEN AVG(r.valor) >= 75 THEN 'Alto'
-
-                WHEN AVG(r.valor) >= 50 THEN 'Médio'
-
-                ELSE 'Baixo'
-
-            END as categoria,
-
-            COUNT(r.valor) as total_respostas
-
-        FROM respostas r
-
-        JOIN avaliacoes a ON r.avaliacao_id = a.id
-
-        JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-
-        LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
-
-        WHERE f.clinica_id = p_clinica_id 
-
-            AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
-
-            AND a.status = 'concluida'
-
-        GROUP BY r.grupo
-
-        ORDER BY r.grupo
-
-    ) dados_grupos;
-
-    
-
-    -- Seção: Alertas e Recomendações
-
-    RETURN QUERY
-
-    SELECT 
-
-        'alertas_recomendacoes'::VARCHAR as secao,
-
-        'analise_critica'::VARCHAR as tipo_dados,
-
-        jsonb_build_object(
-
-            'alertas_criticos', ARRAY[
-
-                'Comportamentos ofensivos detectados em ' || COUNT(CASE WHEN r.grupo = 8 AND r.valor > 0 THEN 1 END) || ' respostas',
-
-                'Alto risco de Jogos de Apostas em ' || COUNT(CASE WHEN r.grupo = 9 AND r.valor > 50 THEN 1 END) || ' casos',
-
-                'Problemas de endividamento em ' || COUNT(CASE WHEN r.grupo = 10 AND r.valor > 75 THEN 1 END) || ' funcionários'
-
-            ],
-
-            'recomendacoes_prioritarias', ARRAY[
-
-                'Implementar programa de prevenção ao assédio e violência',
-
-                'Oferecer orientação financeira e sobre jogos responsáveis',
-
-                'Revisar carga de trabalho e organização das demandas',
-
-                'Fortalecer canais de comunicação e feedback'
-
-            ]
-
-        ) as dados,
-
-        jsonb_build_object(
-
-            'base_analise', 'Respostas com pontuação de risco',
-
-            'criterios', 'Grupos 8,9,10 com scores > limites críticos',
-
-            'urgencia', 'Alta para comportamentos ofensivos'
-
-        ) as metadados
-
-    FROM respostas r
-
-    JOIN avaliacoes a ON r.avaliacao_id = a.id
-
-    JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-
-    LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
-
-    WHERE f.clinica_id = p_clinica_id 
-
-        AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
-
-        AND a.status = 'concluida'
-
-        AND r.grupo IN (8, 9, 10);
-
-        
-
-END;
-
+    AS $$
+
+
+
+DECLARE
+
+
+
+    template_config RECORD;
+
+
+
+BEGIN
+
+
+
+    -- Buscar configuração do template
+
+
+
+    SELECT * INTO template_config FROM relatorio_templates WHERE id = p_template_id;
+
+
+
+    
+
+
+
+    -- Seção: Resumo Executivo
+
+
+
+    RETURN QUERY
+
+
+
+    SELECT 
+
+
+
+        'resumo_executivo'::VARCHAR as secao,
+
+
+
+        'estatisticas_gerais'::VARCHAR as tipo_dados,
+
+
+
+        jsonb_build_object(
+
+
+
+            'total_funcionarios', COUNT(DISTINCT f.cpf),
+
+
+
+            'total_avaliacoes', COUNT(a.id),
+
+
+
+            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluida' THEN 1 END),
+
+
+
+            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2)
+
+
+
+        ) as dados,
+
+
+
+        jsonb_build_object(
+
+
+
+            'periodo', COALESCE(p_data_inicio::TEXT, '2024-01-01') || ' a ' || COALESCE(p_data_fim::TEXT, CURRENT_DATE::TEXT),
+
+
+
+            'clinica_id', p_clinica_id,
+
+
+
+            'empresa_filtro', CASE WHEN p_empresa_id IS NOT NULL THEN 'específica' ELSE 'todas' END
+
+
+
+        ) as metadados
+
+
+
+    FROM funcionarios f
+
+
+
+    LEFT JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
+
+
+
+    LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
+
+
+
+    WHERE f.clinica_id = p_clinica_id 
+
+
+
+        AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
+
+
+
+        AND (p_data_inicio IS NULL OR a.created_at >= p_data_inicio)
+
+
+
+        AND (p_data_fim IS NULL OR a.created_at <= p_data_fim);
+
+
+
+    
+
+
+
+    -- Seção: Análise por Domínios
+
+
+
+    RETURN QUERY
+
+
+
+    SELECT 
+
+
+
+        'analise_dominios'::VARCHAR as secao,
+
+
+
+        'scores_por_grupo'::VARCHAR as tipo_dados,
+
+
+
+        jsonb_agg(
+
+
+
+            jsonb_build_object(
+
+
+
+                'grupo', grupo_num,
+
+
+
+                'dominio', dominio_nome,
+
+
+
+                'score_medio', score_medio,
+
+
+
+                'categoria', categoria,
+
+
+
+                'total_respostas', total_respostas
+
+
+
+            )
+
+
+
+        ) as dados,
+
+
+
+        jsonb_build_object(
+
+
+
+            'metodologia', 'COPSOQ-III',
+
+
+
+            'escala', '0-100',
+
+
+
+            'interpretacao', 'alto=75+, medio=50-74, baixo=0-49'
+
+
+
+        ) as metadados
+
+
+
+    FROM (
+
+
+
+        SELECT 
+
+
+
+            r.grupo as grupo_num,
+
+
+
+            CASE r.grupo
+
+
+
+                WHEN 1 THEN 'Demandas no Trabalho'
+
+
+
+                WHEN 2 THEN 'Organização e Conteúdo'
+
+
+
+                WHEN 3 THEN 'Relações Sociais'
+
+
+
+                WHEN 4 THEN 'Liderança'
+
+
+
+                WHEN 5 THEN 'Valores Organizacionais'
+
+
+
+                WHEN 6 THEN 'Saúde e Bem-estar'
+
+
+
+                WHEN 7 THEN 'Comportamentos Ofensivos'
+
+
+
+                WHEN 8 THEN 'Jogos de Apostas'
+
+
+
+                WHEN 9 THEN 'Endividamento'
+
+
+
+                ELSE 'Outros'
+
+
+
+            END as dominio_nome,
+
+
+
+            ROUND(AVG(r.valor), 2) as score_medio,
+
+
+
+            CASE 
+
+
+
+                WHEN AVG(r.valor) >= 75 THEN 'Alto'
+
+
+
+                WHEN AVG(r.valor) >= 50 THEN 'Médio'
+
+
+
+                ELSE 'Baixo'
+
+
+
+            END as categoria,
+
+
+
+            COUNT(r.valor) as total_respostas
+
+
+
+        FROM respostas r
+
+
+
+        JOIN avaliacoes a ON r.avaliacao_id = a.id
+
+
+
+        JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+
+
+
+        LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
+
+
+
+        WHERE f.clinica_id = p_clinica_id 
+
+
+
+            AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
+
+
+
+            AND a.status = 'concluida'
+
+
+
+        GROUP BY r.grupo
+
+
+
+        ORDER BY r.grupo
+
+
+
+    ) dados_grupos;
+
+
+
+    
+
+
+
+    -- Seção: Alertas e Recomendações
+
+
+
+    RETURN QUERY
+
+
+
+    SELECT 
+
+
+
+        'alertas_recomendacoes'::VARCHAR as secao,
+
+
+
+        'analise_critica'::VARCHAR as tipo_dados,
+
+
+
+        jsonb_build_object(
+
+
+
+            'alertas_criticos', ARRAY[
+
+
+
+                'Comportamentos ofensivos detectados em ' || COUNT(CASE WHEN r.grupo = 8 AND r.valor > 0 THEN 1 END) || ' respostas',
+
+
+
+                'Alto risco de Jogos de Apostas em ' || COUNT(CASE WHEN r.grupo = 9 AND r.valor > 50 THEN 1 END) || ' casos',
+
+
+
+                'Problemas de endividamento em ' || COUNT(CASE WHEN r.grupo = 10 AND r.valor > 75 THEN 1 END) || ' funcionários'
+
+
+
+            ],
+
+
+
+            'recomendacoes_prioritarias', ARRAY[
+
+
+
+                'Implementar programa de prevenção ao assédio e violência',
+
+
+
+                'Oferecer orientação financeira e sobre jogos responsáveis',
+
+
+
+                'Revisar carga de trabalho e organização das demandas',
+
+
+
+                'Fortalecer canais de comunicação e feedback'
+
+
+
+            ]
+
+
+
+        ) as dados,
+
+
+
+        jsonb_build_object(
+
+
+
+            'base_analise', 'Respostas com pontuação de risco',
+
+
+
+            'criterios', 'Grupos 8,9,10 com scores > limites críticos',
+
+
+
+            'urgencia', 'Alta para comportamentos ofensivos'
+
+
+
+        ) as metadados
+
+
+
+    FROM respostas r
+
+
+
+    JOIN avaliacoes a ON r.avaliacao_id = a.id
+
+
+
+    JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+
+
+
+    LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
+
+
+
+    WHERE f.clinica_id = p_clinica_id 
+
+
+
+        AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
+
+
+
+        AND a.status = 'concluida'
+
+
+
+        AND r.grupo IN (8, 9, 10);
+
+
+
+        
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -1770,24 +2821,42 @@ $$;
 
 CREATE FUNCTION public.gerar_numero_recibo() RETURNS text
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-    ano INTEGER;
-    sequencia INTEGER;
-    numero_recibo TEXT;
-BEGIN
-    ano := EXTRACT(YEAR FROM CURRENT_DATE);
-    
-    -- Conta quantos recibos existem no ano atual
-    SELECT COUNT(*) + 1 INTO sequencia
-    FROM recibos
-    WHERE EXTRACT(YEAR FROM criado_em) = ano;
-    
-    -- Formato: REC-AAAA-NNNNN (ex: REC-2025-00001)
-    numero_recibo := 'REC-' || ano || '-' || LPAD(sequencia::TEXT, 5, '0');
-    
-    RETURN numero_recibo;
-END;
+    AS $$
+
+DECLARE
+
+    ano INTEGER;
+
+    sequencia INTEGER;
+
+    numero_recibo TEXT;
+
+BEGIN
+
+    ano := EXTRACT(YEAR FROM CURRENT_DATE);
+
+    
+
+    -- Conta quantos recibos existem no ano atual
+
+    SELECT COUNT(*) + 1 INTO sequencia
+
+    FROM recibos
+
+    WHERE EXTRACT(YEAR FROM criado_em) = ano;
+
+    
+
+    -- Formato: REC-AAAA-NNNNN (ex: REC-2025-00001)
+
+    numero_recibo := 'REC-' || ano || '-' || LPAD(sequencia::TEXT, 5, '0');
+
+    
+
+    RETURN numero_recibo;
+
+END;
+
 $$;
 
 
@@ -1804,22 +2873,38 @@ COMMENT ON FUNCTION public.gerar_numero_recibo() IS 'Gera nÃºmero Ãºnico de 
 
 CREATE FUNCTION public.get_contratante_funcionario(p_funcionario_id integer) RETURNS TABLE(contratante_id integer, contratante_nome character varying, contratante_tipo public.tipo_contratante_enum, contratante_ativo boolean)
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    RETURN QUERY
-    SELECT 
-        c.id,
-        c.nome,
-        c.tipo,
-        c.ativa
-    FROM contratantes c
-    INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
-    WHERE cf.funcionario_id = p_funcionario_id
-      AND cf.vinculo_ativo = true
-      AND c.ativa = true
-    ORDER BY cf.criado_em DESC
-    LIMIT 1;
-END;
+    AS $$
+
+BEGIN
+
+    RETURN QUERY
+
+    SELECT 
+
+        c.id,
+
+        c.nome,
+
+        c.tipo,
+
+        c.ativa
+
+    FROM contratantes c
+
+    INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+
+    WHERE cf.funcionario_id = p_funcionario_id
+
+      AND cf.vinculo_ativo = true
+
+      AND c.ativa = true
+
+    ORDER BY cf.criado_em DESC
+
+    LIMIT 1;
+
+END;
+
 $$;
 
 
@@ -1829,78 +2914,150 @@ $$;
 
 CREATE FUNCTION public.get_resultados_por_empresa(p_clinica_id integer, p_empresa_id integer DEFAULT NULL::integer) RETURNS TABLE(empresa_id integer, empresa_nome character varying, grupo integer, dominio character varying, media_score numeric, categoria character varying, total_respostas bigint)
     LANGUAGE plpgsql
-    AS $$
-
-BEGIN
-
-    RETURN QUERY
-
-    SELECT 
-
-        ec.id as empresa_id,
-
-        ec.nome as empresa_nome,
-
-        r.grupo,
-
-        CASE r.grupo
-
-            WHEN 1 THEN 'Demandas no Trabalho'
-
-            WHEN 2 THEN 'Organização e Conteúdo'
-
-            WHEN 3 THEN 'Relações Sociais'
-
-            WHEN 4 THEN 'Liderança'
-
-            WHEN 5 THEN 'Valores Organizacionais'
-
-            WHEN 6 THEN 'Saúde e Bem-estar'
-
-            WHEN 7 THEN 'Comportamentos Ofensivos'
-
-            WHEN 8 THEN 'Jogos de Apostas'
-
-            WHEN 9 THEN 'Endividamento'
-
-            ELSE 'Outros'
-
-        END as dominio,
-
-        AVG(r.valor) as media_score,
-
-        CASE 
-
-            WHEN AVG(r.valor) >= 75 THEN 'alto'
-
-            WHEN AVG(r.valor) >= 50 THEN 'medio'
-
-            ELSE 'baixo'
-
-        END as categoria,
-
-        COUNT(r.valor) as total_respostas
-
-    FROM respostas r
-
-    JOIN avaliacoes a ON r.avaliacao_id = a.id
-
-    JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-
-    JOIN empresas_clientes ec ON f.empresa_id = ec.id
-
-    WHERE f.clinica_id = p_clinica_id
-
-        AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
-
-        AND a.status = 'concluida'
-
-    GROUP BY ec.id, ec.nome, r.grupo
-
-    ORDER BY ec.nome, r.grupo;
-
-END;
-
+    AS $$
+
+
+
+BEGIN
+
+
+
+    RETURN QUERY
+
+
+
+    SELECT 
+
+
+
+        ec.id as empresa_id,
+
+
+
+        ec.nome as empresa_nome,
+
+
+
+        r.grupo,
+
+
+
+        CASE r.grupo
+
+
+
+            WHEN 1 THEN 'Demandas no Trabalho'
+
+
+
+            WHEN 2 THEN 'Organização e Conteúdo'
+
+
+
+            WHEN 3 THEN 'Relações Sociais'
+
+
+
+            WHEN 4 THEN 'Liderança'
+
+
+
+            WHEN 5 THEN 'Valores Organizacionais'
+
+
+
+            WHEN 6 THEN 'Saúde e Bem-estar'
+
+
+
+            WHEN 7 THEN 'Comportamentos Ofensivos'
+
+
+
+            WHEN 8 THEN 'Jogos de Apostas'
+
+
+
+            WHEN 9 THEN 'Endividamento'
+
+
+
+            ELSE 'Outros'
+
+
+
+        END as dominio,
+
+
+
+        AVG(r.valor) as media_score,
+
+
+
+        CASE 
+
+
+
+            WHEN AVG(r.valor) >= 75 THEN 'alto'
+
+
+
+            WHEN AVG(r.valor) >= 50 THEN 'medio'
+
+
+
+            ELSE 'baixo'
+
+
+
+        END as categoria,
+
+
+
+        COUNT(r.valor) as total_respostas
+
+
+
+    FROM respostas r
+
+
+
+    JOIN avaliacoes a ON r.avaliacao_id = a.id
+
+
+
+    JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+
+
+
+    JOIN empresas_clientes ec ON f.empresa_id = ec.id
+
+
+
+    WHERE f.clinica_id = p_clinica_id
+
+
+
+        AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
+
+
+
+        AND a.status = 'concluida'
+
+
+
+    GROUP BY ec.id, ec.nome, r.grupo
+
+
+
+    ORDER BY ec.nome, r.grupo;
+
+
+
+END;
+
+
+
 $$;
 
 
@@ -1910,11 +3067,16 @@ $$;
 
 CREATE FUNCTION public.is_admin_or_master() RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-BEGIN
-    -- Após migração, apenas 'admin' confere privilégio total. Esta função mantém compatibilidade histórica
-    RETURN current_user_perfil() = 'admin';
-END;
+    AS $$
+
+BEGIN
+
+    -- Após migração, apenas 'admin' confere privilégio total. Esta função mantém compatibilidade histórica
+
+    RETURN current_user_perfil() = 'admin';
+
+END;
+
 $$;
 
 
@@ -1931,13 +3093,20 @@ COMMENT ON FUNCTION public.is_admin_or_master() IS 'Verifica se o usuário atual
 
 CREATE FUNCTION public.is_valid_perfil(p_perfil text) RETURNS boolean
     LANGUAGE plpgsql IMMUTABLE
-    AS $$
-BEGIN
-    RETURN p_perfil::perfil_usuario_enum IS NOT NULL;
-EXCEPTION
-    WHEN invalid_text_representation THEN
-        RETURN FALSE;
-END;
+    AS $$
+
+BEGIN
+
+    RETURN p_perfil::perfil_usuario_enum IS NOT NULL;
+
+EXCEPTION
+
+    WHEN invalid_text_representation THEN
+
+        RETURN FALSE;
+
+END;
+
 $$;
 
 
@@ -1954,12 +3123,18 @@ COMMENT ON FUNCTION public.is_valid_perfil(p_perfil text) IS 'Valida se um texto
 
 CREATE FUNCTION public.log_access_denied(p_user text, p_action text, p_resource text, p_reason text) RETURNS void
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  -- Opcional: inserir em tabela de logs se quiser rastrear
-  -- INSERT INTO app_access_logs(user_id, action, resource, reason, created_at) VALUES (p_user, p_action, p_resource, p_reason, now());
-  RETURN;
-END;
+    AS $$
+
+BEGIN
+
+  -- Opcional: inserir em tabela de logs se quiser rastrear
+
+  -- INSERT INTO app_access_logs(user_id, action, resource, reason, created_at) VALUES (p_user, p_action, p_resource, p_reason, now());
+
+  RETURN;
+
+END;
+
 $$;
 
 
@@ -1976,27 +3151,48 @@ COMMENT ON FUNCTION public.log_access_denied(p_user text, p_action text, p_resou
 
 CREATE FUNCTION public.lote_pode_ser_processado(p_lote_id integer) RETURNS boolean
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_status status_lote;
-  v_tem_laudo BOOLEAN;
-BEGIN
-  -- Buscar status do lote
-  SELECT status INTO v_status
-  FROM lotes_avaliacao
-  WHERE id = p_lote_id;
-
-  IF NOT FOUND THEN
-    RETURN FALSE;
-  END IF;
-
-  -- Verificar se já tem laudo enviado
-  SELECT EXISTS(SELECT 1 FROM laudos WHERE lote_id = p_lote_id AND status = 'enviado')
-  INTO v_tem_laudo;
-
-  -- Pode processar se está concluído e não tem laudo
-  RETURN v_status = 'concluido' AND NOT v_tem_laudo;
-END;
+    AS $$
+
+DECLARE
+
+  v_status status_lote;
+
+  v_tem_laudo BOOLEAN;
+
+BEGIN
+
+  -- Buscar status do lote
+
+  SELECT status INTO v_status
+
+  FROM lotes_avaliacao
+
+  WHERE id = p_lote_id;
+
+
+
+  IF NOT FOUND THEN
+
+    RETURN FALSE;
+
+  END IF;
+
+
+
+  -- Verificar se já tem laudo enviado
+
+  SELECT EXISTS(SELECT 1 FROM laudos WHERE lote_id = p_lote_id AND status = 'enviado')
+
+  INTO v_tem_laudo;
+
+
+
+  -- Pode processar se está concluído e não tem laudo
+
+  RETURN v_status = 'concluido' AND NOT v_tem_laudo;
+
+END;
+
 $$;
 
 
@@ -2013,20 +3209,34 @@ COMMENT ON FUNCTION public.lote_pode_ser_processado(p_lote_id integer) IS 'Verif
 
 CREATE FUNCTION public.marcar_notificacoes_lidas(p_notificacao_ids integer[], p_usuario_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_count INTEGER;
-BEGIN
-  UPDATE notificacoes
-  SET lida = TRUE,
-      data_leitura = NOW()
-  WHERE id = ANY(p_notificacao_ids)
-    AND destinatario_id = p_usuario_id
-    AND lida = FALSE;
-  
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count;
-END;
+    AS $$
+
+DECLARE
+
+  v_count INTEGER;
+
+BEGIN
+
+  UPDATE notificacoes
+
+  SET lida = TRUE,
+
+      data_leitura = NOW()
+
+  WHERE id = ANY(p_notificacao_ids)
+
+    AND destinatario_id = p_usuario_id
+
+    AND lida = FALSE;
+
+  
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN v_count;
+
+END;
+
 $$;
 
 
@@ -2036,20 +3246,34 @@ $$;
 
 CREATE FUNCTION public.marcar_notificacoes_lidas(p_notificacao_ids integer[], p_usuario_cpf text) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_count INTEGER;
-BEGIN
-  UPDATE notificacoes
-  SET lida = TRUE,
-      data_leitura = NOW()
-  WHERE id = ANY(p_notificacao_ids)
-    AND destinatario_cpf = p_usuario_cpf
-    AND lida = FALSE;
-  
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count;
-END;
+    AS $$
+
+DECLARE
+
+  v_count INTEGER;
+
+BEGIN
+
+  UPDATE notificacoes
+
+  SET lida = TRUE,
+
+      data_leitura = NOW()
+
+  WHERE id = ANY(p_notificacao_ids)
+
+    AND destinatario_cpf = p_usuario_cpf
+
+    AND lida = FALSE;
+
+  
+
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+
+  RETURN v_count;
+
+END;
+
 $$;
 
 
@@ -2059,44 +3283,82 @@ $$;
 
 CREATE FUNCTION public.notificar_pre_cadastro_criado() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_contratante_nome TEXT;
-  v_admin_record RECORD;
-BEGIN
-  -- Buscar nome do contratante (corrigido de clinicas para contratantes)
-  SELECT nome INTO v_contratante_nome
-  FROM contratantes
-  WHERE id = NEW.contratante_id;
-
-  -- Notificar todos os admins
-  FOR v_admin_record IN
-    SELECT cpf FROM usuarios WHERE role = 'admin' AND ativo = TRUE
-  LOOP
-    INSERT INTO notificacoes (
-      tipo, prioridade, destinatario_cpf, destinatario_tipo,
-      titulo, mensagem, dados_contexto, link_acao, botao_texto,
-      contratacao_personalizada_id
-    ) VALUES (
-      'pre_cadastro_criado',
-      'alta',
-      v_admin_record.cpf,
-      'admin',
-      'Novo Pre-Cadastro: ' || v_contratante_nome,
-      'Um novo pre-cadastro de plano personalizado foi criado e aguarda definicao de valor. Funcionarios estimados: ' || COALESCE(NEW.numero_funcionarios_estimado::TEXT, 'Nao informado') || '.',
-      jsonb_build_object(
-        'contratacao_id', NEW.id,
-        'contratante_nome', v_contratante_nome,
-        'numero_funcionarios', NEW.numero_funcionarios_estimado
-      ),
-      '/admin/contratacao/pendentes',
-      'Definir Valor',
-      NEW.id
-    );
-  END LOOP;
-
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_contratante_nome TEXT;
+
+  v_admin_record RECORD;
+
+BEGIN
+
+  -- Buscar nome do contratante (corrigido de clinicas para contratantes)
+
+  SELECT nome INTO v_contratante_nome
+
+  FROM contratantes
+
+  WHERE id = NEW.contratante_id;
+
+
+
+  -- Notificar todos os admins
+
+  FOR v_admin_record IN
+
+    SELECT cpf FROM usuarios WHERE role = 'admin' AND ativo = TRUE
+
+  LOOP
+
+    INSERT INTO notificacoes (
+
+      tipo, prioridade, destinatario_cpf, destinatario_tipo,
+
+      titulo, mensagem, dados_contexto, link_acao, botao_texto,
+
+      contratacao_personalizada_id
+
+    ) VALUES (
+
+      'pre_cadastro_criado',
+
+      'alta',
+
+      v_admin_record.cpf,
+
+      'admin',
+
+      'Novo Pre-Cadastro: ' || v_contratante_nome,
+
+      'Um novo pre-cadastro de plano personalizado foi criado e aguarda definicao de valor. Funcionarios estimados: ' || COALESCE(NEW.numero_funcionarios_estimado::TEXT, 'Nao informado') || '.',
+
+      jsonb_build_object(
+
+        'contratacao_id', NEW.id,
+
+        'contratante_nome', v_contratante_nome,
+
+        'numero_funcionarios', NEW.numero_funcionarios_estimado
+
+      ),
+
+      '/admin/contratacao/pendentes',
+
+      'Definir Valor',
+
+      NEW.id
+
+    );
+
+  END LOOP;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2106,47 +3368,88 @@ $$;
 
 CREATE FUNCTION public.notificar_sla_excedido() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_contratante_nome TEXT;
-  v_horas_decorridas NUMERIC;
-BEGIN
-  -- Calcular horas desde criaÃ§Ã£o
-  v_horas_decorridas := EXTRACT(EPOCH FROM (NOW() - NEW.criado_em)) / 3600;
-
-  IF v_horas_decorridas > 48 AND NEW.status = 'aguardando_valor_admin' THEN
-    -- Buscar nome do contratante
-    SELECT nome_fantasia INTO v_contratante_nome
-    FROM clinicas
-    WHERE id = NEW.contratante_id;
-
-    -- Notificar admins sobre SLA excedido
-    INSERT INTO notificacoes (
-      tipo, prioridade, destinatario_id, destinatario_tipo,
-      titulo, mensagem, dados_contexto, link_acao, botao_texto,
-      contratacao_personalizada_id
-    )
-    SELECT 
-      'sla_excedido',
-      'critica',
-      u.id,
-      'admin',
-      'ðŸš¨ SLA Excedido: ' || v_contratante_nome,
-      'PrÃ©-cadastro aguardando definiÃ§Ã£o de valor hÃ¡ mais de 48 horas. AÃ§Ã£o urgente necessÃ¡ria.',
-      jsonb_build_object(
-        'contratacao_id', NEW.id,
-        'horas_decorridas', ROUND(v_horas_decorridas, 1),
-        'contratante_nome', v_contratante_nome
-      ),
-      '/admin/contratacao/pendentes',
-      'Definir Valor Agora',
-      NEW.id
-    FROM usuarios u
-    WHERE u.role = 'admin' AND u.ativo = TRUE;
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_contratante_nome TEXT;
+
+  v_horas_decorridas NUMERIC;
+
+BEGIN
+
+  -- Calcular horas desde criaÃ§Ã£o
+
+  v_horas_decorridas := EXTRACT(EPOCH FROM (NOW() - NEW.criado_em)) / 3600;
+
+
+
+  IF v_horas_decorridas > 48 AND NEW.status = 'aguardando_valor_admin' THEN
+
+    -- Buscar nome do contratante
+
+    SELECT nome_fantasia INTO v_contratante_nome
+
+    FROM clinicas
+
+    WHERE id = NEW.contratante_id;
+
+
+
+    -- Notificar admins sobre SLA excedido
+
+    INSERT INTO notificacoes (
+
+      tipo, prioridade, destinatario_id, destinatario_tipo,
+
+      titulo, mensagem, dados_contexto, link_acao, botao_texto,
+
+      contratacao_personalizada_id
+
+    )
+
+    SELECT 
+
+      'sla_excedido',
+
+      'critica',
+
+      u.id,
+
+      'admin',
+
+      'ðŸš¨ SLA Excedido: ' || v_contratante_nome,
+
+      'PrÃ©-cadastro aguardando definiÃ§Ã£o de valor hÃ¡ mais de 48 horas. AÃ§Ã£o urgente necessÃ¡ria.',
+
+      jsonb_build_object(
+
+        'contratacao_id', NEW.id,
+
+        'horas_decorridas', ROUND(v_horas_decorridas, 1),
+
+        'contratante_nome', v_contratante_nome
+
+      ),
+
+      '/admin/contratacao/pendentes',
+
+      'Definir Valor Agora',
+
+      NEW.id
+
+    FROM usuarios u
+
+    WHERE u.role = 'admin' AND u.ativo = TRUE;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2156,42 +3459,78 @@ $$;
 
 CREATE FUNCTION public.notificar_valor_definido() RETURNS trigger
     LANGUAGE plpgsql
-    AS $_$
-DECLARE
-  v_contratante_nome TEXT;
-  v_gestor_cpf TEXT;
-BEGIN
-  -- Buscar dados do contratante (corrigido de clinicas para contratantes)
-  SELECT nome, responsavel_cpf INTO v_contratante_nome, v_gestor_cpf
-  FROM contratantes
-  WHERE id = NEW.contratante_id;
-
-  -- Notificar gestor do contratante
-  INSERT INTO notificacoes (
-    tipo, prioridade, destinatario_cpf, destinatario_tipo,
-    titulo, mensagem, dados_contexto, link_acao, botao_texto,
-    contratacao_personalizada_id
-  ) VALUES (
-    'valor_definido',
-    'media',
-    v_gestor_cpf,
-    'gestor_entidade',
-    'Valor Definido para Plano Personalizado',
-    'O valor do seu plano personalizado foi definido. Valor por funcionario: R$ ' ||
-      TO_CHAR(NEW.valor_por_funcionario, 'FM999G999G990D00') ||
-      '. Total estimado: R$ ' || TO_CHAR(NEW.valor_total_estimado, 'FM999G999G990D00') || '.',
-    jsonb_build_object(
-      'contratacao_id', NEW.id,
-      'valor_por_funcionario', NEW.valor_por_funcionario,
-      'valor_total_estimado', NEW.valor_total_estimado
-    ),
-    '/entidade/contratacao/' || NEW.id,
-    'Ver Contrato',
-    NEW.id
-  );
-
-  RETURN NEW;
-END;
+    AS $_$
+
+DECLARE
+
+  v_contratante_nome TEXT;
+
+  v_gestor_cpf TEXT;
+
+BEGIN
+
+  -- Buscar dados do contratante (corrigido de clinicas para contratantes)
+
+  SELECT nome, responsavel_cpf INTO v_contratante_nome, v_gestor_cpf
+
+  FROM contratantes
+
+  WHERE id = NEW.contratante_id;
+
+
+
+  -- Notificar gestor do contratante
+
+  INSERT INTO notificacoes (
+
+    tipo, prioridade, destinatario_cpf, destinatario_tipo,
+
+    titulo, mensagem, dados_contexto, link_acao, botao_texto,
+
+    contratacao_personalizada_id
+
+  ) VALUES (
+
+    'valor_definido',
+
+    'media',
+
+    v_gestor_cpf,
+
+    'gestor_entidade',
+
+    'Valor Definido para Plano Personalizado',
+
+    'O valor do seu plano personalizado foi definido. Valor por funcionario: R$ ' ||
+
+      TO_CHAR(NEW.valor_por_funcionario, 'FM999G999G990D00') ||
+
+      '. Total estimado: R$ ' || TO_CHAR(NEW.valor_total_estimado, 'FM999G999G990D00') || '.',
+
+    jsonb_build_object(
+
+      'contratacao_id', NEW.id,
+
+      'valor_por_funcionario', NEW.valor_por_funcionario,
+
+      'valor_total_estimado', NEW.valor_total_estimado
+
+    ),
+
+    '/entidade/contratacao/' || NEW.id,
+
+    'Ver Contrato',
+
+    NEW.id
+
+  );
+
+
+
+  RETURN NEW;
+
+END;
+
 $_$;
 
 
@@ -2201,18 +3540,30 @@ $_$;
 
 CREATE FUNCTION public.obter_proximo_numero_ordem(p_empresa_id integer) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-    v_proximo INTEGER;
-BEGIN
-    -- Buscar o maior nÃºmero de ordem para a empresa e incrementar
-    SELECT COALESCE(MAX(numero_ordem), 0) + 1
-    INTO v_proximo
-    FROM lotes_avaliacao
-    WHERE empresa_id = p_empresa_id;
-    
-    RETURN v_proximo;
-END;
+    AS $$
+
+DECLARE
+
+    v_proximo INTEGER;
+
+BEGIN
+
+    -- Buscar o maior nÃºmero de ordem para a empresa e incrementar
+
+    SELECT COALESCE(MAX(numero_ordem), 0) + 1
+
+    INTO v_proximo
+
+    FROM lotes_avaliacao
+
+    WHERE empresa_id = p_empresa_id;
+
+    
+
+    RETURN v_proximo;
+
+END;
+
 $$;
 
 
@@ -2229,13 +3580,20 @@ COMMENT ON FUNCTION public.obter_proximo_numero_ordem(p_empresa_id integer) IS '
 
 CREATE FUNCTION public.prevent_laudo_lote_id_change() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF OLD.lote_id != NEW.lote_id THEN
-        RAISE EXCEPTION 'NÃ£o Ã© permitido alterar lote_id de um laudo jÃ¡ criado';
-    END IF;
-    RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+    IF OLD.lote_id != NEW.lote_id THEN
+
+        RAISE EXCEPTION 'NÃ£o Ã© permitido alterar lote_id de um laudo jÃ¡ criado';
+
+    END IF;
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2292,25 +3650,44 @@ COMMENT ON FUNCTION public.prevent_lote_mutation_during_emission() IS 'Previne a
 
 CREATE FUNCTION public.prevent_lote_status_change_after_emission() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    -- Se laudo foi emitido e tentando alterar status
-    IF OLD.emitido_em IS NOT NULL AND NEW.status != OLD.status THEN
-        -- Permitir apenas transição finalizado -> enviado (fluxo normal)
-        IF OLD.status = 'finalizado' AND NEW.status = 'enviado' THEN
-            RETURN NEW;
-        END IF;
-        
-        RAISE EXCEPTION 
-            'Não é possível alterar status do lote % após emissão do laudo. Status atual: %, tentativa: %',
-            OLD.codigo, OLD.status, NEW.status
-        USING 
-            ERRCODE = 'integrity_constraint_violation',
-            HINT = 'Lotes com laudo emitido são imutáveis';
-    END IF;
-    
-    RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+    -- Se laudo foi emitido e tentando alterar status
+
+    IF OLD.emitido_em IS NOT NULL AND NEW.status != OLD.status THEN
+
+        -- Permitir apenas transição finalizado -> enviado (fluxo normal)
+
+        IF OLD.status = 'finalizado' AND NEW.status = 'enviado' THEN
+
+            RETURN NEW;
+
+        END IF;
+
+        
+
+        RAISE EXCEPTION 
+
+            'Não é possível alterar status do lote % após emissão do laudo. Status atual: %, tentativa: %',
+
+            OLD.codigo, OLD.status, NEW.status
+
+        USING 
+
+            ERRCODE = 'integrity_constraint_violation',
+
+            HINT = 'Lotes com laudo emitido são imutáveis';
+
+    END IF;
+
+    
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2327,28 +3704,50 @@ COMMENT ON FUNCTION public.prevent_lote_status_change_after_emission() IS 'Previ
 
 CREATE FUNCTION public.prevent_modification_after_emission() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-    lote_emitido_em TIMESTAMP;
-    lote_codigo VARCHAR;
-BEGIN
-    -- Buscar informações do lote
-    SELECT emitido_em, codigo INTO lote_emitido_em, lote_codigo
-    FROM lotes_avaliacao
-    WHERE id = NEW.lote_id;
-    
-    -- Se o laudo foi emitido, bloquear modificação
-    IF lote_emitido_em IS NOT NULL THEN
-        RAISE EXCEPTION 
-            'Não é possível modificar avaliação do lote % (código: %). Laudo foi emitido em %.',
-            NEW.lote_id, lote_codigo, lote_emitido_em
-        USING 
-            ERRCODE = 'integrity_constraint_violation',
-            HINT = 'Laudos emitidos são imutáveis para garantir integridade';
-    END IF;
-    
-    RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+    lote_emitido_em TIMESTAMP;
+
+    lote_codigo VARCHAR;
+
+BEGIN
+
+    -- Buscar informações do lote
+
+    SELECT emitido_em, codigo INTO lote_emitido_em, lote_codigo
+
+    FROM lotes_avaliacao
+
+    WHERE id = NEW.lote_id;
+
+    
+
+    -- Se o laudo foi emitido, bloquear modificação
+
+    IF lote_emitido_em IS NOT NULL THEN
+
+        RAISE EXCEPTION 
+
+            'Não é possível modificar avaliação do lote % (código: %). Laudo foi emitido em %.',
+
+            NEW.lote_id, lote_codigo, lote_emitido_em
+
+        USING 
+
+            ERRCODE = 'integrity_constraint_violation',
+
+            HINT = 'Laudos emitidos são imutáveis para garantir integridade';
+
+    END IF;
+
+    
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2365,26 +3764,46 @@ COMMENT ON FUNCTION public.prevent_modification_after_emission() IS 'Previne mod
 
 CREATE FUNCTION public.prevent_modification_avaliacao_when_lote_emitted() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-DECLARE
-  v_count INTEGER;
-  v_lote INTEGER;
-BEGIN
-  IF TG_OP IN ('UPDATE', 'DELETE') THEN
-    v_lote := COALESCE(NEW.lote_id, OLD.lote_id);
-    SELECT COUNT(*) INTO v_count FROM laudos WHERE lote_id = v_lote AND emitido_em IS NOT NULL;
-    IF v_count > 0 THEN
-      RAISE EXCEPTION 'Não é permitido alterar/deletar avaliação %: laudo do lote % já foi emitido.', COALESCE(NEW.id, OLD.id), v_lote
-        USING HINT = 'Avaliações pertencentes a lotes com laudos emitidos são imutáveis.', ERRCODE = '23506';
-    END IF;
-    IF TG_OP = 'DELETE' THEN
-      RETURN OLD;
-    ELSE
-      RETURN NEW;
-    END IF;
-  END IF;
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_count INTEGER;
+
+  v_lote INTEGER;
+
+BEGIN
+
+  IF TG_OP IN ('UPDATE', 'DELETE') THEN
+
+    v_lote := COALESCE(NEW.lote_id, OLD.lote_id);
+
+    SELECT COUNT(*) INTO v_count FROM laudos WHERE lote_id = v_lote AND emitido_em IS NOT NULL;
+
+    IF v_count > 0 THEN
+
+      RAISE EXCEPTION 'Não é permitido alterar/deletar avaliação %: laudo do lote % já foi emitido.', COALESCE(NEW.id, OLD.id), v_lote
+
+        USING HINT = 'Avaliações pertencentes a lotes com laudos emitidos são imutáveis.', ERRCODE = '23506';
+
+    END IF;
+
+    IF TG_OP = 'DELETE' THEN
+
+      RETURN OLD;
+
+    ELSE
+
+      RETURN NEW;
+
+    END IF;
+
+  END IF;
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2401,60 +3820,114 @@ COMMENT ON FUNCTION public.prevent_modification_avaliacao_when_lote_emitted() IS
 
 CREATE FUNCTION public.prevent_modification_lote_when_laudo_emitted() RETURNS trigger
     LANGUAGE plpgsql SECURITY DEFINER
-    AS $$
-DECLARE
-  has_laudo_emitted BOOLEAN := FALSE;
-  only_date_fields_changed BOOLEAN := TRUE;
-  changed_fields TEXT[] := ARRAY[]::TEXT[];
-BEGIN
-  IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
-    -- Check if there's an emitted laudo for this lote
-    SELECT EXISTS(SELECT 1 FROM laudos WHERE lote_id = OLD.id AND emitido_em IS NOT NULL) INTO has_laudo_emitted;
-
-    IF has_laudo_emitted THEN
-      -- If laudo is emitted, check what fields are being changed
-      IF TG_OP = 'UPDATE' THEN
-        -- Check if only date/timestamp fields are being updated from NULL to a value
-        IF (OLD.emitido_em IS NULL AND NEW.emitido_em IS NOT NULL) OR
-           (OLD.enviado_em IS NULL AND NEW.enviado_em IS NOT NULL) OR
-           (OLD.processamento_em IS NOT NULL AND NEW.processamento_em IS NULL) OR
-           (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'finalizado') THEN
-          -- Allow updates to date fields or status to 'finalizado'
-          RETURN NEW;
-        END IF;
-
-        -- Check if any other fields are being changed
-        IF OLD.titulo IS DISTINCT FROM NEW.titulo OR
-           OLD.descricao IS DISTINCT FROM NEW.descricao OR
-           OLD.tipo IS DISTINCT FROM NEW.tipo OR
-           OLD.liberado_por IS DISTINCT FROM NEW.liberado_por OR
-           OLD.liberado_em IS DISTINCT FROM NEW.liberado_em OR
-           OLD.criado_em IS DISTINCT FROM NEW.criado_em OR
-           OLD.contratante_id IS DISTINCT FROM NEW.contratante_id OR
-           OLD.auto_emitir_em IS DISTINCT FROM NEW.auto_emitir_em OR
-           OLD.auto_emitir_agendado IS DISTINCT FROM NEW.auto_emitir_agendado OR
-           OLD.hash_pdf IS DISTINCT FROM NEW.hash_pdf OR
-           OLD.numero_ordem IS DISTINCT FROM NEW.numero_ordem OR
-           OLD.cancelado_automaticamente IS DISTINCT FROM NEW.cancelado_automaticamente OR
-           OLD.motivo_cancelamento IS DISTINCT FROM NEW.motivo_cancelamento OR
-           OLD.modo_emergencia IS DISTINCT FROM NEW.modo_emergencia OR
-           OLD.motivo_emergencia IS DISTINCT FROM NEW.motivo_emergencia THEN
-          RAISE EXCEPTION 'Não é permitido alterar lote %: laudo já emitido. Apenas campos de data podem ser atualizados.', OLD.id;
-        END IF;
-
-        -- Allow the update if only allowed fields changed
-        RETURN NEW;
-      END IF;
-
-      -- For DELETE operations, always prevent
-      IF TG_OP = 'DELETE' THEN
-        RAISE EXCEPTION 'Não é permitido deletar lote %: laudo já emitido.', OLD.id;
-      END IF;
-    END IF;
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  has_laudo_emitted BOOLEAN := FALSE;
+
+  only_date_fields_changed BOOLEAN := TRUE;
+
+  changed_fields TEXT[] := ARRAY[]::TEXT[];
+
+BEGIN
+
+  IF TG_OP = 'UPDATE' OR TG_OP = 'DELETE' THEN
+
+    -- Check if there's an emitted laudo for this lote
+
+    SELECT EXISTS(SELECT 1 FROM laudos WHERE lote_id = OLD.id AND emitido_em IS NOT NULL) INTO has_laudo_emitted;
+
+
+
+    IF has_laudo_emitted THEN
+
+      -- If laudo is emitted, check what fields are being changed
+
+      IF TG_OP = 'UPDATE' THEN
+
+        -- Check if only date/timestamp fields are being updated from NULL to a value
+
+        IF (OLD.emitido_em IS NULL AND NEW.emitido_em IS NOT NULL) OR
+
+           (OLD.enviado_em IS NULL AND NEW.enviado_em IS NOT NULL) OR
+
+           (OLD.processamento_em IS NOT NULL AND NEW.processamento_em IS NULL) OR
+
+           (OLD.status IS DISTINCT FROM NEW.status AND NEW.status = 'finalizado') THEN
+
+          -- Allow updates to date fields or status to 'finalizado'
+
+          RETURN NEW;
+
+        END IF;
+
+
+
+        -- Check if any other fields are being changed
+
+        IF OLD.titulo IS DISTINCT FROM NEW.titulo OR
+
+           OLD.descricao IS DISTINCT FROM NEW.descricao OR
+
+           OLD.tipo IS DISTINCT FROM NEW.tipo OR
+
+           OLD.liberado_por IS DISTINCT FROM NEW.liberado_por OR
+
+           OLD.liberado_em IS DISTINCT FROM NEW.liberado_em OR
+
+           OLD.criado_em IS DISTINCT FROM NEW.criado_em OR
+
+           OLD.contratante_id IS DISTINCT FROM NEW.contratante_id OR
+
+           OLD.auto_emitir_em IS DISTINCT FROM NEW.auto_emitir_em OR
+
+           OLD.auto_emitir_agendado IS DISTINCT FROM NEW.auto_emitir_agendado OR
+
+           OLD.hash_pdf IS DISTINCT FROM NEW.hash_pdf OR
+
+           OLD.numero_ordem IS DISTINCT FROM NEW.numero_ordem OR
+
+           OLD.cancelado_automaticamente IS DISTINCT FROM NEW.cancelado_automaticamente OR
+
+           OLD.motivo_cancelamento IS DISTINCT FROM NEW.motivo_cancelamento OR
+
+           OLD.modo_emergencia IS DISTINCT FROM NEW.modo_emergencia OR
+
+           OLD.motivo_emergencia IS DISTINCT FROM NEW.motivo_emergencia THEN
+
+          RAISE EXCEPTION 'Não é permitido alterar lote %: laudo já emitido. Apenas campos de data podem ser atualizados.', OLD.id;
+
+        END IF;
+
+
+
+        -- Allow the update if only allowed fields changed
+
+        RETURN NEW;
+
+      END IF;
+
+
+
+      -- For DELETE operations, always prevent
+
+      IF TG_OP = 'DELETE' THEN
+
+        RAISE EXCEPTION 'Não é permitido deletar lote %: laudo já emitido.', OLD.id;
+
+      END IF;
+
+    END IF;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2521,20 +3994,34 @@ COMMENT ON FUNCTION public.prevent_mutation_during_emission() IS 'Previne altera
 
 CREATE FUNCTION public.safe_drop_policy(p_policy_name text, p_table_name text) RETURNS void
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  -- Validate match first
-  IF NOT validate_policy_table_match(p_policy_name, p_table_name) THEN
-    RAISE EXCEPTION 'Policy name "%" does not match table "%". Check migration code.',
-      p_policy_name, p_table_name;
-  END IF;
-  
-  -- Drop policy
-  EXECUTE format('DROP POLICY IF EXISTS %I ON %I', p_policy_name, p_table_name);
-  
-  -- Log
-  RAISE NOTICE 'Dropped policy "%" from table "%"', p_policy_name, p_table_name;
-END;
+    AS $$
+
+BEGIN
+
+  -- Validate match first
+
+  IF NOT validate_policy_table_match(p_policy_name, p_table_name) THEN
+
+    RAISE EXCEPTION 'Policy name "%" does not match table "%". Check migration code.',
+
+      p_policy_name, p_table_name;
+
+  END IF;
+
+  
+
+  -- Drop policy
+
+  EXECUTE format('DROP POLICY IF EXISTS %I ON %I', p_policy_name, p_table_name);
+
+  
+
+  -- Log
+
+  RAISE NOTICE 'Dropped policy "%" from table "%"', p_policy_name, p_table_name;
+
+END;
+
 $$;
 
 
@@ -2542,8 +4029,10 @@ $$;
 -- Name: FUNCTION safe_drop_policy(p_policy_name text, p_table_name text); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.safe_drop_policy(p_policy_name text, p_table_name text) IS 'Safely drops a policy after validating name matches table.
-   Use this in migrations instead of DROP POLICY directly.
+COMMENT ON FUNCTION public.safe_drop_policy(p_policy_name text, p_table_name text) IS 'Safely drops a policy after validating name matches table.
+
+   Use this in migrations instead of DROP POLICY directly.
+
    Example: SELECT safe_drop_policy(''avaliacoes_own_select'', ''avaliacoes'')';
 
 
@@ -2567,20 +4056,34 @@ $$;
 
 CREATE FUNCTION public.trg_enforce_laudo_id_equals_lote() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-  -- If insert doesn't specify id or id differs, set id to lote_id
-  IF NEW.id IS NULL OR NEW.id IS DISTINCT FROM NEW.lote_id THEN
-    NEW.id := NEW.lote_id;
-  END IF;
-
-  -- Prevent creating a laudo when another laudo with same id exists (should be same as lote)
-  IF EXISTS (SELECT 1 FROM laudos WHERE id = NEW.id) THEN
-    RAISE EXCEPTION 'Laudo with id % already exists', NEW.id;
-  END IF;
-
-  RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+  -- If insert doesn't specify id or id differs, set id to lote_id
+
+  IF NEW.id IS NULL OR NEW.id IS DISTINCT FROM NEW.lote_id THEN
+
+    NEW.id := NEW.lote_id;
+
+  END IF;
+
+
+
+  -- Prevent creating a laudo when another laudo with same id exists (should be same as lote)
+
+  IF EXISTS (SELECT 1 FROM laudos WHERE id = NEW.id) THEN
+
+    RAISE EXCEPTION 'Laudo with id % already exists', NEW.id;
+
+  END IF;
+
+
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2590,13 +4093,20 @@ $$;
 
 CREATE FUNCTION public.trigger_gerar_numero_recibo() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    IF NEW.numero_recibo IS NULL OR NEW.numero_recibo = '' THEN
-        NEW.numero_recibo := gerar_numero_recibo();
-    END IF;
-    RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+    IF NEW.numero_recibo IS NULL OR NEW.numero_recibo = '' THEN
+
+        NEW.numero_recibo := gerar_numero_recibo();
+
+    END IF;
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2606,11 +4116,16 @@ $$;
 
 CREATE FUNCTION public.update_contratantes_senhas_updated_at() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+    NEW.updated_at = CURRENT_TIMESTAMP;
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2620,11 +4135,16 @@ $$;
 
 CREATE FUNCTION public.update_contratantes_updated_at() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-BEGIN
-    NEW.atualizado_em = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
+    AS $$
+
+BEGIN
+
+    NEW.atualizado_em = CURRENT_TIMESTAMP;
+
+    RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -2634,30 +4154,54 @@ $$;
 
 CREATE FUNCTION public.upsert_laudo(p_lote_id integer, p_emissor_cpf character, p_observacoes text, p_status text DEFAULT 'enviado'::text) RETURNS integer
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-    v_laudo_id INTEGER;
-BEGIN
-    -- Como o laudo já foi criado em rascunho ao criar o lote, apenas atualizamos
-    UPDATE laudos
-    SET 
-        emissor_cpf = p_emissor_cpf,
-        observacoes = p_observacoes,
-        status = p_status,
-        emitido_em = NOW(),
-        atualizado_em = NOW()
-    WHERE id = p_lote_id
-    RETURNING id INTO v_laudo_id;
-
-    -- Se não existir (caso de lotes antigos), inserir
-    IF v_laudo_id IS NULL THEN
-        INSERT INTO laudos (id, lote_id, emissor_cpf, observacoes, status, criado_em, emitido_em, atualizado_em)
-        VALUES (p_lote_id, p_lote_id, p_emissor_cpf, p_observacoes, p_status, NOW(), NOW(), NOW())
-        RETURNING id INTO v_laudo_id;
-    END IF;
-
-    RETURN v_laudo_id;
-END;
+    AS $$
+
+DECLARE
+
+    v_laudo_id INTEGER;
+
+BEGIN
+
+    -- Como o laudo já foi criado em rascunho ao criar o lote, apenas atualizamos
+
+    UPDATE laudos
+
+    SET 
+
+        emissor_cpf = p_emissor_cpf,
+
+        observacoes = p_observacoes,
+
+        status = p_status,
+
+        emitido_em = NOW(),
+
+        atualizado_em = NOW()
+
+    WHERE id = p_lote_id
+
+    RETURNING id INTO v_laudo_id;
+
+
+
+    -- Se não existir (caso de lotes antigos), inserir
+
+    IF v_laudo_id IS NULL THEN
+
+        INSERT INTO laudos (id, lote_id, emissor_cpf, observacoes, status, criado_em, emitido_em, atualizado_em)
+
+        VALUES (p_lote_id, p_lote_id, p_emissor_cpf, p_observacoes, p_status, NOW(), NOW(), NOW())
+
+        RETURNING id INTO v_laudo_id;
+
+    END IF;
+
+
+
+    RETURN v_laudo_id;
+
+END;
+
 $$;
 
 
@@ -2674,24 +4218,42 @@ COMMENT ON FUNCTION public.upsert_laudo(p_lote_id integer, p_emissor_cpf charact
 
 CREATE FUNCTION public.user_has_permission(permission_name text) RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-DECLARE
-    v_perfil TEXT;
-BEGIN
-    v_perfil := current_user_perfil();
-    
-    IF v_perfil IS NULL THEN
-        RETURN FALSE;
-    END IF;
-    
-    RETURN EXISTS (
-        SELECT 1
-        FROM role_permissions rp
-        JOIN roles r ON r.name = v_perfil AND r.id = rp.role_id
-        JOIN permissions p ON p.name = permission_name AND p.id = rp.permission_id
-        WHERE r.active = TRUE
-    );
-END;
+    AS $$
+
+DECLARE
+
+    v_perfil TEXT;
+
+BEGIN
+
+    v_perfil := current_user_perfil();
+
+    
+
+    IF v_perfil IS NULL THEN
+
+        RETURN FALSE;
+
+    END IF;
+
+    
+
+    RETURN EXISTS (
+
+        SELECT 1
+
+        FROM role_permissions rp
+
+        JOIN roles r ON r.name = v_perfil AND r.id = rp.role_id
+
+        JOIN permissions p ON p.name = permission_name AND p.id = rp.permission_id
+
+        WHERE r.active = TRUE
+
+    );
+
+END;
+
 $$;
 
 
@@ -2708,78 +4270,150 @@ COMMENT ON FUNCTION public.user_has_permission(permission_name text) IS 'Verific
 
 CREATE FUNCTION public.validar_lote_pre_laudo(p_lote_id integer) RETURNS TABLE(valido boolean, alertas text[], funcionarios_pendentes integer, detalhes jsonb, bloqueante boolean)
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_empresa_id INTEGER;
-  v_numero_lote INTEGER;
-  v_total_avaliacoes INTEGER;
-  v_avaliacoes_concluidas INTEGER;
-  v_avaliacoes_inativadas INTEGER;
-  v_funcionarios_pendentes INTEGER;
-  v_alertas TEXT[] := '{}';
-  v_detalhes JSONB;
-  v_bloqueante BOOLEAN := FALSE;
-BEGIN
-  -- Buscar dados do lote
-  SELECT empresa_id, numero_ordem INTO v_empresa_id, v_numero_lote
-  FROM lotes_avaliacao
-  WHERE id = p_lote_id;
-  
-  -- Contar avaliaÃ§Ãµes do lote
-  SELECT 
-    COUNT(*) AS total,
-    COUNT(*) FILTER (WHERE status = 'concluida') AS concluidas,
-    COUNT(*) FILTER (WHERE status = 'inativada') AS inativadas
-  INTO v_total_avaliacoes, v_avaliacoes_concluidas, v_avaliacoes_inativadas
-  FROM avaliacoes
-  WHERE lote_id = p_lote_id;
-  
-  -- Verificar funcionÃ¡rios que deveriam estar no lote mas nÃ£o estÃ£o
-  SELECT COUNT(*) INTO v_funcionarios_pendentes
-  FROM calcular_elegibilidade_lote(v_empresa_id, v_numero_lote) el
-  WHERE NOT EXISTS (
-    SELECT 1 FROM avaliacoes a 
-    WHERE a.funcionario_cpf = el.funcionario_cpf 
-    AND a.lote_id = p_lote_id
-  );
-  
-  -- Gerar alertas
-  IF v_avaliacoes_inativadas > v_avaliacoes_concluidas * 0.3 THEN
-    v_alertas := array_append(v_alertas, 'ATENÃ‡ÃƒO: Mais de 30% das avaliaÃ§Ãµes foram inativadas (' || v_avaliacoes_inativadas || ' de ' || v_total_avaliacoes || '). Verifique se hÃ¡ problemas sistÃªmicos.');
-  END IF;
-  
-  IF v_funcionarios_pendentes > 0 THEN
-    v_alertas := array_append(v_alertas, 'PENDÃŠNCIA: ' || v_funcionarios_pendentes || ' funcionÃ¡rio(s) deveriam estar neste lote mas nÃ£o foram incluÃ­dos. Revise a elegibilidade.');
-  END IF;
-  
-  IF v_avaliacoes_concluidas = 0 THEN
-    v_alertas := array_append(v_alertas, 'ERRO: Nenhuma avaliaÃ§Ã£o concluÃ­da neste lote. NÃ£o Ã© possÃ­vel gerar laudo.');
-  END IF;
-  
-  -- Montar detalhes JSON
-  v_detalhes := jsonb_build_object(
-    'lote_id', p_lote_id,
-    'numero_lote', v_numero_lote,
-    'total_avaliacoes', v_total_avaliacoes,
-    'avaliacoes_concluidas', v_avaliacoes_concluidas,
-    'avaliacoes_inativadas', v_avaliacoes_inativadas,
-    'funcionarios_pendentes', v_funcionarios_pendentes,
-    'taxa_conclusao', ROUND((v_avaliacoes_concluidas::NUMERIC / NULLIF(v_total_avaliacoes, 0)) * 100, 2)
-  );
-  
-  -- Determinar se hÃ¡ bloqueios severos (erro definitivo)
-  IF v_avaliacoes_concluidas = 0 OR v_funcionarios_pendentes > 0 THEN
-    v_bloqueante := TRUE;
-  END IF;
-
-  -- Retornar resultado (bloqueante = errors que impedem emissÃ£o)
-  RETURN QUERY SELECT 
-    NOT v_bloqueante AS valido,
-    v_alertas AS alertas,
-    v_funcionarios_pendentes,
-    v_detalhes AS detalhes,
-    v_bloqueante AS bloqueante;
-END;
+    AS $$
+
+DECLARE
+
+  v_empresa_id INTEGER;
+
+  v_numero_lote INTEGER;
+
+  v_total_avaliacoes INTEGER;
+
+  v_avaliacoes_concluidas INTEGER;
+
+  v_avaliacoes_inativadas INTEGER;
+
+  v_funcionarios_pendentes INTEGER;
+
+  v_alertas TEXT[] := '{}';
+
+  v_detalhes JSONB;
+
+  v_bloqueante BOOLEAN := FALSE;
+
+BEGIN
+
+  -- Buscar dados do lote
+
+  SELECT empresa_id, numero_ordem INTO v_empresa_id, v_numero_lote
+
+  FROM lotes_avaliacao
+
+  WHERE id = p_lote_id;
+
+  
+
+  -- Contar avaliaÃ§Ãµes do lote
+
+  SELECT 
+
+    COUNT(*) AS total,
+
+    COUNT(*) FILTER (WHERE status = 'concluida') AS concluidas,
+
+    COUNT(*) FILTER (WHERE status = 'inativada') AS inativadas
+
+  INTO v_total_avaliacoes, v_avaliacoes_concluidas, v_avaliacoes_inativadas
+
+  FROM avaliacoes
+
+  WHERE lote_id = p_lote_id;
+
+  
+
+  -- Verificar funcionÃ¡rios que deveriam estar no lote mas nÃ£o estÃ£o
+
+  SELECT COUNT(*) INTO v_funcionarios_pendentes
+
+  FROM calcular_elegibilidade_lote(v_empresa_id, v_numero_lote) el
+
+  WHERE NOT EXISTS (
+
+    SELECT 1 FROM avaliacoes a 
+
+    WHERE a.funcionario_cpf = el.funcionario_cpf 
+
+    AND a.lote_id = p_lote_id
+
+  );
+
+  
+
+  -- Gerar alertas
+
+  IF v_avaliacoes_inativadas > v_avaliacoes_concluidas * 0.3 THEN
+
+    v_alertas := array_append(v_alertas, 'ATENÃ‡ÃƒO: Mais de 30% das avaliaÃ§Ãµes foram inativadas (' || v_avaliacoes_inativadas || ' de ' || v_total_avaliacoes || '). Verifique se hÃ¡ problemas sistÃªmicos.');
+
+  END IF;
+
+  
+
+  IF v_funcionarios_pendentes > 0 THEN
+
+    v_alertas := array_append(v_alertas, 'PENDÃŠNCIA: ' || v_funcionarios_pendentes || ' funcionÃ¡rio(s) deveriam estar neste lote mas nÃ£o foram incluÃ­dos. Revise a elegibilidade.');
+
+  END IF;
+
+  
+
+  IF v_avaliacoes_concluidas = 0 THEN
+
+    v_alertas := array_append(v_alertas, 'ERRO: Nenhuma avaliaÃ§Ã£o concluÃ­da neste lote. NÃ£o Ã© possÃ­vel gerar laudo.');
+
+  END IF;
+
+  
+
+  -- Montar detalhes JSON
+
+  v_detalhes := jsonb_build_object(
+
+    'lote_id', p_lote_id,
+
+    'numero_lote', v_numero_lote,
+
+    'total_avaliacoes', v_total_avaliacoes,
+
+    'avaliacoes_concluidas', v_avaliacoes_concluidas,
+
+    'avaliacoes_inativadas', v_avaliacoes_inativadas,
+
+    'funcionarios_pendentes', v_funcionarios_pendentes,
+
+    'taxa_conclusao', ROUND((v_avaliacoes_concluidas::NUMERIC / NULLIF(v_total_avaliacoes, 0)) * 100, 2)
+
+  );
+
+  
+
+  -- Determinar se hÃ¡ bloqueios severos (erro definitivo)
+
+  IF v_avaliacoes_concluidas = 0 OR v_funcionarios_pendentes > 0 THEN
+
+    v_bloqueante := TRUE;
+
+  END IF;
+
+
+
+  -- Retornar resultado (bloqueante = errors que impedem emissÃ£o)
+
+  RETURN QUERY SELECT 
+
+    NOT v_bloqueante AS valido,
+
+    v_alertas AS alertas,
+
+    v_funcionarios_pendentes,
+
+    v_detalhes AS detalhes,
+
+    v_bloqueante AS bloqueante;
+
+END;
+
 $$;
 
 
@@ -2796,43 +4430,80 @@ COMMENT ON FUNCTION public.validar_lote_pre_laudo(p_lote_id integer) IS 'Valida 
 
 CREATE FUNCTION public.validar_sessao_rls() RETURNS boolean
     LANGUAGE plpgsql STABLE
-    AS $_$
-DECLARE
-    v_perfil TEXT;
-    v_cpf TEXT;
-    v_contratante_id TEXT;
-    v_clinica_id TEXT;
-BEGIN
-    -- Obter variáveis de contexto
-    v_perfil := current_setting('app.current_perfil', true);
-    v_cpf := current_setting('app.current_user_cpf', true);
-    v_contratante_id := current_setting('app.current_contratante_id', true);
-    v_clinica_id := current_setting('app.current_clinica_id', true);
-    
-    -- Validações
-    IF v_perfil IS NULL OR v_perfil = '' THEN
-        RAISE EXCEPTION 'SEGURANÇA: Perfil de usuário não definido na sessão';
-    END IF;
-    
-    IF v_cpf IS NULL OR v_cpf = '' THEN
-        RAISE EXCEPTION 'SEGURANÇA: CPF de usuário não definido na sessão';
-    END IF;
-    
-    -- Validar CPF tem 11 dígitos
-    IF v_cpf !~ '^\d{11}$' THEN
-        RAISE EXCEPTION 'SEGURANÇA: CPF inválido na sessão: %', v_cpf;
-    END IF;
-    
-    -- Perfis que requerem contratante_id ou clinica_id
-    IF v_perfil IN ('gestor_entidade', 'rh', 'entidade') THEN
-        IF (v_contratante_id IS NULL OR v_contratante_id = '') 
-           AND (v_clinica_id IS NULL OR v_clinica_id = '') THEN
-            RAISE EXCEPTION 'SEGURANÇA: Perfil % requer contratante_id ou clinica_id', v_perfil;
-        END IF;
-    END IF;
-    
-    RETURN TRUE;
-END;
+    AS $_$
+
+DECLARE
+
+    v_perfil TEXT;
+
+    v_cpf TEXT;
+
+    v_contratante_id TEXT;
+
+    v_clinica_id TEXT;
+
+BEGIN
+
+    -- Obter variáveis de contexto
+
+    v_perfil := current_setting('app.current_perfil', true);
+
+    v_cpf := current_setting('app.current_user_cpf', true);
+
+    v_contratante_id := current_setting('app.current_contratante_id', true);
+
+    v_clinica_id := current_setting('app.current_clinica_id', true);
+
+    
+
+    -- Validações
+
+    IF v_perfil IS NULL OR v_perfil = '' THEN
+
+        RAISE EXCEPTION 'SEGURANÇA: Perfil de usuário não definido na sessão';
+
+    END IF;
+
+    
+
+    IF v_cpf IS NULL OR v_cpf = '' THEN
+
+        RAISE EXCEPTION 'SEGURANÇA: CPF de usuário não definido na sessão';
+
+    END IF;
+
+    
+
+    -- Validar CPF tem 11 dígitos
+
+    IF v_cpf !~ '^\d{11}$' THEN
+
+        RAISE EXCEPTION 'SEGURANÇA: CPF inválido na sessão: %', v_cpf;
+
+    END IF;
+
+    
+
+    -- Perfis que requerem contratante_id ou clinica_id
+
+    IF v_perfil IN ('gestor_entidade', 'rh', 'entidade') THEN
+
+        IF (v_contratante_id IS NULL OR v_contratante_id = '') 
+
+           AND (v_clinica_id IS NULL OR v_clinica_id = '') THEN
+
+            RAISE EXCEPTION 'SEGURANÇA: Perfil % requer contratante_id ou clinica_id', v_perfil;
+
+        END IF;
+
+    END IF;
+
+    
+
+    RETURN TRUE;
+
+END;
+
 $_$;
 
 
@@ -2849,32 +4520,58 @@ COMMENT ON FUNCTION public.validar_sessao_rls() IS 'Valida que todas as variáve
 
 CREATE FUNCTION public.validate_policy_table_match(p_policy_name text, p_table_name text) RETURNS boolean
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_policy_table TEXT;
-BEGIN
-  -- Extract table name from policy name
-  -- Pattern: <table>_<perfil>_<action>
-  -- Example: avaliacoes_own_select -> table should be avaliacoes
-  
-  v_policy_table := split_part(p_policy_name, '_', 1);
-  
-  -- Special cases with compound names
-  IF p_policy_name LIKE 'lotes_%' THEN
-    v_policy_table := 'lotes_avaliacao';
-  ELSIF p_policy_name LIKE 'empresas_%' THEN
-    v_policy_table := 'empresas_clientes';
-  END IF;
-  
-  -- Validate match
-  IF v_policy_table != p_table_name THEN
-    RAISE WARNING 'Policy name "%" suggests table "%" but applied to table "%"',
-      p_policy_name, v_policy_table, p_table_name;
-    RETURN false;
-  END IF;
-  
-  RETURN true;
-END;
+    AS $$
+
+DECLARE
+
+  v_policy_table TEXT;
+
+BEGIN
+
+  -- Extract table name from policy name
+
+  -- Pattern: <table>_<perfil>_<action>
+
+  -- Example: avaliacoes_own_select -> table should be avaliacoes
+
+  
+
+  v_policy_table := split_part(p_policy_name, '_', 1);
+
+  
+
+  -- Special cases with compound names
+
+  IF p_policy_name LIKE 'lotes_%' THEN
+
+    v_policy_table := 'lotes_avaliacao';
+
+  ELSIF p_policy_name LIKE 'empresas_%' THEN
+
+    v_policy_table := 'empresas_clientes';
+
+  END IF;
+
+  
+
+  -- Validate match
+
+  IF v_policy_table != p_table_name THEN
+
+    RAISE WARNING 'Policy name "%" suggests table "%" but applied to table "%"',
+
+      p_policy_name, v_policy_table, p_table_name;
+
+    RETURN false;
+
+  END IF;
+
+  
+
+  RETURN true;
+
+END;
+
 $$;
 
 
@@ -2882,8 +4579,10 @@ $$;
 -- Name: FUNCTION validate_policy_table_match(p_policy_name text, p_table_name text); Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON FUNCTION public.validate_policy_table_match(p_policy_name text, p_table_name text) IS 'Validates that policy name matches target table name.
-   Use in migrations before DROP/CREATE POLICY.
+COMMENT ON FUNCTION public.validate_policy_table_match(p_policy_name text, p_table_name text) IS 'Validates that policy name matches target table name.
+
+   Use in migrations before DROP/CREATE POLICY.
+
    Example: validate_policy_table_match(''avaliacoes_own_select'', ''avaliacoes'')';
 
 
@@ -2893,34 +4592,62 @@ COMMENT ON FUNCTION public.validate_policy_table_match(p_policy_name text, p_tab
 
 CREATE FUNCTION public.validate_rh_clinica() RETURNS boolean
     LANGUAGE plpgsql STABLE SECURITY DEFINER
-    AS $$
-DECLARE
-    v_cpf TEXT;
-    v_perfil TEXT;
-    v_clinica_id INTEGER;
-    v_rh_clinica_id INTEGER;
-BEGIN
-    v_cpf := current_user_cpf();
-    v_perfil := current_user_perfil();
-    v_clinica_id := current_user_clinica_id();
-    
-    -- Se não for RH, validação passa
-    IF v_perfil != 'rh' THEN
-        RETURN TRUE;
-    END IF;
-    
-    -- Verificar se o RH realmente pertence à clínica especificada
-    SELECT clinica_id INTO v_rh_clinica_id
-    FROM funcionarios
-    WHERE cpf = v_cpf AND perfil = 'rh' AND ativo = TRUE;
-    
-    -- Se não encontrou ou clínica não corresponde, retornar FALSE
-    IF v_rh_clinica_id IS NULL OR v_rh_clinica_id != v_clinica_id THEN
-        RETURN FALSE;
-    END IF;
-    
-    RETURN TRUE;
-END;
+    AS $$
+
+DECLARE
+
+    v_cpf TEXT;
+
+    v_perfil TEXT;
+
+    v_clinica_id INTEGER;
+
+    v_rh_clinica_id INTEGER;
+
+BEGIN
+
+    v_cpf := current_user_cpf();
+
+    v_perfil := current_user_perfil();
+
+    v_clinica_id := current_user_clinica_id();
+
+    
+
+    -- Se não for RH, validação passa
+
+    IF v_perfil != 'rh' THEN
+
+        RETURN TRUE;
+
+    END IF;
+
+    
+
+    -- Verificar se o RH realmente pertence à clínica especificada
+
+    SELECT clinica_id INTO v_rh_clinica_id
+
+    FROM funcionarios
+
+    WHERE cpf = v_cpf AND perfil = 'rh' AND ativo = TRUE;
+
+    
+
+    -- Se não encontrou ou clínica não corresponde, retornar FALSE
+
+    IF v_rh_clinica_id IS NULL OR v_rh_clinica_id != v_clinica_id THEN
+
+        RETURN FALSE;
+
+    END IF;
+
+    
+
+    RETURN TRUE;
+
+END;
+
 $$;
 
 
@@ -2937,72 +4664,138 @@ COMMENT ON FUNCTION public.validate_rh_clinica() IS 'Valida se o RH atual realme
 
 CREATE FUNCTION public.verificar_cancelamento_automatico_lote() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_lote_id INTEGER;
-  v_total_avaliacoes INTEGER;
-  v_avaliacoes_inativadas INTEGER;
-  v_avaliacoes_ativas INTEGER;
-  v_lote_status status_lote;
-BEGIN
-  -- Pegar o lote_id da avaliaÃ§Ã£o que foi alterada
-  v_lote_id := COALESCE(NEW.lote_id, OLD.lote_id);
-  
-  -- Se nÃ£o tem lote associado, nada a fazer
-  IF v_lote_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-
-  -- Verificar status atual do lote
-  SELECT status INTO v_lote_status
-  FROM lotes_avaliacao
-  WHERE id = v_lote_id;
-
-  -- SÃ³ processar lotes ativos
-  IF v_lote_status != 'ativo' THEN
-    RETURN NEW;
-  END IF;
-  
-  -- Contar avaliaÃ§Ãµes do lote
-  SELECT
-    COUNT(*) as total,
-    COUNT(*) FILTER (WHERE status = 'inativada') as inativadas,
-    COUNT(*) FILTER (WHERE status != 'inativada') as ativas
-  INTO
-    v_total_avaliacoes,
-    v_avaliacoes_inativadas,
-    v_avaliacoes_ativas
-  FROM avaliacoes
-  WHERE lote_id = v_lote_id;
-  
-  -- Se TODAS as avaliaÃ§Ãµes foram inativadas, cancelar lote automaticamente
-  IF v_avaliacoes_ativas = 0 AND v_avaliacoes_inativadas > 0 THEN
-    UPDATE lotes_avaliacao
-    SET 
-      status = 'cancelado'::status_lote,
-      cancelado_automaticamente = true,
-      motivo_cancelamento = 'Todas as avaliaÃ§Ãµes foram inativadas',
-      auto_emitir_agendado = false,
-      auto_emitir_em = NULL,
-      atualizado_em = NOW()
-    WHERE id = v_lote_id
-      AND status = 'ativo';  -- Garantir que sÃ³ cancela se ainda estiver ativo
-    
-    RAISE NOTICE 'Lote % cancelado automaticamente: todas as % avaliaÃ§Ãµes foram inativadas', 
-      v_lote_id, v_avaliacoes_inativadas;
-      
-    -- Registrar notificaÃ§Ã£o para admin
-    INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
-    VALUES (
-      'lote_cancelado_auto',
-      'Lote ' || v_lote_id || ' foi cancelado automaticamente porque todas as avaliaÃ§Ãµes foram inativadas',
-      v_lote_id,
-      NOW()
-    );
-  END IF;
-  
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_lote_id INTEGER;
+
+  v_total_avaliacoes INTEGER;
+
+  v_avaliacoes_inativadas INTEGER;
+
+  v_avaliacoes_ativas INTEGER;
+
+  v_lote_status status_lote;
+
+BEGIN
+
+  -- Pegar o lote_id da avaliaÃ§Ã£o que foi alterada
+
+  v_lote_id := COALESCE(NEW.lote_id, OLD.lote_id);
+
+  
+
+  -- Se nÃ£o tem lote associado, nada a fazer
+
+  IF v_lote_id IS NULL THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  -- Verificar status atual do lote
+
+  SELECT status INTO v_lote_status
+
+  FROM lotes_avaliacao
+
+  WHERE id = v_lote_id;
+
+
+
+  -- SÃ³ processar lotes ativos
+
+  IF v_lote_status != 'ativo' THEN
+
+    RETURN NEW;
+
+  END IF;
+
+  
+
+  -- Contar avaliaÃ§Ãµes do lote
+
+  SELECT
+
+    COUNT(*) as total,
+
+    COUNT(*) FILTER (WHERE status = 'inativada') as inativadas,
+
+    COUNT(*) FILTER (WHERE status != 'inativada') as ativas
+
+  INTO
+
+    v_total_avaliacoes,
+
+    v_avaliacoes_inativadas,
+
+    v_avaliacoes_ativas
+
+  FROM avaliacoes
+
+  WHERE lote_id = v_lote_id;
+
+  
+
+  -- Se TODAS as avaliaÃ§Ãµes foram inativadas, cancelar lote automaticamente
+
+  IF v_avaliacoes_ativas = 0 AND v_avaliacoes_inativadas > 0 THEN
+
+    UPDATE lotes_avaliacao
+
+    SET 
+
+      status = 'cancelado'::status_lote,
+
+      cancelado_automaticamente = true,
+
+      motivo_cancelamento = 'Todas as avaliaÃ§Ãµes foram inativadas',
+
+      auto_emitir_agendado = false,
+
+      auto_emitir_em = NULL,
+
+      atualizado_em = NOW()
+
+    WHERE id = v_lote_id
+
+      AND status = 'ativo';  -- Garantir que sÃ³ cancela se ainda estiver ativo
+
+    
+
+    RAISE NOTICE 'Lote % cancelado automaticamente: todas as % avaliaÃ§Ãµes foram inativadas', 
+
+      v_lote_id, v_avaliacoes_inativadas;
+
+      
+
+    -- Registrar notificaÃ§Ã£o para admin
+
+    INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
+
+    VALUES (
+
+      'lote_cancelado_auto',
+
+      'Lote ' || v_lote_id || ' foi cancelado automaticamente porque todas as avaliaÃ§Ãµes foram inativadas',
+
+      v_lote_id,
+
+      NOW()
+
+    );
+
+  END IF;
+
+  
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -3019,65 +4812,124 @@ COMMENT ON FUNCTION public.verificar_cancelamento_automatico_lote() IS 'Cancela 
 
 CREATE FUNCTION public.verificar_conclusao_lote() RETURNS trigger
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_lote_id INTEGER;
-  v_total_avaliacoes INTEGER;
-  v_avaliacoes_concluidas INTEGER;
-  v_avaliacoes_inativadas INTEGER;
-  v_avaliacoes_pendentes INTEGER;
-  v_lote_status status_lote;
-BEGIN
-  -- Pegar o lote_id da avaliaÃ§Ã£o que foi alterada
-  v_lote_id := COALESCE(NEW.lote_id, OLD.lote_id);
-  
-  -- Se nÃ£o tem lote associado, nada a fazer
-  IF v_lote_id IS NULL THEN
-    RETURN NEW;
-  END IF;
-
-  -- Verificar status atual do lote
-  SELECT status INTO v_lote_status
-  FROM lotes_avaliacao
-  WHERE id = v_lote_id;
-
-  -- SÃ³ processar lotes ativos
-  IF v_lote_status != 'ativo' THEN
-    RETURN NEW;
-  END IF;
-  
-  -- Contar avaliaÃ§Ãµes do lote
-  SELECT
-    COUNT(*) as total,
-    COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
-    COUNT(*) FILTER (WHERE status = 'inativada') as inativadas,
-    COUNT(*) FILTER (WHERE status IN ('iniciada', 'em_andamento')) as pendentes
-  INTO
-    v_total_avaliacoes,
-    v_avaliacoes_concluidas,
-    v_avaliacoes_inativadas,
-    v_avaliacoes_pendentes
-  FROM avaliacoes
-  WHERE lote_id = v_lote_id;
-  
-  -- Se todas as avaliaÃ§Ãµes (exceto as inativadas) foram concluÃ­das, marcar lote como concluÃ­do
-  -- E agendar envio para 10 minutos depois (emissÃ£o serÃ¡ imediata via cron)
-  IF v_avaliacoes_pendentes = 0 AND (v_avaliacoes_concluidas + v_avaliacoes_inativadas) = v_total_avaliacoes AND v_avaliacoes_concluidas > 0 THEN
-    UPDATE lotes_avaliacao
-    SET 
-      status = 'concluido'::status_lote,
-      auto_emitir_agendado = true,
-      auto_emitir_em = NOW() + INTERVAL '10 minutes',  -- Apenas para o ENVIO (emissÃ£o Ã© imediata)
-      atualizado_em = NOW()
-    WHERE id = v_lote_id
-      AND status = 'ativo';  -- Evitar update desnecessÃ¡rio
-    
-    RAISE NOTICE 'Lote % marcado como concluÃ­do e agendado para envio em 10 minutos: % concluÃ­das, % inativadas, % pendentes', 
-      v_lote_id, v_avaliacoes_concluidas, v_avaliacoes_inativadas, v_avaliacoes_pendentes;
-  END IF;
-  
-  RETURN NEW;
-END;
+    AS $$
+
+DECLARE
+
+  v_lote_id INTEGER;
+
+  v_total_avaliacoes INTEGER;
+
+  v_avaliacoes_concluidas INTEGER;
+
+  v_avaliacoes_inativadas INTEGER;
+
+  v_avaliacoes_pendentes INTEGER;
+
+  v_lote_status status_lote;
+
+BEGIN
+
+  -- Pegar o lote_id da avaliaÃ§Ã£o que foi alterada
+
+  v_lote_id := COALESCE(NEW.lote_id, OLD.lote_id);
+
+  
+
+  -- Se nÃ£o tem lote associado, nada a fazer
+
+  IF v_lote_id IS NULL THEN
+
+    RETURN NEW;
+
+  END IF;
+
+
+
+  -- Verificar status atual do lote
+
+  SELECT status INTO v_lote_status
+
+  FROM lotes_avaliacao
+
+  WHERE id = v_lote_id;
+
+
+
+  -- SÃ³ processar lotes ativos
+
+  IF v_lote_status != 'ativo' THEN
+
+    RETURN NEW;
+
+  END IF;
+
+  
+
+  -- Contar avaliaÃ§Ãµes do lote
+
+  SELECT
+
+    COUNT(*) as total,
+
+    COUNT(*) FILTER (WHERE status = 'concluida') as concluidas,
+
+    COUNT(*) FILTER (WHERE status = 'inativada') as inativadas,
+
+    COUNT(*) FILTER (WHERE status IN ('iniciada', 'em_andamento')) as pendentes
+
+  INTO
+
+    v_total_avaliacoes,
+
+    v_avaliacoes_concluidas,
+
+    v_avaliacoes_inativadas,
+
+    v_avaliacoes_pendentes
+
+  FROM avaliacoes
+
+  WHERE lote_id = v_lote_id;
+
+  
+
+  -- Se todas as avaliaÃ§Ãµes (exceto as inativadas) foram concluÃ­das, marcar lote como concluÃ­do
+
+  -- E agendar envio para 10 minutos depois (emissÃ£o serÃ¡ imediata via cron)
+
+  IF v_avaliacoes_pendentes = 0 AND (v_avaliacoes_concluidas + v_avaliacoes_inativadas) = v_total_avaliacoes AND v_avaliacoes_concluidas > 0 THEN
+
+    UPDATE lotes_avaliacao
+
+    SET 
+
+      status = 'concluido'::status_lote,
+
+      auto_emitir_agendado = true,
+
+      auto_emitir_em = NOW() + INTERVAL '10 minutes',  -- Apenas para o ENVIO (emissÃ£o Ã© imediata)
+
+      atualizado_em = NOW()
+
+    WHERE id = v_lote_id
+
+      AND status = 'ativo';  -- Evitar update desnecessÃ¡rio
+
+    
+
+    RAISE NOTICE 'Lote % marcado como concluÃ­do e agendado para envio em 10 minutos: % concluÃ­das, % inativadas, % pendentes', 
+
+      v_lote_id, v_avaliacoes_concluidas, v_avaliacoes_inativadas, v_avaliacoes_pendentes;
+
+  END IF;
+
+  
+
+  RETURN NEW;
+
+END;
+
 $$;
 
 
@@ -3094,105 +4946,202 @@ COMMENT ON FUNCTION public.verificar_conclusao_lote() IS 'Atualiza lote para con
 
 CREATE FUNCTION public.verificar_inativacao_consecutiva(p_funcionario_cpf character, p_lote_id integer) RETURNS TABLE(permitido boolean, motivo text, total_inativacoes_consecutivas integer, ultima_inativacao_lote character varying)
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_lote_atual_ordem INTEGER;
-  v_lote_anterior_ordem INTEGER;
-  v_avaliacao_anterior_status VARCHAR(20);
-  v_ultima_inativacao_codigo VARCHAR(20);
-  v_total_consecutivas INTEGER := 0;
-  v_tem_anomalia_critica BOOLEAN := false;
-  v_empresa_id INTEGER;
-  v_contratante_id INTEGER;
-  v_total_avaliacoes_anteriores INTEGER := 0;
-BEGIN
-  -- Buscar empresa_id e contratante_id do lote
-  SELECT empresa_id, contratante_id INTO v_empresa_id, v_contratante_id
-  FROM lotes_avaliacao
-  WHERE id = p_lote_id;
-
-  -- Verificar se funcionÃ¡rio tem anomalias crÃ­ticas (aplica apenas para empresas por enquanto)
-  IF v_contratante_id IS NULL THEN
-    SELECT EXISTS(
-      SELECT 1 FROM (SELECT * FROM detectar_anomalias_indice(v_empresa_id)) AS anomalias
-      WHERE anomalias.funcionario_cpf = p_funcionario_cpf AND anomalias.severidade = 'CRITICA'
-    ) INTO v_tem_anomalia_critica;
-  ELSE
-    -- Para contratantes ainda nÃ£o aplicamos detecÃ§Ã£o de anomalias; nÃ£o bloquear por anomalia
-    v_tem_anomalia_critica := false;
-  END IF;
-
-  -- Buscar ordem do lote atual
-  SELECT numero_ordem INTO v_lote_atual_ordem
-  FROM lotes_avaliacao
-  WHERE id = p_lote_id;
-
-  -- Buscar lote anterior (ordem - 1) e status da avaliacao correspondente (se existir) no mesmo contexto
-  SELECT la.numero_ordem, a.status, la.codigo
-  INTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
-  FROM lotes_avaliacao la
-  LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.funcionario_cpf = p_funcionario_cpf
-  WHERE la.numero_ordem = v_lote_atual_ordem - 1
-    AND (
-      (v_contratante_id IS NOT NULL AND la.contratante_id = v_contratante_id)
-      OR (v_contratante_id IS NULL AND la.empresa_id = v_empresa_id)
-    )
-  LIMIT 1;
-
-  -- Contar inativaÃ§Ãµes anteriores (qualquer lote anterior no contexto)
-  SELECT COUNT(*) INTO v_total_consecutivas
-  FROM avaliacoes a
-  JOIN lotes_avaliacao la ON a.lote_id = la.id
-  WHERE a.funcionario_cpf = p_funcionario_cpf
-    AND la.numero_ordem < v_lote_atual_ordem
-    AND a.status = 'inativada'
-    AND (
-      (v_contratante_id IS NOT NULL AND la.contratante_id = v_contratante_id)
-      OR (v_contratante_id IS NULL AND la.empresa_id = v_empresa_id)
-    );
-
-  -- Contar nÃºmero de avaliaÃ§Ãµes anteriores (independente de status) no contexto
-  SELECT COUNT(*) INTO v_total_avaliacoes_anteriores
-  FROM avaliacoes a
-  JOIN lotes_avaliacao la ON a.lote_id = la.id
-  WHERE a.funcionario_cpf = p_funcionario_cpf
-    AND la.numero_ordem < v_lote_atual_ordem
-    AND (
-      (v_contratante_id IS NOT NULL AND la.contratante_id = v_contratante_id)
-      OR (v_contratante_id IS NULL AND la.empresa_id = v_empresa_id)
-    );
-
-  -- Se tem anomalia critica, permitir inativacao consecutiva
-  IF v_tem_anomalia_critica THEN
-    RETURN QUERY SELECT 
-      true AS permitido,
-      'PERMITIDO: Funcionario tem anomalias criticas detectadas. Inativacao consecutiva autorizada automaticamente. ' ||
-      'Motivo: Anomalias criticas justificam flexibilizacao do processo de avaliacao.' AS motivo,
-      v_total_consecutivas AS total_inativacoes_consecutivas,
-      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
-  -- Se nÃ£o hÃ¡ avaliaÃ§Ãµes anteriores (funcionÃ¡rio recÃ©m-importado/inscrito), permitir sem sinalizar como forÃ§ada
-  ELSIF v_total_avaliacoes_anteriores = 0 THEN
-    RETURN QUERY SELECT 
-      true AS permitido,
-      'PERMITIDO: FuncionÃ¡rio sem avaliaÃ§Ãµes anteriores (possivelmente recÃ©m-importado/inscrito). InativaÃ§Ã£o do primeiro lote Ã© permitida.' AS motivo,
-      v_total_consecutivas AS total_inativacoes_consecutivas,
-      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
-  -- A partir da 2Âª inativaÃ§Ã£o (ou seja, jÃ¡ existe pelo menos 1 inativaÃ§Ã£o anterior), sinalizar como restriÃ§Ã£o (pode ser forÃ§ada)
-  ELSIF v_total_consecutivas >= 1 THEN
-    RETURN QUERY SELECT 
-      false AS permitido,
-      'ATENCAO: Este funcionario ja tem ' || v_total_consecutivas || ' inativacao(oes) anteriores. ' ||
-      'A partir da segunda inativacao, o sistema exige justificativa detalhada e registro de auditoria (inativacao forcada).' AS motivo,
-      v_total_consecutivas AS total_inativacoes_consecutivas,
-      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
-  ELSE
-    RETURN QUERY SELECT 
-      true AS permitido,
-      'InativaÃ§Ã£o permitida. Lembre-se de registrar o motivo detalhadamente.' AS motivo,
-      v_total_consecutivas AS total_inativacoes_consecutivas,
-      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
-  END IF;
-END;
+    AS $$
+
+DECLARE
+
+  v_lote_atual_ordem INTEGER;
+
+  v_lote_anterior_ordem INTEGER;
+
+  v_avaliacao_anterior_status VARCHAR(20);
+
+  v_ultima_inativacao_codigo VARCHAR(20);
+
+  v_total_consecutivas INTEGER := 0;
+
+  v_tem_anomalia_critica BOOLEAN := false;
+
+  v_empresa_id INTEGER;
+
+  v_contratante_id INTEGER;
+
+  v_total_avaliacoes_anteriores INTEGER := 0;
+
+BEGIN
+
+  -- Buscar empresa_id e contratante_id do lote
+
+  SELECT empresa_id, contratante_id INTO v_empresa_id, v_contratante_id
+
+  FROM lotes_avaliacao
+
+  WHERE id = p_lote_id;
+
+
+
+  -- Verificar se funcionÃ¡rio tem anomalias crÃ­ticas (aplica apenas para empresas por enquanto)
+
+  IF v_contratante_id IS NULL THEN
+
+    SELECT EXISTS(
+
+      SELECT 1 FROM (SELECT * FROM detectar_anomalias_indice(v_empresa_id)) AS anomalias
+
+      WHERE anomalias.funcionario_cpf = p_funcionario_cpf AND anomalias.severidade = 'CRITICA'
+
+    ) INTO v_tem_anomalia_critica;
+
+  ELSE
+
+    -- Para contratantes ainda nÃ£o aplicamos detecÃ§Ã£o de anomalias; nÃ£o bloquear por anomalia
+
+    v_tem_anomalia_critica := false;
+
+  END IF;
+
+
+
+  -- Buscar ordem do lote atual
+
+  SELECT numero_ordem INTO v_lote_atual_ordem
+
+  FROM lotes_avaliacao
+
+  WHERE id = p_lote_id;
+
+
+
+  -- Buscar lote anterior (ordem - 1) e status da avaliacao correspondente (se existir) no mesmo contexto
+
+  SELECT la.numero_ordem, a.statusINTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
+
+  FROM lotes_avaliacao la
+
+  LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.funcionario_cpf = p_funcionario_cpf
+
+  WHERE la.numero_ordem = v_lote_atual_ordem - 1
+
+    AND (
+
+      (v_contratante_id IS NOT NULL AND la.contratante_id = v_contratante_id)
+
+      OR (v_contratante_id IS NULL AND la.empresa_id = v_empresa_id)
+
+    )
+
+  LIMIT 1;
+
+
+
+  -- Contar inativaÃ§Ãµes anteriores (qualquer lote anterior no contexto)
+
+  SELECT COUNT(*) INTO v_total_consecutivas
+
+  FROM avaliacoes a
+
+  JOIN lotes_avaliacao la ON a.lote_id = la.id
+
+  WHERE a.funcionario_cpf = p_funcionario_cpf
+
+    AND la.numero_ordem < v_lote_atual_ordem
+
+    AND a.status = 'inativada'
+
+    AND (
+
+      (v_contratante_id IS NOT NULL AND la.contratante_id = v_contratante_id)
+
+      OR (v_contratante_id IS NULL AND la.empresa_id = v_empresa_id)
+
+    );
+
+
+
+  -- Contar nÃºmero de avaliaÃ§Ãµes anteriores (independente de status) no contexto
+
+  SELECT COUNT(*) INTO v_total_avaliacoes_anteriores
+
+  FROM avaliacoes a
+
+  JOIN lotes_avaliacao la ON a.lote_id = la.id
+
+  WHERE a.funcionario_cpf = p_funcionario_cpf
+
+    AND la.numero_ordem < v_lote_atual_ordem
+
+    AND (
+
+      (v_contratante_id IS NOT NULL AND la.contratante_id = v_contratante_id)
+
+      OR (v_contratante_id IS NULL AND la.empresa_id = v_empresa_id)
+
+    );
+
+
+
+  -- Se tem anomalia critica, permitir inativacao consecutiva
+
+  IF v_tem_anomalia_critica THEN
+
+    RETURN QUERY SELECT 
+
+      true AS permitido,
+
+      'PERMITIDO: Funcionario tem anomalias criticas detectadas. Inativacao consecutiva autorizada automaticamente. ' ||
+
+      'Motivo: Anomalias criticas justificam flexibilizacao do processo de avaliacao.' AS motivo,
+
+      v_total_consecutivas AS total_inativacoes_consecutivas,
+
+      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
+
+  -- Se nÃ£o hÃ¡ avaliaÃ§Ãµes anteriores (funcionÃ¡rio recÃ©m-importado/inscrito), permitir sem sinalizar como forÃ§ada
+
+  ELSIF v_total_avaliacoes_anteriores = 0 THEN
+
+    RETURN QUERY SELECT 
+
+      true AS permitido,
+
+      'PERMITIDO: FuncionÃ¡rio sem avaliaÃ§Ãµes anteriores (possivelmente recÃ©m-importado/inscrito). InativaÃ§Ã£o do primeiro lote Ã© permitida.' AS motivo,
+
+      v_total_consecutivas AS total_inativacoes_consecutivas,
+
+      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
+
+  -- A partir da 2Âª inativaÃ§Ã£o (ou seja, jÃ¡ existe pelo menos 1 inativaÃ§Ã£o anterior), sinalizar como restriÃ§Ã£o (pode ser forÃ§ada)
+
+  ELSIF v_total_consecutivas >= 1 THEN
+
+    RETURN QUERY SELECT 
+
+      false AS permitido,
+
+      'ATENCAO: Este funcionario ja tem ' || v_total_consecutivas || ' inativacao(oes) anteriores. ' ||
+
+      'A partir da segunda inativacao, o sistema exige justificativa detalhada e registro de auditoria (inativacao forcada).' AS motivo,
+
+      v_total_consecutivas AS total_inativacoes_consecutivas,
+
+      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
+
+  ELSE
+
+    RETURN QUERY SELECT 
+
+      true AS permitido,
+
+      'InativaÃ§Ã£o permitida. Lembre-se de registrar o motivo detalhadamente.' AS motivo,
+
+      v_total_consecutivas AS total_inativacoes_consecutivas,
+
+      v_ultima_inativacao_codigo AS ultima_inativacao_lote;
+
+  END IF;
+
+END;
+
 $$;
 
 
@@ -3209,33 +5158,60 @@ COMMENT ON FUNCTION public.verificar_inativacao_consecutiva(p_funcionario_cpf ch
 
 CREATE FUNCTION public.verificar_integridade_recibo(recibo_id integer) RETURNS TABLE(id integer, hash_armazenado character, hash_calculado character, integro boolean)
     LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_pdf BYTEA;
-  v_hash_armazenado CHAR(64);
-  v_hash_calculado CHAR(64);
-BEGIN
-  -- Buscar PDF e hash armazenado
-  SELECT r.pdf, r.hash_pdf
-  INTO v_pdf, v_hash_armazenado
-  FROM recibos r
-  WHERE r.id = recibo_id;
-
-  -- Se nÃ£o encontrar, retornar vazio
-  IF NOT FOUND THEN
-    RETURN;
-  END IF;
-
-  -- Calcular hash do PDF atual
-  v_hash_calculado := calcular_hash_pdf(v_pdf);
-
-  -- Retornar resultado da verificaÃ§Ã£o
-  RETURN QUERY SELECT
-    recibo_id,
-    v_hash_armazenado,
-    v_hash_calculado,
-    (v_hash_armazenado = v_hash_calculado) AS integro;
-END;
+    AS $$
+
+DECLARE
+
+  v_pdf BYTEA;
+
+  v_hash_armazenado CHAR(64);
+
+  v_hash_calculado CHAR(64);
+
+BEGIN
+
+  -- Buscar PDF e hash armazenado
+
+  SELECT r.pdf, r.hash_pdf
+
+  INTO v_pdf, v_hash_armazenado
+
+  FROM recibos r
+
+  WHERE r.id = recibo_id;
+
+
+
+  -- Se nÃ£o encontrar, retornar vazio
+
+  IF NOT FOUND THEN
+
+    RETURN;
+
+  END IF;
+
+
+
+  -- Calcular hash do PDF atual
+
+  v_hash_calculado := calcular_hash_pdf(v_pdf);
+
+
+
+  -- Retornar resultado da verificaÃ§Ã£o
+
+  RETURN QUERY SELECT
+
+    recibo_id,
+
+    v_hash_armazenado,
+
+    v_hash_calculado,
+
+    (v_hash_armazenado = v_hash_calculado) AS integro;
+
+END;
+
 $$;
 
 
@@ -4324,8 +6300,10 @@ CREATE VIEW public.equipe_administrativa AS
 -- Name: VIEW equipe_administrativa; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON VIEW public.equipe_administrativa IS 'View semÃ¢ntica para equipe administrativa da plataforma.
-Inclui administradores do sistema e emissores de laudos.
+COMMENT ON VIEW public.equipe_administrativa IS 'View semÃ¢ntica para equipe administrativa da plataforma.
+
+Inclui administradores do sistema e emissores de laudos.
+
 Facilita auditoria e gestÃ£o de acessos especiais.';
 
 
@@ -4485,8 +6463,10 @@ CREATE VIEW public.funcionarios_operacionais AS
 -- Name: VIEW funcionarios_operacionais; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON VIEW public.funcionarios_operacionais IS 'View semÃ¢ntica para funcionÃ¡rios operacionais que realizam avaliaÃ§Ãµes.
-Exclui gestores, admins e emissores.
+COMMENT ON VIEW public.funcionarios_operacionais IS 'View semÃ¢ntica para funcionÃ¡rios operacionais que realizam avaliaÃ§Ãµes.
+
+Exclui gestores, admins e emissores.
+
 Facilita queries de RH e relatÃ³rios de funcionÃ¡rios.';
 
 
@@ -4519,8 +6499,10 @@ CREATE VIEW public.gestores AS
 -- Name: VIEW gestores; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON VIEW public.gestores IS 'View semÃ¢ntica para todos os gestores do sistema.
-Inclui gestores de RH (clÃ­nicas) e gestores de entidades.
+COMMENT ON VIEW public.gestores IS 'View semÃ¢ntica para todos os gestores do sistema.
+
+Inclui gestores de RH (clÃ­nicas) e gestores de entidades.
+
 Facilita queries que precisam apenas de gestores administrativos.';
 
 
@@ -4688,14 +6670,22 @@ CREATE TABLE public.laudos (
 -- Name: TABLE laudos; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.laudos IS 'Laudos psicolÃ³gicos emitidos por emissores. 
-IMPORTANTE: Laudos sÃ£o criados APENAS pelo emissor no momento da emissÃ£o.
-NÃƒO devem ser criados antecipadamente em status rascunho.
-Fluxo correto:
-1. RH/Entidade solicita emissÃ£o (POST /api/lotes/[loteId]/solicitar-emissao)
-2. Lote aparece no dashboard do emissor
-3. Emissor clica "Gerar Laudo" (POST /api/emissor/laudos/[loteId])
-4. Sistema cria registro em laudos E gera PDF+hash
+COMMENT ON TABLE public.laudos IS 'Laudos psicolÃ³gicos emitidos por emissores. 
+
+IMPORTANTE: Laudos sÃ£o criados APENAS pelo emissor no momento da emissÃ£o.
+
+NÃƒO devem ser criados antecipadamente em status rascunho.
+
+Fluxo correto:
+
+1. RH/Entidade solicita emissÃ£o (POST /api/lotes/[loteId]/solicitar-emissao)
+
+2. Lote aparece no dashboard do emissor
+
+3. Emissor clica "Gerar Laudo" (POST /api/emissor/laudos/[loteId])
+
+4. Sistema cria registro em laudos E gera PDF+hash
+
 5. Emissor revisa e envia';
 
 
@@ -5596,8 +7586,10 @@ CREATE TABLE public.role_permissions (
 -- Name: TABLE role_permissions; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.role_permissions IS 'Admin tem apenas permissões de cadastro (RH, clínicas, admins). 
-Operações como gerenciar avaliações, lotes, empresas e funcionários são de responsabilidade de RH e entidade_gestor.
+COMMENT ON TABLE public.role_permissions IS 'Admin tem apenas permissões de cadastro (RH, clínicas, admins). 
+
+Operações como gerenciar avaliações, lotes, empresas e funcionários são de responsabilidade de RH e entidade_gestor.
+
 Emissão de laudos é exclusiva de emissores.';
 
 
@@ -5734,7 +7726,8 @@ CREATE VIEW public.usuarios_resumo AS
 -- Name: VIEW usuarios_resumo; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON VIEW public.usuarios_resumo IS 'View analÃ­tica com resumo estatÃ­stico de usuÃ¡rios por tipo.
+COMMENT ON VIEW public.usuarios_resumo IS 'View analÃ­tica com resumo estatÃ­stico de usuÃ¡rios por tipo.
+
 Ãštil para dashboards administrativos e relatÃ³rios gerenciais.';
 
 
@@ -5745,7 +7738,7 @@ COMMENT ON VIEW public.usuarios_resumo IS 'View analÃ­tica com resumo estatÃ�
 CREATE VIEW public.v_auditoria_emissoes AS
  SELECT l.id AS laudo_id,
     l.lote_id,
-    la.codigo AS lote_codigo,
+    
     la.contratante_id,
     la.empresa_id,
     fe.solicitado_por AS solicitante_cpf,
@@ -7757,7 +9750,8 @@ CREATE TRIGGER trg_reservar_id_laudo_on_lote_insert AFTER INSERT ON public.lotes
 -- Name: TRIGGER trg_reservar_id_laudo_on_lote_insert ON lotes_avaliacao; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TRIGGER trg_reservar_id_laudo_on_lote_insert ON public.lotes_avaliacao IS 'Reserva automaticamente ID do laudo quando lote Ã© criado.
+COMMENT ON TRIGGER trg_reservar_id_laudo_on_lote_insert ON public.lotes_avaliacao IS 'Reserva automaticamente ID do laudo quando lote Ã© criado.
+
 Laudo fica em status=rascunho atÃ© emissor processar.';
 
 

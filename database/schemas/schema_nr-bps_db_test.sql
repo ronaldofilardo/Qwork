@@ -2319,7 +2319,7 @@ BEGIN
 
     -- Buscar prÃ³ximo sequencial para a data
 
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
 
     INTO sequencial
 
@@ -4216,9 +4216,7 @@ BEGIN
 
   -- Buscar lote anterior (ordem - 1)
 
-  SELECT la.numero_ordem, a.status, la.codigo
-
-  INTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
+  SELECT la.numero_ordem, a.statusINTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
 
   FROM lotes_avaliacao la
 
@@ -7128,7 +7126,7 @@ COMMENT ON VIEW public.v_contratantes_stats IS 'View com estatÃ­sticas agregad
 
 CREATE VIEW public.vw_alertas_lotes_stuck AS
  SELECT la.id AS lote_id,
-    la.codigo,
+    
     la.status,
     COALESCE(ec.nome, cont.nome) AS empresa_nome,
     COALESCE(c.nome, cont.nome) AS clinica_nome,
@@ -7154,7 +7152,7 @@ CREATE VIEW public.vw_alertas_lotes_stuck AS
      LEFT JOIN public.contratantes cont ON ((la.contratante_id = cont.id)))
      LEFT JOIN public.avaliacoes a ON ((la.id = a.lote_id)))
   WHERE (((la.status)::text = ANY ((ARRAY['ativo'::character varying, 'concluido'::character varying, 'finalizado'::character varying])::text[])) AND (la.atualizado_em < (now() - '48:00:00'::interval)))
-  GROUP BY la.id, la.codigo, la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
+  GROUP BY la.id,  la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
 
 
 ALTER VIEW public.vw_alertas_lotes_stuck OWNER TO postgres;
@@ -7667,7 +7665,7 @@ COMMENT ON VIEW public.vw_health_check_contratantes IS 'Health check rÃ¡pido d
 
 CREATE VIEW public.vw_lotes_info AS
  SELECT la.id,
-    la.codigo,
+    
     la.clinica_id,
     c.nome AS clinica_nome,
     c.cnpj AS clinica_cnpj,

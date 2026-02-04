@@ -35,7 +35,7 @@ async function investigarGestores() {
     const lotes = await query(
       `SELECT 
         la.id,
-        la.codigo,
+        
         la.titulo,
         la.status,
         la.liberado_por,
@@ -46,7 +46,7 @@ async function investigarGestores() {
       LEFT JOIN contratantes c ON la.contratante_id = c.id
       LEFT JOIN avaliacoes a ON a.lote_id = la.id
       WHERE la.liberado_por = $1
-      GROUP BY la.id, la.codigo, la.titulo, la.status, la.liberado_por, la.contratante_id, c.nome
+      GROUP BY la.id,  la.titulo, la.status, la.liberado_por, la.contratante_id, c.nome
       ORDER BY la.id DESC`,
       [cpf]
     );
@@ -57,8 +57,7 @@ async function investigarGestores() {
     const laudos = await query(
       `SELECT 
         l.id,
-        l.lote_id,
-        la.codigo as lote_codigo,
+        l.lote_idas lote_codigo,
         l.status,
         l.emissor_cpf,
         l.emitido_em,
@@ -76,7 +75,7 @@ async function investigarGestores() {
     const inconsistencias = await query(
       `SELECT 
         la.id,
-        la.codigo,
+        
         la.liberado_por,
         la.contratante_id,
         cs.contratante_id as gestor_contratante_id

@@ -17,9 +17,10 @@ SELECT
   (SELECT COUNT(*) FROM avaliacoes WHERE lote_id = 22) as remaining_evaluations;
 
 -- 3. Update funcionarios to reflect correct ultimo_lote
+-- [DEPRECATED MIGRATION 164] Campo ultimo_lote_codigo removido
 UPDATE funcionarios
 SET 
-  ultimo_lote_codigo = '002-050126',
+  -- ultimo_lote_codigo = '002-050126', -- REMOVIDO
   ultima_avaliacao_id = (
     SELECT id FROM avaliacoes 
     WHERE funcionario_cpf = funcionarios.cpf 
@@ -33,7 +34,7 @@ SELECT
   cpf,
   nome,
   indice_avaliacao,
-  ultimo_lote_codigo,
+  -- ultimo_lote_codigo, -- [DEPRECATED] Campo removido
   ultima_avaliacao_status,
   ultima_avaliacao_data_conclusao,
   EXTRACT(DAY FROM NOW() - ultima_avaliacao_data_conclusao)::INTEGER as dias_desde_conclusao

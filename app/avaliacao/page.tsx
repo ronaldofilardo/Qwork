@@ -163,23 +163,42 @@ export default function NovaAvaliacaoPage() {
           setRespostas(map);
           setHasStarted(data.respostas.length > 0);
 
-          const respondidas = data.respostas.map((r: RespostaData) =>
-            String(r.item)
-          );
+          // Sincronizar status da avaliação: se já houver respostas e o status ainda for 'iniciada', atualizar para 'em_andamento'
+          try {
+            if (
+              data.respostas.length > 0 &&
+              avaliacaoAtual &&
+              avaliacaoAtual.status === 'iniciada'
+            ) {
+              fetch('/api/avaliacao/status', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  status: 'em_andamento',
+                  avaliacaoId: avaliacaoIdToUse,
+                }),
+              }).catch((err) =>
+                console.warn(
+                  'Erro ao sincronizar status para em_andamento:',
+                  err
+                )
+              );
+            }
+          } catch (err) {
+            console.warn(
+              'Erro na verificação de sincronização de status:',
+              err
+            );
+          }
 
-          const proximo = todasQuestoesCarregadas.findIndex(
-            (q) => !respondidas.includes(String(q.itemId))
+          // Encontrar primeira questão não respondida ou ir para o final
+          const primeiraIndex = todasQuestoesCarregadas.findIndex(
+            (q) => !map[q.itemId]
           );
-
-          console.log('[DEBUG] respondidas:', respondidas.length);
-          console.log('[DEBUG] proximo index:', proximo);
-          console.log(
-            '[DEBUG] todasQuestoesCarregadas length:',
-            todasQuestoesCarregadas.length
-          );
-
           setCurrentIndex(
-            proximo === -1 ? todasQuestoesCarregadas.length : proximo
+            primeiraIndex === -1
+              ? todasQuestoesCarregadas.length - 1
+              : primeiraIndex
           );
         }
       } catch (err) {

@@ -53,7 +53,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 1,
-        codigo: '001-291125',
         titulo: 'Lote Teste',
         tipo: 'completo',
         status: 'rascunho', // CRITICAL: Needed for filter
@@ -175,7 +174,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 123,
-        codigo: '001-291125',
         titulo: 'Lote Teste',
         tipo: 'completo',
         status: 'rascunho',
@@ -223,7 +221,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 1,
-        codigo: '001-291125',
         titulo: 'Lote Teste',
         tipo: 'completo',
         status: 'rascunho',
@@ -273,7 +270,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 1,
-        codigo: '001-291125',
         titulo: 'Lote Rascunho',
         tipo: 'completo',
         status: 'rascunho',
@@ -291,7 +287,6 @@ describe.skip('Emissor Dashboard', () => {
       },
       {
         id: 2,
-        codigo: '002-291125',
         titulo: 'Lote Emitido',
         tipo: 'completo',
         status: 'rascunho',
@@ -340,7 +335,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 3,
-        codigo: '003-161225',
         titulo: 'Lote com previsão',
         tipo: 'completo',
         status: 'rascunho', // CRITICAL: Needed for "aguardando-envio" tab filter
@@ -395,7 +389,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 5,
-        codigo: '005-161225',
         titulo: 'Lote Agendado Auto',
         tipo: 'completo',
         status: 'rascunho',
@@ -443,7 +436,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 6,
-        codigo: '006-161225',
         titulo: 'Lote Finalizado',
         tipo: 'completo',
         status: 'finalizado',
@@ -500,7 +492,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 7,
-        codigo: '007-161225',
         titulo: 'Lote para Download',
         tipo: 'completo',
         status: 'finalizado',

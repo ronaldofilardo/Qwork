@@ -65,7 +65,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 18,
-              codigo: '004-300126',
               status: 'concluido',
               empresa_nome: 'Empresa Teste',
               total_liberadas: '3', // STRING (como retorna do PostgreSQL)
@@ -92,7 +91,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 9,
-              codigo: '008-290126',
               status: 'concluido',
               empresa_nome: 'Empresa Teste',
               total_liberadas: '4', // STRING
@@ -119,7 +117,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 99,
-              codigo: '099-999999',
               status: 'ativo',
               empresa_nome: 'Empresa Teste',
               total_liberadas: '5', // STRING
@@ -151,7 +148,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 18,
-              codigo: '004-300126',
               status: 'concluido',
               empresa_nome: 'Empresa Teste',
               total_liberadas: '3', // STRING
@@ -183,7 +179,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 9,
-              codigo: '008-290126',
               status: 'concluido',
               empresa_nome: 'Empresa Teste',
               total_liberadas: '4', // STRING
@@ -212,7 +207,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
         rows: [
           {
             id: 99,
-            codigo: '099-999999',
             status: 'ativo',
             empresa_nome: 'Empresa Teste',
             total_liberadas: '5', // STRING
@@ -238,7 +232,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 18,
-              codigo: '004-300126',
               status: 'concluido',
               total_liberadas: '3',
               concluidas: '3',
@@ -266,7 +259,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 18,
-              codigo: '004-300126',
               status: 'concluido',
               total_liberadas: '3',
               concluidas: '3',
@@ -298,7 +290,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 18,
-              codigo: '004-300126',
               status: 'concluido',
               total_liberadas: '3',
               concluidas: '3',
@@ -343,7 +334,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 20,
-              codigo: '020-300126',
               status: 'concluido',
               total_liberadas: 2, // NUMBER (caso raro)
               concluidas: 1, // NUMBER
@@ -368,7 +358,6 @@ describe('Validação de Lote com Avaliações Inativadas', () => {
           rows: [
             {
               id: 21,
-              codigo: '021-300126',
               status: 'concluido',
               total_liberadas: '0',
               concluidas: null, // NULL

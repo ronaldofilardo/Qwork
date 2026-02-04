@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 export interface Laudo {
   id: number;
   lote_id: number;
-  codigo: string;
+  // codigo: removido
   titulo: string;
   empresa_nome: string;
   clinica_nome: string;

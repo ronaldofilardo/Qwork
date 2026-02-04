@@ -33,8 +33,8 @@ describe('Lote insert reserves laudo rascunho', () => {
       const contratanteId = contratanteRes.rows[0].id;
 
       const res = await query(
-        `INSERT INTO lotes_avaliacao (codigo, titulo, tipo, status, criado_em, atualizado_em, contratante_id) VALUES ($1, $2, 'completo', 'rascunho', NOW(), NOW(), $3) RETURNING id`,
-        ['TEST-ALLOC-001', 'Teste reserva laudo', contratanteId]
+        `INSERT INTO lotes_avaliacao (tipo, status, criado_em, atualizado_em, contratante_id) VALUES ('completo', 'rascunho', NOW(), NOW(), $1) RETURNING id`,
+        [contratanteId]
       );
 
       const loteId = res.rows[0].id;
