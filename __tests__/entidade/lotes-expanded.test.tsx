@@ -46,7 +46,9 @@ describe('Entidade Lotes - cards compactos', () => {
     render(<EntidadeLotesPage />);
 
     await waitFor(() =>
-      expect(screen.getByText('Ciclos de Coletas Avaliativas')).toBeInTheDocument()
+      expect(
+        screen.getByText('Ciclos de Coletas Avaliativas')
+      ).toBeInTheDocument()
     );
 
     // Card deve ser clicável (LotesGrid usa aria-label)
@@ -91,7 +93,9 @@ describe('Entidade Lotes - cards compactos', () => {
     render(<EntidadeLotesPage />);
 
     await waitFor(() =>
-      expect(screen.getByText('Ciclos de Coletas Avaliativas')).toBeInTheDocument()
+      expect(
+        screen.getByText('Ciclos de Coletas Avaliativas')
+      ).toBeInTheDocument()
     );
 
     // Clicar no card não deve revelar seção de funcionários (LotesGrid não tem expansão)
@@ -103,4 +107,3 @@ describe('Entidade Lotes - cards compactos', () => {
     expect(mockRouter.push).toHaveBeenCalledWith('/entidade/lote/2');
   });
 });
-
