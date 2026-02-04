@@ -48,7 +48,7 @@
     "check:insert-placeholders": "node scripts/checks/validate-insert-placeholders.cjs",
     "cypress": "cypress open",
     "cypress:headless": "cypress run",
-    "test:e2e": "npx tsx scripts/insert-login-test-data.ts && start-server-and-test 'pnpm dev:test' http://localhost:3000 cypress:headless",
+    "test:e2e": "cross-env NODE_ENV=test TEST_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db_test npx tsx scripts/insert-login-test-data.ts && start-server-and-test \"cross-env NODE_ENV=test TEST_DATABASE_URL=postgresql://postgres:123456@localhost:5432/nr-bps_db_test pnpm dev:test\" http://localhost:3000 cypress:headless",
     "cypress:regressao:headless": "cypress run --spec \"cypress/e2e/regressao/fluxo-cadastro-regressao.cy.ts\"",
     "test:e2e:regressao": "npx tsx scripts/insert-login-test-data.ts && start-server-and-test 'pnpm dev:test' http://localhost:3000 cypress:regressao:headless",
     "dev:test": "node scripts/dev-test-cross-platform.js",

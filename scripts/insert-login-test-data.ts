@@ -21,6 +21,12 @@ async function insertLoginTestData() {
   try {
     console.log('🔄 Inserindo dados de teste para login...');
 
+    // Garantir contexto para triggers de auditoria (app.current_user_cpf deve estar setado)
+    await query(`SELECT set_config('app.current_user_cpf', '00000000000', false)`);
+    await query(`SELECT set_config('app.current_user_perfil', 'system', false)`);
+    await query(`SELECT set_config('app.client_ip', '127.0.0.1', false)`);
+
+
     // Inserir clínica
     await query(`
       INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, ativa)
@@ -43,6 +49,11 @@ async function insertLoginTestData() {
 
     // Senha hash para '123': $2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2
     // Inserir funcionários, RH e admin (apenas um RH ativo por clínica devido à constraint)
+
+    // Garantir default para usuario_tipo (evita falhas em ambientes de teste mais estritos)
+    // Padrão para funcionários de clínica
+    await query(`ALTER TABLE funcionarios ALTER COLUMN usuario_tipo SET DEFAULT 'funcionario_clinica'`);
+
     await query(`
       INSERT INTO funcionarios (cpf, nome, setor, funcao, email, senha_hash, perfil, ativo, clinica_id, empresa_id, matricula, turno, escala, nivel_cargo)
       VALUES
