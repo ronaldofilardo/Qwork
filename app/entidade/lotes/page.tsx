@@ -50,7 +50,7 @@ export default function LotesPage() {
   const [loading, setLoading] = useState(true);
   const [showLiberarModal, setShowLiberarModal] = useState(false);
   const [downloadingLaudo, setDownloadingLaudo] = useState<number | null>(null);
-  
+
   // Referência para o intervalo de polling
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -60,13 +60,13 @@ export default function LotesPage() {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache'
-        }
+          Pragma: 'no-cache',
+        },
       });
       if (lotesRes.ok) {
         const lotesData = await lotesRes.json();
         setLotes(lotesData.lotes || []);
-        
+
         // Converter lotes para formato de laudos para compatibilidade com LotesGrid
         const laudosFromLotes: Laudo[] = (lotesData.lotes || [])
           .filter((lote: LoteAvaliacao) => lote.laudo_id)
@@ -77,7 +77,7 @@ export default function LotesPage() {
             enviado_em: lote.laudo_enviado_em || '',
             emitido_em: lote.laudo_emitido_em || '',
             hash: lote.laudo_hash || '',
-            status: lote.laudo_status || 'emitido'
+            status: lote.laudo_status || 'emitido',
           }));
         setLaudos(laudosFromLotes);
       }
@@ -93,19 +93,19 @@ export default function LotesPage() {
   useEffect(() => {
     loadLotes();
   }, [loadLotes]);
-  
+
   // Polling: atualizar a cada 30 segundos para verificar mudanças de status
   useEffect(() => {
     // Limpar intervalo anterior se existir
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
     }
-    
+
     // Configurar novo intervalo de polling
     pollingIntervalRef.current = setInterval(() => {
       loadLotes();
     }, 30000); // 30 segundos
-    
+
     // Cleanup: limpar intervalo quando componente desmontar
     return () => {
       if (pollingIntervalRef.current) {
@@ -114,9 +114,12 @@ export default function LotesPage() {
     };
   }, [loadLotes]);
 
-  const handleLoteClick = useCallback((loteId: number) => {
-    router.push(`/entidade/lote/${loteId}`);
-  }, [router]);
+  const handleLoteClick = useCallback(
+    (loteId: number) => {
+      router.push(`/entidade/lote/${loteId}`);
+    },
+    [router]
+  );
 
   const handleDownloadLaudo = useCallback(async (laudo: Laudo) => {
     if (!laudo.id) {
@@ -128,9 +131,7 @@ export default function LotesPage() {
     toast.loading('Baixando laudo...', { id: `laudo-${laudo.id}` });
 
     try {
-      const response = await fetch(
-        `/api/entidade/laudos/${laudo.id}/download`
-      );
+      const response = await fetch(`/api/entidade/laudos/${laudo.id}/download`);
 
       if (!response.ok) {
         const errorData = await response.json();
