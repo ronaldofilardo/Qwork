@@ -57,29 +57,17 @@ $$ LANGUAGE plpgsql;
 COMMENT ON FUNCTION fn_recalcular_status_lote_on_avaliacao_update() IS 
 'Recalcula status do lote quando avaliação muda. Marca lote como concluído quando todas avaliações liberadas estão finalizadas (concluídas ou inativadas). Emissão de laudo é manual.';
 
--- Recriar trigger corrigido (sem passar parâmetro)
+-- Recriar trigger corrigido (chamada direta, sem wrapper)
 DROP TRIGGER IF EXISTS trg_recalc_lote_on_avaliacao_change ON avaliacoes;
 
-CREATE OR REPLACE FUNCTION trg_recalc_lote_on_avaliacao_change()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- A função fn_recalcular_status_lote_on_avaliacao_update NÃO aceita parâmetros
-  -- Ela é um trigger function que usa NEW/OLD automaticamente
-  IF TG_OP = 'DELETE' THEN
-    RETURN fn_recalcular_status_lote_on_avaliacao_update();
-  ELSE
-    RETURN fn_recalcular_status_lote_on_avaliacao_update();
-  END IF;
-END;
-$$ LANGUAGE plpgsql;
-
+-- Trigger chama diretamente a função de trigger (sem wrapper!)
 CREATE TRIGGER trg_recalc_lote_on_avaliacao_change
   AFTER INSERT OR UPDATE OR DELETE ON avaliacoes
   FOR EACH ROW
-  EXECUTE FUNCTION trg_recalc_lote_on_avaliacao_change();
+  EXECUTE FUNCTION fn_recalcular_status_lote_on_avaliacao_update();
 
-COMMENT ON FUNCTION trg_recalc_lote_on_avaliacao_change IS 
-  'Wrapper que chama fn_recalcular_status_lote_on_avaliacao_update corretamente';
+COMMENT ON TRIGGER trg_recalc_lote_on_avaliacao_change ON avaliacoes IS 
+  'Recalcula automaticamente status do lote quando avaliação muda';
 
 -- Validação
 DO $$
