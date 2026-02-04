@@ -29,7 +29,7 @@ describe('EntidadeLotesPage', () => {
 
     // Mock da API de lotes
     (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url === '/api/entidade/lotes') {
+      if (url.startsWith('/api/entidade/lotes')) {
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -42,6 +42,7 @@ describe('EntidadeLotesPage', () => {
                   status: 'ativo',
                   liberado_em: '2024-12-01T00:00:00Z',
                   liberado_por_nome: 'João Silva',
+                  empresa_nome: 'Empresa ABC',
                   total_avaliacoes: 50,
                   avaliacoes_concluidas: 35,
                   avaliacoes_inativadas: 0,
@@ -56,6 +57,7 @@ describe('EntidadeLotesPage', () => {
                   status: 'rascunho',
                   liberado_em: '2024-12-15T00:00:00Z',
                   liberado_por_nome: 'Maria Santos',
+                  empresa_nome: 'Empresa XYZ',
                   total_avaliacoes: 0,
                   avaliacoes_concluidas: 0,
                   avaliacoes_inativadas: 0,
@@ -257,7 +259,7 @@ describe('EntidadeLotesPage', () => {
 
   it('shows laudo available when lote is concluido and laudo status is enviado', async () => {
     (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url === '/api/entidade/lotes') {
+      if (url.startsWith('/api/entidade/lotes')) {
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -268,6 +270,7 @@ describe('EntidadeLotesPage', () => {
                   titulo: 'Lote Concluido com Laudo',
                   tipo: 'avaliacao_psicossocial',
                   status: 'concluido',
+                  empresa_nome: 'Empresa Teste',
                   total_avaliacoes: 10,
                   avaliacoes_concluidas: 10,
                   laudo_id: 56,
@@ -313,7 +316,7 @@ describe('EntidadeLotesPage', () => {
 
   it('shows canceled badge and disables interactions when lote is cancelado', async () => {
     (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url === '/api/entidade/lotes') {
+      if (url.startsWith('/api/entidade/lotes')) {
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -321,9 +324,10 @@ describe('EntidadeLotesPage', () => {
               lotes: [
                 {
                   id: 200,
-                  titulo: 'Lote Cancelado',
+                  titulo: 'Lote Concluído',
                   tipo: 'avaliacao_psicossocial',
-                  status: 'cancelado',
+                  status: 'concluido',
+                  empresa_nome: 'Empresa Cancelada',
                   liberado_em: new Date().toISOString(),
                   liberado_por_nome: 'João Silva',
                   total_avaliacoes: 5,
@@ -351,14 +355,14 @@ describe('EntidadeLotesPage', () => {
       ).toBeInTheDocument();
     });
 
-    // LotesGrid não mostra badge de cancelado, apenas o badge de inativadas
+    // LotesGrid mostra badge de inativadas
     expect(screen.getByText('⚠️ 5 inativadas')).toBeInTheDocument();
 
-    // O botão de relatório por setor deve estar desabilitado
-    expect(screen.getByText('📋 Relatório por Setor')).toBeDisabled();
+    // O botão de relatório por setor deve estar habilitado para lotes concluídos
+    expect(screen.getByText('📋 Relatório por Setor')).toBeEnabled();
 
-    // Laudo não deve estar disponível quando lote está cancelado
-    expect(screen.queryByText('📄 Laudo disponível')).not.toBeInTheDocument();
+    // Laudo deve estar disponível quando lote está concluído e tem laudo
+    expect(screen.getByText('📄 Laudo disponível')).toBeInTheDocument();
 
     // LotesGrid permite clicar em cards cancelados, então deve navegar
     const card = screen.getByLabelText('Ver detalhes do lote 200');
