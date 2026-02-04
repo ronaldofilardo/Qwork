@@ -185,6 +185,15 @@ export default function DetalhesLotePage() {
 
   useEffect(() => {
     loadLoteData();
+
+    // Polling: atualizar dados a cada 30 segundos
+    const intervalId = setInterval(() => {
+      loadLoteData();
+    }, 30000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
   }, [loadLoteData]);
 
   // Debounce para busca (300ms)
