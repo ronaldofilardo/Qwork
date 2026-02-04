@@ -114,7 +114,10 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
         } as Response;
       }
 
-      if (urlString === '/api/rh/lotes?empresa_id=1&limit=5') {
+      if (
+        urlString === '/api/rh/lotes?empresa_id=1&limit=5' ||
+        urlString === '/api/rh/lotes?empresa_id=1'
+      ) {
         return {
           ok: true,
           json: async () =>
