@@ -73,6 +73,7 @@ interface Funcionario {
     data_conclusao: string | null;
     motivo_inativacao?: string | null;
     inativada_em?: string | null;
+    total_respostas?: number;
   };
   grupos?: {
     g1?: number;
@@ -151,37 +152,55 @@ export default function DetalhesLotePage() {
     g10: [],
   });
 
-  const loadLoteData = useCallback(async () => {
-    try {
-      setLoading(true);
+  const loadLoteData = useCallback(
+    async (forceRefresh = false) => {
+      try {
+        setLoading(true);
 
-      if (!loteId) {
-        toast.error('ID do lote inválido');
+        if (!loteId) {
+          toast.error('ID do lote inválido');
+          router.push('/entidade/lotes');
+          return;
+        }
+
+        // Cache busting: adicionar timestamp à URL para evitar cache
+        const timestamp = new Date().getTime();
+        const response = await fetch(
+          `/api/entidade/lote/${loteId}?_t=${timestamp}`,
+          {
+            cache: 'no-store',
+            headers: {
+              'Cache-Control': 'no-cache',
+              Pragma: 'no-cache',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          toast.error(errorData.error || 'Erro ao carregar dados do lote');
+          router.push('/entidade/lotes');
+          return;
+        }
+
+        const data = await response.json();
+        setLote(data.lote);
+        setEstatisticas(data.estatisticas);
+        setFuncionarios(data.funcionarios || []);
+
+        if (forceRefresh) {
+          toast.success('Dados atualizados!');
+        }
+      } catch (error) {
+        console.error('Erro ao carregar lote:', error);
+        toast.error('Erro ao conectar com o servidor');
         router.push('/entidade/lotes');
-        return;
+      } finally {
+        setLoading(false);
       }
-
-      const response = await fetch(`/api/entidade/lote/${loteId}`);
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'Erro ao carregar dados do lote');
-        router.push('/entidade/lotes');
-        return;
-      }
-
-      const data = await response.json();
-      setLote(data.lote);
-      setEstatisticas(data.estatisticas);
-      setFuncionarios(data.funcionarios || []);
-    } catch (error) {
-      console.error('Erro ao carregar lote:', error);
-      toast.error('Erro ao conectar com o servidor');
-      router.push('/entidade/lotes');
-    } finally {
-      setLoading(false);
-    }
-  }, [loteId, router]);
+    },
+    [loteId, router]
+  );
 
   useEffect(() => {
     loadLoteData();
@@ -702,6 +721,27 @@ export default function DetalhesLotePage() {
 
             <div className="flex gap-3">
               <button
+                onClick={() => loadLoteData(true)}
+                disabled={loading}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Atualizar dados"
+              >
+                <svg
+                  className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+                Atualizar
+              </button>
+              <button
                 onClick={handleDownloadReport}
                 disabled={lote.status === 'criado'}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1185,25 +1225,38 @@ export default function DetalhesLotePage() {
                             : '-'}
                       </td>
                       <td className="px-2 py-1 text-sm">
-                        <span
-                          className={`inline-flex px-1 py-0.5 text-[11px] font-semibold rounded-full ${
-                            func.avaliacao.status === 'concluida'
-                              ? 'bg-green-100 text-green-800'
+                        <div className="flex flex-col gap-0.5">
+                          <span
+                            className={`inline-flex px-1 py-0.5 text-[11px] font-semibold rounded-full ${
+                              func.avaliacao.status === 'concluida'
+                                ? 'bg-green-100 text-green-800'
+                                : func.avaliacao.status === 'em_andamento'
+                                  ? 'bg-blue-100 text-blue-800'
+                                  : func.avaliacao.status === 'inativada'
+                                    ? 'bg-red-100 text-red-800'
+                                    : func.avaliacao.status === 'iniciada'
+                                      ? 'bg-blue-50 text-blue-700'
+                                      : 'bg-yellow-100 text-yellow-800'
+                            }`}
+                          >
+                            {func.avaliacao.status === 'concluida'
+                              ? 'Concluída'
                               : func.avaliacao.status === 'em_andamento'
-                                ? 'bg-blue-100 text-blue-800'
+                                ? 'Em Andamento'
                                 : func.avaliacao.status === 'inativada'
-                                  ? 'bg-red-100 text-red-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                          }`}
-                        >
-                          {func.avaliacao.status === 'concluida'
-                            ? 'Concluída'
-                            : func.avaliacao.status === 'em_andamento'
-                              ? 'Em Andamento'
-                              : func.avaliacao.status === 'inativada'
-                                ? 'Inativada'
-                                : 'Pendente'}
-                        </span>
+                                  ? 'Inativada'
+                                  : func.avaliacao.status === 'iniciada'
+                                    ? 'Iniciada'
+                                    : 'Pendente'}
+                          </span>
+                          {func.avaliacao.status !== 'concluida' &&
+                            func.avaliacao.status !== 'inativada' &&
+                            func.avaliacao.total_respostas !== undefined && (
+                              <span className="text-[10px] text-gray-600">
+                                {func.avaliacao.total_respostas}/37 respostas
+                              </span>
+                            )}
+                        </div>
                       </td>
                       <td className="px-2 py-1 text-sm text-center">
                         <div className="flex gap-1 justify-center">

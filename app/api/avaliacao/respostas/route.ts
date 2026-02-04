@@ -49,41 +49,60 @@ export async function POST(request: Request) {
       await query(
         `INSERT INTO respostas (avaliacao_id, item, valor, grupo)
          VALUES ($1, $2, $3, $4)
-         ON CONFLICT (avaliacao_id, grupo, item) DO UPDATE SET valor = EXCLUDED.valor`,
+         ON CONFLICT (avaliacao_id, grupo, item) DO UPDATE SET valor = EXCLUDED.valor, criado_em = NOW()`,
         [avaliacaoId, resposta.item, resposta.valor, resposta.grupo]
       );
     }
 
-    // Se houver respostas e a avaliação ainda estiver 'iniciada', atualizar para 'em_andamento'
+    // ✅ ATUALIZAR STATUS PARA 'EM_ANDAMENTO' SE AINDA ESTIVER 'INICIADA'
+    // Fazer isso ANTES de verificar auto-conclusão para garantir que o status seja atualizado
     try {
       const statusRes = await query(
         `SELECT status FROM avaliacoes WHERE id = $1`,
         [avaliacaoId]
       );
       const currentStatus = statusRes.rows[0]?.status;
+
       if (currentStatus === 'iniciada') {
-        // Atualizar status dentro de contexto transacional com segurança
-        await transactionWithContext(async (queryTx) => {
-          await queryTx(
-            `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1`,
+        // Atualizar status diretamente (sem transactionWithContext que pode causar problemas com RLS)
+        try {
+          await query(
+            `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1 AND status = 'iniciada'`,
             [avaliacaoId]
           );
-        });
-        console.log(
-          `[RESPOSTAS] ✅ Atualizado status da avaliação ${avaliacaoId} para 'em_andamento'`
-        );
+          console.log(
+            `[RESPOSTAS] ✅ Atualizado status da avaliação ${avaliacaoId} para 'em_andamento'`
+          );
+        } catch (updateErr: any) {
+          // Se falhar, tentar com contexto de segurança
+          console.warn(
+            `[RESPOSTAS] ⚠️ Primeira tentativa falhou, usando transactionWithContext...`
+          );
+          await transactionWithContext(async (queryTx) => {
+            await queryTx(
+              `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1 AND status = 'iniciada'`,
+              [avaliacaoId]
+            );
+          });
+          console.log(
+            `[RESPOSTAS] ✅ Status atualizado com transactionWithContext`
+          );
+        }
       }
     } catch (statusErr: any) {
-      // Log detalhado do erro para diagnóstico
+      // Log detalhado do erro para diagnóstico, mas NÃO bloquear o salvamento das respostas
       console.error(
         '[RESPOSTAS] ❌ Erro ao atualizar status para em_andamento:',
         {
           message: statusErr?.message,
           code: statusErr?.code,
           detail: statusErr?.detail,
+          hint: statusErr?.hint,
           avaliacaoId,
+          stack: statusErr?.stack,
         }
       );
+      // Continuar execução - respostas já foram salvas
     }
 
     // ✅ VERIFICAR SE COMPLETOU 37 RESPOSTAS (AUTO-CONCLUSÃO)

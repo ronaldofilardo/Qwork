@@ -56,7 +56,8 @@ export default function LotesPage() {
 
   const loadLotes = useCallback(async () => {
     try {
-      const lotesRes = await fetch('/api/entidade/lotes', {
+      const timestamp = new Date().getTime();
+      const lotesRes = await fetch(`/api/entidade/lotes?_t=${timestamp}`, {
         cache: 'no-store',
         headers: {
           'Cache-Control': 'no-cache',

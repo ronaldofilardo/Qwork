@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(
   request: Request,
@@ -87,7 +88,7 @@ export async function GET(
 
     const estatisticas = statsResult.rows[0];
 
-    // Buscar funcionários e suas avaliações
+    // Buscar funcionários e suas avaliações (incluindo contagem de respostas)
     const funcionariosResult = await query(
       `
       SELECT
@@ -101,7 +102,8 @@ export async function GET(
         a.inicio as avaliacao_data_inicio,
         a.envio as avaliacao_data_conclusao,
         a.motivo_inativacao,
-        a.inativada_em
+        a.inativada_em,
+        (SELECT COUNT(DISTINCT (r.grupo, r.item)) FROM respostas r WHERE r.avaliacao_id = a.id) as total_respostas
       FROM funcionarios f
       JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
       WHERE a.lote_id = $1 AND f.contratante_id = $2
@@ -146,13 +148,14 @@ export async function GET(
             data_conclusao: row.avaliacao_data_conclusao,
             motivo_inativacao: row.motivo_inativacao,
             inativada_em: row.inativada_em,
+            total_respostas: parseInt(row.total_respostas) || 0,
           },
           grupos: mediasGrupos,
         };
       })
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       lote,
       estatisticas: {
         total_funcionarios: parseInt(estatisticas.total_funcionarios),
@@ -161,6 +164,16 @@ export async function GET(
       },
       funcionarios: funcionariosComGrupos,
     });
+
+    // Forçar sem cache
+    response.headers.set(
+      'Cache-Control',
+      'no-store, no-cache, must-revalidate, max-age=0'
+    );
+    response.headers.set('Pragma', 'no-cache');
+    response.headers.set('Expires', '0');
+
+    return response;
   } catch (error) {
     console.error('Erro ao buscar detalhes do lote:', error);
     return NextResponse.json(
