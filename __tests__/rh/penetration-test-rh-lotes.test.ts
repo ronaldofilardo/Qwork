@@ -67,7 +67,7 @@ describe('Penetration Test: Acesso não autorizado a /api/rh/lotes', () => {
     });
 
     mockQueryWithContext.mockResolvedValue({
-      rows: [{ id: 1, codigo: 'LOTE001', clinica_id: 1, status: 'ativo' }],
+      rows: [{ id: 1, clinica_id: 1, status: 'ativo' }],
       rowCount: 1,
     });
 

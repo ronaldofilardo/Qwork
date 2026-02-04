@@ -7,20 +7,21 @@ export async function GET() {
   try {
     const session = await requireAuth();
 
-    // Buscar todas as avaliações do usuário (excluindo inativadas)
+    // Buscar todas as avaliações do usuário (excluindo inativadas) com contagem de respostas
     const avaliacoesResult = await query(
       `SELECT 
-        id, 
-        status, 
-        inicio, 
-        envio, 
-        grupo_atual, 
-        criado_em,
-        lote_id,
-        atualizado_em
-       FROM avaliacoes
-       WHERE funcionario_cpf = $1 AND status != 'inativada'
-       ORDER BY criado_em DESC`,
+        a.id, 
+        a.status, 
+        a.inicio, 
+        a.envio, 
+        a.grupo_atual, 
+        a.criado_em,
+        a.lote_id,
+        a.atualizado_em,
+        (SELECT COUNT(*) FROM respostas r WHERE r.avaliacao_id = a.id) as total_respostas
+       FROM avaliacoes a
+       WHERE a.funcionario_cpf = $1 AND a.status != 'inativada'
+       ORDER BY a.criado_em DESC`,
       [session.cpf]
     );
 

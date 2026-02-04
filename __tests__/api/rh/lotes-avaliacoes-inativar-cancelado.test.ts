@@ -8,16 +8,16 @@ jest.mock('@/lib/session', () => ({
   requireRHWithEmpresaAccess: jest.fn(),
 }));
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));
-jest.mock('@/lib/lotes', () => ({ recalcularStatusLotePorId: jest.fn() }));
+jest.mock('@/lib/db-gestor', () => ({ queryAsGestorRH: jest.fn() }));
 
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 const mockQuery = query as jest.MockedFunction<typeof query>;
-let mockRecalc: jest.MockedFunction<any>;
+const mockQueryAsGestorRH = (require('@/lib/db-gestor') as any)
+  .queryAsGestorRH as jest.MockedFunction<any>;
 
 describe('POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar - cancelado', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockRecalc = (require('@/lib/lotes') as any).recalcularStatusLotePorId;
   });
 
   it('cancela lote quando todas as avaliacoes ficam inativadas', async () => {
@@ -27,9 +27,12 @@ describe('POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar - cancelado'
       perfil: 'rh',
     } as any);
 
-    // avaliacao existente
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // lote check in request (unused in current impl, but tests expect)
+      .mockResolvedValueOnce({
+        rows: [{ id: 26, empresa_id: 1, status: 'ativo', emitido_em: null }],
+        rowCount: 1,
+      }) // lote check
+      .mockResolvedValueOnce({ rows: [{ count: '0' }], rowCount: 1 }) // emissão não solicitada
       .mockResolvedValueOnce({
         rows: [
           {
@@ -37,24 +40,26 @@ describe('POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar - cancelado'
             status: 'em_andamento',
             funcionario_cpf: '34369034345',
             funcionario_nome: 'Davi Rezende',
-            lote_id: 26,
-            lote_codigo: '006-050126',
-            lote_ordem: 50,
           },
         ],
         rowCount: 1,
-      }) // busca avaliacao
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // update da avaliacao
+      }) // avaliação check
       .mockResolvedValueOnce({
-        rows: [{ ativas: '0', concluidas: '0', iniciadas: '0' }],
+        rows: [
+          {
+            total_avaliacoes: '3',
+            ativas: '0',
+            concluidas: '0',
+            inativadas: '3',
+            liberadas: '3',
+          },
+        ],
         rowCount: 1,
-      }) // stats: ativas 0
-      .mockResolvedValueOnce({ rows: [{ status: 'concluido' }], rowCount: 1 }); // status atual
+      }) // stats para recálculo
+      .mockResolvedValueOnce({ rows: [{ status: 'ativo' }], rowCount: 1 }) // status atual
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE status do lote
 
-    mockRecalc.mockResolvedValue({
-      novoStatus: 'cancelado',
-      loteFinalizado: true,
-    } as any);
+    mockQueryAsGestorRH.mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE avaliação
 
     const request = new NextRequest(
       'http://localhost:3000/api/rh/lotes/26/avaliacoes/55/inativar',
@@ -73,8 +78,5 @@ describe('POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar - cancelado'
     expect(data.success).toBe(true);
     expect(data.message).toMatch(/cancelado automaticamente/);
     expect(data.lote.novoStatus).toBe('cancelado');
-
-    // verificar que a função de recálculo foi chamada
-    expect(mockRecalc).toHaveBeenCalledWith(26);
   });
 });

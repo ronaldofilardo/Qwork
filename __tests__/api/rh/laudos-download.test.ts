@@ -57,7 +57,6 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
         {
           id: 10,
           lote_id: 18,
-          codigo: '002-040126',
           titulo: 'Teste',
           clinica_id: 5,
         },
@@ -93,7 +92,6 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
         {
           id: 10,
           lote_id: 18,
-          codigo: '002-040126',
           titulo: 'Teste',
           clinica_id: 5,
           arquivo_pdf: Buffer.from('pdf-bytes'),

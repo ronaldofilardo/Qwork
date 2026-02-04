@@ -19,7 +19,7 @@ export interface RelatorioData {
   empresa: string;
   lote?: {
     id: string | number;
-    codigo: string;
+    // codigo: removido
     titulo: string;
   };
   data?: string;
@@ -58,7 +58,7 @@ export interface DadosFuncionario {
   matricula?: string;
   lote?: {
     id: string | number;
-    codigo: string;
+    // codigo: removido
     titulo: string;
   };
 }
@@ -514,6 +514,11 @@ export function gerarRelatorioLotePDF(dados: RelatorioData): void {
   }
 
   // Download
-  const nomeArquivo = `relatorio-lote-${dados.lote?.codigo || 'geral'}.pdf`;
+  const loteId = dados.lote?.id;
+  const codigoLote =
+    typeof loteId === 'number'
+      ? `LOTE-${String(loteId).padStart(3, '0')}`
+      : `LOTE-${String(loteId ?? 'geral')}`;
+  const nomeArquivo = `relatorio-lote-${codigoLote}.pdf`;
   doc.save(nomeArquivo);
 }

@@ -37,7 +37,6 @@ describe('EntidadeLotesPage', () => {
               lotes: [
                 {
                   id: 1,
-                  codigo: 'LOTE-001',
                   titulo: 'Lote Dezembro 2024',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo',
@@ -47,7 +46,6 @@ describe('EntidadeLotesPage', () => {
                 },
                 {
                   id: 2,
-                  codigo: 'LOTE-002',
                   titulo: 'Lote Janeiro 2025',
                   tipo: 'avaliacao_psicossocial',
                   status: 'rascunho',
@@ -210,7 +208,6 @@ describe('EntidadeLotesPage', () => {
               lotes: [
                 {
                   id: 100,
-                  codigo: 'LOTE-100',
                   titulo: 'Lote Com Laudo Indevido',
                   tipo: 'avaliacao_psicossocial',
                   status: 'ativo', // not concluido/ finalizado
@@ -253,7 +250,6 @@ describe('EntidadeLotesPage', () => {
               lotes: [
                 {
                   id: 101,
-                  codigo: 'LOTE-101',
                   titulo: 'Lote Concluido com Laudo',
                   tipo: 'avaliacao_psicossocial',
                   status: 'concluido',
@@ -310,7 +306,6 @@ describe('EntidadeLotesPage', () => {
               lotes: [
                 {
                   id: 200,
-                  codigo: 'LOTE-200',
                   titulo: 'Lote Cancelado',
                   tipo: 'avaliacao_psicossocial',
                   status: 'cancelado',
@@ -347,7 +342,7 @@ describe('EntidadeLotesPage', () => {
     ).not.toBeInTheDocument();
 
     // Clicar no card não deve navegar para detalhes
-    const card = screen.getByLabelText('Ver detalhes do lote LOTE-200');
+    const card = screen.getByLabelText('Ver detalhes do lote 200');
     fireEvent.click(card);
     expect(mockRouter.push).not.toHaveBeenCalled();
   });

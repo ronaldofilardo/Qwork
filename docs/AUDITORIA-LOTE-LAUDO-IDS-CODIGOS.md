@@ -159,7 +159,7 @@ BEGIN
     data_atual := TO_CHAR(CURRENT_DATE, 'DDMMYY');
 
     -- Buscar próximo sequencial para a data
-    SELECT COALESCE(MAX(CAST(SPLIT_PART(la.codigo, '-', 1) AS INTEGER)), 0) + 1
+    SELECT COALESCE(MAX(CAST(SPLIT_PART( '-', 1) AS INTEGER)), 0) + 1
     INTO sequencial
     FROM lotes_avaliacao la
     WHERE la.codigo LIKE '%-' || data_atual;
@@ -264,16 +264,16 @@ CREATE POLICY admin_all_lotes ON lotes_avaliacao
 
 ```typescript
 // __tests__/rh/dashboard-lotes-laudos.test.tsx
-codigo: 'LOTE001', codigo: 'LOTE002'
+codigo: 'LOTE001'
 
 // __tests__/visual-regression/component-specific.test.tsx
-loteCodigo="LOTE-001"
+
 
 // __tests__/integration/inativar-contratante-integration.test.ts
 const codigo = await query(`SELECT gerar_codigo_lote() as codigo`);
 
 // __tests__/security/audit-logs.test.ts
-const dadosAnteriores = { id: 123, codigo: 'LOTE-001' };
+const dadosAnteriores = { id: 123 };
 ```
 
 **Impacto:** Testes validam comportamento de `codigo`, dificultando remoção.

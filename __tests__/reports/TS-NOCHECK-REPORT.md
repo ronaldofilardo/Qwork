@@ -243,7 +243,6 @@ global.fetch = jest.fn();
 
 const mockLote = {
   id: 1,
-  codigo: 'LOTE001',
   // ... sem tipo
 };
 

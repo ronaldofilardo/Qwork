@@ -63,7 +63,7 @@ CREATE VIEW v_auditoria_emissoes AS
 SELECT
     l.id AS laudo_id,
     l.lote_id,
-    la.codigo AS lote_codigo,
+    
 
     -- Solicitante
     fe.solicitado_por AS solicitante_cpf,
@@ -222,7 +222,7 @@ WHERE cpf = '87545772920';
 ```sql
 SELECT
     fe.lote_id,
-    la.codigo,
+    
     fe.solicitado_por,
     fe.tipo_solicitante,
     fe.solicitado_em

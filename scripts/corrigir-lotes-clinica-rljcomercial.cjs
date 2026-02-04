@@ -28,8 +28,6 @@ async function corrigirLotesClinica() {
     const lotesRLJResult = await client.query(`
       SELECT 
         la.id,
-        la.codigo,
-        la.titulo,
         la.contratante_id,
         la.clinica_id,
         la.empresa_id,
@@ -51,8 +49,7 @@ async function corrigirLotesClinica() {
     );
 
     lotesRLJResult.rows.forEach((lote) => {
-      console.log(`  Lote ${lote.codigo} (ID: ${lote.id})`);
-      console.log(`    Título: ${lote.titulo}`);
+      console.log(`  Lote ID: ${lote.id}`);
       console.log(`    Status: ${lote.status}`);
       console.log(
         `    Contratante: ${lote.contratante_nome} (tipo: ${lote.contratante_tipo})`

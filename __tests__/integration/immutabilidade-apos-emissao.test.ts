@@ -99,8 +99,8 @@ describe('Imutabilidade após laudo emitido', () => {
     `);
 
     const lote = await query(
-      `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,$3,'Lote Imut','ativo',$4,'completo',1) RETURNING id`,
-      [`IMUT-${Date.now()}`, clinicaId, empresaId, funcionarioCpf]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,'ativo',$3,'completo',1) RETURNING id`,
+      [clinicaId, empresaId, funcionarioCpf]
     );
     loteId = lote.rows[0].id;
 

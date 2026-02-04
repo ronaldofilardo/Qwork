@@ -1,22 +1,34 @@
-/**
- * API para gerar PDF de relatório de lote (todas avaliações)
- * Logo na primeira página + contador em todas as páginas
- */
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { requireClinica } from '@/lib/session';
+import jsPDF from 'jspdf';
+import { applyPlugin } from 'jspdf-autotable';
+
+// Garantir que o plugin AutoTable seja aplicado ao jsPDF (servidor/SSG/SSR)
+try {
+  applyPlugin(jsPDF);
+} catch (err) {
+  console.warn(
+    'Aviso: não foi possível aplicar jspdf-autotable ao jsPDF:',
+    err
+  );
+}
 
 export const dynamic = 'force-dynamic';
-import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-// requireRole not needed here; use requireClinica when mapping clinica
-// import { requireRole } from '@/lib/session';
-import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
-import { gerarHTMLRelatorioLote } from '@/lib/templates/relatorio-lote-html';
-import {
-  getPDFHeaderTemplate,
-  getPDFFooterTemplate,
-} from '@/lib/pdf/puppeteer-templates';
-export async function GET(request: NextRequest) {
+
+// Extend jsPDF type to include autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+    lastAutoTable?: {
+      finalY: number;
+    };
+  }
+}
+
+export async function GET(request: Request) {
   try {
-    const searchParams = request.nextUrl.searchParams;
+    const searchParams = new URL(request.url).searchParams;
     const loteId = searchParams.get('lote_id');
 
     if (!loteId) {
@@ -26,22 +38,24 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // CORREÇÃO: Usar requireClinica para garantir mapeamento de clinica_id
-    const { requireClinica } = await import('@/lib/session');
+    // Verificar sessão e perfil
     const session = await requireClinica();
     const clinicaId = session.clinica_id;
 
     // Buscar informações do lote
     const loteResult = await query(
       `
-      SELECT 
-        la.codigo,
-        la.titulo,
-        ec.nome as empresa_nome
+      SELECT DISTINCT
+        la.id,
+        la.tipo,
+        la.status,
+        la.criado_em,
+        la.liberado_em,
+        la.hash_pdf
       FROM lotes_avaliacao la
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
-      WHERE la.id = $1
-        AND ec.clinica_id = $2
+      WHERE la.id = $1 AND ec.clinica_id = $2
+      LIMIT 1
     `,
       [loteId, clinicaId]
     );
@@ -53,154 +67,160 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const lote = loteResult.rows[0] as Record<string, any>;
+    const lote = loteResult.rows[0];
 
-    // Buscar todas as avaliações concluídas do lote
-    const avaliacoesResult = await query(
+    // Buscar laudo (se existir) para obter timestamp de emissão e hash do arquivo
+    const laudoResult = await query(
       `
-      SELECT 
-        a.id,
-        a.envio,
-        f.cpf,
-        f.nome,
-        f.setor,
-        f.funcao,
-        f.matricula
-      FROM avaliacoes a
-      JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1
-        AND a.status = 'concluida'
-        AND f.clinica_id = $2
-      ORDER BY f.nome
-    `,
-      [loteId, clinicaId]
+      SELECT id, emitido_em
+      FROM laudos
+      WHERE lote_id = $1 AND status IN ('enviado', 'emitido')
+      ORDER BY emitido_em DESC
+      LIMIT 1
+      `,
+      [loteId]
     );
 
-    if (avaliacoesResult.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'Nenhuma avaliação concluída encontrada neste lote' },
-        { status: 404 }
-      );
+    const laudo = laudoResult.rows[0] || null;
+    const emitidoEm = laudo ? laudo.emitido_em : null;
+    let laudoHash: string | null = null;
+
+    // Tentar ler metadados do arquivo salvo (storage/laudos/laudo-<id>.json)
+    if (laudo && laudo.id) {
+      try {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const metaPath = path.join(
+          process.cwd(),
+          'storage',
+          'laudos',
+          `laudo-${laudo.id}.json`
+        );
+        const metaContent = await fs.readFile(metaPath, 'utf8');
+        const meta = JSON.parse(metaContent);
+        laudoHash = meta.hash || null;
+      } catch (err) {
+        console.error('Aviso: não foi possível ler metadados do laudo:', err);
+      }
     }
 
-    // Para cada avaliação, buscar médias dos grupos
-    const funcionarios = [];
+    // Buscar funcionários que tinham avaliação concluída ATÉ a emissão (ou até agora se sem laudo)
+    const cutoff = emitidoEm
+      ? new Date(emitidoEm).toISOString()
+      : new Date().toISOString();
 
-    for (const avaliacao of avaliacoesResult.rows) {
-      // Buscar médias por grupo
-      const gruposResult = await query(
-        `
-        SELECT 
-          r.grupo,
-          AVG(r.valor) as media
-        FROM respostas r
-        WHERE r.avaliacao_id = $1
-        GROUP BY r.grupo
-        ORDER BY r.grupo
-      `,
-        [avaliacao.id]
-      );
+    const funcionariosResult = await query(
+      `
+      SELECT
+        f.nome,
+        f.cpf,
+        f.setor,
+        f.funcao,
+        f.nivel_cargo,
+        a.status as avaliacao_status,
+        a.envio as data_conclusao
+      FROM funcionarios f
+      JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
+      JOIN empresas_clientes ec ON f.empresa_id = ec.id
+      WHERE a.lote_id = $1 AND ec.clinica_id = $2
+        AND a.status = 'concluida'
+        AND a.envio <= $3
+      ORDER BY f.nome ASC
+    `,
+      [loteId, clinicaId, cutoff]
+    );
 
-      const grupos = gruposResult.rows.map((grupo: any) => {
-        const media = parseFloat(grupo.media);
-        const mediaStr = media.toFixed(1);
+    // Gerar PDF
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.width;
 
-        // Determinar classificação
-        let classificacao: 'verde' | 'amarelo' | 'vermelho';
+    // Título
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Relatório de Ciclo de Coletas Avaliativas', pageWidth / 2, 20, {
+      align: 'center',
+    });
 
-        if (grupo.grupo_tipo === 'positiva') {
-          if (media > 66) classificacao = 'verde';
-          else if (media >= 33) classificacao = 'amarelo';
-          else classificacao = 'vermelho';
-        } else {
-          if (media < 33) classificacao = 'verde';
-          else if (media <= 66) classificacao = 'amarelo';
-          else classificacao = 'vermelho';
-        }
+    // Informações do Lote
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Código: ${lote.id}`, 14, 35);
+    doc.text(`Status: ${lote.status}`, 14, 56);
 
-        return {
-          id: grupo.grupo,
-          titulo: grupo.grupo_titulo,
-          dominio: grupo.grupo_dominio,
-          media: mediaStr,
-          classificacao,
-        };
-      });
+    // Emitido e hash do laudo ou do lote (priorizar hash do lote se existir)
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    const emitidoTexto = emitidoEm
+      ? new Date(emitidoEm).toLocaleString('pt-BR')
+      : '—';
+    doc.text(`Emitido em: ${emitidoTexto}`, 14, 63);
 
-      funcionarios.push({
-        nome: avaliacao.nome,
-        cpf: avaliacao.cpf,
-        perfil: 'funcionario',
-        setor: avaliacao.setor,
-        funcao: avaliacao.funcao,
-        matricula: avaliacao.matricula,
-        envio: avaliacao.envio,
-        grupos,
-      });
-    }
+    // Priorizar o hash armazenado no lote (hash_pdf), se não existir usar metadados do laudo
+    const pdfHash = lote.hash_pdf || laudoHash;
+    doc.text(`Hash: ${pdfHash || '—'}`, 14, 70);
 
-    // Preparar dados para o template
-    const dadosRelatorio = {
-      lote: {
-        id: lote.id,
-        titulo: lote.titulo,
-      },
-      empresa: lote.empresa_nome,
-      totalFuncionarios: funcionarios.length,
-      funcionarios,
-    };
+    // Tabela de Funcionários (somente os que constam no laudo)
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Funcionários', 14, 86);
 
-    // Gerar HTML
-    const html = gerarHTMLRelatorioLote(dadosRelatorio);
+    const tableData = funcionariosResult.rows.map((row) => [
+      row.nome,
+      row.cpf,
+      row.setor,
+      row.funcao,
+      row.nivel_cargo || '-',
+      row.avaliacao_status === 'concluida' ? 'Concluída' : 'Pendente',
+      row.data_conclusao
+        ? new Date(row.data_conclusao).toLocaleDateString('pt-BR')
+        : '-',
+    ]);
 
-    // Gerar PDF com Puppeteer (usa @sparticuz/chromium em serverless)
-    const puppeteer = await getPuppeteerInstance();
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
+    doc.autoTable({
+      startY: 91,
+      head: [
+        ['Nome', 'CPF', 'Setor', 'Função', 'Nível', 'Status', 'Conclusão'],
       ],
+      body: tableData,
+      styles: { fontSize: 8, cellPadding: 2 },
+      headStyles: { fillColor: [255, 107, 0], textColor: 255 },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      margin: { top: 91 },
     });
 
-    const page = await (browser as any).newPage();
-    await page.setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdfBuffer = await page.pdf({
-      format: 'A4',
-      printBackground: true,
-      displayHeaderFooter: true,
-      headerTemplate: getPDFHeaderTemplate(
-        `Lote ${lote.id} - ${lote.empresa_nome}`
-      ),
-      footerTemplate: getPDFFooterTemplate(),
-      margin: {
-        top: '50mm',
-        right: '15mm',
-        bottom: '25mm',
-        left: '15mm',
-      },
-    });
-
-    await browser.close();
+    // Rodapé
+    const pageCount = (doc as any).internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(
+        `Página ${i} de ${pageCount}`,
+        pageWidth / 2,
+        doc.internal.pageSize.height - 10,
+        { align: 'center' }
+      );
+      doc.text(
+        `Gerado em ${new Date().toLocaleString('pt-BR')}`,
+        pageWidth / 2,
+        doc.internal.pageSize.height - 5,
+        { align: 'center' }
+      );
+    }
 
     // Retornar PDF
-    const nomeArquivo = `relatorio-lote-${lote.id}.pdf`;
+    const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
-    return new NextResponse(Buffer.from(pdfBuffer), {
+    return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
+        'Content-Disposition': `attachment; filename="relatorio-lote-${lote.id}.pdf"`,
       },
     });
   } catch (error) {
-    console.error('Erro ao gerar PDF do relatório de lote:', error);
+    console.error('Erro ao gerar relatório:', error);
     return NextResponse.json(
-      { error: 'Erro ao gerar PDF do relatório de lote' },
+      { error: 'Erro interno do servidor' },
       { status: 500 }
     );
   }

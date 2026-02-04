@@ -6,7 +6,6 @@ import { FolderOpen, FileText } from 'lucide-react';
 interface Laudo {
   id: number;
   lote_id: number;
-  lote_id: number;
   lote_titulo: string;
   status: string;
   data_emissao?: string;
@@ -82,7 +81,7 @@ export default function LaudosEntidadePage() {
                   <h3 className="text-lg font-semibold text-gray-900">
                     {laudo.lote_titulo}
                   </h3>
-                  <p className="text-sm text-gray-500">{laudo.lote_codigo}</p>
+                  <p className="text-sm text-gray-500">Lote #{laudo.lote_id}</p>
                 </div>
                 <span
                   className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${

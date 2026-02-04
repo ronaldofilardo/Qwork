@@ -38,7 +38,6 @@ describe('API: relatorio de lote', () => {
           rows: [
             {
               id: loteId,
-              codigo: 'L-001',
               titulo: 'Teste Lote',
               tipo: 'padrao',
               status: 'finalizado',

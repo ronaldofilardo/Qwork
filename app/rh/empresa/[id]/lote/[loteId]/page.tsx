@@ -35,8 +35,6 @@ function formatDate(dateString: string): string {
 
 interface LoteInfo {
   id: number;
-  codigo: string;
-  titulo: string;
   descricao: string | null;
   tipo: string;
   status: string;
@@ -922,11 +920,11 @@ export default function DetalhesLotePage() {
               <div className="flex-1">
                 <div className="mb-1">
                   <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Código: {lote.id}
+                    Lote ID
                   </span>
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                  {lote.titulo}
+                  {lote.id}
                 </h1>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
                   <div>
@@ -1482,6 +1480,7 @@ export default function DetalhesLotePage() {
                         <div className="flex gap-1 justify-center">
                           {func.avaliacao.status !== 'concluida' &&
                             func.avaliacao.status !== 'inativada' &&
+                            !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
                               <button
                                 onClick={() =>
@@ -1497,13 +1496,11 @@ export default function DetalhesLotePage() {
                                 🚫 Inativar
                               </button>
                             )}
-                          {(func.avaliacao.status === 'concluida' ||
+                          {(func.avaliacao.status === 'iniciada' ||
+                            func.avaliacao.status === 'concluida' ||
                             func.avaliacao.status === 'em_andamento') &&
-                            lote?.status !== 'concluido' &&
-                            lote?.status !== 'concluded' &&
-                            lote?.status !== 'enviado_emissor' &&
-                            lote?.status !== 'a_emitir' &&
-                            lote?.status !== 'emitido' && (
+                            !lote?.emissao_solicitada &&
+                            !lote?.emitido_em && (
                               <button
                                 onClick={() =>
                                   setModalResetar({
@@ -1550,6 +1547,7 @@ export default function DetalhesLotePage() {
           funcionarioNome={modalInativar.funcionarioNome}
           funcionarioCpf={modalInativar.funcionarioCpf}
           _loteId={loteId}
+          contexto="rh"
           onClose={() => setModalInativar(null)}
           onSuccess={loadLoteData}
         />

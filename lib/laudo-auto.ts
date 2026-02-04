@@ -103,12 +103,14 @@ export async function selecionarEmissorParaLote(_loteId: number) {
 // ==========================================
 
 function criarLaudoPadronizado(
+  loteId: number,
   dadosGeraisEmpresa: any,
   scoresPorGrupo: any[],
   interpretacaoRecomendacoes: any,
   observacoesConclusao: any
 ): LaudoDadosCompletos {
   return {
+    loteId,
     etapa1: dadosGeraisEmpresa,
     etapa2: scoresPorGrupo,
     etapa3: interpretacaoRecomendacoes,
@@ -198,6 +200,7 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       );
       const observacoesConclusao = gerarObservacoesConclusao('');
       const laudoPadronizado = criarLaudoPadronizado(
+        loteId,
         dadosGeraisEmpresa,
         scoresPorGrupo,
         interpretacaoRecomendacoes,
@@ -205,7 +208,7 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       );
 
       // Gerar HTML e PDF (respeitar modo test)
-      const html = gerarHTMLLaudoCompleto(laudoPadronizado);
+      const html = gerarHTMLLaudoCompleto({ loteId, ...laudoPadronizado });
       let pdfBuffer: Buffer;
       if (process.env.NODE_ENV === 'test') {
         pdfBuffer = Buffer.from(
@@ -708,12 +711,13 @@ export const gerarLaudoCompletoEmitirPDF = async function (
       // Gerar HTML do laudo usando template padronizado
       console.log(`[DEBUG] Gerando HTML do laudo...`);
       const laudoPadronizado = criarLaudoPadronizado(
+        loteId,
         dadosGeraisEmpresa,
         scoresPorGrupo,
         interpretacaoRecomendacoes,
         observacoesConclusao
       );
-      const html = gerarHTMLLaudoCompleto(laudoPadronizado);
+      const html = gerarHTMLLaudoCompleto({ loteId, ...laudoPadronizado });
 
       // SEMPRE usar Puppeteer para geração de PDF
       // Removida lógica de teste com PDF fictício - geração deve ser consistente

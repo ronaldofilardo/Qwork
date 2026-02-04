@@ -95,36 +95,16 @@ export async function POST(
       );
     }
 
-    // Verificar se já está na fila
-    let filaResult;
-    try {
-      filaResult = await query(
-        `
-        SELECT id, tentativas FROM fila_emissao
-        WHERE lote_id = $1
-      `,
-        [loteId]
-      );
-    } catch (err) {
-      // Se a tabela fila_emissao não existir, instruir o desenvolvedor a aplicar migrações
-      if (
-        err instanceof Error &&
-        /fila_emissao|relation "fila_emissao"/i.test(err.message)
-      ) {
-        console.error(
-          '[REPROCESSAR] Tabela fila_emissao não encontrada:',
-          err.message
-        );
-        return NextResponse.json(
-          {
-            error:
-              'Banco de dados desatualizado: tabela "fila_emissao" inexistente. Execute a migração 007 (ou rode "scripts/powershell/sync-dev-to-prod.ps1" / aplicar "database/migrations/007_refactor_status_fila_emissao.sql") e tente novamente.',
-          },
-          { status: 500 }
-        );
-      }
-      throw err;
-    }
+    // Verificar se já foi solicitada emissão (usando auditoria_laudos)
+    const filaResult = await query(
+      `
+      SELECT id, tentativas FROM auditoria_laudos
+      WHERE lote_id = $1 AND acao = 'solicitar_emissao' AND status IN ('pendente', 'reprocessando')
+      ORDER BY criado_em DESC
+      LIMIT 1
+    `,
+      [loteId]
+    );
 
     if (filaResult.rows && filaResult.rows.length > 0) {
       return NextResponse.json(
@@ -137,36 +117,15 @@ export async function POST(
       );
     }
 
-    // Adicionar à fila de emissão
-    let filaInsertResult;
-    try {
-      filaInsertResult = await query(
-        `
-        INSERT INTO fila_emissao (lote_id, tentativas, max_tentativas, proxima_tentativa)
-        VALUES ($1, 0, 3, NOW())
-        RETURNING id
-      `,
-        [loteId]
-      );
-    } catch (err) {
-      if (
-        err instanceof Error &&
-        /fila_emissao|relation "fila_emissao"/i.test(err.message)
-      ) {
-        console.error(
-          '[REPROCESSAR] Falha ao inserir na fila_emissao (tabela ausente):',
-          err.message
-        );
-        return NextResponse.json(
-          {
-            error:
-              'Banco de dados desatualizado: tabela "fila_emissao" inexistente. Execute a migração 007 (ou rode "scripts/powershell/sync-dev-to-prod.ps1" / aplicar "database/migrations/007_refactor_status_fila_emissao.sql") e tente novamente.',
-          },
-          { status: 500 }
-        );
-      }
-      throw err;
-    }
+    // Adicionar à fila de emissão (usando auditoria_laudos)
+    const filaInsertResult = await query(
+      `
+      INSERT INTO auditoria_laudos (lote_id, acao, status, tentativas, solicitado_por, tipo_solicitante, criado_em)
+      VALUES ($1, 'solicitar_emissao', 'reprocessando', 0, $2, 'emissor', NOW())
+      RETURNING id
+    `,
+      [loteId, session.cpf]
+    );
 
     const filaItemId =
       filaInsertResult.rows && filaInsertResult.rows[0]

@@ -48,7 +48,7 @@ export const GET = async (
       LEFT JOIN contratantes cont ON la.contratante_id = cont.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.codigo, la.status, ec.nome, c.nome, cont.nome
+      GROUP BY la.id,  la.status, ec.nome, c.nome, cont.nome
     `,
       [loteId]
     );
@@ -372,7 +372,7 @@ export const POST = async (
       LEFT JOIN contratantes cont ON la.contratante_id = cont.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.codigo, la.status, ec.nome, cont.nome
+      GROUP BY la.id,  la.status, ec.nome, cont.nome
     `,
       [loteId]
     );

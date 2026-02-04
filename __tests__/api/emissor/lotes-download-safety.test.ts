@@ -29,7 +29,6 @@ describe('Lotes route - não expõe laudos antes de lote concluído', () => {
       rows: [
         {
           id: 3,
-          codigo: '003-290126',
           titulo: 'Lote 1',
           tipo: 'padrao',
           lote_status: 'ativo',

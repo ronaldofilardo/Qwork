@@ -14,8 +14,7 @@ const MockEntidadeLoteCard = ({
     className="card-clickable cursor-pointer hover:shadow-lg hover:border-primary transition-all"
     onClick={onClick}
   >
-    <h3>{lote.titulo}</h3>
-    <p>{`Lote #${lote.id}`}</p>
+    <h3>{`Lote #${lote.id}`}</h3>
     <button data-testid={`report-btn-${lote.id}`} onClick={onReportClick}>
       Gerar Relatório
     </button>
@@ -41,8 +40,6 @@ describe('Navegação dos Cards de Lote - Entidade', () => {
 
   const mockLote = {
     id: 1,
-    codigo: 'ENT-001',
-    titulo: 'Lote Teste Entidade',
     total_funcionarios: 10,
     funcionarios_concluidos: 7,
     status: 'enviado',
@@ -224,7 +221,6 @@ describe('Navegação dos Cards de Lote - Entidade', () => {
         {
           id: 1,
           titulo: 'Lote 1',
-          codigo: 'ENT-001',
           total_funcionarios: 10,
           funcionarios_concluidos: 7,
           status: 'enviado',
@@ -232,7 +228,6 @@ describe('Navegação dos Cards de Lote - Entidade', () => {
         {
           id: 2,
           titulo: 'Lote 2',
-          codigo: 'ENT-002',
           total_funcionarios: 15,
           funcionarios_concluidos: 10,
           status: 'criado',
@@ -240,7 +235,6 @@ describe('Navegação dos Cards de Lote - Entidade', () => {
         {
           id: 3,
           titulo: 'Lote 3',
-          codigo: 'ENT-003',
           total_funcionarios: 8,
           funcionarios_concluidos: 8,
           status: 'concluido',
@@ -321,7 +315,6 @@ describe('Integração Completa - Cards de Lote no Dashboard de Entidade', () =>
   it('deve implementar fluxo completo de navegação e ações', () => {
     const mockLoteData = {
       id: 1,
-      codigo: 'ENT-001',
       titulo: 'Lote Completo',
       total_funcionarios: 10,
       funcionarios_concluidos: 10,

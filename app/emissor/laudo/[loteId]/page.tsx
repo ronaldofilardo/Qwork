@@ -10,7 +10,7 @@ import ModalUploadLaudo from '@/components/modals/ModalUploadLaudo';
 
 interface Lote {
   id: number;
-  codigo: string;
+  // codigo removido - usar apenas lote.id (alinhado com laudo.id)
   empresa_nome: string;
   clinica_nome: string;
 }
@@ -935,7 +935,6 @@ export default function EditarLaudo() {
       {/* Modal de Upload */}
       <ModalUploadLaudo
         loteId={loteId}
-        loteCodigo={lote?.id?.toString() || ''}
         isOpen={modalUploadOpen}
         onClose={() => setModalUploadOpen(false)}
         onSuccess={handleUploadSuccess}

@@ -419,12 +419,12 @@ export async function recalcularStatusLotePorId(loteId: number) {
 
 ```sql
 -- No Neon
-SELECT la.id, la.codigo, la.status,
+SELECT la.id,  la.status,
        COUNT(a.id) as total_avaliacoes,
        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas
 FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
-WHERE la.codigo = 'LOTE-TESTE-PROD'
+WHERE la.id = 0 -- FIXME: substituir por ID correto
 GROUP BY la.id;
 
 -- Resultado esperado:
@@ -488,7 +488,7 @@ SELECT l.id, l.lote_id, l.url, l.hash_pdf, l.status, l.emitido_em,
        la.status as lote_status
 FROM laudos l
 JOIN lotes_avaliacao la ON la.id = l.lote_id
-WHERE la.codigo = 'LOTE-TESTE-PROD';
+WHERE la.id = 0 -- FIXME: substituir por ID correto;
 
 -- Resultado esperado:
 -- url = https://s3.us-east-005.backblazeb2.com/...

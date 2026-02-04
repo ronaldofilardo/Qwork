@@ -59,15 +59,9 @@ describe('Correções de Inconsistências de Status e Validação', () => {
       );
 
       const loteResult = await query(
-        `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, liberado_por, status, titulo, tipo) 
-         VALUES ($1, $2, $3, $4, 'concluido', $5, 'completo') RETURNING id`,
-        [
-          'LOTE-STATUS-001',
-          clinicaId,
-          empresaId,
-          liberadoCpf,
-          'Lote Teste Status',
-        ]
+        `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, status, tipo) 
+         VALUES ($1, $2, $3, 'concluido', 'completo') RETURNING id`,
+        [clinicaId, empresaId, liberadoCpf]
       );
       const loteId = loteResult.rows[0].id;
 
@@ -142,15 +136,15 @@ describe('Correções de Inconsistências de Status e Validação', () => {
       );
 
       const loteResult = await query(
-        `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, liberado_por, status, titulo, tipo) 
-         VALUES ($1, $2, $3, $4, 'ativo', $5, 'completo') RETURNING id`,
-        ['LOTE-API-001', clinicaId, empresaId, liberadoCpf2, 'Lote Teste API']
+        `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, status, tipo) 
+         VALUES ($1, $2, $3, 'ativo', 'completo') RETURNING id`,
+        [clinicaId, empresaId, liberadoCpf2]
       );
       const loteId = loteResult.rows[0].id;
 
       // Buscar como a API retornaria
       const apiResponse = await query(
-        `SELECT id, codigo, status FROM lotes_avaliacao WHERE id = $1`,
+        `SELECT id, status FROM lotes_avaliacao WHERE id = $1`,
         [loteId]
       );
 
@@ -242,9 +236,9 @@ describe('Correções de Inconsistências de Status e Validação', () => {
     it('deve validar critério 1: status do lote deve ser concluido', async () => {
       // Lote com status 'ativo'
       const loteResult = await query(
-        `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, liberado_por, status, titulo, tipo) 
-         VALUES ($1, $2, $3, $4, 'ativo', $5, 'completo') RETURNING id`,
-        ['LOTE-VAL-001', clinicaId, empresaId, funcionarioCpf, 'Lote Ativo']
+        `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, status, tipo) 
+         VALUES ($1, $2, $3, 'ativo', 'completo') RETURNING id`,
+        [clinicaId, empresaId, funcionarioCpf]
       );
       const loteId = loteResult.rows[0].id;
 
@@ -471,7 +465,7 @@ describe('Correções de Inconsistências de Status e Validação', () => {
 
       interface LoteAPIResponse {
         id: number;
-        codigo: string;
+        // codigo: removido
         status: string;
         pode_emitir_laudo: boolean;
         motivos_bloqueio: string[];
@@ -480,7 +474,6 @@ describe('Correções de Inconsistências de Status e Validação', () => {
 
       const mockLoteResponse: LoteAPIResponse = {
         id: 1,
-        codigo: 'LOTE-001',
         status: 'concluido',
         pode_emitir_laudo: true,
         motivos_bloqueio: [],

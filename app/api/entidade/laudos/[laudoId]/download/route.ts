@@ -30,8 +30,6 @@ export const GET = async (
       SELECT
         l.id,
         l.lote_id,
-        la.codigo,
-        la.titulo,
         la.contratante_id
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
@@ -66,7 +64,7 @@ export const GET = async (
 
       try {
         const buffer = await fs.readFile(localPath);
-        const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
+        const fileName = `laudo-${laudo.id}.pdf`;
         console.log(`[DOWNLOAD] Servindo laudo ${laudo.id} do storage local`);
         return new NextResponse(new Uint8Array(buffer), {
           status: 200,

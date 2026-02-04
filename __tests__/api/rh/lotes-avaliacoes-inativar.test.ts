@@ -8,6 +8,10 @@ jest.mock('@/lib/db', () => ({
   query: jest.fn(),
 }));
 
+jest.mock('@/lib/db-gestor', () => ({
+  queryAsGestorRH: jest.fn(),
+}));
+
 jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
   requireRHWithEmpresaAccess: jest.fn(),
@@ -15,11 +19,19 @@ jest.mock('@/lib/session', () => ({
 
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth } from '@/lib/session';
+import { queryAsGestorRH } from '@/lib/db-gestor';
+import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
 import { POST } from '@/app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQueryAsGestorRH = queryAsGestorRH as jest.MockedFunction<
+  typeof queryAsGestorRH
+>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequireRHWithEmpresaAccess =
+  requireRHWithEmpresaAccess as jest.MockedFunction<
+    typeof requireRHWithEmpresaAccess
+  >;
 
 describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
   beforeEach(() => {
@@ -33,9 +45,17 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // lote check
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, empresa_id: 1, status: 'ativo', emitido_em: null }],
+          rowCount: 1,
+        }) // lote check
+        .mockResolvedValueOnce({
+          rows: [{ count: '0' }],
+          rowCount: 1,
+        }) // emissão não solicitada
         .mockResolvedValueOnce({
           rows: [
             {
@@ -47,18 +67,21 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
           ],
           rowCount: 1,
         }) // avaliação check
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE avaliação
         .mockResolvedValueOnce({
           rows: [
             {
+              total_avaliacoes: '5',
               ativas: '4',
               concluidas: '3',
-              iniciadas: '1',
+              inativadas: '1',
+              liberadas: '5',
             },
           ],
           rowCount: 1,
-        }) // lote stats
+        }) // stats para recálculo
         .mockResolvedValueOnce({ rows: [{ status: 'ativo' }], rowCount: 1 }); // status atual do lote
+
+      mockQueryAsGestorRH.mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE avaliação
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/lotes/1/avaliacoes/1/inativar',
@@ -86,8 +109,8 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
       });
       expect(data.lote_concluido).toBe(false);
 
-      // Verifica se UPDATE da avaliação foi chamado
-      expect(mockQuery).toHaveBeenCalledWith(
+      // Verifica se UPDATE da avaliação foi chamado via queryAsGestorRH
+      expect(mockQueryAsGestorRH).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE avaliacoes'),
         expect.any(Array)
       );
@@ -123,12 +146,17 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{ id: 1, empresa_id: 1, status: 'ativo' }],
+          rows: [{ id: 1, empresa_id: 1, status: 'ativo', emitido_em: null }],
           rowCount: 1,
         }) // lote check
+        .mockResolvedValueOnce({
+          rows: [{ count: '0' }],
+          rowCount: 1,
+        }) // emissão não solicitada
         .mockResolvedValueOnce({
           rows: [
             {
@@ -158,18 +186,23 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
       expect(data.error).toBe('Esta avaliação já está inativada');
     });
 
-    it('deve rejeitar avaliação já concluída', async () => {
+    it('deve permitir inativar avaliação concluída se emissão não foi solicitada', async () => {
       mockRequireAuth.mockResolvedValue({
         cpf: '11111111111',
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{ id: 1, empresa_id: 1, status: 'ativo' }],
+          rows: [{ id: 1, empresa_id: 1, status: 'ativo', emitido_em: null }],
           rowCount: 1,
         }) // lote check
+        .mockResolvedValueOnce({
+          rows: [{ count: '0' }],
+          rowCount: 1,
+        }) // emissão não solicitada
         .mockResolvedValueOnce({
           rows: [
             {
@@ -180,13 +213,28 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
             },
           ],
           rowCount: 1,
-        }); // avaliação já concluída
+        }) // avaliação concluída
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              total_avaliacoes: '5',
+              ativas: '4',
+              concluidas: '3',
+              inativadas: '1',
+              liberadas: '5',
+            },
+          ],
+          rowCount: 1,
+        }) // stats para recálculo
+        .mockResolvedValueOnce({ rows: [{ status: 'ativo' }], rowCount: 1 }); // status atual do lote
+
+      mockQueryAsGestorRH.mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE avaliação
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/lotes/1/avaliacoes/1/inativar',
         {
           method: 'POST',
-          body: JSON.stringify({ motivo: 'Teste' }),
+          body: JSON.stringify({ motivo: 'Funcionário solicitou inativação' }),
         }
       );
 
@@ -195,10 +243,9 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
       });
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe(
-        'Não é possível inativar uma avaliação já concluída'
-      );
+      expect(response.status).toBe(200);
+      expect(data.success).toBe(true);
+      expect(data.message).toBe('Avaliação inativada com sucesso');
     });
 
     it('deve validar acesso apenas para perfil RH', async () => {
@@ -226,6 +273,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // lote não encontrado
 
@@ -254,9 +302,14 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery
-        .mockResolvedValueOnce({ rows: [{ clinica_id: 1 }], rowCount: 1 }) // lote check
+        .mockResolvedValueOnce({
+          rows: [{ id: 1, empresa_id: 1, status: 'ativo', emitido_em: null }],
+          rowCount: 1,
+        }) // lote check
+        .mockResolvedValueOnce({ rows: [{ count: '0' }], rowCount: 1 }) // emissão não solicitada
         .mockResolvedValueOnce({
           rows: [
             {
@@ -268,19 +321,22 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
           ],
           rowCount: 1,
         }) // avaliação check
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 }) // UPDATE avaliação
         .mockResolvedValueOnce({
           rows: [
             {
-              ativas: '4',
+              total_avaliacoes: '5',
+              ativas: '0',
               concluidas: '4',
-              iniciadas: '0',
+              inativadas: '1',
+              liberadas: '5',
             },
           ],
           rowCount: 1,
-        }) // lote stats (todas as 4 avaliações restantes estão concluídas)
+        }) // stats para recálculo (concluídas + inativadas = liberadas)
         .mockResolvedValueOnce({ rows: [{ status: 'ativo' }], rowCount: 1 }) // status atual do lote
         .mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE lote para concluido
+
+      mockQueryAsGestorRH.mockResolvedValueOnce({ rows: [], rowCount: 1 }); // UPDATE avaliação
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/lotes/1/avaliacoes/1/inativar',
@@ -319,12 +375,14 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery
         .mockResolvedValueOnce({
-          rows: [{ id: 1, empresa_id: 1, status: 'ativo' }],
+          rows: [{ id: 1, empresa_id: 1, status: 'ativo', emitido_em: null }],
           rowCount: 1,
         }) // lote check
+        .mockResolvedValueOnce({ rows: [{ count: '0' }], rowCount: 1 }) // emissão não solicitada
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }); // avaliação não encontrada
 
       const request = new NextRequest(
@@ -350,6 +408,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
         nome: 'RH Teste',
         perfil: 'rh',
       });
+      mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
 
       mockQuery
         .mockResolvedValueOnce({
@@ -359,16 +418,9 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
           rowCount: 1,
         }) // lote check (já emitido)
         .mockResolvedValueOnce({
-          rows: [
-            {
-              id: 1,
-              status: 'em_andamento',
-              funcionario_cpf: '12345678901',
-              funcionario_nome: 'João Silva',
-            },
-          ],
+          rows: [{ count: '1' }],
           rowCount: 1,
-        }); // avaliação com lote emitido
+        }); // emissão já solicitada
 
       const request = new NextRequest(
         'http://localhost:3000/api/rh/lotes/1/avaliacoes/1/inativar',
@@ -385,7 +437,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe(
-        'Não é possível inativar avaliações de lote já emitido — laudo gerado e avaliações são imutáveis'
+        'Não é possível inativar avaliações: emissão do laudo já foi solicitada ou laudo já foi emitido (princípio da imutabilidade)'
       );
     });
   });

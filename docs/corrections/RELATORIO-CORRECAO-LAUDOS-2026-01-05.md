@@ -198,7 +198,7 @@ Comandos para validar correções:
 
 ```sql
 -- Verificar lotes concluídos sem laudos
-SELECT la.id, la.codigo FROM lotes_avaliacao la
+SELECT la.idFROM lotes_avaliacao la
 LEFT JOIN laudos l ON l.lote_id = la.id
 WHERE la.status = 'concluido' AND l.id IS NULL;
 -- Esperado: 0 linhas
@@ -211,7 +211,7 @@ WHERE la.status = 'concluido' AND l.status = 'rascunho';
 -- Esperado: 0 linhas
 
 -- Listar todos os laudos enviados
-SELECT l.id, la.codigo, l.status, l.emitido_em
+SELECT l.id,  l.status, l.emitido_em
 FROM laudos l
 JOIN lotes_avaliacao la ON l.lote_id = la.id
 WHERE la.status = 'concluido'

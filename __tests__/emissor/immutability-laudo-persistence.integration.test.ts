@@ -94,7 +94,7 @@ describe('Imutabilidade de Lote + Persistência de Laudo - Integração', () => 
 
     // Criar lote
     const loteResult = await query(
-      `INSERT INTO lotes_avaliacao (codigo, contratante_id, empresa_id, liberado_por, status)
+      `INSERT INTO lotes_avaliacao (contratante_id, empresa_id, liberado_por, status)
        VALUES ($1, $2, $3, $4, 'ativo') RETURNING id`,
       [uniqueCode(), clinicaId, empresaId, emissorCpf]
     );

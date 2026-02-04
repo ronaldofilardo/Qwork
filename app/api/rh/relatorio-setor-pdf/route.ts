@@ -1,9 +1,13 @@
+/**
+ * IMPORTANTE: Esta rota retorna apenas HTML para o cliente renderizar.
+ * Não usa puppeteer - PDF é gerado no cliente via window.print() ou jsPDF.
+ * Apenas o emissor (laudos) usa puppeteer para geração server-side.
+ */
 export const dynamic = 'force-dynamic';
 import { NextResponse, NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
 import { gruposCOPSOQ } from '@/lib/laudo-calculos';
-import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
 
 // Função para determinar categoria de risco (mesma lógica)
 function determinarCategoriaRisco(
@@ -136,7 +140,6 @@ export async function GET(request: NextRequest) {
     const loteInfo = await query(
       `
       SELECT 
-        la.codigo,
         la.titulo,
         ec.nome as empresa_nome,
         c.nome as clinica_nome
@@ -503,47 +506,17 @@ export async function GET(request: NextRequest) {
 </html>
     `;
 
-    // Gerar PDF com Puppeteer (usa getPuppeteerInstance para compatibilidade serverless)
-    const puppeteer = await getPuppeteerInstance();
-    const browser = await puppeteer.launch({
-      headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-      ],
-    });
-
-    const page = await (browser as any).newPage();
-    await (page as any).setContent(html, { waitUntil: 'networkidle0' });
-
-    const pdfBuffer = await (page as any).pdf({
-      format: 'A4',
-      landscape: true,
-      margin: {
-        top: '10mm',
-        right: '10mm',
-        bottom: '10mm',
-        left: '10mm',
-      },
-      printBackground: true,
-    });
-
-    await (browser as any).close();
-
-    return new NextResponse(Buffer.from(pdfBuffer), {
+    // Retornar HTML para o cliente renderizar
+    // O cliente usa window.print() ou jsPDF para gerar PDF
+    return new NextResponse(html, {
       headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="relatorio-setor-${setor}-lote-${lote.id}.pdf"`,
+        'Content-Type': 'text/html; charset=utf-8',
       },
     });
   } catch (error) {
-    console.error('Erro ao gerar PDF do relatório por setor:', error);
+    console.error('Erro ao gerar HTML do relatório por setor:', error);
     return NextResponse.json(
-      { error: 'Erro ao gerar PDF do relatório' },
+      { error: 'Erro ao gerar relatório' },
       { status: 500 }
     );
   }

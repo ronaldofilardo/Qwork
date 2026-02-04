@@ -14,8 +14,6 @@ async function debugLotesStatus() {
       `
       SELECT 
         la.id,
-        la.codigo,
-        la.titulo,
         la.status,
         la.liberado_em,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_avaliacoes,
@@ -25,7 +23,7 @@ async function debugLotesStatus() {
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON a.lote_id = la.id
       WHERE la.status = 'concluido'
-      GROUP BY la.id, la.codigo, la.titulo, la.status, la.liberado_em
+      GROUP BY la.id, la.status, la.liberado_em
       ORDER BY la.id DESC
       LIMIT 10
       `
@@ -35,7 +33,7 @@ async function debugLotesStatus() {
 
     for (const lote of lotes.rows) {
       console.log(`\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-      console.log(`Lote ${lote.codigo} - ${lote.titulo}`);
+      console.log(`Lote #${lote.id}`);
       console.log(`ID: ${lote.id}`);
       console.log(`Status: ${lote.status}`);
       console.log(`Total de avaliações: ${lote.total_avaliacoes}`);

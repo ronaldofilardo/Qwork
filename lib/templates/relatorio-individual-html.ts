@@ -92,8 +92,7 @@ export function gerarHTMLRelatorioIndividual(dados: RelatorioIndividualData) {
   </div>
 
   <div class="section dados">
-    <div><span class="label">Código do Lote:</span>${escapeHtml(lote?.codigo || '-')}</div>
-    <div><span class="label">Título:</span>${escapeHtml(lote?.titulo || '-')}</div>
+    <div><span class="label">ID do Lote:</span>${lote?.id || '-'}</div>
     <div><span class="label">Data de Conclusão:</span>${escapeHtml(envio || '-')}</div>
   </div>
 

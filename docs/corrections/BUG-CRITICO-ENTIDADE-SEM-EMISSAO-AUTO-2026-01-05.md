@@ -229,7 +229,7 @@ laudo_enviado_em: 2026-01-05 20:57:44  ✅
 ```sql
 SELECT
   la.id,
-  la.codigo,
+  
   la.status,
   la.liberado_em,
   la.contratante_id,

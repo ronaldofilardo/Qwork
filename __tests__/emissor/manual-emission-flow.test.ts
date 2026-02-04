@@ -64,9 +64,9 @@ describe('Fluxo de Emissão Manual de Laudos', () => {
 
     // Criar lote
     const lote = await query(
-      `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, status) 
-       VALUES ($1, $2, $3, 'ativo') RETURNING id`,
-      [`MANUAL-${Date.now()}`, clinicaId, empresaId]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status) 
+       VALUES ($1, $2, 'ativo') RETURNING id`,
+      [clinicaId, empresaId]
     );
     loteId = lote.rows[0].id;
 

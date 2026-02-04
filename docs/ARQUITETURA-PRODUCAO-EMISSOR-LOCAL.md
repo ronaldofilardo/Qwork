@@ -219,14 +219,14 @@ export async function recalcularStatusLotePorId(loteId: number) {
 
 ```sql
 -- Ver laudos pendentes
-SELECT le.id, le.lote_id, la.codigo, le.tipo_solicitante, le.created_at
+SELECT le.id, le.lote_id,  le.tipo_solicitante, le.created_at
 FROM fila_emissao le
 JOIN lotes_avaliacao la ON la.id = le.lote_id
 WHERE le.processado = false
 ORDER BY le.created_at;
 
 -- Ver laudos emitidos hoje
-SELECT l.id, l.lote_id, la.codigo, l.emitido_em, l.emissor_cpf
+SELECT l.id, l.lote_id,  l.emitido_em, l.emissor_cpf
 FROM laudos l
 JOIN lotes_avaliacao la ON la.id = l.lote_id
 WHERE l.emitido_em::date = CURRENT_DATE

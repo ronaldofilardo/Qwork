@@ -35,7 +35,6 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
       rows: [
         {
           id: 1,
-          codigo: '001-020126',
           titulo: 'Lote Teste',
           tipo: 'completo',
           status: 'ativo',
@@ -115,7 +114,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
 
     expect(response.status).toBe(200);
     expect(data.lote).toBeDefined();
-    expect(data.lote.codigo).toBe('001-020126');
+    // codigo removido
     expect(data.lote.emitido_em).toBeNull();
 
     expect(data.estatisticas).toBeDefined();
@@ -218,7 +217,6 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
       rows: [
         {
           id: 1,
-          codigo: '001',
           titulo: 'Teste',
           tipo: 'completo',
           status: 'ativo',

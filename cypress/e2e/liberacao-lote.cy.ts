@@ -170,7 +170,6 @@ describe('Fluxo de Liberação de Lote', () => {
             message: 'Lote 1 (001-010126) liberado com sucesso!',
             lote: {
               id: 1,
-              codigo: '001-010126',
               numero_ordem: 1,
               titulo: 'Lote 1 - 001-010126',
               tipo: 'completo',
@@ -207,7 +206,7 @@ describe('Fluxo de Liberação de Lote', () => {
           statusCode: 200,
           body: {
             success: true,
-            lote: { id: 1, codigo: '001', numero_ordem: 1 },
+            lote: { id: 1, numero_ordem: 1 },
           },
         });
       }).as('liberarComTitulo');
@@ -226,7 +225,7 @@ describe('Fluxo de Liberação de Lote', () => {
           statusCode: 200,
           body: {
             success: true,
-            lote: { id: 1, codigo: '001', numero_ordem: 1 },
+            lote: { id: 1, numero_ordem: 1 },
           },
         });
       }).as('liberarComDelay');
@@ -246,7 +245,6 @@ describe('Fluxo de Liberação de Lote', () => {
           message: 'Lote 1 (001-010126) liberado com sucesso!',
           lote: {
             id: 1,
-            codigo: '001-010126',
             numero_ordem: 1,
             titulo: 'Lote 1',
             tipo: 'completo',
@@ -268,7 +266,7 @@ describe('Fluxo de Liberação de Lote', () => {
         statusCode: 200,
         body: {
           success: true,
-          lote: { id: 42, codigo: '002-420126', numero_ordem: 1 },
+          lote: { id: 42, numero_ordem: 1 },
         },
       }).as('liberarNav');
 
@@ -310,7 +308,6 @@ describe('Fluxo de Liberação de Lote', () => {
           message: 'Lote liberado!',
           lote: {
             id: loteId,
-            codigo: '042-010126',
             numero_ordem: 42,
             titulo: 'Lote 42',
             tipo: 'completo',
@@ -322,7 +319,7 @@ describe('Fluxo de Liberação de Lote', () => {
       // Mock da página de detalhes do lote
       cy.intercept('GET', `/api/rh/lote/${loteId}*`, {
         statusCode: 200,
-        body: { success: true, lote: { id: loteId, codigo: '042-010126' } },
+        body: { success: true, lote: { id: loteId } },
       }).as('getDetalhesLote');
 
       cy.contains('button', 'Iniciar Ciclo').click();
@@ -346,7 +343,7 @@ describe('Fluxo de Liberação de Lote', () => {
           statusCode: 200,
           body: {
             success: true,
-            lote: { id: 1, codigo: '001', numero_ordem: 1 },
+            lote: { id: 1, numero_ordem: 1 },
           },
         });
       }).as('liberarLento');
@@ -367,7 +364,7 @@ describe('Fluxo de Liberação de Lote', () => {
           statusCode: 200,
           body: {
             success: true,
-            lote: { id: 1, codigo: '001', numero_ordem: 1 },
+            lote: { id: 1, numero_ordem: 1 },
           },
         });
       }).as('liberarParaDesabilitar');
@@ -385,7 +382,7 @@ describe('Fluxo de Liberação de Lote', () => {
         statusCode: 200,
         body: {
           success: true,
-          lote: { id: 1, codigo: '001', numero_ordem: 1 },
+          lote: { id: 1, numero_ordem: 1 },
           resumoInclusao: {
             funcionarios_novos: 10,
             indices_atrasados: 5,
@@ -417,7 +414,7 @@ describe('Fluxo de Liberação de Lote', () => {
         statusCode: 200,
         body: {
           success: true,
-          lote: { id: 1, codigo: '001', numero_ordem: 1 },
+          lote: { id: 1, numero_ordem: 1 },
           resumoInclusao: {
             funcionarios_novos: 0,
             indices_atrasados: 0,

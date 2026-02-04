@@ -14,7 +14,7 @@ BEGIN;
 CREATE TEMP TABLE lotes_afetados AS
 SELECT 
   la.id as lote_id,
-  la.codigo,
+  
   la.liberado_por,
   l.id as laudo_id_existente,
   l.criado_em as laudo_criado_em,
@@ -54,7 +54,7 @@ ORDER BY lote_id;
 -- 4. Verificar resultado
 SELECT 
   la.id as lote_id,
-  la.codigo,
+  
   la.status,
   fe.id as fila_id,
   fe.solicitado_em,

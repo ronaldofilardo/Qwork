@@ -10,12 +10,10 @@ describe('Integração: Sistema Completo de Emissão Automática', () => {
     it('deve processar lote do início ao fim', () => {
       // Cenário: Lote com 3 avaliações, todas finalizadas
       const loteId = 1;
-      const loteCodigo = '001-INT';
 
       // Simular dados do lote
       const lote = {
         id: loteId,
-        codigo: loteCodigo,
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 3,
@@ -27,13 +25,12 @@ describe('Integração: Sistema Completo de Emissão Automática', () => {
 
       expect(estaPronto).toBe(true);
       expect(lote.id).toBe(1);
-      expect(lote.codigo).toBe('001-INT');
     });
 
     it('deve respeitar ordem de processamento (mais antigos primeiro)', () => {
       const lotes = [
-        { id: 2, codigo: '002-INT', criado_em: new Date('2024-01-02') },
-        { id: 1, codigo: '001-INT', criado_em: new Date('2024-01-01') },
+        { id: 2, criado_em: new Date('2024-01-02') },
+        { id: 1, criado_em: new Date('2024-01-01') },
       ];
 
       // Ordenar por data de criação (mais antigos primeiro)

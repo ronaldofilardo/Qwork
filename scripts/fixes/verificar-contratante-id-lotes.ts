@@ -77,8 +77,7 @@ async function main() {
   const laudos = await query(
     `
     SELECT 
-      l.id, l.lote_id, l.status, l.emissor_cpf, l.enviado_em,
-      la.codigo as lote_codigo
+      l.id, l.lote_id, l.status, l.emissor_cpf, l.enviado_emas lote_codigo
     FROM laudos l
     JOIN lotes_avaliacao la ON la.id = l.lote_id
     WHERE la.liberado_por = ANY($1)

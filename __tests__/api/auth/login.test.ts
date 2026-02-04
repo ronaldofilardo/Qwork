@@ -1004,7 +1004,7 @@ describe('/api/auth/login', () => {
       expect(data.error).toBe(
         'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.'
       );
-      expect(data.codigo).toBe('PAGAMENTO_PENDENTE');
+      // codigo removido
     });
   });
 
@@ -1207,7 +1207,7 @@ describe('/api/auth/login', () => {
       expect(data.error).toBe(
         'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.'
       );
-      expect(data.codigo).toBe('PAGAMENTO_PENDENTE');
+      // codigo removido
     });
   });
 

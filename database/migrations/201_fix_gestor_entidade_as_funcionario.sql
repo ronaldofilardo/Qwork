@@ -50,8 +50,7 @@ END $$;
 -- Verificar lotes onde liberado_por aponta para gestor_entidade em funcionarios
 CREATE TEMP TABLE temp_lotes_gestor AS
 SELECT 
-    la.id as lote_id,
-    la.codigo as lote_codigo,
+    la.id as lote_idas lote_codigo,
     la.liberado_por,
     la.status,
     la.contratante_id,

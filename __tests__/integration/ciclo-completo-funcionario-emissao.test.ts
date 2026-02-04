@@ -150,12 +150,11 @@ describe('Ciclo Completo: Funcionário → Avaliação → Reset → Emissão', 
 
   describe('Passo 2: Liberação de Lote', () => {
     it('deve criar lote ativo liberado pelo RH', async () => {
-      const timestamp = Date.now();
       const loteResult = await query(
-        `INSERT INTO lotes_avaliacao (codigo, titulo, clinica_id, empresa_id, liberado_por, status, liberado_em, criado_em)
-         VALUES ($1, 'Lote Ciclo Completo', $2, $3, $4, 'ativo', NOW(), NOW())
+        `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, status, liberado_em, criado_em)
+         VALUES ($1, $2, $3, 'ativo', NOW(), NOW())
          RETURNING id`,
-        [`CICLO-${timestamp}`, clinicaId, empresaId, rhCpf]
+        [clinicaId, empresaId, rhCpf]
       );
 
       loteId = loteResult.rows[0].id;

@@ -18,8 +18,6 @@ export async function GET() {
       SELECT
         'lote_concluido' as tipo,
         la.id as lote_id,
-        la.codigo,
-        la.titulo,
         COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
         COUNT(DISTINCT a.id) as total_avaliacoes,
         MAX(a.envio) as data_conclusao
@@ -29,7 +27,7 @@ export async function GET() {
       WHERE f.contratante_id = $1
         AND la.status = 'ativo'
         AND a.envio >= NOW() - INTERVAL '7 days'
-      GROUP BY la.id, la.codigo, la.titulo
+      GROUP BY la.id
       HAVING COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida') = COUNT(DISTINCT a.id)
       ORDER BY MAX(a.envio) DESC
       LIMIT 10
@@ -44,8 +42,6 @@ export async function GET() {
         'laudo_enviado' as tipo,
         l.id as laudo_id,
         l.lote_id,
-        la.codigo,
-        la.titulo,
         l.enviado_em as data_evento,
         e.nome as emissor_nome
       FROM laudos l
@@ -54,7 +50,7 @@ export async function GET() {
       LEFT JOIN funcionarios e ON e.cpf = l.emissor_cpf
       WHERE f.contratante_id = $1
         AND l.enviado_em >= NOW() - INTERVAL '7 days'
-      GROUP BY l.id, la.codigo, la.titulo, l.enviado_em, e.nome
+      GROUP BY l.id, l.enviado_em, e.nome
       ORDER BY l.enviado_em DESC
       LIMIT 10
     `,
@@ -65,12 +61,12 @@ export async function GET() {
     const notificacoes = [
       ...lotesConcluidos.rows.map((n) => ({
         ...n,
-        mensagem: `Lote ${String(n.codigo)} concluído com ${String(n.avaliacoes_concluidas)} avaliações`,
+        mensagem: `Lote ID: ${String(n.lote_id)} concluído com ${String(n.avaliacoes_concluidas)} avaliações`,
         data_evento: n.data_conclusao,
       })),
       ...laudosEnviados.rows.map((n) => ({
         ...n,
-        mensagem: `Laudo ${String(n.codigo)} enviado por ${String(n.emissor_nome) || 'emissor'}`,
+        mensagem: `Laudo ID: ${String(n.laudo_id)} enviado por ${String(n.emissor_nome) || 'emissor'}`,
         data_evento: n.data_evento,
       })),
     ].sort(

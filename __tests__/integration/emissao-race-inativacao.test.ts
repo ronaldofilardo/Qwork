@@ -63,8 +63,8 @@ describe('Emissão imediata - corrida de inativação', () => {
   it('deve gerar o laudo mesmo se uma avaliacao for inativada logo apos a conclusao', async () => {
     // Criar lote e 3 avaliacoes
     const lote = await query(
-      `INSERT INTO lotes_avaliacao (codigo, clinica_id, empresa_id, titulo, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,$3,'Lote Race','ativo',$4,'completo',1) RETURNING id`,
-      [`RACE-${Date.now()}`, clinicaId, empresaId, funcionarioCpf]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, status, liberado_por, tipo, numero_ordem) VALUES ($1,$2,'ativo',$3,'completo',1) RETURNING id`,
+      [clinicaId, empresaId, funcionarioCpf]
     );
     loteId = lote.rows[0].id;
 

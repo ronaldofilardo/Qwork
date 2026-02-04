@@ -61,7 +61,6 @@ describe('API: Laudo HTML Generation', () => {
         rows: [
           {
             id: 1,
-            codigo: 'LOTE-001',
             titulo: 'Lote Teste',
             status: 'encerrado',
             clinica_id: 1,
@@ -123,7 +122,7 @@ describe('API: Laudo HTML Generation', () => {
 
     query
       .mockResolvedValueOnce({
-        rows: [{ id: 1, codigo: 'LOTE-001' }],
+        rows: [{ id: 1 }],
       })
       .mockResolvedValueOnce({
         rows: [], // Nenhum laudo encontrado
@@ -164,7 +163,6 @@ describe('API: Relatório Individual HTML Generation', () => {
         rows: [
           {
             id: 1,
-            codigo: 'LOTE-001',
             titulo: 'Lote Teste',
             clinica_id: 1,
             empresa_id: 1,
@@ -270,7 +268,6 @@ describe('API: Export Funcionários CSV', () => {
         rows: [
           {
             id: 1,
-            codigo: 'LOTE-001',
             titulo: 'Lote Teste',
             clinica_id: 1,
             empresa_id: 1,
@@ -328,7 +325,6 @@ describe('API: Export Funcionários CSV', () => {
       rows: [
         {
           id: 1,
-          codigo: 'LOTE-001',
           clinica_id: 1, // Clínica 1
           empresa_id: 1,
         },

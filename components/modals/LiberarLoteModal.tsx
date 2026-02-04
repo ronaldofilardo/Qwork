@@ -62,7 +62,6 @@ export function LiberarLoteModal({
   const resultState = isEntidade ? entidadeHook.result : rhHook.result;
   const resetState = isEntidade ? entidadeHook.reset : rhHook.reset;
 
-  const [titulo, setTitulo] = useState('');
   const [descricao, setDescricao] = useState('');
   const [tipo, setTipo] = useState<'completo' | 'operacional' | 'gestao'>(
     'completo'
@@ -84,7 +83,6 @@ export function LiberarLoteModal({
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setTitulo('');
       setDescricao('');
       setTipo('completo');
       setDataFiltro('');
@@ -131,7 +129,6 @@ export function LiberarLoteModal({
         tipo,
       };
 
-      if (titulo.trim()) params.titulo = titulo.trim();
       if (descricao.trim()) params.descricao = descricao.trim();
       if (dataFiltro) params.dataFiltro = dataFiltro;
 
@@ -162,10 +159,6 @@ export function LiberarLoteModal({
       empresaId: finalEmpresaId,
       tipo,
     };
-
-    if (titulo.trim()) {
-      params.titulo = titulo.trim();
-    }
 
     if (descricao.trim()) {
       params.descricao = descricao.trim();
@@ -249,9 +242,9 @@ export function LiberarLoteModal({
                   {(resultState as any)?.message}
                 </p>
                 <div className="mt-2 text-sm text-green-800">
-                  <strong>Código:</strong> {(resultState as any).lote?.codigo} |{' '}
                   <strong>Lote nº:</strong>{' '}
-                  {(resultState as any).lote?.numero_ordem}
+                  {(resultState as any).lote?.numero_ordem} |{' '}
+                  <strong>ID:</strong> {(resultState as any).lote?.id}
                 </div>
               </div>
             </div>
@@ -451,28 +444,6 @@ export function LiberarLoteModal({
                   </label>
                 ))}
               </div>
-            </div>
-
-            {/* Título (Opcional) */}
-            <div>
-              <label
-                htmlFor="titulo"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Título (Opcional)
-              </label>
-              <input
-                id="titulo"
-                type="text"
-                value={titulo}
-                onChange={(e) => setTitulo(e.target.value)}
-                disabled={loadingState}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-gray-100 disabled:cursor-not-allowed"
-                placeholder="Ex: Avaliação Anual 2026"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Se não informado, será gerado automaticamente
-              </p>
             </div>
 
             {/* Descrição (Opcional) */}

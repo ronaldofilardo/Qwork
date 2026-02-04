@@ -68,7 +68,6 @@ describe('Fluxo Completo - Plano Fixo', () => {
       statusCode: 403,
       body: {
         error: 'Aguardando confirmação de pagamento',
-        codigo: 'PAGAMENTO_PENDENTE',
       },
     }).as('loginBloqueado');
 

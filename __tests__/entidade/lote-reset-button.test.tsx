@@ -21,7 +21,7 @@ interface MockLoteDetalhes {
   success: boolean;
   lote: {
     id: number;
-    codigo: string;
+    // codigo: removido
     status: 'ativo' | 'concluido' | 'inativo';
   };
   estatisticas: {
@@ -57,7 +57,7 @@ describe('DetalhesLote - botão Reset', () => {
     // Arrange: Mock de resposta da API com lote ativo e avaliação concluída
     const mockResponse: MockLoteDetalhes = {
       success: true,
-      lote: { id: 1, codigo: 'LOT', status: 'ativo' },
+      lote: { id: 1, status: 'ativo' },
       estatisticas: {
         total_funcionarios: 1,
         funcionarios_concluidos: 1,

@@ -16,7 +16,7 @@ WHERE id NOT IN (SELECT lote_id FROM laudos WHERE lote_id IS NOT NULL)
 ON CONFLICT (id) DO NOTHING;
 
 -- Mostrar resultado
-SELECT la.id, la.codigo, la.status AS lote_status, l.id AS laudo_id, l.status AS laudo_status
+SELECT la.id,  la.status AS lote_status, l.id AS laudo_id, l.status AS laudo_status
 FROM lotes_avaliacao la
 LEFT JOIN laudos l ON la.id = l.lote_id
 WHERE la.id >= 5

@@ -30,7 +30,6 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
       // Simular dados de um lote pronto
       const lotePronto = {
         id: 1,
-        codigo: '001-TEST',
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 3,
@@ -47,7 +46,6 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
     it('deve rejeitar lote não pronto', () => {
       const loteNaoPronto = {
         id: 1,
-        codigo: '001-TEST',
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 3,
@@ -63,7 +61,6 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
     it('deve validar lote com avaliações zero', () => {
       const loteVazio = {
         id: 1,
-        codigo: '001-TEST',
         empresa_id: 1,
         clinica_id: 1,
         total_avaliacoes: 0,
@@ -165,7 +162,6 @@ describe('Auto-Conclusão de Lotes - Lógica de Negócio', () => {
     it('deve gerar mensagem de auditoria completa', () => {
       const lote = {
         id: 1,
-        codigo: '001-TEST',
         total_avaliacoes: 3,
       };
 

@@ -41,9 +41,6 @@ export async function GET(req: Request) {
     const loteResult = await query(
       `SELECT 
         la.id, 
-        la.codigo,
-        la.numero_ordem,
-        la.titulo,
         la.tipo,
         la.status,
         la.empresa_id,

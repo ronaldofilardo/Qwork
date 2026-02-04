@@ -37,8 +37,6 @@ export async function GET(request: NextRequest) {
       SELECT
         l.id,
         l.lote_id,
-        la.codigo,
-        la.titulo,
         c.nome as contratante_nome,
         e.nome as emissor_nome,
         l.enviado_em,
@@ -75,8 +73,6 @@ export async function GET(request: NextRequest) {
     const laudosTransformados = laudos.rows.map((laudo: any) => ({
       id: laudo.id,
       lote_id: laudo.lote_id,
-      lote_codigo: laudo.codigo,
-      lote_titulo: laudo.titulo,
       status: laudo.status,
       data_emissao: laudo.enviado_em,
       arquivos: {

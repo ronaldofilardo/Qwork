@@ -101,7 +101,7 @@ describe('POST /api/emissor/laudos/[loteId]/reprocessar', () => {
     });
 
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 123, codigo: '001-010125', status: 'ativo' }],
+      rows: [{ id: 123, status: 'ativo' }],
       rowCount: 1,
     });
 
@@ -130,7 +130,7 @@ describe('POST /api/emissor/laudos/[loteId]/reprocessar', () => {
 
     mockQuery
       .mockResolvedValueOnce({
-        rows: [{ id: 123, codigo: '001-010125', status: 'concluido' }],
+        rows: [{ id: 123, status: 'concluido' }],
         rowCount: 1,
       })
       .mockResolvedValueOnce({
@@ -163,7 +163,7 @@ describe('POST /api/emissor/laudos/[loteId]/reprocessar', () => {
 
     mockQuery
       .mockResolvedValueOnce({
-        rows: [{ id: 123, codigo: '001-010125', status: 'concluido' }],
+        rows: [{ id: 123, status: 'concluido' }],
         rowCount: 1,
       })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 })
@@ -199,7 +199,7 @@ describe('POST /api/emissor/laudos/[loteId]/reprocessar', () => {
 
     mockQuery
       .mockResolvedValueOnce({
-        rows: [{ id: 123, codigo: '001-010125', status: 'concluido' }],
+        rows: [{ id: 123, status: 'concluido' }],
         rowCount: 1,
       })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // Sem laudo enviado
@@ -222,7 +222,6 @@ describe('POST /api/emissor/laudos/[loteId]/reprocessar', () => {
     expect(data.message).toContain('Reprocessamento solicitado');
     expect(data.lote).toEqual({
       id: 123,
-      codigo: '001-010125',
     });
 
     // Verificar chamadas do banco
@@ -247,7 +246,7 @@ describe('POST /api/emissor/laudos/[loteId]/reprocessar', () => {
 
     mockQuery
       .mockResolvedValueOnce({
-        rows: [{ id: 123, codigo: '001-010125', status: 'concluido' }],
+        rows: [{ id: 123, status: 'concluido' }],
         rowCount: 1,
       })
       .mockResolvedValueOnce({ rows: [], rowCount: 0 })

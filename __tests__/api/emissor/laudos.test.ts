@@ -349,7 +349,7 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       mockQuery.mockImplementation(async (text) => {
         if (text.includes('lotes_avaliacao')) {
           return {
-            rows: [{ id: 1, codigo: 'LOTE001', clinica_id: 1 }],
+            rows: [{ id: 1, clinica_id: 1 }],
             rowCount: 1,
           } as any;
         }

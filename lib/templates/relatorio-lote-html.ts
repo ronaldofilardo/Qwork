@@ -26,7 +26,8 @@ interface FuncionarioLote {
 
 interface RelatorioLoteData {
   lote: {
-    codigo: string;
+    id?: number | string;
+    codigo?: string;
     titulo: string;
   };
   empresa: string;
@@ -226,7 +227,7 @@ export function gerarHTMLRelatorioLote(dados: RelatorioLoteData): string {
       </div>
       <div class="capa-info-item">
         <span class="capa-info-label">Título do Lote:</span>
-        <span class="capa-info-value">${lote.titulo}</span>
+        <span class="capa-info-value">ID {lote.id}</span>
       </div>
       <div class="capa-info-item">
         <span class="capa-info-label">Total de Avaliações:</span>

@@ -8,6 +8,7 @@ import { gerarHTMLLaudoCompleto } from '@/lib/templates/laudo-html';
 
 describe('templates/laudo-html - gerarHTMLLaudoCompleto', () => {
   const laudoPadronizado = {
+    loteId: 999,
     etapa1: {
       clinicaNome: 'Clínica de Saúde Ocupacional',
       clinicaEndereco: 'Rua das Flores, 123 - São Paulo/SP',

@@ -101,7 +101,6 @@ describe('Centro de Operações - Notificações Persistentes', () => {
         mensagem: 'Laudo em processamento',
         dados_contexto: {
           lote_id: 999,
-          codigo: 'TESTE-001',
         },
         link_acao: '/clinica/lotes/999',
         prioridade: 'media',
@@ -119,7 +118,6 @@ describe('Centro de Operações - Notificações Persistentes', () => {
         mensagem: 'Laudo disponível para download',
         dados_contexto: {
           lote_id: 998,
-          codigo: 'TESTE-002',
         },
         link_acao: '/entidade/lotes',
         prioridade: 'media',

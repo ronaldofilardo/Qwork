@@ -8,10 +8,9 @@ describe('Lote status respecting liberadas filter', () => {
     );
     const clinicaId = clinica.rows[0].id;
 
-    const codigo = 'TEST-COD-2-' + Math.floor(Math.random() * 1000000);
     const loteRes = await query(
-      "INSERT INTO lotes_avaliacao (clinica_id, status, codigo, titulo) VALUES ($1, 'ativo', $2,'Lote Liberadas') RETURNING id",
-      [clinicaId, codigo]
+      "INSERT INTO lotes_avaliacao (clinica_id, status) VALUES ($1, 'ativo') RETURNING id",
+      [clinicaId]
     );
     const loteId = loteRes.rows[0].id;
 

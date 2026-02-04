@@ -15,8 +15,7 @@ async function listarLaudosEmitidos() {
         l.id as laudo_id,
         l.emitido_em,
         l.status as laudo_status,
-        la.codigo as lote_codigo,
-        la.titulo as lote_titulo,
+        la.id as lote_id,
         CASE 
           WHEN la.clinica_id IS NOT NULL THEN 'CLÍNICA/RH'
           WHEN la.contratante_id IS NOT NULL THEN 'ENTIDADE'
@@ -49,7 +48,7 @@ async function listarLaudosEmitidos() {
         console.log(`   Status: ${row.laudo_status}`);
         console.log(`   Emitido em: ${row.emitido_em}`);
         console.log(`   Tipo: ${row.tipo_contratante}`);
-        console.log(`   Lote: ${row.lote_codigo} - ${row.lote_titulo}`);
+        console.log(`   Lote ID: ${row.lote_id}`);
 
         if (row.tipo_contratante === 'CLÍNICA/RH') {
           console.log(

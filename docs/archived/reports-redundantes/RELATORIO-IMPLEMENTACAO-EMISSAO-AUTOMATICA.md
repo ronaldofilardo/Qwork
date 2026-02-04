@@ -74,7 +74,7 @@ if (totalAvaliacoes > 0 && ativasNum === 0) {
 **Query corrigida:**
 
 ```sql
-SELECT la.id, la.empresa_id, la.clinica_id, la.codigo, la.contratante_id
+SELECT la.id, la.empresa_id, la.clinica_id,  la.contratante_id
 FROM lotes_avaliacao la
 WHERE la.status = 'concluido'
   AND la.auto_emitir_em <= NOW()

@@ -35,7 +35,6 @@ describe('/api/entidade/lotes', () => {
       rows: [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste',
           tipo: 'completo',
           status: 'ativo',
@@ -63,7 +62,7 @@ describe('/api/entidade/lotes', () => {
 
     expect(response.status).toBe(200);
     expect(data.lotes).toHaveLength(1);
-    expect(data.lotes[0].codigo).toBe('001-291125');
+    // codigo removido
     expect(data.lotes[0].total_avaliacoes).toBe(5);
     expect(data.lotes[0].avaliacoes_concluidas).toBe(3);
   });
@@ -116,7 +115,6 @@ describe('/api/entidade/lotes', () => {
       rows: [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste',
           tipo: 'completo',
           status: 'concluido',
@@ -168,7 +166,6 @@ describe('/api/entidade/lotes', () => {
       rows: [
         {
           id: 2,
-          codigo: '002-291125',
           titulo: 'Lote Teste 2',
           tipo: 'completo',
           status: 'concluido',
@@ -207,5 +204,46 @@ describe('/api/entidade/lotes', () => {
 
     expect(response.status).toBe(200);
     expect(data.lotes[0].pode_emitir_laudo).toBe(true);
+  });
+
+  it('deve usar a view v_fila_emissao na query de lotes da entidade', async () => {
+    mockGetSession.mockReturnValue({
+      perfil: 'gestor_entidade',
+      contratante_id: 1,
+    });
+
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 1,
+          titulo: 'Lote Teste',
+          tipo: 'completo',
+          status: 'ativo',
+          criado_em: '2025-11-29T10:00:00Z',
+          liberado_em: '2025-12-01T10:00:00Z',
+          liberado_por_nome: 'João Silva',
+          total_avaliacoes: 5,
+          avaliacoes_concluidas: 3,
+          avaliacoes_inativadas: 0,
+          laudo_id: null,
+          laudo_status: null,
+          laudo_emitido_em: null,
+          laudo_enviado_em: null,
+          laudo_hash: null,
+          emissor_nome: null,
+          solicitado_por: null,
+          solicitado_em: null,
+          tipo_solicitante: null,
+        },
+      ],
+    });
+
+    await GET();
+
+    const anyContains = mockQuery.mock.calls.some(
+      (call) =>
+        typeof call[0] === 'string' && call[0].includes('v_fila_emissao')
+    );
+    expect(anyContains).toBe(true);
   });
 });

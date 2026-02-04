@@ -151,7 +151,6 @@ describe('NotificationCenter', () => {
       const mockNotificacoes = [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste 1',
           empresa_nome: 'Empresa A',
           clinica_nome: 'Clínica A',
@@ -162,7 +161,6 @@ describe('NotificationCenter', () => {
         },
         {
           id: 2,
-          codigo: '002-291125',
           titulo: 'Lote Teste 2',
           empresa_nome: 'Empresa B',
           clinica_nome: 'Clínica B',
@@ -200,7 +198,6 @@ describe('NotificationCenter', () => {
       const mockNotificacoes = [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste',
           empresa_nome: 'Empresa A',
           clinica_nome: 'Clínica A',
@@ -238,7 +235,6 @@ describe('NotificationCenter', () => {
       const mockNotificacoes = [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste',
           empresa_nome: 'Empresa A',
           clinica_nome: 'Clínica A',
@@ -274,7 +270,6 @@ describe('NotificationCenter', () => {
       const mockNotificacoes = [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste',
           empresa_nome: 'Empresa A',
           clinica_nome: 'Clínica A',
@@ -330,7 +325,6 @@ describe('NotificationCenter', () => {
       const mockNotificacoes = [
         {
           id: 1,
-          codigo: '001-291125',
           titulo: 'Lote Teste 1',
           empresa_nome: 'Empresa A',
           clinica_nome: 'Clínica A',

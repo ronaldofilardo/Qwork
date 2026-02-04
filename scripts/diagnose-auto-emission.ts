@@ -66,7 +66,7 @@ async function diagnoseAutoEmission() {
     // 4. Verificar se há hash_pdf na tabela lotes_avaliacao sem laudo
     console.log('4️⃣  Verificando lotes com hash_pdf mas sem laudo válido...');
     const hashWithoutLaudo = await query(`
-      SELECT la.id, la.codigo, la.hash_pdf, la.emitido_em, l.status AS laudo_status
+      SELECT la.id,  la.hash_pdf, la.emitido_em, l.status AS laudo_status
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON l.lote_id = la.id AND l.status != 'rascunho'
       WHERE la.hash_pdf IS NOT NULL

@@ -54,7 +54,6 @@ describe('pdf-relatorio-generator', () => {
     empresa: 'Empresa Teste LTDA',
     lote: {
       id: 1,
-      codigo: 'LOTE-001',
       titulo: 'Avaliação Anual 2025',
     },
     total_avaliacoes: 2,
@@ -243,7 +242,6 @@ describe('pdf-relatorio-generator', () => {
       matricula: 'EMP001',
       lote: {
         id: 1,
-        codigo: 'LOTE-001',
         titulo: 'Avaliação Anual 2025',
       },
     };

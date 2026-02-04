@@ -49,7 +49,7 @@ GROUP BY a.id, a.funcionario_cpf, a.status, a.inicio, a.envio, a.lote_id;
 -- Verificar impacto no lote
 SELECT 
     la.id as lote_id,
-    la.codigo,
+    
     la.titulo,
     la.status as lote_status,
     COUNT(a.id) as total_avaliacoes,
@@ -59,6 +59,6 @@ SELECT
 FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.id = (SELECT lote_id FROM avaliacoes WHERE id = 48)
-GROUP BY la.id, la.codigo, la.titulo, la.status;
+GROUP BY la.id,  la.titulo, la.status;
 
 COMMIT;

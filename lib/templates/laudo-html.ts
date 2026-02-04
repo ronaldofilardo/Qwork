@@ -10,6 +10,7 @@ import {
 import { getLogoSignatureTemplate } from '../pdf/puppeteer-templates';
 
 export interface LaudoDadosCompletos {
+  loteId: number; // ID do lote (alinhado com laudo.id)
   etapa1: DadosGeraisEmpresa;
   etapa2?: ScoreGrupo[];
   etapa3?: InterpretacaoRecomendacoes;
@@ -255,7 +256,6 @@ function gerarSecaoEtapa1(etapa1: DadosGeraisEmpresa): string {
         <p><strong>Empresa Avaliada:</strong> <span>${etapa1.empresaAvaliada}</span></p>
         <p><strong>CNPJ:</strong> <span>${etapa1.cnpj}</span></p>
         <p><strong>Endereço:</strong> <span>${etapa1.endereco}</span></p>
-        <p><strong>Lote:</strong> <span>${etapa1.loteCodigo}</span></p>
         <p><strong>Período das Avaliações Consideradas:</strong> <span>${etapa1.periodoAvaliacoes.dataLiberacao} a ${etapa1.periodoAvaliacoes.dataUltimaConclusao}</span></p>
         <p><strong>Total de Funcionários Avaliados:</strong> <span>${etapa1.totalFuncionariosAvaliados} (${etapa1.percentualConclusao}% das avaliações ativas foram concluídas)</span></p>
         <p><strong>Amostra:</strong> <span>${etapa1.amostra.operacional} funcionários do nível Operacional + ${etapa1.amostra.gestao} do nível Gestão</span></p>
@@ -551,7 +551,8 @@ function gerarRodape(): string {
 export function gerarHTMLLaudoCompleto(
   laudoPadronizado: LaudoDadosCompletos
 ): string {
-  const { etapa1, etapa2, etapa3, etapa4, emitidoEm } = laudoPadronizado;
+  const { loteId, etapa1, etapa2, etapa3, etapa4, emitidoEm } =
+    laudoPadronizado;
 
   const date = emitidoEm ? new Date(emitidoEm) : new Date();
   const formattedHeaderDate =
@@ -594,7 +595,7 @@ export function gerarHTMLLaudoCompleto(
   `;
 
   // Substituir placeholders no CSS com valores reais
-  html = html.replace('{{LOTE_ID}}', etapa1.loteId?.toString() || '');
+  html = html.replace('{{LOTE_ID}}', loteId?.toString() || '');
   html = html.replace('{{DATA_EMISSAO}}', formattedDataEmissao);
 
   return html;

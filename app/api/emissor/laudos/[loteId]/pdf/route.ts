@@ -66,12 +66,14 @@ async function validarAcessoLote(
  * Criar laudo padronizado para o template centralizado
  */
 function criarLaudoPadronizado(
+  loteId: number,
   dadosGeraisEmpresa: any,
   scoresPorGrupo: any[],
   interpretacaoRecomendacoes: any,
   observacoesConclusao: any
 ): LaudoDadosCompletos {
   return {
+    loteId,
     etapa1: dadosGeraisEmpresa,
     etapa2: scoresPorGrupo,
     etapa3: interpretacaoRecomendacoes,
@@ -190,6 +192,7 @@ export const GET = async (
     const observacoesConclusao = gerarObservacoesConclusao(observacoes);
 
     const laudoPadronizado = criarLaudoPadronizado(
+      loteId,
       dadosGeraisEmpresa,
       scoresPorGrupo,
       interpretacaoRecomendacoes,
@@ -197,7 +200,7 @@ export const GET = async (
     );
 
     // Gerar HTML do laudo usando o template centralizado
-    const html = gerarHTMLLaudoCompleto(laudoPadronizado);
+    const html = gerarHTMLLaudoCompleto({ loteId, ...laudoPadronizado });
 
     // Gerar PDF
     const puppeteer = await getPuppeteerInstance();

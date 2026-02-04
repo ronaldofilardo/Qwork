@@ -220,7 +220,7 @@ describe('Correções Sistema - Validações de Dados', () => {
 describe('Correções Sistema - Queries Funcionais', () => {
   it('deve conseguir buscar lotes de entidade por contratante_id', async () => {
     const result = await query(`
-      SELECT la.id, la.codigo, la.contratante_id, c.tipo
+      SELECT la.id,  la.contratante_id, c.tipo
       FROM lotes_avaliacao la
       INNER JOIN contratantes c ON c.id = la.contratante_id
       WHERE la.contratante_id IS NOT NULL
@@ -237,7 +237,7 @@ describe('Correções Sistema - Queries Funcionais', () => {
     const result = await query(`
       SELECT 
         la.id, 
-        la.codigo, 
+         
         la.clinica_id, 
         la.empresa_id,
         c.nome as clinica_nome,

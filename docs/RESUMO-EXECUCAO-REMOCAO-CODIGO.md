@@ -72,10 +72,10 @@
 ### 🔵 **BIBLIOTECAS & INTERFACES** (4 arquivos)
 
 1. ✅ [lib/types/database.ts](../lib/types/database.ts)
-   - Removido campo `codigo: string;` da interface `LoteAvaliacao`
+   - Removido campo `// codigo: removido` da interface `LoteAvaliacao`
 
 2. ✅ [lib/hooks/useLotesAvaliacao.ts](../lib/hooks/useLotesAvaliacao.ts)
-   - Removido campo `codigo: string;` da interface `LoteAvaliacao`
+   - Removido campo `// codigo: removido` da interface `LoteAvaliacao`
 
 3. ✅ [lib/templates/laudo-html.ts](../lib/templates/laudo-html.ts)
    - Alterado `{{LOTE_CODIGO}}` → `{{LOTE_ID}}` no rodapé do PDF
@@ -114,7 +114,6 @@
 // ANTES:
 const mockLote = {
   id: 1,
-  codigo: 'LOTE-001',
   titulo: 'Teste',
 };
 

@@ -37,8 +37,10 @@ export default function ModalResetarAvaliacao({
     setLoading(true);
 
     try {
+      // Para RH usa 'lotes', para entidade usa 'lote' (singular)
+      const path = basePath === '/api/rh' ? 'lotes' : 'lote';
       const response = await fetch(
-        `${basePath}/lotes/${loteId}/avaliacoes/${avaliacaoId}/reset`,
+        `${basePath}/${path}/${loteId}/avaliacoes/${avaliacaoId}/reset`,
         {
           method: 'POST',
           headers: {

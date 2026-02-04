@@ -171,6 +171,59 @@ describe('/api/avaliacao/respostas', () => {
       expect(mockQuery).toHaveBeenCalled();
     });
 
+    it("deve atualizar status para 'em_andamento' quando salvar respostas e avaliação estava 'iniciada'", async () => {
+      const requestBody = {
+        respostas: [{ item: 'Q1', valor: 75, grupo: 1 }],
+      };
+
+      mockSession = {
+        cpf: '12345678901',
+        nome: 'Test User',
+        perfil: 'funcionario' as const,
+      };
+      mockGetSession.mockResolvedValue(mockSession);
+
+      // Chamadas seqüenciais esperadas:
+      // 1) SELECT avaliação -> retorna id 99
+      // 2) INSERT resposta -> ok
+      // 3) SELECT status -> retorna 'iniciada'
+      // 4) UPDATE avaliacoes SET status = 'em_andamento' -> ok
+      // 5) COUNT respostas -> retorna 1
+
+      mockQuery
+        .mockImplementationOnce(() =>
+          Promise.resolve({ rows: [{ id: 99 }], rowCount: 1 })
+        ) // buscar avaliacao
+        .mockImplementationOnce(() =>
+          Promise.resolve({ rows: [], rowCount: 1 })
+        ) // insert resposta
+        .mockImplementationOnce(() =>
+          Promise.resolve({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        ) // select status
+        .mockImplementationOnce(() =>
+          Promise.resolve({ rows: [], rowCount: 1 })
+        ) // update status
+        .mockImplementationOnce(() =>
+          Promise.resolve({ rows: [{ total: '1' }], rowCount: 1 })
+        ); // count
+
+      const request = new Request('http://localhost/api/avaliacao/respostas', {
+        method: 'POST',
+        body: JSON.stringify(requestBody),
+      });
+
+      const response = await POST(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining(
+          "UPDATE avaliacoes SET status = 'em_andamento'"
+        ),
+        [99]
+      );
+    });
+
     it('deve retornar erro quando dados são inválidos', async () => {
       mockSession = {
         cpf: '12345678901',

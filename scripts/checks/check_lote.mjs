@@ -12,10 +12,10 @@ async function checkLote() {
 
   try {
     const res = await pool.query(`
-      SELECT la.id, la.codigo, la.empresa_id, la.status, l.status as laudo_status
+      SELECT la.id, la.empresa_id, la.status, l.status as laudo_status
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON la.id = l.id
-      WHERE la.codigo = '004-161225'
+      WHERE la.id = 1 -- FIXME: Alterar ID conforme necessário
     `);
     console.log('Lote details:', res.rows);
   } catch (error) {

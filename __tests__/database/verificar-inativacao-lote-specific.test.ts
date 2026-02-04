@@ -30,14 +30,14 @@ describe.skip('DB: verificar_inativacao_consecutiva - caso lote 005-060126 (skip
 
     // Criar dois lotes: anterior (ordem 4) e atual (ordem 5) com codigo similar ao informado
     const resLoteAnt = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, clinica_id, empresa_id, liberado_por, status, numero_ordem) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      ['005-060125', 'Lote anterior', clinicaId, empresaId, 1, 'concluido', 4]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, status, numero_ordem) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [clinicaId, empresaId, 1, 'concluido', 4]
     );
     loteAnteriorId = resLoteAnt.rows[0].id;
 
     const resLoteAt = await query(
-      `INSERT INTO lotes_avaliacao (codigo, titulo, clinica_id, empresa_id, liberado_por, status, numero_ordem) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id`,
-      ['005-060126', 'Lote 005-060126', clinicaId, empresaId, 1, 'liberado', 5]
+      `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, liberado_por, status, numero_ordem) VALUES ($1,$2,$3,$4,$5) RETURNING id`,
+      [clinicaId, empresaId, 1, 'liberado', 5]
     );
     loteAtualId = resLoteAt.rows[0].id;
 

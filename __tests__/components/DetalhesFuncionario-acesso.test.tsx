@@ -80,8 +80,6 @@ describe('DetalhesFuncionario - Funcionalidades Básicas', () => {
               envio: '2024-01-15T00:00:00Z',
               data_inativacao: null,
               motivo_inativacao: null,
-              lote_codigo: 'LOTE001',
-              lote_titulo: 'Avaliação 2024',
               numero_ordem: 1,
               liberado_em: '2024-01-01T00:00:00Z',
             },

@@ -73,7 +73,6 @@ describe('/api/emissor/notificacoes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Lote Teste',
             liberado_em: '2025-11-29T10:00:00Z',
             empresa_nome: 'Empresa Teste',
@@ -104,7 +103,6 @@ describe('/api/emissor/notificacoes', () => {
         rows: [
           {
             id: 2,
-            codigo: '002-291125',
             titulo: 'Lote Completo',
             liberado_em: '2025-11-29T10:00:00Z',
             empresa_nome: 'Empresa Teste',
@@ -155,7 +153,6 @@ describe('/api/emissor/notificacoes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Sem Laudo',
             liberado_em: '2025-11-29T10:00:00Z',
             empresa_nome: 'Empresa Teste',
@@ -215,7 +212,6 @@ describe('/api/emissor/notificacoes', () => {
         rows: [
           {
             id: 1,
-            codigo: '001-291125',
             titulo: 'Lote 1',
             liberado_em: '2025-11-29T10:00:00Z',
             empresa_nome: 'Empresa A',
@@ -229,7 +225,6 @@ describe('/api/emissor/notificacoes', () => {
           },
           {
             id: 2,
-            codigo: '002-291125',
             titulo: 'Lote 2',
             liberado_em: '2025-11-29T11:00:00Z',
             empresa_nome: 'Empresa B',
@@ -255,7 +250,7 @@ describe('/api/emissor/notificacoes', () => {
       // Verificar estrutura da primeira notificação
       const notif = data.notificacoes[0];
       expect(notif).toHaveProperty('id');
-      expect(notif).toHaveProperty('codigo');
+      // codigo removido
       expect(notif).toHaveProperty('titulo');
       expect(notif).toHaveProperty('empresa_nome');
       expect(notif).toHaveProperty('clinica_nome');

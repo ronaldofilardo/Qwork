@@ -255,8 +255,8 @@ describe('Correção: Emissão Manual de Laudos (31/01/2026)', () => {
 
       // Simular solicitação (apenas registra, não emite)
       await query(
-        `INSERT INTO auditoria_laudos (lote_id, acao, status, criado_em)
-         VALUES ($1, 'solicitacao_manual', 'pendente', NOW())`,
+        `INSERT INTO auditoria_laudos (lote_id, acao, status, solicitado_por, tipo_solicitante, criado_em)
+         VALUES ($1, 'solicitacao_manual', 'pendente', '12345678901', 'rh', NOW())`,
         [loteSolicitacaoId]
       );
 
@@ -290,8 +290,8 @@ describe('Correção: Emissão Manual de Laudos (31/01/2026)', () => {
 
       // 2. RH/Entidade solicita (apenas registra)
       await query(
-        `INSERT INTO auditoria_laudos (lote_id, acao, status, criado_em)
-         VALUES ($1, 'solicitacao_manual', 'pendente', NOW())`,
+        `INSERT INTO auditoria_laudos (lote_id, acao, status, solicitado_por, tipo_solicitante, criado_em)
+         VALUES ($1, 'solicitacao_manual', 'pendente', '12345678901', 'rh', NOW())`,
         [loteId]
       );
 

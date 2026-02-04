@@ -1,7 +1,7 @@
 import { requireAuth } from '@/lib/session';
 import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
-import { recalcularStatusLotePorId } from '@/lib/lotes';
 
 export const dynamic = 'force-dynamic';
 
@@ -66,6 +66,27 @@ export async function POST(
 
     const lote = loteCheck.rows[0];
 
+    // Verificar se a emissão do laudo foi solicitada (princípio da imutabilidade)
+    const emissaoSolicitadaResult = await query(
+      `SELECT COUNT(*) as count FROM v_fila_emissao WHERE lote_id = $1`,
+      [loteId]
+    );
+    const emissaoSolicitada =
+      parseInt(emissaoSolicitadaResult.rows[0].count) > 0;
+
+    // Bloquear operações quando emissão foi solicitada
+    if (emissaoSolicitada) {
+      return NextResponse.json(
+        {
+          error:
+            'Não é possível inativar avaliações: emissão do laudo já foi solicitada (princípio da imutabilidade)',
+          success: false,
+          emissaoSolicitada: true,
+        },
+        { status: 400 }
+      );
+    }
+
     // Verificar se o gestor de entidade tem acesso ao contratante do lote
     if (!user.contratante_id || lote.contratante_id !== user.contratante_id) {
       return NextResponse.json(
@@ -113,19 +134,12 @@ export async function POST(
       );
     }
 
-    // Verificar se a avaliação já está concluída
-    if (avaliacao.status === 'concluida') {
-      return NextResponse.json(
-        {
-          error: 'Não é possível inativar uma avaliação já concluída',
-          success: false,
-        },
-        { status: 400 }
-      );
-    }
+    // Permitir inativação de avaliações em qualquer status (exceto já inativadas)
+    // desde que a emissão do laudo ainda não tenha sido solicitada
+    // A verificação de emissão já foi feita acima
 
-    // Inativar a avaliação
-    await query(
+    // Inativar a avaliação (usando queryAsGestorEntidade para auditoria)
+    await queryAsGestorEntidade(
       `
       UPDATE avaliacoes
       SET status = 'inativada',
@@ -136,10 +150,58 @@ export async function POST(
       [avaliacaoId, motivo.trim()]
     );
 
-    // Recalcular o status do lote após inativação (usando helper centralizado)
-    const { novoStatus, loteFinalizado } = await recalcularStatusLotePorId(
-      parseInt(loteId)
+    // Recalcular o status do lote após inativação (inline para evitar validação de funcionário)
+    const statsResult = await query(
+      `
+      SELECT
+        COUNT(a.id) as total_avaliacoes,
+        COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
+        COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
+      FROM avaliacoes a
+      WHERE a.lote_id = $1
+    `,
+      [loteId]
     );
+
+    const { ativas, concluidas, inativadas, liberadas } = statsResult.rows[0];
+    const _ativasNum = parseInt(String(ativas), 10) || 0;
+    const concluidasNum = parseInt(String(concluidas), 10) || 0;
+    const inativadasNum = parseInt(String(inativadas), 10) || 0;
+    const liberadasNum = parseInt(String(liberadas), 10) || 0;
+
+    // Determinar novo status do lote
+    let novoStatus = 'ativo';
+    let loteFinalizado = false;
+
+    if (
+      liberadasNum > 0 &&
+      inativadasNum === liberadasNum &&
+      concluidasNum === 0
+    ) {
+      novoStatus = 'cancelado';
+    } else if (
+      concluidasNum + inativadasNum === liberadasNum &&
+      liberadasNum > 0
+    ) {
+      novoStatus = 'concluido';
+      loteFinalizado = true;
+    }
+
+    // Atualizar status do lote se mudou
+    const statusAtualResult = await query(
+      'SELECT status FROM lotes_avaliacao WHERE id = $1',
+      [loteId]
+    );
+    const statusAtual = statusAtualResult.rows[0]?.status;
+
+    if (novoStatus !== statusAtual) {
+      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
+        novoStatus,
+        loteId,
+      ]);
+    }
 
     // Log da ação
     console.log(

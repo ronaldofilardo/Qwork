@@ -39,7 +39,7 @@ export const POST = async (
       `
       SELECT 
         la.id, 
-        la.codigo, 
+         
         la.status,
         la.emissor_cpf,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
@@ -48,7 +48,7 @@ export const POST = async (
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.codigo, la.status, la.emissor_cpf
+      GROUP BY la.id,  la.status, la.emissor_cpf
     `,
       [loteId]
     );

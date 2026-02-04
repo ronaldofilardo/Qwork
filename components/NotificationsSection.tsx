@@ -6,7 +6,7 @@ interface NotificacaoClinica {
   id: string;
   tipo: 'lote_concluido' | 'laudo_enviado';
   lote_id: number;
-  codigo: string;
+  // codigo: removido
   titulo: string;
   empresa_nome: string;
   data_evento: string;
@@ -195,10 +195,10 @@ export default function NotificationsSection({
                   Tipo
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Código
+                  Lote ID
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Lote
+                  Título
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Empresa
@@ -232,7 +232,7 @@ export default function NotificationsSection({
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-mono">
-                    {notif.codigo}
+                    {notif.lote_id}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div

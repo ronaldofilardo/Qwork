@@ -121,12 +121,12 @@ export default function RelatorioSetor({
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        const loteId = (
+        const dadosLoteId = (
           (dados as Record<string, unknown>)['lote'] as
             | Record<string, unknown>
             | undefined
         )?.['id'] as number | undefined;
-        a.download = `relatorio-setor-${setorSelecionado}-lote-${loteId || 'sem-id'}.pdf`;
+        a.download = `relatorio-setor-${setorSelecionado}-lote-${dadosLoteId || 'sem-id'}.pdf`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);

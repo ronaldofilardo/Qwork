@@ -2,13 +2,15 @@ import { useState, useCallback } from 'react';
 
 export interface LoteAvaliacao {
   id: number;
-  titulo: string;
   tipo: string;
   liberado_em: string;
   status: string;
   total_avaliacoes: number;
   avaliacoes_concluidas: number;
   avaliacoes_inativadas: number;
+  empresa_nome?: string;
+  // Hash SHA-256 do PDF do lote (quando disponível)
+  hash_pdf?: string | null;
   // Novos campos de validação de laudo
   pode_emitir_laudo?: boolean;
   motivos_bloqueio?: string[];

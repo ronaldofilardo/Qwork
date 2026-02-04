@@ -22,7 +22,6 @@ export async function GET() {
       `
       SELECT DISTINCT
         la.id,
-        la.titulo,
         la.tipo,
         la.status,
         la.criado_em,
@@ -47,10 +46,10 @@ export async function GET() {
       LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
       LEFT JOIN laudos l ON l.lote_id = la.id
       LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
-      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.contratante_id = $1
         AND la.status != 'cancelado'
-      GROUP BY la.id, la.titulo, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome,
+      GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome,
                l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
                fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY la.criado_em DESC

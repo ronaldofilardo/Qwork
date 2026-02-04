@@ -121,7 +121,6 @@ export const GET = async (_req: Request) => {
         l.enviado_em,
         l.hash_pdf,
         la.id as lote_id_ref,
-        la.titulo,
         ec.nome as empresa_nome,
         c.nome as clinica_nome,
         f.nome as emissor_nome
@@ -140,7 +139,6 @@ export const GET = async (_req: Request) => {
     const laudos = laudosQuery.rows.map((laudo) => ({
       id: laudo.laudo_id,
       lote_id: laudo.lote_id,
-      lote_titulo: laudo.titulo,
       empresa_nome: laudo.empresa_nome,
       clinica_nome: laudo.clinica_nome,
       emissor_nome: laudo.emissor_nome || 'N/A',

@@ -67,7 +67,6 @@ describe('Laudos via Sidebar', () => {
               {
                 id: 1,
                 lote_id: 1,
-                codigo: 'LOTE1',
                 titulo: 'Laudo 1',
                 empresa_nome: 'Empresa Teste',
                 clinica_nome: 'Clínica',

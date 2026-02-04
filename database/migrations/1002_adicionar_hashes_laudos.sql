@@ -61,8 +61,7 @@ SELECT
   'RELATÓRIO DE HASHES - LAUDOS EMITIDOS' as titulo;
 
 SELECT 
-  l.id,
-  la.codigo as lote_codigo,
+  l.idas lote_codigo,
   l.status,
   l.emitido_em::date as data_emissao,
   CASE 

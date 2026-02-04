@@ -191,7 +191,6 @@ export async function GET(request: NextRequest) {
     const loteInfo = await query(
       `
       SELECT 
-        la.codigo,
         la.titulo,
         ec.nome as empresa_nome
       FROM lotes_avaliacao la

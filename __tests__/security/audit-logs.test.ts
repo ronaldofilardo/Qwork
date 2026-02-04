@@ -102,7 +102,7 @@ describe('Audit Logs - Sistema de Auditoria', () => {
       });
       mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
 
-      const dadosAnteriores = { id: 123, codigo: 'LOTE-001' };
+      const dadosAnteriores = { id: 123 };
 
       await logAudit({
         resource: 'lotes_avaliacao',

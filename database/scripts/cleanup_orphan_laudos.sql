@@ -18,7 +18,7 @@ WHERE status = 'rascunho'
 ALTER TABLE laudos ENABLE ROW LEVEL SECURITY;
 
 -- Verificar resultado
-SELECT la.id, la.codigo, l.id AS laudo_id, l.status, l.emitido_em 
+SELECT la.id,  l.id AS laudo_id, l.status, l.emitido_em 
 FROM lotes_avaliacao la 
 LEFT JOIN laudos l ON la.id = l.lote_id 
 ORDER BY la.id;

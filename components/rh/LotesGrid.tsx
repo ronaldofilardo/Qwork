@@ -10,7 +10,7 @@ interface LotesGridProps {
     emissor_nome: string;
     enviado_em: string;
     hash: string;
-    codigo: string;
+    // codigo: removido
     status?: string;
   }>;
   downloadingLaudo: number | null;
@@ -86,7 +86,7 @@ export function LotesGrid({
             <div className="mb-4">
               <div className="flex items-center justify-between mb-1">
                 <h5 className="font-semibold text-gray-800 text-base">
-                  {lote.titulo}
+                  Lote ID: {lote.id}
                 </h5>
                 {lote.avaliacoes_inativadas > 0 && (
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
@@ -95,7 +95,9 @@ export function LotesGrid({
                   </span>
                 )}
               </div>
-              <p className="text-sm text-gray-600">Código: {lote.id}</p>
+              <p className="text-sm text-gray-600">
+                Empresa: {lote.empresa_nome || 'N/A'}
+              </p>
               <p className="text-xs text-gray-500">
                 Liberado em{' '}
                 {new Date(lote.liberado_em).toLocaleDateString('pt-BR')} às{' '}
@@ -104,6 +106,33 @@ export function LotesGrid({
                   minute: '2-digit',
                 })}
               </p>
+
+              {/* Mostrar hash do lote quando disponível (cópia rápida) */}
+              {lote.hash_pdf && (
+                <div className="mt-2 bg-white p-2 rounded border border-gray-100">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-semibold text-gray-800">
+                      🔒 Hash SHA-256
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard
+                          .writeText(lote.hash_pdf as string)
+                          .then(() => toast.success('Hash copiado!'))
+                          .catch(() => toast.error('Erro ao copiar hash'));
+                      }}
+                      className="inline-flex items-center gap-1 bg-gray-200 text-gray-800 px-2 py-1 rounded text-xs hover:bg-gray-300"
+                      title="Copiar hash do lote"
+                    >
+                      📋 Copiar
+                    </button>
+                  </div>
+                  <code className="text-[10px] font-mono text-gray-700 break-all block">
+                    {lote.hash_pdf}
+                  </code>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2 mb-4">
@@ -265,7 +294,7 @@ export function LotesGrid({
                               toast.error('Não foi possível copiar o hash')
                             );
                         }}
-                        aria-label={`Copiar hash do laudo ${laudoAssociado.codigo}`}
+                        aria-label={`Copiar hash do laudo ID ${laudoAssociado.id}`}
                         title="Copiar hash completo"
                         className="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:outline-none"
                       >

@@ -217,7 +217,6 @@ describe('Cenários com Funcionários Inativos', () => {
       mockQuery.mockResolvedValueOnce({
         rows: [{
           id: 1,
-          codigo: '001-010125',
           titulo: 'Lote Pronto',
           liberado_em: '2025-01-01',
           empresa_nome: 'Empresa ABC',
@@ -235,7 +234,7 @@ describe('Cenários com Funcionários Inativos', () => {
       const result = await mockQuery(`
         SELECT
           la.id,
-          la.codigo,
+          
           la.titulo,
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
           COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas

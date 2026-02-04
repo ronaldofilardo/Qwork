@@ -38,7 +38,7 @@ COMMENT ON VIEW vw_lotes_por_contratante IS
 CREATE OR REPLACE VIEW vw_alertas_lotes_stuck AS
 SELECT
     la.id as lote_id,
-    la.codigo,
+    
     la.status,
     COALESCE(ec.nome, cont.nome) as empresa_nome,
     COALESCE(c.nome, cont.nome) as clinica_nome,
@@ -61,7 +61,7 @@ LEFT JOIN contratantes cont ON la.contratante_id = cont.id
 LEFT JOIN avaliacoes a ON la.id = a.lote_id
 WHERE la.status IN ('ativo', 'concluido', 'finalizado')
   AND la.atualizado_em < NOW() - INTERVAL '48 hours'
-GROUP BY la.id, la.codigo, la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
+GROUP BY la.id,  la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
 
 COMMENT ON VIEW vw_alertas_lotes_stuck IS 
 'Lotes sem atualização há mais de 48h, indicando possível problema no fluxo';

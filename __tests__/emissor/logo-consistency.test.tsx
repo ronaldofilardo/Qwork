@@ -42,7 +42,6 @@ describe('Emissor - Logo no Laudo', () => {
         operacional: 40,
         gestao: 10,
       },
-      loteCodigo: 'LOTE-TEST-001',
     },
     etapa2: [],
     etapa3: {
@@ -71,7 +70,6 @@ describe('Emissor - Logo no Laudo', () => {
 
   const mockLote = {
     id: 123,
-    codigo: 'LOTE-001',
     empresa_nome: 'Empresa Teste',
     clinica_nome: 'Clínica Teste',
   };

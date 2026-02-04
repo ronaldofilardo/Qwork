@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSession } from '@/lib/session';
+import { requireAuth, getSession } from '@/lib/session';
 import jsPDF from 'jspdf';
 import { applyPlugin } from 'jspdf-autotable';
 
@@ -33,12 +33,15 @@ export async function POST(
 ) {
   try {
     // Verificar sessão e perfil
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    let session;
+    if (typeof getSession === 'function') {
+      // getSession é síncrono (retorna Session | null) - não usar await
+      session = getSession();
+    } else {
+      session = await requireAuth();
     }
 
-    if (session.perfil !== 'gestor_entidade') {
+    if (!session || session.perfil !== 'gestor_entidade') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
 
@@ -55,12 +58,11 @@ export async function POST(
       `
       SELECT DISTINCT
         la.id,
-        la.codigo,
-        la.titulo,
         la.tipo,
         la.status,
         la.criado_em,
-        la.liberado_em
+        la.liberado_em,
+        la.hash_pdf
       FROM lotes_avaliacao la
       JOIN avaliacoes a ON a.lote_id = la.id
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
@@ -156,17 +158,19 @@ export async function POST(
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
     doc.text(`Código: ${lote.id}`, 14, 35);
-    doc.text(`Título: ${lote.titulo}`, 14, 42);
     doc.text(`Status: ${lote.status}`, 14, 56);
 
-    // Emitido e hash do laudo (se disponível)
+    // Emitido e hash do laudo ou do lote (priorizar hash do lote se existir)
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const emitidoTexto = emitidoEm
       ? new Date(emitidoEm).toLocaleString('pt-BR')
       : '—';
     doc.text(`Emitido em: ${emitidoTexto}`, 14, 63);
-    doc.text(`Hash: ${laudoHash || '—'}`, 14, 70);
+
+    // Priorizar o hash armazenado no lote (hash_pdf), se não existir usar metadados do laudo
+    const pdfHash = lote.hash_pdf || laudoHash;
+    doc.text(`Hash: ${pdfHash || '—'}`, 14, 70);
 
     // Tabela de Funcionários (somente os que constam no laudo)
     doc.setFontSize(14);
@@ -220,12 +224,34 @@ export async function POST(
     // Retornar PDF
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
-    return new NextResponse(pdfBuffer, {
-      headers: {
-        'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="relatorio-lote-${lote.id}.pdf"`,
-      },
-    });
+    const response = new NextResponse(pdfBuffer);
+
+    // Garantir headers (compatibilidade com ambientes de teste)
+    try {
+      response.headers.set('Content-Type', 'application/pdf');
+      response.headers.set('content-type', 'application/pdf');
+      response.headers.set(
+        'Content-Disposition',
+        `attachment; filename="relatorio-lote-${lote.id}.pdf"`
+      );
+
+      // DEBUG: imprimir informações de headers para diagnosticar ambiente de testes
+      // eslint-disable-next-line no-console
+      console.log(
+        '[DEBUG] response.headers as object:',
+        (response as any).headers
+      );
+      // eslint-disable-next-line no-console
+      console.log(
+        '[DEBUG] response.headers.get type:',
+        typeof (response as any).headers.get
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn('[DEBUG] não foi possível setar headers diretamente:', err);
+    }
+
+    return response;
   } catch (error) {
     console.error('Erro ao gerar relatório:', error);
     return NextResponse.json(

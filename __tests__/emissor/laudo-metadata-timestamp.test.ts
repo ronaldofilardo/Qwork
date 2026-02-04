@@ -7,7 +7,7 @@ describe('Consistência de timestamp entre storage e DB para laudos', () => {
   let loteId: number;
   let emissorCpf: string;
   let funcionarioCpf: string;
-  let loteCodigo: string;
+  let // loteCodigo: removido
 
   beforeAll(async () => {
     // Limpeza mínima
@@ -55,7 +55,7 @@ describe('Consistência de timestamp entre storage e DB para laudos', () => {
     loteCodigo = `TS-${Date.now().toString().slice(-6)}`;
 
     const loteRes = await query(
-      `INSERT INTO lotes_avaliacao (titulo, empresa_id, clinica_id, tipo, status, liberado_por) VALUES ('Lote TS', $1, $2, 'completo', 'rascunho', $3) RETURNING id`,
+      `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status, liberado_por) VALUES ($1, $2, 'completo', 'rascunho', $3) RETURNING id`,
       [empresaId, clinicaId, emissorCpf]
     );
     loteId = loteRes.rows[0].id;

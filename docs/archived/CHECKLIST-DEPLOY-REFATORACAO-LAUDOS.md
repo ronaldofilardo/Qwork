@@ -608,8 +608,7 @@ ORDER BY criado_em DESC;
 
 ```sql
 SELECT
-  f.id, f.lote_id, f.tentativas, f.erro, la.codigo
-FROM fila_emissao f
+  f.id, f.lote_id, f.tentativas, f.erroFROM fila_emissao f
 JOIN lotes_avaliacao la ON f.lote_id = la.id
 WHERE f.tentativas >= f.max_tentativas;
 ```

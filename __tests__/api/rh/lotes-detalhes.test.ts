@@ -39,7 +39,6 @@ describe('/api/rh/lotes/[id]', () => {
         rowCount: 1,
         rows: [{
           id: 16,
-          codigo: 'LOTE-016',
           titulo: 'Avaliação Anual 2025',
           descricao: 'Avaliação completa dos funcionários',
           tipo: 'completo',
@@ -68,7 +67,6 @@ describe('/api/rh/lotes/[id]', () => {
         id: 16,
         empresa_id: 5,
         empresa_nome: 'Empresa ABC Ltda',
-        codigo: 'LOTE-016',
         titulo: 'Avaliação Anual 2025',
         descricao: 'Avaliação completa dos funcionários',
         tipo: 'completo',
@@ -146,7 +144,6 @@ describe('/api/rh/lotes/[id]', () => {
           clinica_id: 2, // Clínica diferente
           empresa_id: 5,
           empresa_nome: 'Empresa ABC Ltda',
-          codigo: 'LOTE-016',
           titulo: 'Avaliação Anual 2025',
           descricao: 'Avaliação completa dos funcionários',
           tipo: 'completo',
@@ -200,7 +197,6 @@ describe('/api/rh/lotes/[id]', () => {
         rowCount: 1,
         rows: [{
           id: 16,
-          codigo: 'LOTE-016',
           titulo: 'Avaliação Anual 2025',
           descricao: 'Avaliação completa dos funcionários',
           tipo: 'completo',

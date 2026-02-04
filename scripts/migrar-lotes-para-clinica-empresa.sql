@@ -90,8 +90,8 @@ FROM lotes_avaliacao;
 
 SELECT 
   id, 
-  codigo, 
-  titulo,
+  -- codigo, -- [DEPRECATED MIGRATION 164]
+  -- titulo, -- [DEPRECATED MIGRATION 164]
   contratante_id,
   clinica_id,
   empresa_id,

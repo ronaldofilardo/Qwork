@@ -19,8 +19,6 @@ export const GET = async (_req: Request) => {
       `
       SELECT
         la.id,
-        la.codigo,
-        la.titulo,
         la.liberado_em,
         ec.nome as empresa_nome,
         c.nome as clinica_nome,
@@ -38,7 +36,7 @@ export const GET = async (_req: Request) => {
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       LEFT JOIN laudos l ON la.id = l.id AND l.emissor_cpf = $1
       WHERE la.status IN ('ativo', 'finalizado')
-      GROUP BY la.id, la.codigo, la.titulo, la.liberado_em, ec.nome, c.nome, l.status, l.id
+      GROUP BY la.id, la.liberado_em, ec.nome, c.nome, l.status, l.id
       HAVING
         COUNT(a.id) > 0
         AND COUNT(a.id) = COUNT(CASE WHEN a.status = 'concluida' THEN 1 END)
@@ -50,8 +48,6 @@ export const GET = async (_req: Request) => {
 
     const notificacoes = notificacoesQuery.rows.map((notif) => ({
       id: notif.id,
-      codigo: notif.codigo,
-      titulo: notif.titulo,
       empresa_nome: notif.empresa_nome,
       clinica_nome: notif.clinica_nome,
       liberado_em: notif.liberado_em,
@@ -59,8 +55,8 @@ export const GET = async (_req: Request) => {
       tipo: notif.tipo_notificacao,
       mensagem:
         notif.tipo_notificacao === 'novo_lote'
-          ? `Novo lote "${notif.titulo}" pronto para emissão de laudo`
-          : `Laudo em rascunho aguardando finalização: "${notif.titulo}"`,
+          ? `Novo lote ID: ${notif.id} pronto para emissão de laudo`
+          : `Laudo em rascunho aguardando finalização: ID ${notif.id}`,
     }));
 
     // Contar total de notificações não lidas

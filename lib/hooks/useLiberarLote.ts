@@ -27,9 +27,8 @@ export interface LoteResponse {
   hint?: string;
   lote?: {
     id: number;
-    codigo: string;
+    // codigo: removido
     numero_ordem: number;
-    titulo: string;
     tipo: string;
     liberado_em: string;
   };
@@ -44,7 +43,6 @@ export interface LoteResponse {
 
 export interface LiberarLoteParams {
   empresaId: number;
-  titulo?: string;
   descricao?: string;
   tipo?: 'completo' | 'operacional' | 'gestao';
   dataFiltro?: string;

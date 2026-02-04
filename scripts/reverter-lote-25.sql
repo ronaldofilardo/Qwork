@@ -39,13 +39,13 @@ VALUES (
 -- 4. Verificar resultado
 SELECT 
     la.id, 
-    la.codigo, 
+     
     la.status, 
     COUNT(l.id) as laudos_count,
     la.atualizado_em
 FROM lotes_avaliacao la
 LEFT JOIN laudos l ON l.lote_id = la.id
 WHERE la.id = 25
-GROUP BY la.id, la.codigo, la.status, la.atualizado_em;
+GROUP BY la.id,  la.status, la.atualizado_em;
 
 COMMIT;

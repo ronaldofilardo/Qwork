@@ -87,7 +87,7 @@ interface LoteInfo {
 ```sql
 SELECT
   la.id,
-  la.codigo,
+  
   la.titulo,
   la.tipo,
   la.status,

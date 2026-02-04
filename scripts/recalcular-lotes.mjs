@@ -66,17 +66,17 @@ async function recalcularLotes() {
             [novoStatus, lote.id]
           );
           console.log(
-            `✅ ${lote.codigo}: ${lote.status} → ${novoStatus} (emissão agendada)`
+            `✅ Lote #${lote.id}: ${lote.status} → ${novoStatus} (emissão agendada)`
           );
         } else {
           await pool.query(
             'UPDATE lotes_avaliacao SET status = $1 WHERE id = $2',
             [novoStatus, lote.id]
           );
-          console.log(`✅ ${lote.codigo}: ${lote.status} → ${novoStatus}`);
+          console.log(`✅ Lote #${lote.id}: ${lote.status} → ${novoStatus}`);
         }
       } else {
-        console.log(`➡️ ${lote.codigo}: status já correto (${lote.status})`);
+        console.log(`➡️ Lote #${lote.id}: status já correto (${lote.status})`);
       }
     }
 

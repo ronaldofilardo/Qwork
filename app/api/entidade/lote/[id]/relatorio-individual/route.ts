@@ -185,7 +185,6 @@ export async function GET(
         f.matricula,
         ec.nome as empresa_nome,
         la.id as lote_id,
-        la.titulo as lote_titulo,
         la.clinica_id as lote_clinica_id,
         la.contratante_id as lote_contratante_id
       FROM avaliacoes a
@@ -283,7 +282,7 @@ export async function GET(
       },
       lote: {
         id: loteId,
-        titulo: avaliacao.lote_titulo,
+        descricao: null, // Não disponível nesta query simplificada
       },
       envio: avaliacao.envio,
       grupos: gruposProcessados.sort((a, b) => a.id - b.id),
@@ -339,7 +338,11 @@ export async function GET(
     doc.setFont('helvetica', 'normal');
     doc.text(`Lote #${dadosRelatorio.lote.id}`, 14, yPos);
     yPos += 5;
-    doc.text(`Título: ${dadosRelatorio.lote.titulo}`, 14, yPos);
+    doc.text(
+      `Lote: ${dadosRelatorio.lote.descricao || dadosRelatorio.lote.id}`,
+      14,
+      yPos
+    );
     yPos += 5;
     const dataEnvio = dadosRelatorio.envio
       ? new Date(dadosRelatorio.envio).toLocaleString('pt-BR')
@@ -402,12 +405,36 @@ export async function GET(
     // Gerar buffer do PDF
     const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
 
+    // Persistir hash do relatório individual (se houver laudo associado)
+    try {
+      const crypto = await import('crypto');
+      const hash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
+
+      const laudoResult = await query(
+        `SELECT id FROM laudos WHERE lote_id = $1 ORDER BY emitido_em DESC LIMIT 1`,
+        [avaliacao.lote_id]
+      );
+
+      if (laudoResult.rows[0]) {
+        await query(
+          `UPDATE laudos SET hash_relatorio_individual = $1, atualizado_em = now() WHERE id = $2`,
+          [hash, laudoResult.rows[0].id]
+        );
+      }
+    } catch (err) {
+      console.error(
+        'Aviso: não foi possível persistir hash_relatorio_individual:',
+        err
+      );
+    }
+
     // Retornar PDF
     const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(/\s+/g, '-')}-${avaliacao.lote_codigo}.pdf`;
 
     return new NextResponse(pdfBuffer, {
       headers: {
         'Content-Type': 'application/pdf',
+        'content-type': 'application/pdf',
         'Content-Disposition': `attachment; filename="${nomeArquivo}"`,
       },
     });

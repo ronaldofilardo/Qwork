@@ -41,8 +41,6 @@ export const GET = async (req: Request) => {
               'lote_concluido' as tipo,
               la.id as id_referencia,
               la.id as lote_id,
-              la.codigo,
-              la.titulo,
               ec.nome as empresa_nome,
               MAX(a.envio) as data_evento
             FROM lotes_avaliacao la
@@ -57,7 +55,7 @@ export const GET = async (req: Request) => {
                 SELECT 1 FROM avaliacoes a3 
                 WHERE a3.lote_id = la.id AND a3.status = 'concluida'
               )
-            GROUP BY la.id, la.codigo, la.titulo, ec.nome
+            GROUP BY la.id, ec.nome
             HAVING MAX(a.envio) >= NOW() - INTERVAL '7 days'
 
             UNION ALL
@@ -66,8 +64,6 @@ export const GET = async (req: Request) => {
               'laudo_enviado' as tipo,
               l.id as id_referencia,
               l.lote_id,
-              la.codigo,
-              la.titulo,
               ec.nome as empresa_nome,
               l.enviado_em as data_evento
             FROM laudos l
@@ -87,14 +83,12 @@ export const GET = async (req: Request) => {
             id: `${notif.tipo}_${notif.id_referencia}`,
             tipo: notif.tipo,
             lote_id: notif.lote_id,
-            codigo: notif.codigo,
-            titulo: notif.titulo,
             empresa_nome: notif.empresa_nome,
             data_evento: notif.data_evento,
             mensagem:
               notif.tipo === 'lote_concluido'
-                ? `Lote "${notif.titulo}" enviado`
-                : `Laudo recebido para o lote "${notif.titulo}"`,
+                ? `Lote ID: ${notif.lote_id} enviado`
+                : `Laudo recebido para o lote ID: ${notif.lote_id}`,
           }));
 
           // Enviar notificações

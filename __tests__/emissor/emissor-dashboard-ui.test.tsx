@@ -22,7 +22,6 @@ describe('Emissor Dashboard UI', () => {
             lotes: [
               {
                 id: 1,
-                codigo: 'LOT-100',
                 titulo: 'Lote 1',
                 tipo: 'completo',
                 status: 'concluido',

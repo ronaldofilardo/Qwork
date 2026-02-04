@@ -8,6 +8,7 @@ interface Avaliacao {
   status: string;
   inicio: string;
   fim?: string;
+  total_respostas?: number;
 }
 
 interface AvaliacaoAPI {
@@ -17,6 +18,7 @@ interface AvaliacaoAPI {
   envio: string | null;
   grupo_atual: number | null;
   criado_em: string;
+  total_respostas: number;
 }
 
 export default function Dashboard() {
@@ -42,6 +44,7 @@ export default function Dashboard() {
         id: a.id,
         // Mantém o status original para distinguir entre 'iniciada' e 'em_andamento'
         status: a.status,
+        total_respostas: a.total_respostas || 0,
         inicio: a.criado_em
           ? new Date(a.criado_em).toLocaleString('pt-BR', {
               day: '2-digit',
@@ -68,6 +71,7 @@ export default function Dashboard() {
         disponiveis: todas.filter(
           (a) => a.status === 'iniciada' || a.status === 'em_andamento'
         ).length,
+        comRespostas: todas.filter((a) => (a.total_respostas || 0) > 0).length,
       });
 
       setAvaliacoes(todas);
@@ -131,7 +135,7 @@ export default function Dashboard() {
                     href={`/avaliacao?id=${a.id}`}
                     className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold"
                   >
-                    {a.status === 'iniciada' ? 'Iniciar' : 'Continuar'}{' '}
+                    {(a.total_respostas || 0) > 0 ? 'Continuar' : 'Iniciar'}{' '}
                     Avaliação
                   </Link>
                 </div>

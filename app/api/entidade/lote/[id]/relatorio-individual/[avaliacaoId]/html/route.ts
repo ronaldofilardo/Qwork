@@ -19,7 +19,7 @@ export async function GET(
 
     // Verificar acesso ao lote
     const loteResult = await query(
-      `SELECT la.id, la.titulo, la.clinica_id, la.empresa_id
+      `SELECT la.id, la.clinica_id, la.empresa_id
        FROM lotes_avaliacao la
        WHERE la.id = $1`,
       [loteId]
@@ -155,7 +155,6 @@ export async function GET(
       },
       lote: {
         id: lote.id,
-        titulo: lote.titulo,
       },
       envio: avaliacao.concluida_em
         ? new Date(avaliacao.concluida_em).toLocaleDateString('pt-BR')

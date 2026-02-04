@@ -23,7 +23,7 @@ describe('Correções de Inconsistências - Validação Lógica', () => {
     it('deve estrutura de resposta incluir novos campos de validação', () => {
       interface LoteAPIResponse {
         id: number;
-        codigo: string;
+        // codigo: removido
         status: string;
         pode_emitir_laudo: boolean;
         motivos_bloqueio: string[];
@@ -32,7 +32,6 @@ describe('Correções de Inconsistências - Validação Lógica', () => {
 
       const mockLote: LoteAPIResponse = {
         id: 1,
-        codigo: 'LOTE-001',
         status: 'concluido',
         pode_emitir_laudo: true,
         motivos_bloqueio: [],
@@ -211,7 +210,7 @@ describe('Correções de Inconsistências - Validação Lógica', () => {
     it('deve funcionar com lotes antigos sem novos campos', () => {
       interface LoteLegacy {
         id: number;
-        codigo: string;
+        // codigo: removido
         status: string;
         total_avaliacoes: number;
         avaliacoes_concluidas: number;
@@ -226,7 +225,6 @@ describe('Correções de Inconsistências - Validação Lógica', () => {
 
       const loteLegacy: LoteLegacy = {
         id: 1,
-        codigo: 'LOTE-LEGACY',
         status: 'concluido',
         total_avaliacoes: 10,
         avaliacoes_concluidas: 10,

@@ -112,7 +112,7 @@ graph LR
 **Query de Seleção de Lotes:**
 
 ```sql
-SELECT la.id, la.empresa_id, la.clinica_id, la.codigo, la.contratante_id
+SELECT la.id, la.empresa_id, la.clinica_id,  la.contratante_id
 FROM lotes_avaliacao la
 WHERE la.status = 'concluido'
   AND la.auto_emitir_em <= NOW()
@@ -161,7 +161,7 @@ WHERE la.status = 'concluido'
 
 ```sql
 SELECT l.id as laudo_id, l.lote_id, l.arquivo_pdf, l.hash_pdf,
-       la.codigo, la.clinica_id, la.contratante_id
+        la.clinica_id, la.contratante_id
 FROM laudos l
 JOIN lotes_avaliacao la ON l.lote_id = la.id
 WHERE l.status = 'enviado'
@@ -662,7 +662,7 @@ A máquina de estado de emissão automática foi **rigorosamente validada** e es
 ### **Verificar Lotes Elegíveis para Emissão:**
 
 ```sql
-SELECT la.id, la.codigo, la.status, la.auto_emitir_em,
+SELECT la.id,  la.status, la.auto_emitir_em,
        COUNT(a.id) as total,
        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as concluidas
 FROM lotes_avaliacao la
@@ -671,14 +671,14 @@ WHERE la.status = 'concluido'
   AND la.auto_emitir_em <= NOW()
   AND la.auto_emitir_agendado = true
   AND la.id NOT IN (SELECT lote_id FROM laudos WHERE status = 'enviado')
-GROUP BY la.id, la.codigo, la.status, la.auto_emitir_em;
+GROUP BY la.id,  la.status, la.auto_emitir_em;
 ```
 
 ### **Verificar Status de Laudos:**
 
 ```sql
 SELECT l.id, l.lote_id, l.status, l.emitido_em, l.enviado_em,
-       la.codigo, la.status as lote_status
+        la.status as lote_status
 FROM laudos l
 JOIN lotes_avaliacao la ON l.lote_id = la.id
 ORDER BY l.criado_em DESC
@@ -698,9 +698,7 @@ LIMIT 20;
 ### **Verificar Auditoria de Laudos:**
 
 ```sql
-SELECT al.lote_id, al.laudo_id, al.acao, al.status, al.criado_em,
-       la.codigo
-FROM auditoria_laudos al
+SELECT al.lote_id, al.laudo_id, al.acao, al.status, al.criado_emFROM auditoria_laudos al
 JOIN lotes_avaliacao la ON al.lote_id = la.id
 WHERE al.criado_em >= NOW() - INTERVAL '24 hours'
 ORDER BY al.criado_em DESC

@@ -111,8 +111,7 @@ BEGIN
   WHERE id = p_lote_id;
 
   -- Buscar lote anterior (ordem - 1) e status da avaliacao correspondente (se existir) no mesmo contexto
-  SELECT la.numero_ordem, a.status, la.codigo
-  INTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
+  SELECT la.numero_ordem, a.statusINTO v_lote_anterior_ordem, v_avaliacao_anterior_status, v_ultima_inativacao_codigo
   FROM lotes_avaliacao la
   LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.funcionario_cpf = p_funcionario_cpf
   WHERE la.numero_ordem = v_lote_atual_ordem - 1

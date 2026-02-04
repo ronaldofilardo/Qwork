@@ -235,7 +235,6 @@ describe('/api/admin/funcionarios', () => {
           avaliacao_envio: null,
           avaliacao_status: 'em_andamento',
           lote_id: 5,
-          lote_codigo: 'LOTE-2025-01',
         },
       ];
 
@@ -264,7 +263,6 @@ describe('/api/admin/funcionarios', () => {
       expect(funcionario.avaliacoes).toHaveLength(1);
       expect(funcionario.avaliacoes[0].id).toBe(1);
       expect(funcionario.avaliacoes[0].lote_id).toBe(5);
-      expect(funcionario.avaliacoes[0].lote_codigo).toBe('LOTE-2025-01');
 
       // Verifica que a query faz LEFT JOIN com avaliacoes e lotes_avaliacao
       const queryCall = mockQuery.mock.calls[1];

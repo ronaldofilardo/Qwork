@@ -31,14 +31,14 @@ export const POST = async (
       `
       SELECT 
         la.id,
-        la.codigo,
+        
         la.status,
         COUNT(a.id) as total_avaliacoes,
         COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1
-      GROUP BY la.id, la.codigo, la.status
+      GROUP BY la.id,  la.status
     `,
       [loteId]
     );

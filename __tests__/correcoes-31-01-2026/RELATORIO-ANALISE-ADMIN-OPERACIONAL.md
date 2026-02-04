@@ -70,7 +70,7 @@ const session = await requireRole('rh');
 SELECT
   f.cpf, f.nome, ...,
   a.id as avaliacao_id, a.status as avaliacao_status,
-  la.id as lote_id, la.codigo as lote_codigo
+  la.id as lote_idas lote_codigo
 FROM funcionarios f
 LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
 LEFT JOIN lotes_avaliacao la ON a.lote_id = la.id

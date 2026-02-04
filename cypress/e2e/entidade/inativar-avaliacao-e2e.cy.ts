@@ -12,7 +12,7 @@ describe('Entidade - Inativar Avaliação (E2E confiável)', () => {
     let inactivated = false;
 
     const initialLote = {
-      lote: { id: 1, codigo: 'LOT-E2E-001', titulo: 'Lote Teste E2E' },
+      lote: { id: 1, titulo: 'Lote Teste E2E' },
       funcionarios: [
         {
           cpf: '12345678901',
@@ -31,7 +31,7 @@ describe('Entidade - Inativar Avaliação (E2E confiável)', () => {
     };
 
     const updatedLote = {
-      lote: { id: 1, codigo: 'LOT-E2E-001', titulo: 'Lote Teste E2E' },
+      lote: { id: 1, titulo: 'Lote Teste E2E' },
       funcionarios: [
         {
           cpf: '12345678901',
@@ -56,7 +56,6 @@ describe('Entidade - Inativar Avaliação (E2E confiável)', () => {
         lotes: [
           {
             id: 1,
-            codigo: 'LOT-E2E-001',
             titulo: 'Lote Teste E2E',
             tipo: 'avaliacao_psicossocial',
             status: 'ativo',

@@ -11,6 +11,7 @@ import { LaudoPadronizado } from '@/lib/laudo-tipos';
 
 describe('Laudo - Alterações de Design', () => {
   const mockLaudoCompleto: LaudoPadronizado = {
+    loteId: 888,
     etapa1: {
       clinicaNome: 'Clínica Teste',
       clinicaEndereco: 'Rua Teste, 123',

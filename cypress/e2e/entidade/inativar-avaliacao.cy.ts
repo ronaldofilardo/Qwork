@@ -15,7 +15,6 @@ describe('Entidade - Inativar Avaliação (fluxo básico)', () => {
         lotes: [
           {
             id: 1,
-            codigo: 'LOT-ENT-001',
             titulo: 'Lote Teste Entidade',
             tipo: 'avaliacao_psicossocial',
             status: 'ativo',
@@ -31,7 +30,7 @@ describe('Entidade - Inativar Avaliação (fluxo básico)', () => {
     cy.intercept('GET', '/api/entidade/lote/1', {
       statusCode: 200,
       body: {
-        lote: { id: 1, codigo: 'LOT-ENT-001', titulo: 'Lote Teste Entidade' },
+        lote: { id: 1, titulo: 'Lote Teste Entidade' },
         funcionarios: [
           {
             cpf: '12345678901',

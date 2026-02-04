@@ -20,8 +20,20 @@ export const POST = async (req: Request) => {
   }
 
   try {
-    const { titulo, descricao, dataFiltro, loteReferenciaId, tipo } =
-      await req.json();
+    // Parse do body (pode estar vazio)
+    let descricao, dataFiltro, loteReferenciaId, tipo;
+    try {
+      const body = await req.json();
+      descricao = body.descricao;
+      dataFiltro = body.dataFiltro;
+      loteReferenciaId = body.loteReferenciaId;
+      tipo = body.tipo;
+    } catch {
+      // Body vazio ou inválido - usar valores padrão
+      console.log(
+        '[LIBERAR-LOTE] Body vazio ou inválido, usando valores padrão'
+      );
+    }
 
     const contratanteId = session.contratante_id as number;
 
@@ -138,12 +150,10 @@ export const POST = async (req: Request) => {
       // ✅ CORREÇÃO: Entity usa contratante_id (não clinica_id/empresa_id)
       // XOR constraint exige: contratante_id OU clinica_id (não ambos)
       // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
-      // Usa apenas ID (sem geração de codigo)
       const loteResult = await queryAsGestorEntidade(
-        `INSERT INTO lotes_avaliacao (contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, $4, 'ativo', $5, $6) RETURNING id, liberado_em, numero_ordem`,
+        `INSERT INTO lotes_avaliacao (contratante_id, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
         [
           contratanteId,
-          titulo || `Lote ${String(numeroOrdem)}`,
           descricao ||
             `Lote ${String(numeroOrdem)} liberado para entidade ${contratanteId}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis da empresa ${String(empresaCheck.rows[0].nome)}.`,
           tipo || 'completo',
@@ -198,13 +208,10 @@ export const POST = async (req: Request) => {
               empresa_id: empresaId,
               empresa_nome: String(empresaCheck.rows[0].nome),
               tipo: tipo || 'completo',
-              titulo:
-                titulo ||
-                `Lote ${String(lote.numero_ordem)} - ${String(codigo)}`,
+              lote_id: lote.id,
               descricao: descricao || null,
               data_filtro: dataFiltro || null,
               lote_referencia_id: loteReferenciaId || null,
-              id: lote.id,
               numero_ordem: lote.numero_ordem,
               avaliacoes_criadas: avaliacoesCriadas,
               total_funcionarios: funcionariosElegiveis.length,
@@ -300,21 +307,14 @@ export const POST = async (req: Request) => {
       console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
 
       if (funcionariosElegiveis.length > 0) {
-        const codigoResult = await queryAsGestorEntidade(
-          `SELECT usar apenas ID do lote() as codigo`
-        );
-        const codigo = codigoResult.rows[0].codigo;
-
         // ✅ CORREÇÃO: Lote de entidade usa apenas contratante_id
         // XOR constraint: contratante_id (não clinica_id/empresa_id)
         // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
         const loteResult = await queryAsGestorEntidade(
-          `INSERT INTO lotes_avaliacao (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
-           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7) RETURNING id, codigo, liberado_em, numero_ordem`,
+          `INSERT INTO lotes_avaliacao (contratante_id, descricao, tipo, status, liberado_por, numero_ordem)
+           VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
           [
-            codigo,
             contratanteId,
-            titulo || `Lote ${String(numeroOrdem)} - ${String(codigo)}`,
             descricao ||
               `Lote ${String(numeroOrdem)} liberado para ${String(contratanteNome)}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis vinculados diretamente à entidade.`,
             tipo || 'completo',
@@ -358,9 +358,7 @@ export const POST = async (req: Request) => {
                 contratante_id: contratanteId,
                 contratante_nome: contratanteNome,
                 tipo: tipo || 'completo',
-                titulo:
-                  titulo ||
-                  `Lote ${String(lote.numero_ordem)} - ${String(codigo)}`,
+                lote_id: lote.id,
                 descricao: descricao || null,
                 data_filtro: dataFiltro || null,
                 numero_ordem: lote.numero_ordem,

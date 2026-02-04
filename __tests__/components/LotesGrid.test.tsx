@@ -7,7 +7,6 @@ describe('LotesGrid component', () => {
     const lotes = [
       {
         id: 1,
-        codigo: 'LOTE-001',
         titulo: 'Lote Teste',
         tipo: 'inicial',
         status: 'concluido',

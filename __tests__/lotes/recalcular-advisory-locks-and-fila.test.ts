@@ -10,7 +10,7 @@ describe('RecalcularStatus: advisory lock and fila idempotency', () => {
 
     const codigo = 'TEST-COD-1-' + Math.floor(Math.random() * 1000000);
     const loteRes = await query(
-      "INSERT INTO lotes_avaliacao (clinica_id, status, codigo, titulo) VALUES ($1, 'rascunho', $2,'Lote Teste') RETURNING id",
+      "INSERT INTO lotes_avaliacao (clinica_id, status) VALUES ($1, 'rascunho') RETURNING id",
       [clinicaId, codigo]
     );
     const loteId = loteRes.rows[0].id;

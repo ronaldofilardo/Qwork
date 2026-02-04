@@ -21,12 +21,12 @@ export const GET = async (req: Request) => {
 
   try {
     // Buscar total de lotes (excluindo cancelados)
-    // IMPORTANTE: Apenas lotes que foram SOLICITADOS para emissão (fila_emissao) ou já têm laudo EMITIDO
+    // Exibe lotes que foram solicitados para emissão OU já têm laudo emitido
     const totalQuery = await query(
       `
       SELECT COUNT(DISTINCT la.id) as total
       FROM lotes_avaliacao la
-      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
@@ -40,16 +40,15 @@ export const GET = async (req: Request) => {
         : parseInt(totalQuery.rows[0].total);
 
     // Buscar lotes paginados (excluindo cancelados)
-    // IMPORTANTE: Apenas lotes que foram SOLICITADOS para emissão (fila_emissao) ou já têm laudo EMITIDO
+    // Exibe lotes que foram solicitados para emissão OU já têm laudo emitido
     const lotesQuery = await query(
       `
       SELECT
         la.id,
-        la.titulo,
+        la.descricao,
         la.tipo,
         la.status as lote_status,
         la.liberado_em,
-        la.modo_emergencia,
         COALESCE(ec.nome, cont.nome) as empresa_nome,
         COALESCE(c.nome, cont.nome) as clinica_nome,
         COUNT(a.id) as total_avaliacoes,
@@ -71,10 +70,10 @@ export const GET = async (req: Request) => {
       LEFT JOIN clinicas c ON ec.clinica_id = c.id
       LEFT JOIN contratantes cont ON la.contratante_id = cont.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
-      GROUP BY la.id, la.titulo, la.tipo, la.status, la.liberado_em, la.modo_emergencia, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
           WHEN la.status = 'ativo' THEN 1
@@ -244,14 +243,13 @@ export const GET = async (req: Request) => {
 
         return {
           id: lote.id,
-          titulo: lote.titulo,
+          descricao: lote.descricao || `Lote #${lote.id}`,
           tipo: lote.tipo,
           status: lote.lote_status,
           empresa_nome: lote.empresa_nome,
           clinica_nome: lote.clinica_nome,
           liberado_em: lote.liberado_em,
           total_avaliacoes: lote.total_avaliacoes,
-          modo_emergencia: lote.modo_emergencia || false,
           solicitado_por: lote.solicitado_por || null,
           solicitado_em: lote.solicitado_em || null,
           tipo_solicitante: lote.tipo_solicitante || null,

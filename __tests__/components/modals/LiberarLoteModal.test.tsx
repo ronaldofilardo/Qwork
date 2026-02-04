@@ -154,7 +154,6 @@ describe('LiberarLoteModal', () => {
       message: 'Lote 1 (001-010126) liberado com sucesso!',
       lote: {
         id: 1,
-        codigo: '001-010126',
         numero_ordem: 1,
         titulo: 'Lote 1',
         tipo: 'completo',

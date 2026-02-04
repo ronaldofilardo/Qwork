@@ -26,8 +26,6 @@ export const GET = async (_req: Request) => {
         l.status,
         l.enviado_em,
         l.hash_pdf,
-        la.codigo,
-        la.titulo,
         ec.nome as empresa_nome,
         u.nome as emissor_nome
       FROM laudos l
@@ -45,9 +43,6 @@ export const GET = async (_req: Request) => {
     const laudos = laudosQuery.rows.map((laudo) => ({
       id: laudo.laudo_id,
       lote_id: laudo.lote_id,
-      codigo: laudo.codigo,
-      lote_codigo: laudo.codigo,
-      lote_titulo: laudo.titulo,
       empresa_nome: laudo.empresa_nome,
       emissor_nome: laudo.emissor_nome || 'N/A',
       enviado_em: laudo.enviado_em,

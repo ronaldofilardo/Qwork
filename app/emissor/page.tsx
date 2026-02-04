@@ -3,11 +3,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { ModalEmergencia } from '@/components/emissor/ModalEmergencia';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
 interface Lote {
   id: number;
-  titulo: string;
+  // titulo removido - usar apenas lote.id (alinhado com laudo.id)
   tipo: string;
   status: string;
   empresa_nome: string;
@@ -15,7 +14,6 @@ interface Lote {
   liberado_em: string;
   total_avaliacoes: number;
   emissao_automatica?: boolean;
-  modo_emergencia?: boolean;
   solicitado_por?: string | null;
   solicitado_em?: string | null;
   tipo_solicitante?: string | null;
@@ -44,12 +42,8 @@ interface NotificacaoLote {
   visualizada: boolean;
 }
 
-interface LoteComNotificacao extends Lote {
-  modo_emergencia?: boolean;
-}
-
 export default function EmissorDashboard() {
-  const [lotes, setLotes] = useState<LoteComNotificacao[]>([]);
+  const [lotes, setLotes] = useState<Lote[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -84,37 +78,35 @@ export default function EmissorDashboard() {
 
         if (data.success) {
           // Processar lotes - sem dias_pendente
-          const newLotesComInfo: LoteComNotificacao[] = data.lotes.map(
-            (lote: Lote) => {
-              // Simular notificações para o lote
-              const notificacoes: NotificacaoLote[] = [];
+          const newLotesComInfo: Lote[] = data.lotes.map((lote: Lote) => {
+            // Simular notificações para o lote
+            const notificacoes: NotificacaoLote[] = [];
 
-              // Notificação de lote liberado (sempre presente)
+            // Notificação de lote liberado (sempre presente)
+            notificacoes.push({
+              id: `lote_liberado_${lote.id}`,
+              tipo: 'lote_liberado',
+              mensagem: `Lote ID ${lote.id} foi liberado pela clínica`,
+              data_evento: lote.liberado_em,
+              visualizada: false,
+            });
+
+            // Notificação de lote finalizado (se aplicável)
+            if (lote.laudo?.status === 'enviado') {
               notificacoes.push({
-                id: `lote_liberado_${lote.id}`,
-                tipo: 'lote_liberado',
-                mensagem: `Lote "${lote.titulo}" foi liberado pela clínica`,
-                data_evento: lote.liberado_em,
+                id: `lote_finalizado_${lote.id}`,
+                tipo: 'lote_finalizado',
+                mensagem: `Lote ID ${lote.id} foi finalizado e laudo enviado`,
+                data_evento: lote.laudo.enviado_em || lote.liberado_em,
                 visualizada: false,
               });
-
-              // Notificação de lote finalizado (se aplicável)
-              if (lote.laudo?.status === 'enviado') {
-                notificacoes.push({
-                  id: `lote_finalizado_${lote.id}`,
-                  tipo: 'lote_finalizado',
-                  mensagem: `Lote "${lote.titulo}" foi finalizado e laudo enviado`,
-                  data_evento: lote.laudo.enviado_em || lote.liberado_em,
-                  visualizada: false,
-                });
-              }
-
-              return {
-                ...lote,
-                notificacoes,
-              };
             }
-          );
+
+            return {
+              ...lote,
+              notificacoes,
+            };
+          });
 
           if (reset) {
             setLotes(newLotesComInfo);
@@ -159,7 +151,7 @@ export default function EmissorDashboard() {
     return () => clearInterval(interval);
   }, [currentPage, loading, loadingMore, fetchLotes]);
 
-  const getStatusColor = (lote: LoteComNotificacao) => {
+  const getStatusColor = (lote: Lote) => {
     // Se o lote está concluído mas o laudo foi enviado, tratar como finalizado
     const effectiveStatus =
       lote.status === 'concluido' && lote.laudo?.status === 'enviado'
@@ -182,7 +174,7 @@ export default function EmissorDashboard() {
     }
   };
 
-  const _getStatusIcon = (lote: LoteComNotificacao) => {
+  const _getStatusIcon = (lote: Lote) => {
     // Se o lote está concluído mas o laudo foi enviado, tratar como finalizado
     const effectiveStatus =
       lote.status === 'concluido' && lote.laudo?.status === 'enviado'
@@ -393,11 +385,7 @@ export default function EmissorDashboard() {
           const htmlContent = await htmlResponse.text();
 
           // 4. Gerar PDF no navegador usando jsPDF + html2canvas
-          await gerarPDFClientSide(
-            htmlContent,
-            `laudo-${lote.id}`,
-            lote.id
-          );
+          await gerarPDFClientSide(htmlContent, `laudo-${lote.id}`, lote.id);
 
           return;
         }
@@ -542,7 +530,7 @@ export default function EmissorDashboard() {
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex-1">
                         <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                          {lote.titulo} - Lote: {lote.id}
+                          Lote ID: {lote.id}
                         </h3>
                       </div>
                       <div className="text-right">
@@ -781,17 +769,8 @@ export default function EmissorDashboard() {
                       </div>
                     )}
 
-                    {/* Badge de modo emergência */}
-                    {lote.modo_emergencia && (
-                      <div className="mb-4">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-red-100 text-red-800">
-                          <span>⚠️</span>
-                          Emissão de Emergência
-                        </span>
-                      </div>
-                    )}
-
                     <div className="flex justify-end gap-2">
+                      \n{' '}
                       {/* Botão reprocessar - apenas para lotes concluídos sem laudo EMITIDO */}
                       {lote.status === 'concluido' &&
                         (!lote.laudo || !lote.laudo._emitido) && (
@@ -805,17 +784,6 @@ export default function EmissorDashboard() {
                             {isReprocessando ? 'Processando...' : 'Reprocessar'}
                           </button>
                         )}
-
-                      {/* Botão emergência - apenas para emissores/admins, lotes concluídos sem laudo EMITIDO */}
-                      {lote.status === 'concluido' &&
-                        (!lote.laudo || !lote.laudo._emitido) && (
-                          <ModalEmergencia
-                            loteId={lote.id}
-                            loteCodigo={lote.id}
-                            onSuccess={() => fetchLotes(currentPage, false)}
-                          />
-                        )}
-
                       {/* Botão principal do lote */}
                       {(() => {
                         const laudoDisponivelParaDownload = Boolean(

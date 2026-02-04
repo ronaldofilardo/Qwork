@@ -354,7 +354,7 @@ SELECT
   l.lote_id,
   l.status,  // ← ADICIONADO
   l.hash_pdf,
-  la.codigo,
+  
   la.titulo,
   la.clinica_id,
   la.empresa_id

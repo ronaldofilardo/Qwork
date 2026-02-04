@@ -10,8 +10,6 @@ describe('LaudosSection', () => {
     {
       id: 1,
       lote_id: 1,
-      lote_codigo: 'LOTE001',
-      lote_titulo: 'Avaliação Psicossocial 2024',
       empresa_nome: 'Empresa ABC',
       status: 'enviado',
       data_emissao: '2024-12-01T10:00:00Z',
@@ -22,8 +20,6 @@ describe('LaudosSection', () => {
     {
       id: 2,
       lote_id: 2,
-      lote_codigo: 'LOTE002',
-      lote_titulo: 'Avaliação Setorial Q4',
       empresa_nome: 'Empresa XYZ',
       status: 'pendente',
       data_emissao: null,
@@ -166,7 +162,7 @@ describe('LaudosSection', () => {
       {
         id: 1,
         lote_id: 1,
-        lote_codigo: 'LOTE001',
+        lote_
         lote_titulo: 'Teste',
         empresa_nome: 'Empresa A',
         status: 'processando',

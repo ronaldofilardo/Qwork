@@ -281,7 +281,7 @@ describe('Emissor Workflow - Melhorias UX', () => {
       const result = await query(
         `SELECT
           la.id,
-          la.codigo,
+          
           la.status,
           CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
           fe.solicitado_por,
@@ -299,7 +299,7 @@ describe('Emissor Workflow - Melhorias UX', () => {
 
       result.rows.forEach((row) => {
         expect(row).toHaveProperty('id');
-        expect(row).toHaveProperty('codigo');
+        // codigo removido
         expect(row).toHaveProperty('emissao_solicitada');
         expect(row).toHaveProperty('tem_laudo');
         expect(typeof row.emissao_solicitada).toBe('boolean');

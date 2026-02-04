@@ -12,7 +12,7 @@ async function testarAPI() {
       `
       SELECT DISTINCT
         la.id,
-        la.codigo,
+        
         la.titulo,
         la.status
       FROM lotes_avaliacao la

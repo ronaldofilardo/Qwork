@@ -38,7 +38,7 @@ function formatDate(dateString: string | null): string {
 
 interface LoteInfo {
   id: number;
-  codigo: string;
+  // codigo: removido
   titulo: string;
   tipo: string;
   status: string;
@@ -671,7 +671,7 @@ export default function DetalhesLotePage() {
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold text-gray-800">
-                  {lote.titulo}
+                  Lote ID: {lote.id}
                 </h1>
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -1194,6 +1194,7 @@ export default function DetalhesLotePage() {
                         <div className="flex gap-1 justify-center">
                           {func.avaliacao.status !== 'concluida' &&
                             func.avaliacao.status !== 'inativada' &&
+                            !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
                               <button
                                 onClick={() =>
@@ -1211,11 +1212,9 @@ export default function DetalhesLotePage() {
                             )}
                           {/* Show Reset for any evaluation that is NOT inativada — backend will enforce single-reset and lote constraints */}
                           {func.avaliacao.status !== 'inativada' &&
-                            lote?.status !== 'concluido' &&
-                            lote?.status !== 'concluded' &&
-                            lote?.status !== 'enviado_emissor' &&
-                            lote?.status !== 'a_emitir' &&
-                            lote?.status !== 'emitido' && (
+                            func.avaliacao.status !== 'concluida' &&
+                            !lote?.emissao_solicitada &&
+                            !lote?.emitido_em && (
                               <button
                                 onClick={() =>
                                   setModalResetar({
@@ -1288,6 +1287,7 @@ export default function DetalhesLotePage() {
           funcionarioNome={modalInativar.funcionarioNome}
           funcionarioCpf={modalInativar.funcionarioCpf}
           _loteId={loteId}
+          contexto="entidade"
           onClose={() => setModalInativar(null)}
           onSuccess={loadLoteData}
         />

@@ -20,14 +20,13 @@ SELECT
     a.lote_id,
     a.funcionario_cpf,
     a.status,
-    COUNT(DISTINCT (r.grupo, r.item)) as respostas_unicas,
-    la.codigo as lote_codigo,
+    COUNT(DISTINCT (r.grupo, r.item)) as respostas_unicasas lote_codigo,
     la.status as lote_status
 FROM avaliacoes a
 JOIN lotes_avaliacao la ON la.id = a.lote_id
 LEFT JOIN respostas r ON r.avaliacao_id = a.id
 WHERE a.id = 85
-GROUP BY a.id, a.lote_id, a.funcionario_cpf, a.status, la.codigo, la.status;
+GROUP BY a.id, a.lote_id, a.funcionario_cpf, a.status,  la.status;
 
 -- Atualizar avaliação #85 para concluída
 UPDATE avaliacoes
@@ -48,7 +47,7 @@ RETURNING id, lote_id, funcionario_cpf, status, envio;
 
 SELECT 
     la.id,
-    la.codigo,
+    
     la.status as status_atual,
     la.tipo,
     COUNT(a.id) as total_avaliacoes,
@@ -59,7 +58,7 @@ SELECT
 FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.id = 25
-GROUP BY la.id, la.codigo, la.status, la.tipo;
+GROUP BY la.id,  la.status, la.tipo;
 
 -- Atualizar lote para 'concluido' se todas as avaliações ativas estiverem concluídas
 \echo ''

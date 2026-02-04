@@ -147,13 +147,13 @@ export async function recalcularStatusLotePorId(
         try {
           // Buscar dados do lote para criar notificação contextualizada
           const loteInfo = await q(
-            `SELECT la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id,
+            `SELECT la.liberado_por, f.perfil, la.clinica_id, la.contratante_id,
                     COUNT(a.id) as total_avaliacoes
              FROM lotes_avaliacao la
              LEFT JOIN funcionarios f ON f.cpf = la.liberado_por
              LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
              WHERE la.id = $1
-             GROUP BY la.codigo, la.liberado_por, f.perfil, la.clinica_id, la.contratante_id`,
+             GROUP BY la.liberado_por, f.perfil, la.clinica_id, la.contratante_id`,
             [loteId]
           );
 

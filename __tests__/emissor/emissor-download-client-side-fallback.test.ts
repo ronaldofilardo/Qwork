@@ -51,7 +51,6 @@ describe('Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback'
           {
             id: 456,
             lote_id: loteId,
-            codigo: 'LOTE-ABC',
             titulo: 'Laudo Teste',
           },
         ],
@@ -84,7 +83,6 @@ describe('Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback'
           {
             id: 456,
             lote_id: loteId,
-            codigo: 'LOTE-ABC-123',
             titulo: 'Laudo Teste',
           },
         ],
@@ -123,7 +121,6 @@ describe('Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback'
           {
             id: 456,
             lote_id: loteId,
-            codigo: 'LOTE-XYZ',
             titulo: 'Laudo Teste',
           },
         ],
@@ -162,7 +159,6 @@ describe('Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback'
           {
             id: 777,
             lote_id: loteId,
-            codigo: 'LOTE-999',
             titulo: 'Laudo Teste',
           },
         ],

@@ -103,13 +103,14 @@ export const GET = async (req: Request) => {
       `
       SELECT
         la.id,
-        la.titulo,
         la.descricao,
         la.tipo,
         la.status,
         la.liberado_em,
         la.liberado_por,
         f.nome as liberado_por_nome,
+        ec.nome as empresa_nome,
+        la.hash_pdf,
         COUNT(a.id) as total_avaliacoes,
         COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
@@ -118,11 +119,12 @@ export const GET = async (req: Request) => {
         fe.tipo_solicitante
       FROM lotes_avaliacao la
       LEFT JOIN funcionarios f ON la.liberado_por = f.cpf
+      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
-      LEFT JOIN fila_emissao fe ON fe.lote_id = la.id
+      LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.clinica_id = $1 
         AND la.empresa_id = $2
-      GROUP BY la.id, la.titulo, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome, ec.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY la.liberado_em DESC
       LIMIT $3
     `,
@@ -131,12 +133,14 @@ export const GET = async (req: Request) => {
 
     const lotes = lotesQuery.rows.map((lote: any) => ({
       id: lote.id,
-      titulo: lote.titulo,
       tipo: lote.tipo,
       status: lote.status,
       liberado_em: lote.liberado_em,
       liberado_por: lote.liberado_por,
       liberado_por_nome: lote.liberado_por_nome,
+      empresa_nome: lote.empresa_nome,
+      // Hash do PDF do lote (quando disponível)
+      hash_pdf: lote.hash_pdf || null,
       total_avaliacoes: parseInt(lote.total_avaliacoes),
       avaliacoes_concluidas: parseInt(lote.avaliacoes_concluidas),
       avaliacoes_inativadas: parseInt(lote.avaliacoes_inativadas),
@@ -163,6 +167,7 @@ export const GET = async (req: Request) => {
 
         lotesComValidacao.push({
           ...lote,
+          hash_pdf: lote.hash_pdf || null,
           pode_emitir_laudo: resultado.valido || false,
           motivos_bloqueio: resultado.alertas || [],
           taxa_conclusao: resultado.detalhes?.taxa_conclusao || 0,
@@ -171,6 +176,7 @@ export const GET = async (req: Request) => {
         console.error(`Erro ao validar lote ${lote.id}:`, validationError);
         lotesComValidacao.push({
           ...lote,
+          hash_pdf: lote.hash_pdf || null,
           pode_emitir_laudo: false,
           motivos_bloqueio: ['Erro ao validar lote'],
           taxa_conclusao: 0,

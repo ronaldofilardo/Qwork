@@ -16,7 +16,7 @@ async function corrigirEmissorLaudos() {
     SELECT 
       l.id,
       l.lote_id,
-      la.codigo,
+      
       la.liberado_por as gestor_cpf,
       l.emissor_cpf,
       l.emissor_cpf = la.liberado_por as emissor_correto,
@@ -68,7 +68,7 @@ async function corrigirEmissorLaudos() {
     SELECT 
       l.id,
       l.lote_id,
-      la.codigo,
+      
       la.liberado_por as gestor_cpf,
       l.emissor_cpf,
       l.emissor_cpf = la.liberado_por as emissor_correto,
