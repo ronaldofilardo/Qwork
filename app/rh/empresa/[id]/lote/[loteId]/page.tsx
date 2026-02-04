@@ -1279,6 +1279,9 @@ export default function DetalhesLotePage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 border-b border-gray-200">
                 <tr>
+                  <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider w-20">
+                    ID
+                  </th>
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     <div className="flex items-center justify-between">
                       <span>Nome</span>
@@ -1378,7 +1381,7 @@ export default function DetalhesLotePage() {
                 {funcionariosFiltrados.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={17}
+                      colSpan={18}
                       className="px-3 py-6 text-center text-gray-500 text-sm"
                     >
                       {busca ||
@@ -1398,6 +1401,9 @@ export default function DetalhesLotePage() {
                           : ''
                       }`}
                     >
+                      <td className="px-3 py-2 text-sm text-gray-500 font-mono">
+                        #{func.avaliacao.id}
+                      </td>
                       <td className="px-3 py-2 text-sm text-gray-900">
                         <div className="flex items-center gap-2">
                           {func.avaliacao.status === 'inativada' && (
