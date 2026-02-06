@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { query, getDatabaseInfo } from '@/lib/db';
 import { createSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
 import {
   registrarAuditoria,
   extrairContextoRequisicao,
