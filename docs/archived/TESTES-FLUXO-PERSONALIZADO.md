@@ -30,7 +30,7 @@ Este documento descreve os testes criados e validados para o fluxo completo do p
 - Admin define valor_por_funcionario e valor_total
 - Contrato criado com status `aguardando_pagamento`
 - Após pagamento: contrato vira `ativo`, contratante vira `aprovado`
-- Senha criada em `contratantes_senhas` com hash bcrypt
+- Senha criada em `entidades_senhas` com hash bcrypt
 - Estado final consistente em todas as tabelas
 
 **Tecnologias:**
@@ -127,7 +127,7 @@ pnpm test "personalizado" --no-coverage
 
 4. **Liberação de Login**
    - ✅ Criação de senha com hash bcrypt
-   - ✅ Armazenamento em `contratantes_senhas`
+   - ✅ Armazenamento em `entidades_senhas`
    - ✅ `data_liberacao_login` definida
 
 ### Integrações Testadas ✅

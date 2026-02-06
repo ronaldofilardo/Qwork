@@ -51,7 +51,7 @@ describe('Fluxo Personalizado Simplificado', () => {
       [cnpjTest]
     );
     await query(
-      `DELETE FROM contratantes_senhas 
+      `DELETE FROM entidades_senhas 
        WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
       [cnpjTest]
     );
@@ -163,7 +163,7 @@ describe('Fluxo Personalizado Simplificado', () => {
     const senhaHash = await bcrypt.hash('Senha@123', 10);
 
     await query(
-      `INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash)
+      `INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
        VALUES ($1, $2, $3)
        ON CONFLICT (contratante_id) DO UPDATE SET senha_hash = EXCLUDED.senha_hash`,
       [contratanteId, cpfTest, senhaHash]
@@ -171,7 +171,7 @@ describe('Fluxo Personalizado Simplificado', () => {
 
     // Verificar senha criada
     const verificaSenha = await query(
-      'SELECT * FROM contratantes_senhas WHERE contratante_id = $1',
+      'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
       [contratanteId]
     );
 
@@ -189,7 +189,7 @@ describe('Fluxo Personalizado Simplificado', () => {
        FROM contratantes c
        LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
        LEFT JOIN contratos ct ON c.id = ct.contratante_id
-       LEFT JOIN contratantes_senhas cs ON c.id = cs.contratante_id
+       LEFT JOIN entidades_senhas cs ON c.id = cs.contratante_id
        WHERE c.id = $1`,
       [contratanteId]
     );
@@ -230,7 +230,7 @@ describe('Fluxo Personalizado Simplificado', () => {
       [cnpjTest]
     );
     await query(
-      `DELETE FROM contratantes_senhas 
+      `DELETE FROM entidades_senhas 
        WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
       [cnpjTest]
     );

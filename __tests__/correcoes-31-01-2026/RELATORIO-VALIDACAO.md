@@ -48,7 +48,7 @@
    - ✅ `current_user_cpf()` existe
 
 7. **Correções Legadas (3 testes)**
-   - ✅ `avaliacao_resets_insert_policy` NÃO menciona admin (apenas rh/gestor_entidade)
+   - ✅ `avaliacao_resets_insert_policy` NÃO menciona admin (apenas rh/gestor)
    - ✅ `avaliacoes_own_update` NÃO menciona admin (apenas funcionario_cpf)
    - ✅ Nenhuma política PERMISSIVE dá acesso operacional a admin
 
@@ -117,7 +117,7 @@ fila_emissao_admin_view
 
 ```sql
 -- Removido admin, mantido apenas perfis operacionais
-avaliacao_resets_insert_policy  -- Apenas rh/gestor_entidade
+avaliacao_resets_insert_policy  -- Apenas rh/gestor
 avaliacoes_own_update           -- Apenas funcionario_cpf (próprio)
 ```
 

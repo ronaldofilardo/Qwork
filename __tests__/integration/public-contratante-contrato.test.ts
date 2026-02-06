@@ -11,7 +11,7 @@ describe('API /api/public/contratante - inclui contrato_id', () => {
       contratoId = null;
     }
     if (contratanteId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+      await query('DELETE FROM entidades WHERE id = $1', [contratanteId]);
       contratanteId = null;
     }
   });
@@ -24,11 +24,17 @@ describe('API /api/public/contratante - inclui contrato_id', () => {
     );
     const planoId = planoRes.rows[0].id;
 
+    // Gerar dados únicos
+    const ts = Date.now();
+    const cnpj = `E2E${ts}`;
+    const email = `e2e${ts}@teste.com`;
+    const cpf = String(ts).slice(-11).padStart(11, '1');
+
     // Criar contratante
     const contratanteRes = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular, ativa, pagamento_confirmado, plano_id)
-       VALUES ('entidade', 'Empresa Teste', $1, $2, '11999999999', 'Rua Teste', 'Cid', 'ST', '00000000', '12345678901', 'Resp', 'resp@x.com', '11911111111', false, false, $3) RETURNING id`,
-      [`E2E${Date.now()}`, `e2e${Date.now()}@teste.com`, planoId]
+      `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular, ativa, pagamento_confirmado, plano_id)
+       VALUES ('entidade', 'Empresa Teste', $1, $2, '11999999999', 'Rua Teste', 'Cid', 'ST', '00000000', $3, 'Resp', 'resp@x.com', '11911111111', false, false, $4) RETURNING id`,
+      [cnpj, email, cpf, planoId]
     );
 
     contratanteId = contratanteRes.rows[0].id;

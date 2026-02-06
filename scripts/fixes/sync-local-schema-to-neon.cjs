@@ -56,24 +56,20 @@ $$ LANGUAGE plpgsql IMMUTABLE;
 
 async function ensureContratantesSenhasColumns() {
   const cols = await query(
-    "SELECT column_name FROM information_schema.columns WHERE table_name = 'contratantes_senhas' ORDER BY ordinal_position"
+    "SELECT column_name FROM information_schema.columns WHERE table_name = 'entidades_senhas' ORDER BY ordinal_position"
   );
   const existing = cols.rows.map((r) => r.column_name);
-  console.log('Colunas atuais de contratantes_senhas:', existing.join(', '));
+  console.log('Colunas atuais de entidades_senhas:', existing.join(', '));
 
   const needs = [];
   if (!existing.includes('contratante_id'))
     needs.push(
-      'ALTER TABLE contratantes_senhas ADD COLUMN contratante_id INTEGER'
+      'ALTER TABLE entidades_senhas ADD COLUMN contratante_id INTEGER'
     );
   if (!existing.includes('created_at'))
-    needs.push(
-      'ALTER TABLE contratantes_senhas ADD COLUMN created_at TIMESTAMP'
-    );
+    needs.push('ALTER TABLE entidades_senhas ADD COLUMN created_at TIMESTAMP');
   if (!existing.includes('updated_at'))
-    needs.push(
-      'ALTER TABLE contratantes_senhas ADD COLUMN updated_at TIMESTAMP'
-    );
+    needs.push('ALTER TABLE entidades_senhas ADD COLUMN updated_at TIMESTAMP');
 
   for (const sql of needs) {
     console.log('Aplicando:', sql);
@@ -81,14 +77,14 @@ async function ensureContratantesSenhasColumns() {
   }
 
   if (needs.length === 0)
-    console.log('Nenhuma alteração necessária em contratantes_senhas.');
+    console.log('Nenhuma alteração necessária em entidades_senhas.');
 
   // Tentar popular contratante_id a partir de contratantes.responsavel_cpf
   console.log(
-    'Populando contratante_id em contratantes_senhas quando possível...'
+    'Populando contratante_id em entidades_senhas quando possível...'
   );
   await query(`
-    UPDATE contratantes_senhas cs
+    UPDATE entidades_senhas cs
     SET contratante_id = c.id
     FROM contratantes c
     WHERE cs.cpf = c.responsavel_cpf
@@ -96,10 +92,10 @@ async function ensureContratantesSenhasColumns() {
   `);
 
   const nullCount = await query(
-    'SELECT COUNT(*) as total FROM contratantes_senhas WHERE contratante_id IS NULL'
+    'SELECT COUNT(*) as total FROM entidades_senhas WHERE contratante_id IS NULL'
   );
   console.log(
-    'contratantes_senhas com contratante_id NULL após tentativa:',
+    'entidades_senhas com contratante_id NULL após tentativa:',
     nullCount.rows[0].total
   );
 
@@ -107,9 +103,9 @@ async function ensureContratantesSenhasColumns() {
   if (parseInt(nullCount.rows[0].total, 10) === 0) {
     try {
       await query(
-        'ALTER TABLE contratantes_senhas ALTER COLUMN contratante_id SET NOT NULL'
+        'ALTER TABLE entidades_senhas ALTER COLUMN contratante_id SET NOT NULL'
       );
-      console.log('Setado NOT NULL em contratantes_senhas.contratante_id');
+      console.log('Setado NOT NULL em entidades_senhas.contratante_id');
     } catch (err) {
       console.warn(
         'Não foi possível setar NOT NULL (provavelmente já existe ou há restrições):',

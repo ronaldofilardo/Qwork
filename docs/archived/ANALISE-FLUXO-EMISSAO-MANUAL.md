@@ -53,9 +53,9 @@ CREATE TABLE fila_emissao (
 
 **Campos Faltantes**:
 
-- `solicitado_por` (VARCHAR(11)) - CPF do RH ou gestor_entidade
+- `solicitado_por` (VARCHAR(11)) - CPF do RH ou gestor
 - `solicitado_em` (TIMESTAMP) - Momento da solicitação
-- `tipo_solicitante` (VARCHAR(20)) - 'rh' ou 'gestor_entidade'
+- `tipo_solicitante` (VARCHAR(20)) - 'rh' ou 'gestor'
 
 **Impacto**:
 
@@ -86,7 +86,7 @@ hash_pdf CHARACTER(64) -- SHA-256 para imutabilidade
 **⚠️ AMBIGUIDADE**:
 
 - `emissor_cpf` é sempre do **emissor automático** (CPF 53051173991)
-- **Não registra o solicitante** (RH ou gestor_entidade)
+- **Não registra o solicitante** (RH ou gestor)
 - Há confusão entre "quem solicitou" vs "quem emitiu"
 
 ---
@@ -306,7 +306,7 @@ sequenceDiagram
 | -------------------------- | ---------- | ---------------------------------------- |
 | Registrar quem solicitou   | ❌ FALHA   | Campo inexistente em `fila_emissao`      |
 | Registrar quando solicitou | ⚠️ PARCIAL | `criado_em` existe, mas não é específico |
-| Registrar tipo de usuário  | ❌ FALHA   | Não registra perfil (rh/gestor_entidade) |
+| Registrar tipo de usuário  | ❌ FALHA   | Não registra perfil (rh/gestor)          |
 | Auditoria completa         | ❌ FALHA   | `auditoria_laudos` não tem solicitação   |
 | Rastreabilidade            | ❌ FALHA   | Impossível ligar laudo → solicitante     |
 | Não-repúdio                | ❌ FALHA   | Usuário pode negar solicitação           |
@@ -359,15 +359,15 @@ BEGIN;
 ALTER TABLE fila_emissao
 ADD COLUMN solicitado_por VARCHAR(11),
 ADD COLUMN solicitado_em TIMESTAMP DEFAULT NOW(),
-ADD COLUMN tipo_solicitante VARCHAR(20) CHECK (tipo_solicitante IN ('rh', 'gestor_entidade', 'admin'));
+ADD COLUMN tipo_solicitante VARCHAR(20) CHECK (tipo_solicitante IN ('rh', 'gestor', 'admin'));
 
 -- Criar índice para consultas de auditoria
 CREATE INDEX idx_fila_emissao_solicitado_por ON fila_emissao(solicitado_por);
 CREATE INDEX idx_fila_emissao_solicitado_em ON fila_emissao(solicitado_em DESC);
 
-COMMENT ON COLUMN fila_emissao.solicitado_por IS 'CPF do RH ou gestor_entidade que solicitou a emissão';
+COMMENT ON COLUMN fila_emissao.solicitado_por IS 'CPF do RH ou gestor que solicitou a emissão';
 COMMENT ON COLUMN fila_emissao.solicitado_em IS 'Timestamp da solicitação manual';
-COMMENT ON COLUMN fila_emissao.tipo_solicitante IS 'Perfil do usuário: rh, gestor_entidade ou admin';
+COMMENT ON COLUMN fila_emissao.tipo_solicitante IS 'Perfil do usuário: rh, gestor ou admin';
 
 COMMIT;
 ```
@@ -448,7 +448,7 @@ CREATE OR REPLACE VIEW v_auditoria_emissoes AS
 SELECT
     l.id AS laudo_id,
     l.lote_id,
-    
+
     la.contratante_id,
     la.empresa_id,
 
@@ -538,7 +538,7 @@ BEGIN
     FROM laudos l
     INNER JOIN fila_emissao fe ON l.lote_id = fe.lote_id
     LEFT JOIN funcionarios f ON fe.solicitado_por = f.cpf
-    LEFT JOIN contratantes_senhas cs ON fe.solicitado_por = cs.cpf
+    LEFT JOIN entidades_senhas cs ON fe.solicitado_por = cs.cpf
     WHERE l.id = p_laudo_id;
 END;
 $$ LANGUAGE plpgsql;

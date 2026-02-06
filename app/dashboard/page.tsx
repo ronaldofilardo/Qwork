@@ -70,7 +70,7 @@ export default function Dashboard() {
 
       console.log('[Dashboard] Avaliações carregadas:', {
         total: todas.length,
-        concluidas: todas.filter((a) => a.status === 'concluida').length,
+        concluidas: todas.filter((a) => a.status === 'concluido').length,
         disponiveis: todas.filter(
           (a) => a.status === 'iniciada' || a.status === 'em_andamento'
         ).length,
@@ -151,12 +151,12 @@ export default function Dashboard() {
         )}
 
         <h2 className="text-2xl font-bold mt-12 mb-6">Histórico</h2>
-        {avaliacoes.filter((a) => a.status === 'concluida').length === 0 ? (
+        {avaliacoes.filter((a) => a.status === 'concluido').length === 0 ? (
           <p className="text-gray-500">Nenhuma avaliação concluída.</p>
         ) : (
           <div className="space-y-4">
             {avaliacoes
-              .filter((a) => a.status === 'concluida')
+              .filter((a) => a.status === 'concluido')
               .map((a) => (
                 <div
                   key={a.id}
@@ -187,3 +187,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

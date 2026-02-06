@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS notificacoes (
   
   -- Destinatario
   destinatario_cpf TEXT NOT NULL,
-  destinatario_tipo TEXT NOT NULL CHECK (destinatario_tipo IN ('admin', 'gestor_entidade', 'funcionario')),
+  destinatario_tipo TEXT NOT NULL CHECK (destinatario_tipo IN ('admin', 'gestor', 'funcionario')),
   
   -- Conteudo
   titulo TEXT NOT NULL,
@@ -145,7 +145,7 @@ BEGIN
     'valor_definido',
     'media',
     v_gestor_cpf,
-    'gestor_entidade',
+    'gestor',
     'Valor Definido para Plano Personalizado',
     'O valor do seu plano personalizado foi definido. Valor por funcionario: R$ ' || 
       TO_CHAR(NEW.valor_por_funcionario, 'FM999G999G990D00') || 
@@ -276,7 +276,7 @@ CREATE POLICY notificacoes_admin_full_access ON notificacoes
 CREATE POLICY notificacoes_gestor_own ON notificacoes
   FOR SELECT
   USING (
-    destinatario_tipo = 'gestor_entidade'
+    destinatario_tipo = 'gestor'
     AND destinatario_cpf = NULLIF(current_setting('app.current_user_cpf', TRUE), '')
   );
 
@@ -284,11 +284,11 @@ CREATE POLICY notificacoes_gestor_own ON notificacoes
 CREATE POLICY notificacoes_gestor_update ON notificacoes
   FOR UPDATE
   USING (
-    destinatario_tipo = 'gestor_entidade'
+    destinatario_tipo = 'gestor'
     AND destinatario_cpf = NULLIF(current_setting('app.current_user_cpf', TRUE), '')
   )
   WITH CHECK (
-    destinatario_tipo = 'gestor_entidade'
+    destinatario_tipo = 'gestor'
     AND destinatario_cpf = NULLIF(current_setting('app.current_user_cpf', TRUE), '')
   );
 

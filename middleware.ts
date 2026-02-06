@@ -53,7 +53,7 @@ const CONTRATACAO_ROUTES = {
     '/api/admin/contratacao/pendentes',
   ],
   // Gestor de Entidade: Criar e gerenciar próprias contratações
-  gestor_entidade: [
+  gestor: [
     '/api/contratacao/personalizado/pre-cadastro',
     '/api/contratacao/personalizado/aceitar-contrato',
     '/api/contratacao/personalizado/cancelar',
@@ -149,12 +149,10 @@ export function middleware(request: NextRequest) {
         ) {
           return NextResponse.next();
         }
-      } else if (session.perfil === 'gestor_entidade') {
+      } else if (session.perfil === 'gestor') {
         // Gestor de entidade tem acesso limitado
         if (
-          CONTRATACAO_ROUTES.gestor_entidade.some((route) =>
-            pathname.startsWith(route)
-          )
+          CONTRATACAO_ROUTES.gestor.some((route) => pathname.startsWith(route))
         ) {
           return NextResponse.next();
         }
@@ -282,7 +280,7 @@ export function middleware(request: NextRequest) {
           `[SECURITY] Gestor RH ${maskedCpf} tentou acessar rota de funcionário ${pathname}, redirecionando para /rh`
         );
         return NextResponse.redirect(new URL('/rh', request.url));
-      } else if (session.perfil === 'gestor_entidade') {
+      } else if (session.perfil === 'gestor') {
         const maskedCpf =
           typeof session.cpf === 'string'
             ? `***${String(session.cpf).slice(-4)}`
@@ -329,7 +327,7 @@ export function middleware(request: NextRequest) {
     }
 
     // APENAS perfil 'rh' pode acessar rotas /rh e /api/rh
-    // gestor_entidade deve usar /entidade e /api/entidade
+    // gestor deve usar /entidade e /api/entidade
     if (session && session.perfil !== 'rh') {
       const maskedCpf =
         typeof session.cpf === 'string'
@@ -354,7 +352,7 @@ export function middleware(request: NextRequest) {
       }
     }
 
-    if (session && session.perfil !== 'gestor_entidade') {
+    if (session && session.perfil !== 'gestor') {
       const maskedCpf =
         typeof session.cpf === 'string'
           ? `***${String(session.cpf).slice(-4)}`

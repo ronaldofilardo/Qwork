@@ -26,22 +26,36 @@ describe('Login compatibilidade - gestores (CPF join & schema fallback)', () => 
     jest.clearAllMocks();
   });
 
-  test('aceita gestor via contratantes_senhas vinculado por responsavel_cpf', async () => {
+  test('aceita gestor via usuarios + entidades_senhas', async () => {
     const senha = 'senhaTeste123';
     const hash = await bcrypt.hash(senha, 10);
 
     // Mock comportamento do query de forma diferenciada por SQL
     (query as jest.Mock).mockImplementation(
       async (sql: string, params: any[]) => {
-        if (sql.includes('FROM contratantes_senhas')) {
+        // Query na tabela usuarios
+        if (sql.includes('FROM usuarios') && sql.includes('WHERE cpf =')) {
           return {
             rows: [
               {
                 cpf: '04703084945',
+                nome: 'Gestor RH',
+                tipo_usuario: 'gestor',
+                clinica_id: null,
+                entidade_id: 10,
+                ativo: true,
+              },
+            ],
+          };
+        }
+
+        // Query na tabela entidades_senhas
+        if (sql.includes('FROM entidades_senhas')) {
+          return {
+            rows: [
+              {
                 senha_hash: hash,
-                contratante_id: 10,
-                responsavel_nome: 'Gestor RH',
-                tipo: 'clinica',
+                id: 10,
                 ativa: true,
                 pagamento_confirmado: true,
               },
@@ -49,9 +63,9 @@ describe('Login compatibilidade - gestores (CPF join & schema fallback)', () => 
           };
         }
 
-        // clinicas query -> retornar vazio (sem clinica vinculada)
-        if (sql.includes('FROM clinicas')) {
-          return { rows: [] };
+        // Audit log
+        if (sql.includes('INSERT INTO audit_logs')) {
+          return { rows: [], rowCount: 1 };
         }
 
         // demais queries: retornar vazio por padrão
@@ -72,21 +86,35 @@ describe('Login compatibilidade - gestores (CPF join & schema fallback)', () => 
     expect(createSession).toHaveBeenCalled();
   });
 
-  test('continua login mesmo se consulta de clinicas falhar por coluna ausente', async () => {
+  test('continua login mesmo se consulta falhar gracefully', async () => {
     const senha = 'senhaTeste456';
     const hash = await bcrypt.hash(senha, 10);
 
     (query as jest.Mock).mockImplementation(
       async (sql: string, params: any[]) => {
-        if (sql.includes('FROM contratantes_senhas')) {
+        // Query na tabela usuarios
+        if (sql.includes('FROM usuarios') && sql.includes('WHERE cpf =')) {
           return {
             rows: [
               {
                 cpf: '04703084945',
+                nome: 'Gestor RH',
+                tipo_usuario: 'gestor',
+                clinica_id: null,
+                entidade_id: 10,
+                ativo: true,
+              },
+            ],
+          };
+        }
+
+        // Query na tabela entidades_senhas
+        if (sql.includes('FROM entidades_senhas')) {
+          return {
+            rows: [
+              {
                 senha_hash: hash,
-                contratante_id: 10,
-                responsavel_nome: 'Gestor RH',
-                tipo: 'clinica',
+                id: 10,
                 ativa: true,
                 pagamento_confirmado: true,
               },
@@ -94,9 +122,9 @@ describe('Login compatibilidade - gestores (CPF join & schema fallback)', () => 
           };
         }
 
-        if (sql.includes('FROM clinicas')) {
-          const err: any = new Error('column "contratante_id" does not exist');
-          throw err;
+        // Audit log
+        if (sql.includes('INSERT INTO audit_logs')) {
+          return { rows: [], rowCount: 1 };
         }
 
         return { rows: [] };

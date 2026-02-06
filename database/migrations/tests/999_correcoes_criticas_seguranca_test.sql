@@ -30,9 +30,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_prevenir_placeholder_senha ON contratantes_senhas;
+DROP TRIGGER IF EXISTS trg_prevenir_placeholder_senha ON entidades_senhas;
 CREATE TRIGGER trg_prevenir_placeholder_senha
-    BEFORE INSERT OR UPDATE ON contratantes_senhas
+    BEFORE INSERT OR UPDATE ON entidades_senhas
     FOR EACH ROW
     EXECUTE FUNCTION prevenir_placeholder_senha();
 
@@ -44,7 +44,7 @@ CREATE TRIGGER trg_prevenir_placeholder_senha
 \echo '2. Aplicando FORCE RLS...'
 
 ALTER TABLE contratantes FORCE ROW LEVEL SECURITY;
-ALTER TABLE contratantes_senhas FORCE ROW LEVEL SECURITY;
+ALTER TABLE entidades_senhas FORCE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios FORCE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes FORCE ROW LEVEL SECURITY;
 ALTER TABLE resultados FORCE ROW LEVEL SECURITY;
@@ -199,7 +199,7 @@ BEGIN
         'Placeholders'::TEXT,
         CASE WHEN COUNT(*) = 0 THEN 'OK' ELSE 'CRITICO' END,
         'Placeholders: ' || COUNT(*)::TEXT
-    FROM contratantes_senhas
+    FROM entidades_senhas
     WHERE senha_hash LIKE 'PLACEHOLDER_%';
     
     -- Verificar funções

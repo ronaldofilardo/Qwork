@@ -11,14 +11,14 @@
 REGRAS DE NEGÓCIO - ROLES E HIERARQUIA:
 
 1. GESTORES NÃO SÃO FUNCIONÁRIOS
-   - gestor_entidade: gerencia ENTIDADE (contratante tipo='entidade')
+   - gestor: gerencia ENTIDADE (contratante tipo='entidade')
    - rh: gerencia CLÍNICA (contratante tipo='clinica')
-   - Ambos estão em contratantes_senhas, vinculados a contratante_id
+   - Ambos estão em entidades_senhas, vinculados a contratante_id
    - NÃO devem estar na tabela funcionarios
 
 2. OBRIGATORIEDADE DE GESTORES:
    - Todo contratante tipo='clinica' → DEVE ter um RH
-   - Todo contratante tipo='entidade' → DEVE ter um gestor_entidade
+   - Todo contratante tipo='entidade' → DEVE ter um gestor
 
 3. HIERARQUIA CLÍNICA:
    Contratante (tipo='clinica') 
@@ -30,7 +30,7 @@ REGRAS DE NEGÓCIO - ROLES E HIERARQUIA:
 4. HIERARQUIA ENTIDADE:
    Contratante (tipo='entidade')
      → tem Funcionários diretos (funcionarios vinculados ao contratante)
-     → Funcionários vinculados ao gestor_entidade
+     → Funcionários vinculados ao gestor
 
 5. CICLO DE AVALIAÇÃO:
    - Funcionários são elegíveis para lotes de avaliação
@@ -60,7 +60,7 @@ DECLARE
 BEGIN
   -- Verificar se já tem gestor
   SELECT EXISTS(
-    SELECT 1 FROM contratantes_senhas WHERE contratante_id = v_contratante_id
+    SELECT 1 FROM entidades_senhas WHERE contratante_id = v_contratante_id
   ) INTO v_tem_gestor;
 
   IF v_tem_gestor THEN
@@ -73,7 +73,7 @@ BEGIN
     RAISE NOTICE 'Inserindo gestor CPF % para contratante % (senha: %)', v_cpf, v_contratante_id, v_senha_esperada;
     
     -- Inserir gestor com senha hasheada
-    INSERT INTO contratantes_senhas (
+    INSERT INTO entidades_senhas (
       cpf, 
       contratante_id, 
       senha_hash, 
@@ -103,13 +103,13 @@ BEGIN
   -- Contar clínicas sem RH
   SELECT COUNT(*) INTO v_clinicas_sem_rh
   FROM contratantes c
-  LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+  LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
   WHERE c.tipo = 'clinica' AND cs.cpf IS NULL AND c.ativa = true;
   
   -- Contar entidades sem gestor
   SELECT COUNT(*) INTO v_entidades_sem_gestor
   FROM contratantes c
-  LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+  LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
   WHERE c.tipo = 'entidade' AND cs.cpf IS NULL AND c.ativa = true;
   
   IF v_clinicas_sem_rh = 0 AND v_entidades_sem_gestor = 0 THEN
@@ -202,7 +202,7 @@ SELECT
     ELSE '⚠️ TIPO DESCONHECIDO'
   END as status
 FROM contratantes c
-LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
 WHERE c.ativa = true
 ORDER BY c.tipo, c.id;
 

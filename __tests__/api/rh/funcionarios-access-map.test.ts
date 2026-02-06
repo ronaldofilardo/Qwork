@@ -60,6 +60,7 @@ describe('POST /api/rh/funcionarios - mapear clinica via contratante', () => {
 
     const response = await POST(request);
     const data = await response.json();
+    console.log(
       '[TEST DEBUG] response status:',
       response.status,
       'body:',

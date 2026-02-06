@@ -8,7 +8,7 @@
 Os testes de integração do fluxo de cadastro → pagamento → ativação estavam falhando porque:
 
 1. O valor `'gestor'` estava sendo usado para `nivel_cargo`, mas o enum PostgreSQL só aceita `'operacional'` e `'gestao'`
-2. As constraints da tabela `funcionarios` não permitiam o novo perfil `'gestor_entidade'`
+2. As constraints da tabela `funcionarios` não permitiam o novo perfil `'gestor'`
 
 ## Correções Aplicadas
 
@@ -32,31 +32,31 @@ Três constraints foram atualizadas na tabela `funcionarios`:
 
 #### a) `funcionarios_perfil_check`
 
-Adicionado `'gestor_entidade'` aos valores permitidos de perfil.
+Adicionado `'gestor'` aos valores permitidos de perfil.
 
 ```sql
-CHECK (perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor_entidade'))
+CHECK (perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor'))
 ```
 
 ####b) `funcionarios_clinica_check`
-Permitir `clinica_id` e `empresa_id` nulos quando `perfil = 'gestor_entidade'`.
+Permitir `clinica_id` e `empresa_id` nulos quando `perfil = 'gestor'`.
 
 ```sql
 CHECK (
   clinica_id IS NOT NULL
   OR empresa_id IS NOT NULL
-  OR perfil IN ('emissor', 'gestor_entidade')
+  OR perfil IN ('emissor', 'gestor')
 )
 ```
 
 #### c) `funcionarios_nivel_cargo_check`
 
-Permitir `nivel_cargo` não nulo para `perfil = 'gestor_entidade'`.
+Permitir `nivel_cargo` não nulo para `perfil = 'gestor'`.
 
 ```sql
 CHECK (
   (perfil IN ('admin', 'emissor') AND nivel_cargo IS NULL)
-  OR (perfil IN ('funcionario', 'rh', 'gestor_entidade') AND nivel_cargo IN ('operacional', 'gestao'))
+  OR (perfil IN ('funcionario', 'rh', 'gestor') AND nivel_cargo IN ('operacional', 'gestao'))
 )
 ```
 

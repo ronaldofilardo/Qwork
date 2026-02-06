@@ -1,32 +1,18 @@
--- Migration 092: Criar helper seguro para inserção de funcionarios pelo sistema
--- Data: 2026-01-24
+-- Migration 092: Obsoleta
+-- Esta migration foi tornada obsoleta pelo plano de remoção de gestores em 'funcionarios'.
+-- A função `fn_create_funcionario_autorizado` não deve ser criada nem utilizada.
 
 BEGIN;
 
-CREATE OR REPLACE FUNCTION fn_create_funcionario_autorizado(
-  p_cpf VARCHAR(11),
-  p_nome TEXT,
-  p_email TEXT,
-  p_senha_hash TEXT,
-  p_perfil VARCHAR(20),
-  p_ativo BOOLEAN DEFAULT TRUE,
-  p_contratante_id INTEGER DEFAULT NULL
-)
-RETURNS VOID AS $$
-BEGIN
-  INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, contratante_id, criado_em, atualizado_em)
-  VALUES (p_cpf, p_nome, p_email, p_senha_hash, p_perfil, p_ativo, p_contratante_id, NOW(), NOW())
-  ON CONFLICT (cpf) DO UPDATE SET
-    nome = COALESCE(EXCLUDED.nome, funcionarios.nome),
-    email = COALESCE(EXCLUDED.email, funcionarios.email),
-    senha_hash = EXCLUDED.senha_hash,
-    perfil = COALESCE(EXCLUDED.perfil, funcionarios.perfil),
-    ativo = COALESCE(EXCLUDED.ativo, funcionarios.ativo),
-    contratante_id = COALESCE(EXCLUDED.contratante_id, funcionarios.contratante_id),
-    atualizado_em = NOW();
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- Garantir que a função não exista (será criada em migrações antigas somente por compatibilidade histórica)
+DROP FUNCTION IF EXISTS fn_create_funcionario_autorizado(VARCHAR, TEXT, TEXT, TEXT, VARCHAR, BOOLEAN, INTEGER);
 
-COMMENT ON FUNCTION fn_create_funcionario_autorizado IS 'Cria ou atualiza um funcionario em nome do sistema (Security Definer)';
+-- Registrar aviso para deploys manuais
+DO $$
+BEGIN
+  RAISE NOTICE 'Migration 092 é obsoleta: fn_create_funcionario_autorizado removida por policy de segregação de gestores (usar criação em usuarios)';
+END$$;
+
+COMMIT;
 
 COMMIT;

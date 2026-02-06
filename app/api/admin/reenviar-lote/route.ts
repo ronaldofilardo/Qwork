@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export const POST = async (req: Request) => {
-  const user = await requireRole(['rh', 'gestor_entidade']);
+  const user = await requireRole(['rh', 'gestor']);
   if (!user) {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
@@ -33,7 +33,7 @@ export const POST = async (req: Request) => {
         la.id,
         la.status,
         COUNT(a.id) as total_avaliacoes,
-        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+        COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id

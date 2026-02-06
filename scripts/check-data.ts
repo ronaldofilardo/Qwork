@@ -8,9 +8,9 @@ async function checkData() {
     );
     console.log(funcs.rows);
 
-    console.log('\nTotal de Contratantes_senhas:');
+    console.log('\nTotal de entidades_senhas:');
     const senhas = await query(
-      'SELECT COUNT(*) as total FROM contratantes_senhas'
+      'SELECT COUNT(*) as total FROM entidades_senhas'
     );
     console.log(senhas.rows);
   } catch (error) {

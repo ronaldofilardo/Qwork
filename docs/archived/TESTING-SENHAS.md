@@ -2,7 +2,7 @@
 
 ⚠️ Objetivo
 
-Este documento registra a política de testes relacionada ao manuseio de senhas e operações sensíveis em toda a base de código. Ele é parte do processo de auditoria do repositório e deve ser referenciado por todos os testes que lidem com autenticação, hashes e operações sobre `contratantes_senhas`.
+Este documento registra a política de testes relacionada ao manuseio de senhas e operações sensíveis em toda a base de código. Ele é parte do processo de auditoria do repositório e deve ser referenciado por todos os testes que lidem com autenticação, hashes e operações sobre `entidades_senhas`.
 
 Proibições absolutas
 
@@ -20,7 +20,7 @@ Condições obrigatórias para testes de senha
 Boas práticas
 
 - Incluir o cabeçalho de política (ou referenciar este documento) em qualquer arquivo de teste que opere com senhas.
-- Escrever testes que validem explicitamente que nenhuma SQL contendo `contratantes_senhas` está sendo usada para escrita nos testes.
+- Escrever testes que validem explicitamente que nenhuma SQL contendo `entidades_senhas` está sendo usada para escrita nos testes.
 - Documentar quaisquer exceções (aprovadas por revisor senior) no PR que introduzir a exceção.
 
 Auditoria e monitoramento

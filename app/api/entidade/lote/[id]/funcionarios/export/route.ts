@@ -34,7 +34,7 @@ export async function GET(
     const lote = loteResult.rows[0];
 
     // Verificar permissão (entidade ou RH)
-    if (session.perfil === 'gestor_entidade') {
+    if (session.perfil === 'gestor') {
       if (lote.clinica_id !== session.clinica_id) {
         return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
       }
@@ -64,7 +64,7 @@ export async function GET(
         a.status as avaliacao_status,
         a.concluida_em,
         CASE 
-          WHEN a.status = 'concluida' THEN 'Concluída'
+          WHEN a.status = 'concluido' THEN 'Concluída'
           WHEN a.status = 'em_andamento' THEN 'Em Andamento'
           WHEN a.status = 'pendente' THEN 'Pendente'
           WHEN a.status = 'inativa' THEN 'Inativa'

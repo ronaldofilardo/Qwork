@@ -17,13 +17,24 @@ export async function GET() {
     const session = await requireRole('admin');
 
     const result = await query(
-      `SELECT id, nome, cnpj, email, telefone, endereco,
-               cidade, estado, ativa, status,
-               responsavel_nome, responsavel_cpf, responsavel_email,
-               TO_CHAR(criado_em, 'YYYY-MM-DD HH24:MI:SS') as criado_em
-        FROM contratantes
-        WHERE tipo = 'clinica' AND status = 'aprovado'
-        ORDER BY criado_em DESC`,
+      `SELECT * FROM (
+         SELECT id, nome, cnpj, email, telefone, endereco,
+                cidade, estado, ativa, status,
+                responsavel_nome, responsavel_cpf, responsavel_email,
+                TO_CHAR(criado_em, 'YYYY-MM-DD HH24:MI:SS') as criado_em
+         FROM contratantes
+         WHERE tipo = 'clinica' AND status = 'aprovado'
+
+         UNION ALL
+
+         SELECT id, nome, cnpj, email, telefone, endereco,
+                cidade, estado, ativa, 'aprovado' as status,
+                responsavel_nome, responsavel_cpf, responsavel_email,
+                TO_CHAR(criado_em, 'YYYY-MM-DD HH24:MI:SS') as criado_em
+         FROM clinicas
+         WHERE ativa = true
+       ) t
+       ORDER BY criado_em DESC`,
       [],
       session
     );
@@ -58,7 +69,7 @@ export async function POST(request: NextRequest) {
       cidade,
       estado,
       _inscricao_estadual,
-      gestor_rh,
+      rh,
     } = data;
 
     // Validações básicas
@@ -87,8 +98,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Validar gestor RH se fornecido
-    if (gestor_rh) {
-      if (!gestor_rh.nome || !gestor_rh.cpf || !gestor_rh.email) {
+    if (rh) {
+      if (!rh.nome || !rh.cpf || !rh.email) {
         return NextResponse.json(
           {
             error:
@@ -98,14 +109,14 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!validarCPF(gestor_rh.cpf)) {
+      if (!validarCPF(rh.cpf)) {
         return NextResponse.json(
           { error: 'CPF do gestor RH inválido' },
           { status: 400 }
         );
       }
 
-      if (!validarEmail(gestor_rh.email)) {
+      if (!validarEmail(rh.email)) {
         return NextResponse.json(
           { error: 'Email do gestor RH inválido' },
           { status: 400 }
@@ -115,7 +126,7 @@ export async function POST(request: NextRequest) {
       // Verificar se CPF já existe
       const cpfExiste = await query(
         'SELECT cpf FROM funcionarios WHERE cpf = $1',
-        [gestor_rh.cpf.replace(/\D/g, '')],
+        [rh.cpf.replace(/\D/g, '')],
         session
       );
 
@@ -170,10 +181,10 @@ export async function POST(request: NextRequest) {
           cidade || null,
           estado || null,
           '00000-000',
-          gestor_rh?.nome || 'Responsável',
-          gestor_rh?.cpf?.replace(/\D/g, '') || '00000000000',
+          rh?.nome || 'Responsável',
+          rh?.cpf?.replace(/\D/g, '') || '00000000000',
           'Gestor',
-          gestor_rh?.email || email,
+          rh?.email || email,
           telefone || '00000000000',
         ],
         session
@@ -181,25 +192,17 @@ export async function POST(request: NextRequest) {
 
       const clinicaCriada = resultClinica.rows[0] as Record<string, any>;
 
-      // Se foi fornecido gestor RH, criar o usuário
+      // Se foi fornecido gestor RH, criar o usuário em USUARIOS (não em funcionarios)
       let gestorCriado = null;
-      if (gestor_rh) {
-        const cpfLimpo = gestor_rh.cpf.replace(/\D/g, '');
-        const senhaHash = await bcrypt.hash(gestor_rh.senha || '123456', 10);
+      if (rh) {
+        const cpfLimpo = rh.cpf.replace(/\D/g, '');
+        const senhaHash = await bcrypt.hash(rh.senha || '123456', 10);
 
         const resultGestor = await query(
-          `INSERT INTO funcionarios (
-            cpf, nome, email, senha_hash, perfil, clinica_id, ativo
-          )
-          VALUES ($1, $2, $3, $4, 'rh', $5, true)
-          RETURNING cpf, nome, email, ativo, criado_em`,
-          [
-            cpfLimpo,
-            gestor_rh.nome,
-            gestor_rh.email,
-            senhaHash,
-            clinicaCriada.id,
-          ],
+          `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
+           VALUES ($1, $2, $3, $4, 'rh', $5, true, NOW(), NOW())
+           RETURNING cpf, nome, email, ativo, criado_em`,
+          [cpfLimpo, rh.nome, rh.email, senhaHash, clinicaCriada.id],
           session
         );
 
@@ -208,14 +211,14 @@ export async function POST(request: NextRequest) {
         // Log de auditoria para criação do gestor
         await logAudit(
           {
-            resource: 'funcionarios',
+            resource: 'usuarios',
             action: 'INSERT',
             resourceId: cpfLimpo,
             newData: {
               cpf: cpfLimpo,
-              nome: gestor_rh.nome,
-              email: gestor_rh.email,
-              perfil: 'rh',
+              nome: rh.nome,
+              email: rh.email,
+              tipo_usuario: 'rh',
               clinica_id: clinicaCriada.id,
             },
             ...extractRequestInfo(request),
@@ -253,7 +256,7 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           clinica: clinicaCriada,
-          gestor_rh: gestorCriado,
+          rh: gestorCriado,
         },
         { status: 201 }
       );

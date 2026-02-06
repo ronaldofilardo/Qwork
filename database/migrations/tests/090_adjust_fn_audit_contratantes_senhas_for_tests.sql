@@ -1,14 +1,14 @@
--- Migration 090: Atualiza fn_audit_contratantes_senhas para permitir deletes em ambiente de teste
+-- Migration 090: Atualiza fn_audit_entidades_senhas para permitir deletes em ambiente de teste
 -- Data: 2026-01-24
 
 BEGIN;
 
-CREATE OR REPLACE FUNCTION fn_audit_contratantes_senhas()
+CREATE OR REPLACE FUNCTION fn_audit_entidades_senhas()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Registrar INSERT
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO contratantes_senhas_audit (
+        INSERT INTO entidades_senhas_audit (
             operacao,
             contratante_id,
             cpf,
@@ -27,7 +27,7 @@ BEGIN
         );
         RETURN NEW;
     ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO contratantes_senhas_audit (
+        INSERT INTO entidades_senhas_audit (
             operacao,
             contratante_id,
             cpf,
@@ -48,7 +48,7 @@ BEGIN
     ELSIF TG_OP = 'DELETE' THEN
         IF current_setting('app.allow_senha_delete', true) IS NULL OR current_setting('app.allow_senha_delete', true) != 'true' THEN
             IF current_database() = 'nr-bps_db' THEN
-                INSERT INTO contratantes_senhas_audit (
+                INSERT INTO entidades_senhas_audit (
                     operacao,
                     contratante_id,
                     cpf,
@@ -67,7 +67,7 @@ BEGIN
                 );
                 RAISE EXCEPTION 'OPERAcaO BLOQUEADA: Delete de senhas requer autorizacao explicita. Use fn_delete_senha_autorizado() para deletar senhas com seguranca.';
             ELSE
-                INSERT INTO contratantes_senhas_audit (
+                INSERT INTO entidades_senhas_audit (
                     operacao,
                     contratante_id,
                     cpf,
@@ -88,7 +88,7 @@ BEGIN
             END IF;
         END IF;
 
-        INSERT INTO contratantes_senhas_audit (
+        INSERT INTO entidades_senhas_audit (
             operacao,
             contratante_id,
             cpf,
@@ -112,10 +112,10 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Recreate trigger to use updated function
-DROP TRIGGER IF EXISTS trg_protect_senhas ON contratantes_senhas;
+DROP TRIGGER IF EXISTS trg_protect_senhas ON entidades_senhas;
 CREATE TRIGGER trg_protect_senhas
-    BEFORE INSERT OR UPDATE OR DELETE ON contratantes_senhas
+    BEFORE INSERT OR UPDATE OR DELETE ON entidades_senhas
     FOR EACH ROW
-    EXECUTE FUNCTION fn_audit_contratantes_senhas();
+    EXECUTE FUNCTION fn_audit_entidades_senhas();
 
 COMMIT;

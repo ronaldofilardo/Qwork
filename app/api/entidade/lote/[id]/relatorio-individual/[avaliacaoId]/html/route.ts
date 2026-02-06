@@ -35,7 +35,7 @@ export async function GET(
     const lote = loteResult.rows[0];
 
     // Verificar permissão (entidade ou RH)
-    if (session.perfil === 'gestor_entidade') {
+    if (session.perfil === 'gestor') {
       if (lote.clinica_id !== session.clinica_id) {
         return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
       }
@@ -80,7 +80,7 @@ export async function GET(
 
     const avaliacao = avaliacaoResult.rows[0];
 
-    if (avaliacao.status !== 'concluida') {
+    if (avaliacao.status !== 'concluido') {
       return NextResponse.json(
         { error: 'Avaliação ainda não foi concluída' },
         { status: 400 }

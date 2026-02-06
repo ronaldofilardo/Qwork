@@ -172,9 +172,9 @@ export async function gerarDadosGeraisEmpresa(
       COALESCE(ec.cep, cont.cep) as cep,
       COALESCE(c.nome, cont.nome) as clinica_nome,
       COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-      COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+      COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
       MIN(a.inicio) as primeira_avaliacao,
-      MAX(CASE WHEN a.status = 'concluida' THEN a.envio END) as ultima_conclusao
+      MAX(CASE WHEN a.status = 'concluido' THEN a.envio END) as ultima_conclusao
     FROM lotes_avaliacao la
     LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
     LEFT JOIN clinicas c ON ec.clinica_id = c.id
@@ -208,7 +208,7 @@ export async function gerarDadosGeraisEmpresa(
       SUM(CASE WHEN nivel_cargo = 'gestao' THEN 1 ELSE 0 END) as gestao
     FROM funcionarios f
     JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
-    WHERE a.lote_id = $1 AND a.status = 'concluida'
+    WHERE a.lote_id = $1 AND a.status = 'concluido'
   `,
     [loteId]
   );
@@ -260,7 +260,7 @@ export async function calcularScoresPorGrupo(
       r.valor
     FROM respostas r
     JOIN avaliacoes a ON r.avaliacao_id = a.id
-    WHERE a.lote_id = $1 AND a.status = 'concluida'
+    WHERE a.lote_id = $1 AND a.status = 'concluido'
     ORDER BY r.grupo, r.avaliacao_id
   `,
     [loteId]

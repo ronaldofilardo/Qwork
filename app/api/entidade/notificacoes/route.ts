@@ -10,7 +10,7 @@ import { requireEntity } from '@/lib/session';
 export async function GET() {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     // Buscar notificações de lotes concluídos (últimos 7 dias)
     const lotesConcluidos = await queryAsGestorEntidade(
@@ -18,7 +18,7 @@ export async function GET() {
       SELECT
         'lote_concluido' as tipo,
         la.id as lote_id,
-        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluido') as avaliacoes_concluidas,
         COUNT(DISTINCT a.id) as total_avaliacoes,
         MAX(a.envio) as data_conclusao
       FROM lotes_avaliacao la
@@ -28,11 +28,11 @@ export async function GET() {
         AND la.status = 'ativo'
         AND a.envio >= NOW() - INTERVAL '7 days'
       GROUP BY la.id
-      HAVING COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida') = COUNT(DISTINCT a.id)
+      HAVING COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluido') = COUNT(DISTINCT a.id)
       ORDER BY MAX(a.envio) DESC
       LIMIT 10
     `,
-      [contratanteId]
+      [entidadeId]
     );
 
     // Buscar notificações de laudos enviados (últimos 7 dias)
@@ -54,7 +54,7 @@ export async function GET() {
       ORDER BY l.enviado_em DESC
       LIMIT 10
     `,
-      [contratanteId]
+      [entidadeId]
     );
 
     // Combinar notificações e ordenar por data

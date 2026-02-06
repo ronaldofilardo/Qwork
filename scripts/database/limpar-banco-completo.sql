@@ -65,7 +65,7 @@ TRUNCATE TABLE contratos_planos CASCADE;
 
 -- Tabelas de contratantes (entidades)
 TRUNCATE TABLE contratantes_snapshots CASCADE;
-TRUNCATE TABLE contratantes_senhas CASCADE;
+TRUNCATE TABLE entidades_senhas CASCADE;
 TRUNCATE TABLE contratantes CASCADE;
 
 -- Tabelas de clínicas

@@ -110,7 +110,7 @@ Time:        ~5s
 
 4. ✅ **Liberação de Login**
    - Senha criada com hash bcryptjs
-   - Armazenamento em `contratantes_senhas`
+   - Armazenamento em `entidades_senhas`
    - `data_liberacao_login` definida
 
 ## Arquivos Modificados

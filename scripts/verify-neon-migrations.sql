@@ -162,8 +162,9 @@ WHERE table_schema = 'public'
     'fila_emissao',
     'funcionarios',
     'clinicas',
-    'contratantes'
+    'entidades'
   )
+-- Nota: Tabela 'contratantes' foi renomeada para 'entidades'
 ORDER BY table_name;
 
 \echo ''
@@ -182,7 +183,7 @@ SELECT
     COUNT(*) FILTER (WHERE processado = true) as processados,
     COUNT(*) FILTER (WHERE processado = false) as pendentes,
     COUNT(*) FILTER (WHERE tipo_solicitante = 'rh') as solicitacoes_rh,
-    COUNT(*) FILTER (WHERE tipo_solicitante = 'gestor_entidade') as solicitacoes_entidade,
+    COUNT(*) FILTER (WHERE tipo_solicitante = 'gestor') as solicitacoes_entidade,
     COUNT(*) FILTER (WHERE tipo_solicitante IS NULL) as sem_tipo
 FROM fila_emissao;
 

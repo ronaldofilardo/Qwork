@@ -1,6 +1,6 @@
 -- Migration: Limpar Gestores da Tabela Funcionarios
 -- Data: 01/02/2026
--- Objetivo: Garantir que gestores (RH e Entidade) existam APENAS em contratantes_senhas
+-- Objetivo: Garantir que gestores (RH e Entidade) existam APENAS em entidades_senhas
 
 BEGIN;
 
@@ -10,7 +10,7 @@ BEGIN;
 
 -- DECISÃO ARQUITETURAL:
 -- Gestores NÃO são funcionários operacionais
--- Gestores são entidades separadas geridas via contratantes_senhas
+-- Gestores são entidades separadas geridas via entidades_senhas
 -- Esta migration remove qualquer resíduo de gestores em funcionarios
 
 -- ============================================
@@ -33,10 +33,10 @@ SELECT
     c.nome as contratante_nome,
     c.tipo as contratante_tipo
 FROM funcionarios f
-LEFT JOIN contratantes_senhas cs ON f.cpf = cs.cpf
+LEFT JOIN entidades_senhas cs ON f.cpf = cs.cpf
 LEFT JOIN contratantes c ON cs.contratante_id = c.id
-WHERE f.perfil IN ('rh', 'gestor_entidade')
-   OR f.usuario_tipo IN ('gestor_rh', 'gestor_entidade');
+WHERE f.perfil IN ('rh', 'gestor')
+   OR f.usuario_tipo IN ('rh', 'gestor');
 
 -- Log dos casos encontrados
 DO $$
@@ -84,7 +84,7 @@ INSERT INTO funcionarios_backup_gestores_cleanup
     (cpf, nome, email, perfil, usuario_tipo, ativo, contratante_id, clinica_id, empresa_id, motivo)
 SELECT 
     cpf, nome, email, perfil, usuario_tipo, ativo, contratante_id, clinica_id, empresa_id,
-    'Migration 300: Limpeza arquitetural - gestores devem estar apenas em contratantes_senhas'
+    'Migration 300: Limpeza arquitetural - gestores devem estar apenas em entidades_senhas'
 FROM temp_gestores_incorretos;
 
 DO $$
@@ -100,7 +100,7 @@ END $$;
 -- ============================================
 
 -- 3.1. Lotes liberados por gestores
--- Ação: Manter liberado_por (CPF ainda existe em contratantes_senhas)
+-- Ação: Manter liberado_por (CPF ainda existe em entidades_senhas)
 -- Não precisa alterar nada - CPF é válido para auditoria
 
 -- 3.2. Verificar se gestores têm avaliações (NÃO deveriam)
@@ -138,10 +138,10 @@ WHERE cf.funcionario_id IN (
 RAISE NOTICE 'Vínculos removidos de contratantes_funcionarios';
 
 -- ============================================
--- 4. VALIDAR EXISTÊNCIA EM CONTRATANTES_SENHAS
+-- 4. VALIDAR EXISTÊNCIA EM entidades_senhas
 -- ============================================
 
--- Verificar que todos os gestores existem em contratantes_senhas
+-- Verificar que todos os gestores existem em entidades_senhas
 DO $$
 DECLARE
     v_sem_senha INTEGER;
@@ -154,7 +154,7 @@ BEGIN
     IF v_sem_senha > 0 THEN
         RAISE WARNING '';
         RAISE WARNING '============================================';
-        RAISE WARNING 'ATENÇÃO: % gestores sem registro em contratantes_senhas', v_sem_senha;
+        RAISE WARNING 'ATENÇÃO: % gestores sem registro em entidades_senhas', v_sem_senha;
         RAISE WARNING '============================================';
         
         FOR rec IN 
@@ -166,11 +166,11 @@ BEGIN
         END LOOP;
         
         RAISE WARNING '';
-        RAISE WARNING 'AÇÃO NECESSÁRIA: Criar registros em contratantes_senhas para estes gestores';
+        RAISE WARNING 'AÇÃO NECESSÁRIA: Criar registros em entidades_senhas para estes gestores';
         RAISE WARNING 'OU confirmar que são registros antigos/inválidos que podem ser removidos';
         RAISE WARNING '';
     ELSE
-        RAISE NOTICE 'Todos os gestores têm registro em contratantes_senhas (CORRETO)';
+        RAISE NOTICE 'Todos os gestores têm registro em entidades_senhas (CORRETO)';
     END IF;
 END $$;
 
@@ -180,8 +180,8 @@ END $$;
 
 -- Remover registros onde perfil indica gestor
 DELETE FROM funcionarios 
-WHERE perfil IN ('rh', 'gestor_entidade')
-   OR usuario_tipo IN ('gestor_rh', 'gestor_entidade');
+WHERE perfil IN ('rh', 'gestor')
+   OR usuario_tipo IN ('rh', 'gestor');
 
 DO $$
 DECLARE
@@ -208,12 +208,12 @@ BEGIN
     -- Contar gestores remanescentes em funcionarios (deve ser 0)
     SELECT COUNT(*) INTO v_func_gestores 
     FROM funcionarios 
-    WHERE perfil IN ('rh', 'gestor_entidade')
-       OR usuario_tipo IN ('gestor_rh', 'gestor_entidade');
+    WHERE perfil IN ('rh', 'gestor')
+       OR usuario_tipo IN ('rh', 'gestor');
     
-    -- Contar gestores em contratantes_senhas (deve ser > 0)
+    -- Contar gestores em entidades_senhas (deve ser > 0)
     SELECT COUNT(*) INTO v_cs_gestores
-    FROM contratantes_senhas cs
+    FROM entidades_senhas cs
     JOIN contratantes c ON c.id = cs.contratante_id
     WHERE c.ativa = true;
     
@@ -224,7 +224,7 @@ BEGIN
     RAISE NOTICE 'VALIDAÇÃO FINAL';
     RAISE NOTICE '============================================';
     RAISE NOTICE 'Gestores em funcionarios: % (esperado: 0)', v_func_gestores;
-    RAISE NOTICE 'Gestores em contratantes_senhas: % (esperado: > 0)', v_cs_gestores;
+    RAISE NOTICE 'Gestores em entidades_senhas: % (esperado: > 0)', v_cs_gestores;
     RAISE NOTICE 'Funcionários operacionais restantes: %', v_func_total;
     RAISE NOTICE '============================================';
     RAISE NOTICE '';
@@ -234,7 +234,7 @@ BEGIN
     END IF;
     
     IF v_cs_gestores = 0 THEN
-        RAISE WARNING 'ATENÇÃO: Nenhum gestor encontrado em contratantes_senhas';
+        RAISE WARNING 'ATENÇÃO: Nenhum gestor encontrado em entidades_senhas';
     END IF;
     
     RAISE NOTICE '✓ Limpeza concluída com sucesso';
@@ -253,19 +253,19 @@ COMMIT;
 
 -- 2. Confirmar que não há gestores em funcionarios:
 --    SELECT * FROM funcionarios 
---    WHERE perfil IN ('rh', 'gestor_entidade')
---       OR usuario_tipo IN ('gestor_rh', 'gestor_entidade');
+--    WHERE perfil IN ('rh', 'gestor')
+--       OR usuario_tipo IN ('rh', 'gestor');
 --    -- Esperado: 0 rows
 
--- 3. Confirmar que gestores existem em contratantes_senhas:
+-- 3. Confirmar que gestores existem em entidades_senhas:
 --    SELECT cs.cpf, c.nome, c.tipo, c.ativa
---    FROM contratantes_senhas cs
+--    FROM entidades_senhas cs
 --    JOIN contratantes c ON c.id = cs.contratante_id
 --    ORDER BY c.tipo, c.nome;
 
 -- 4. Testar login de gestores:
---    - Gestor RH deve autenticar via contratantes_senhas
---    - Gestor Entidade deve autenticar via contratantes_senhas
+--    - Gestor RH deve autenticar via entidades_senhas
+--    - Gestor Entidade deve autenticar via entidades_senhas
 --    - Funcionário comum deve autenticar via funcionarios
 
 -- 5. Se houver problemas:

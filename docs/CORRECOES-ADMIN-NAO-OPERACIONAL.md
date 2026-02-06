@@ -64,7 +64,7 @@ Garantir que todas as rotas em `/api/admin/*` sejam APENAS administrativas:
 ```typescript
 // Arquivo: app/api/admin/reenviar-lote/route.ts
 export const POST = async (req: Request) => {
-  const user = await requireRole(['rh', 'gestor_entidade']); // ✅ CORRETO - não permite admin!
+  const user = await requireRole(['rh', 'gestor']); // ✅ CORRETO - não permite admin!
 ```
 
 **Status:** ✅ OK - Não permite admin

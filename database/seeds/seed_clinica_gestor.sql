@@ -19,24 +19,25 @@ SET nome = EXCLUDED.nome,
     ativa = EXCLUDED.ativa,
     atualizado_em = CURRENT_TIMESTAMP;
 
--- Inserir/atualizar gestor RH para a clínica (CPF de exemplo retirado dos logs)
-INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, clinica_id, criado_em, atualizado_em)
+-- Inserir/atualizar gestor RH em USUARIOS (não em funcionarios - gestores vão para usuarios)
+INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
 VALUES (
   '04703084945',
   'Tania ka',
   'tania.ka@clinica2.test',
   crypt('123', gen_salt('bf')),
   'rh',
+  2,
   true,
   2,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 )
-ON CONFLICT (cpf) DO UPDATE
-SET nome = EXCLUDED.nome,
+ON CONFLICT (cpf) DO UPDATE SET
+    nome = EXCLUDED.nome,
     email = EXCLUDED.email,
     senha_hash = EXCLUDED.senha_hash,
-    perfil = EXCLUDED.perfil,
+    tipo_usuario = EXCLUDED.tipo_usuario,
     ativo = EXCLUDED.ativo,
     clinica_id = EXCLUDED.clinica_id,
     atualizado_em = CURRENT_TIMESTAMP;

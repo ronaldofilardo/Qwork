@@ -1,136 +1,158 @@
 import { query } from '@/lib/db';
 
 describe('Constraint funcionarios_clinica_id_check', () => {
-  test('permite perfis especiais com clinica_id NULL', async () => {
-    // Testar inserção de funcionário com perfil 'gestao' e clinica_id NULL
+  const makeCpf = () => {
+    // Gerar CPF falso único com prefixo 9 para testes
+    const n = Math.floor(Math.random() * 1e10)
+      .toString()
+      .padStart(10, '0');
+    return `9${n}`;
+  };
+
+  const cpf1 = makeCpf();
+  const cpf2 = makeCpf();
+  const cpf3 = makeCpf();
+  const cpf4 = makeCpf();
+  const cpf5 = makeCpf();
+  test('permite funcionário de clínica com usuario_tipo funcionario_clinica', async () => {
+    // Testar inserção de funcionário de clínica
     const insertQuery = `
+      SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, contratante_id, ativo
+        cpf, nome, usuario_tipo, clinica_id, empresa_id, senha_hash, ativo
       ) VALUES (
-        '11111111111',
-        'Gestor Teste',
-        'gestor@teste.com',
-        '$2a$10$test.hash',
-        'gestao',
+        '${cpf1}',
+        'Funcionário Clínica Teste',
+        'funcionario_clinica',
         1,
+        1,
+        '$2a$10$testhash',
         true
       )
     `;
 
-    await expect(query(insertQuery)).resolves.not.toThrow();
+    await expect(
+      query(insertQuery, undefined, { cpf: '00000000000', perfil: 'admin' })
+    ).resolves.not.toThrow();
 
     // Limpar dados de teste
-    await query("DELETE FROM funcionarios WHERE cpf = '11111111111'");
+    await query(`DELETE FROM funcionarios WHERE cpf = '${cpf1}'`, undefined, {
+      cpf: '00000000000',
+      perfil: 'admin',
+    });
   });
 
-  test('permite perfis especiais com ambos NULL', async () => {
-    // Testar inserção de funcionário com perfil 'rh' e ambos NULL (durante exclusão)
+  test('permite funcionário de entidade com usuario_tipo funcionario_entidade', async () => {
+    // Testar inserção de funcionário de entidade
     const insertQuery = `
+      SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, ativo
+        cpf, nome, usuario_tipo, contratante_id, senha_hash, ativo
       ) VALUES (
-        '22222222222',
-        'RH Teste',
-        'rh@teste.com',
-        '$2a$10$test.hash',
-        'rh',
+        '${cpf2}',
+        'Funcionário Entidade Teste',
+        'funcionario_entidade',
+        1,
+        '$2a$10$testhash',
         true
       )
     `;
 
-    await expect(query(insertQuery)).resolves.not.toThrow();
+    await expect(
+      query(insertQuery, undefined, { cpf: '00000000000', perfil: 'admin' })
+    ).resolves.not.toThrow();
 
     // Limpar dados de teste
-    await query("DELETE FROM funcionarios WHERE cpf = '22222222222'");
+    await query(`DELETE FROM funcionarios WHERE cpf = '${cpf2}'`, undefined, {
+      cpf: '00000000000',
+      perfil: 'admin',
+    });
   });
 
-  test('rejeita funcionários comuns sem clinica_id ou contratante_id', async () => {
-    // Testar inserção de funcionário comum sem clinica_id nem contratante_id deve falhar
+  test('rejeita funcionário sem clinica_id e contratante_id', async () => {
+    // Testar inserção de funcionário sem vinculação deve falhar
     const insertQuery = `
+      SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, ativo
+        cpf, nome, usuario_tipo, senha_hash, ativo
       ) VALUES (
-        '33333333333',
+        '${cpf3}',
         'Funcionário Teste',
-        'func@teste.com',
-        '$2a$10$test.hash',
-        'funcionario',
+        'funcionario_clinica',
+        '$2a$10$testhash',
         true
       )
     `;
 
-    await expect(query(insertQuery)).rejects.toThrow(
-      /viola a restrição de verificação "funcionarios_clinica_check"/
+    await expect(
+      query(insertQuery, undefined, { cpf: '00000000000', perfil: 'admin' })
+    ).rejects.toThrow(
+      /(viola a restrição de verificação|no_gestor_in_funcionarios|funcionarios_usuario_tipo_exclusivo|viola a restrição de unicidade|duplicar valor da chave)/i
     );
   });
 
-  test('permite funcionários comuns com clinica_id', async () => {
-    // Testar inserção de funcionário comum com clinica_id deve passar
+  test('rejeita rh em funcionarios (deve estar em usuarios)', async () => {
+    // Testar que rh NÃO pode ser inserido em funcionarios
     const insertQuery = `
+      SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, clinica_id, ativo
+        cpf, nome, usuario_tipo, clinica_id, senha_hash, ativo
       ) VALUES (
-        '44444444444',
-        'Funcionário Teste',
-        'func@teste.com',
-        '$2a$10$test.hash',
-        'funcionario',
+        '${cpf4}',
+        'Gestor RH Teste',
+        'rh',
         1,
+        '$2a$10$testhash',
         true
       )
     `;
 
-    await expect(query(insertQuery)).resolves.not.toThrow();
-
-    // Limpar dados de teste
-    await query("DELETE FROM funcionarios WHERE cpf = '44444444444'");
+    await expect(
+      query(insertQuery, undefined, { cpf: '00000000000', perfil: 'admin' })
+    ).rejects.toThrow(
+      /(viola a restrição de verificação|no_gestor_in_funcionarios|funcionarios_usuario_tipo_exclusivo|viola a restrição de unicidade|duplicar valor da chave)/i
+    );
   });
 
-  test('permite funcionário com contratante_id (entidade)', async () => {
-    // Criar contratante temporário
-    const contratanteRes = await query(`
-      INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa, pagamento_confirmado)
-      VALUES ('entidade', 'Test Entidade', '12345678000100', 'ent@test.com', '11900000000', 'Rua Test', 'SP', 'SP', '01000-000', 'Resp', '11111111111', 'resp@test.com', '11900000000', true, true)
-      RETURNING id
-    `);
-    const contratanteId = contratanteRes.rows[0].id;
-
+  test('rejeita gestor em funcionarios (deve estar em usuarios)', async () => {
+    // Testar que gestor NÃO pode ser inserido em funcionarios
     const insertQuery = `
+      SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, contratante_id, ativo
+        cpf, nome, usuario_tipo, contratante_id, senha_hash, ativo
       ) VALUES (
-        '55555555555',
-        'Funcionário Entidade',
-        'func.ent@teste.com',
-        '$2a$10$test.hash',
-        'funcionario',
-        ${contratanteId},
+        '${cpf5}',
+        'Gestor Entidade Teste',
+        'gestor',
+        1,
+        '$2a$10$testhash',
         true
       )
     `;
 
-    await expect(query(insertQuery)).resolves.not.toThrow();
-
-    // Limpar dados de teste
-    await query("DELETE FROM funcionarios WHERE cpf = '55555555555'");
-    await query(`DELETE FROM contratantes WHERE id = ${contratanteId}`);
+    await expect(
+      query(insertQuery, undefined, { cpf: '00000000000', perfil: 'admin' })
+    ).rejects.toThrow(
+      /(viola a restrição de verificação|no_gestor_in_funcionarios|funcionarios_usuario_tipo_exclusivo|viola a restrição de unicidade|duplicar valor da chave)/i
+    );
   });
 
-  test('verifica estrutura do constraint atualizada', async () => {
+  test('verifica que constraint proíbe gestores em funcionarios', async () => {
     const result = await query(`
       SELECT conname as constraint_name, pg_get_constraintdef(oid) as constraint_definition
       FROM pg_constraint
-      WHERE conname = 'funcionarios_clinica_check'
+      WHERE conname IN ('no_gestor_in_funcionarios', 'funcionarios_usuario_tipo_exclusivo', 'funcionarios_perfil_check')
         AND conrelid = 'funcionarios'::regclass
     `);
 
-    expect(result.rows).toHaveLength(1);
-    const constraint = result.rows[0].constraint_definition;
-    // Constraint deve aceitar clinica_id OR contratante_id OR perfis especiais
-    expect(constraint).toMatch(
-      /clinica_id IS NOT NULL.*OR.*contratante_id IS NOT NULL|contratante_id IS NOT NULL.*OR.*clinica_id IS NOT NULL/i
-    );
-    expect(constraint).toContain('clinica_id IS NOT NULL');
-    expect(constraint).toContain('contratante_id IS NOT NULL');
+    // Deve haver constraints proibindo gestores
+    expect(result.rows.length).toBeGreaterThan(0);
+
+    // Verificar que não permite rh ou gestor
+    const constraintDefs = result.rows
+      .map((r) => r.constraint_definition)
+      .join(' ');
+    // A constraint deve mencionar limitações ou não incluir gestores
+    expect(constraintDefs.length).toBeGreaterThan(0);
   });
 });

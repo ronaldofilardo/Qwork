@@ -37,10 +37,10 @@ jest.mock('@/lib/xlsxParser', () => {
 
 jest.mock('@/lib/session', () => ({
   requireEntity: jest.fn(() => ({
-    contratante_id: 1,
+    entidade_id: 1,
     cpf: '12345678909',
   })) as jest.MockedFunction<
-    () => Promise<{ contratante_id: number; cpf: string }>
+    () => Promise<{ entidade_id: number; cpf: string }>
   >,
 }));
 
@@ -50,8 +50,18 @@ jest.mock('@/lib/db', () => ({
   >,
 }));
 
+jest.mock('@/lib/db-gestor', () => ({
+  queryAsGestorEntidade: jest.fn(() => ({ rows: [] })) as jest.MockedFunction<
+    typeof import('@/lib/db-gestor').queryAsGestorEntidade
+  >,
+}));
+
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn(() => Promise.resolve('$2a$10$mockedhashvalue')),
+}));
+
 const { parseXlsxBufferToRows } = require('@/lib/xlsxParser');
-const { query } = require('@/lib/db');
+const { queryAsGestorEntidade } = require('@/lib/db-gestor');
 
 function makeRequestWithFile() {
   const file = new File(['dummy'], 'teste.xlsx', {
@@ -69,8 +79,8 @@ function makeRequestWithFile() {
  */
 describe('import route', () => {
   beforeEach(() => {
-    // Limpar todos os mocks antes de cada teste
-    jest.clearAllMocks();
+    // Limpar apenas os calls, mas manter os mocks configurados
+    queryAsGestorEntidade.mockClear();
   });
 
   afterEach(() => {
@@ -96,6 +106,11 @@ describe('import route', () => {
         },
       ],
     });
+
+    // Mock: CPF não existe
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+    // Mock: Matrícula não existe (nenhuma matrícula fornecida)
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -139,6 +154,11 @@ describe('import route', () => {
         },
       ],
     });
+
+    // Mock: CPF não existe
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+    // Mock: Matrícula não existe
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -226,6 +246,9 @@ describe('import route', () => {
    * @description Deve retornar 409 quando matrícula já está cadastrada
    */
   it('returns 409 when matricula already exists in database', async () => {
+    // Limpar mocks acumulados
+    queryAsGestorEntidade.mockReset();
+
     parseXlsxBufferToRows.mockReturnValue({
       success: true,
       data: [
@@ -242,10 +265,12 @@ describe('import route', () => {
     });
 
     // Setup: CPF não existe
-    query.mockResolvedValueOnce({ rows: [] });
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     // Setup: Matrícula já existe
-    query.mockResolvedValueOnce({ rows: [{ matricula: 'MAT999' }] });
+    queryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ matricula: 'MAT999' }],
+    });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -266,10 +291,13 @@ describe('import route', () => {
   });
 
   /**
-   * @test Valida que usuario_tipo é definido corretamente
-   * @description Deve inserir com usuario_tipo='funcionario_entidade'
+   * @test Valida que perfil é definido corretamente e cria relacionamento
+   * @description Deve inserir com perfil='funcionario' e criar entrada em funcionarios_entidades
    */
-  it('inserts funcionarios with correct usuario_tipo', async () => {
+  it('inserts funcionarios with correct perfil and creates relationship', async () => {
+    // Limpar todos os mocks anteriores
+    queryAsGestorEntidade.mockReset();
+
     parseXlsxBufferToRows.mockReturnValue({
       success: true,
       data: [
@@ -286,15 +314,22 @@ describe('import route', () => {
     });
 
     // Setup: CPF não existe
-    query.mockResolvedValueOnce({ rows: [] });
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     // Setup: Matrícula não existe
-    query.mockResolvedValueOnce({ rows: [] });
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
-    // Setup: BEGIN/INSERT/COMMIT
-    query.mockResolvedValueOnce({ rows: [] }); // BEGIN
-    query.mockResolvedValueOnce({ rows: [] }); // INSERT
-    query.mockResolvedValueOnce({ rows: [] }); // COMMIT
+    // Setup: BEGIN
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+    // Setup: INSERT funcionarios RETURNING id
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    // Setup: INSERT funcionarios_entidades
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+    // Setup: COMMIT
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -312,15 +347,31 @@ describe('import route', () => {
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
 
-    // Verificar que o INSERT inclui usuario_tipo
-    const insertCalls = query.mock.calls.filter((call) =>
-      call[0].includes('INSERT INTO funcionarios')
+    // Verificar que o INSERT em funcionarios usa perfil (não usuario_tipo)
+    const allCalls = queryAsGestorEntidade.mock.calls;
+    const insertFuncCalls = allCalls.filter(
+      (call) =>
+        call[0].includes('INSERT INTO funcionarios') &&
+        !call[0].includes('funcionarios_entidades')
     );
-    expect(insertCalls.length).toBe(1);
-    expect(insertCalls[0][0]).toContain('usuario_tipo');
-    expect(insertCalls[0][0]).toContain("'funcionario_entidade'");
 
-    // Verificar que session foi passado
-    expect(insertCalls[0][2]).toBeDefined();
+    // Deve ter pelo menos 1 INSERT de funcionarios
+    expect(insertFuncCalls.length).toBeGreaterThanOrEqual(1);
+
+    // Pegar o último INSERT (do teste atual)
+    const lastInsert = insertFuncCalls[insertFuncCalls.length - 1];
+    expect(lastInsert[0]).toContain('perfil');
+    expect(lastInsert[0]).toContain("'funcionario'");
+
+    // Verificar que criou entrada em funcionarios_entidades
+    const insertRelCalls = allCalls.filter((call) =>
+      call[0].includes('INSERT INTO funcionarios_entidades')
+    );
+    expect(insertRelCalls.length).toBeGreaterThanOrEqual(1);
+
+    // Verificar que contratante_id foi passado como parâmetro
+    expect(lastInsert[1]).toBeDefined();
+    expect(Array.isArray(lastInsert[1])).toBe(true);
+    expect(lastInsert[1]).toContain(1); // entidade_id mockado
   });
 });

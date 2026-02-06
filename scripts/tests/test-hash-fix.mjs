@@ -11,18 +11,26 @@ async function testHashStorage() {
     }
 
     const contratante = contratantes.rows[0];
-    console.log('Testando com contratante:', contratante.id, contratante.responsavel_cpf);
+    console.log(
+      'Testando com contratante:',
+      contratante.id,
+      contratante.responsavel_cpf
+    );
 
     // Limpar dados existentes para teste limpo
-    await query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [contratante.id]);
-    await query('DELETE FROM funcionarios WHERE cpf = $1', [contratante.responsavel_cpf]);
+    await query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [
+      contratante.id,
+    ]);
+    await query('DELETE FROM funcionarios WHERE cpf = $1', [
+      contratante.responsavel_cpf,
+    ]);
 
     // Executar a função
     await criarContaResponsavel(contratante);
 
     // Verificar o resultado
     const result = await query(
-      'SELECT senha_hash, length(senha_hash) as len FROM contratantes_senhas WHERE contratante_id = $1',
+      'SELECT senha_hash, length(senha_hash) as len FROM entidades_senhas WHERE contratante_id = $1',
       [contratante.id]
     );
 
@@ -39,7 +47,6 @@ async function testHashStorage() {
     } else {
       console.log('❌ ERRO: Nenhum hash encontrado após inserção');
     }
-
   } catch (error) {
     console.error('Erro no teste:', error);
   }

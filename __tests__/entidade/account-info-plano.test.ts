@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 jest.mock('@/lib/session', () => ({
   getSession: jest
     .fn()
-    .mockReturnValue({ perfil: 'gestor_entidade', contratante_id: 99 }),
+    .mockReturnValue({ perfil: 'gestor', contratante_id: 99 }),
 }));
 
 jest.mock('@/lib/db', () => ({

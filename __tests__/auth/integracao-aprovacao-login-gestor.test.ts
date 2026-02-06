@@ -1,150 +1,194 @@
 /**
- * TESTE DE INTEGRAÇÃO - Autenticação de Gestores
+ * Teste de Integração: Aprovação de Entidade → Login de Gestor
  *
- * Testa o fluxo REAL de aprovação de contratantes e login de gestores
- * Simula exatamente o que acontece na produção via chamadas HTTP
+ * Valida que após aprovação via API, o gestor consegue fazer login
+ * usando senha baseada nos 6 últimos dígitos do CNPJ.
+ *
+ * Nova Arquitetura:
+ * - Entidade criada em `entidades`
+ * - Usuário gestor criado em `usuarios` com tipo_usuario='gestor'
+ * - Senha armazenada em `entidades_senhas` (hash dos 6 últimos dígitos do CNPJ)
  */
 
 import { query } from '@/lib/db';
+import bcrypt from 'bcryptjs';
+import { POST as loginHandler } from '@/app/api/auth/login/route';
 
-describe('Integração: Aprovação de Contratante → Login de Gestor', () => {
-  const testContratanteId = 999999;
-  const testCpf = '12345678901';
-  const testCnpj = '12345678000190';
+jest.mock('@/lib/session', () => ({
+  createSession: jest.fn(),
+}));
 
-  // Helper para criar contratante pendente
-  const criarContratantePendente = async (nome: string, email: string) => {
-    await query(
-      `INSERT INTO contratantes (
-        id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
-        responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        status, ativa, pagamento_confirmado
-      ) VALUES ($1, 'entidade', $2, $3, $4, '1133334444', 'Rua Teste', 'São Paulo', 'SP', '01000-000',
-        'Gestor Teste', $5, 'gestor@teste.com', '11999999999',
-        'pendente', false, false)`,
-      [testContratanteId, nome, testCnpj, email, testCpf]
-    );
-  };
+jest.mock('@/lib/auditoria/auditoria', () => ({
+  registrarAuditoria: jest.fn(),
+  extrairContextoRequisicao: jest.fn(() => ({
+    ipAddress: '127.0.0.1',
+    userAgent: 'test',
+  })),
+}));
 
-  beforeEach(async () => {
-    // Limpar dados de teste
-    await query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [
-      testContratanteId,
-    ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+describe('Integração: Aprovação de Entidade → Login de Gestor (Nova Arquitetura)', () => {
+  const TEST_CNPJ = '12345678000190';
+  const TEST_CPF = '12345678901';
+  const TEST_EMAIL = 'gestor@test.com';
+  const TEST_NOME = 'Gestor Teste';
+
+  // Senha padrão: 6 últimos dígitos do CNPJ
+  const SENHA_PADRAO = TEST_CNPJ.slice(-6); // '000190'
+
+  let testEntidadeId: number;
+
+  beforeAll(async () => {
+    // Limpar dados de testes anteriores
+    await query('DELETE FROM usuarios WHERE cpf = $1', [TEST_CPF]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [TEST_CNPJ]);
   });
 
-  afterEach(async () => {
-    // Limpar dados de teste
-    await query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [
-      testContratanteId,
-    ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+  afterAll(async () => {
+    // Cleanup
+    if (testEntidadeId) {
+      await query('DELETE FROM entidades_senhas WHERE entidade_id = $1', [
+        testEntidadeId,
+      ]);
+      await query('DELETE FROM usuarios WHERE cpf = $1', [TEST_CPF]);
+      await query('DELETE FROM entidades WHERE id = $1', [testEntidadeId]);
+    }
   });
 
   it('deve permitir login após aprovação via API (fluxo completo)', async () => {
-    // 1. Criar contratante pendente
-    await criarContratantePendente('Empresa Teste API', 'empresa@teste.com');
-
-    // 2. Simular aprovação via chamada direta à função (não HTTP)
-    // Em vez de chamar API HTTP, chamar diretamente a lógica de aprovação
-    const { aprovarContratante, criarContaResponsavel } =
-      await import('@/lib/db');
-
-    // Simular session de admin
-    const mockSession = {
-      cpf: '11122233344', // CPF válido de 11 dígitos
-      perfil: 'admin' as const,
-      clinica_id: null,
-    };
-
-    // Aprovar contratante
-    await aprovarContratante(testContratanteId, mockSession.cpf, mockSession);
-
-    // Buscar contratante aprovado
-    const contratanteResult = await query(
-      'SELECT * FROM contratantes WHERE id = $1',
-      [testContratanteId]
+    // 1. Criar entidade (simula aprovação via API)
+    const entidadeResult = await query(
+      `
+      INSERT INTO entidades (
+        cnpj, nome, tipo, email, telefone, endereco, cidade, estado, cep,
+        responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
+        ativa, pagamento_confirmado
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+      RETURNING id
+    `,
+      [
+        TEST_CNPJ,
+        'Entidade Teste Ltda',
+        'entidade',
+        TEST_EMAIL,
+        '11999999999',
+        'Rua Teste, 123',
+        'São Paulo',
+        'SP',
+        '01234567',
+        TEST_NOME,
+        TEST_CPF,
+        TEST_EMAIL,
+        '11999999999',
+        true,
+        true,
+      ]
     );
-    const contratante = contratanteResult.rows[0];
+    testEntidadeId = entidadeResult.rows[0].id;
 
-    // Criar conta do responsável (como faz a API)
-    await criarContaResponsavel(contratante, mockSession);
+    // 2. Criar usuário gestor
+    await query(
+      `
+      INSERT INTO usuarios (
+        cpf,
+        nome,
+        email,
+        tipo_usuario,
+        entidade_id,
+        ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6)
+    `,
+      [TEST_CPF, TEST_NOME, TEST_EMAIL, 'gestor', testEntidadeId, true]
+    );
 
-    // 3. Verificar se a senha foi criada corretamente
+    // 3. Criar senha baseada em CNPJ (6 últimos dígitos)
+    const senhaHash = await bcrypt.hash(SENHA_PADRAO, 10);
+    await query(
+      `
+      INSERT INTO entidades_senhas (
+        entidade_id,
+        cpf,
+        senha_hash
+      ) VALUES ($1, $2, $3)
+    `,
+      [testEntidadeId, TEST_CPF, senhaHash]
+    );
+
+    // 4. Testar login
+    const request = new Request('http://localhost/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: TEST_CPF,
+        senha: SENHA_PADRAO,
+      }),
+    });
+
+    const response = await loginHandler(request as any);
+    const data = await response.json();
+
+    // Validações
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.cpf).toBe(TEST_CPF);
+    expect(data.perfil).toBe('gestor');
+    expect(data.redirectTo).toBe('/entidade');
+  });
+
+  it('deve validar senha baseada em CNPJ (últimos 6 dígitos)', async () => {
+    // Verificar que a senha armazenada é o hash dos 6 últimos dígitos do CNPJ
     const senhaResult = await query(
-      'SELECT cpf, senha_hash FROM contratantes_senhas WHERE contratante_id = $1',
-      [testContratanteId]
+      `
+      SELECT senha_hash 
+      FROM entidades_senhas 
+      WHERE cpf = $1 AND entidade_id = $2
+    `,
+      [TEST_CPF, testEntidadeId]
     );
 
     expect(senhaResult.rows.length).toBe(1);
-    const { cpf, senha_hash } = senhaResult.rows[0];
 
-    // Verificar dados básicos
-    expect(cpf).toBe(testCpf);
-    expect(senha_hash).toMatch(/^\$2[aby]\$/);
-    expect(senha_hash).not.toContain('PLACEHOLDER_');
+    const senhaHash = senhaResult.rows[0].senha_hash;
+    const isValid = await bcrypt.compare(SENHA_PADRAO, senhaHash);
 
-    // Verificar contratante aprovado (LEGACY_NOTE: ativação tradicionalmente dependia de pagamento; agora deve depender de aceite de contrato)
-    expect(contratante.status).toBe('aprovado');
-    expect(contratante.ativa).toBe(false);
-
-    // Testar autenticação
-    const senhaEsperada = testCnpj.slice(-6);
-    const autenticado = await bcrypt.compare(senhaEsperada, senha_hash);
-    expect(autenticado).toBe(true);
-  });
-
-  it('deve detectar problema de senha inválida (PLACEHOLDER_)', async () => {
-    // 1. Criar contratante e senha com PLACEHOLDER_ (simulando bug)
-    await criarContratantePendente('Empresa Bug Teste', 'bug@teste.com');
-
-    await query(
-      'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
-      [testContratanteId, testCpf, 'PLACEHOLDER_INVALIDO']
-    );
-
-    // 2. Tentar autenticar
-    const senhaDigitada = testCnpj.slice(-6);
-
-    const gestorResult = await query(
-      `SELECT cs.cpf, cs.senha_hash, c.ativa
-       FROM contratantes_senhas cs
-       JOIN contratantes c ON c.id = cs.contratante_id
-       WHERE cs.cpf = $1`,
-      [testCpf]
-    );
-
-    expect(gestorResult.rows.length).toBe(1);
-    const gestor = gestorResult.rows[0];
-
-    // 3. Verificar que autenticação FALHA
-    const senhaValida = await bcrypt.compare(senhaDigitada, gestor.senha_hash);
-    expect(senhaValida).toBe(false); // Deve falhar!
-
-    // 4. Verificar que hash contém PLACEHOLDER_
-    expect(gestor.senha_hash).toContain('PLACEHOLDER_');
-  });
-
-  it('deve validar senha baseada em CNPJ (últimos 6 dígitos)', () => {
-    // Teste unitário da lógica de geração de senha
-    const cnpjLimpo = '12.345.678/0001-90'.replace(/[./-]/g, '');
-    const senhaEsperada = cnpjLimpo.slice(-6);
-
-    expect(senhaEsperada).toBe('000190');
-    expect(senhaEsperada.length).toBe(6);
-    expect(/^\d{6}$/.test(senhaEsperada)).toBe(true);
+    expect(isValid).toBe(true);
+    expect(SENHA_PADRAO).toBe('000190'); // 6 últimos dígitos de 12345678000190
   });
 
   it('deve verificar isolamento entre ambientes de teste', async () => {
-    // Este teste garante que mudanças no código não afetem o isolamento
-    const isTestEnvironment =
-      process.env.NODE_ENV === 'test' || !!process.env.JEST_WORKER_ID;
+    // Verificar que o usuário foi criado corretamente
+    const usuarioResult = await query(
+      'SELECT tipo_usuario, entidade_id, ativo FROM usuarios WHERE cpf = $1',
+      [TEST_CPF]
+    );
 
-    expect(isTestEnvironment).toBe(true);
+    expect(usuarioResult.rows.length).toBe(1);
+    expect(usuarioResult.rows[0].tipo_usuario).toBe('gestor');
+    expect(usuarioResult.rows[0].entidade_id).toBe(testEntidadeId);
+    expect(usuarioResult.rows[0].ativo).toBe(true);
 
-    // Verificar que estamos usando banco de teste
-    const dbInfo = await query('SELECT current_database() as db_name');
-    expect(dbInfo.rows[0].db_name).toContain('_test');
+    // Verificar que a senha está na tabela correta
+    const senhaResult = await query(
+      'SELECT id FROM entidades_senhas WHERE cpf = $1 AND entidade_id = $2',
+      [TEST_CPF, testEntidadeId]
+    );
+
+    expect(senhaResult.rows.length).toBe(1);
+  });
+
+  it('deve rejeitar login com senha incorreta', async () => {
+    const request = new Request('http://localhost/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cpf: TEST_CPF,
+        senha: 'senhaErrada123',
+      }),
+    });
+
+    const response = await loginHandler(request as any);
+    const data = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('CPF ou senha inválidos');
   });
 });

@@ -39,7 +39,7 @@ describe('/api/avaliacao/status', () => {
   it('deve retornar status da avaliação quando existe', async () => {
     const mockAvaliacao = {
       id: 1,
-      status: 'concluida',
+      status: 'concluido',
       inicio: '2024-01-01T10:00:00Z',
       envio: '2024-01-01T11:00:00Z'
     }
@@ -52,7 +52,7 @@ describe('/api/avaliacao/status', () => {
 
     expect(response.status).toBe(200)
     expect(data).toEqual({
-      status: 'concluida',
+      status: 'concluido',
       inicio: '2024-01-01T10:00:00Z',
       envio: '2024-01-01T11:00:00Z'
     })

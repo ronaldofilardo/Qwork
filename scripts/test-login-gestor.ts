@@ -1,5 +1,5 @@
 /**
- * Test script para validar login de gestor_entidade
+ * Test script para validar login de gestor
  * CPF: 10932052029
  * Senha: 000186 (últimos 6 dígitos do CNPJ 89588920000186)
  */
@@ -7,7 +7,7 @@
 async function testLogin() {
   const baseUrl = 'http://localhost:3000';
 
-  console.log('\n🔐 Testando login de gestor_entidade...\n');
+  console.log('\n🔐 Testando login de gestor...\n');
 
   const loginData = {
     cpf: '10932052029',

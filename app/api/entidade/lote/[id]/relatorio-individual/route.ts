@@ -137,7 +137,7 @@ export async function GET(
 ) {
   try {
     // Permitir RH e Gestor de Entidade
-    const session = await requireRole(['rh', 'gestor_entidade']);
+    const session = await requireRole(['rh', 'gestor']);
 
     const searchParams = request.nextUrl.searchParams;
     const loteIdParam = params.id;
@@ -158,8 +158,8 @@ export async function GET(
       );
     }
 
-    // Verificar acesso: RH -> requireClinica (usa clinica_id); gestor_entidade -> requireEntity (usa contratante_id)
-    let ownershipField: 'clinica' | 'contratante';
+    // Verificar acesso: RH -> requireClinica (usa clinica_id); gestor -> requireEntity (usa entidade_id)
+    let ownershipField: 'clinica' | 'entidade';
     let ownerId: number;
 
     if (session.perfil === 'rh') {
@@ -168,8 +168,8 @@ export async function GET(
       ownerId = clinicaSession.clinica_id;
     } else {
       const entitySession = await requireEntity();
-      ownershipField = 'contratante';
-      ownerId = entitySession.contratante_id;
+      ownershipField = 'entidade';
+      ownerId = entitySession.entidade_id;
     }
 
     // Buscar dados da avaliação garantindo ownership
@@ -193,7 +193,7 @@ export async function GET(
       JOIN lotes_avaliacao la ON a.lote_id = la.id
       WHERE a.lote_id = $1
         AND a.funcionario_cpf = $2
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
         AND (
           ${ownershipField === 'clinica' ? '(f.clinica_id = $3 OR la.clinica_id = $3)' : '(f.contratante_id = $3 OR la.contratante_id = $3)'}
         )
@@ -213,11 +213,11 @@ export async function GET(
       // Logs adicionais para diagnóstico
       try {
         const loteInfo = await query(
-          `SELECT id, clinica_id, contratante_id FROM lotes_avaliacao WHERE id = $1`,
+          `SELECT id, clinica_id, entidade_id FROM lotes_avaliacao WHERE id = $1`,
           [loteId]
         );
         const funcInfo = await query(
-          `SELECT cpf, nome, contratante_id, clinica_id, empresa_id FROM funcionarios WHERE cpf = $1`,
+          `SELECT cpf, nome, entidade_id, clinica_id, empresa_id FROM funcionarios WHERE cpf = $1`,
           [cpfFilter]
         );
         const avaliacoesCheck = await query(
@@ -429,7 +429,7 @@ export async function GET(
     }
 
     // Retornar PDF
-    const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(/\s+/g, '-')}-${avaliacao.lote_codigo}.pdf`;
+    const nomeArquivo = `relatorio-individual-${avaliacao.nome.replace(/\s+/g, '-')}-lote-${avaliacao.lote_id}.pdf`;
 
     return new NextResponse(pdfBuffer, {
       headers: {

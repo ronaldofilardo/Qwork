@@ -22,7 +22,7 @@ As avaliações agora são **concluídas automaticamente** quando atingem 37 res
 Quando a 37ª resposta é salva:
 
 1. ✅ Calcula resultados automaticamente
-2. ✅ Marca avaliação como `status='concluida'`
+2. ✅ Marca avaliação como `status='concluido'`
 3. ✅ Define timestamp `envio=NOW()`
 4. ✅ Atualiza índice do funcionário
 5. ✅ Recalcula status do lote
@@ -36,3 +36,4 @@ Quando a 37ª resposta é salva:
 ### 🗑️ Remoção Futura
 
 Este endpoint será **removido completamente** em próxima versão após validação em produção.
+

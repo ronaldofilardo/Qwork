@@ -30,7 +30,7 @@ describe('Cenários com Funcionários Inativos', () => {
       const result = await mockQuery(`
         SELECT
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
           COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
         FROM avaliacoes a
         WHERE a.lote_id = $1
@@ -59,7 +59,7 @@ describe('Cenários com Funcionários Inativos', () => {
       const result = await mockQuery(`
         SELECT
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
           COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
         FROM avaliacoes a
         WHERE a.lote_id = $1
@@ -87,7 +87,7 @@ describe('Cenários com Funcionários Inativos', () => {
       const result = await mockQuery(`
         SELECT
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
           COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
         FROM avaliacoes a
         WHERE a.lote_id = $1
@@ -237,14 +237,14 @@ describe('Cenários com Funcionários Inativos', () => {
           
           la.titulo,
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas
+          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas
         FROM lotes_avaliacao la
         LEFT JOIN avaliacoes a ON la.id = a.lote_id
         WHERE la.status IN ('ativo', 'finalizado')
         GROUP BY la.id
         HAVING
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) > 0
-          AND COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) = COUNT(CASE WHEN a.status = 'concluida' THEN 1 END)
+          AND COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) = COUNT(CASE WHEN a.status = 'concluido' THEN 1 END)
       `, [])
 
       expect(result.rows.length).toBe(1)
@@ -262,13 +262,13 @@ describe('Cenários com Funcionários Inativos', () => {
         SELECT
           la.id,
           COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas
+          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas
         FROM lotes_avaliacao la
         LEFT JOIN avaliacoes a ON la.id = a.lote_id
         WHERE la.id = $1
         GROUP BY la.id
         HAVING
-          COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) = COUNT(CASE WHEN a.status = 'concluida' THEN 1 END)
+          COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) = COUNT(CASE WHEN a.status = 'concluido' THEN 1 END)
       `, [1])
 
       // Lote com 10 avaliações: 6 concluídas, 2 pendentes, 2 inativadas
@@ -294,7 +294,7 @@ describe('Cenários com Funcionários Inativos', () => {
         SELECT
           la.liberado_em,
           MIN(a.inicio) as primeira_avaliacao,
-          MAX(CASE WHEN a.status = 'concluida' THEN a.envio END) as ultima_conclusao
+          MAX(CASE WHEN a.status = 'concluido' THEN a.envio END) as ultima_conclusao
         FROM lotes_avaliacao la
         LEFT JOIN avaliacoes a ON la.id = a.lote_id
         WHERE la.id = $1
@@ -309,3 +309,4 @@ describe('Cenários com Funcionários Inativos', () => {
     })
   })
 })
+

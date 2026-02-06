@@ -58,11 +58,11 @@ CREATE POLICY funcionarios_unified_select ON funcionarios FOR SELECT USING (
   (current_user_tipo() = 'admin')
   OR
   -- Gestor RH vê funcionários da sua clínica
-  (current_user_tipo() = 'gestor_rh' 
+  (current_user_tipo() = 'rh' 
    AND clinica_id = current_user_clinica_id())
   OR
   -- Gestor entidade vê funcionários da sua entidade
-  (current_user_tipo() = 'gestor_entidade'
+  (current_user_tipo() = 'gestor'
    AND contratante_id = current_user_contratante_id())
   OR
   -- Emissor vê apenas perfis operacionais (para laudos)
@@ -88,12 +88,12 @@ CREATE POLICY funcionarios_unified_insert ON funcionarios FOR INSERT WITH CHECK 
    AND usuario_tipo != 'admin')
   OR
   -- Gestor RH pode criar funcionários de clínica na sua clínica
-  (current_user_tipo() = 'gestor_rh'
+  (current_user_tipo() = 'rh'
    AND usuario_tipo = 'funcionario_clinica'
    AND clinica_id = current_user_clinica_id())
   OR
   -- Gestor entidade pode criar funcionários de entidade na sua entidade
-  (current_user_tipo() = 'gestor_entidade'
+  (current_user_tipo() = 'gestor'
    AND usuario_tipo = 'funcionario_entidade'
    AND contratante_id = current_user_contratante_id())
 );
@@ -111,11 +111,11 @@ CREATE POLICY funcionarios_unified_update ON funcionarios FOR UPDATE USING (
    AND usuario_tipo != 'admin')
   OR
   -- Gestor RH pode atualizar funcionários da sua clínica
-  (current_user_tipo() = 'gestor_rh'
+  (current_user_tipo() = 'rh'
    AND clinica_id = current_user_clinica_id())
   OR
   -- Gestor entidade pode atualizar funcionários da sua entidade
-  (current_user_tipo() = 'gestor_entidade'
+  (current_user_tipo() = 'gestor'
    AND contratante_id = current_user_contratante_id())
   OR
   -- Funcionário pode atualizar apenas seus dados (campos limitados via trigger)

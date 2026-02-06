@@ -53,7 +53,7 @@ interface Funcionario {
   ultima_avaliacao_id?: number | null;
   ultimo_lote_id?: number | null;
   ultima_avaliacao_data_conclusao?: string | null;
-  ultima_avaliacao_status?: 'concluida' | 'inativada' | null;
+  ultima_avaliacao_status?: 'concluido' | 'inativada' | null;
   ultimo_motivo_inativacao?: string | null;
   // Data da última avaliação válida (concluída)
   data_ultimo_lote?: string | null;
@@ -545,7 +545,7 @@ export default function FuncionariosSection({
                             <span
                               className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${
                                 funcionario.ultima_avaliacao_status ===
-                                'concluida'
+                                'concluido'
                                   ? 'bg-green-100 text-green-800'
                                   : 'bg-gray-100 text-gray-800'
                               }`}
@@ -555,13 +555,13 @@ export default function FuncionariosSection({
                                 funcionario.ultimo_motivo_inativacao
                                   ? `Inativada: ${funcionario.ultimo_motivo_inativacao}`
                                   : funcionario.ultima_avaliacao_status ===
-                                      'concluida'
+                                      'concluido'
                                     ? 'Concluída'
                                     : ''
                               }
                             >
                               {funcionario.ultima_avaliacao_status ===
-                              'concluida'
+                              'concluido'
                                 ? 'Concluída'
                                 : 'Inativada'}
                             </span>
@@ -637,7 +637,7 @@ export default function FuncionariosSection({
                           {/* Se tem avaliação concluída há mais de 12 meses e não tem avaliação válida recente, mostrar aviso de elegibilidade */}
                           {!funcionario.tem_avaliacao_recente &&
                             (funcionario.ultima_avaliacao_status ===
-                              'concluida' ||
+                              'concluido' ||
                               (!funcionario.ultima_avaliacao_data_conclusao &&
                                 (funcionario.indice_avaliacao || 0) > 0)) && (
                               <div className="mt-1">
@@ -747,3 +747,4 @@ export default function FuncionariosSection({
     </div>
   );
 }
+

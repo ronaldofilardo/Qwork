@@ -131,7 +131,7 @@ case 'laudo-para-emitir':
 ```sql
 status_lote: 'ativo' | 'concluido' | 'finalizado' | 'cancelado'
 status_laudo: 'rascunho' | 'emitido' | 'enviado'
-status_avaliacao: 'iniciada' | 'em_andamento' | 'concluida' | 'inativada'
+status_avaliacao: 'iniciada' | 'em_andamento' | 'concluido' | 'inativada'
 ```
 
 ### Lotes Afetados (Estado Final)
@@ -312,3 +312,4 @@ Usar `lib/validacao-lote-laudo.ts` para:
 ---
 
 **Próximos Passos:** Implementar correções listadas e validar com testes e2e.
+

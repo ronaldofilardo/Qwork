@@ -67,7 +67,7 @@ describe('🔒 Segurança Crítica - Correções Implementadas', () => {
 
       await expect(
         query(
-          `INSERT INTO contratantes_senhas (cpf, senha_hash) 
+          `INSERT INTO entidades_senhas (cpf, senha_hash) 
            VALUES ($1, $2)`,
           [cpfTeste, 'PLACEHOLDER_123456']
         )
@@ -79,7 +79,7 @@ describe('🔒 Segurança Crítica - Correções Implementadas', () => {
 
       await expect(
         query(
-          `INSERT INTO contratantes_senhas (cpf, senha_hash) 
+          `INSERT INTO entidades_senhas (cpf, senha_hash) 
            VALUES ($1, $2)`,
           [cpfTeste, 'senha123'] // Muito curta para ser bcrypt
         )
@@ -91,7 +91,7 @@ describe('🔒 Segurança Crítica - Correções Implementadas', () => {
       const senhaHash = await bcrypt.hash('senha123', 10);
 
       const result = await query<ContratanteSenha>(
-        `INSERT INTO contratantes_senhas (cpf, senha_hash) 
+        `INSERT INTO entidades_senhas (cpf, senha_hash) 
          VALUES ($1, $2) RETURNING cpf`,
         [cpfTeste, senhaHash]
       );
@@ -100,13 +100,13 @@ describe('🔒 Segurança Crítica - Correções Implementadas', () => {
       expect(result.rows[0]?.cpf).toBe(cpfTeste);
 
       // Cleanup
-      await query('DELETE FROM contratantes_senhas WHERE cpf = $1', [cpfTeste]);
+      await query('DELETE FROM entidades_senhas WHERE cpf = $1', [cpfTeste]);
     });
 
     it('deve detectar senhas placeholder existentes no banco', async () => {
       const result = await query<CountResult>(`
         SELECT COUNT(*) as total
-        FROM contratantes_senhas
+        FROM entidades_senhas
         WHERE senha_hash LIKE 'PLACEHOLDER_%'
       `);
 
@@ -118,7 +118,7 @@ describe('🔒 Segurança Crítica - Correções Implementadas', () => {
     it('deve ter FORCE RLS ativado em tabelas sensíveis', async () => {
       const tabelasSensiveis = [
         'contratantes',
-        'contratantes_senhas',
+        'entidades_senhas',
         'funcionarios',
         'avaliacoes',
         'laudos',
@@ -387,8 +387,7 @@ describe('🔒 Segurança Crítica - Correções Implementadas', () => {
 
       // \n📊 Relatório de Segurança:
 
-      result.rows.forEach((row: SecurityCheckResult) => {
-      });
+      result.rows.forEach((row: SecurityCheckResult) => {});
 
       expect(result.rows.length).toBeGreaterThan(0);
     });

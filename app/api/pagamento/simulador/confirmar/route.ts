@@ -5,28 +5,28 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      contratante_id,
+      entidade_id,
       contrato_id,
       _plano_id,
       numero_parcelas,
       metodo_pagamento,
     } = body;
 
-    if (!contratante_id) {
+    if (!entidade_id) {
       return NextResponse.json(
-        { error: 'contratante_id é obrigatório' },
+        { error: 'entidade_id é obrigatório' },
         { status: 400 }
       );
     }
 
-    // Validar contratante (incluir dados do responsável para criar login)
-    const contratanteRes = await query(
-      'SELECT id, nome, cnpj, status, responsavel_cpf, responsavel_nome, responsavel_email FROM contratantes WHERE id = $1',
-      [contratante_id]
+    // Validar entidade (incluir dados do responsável para criar login)
+    const entidadeRes = await query(
+      'SELECT id, nome, cnpj, status, responsavel_cpf, responsavel_nome, responsavel_email FROM entidades WHERE id = $1',
+      [entidade_id]
     );
-    if (contratanteRes.rows.length === 0) {
+    if (entidadeRes.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Contratante não encontrado' },
+        { error: 'Entidade não encontrada' },
         { status: 404 }
       );
     }
@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
     let contratoIdValido = contrato_id || null;
     if (contratoIdValido) {
       const ctr = await query(
-        'SELECT id, aceito FROM contratos WHERE id = $1 AND contratante_id = $2',
-        [contratoIdValido, contratante_id]
+        'SELECT id, aceito FROM contratos WHERE id = $1 AND entidade_id = $2',
+        [contratoIdValido, entidade_id]
       );
       if (ctr.rows.length === 0 || !ctr.rows[0].aceito) {
         return NextResponse.json(
@@ -46,8 +46,8 @@ export async function POST(request: NextRequest) {
       }
     } else {
       const ctr = await query(
-        'SELECT id FROM contratos WHERE contratante_id = $1 AND aceito = true LIMIT 1',
-        [contratante_id]
+        'SELECT id FROM contratos WHERE entidade_id = $1 AND aceito = true LIMIT 1',
+        [entidade_id]
       );
       if (ctr.rows.length === 0) {
         return NextResponse.json(
@@ -76,9 +76,9 @@ export async function POST(request: NextRequest) {
     const numeroParc = numero_parcelas || 1;
 
     const insert = await query(
-      `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, data_pagamento)
+      `INSERT INTO pagamentos (entidade_id, contrato_id, valor, status, metodo, numero_parcelas, data_pagamento)
        VALUES ($1,$2,$3,$4,$5,$6,NOW()) RETURNING id`,
-      [contratante_id, contratoIdValido, valorTotal, 'pago', metodo, numeroParc]
+      [entidade_id, contratoIdValido, valorTotal, 'pago', metodo, numeroParc]
     );
 
     const pagamentoId = insert.rows[0].id;
@@ -88,16 +88,16 @@ export async function POST(request: NextRequest) {
       '[SIMULADOR] Geração automática de recibo DESATIVADA - novo fluxo'
     );
 
-    // Ativar contratante e criar login
+    // Ativar entidade e criar login
     try {
       await query(
-        `UPDATE contratantes SET status = 'aprovado', ativa = true, pagamento_confirmado = true, aprovado_em = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
-        [contratante_id]
+        `UPDATE entidades SET status = 'aprovado', ativa = true, pagamento_confirmado = true, aprovado_em = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+        [entidade_id]
       );
 
       // Criar login simples (se não existir)
-      const contratante = contratanteRes.rows[0];
-      const cpf = contratante.responsavel_cpf || null;
+      const entidade = entidadeRes.rows[0];
+      const cpf = entidade.responsavel_cpf || null;
 
       if (cpf) {
         const exists = await query(
@@ -106,8 +106,8 @@ export async function POST(request: NextRequest) {
         );
         if (exists.rows.length === 0) {
           const cnpjRow = await query(
-            'SELECT cnpj FROM contratantes WHERE id = $1',
-            [contratante_id]
+            'SELECT cnpj FROM entidades WHERE id = $1',
+            [entidade_id]
           );
           const cnpjLimpo = (cnpjRow.rows[0]?.cnpj || '').replace(/\D/g, '');
           const senhaInicial = cnpjLimpo.slice(-6) || 'changeme';
@@ -116,12 +116,7 @@ export async function POST(request: NextRequest) {
             await query(
               `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, criado_em, atualizado_em)
                VALUES ($1,$2,$3,$4,'emissor',true,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)`,
-              [
-                cpf,
-                contratante.nome || cpf,
-                contratante.email || null,
-                senhaInicial,
-              ]
+              [cpf, entidade.nome || cpf, entidade.email || null, senhaInicial]
             );
             await query('COMMIT');
           } catch (txErr) {
@@ -140,7 +135,7 @@ export async function POST(request: NextRequest) {
       {
         success: true,
         pagamento_id: pagamentoId,
-        contratante_id,
+        entidade_id,
         acesso_liberado: true,
         login_liberado: true,
         redirect_to: '/',

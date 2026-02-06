@@ -39,14 +39,18 @@ export default function SimuladorPagamentoPage() {
     const carregarDados = async () => {
       try {
         // Modo simplificado - parâmetros na URL
-        const contratanteId = searchParams.get('contratante_id');
+        // Aceitar tanto `contratante_id` quanto `entidade_id` por compatibilidade
+        const contratanteId =
+          searchParams.get('contratante_id') || searchParams.get('entidade_id');
         const planoId = searchParams.get('plano_id');
         const numeroFuncionarios = searchParams.get('numero_funcionarios');
         const contratoId = searchParams.get('contrato_id');
         const retry = searchParams.get('retry') === 'true';
 
         if (!contratanteId || !planoId) {
-          throw new Error('Parâmetros obrigatórios: contratante_id e plano_id');
+          throw new Error(
+            'Parâmetros obrigatórios: contratante_id/entidade_id e plano_id'
+          );
         }
 
         setIsRetry(retry);
@@ -58,7 +62,7 @@ export default function SimuladorPagamentoPage() {
 
         // Buscar informações do contratante e plano
         const res = await fetch(
-          `/api/pagamento/simulador?contratante_id=${contratanteId}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`
+          `/api/pagamento/simulador?entidade_id=${contratanteId}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`
         );
 
         if (!res.ok) {

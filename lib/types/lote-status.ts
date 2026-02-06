@@ -2,7 +2,14 @@
  * Máquina de Estados do Lote
  *
  * Define os possíveis estados de um lote de avaliações e suas transições válidas.
- * Implementa estado 'emissao_solicitada' para evitar join com tabela fila_emissao.
+ *
+ * IMPORTANTE: Sincronização entre status e fila_emissao
+ * - Quando lote.status = 'emissao_solicitada', DEVE existir registro em fila_emissao
+ * - A inserção em fila_emissao DEVE atualizar lote.status para 'emissao_solicitada'
+ * - Esta consistência é garantida por transação e validações
+ *
+ * Padronização: usa 'concluido' (sem acento, forma masculina) para consistência
+ * com avaliações e laudos.
  */
 
 /**

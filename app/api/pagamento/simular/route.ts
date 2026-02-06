@@ -45,13 +45,13 @@ export async function POST(request: NextRequest) {
       }
 
       const contratanteResult = await query(
-        `SELECT id, nome, tipo, numero_funcionarios_estimado FROM contratantes WHERE id = $1`,
+        `SELECT id, nome, tipo, numero_funcionarios_estimado FROM entidades WHERE id = $1`,
         [contratante_id]
       );
 
       if (contratanteResult.rows.length === 0) {
         return NextResponse.json(
-          { error: 'Contratante não encontrado' },
+          { error: 'Entidade n\u00e3o encontrada' },
           { status: 404 }
         );
       }

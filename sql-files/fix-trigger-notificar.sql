@@ -1,16 +1,16 @@
--- Corrigir função da trigger para buscar de contratantes em vez de clinicas
+-- Corrigir função da trigger para buscar de entidades em vez de clinicas (renomeado de contratantes)
 CREATE OR REPLACE FUNCTION public.notificar_pre_cadastro_criado()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-  v_contratante_nome TEXT;
+  v_entidade_nome TEXT;
   v_admin_record RECORD;
 BEGIN
-  -- Buscar nome do contratante (corrigido de clinicas para contratantes)
-  SELECT nome INTO v_contratante_nome
-  FROM contratantes
-  WHERE id = NEW.contratante_id;
+  -- Buscar nome da entidade (corrigido de clinicas para contratantes, agora renomeado para entidades)
+  SELECT nome INTO v_entidade_nome
+  FROM entidades
+  WHERE id = NEW.entidade_id;
 
   -- Notificar todos os admins
   FOR v_admin_record IN

@@ -45,7 +45,7 @@ CREATE OR REPLACE FUNCTION public.current_user_perfil()
 RETURNS text AS $$
 DECLARE
   v_perfil TEXT;
-  v_valid_perfis TEXT[] := ARRAY['funcionario', 'rh', 'emissor', 'admin', 'gestor_entidade'];
+  v_valid_perfis TEXT[] := ARRAY['funcionario', 'rh', 'emissor', 'admin', 'gestor'];
 BEGIN
   v_perfil := NULLIF(current_setting('app.current_user_perfil', TRUE), '');
   
@@ -123,22 +123,22 @@ DECLARE
 BEGIN
   v_id := NULLIF(current_setting('app.current_user_contratante_id', TRUE), '');
   
-  -- SECURITY: For gestor_entidade perfil, contratante_id is mandatory
-  IF v_id IS NULL AND current_user_perfil() = 'gestor_entidade' THEN
-    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor_entidade.';
+  -- SECURITY: For gestor perfil, contratante_id is mandatory
+  IF v_id IS NULL AND current_user_perfil() = 'gestor' THEN
+    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor.';
   END IF;
   
   RETURN v_id::INTEGER;
 EXCEPTION
   WHEN undefined_object THEN
     -- For non-gestor users, NULL is acceptable
-    IF current_user_perfil() = 'gestor_entidade' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+    IF current_user_perfil() = 'gestor' THEN
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor.';
     END IF;
     RETURN NULL;
   WHEN SQLSTATE '22023' THEN
-    IF current_user_perfil() = 'gestor_entidade' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+    IF current_user_perfil() = 'gestor' THEN
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor.';
     END IF;
     RETURN NULL;
 END;
@@ -146,7 +146,7 @@ $$ LANGUAGE plpgsql STABLE SECURITY DEFINER;
 
 COMMENT ON FUNCTION public.current_user_contratante_id() IS
   'Returns current user contratante_id from session context.
-   RAISES EXCEPTION if not set for perfil gestor_entidade (prevents NULL bypass).
+   RAISES EXCEPTION if not set for perfil gestor (prevents NULL bypass).
    Returns NULL for other perfis (acceptable).';
 
 -- ========================================

@@ -12,9 +12,9 @@ import bcrypt from 'bcryptjs';
 export async function GET() {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
-    // Query com isolamento: apenas funcionários vinculados ao contratante_id da entidade
+    // Query com isolamento: apenas funcionários vinculados ao entidade_id da entidade
     // IMPORTANTE: Não retornar funcionários de outras entidades ou de clínicas
     const funcionarios = await queryAsGestorEntidade(
       `
@@ -46,7 +46,7 @@ export async function GET() {
             THEN true 
           ELSE false 
         END as tem_avaliacao_recente,
-        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluido') as avaliacoes_concluidas,
         COUNT(DISTINCT a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as avaliacoes_pendentes,
         MAX(a.envio) as ultima_avaliacao,
         -- Data da última inativação (se houver)
@@ -64,17 +64,17 @@ export async function GET() {
       WHERE f.contratante_id = $1
         AND f.empresa_id IS NULL
         AND f.clinica_id IS NULL
-        AND f.perfil <> 'gestor_entidade'
+        AND f.perfil <> 'gestor'
       GROUP BY f.id, f.cpf, f.nome, f.email, f.setor, f.funcao, f.matricula, f.nivel_cargo, f.turno, f.escala, f.ativo, f.criado_em,
                f.ultima_avaliacao_id, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao, f.data_ultimo_lote
       ORDER BY f.nome
     `,
-      [contratanteId]
+      [entidadeId]
     );
 
-    // Defense-in-depth: filter out gestor_entidade even if the SQL missed it
+    // Defense-in-depth: filter out gestor even if the SQL missed it
     const filteredRows = funcionarios.rows.filter(
-      (f: any) => f.perfil !== 'gestor_entidade'
+      (f: any) => f.perfil !== 'gestor'
     );
 
     return NextResponse.json({
@@ -102,7 +102,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     const {
       cpf,
@@ -157,8 +157,8 @@ export async function POST(request: Request) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha || '123456', 10);
 
-    // Inserir funcionário vinculado à entidade (contratante_id, sem empresa_id/clinica_id)
-    // ISOLAMENTO: funcionários de entidade pertencem apenas à contratante, não a empresa/clínica
+    // Inserir funcionário vinculado à entidade (entidade_id, sem empresa_id/clinica_id)
+    // ISOLAMENTO: funcionários de entidade pertencem apenas à entidade, não a empresa/clínica
     const insertParams = [
       cpfLimpo,
       nome,
@@ -168,7 +168,7 @@ export async function POST(request: Request) {
       email,
       senhaHash,
       perfil,
-      contratanteId,
+      entidadeId,
       matricula || null,
       nivel_cargo || null,
       turno || null,
@@ -179,42 +179,39 @@ export async function POST(request: Request) {
     const result = await queryAsGestorEntidade(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        contratante_id, matricula, nivel_cargo, turno, escala, ativo,
+        entidade_id, matricula, nivel_cargo, turno, escala, ativo,
         empresa_id, clinica_id, usuario_tipo
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true, NULL, NULL, $14)
-      RETURNING id, cpf, nome, email, setor, funcao, data_nascimento, contratante_id`,
+      RETURNING id, cpf, nome, email, setor, funcao, data_nascimento, entidade_id`,
       insertParams
     );
 
-    // Vincular explicitamente ao contratante em contratantes_funcionarios
+    // Vincular explicitamente à entidade em entidades_funcionarios
     const newId = result.rows[0].id;
     try {
       const vinc = await queryAsGestorEntidade(
-        'SELECT * FROM contratantes_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
-        [newId, contratanteId]
+        'SELECT * FROM entidades_funcionarios WHERE funcionario_id = $1 AND entidade_id = $2',
+        [newId, entidadeId]
       );
 
       if (vinc.rows.length > 0) {
         await queryAsGestorEntidade(
-          'UPDATE contratantes_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
-          [newId, contratanteId]
+          'UPDATE entidades_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND entidade_id = $2',
+          [newId, entidadeId]
         );
       } else {
         await queryAsGestorEntidade(
-          'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
-          [newId, contratanteId, 'entidade']
+          'INSERT INTO entidades_funcionarios (funcionario_id, entidade_id, tipo_entidade, vinculo_ativo) VALUES ($1, $2, $3, true)',
+          [newId, entidadeId, 'entidade']
         );
       }
     } catch (err) {
-      console.error(
-        '[ENTIDADE] Erro ao vincular funcionário ao contratante:',
-        err
-      );
+      console.error('[ENTIDADE] Erro ao vincular funcionário à entidade:', err);
       // Não relançar para não impedir criação do funcionário; registrar para investigação
     }
 
     console.log(
-      `[AUDIT] Funcionário ${cpfLimpo} (${nome}) criado pela entidade ${contratanteId} por ${session.cpf}`
+      `[AUDIT] Funcionário ${cpfLimpo} (${nome}) criado pela entidade ${entidadeId} por ${session.cpf}`
     );
 
     return NextResponse.json({

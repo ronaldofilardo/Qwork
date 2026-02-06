@@ -125,7 +125,7 @@ BEGIN
         WHERE id = OLD.avaliacao_id;
         
         -- Se avaliação está concluída, bloquear modificação
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido modificar resultados de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
                 USING HINT = 'Resultados de avaliações concluídas são imutáveis para garantir integridade dos dados.',
                       ERRCODE = '23506';
@@ -138,7 +138,7 @@ BEGIN
         FROM avaliacoes
         WHERE id = NEW.avaliacao_id;
         
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido adicionar resultados a avaliações já concluídas. Avaliação ID: %', NEW.avaliacao_id
                 USING HINT = 'Finalize a avaliação antes de tentar adicionar resultados novamente.',
                       ERRCODE = '23506';
@@ -182,7 +182,7 @@ BEGIN
         WHERE id = OLD.avaliacao_id;
         
         -- Se avaliação está concluída, bloquear modificação
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido modificar respostas de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
                 USING HINT = 'Respostas de avaliações concluídas são imutáveis para garantir integridade dos dados.',
                       ERRCODE = '23506';
@@ -208,7 +208,7 @@ CREATE TRIGGER trigger_resposta_immutability
 -- ================================================================
 
 -- ------------------------------------------------------------
--- Função para impedir mudança de status de "concluida" para outro
+-- Função para impedir mudança de status de "concluido" para outro
 -- ------------------------------------------------------------
 CREATE OR REPLACE FUNCTION protect_concluded_avaliacao()
 RETURNS TRIGGER AS $$
@@ -219,7 +219,7 @@ BEGIN
     v_perfil := current_setting('app.current_user_perfil', true);
     
     -- Se avaliação estava concluída, não permitir mudança de status
-    IF OLD.status = 'concluida' AND NEW.status != 'concluida' THEN
+    IF OLD.status = 'concluido' AND NEW.status != 'concluido' THEN
         RAISE EXCEPTION 'Não é permitido alterar o status de uma avaliação concluída. Avaliação ID: %', OLD.id
             USING HINT = 'Avaliações concluídas não podem ter seu status alterado.',
                   ERRCODE = '23506';

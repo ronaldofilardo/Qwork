@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,19 +8,12 @@ export const revalidate = 0;
 export async function GET() {
   try {
     // Verificar sessão e perfil
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    if (session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    const session = await requireEntity();
 
     // Buscar lotes associados aos funcionários da entidade ou lotes diretamente da entidade
     // Inclui informações de validação e laudos (igual à API da clínica)
     console.log(
-      `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, contratante_id: session.contratante_id || null })}`
+      `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, contratante_id: session.contratante_id })}`
     );
 
     let lotesResult;
@@ -35,7 +28,7 @@ export async function GET() {
           la.liberado_em,
           f2.nome as liberado_por_nome,
           COUNT(DISTINCT a.id) as total_avaliacoes,
-          COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
+          COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
           COUNT(DISTINCT CASE WHEN a.status = 'inativada' THEN a.id END) as avaliacoes_inativadas,
           -- Informações de laudo
           l.id as laudo_id,
@@ -49,22 +42,33 @@ export async function GET() {
           fe.solicitado_em,
           fe.tipo_solicitante
         FROM lotes_avaliacao la
-        LEFT JOIN avaliacoes a ON a.lote_id = la.id
+        INNER JOIN avaliacoes a ON a.lote_id = la.id
+        INNER JOIN funcionarios func ON a.funcionario_cpf = func.cpf
         LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
         LEFT JOIN laudos l ON l.lote_id = la.id
         LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
         LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
+        WHERE func.contratante_id = $1
         GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome,
                  l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
                  fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
         ORDER BY la.criado_em DESC
       `,
-        []
+        [session.entidade_id]
       );
-      console.log(`[DEBUG /api/entidade/lotes] query returned rows=${lotesResult.rowCount}`);
+      console.log(
+        `[DEBUG /api/entidade/lotes] query returned rows=${lotesResult.rowCount}`
+      );
     } catch (err) {
-      console.error('[ERROR /api/entidade/lotes] query failed:', err, err instanceof Error ? err.stack : null);
-      return NextResponse.json({ error: 'Erro ao buscar lotes' }, { status: 500, headers: { 'X-Lotes-Error': 'query_failed' } });
+      console.error(
+        '[ERROR /api/entidade/lotes] query failed:',
+        err,
+        err instanceof Error ? err.stack : null
+      );
+      return NextResponse.json(
+        { error: 'Erro ao buscar lotes' },
+        { status: 500, headers: { 'X-Lotes-Error': 'query_failed' } }
+      );
     }
 
     // BEFORE returning: para lotes cujo laudo existe mas o hash está nulo,

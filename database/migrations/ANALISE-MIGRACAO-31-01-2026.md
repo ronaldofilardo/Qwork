@@ -21,7 +21,7 @@
 | `062_add_calcular_elegibilidade_lote_contratante.sql` | 3 arquivos (normal, utf8, clean) | Versões conflitantes                 |
 | `105/108_add_contratante_id_to_funcionarios.sql`      | 2 arquivos                       | Mesma funcionalidade, IDs diferentes |
 | `071/104_add_data_nascimento_funcionarios.sql`        | 2 arquivos                       | Coluna adicionada 2x                 |
-| `206_add_gestor_entidade_role.sql`                    | 2 arquivos (normal + clean)      | Versão limpa duplicada               |
+| `206_add_gestor_role.sql`                             | 2 arquivos (normal + clean)      | Versão limpa duplicada               |
 | `207_add_current_user_contratante_id_helper.sql`      | 2 arquivos (normal + clean)      | Versão limpa duplicada               |
 | `063/207_current_user_contratante_id.sql`             | 2 arquivos                       | Função criada 2x com IDs diferentes  |
 | `211_create_dba_maintenance_role.sql`                 | 2 arquivos (normal + neon)       | Ambiente duplicado                   |
@@ -96,7 +96,7 @@ Arquivos específicos de teste na pasta principal:
 - `073_drop_views_and_convert_status_test.sql`
 - `075_defensive_verificar_conclusao_lote_test.sql`
 - `081_add_missing_test_db_columns.sql`
-- `090_adjust_fn_audit_contratantes_senhas_for_tests.sql`
+- `090_adjust_fn_audit_entidades_senhas_for_tests.sql`
 - `208_sync_with_neon_test.sql`
 - `999_correcoes_criticas_seguranca_test.sql`
 - `999_fix_nr_bps_db_test.sql`
@@ -125,9 +125,9 @@ Arquivos específicos de teste na pasta principal:
 
 #### 5.3 Perfil Gestor Entidade
 
-- `093_allow_gestor_entidade_with_contratante.sql` - Permite
-- `203_disallow_gestor_entidade_in_funcionarios.sql` - Desabilita
-- `206_add_gestor_entidade_role.sql` - Adiciona novamente
+- `093_allow_gestor_with_contratante.sql` - Permite
+- `203_disallow_gestor_in_funcionarios.sql` - Desabilita
+- `206_add_gestor_role.sql` - Adiciona novamente
 
 **Problema:** Funcionalidade ligada/desligada/religada
 
@@ -292,9 +292,9 @@ database/migrations/
 -- MANTER: 071_add_data_nascimento_funcionarios.sql (primeira versão)
 -- REMOVER: 104_add_data_nascimento_funcionarios.sql
 
--- CONSOLIDAR: gestor_entidade_role
--- MANTER: 206_add_gestor_entidade_role_clean.sql
--- REMOVER: 206_add_gestor_entidade_role.sql
+-- CONSOLIDAR: gestor_role
+-- MANTER: 206_add_gestor_role_clean.sql
+-- REMOVER: 206_add_gestor_role.sql
 
 -- CONSOLIDAR: current_user_contratante_id
 -- MANTER: 207_add_current_user_contratante_id_helper_clean.sql
@@ -311,7 +311,7 @@ mv 072_convert_lotes_status_to_enum_test.sql tests/
 mv 073_drop_views_and_convert_status_test.sql tests/
 mv 075_defensive_verificar_conclusao_lote_test.sql tests/
 mv 081_add_missing_test_db_columns.sql tests/
-mv 090_adjust_fn_audit_contratantes_senhas_for_tests.sql tests/
+mv 090_adjust_fn_audit_entidades_senhas_for_tests.sql tests/
 mv 208_sync_with_neon_test.sql tests/
 mv 999_correcoes_criticas_seguranca_test.sql tests/
 mv 999_fix_nr_bps_db_test.sql tests/

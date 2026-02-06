@@ -23,7 +23,7 @@ ALTER TABLE notificacoes ADD CONSTRAINT notificacao_destinatario_valido
 -- 4. Atualizar constraint de tipo destinatario
 ALTER TABLE notificacoes DROP CONSTRAINT IF EXISTS notificacoes_destinatario_tipo_check;
 ALTER TABLE notificacoes ADD CONSTRAINT notificacoes_destinatario_tipo_check 
-  CHECK (destinatario_tipo IN ('admin', 'gestor_entidade', 'funcionario', 'contratante', 'clinica'));
+  CHECK (destinatario_tipo IN ('admin', 'gestor', 'funcionario', 'contratante', 'clinica'));
 
 -- 5. Criar índice para destinatario_cpf
 CREATE INDEX IF NOT EXISTS idx_notificacoes_destinatario_cpf 

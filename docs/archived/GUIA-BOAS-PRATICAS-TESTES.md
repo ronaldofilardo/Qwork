@@ -151,7 +151,7 @@ async function verificarSenhas() {
   const result = await client.query(`
     SELECT c.id, c.cnpj, c.responsavel_nome, c.responsavel_cpf, c.tipo
     FROM contratantes c
-    LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id 
+    LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id 
       AND cs.cpf = c.responsavel_cpf
     WHERE c.status = 'aprovado' 
       AND c.ativa = true 
@@ -170,7 +170,7 @@ async function verificarSenhas() {
       const hash = await bcrypt.hash(senha, 10);
 
       await client.query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+        'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
         [contratante.id, contratante.responsavel_cpf, hash]
       );
 
@@ -209,13 +209,13 @@ Antes de commitar testes novos, verificar:
 ```sql
 -- NUNCA!
 DELETE FROM contratantes;
-DELETE FROM contratantes_senhas;
+DELETE FROM entidades_senhas;
 TRUNCATE contratantes;
-TRUNCATE contratantes_senhas CASCADE;
+TRUNCATE entidades_senhas CASCADE;
 
 -- SEMPRE usar WHERE específico:
 DELETE FROM contratantes WHERE id = $1;
-DELETE FROM contratantes_senhas WHERE contratante_id = $1;
+DELETE FROM entidades_senhas WHERE contratante_id = $1;
 ```
 
 ---
@@ -240,7 +240,7 @@ SELECT
     ELSE '✅ OK'
   END as status_senha
 FROM contratantes c
-LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
   AND cs.cpf = c.responsavel_cpf
 WHERE c.status = 'aprovado' AND c.ativa = true;
 ```

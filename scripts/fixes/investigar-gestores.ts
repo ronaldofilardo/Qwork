@@ -22,8 +22,8 @@ async function investigarGestores() {
        FROM funcionarios 
        WHERE cpf = $1
        UNION ALL
-       SELECT 'contratantes_senhas' as tabela, cs.cpf, c.nome, 'gestor_entidade' as perfil, true, cs.contratante_id
-       FROM contratantes_senhas cs
+       SELECT 'entidades_senhas' as tabela, cs.cpf, c.nome, 'gestor' as perfil, true, cs.contratante_id
+       FROM entidades_senhas cs
        JOIN contratantes c ON cs.contratante_id = c.id
        WHERE cs.cpf = $1`,
       [cpf]
@@ -80,7 +80,7 @@ async function investigarGestores() {
         la.contratante_id,
         cs.contratante_id as gestor_contratante_id
       FROM lotes_avaliacao la
-      LEFT JOIN contratantes_senhas cs ON cs.cpf = la.liberado_por
+      LEFT JOIN entidades_senhas cs ON cs.cpf = la.liberado_por
       WHERE la.liberado_por = $1
         AND la.contratante_id IS NULL
         AND cs.contratante_id IS NOT NULL`,

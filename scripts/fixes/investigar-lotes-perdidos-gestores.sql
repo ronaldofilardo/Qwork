@@ -12,8 +12,8 @@ SELECT 'funcionarios' as tabela, cpf, nome, perfil, ativo, contratante_id
 FROM funcionarios 
 WHERE cpf IN ('87545772920', '16543102047')
 UNION ALL
-SELECT 'contratantes_senhas' as tabela, cs.cpf, c.nome, cs.perfil::text, true, cs.contratante_id
-FROM contratantes_senhas cs
+SELECT 'entidades_senhas' as tabela, cs.cpf, c.nome, cs.perfil::text, true, cs.contratante_id
+FROM entidades_senhas cs
 JOIN contratantes c ON cs.contratante_id = c.id
 WHERE cs.cpf IN ('87545772920', '16543102047');
 
@@ -82,7 +82,7 @@ SELECT
     la.contratante_id,
     cs.contratante_id as gestor_contratante_id
 FROM lotes_avaliacao la
-LEFT JOIN contratantes_senhas cs ON cs.cpf = la.liberado_por
+LEFT JOIN entidades_senhas cs ON cs.cpf = la.liberado_por
 WHERE la.liberado_por IN ('87545772920', '16543102047')
   AND la.contratante_id IS NULL
   AND cs.contratante_id IS NOT NULL;

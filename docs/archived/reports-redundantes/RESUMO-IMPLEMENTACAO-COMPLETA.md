@@ -146,7 +146,7 @@ Implementação completa do fluxo de **Plano Personalizado** para Medicina do Tr
 
 23. **`middleware.ts`** (atualizado)
     - Rotas `CONTRATACAO_ROUTES` com permissões granulares
-    - `/api/contratacao/personalizado/*` → gestor_entidade
+    - `/api/contratacao/personalizado/*` → gestor
     - `/api/admin/contratacao/*` → admin
 
 ### Tests (2)
@@ -199,13 +199,13 @@ Estados finais:
 
 ### Camada 1: RBAC (Middleware)
 
-- `/api/contratacao/personalizado/*` → gestor_entidade + admin
+- `/api/contratacao/personalizado/*` → gestor + admin
 - `/api/admin/contratacao/*` → admin apenas
 - Verificação de `session.role`
 
 ### Camada 2: RLS (PostgreSQL)
 
-- Políticas por role (admin, gestor_entidade)
+- Políticas por role (admin, gestor)
 - Gestor vê apenas seus próprios registros
 - Admin vê todos
 - Helpers: `verificar_acesso_contratacao_personalizada()`

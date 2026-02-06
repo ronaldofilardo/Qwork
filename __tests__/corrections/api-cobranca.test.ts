@@ -56,9 +56,9 @@ describe('API Cobrança - Consulta a contratantes', () => {
     // Verificar se query foi chamada ao menos uma vez
     expect(mockQuery).toHaveBeenCalled();
 
-    // Verificar se a query SQL busca da tabela CONTRATANTES em alguma das chamadas (a primeira pode ser checagem de coluna)
+    // Verificar se a query SQL busca da tabela ENTIDADES em alguma das chamadas (a primeira pode ser checagem de coluna)
     const found = mockQuery.mock.calls.some((c: any) =>
-      String(c[0]).includes('FROM contratantes ct')
+      String(c[0]).includes('FROM entidades ct')
     );
     expect(found).toBe(true);
 

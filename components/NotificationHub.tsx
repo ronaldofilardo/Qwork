@@ -13,7 +13,7 @@ import type {
 
 interface NotificationHubProps {
   usuarioCpf: string;
-  usuarioTipo: 'admin' | 'gestor_entidade';
+  usuarioTipo: 'admin' | 'gestor';
 }
 
 export default function NotificationHub({

@@ -19,11 +19,10 @@ const { query } = require('../../lib/db');
     );
     console.log('\nClinica:', cl.rows);
 
-    const s = await query(
-      'SELECT cpf FROM contratantes_senhas WHERE cpf = $1',
-      ['70495096040']
-    );
-    console.log('\ncontratantes_senhas rows:', s.rows);
+    const s = await query('SELECT cpf FROM entidades_senhas WHERE cpf = $1', [
+      '70495096040',
+    ]);
+    console.log('\nentidades_senhas rows:', s.rows);
   } catch (err) {
     console.error('Erro:', err.message);
     process.exit(1);

@@ -131,7 +131,7 @@ BEGIN
     p_tipo,
     'media',
     p_contratante_id,
-    'gestor_entidade',
+    'gestor',
     CASE 
       WHEN p_tipo = 'recibo_gerado_retroativo' 
       THEN 'Recibo Retroativo Disponível'

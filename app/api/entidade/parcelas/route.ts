@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { calcularParcelas } from '@/lib/parcelas-helper';
 
@@ -7,22 +7,12 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/entidade/parcelas
- * Lista todas as parcelas do contratante com status de recibo
+ * Lista todas as parcelas da entidade com status de recibo
  */
 export async function GET() {
   try {
-    const session = getSession();
-    if (!session || session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    const contratanteId = session.contratante_id;
-    if (!contratanteId) {
-      return NextResponse.json(
-        { error: 'Contratante não encontrado' },
-        { status: 400 }
-      );
-    }
+    const session = await requireEntity();
+    const entidadeId = session.contratante_id;
 
     // Buscar contrato e timestamp de contratação
     const contratoQuery = `
@@ -32,13 +22,13 @@ export async function GET() {
         co.valor_total,
         co.numero_funcionarios
       FROM contratos co
-      WHERE co.contratante_id = $1
+      WHERE co.entidade_id = $1
       ORDER BY co.criado_em DESC
       LIMIT 1
     `;
 
     const contratoResult = await queryAsGestorEntidade(contratoQuery, [
-      contratanteId,
+      entidadeId,
     ]);
 
     if (contratoResult.rows.length === 0) {
@@ -62,13 +52,13 @@ export async function GET() {
         p.plataforma_nome,
         p.criado_em
       FROM pagamentos p
-      WHERE p.contratante_id = $1
+      WHERE p.entidade_id = $1
       ORDER BY p.criado_em DESC
       LIMIT 1
     `;
 
     const pagamentosResult = await queryAsGestorEntidade(pagamentosQuery, [
-      contratanteId,
+      entidadeId,
     ]);
 
     if (pagamentosResult.rows.length === 0) {

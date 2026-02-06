@@ -120,9 +120,9 @@ export async function queryWithContext<T = Record<string, unknown>>(
       // Mapeamento: perfil (sessão) → usuario_tipo (banco)
       let usuarioTipoParaValidacao: string;
       if (perfil === 'rh') {
-        usuarioTipoParaValidacao = 'gestor_rh';
-      } else if (perfil === 'gestor_entidade') {
-        usuarioTipoParaValidacao = 'gestor_entidade';
+        usuarioTipoParaValidacao = 'rh';
+      } else if (perfil === 'gestor') {
+        usuarioTipoParaValidacao = 'gestor';
       } else if (perfil === 'funcionario') {
         // Pode ser funcionario_clinica ou funcionario_entidade
         // Validar se existe com qualquer um dos tipos
@@ -164,12 +164,12 @@ export async function queryWithContext<T = Record<string, unknown>>(
 
       // FASE 3: Obter identificadores de contexto baseado em usuario_tipo
       let clinicaId: string | null = null;
-      let contratanteId: string | null = null;
+      let entidadeId: string | null = null;
       let usuarioTipo: string | null = null;
 
       // Buscar dados do usuário para determinar tipo e vínculos
       const userData = await query(
-        'SELECT usuario_tipo, clinica_id, contratante_id FROM funcionarios WHERE cpf = $1',
+        'SELECT usuario_tipo, clinica_id, entidade_id FROM funcionarios WHERE cpf = $1',
         [cpf]
       );
 
@@ -180,8 +180,8 @@ export async function queryWithContext<T = Record<string, unknown>>(
         if (user.clinica_id) {
           clinicaId = user.clinica_id.toString();
         }
-        if (user.contratante_id) {
-          contratanteId = user.contratante_id.toString();
+        if (user.entidade_id) {
+          entidadeId = user.entidade_id.toString();
         }
       }
 
@@ -205,14 +205,14 @@ export async function queryWithContext<T = Record<string, unknown>>(
         ]);
       }
 
-      if (contratanteId) {
-        if (!/^\d+$/.test(contratanteId)) {
-          throw new Error('ID de contratante inválido');
+      if (entidadeId) {
+        if (!/^\d+$/.test(entidadeId)) {
+          throw new Error('ID de entidade inválido');
         }
 
         await query('SELECT set_config($1, $2, false)', [
-          'app.current_contratante_id',
-          contratanteId,
+          'app.current_entidade_id',
+          entidadeId,
         ]);
       }
 

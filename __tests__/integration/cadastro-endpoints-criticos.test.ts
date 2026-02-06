@@ -42,7 +42,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       ]);
       await query(`DELETE FROM contratantes WHERE id = $1`, [contratanteId]);
     }
-    await query(`DELETE FROM contratantes_senhas WHERE cpf = $1`, [testCPF]);
+    await query(`DELETE FROM entidades_senhas WHERE cpf = $1`, [testCPF]);
     await query(`DELETE FROM funcionarios WHERE cpf = $1`, [testCPF]);
   });
 
@@ -173,7 +173,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       tokenAtivacao = `test-token-${timestamp}-${Math.random().toString(36)}`;
 
       await query(
-        `INSERT INTO contratantes_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+        `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
          VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')`,
         [testCPF, contratanteId, tokenAtivacao]
       );
@@ -218,7 +218,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       const tokenExpirado = `expired-${timestamp}`;
 
       await query(
-        `INSERT INTO contratantes_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+        `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
          VALUES ($1, $2, $3, NOW() - INTERVAL '1 hour')`,
         [`99${testCPF.slice(2)}`, contratanteId, tokenExpirado]
       );
@@ -239,7 +239,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       expect(data.error).toMatch(/expirad/i);
 
       // Cleanup
-      await query(`DELETE FROM contratantes_senhas WHERE token_ativacao = $1`, [
+      await query(`DELETE FROM entidades_senhas WHERE token_ativacao = $1`, [
         tokenExpirado,
       ]);
     });
@@ -253,7 +253,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       tokenAtivacao = `pwd-token-${timestamp}-${Math.random().toString(36)}`;
 
       await query(
-        `UPDATE contratantes_senhas 
+        `UPDATE entidades_senhas 
          SET token_ativacao = $1, token_expira_em = NOW() + INTERVAL '24 hours'
          WHERE cpf = $2`,
         [tokenAtivacao, testCPF]
@@ -282,7 +282,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
 
     it('deve salvar hash bcrypt no banco', async () => {
       const result = await query(
-        `SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1`,
+        `SELECT senha_hash FROM entidades_senhas WHERE cpf = $1`,
         [testCPF]
       );
 
@@ -306,7 +306,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       const novoToken = `weak-pwd-${timestamp}`;
 
       await query(
-        `UPDATE contratantes_senhas 
+        `UPDATE entidades_senhas 
          SET token_ativacao = $1, token_expira_em = NOW() + INTERVAL '24 hours'
          WHERE cpf = $2`,
         [novoToken, testCPF]
@@ -390,7 +390,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       // 2. Gerar token
       const novoToken = `e2e-flow-${Date.now()}`;
       await query(
-        `INSERT INTO contratantes_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+        `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
          VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')`,
         [novoCPF, novoContratanteId, novoToken]
       );
@@ -442,7 +442,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       await query(`DELETE FROM contratantes WHERE id = $1`, [
         novoContratanteId,
       ]);
-      await query(`DELETE FROM contratantes_senhas WHERE cpf = $1`, [novoCPF]);
+      await query(`DELETE FROM entidades_senhas WHERE cpf = $1`, [novoCPF]);
     });
   });
 });

@@ -1,7 +1,7 @@
 /**
  * @fileoverview Testes client-side para Dashboard principal
  * @description Valida renderização e comportamento de redirecionamento do Dashboard
- * para diferentes perfis de usuário (gestor_entidade)
+ * para diferentes perfis de usuário (gestor)
  */
 
 import type { Session } from '@/types/auth';
@@ -29,18 +29,18 @@ afterEach(() => {
 });
 
 /**
- * @test Valida que gestor_entidade não é redirecionado
- * @description gestor_entidade deve permanecer no dashboard e ver seu nome renderizado
+ * @test Valida que gestor não é redirecionado
+ * @description gestor deve permanecer no dashboard e ver seu nome renderizado
  */
-test('Dashboard não redireciona gestor_entidade e exibe nome', async () => {
-  // Arrange - Mock /api/auth/session returning gestor_entidade e /api/avaliacao/todas
+test('Dashboard não redireciona gestor e exibe nome', async () => {
+  // Arrange - Mock /api/auth/session returning gestor e /api/avaliacao/todas
   global.fetch = jest.fn((url: RequestInfo) => {
     const u = String(url);
     if (u.endsWith('/api/auth/session')) {
       const session: Session = {
         cpf: '87545772920',
         nome: 'RONALDO FILARDO',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
       };
       return Promise.resolve(
         new Response(JSON.stringify(session), { status: 200 })

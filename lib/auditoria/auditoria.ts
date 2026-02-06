@@ -35,7 +35,7 @@ export type AcaoTipo =
 
 export interface AuditoriaInput {
   entidade_tipo: EntidadeTipo;
-  entidade_id: number;
+  entidade_id?: number | null;
   acao: AcaoTipo;
   status_anterior?: string;
   status_novo?: string;

@@ -37,7 +37,7 @@ export type TipoDestinatario =
   | 'contratante'
   | 'clinica'
   | 'funcionario'
-  | 'gestor_entidade';
+  | 'gestor';
 
 /**
  * Prioridade da notificação

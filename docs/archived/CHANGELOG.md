@@ -11,10 +11,10 @@
   - Em `laudos` para integridade de PDFs de laudos
   - Tipo: `VARCHAR(64)` para armazenar hash SHA-256
 
-- ✅ **Criada tabela `contratantes_senhas`**:
+- ✅ **Criada tabela `entidades_senhas`**:
   - Armazena senhas hash bcrypt para gestores de entidades
   - Campos: `contratante_id`, `cpf`, `senha_hash`, `primeira_senha_alterada`
-  - Corrige erro: "relação contratantes_senhas não existe"
+  - Corrige erro: "relação entidades_senhas não existe"
 
 - ✅ **Criado sistema de planos**:
   - Enum `tipo_plano`: `'personalizado'`, `'fixo'`
@@ -43,7 +43,7 @@
 
 - ❌ Erro 500 em `/api/entidade/lotes`: coluna hash_pdf ausente → ✅ Resolvido
 - ❌ Erro 500 em `/api/planos`: tabela planos não existe → ✅ Resolvido
-- ❌ Erro 500 em `/api/auth/login`: tabela contratantes_senhas não existe → ✅ Resolvido
+- ❌ Erro 500 em `/api/auth/login`: tabela entidades_senhas não existe → ✅ Resolvido
 - ❌ Erro 500 em rotas `/api/entidade/*`: entidade não encontrada → ✅ Resolvido
 
 ---

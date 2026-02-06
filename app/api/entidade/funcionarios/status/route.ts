@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export async function PATCH(request: NextRequest) {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     const { cpf, ativo } = await request.json();
 
@@ -24,8 +24,8 @@ export async function PATCH(request: NextRequest) {
 
     // Verificar se o funcionário pertence à entidade
     const funcionarioResult = await queryAsGestorEntidade(
-      'SELECT id, cpf, nome, ativo FROM funcionarios WHERE cpf = $1 AND contratante_id = $2',
-      [cpf, contratanteId]
+      'SELECT id, cpf, nome, ativo FROM funcionarios WHERE cpf = $1 AND entidade_id = $2',
+      [cpf, entidadeId]
     );
 
     if (funcionarioResult.rows.length === 0) {
@@ -59,16 +59,16 @@ export async function PATCH(request: NextRequest) {
              motivo_inativacao = 'Funcionário inativado pela entidade',
              inativada_em = NOW()
          WHERE funcionario_cpf = $1
-           AND status NOT IN ('concluida', 'inativada')`,
+           AND status NOT IN ('concluido', 'inativada')`,
         [cpf]
       );
 
       console.log(
-        `[AUDIT] Funcionário ${cpf} (${String(funcionario.nome)}) inativado pela entidade ${contratanteId} por ${session.cpf}`
+        `[AUDIT] Funcionário ${cpf} (${String(funcionario.nome)}) inativado pela entidade ${session.entidade_id} por ${session.cpf}`
       );
     } else {
       console.log(
-        `[AUDIT] Funcionário ${cpf} (${String(funcionario.nome)}) reativado pela entidade ${contratanteId} por ${session.cpf}`
+        `[AUDIT] Funcionário ${cpf} (${String(funcionario.nome)}) reativado pela entidade ${session.entidade_id} por ${session.cpf}`
       );
     }
 

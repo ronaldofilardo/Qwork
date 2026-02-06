@@ -21,7 +21,7 @@
 ```sql
 SELECT
   COUNT(DISTINCT f.id) as total_funcionarios,
-  COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN f.id END) as funcionarios_concluidos,
+  COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN f.id END) as funcionarios_concluidos,
   COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes
 FROM avaliacoes a
 JOIN funcionarios f ON a.funcionario_cpf = f.cpf
@@ -66,7 +66,7 @@ O problema está na **interpretação do usuário**:
 
 - A porcentagem calcula **avaliações CONCLUÍDAS** vs **total**
 - Status "iniciada" ou "em_andamento" = **PENDENTE** (não concluída)
-- Apenas quando status = "concluida" (37 respostas) é que conta como concluída
+- Apenas quando status = "concluido" (37 respostas) é que conta como concluída
 - Portanto: 0 concluídas / 1 total = **0%** ✅
 
 ### Por que mostra "Pendente" e não "Em Andamento"?
@@ -75,7 +75,7 @@ No código da UI (linha 1195-1201):
 
 ```typescript
 {
-  func.avaliacao.status === 'concluida'
+  func.avaliacao.status === 'concluido'
     ? 'Concluída'
     : func.avaliacao.status === 'em_andamento'
       ? 'Em Andamento'
@@ -140,7 +140,7 @@ try {
 ```typescript
 // Exibir "Iniciada (3 respostas)" ao invés de apenas "Pendente"
 {
-  func.avaliacao.status === 'concluida'
+  func.avaliacao.status === 'concluido'
     ? 'Concluída'
     : func.avaliacao.status === 'em_andamento'
       ? 'Em Andamento'
@@ -208,3 +208,4 @@ A **confusão** surge porque:
 - E porcentagem só conta avaliações **concluídas** (37 respostas)
 
 **Solução:** Melhorar a clareza da UI (opcional), nenhuma correção de bug necessária.
+

@@ -11,7 +11,7 @@ mockGetSession.mockImplementation(() => {
   // MOCK getSession called
 
   return {
-    perfil: 'gestor_entidade',
+    perfil: 'gestor',
     contratante_id: 1,
     cpf: '12345678901',
   } as any;
@@ -208,9 +208,9 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
 
     // Testar download do recibo (Entidade) usando o handler de download
     const reciboId = recibos.rows[0].id;
-    // Mockar sessão como gestor_entidade com o contratante correto
+    // Mockar sessão como gestor com o contratante correto
     mockGetSession.mockReturnValueOnce({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: contratanteId,
       cpf: '12345678901',
     } as any);
@@ -430,9 +430,9 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
     await query('ALTER TABLE recibos RENAME TO recibos_backup', []);
 
     try {
-      // Garantir sessão como gestor_entidade para esse handler
+      // Garantir sessão como gestor para esse handler
       mockGetSession.mockReturnValue({
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: contratanteId,
         cpf: '12345678901',
       } as any);

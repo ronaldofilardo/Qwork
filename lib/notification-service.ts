@@ -17,7 +17,7 @@ export type TipoNotificacao =
 
 export type PrioridadeNotificacao = 'baixa' | 'media' | 'alta' | 'critica';
 
-export type DestinatarioTipo = 'admin' | 'gestor_entidade' | 'funcionario';
+export type DestinatarioTipo = 'admin' | 'gestor' | 'funcionario';
 
 export interface Notificacao {
   id: number;

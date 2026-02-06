@@ -29,11 +29,13 @@ export interface Session {
   //            → NÃO vinculado a clinica_id/empresa_id
   //            → Acessa lotes finalizados de qualquer clínica para emitir laudos
   //
-  // 'gestor_entidade': Gestor de ENTIDADE CONTRATANTE (ex.: grande empresa com múltiplas unidades)
-  //                    → TEM contratante_id obrigatório
+  // 'gestor': Gestor de ENTIDADE CONTRATANTE (ex.: grande empresa com múltiplas unidades)
+  //                    → TEM entidade_id obrigatório
   //                    → Opera lotes da própria entidade
   clinica_id?: number; // Apenas para perfil 'rh'
-  contratante_id?: number; // Apenas para perfil 'gestor_entidade'
+  entidade_id?: number; // Apenas para perfil 'gestor'
+  // Retrocompat - manter contratante_id durante transição
+  contratante_id?: number; // @deprecated Use entidade_id
   sessionLogId?: number;
   sessionToken?: string; // Token único para rotação
   mfaVerified?: boolean; // Indica se MFA foi verificado
@@ -195,20 +197,21 @@ export async function requireRHWithEmpresaAccess(
     );
   }
 
-  // Tentar mapear clinica_id via contratante_id se não estiver na sessão
-  if (!session.clinica_id && session.contratante_id) {
+  // Tentar mapear clinica_id via entidade_id (ou contratante_id legacy) se não estiver na sessão
+  if (!session.clinica_id && (session.entidade_id || session.contratante_id)) {
     console.log(
-      `[DEBUG] requireRHWithEmpresaAccess: RH ${session.cpf} sem clinica_id - tentando mapear via contratante_id`
+      `[DEBUG] requireRHWithEmpresaAccess: RH ${session.cpf} sem clinica_id - tentando mapear via entidade_id`
     );
 
     try {
+      const entidadeIdParaBusca = session.entidade_id || session.contratante_id;
       const fallback = await query(
         `SELECT cl.id, cl.ativa, c.tipo 
          FROM clinicas cl
-         INNER JOIN contratantes c ON c.id = cl.contratante_id
-         WHERE cl.contratante_id = $1 AND c.tipo = 'clinica'
+         INNER JOIN entidades c ON c.id = cl.entidade_id
+         WHERE cl.entidade_id = $1 AND c.tipo = 'clinica'
          LIMIT 1`,
-        [session.contratante_id]
+        [entidadeIdParaBusca]
       );
 
       if (fallback.rows.length > 0) {
@@ -273,10 +276,8 @@ export async function requireEntity(): Promise<
 > {
   const session = await requireAuth();
 
-  if (session.perfil !== 'gestor_entidade') {
-    console.log(
-      `[DEBUG] requireEntity: Perfil ${session.perfil} não é gestor_entidade`
-    );
+  if (session.perfil !== 'gestor') {
+    console.log(`[DEBUG] requireEntity: Perfil ${session.perfil} não é gestor`);
     throw new Error('Acesso restrito a gestores de entidade');
   }
 
@@ -287,24 +288,24 @@ export async function requireEntity(): Promise<
     throw new Error('Contratante não identificado na sessão');
   }
 
-  // Verificar se contratante existe e é ativo
-  const contratanteResult = await query(
-    "SELECT id, tipo, ativa FROM contratantes WHERE id = $1 AND tipo = 'entidade'",
-    [session.contratante_id]
+  // Verificar se entidade existe e é ativo
+  const entidadeResult = await query(
+    "SELECT id, tipo, ativa FROM entidades WHERE id = $1 AND tipo = 'entidade'",
+    [session.entidade_id || session.contratante_id]
   );
 
-  if (contratanteResult.rows.length === 0) {
+  if (entidadeResult.rows.length === 0) {
     console.log(
-      `[DEBUG] requireEntity: Contratante ${session.contratante_id} não encontrado ou não é entidade`
+      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.contratante_id} não encontrada ou não é entidade`
     );
     throw new Error('Entidade não encontrada');
   }
 
-  const contratante = contratanteResult.rows[0];
+  const entidade = entidadeResult.rows[0];
 
-  if (!contratante.ativa) {
+  if (!entidade.ativa) {
     console.log(
-      `[DEBUG] requireEntity: Contratante ${session.contratante_id} está inativo`
+      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.contratante_id} está inativa`
     );
     throw new Error('Entidade inativa. Entre em contato com o suporte.');
   }
@@ -331,20 +332,22 @@ export async function requireClinica(): Promise<
 
   if (!session.clinica_id) {
     console.log(
-      `[DEBUG] requireClinica: Gestor ${session.cpf} sem clinica_id na sessão - tentando mapear via contratante_id`
+      `[DEBUG] requireClinica: Gestor ${session.cpf} sem clinica_id na sessão - tentando mapear via entidade_id`
     );
 
-    // Tentar mapear a clínica a partir do contratante_id presente na sessão
-    if (session.contratante_id) {
+    // Tentar mapear a clínica a partir do entidade_id (ou contratante_id legacy) presente na sessão
+    if (session.entidade_id || session.contratante_id) {
       try {
-        // Buscar clínica vinculada ao contratante
+        const entidadeIdParaBusca =
+          session.entidade_id || session.contratante_id;
+        // Buscar clínica vinculada à entidade
         const fallback = await query(
           `SELECT cl.id, cl.ativa, c.tipo 
            FROM clinicas cl
-           INNER JOIN contratantes c ON c.id = cl.contratante_id
-           WHERE cl.contratante_id = $1 
+           INNER JOIN entidades c ON c.id = cl.entidade_id
+           WHERE cl.entidade_id = $1 
            LIMIT 1`,
-          [session.contratante_id]
+          [entidadeIdParaBusca]
         );
 
         if (fallback.rows.length > 0) {
@@ -413,7 +416,7 @@ export async function requireClinica(): Promise<
     if (session.contratante_id) {
       try {
         const fallback = await query(
-          'SELECT id, ativa FROM clinicas WHERE contratante_id = $1 LIMIT 1',
+          'SELECT id, ativa FROM clinicas WHERE entidade_id = $1 LIMIT 1',
           [session.contratante_id]
         );
 

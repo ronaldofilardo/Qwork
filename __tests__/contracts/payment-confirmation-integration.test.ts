@@ -56,8 +56,8 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
       funcionario: {
         id: 100,
         cpf: '12345678900',
-        perfil: 'gestor_entidade',
-        usuario_tipo: 'gestor_entidade',
+        perfil: 'gestor',
+        usuario_tipo: 'gestor',
       },
     } as CriarContaResponse);
 
@@ -73,12 +73,12 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
     expect(mockAtivarContratante).toBeDefined();
   });
 
-  it('deve criar conta com perfil gestor_entidade para tipo entidade', async () => {
+  it('deve criar conta com perfil gestor para tipo entidade', async () => {
     mockCriarContaResponsavel.mockResolvedValueOnce({
       success: true,
       funcionario: {
-        perfil: 'gestor_entidade',
-        usuario_tipo: 'gestor_entidade',
+        perfil: 'gestor',
+        usuario_tipo: 'gestor',
       },
     } as CriarContaResponse);
 
@@ -91,7 +91,7 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
   it('deve criar conta com perfil rh para tipo clinica', async () => {
     mockCriarContaResponsavel.mockResolvedValueOnce({
       success: true,
-      funcionario: { perfil: 'rh', usuario_tipo: 'gestor_rh' },
+      funcionario: { perfil: 'rh', usuario_tipo: 'rh' },
     } as CriarContaResponse);
 
     await criarContaResponsavel(2);
@@ -132,12 +132,12 @@ describe('criarContaResponsavel - Entidade vs Clínica', () => {
     jest.clearAllMocks();
   });
 
-  it('deve configurar mock com perfil gestor_entidade para entidade', () => {
+  it('deve configurar mock com perfil gestor para entidade', () => {
     const mockRetorno = {
       success: true,
       funcionario: {
-        perfil: 'gestor_entidade',
-        usuario_tipo: 'gestor_entidade',
+        perfil: 'gestor',
+        usuario_tipo: 'gestor',
         nome: 'João Silva',
         cpf: '12345678900',
       },
@@ -145,8 +145,8 @@ describe('criarContaResponsavel - Entidade vs Clínica', () => {
 
     mockCriarContaResponsavel.mockResolvedValueOnce(mockRetorno);
 
-    expect(mockRetorno.funcionario?.perfil).toBe('gestor_entidade');
-    expect(mockRetorno.funcionario?.usuario_tipo).toBe('gestor_entidade');
+    expect(mockRetorno.funcionario?.perfil).toBe('gestor');
+    expect(mockRetorno.funcionario?.usuario_tipo).toBe('gestor');
   });
 
   it('deve configurar mock com perfil rh para clinica', () => {
@@ -154,7 +154,7 @@ describe('criarContaResponsavel - Entidade vs Clínica', () => {
       success: true,
       funcionario: {
         perfil: 'rh',
-        usuario_tipo: 'gestor_rh',
+        usuario_tipo: 'rh',
         nome: 'Maria Santos',
         cpf: '98765432100',
       },
@@ -163,7 +163,7 @@ describe('criarContaResponsavel - Entidade vs Clínica', () => {
     mockCriarContaResponsavel.mockResolvedValueOnce(mockRetorno);
 
     expect(mockRetorno.funcionario?.perfil).toBe('rh');
-    expect(mockRetorno.funcionario?.usuario_tipo).toBe('gestor_rh');
+    expect(mockRetorno.funcionario?.usuario_tipo).toBe('rh');
   });
 
   it('deve configurar mock com senha_gerada', () => {

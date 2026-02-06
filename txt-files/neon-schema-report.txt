@@ -21,8 +21,8 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  public     | clinicas_empresas
  public     | contratacao_personalizada
  public     | contratantes
- public     | contratantes_senhas
- public     | contratantes_senhas_audit
+ public     | entidades_senhas
+ public     | entidades_senhas_audit
  public     | contratos
  public     | contratos_planos
  public     | emissao_queue
@@ -80,7 +80,7 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  tipo_lote_enum         | completo, operacional, gestao
  tipo_notificacao       | pre_cadastro_criado, valor_definido, contrato_aceito, pagamento_confirmado, contratacao_ativa, rejeicao_admin, cancelamento_gestor, sla_excedido, alerta_geral, laudo_emitido_automaticamente, parcela_pendente, parcela_vencendo, quitacao_completa, lote_concluido_aguardando_laudo, laudo_emitido, relatorio_semanal_pendencias, laudo_enviado, recibo_emitido, recibo_gerado_retroativo, emissao_solicitada_sucesso
  tipo_plano             | personalizado, fixo
- usuario_tipo_enum      | funcionario_clinica, funcionario_entidade, gestor_rh, gestor_entidade, admin, emissor
+ usuario_tipo_enum      | funcionario_clinica, funcionario_entidade, rh, gestor, admin, emissor
 (16 linhas)
 
 
@@ -247,7 +247,7 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  public | encrypt                                           | bytea                                                                                                                                                                                                                                 | bytea, bytea, text
  public | encrypt_iv                                        | bytea                                                                                                                                                                                                                                 | bytea, bytea, bytea, text
  public | execute_maintenance                               | void                                                                                                                                                                                                                                  | p_description text, p_sql text
- public | fn_audit_contratantes_senhas                      | trigger                                                                                                                                                                                                                               | 
+ public | fn_audit_entidades_senhas                      | trigger                                                                                                                                                                                                                               | 
  public | fn_buscar_solicitante_laudo                       | TABLE(cpf character varying, nome character varying, perfil character varying, solicitado_em timestamp without time zone)                                                                                                             | p_laudo_id integer
  public | fn_create_funcionario_autorizado                  | void                                                                                                                                                                                                                                  | p_cpf character varying, p_nome text, p_email text, p_senha_hash text, p_perfil character varying, p_ativo boolean DEFAULT true, p_contratante_id integer DEFAULT NULL::integer
  public | fn_delete_senha_autorizado                        | void                                                                                                                                                                                                                                  | p_contratante_id integer, p_motivo text DEFAULT 'N├úo especificado'::text
@@ -330,7 +330,7 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  public | trg_enforce_laudo_id_equals_lote                  | trigger                                                                                                                                                                                                                               | 
  public | trigger_criar_pdf_job                             | trigger                                                                                                                                                                                                                               | 
  public | trigger_gerar_numero_recibo                       | trigger                                                                                                                                                                                                                               | 
- public | update_contratantes_senhas_updated_at             | trigger                                                                                                                                                                                                                               | 
+ public | update_entidades_senhas_updated_at             | trigger                                                                                                                                                                                                                               | 
  public | update_contratantes_updated_at                    | trigger                                                                                                                                                                                                                               | 
  public | update_pdf_jobs_timestamp                         | trigger                                                                                                                                                                                                                               | 
  public | upsert_laudo                                      | integer                                                                                                                                                                                                                               | p_lote_id integer, p_emissor_cpf character, p_observacoes text, p_status text DEFAULT 'enviado'::text

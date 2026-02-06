@@ -44,10 +44,10 @@ const { query } = require('../../lib/db');
     const pass = digits.slice(-6);
     const hash = await bcrypt.hash(pass, 10);
 
-    // Atualizar/Inserir em contratantes_senhas
+    // Atualizar/Inserir em entidades_senhas
     const upsert = await query(
       `
-      INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada, created_at, updated_at)
+      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada, created_at, updated_at)
       VALUES ($1, $2, $3, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       ON CONFLICT (cpf) DO UPDATE SET senha_hash = EXCLUDED.senha_hash, contratante_id = EXCLUDED.contratante_id, updated_at = CURRENT_TIMESTAMP
       RETURNING cpf
@@ -96,7 +96,7 @@ const { query } = require('../../lib/db');
       pass,
       '(somente visível aqui para dev)'
     );
-    console.log('   Upsert contratantes_senhas:', upsert.rows);
+    console.log('   Upsert entidades_senhas:', upsert.rows);
     console.log('   Funcionario atualizado:', updFunc.rows);
     process.exit(0);
   } catch (err) {

@@ -350,7 +350,7 @@ ROLLBACK; -- Para cancelar
 **Dados removidos:**
 
 - Contratantes (tipo = 'entidade')
-- Gestores (perfil = 'gestor_entidade')
+- Gestores (perfil = 'gestor')
 - Funcionários vinculados
 - Lotes de avaliação
 - Avaliações, respostas e resultados

@@ -37,7 +37,7 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 ### 4. Session Management
 
-- ✅ `lib/session.ts` tem função `requireEntity()` que valida gestor_entidade
+- ✅ `lib/session.ts` tem função `requireEntity()` que valida gestor
 - ✅ Session interface tem campo `contratante_id`
 
 ---
@@ -66,14 +66,14 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 ---
 
-### **P0.2 - RBAC: Perfil `gestor_entidade` Não Mapeado em RLS**
+### **P0.2 - RBAC: Perfil `gestor` Não Mapeado em RLS**
 
 **Gravidade:** 🔴 CRÍTICA
 
 **Problema:**
 
 - Políticas RLS usam `current_user_perfil() = 'entidade'`
-- Mas session usa `perfil = 'gestor_entidade'`
+- Mas session usa `perfil = 'gestor'`
 - **Mismatch** de nomenclatura
 
 **Impacto:**
@@ -84,7 +84,7 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 **Localização:**
 
 - `database/migrations/063_update_rls_policies_for_entity_lotes.sql` linha 43
-- `lib/session.ts` linha 214 (perfil = 'gestor_entidade')
+- `lib/session.ts` linha 214 (perfil = 'gestor')
 
 ---
 
@@ -200,7 +200,7 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 ### ✅ Tarefa 2: Corrigir Mismatch de Perfil em RLS
 
 - Arquivo: Nova migration `064_fix_entidade_perfil_rls.sql`
-- Atualizar políticas para aceitar `current_user_perfil() IN ('entidade', 'gestor_entidade')`
+- Atualizar políticas para aceitar `current_user_perfil() IN ('entidade', 'gestor')`
 
 ### ✅ Tarefa 3: Ajustar Query do Emissor para Suportar Lotes sem Empresa
 
@@ -246,7 +246,7 @@ FROM lotes_avaliacao
 WHERE contratante_id IS NOT NULL;
 
 -- 2. Testar política RLS
-SET app.current_user_perfil = 'gestor_entidade';
+SET app.current_user_perfil = 'gestor';
 SET app.current_user_contratante_id = '1';
 SELECT * FROM lotes_avaliacao; -- Deve retornar apenas lotes da entidade 1
 

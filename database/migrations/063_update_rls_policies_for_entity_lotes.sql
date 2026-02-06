@@ -64,12 +64,9 @@ WITH CHECK (
     AND contratante_id = current_user_contratante_id()
 );
 
--- Policy: Emissor vê lotes liberados (status finalizado/concluido)
-CREATE POLICY lotes_emissor_select ON public.lotes_avaliacao FOR
-SELECT TO PUBLIC USING (
-    current_user_perfil() = 'emissor'
-    AND status IN ('finalizado', 'concluido')
-);
+-- Policy: Emissor vê lotes liberados (status finalizado/concluido) - REMOVED/DEPRECATED
+-- Emissor NÃO pode visualizar lotes/avaliacoes (visão de avaliações é exclusiva de RH e gestor)
+-- CREATE POLICY lotes_emissor_select ON public.lotes_avaliacao ... (REMOVIDO)
 
 -- Policy: Funcionário vê lotes onde tem avaliação
 CREATE POLICY lotes_funcionario_select ON public.lotes_avaliacao FOR

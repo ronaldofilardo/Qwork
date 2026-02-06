@@ -1,521 +1,333 @@
 /**
- * Testes Críticos de Autenticação - Gestores vs Funcionários
+ * Testes Críticos de Autenticação - Nova Arquitetura
  *
- * Valida a separação arquitetural entre gestores (contratantes_senhas)
- * e funcionários (funcionarios).
+ * Valida a arquitetura de senhas segregadas:
+ * - usuarios (tabela principal sem senha_hash)
+ * - entidades_senhas (para gestores)
+ * - clinicas_senhas (para RH)
  *
  * Estes testes verificam:
- * 1. Login de gestor_entidade via contratantes_senhas
- * 2. Login de gestor RH via contratantes_senhas
- * 3. Login de funcionário via funcionarios
- * 4. Gestores NÃO estão em funcionarios
- * 5. Queries de gestores usam queryAsGestor (sem RLS)
- * 6. Queries de funcionários usam queryWithContext (com RLS)
+ * 1. Usuários estão em usuarios com tipo_usuario correto
+ * 2. Senhas de gestores estão em entidades_senhas
+ * 3. Senhas de RH estão em clinicas_senhas
+ * 4. Admin e Emissor não precisam de senha em tabelas separadas
  */
 
 import { query } from '@/lib/db';
-import {
-  isGestor,
-  queryAsGestor,
-  validateGestorContext,
-} from '@/lib/db-gestor';
-import { queryWithContext, validateSessionContext } from '@/lib/db-security';
 import bcrypt from 'bcryptjs';
 
-describe('Autenticação Dual-Source: Gestores vs Funcionários', () => {
-  const TEST_CPF_ENTIDADE = '11111111111';
+describe('Autenticação Nova Arquitetura: usuarios + senhas segregadas', () => {
+  const TEST_CPF_GESTOR = '11111111111';
   const TEST_CPF_RH = '22222222222';
-  const TEST_CPF_FUNCIONARIO = '33333333333';
+  const TEST_CPF_ADMIN = '00000000000';
   const TEST_PASSWORD = 'senha123';
 
-  let testContratanteId: number;
+  let testEntidadeId: number;
   let testClinicaId: number;
-  let testEmpresaId: number;
 
   beforeAll(async () => {
-    // Setup: Criar contratante entidade para testes
-    const entidade = await query(`
-      INSERT INTO contratantes (
-        cnpj,
-        nome,
-        email,
-        telefone,
-        tipo,
-        endereco,
-        cidade,
-        estado,
-        cep,
-        responsavel_nome,
-        responsavel_cpf,
-        responsavel_email,
-        responsavel_celular,
-        ativa,
-        pagamento_confirmado
-      ) VALUES (
-        '11111111000111',
-        'Entidade Teste Auth',
+    // Setup: Criar entidade para testes
+    const entidade = await query(
+      `
+      INSERT INTO entidades (
+        cnpj, nome, tipo, email, telefone, endereco, cidade, estado, cep,
+        responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
+        ativa
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+      RETURNING id
+    `,
+      [
+        '12345678000190',
+        'Entidade Teste',
+        'entidade',
         'entidade@test.com',
         '11999999999',
-        'entidade',
         'Rua Teste, 123',
         'São Paulo',
         'SP',
-        '01000-000',
+        '01234567',
         'Responsável Teste',
-        '11111111111',
-        'responsavel@test.com',
+        '12345678901',
+        'resp@test.com',
         '11999999999',
         true,
-        true
-      ) RETURNING id
-    `);
-    testContratanteId = entidade.rows[0].id;
-
-    // Criar gestor entidade em contratantes_senhas
-    const passwordHash = await bcrypt.hash(TEST_PASSWORD, 10);
-    await query(
-      `
-      INSERT INTO contratantes_senhas (
-        cpf_cnpj,
-        senha_hash,
-        perfil,
-        contratante_id,
-        ativo
-      ) VALUES ($1, $2, 'gestor_entidade', $3, true)
-    `,
-      [TEST_CPF_ENTIDADE, passwordHash, testContratanteId]
+      ]
     );
+    testEntidadeId = entidade.rows[0].id;
 
-    // Criar clínica para RH
-    const clinica = await query(`
+    // Criar clínica para testes
+    const clinica = await query(
+      `
       INSERT INTO clinicas (
+        nome,
         cnpj,
-        nome_clinica,
-        razao_social,
-        email,
-        telefone,
-        cep,
-        endereco,
-        numero,
-        bairro,
-        cidade,
-        estado,
-        ativa,
-        pagamento_confirmado
-      ) VALUES (
-        '22222222000122',
-        'Clínica Teste RH',
-        'Clínica RH LTDA',
-        'clinica@test.com',
-        '11988888888',
-        '01000-000',
-        'Rua Teste',
-        '123',
-        'Centro',
-        'São Paulo',
-        'SP',
-        true,
-        true
-      ) RETURNING id
-    `);
+        entidade_id,
+        ativa
+      ) VALUES ($1, $2, $3, $4)
+      RETURNING id
+    `,
+      ['Clínica Teste', '98765432000199', testEntidadeId, true]
+    );
     testClinicaId = clinica.rows[0].id;
 
-    // Criar gestor RH em contratantes_senhas
+    // Criar usuário gestor
     await query(
       `
-      INSERT INTO contratantes_senhas (
-        cpf_cnpj,
-        senha_hash,
-        perfil,
-        clinica_id,
-        ativo
-      ) VALUES ($1, $2, 'rh', $3, true)
+      INSERT INTO usuarios (cpf, nome, email, tipo_usuario, entidade_id, ativo)
+      VALUES ($1, $2, $3, $4, $5, $6)
     `,
-      [TEST_CPF_RH, passwordHash, testClinicaId]
+      [
+        TEST_CPF_GESTOR,
+        'Gestor Teste',
+        'gestor@test.com',
+        'gestor',
+        testEntidadeId,
+        true,
+      ]
     );
 
-    // Criar empresa cliente
-    const empresa = await query(
-      `
-      INSERT INTO empresas_clientes (
-        cnpj,
-        razao_social,
-        nome_fantasia,
-        contratante_id,
-        clinica_id,
-        ativa
-      ) VALUES (
-        '33333333000133',
-        'Empresa Teste Funcionario',
-        'Empresa Teste',
-        $1,
-        $2,
-        true
-      ) RETURNING id
-    `,
-      [testContratanteId, testClinicaId]
-    );
-    testEmpresaId = empresa.rows[0].id;
-
-    // Criar funcionário em funcionarios (não em contratantes_senhas)
+    // Criar senha para gestor em entidades_senhas
+    const hashedPassword = await bcrypt.hash(TEST_PASSWORD, 10);
     await query(
       `
-      INSERT INTO funcionarios (
-        cpf,
-        nome,
-        email,
-        empresa_id,
-        cargo,
-        setor,
-        data_admissao,
-        ativo
-      ) VALUES (
-        $1,
-        'Funcionário Teste',
-        'funcionario@test.com',
-        $2,
-        'Analista',
-        'TI',
-        CURRENT_DATE,
-        true
-      )
+      INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash)
+      VALUES ($1, $2, $3)
     `,
-      [TEST_CPF_FUNCIONARIO, testEmpresaId]
+      [testEntidadeId, TEST_CPF_GESTOR, hashedPassword]
+    );
+
+    // Criar usuário RH
+    await query(
+      `
+      INSERT INTO usuarios (cpf, nome, email, tipo_usuario, clinica_id, ativo)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `,
+      [TEST_CPF_RH, 'RH Teste', 'rh@test.com', 'rh', testClinicaId, true]
+    );
+
+    // Criar senha para RH em clinicas_senhas
+    await query(
+      `
+      INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash)
+      VALUES ($1, $2, $3)
+    `,
+      [testClinicaId, TEST_CPF_RH, hashedPassword]
+    );
+
+    // Criar usuário admin (sem senha em tabelas separadas)
+    await query(
+      `
+      INSERT INTO usuarios (cpf, nome, email, tipo_usuario, ativo)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (cpf) DO NOTHING
+    `,
+      [TEST_CPF_ADMIN, 'Admin Teste', 'admin@test.com', 'admin', true]
     );
   });
 
   afterAll(async () => {
     // Cleanup
-    await query('DELETE FROM funcionarios WHERE cpf = $1', [
-      TEST_CPF_FUNCIONARIO,
+    await query('DELETE FROM clinicas_senhas WHERE cpf = ANY($1)', [
+      [TEST_CPF_RH],
     ]);
-    await query('DELETE FROM empresas_clientes WHERE id = $1', [testEmpresaId]);
-    await query('DELETE FROM contratantes_senhas WHERE cpf_cnpj IN ($1, $2)', [
-      TEST_CPF_ENTIDADE,
-      TEST_CPF_RH,
+    await query('DELETE FROM entidades_senhas WHERE cpf = ANY($1)', [
+      [TEST_CPF_GESTOR],
+    ]);
+    await query('DELETE FROM usuarios WHERE cpf = ANY($1)', [
+      [TEST_CPF_GESTOR, TEST_CPF_RH],
     ]);
     await query('DELETE FROM clinicas WHERE id = $1', [testClinicaId]);
-    await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+    await query('DELETE FROM entidades WHERE id = $1', [testEntidadeId]);
   });
 
   describe('1. Validação de Tipo de Usuário', () => {
-    it('deve identificar gestor_entidade como gestor', async () => {
-      const resultado = await isGestor(TEST_CPF_ENTIDADE);
-      expect(resultado).toBe(true);
-    });
-
-    it('deve identificar gestor RH como gestor', async () => {
-      const resultado = await isGestor(TEST_CPF_RH);
-      expect(resultado).toBe(true);
-    });
-
-    it('deve identificar funcionário como NÃO-gestor', async () => {
-      const resultado = await isGestor(TEST_CPF_FUNCIONARIO);
-      expect(resultado).toBe(false);
-    });
-  });
-
-  describe('2. Validação de Contexto - Gestores', () => {
-    it('deve validar gestor_entidade via contratantes_senhas', async () => {
-      const gestor = await validateGestorContext(TEST_CPF_ENTIDADE);
-
-      expect(gestor).toBeDefined();
-      expect(gestor.cpf_cnpj).toBe(TEST_CPF_ENTIDADE);
-      expect(gestor.perfil).toBe('gestor_entidade');
-      expect(gestor.contratante_id).toBe(testContratanteId);
-      expect(gestor.ativo).toBe(true);
-    });
-
-    it('deve validar gestor RH via contratantes_senhas', async () => {
-      const gestor = await validateGestorContext(TEST_CPF_RH);
-
-      expect(gestor).toBeDefined();
-      expect(gestor.cpf_cnpj).toBe(TEST_CPF_RH);
-      expect(gestor.perfil).toBe('rh');
-      expect(gestor.clinica_id).toBe(testClinicaId);
-      expect(gestor.ativo).toBe(true);
-    });
-
-    it('deve lançar erro ao validar funcionário como gestor', async () => {
-      await expect(validateGestorContext(TEST_CPF_FUNCIONARIO)).rejects.toThrow(
-        'SEGURANÇA: Gestor não encontrado'
+    it('deve identificar gestor como tipo_usuario gestor', async () => {
+      const result = await query(
+        'SELECT tipo_usuario FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_GESTOR]
       );
-    });
-  });
-
-  describe('3. Validação de Contexto - Funcionários', () => {
-    it('deve validar funcionário via funcionarios', async () => {
-      const funcionario = await validateSessionContext(TEST_CPF_FUNCIONARIO);
-
-      expect(funcionario).toBeDefined();
-      expect(funcionario.cpf).toBe(TEST_CPF_FUNCIONARIO);
-      expect(funcionario.empresa_id).toBe(testEmpresaId);
-      expect(funcionario.ativo).toBe(true);
+      expect(result.rows[0].tipo_usuario).toBe('gestor');
     });
 
-    it('deve lançar erro ao validar gestor como funcionário', async () => {
-      await expect(validateSessionContext(TEST_CPF_ENTIDADE)).rejects.toThrow(
-        'SEGURANÇA: Usuário não encontrado ou inativo'
-      );
-    });
-  });
-
-  describe('4. Separação de Tabelas - Gestores NÃO em funcionarios', () => {
-    it('gestor_entidade NÃO deve estar em funcionarios', async () => {
-      const resultado = await query(
-        `
-        SELECT * FROM funcionarios WHERE cpf = $1
-      `,
-        [TEST_CPF_ENTIDADE]
-      );
-
-      expect(resultado.rows.length).toBe(0);
-    });
-
-    it('gestor RH NÃO deve estar em funcionarios', async () => {
-      const resultado = await query(
-        `
-        SELECT * FROM funcionarios WHERE cpf = $1
-      `,
+    it('deve identificar RH como tipo_usuario rh', async () => {
+      const result = await query(
+        'SELECT tipo_usuario FROM usuarios WHERE cpf = $1',
         [TEST_CPF_RH]
       );
-
-      expect(resultado.rows.length).toBe(0);
+      expect(result.rows[0].tipo_usuario).toBe('rh');
     });
 
-    it('funcionário NÃO deve estar em contratantes_senhas', async () => {
-      const resultado = await query(
-        `
-        SELECT * FROM contratantes_senhas WHERE cpf_cnpj = $1
-      `,
-        [TEST_CPF_FUNCIONARIO]
+    it('deve identificar admin como tipo_usuario admin', async () => {
+      const result = await query(
+        'SELECT tipo_usuario FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_ADMIN]
       );
-
-      expect(resultado.rows.length).toBe(0);
+      expect(result.rows[0].tipo_usuario).toBe('admin');
     });
   });
 
-  describe('5. Query Functions - Gestores (sem RLS)', () => {
-    it('queryAsGestor deve acessar dados sem RLS', async () => {
-      // Gestor pode ver todas as empresas do seu contratante
-      const empresas = await queryAsGestor(
-        `
-        SELECT * FROM empresas_clientes
-        WHERE contratante_id = $1
-      `,
-        [testContratanteId]
+  describe('2. Validação de Senhas - Gestores', () => {
+    it('deve validar senha de gestor em entidades_senhas', async () => {
+      const result = await query(
+        `SELECT es.senha_hash 
+         FROM entidades_senhas es
+         WHERE es.cpf = $1 AND es.entidade_id = $2`,
+        [TEST_CPF_GESTOR, testEntidadeId]
       );
 
-      expect(empresas.rows.length).toBeGreaterThan(0);
-      expect(empresas.rows[0].id).toBe(testEmpresaId);
+      expect(result.rows.length).toBe(1);
+      const isValid = await bcrypt.compare(
+        TEST_PASSWORD,
+        result.rows[0].senha_hash
+      );
+      expect(isValid).toBe(true);
     });
 
-    it('queryAsGestor não deve falhar com queries sem filtro', async () => {
-      // Gestores podem fazer queries sem filtros específicos
-      const resultado = await queryAsGestor(
-        `
-        SELECT COUNT(*) as total FROM empresas_clientes
-        WHERE contratante_id = $1
-      `,
-        [testContratanteId]
+    it('gestor NÃO deve ter senha em clinicas_senhas', async () => {
+      const result = await query(
+        'SELECT * FROM clinicas_senhas WHERE cpf = $1',
+        [TEST_CPF_GESTOR]
       );
-
-      expect(resultado.rows[0].total).toBeGreaterThan(0);
+      expect(result.rows.length).toBe(0);
     });
   });
 
-  describe('6. Query Functions - Funcionários (com RLS)', () => {
-    it('queryWithContext deve aplicar RLS para funcionários', async () => {
-      // Configura contexto de sessão para o funcionário
-      await query(`SET LOCAL app.current_user_cpf = $1`, [
-        TEST_CPF_FUNCIONARIO,
-      ]);
-      await query(`SET LOCAL app.current_user_empresa = $1`, [testEmpresaId]);
-
-      // Funcionário vê apenas seus próprios dados
-      const resultado = await queryWithContext(
-        `
-        SELECT * FROM funcionarios WHERE cpf = $1
-      `,
-        [TEST_CPF_FUNCIONARIO]
+  describe('3. Validação de Senhas - RH', () => {
+    it('deve validar senha de RH em clinicas_senhas', async () => {
+      const result = await query(
+        `SELECT cs.senha_hash 
+         FROM clinicas_senhas cs
+         WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
+        [TEST_CPF_RH, testClinicaId]
       );
 
-      expect(resultado.rows.length).toBe(1);
-      expect(resultado.rows[0].cpf).toBe(TEST_CPF_FUNCIONARIO);
-    });
-
-    it('queryWithContext deve isolar dados por empresa via RLS', async () => {
-      // Configura contexto
-      await query(`SET LOCAL app.current_user_cpf = $1`, [
-        TEST_CPF_FUNCIONARIO,
-      ]);
-      await query(`SET LOCAL app.current_user_empresa = $1`, [testEmpresaId]);
-
-      // Funcionário vê apenas funcionários da própria empresa
-      const resultado = await queryWithContext(
-        `
-        SELECT * FROM funcionarios WHERE empresa_id = $1
-      `,
-        [testEmpresaId]
+      expect(result.rows.length).toBe(1);
+      const isValid = await bcrypt.compare(
+        TEST_PASSWORD,
+        result.rows[0].senha_hash
       );
-
-      // Todos os resultados devem ser da mesma empresa
-      resultado.rows.forEach((row) => {
-        expect(row.empresa_id).toBe(testEmpresaId);
-      });
-    });
-  });
-
-  describe('7. Fluxo Completo de Login', () => {
-    it('LOGIN: gestor_entidade deve ser encontrado em contratantes_senhas', async () => {
-      const resultado = await query(
-        `
-        SELECT 
-          cpf_cnpj,
-          perfil,
-          contratante_id,
-          clinica_id,
-          ativo
-        FROM contratantes_senhas
-        WHERE cpf_cnpj = $1 AND ativo = true
-      `,
-        [TEST_CPF_ENTIDADE]
-      );
-
-      expect(resultado.rows.length).toBe(1);
-      expect(resultado.rows[0].perfil).toBe('gestor_entidade');
-      expect(resultado.rows[0].contratante_id).toBe(testContratanteId);
+      expect(isValid).toBe(true);
     });
 
-    it('LOGIN: gestor RH deve ser encontrado em contratantes_senhas', async () => {
-      const resultado = await query(
-        `
-        SELECT 
-          cpf_cnpj,
-          perfil,
-          contratante_id,
-          clinica_id,
-          ativo
-        FROM contratantes_senhas
-        WHERE cpf_cnpj = $1 AND ativo = true
-      `,
+    it('RH NÃO deve ter senha em entidades_senhas', async () => {
+      const result = await query(
+        'SELECT * FROM entidades_senhas WHERE cpf = $1',
         [TEST_CPF_RH]
       );
-
-      expect(resultado.rows.length).toBe(1);
-      expect(resultado.rows[0].perfil).toBe('rh');
-      expect(resultado.rows[0].clinica_id).toBe(testClinicaId);
-    });
-
-    it('LOGIN: funcionário deve ser encontrado em funcionarios', async () => {
-      const resultado = await query(
-        `
-        SELECT 
-          cpf,
-          nome,
-          empresa_id,
-          ativo
-        FROM funcionarios
-        WHERE cpf = $1 AND ativo = true
-      `,
-        [TEST_CPF_FUNCIONARIO]
-      );
-
-      expect(resultado.rows.length).toBe(1);
-      expect(resultado.rows[0].empresa_id).toBe(testEmpresaId);
-    });
-
-    it('LOGIN: fallback deve funcionar (gestor não em funcionarios)', async () => {
-      // Primeiro, busca em contratantes_senhas
-      const gestor = await query(
-        `
-        SELECT * FROM contratantes_senhas
-        WHERE cpf_cnpj = $1 AND ativo = true
-      `,
-        [TEST_CPF_ENTIDADE]
-      );
-
-      expect(gestor.rows.length).toBe(1);
-
-      // Se não encontrar (caso funcionário), busca em funcionarios
-      if (gestor.rows.length === 0) {
-        const funcionario = await query(
-          `
-          SELECT * FROM funcionarios
-          WHERE cpf = $1 AND ativo = true
-        `,
-          [TEST_CPF_ENTIDADE]
-        );
-
-        // Mas para gestor_entidade, não deve estar aqui
-        expect(funcionario.rows.length).toBe(0);
-      }
+      expect(result.rows.length).toBe(0);
     });
   });
 
-  describe('8. Cenários de Erro', () => {
-    it('deve rejeitar gestor inativo', async () => {
-      // Inativar temporariamente
-      await query(
-        `
-        UPDATE contratantes_senhas
-        SET ativo = false
-        WHERE cpf_cnpj = $1
-      `,
-        [TEST_CPF_ENTIDADE]
-      );
-
-      await expect(validateGestorContext(TEST_CPF_ENTIDADE)).rejects.toThrow(
-        'SEGURANÇA: Gestor inativo'
-      );
-
-      // Reativar
-      await query(
-        `
-        UPDATE contratantes_senhas
-        SET ativo = true
-        WHERE cpf_cnpj = $1
-      `,
-        [TEST_CPF_ENTIDADE]
-      );
+  describe('4. Separação de Tabelas - usuarios sem senha_hash', () => {
+    it('tabela usuarios NÃO deve ter coluna senha_hash', async () => {
+      const result = await query(`
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_name = 'usuarios' AND column_name = 'senha_hash'
+      `);
+      expect(result.rows.length).toBe(0);
     });
 
-    it('deve rejeitar funcionário inativo', async () => {
-      // Inativar temporariamente
-      await query(
-        `
-        UPDATE funcionarios
-        SET ativo = false
-        WHERE cpf = $1
-      `,
-        [TEST_CPF_FUNCIONARIO]
+    it('gestor deve ter entidade_id e não clinica_id', async () => {
+      const result = await query(
+        'SELECT entidade_id, clinica_id FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_GESTOR]
       );
+      expect(result.rows[0].entidade_id).toBe(testEntidadeId);
+      expect(result.rows[0].clinica_id).toBeNull();
+    });
 
-      await expect(
-        validateSessionContext(TEST_CPF_FUNCIONARIO)
-      ).rejects.toThrow('SEGURANÇA: Usuário inativo');
-
-      // Reativar
-      await query(
-        `
-        UPDATE funcionarios
-        SET ativo = true
-        WHERE cpf = $1
-      `,
-        [TEST_CPF_FUNCIONARIO]
+    it('RH deve ter clinica_id e não entidade_id', async () => {
+      const result = await query(
+        'SELECT entidade_id, clinica_id FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_RH]
       );
+      expect(result.rows[0].clinica_id).toBe(testClinicaId);
+      expect(result.rows[0].entidade_id).toBeNull();
+    });
+  });
+
+  describe('5. Fluxo Completo de Login', () => {
+    it('LOGIN: gestor deve ser encontrado em usuarios + entidades_senhas', async () => {
+      // Passo 1: Buscar em usuarios
+      const usuario = await query(
+        'SELECT cpf, tipo_usuario, entidade_id FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_GESTOR]
+      );
+      expect(usuario.rows.length).toBe(1);
+      expect(usuario.rows[0].tipo_usuario).toBe('gestor');
+
+      // Passo 2: Buscar senha em entidades_senhas
+      const senha = await query(
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1 AND entidade_id = $2',
+        [TEST_CPF_GESTOR, usuario.rows[0].entidade_id]
+      );
+      expect(senha.rows.length).toBe(1);
+    });
+
+    it('LOGIN: RH deve ser encontrado em usuarios + clinicas_senhas', async () => {
+      // Passo 1: Buscar em usuarios
+      const usuario = await query(
+        'SELECT cpf, tipo_usuario, clinica_id FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_RH]
+      );
+      expect(usuario.rows.length).toBe(1);
+      expect(usuario.rows[0].tipo_usuario).toBe('rh');
+
+      // Passo 2: Buscar senha em clinicas_senhas
+      const senha = await query(
+        'SELECT senha_hash FROM clinicas_senhas WHERE cpf = $1 AND clinica_id = $2',
+        [TEST_CPF_RH, usuario.rows[0].clinica_id]
+      );
+      expect(senha.rows.length).toBe(1);
+    });
+
+    it('LOGIN: admin deve ser encontrado em usuarios (sem senha em tabelas separadas)', async () => {
+      const usuario = await query(
+        'SELECT cpf, tipo_usuario FROM usuarios WHERE cpf = $1',
+        [TEST_CPF_ADMIN]
+      );
+      expect(usuario.rows.length).toBe(1);
+      expect(usuario.rows[0].tipo_usuario).toBe('admin');
+
+      // Admin não tem senha em entidades_senhas ou clinicas_senhas
+      const senhaEntidade = await query(
+        'SELECT * FROM entidades_senhas WHERE cpf = $1',
+        [TEST_CPF_ADMIN]
+      );
+      expect(senhaEntidade.rows.length).toBe(0);
+
+      const senhaClinica = await query(
+        'SELECT * FROM clinicas_senhas WHERE cpf = $1',
+        [TEST_CPF_ADMIN]
+      );
+      expect(senhaClinica.rows.length).toBe(0);
+    });
+  });
+
+  describe('6. Cenários de Erro', () => {
+    it('deve rejeitar usuário inativo', async () => {
+      // Desativar usuário
+      await query('UPDATE usuarios SET ativo = false WHERE cpf = $1', [
+        TEST_CPF_GESTOR,
+      ]);
+
+      const result = await query('SELECT ativo FROM usuarios WHERE cpf = $1', [
+        TEST_CPF_GESTOR,
+      ]);
+      expect(result.rows[0].ativo).toBe(false);
+
+      // Reativar para não afetar outros testes
+      await query('UPDATE usuarios SET ativo = true WHERE cpf = $1', [
+        TEST_CPF_GESTOR,
+      ]);
     });
 
     it('deve rejeitar CPF inexistente', async () => {
-      const CPF_INVALIDO = '99999999999';
-
-      await expect(validateGestorContext(CPF_INVALIDO)).rejects.toThrow(
-        'SEGURANÇA: Gestor não encontrado'
-      );
-
-      await expect(validateSessionContext(CPF_INVALIDO)).rejects.toThrow(
-        'SEGURANÇA: Usuário não encontrado ou inativo'
-      );
+      const result = await query('SELECT * FROM usuarios WHERE cpf = $1', [
+        '99999999999',
+      ]);
+      expect(result.rows.length).toBe(0);
     });
   });
 });

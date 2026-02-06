@@ -61,7 +61,7 @@
 **Tabelas com FORCE RLS:**
 
 - contratantes
-- contratantes_senhas
+- entidades_senhas
 - funcionarios
 - avaliacoes
 - resultados
@@ -104,7 +104,7 @@
 - CPF não vazio
 - CPF com 11 dígitos
 - Perfil não vazio
-- Perfil válido para gestor_entidade/rh
+- Perfil válido para gestor/rh
 - Contratante_id ou clinica_id quando necessário
 
 ---
@@ -203,7 +203,7 @@ git push origin main
 ### Verificar Placeholders
 
 ```sql
-SELECT COUNT(*) FROM contratantes_senhas WHERE senha_hash LIKE 'PLACEHOLDER_%';
+SELECT COUNT(*) FROM entidades_senhas WHERE senha_hash LIKE 'PLACEHOLDER_%';
 -- Esperado: 0
 ```
 
@@ -335,6 +335,6 @@ Em caso de problemas:
 
 **🔒 Sistema Seguro e Pronto para Produção**
 
-Data de Aprovação: ********\_********  
-Responsável: ********\_********  
-Assinatura: ********\_********
+Data de Aprovação: **\*\*\*\***\_**\*\*\*\***  
+Responsável: **\*\*\*\***\_**\*\*\*\***  
+Assinatura: **\*\*\*\***\_**\*\*\*\***

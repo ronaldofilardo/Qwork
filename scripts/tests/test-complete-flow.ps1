@@ -128,7 +128,7 @@ $cpfResponsavel = "12345678901"
 $senhaHash = "test_hash_123" # Em produção seria bcrypt
 
 $insertSenha = @"
-INSERT INTO contratantes_senhas (cpf, senha_hash, primeiro_acesso)
+INSERT INTO entidades_senhas (cpf, senha_hash, primeiro_acesso)
 VALUES ('$cpfResponsavel', '$senhaHash', true)
 ON CONFLICT (cpf) DO UPDATE SET senha_hash = '$senhaHash'
 RETURNING id;

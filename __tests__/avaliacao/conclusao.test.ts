@@ -55,7 +55,7 @@ describe('Avaliação - Conclusão', () => {
       expect(data.success).toBe(true);
     });
 
-    it('deve atualizar status para "concluida"', async () => {
+    it('deve atualizar status para "concluido"', async () => {
       mockQuery
         .mockResolvedValueOnce({
           rows: [{ id: 1, funcionario_cpf: '12345678901' }],
@@ -161,7 +161,7 @@ describe('Avaliação - Conclusão', () => {
         rows: [
           {
             id: 1,
-            status: 'concluida',
+            status: 'concluido',
             inicio: new Date().toISOString(),
             envio: new Date().toISOString(),
             grupo_atual: null,
@@ -174,7 +174,7 @@ describe('Avaliação - Conclusão', () => {
       const response = await GET();
       const data = await response.json();
 
-      expect(data.status).toBe('concluida');
+      expect(data.status).toBe('concluido');
       expect(data.envio).toBeDefined();
       // Frontend deve redirecionar para /avaliacao/concluida ou dashboard
     });

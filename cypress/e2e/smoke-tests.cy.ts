@@ -128,7 +128,7 @@ describe('Smoke Tests - Funcionalidades Críticas', () => {
         statusCode: 200,
         body: {
           cpf: '12345678901',
-          perfil: 'gestor_entidade',
+          perfil: 'gestor',
           clinica_id: 1,
           sessionToken: 'entidade-smoke',
         },

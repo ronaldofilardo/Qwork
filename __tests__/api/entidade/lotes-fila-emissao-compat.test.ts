@@ -14,7 +14,7 @@ describe('/api/entidade/lotes - compat v_fila_emissao', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
   });

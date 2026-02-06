@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     }
 
     // Buscar funcionários ativos e inativos da empresa e clínica
-    // ISOLAMENTO: Apenas funcionários vinculados à empresa/clínica (sem contratante_id)
+    // ISOLAMENTO: Apenas funcionários vinculados à empresa/clínica (sem entidade_id)
     const funcionariosResult = await query(
       `SELECT cpf, nome, data_nascimento, setor, funcao, email, matricula, nivel_cargo, turno, escala, ativo, criado_em, atualizado_em,
               indice_avaliacao, data_ultimo_lote,
@@ -179,12 +179,12 @@ export async function POST(request: Request) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha || '123456', 10);
 
-    // Inserir funcionário vinculado à clínica/empresa (sem contratante_id)
-    // ISOLAMENTO: funcionários de clínica pertencem a empresa_id + clinica_id, não a contratante
+    // Inserir funcionário vinculado à clínica/empresa (sem entidade_id)
+    // ISOLAMENTO: funcionários de clínica pertencem a empresa_id + clinica_id, não a entidade
     await query(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        clinica_id, empresa_id, contratante_id, matricula, nivel_cargo, turno, escala, ativo, usuario_tipo
+        clinica_id, empresa_id, entidade_id, matricula, nivel_cargo, turno, escala, ativo, usuario_tipo
       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11, $12, $13, $14, true, $15)`,
       [
         cpf,

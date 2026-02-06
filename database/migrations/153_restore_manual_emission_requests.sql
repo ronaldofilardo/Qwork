@@ -23,8 +23,8 @@ SELECT DISTINCT ON (a.lote_id)
   a.criado_em as solicitado_em,
   CASE 
     -- Inferir tipo_solicitante a partir do perfil na auditoria ou padrão 'rh'
-    WHEN a.observacoes ILIKE '%gestor_entidade%' THEN 'gestor_entidade'
-    WHEN a.observacoes ILIKE '%entidade%' THEN 'gestor_entidade'
+    WHEN a.observacoes ILIKE '%gestor%' THEN 'gestor'
+    WHEN a.observacoes ILIKE '%entidade%' THEN 'gestor'
     ELSE 'rh'
   END as tipo_solicitante
 FROM auditoria_laudos a

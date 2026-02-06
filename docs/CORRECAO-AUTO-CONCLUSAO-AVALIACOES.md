@@ -47,7 +47,7 @@ graph LR
     A[Funcionário responde 37ª questão] --> B[POST /api/avaliacao/save OU /api/avaliacao/respostas]
     B --> C{Conta respostas únicas}
     C -->|>= 37| D[Calcula resultados]
-    D --> E[UPDATE avaliacoes SET status='concluida']
+    D --> E[UPDATE avaliacoes SET status='concluido']
     E --> F[UPDATE funcionarios SET indice_avaliacao]
     F --> G[recalcularStatusLote]
     G --> H[UPDATE lotes_avaliacao SET status='concluido']
@@ -73,7 +73,7 @@ graph LR
 
 ✅ Zero inconsistências de status
 ✅ Código centralizado e testável
-✅ Funciona para **ambos os perfis**: `rh` (clínica) e `gestor_entidade` (contratante)
+✅ Funciona para **ambos os perfis**: `rh` (clínica) e `gestor` (contratante)
 
 ## 📋 Arquivos Modificados
 
@@ -107,7 +107,7 @@ graph LR
 ### Teste 3: Clínica vs Entidade
 
 1. Testar com usuário `perfil='rh'` (clínica)
-2. Testar com usuário `perfil='gestor_entidade'` (contratante)
+2. Testar com usuário `perfil='gestor'` (contratante)
 3. ✅ Ambos devem funcionar identicamente
 
 ## 📊 Impacto
@@ -119,7 +119,7 @@ graph LR
 
 ### Dados Históricos
 
-- ⚠️ Avaliações antigas com 37 respostas mas `status != 'concluida'`
+- ⚠️ Avaliações antigas com 37 respostas mas `status != 'concluido'`
 - 💡 Script `scripts/fix-todas-avaliacoes-lotes-neon.sql` disponível para correção em massa
 - 🔍 Avaliação #85 e Lote #25 já corrigidos manualmente
 

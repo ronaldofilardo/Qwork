@@ -101,7 +101,7 @@ Melhorar testes de baixa e média complexidade com @ts-nocheck, elevando scores 
 - ✅ Comentários AAA
 - ✅ Mocks tipados com estruturas complexas
 - ✅ Tipagem de grupos: `grupos?: Record<string, number>`
-- ✅ União de tipos: `status: 'concluida' | 'pendente' | 'em_andamento'`
+- ✅ União de tipos: `status: 'concluido' | 'pendente' | 'em_andamento'`
 - ✅ Documentação de regras de classificação (positivo/negativo, limites)
 
 **Complexidade**: Médio-Alto - Lógica de classificação de risco psicossocial com 10 grupos e 3 níveis de risco
@@ -252,4 +252,5 @@ global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 
 **Refatoração concluída com excelência!** ✨  
 **Resultado**: 100% type safe, 0% @ts-nocheck, 9/10 no TOP 10 🏆
+
 

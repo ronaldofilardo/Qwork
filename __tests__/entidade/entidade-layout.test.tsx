@@ -32,7 +32,7 @@ afterEach(() => {
 
 /**
  * @test Valida redirecionamento quando perfil não é autorizado
- * @description Layout deve redirecionar para /login quando usuário não tem perfil gestor_entidade
+ * @description Layout deve redirecionar para /login quando usuário não tem perfil gestor
  */
 test('Entidade layout redireciona para login se perfil incorreto', async () => {
   // Arrange - Mock session endpoint returning perfil 'rh' (não autorizado)
@@ -61,17 +61,17 @@ test('Entidade layout redireciona para login se perfil incorreto', async () => {
 
 /**
  * @test Valida renderização com perfil autorizado
- * @description Layout deve aceitar gestor_entidade e renderizar conteúdo sem redirecionar
+ * @description Layout deve aceitar gestor e renderizar conteúdo sem redirecionar
  */
-test('Entidade layout aceita gestor_entidade e carrega conteudo', async () => {
-  // Arrange - Mock session endpoint returning gestor_entidade
+test('Entidade layout aceita gestor e carrega conteudo', async () => {
+  // Arrange - Mock session endpoint returning gestor
   // @ts-ignore
   global.fetch = jest.fn((url: RequestInfo) => {
     if (String(url).endsWith('/api/auth/session')) {
       const session: Session = {
         cpf: '87545772920',
         nome: 'RONALDO',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
       };
       return Promise.resolve(
         new Response(JSON.stringify(session), { status: 200 })

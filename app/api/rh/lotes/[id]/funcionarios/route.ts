@@ -113,7 +113,7 @@ export const GET = async (
         const mediasGrupos: { [key: string]: number } = {};
 
         // Apenas calcular se avaliação está concluída
-        if (func.status_avaliacao === 'concluida') {
+        if (func.status_avaliacao === 'concluido') {
           const respostasResult = await query(
             `
             SELECT grupo, AVG(valor) as media

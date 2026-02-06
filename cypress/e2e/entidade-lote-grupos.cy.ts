@@ -147,7 +147,7 @@ test.describe('Entidade - Visualização de Lote com G1-G10', () => {
     await page.waitForURL(/\/entidade\/lote\/\d+/);
 
     // Selecionar apenas concluídas
-    await page.selectOption('select', 'concluida');
+    await page.selectOption('select', 'concluido');
 
     // Aguardar filtro aplicar
     await page.waitForTimeout(200);
@@ -191,7 +191,7 @@ test.describe('Entidade - Visualização de Lote com G1-G10', () => {
     await page.waitForURL(/\/entidade\/lote\/\d+/);
 
     // Filtrar por status
-    await page.selectOption('select', 'concluida');
+    await page.selectOption('select', 'concluido');
 
     // Aplicar filtro de grupo
     await page.click('button:has-text("▼")').first();
@@ -237,3 +237,4 @@ test.describe('Entidade - Visualização de Lote com G1-G10', () => {
     await expect(botaoDownload).toBeVisible();
   });
 });
+

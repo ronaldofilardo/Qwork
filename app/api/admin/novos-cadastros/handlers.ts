@@ -5,8 +5,8 @@
 
 import { query } from '@/lib/infrastructure/database';
 import {
-  aprovarContratante,
-  rejeitarContratante,
+  aprovarEntidade,
+  rejeitarEntidade,
   solicitarReanalise,
 } from '@/lib/db';
 import { logAudit, extractRequestInfo } from '@/lib/audit';
@@ -15,12 +15,12 @@ import { requireRole } from '@/lib/application/handlers/api-handler';
 import { createPaymentLink } from '@/lib/utils/get-base-url';
 import type {
   GetNovosCadastrosInput,
-  AprovarContratanteInput,
-  RejeitarContratanteInput,
+  AprovarEntidadeInput,
+  RejeitarEntidadeInput,
   SolicitarReanaliseInput,
   AprovarPersonalizadoInput,
   RegenerarLinkPersonalizadoInput,
-  DeletarContratanteInput,
+  DeletarEntidadeInput,
 } from './schemas';
 
 export async function handleGetNovosCadastros(
@@ -43,7 +43,7 @@ export async function handleGetNovosCadastros(
         cp.status as contratacao_status,
       -- Indica se requer aprovação manual: quando já existe pagamento confirmado e contrato aceito, não requer aprovação manual
       CASE WHEN c.pagamento_confirmado = true AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.contratante_id = c.id AND ct.aceito = true) THEN false ELSE true END AS requer_aprovacao_manual
-      FROM contratantes c
+      FROM entidades c
       LEFT JOIN planos p ON c.plano_id = p.id
       LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
       WHERE c.status = $1
@@ -78,7 +78,7 @@ export async function handleGetNovosCadastros(
       cp.status as contratacao_status,
       -- Indica se requer aprovação manual: quando já existe pagamento confirmado e contrato aceito, não requer aprovação manual
       CASE WHEN c.pagamento_confirmado = true AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.contratante_id = c.id AND ct.aceito = true) THEN false ELSE true END AS requer_aprovacao_manual
-    FROM contratantes c
+    FROM entidades c
     LEFT JOIN planos p ON c.plano_id = p.id
     LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
     WHERE c.status IN ('pendente', 'aguardando_pagamento', 'em_reanalise')
@@ -102,16 +102,16 @@ export async function handleGetNovosCadastros(
   };
 }
 
-export async function handleAprovarContratante(
-  input: AprovarContratanteInput,
+export async function handleAprovarEntidade(
+  input: AprovarEntidadeInput,
   context: RequestContext
 ) {
   // Exige sessão com role de admin
   requireRole(context, 'admin');
   const { session, request } = context;
 
-  const contratante = await aprovarContratante(
-    input.contratante_id,
+  const entidade = await aprovarEntidade(
+    input.entidade_id,
     session.cpf,
     session
   );
@@ -120,35 +120,35 @@ export async function handleAprovarContratante(
   const requestInfo = extractRequestInfo(request);
   await logAudit(
     {
-      resource: 'contratantes',
+      resource: 'entidades',
       action: 'UPDATE',
-      resourceId: input.contratante_id,
+      resourceId: input.entidade_id,
       oldData: { status: 'pendente' },
       newData: { status: 'ativo', aprovado_por: session.cpf },
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
-      details: `Contratante APROVADO - ID: ${String(input.contratante_id)}, Aprovador: ${String(session.nome)}`,
+      details: `Entidade APROVADA - ID: ${String(input.entidade_id)}, Aprovador: ${String(session.nome)}`,
     },
     session
   );
 
   return {
     success: true,
-    message: 'Contratante aprovado com sucesso',
-    contratante,
+    message: 'Entidade aprovada com sucesso',
+    entidade,
   };
 }
 
-export async function handleRejeitarContratante(
-  input: RejeitarContratanteInput,
+export async function handleRejeitarEntidade(
+  input: RejeitarEntidadeInput,
   context: RequestContext
 ) {
   // Exige sessão com role de admin
   requireRole(context, 'admin');
   const { session, request } = context;
 
-  const contratante = await rejeitarContratante(
-    input.contratante_id,
+  const entidade = await rejeitarEntidade(
+    input.entidade_id,
     input.motivo,
     session
   );
@@ -157,22 +157,22 @@ export async function handleRejeitarContratante(
   const requestInfo = extractRequestInfo(request);
   await logAudit(
     {
-      resource: 'contratantes',
+      resource: 'entidades',
       action: 'UPDATE',
-      resourceId: input.contratante_id,
+      resourceId: input.entidade_id,
       oldData: { status: 'pendente' },
       newData: { status: 'rejeitado', motivo: input.motivo },
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
-      details: `Contratante REJEITADO - ID: ${String(input.contratante_id)}, Motivo: ${String(input.motivo)}`,
+      details: `Entidade REJEITADA - ID: ${String(input.entidade_id)}, Motivo: ${String(input.motivo)}`,
     },
     session
   );
 
   return {
     success: true,
-    message: 'Contratante rejeitado',
-    contratante,
+    message: 'Entidade rejeitada',
+    entidade,
   };
 }
 
@@ -186,8 +186,8 @@ export async function handleSolicitarReanalise(
     throw new Error('Acesso negado. Apenas administradores.');
   }
 
-  const contratante = await solicitarReanalise(
-    input.contratante_id,
+  const entidade = await solicitarReanalise(
+    input.entidade_id,
     input.mensagem,
     session
   );
@@ -196,13 +196,13 @@ export async function handleSolicitarReanalise(
   const requestInfo = extractRequestInfo(request);
   await logAudit(
     {
-      resource: 'contratantes',
+      resource: 'entidades',
       action: 'UPDATE',
-      resourceId: input.contratante_id,
+      resourceId: input.entidade_id,
       newData: { status: 'reanalise_solicitada', mensagem: input.mensagem },
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
-      details: `Reanalise solicitada - ID: ${String(input.contratante_id)}`,
+      details: `Reanalise solicitada - ID: ${String(input.entidade_id)}`,
     },
     session
   );
@@ -210,7 +210,7 @@ export async function handleSolicitarReanalise(
   return {
     success: true,
     message: 'Solicitação de reanálise enviada',
-    contratante,
+    entidade,
   };
 }
 
@@ -221,20 +221,36 @@ export async function handleAprovarPersonalizado(
   requireRole(context, 'admin');
   const { session, request } = context;
 
-  // Buscar contratante e verificar se é personalizado
-  const contratanteRes = await query(
-    `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome 
-     FROM contratantes c 
-     JOIN planos p ON c.plano_id = p.id 
-     WHERE c.id = $1`,
-    [input.contratante_id]
+  // Verificar se a tabela contratacao_personalizada ainda existe
+  const tableExists = await query<{ exists: boolean }>(
+    `SELECT EXISTS (
+      SELECT 1 FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name = 'contratacao_personalizada'
+    )`,
+    []
   );
 
-  if (contratanteRes.rows.length === 0) {
-    throw new Error('Contratante não encontrado');
+  if (!tableExists.rows[0].exists) {
+    throw new Error(
+      'Funcionalidade de contratação personalizada não está mais disponível'
+    );
   }
 
-  const contratante = contratanteRes.rows[0] as {
+  // Buscar entidade e verificar se é personalizado
+  const entidadeRes = await query(
+    `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome 
+     FROM entidades c 
+     JOIN planos p ON c.plano_id = p.id 
+     WHERE c.id = $1`,
+    [input.entidade_id]
+  );
+
+  if (entidadeRes.rows.length === 0) {
+    throw new Error('Entidade não encontrada');
+  }
+
+  const entidade = entidadeRes.rows[0] as {
     id: number;
     nome: string;
     plano_id: number;
@@ -242,7 +258,7 @@ export async function handleAprovarPersonalizado(
     plano_nome: string;
   };
 
-  if (contratante.plano_tipo !== 'personalizado') {
+  if (entidade.plano_tipo !== 'personalizado') {
     throw new Error('Operação válida apenas para planos personalizados');
   }
 
@@ -262,7 +278,7 @@ export async function handleAprovarPersonalizado(
       input.valor_por_funcionario,
       input.numero_funcionarios,
       valorTotal,
-      input.contratante_id,
+      input.entidade_id,
     ]
   );
 
@@ -277,21 +293,23 @@ export async function handleAprovarPersonalizado(
          payment_link_expiracao = $2, 
          link_enviado_em = CURRENT_TIMESTAMP 
      WHERE contratante_id = $3`,
-    [token, expiracao, input.contratante_id]
+    [token, expiracao, input.entidade_id]
   );
 
   // Criar contrato em contratos
-  await query(
+  const contratoRes = await query<{ id: number }>(
     `INSERT INTO contratos (
       contratante_id, plano_id, numero_funcionarios, valor_total, status, criado_em
-    ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento', CURRENT_TIMESTAMP)`,
+    ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento', CURRENT_TIMESTAMP) RETURNING id`,
     [
-      input.contratante_id,
-      contratante.plano_id,
+      input.entidade_id,
+      entidade.plano_id,
       input.numero_funcionarios,
       valorTotal,
     ]
   );
+
+  const contratoId = contratoRes.rows[0]?.id;
 
   // Log de auditoria
   const requestInfo = extractRequestInfo(request);
@@ -299,7 +317,7 @@ export async function handleAprovarPersonalizado(
     {
       resource: 'contratacao_personalizada',
       action: 'UPDATE',
-      resourceId: input.contratante_id,
+      resourceId: input.entidade_id,
       oldData: { status: 'aguardando_valor_admin' },
       newData: {
         status: 'valor_definido',
@@ -316,18 +334,23 @@ export async function handleAprovarPersonalizado(
 
   const linkPagamento = createPaymentLink(token);
 
+  const contratanteResp = {
+    id: entidade.id,
+    nome: entidade.nome,
+    valor_por_funcionario: input.valor_por_funcionario,
+    numero_funcionarios: input.numero_funcionarios,
+    valor_total: valorTotal,
+    link_pagamento: linkPagamento,
+    link_expiracao: expiracao.toISOString(),
+    contrato_id: contratoId,
+    contratacao_id: contratoId,
+  };
+
   return {
     success: true,
     message: 'Valores definidos e link gerado com sucesso',
-    contratante: {
-      id: contratante.id,
-      nome: contratante.nome,
-      valor_por_funcionario: input.valor_por_funcionario,
-      numero_funcionarios: input.numero_funcionarios,
-      valor_total: valorTotal,
-      link_pagamento: linkPagamento,
-      link_expiracao: expiracao.toISOString(),
-    },
+    entidade: contratanteResp,
+    contratante: contratanteResp,
   };
 }
 
@@ -338,14 +361,30 @@ export async function handleRegenerarLink(
   requireRole(context, 'admin');
   const { session, request } = context;
 
+  // Verificar se a tabela contratacao_personalizada ainda existe
+  const tableExists = await query<{ exists: boolean }>(
+    `SELECT EXISTS (
+      SELECT 1 FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name = 'contratacao_personalizada'
+    )`,
+    []
+  );
+
+  if (!tableExists.rows[0].exists) {
+    throw new Error(
+      'Funcionalidade de contratação personalizada não está mais disponível'
+    );
+  }
+
   // Buscar contratacao_personalizada existente
   const contratacaoRes = await query(
-    `SELECT cp.*, c.nome, c.id as contratante_id
+    `SELECT cp.*, c.nome, c.id as entidade_id
      FROM contratacao_personalizada cp
-     JOIN contratantes c ON cp.contratante_id = c.id
+     JOIN entidades c ON cp.contratante_id = c.id
      WHERE cp.contratante_id = $1
        AND cp.status = 'valor_definido'`,
-    [input.contratante_id]
+    [input.entidade_id]
   );
 
   if (contratacaoRes.rows.length === 0) {
@@ -355,7 +394,7 @@ export async function handleRegenerarLink(
   }
 
   const contratacao = contratacaoRes.rows[0] as {
-    contratante_id: number;
+    entidade_id: number;
     nome: string;
     payment_link_token?: string;
     payment_link_expiracao?: Date;
@@ -373,7 +412,7 @@ export async function handleRegenerarLink(
          payment_link_expiracao = $2, 
          link_enviado_em = CURRENT_TIMESTAMP 
      WHERE contratante_id = $3`,
-    [token, expiracao, input.contratante_id]
+    [token, expiracao, input.entidade_id]
   );
 
   // Log de auditoria
@@ -382,34 +421,37 @@ export async function handleRegenerarLink(
     {
       resource: 'contratacao_personalizada',
       action: 'UPDATE',
-      resourceId: input.contratante_id,
+      resourceId: input.entidade_id,
       newData: {
         payment_link_token: token,
         link_expiracao: expiracao,
       },
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
-      details: `Link de pagamento regenerado para contratante ${input.contratante_id}`,
+      details: `Link de pagamento regenerado para entidade ${input.entidade_id}`,
     },
     session
   );
 
   const linkPagamento = createPaymentLink(token);
 
+  const contratanteResp = {
+    id: contratacao.entidade_id,
+    nome: contratacao.nome,
+    link_pagamento: linkPagamento,
+    link_expiracao: expiracao.toISOString(),
+  };
+
   return {
     success: true,
     message: 'Link regenerado com sucesso',
-    contratante: {
-      id: contratacao.contratante_id,
-      nome: contratacao.nome,
-      link_pagamento: linkPagamento,
-      link_expiracao: expiracao.toISOString(),
-    },
+    entidade: contratanteResp,
+    contratante: contratanteResp,
   };
 }
 
-export async function handleDeletarContratante(
-  input: DeletarContratanteInput,
+export async function handleDeletarEntidade(
+  input: DeletarEntidadeInput,
   context: RequestContext
 ) {
   requireRole(context, 'admin');
@@ -417,42 +459,42 @@ export async function handleDeletarContratante(
   const { session } = context;
   const requestInfo = extractRequestInfo(context.request);
 
-  // Verificar se o contratante existe e está em status que permite deleção
-  const contratante = await query(
-    'SELECT id, nome, status FROM contratantes WHERE id = $1',
-    [input.contratante_id]
+  // Verificar se a entidade existe e está em status que permite deleção
+  const entidade = await query(
+    'SELECT id, nome, status FROM entidades WHERE id = $1',
+    [input.entidade_id]
   );
 
-  if (contratante.rows.length === 0) {
-    throw new Error('Contratante não encontrado');
+  if (entidade.rows.length === 0) {
+    throw new Error('Entidade não encontrada');
   }
 
-  const status = (contratante.rows[0] as any).status;
+  const status = (entidade.rows[0] as any).status;
 
   // Só permitir deletar se estiver em status pendente ou rejeitado
   if (!['pendente', 'rejeitado'].includes(status)) {
-    throw new Error('Não é possível deletar contratante com status atual');
+    throw new Error('Não é possível deletar entidade com status atual');
   }
 
-  // Deletar o contratante (cascade deve cuidar das dependências)
-  await query('DELETE FROM contratantes WHERE id = $1', [input.contratante_id]);
+  // Deletar a entidade (cascade deve cuidar das dependências)
+  await query('DELETE FROM entidades WHERE id = $1', [input.entidade_id]);
 
   // Log de auditoria
   await logAudit(
     {
-      resource: 'contratante',
+      resource: 'entidade',
       action: 'DELETE',
-      resourceId: input.contratante_id,
-      oldData: contratante.rows[0] as any,
+      resourceId: input.entidade_id,
+      oldData: entidade.rows[0] as any,
       ipAddress: requestInfo.ipAddress,
       userAgent: requestInfo.userAgent,
-      details: `Contratante deletado: ${(contratante.rows[0] as any).nome}`,
+      details: `Entidade deletada: ${(entidade.rows[0] as any).nome}`,
     },
     session
   );
 
   return {
     success: true,
-    message: 'Contratante deletado com sucesso',
+    message: 'Entidade deletada com sucesso',
   };
 }

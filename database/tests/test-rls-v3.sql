@@ -201,12 +201,12 @@ END $$;
 RESET SESSION AUTHORIZATION;
 
 -- ================================================================
--- TESTE 7: Admin pode gerenciar clínicas
+-- TESTE 7: Admin NÃO deve gerenciar ou visualizar clínicas
 -- ================================================================
 
 \echo ''
-\echo 'TESTE 7: Admin gerenciando clínicas...'
-\echo '   Resultado esperado: Acesso completo'
+\echo 'TESTE 7: Admin gerenciando clínicas (bloqueio esperado)...'
+\echo '   Resultado esperado: 0 registros (bloqueado)'
 
 SET SESSION AUTHORIZATION test_admin;
 
@@ -218,10 +218,10 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_count FROM clinicas;
     
-    IF v_count > 0 THEN
-        RAISE NOTICE '✓ TESTE 7 PASSOU: Admin vê % clínicas', v_count;
+    IF v_count = 0 THEN
+        RAISE NOTICE '✓ TESTE 7 PASSOU: Admin bloqueado de visualizar/gerenciar clínicas (vê 0 registros)';
     ELSE
-        RAISE NOTICE '⚠ TESTE 7: Admin não vê clínicas (pode ser banco vazio)';
+        RAISE EXCEPTION 'FALHA NO TESTE 7: Admin consegue visualizar clínicas! Viu % registros', v_count;
     END IF;
 END $$;
 
@@ -284,7 +284,7 @@ BEGIN
     RETURNING id INTO v_resultado_id;
 
     -- Concluir avaliação
-    UPDATE avaliacoes SET status = 'concluida', envio = NOW() WHERE id = v_avaliacao_id;
+    UPDATE avaliacoes SET status = 'concluido', envio = NOW() WHERE id = v_avaliacao_id;
 
     RAISE NOTICE '   Avaliação criada e concluída: ID %', v_avaliacao_id;
 
@@ -328,3 +328,4 @@ END $$;
 \echo '========================================================'
 \echo 'FIM DOS TESTES'
 \echo '========================================================'
+

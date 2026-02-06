@@ -6,10 +6,10 @@ const bcrypt = require('bcryptjs');
   try {
     const cpf = '70495096040';
     const cs = await query(
-      'SELECT senha_hash, contratante_id FROM contratantes_senhas WHERE cpf = $1',
+      'SELECT senha_hash, contratante_id FROM entidades_senhas WHERE cpf = $1',
       [cpf]
     );
-    console.log('contratantes_senhas:', cs.rows);
+    console.log('entidades_senhas:', cs.rows);
 
     const f = await query(
       'SELECT senha_hash FROM funcionarios WHERE cpf = $1',
@@ -38,7 +38,7 @@ const bcrypt = require('bcryptjs');
 
     if (cs.rows[0]) {
       const ok = await bcrypt.compare(pass, cs.rows[0].senha_hash);
-      console.log('bcrypt compare pass with contratantes_senhas:', ok);
+      console.log('bcrypt compare pass with entidades_senhas:', ok);
     }
 
     if (f.rows[0]) {

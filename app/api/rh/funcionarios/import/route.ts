@@ -236,9 +236,12 @@ export async function POST(request: Request) {
       let created = 0;
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
-        await query(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, clinica_id, empresa_id, ativo, matricula, nivel_cargo, turno, escala, usuario_tipo)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',$8,$9,true,$10,$11,$12,$13,'funcionario_clinica')`,
+
+        // 1. Inserir funcionário com contexto de clínica/empresa
+        const insertResult = await query(
+          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, clinica_id, empresa_id)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,$12,$13)
+           RETURNING id`,
           [
             r.cpf,
             r.nome,
@@ -247,15 +250,26 @@ export async function POST(request: Request) {
             r.funcao,
             r.email,
             senhaHash,
-            session.clinica_id,
-            empresaId,
             r.matricula || null,
-            r.nivel_cargo || null,
+            null, // nivel_cargo must be NULL for perfil funcionario_clinica to satisfy DB check
             r.turno || null,
             r.escala || null,
+            session.clinica_id,
+            empresaId,
           ],
           session
         );
+
+        const funcionarioId = insertResult.rows[0].id;
+
+        // 2. Criar relacionamento na tabela funcionarios_clinicas (via empresa)
+        await query(
+          `INSERT INTO funcionarios_clinicas (funcionario_id, empresa_id, ativo, data_vinculo)
+           VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
+          [funcionarioId, empresaId],
+          session
+        );
+
         created++;
       }
 

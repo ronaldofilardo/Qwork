@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * Reset (clear) all responses for a single evaluation within a batch
  *
  * Requirements:
- * - User must be gestor_entidade from same contratante
+ * - User must be gestor from same contratante
  * - Batch must NOT be concluded, sent to emissor, or have laudo
  * - Evaluation must belong to the batch
  * - Only ONE reset per evaluation per batch allowed
@@ -23,7 +23,7 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
-    if (!user || user.perfil !== 'gestor_entidade') {
+    if (!user || user.perfil !== 'gestor') {
       return NextResponse.json(
         { error: 'Acesso negado', success: false },
         { status: 403 }
@@ -65,7 +65,7 @@ export async function POST(
       await query(`SET LOCAL app.current_user_perfil = '${user.perfil}'`);
 
       // Check batch belongs to user's contratante and get status
-      // Verificar posse do lote: para gestor_entidade a autoridade vem do lote.contratante_id
+      // Verificar posse do lote: para gestor a autoridade vem do lote.contratante_id
       const loteCheck = await query(
         `
         SELECT la.id, la.empresa_id, la.status, la.contratante_id
@@ -204,7 +204,7 @@ export async function POST(
       );
 
       // Insert immutable audit record
-      // Use COALESCE to handle cases where gestor_entidade is not in funcionarios table
+      // Use COALESCE to handle cases where gestor is not in funcionarios table
       const auditResult = await query(
         `
         INSERT INTO avaliacao_resets (
@@ -219,7 +219,7 @@ export async function POST(
           $1,
           $2,
           COALESCE(f.id, $6),  -- Use funcionario.id if exists, otherwise use contratante_id
-          'gestor_entidade',
+          'gestor',
           $3,
           $4
         FROM (SELECT $5::VARCHAR AS cpf) u

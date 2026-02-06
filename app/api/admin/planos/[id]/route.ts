@@ -209,21 +209,42 @@ export async function DELETE(
       );
     }
 
-    // Validar senha do admin
+    // Validar senha do admin (procurar primeiro em funcionarios, depois em usuarios)
     try {
+      let hash: string | null = null;
+
+      // Tentar encontrar admin em funcionarios (legacy / admin local)
       const adminRow = await query(
         "SELECT senha_hash FROM funcionarios WHERE cpf = $1 AND perfil = 'admin' AND ativo = true",
         [session.cpf]
       );
 
-      if (adminRow.rows.length === 0) {
+      if (adminRow.rows.length > 0) {
+        hash = adminRow.rows[0].senha_hash;
+        console.log(
+          '[DELETE PLAN] Admin encontrado em funcionarios para validação de senha'
+        );
+      } else {
+        // Fallback: tentar em usuarios (gestores/adm migrados)
+        const uRow = await query(
+          "SELECT senha_hash FROM usuarios WHERE cpf = $1 AND role IN ('admin') AND ativo = true",
+          [session.cpf]
+        );
+        if (uRow.rows.length > 0) {
+          hash = uRow.rows[0].senha_hash;
+          console.log(
+            '[DELETE PLAN] Admin encontrado em usuarios para validação de senha'
+          );
+        }
+      }
+
+      if (!hash) {
         return NextResponse.json(
           { error: 'Administrador não encontrado' },
           { status: 403 }
         );
       }
 
-      const hash = adminRow.rows[0].senha_hash;
       const valid = await bcrypt.compare(admin_password, hash);
 
       if (!valid) {

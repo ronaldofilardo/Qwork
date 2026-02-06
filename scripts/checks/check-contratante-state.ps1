@@ -104,13 +104,13 @@ Write-Host "  Primeiro pag.:    $(if ($data_pag) { $data_pag } else { 'SEM PAGAM
 Write-Host "  Criado em:        $criado_em"
 Write-Host ""
 
-# 2. SENHA EM CONTRATANTES_SENHAS
-Write-Host "🔐 2. SENHA EM CONTRATANTES_SENHAS" -ForegroundColor Yellow
+# 2. SENHA EM entidades_senhas
+Write-Host "🔐 2. SENHA EM entidades_senhas" -ForegroundColor Yellow
 Write-Host "─────────────────────────────────────────────────" -ForegroundColor Gray
 
 $queryCS = @"
 SELECT cpf, length(senha_hash) as hash_len, criado_em 
-FROM contratantes_senhas 
+FROM entidades_senhas 
 WHERE contratante_id = $ContratanteId;
 "@
 
@@ -123,7 +123,7 @@ if ($senhaCS) {
     Write-Host "  Hash length:   $($csFields[1]) chars" -ForegroundColor $(if ($csFields[1] -eq '60') { 'Green' } else { 'Red' })
     Write-Host "  Criado em:     $($csFields[2])"
 } else {
-    Write-Host "  ❌ Senha NÃO existe em contratantes_senhas!" -ForegroundColor Red
+    Write-Host "  ❌ Senha NÃO existe em entidades_senhas!" -ForegroundColor Red
 }
 Write-Host ""
 
@@ -289,7 +289,7 @@ if ($status -eq 'aprovado' -and $ativa -eq 'f') {
 
 # Verificar ativa mas sem senha
 if ($ativa -eq 't' -and !$senhaCS) {
-    $issues += "❌ Contratante ativo mas SEM SENHA em contratantes_senhas!"
+    $issues += "❌ Contratante ativo mas SEM SENHA em entidades_senhas!"
 }
 
 # Verificar clínica sem registro

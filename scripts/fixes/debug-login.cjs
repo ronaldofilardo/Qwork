@@ -10,12 +10,12 @@ async function testLogin() {
   console.log(`Senha digitada: ${senha}`);
 
   try {
-    // 1. Buscar em contratantes_senhas
-    console.log('\n1. Buscando em contratantes_senhas...');
+    // 1. Buscar em entidades_senhas
+    console.log('\n1. Buscando em entidades_senhas...');
     const gestorResult = await query(
       `SELECT cs.cpf, cs.senha_hash, c.id as contratante_id, c.responsavel_nome as nome,
               c.tipo, c.ativa, c.pagamento_confirmado
-       FROM contratantes_senhas cs
+       FROM entidades_senhas cs
        JOIN contratantes c ON c.id = cs.contratante_id
        WHERE cs.cpf = $1`,
       [cpf]
@@ -23,7 +23,7 @@ async function testLogin() {
 
     if (gestorResult.rows.length > 0) {
       const gestor = gestorResult.rows[0];
-      console.log('✅ Gestor encontrado em contratantes_senhas:');
+      console.log('✅ Gestor encontrado em entidades_senhas:');
       console.log(`   CPF: ${gestor.cpf}`);
       console.log(`   Tipo: ${gestor.tipo}`);
       console.log(`   Ativa: ${gestor.ativa}`);
@@ -46,7 +46,7 @@ async function testLogin() {
         console.log(`   Hash armazenado: ${gestor.senha_hash}`);
       }
     } else {
-      console.log('❌ Gestor NÃO encontrado em contratantes_senhas');
+      console.log('❌ Gestor NÃO encontrado em entidades_senhas');
 
       // 2. Buscar em funcionarios
       console.log('\n3. Buscando em funcionarios...');

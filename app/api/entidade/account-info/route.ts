@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { calcularParcelas, getResumoPagamento } from '@/lib/parcelas-helper';
 
@@ -7,38 +7,28 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const session = getSession();
-    if (!session || session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    const session = await requireEntity();
+    const entidadeId = session.contratante_id;
 
-    const contratanteId = session.contratante_id;
-    if (!contratanteId) {
-      return NextResponse.json(
-        { error: 'Contratante não encontrado' },
-        { status: 400 }
-      );
-    }
-
-    // Buscar informações da entidade (contratantes)
+    // Buscar informações da entidade
     const entidadeQuery = `
       SELECT
-        c.id,
-        c.nome,
-        c.cnpj,
-        c.email,
-        c.telefone,
-        c.endereco,
-        c.cidade,
-        c.estado,
-        c.criado_em
-      FROM contratantes c
-      WHERE c.id = $1 AND c.tipo = 'entidade'
+        e.id,
+        e.nome,
+        e.cnpj,
+        e.email,
+        e.telefone,
+        e.endereco,
+        e.cidade,
+        e.estado,
+        e.criado_em
+      FROM entidades e
+      WHERE e.id = $1 AND e.tipo = 'entidade'
       LIMIT 1
     `;
 
     const entidadeResult = await queryAsGestorEntidade(entidadeQuery, [
-      contratanteId,
+      entidadeId,
     ]);
 
     if (entidadeResult.rows.length === 0) {
@@ -86,13 +76,13 @@ export async function GET() {
       FROM contratos co
       JOIN planos p ON co.plano_id = p.id
       -- Comparar como texto para tolerar bancos com valores legados como 'ativo'
-      WHERE co.contratante_id = $1 AND co.status::text IN ('ativo','aprovado','aguardando_pagamento')
+      WHERE co.entidade_id = $1 AND co.status::text IN ('ativo','aprovado','aguardando_pagamento')
       ORDER BY co.criado_em DESC
       LIMIT 1
     `;
 
     const contratoResult = await queryAsGestorEntidade(contratoQuery, [
-      contratanteId,
+      entidadeId,
     ]);
     let contrato =
       contratoResult.rows.length > 0 ? contratoResult.rows[0] : null;
@@ -140,7 +130,7 @@ export async function GET() {
         `;
 
         const cpRes = await queryAsGestorEntidade(contratoPlanoQuery, [
-          contratanteId,
+          entidadeId,
         ]);
         if (cpRes.rows.length > 0) {
           contrato = cpRes.rows[0];
@@ -150,7 +140,7 @@ export async function GET() {
       }
     }
 
-    // Buscar pagamentos do contratante (mais completos)
+    // Buscar pagamentos da entidade (mais completos)
     const pagamentosQuery = `
       SELECT
         p.id,
@@ -163,13 +153,13 @@ export async function GET() {
         p.detalhes_parcelas,
         p.criado_em
       FROM pagamentos p
-      WHERE p.contratante_id = $1
+      WHERE p.entidade_id = $1
       ORDER BY p.criado_em DESC
       LIMIT 5
     `;
 
     const pagamentosResult = (await queryAsGestorEntidade(pagamentosQuery, [
-      contratanteId,
+      entidadeId,
     ])) || { rows: [] };
     const pagamentosRaw = pagamentosResult.rows || [];
 

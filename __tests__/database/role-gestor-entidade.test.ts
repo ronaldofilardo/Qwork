@@ -1,9 +1,9 @@
 /**
- * Teste para validar role gestor_entidade
+ * Teste para validar role gestor
  * Created: 2026-01-29
  *
  * Valida as mudancas implementadas:
- * - Migration 206: Role gestor_entidade existe com ID=5
+ * - Migration 206: Role gestor existe com ID=5
  * - Migration 206: 8 permissions associadas ao role
  * - Migration 207: Helper function current_user_contratante_id()
  * - Migration 208: Tabelas sincronizadas com Neon
@@ -11,20 +11,20 @@
 
 import { query } from '@/lib/db';
 
-describe('Role gestor_entidade - Database Integration', () => {
+describe('Role gestor - Database Integration', () => {
   describe('Migration 206 - Role e Permissions', () => {
-    it('deve ter role gestor_entidade com ID=5', async () => {
+    it('deve ter role gestor com ID=5', async () => {
       const result = await query(
         `SELECT id, name, display_name
          FROM roles 
          WHERE name = $1`,
-        ['gestor_entidade']
+        ['gestor']
       );
 
       expect(result.rows).toHaveLength(1);
       expect(result.rows[0]).toMatchObject({
         id: 5,
-        name: 'gestor_entidade',
+        name: 'gestor',
         display_name: 'Gestor de Entidade',
       });
     });
@@ -37,7 +37,7 @@ describe('Role gestor_entidade - Database Integration', () => {
          JOIN roles r ON r.id = rp.role_id
          WHERE r.name = $1
          ORDER BY p.name`,
-        ['gestor_entidade']
+        ['gestor']
       );
 
       expect(result.rows).toHaveLength(8);
@@ -85,7 +85,7 @@ describe('Role gestor_entidade - Database Integration', () => {
          JOIN role_permissions rp ON p.id = rp.permission_id
          JOIN roles r ON r.id = rp.role_id
          WHERE r.name = $1 AND p.name LIKE '%entidade%'`,
-        ['gestor_entidade']
+        ['gestor']
       );
 
       const resultRH = await query(
@@ -243,7 +243,7 @@ describe('Role gestor_entidade - Database Integration', () => {
         { id: 2, name: 'rh' },
         { id: 3, name: 'emissor' },
         { id: 4, name: 'admin' },
-        { id: 5, name: 'gestor_entidade' },
+        { id: 5, name: 'gestor' },
       ]);
     });
 
@@ -255,17 +255,17 @@ describe('Role gestor_entidade - Database Integration', () => {
       expect(names).toContain('rh');
       expect(names).toContain('emissor');
       expect(names).toContain('admin');
-      expect(names).toContain('gestor_entidade');
+      expect(names).toContain('gestor');
     });
   });
 
   describe('Validacao de Funcionario Real', () => {
-    it('deve permitir funcionario com perfil gestor_entidade e contratante_id', async () => {
+    it('deve permitir funcionario com perfil gestor e contratante_id', async () => {
       // Validar que estrutura permite o registro existente no Neon
       const result = await query(
         `SELECT 
-           COUNT(*) FILTER (WHERE perfil = 'gestor_entidade') as gestor_count,
-           COUNT(*) FILTER (WHERE perfil = 'gestor_entidade' AND contratante_id IS NOT NULL) as com_contratante
+           COUNT(*) FILTER (WHERE perfil = 'gestor') as gestor_count,
+           COUNT(*) FILTER (WHERE perfil = 'gestor' AND contratante_id IS NOT NULL) as com_contratante
          FROM funcionarios`
       );
 

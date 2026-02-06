@@ -27,9 +27,9 @@ describe('Cadastro - Lógica de Bifurcação de Status', () => {
       'DELETE FROM contratacao_personalizada WHERE plano_id IN ($1, $2)',
       [planoFixoId, planoPersonalizadoId]
     );
-    await query('DELETE FROM contratantes WHERE plano_id IN ($1, $2)', [
-      planoFixoId,
-      planoPersonalizadoId,
+    await query('DELETE FROM entidades WHERE nome LIKE $1', ['Test Fixo DB%']);
+    await query('DELETE FROM entidades WHERE nome LIKE $1', [
+      'Test Personalizado DB%',
     ]);
     await query('DELETE FROM planos WHERE id IN ($1, $2)', [
       planoFixoId,
@@ -54,10 +54,10 @@ describe('Cadastro - Lógica de Bifurcação de Status', () => {
   it('contratante com plano fixo deve ter status aguardando_pagamento', async () => {
     // Inserir contratante diretamente no DB
     const contratanteFixo = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
-        responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_telefone, responsavel_email,
-        numero_funcionarios, plano_id, status
+        responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_celular, responsavel_email,
+        numero_funcionarios_estimado, plano_id, status
       ) VALUES (
         'entidade', 'Test Fixo DB', '06990590000123', 'testfixo@test.com', '11987654321',
         'Rua A', 'São Paulo', 'SP', '01000000',
@@ -81,10 +81,10 @@ describe('Cadastro - Lógica de Bifurcação de Status', () => {
   it('contratante com plano personalizado deve ter status pendente e registro na tabela contratacao_personalizada', async () => {
     // Inserir contratante com plano personalizado
     const contratantePersonalizado = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
-        responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_telefone, responsavel_email,
-        numero_funcionarios, plano_id, status
+        responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_celular, responsavel_email,
+        numero_funcionarios_estimado, plano_id, status
       ) VALUES (
         'entidade', 'Test Personalizado DB', '07234453000189', 'testpers@test.com', '21987654321',
         'Rua B', 'Rio de Janeiro', 'RJ', '20000000',
@@ -120,10 +120,10 @@ describe('Cadastro - Lógica de Bifurcação de Status', () => {
   it('trigger deve sincronizar status entre contratantes e contratacao_personalizada', async () => {
     // Criar contratante e registro personalizado
     const contratante = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
-        responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_telefone, responsavel_email,
-        numero_funcionarios, plano_id, status
+        responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_celular, responsavel_email,
+        numero_funcionarios_estimado, plano_id, status
       ) VALUES (
         'entidade', 'Test Trigger', '11444777000161', 'testtrigger@test.com', '11987654321',
         'Rua C', 'São Paulo', 'SP', '01000000',
@@ -148,7 +148,7 @@ describe('Cadastro - Lógica de Bifurcação de Status', () => {
 
     // Verificar se trigger sincronizou status em contratantes
     const contratanteAtualizado = await query(
-      'SELECT status FROM contratantes WHERE id = $1',
+      'SELECT status FROM entidades WHERE id = $1',
       [contratante.rows[0].id]
     );
 

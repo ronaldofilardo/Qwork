@@ -104,7 +104,7 @@ export default function DetalhesLotePage() {
   const [busca, setBusca] = useState('');
   const [buscaDebouncedValue, setBuscaDebouncedValue] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<
-    'todos' | 'concluida' | 'pendente'
+    'todos' | 'concluido' | 'pendente'
   >('todos');
   // Mensagem amigável enviada pelo backend em caso de permissão negada (ex.: mismatch de clínica)
   const [permissionErrorHint, setPermissionErrorHint] = useState<string | null>(
@@ -566,10 +566,10 @@ export default function DetalhesLotePage() {
       // Filtro de status geral
       const matchStatus =
         filtroStatus === 'todos' ||
-        (filtroStatus === 'concluida' &&
-          func.avaliacao.status === 'concluida') ||
+        (filtroStatus === 'concluido' &&
+          func.avaliacao.status === 'concluido') ||
         (filtroStatus === 'pendente' &&
-          func.avaliacao.status !== 'concluida' &&
+          func.avaliacao.status !== 'concluido' &&
           func.avaliacao.status !== 'inativada');
 
       // Filtros por coluna
@@ -1040,9 +1040,14 @@ export default function DetalhesLotePage() {
               </div>
             </div>
 
-            {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído, sem laudo e sem solicitação */}
+            {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído (status='concluido'), sem laudo e sem solicitação */}
             {lote &&
               lote.status === 'concluido' &&
+              estatisticas &&
+              estatisticas.avaliacoes_concluidas +
+                estatisticas.avaliacoes_pendentes >
+                0 &&
+              estatisticas.avaliacoes_pendentes === 0 &&
               !lote.emissao_solicitada &&
               !lote.tem_laudo && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
@@ -1236,13 +1241,13 @@ export default function DetalhesLotePage() {
                 value={filtroStatus}
                 onChange={(e) =>
                   setFiltroStatus(
-                    e.target.value as 'todos' | 'concluida' | 'pendente'
+                    e.target.value as 'todos' | 'concluido' | 'pendente'
                   )
                 }
                 className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
               >
                 <option value="todos">Todos os status</option>
-                <option value="concluida">Concluídas</option>
+                <option value="concluido">Concluídas</option>
                 <option value="pendente">Pendentes</option>
               </select>
               <button
@@ -1431,7 +1436,7 @@ export default function DetalhesLotePage() {
                         {getStatusBadge(func.avaliacao.status)}
                       </td>
                       <td className="px-3 py-2 text-sm text-gray-600">
-                        {func.avaliacao.status === 'concluida'
+                        {func.avaliacao.status === 'concluido'
                           ? formatarData(func.avaliacao.data_conclusao)
                           : '-'}
                       </td>
@@ -1484,7 +1489,7 @@ export default function DetalhesLotePage() {
                       </td>
                       <td className="px-3 py-2 text-sm text-center">
                         <div className="flex gap-1 justify-center">
-                          {func.avaliacao.status !== 'concluida' &&
+                          {func.avaliacao.status !== 'concluido' &&
                             func.avaliacao.status !== 'inativada' &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
@@ -1503,7 +1508,7 @@ export default function DetalhesLotePage() {
                               </button>
                             )}
                           {(func.avaliacao.status === 'iniciada' ||
-                            func.avaliacao.status === 'concluida' ||
+                            func.avaliacao.status === 'concluido' ||
                             func.avaliacao.status === 'em_andamento') &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
@@ -1525,10 +1530,10 @@ export default function DetalhesLotePage() {
                             onClick={() =>
                               gerarRelatorioFuncionario(func.cpf, func.nome)
                             }
-                            disabled={func.avaliacao.status !== 'concluida'}
+                            disabled={func.avaliacao.status !== 'concluido'}
                             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             title={
-                              func.avaliacao.status === 'concluida'
+                              func.avaliacao.status === 'concluido'
                                 ? 'Gerar relatório PDF'
                                 : 'Relatório disponível apenas para avaliações concluídas'
                             }

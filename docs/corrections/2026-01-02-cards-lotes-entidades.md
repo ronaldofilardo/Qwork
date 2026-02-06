@@ -46,7 +46,7 @@ Implementação completa de cards interativos para Ciclos de Coletas Avaliativas
 
 - **`app/api/entidade/lote/[id]/route.ts`** (novo)
   - GET: Busca detalhes do lote
-  - Validação de sessão e perfil (gestor_entidade)
+  - Validação de sessão e perfil (gestor)
   - Retorna lote, estatísticas e funcionários
   - Verificação de pertencimento à entidade
 
@@ -175,7 +175,7 @@ const handleGenerateReport = async (e: React.MouseEvent, loteId: number) => {
 ### **Validações de Segurança**
 
 - Todas as APIs verificam sessão (`getSession()`)
-- Perfil obrigatório: `gestor_entidade`
+- Perfil obrigatório: `gestor`
 - Lotes verificados contra `contratante_id` da sessão
 - Queries SQL com prepared statements ($1, $2)
 

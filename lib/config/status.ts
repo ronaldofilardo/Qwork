@@ -5,7 +5,7 @@
 export const AVALIACAO_STATUS = {
   INICIADA: 'iniciada',
   EM_ANDAMENTO: 'em_andamento',
-  CONCLUIDA: 'concluida',
+  CONCLUIDO: 'concluido',
   INATIVADA: 'inativada',
 } as const;
 

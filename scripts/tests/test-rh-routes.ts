@@ -3,18 +3,16 @@ import bcrypt from 'bcryptjs';
 
 async function setPassword(cpf: string, plain: string) {
   const hash = await bcrypt.hash(plain, 10);
-  // Atualizar tanto funcionarios quanto contratantes_senhas (gestores) para garantir login
+  // Atualizar tanto funcionarios quanto entidades_senhas (gestores) para garantir login
   await query('UPDATE funcionarios SET senha_hash = $1 WHERE cpf = $2', [
     hash,
     cpf,
   ]);
-  await query('UPDATE contratantes_senhas SET senha_hash = $1 WHERE cpf = $2', [
+  await query('UPDATE entidades_senhas SET senha_hash = $1 WHERE cpf = $2', [
     hash,
     cpf,
   ]);
-  console.log(
-    `Senha atualizada para ${cpf} (funcionarios + contratantes_senhas)`
-  );
+  console.log(`Senha atualizada para ${cpf} (funcionarios + entidades_senhas)`);
 }
 
 async function loginAndGetCookie(cpf: string, senha: string) {

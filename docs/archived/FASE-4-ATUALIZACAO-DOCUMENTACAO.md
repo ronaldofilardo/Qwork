@@ -102,7 +102,7 @@ const funcionario = await criarFuncionario({
 
 ---
 
-### 3. Gestor RH (`gestor_rh`)
+### 3. Gestor RH (`rh`)
 
 **Descrição:** Gestor de clínica (medicina ocupacional)
 
@@ -112,7 +112,7 @@ const funcionario = await criarFuncionario({
 INSERT INTO funcionarios (
   cpf, nome, usuario_tipo, clinica_id, ...
 ) VALUES (
-  '11122233344', 'Carlos Oliveira', 'gestor_rh', 2, ...
+  '11122233344', 'Carlos Oliveira', 'rh', 2, ...
 );
 ```
 
@@ -135,7 +135,7 @@ INSERT INTO funcionarios (
 import { criarFuncionario } from '@/lib/funcionarios';
 
 const gestor = await criarFuncionario({
-  tipo: 'gestor_rh',
+  tipo: 'rh',
   cpf: '11122233344',
   nome: 'Carlos Oliveira',
   email: 'carlos@clinica.com',
@@ -146,7 +146,7 @@ const gestor = await criarFuncionario({
 
 ---
 
-### 4. Gestor de Entidade (`gestor_entidade`)
+### 4. Gestor de Entidade (`gestor`)
 
 **Descrição:** Gestor de entidade privada
 
@@ -156,7 +156,7 @@ const gestor = await criarFuncionario({
 INSERT INTO funcionarios (
   cpf, nome, usuario_tipo, contratante_id, ...
 ) VALUES (
-  '55566677788', 'Ana Costa', 'gestor_entidade', 10, ...
+  '55566677788', 'Ana Costa', 'gestor', 10, ...
 );
 ```
 
@@ -179,7 +179,7 @@ INSERT INTO funcionarios (
 import { criarFuncionario } from '@/lib/funcionarios';
 
 const gestor = await criarFuncionario({
-  tipo: 'gestor_entidade',
+  tipo: 'gestor',
   cpf: '55566677788',
   nome: 'Ana Costa',
   email: 'ana@entidade.com',
@@ -258,10 +258,10 @@ As políticas RLS foram unificadas usando `usuario_tipo`:
 CREATE POLICY funcionarios_unified_select ON funcionarios FOR SELECT USING (
   (current_user_tipo() = 'admin')  -- Admin vê tudo
   OR
-  (current_user_tipo() = 'gestor_rh'
+  (current_user_tipo() = 'rh'
    AND clinica_id = current_user_clinica_id())  -- RH vê sua clínica
   OR
-  (current_user_tipo() = 'gestor_entidade'
+  (current_user_tipo() = 'gestor'
    AND contratante_id = current_user_contratante_id())  -- Gestor vê sua entidade
   OR
   (cpf = current_user_cpf())  -- Funcionário vê próprios dados
@@ -271,11 +271,11 @@ CREATE POLICY funcionarios_unified_select ON funcionarios FOR SELECT USING (
 CREATE POLICY funcionarios_unified_insert ON funcionarios FOR INSERT WITH CHECK (
   (current_user_tipo() = 'admin' AND usuario_tipo != 'admin')
   OR
-  (current_user_tipo() = 'gestor_rh'
+  (current_user_tipo() = 'rh'
    AND usuario_tipo = 'funcionario_clinica'
    AND clinica_id = current_user_clinica_id())
   OR
-  (current_user_tipo() = 'gestor_entidade'
+  (current_user_tipo() = 'gestor'
    AND usuario_tipo = 'funcionario_entidade'
    AND contratante_id = current_user_contratante_id())
 );
@@ -296,8 +296,8 @@ UPDATE funcionarios SET usuario_tipo =
           THEN 'funcionario_entidade'
         ELSE 'funcionario_clinica'
       END
-    WHEN 'rh' THEN 'gestor_rh'
-    WHEN 'gestor_entidade' THEN 'gestor_entidade'
+    WHEN 'rh' THEN 'rh'
+    WHEN 'gestor' THEN 'gestor'
     WHEN 'admin' THEN 'admin'
     WHEN 'emissor' THEN 'emissor'
   END;

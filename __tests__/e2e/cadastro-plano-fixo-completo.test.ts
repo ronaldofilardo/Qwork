@@ -289,22 +289,22 @@ describe('E2E: Cadastro Contratante - Plano Fixo', () => {
   describe('6. Criação de Conta Responsável', () => {
     it('deve criar conta do responsável automaticamente', async () => {
       const result = await query(
-        `SELECT * FROM funcionarios 
+        `SELECT * FROM usuarios 
          WHERE cpf = $1 AND contratante_id = $2`,
         [mockResponsavelCPF, contratanteId]
       );
 
       expect(result.rows.length).toBe(1);
-      const funcionario = result.rows[0];
-      expect(funcionario.nome).toBe('João da Silva');
-      expect(funcionario.email).toBe('joao.fixo@empresa.com');
-      expect(funcionario.perfil).toBe('gestor_entidade');
-      expect(funcionario.senha_hash).toBeDefined();
+      const usuario = result.rows[0];
+      expect(usuario.nome).toBe('João da Silva');
+      expect(usuario.email).toBe('joao.fixo@empresa.com');
+      expect(usuario.tipo_usuario).toBe('gestor');
+      expect(usuario.senha_hash).toBeDefined();
     });
 
     it('deve validar que a senha foi hasheada com bcrypt', async () => {
       const result = await query(
-        `SELECT senha_hash FROM funcionarios WHERE cpf = $1`,
+        `SELECT senha_hash FROM usuarios WHERE cpf = $1`,
         [mockResponsavelCPF]
       );
 
@@ -396,15 +396,13 @@ describe('E2E: Cadastro Contratante - Plano Fixo', () => {
       expect(contrato.rows[0].status).toBe('pago');
 
       // Verificar funcionário (responsável)
-      const funcionario = await query(
-        `SELECT * FROM funcionarios WHERE cpf = $1`,
-        [mockResponsavelCPF]
-      );
-      expect(funcionario.rows.length).toBe(1);
-      expect(funcionario.rows[0].perfil).toBe('gestor_entidade');
+      const usuario = await query(`SELECT * FROM usuarios WHERE cpf = $1`, [
+        mockResponsavelCPF,
+      ]);
+      expect(usuario.rows.length).toBe(1);
+      expect(usuario.rows[0].tipo_usuario).toBe('gestor');
 
       // ✅ Fluxo completo validado com sucesso!
-
     });
   });
 });

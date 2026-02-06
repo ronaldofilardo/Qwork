@@ -21,7 +21,7 @@ export async function GET() {
       session.perfil === 'admin'
         ? 'admin'
         : session.perfil === 'rh'
-          ? 'gestor_entidade'
+          ? 'gestor'
           : 'funcionario';
 
     const contagem = await NotificationService.contarNaoLidas(

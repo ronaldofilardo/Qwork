@@ -1,7 +1,7 @@
 -- Migration: Atualizar RLS Policies para Excluir Gestores
 -- Data: 01/02/2026
 -- Objetivo: Gestores (RH e Entidade) não devem usar RLS
--- Eles são validados via contratantes_senhas, não funcionarios
+-- Eles são validados via entidades_senhas, não funcionarios
 
 BEGIN;
 
@@ -11,7 +11,7 @@ BEGIN;
 
 -- PROBLEMA:
 -- RLS policies assumem que todos os usuários estão em funcionarios
--- Gestores (RH e Entidade) estão em contratantes_senhas, não funcionarios
+-- Gestores (RH e Entidade) estão em entidades_senhas, não funcionarios
 -- Isso causa falhas em validateSessionContext quando gestores fazem queries
 
 -- SOLUÇÃO:
@@ -30,7 +30,7 @@ DECLARE
     v_perfil TEXT;
 BEGIN
     v_perfil := current_setting('app.current_user_perfil', TRUE);
-    RETURN v_perfil IN ('rh', 'gestor_entidade', 'admin');
+    RETURN v_perfil IN ('rh', 'gestor', 'admin');
 EXCEPTION 
     WHEN OTHERS THEN
         RETURN FALSE;
@@ -262,11 +262,11 @@ COMMIT;
 --    - Funcionários devem usar queryWithContext (com RLS)
 
 -- 3. Verificar que gestores NÃO estão em funcionarios:
---    SELECT * FROM funcionarios WHERE perfil IN ('rh', 'gestor_entidade');
+--    SELECT * FROM funcionarios WHERE perfil IN ('rh', 'gestor');
 --    -- Resultado esperado: 0 rows (ou apenas registros antigos/inválidos)
 
--- 4. Confirmar que gestores estão em contratantes_senhas:
+-- 4. Confirmar que gestores estão em entidades_senhas:
 --    SELECT cs.cpf, c.nome, c.tipo 
---    FROM contratantes_senhas cs
+--    FROM entidades_senhas cs
 --    JOIN contratantes c ON c.id = cs.contratante_id
 --    WHERE c.ativa = true;

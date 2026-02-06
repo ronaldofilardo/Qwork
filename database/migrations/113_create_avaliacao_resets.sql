@@ -37,7 +37,7 @@ COMMENT ON COLUMN avaliacao_resets.id IS 'Unique identifier for the reset operat
 COMMENT ON COLUMN avaliacao_resets.avaliacao_id IS 'ID of the evaluation that was reset';
 COMMENT ON COLUMN avaliacao_resets.lote_id IS 'ID of the batch/cycle containing the evaluation';
 COMMENT ON COLUMN avaliacao_resets.requested_by_user_id IS 'User ID who requested the reset';
-COMMENT ON COLUMN avaliacao_resets.requested_by_role IS 'Role of the user at the time of reset (rh or gestor_entidade)';
+COMMENT ON COLUMN avaliacao_resets.requested_by_role IS 'Role of the user at the time of reset (rh or gestor)';
 COMMENT ON COLUMN avaliacao_resets.reason IS 'Mandatory justification for the reset operation';
 COMMENT ON COLUMN avaliacao_resets.respostas_count IS 'Number of responses deleted during reset';
 COMMENT ON COLUMN avaliacao_resets.created_at IS 'Timestamp when the reset was performed';
@@ -51,7 +51,7 @@ DROP POLICY IF EXISTS avaliacao_resets_select_policy ON avaliacao_resets;
 CREATE POLICY avaliacao_resets_select_policy ON avaliacao_resets
   FOR SELECT
   USING (
-    -- Allow rh and gestor_entidade from same tenant
+    -- Allow rh and gestor from same tenant
     EXISTS (
       SELECT 1 FROM avaliacoes av
       JOIN lotes_avaliacao lot ON av.lote_id = lot.id
@@ -62,7 +62,7 @@ CREATE POLICY avaliacao_resets_select_policy ON avaliacao_resets
            AND lot.clinica_id = current_setting('app.current_user_clinica_id', true)::int)
           OR
           -- Gestor from same contratante (entity)
-          (current_setting('app.current_user_perfil', true) = 'gestor_entidade' 
+          (current_setting('app.current_user_perfil', true) = 'gestor' 
            AND lot.contratante_id = current_setting('app.current_user_contratante_id', true)::int)
         )
     )
@@ -76,7 +76,7 @@ CREATE POLICY avaliacao_resets_insert_policy ON avaliacao_resets
     -- backend processes (migrations, jobs) can insert when they set this flag
     current_setting('app.is_backend', true) = '1'
     -- or an authorized user role with correct tenant context
-    OR (current_setting('app.current_user_perfil', true) IN ('rh','gestor_entidade','admin'))
+    OR (current_setting('app.current_user_perfil', true) IN ('rh','gestor','admin'))
   );
 
 DROP POLICY IF EXISTS avaliacao_resets_update_policy ON avaliacao_resets;

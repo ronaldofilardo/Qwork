@@ -59,7 +59,7 @@ Write-Host "-" * 60
 Write-Host "Verificando placeholders existentes..." -ForegroundColor White
 $placeholdersQuery = @"
 SELECT COUNT(*) as total 
-FROM contratantes_senhas 
+FROM entidades_senhas 
 WHERE senha_hash LIKE 'PLACEHOLDER_%'
 "@
 
@@ -202,7 +202,7 @@ Write-Host "3. Monitore a tabela de auditoria:" -ForegroundColor White
 Write-Host "   SELECT * FROM rls_policy_audit ORDER BY event_time DESC LIMIT 10;" -ForegroundColor Gray
 Write-Host ""
 Write-Host "4. Forçar reset de senhas marcadas:" -ForegroundColor White
-Write-Host "   SELECT cpf FROM contratantes_senhas WHERE senha_hash LIKE 'RESET_REQUIRED_%';" -ForegroundColor Gray
+Write-Host "   SELECT cpf FROM entidades_senhas WHERE senha_hash LIKE 'RESET_REQUIRED_%';" -ForegroundColor Gray
 Write-Host ""
 Write-Host "5. Leia a documentação completa:" -ForegroundColor White
 Write-Host "   docs/CORRECOES-CRITICAS-SEGURANCA.md" -ForegroundColor Gray

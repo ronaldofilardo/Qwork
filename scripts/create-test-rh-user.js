@@ -74,7 +74,7 @@ async function createTestRHUser() {
     // Agora criar a senha para o RH
     await query(
       `
-      INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
+      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
       VALUES ($1, $2, $3, true)
       ON CONFLICT (contratante_id) DO UPDATE SET
         cpf = EXCLUDED.cpf,
@@ -94,7 +94,7 @@ async function createTestRHUser() {
     const verifyResult = await query(
       `
       SELECT cs.cpf, c.nome as contratante_nome, c.ativa
-      FROM contratantes_senhas cs
+      FROM entidades_senhas cs
       JOIN contratantes c ON c.id = cs.contratante_id
       WHERE cs.cpf = $1
     `,

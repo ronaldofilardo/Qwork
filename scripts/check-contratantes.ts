@@ -11,7 +11,7 @@ async function checkContratantes() {
     console.log('\nContratantes com senhas configuradas:');
     const senhasJoin = await query(`
       SELECT c.tipo, c.ativa, COUNT(DISTINCT c.id) as total_com_senha
-      FROM contratantes_senhas cs
+      FROM entidades_senhas cs
       JOIN contratantes c ON c.id = cs.contratante_id
       GROUP BY c.tipo, c.ativa
       ORDER BY c.tipo

@@ -22,7 +22,7 @@ const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
   beforeEach(() => jest.clearAllMocks());
 
-  it('deve rejeitar se usuario nao for gestor_entidade', async () => {
+  it('deve rejeitar se usuario nao for gestor', async () => {
     mockRequireAuth.mockResolvedValue({
       perfil: 'funcionario',
       cpf: '22222222222',
@@ -44,7 +44,7 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
 
   it('deve rejeitar se lote nao pertence ao contratante', async () => {
     mockRequireAuth.mockResolvedValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 99,
       cpf: '22222222222',
     } as unknown);
@@ -69,7 +69,7 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
 
   it('deve resetar com sucesso', async () => {
     mockRequireAuth.mockResolvedValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 99,
       cpf: '22222222222',
       nome: 'Gestor',

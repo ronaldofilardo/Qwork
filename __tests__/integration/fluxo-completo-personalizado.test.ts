@@ -58,23 +58,23 @@ describe('Fluxo Completo - Plano Personalizado', () => {
   beforeEach(async () => {
     // Limpar dados de testes anteriores
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM entidades_senhas WHERE entidade_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      "DELETE FROM notificacoes WHERE dados_contexto->>'contratacao_id' IS NOT NULL OR dados_contexto->>'contratante_id' IN (SELECT id::text FROM contratantes WHERE cnpj = $1)",
+      "DELETE FROM notificacoes WHERE dados_contexto->>'contratacao_id' IS NOT NULL OR dados_contexto->>'contratante_id' IN (SELECT id::text FROM entidades WHERE cnpj = $1)",
       [testCnpj]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [testCnpj]);
-    await query('DELETE FROM contratantes WHERE responsavel_cpf = $1', [
+    await query('DELETE FROM entidades WHERE cnpj = $1', [testCnpj]);
+    await query('DELETE FROM entidades WHERE responsavel_cpf = $1', [
       testCpfResp,
     ]);
   });
@@ -82,18 +82,18 @@ describe('Fluxo Completo - Plano Personalizado', () => {
   afterAll(async () => {
     // Limpar dados do teste
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE plano_id = $1)',
+      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
       [planoPersonalizadoId]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE plano_id = $1)',
+      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
       [planoPersonalizadoId]
     );
     await query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id IN (SELECT id FROM contratantes WHERE plano_id = $1)',
+      'DELETE FROM entidades_senhas WHERE entidade_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
       [planoPersonalizadoId]
     );
-    await query('DELETE FROM contratantes WHERE plano_id = $1', [
+    await query('DELETE FROM entidades WHERE plano_id = $1', [
       planoPersonalizadoId,
     ]);
     await query('DELETE FROM planos WHERE id = $1', [planoPersonalizadoId]);
@@ -171,11 +171,19 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     } as any;
 
     const cadastroResponse = await cadastroPost(mockRequest);
-    const cadastroData = await cadastroResponse.json();
+    let cadastroData: any;
+    try {
+      cadastroData = await cadastroResponse.json();
+    } catch (err) {
+      const txt = await cadastroResponse.text();
+      console.error('DEBUG cadastroText:', txt);
+      cadastroData = { errorText: txt };
+    }
 
-      status: cadastroResponse.status,
-      data: cadastroData,
-    });
+    if (cadastroResponse.status !== 201) {
+      console.error('DEBUG cadastroStatus:', cadastroResponse.status);
+      console.error('DEBUG cadastroData:', cadastroData);
+    }
 
     expect(cadastroResponse.status).toBe(201);
     expect(cadastroData.success).toBe(true);
@@ -191,9 +199,6 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     expect(contratacaoRes.rows.length).toBe(1);
     expect(contratacaoRes.rows[0].status).toBe('aguardando_valor_admin');
-
-      '✓ Empresa cadastrada com sucesso, aguardando definição de valores pelo admin'
-    );
 
     // 2. ADMIN DEFINE VALORES E GERA LINK
     // \n=== ETAPA 2: ADMIN DEFINE VALORES E GERA LINK ===
@@ -244,9 +249,6 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
     const linkPagamento = `${baseUrl}/pagamento/personalizado/${paymentToken}`;
-
-      '✓ Valores definidos: R$ 50,00/funcionário × 150 = R$ 7.500,00'
-    );
 
     // Verificar atualização em contratacao_personalizada
     const contratacaoAtualizada = await query(
@@ -330,7 +332,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     await query(
       `
-      INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash)
+      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
       VALUES ($1, $2, $3)
       ON CONFLICT (contratante_id) DO UPDATE SET senha_hash = EXCLUDED.senha_hash
     `,
@@ -338,7 +340,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     );
 
     const senhaRes = await query(
-      'SELECT * FROM contratantes_senhas WHERE contratante_id = $1',
+      'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
       [contratanteId]
     );
 
@@ -380,7 +382,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
       FROM contratantes c
       LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
       LEFT JOIN contratos ct ON c.id = ct.contratante_id
-      LEFT JOIN contratantes_senhas cs ON c.id = cs.contratante_id
+      LEFT JOIN entidades_senhas cs ON c.id = cs.contratante_id
       WHERE c.id = $1
     `,
       [contratanteId]
@@ -395,6 +397,5 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     expect(estadoFinal.contrato_status).toBe('ativo');
     expect(estadoFinal.contrato_aceito).toBe(true);
     expect(estadoFinal.tem_senha).toBe(true);
-
   });
 });

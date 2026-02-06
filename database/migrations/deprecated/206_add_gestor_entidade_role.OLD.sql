@@ -1,7 +1,7 @@
--- Migration 206: Adicionar role 'gestor_entidade' na tabela roles
+-- Migration 206: Adicionar role 'gestor' na tabela roles
 -- Data: 2026-01-29
 -- Contexto: Formalizar papel de gestor de entidade no sistema RBAC
---           Sistema já usa 'gestor_entidade' como string literal no código
+--           Sistema já usa 'gestor' como string literal no código
 --           Esta migration adiciona o registro formal na tabela roles para:
 --           - Consistência arquitetural (database reflete código)
 --           - Base para permissões granulares RBAC
@@ -16,7 +16,7 @@
 BEGIN;
 
 -- ==========================================
--- 1. INSERIR ROLE GESTOR_ENTIDADE
+-- 1. INSERIR ROLE gestor
 -- ==========================================
 
 INSERT INTO public.roles (
@@ -27,7 +27,7 @@ INSERT INTO public.roles (
   active
 )
 VALUES (
-  'gestor_entidade',
+  'gestor',
   'Gestor de Entidade',
   'Gerencia funcionários de sua entidade privada (sem gestão de empresas intermediárias). Tem acesso a: funcionários, lotes de avaliação, laudos e relatórios da própria entidade.',
   10,  -- Mesmo nível que 'rh' e 'emissor'
@@ -111,14 +111,14 @@ VALUES
 ON CONFLICT (name) DO NOTHING;
 
 -- ==========================================
--- 3. ASSOCIAR PERMISSÕES AO ROLE GESTOR_ENTIDADE
+-- 3. ASSOCIAR PERMISSÕES AO ROLE gestor
 -- ==========================================
 
 -- Permissões específicas de entidade
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM public.roles r, public.permissions p
-WHERE r.name = 'gestor_entidade' AND p.name IN (
+WHERE r.name = 'gestor' AND p.name IN (
   'read:avaliacoes:entidade',
   'read:funcionarios:entidade',
   'write:funcionarios:entidade',
@@ -134,7 +134,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM public.roles r, public.permissions p
-WHERE r.name = 'gestor_entidade' AND p.name IN (
+WHERE r.name = 'gestor' AND p.name IN (
   'read:avaliacoes:own',    -- Pode ver próprias avaliações (caso faça teste)
   'read:funcionarios:own'   -- Pode ver próprios dados
 )
@@ -145,7 +145,7 @@ ON CONFLICT DO NOTHING;
 -- ==========================================
 
 COMMENT ON TABLE public.roles IS 
-'Tabela de papéis (roles) do sistema RBAC. Perfis: funcionario, rh, emissor, admin, gestor_entidade. IMPORTANTE: funcionarios.perfil é VARCHAR, NÃO FK para esta tabela. Validação é por string literal.';
+'Tabela de papéis (roles) do sistema RBAC. Perfis: funcionario, rh, emissor, admin, gestor. IMPORTANTE: funcionarios.perfil é VARCHAR, NÃO FK para esta tabela. Validação é por string literal.';
 
 -- ==========================================
 -- 5. VERIFICAÇÕES E MENSAGENS
@@ -161,10 +161,10 @@ BEGIN
   -- Verificar role foi criado
   SELECT COUNT(*), MAX(id) INTO role_count, role_id 
   FROM public.roles 
-  WHERE name = 'gestor_entidade';
+  WHERE name = 'gestor';
   
   IF role_count = 0 THEN
-    RAISE EXCEPTION 'ERRO CRÍTICO: Role gestor_entidade não foi criado!';
+    RAISE EXCEPTION 'ERRO CRÍTICO: Role gestor não foi criado!';
   END IF;
   
   -- Verificar permissões foram criadas
@@ -180,10 +180,10 @@ BEGIN
   SELECT COUNT(*) INTO assoc_count 
   FROM public.role_permissions rp
   JOIN public.roles r ON r.id = rp.role_id
-  WHERE r.name = 'gestor_entidade';
+  WHERE r.name = 'gestor';
   
   IF assoc_count = 0 THEN
-    RAISE WARNING 'AVISO: Nenhuma permissão foi associada ao role gestor_entidade';
+    RAISE WARNING 'AVISO: Nenhuma permissão foi associada ao role gestor';
   END IF;
   
   -- Mensagens de sucesso
@@ -193,12 +193,12 @@ BEGIN
   RAISE NOTICE '========================================';
   RAISE NOTICE '';
   RAISE NOTICE 'Resumo:';
-  RAISE NOTICE '  - Role "gestor_entidade" criado: ID %', role_id;
+  RAISE NOTICE '  - Role "gestor" criado: ID %', role_id;
   RAISE NOTICE '  - Permissoes criadas: % permissao(oes)', perm_count;
   RAISE NOTICE '  - Associacoes criadas: % associacao(oes)', assoc_count;
   RAISE NOTICE '';
   RAISE NOTICE 'Proximos passos:';
-  RAISE NOTICE '  1. Validar: SELECT * FROM roles WHERE name = ''gestor_entidade'';';
+  RAISE NOTICE '  1. Validar: SELECT * FROM roles WHERE name = ''gestor'';';
   RAISE NOTICE '  2. Testar: Fazer login como gestor de entidade';
   RAISE NOTICE '  3. Verificar: Sistema continua funcionando normalmente';
   RAISE NOTICE '';
@@ -226,7 +226,7 @@ SELECT
   active,
   created_at
 FROM roles 
-WHERE name = 'gestor_entidade';
+WHERE name = 'gestor';
 
 -- Verificar permissões associadas
 SELECT 
@@ -238,7 +238,7 @@ SELECT
 FROM roles r
 JOIN role_permissions rp ON rp.role_id = r.id
 JOIN permissions p ON p.id = rp.permission_id
-WHERE r.name = 'gestor_entidade'
+WHERE r.name = 'gestor'
 ORDER BY p.resource, p.action;
 
 -- Comparar com role 'rh' (devem ser similares, exceto empresas)
@@ -247,7 +247,7 @@ SELECT
   COUNT(*) as total_permissions
 FROM roles r
 JOIN role_permissions rp ON rp.role_id = r.id
-WHERE r.name IN ('rh', 'gestor_entidade')
+WHERE r.name IN ('rh', 'gestor')
 GROUP BY r.name;
 
 -- Verificar que perfil continua sendo string (não FK)
@@ -281,7 +281,7 @@ BEGIN;
 -- Remover associações
 DELETE FROM role_permissions
 WHERE role_id IN (
-  SELECT id FROM roles WHERE name = 'gestor_entidade'
+  SELECT id FROM roles WHERE name = 'gestor'
 );
 
 -- Remover permissões específicas de entidade
@@ -289,7 +289,7 @@ DELETE FROM permissions
 WHERE name LIKE '%:entidade' OR name LIKE '%:own';
 
 -- Remover role
-DELETE FROM roles WHERE name = 'gestor_entidade';
+DELETE FROM roles WHERE name = 'gestor';
 
 COMMIT;
 */

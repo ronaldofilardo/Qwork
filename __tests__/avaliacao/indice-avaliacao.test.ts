@@ -106,7 +106,7 @@ describe('Sistema de Índice de Avaliação', () => {
       // Criar e concluir avaliação
       const avaliacaoResult = await query(
         `INSERT INTO avaliacoes (funcionario_cpf, lote_id, status, inicio)
-         VALUES ($1, $2, 'concluida', NOW())
+         VALUES ($1, $2, 'concluido', NOW())
          RETURNING id`,
         [funcionarioCpfTeste, loteId]
       );
@@ -199,3 +199,4 @@ describe('Sistema de Índice de Avaliação', () => {
     await query('DELETE FROM clinicas WHERE id = $1', [clinicaIdTeste]);
   });
 });
+

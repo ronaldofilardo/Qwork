@@ -17,12 +17,7 @@ export type { Session };
 /**
  * Perfis disponíveis no sistema
  */
-export type Perfil =
-  | 'admin'
-  | 'rh'
-  | 'funcionario'
-  | 'emissor'
-  | 'gestor_entidade';
+export type Perfil = 'admin' | 'rh' | 'funcionario' | 'emissor' | 'gestor';
 
 /**
  * Lista de perfis válidos (para validação em runtime)
@@ -32,7 +27,7 @@ export const PERFIS_VALIDOS: readonly Perfil[] = [
   'rh',
   'funcionario',
   'emissor',
-  'gestor_entidade',
+  'gestor',
 ] as const;
 
 /**
@@ -342,7 +337,9 @@ function _generateRLSQuery(text: string, session?: Session): string {
       `SELECT set_config('app.current_user_cpf', '${escapeString(session.cpf)}', true)`,
       `SELECT set_config('app.current_user_perfil', '${escapeString(session.perfil)}', true)`,
       `SELECT set_config('app.current_user_clinica_id', '${escapeString(String(session.clinica_id || ''))}', true)`,
-      `SELECT set_config('app.current_user_contratante_id', '${escapeString(String(session.contratante_id || ''))}', true)`,
+      `SELECT set_config('app.current_user_entidade_id', '${escapeString(String(session.entidade_id || ''))}', true)`,
+      // Manter antigo para retrocompatibilidade com migrations antigas
+      `SELECT set_config('app.current_user_entidade_id', '${escapeString(String(session.entidade_id || ''))}', true)`,
     ].join('; ');
 
     // Prefix the main statement with set_config calls so they execute in the same session/statement scope
@@ -426,7 +423,7 @@ export async function query<T = any>(
               `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
             );
             await client.query(
-              `SET LOCAL app.current_user_contratante_id = '${escapeString(String(session.contratante_id || ''))}'`
+              `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
             );
 
             const result = await client.query(text, params);
@@ -506,15 +503,15 @@ export async function query<T = any>(
         const setClinica = `SELECT set_config('app.current_user_clinica_id', '${escapeString(
           String(session.clinica_id || '')
         )}', true)`;
-        const setContratante = `SELECT set_config('app.current_user_contratante_id', '${escapeString(
-          String(session.contratante_id || '')
+        const setEntidade = `SELECT set_config('app.current_user_entidade_id', '${escapeString(
+          String(session.entidade_id || '')
         )}', true)`;
 
         try {
           await sql(setCpf);
           await sql(setPerfil);
           await sql(setClinica);
-          await sql(setContratante);
+          await sql(setEntidade);
         } catch (err) {
           console.warn('[db][neon] falha ao aplicar set_config:', err);
         }
@@ -614,7 +611,7 @@ if ((isDevelopment || isTest) && databaseUrl) {
     connectionString: databaseUrl,
     max: isTest ? 5 : 10, // Menos conexões para testes
     idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+    connectionTimeoutMillis: 10000, // Aumentado de 2000 para 10000ms
   });
 
   // Log claro do banco sendo usado (apenas em desenvolvimento e testes)
@@ -756,10 +753,12 @@ export interface TransactionClient {
 }
 
 // ============================================================================
-// HELPERS PARA CONTRATANTES (Clínicas e Entidades)
+// ====================================================================
+// HELPERS PARA ENTIDADES (Clínicas e Entidades Contratantes)
+// Anteriormente "HELPERS PARA CONTRATANTES" - renomeado na Migration 420
 // ============================================================================
 
-export type TipoContratante = 'clinica' | 'entidade';
+export type TipoEntidade = 'clinica' | 'entidade';
 export type StatusAprovacao =
   | 'pendente'
   | 'aprovado'
@@ -767,9 +766,9 @@ export type StatusAprovacao =
   | 'em_reanalise'
   | 'aguardando_pagamento';
 
-export interface Contratante {
+export interface Entidade {
   id: number;
-  tipo: TipoContratante;
+  tipo: TipoEntidade;
   nome: string;
   cnpj: string;
   inscricao_estadual?: string;
@@ -802,11 +801,11 @@ export interface Contratante {
   aprovado_por_cpf?: string;
 }
 
-export interface ContratanteFuncionario {
+export interface EntidadeFuncionario {
   id: number;
   funcionario_id: number;
-  contratante_id: number;
-  tipo_contratante: TipoContratante;
+  entidade_id: number;
+  tipo_contratante: TipoEntidade;
   vinculo_ativo: boolean;
   data_inicio: Date;
   data_fim?: Date;
@@ -815,37 +814,37 @@ export interface ContratanteFuncionario {
 }
 
 /**
- * Buscar contratantes por tipo
+ * Buscar entidades por tipo
  */
-export async function getContratantesByTipo(
-  tipo?: TipoContratante,
+export async function getEntidadesByTipo(
+  tipo?: TipoEntidade,
   session?: Session
-): Promise<Contratante[]> {
-  // Exclui contratantes pendentes de aprovação (status='pendente', 'em_reanalise', 'aguardando_pagamento')
-  // Esses aparecem em "Novos Cadastros", não em "Contratantes"
+): Promise<Entidade[]> {
+  // Exclui entidades pendentes de aprovação (status='pendente', 'em_reanalise', 'aguardando_pagamento')
+  // Esses aparecem em "Novos Cadastros", não em "Entidades"
   const queryText = tipo
-    ? `SELECT * FROM contratantes 
+    ? `SELECT * FROM entidades 
        WHERE tipo = $1 
        AND status NOT IN ('pendente', 'em_reanalise', 'aguardando_pagamento')
        ORDER BY nome`
-    : `SELECT * FROM contratantes 
+    : `SELECT * FROM entidades 
        WHERE status NOT IN ('pendente', 'em_reanalise', 'aguardando_pagamento')
        ORDER BY nome`;
   const params = tipo ? [tipo] : [];
-  const result = await query<Contratante>(queryText, params, session);
+  const result = await query<Entidade>(queryText, params, session);
   return result.rows;
 }
 
 /**
- * Buscar contratante por ID
+ * Buscar entidade por ID
  */
-export async function getContratanteById(
+export async function getEntidadeById(
   id: number,
   session?: Session
-): Promise<Contratante | null> {
-  const result = await query<Contratante>(
+): Promise<Entidade | null> {
+  const result = await query<Entidade>(
     `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
-     FROM contratantes c
+     FROM entidades c
      LEFT JOIN planos p ON c.plano_id = p.id
      WHERE c.id = $1`,
     [id],
@@ -855,21 +854,21 @@ export async function getContratanteById(
 }
 
 /**
- * Buscar contratantes pendentes de aprovação
+ * Buscar entidades pendentes de aprovação
  * Inclui status 'aguardando_pagamento' para permitir regeneração de links
  */
-export async function getContratantesPendentes(
-  tipo?: TipoContratante,
+export async function getEntidadesPendentes(
+  tipo?: TipoEntidade,
   session?: Session
-): Promise<Contratante[]> {
+): Promise<Entidade[]> {
   const queryText = tipo
     ? `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
-       FROM contratantes c
+       FROM entidades c
        LEFT JOIN planos p ON c.plano_id = p.id
        WHERE c.status IN ($1, $2, $3) AND c.tipo = $4
        ORDER BY c.criado_em DESC`
     : `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
-       FROM contratantes c
+       FROM entidades c
        LEFT JOIN planos p ON c.plano_id = p.id
        WHERE c.status IN ($1, $2, $3)
        ORDER BY c.tipo, c.criado_em DESC`;
@@ -878,20 +877,20 @@ export async function getContratantesPendentes(
     ? ['pendente', 'em_reanalise', 'aguardando_pagamento', tipo]
     : ['pendente', 'em_reanalise', 'aguardando_pagamento'];
 
-  const result = await query<Contratante>(queryText, params, session);
+  const result = await query<Entidade>(queryText, params, session);
   return result.rows;
 }
 
 /**
  * Criar novo contratante (via modal de cadastro)
  */
-export async function createContratante(
+export async function createEntidade(
   data: Omit<
-    Contratante,
+    Entidade,
     'id' | 'criado_em' | 'atualizado_em' | 'aprovado_em' | 'aprovado_por_cpf'
   >,
   session?: Session
-): Promise<Contratante> {
+): Promise<Entidade> {
   if (DEBUG_DB) {
     console.debug('[CREATE_CONTRATANTE] Iniciando criação com dados:', {
       tipo: data.tipo,
@@ -903,7 +902,7 @@ export async function createContratante(
   }
   // Verificar se email já existe
   const emailCheck = await query(
-    'SELECT id FROM contratantes WHERE email = $1',
+    'SELECT id FROM entidades WHERE email = $1',
     [data.email],
     session
   );
@@ -913,7 +912,7 @@ export async function createContratante(
 
   // Verificar se CNPJ já existe
   const cnpjCheck = await query(
-    'SELECT id FROM contratantes WHERE cnpj = $1',
+    'SELECT id FROM entidades WHERE cnpj = $1',
     [data.cnpj],
     session
   );
@@ -921,41 +920,41 @@ export async function createContratante(
     throw new Error('CNPJ já cadastrado no sistema');
   }
 
-  // Verificar se CPF do responsável já existe em contratantes (apenas se aprovado)
-  const cpfCheckContratantes = await query(
-    'SELECT id, status FROM contratantes WHERE responsavel_cpf = $1',
+  // Verificar se CPF do responsável já existe em entidades (apenas se aprovado)
+  const cpfCheckEntidades = await query(
+    'SELECT id, status FROM entidades WHERE responsavel_cpf = $1',
     [data.responsavel_cpf],
     session
   );
-  if (cpfCheckContratantes.rows.length > 0) {
-    const contratanteExistente = cpfCheckContratantes.rows[0];
-    if (contratanteExistente.status === 'aprovado') {
+  if (cpfCheckEntidades.rows.length > 0) {
+    const entidadeExistente = cpfCheckEntidades.rows[0];
+    if (entidadeExistente.status === 'aprovado') {
       throw new Error(
-        'CPF do responsável já cadastrado no sistema (contratante aprovado)'
+        'CPF do responsável já cadastrado no sistema (entidade aprovada)'
       );
     }
     // Se não aprovado, permitir re-cadastro (pode ter sido rejeitado ou está pendente)
   }
 
-  // Verificar se CPF do responsável já existe em funcionários de OUTRO contratante
+  // Verificar se CPF do responsável já existe em funcionários de OUTRA entidade
   // Um gestor pode ser responsável por sua própria clínica, mas não pode ser funcionário
   // de uma clínica E responsável por outra clínica diferente
   const cpfCheckFuncionarios = await query(
-    `SELECT f.id, f.perfil, c.id as contratante_id, c.cnpj as contratante_cnpj
+    `SELECT f.id, f.perfil, c.id as entidade_id, c.cnpj as entidade_cnpj
      FROM funcionarios f
      INNER JOIN clinicas cl ON f.clinica_id = cl.id
-     INNER JOIN contratantes c ON cl.contratante_id = c.id
+     INNER JOIN entidades c ON cl.entidade_id = c.id
      WHERE f.cpf = $1`,
     [data.responsavel_cpf],
     session
   );
   if (cpfCheckFuncionarios.rows.length > 0) {
     const funcionario = cpfCheckFuncionarios.rows[0];
-    // Se o CPF já é funcionário de outro contratante, não permitir
+    // Se o CPF já é funcionário de outra entidade, não permitir
     // (evita conflito de interesse entre clínicas)
-    if (funcionario.contratante_cnpj !== data.cnpj) {
+    if (funcionario.entidade_cnpj !== data.cnpj) {
       throw new Error(
-        `CPF do responsável já vinculado como funcionário em outro contratante (CNPJ: ${funcionario.contratante_cnpj})`
+        `CPF do responsável já vinculado como funcionário em outra entidade (CNPJ: ${funcionario.entidade_cnpj})`
       );
     }
     // Se é do mesmo CNPJ, permitir - pode ser o gestor se cadastrando
@@ -964,7 +963,7 @@ export async function createContratante(
   // Garantir que colunas adicionadas por migração existam (adicionar se ausentes)
   try {
     await query(
-      `ALTER TABLE contratantes
+      `ALTER TABLE entidades
        ADD COLUMN IF NOT EXISTS plano_id INTEGER,
        ADD COLUMN IF NOT EXISTS pagamento_confirmado BOOLEAN DEFAULT false,
        ADD COLUMN IF NOT EXISTS data_liberacao_login TIMESTAMP,
@@ -974,20 +973,17 @@ export async function createContratante(
     );
   } catch (err) {
     // Não falhar se alter table não puder ser executado por permissões; log para debugging
-    console.warn(
-      'Aviso: não foi possível garantir colunas em contratantes:',
-      err
-    );
+    console.warn('Aviso: não foi possível garantir colunas em entidades:', err);
   }
 
-  // Garantir valores seguros para novos contratantes (inativo por padrão até confirmação) (revisado para contract-first)
-  // Independente dos valores passados, novos contratantes SEMPRE começam inativos
+  // Garantir valores seguros para novas entidades (inativo por padrão até confirmação) (revisado para contract-first)
+  // Independente dos valores passados, novas entidades SEMPRE começam inativas
   // e sem pagamento/contrato até confirmarem o pagamento
   // Inserção com retry para conter problemas de enum em bancos locais antigos
-  let result: QueryResult<Contratante>;
+  let result: QueryResult<Entidade>;
   try {
-    result = await query<Contratante>(
-      `INSERT INTO contratantes (
+    result = await query<Entidade>(
+      `INSERT INTO entidades (
         tipo, nome, cnpj, inscricao_estadual, email, telefone,
         endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
@@ -1034,11 +1030,11 @@ export async function createContratante(
       msg.includes('status_aprovacao_enum')
     ) {
       console.warn(
-        '[CREATE_CONTRATANTE] Enum status inconsistente no DB, tentando inserir com status fallback "pendente"',
+        '[CREATE_ENTIDADE] Enum status inconsistente no DB, tentando inserir com status fallback "pendente"',
         { error: msg }
       );
-      result = await query<Contratante>(
-        `INSERT INTO contratantes (
+      result = await query<Entidade>(
+        `INSERT INTO entidades (
           tipo, nome, cnpj, inscricao_estadual, email, telefone,
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
@@ -1079,7 +1075,7 @@ export async function createContratante(
     }
   }
   const contratanteCriado = result.rows[0];
-  console.log('[CREATE_CONTRATANTE] Contratante criado com sucesso:', {
+  console.log('[CREATE_CONTRATANTE] Entidade criado com sucesso:', {
     id: contratanteCriado.id,
     cnpj: contratanteCriado.cnpj,
     tipo: contratanteCriado.tipo,
@@ -1088,30 +1084,30 @@ export async function createContratante(
 }
 
 /**
- * Aprovar contratante
+ * Aprovar entidade
  */
-export async function aprovarContratante(
+export async function aprovarEntidade(
   id: number,
   aprovadoPorCpf: string,
   session?: Session
-): Promise<Contratante> {
-  // Primeiro, buscar o contratante para verificar o tipo
-  const contratanteResult = await query<Contratante>(
-    'SELECT * FROM contratantes WHERE id = $1',
+): Promise<Entidade> {
+  // Primeiro, buscar a entidade para verificar o tipo
+  const entidadeResult = await query<Entidade>(
+    'SELECT * FROM entidades WHERE id = $1',
     [id],
     session
   );
 
-  if (contratanteResult.rows.length === 0) {
-    throw new Error('Contratante não encontrado');
+  if (entidadeResult.rows.length === 0) {
+    throw new Error('Entidade não encontrada');
   }
 
-  const contratante = contratanteResult.rows[0];
+  const entidade = entidadeResult.rows[0];
 
-  // Aprovar o contratante (apenas altera status, NÃO ativa automaticamente)
+  // Aprovar a entidade (apenas altera status, NÃO ativa automaticamente)
   // Nota: ativação deve ser controlada por contrato aceito e confirmações apropriadas
-  const result = await query<Contratante>(
-    `UPDATE contratantes
+  const result = await query<Entidade>(
+    `UPDATE entidades
      SET status = 'aprovado',
          aprovado_em = CURRENT_TIMESTAMP,
          aprovado_por_cpf = $2
@@ -1121,72 +1117,72 @@ export async function aprovarContratante(
     session
   );
 
-  const contratanteAprovado = result.rows[0];
+  const entidadeAprovada = result.rows[0];
 
   // Se for uma clínica, criar entrada na tabela clinicas
-  if (contratante.tipo === 'clinica') {
+  if (entidade.tipo === 'clinica') {
     try {
       const clinicaResult = await query(
-        `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, contratante_id)
+        `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, entidade_id)
          VALUES ($1, $2, $3, $4, $5, $6)
-         ON CONFLICT (cnpj) DO UPDATE SET contratante_id = EXCLUDED.contratante_id, ativa = COALESCE(clinicas.ativa, true), atualizado_em = CURRENT_TIMESTAMP
+         ON CONFLICT (cnpj) DO UPDATE SET entidade_id = EXCLUDED.entidade_id, ativa = COALESCE(clinicas.ativa, true), atualizado_em = CURRENT_TIMESTAMP
          RETURNING id`,
         [
-          contratante.nome,
-          contratante.cnpj,
-          contratante.email,
-          contratante.telefone,
-          contratante.endereco,
-          contratante.id,
+          entidade.nome,
+          entidade.cnpj,
+          entidade.email,
+          entidade.telefone,
+          entidade.endereco,
+          entidade.id,
         ],
         session
       );
 
       if (clinicaResult.rows.length > 0) {
         console.log(
-          `[APROVAR_CONTRATANTE] Clínica criada com ID: ${clinicaResult.rows[0].id} para contratante ${contratante.id}`
+          `[APROVAR_ENTIDADE] Clínica criada com ID: ${clinicaResult.rows[0].id} para entidade ${entidade.id}`
         );
       }
     } catch (error) {
-      console.error('[APROVAR_CONTRATANTE] Erro ao criar clínica:', error);
+      console.error('[APROVAR_ENTIDADE] Erro ao criar clínica:', error);
       // Não falhar a aprovação se houver erro na criação da clínica
     }
   }
 
-  return contratanteAprovado;
+  return entidadeAprovada;
 }
 
 /**
- * Ativar contratante após pagamento confirmado
- * Verifica condições antes de ativar contratante (pagamento confirmado e recibo emitido)
+ * Ativar entidade após pagamento confirmado
+ * Verifica condições antes de ativar entidade (pagamento confirmado e recibo emitido)
  */
-export async function ativarContratante(
+export async function ativarEntidade(
   id: number,
   session?: Session
-): Promise<{ success: boolean; message: string; contratante?: Contratante }> {
+): Promise<{ success: boolean; message: string; contratante?: Entidade }> {
   // Verificar estado atual
   const checkResult = await query<{
     pagamento_confirmado: boolean;
     ativa: boolean;
   }>(
-    'SELECT pagamento_confirmado, ativa FROM contratantes WHERE id = $1',
+    'SELECT pagamento_confirmado, ativa FROM entidades WHERE id = $1',
     [id],
     session
   );
 
   if (checkResult.rows.length === 0) {
-    return { success: false, message: 'Contratante não encontrado' };
+    return { success: false, message: 'Entidade não encontrada' };
   }
 
   const { pagamento_confirmado, ativa } = checkResult.rows[0];
 
   if (DEBUG_DB)
     console.log(
-      `[ativarContratante] ID=${id}, pagamento_confirmado=${pagamento_confirmado}, ativa=${ativa}`
+      `[ativarEntidade] ID=${id}, pagamento_confirmado=${pagamento_confirmado}, ativa=${ativa}`
     );
 
   if (ativa) {
-    return { success: false, message: 'Contratante já está ativo' };
+    return { success: false, message: 'Entidade já está ativo' };
   }
 
   if (!pagamento_confirmado) {
@@ -1195,20 +1191,20 @@ export async function ativarContratante(
 
   // Verificar recibo - geração pode ser sob demanda. Se não existir, registrar aviso e prosseguir
   const reciboCheck = await query(
-    'SELECT id FROM recibos WHERE contratante_id = $1 AND cancelado = false LIMIT 1',
+    'SELECT id FROM recibos WHERE entidade_id = $1 AND cancelado = false LIMIT 1',
     [id],
     session
   );
   if (reciboCheck.rows.length === 0) {
     if (DEBUG_DB)
       console.warn(
-        `[ativarContratante] Nenhum recibo encontrado para contratante ${id}. Prosseguindo porque recibos são gerados sob demanda.`
+        `[ativarEntidade] Nenhum recibo encontrado para entidade ${id}. Prosseguindo porque recibos são gerados sob demanda.`
       );
   }
 
-  // Ativar o contratante e marcar aprovado se ainda não estiver aprovado.
-  const result = await query<Contratante>(
-    `UPDATE contratantes
+  // Ativar a entidade e marcar aprovado se ainda não estiver aprovado.
+  const result = await query<Entidade>(
+    `UPDATE entidades
      SET ativa = true,
          data_liberacao_login = CURRENT_TIMESTAMP,
          status = CASE WHEN status <> 'aprovado' THEN 'aprovado' ELSE status END,
@@ -1224,27 +1220,25 @@ export async function ativarContratante(
     return { success: false, message: 'Falha ao ativar contratante' };
   }
 
-  console.log(
-    `[ativarContratante] Contratante ativado: ${result.rows[0].nome}`
-  );
+  console.log(`[ativarEntidade] Entidade ativado: ${result.rows[0].nome}`);
 
   return {
     success: true,
-    message: 'Contratante ativado com sucesso',
+    message: 'Entidade ativado com sucesso',
     contratante: result.rows[0],
   };
 }
 
 /**
- * Rejeitar contratante
+ * Rejeitar entidade
  */
-export async function rejeitarContratante(
+export async function rejeitarEntidade(
   id: number,
   motivo: string,
   session?: Session
-): Promise<Contratante> {
-  const result = await query<Contratante>(
-    `UPDATE contratantes 
+): Promise<Entidade> {
+  const result = await query<Entidade>(
+    `UPDATE entidades 
      SET status = 'rejeitado', motivo_rejeicao = $2
      WHERE id = $1 
      RETURNING *`,
@@ -1261,9 +1255,9 @@ export async function solicitarReanalise(
   id: number,
   observacoes: string,
   session?: Session
-): Promise<Contratante> {
-  const result = await query<Contratante>(
-    `UPDATE contratantes
+): Promise<Entidade> {
+  const result = await query<Entidade>(
+    `UPDATE entidades
      SET status = 'em_reanalise',
          observacoes_reanalise = $2,
          -- Resetar flags de pagamento para permitir novo fluxo
@@ -1282,34 +1276,34 @@ export async function solicitarReanalise(
 /**
  * Criar vínculo polimórfico entre funcionário e contratante
  */
-export async function vincularFuncionarioContratante(
+export async function vincularFuncionarioEntidade(
   funcionarioId: number,
-  contratanteId: number,
-  tipoContratante: TipoContratante,
+  entidadeId: number,
+  tipoEntidade: TipoEntidade,
   session?: Session
-): Promise<ContratanteFuncionario> {
-  const result = await query<ContratanteFuncionario>(
-    `INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+): Promise<EntidadeFuncionario> {
+  const result = await query<EntidadeFuncionario>(
+    `INSERT INTO entidades_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
      VALUES ($1, $2, $3, true)
-     ON CONFLICT (funcionario_id, contratante_id) 
+     ON CONFLICT (funcionario_id, entidade_id) 
      DO UPDATE SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP
      RETURNING *`,
-    [funcionarioId, contratanteId, tipoContratante],
+    [funcionarioId, entidadeId, tipoEntidade],
     session
   );
   return result.rows[0];
 }
 
 /**
- * Buscar contratante de um funcionário
+ * Buscar entidade de um funcionário
  */
-export async function getContratanteDeFuncionario(
+export async function getEntidadeDeFuncionario(
   funcionarioId: number,
   session?: Session
-): Promise<Contratante | null> {
-  const result = await query<Contratante>(
-    `SELECT c.* FROM contratantes c
-     INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+): Promise<Entidade | null> {
+  const result = await query<Entidade>(
+    `SELECT c.* FROM entidades c
+     INNER JOIN entidades_funcionarios cf ON cf.entidade_id = c.id
      WHERE cf.funcionario_id = $1 AND cf.vinculo_ativo = true AND c.ativa = true
      ORDER BY cf.criado_em DESC
      LIMIT 1`,
@@ -1322,37 +1316,37 @@ export async function getContratanteDeFuncionario(
 /**
  * Buscar funcionários de um contratante
  */
-export async function getFuncionariosDeContratante(
-  contratanteId: number,
+export async function getFuncionariosDeEntidade(
+  entidadeId: number,
   apenasAtivos: boolean = true,
   session?: Session
 ) {
   const queryText = apenasAtivos
     ? `SELECT f.* FROM funcionarios f
-       INNER JOIN contratantes_funcionarios cf ON cf.funcionario_id = f.id
-       WHERE cf.contratante_id = $1 AND cf.vinculo_ativo = true AND f.ativo = true`
+       INNER JOIN entidades_funcionarios cf ON cf.funcionario_id = f.id
+       WHERE cf.entidade_id = $1 AND cf.vinculo_ativo = true AND f.ativo = true`
     : `SELECT f.* FROM funcionarios f
-       INNER JOIN contratantes_funcionarios cf ON cf.funcionario_id = f.id
-       WHERE cf.contratante_id = $1`;
+       INNER JOIN entidades_funcionarios cf ON cf.funcionario_id = f.id
+       WHERE cf.entidade_id = $1`;
 
-  const result = await query(queryText, [contratanteId], session);
+  const result = await query(queryText, [entidadeId], session);
   return result.rows;
 }
 
 /**
  * Helper seguro para queries multi-tenant
- * Garante filtro obrigatório por clinica_id ou contratante_id
+ * Garante filtro obrigatório por clinica_id ou entidade_id
  */
 export async function queryMultiTenant<T = unknown>(
   text: string,
   params: unknown[],
-  tenantFilter: { clinica_id?: number; contratante_id?: number },
+  tenantFilter: { clinica_id?: number; entidade_id?: number },
   session?: Session
 ): Promise<QueryResult<T>> {
   // Validar que pelo menos um filtro foi fornecido
-  if (!tenantFilter.clinica_id && !tenantFilter.contratante_id) {
+  if (!tenantFilter.clinica_id && !tenantFilter.entidade_id) {
     throw new Error(
-      'ERRO DE SEGURANÇA: queryMultiTenant requer clinica_id ou contratante_id'
+      'ERRO DE SEGURANÇA: queryMultiTenant requer clinica_id ou entidade_id'
     );
   }
 
@@ -1369,12 +1363,12 @@ export async function queryMultiTenant<T = unknown>(
     filteredParams.push(tenantFilter.clinica_id);
   }
 
-  if (tenantFilter.contratante_id) {
+  if (tenantFilter.entidade_id) {
     const hasWhere = /WHERE/i.test(filteredQuery);
     filteredQuery += hasWhere
-      ? ` AND contratante_id = $${filteredParams.length + 1}`
-      : ` WHERE contratante_id = $${filteredParams.length + 1}`;
-    filteredParams.push(tenantFilter.contratante_id);
+      ? ` AND entidade_id = $${filteredParams.length + 1}`
+      : ` WHERE entidade_id = $${filteredParams.length + 1}`;
+    filteredParams.push(tenantFilter.entidade_id);
   }
 
   return query<T>(filteredQuery, filteredParams, session);
@@ -1393,7 +1387,7 @@ export async function contarFuncionariosAtivos(
      LEFT JOIN funcionarios f ON (
        (cp.tipo_contratante = 'clinica' AND f.clinica_id = cp.clinica_id AND f.status = 'ativo')
        OR 
-       (cp.tipo_contratante = 'entidade' AND f.contratante_id = cp.contratante_id AND f.status = 'ativo')
+       (cp.tipo_contratante = 'entidade' AND f.entidade_id = cp.entidade_id AND f.status = 'ativo')
      )
      WHERE cp.id = $1`,
     [contratoId],
@@ -1449,11 +1443,14 @@ export async function marcarNotificacaoComoLida(
  * Obter contratos de planos para uma clínica ou entidade
  */
 export async function getContratosPlanos(
-  filter: { clinica_id?: number; contratante_id?: number },
+  filter: {
+    clinica_id?: number;
+    entidade_id?: number;
+  },
   session?: Session
 ) {
-  if (!filter.clinica_id && !filter.contratante_id) {
-    throw new Error('Filtro de clinica_id ou contratante_id é obrigatório');
+  if (!filter.clinica_id && !filter.entidade_id) {
+    throw new Error('Filtro de clinica_id ou entidade_id é obrigatório');
   }
 
   let queryText = `
@@ -1469,9 +1466,9 @@ export async function getContratosPlanos(
     queryText += ` AND cp.clinica_id = $${params.length}`;
   }
 
-  if (filter.contratante_id) {
-    params.push(filter.contratante_id);
-    queryText += ` AND cp.contratante_id = $${params.length}`;
+  if (filter.entidade_id) {
+    params.push(filter.entidade_id);
+    queryText += ` AND cp.entidade_id = $${params.length}`;
   }
 
   queryText += ' ORDER BY cp.created_at DESC';
@@ -1484,22 +1481,22 @@ export async function getContratosPlanos(
  * Criar conta para responsável do contratante
  */
 export async function criarContaResponsavel(
-  contratante: number | Contratante,
+  contratante: number | Entidade,
   session?: Session
 ) {
-  let contratanteData: Contratante;
+  let contratanteData: Entidade;
 
-  // Se recebeu um número (ID), buscar os dados do contratante
+  // Se recebeu um número (ID), buscar os dados da entidade
   if (typeof contratante === 'number') {
     const result = await query(
-      'SELECT * FROM contratantes WHERE id = $1',
+      'SELECT * FROM entidades WHERE id = $1',
       [contratante],
       session
     );
     if (result.rows.length === 0) {
-      throw new Error(`Contratante ${contratante} não encontrado`);
+      throw new Error(`Entidade ${contratante} não encontrado`);
     }
-    contratanteData = result.rows[0] as Contratante;
+    contratanteData = result.rows[0] as Entidade;
   } else {
     contratanteData = contratante;
   }
@@ -1521,7 +1518,7 @@ export async function criarContaResponsavel(
         '[CRIAR_CONTA] CNPJ não encontrado no objeto, buscando do banco...'
       );
     const contratanteResult = await query(
-      'SELECT cnpj FROM contratantes WHERE id = $1',
+      'SELECT cnpj FROM entidades WHERE id = $1',
       [contratanteData.id],
       session
     );
@@ -1553,37 +1550,95 @@ export async function criarContaResponsavel(
     console.debug(`[CRIAR_CONTA] CPF: ${cpfParaUsar}, CNPJ: ${cnpj}`);
   }
 
-  // 1. Criar senha em contratantes_senhas usando prepared statement
+  // 1. Determinar tipo de usuário e tabela de senha
+  const tipoUsuario = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
+  const tabelaSenha =
+    tipoUsuario === 'gestor' ? 'entidades_senhas' : 'clinicas_senhas';
+  const campoId = tipoUsuario === 'gestor' ? 'entidade_id' : 'clinica_id';
+
+  // 2. Para RH, precisamos buscar/criar a clínica primeiro
+  let referenceId = contratanteData.id;
+  if (tipoUsuario === 'rh') {
+    try {
+      const clinicaResult = await query(
+        'SELECT id FROM clinicas WHERE entidade_id = $1 LIMIT 1',
+        [contratanteData.id],
+        session
+      );
+      if (clinicaResult.rows.length > 0) {
+        referenceId = clinicaResult.rows[0].id;
+      } else {
+        // Criar clínica vinculada à entidade
+        const ins = await query(
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, entidade_id, ativa, criado_em, atualizado_em)
+           VALUES ($1,$2,$3,$4,$5,$6, true, NOW(), NOW())
+           ON CONFLICT (cnpj)
+           DO UPDATE SET entidade_id = EXCLUDED.entidade_id, ativa = true, atualizado_em = CURRENT_TIMESTAMP
+           RETURNING id`,
+          [
+            contratanteData.nome,
+            contratanteData.cnpj,
+            contratanteData.email || null,
+            contratanteData.telefone || null,
+            contratanteData.endereco || null,
+            contratanteData.id,
+          ],
+          session
+        );
+        referenceId = ins.rows.length > 0 ? ins.rows[0].id : null;
+
+        if (!referenceId) {
+          // Fallback: tentar obter clínica por entidade_id ou cnpj
+          const sel = await query(
+            'SELECT id FROM clinicas WHERE entidade_id = $1 OR cnpj = $2 LIMIT 1',
+            [contratanteData.id, contratanteData.cnpj],
+            session
+          );
+          referenceId = sel.rows.length > 0 ? sel.rows[0].id : null;
+        }
+
+        if (DEBUG_DB && referenceId) {
+          console.debug(
+            `[CRIAR_CONTA] Clínica criada/identificada id=${referenceId}`
+          );
+        }
+      }
+    } catch (err) {
+      console.error('[CRIAR_CONTA] Erro ao buscar/criar clinica:', err);
+      throw err;
+    }
+  }
+
+  // 3. Criar senha na tabela apropriada (entidades_senhas ou clinicas_senhas)
   try {
-    // Garantir compatibilidade com esquemas que não possuem UNIQUE(contratante_id, cpf)
     const exists = await query(
-      'SELECT id FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
-      [contratanteData.id, cpfParaUsar],
+      `SELECT id FROM ${tabelaSenha} WHERE ${campoId} = $1 AND cpf = $2`,
+      [referenceId, cpfParaUsar],
       session
     );
 
     if (exists.rows.length > 0) {
       await query(
-        'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE contratante_id = $2 AND cpf = $3',
-        [hashed, contratanteData.id, cpfParaUsar],
+        `UPDATE ${tabelaSenha} SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE ${campoId} = $2 AND cpf = $3`,
+        [hashed, referenceId, cpfParaUsar],
         session
       );
       console.log(
-        `[CRIAR_CONTA] Senha atualizada em contratantes_senhas para CPF ${cpfParaUsar}`
+        `[CRIAR_CONTA] Senha atualizada em ${tabelaSenha} para CPF ${cpfParaUsar}`
       );
     } else {
       await query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash, criado_em, atualizado_em) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)',
-        [contratanteData.id, cpfParaUsar, hashed],
+        `INSERT INTO ${tabelaSenha} (${campoId}, cpf, senha_hash, criado_em, atualizado_em) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+        [referenceId, cpfParaUsar, hashed],
         session
       );
       console.log(
-        `[CRIAR_CONTA] Senha inserida em contratantes_senhas para CPF ${cpfParaUsar}`
+        `[CRIAR_CONTA] Senha inserida em ${tabelaSenha} para CPF ${cpfParaUsar}`
       );
     }
   } catch (err) {
     console.error(
-      '[CRIAR_CONTA] Erro ao inserir/atualizar em contratantes_senhas:',
+      `[CRIAR_CONTA] Erro ao inserir/atualizar em ${tabelaSenha}:`,
       err
     );
     throw err;
@@ -1591,8 +1646,8 @@ export async function criarContaResponsavel(
 
   // Verificar se foi inserido corretamente
   const checkResult = await query(
-    'SELECT senha_hash, length(senha_hash) as hash_len FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
-    [contratanteData.id, cpfParaUsar],
+    `SELECT senha_hash, length(senha_hash) as hash_len FROM ${tabelaSenha} WHERE ${campoId} = $1 AND cpf = $2`,
+    [referenceId, cpfParaUsar],
     session
   );
 
@@ -1608,390 +1663,102 @@ export async function criarContaResponsavel(
     const testMatch = await bcrypt.compare(defaultPassword, stored.senha_hash);
     if (DEBUG_DB) {
       console.debug(
-        `[CRIAR_CONTA] Teste de senha para CPF ${contratanteData.responsavel_cpf}: ${testMatch ? 'SUCESSO' : 'FALHA'}`
+        `[CRIAR_CONTA] Teste de senha para CPF ${cpfParaUsar}: ${testMatch ? 'SUCESSO' : 'FALHA'}`
       );
     }
   } else {
     console.error(
-      `[CRIAR_CONTA ERROR] Senha não encontrada após inserção para CPF ${contratanteData.responsavel_cpf}`
+      `[CRIAR_CONTA ERROR] Senha não encontrada após inserção para CPF ${cpfParaUsar}`
     );
   }
 
-  // 2. Criar/atualizar registro em funcionarios (incluindo entidades)
-  // Observação: criando registro também para contratantes do tipo 'entidade' para suportar
-  // flows de ativação que esperam um login do responsável (gestor_entidade).
+  // 4. Criar/atualizar registro em USUARIOS (sem senha_hash, só referência)
   try {
-    const f = await query(
-      'SELECT id FROM funcionarios WHERE cpf = $1',
-      [contratanteData.responsavel_cpf],
+    // Determinar clinica_id ou entidade_id
+    let clinicaId = null;
+    let usuarioEntidadeId = null;
+
+    if (tipoUsuario === 'rh') {
+      clinicaId = referenceId;
+    } else {
+      usuarioEntidadeId = contratanteData.id;
+    }
+
+    // Verificar se usuário já existe
+    const usuarioExistente = await query(
+      'SELECT id FROM usuarios WHERE cpf = $1',
+      [cpfParaUsar],
       session
     );
 
-    // Determinar usuario_tipo: entidades -> gestor_entidade, outros -> gestor_rh
-    const usuarioTipo =
-      contratanteData.tipo === 'entidade' ? 'gestor_entidade' : 'gestor_rh';
-    const perfilToSet = usuarioTipo; // manter compat temporária
-
-    if (f.rows.length > 0) {
-      const fid = f.rows[0].id;
-
-      // Para usuario_tipo gestor_rh (clínicas), buscar clinica_id vinculada ao contratante
-      let clinicaId = null;
-      if (usuarioTipo === 'gestor_rh') {
-        try {
-          const clinicaResult = await query(
-            'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
-            [contratanteData.id],
-            session
-          );
-          if (clinicaResult.rows.length > 0) {
-            clinicaId = clinicaResult.rows[0].id;
-            if (DEBUG_DB) {
-              console.debug(
-                `[CRIAR_CONTA] Clínica id=${clinicaId} mapeada para funcionário RH existente`
-              );
-            }
-          }
-        } catch (err) {
-          console.error(
-            '[CRIAR_CONTA] Erro ao buscar clinica_id para RH:',
-            err
-          );
-        }
-
-        // Se não houver clínica, tentar criar uma entry idempotente vinculada ao contratante
-        if (!clinicaId) {
-          try {
-            const ins = await query(
-              `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, contratante_id, ativa, criado_em, atualizado_em)
-               VALUES ($1,$2,$3,$4,$5,$6, true, NOW(), NOW())
-               ON CONFLICT (cnpj)
-               DO UPDATE SET nome = EXCLUDED.nome, email = EXCLUDED.email, telefone = EXCLUDED.telefone, endereco = EXCLUDED.endereco, contratante_id = EXCLUDED.contratante_id, ativa = true, atualizado_em = CURRENT_TIMESTAMP
-               RETURNING id`,
-              [
-                contratanteData.nome,
-                contratanteData.cnpj,
-                contratanteData.email || null,
-                contratanteData.telefone || null,
-                contratanteData.endereco || null,
-                contratanteData.id,
-              ],
-              session
-            );
-            if (ins.rows.length > 0) {
-              clinicaId = ins.rows[0].id;
-              if (DEBUG_DB)
-                console.debug(
-                  `[CRIAR_CONTA] Clínica criada id=${clinicaId} para contratante ${contratanteData.id}`
-                );
-            } else {
-              // Se não foi criada (conflito), tentar recarregar
-              const reload = await query(
-                'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
-                [contratanteData.id],
-                session
-              );
-              if (reload.rows.length > 0) clinicaId = reload.rows[0].id;
-            }
-          } catch (err: any) {
-            // Tratamento especial para unique_violation (23505) que pode ocorrer
-            // em cenários de corrida: se outra transação criou a clínica ao mesmo tempo,
-            // recarregamos a clínica existente em vez de falhar.
-            const isUniqueViolation =
-              err &&
-              (err.code === '23505' ||
-                (err.message || '').includes('clinicas_cnpj_key'));
-            if (isUniqueViolation) {
-              try {
-                const reload = await query(
-                  'SELECT id FROM clinicas WHERE cnpj = $1 LIMIT 1',
-                  [contratanteData.cnpj],
-                  session
-                );
-                if (reload.rows.length > 0) {
-                  clinicaId = reload.rows[0].id;
-                  if (DEBUG_DB)
-                    console.debug(
-                      `[CRIAR_CONTA] Unique violation detectada — recarregada clinica id=${clinicaId}`
-                    );
-                }
-              } catch (reloadErr) {
-                console.error(
-                  '[CRIAR_CONTA] Falha ao recarregar clínica após unique_violation:',
-                  reloadErr
-                );
-              }
-            } else {
-              console.error(
-                '[CRIAR_CONTA] Erro ao criar/marcar clinica para RH:',
-                err
-              );
-            }
-          }
-        }
-      }
-
+    if (usuarioExistente.rows.length > 0) {
+      // Atualizar usuário existente
       await query(
-        `UPDATE funcionarios SET nome = $1, email = $2, perfil = $3, usuario_tipo = $4, contratante_id = $5, clinica_id = $6, ativo = true, senha_hash = $7, atualizado_em = CURRENT_TIMESTAMP WHERE id = $8`,
+        `UPDATE usuarios 
+         SET nome = $1, email = $2, tipo_usuario = $3, 
+             clinica_id = $4, entidade_id = $5, ativo = true, atualizado_em = CURRENT_TIMESTAMP 
+         WHERE cpf = $6`,
         [
           contratanteData.responsavel_nome || 'Gestor',
           contratanteData.responsavel_email || null,
-          perfilToSet, // manter perfil para compat temporária
-          usuarioTipo, // novo campo
-          contratanteData.id,
+          tipoUsuario,
           clinicaId,
-          hashed,
-          fid,
+          usuarioEntidadeId,
+          cpfParaUsar,
         ],
         session
       );
-      // Upsert vinculo
-      const vinc = await query(
-        'SELECT * FROM contratantes_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
-        [fid, contratanteData.id],
-        session
-      );
-      if (vinc.rows.length > 0) {
-        await query(
-          'UPDATE contratantes_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
-          [fid, contratanteData.id],
-          session
-        );
-      } else {
-        await query(
-          'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
-          [fid, contratanteData.id, contratanteData.tipo || 'entidade'],
-          session
+      if (DEBUG_DB) {
+        console.debug(
+          `[CRIAR_CONTA] Usuário atualizado: CPF=${cpfParaUsar}, tipo=${tipoUsuario}`
         );
       }
-      if (DEBUG_DB)
-        console.debug(
-          `[CRIAR_CONTA] Atualizado funcionario id=${fid} usuario_tipo=${usuarioTipo}`
-        );
     } else {
-      // Inserir novo funcionario
-      const nivelCargo = null; // manter null para perfis não-funcionarios
-      const empresaId = null;
-
-      // Para usuario_tipo gestor_rh (clínicas), buscar clinica_id vinculada ao contratante
-      let clinicaId = null;
-      if (usuarioTipo === 'gestor_rh') {
-        try {
-          const clinicaResult = await query(
-            'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
-            [contratanteData.id],
-            session
-          );
-          if (clinicaResult.rows.length > 0) {
-            clinicaId = clinicaResult.rows[0].id;
-            if (DEBUG_DB) {
-              console.debug(
-                `[CRIAR_CONTA] Clínica id=${clinicaId} mapeada para funcionário RH`
-              );
-            }
-          } else {
-            // Tentar criar a clínica de forma idempotente para este contratante
-            try {
-              const ins = await query(
-                `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, contratante_id, ativa, criado_em, atualizado_em)
-                 VALUES ($1,$2,$3,$4,$5,$6, true, NOW(), NOW())
-                 ON CONFLICT (cnpj)
-                 DO UPDATE SET nome = EXCLUDED.nome, email = EXCLUDED.email, telefone = EXCLUDED.telefone, endereco = EXCLUDED.endereco, contratante_id = EXCLUDED.contratante_id, ativa = true, atualizado_em = CURRENT_TIMESTAMP
-                 RETURNING id`,
-                [
-                  contratanteData.nome,
-                  contratanteData.cnpj,
-                  contratanteData.email || null,
-                  contratanteData.telefone || null,
-                  contratanteData.endereco || null,
-                  contratanteData.id,
-                ],
-                session
-              );
-              if (ins.rows.length > 0) {
-                clinicaId = ins.rows[0].id;
-                if (DEBUG_DB)
-                  console.debug(
-                    `[CRIAR_CONTA] Clínica criada id=${clinicaId} para contratante ${contratanteData.id}`
-                  );
-              } else {
-                const reload = await query(
-                  'SELECT id FROM clinicas WHERE contratante_id = $1 LIMIT 1',
-                  [contratanteData.id],
-                  session
-                );
-                if (reload.rows.length > 0) clinicaId = reload.rows[0].id;
-              }
-            } catch (err: any) {
-              const isUniqueViolation =
-                err &&
-                (err.code === '23505' ||
-                  (err.message || '').includes('clinicas_cnpj_key'));
-              if (isUniqueViolation) {
-                try {
-                  const reload = await query(
-                    'SELECT id FROM clinicas WHERE cnpj = $1 LIMIT 1',
-                    [contratanteData.cnpj],
-                    session
-                  );
-                  if (reload.rows.length > 0) {
-                    clinicaId = reload.rows[0].id;
-                    if (DEBUG_DB)
-                      console.debug(
-                        `[CRIAR_CONTA] Unique violation detectada (new) — recarregada clinica id=${clinicaId}`
-                      );
-                  }
-                } catch (reloadErr) {
-                  console.error(
-                    '[CRIAR_CONTA] Falha ao recarregar clínica após unique_violation (new):',
-                    reloadErr
-                  );
-                }
-              } else {
-                console.error(
-                  '[CRIAR_CONTA] Erro ao criar clinica para contratante:',
-                  err
-                );
-                console.warn(
-                  `Clínica não encontrada para contratante ${contratanteData.id}. O funcionário RH será criado sem clinica_id.`
-                );
-              }
-            }
-          }
-        } catch (err) {
-          console.error(
-            '[CRIAR_CONTA] Erro ao buscar clinica_id para RH:',
-            err
-          );
-        }
-      }
-
-      const insertRes = await query(
-        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, ativo, nivel_cargo, contratante_id, clinica_id, empresa_id, criado_em, atualizado_em)
-         VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8, $9, $10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id`,
+      // Inserir novo usuário
+      await query(
+        `INSERT INTO usuarios (cpf, nome, email, tipo_usuario, clinica_id, entidade_id, ativo, criado_em, atualizado_em)
+         VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [
-          contratanteData.responsavel_cpf,
+          cpfParaUsar,
           contratanteData.responsavel_nome || 'Gestor',
           contratanteData.responsavel_email || null,
-          hashed,
-          perfilToSet, // manter perfil para compatibilidade temporária
-          usuarioTipo, // novo campo
-          nivelCargo,
-          contratanteData.id,
+          tipoUsuario,
           clinicaId,
-          empresaId,
+          usuarioEntidadeId,
         ],
         session
       );
-      const fid = insertRes.rows[0].id;
-      await query(
-        'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
-        [fid, contratanteData.id, contratanteData.tipo || 'entidade'],
-        session
-      );
-
-      if (DEBUG_DB)
+      if (DEBUG_DB) {
         console.debug(
-          `[CRIAR_CONTA] Funcionario criado id=${fid} usuario_tipo=${usuarioTipo}`
+          `[CRIAR_CONTA] Usuário criado: CPF=${cpfParaUsar}, tipo=${tipoUsuario}`
         );
+      }
     }
+
+    console.log(
+      `[CRIAR_CONTA] ✅ Conta criada em 'usuarios' para ${tipoUsuario} (CPF: ${cpfParaUsar}), senha em ${tabelaSenha}`
+    );
   } catch (err) {
-    console.error('[CRIAR_CONTA] Erro ao criar/atualizar funcionario:', err);
-    // Não relançar para não quebrar o fluxo principal de confirmação de pagamento
-  }
-
-  // Envolver recuperação extra para cenários de corrida/unique_violation
-  catchGlobal: {
-    // bloco vazio — mantido para clareza estrutural
-  }
-
-  // Garantir que, se alguma inserção crítica lançou unique_violation em outro lugar,
-  // tentamos uma recuperação adicional antes de retornar ao chamador.
-  // (Nota: esta recuperação é idempotente e não lança)
-  try {
-    // noop — preserva fluxo quando não há erro
-  } catch (_err) {
-    // não esperado
-    void _err;
+    console.error('[CRIAR_CONTA] ❌ Erro ao criar/atualizar usuário:', err);
+    throw err;
   }
 
   console.log(
-    `Conta (RH) processada para responsável ${contratanteData.responsavel_cpf} (senha padrão definida)`
+    `Conta processada para responsável ${cpfParaUsar} do contratante ${contratanteData.id} (senha padrão definida)`
   );
-
-  // Ler senha armazenada em funcionarios e validar que o hash corresponde à senha padrão
-  try {
-    const funcCheck = await query(
-      'SELECT senha_hash FROM funcionarios WHERE cpf = $1',
-      [contratanteData.responsavel_cpf],
-      session
-    );
-    if (funcCheck.rows.length > 0) {
-      const funcHash = funcCheck.rows[0].senha_hash;
-      if (DEBUG_DB) {
-        console.debug(
-          `[CRIAR_CONTA] Hash em funcionarios length=${funcHash?.length || 0}`
-        );
-      }
-      // Se o hash armazenado parecer ser um bcrypt, validar e atualizar se necessário.
-      // Se for texto plano (senha inicial), deixamos como está — será migrado no primeiro login.
-      let funcMatch = false;
-      if (
-        typeof funcHash === 'string' &&
-        (funcHash.startsWith('$2a$') ||
-          funcHash.startsWith('$2b$') ||
-          funcHash.startsWith('$2y$'))
-      ) {
-        funcMatch = await bcrypt.compare(defaultPassword, funcHash);
-        if (DEBUG_DB) {
-          console.debug(
-            `[CRIAR_CONTA] Teste senha contra funcionarios hash (bcrypt): ${funcMatch ? 'OK' : 'MISMATCH'}`
-          );
-        }
-        if (!funcMatch) {
-          // Forçar atualização com o hash correto e logar a ação
-          await query(
-            'UPDATE funcionarios SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE cpf = $2',
-            [hashed, contratanteData.responsavel_cpf],
-            session
-          );
-          console.warn(
-            '[CRIAR_CONTA] Hash em funcionarios divergente — atualizado com hash gerado agora'
-          );
-        }
-      } else {
-        if (DEBUG_DB) {
-          console.debug(
-            '[CRIAR_CONTA] Hash em funcionarios parece ser senha texto plano — mantendo como está (será migrada no login)'
-          );
-        }
-      }
-    }
-  } catch (err) {
-    console.error(
-      '[CRIAR_CONTA] Erro ao validar/atualizar hash em funcionarios:',
-      err
-    );
-  }
 }
 
 /**
- * Criar senha inicial para entidade (gestor_entidade)
+ * Criar senha inicial para entidade (gestor)
  * Chama a função SQL criar_senha_inicial_entidade
  */
 export async function criarSenhaInicialEntidade(
-  contratanteId: number,
+  entidadeId: number,
   session?: Session
 ): Promise<void> {
-  await query(
-    'SELECT criar_senha_inicial_entidade($1)',
-    [contratanteId],
-    session
-  );
+  await query('SELECT criar_senha_inicial_entidade($1)', [entidadeId], session);
 
-  console.log(
-    `Senha inicial criada para entidade contratante ${contratanteId}`
-  );
+  console.log(`Senha inicial criada para entidade contratante ${entidadeId}`);
 }
 
 /**
@@ -2018,23 +1785,27 @@ export async function criarEmissorIndependente(
   // Hash da senha (padrão 123456 se não fornecida)
   const senhaHash = await bcrypt.hash(senha || '123456', 10);
 
-  // Inserir emissor com clinica_id = NULL
+  // Inserir emissor em `usuarios` (contas do sistema devem existir em `usuarios`)
   const result = await query(
-    `INSERT INTO funcionarios (
-      cpf, 
-      nome, 
-      email, 
-      senha_hash, 
-      perfil, 
-      usuario_tipo,
-      clinica_id,
+    `INSERT INTO usuarios (
+      cpf,
+      nome,
+      email,
+      tipo_usuario,
+      senha_hash,
       ativo,
-      indice_avaliacao,
       criado_em,
       atualizado_em
     )
-    VALUES ($1, $2, $3, $4, 'emissor', 'emissor', NULL, true, 0, NOW(), NOW())
-    RETURNING cpf, nome, email, clinica_id`,
+    VALUES ($1, $2, $3, 'emissor', $4, true, NOW(), NOW())
+    ON CONFLICT (cpf) DO UPDATE SET
+      nome = EXCLUDED.nome,
+      email = EXCLUDED.email,
+      tipo_usuario = EXCLUDED.tipo_usuario,
+      senha_hash = EXCLUDED.senha_hash,
+      ativo = EXCLUDED.ativo,
+      atualizado_em = CURRENT_TIMESTAMP
+    RETURNING cpf, nome, email`,
     [cpfLimpo, nome, email, senhaHash],
     session
   );
@@ -2045,5 +1816,50 @@ export async function criarEmissorIndependente(
     );
   }
 
-  return result.rows[0];
+  // Compatibilidade: alguns esquemas mais antigos usam a coluna `role` em vez de `tipo_usuario`.
+  // Tentamos atualizar `role = 'emissor'` quando a coluna existir; se não existir, ignoramos o erro.
+  try {
+    await query(
+      `UPDATE usuarios SET role = 'emissor' WHERE cpf = $1`,
+      [cpfLimpo],
+      session
+    );
+  } catch (err: any) {
+    // Código 42703 = undefined_column (coluna não existe) — podemos ignorar
+    if (err && err.code && err.code === '42703') {
+      if (DEBUG_DB) {
+        console.debug(
+          '[CRIAR_EMISSOR] Coluna `role` não existe no schema local — ignorando.'
+        );
+      }
+    } else {
+      // Para outros erros, apenas logamos (não interromper a criação)
+      console.warn(
+        '[CRIAR_EMISSOR] Falha ao atualizar coluna `role` (não bloqueante):',
+        err
+      );
+    }
+  }
+
+  return {
+    cpf: result.rows[0].cpf,
+    nome: result.rows[0].nome,
+    email: result.rows[0].email,
+    clinica_id: null,
+  };
 }
+
+// ====================================================================
+// ALIASES DE RETROCOMPATIBILIDADE
+// TODO: Remover após atualizar todos os arquivos que referenciam funções antigas
+// ====================================================================
+
+/**
+ * @deprecated Use getEntidadesByTipo ao invés. Será removido após refatoração completa.
+ */
+export const getContratantesByTipo = getEntidadesByTipo;
+
+/**
+ * @deprecated Use getEntidadesPendentes ao invés. Será removido após refatoração completa.
+ */
+export const getContratantesPendentes = getEntidadesPendentes;

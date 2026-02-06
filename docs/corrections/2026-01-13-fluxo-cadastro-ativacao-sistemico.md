@@ -135,8 +135,7 @@ try {
   );
 
   if (loginExists.rows.length === 0) {
-    const perfil =
-      pagamento.tipo === 'clinica' ? 'gestor_entidade' : 'gestor_entidade';
+    const perfil = pagamento.tipo === 'clinica' ? 'gestor' : 'gestor';
 
     // Inserir com senha em texto plano - sistema fará hash no primeiro login
     await query(

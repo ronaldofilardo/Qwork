@@ -40,12 +40,12 @@ describe('/api/entidade/funcionarios', () => {
     }
   });
 
-  test('✅ GET não deve incluir perfil gestor_entidade na lista', async () => {
+  test('✅ GET não deve incluir perfil gestor na lista', async () => {
     // Mock sessão de gestor de entidade
     sessionMod.requireEntity.mockResolvedValue({
       cpf: '52998224725',
       nome: 'Gestor Entidade',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 77,
     });
 
@@ -56,7 +56,7 @@ describe('/api/entidade/funcionarios', () => {
           id: 1,
           nome: 'Gestor Entidade',
           cpf: '111',
-          perfil: 'gestor_entidade',
+          perfil: 'gestor',
         },
         { id: 2, nome: 'Funcionario A', cpf: '222', perfil: 'funcionario' },
       ],
@@ -68,10 +68,10 @@ describe('/api/entidade/funcionarios', () => {
 
     expect(response.status).toBe(200);
     expect(body.funcionarios).toBeDefined();
-    // Deve incluir apenas o funcionário (gestor_entidade filtrado no SQL)
-    expect(
-      body.funcionarios.every((f: any) => f.perfil !== 'gestor_entidade')
-    ).toBe(true);
+    // Deve incluir apenas o funcionário (gestor filtrado no SQL)
+    expect(body.funcionarios.every((f: any) => f.perfil !== 'gestor')).toBe(
+      true
+    );
   });
 
   test('🔧 Deve ser possível chamar a função POST', async () => {
@@ -105,7 +105,7 @@ describe('/api/entidade/funcionarios', () => {
     sessionMod.requireEntity.mockResolvedValue({
       cpf: '52998224725',
       nome: 'Gestor Entidade',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 77,
     });
 

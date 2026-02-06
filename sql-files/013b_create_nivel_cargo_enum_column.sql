@@ -285,8 +285,8 @@ ALTER TYPE public.tipo_plano OWNER TO neondb_owner;
 CREATE TYPE public.usuario_tipo_enum AS ENUM (
     'funcionario_clinica',
     'funcionario_entidade',
-    'gestor_rh',
-    'gestor_entidade',
+    'rh',
+    'gestor',
     'admin',
     'emissor'
 );
@@ -889,22 +889,22 @@ DECLARE
 BEGIN
   v_id := NULLIF(current_setting('app.current_user_contratante_id', TRUE), '');
   
-  -- SECURITY: For gestor_entidade perfil, contratante_id is mandatory
-  IF v_id IS NULL AND current_user_perfil() = 'gestor_entidade' THEN
-    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor_entidade.';
+  -- SECURITY: For gestor perfil, contratante_id is mandatory
+  IF v_id IS NULL AND current_user_perfil() = 'gestor' THEN
+    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor.';
   END IF;
   
   RETURN v_id::INTEGER;
 EXCEPTION
   WHEN undefined_object THEN
     -- For non-gestor users, NULL is acceptable
-    IF current_user_perfil() = 'gestor_entidade' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+    IF current_user_perfil() = 'gestor' THEN
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor.';
     END IF;
     RETURN NULL;
   WHEN SQLSTATE '22023' THEN
-    IF current_user_perfil() = 'gestor_entidade' THEN
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+    IF current_user_perfil() = 'gestor' THEN
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor.';
     END IF;
     RETURN NULL;
 END;
@@ -918,7 +918,7 @@ ALTER FUNCTION public.current_user_contratante_id() OWNER TO neondb_owner;
 --
 
 COMMENT ON FUNCTION public.current_user_contratante_id() IS 'Returns current user contratante_id from session context.
-   RAISES EXCEPTION if not set for perfil gestor_entidade (prevents NULL bypass).
+   RAISES EXCEPTION if not set for perfil gestor (prevents NULL bypass).
    Returns NULL for other perfis (acceptable).';
 
 
@@ -1315,7 +1315,7 @@ BEGIN
     FROM laudos l
     INNER JOIN fila_emissao fe ON l.lote_id = fe.lote_id
     LEFT JOIN funcionarios f ON fe.solicitado_por = f.cpf
-    LEFT JOIN contratantes_senhas cs ON fe.solicitado_por = cs.cpf
+    LEFT JOIN entidades_senhas cs ON fe.solicitado_por = cs.cpf
     WHERE l.id = p_laudo_id
     AND fe.solicitado_por IS NOT NULL;
 END;
@@ -2469,10 +2469,10 @@ $$;
 ALTER FUNCTION public.trigger_gerar_numero_recibo() OWNER TO neondb_owner;
 
 --
--- Name: update_contratantes_senhas_updated_at(); Type: FUNCTION; Schema: public; Owner: neondb_owner
+-- Name: update_entidades_senhas_updated_at(); Type: FUNCTION; Schema: public; Owner: neondb_owner
 --
 
-CREATE FUNCTION public.update_contratantes_senhas_updated_at() RETURNS trigger
+CREATE FUNCTION public.update_entidades_senhas_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
@@ -2482,7 +2482,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_contratantes_senhas_updated_at() OWNER TO neondb_owner;
+ALTER FUNCTION public.update_entidades_senhas_updated_at() OWNER TO neondb_owner;
 
 --
 -- Name: update_contratantes_updated_at(); Type: FUNCTION; Schema: public; Owner: neondb_owner
@@ -2702,7 +2702,7 @@ BEGIN
     END IF;
     
     -- Perfis que requerem contratante_id ou clinica_id
-    IF v_perfil IN ('gestor_entidade', 'rh', 'entidade') THEN
+    IF v_perfil IN ('gestor', 'rh', 'entidade') THEN
         IF (v_contratante_id IS NULL OR v_contratante_id = '') 
            AND (v_clinica_id IS NULL OR v_clinica_id = '') THEN
             RAISE EXCEPTION 'SEGURANÇA: Perfil % requer contratante_id ou clinica_id', v_perfil;
@@ -3541,7 +3541,7 @@ COMMENT ON COLUMN public.avaliacao_resets.requested_by_user_id IS 'User ID who r
 -- Name: COLUMN avaliacao_resets.requested_by_role; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.avaliacao_resets.requested_by_role IS 'Role of the user at the time of reset (rh or gestor_entidade)';
+COMMENT ON COLUMN public.avaliacao_resets.requested_by_role IS 'Role of the user at the time of reset (rh or gestor)';
 
 
 --
@@ -3910,10 +3910,10 @@ ALTER SEQUENCE public.contratantes_id_seq OWNED BY public.contratantes.id;
 
 
 --
--- Name: contratantes_senhas; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
-CREATE TABLE public.contratantes_senhas (
+CREATE TABLE public.entidades_senhas (
     id integer NOT NULL,
     contratante_id integer NOT NULL,
     cpf character varying(11) NOT NULL,
@@ -3923,38 +3923,38 @@ CREATE TABLE public.contratantes_senhas (
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     criado_em timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     atualizado_em timestamp with time zone,
-    CONSTRAINT contratantes_senhas_cpf_check CHECK (((cpf)::text ~ '^\d{11}$'::text))
+    CONSTRAINT entidades_senhas_cpf_check CHECK (((cpf)::text ~ '^\d{11}$'::text))
 );
 
 
-ALTER TABLE public.contratantes_senhas OWNER TO neondb_owner;
+ALTER TABLE public.entidades_senhas OWNER TO neondb_owner;
 
 --
--- Name: TABLE contratantes_senhas; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: TABLE entidades_senhas; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON TABLE public.contratantes_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-
-
---
--- Name: COLUMN contratantes_senhas.cpf; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON TABLE public.entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
 
 
 --
--- Name: COLUMN contratantes_senhas.primeira_senha_alterada; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: COLUMN entidades_senhas.cpf; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.contratantes_senhas.primeira_senha_alterada IS 'Flag para forÃ§ar alteraÃ§Ã£o de senha no primeiro acesso';
+COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
 
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: COLUMN entidades_senhas.primeira_senha_alterada; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-CREATE SEQUENCE public.contratantes_senhas_id_seq
+COMMENT ON COLUMN public.entidades_senhas.primeira_senha_alterada IS 'Flag para forÃ§ar alteraÃ§Ã£o de senha no primeiro acesso';
+
+
+--
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+--
+
+CREATE SEQUENCE public.entidades_senhas_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -3963,13 +3963,13 @@ CREATE SEQUENCE public.contratantes_senhas_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.contratantes_senhas_id_seq OWNER TO neondb_owner;
+ALTER SEQUENCE public.entidades_senhas_id_seq OWNER TO neondb_owner;
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
-ALTER SEQUENCE public.contratantes_senhas_id_seq OWNED BY public.contratantes_senhas.id;
+ALTER SEQUENCE public.entidades_senhas_id_seq OWNED BY public.entidades_senhas.id;
 
 
 --
@@ -4166,7 +4166,7 @@ CREATE TABLE public.fila_emissao (
     solicitado_em timestamp without time zone DEFAULT now(),
     tipo_solicitante character varying(20),
     CONSTRAINT chk_fila_emissao_solicitante CHECK (((solicitado_por IS NULL) OR ((solicitado_por IS NOT NULL) AND (tipo_solicitante IS NOT NULL)))),
-    CONSTRAINT fila_emissao_tipo_solicitante_check CHECK ((((tipo_solicitante)::text = ANY (ARRAY[('rh'::character varying)::text, ('gestor_entidade'::character varying)::text, ('admin'::character varying)::text])) OR (tipo_solicitante IS NULL)))
+    CONSTRAINT fila_emissao_tipo_solicitante_check CHECK ((((tipo_solicitante)::text = ANY (ARRAY[('rh'::character varying)::text, ('gestor'::character varying)::text, ('admin'::character varying)::text])) OR (tipo_solicitante IS NULL)))
 );
 
 ALTER TABLE ONLY public.fila_emissao FORCE ROW LEVEL SECURITY;
@@ -4213,7 +4213,7 @@ COMMENT ON COLUMN public.fila_emissao.erro IS 'Mensagem do último erro ocorrido
 -- Name: COLUMN fila_emissao.solicitado_por; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.fila_emissao.solicitado_por IS 'CPF do RH ou gestor_entidade que solicitou a emissão manual do laudo';
+COMMENT ON COLUMN public.fila_emissao.solicitado_por IS 'CPF do RH ou gestor que solicitou a emissão manual do laudo';
 
 
 --
@@ -4227,7 +4227,7 @@ COMMENT ON COLUMN public.fila_emissao.solicitado_em IS 'Timestamp exato da solic
 -- Name: COLUMN fila_emissao.tipo_solicitante; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.fila_emissao.tipo_solicitante IS 'Perfil do usuário que solicitou: rh, gestor_entidade ou admin';
+COMMENT ON COLUMN public.fila_emissao.tipo_solicitante IS 'Perfil do usuário que solicitou: rh, gestor ou admin';
 
 
 --
@@ -5399,7 +5399,7 @@ ALTER VIEW public.v_relatorio_emissoes_usuario OWNER TO neondb_owner;
 -- Name: VIEW v_relatorio_emissoes_usuario; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON VIEW public.v_relatorio_emissoes_usuario IS 'Relatório estatístico de emissões por usuário (RH ou gestor_entidade) para auditoria e compliance';
+COMMENT ON VIEW public.v_relatorio_emissoes_usuario IS 'Relatório estatístico de emissões por usuário (RH ou gestor) para auditoria e compliance';
 
 
 --
@@ -5551,10 +5551,10 @@ ALTER TABLE ONLY public.contratantes ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: contratantes_senhas id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes_senhas ALTER COLUMN id SET DEFAULT nextval('public.contratantes_senhas_id_seq'::regclass);
+ALTER TABLE ONLY public.entidades_senhas ALTER COLUMN id SET DEFAULT nextval('public.entidades_senhas_id_seq'::regclass);
 
 
 --
@@ -5871,10 +5871,10 @@ COPY public.contratantes (id, tipo, nome, cnpj, inscricao_estadual, email, telef
 
 
 --
--- Data for Name: contratantes_senhas; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+-- Data for Name: entidades_senhas; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
-COPY public.contratantes_senhas (id, contratante_id, cpf, senha_hash, primeira_senha_alterada, created_at, updated_at, criado_em, atualizado_em) FROM stdin;
+COPY public.entidades_senhas (id, contratante_id, cpf, senha_hash, primeira_senha_alterada, created_at, updated_at, criado_em, atualizado_em) FROM stdin;
 \.
 
 
@@ -6151,10 +6151,10 @@ SELECT pg_catalog.setval('public.contratantes_id_seq', 1, false);
 
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.contratantes_senhas_id_seq', 1, false);
+SELECT pg_catalog.setval('public.entidades_senhas_id_seq', 1, false);
 
 
 --
@@ -6445,19 +6445,19 @@ ALTER TABLE ONLY public.contratantes
 
 
 --
--- Name: contratantes_senhas contratantes_senhas_cpf_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas entidades_senhas_cpf_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT contratantes_senhas_cpf_key UNIQUE (cpf);
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT entidades_senhas_cpf_key UNIQUE (cpf);
 
 
 --
--- Name: contratantes_senhas contratantes_senhas_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas entidades_senhas_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT contratantes_senhas_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT entidades_senhas_pkey PRIMARY KEY (id);
 
 
 --
@@ -6781,10 +6781,10 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: contratantes_senhas_contratante_cpf_unique; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas_contratante_cpf_unique; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE UNIQUE INDEX contratantes_senhas_contratante_cpf_unique ON public.contratantes_senhas USING btree (contratante_id, cpf);
+CREATE UNIQUE INDEX entidades_senhas_contratante_cpf_unique ON public.entidades_senhas USING btree (contratante_id, cpf);
 
 
 --
@@ -7012,17 +7012,17 @@ CREATE INDEX idx_contratantes_data_liberacao ON public.contratantes USING btree 
 
 
 --
--- Name: idx_contratantes_senhas_contratante; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: idx_entidades_senhas_contratante; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_senhas_contratante ON public.contratantes_senhas USING btree (contratante_id);
+CREATE INDEX idx_entidades_senhas_contratante ON public.entidades_senhas USING btree (contratante_id);
 
 
 --
--- Name: idx_contratantes_senhas_cpf; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: idx_entidades_senhas_cpf; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_senhas_cpf ON public.contratantes_senhas USING btree (cpf);
+CREATE INDEX idx_entidades_senhas_cpf ON public.entidades_senhas USING btree (cpf);
 
 
 --
@@ -7677,10 +7677,10 @@ COMMENT ON TRIGGER prevent_lote_update_after_emission ON public.lotes_avaliacao 
 
 
 --
--- Name: contratantes_senhas trg_contratantes_senhas_updated_at; Type: TRIGGER; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas trg_entidades_senhas_updated_at; Type: TRIGGER; Schema: public; Owner: neondb_owner
 --
 
-CREATE TRIGGER trg_contratantes_senhas_updated_at BEFORE UPDATE ON public.contratantes_senhas FOR EACH ROW EXECUTE FUNCTION public.update_contratantes_senhas_updated_at();
+CREATE TRIGGER trg_entidades_senhas_updated_at BEFORE UPDATE ON public.entidades_senhas FOR EACH ROW EXECUTE FUNCTION public.update_entidades_senhas_updated_at();
 
 
 --
@@ -7930,11 +7930,11 @@ ALTER TABLE ONLY public.avaliacoes
 
 
 --
--- Name: contratantes_senhas fk_contratantes_senhas_contratante; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: entidades_senhas fk_entidades_senhas_contratante; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT fk_contratantes_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
 
 
 --
@@ -8161,53 +8161,32 @@ ALTER TABLE ONLY public.role_permissions
     ADD CONSTRAINT role_permissions_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id) ON DELETE CASCADE;
 
 
---
--- Name: avaliacoes admin_all_avaliacoes; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_all_avaliacoes ON public.avaliacoes USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
+-- ❌ REMOVIDO: admin_all_avaliacoes (admin não acessa avaliacoes)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
---
--- Name: empresas_clientes admin_all_empresas; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_all_empresas ON public.empresas_clientes USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
+-- ❌ REMOVIDO: admin_all_empresas (admin não acessa empresas_clientes)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
---
--- Name: laudos admin_all_laudos; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_all_laudos ON public.laudos USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
+-- ❌ REMOVIDO: admin_all_laudos (admin não acessa laudos)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
---
--- Name: lotes_avaliacao admin_all_lotes; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_all_lotes ON public.lotes_avaliacao USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
+-- ❌ REMOVIDO: admin_all_lotes (admin não acessa lotes_avaliacao)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
---
--- Name: respostas admin_all_respostas; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_all_respostas ON public.respostas USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
+-- ❌ REMOVIDO: admin_all_respostas (admin não acessa respostas)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
---
--- Name: resultados admin_all_resultados; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_all_resultados ON public.resultados USING ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text));
+-- ❌ REMOVIDO: admin_all_resultados (admin não acessa resultados)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
---
--- Name: funcionarios admin_restricted_funcionarios; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY admin_restricted_funcionarios ON public.funcionarios USING (((current_setting('app.current_user_perfil'::text, true) = 'admin'::text) AND ((perfil)::text = ANY (ARRAY[('rh'::character varying)::text, ('emissor'::character varying)::text]))));
+-- ❌ REMOVIDO: admin_restricted_funcionarios (admin não acessa funcionarios)
+-- Policy removida em 04/02/2026 - vide migration 301
 
 
 --
@@ -8282,7 +8261,7 @@ CREATE POLICY avaliacao_resets_delete_policy ON public.avaliacao_resets FOR DELE
 -- Name: avaliacao_resets avaliacao_resets_insert_policy; Type: POLICY; Schema: public; Owner: neondb_owner
 --
 
-CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR INSERT WITH CHECK (((current_setting('app.is_backend'::text, true) = '1'::text) OR (current_setting('app.current_user_perfil'::text, true) = ANY (ARRAY['rh'::text, 'gestor_entidade'::text, 'admin'::text]))));
+CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR INSERT WITH CHECK (((current_setting('app.is_backend'::text, true) = '1'::text) OR (current_setting('app.current_user_perfil'::text, true) = ANY (ARRAY['rh'::text, 'gestor'::text, 'admin'::text]))));
 
 
 --
@@ -8292,7 +8271,7 @@ CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR INSE
 CREATE POLICY avaliacao_resets_select_policy ON public.avaliacao_resets FOR SELECT USING ((EXISTS ( SELECT 1
    FROM (public.avaliacoes av
      JOIN public.lotes_avaliacao lot ON ((av.lote_id = lot.id)))
-  WHERE ((av.id = avaliacao_resets.avaliacao_id) AND (((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND (lot.clinica_id = (current_setting('app.current_user_clinica_id'::text, true))::integer)) OR ((current_setting('app.current_user_perfil'::text, true) = 'gestor_entidade'::text) AND (lot.contratante_id = (current_setting('app.current_user_contratante_id'::text, true))::integer)))))));
+  WHERE ((av.id = avaliacao_resets.avaliacao_id) AND (((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND (lot.clinica_id = (current_setting('app.current_user_clinica_id'::text, true))::integer)) OR ((current_setting('app.current_user_perfil'::text, true) = 'gestor'::text) AND (lot.contratante_id = (current_setting('app.current_user_contratante_id'::text, true))::integer)))))));
 
 
 --
@@ -8313,7 +8292,8 @@ CREATE POLICY avaliacoes_block_admin ON public.avaliacoes AS RESTRICTIVE USING (
 -- Name: avaliacoes avaliacoes_own_update; Type: POLICY; Schema: public; Owner: neondb_owner
 --
 
-CREATE POLICY avaliacoes_own_update ON public.avaliacoes FOR UPDATE USING ((((funcionario_cpf)::text = public.current_user_cpf()) OR (public.current_user_perfil() = ANY (ARRAY['admin'::text, 'rh'::text, 'emissor'::text]))));
+-- ✅ CORRIGIDO: Removido 'admin' e 'emissor' (04/02/2026)
+CREATE POLICY avaliacoes_own_update ON public.avaliacoes FOR UPDATE USING ((((funcionario_cpf)::text = public.current_user_cpf()) OR (public.current_user_perfil() = ANY (ARRAY['rh'::text, 'gestor'::text]))));
 
 
 --
@@ -8323,12 +8303,8 @@ CREATE POLICY avaliacoes_own_update ON public.avaliacoes FOR UPDATE USING ((((fu
 ALTER TABLE public.clinicas ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: clinicas clinicas_admin_all; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY clinicas_admin_all ON public.clinicas USING ((public.current_user_perfil() = 'admin'::text)) WITH CHECK ((public.current_user_perfil() = 'admin'::text));
-
-
+-- ❌ REMOVIDO: clinicas_admin_all (admin não acessa clinicas)
+-- Policy removida em 04/02/2026 - vide migration 301
 --
 -- Name: clinicas clinicas_rh_select; Type: POLICY; Schema: public; Owner: neondb_owner
 --
@@ -8337,12 +8313,8 @@ CREATE POLICY clinicas_rh_select ON public.clinicas FOR SELECT USING (((public.c
 
 
 --
--- Name: contratantes contratantes_admin_all; Type: POLICY; Schema: public; Owner: neondb_owner
---
-
-CREATE POLICY contratantes_admin_all ON public.contratantes USING ((public.current_user_perfil() = 'admin'::text)) WITH CHECK ((public.current_user_perfil() = 'admin'::text));
-
-
+-- ❌ REMOVIDO: contratantes_admin_all (admin não acessa contratantes)
+-- Policy removida em 04/02/2026 - vide migration 301
 --
 -- Name: empresas_clientes empresas_block_admin; Type: POLICY; Schema: public; Owner: neondb_owner
 --
@@ -8479,7 +8451,7 @@ COMMENT ON POLICY funcionarios_delete_simple ON public.funcionarios IS 'Polític
 -- Name: funcionarios funcionarios_insert_simple; Type: POLICY; Schema: public; Owner: neondb_owner
 --
 
-CREATE POLICY funcionarios_insert_simple ON public.funcionarios FOR INSERT WITH CHECK (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor_entidade'::text)));
+CREATE POLICY funcionarios_insert_simple ON public.funcionarios FOR INSERT WITH CHECK (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor'::text)));
 
 
 --
@@ -8535,7 +8507,7 @@ CREATE POLICY funcionarios_rh_update ON public.funcionarios FOR UPDATE USING (((
 -- Name: funcionarios funcionarios_select_simple; Type: POLICY; Schema: public; Owner: neondb_owner
 --
 
-CREATE POLICY funcionarios_select_simple ON public.funcionarios FOR SELECT USING (((public.current_user_perfil() = 'admin'::text) OR ((public.current_user_perfil() = 'funcionario'::text) AND ((cpf)::text = public.current_user_cpf())) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor_entidade'::text)));
+CREATE POLICY funcionarios_select_simple ON public.funcionarios FOR SELECT USING (((public.current_user_perfil() = 'admin'::text) OR ((public.current_user_perfil() = 'funcionario'::text) AND ((cpf)::text = public.current_user_cpf())) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor'::text)));
 
 
 --
@@ -8549,7 +8521,7 @@ COMMENT ON POLICY funcionarios_select_simple ON public.funcionarios IS 'Polític
 -- Name: funcionarios funcionarios_update_simple; Type: POLICY; Schema: public; Owner: neondb_owner
 --
 
-CREATE POLICY funcionarios_update_simple ON public.funcionarios FOR UPDATE USING (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor_entidade'::text)));
+CREATE POLICY funcionarios_update_simple ON public.funcionarios FOR UPDATE USING (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor'::text)));
 
 
 --

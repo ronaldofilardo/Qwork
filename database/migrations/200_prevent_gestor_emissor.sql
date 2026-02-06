@@ -9,9 +9,9 @@ BEGIN
   -- Se estamos inserindo/atualizando para perfil 'emissor', garantir que o CPF NÃO pertença a um gestor
   IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
     IF (NEW.perfil = 'emissor') THEN
-      -- Se CPF existe em contratantes_senhas ligado a uma contratante do tipo 'entidade', bloquear
+      -- Se CPF existe em entidades_senhas ligado a uma contratante do tipo 'entidade', bloquear
       IF EXISTS(
-        SELECT 1 FROM contratantes_senhas cs
+        SELECT 1 FROM entidades_senhas cs
         JOIN contratantes c ON c.id = cs.contratante_id
         WHERE cs.cpf = NEW.cpf AND c.tipo = 'entidade' AND c.ativa = true
       ) THEN
@@ -27,8 +27,8 @@ BEGIN
       END IF;
     END IF;
 
-    -- Se estamos tornando alguém em gestor (rh/gestor_entidade), garantir que CPF não seja emissor
-    IF (NEW.perfil IN ('rh','gestor_entidade')) THEN
+    -- Se estamos tornando alguém em gestor (rh/gestor), garantir que CPF não seja emissor
+    IF (NEW.perfil IN ('rh','gestor')) THEN
       IF EXISTS(
         SELECT 1 FROM funcionarios f
         WHERE f.cpf = NEW.cpf AND f.perfil = 'emissor' AND (TG_OP = 'INSERT' OR f.id <> NEW.id)
@@ -46,7 +46,7 @@ CREATE TRIGGER trg_prevent_gestor_emissor
 BEFORE INSERT OR UPDATE ON funcionarios
 FOR EACH ROW EXECUTE FUNCTION prevent_gestor_being_emissor();
 
--- Função que impede um CPF já cadastrado como emissor de virar gestor de entidade (via contratantes_senhas)
+-- Função que impede um CPF já cadastrado como emissor de virar gestor de entidade (via entidades_senhas)
 CREATE OR REPLACE FUNCTION prevent_contratante_for_emissor() RETURNS trigger AS $$
 BEGIN
   IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
@@ -59,7 +59,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trg_prevent_contratante_emissor
-BEFORE INSERT OR UPDATE ON contratantes_senhas
+BEFORE INSERT OR UPDATE ON entidades_senhas
 FOR EACH ROW EXECUTE FUNCTION prevent_contratante_for_emissor();
 
 COMMIT;

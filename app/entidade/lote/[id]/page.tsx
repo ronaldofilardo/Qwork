@@ -99,7 +99,7 @@ export default function DetalhesLotePage() {
   const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<
-    'todos' | 'concluida' | 'pendente'
+    'todos' | 'concluido' | 'pendente'
   >('todos');
   const [busca, setBusca] = useState('');
   const [buscaDebouncedValue, setBuscaDebouncedValue] = useState('');
@@ -389,14 +389,14 @@ export default function DetalhesLotePage() {
     return funcionarios.filter((func) => {
       // Filtro de status
       if (
-        filtroStatus === 'concluida' &&
-        func.avaliacao.status !== 'concluida'
+        filtroStatus === 'concluido' &&
+        func.avaliacao.status !== 'concluido'
       ) {
         return false;
       }
       if (
         filtroStatus === 'pendente' &&
-        func.avaliacao.status === 'concluida'
+        func.avaliacao.status === 'concluido'
       ) {
         return false;
       }
@@ -828,9 +828,14 @@ export default function DetalhesLotePage() {
             </div>
           </div>
 
-          {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído, sem laudo e sem solicitação */}
+          {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído (status='concluido'), sem laudo e sem solicitação */}
           {lote &&
             lote.status === 'concluido' &&
+            estatisticas &&
+            estatisticas.funcionarios_concluidos +
+              estatisticas.funcionarios_pendentes >
+              0 &&
+            estatisticas.funcionarios_pendentes === 0 &&
             !lote.emissao_solicitada &&
             !lote.tem_laudo && (
               <div className="mt-6 pt-6 border-t border-gray-200">
@@ -1032,13 +1037,13 @@ export default function DetalhesLotePage() {
                 value={filtroStatus}
                 onChange={(e) =>
                   setFiltroStatus(
-                    e.target.value as 'todos' | 'concluida' | 'pendente'
+                    e.target.value as 'todos' | 'concluido' | 'pendente'
                   )
                 }
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
               >
                 <option value="todos">Todos</option>
-                <option value="concluida">Concluídas</option>
+                <option value="concluido">Concluídas</option>
                 <option value="pendente">Pendentes</option>
               </select>
             </div>
@@ -1228,7 +1233,7 @@ export default function DetalhesLotePage() {
                         <div className="flex flex-col gap-0.5">
                           <span
                             className={`inline-flex px-1 py-0.5 text-[11px] font-semibold rounded-full ${
-                              func.avaliacao.status === 'concluida'
+                              func.avaliacao.status === 'concluido'
                                 ? 'bg-green-100 text-green-800'
                                 : func.avaliacao.status === 'em_andamento'
                                   ? 'bg-blue-100 text-blue-800'
@@ -1239,7 +1244,7 @@ export default function DetalhesLotePage() {
                                       : 'bg-yellow-100 text-yellow-800'
                             }`}
                           >
-                            {func.avaliacao.status === 'concluida'
+                            {func.avaliacao.status === 'concluido'
                               ? 'Concluída'
                               : func.avaliacao.status === 'em_andamento'
                                 ? 'Em Andamento'
@@ -1249,7 +1254,7 @@ export default function DetalhesLotePage() {
                                     ? 'Iniciada'
                                     : 'Pendente'}
                           </span>
-                          {func.avaliacao.status !== 'concluida' &&
+                          {func.avaliacao.status !== 'concluido' &&
                             func.avaliacao.status !== 'inativada' &&
                             func.avaliacao.total_respostas !== undefined && (
                               <span className="text-[10px] text-gray-600">
@@ -1260,7 +1265,7 @@ export default function DetalhesLotePage() {
                       </td>
                       <td className="px-2 py-1 text-sm text-center">
                         <div className="flex gap-1 justify-center">
-                          {func.avaliacao.status !== 'concluida' &&
+                          {func.avaliacao.status !== 'concluido' &&
                             func.avaliacao.status !== 'inativada' &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
@@ -1280,7 +1285,7 @@ export default function DetalhesLotePage() {
                             )}
                           {/* Show Reset for any evaluation that is NOT inativada — backend will enforce single-reset and lote constraints */}
                           {func.avaliacao.status !== 'inativada' &&
-                            func.avaliacao.status !== 'concluida' &&
+                            func.avaliacao.status !== 'concluido' &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
                               <button
@@ -1326,7 +1331,7 @@ export default function DetalhesLotePage() {
                         </td>
                       ))}
                       <td className="px-2 py-1 text-center">
-                        {func.avaliacao.status === 'concluida' && (
+                        {func.avaliacao.status === 'concluido' && (
                           <button
                             onClick={() =>
                               gerarRelatorioFuncionario(func.cpf, func.nome)

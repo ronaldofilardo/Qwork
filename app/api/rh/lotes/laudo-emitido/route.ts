@@ -108,7 +108,7 @@ export const GET = async (req: Request) => {
         la.finalizado_em,
         f.nome as liberado_por_nome,
         COUNT(a.id) as total_avaliacoes,
-        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+        COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
         l.status as status_laudo,
         l.id as laudo_id,

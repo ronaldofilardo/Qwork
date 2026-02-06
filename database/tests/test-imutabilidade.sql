@@ -21,7 +21,7 @@ BEGIN
     RETURNING id INTO v_resultado_id;
 
     -- Agora marcar avaliação como concluída
-    UPDATE avaliacoes SET status = 'concluida', envio = NOW() WHERE id = v_avaliacao_id;
+    UPDATE avaliacoes SET status = 'concluido', envio = NOW() WHERE id = v_avaliacao_id;
 
     RAISE NOTICE 'Avaliação criada: ID %', v_avaliacao_id;
     RAISE NOTICE 'Resultado criado: ID %', v_resultado_id;

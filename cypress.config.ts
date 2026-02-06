@@ -118,9 +118,7 @@ export default defineConfig({
                 [cpf]
               );
               await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
-              await query('DELETE FROM contratantes_senhas WHERE cpf = $1', [
-                cpf,
-              ]);
+              await query('DELETE FROM entidades_senhas WHERE cpf = $1', [cpf]);
             }
 
             if (cnpj) {
@@ -181,7 +179,7 @@ export default defineConfig({
             const token = `token-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
             await query(
-              `INSERT INTO contratantes_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+              `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
                VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')`,
               [cpf, contratanteId, token]
             );
@@ -198,7 +196,7 @@ export default defineConfig({
           try {
             const { query } = await import('./lib/db');
             const res = await query(
-              'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1 LIMIT 1',
+              'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1 LIMIT 1',
               [cpf]
             );
             return res.rows[0] || null;

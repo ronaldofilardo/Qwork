@@ -30,7 +30,7 @@ export async function GET() {
         -- Total de avaliações liberadas
         COUNT(DISTINCT a.id) as total_avaliacoes,
         -- Avaliações concluídas
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
         -- Avaliações em andamento
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN a.id END) as avaliacoes_em_andamento
       FROM clinicas c
@@ -56,5 +56,6 @@ export async function GET() {
     )
   }
 }
+
 
 

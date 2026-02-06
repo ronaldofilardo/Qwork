@@ -39,24 +39,24 @@ require('./load-env.cjs').loadEnv();
     console.log('Contratante:', contratante.id, 'CNPJ:', contratante.cnpj);
     console.log('Senha padrão:', defaultPassword);
 
-    // Upsert em contratantes_senhas (compatível com esquemas sem UNIQUE)
+    // Upsert em entidades_senhas (compatível com esquemas sem UNIQUE)
     const csExists = await client.query(
-      'SELECT id FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
+      'SELECT id FROM entidades_senhas WHERE contratante_id = $1 AND cpf = $2',
       [contratante.id, cpf]
     );
 
     if (csExists.rows.length > 0) {
       await client.query(
-        'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE contratante_id = $2 AND cpf = $3',
+        'UPDATE entidades_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE contratante_id = $2 AND cpf = $3',
         [hash, contratante.id, cpf]
       );
-      console.log('Atualizado em contratantes_senhas');
+      console.log('Atualizado em entidades_senhas');
     } else {
       await client.query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+        'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
         [contratante.id, cpf, hash]
       );
-      console.log('Inserido em contratantes_senhas');
+      console.log('Inserido em entidades_senhas');
     }
 
     // Verificar funcionario
@@ -67,7 +67,7 @@ require('./load-env.cjs').loadEnv();
     if (fRes.rows.length > 0) {
       const fid = fRes.rows[0].id;
       await client.query(
-        `UPDATE funcionarios SET nome = $1, email = $2, perfil = 'gestor_entidade', contratante_id = $3, ativo = true, senha_hash = $4, atualizado_em = CURRENT_TIMESTAMP WHERE id = $5`,
+        `UPDATE funcionarios SET nome = $1, email = $2, perfil = 'gestor', contratante_id = $3, ativo = true, senha_hash = $4, atualizado_em = CURRENT_TIMESTAMP WHERE id = $5`,
         [
           contratante.responsavel_nome || 'Gestor',
           contratante.responsavel_email || null,
@@ -99,7 +99,7 @@ require('./load-env.cjs').loadEnv();
     } else {
       const ins = await client.query(
         `INSERT INTO funcionarios (cpf, nome, email, perfil, contratante_id, ativo, empresa_id, setor, funcao, nivel_cargo, senha_hash, criado_em, atualizado_em)
-         VALUES ($1,$2,$3,'gestor_entidade',$4,true,NULL,'Gestão','Gestor da Entidade','gestao',$5,NOW(),NOW()) RETURNING id`,
+         VALUES ($1,$2,$3,'gestor',$4,true,NULL,'Gestão','Gestor da Entidade','gestao',$5,NOW(),NOW()) RETURNING id`,
         [
           cpf,
           contratante.responsavel_nome || 'Gestor',

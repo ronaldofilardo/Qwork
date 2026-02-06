@@ -42,7 +42,7 @@ error instanceof Error ? error.message : 'Erro desconhecido';
 -- Tabela avaliacoes: adicionar 'inativada'
 ALTER TABLE avaliacoes DROP CONSTRAINT IF EXISTS avaliacoes_status_check;
 ALTER TABLE avaliacoes ADD CONSTRAINT avaliacoes_status_check
-  CHECK (status IN ('iniciada', 'em_andamento', 'concluida', 'inativada'));
+  CHECK (status IN ('iniciada', 'em_andamento', 'concluido', 'inativada'));
 
 -- Tabela lotes_avaliacao: adicionar 'concluido'
 ALTER TABLE lotes_avaliacao DROP CONSTRAINT IF EXISTS lotes_avaliacao_status_check;
@@ -76,7 +76,7 @@ WHERE constraint_name IN ('avaliacoes_status_check', 'lotes_avaliacao_status_che
 if (!ativo) {
   // Desativando: marcar avaliações não concluídas como 'inativada'
   const updateResult = await query(
-    "UPDATE avaliacoes SET status = 'inativada' WHERE funcionario_cpf = $1 AND status != 'concluida' RETURNING id, status",
+    "UPDATE avaliacoes SET status = 'inativada' WHERE funcionario_cpf = $1 AND status != 'concluido' RETURNING id, status",
     [cpf]
   );
   console.log(
@@ -95,7 +95,7 @@ if (!ativo) {
   ```sql
   SELECT
     COUNT(*) FILTER (WHERE a.status != 'inativada') as ativas,
-    COUNT(*) FILTER (WHERE a.status = 'concluida') as concluidas
+    COUNT(*) FILTER (WHERE a.status = 'concluido') as concluidas
   FROM avaliacoes a
   WHERE a.lote_id = $1
   ```
@@ -153,7 +153,7 @@ LEFT JOIN lotes_avaliacao la ON a.lote_id = la.id
 
 ```sql
 COUNT(*) FILTER (WHERE a.status != 'inativada') AS total_avaliacoes,
-COUNT(*) FILTER (WHERE a.status = 'concluida') AS avaliacoes_concluidas,
+COUNT(*) FILTER (WHERE a.status = 'concluido') AS avaliacoes_concluidas,
 COUNT(*) FILTER (WHERE a.status = 'inativada') AS avaliacoes_inativadas
 ```
 
@@ -246,7 +246,7 @@ COUNT(*) FILTER (WHERE a.status = 'inativada') AS avaliacoes_inativadas
 - ✅ Permite `'inativada'`
 - ✅ Permite `'iniciada'`
 - ✅ Permite `'em_andamento'`
-- ✅ Permite `'concluida'`
+- ✅ Permite `'concluido'`
 - ✅ Rejeita status inválido
 
 #### 4.2 Lotes_avaliacao Status Constraint (5 testes)
@@ -307,7 +307,7 @@ COUNT(*) FILTER (WHERE a.status = 'inativada') AS avaliacoes_inativadas
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 3. UPDATE avaliacoes SET status = 'inativada'                   │
-│    WHERE funcionario_cpf = $1 AND status != 'concluida'         │
+│    WHERE funcionario_cpf = $1 AND status != 'concluido'         │
 │    RETURNING id, status                                         │
 │    → Log: "[INFO] Inativadas 2 avaliações do funcionário"      │
 └────────────────────────┬────────────────────────────────────────┘
@@ -433,3 +433,4 @@ pnpm run build
 **Elaborado por**: Copilot  
 **Modelo**: Claude Sonnet 4.5  
 **Data**: 2025-01-23
+

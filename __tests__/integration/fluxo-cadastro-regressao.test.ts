@@ -195,7 +195,7 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
 
     expect(func.rows.length).toBe(1, 'Conta de gestor deve ter sido criada');
     expect(func.rows[0].ativo).toBe(true, 'Gestor deve estar ativo');
-    expect(['gestor_entidade', 'emissor']).toContain(func.rows[0].perfil);
+    expect(['gestor', 'emissor']).toContain(func.rows[0].perfil);
 
     const senhaEsperada = String(cnpjFixo).replace(/[./-]/g, '').slice(-6);
     expect(func.rows[0].senha_hash).toBe(

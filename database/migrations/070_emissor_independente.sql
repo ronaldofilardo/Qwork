@@ -63,7 +63,7 @@ CHECK (
   (perfil IN ('emissor', 'admin') OR clinica_id IS NOT NULL OR contratante_id IS NOT NULL)
 );
 
-\echo '   ✓ Constraint adicionada: emissor/admin/gestor_entidade podem ter clinica_id NULL'
+\echo '   ✓ Constraint adicionada: emissor/admin/gestor podem ter clinica_id NULL'
 
 -- ==========================================
 -- 4. ATUALIZAR POLÍTICAS RLS

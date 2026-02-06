@@ -55,17 +55,17 @@ Após iniciar o servidor, você deve ver:
 
 **Sem avisos** sobre `TEST_DATABASE_URL` ou `nr-bps_db_test`.
 
-## Gestor_Entidade Após Refatoração
+## gestor Após Refatoração
 
 ### Como Funciona Agora
 
-1. **Login**: Via `contratantes_senhas` (igual antes)
+1. **Login**: Via `entidades_senhas` (igual antes)
 2. **Validação**: Via `requireEntity()` → `validateGestorContext()`
 3. **Queries**: Usam `queryAsGestor()` ou `query()` direta
 4. **RLS**: **Não aplicado** (gestores não usam RLS)
 5. **Tabelas**: Gestor **NÃO** está mais em `funcionarios`
 
-### Endpoints de Gestor_Entidade
+### Endpoints de gestor
 
 Todos os endpoints `/api/entidade/*` foram atualizados para usar:
 
@@ -82,16 +82,16 @@ const result = await queryAsGestor(`SELECT ...`, [params]);
 ### Verificar Gestor no Banco
 
 ```sql
--- Gestor deve estar APENAS em contratantes_senhas
+-- Gestor deve estar APENAS em entidades_senhas
 SELECT cpf_cnpj, perfil, contratante_id, ativo
-FROM contratantes_senhas
-WHERE perfil = 'gestor_entidade';
+FROM entidades_senhas
+WHERE perfil = 'gestor';
 
 -- Gestor NÃO deve estar em funcionarios
 SELECT * FROM funcionarios
 WHERE cpf IN (
-  SELECT cpf_cnpj FROM contratantes_senhas
-  WHERE perfil = 'gestor_entidade'
+  SELECT cpf_cnpj FROM entidades_senhas
+  WHERE perfil = 'gestor'
 );
 -- Deve retornar 0 linhas
 ```
@@ -114,8 +114,8 @@ psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -f database/migrati
 psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -c "
 SELECT COUNT(*) as gestores_incorretos FROM funcionarios
 WHERE cpf IN (
-  SELECT cpf_cnpj FROM contratantes_senhas
-  WHERE perfil IN ('gestor_entidade', 'rh')
+  SELECT cpf_cnpj FROM entidades_senhas
+  WHERE perfil IN ('gestor', 'rh')
 );"
 # Deve retornar 0
 ```
@@ -133,7 +133,7 @@ Porque variáveis de ambiente do terminal têm **precedência mais alta** que ar
 1. Limpar ambiente do terminal
 2. Aplicar migrações SQL (quando pronto)
 
-### "O login do gestor_entidade mudou?"
+### "O login do gestor mudou?"
 
 **Não**. O login continua exatamente igual. A mudança foi apenas nas **queries internas** após o login.
 
@@ -178,7 +178,7 @@ Chave (liberado_por)=(CPF_DO_GESTOR) não está presente na tabela "funcionarios
 
 ### Causa
 
-Após refatoração de gestores (separação de funcionarios), a FK `lotes_avaliacao.liberado_por` ainda referenciava `funcionarios(cpf)`, mas gestores agora usam `contratantes_senhas`.
+Após refatoração de gestores (separação de funcionarios), a FK `lotes_avaliacao.liberado_por` ainda referenciava `funcionarios(cpf)`, mas gestores agora usam `entidades_senhas`.
 
 ### Solução
 
@@ -191,7 +191,7 @@ psql "postgresql://postgres:123456@localhost:5432/nr-bps_db" -f database/migrati
 Esta migration:
 
 - Remove FK antiga para `funcionarios`
-- Adiciona FK nova para `contratantes_senhas(cpf)`
+- Adiciona FK nova para `entidades_senhas(cpf)`
 
 ---
 

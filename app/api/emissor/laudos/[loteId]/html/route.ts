@@ -40,7 +40,7 @@ export async function GET(
 
     // Buscar dados do lote
     const loteResult = await query(
-      `SELECT id, codigo, titulo, status, clinica_id, empresa_id
+      `SELECT id, status, clinica_id, empresa_id
        FROM lotes_avaliacao
        WHERE id = $1`,
       [loteId]
@@ -55,7 +55,7 @@ export async function GET(
     }
 
     const lote = loteResult.rows[0];
-    console.log(`[INFO] Lote encontrado: ${lote.id} - ${lote.titulo}`);
+    console.log(`[INFO] Lote encontrado: ${lote.id}`);
 
     // Verificar se já existe laudo emitido
     const laudoResult = await query(
@@ -101,7 +101,7 @@ export async function GET(
         ) as respostas
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND a.status = 'concluida'
+      WHERE a.lote_id = $1 AND a.status = 'concluido'
       ORDER BY f.nome`,
       [loteId]
     );

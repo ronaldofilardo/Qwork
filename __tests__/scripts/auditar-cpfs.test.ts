@@ -77,7 +77,7 @@ describe('Script Auditoria CPFs - LGPD', () => {
     ];
 
     const mockAvaliacoes = [
-      { id: 1, funcionario_cpf: '12345678909', status: 'concluida' },
+      { id: 1, funcionario_cpf: '12345678909', status: 'concluido' },
       { id: 2, funcionario_cpf: '11111111111', status: 'pendente' },
     ];
 

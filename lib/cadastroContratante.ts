@@ -2,7 +2,7 @@
 
 import { formatarValor } from '@/lib/validacoes-contratacao';
 
-export type TipoContratante = 'clinica' | 'entidade';
+export type TipoEntidade = 'clinica' | 'entidade';
 
 export interface DadosContratante {
   nome: string;
@@ -190,7 +190,7 @@ export const gerarContratoSimulado = (params: {
   dadosContratante: DadosContratante;
   dadosResponsavel: DadosResponsavel;
   numeroFuncionarios: number;
-  tipo: TipoContratante;
+  tipo: TipoEntidade;
 }): string => {
   const {
     plano,

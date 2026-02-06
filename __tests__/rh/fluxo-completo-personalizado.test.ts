@@ -113,7 +113,7 @@ describe('Fluxo Completo Plano Personalizado - AAA Entidade', () => {
     // \n=== NOTIFICAÇÃO GERADA ===
 
     expect(notificacao.tipo).toBe('valor_definido');
-    expect(notificacao.destinatario_tipo).toBe('gestor_entidade');
+    expect(notificacao.destinatario_tipo).toBe('gestor');
     expect(notificacao.botao_texto).toBe('Ver Contrato');
   });
 

@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       WHERE f.clinica_id = $1
         AND f.setor = $2
         AND a.lote_id = $3
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
       GROUP BY f.cpf, f.nome, f.setor, f.funcao, f.matricula, f.turno, f.escala
       ORDER BY f.nome
     `;

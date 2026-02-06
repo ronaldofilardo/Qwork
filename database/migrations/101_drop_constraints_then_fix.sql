@@ -36,7 +36,7 @@ END $$;
 -- 5) Recreate new constraints aligned with the access model
 ALTER TABLE public.funcionarios
   ADD CONSTRAINT funcionarios_perfil_check CHECK (
-    perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor_entidade', 'cadastro')
+    perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor', 'cadastro')
   );
 
 ALTER TABLE public.funcionarios

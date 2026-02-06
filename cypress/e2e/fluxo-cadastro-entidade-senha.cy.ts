@@ -122,7 +122,7 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
       });
     });
 
-    it('deve gerar token de ativação e criar registro em contratantes_senhas', () => {
+    it('deve gerar token de ativação e criar registro em entidades_senhas', () => {
       cy.task('db:gerarTokenAtivacao', { contratanteId, cpf: mockCPF }).then(
         (result: any) => {
           expect(result.success).to.be.true;

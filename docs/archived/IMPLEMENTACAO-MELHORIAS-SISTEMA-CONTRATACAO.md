@@ -69,7 +69,7 @@ Este documento resume todas as melhorias implementadas no sistema QWork para gar
 - ✅ Políticas para isolamento por clínica/entidade
 - ✅ Função helper `set_rls_context()` para definir contexto
 - ✅ Wrapper `queryWithRLS()` para queries com contexto automático
-- ✅ Políticas específicas para cada perfil (admin, rh, gestor_entidade, funcionário)
+- ✅ Políticas específicas para cada perfil (admin, rh, gestor, funcionário)
 
 **Impacto**: Elimina vazamento de dados entre clínicas/entidades.
 

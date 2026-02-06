@@ -168,14 +168,14 @@ export default function AdminSidebar({
         onClick={() => onSectionChange('novos-cadastros')}
       />
 
-      {/* Contratantes */}
+      {/* Contratantes - Admin visualiza contratantes para gerenciar usuários gestores */}
       <MenuItem
         icon={Building2}
         label="Contratantes"
         isActive={activeSection === 'contratantes'}
         onClick={() => {
           toggleSection('contratantes');
-          onSectionChange('contratantes', 'clinicas');
+          onSectionChange('contratantes', 'lista');
         }}
         hasSubMenu
         isExpanded={isExpanded('contratantes')}

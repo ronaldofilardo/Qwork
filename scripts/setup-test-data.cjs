@@ -62,7 +62,7 @@ async function setupTestData() {
           END IF;
           
           -- Perfis que requerem contratante_id ou clinica_id
-          IF v_perfil IN ('gestor_entidade', 'rh', 'entidade') THEN
+          IF v_perfil IN ('gestor', 'rh', 'entidade') THEN
               IF (v_contratante_id IS NULL OR v_contratante_id = '') 
                  AND (v_clinica_id IS NULL OR v_clinica_id = '') THEN
                   RAISE EXCEPTION 'SEGURANÇA: Perfil % requer contratante_id ou clinica_id', v_perfil;
@@ -111,7 +111,7 @@ async function setupTestData() {
         [
           '04703084945',
           'RH Teste',
-          'gestor_rh',
+          'rh',
           true,
           senhaHash,
           clinicaId,

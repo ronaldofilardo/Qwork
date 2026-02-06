@@ -1,5 +1,5 @@
 /**
- * Script de teste para validar o login de gestor_entidade
+ * Script de teste para validar o login de gestor
  * Testa o caso do CPF 87545772920 (RONALDO FILARDO)
  *
  * Executar: node scripts/tests/test-gestor-login.js
@@ -39,12 +39,10 @@ async function testarLogin() {
       console.log('');
       console.log('VALIDAÇÃO:');
 
-      if (data.perfil === 'gestor_entidade') {
-        console.log('  ✅ Perfil correto: gestor_entidade');
+      if (data.perfil === 'gestor') {
+        console.log('  ✅ Perfil correto: gestor');
       } else {
-        console.log(
-          `  ❌ Perfil incorreto: ${data.perfil} (esperado: gestor_entidade)`
-        );
+        console.log(`  ❌ Perfil incorreto: ${data.perfil} (esperado: gestor)`);
       }
 
       if (data.redirectTo === '/entidade') {
@@ -57,10 +55,7 @@ async function testarLogin() {
 
       console.log('');
 
-      if (
-        data.perfil === 'gestor_entidade' &&
-        data.redirectTo === '/entidade'
-      ) {
+      if (data.perfil === 'gestor' && data.redirectTo === '/entidade') {
         console.log('🎉 TESTE PASSOU! Correção funcionando corretamente.');
       } else {
         console.log('⚠️  TESTE FALHOU! Verificar implementação.');

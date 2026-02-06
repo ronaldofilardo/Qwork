@@ -59,7 +59,7 @@ SELECT
   cpf,
   NOW() - INTERVAL '1 day' * (random() * 30)::integer, -- Data aleatória nos últimos 30 dias
   NOW() - INTERVAL '1 hour' * (random() * 24)::integer, -- Data de envio após início
-  'concluida'::varchar,
+  'concluido'::varchar,
   10, -- Último grupo
   :LOTE_ID,
   NOW(),
@@ -297,7 +297,7 @@ COMMIT;
 /*
 1. **Configuração Inicial**: Define os IDs do lote e empresa para a operação
 2. **Verificação de Dados**: Confere se o lote existe e conta funcionários elegíveis
-3. **Criação de Avaliações**: Insere registros na tabela `avaliacoes` com status 'concluida'
+3. **Criação de Avaliações**: Insere registros na tabela `avaliacoes` com status 'concluido'
 4. **Geração de Respostas**: Cria respostas aleatórias para cada questão usando valores válidos (0, 25, 50, 75, 100)
 5. **Cálculo de Resultados**: Calcula o score por grupo e determina a categoria (baixo/medio/alto)
 6. **Análise Estatística**: Detecta anomalias nos scores (padrões uniformes, valores fora do range, comportamentos ofensivos)
@@ -309,3 +309,4 @@ NOTAS:
 - Respostas são aleatórias para simular comportamento real
 - Scores são calculados com base na soma das respostas por grupo
 */
+

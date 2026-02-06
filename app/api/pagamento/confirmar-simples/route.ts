@@ -7,55 +7,55 @@ import { query } from '@/lib/db';
  * Endpoint ULTRA-SIMPLIFICADO para confirmar pagamento durante desenvolvimento.
  * Não valida status, não cria registros complexos - apenas marca como pago e ativa conta.
  *
- * Body: { contratante_id, valor_total, metodo? }
+ * Body: { entidade_id, valor_total, metodo? }
  */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { contratante_id, valor_total, metodo = 'pix' } = body;
+    const { entidade_id, valor_total, metodo = 'pix' } = body;
 
-    if (!contratante_id) {
+    if (!entidade_id) {
       return NextResponse.json(
-        { error: 'contratante_id é obrigatório' },
+        { error: 'entidade_id é obrigatório' },
         { status: 400 }
       );
     }
 
     console.log(
-      '[PAGAMENTO_SIMPLES] Iniciando confirmação para contratante',
-      contratante_id
+      '[PAGAMENTO_SIMPLES] Iniciando confirmação para entidade',
+      entidade_id
     );
 
-    // 1. Confirmar pagamento no contratante
+    // 1. Confirmar pagamento na entidade
     await query(
-      `UPDATE contratantes 
+      `UPDATE entidades 
        SET pagamento_confirmado = true,
            status = 'ativo',
            ativa = true,
            atualizado_em = CURRENT_TIMESTAMP
        WHERE id = $1`,
-      [contratante_id]
+      [entidade_id]
     );
 
     // 2. Criar registro de pagamento simples (apenas para histórico)
     const pagamentoRes = await query(
-      `INSERT INTO pagamentos (contratante_id, valor, metodo, status, confirmado_em)
+      `INSERT INTO pagamentos (entidade_id, valor, metodo, status, confirmado_em)
        VALUES ($1, $2, $3, 'confirmado', CURRENT_TIMESTAMP)
        RETURNING id`,
-      [contratante_id, valor_total || 0, metodo]
+      [entidade_id, valor_total || 0, metodo]
     );
 
     const pagamentoId = pagamentoRes.rows[0].id;
 
     // 3. Criar conta responsável (login)
-    const contratanteRes = await query(
-      'SELECT responsavel_cpf, responsavel_nome, responsavel_email, tipo FROM contratantes WHERE id = $1',
-      [contratante_id]
+    const entidadeRes = await query(
+      'SELECT responsavel_cpf, responsavel_nome, responsavel_email, tipo FROM entidades WHERE id = $1',
+      [entidade_id]
     );
 
-    if (contratanteRes.rows.length > 0) {
+    if (entidadeRes.rows.length > 0) {
       const { responsavel_cpf, responsavel_nome, responsavel_email, tipo } =
-        contratanteRes.rows[0];
+        entidadeRes.rows[0];
 
       // Verificar se já existe login
       const loginExists = await query(
@@ -68,11 +68,10 @@ export async function POST(request: NextRequest) {
         const bcrypt = await import('bcryptjs');
         const senhaHash = await bcrypt.hash('123456', 10);
 
-        const perfil =
-          tipo === 'clinica' ? 'gestor_entidade' : 'gestor_entidade';
+        const perfil = tipo === 'clinica' ? 'gestor' : 'gestor';
 
         await query(
-          `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, contratante_id)
+          `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, entidade_id)
            VALUES ($1, $2, $3, $4, $5, true, $6)`,
           [
             responsavel_cpf,
@@ -80,7 +79,7 @@ export async function POST(request: NextRequest) {
             responsavel_email,
             senhaHash,
             perfil,
-            contratante_id,
+            entidade_id,
           ]
         );
 
@@ -89,7 +88,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('[PAGAMENTO_SIMPLES] Pagamento confirmado com sucesso', {
-      contratante_id,
+      entidade_id,
       pagamento_id: pagamentoId,
     });
 

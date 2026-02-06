@@ -1,10 +1,10 @@
 describe('Entidade - Inativar Avaliação (E2E confiável)', () => {
   it('abre card, inativa avaliação e recarrega funcionários', () => {
-    // Criar sessão de teste como gestor_entidade
+    // Criar sessão de teste como gestor
     cy.request('POST', '/api/test/session', {
       cpf: '22222222222',
       nome: 'Gestor Entidade Teste',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 

@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS historico_alteracoes_valores (
   -- Auditoria
   alterado_por_cpf TEXT NOT NULL,
   alterado_por_nome TEXT,
-  alterado_por_role TEXT NOT NULL CHECK (alterado_por_role IN ('admin', 'gestor_entidade')),
+  alterado_por_role TEXT NOT NULL CHECK (alterado_por_role IN ('admin', 'gestor')),
   data_alteracao TIMESTAMP DEFAULT NOW(),
   
   -- Metadata

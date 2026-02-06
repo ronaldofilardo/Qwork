@@ -44,7 +44,7 @@ BEGIN
   ) THEN
     ALTER TABLE avaliacoes DROP CONSTRAINT IF EXISTS avaliacoes_status_check;
     ALTER TABLE avaliacoes ADD CONSTRAINT avaliacoes_status_check 
-    CHECK (status IN ('iniciada', 'em_andamento', 'concluida', 'inativada'));
+    CHECK (status IN ('iniciada', 'em_andamento', 'concluido', 'inativada'));
   END IF;
 END $$;
 
@@ -134,7 +134,7 @@ WITH
             avaliacoes a
             JOIN lotes_avaliacao la ON a.lote_id = la.id
         WHERE
-            a.status = 'concluida'
+            a.status = 'concluido'
         GROUP BY
             a.funcionario_cpf
     )

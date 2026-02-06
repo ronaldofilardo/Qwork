@@ -6,7 +6,7 @@ import { query } from '@/lib/db';
  *
  * Gera link de pagamento para planos fixos quando há falha no pagamento inicial
  * Body:
- * - contratante_id: ID do contratante
+ * - entidade_id: ID da entidade
  * - contrato_id: ID do contrato (opcional, será criado se não existir)
  * - plano_id: ID do plano fixo
  * - numero_funcionarios: Número de funcionários
@@ -14,14 +14,14 @@ import { query } from '@/lib/db';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { contratante_id, contrato_id, plano_id, numero_funcionarios } = body;
+    const { entidade_id, contrato_id, plano_id, numero_funcionarios } = body;
 
     // Validações
-    if (!contratante_id || !plano_id || !numero_funcionarios) {
+    if (!entidade_id || !plano_id || !numero_funcionarios) {
       return NextResponse.json(
         {
           error:
-            'Campos obrigatórios: contratante_id, plano_id, numero_funcionarios',
+            'Campos obrigatórios: entidade_id, plano_id, numero_funcionarios',
         },
         { status: 400 }
       );
@@ -30,27 +30,27 @@ export async function POST(request: NextRequest) {
     await query('BEGIN');
 
     try {
-      // Verificar status do contratante
-      const contratanteRes = await query(
-        'SELECT status, ativa, pagamento_confirmado FROM contratantes WHERE id = $1',
-        [contratante_id]
+      // Verificar status da entidade
+      const entidadeRes = await query(
+        'SELECT status, ativa, pagamento_confirmado FROM entidades WHERE id = $1',
+        [entidade_id]
       );
 
-      if (contratanteRes.rows.length === 0) {
+      if (entidadeRes.rows.length === 0) {
         return NextResponse.json(
-          { error: 'Contratante não encontrado' },
+          { error: 'Entidade não encontrada' },
           { status: 404 }
         );
       }
 
-      const contratante = contratanteRes.rows[0];
+      const entidade = entidadeRes.rows[0];
 
-      // Não permitir regeneração para contratantes já aprovados
-      if (contratante.status === 'aprovado') {
+      // Não permitir regeneração para entidades já aprovadas
+      if (entidade.status === 'aprovado') {
         return NextResponse.json(
           {
             error:
-              'Não é possível gerar link de pagamento para contratante já aprovado',
+              'Não é possível gerar link de pagamento para entidade já aprovada',
           },
           { status: 400 }
         );
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
           ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento', $5, $5)
           RETURNING id`,
           [
-            contratante_id,
+            entidade_id,
             plano_id,
             numero_funcionarios,
             valorTotal,
@@ -118,26 +118,26 @@ export async function POST(request: NextRequest) {
         contratoIdFinal = contratoRes.rows[0].id;
       }
 
-      // Atualizar status do contratante para 'aguardando_pagamento'
+      // Atualizar status da entidade para 'aguardando_pagamento'
       // NÃO ATIVAR até confirmação de pagamento
       await query(
-        `UPDATE contratantes 
+        `UPDATE entidades 
          SET status = 'aguardando_pagamento',
              pagamento_confirmado = false,
              ativa = false
          WHERE id = $1`,
-        [contratante_id]
+        [entidade_id]
       );
 
       await query('COMMIT');
 
       // Gerar link de pagamento
-      const paymentLink = `/pagamento/simulador?contratante_id=${contratante_id}&contrato_id=${contratoIdFinal}&plano_id=${plano_id}&numero_funcionarios=${numero_funcionarios}&retry=true`;
+      const paymentLink = `/pagamento/simulador?entidade_id=${entidade_id}&contrato_id=${contratoIdFinal}&plano_id=${plano_id}&numero_funcionarios=${numero_funcionarios}&retry=true`;
 
       console.info(
         JSON.stringify({
           event: 'payment_link_generated_plano_fixo',
-          contratante_id,
+          entidade_id,
           contrato_id: contratoIdFinal,
           plano_id,
           numero_funcionarios,

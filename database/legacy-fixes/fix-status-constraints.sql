@@ -9,7 +9,7 @@ ADD CONSTRAINT avaliacoes_status_check CHECK (
     status IN (
         'iniciada',
         'em_andamento',
-        'concluida',
+        'concluido',
         'inativada'
     )
 );

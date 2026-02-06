@@ -30,20 +30,22 @@ resultados_block_admin        | RESTRICTIVE | ALL
 #### 1. `clinicas_admin_all` (clinicas)
 
 ```sql
-USING (current_user_perfil() = 'admin')
+-- OBSERVAÇÃO: esta política foi REMOVIDA. Admin NÃO gerencia clínicas.
+-- Recomendação: uso de políticas restritivas para RH (scoped by clinica_id).
 ```
 
-**Justificativa**: ✅ Admin gerencia clínicas (administrativo)
+**Justificativa**: ❌ Política removida. Admin não tem acesso operacional a clínicas; RH é responsável.
 
 ---
 
 #### 2. `contratantes_admin_all` (contratantes)
 
 ```sql
-USING (current_user_perfil() = 'admin')
+-- OBSERVAÇÃO: esta política foi REMOVIDA. Admin NÃO gerencia contratantes/entidades.
+-- Recomendação: uso de políticas específicas para gestões de gestor.
 ```
 
-**Justificativa**: ✅ Admin gerencia contratantes (administrativo)
+**Justificativa**: ❌ Política removida. Admin não tem acesso operacional a contratantes; gestores de entidade são responsáveis.
 
 ---
 

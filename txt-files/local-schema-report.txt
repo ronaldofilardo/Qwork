@@ -18,7 +18,7 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  public     | clinicas_empresas
  public     | contratacao_personalizada
  public     | contratantes
- public     | contratantes_senhas
+ public     | entidades_senhas
  public     | contratos
  public     | contratos_planos
  public     | emissao_queue
@@ -67,7 +67,7 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  tipo_lote_enum         | completo, operacional, gestao
  tipo_notificacao       | pre_cadastro_criado, valor_definido, contrato_aceito, pagamento_confirmado, contratacao_ativa, rejeicao_admin, cancelamento_gestor, sla_excedido, alerta_geral, emissao_solicitada_sucesso
  tipo_plano             | personalizado, fixo
- usuario_tipo_enum      | funcionario_clinica, funcionario_entidade, gestor_rh, gestor_entidade, admin, emissor
+ usuario_tipo_enum      | funcionario_clinica, funcionario_entidade, rh, gestor, admin, emissor
 (14 linhas)
 
 
@@ -276,7 +276,7 @@ COMPARA├ç├âO DE SCHEMAS: LOCAL vs NEON
  public | set_updated_at_column                            | trigger                                                                                                                                                                                                                               | 
  public | trg_enforce_laudo_id_equals_lote                 | trigger                                                                                                                                                                                                                               | 
  public | trigger_gerar_numero_recibo                      | trigger                                                                                                                                                                                                                               | 
- public | update_contratantes_senhas_updated_at            | trigger                                                                                                                                                                                                                               | 
+ public | update_entidades_senhas_updated_at            | trigger                                                                                                                                                                                                                               | 
  public | update_contratantes_updated_at                   | trigger                                                                                                                                                                                                                               | 
  public | upsert_laudo                                     | integer                                                                                                                                                                                                                               | p_lote_id integer, p_emissor_cpf character, p_observacoes text, p_status text DEFAULT 'enviado'::text
  public | user_has_permission                              | boolean                                                                                                                                                                                                                               | permission_name text

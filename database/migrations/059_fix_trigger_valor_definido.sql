@@ -27,7 +27,7 @@ BEGIN
     'media',
     v_contratante_id,
     v_gestor_cpf,
-    'gestor_entidade',
+    'gestor',
     'Valor Definido para Plano Personalizado',
     'O valor do seu plano personalizado foi definido. Valor por funcionário: R$ ' || 
       TO_CHAR(NEW.valor_por_funcionario, 'FM999G999G990D00') || 

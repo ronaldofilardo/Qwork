@@ -259,12 +259,12 @@ idx_funcionarios_cpf_clinica_perfil
 
 ### 12. Padronização de Status ✅
 
-**Problema**: Inconsistências terminológicas ('concluida' vs 'concluido').
+**Problema**: Inconsistências terminológicas ('concluido' vs 'concluido').
 
 **Solução**: Tipos ENUM criados e documentados:
 
 ```sql
-CREATE TYPE status_avaliacao AS ENUM ('pendente', 'em_andamento', 'concluida');
+CREATE TYPE status_avaliacao AS ENUM ('pendente', 'em_andamento', 'concluido');
 CREATE TYPE status_lote AS ENUM ('rascunho', 'ativo', 'concluido');
 CREATE TYPE status_laudo AS ENUM ('rascunho', 'emitido', 'enviado');
 ```
@@ -482,3 +482,4 @@ Para dúvidas ou problemas relacionados a estas correções:
 **Última Atualização**: 14 de dezembro de 2025  
 **Versão do Documento**: 1.0.0  
 **Status**: Implementado e Testado
+

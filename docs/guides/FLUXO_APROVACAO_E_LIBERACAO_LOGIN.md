@@ -87,7 +87,7 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 │    → defaultPassword = últimos 6 dígitos do CNPJ (sem formatação)│
 │    → hashed = bcrypt.hash(defaultPassword, 10)                  │
 │                                                                  │
-│    1. INSERT/UPDATE contratantes_senhas:                        │
+│    1. INSERT/UPDATE entidades_senhas:                        │
 │       - contratante_id                                          │
 │       - cpf (responsavel_cpf)                                   │
 │       - senha_hash (bcrypt)                                     │
@@ -102,7 +102,7 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 │                                                                  │
 │       SE tipo == 'entidade':                                    │
 │       → NÃO cria funcionario                                    │
-│       → Login direto via contratantes_senhas                    │
+│       → Login direto via entidades_senhas                    │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
@@ -113,7 +113,7 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 │    - Senha: últimos 6 dígitos do CNPJ                           │
 │                                                                  │
 │    Tabelas de Autenticação:                                     │
-│    - contratantes_senhas (ambos os tipos)                       │
+│    - entidades_senhas (ambos os tipos)                       │
 │    - funcionarios (apenas clínica)                              │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -134,9 +134,9 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 
 1. ✅ **Aprovação**: Status muda para 'aprovado'
 2. ✅ **Ativação**: `ativa=true` após validação de pagamento
-3. ✅ **Criação de Senha**: `contratantes_senhas` (CPF + bcrypt hash)
+3. ✅ **Criação de Senha**: `entidades_senhas` (CPF + bcrypt hash)
 4. ❌ **NÃO cria funcionario**: Responsável **não** entra na tabela `funcionarios`
-5. ✅ **Login**: Via `contratantes_senhas` apenas
+5. ✅ **Login**: Via `entidades_senhas` apenas
 
 #### Estrutura de Dados
 
@@ -147,7 +147,7 @@ contratantes:
   responsavel_cpf='12345678901', cnpj='12345678000100'
 
 -- Senha do responsável
-contratantes_senhas:
+entidades_senhas:
   contratante_id=7, cpf='12345678901', senha_hash='$2b$10...'
 
 -- Empresas associadas (pode ser a própria entidade ou subsidiárias)
@@ -160,8 +160,8 @@ empresas_clientes:
 #### Login da Entidade
 
 - **Endpoint**: `/api/auth/login` ou `/api/auth/login-entidade`
-- **Validação**: Busca em `contratantes_senhas` WHERE `cpf = ? AND contratante_id = ?`
-- **Perfil retornado**: `gestor_entidade` ou `rh` (derivado da sessão)
+- **Validação**: Busca em `entidades_senhas` WHERE `cpf = ? AND contratante_id = ?`
+- **Perfil retornado**: `gestor` ou `rh` (derivado da sessão)
 
 ---
 
@@ -183,9 +183,9 @@ empresas_clientes:
      ```
 2. ✅ **Confirmação de Pagamento**: Automática via simulador de pagamento
 3. ✅ **Ativação AUTOMÁTICA**: `ativa=true` imediatamente após confirmação de pagamento
-4. ✅ **Criação de Senha**: `contratantes_senhas` (CPF + bcrypt hash)
+4. ✅ **Criação de Senha**: `entidades_senhas` (CPF + bcrypt hash)
 5. ❌ **NÃO cria funcionario**: Responsável **não** entra na tabela `funcionarios` (intencional)
-6. ✅ **Login**: Via `contratantes_senhas` apenas
+6. ✅ **Login**: Via `entidades_senhas` apenas
 
 #### Estrutura de Dados
 
@@ -200,7 +200,7 @@ clinicas:
   id=1, nome='Clínica BPS Saúde', contratante_id=8, cnpj='98765432000199'
 
 -- Senha do responsável
-contratantes_senhas:
+entidades_senhas:
   contratante_id=8, cpf='98765432100', senha_hash='$2b$10...'
 
 -- ❌ NÃO existe em funcionarios (responsável não é funcionário)
@@ -213,7 +213,7 @@ empresas_clientes:
 #### Login da Clínica
 
 - **Endpoint**: `/api/auth/login` ou `/api/auth/login-clinica`
-- **Validação**: Busca em `contratantes_senhas` WHERE `cpf = ? AND contratante_id = ?`
+- **Validação**: Busca em `entidades_senhas` WHERE `cpf = ? AND contratante_id = ?`
 - **Perfil retornado**: `gestor_clinica` ou `rh` (derivado da sessão)
 
 ---
@@ -357,7 +357,7 @@ Conta responsável não foi criada automaticamente.
 
 **Solução:**
 
-1. Verificar `contratantes_senhas` se senha existe: `SELECT * FROM contratantes_senhas WHERE contratante_id=?`
+1. Verificar `entidades_senhas` se senha existe: `SELECT * FROM entidades_senhas WHERE contratante_id=?`
 2. Sistema tentará recriar automaticamente no próximo login
 3. Verificar logs de erro para identificar a causa raiz
 4. **Não é necessário intervenção manual** - processo é automatizado
@@ -391,7 +391,7 @@ WHERE c.tipo='clinica' AND c.id=?;
 
 - Contratante aprovado mas não ativado (`ativa=false`)
 - Pagamento ainda não confirmado no simulador
-- Senha não criada em `contratantes_senhas`
+- Senha não criada em `entidades_senhas`
 
 **Diagnóstico:**
 
@@ -401,7 +401,7 @@ SELECT
   c.id, c.tipo, c.ativa, c.status, c.pagamento_confirmado,
   cs.cpf, cs.senha_hash
 FROM contratantes c
-LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
 WHERE c.id = ?;
 ```
 
@@ -410,7 +410,7 @@ WHERE c.id = ?;
 - [ ] `ativa = true`?
 - [ ] `status = 'aprovado'`?
 - [ ] `pagamento_confirmado = true`?
-- [ ] `contratantes_senhas` tem registro?
+- [ ] `entidades_senhas` tem registro?
 - [ ] Sistema recebeu callback do simulador de pagamento?
 
 ---
@@ -439,28 +439,28 @@ WHERE c.id = ?;
 ### **Entidade**
 
 ```typescript
-// Busca apenas em contratantes_senhas
+// Busca apenas em entidades_senhas
 const senhaResult = await query(
-  'SELECT * FROM contratantes_senhas WHERE cpf = $1',
+  'SELECT * FROM entidades_senhas WHERE cpf = $1',
   [cpf]
 );
 // Valida bcrypt.compare(senha, senha_hash)
-// Session: { perfil: 'gestor_entidade', contratante_id }
+// Session: { perfil: 'gestor', contratante_id }
 ```
 
 ### **Clínica**
 
 ```typescript
-// Busca em contratantes_senhas (IGUAL à entidade)
+// Busca em entidades_senhas (IGUAL à entidade)
 const senhaResult = await query(
-  "SELECT cs.*, c.tipo FROM contratantes_senhas cs JOIN contratantes c ON cs.contratante_id = c.id WHERE cs.cpf = $1 AND c.tipo='clinica'",
+  "SELECT cs.*, c.tipo FROM entidades_senhas cs JOIN contratantes c ON cs.contratante_id = c.id WHERE cs.cpf = $1 AND c.tipo='clinica'",
   [cpf]
 );
 // Valida bcrypt.compare(senha, senha_hash)
 // Session: { perfil: 'gestor_clinica', clinica_id, contratante_id }
 ```
 
-**Importante:** Ambos os tipos (entidade e clínica) usam **apenas** `contratantes_senhas` para autenticação.
+**Importante:** Ambos os tipos (entidade e clínica) usam **apenas** `entidades_senhas` para autenticação.
 
 ---
 
@@ -525,7 +525,7 @@ Para novos desenvolvedores ou ao revisar o fluxo:
 - [ ] Se `tipo='clinica'`, cria registro em `clinicas` automaticamente
 - [ ] Simulador de pagamento confirma → `pagamento_confirmado=true`
 - [ ] **Ativação AUTOMÁTICA**: `ativarContratante()` executado pelo sistema
-- [ ] `criarContaResponsavel()` cria senha em `contratantes_senhas`
+- [ ] `criarContaResponsavel()` cria senha em `entidades_senhas`
 - [ ] **Ambos os tipos** (entidade e clínica) NÃO criam em `funcionarios`
 - [ ] Senha padrão = últimos 6 dígitos do CNPJ (bcrypt hash)
 - [ ] Audit logs registram todas as ações críticas
@@ -540,8 +540,8 @@ Para novos desenvolvedores ou ao revisar o fluxo:
 | ------------------------------- | --------------------------------- | ------------------------------------------- |
 | **Criação de `clinicas`?**      | ❌ Não                            | ✅ Sim (na aprovação)                       |
 | **Registro em `funcionarios`?** | ❌ Não                            | ❌ Não                                      |
-| **Autenticação via**            | `contratantes_senhas`             | `contratantes_senhas`                       |
-| **Perfil de login**             | `gestor_entidade`                 | `gestor_clinica`                            |
+| **Autenticação via**            | `entidades_senhas`                | `entidades_senhas`                          |
+| **Perfil de login**             | `gestor`                          | `gestor_clinica`                            |
 | **Gerencia empresas?**          | Diretamente (próprias)            | Múltiplas clientes via `clinicas`           |
 | **Estrutura**                   | `contratante → empresas_clientes` | `contratante → clinica → empresas_clientes` |
 | **Ativação**                    | Automática pós-pagamento          | Automática pós-pagamento                    |

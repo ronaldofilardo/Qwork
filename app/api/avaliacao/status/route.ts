@@ -34,7 +34,7 @@ export async function GET() {
       total = 0;
     }
 
-    if (avaliacao.status === 'concluida') {
+    if (avaliacao.status === 'concluido') {
       return NextResponse.json(
         {
           status: avaliacao.status,
@@ -74,7 +74,7 @@ export async function PATCH(request: Request) {
 
     if (
       !status ||
-      !['iniciada', 'em_andamento', 'concluida'].includes(status)
+      !['iniciada', 'em_andamento', 'concluido'].includes(status)
     ) {
       return NextResponse.json({ error: 'Status inválido' }, { status: 400 });
     }
@@ -128,3 +128,4 @@ export async function PATCH(request: Request) {
     );
   }
 }
+

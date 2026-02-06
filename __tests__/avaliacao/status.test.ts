@@ -126,12 +126,12 @@ describe('Avaliação - Status', () => {
       expect(data.error).toBe('Status inválido');
     });
 
-    it('deve retornar "concluida" quando avaliação finalizada', async () => {
+    it('deve retornar "concluido" quando avaliação finalizada', async () => {
       mockQuery.mockResolvedValue({
         rows: [
           {
             id: 1,
-            status: 'concluida',
+            status: 'concluido',
             inicio: new Date().toISOString(),
             envio: new Date().toISOString(),
             grupo_atual: null,
@@ -144,7 +144,7 @@ describe('Avaliação - Status', () => {
       const response = await GET();
       const data = await response.json();
 
-      expect(data.status).toBe('concluida');
+      expect(data.status).toBe('concluido');
       expect(data.envio).toBeDefined();
     });
   });
@@ -262,3 +262,4 @@ describe('Avaliação - Status', () => {
     });
   });
 });
+

@@ -8,9 +8,9 @@
 
 ### Contexto
 
-O gestor_entidade com CPF `87545772920` foi inserido **antes da refatoração** que separou gestores de funcionários. Esta refatoração estabeleceu que:
+O gestor com CPF `87545772920` foi inserido **antes da refatoração** que separou gestores de funcionários. Esta refatoração estabeleceu que:
 
-- **Gestores** (RH e Entidade) estão apenas em `contratantes_senhas`
+- **Gestores** (RH e Entidade) estão apenas em `entidades_senhas`
 - **Gestores NÃO** estão em `funcionarios`
 - **Gestores NÃO** usam RLS (Row Level Security)
 - **Queries de gestores** devem configurar variáveis de sessão para auditoria
@@ -25,7 +25,7 @@ de chave estrangeira "lotes_avaliacao_liberado_por_fkey"
 Chave (liberado_por)=(87545772920) não está presente na tabela "funcionarios".
 ```
 
-**Causa**: FK `lotes_avaliacao.liberado_por` referenciava `funcionarios(cpf)`, mas gestores estão em `contratantes_senhas`.
+**Causa**: FK `lotes_avaliacao.liberado_por` referenciava `funcionarios(cpf)`, mas gestores estão em `entidades_senhas`.
 
 #### 2. Variáveis de Sessão Não Configuradas
 
@@ -59,10 +59,10 @@ await queryAsGestorEntidade('INSERT INTO lotes_avaliacao ...');
 ALTER TABLE lotes_avaliacao
 DROP CONSTRAINT IF EXISTS lotes_avaliacao_liberado_por_fkey;
 
--- Adiciona FK nova (contratantes_senhas)
+-- Adiciona FK nova (entidades_senhas)
 ALTER TABLE lotes_avaliacao
 ADD CONSTRAINT lotes_avaliacao_liberado_por_fkey
-FOREIGN KEY (liberado_por) REFERENCES contratantes_senhas (cpf);
+FOREIGN KEY (liberado_por) REFERENCES entidades_senhas (cpf);
 ```
 
 **Status**: ✅ Aplicada com sucesso
@@ -150,8 +150,8 @@ await queryAsGestorEntidade('SELECT ...');
 
 Validações automáticas:
 
-- ✅ Todos gestores em `contratantes_senhas` têm `contratante_id`
-- ✅ Todos lotes têm `liberado_por` válido em `contratantes_senhas`
+- ✅ Todos gestores em `entidades_senhas` têm `contratante_id`
+- ✅ Todos lotes têm `liberado_por` válido em `entidades_senhas`
 - ✅ Índices de performance criados
 - ✅ Comentários de documentação adicionados
 
@@ -160,7 +160,7 @@ Validações automáticas:
 ```
        tabela        | total_gestores | com_contratante_id | sem_contratante_id
 ---------------------+----------------+--------------------+--------------------
- contratantes_senhas |              1 |                  1 |                  0
+ entidades_senhas |              1 |                  1 |                  0
  lotes_avaliacao     |              0 |                  0 |                  0
 ```
 
@@ -173,8 +173,8 @@ Validações automáticas:
 ### Estado Atual (Correto)
 
 ```sql
--- ✅ Em contratantes_senhas (tabela correta)
-SELECT cpf, contratante_id FROM contratantes_senhas WHERE cpf = '87545772920';
+-- ✅ Em entidades_senhas (tabela correta)
+SELECT cpf, contratante_id FROM entidades_senhas WHERE cpf = '87545772920';
      cpf     | contratante_id
 -------------+----------------
  87545772920 |              2
@@ -227,7 +227,7 @@ Antes de cada query, `queryAsGestorEntidade` executa:
 
 ```sql
 SET app.current_user_cpf = '87545772920';
-SET app.current_user_perfil = 'gestor_entidade';
+SET app.current_user_perfil = 'gestor';
 ```
 
 Isso permite que:
@@ -245,8 +245,8 @@ Isso permite que:
 ```typescript
 // lib/db-gestor.ts valida:
 - ✅ Sessão autenticada existe
-- ✅ Perfil é gestor (rh ou gestor_entidade)
-- ✅ CPF existe em contratantes_senhas
+- ✅ Perfil é gestor (rh ou gestor)
+- ✅ CPF existe em entidades_senhas
 - ✅ Gestor está ativo
 ```
 
@@ -256,7 +256,7 @@ Isso permite que:
 -- FK garante integridade referencial
 ALTER TABLE lotes_avaliacao
 ADD CONSTRAINT lotes_avaliacao_liberado_por_fkey
-FOREIGN KEY (liberado_por) REFERENCES contratantes_senhas (cpf);
+FOREIGN KEY (liberado_por) REFERENCES entidades_senhas (cpf);
 ```
 
 ### 3. Auditoria Completa
@@ -274,9 +274,9 @@ FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
 
 ### ✅ Testes Concluídos
 
-- [x] Gestor existe em `contratantes_senhas`
+- [x] Gestor existe em `entidades_senhas`
 - [x] Gestor NÃO existe em `funcionarios`
-- [x] FK `liberado_por` referencia `contratantes_senhas`
+- [x] FK `liberado_por` referencia `entidades_senhas`
 - [x] Migration 303 aplicada sem erros
 - [x] Migration 304 validou dados com sucesso
 - [x] Todos endpoints de entidade usam `queryAsGestorEntidade`
@@ -286,7 +286,7 @@ FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
 
 ### 🔄 Testes Pendentes (Próximo Passo)
 
-- [ ] Liberar lote via UI como gestor_entidade
+- [ ] Liberar lote via UI como gestor
 - [ ] Verificar registro de auditoria no `audit_logs`
 - [ ] Confirmar avaliações criadas corretamente
 - [ ] Testar filtros (dataFiltro, tipo)

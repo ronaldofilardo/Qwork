@@ -16,7 +16,7 @@ describe('Relatório Individual - Entidade', () => {
     const content = fs.readFileSync(filePath, 'utf8');
 
     expect(content).toMatch(
-      /requireRole\(\s*\[\s*['\"]rh['\"]\s*,\s*['\"]gestor_entidade['\"]\s*\]\s*\)/
+      /requireRole\(\s*\[\s*['\"]rh['\"]\s*,\s*['\"]gestor['\"]\s*\]\s*\)/
     );
   });
 

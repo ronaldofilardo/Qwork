@@ -35,9 +35,7 @@ describe('criarContaResponsavel - cria clínica se ausente', () => {
           };
         }
         if (
-          sql.includes(
-            'SELECT id FROM contratantes_senhas WHERE contratante_id'
-          )
+          sql.includes('SELECT id FROM entidades_senhas WHERE contratante_id')
         ) {
           return { rows: [], rowCount: 0 };
         }

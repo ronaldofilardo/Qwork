@@ -40,7 +40,7 @@ export const GET = async (
              COALESCE(ec.nome, cont.nome) as empresa_nome, 
              COALESCE(c.nome, cont.nome) as clinica_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
-             COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+             COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
@@ -365,7 +365,7 @@ export const POST = async (
       SELECT la.id, la.status, 
              COALESCE(ec.nome, cont.nome) as empresa_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
-             COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+             COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id

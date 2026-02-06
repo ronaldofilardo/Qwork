@@ -36,7 +36,7 @@ describe('Avaliação - auto conclusão e redirecionamento', () => {
   });
 
   it('Dashboard mostra "Ver Comprovante" para avaliação concluída (RH e Entidade)', () => {
-    const perfis = ['rh', 'gestor_entidade'];
+    const perfis = ['rh', 'gestor'];
 
     perfis.forEach((perfil) => {
       // Mockar sessão com o perfil
@@ -52,7 +52,7 @@ describe('Avaliação - auto conclusão e redirecionamento', () => {
           avaliacoes: [
             {
               id: 99,
-              status: 'concluida',
+              status: 'concluido',
               criado_em: new Date().toISOString(),
               total_respostas: 37,
             },

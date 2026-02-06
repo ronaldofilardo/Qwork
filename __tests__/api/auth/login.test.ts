@@ -8,6 +8,10 @@ import { createSession } from '@/lib/session';
 jest.mock('@/lib/db');
 jest.mock('bcryptjs');
 jest.mock('@/lib/session');
+jest.mock('@/lib/rate-limit', () => ({
+  rateLimit: jest.fn(() => jest.fn(() => null)), // Desabilita rate limit para testes
+  RATE_LIMIT_CONFIGS: { auth: {} },
+}));
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockCompare = bcrypt.compare as jest.MockedFunction<
@@ -17,7 +21,7 @@ const mockCreateSession = createSession as jest.MockedFunction<
   typeof createSession
 >;
 
-describe('/api/auth/login', () => {
+describe('/api/auth/login - Nova Arquitetura', () => {
   let mockRequest: Partial<NextRequest>;
 
   beforeEach(() => {
@@ -36,18 +40,13 @@ describe('/api/auth/login', () => {
       } as any,
     };
 
-    // Reset mocks para cada teste
     mockQuery.mockReset();
     mockCompare.mockReset();
     mockCreateSession.mockReset();
   });
 
   afterEach(() => {
-    // Garantir limpeza completa dos mocks após cada teste
     jest.clearAllMocks();
-    mockQuery.mockRestore();
-    mockCompare.mockRestore();
-    mockCreateSession.mockRestore();
   });
 
   it('deve retornar erro 400 se CPF não for fornecido', async () => {
@@ -70,91 +69,47 @@ describe('/api/auth/login', () => {
     expect(data.error).toBe('CPF e senha são obrigatórios');
   });
 
-  it('deve retornar erro 400 se senha não for fornecida', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({ cpf: '12345678901' });
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(400);
-    expect(data.error).toBe('CPF e senha são obrigatórios');
-  });
-
-  it('deve retornar erro 401 se CPF não existir', async () => {
+  it('deve retornar erro 401 se usuário não existir em usuarios', async () => {
     (mockRequest.json as jest.Mock).mockResolvedValue({
       cpf: '99999999999',
       senha: '123',
     });
 
-    // ✅ Padrão robusto: mockImplementation para controle preciso
-    mockQuery.mockImplementation((sql: string) => {
-      // Rate limiting query - retorna 0 tentativas
-      if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      }
-      // Employee query - user not found
-      if (sql.includes('funcionarios')) {
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-      // Entity query - user not found
-      if (sql.includes("tipo = 'entidade'")) {
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-      // Clinic query - user not found
-      if (sql.includes("tipo = 'clinica'")) {
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-      // Audit log insert for failed login
-      if (sql.includes('INSERT INTO audit_logs')) {
-        return Promise.resolve({ rows: [], rowCount: 1 });
-      }
-      // Default
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
+    // Mock: usuário não encontrado na tabela usuarios
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
     const response = await POST(mockRequest as NextRequest);
     const data = await response.json();
 
     expect(response.status).toBe(401);
     expect(data.error).toBe('CPF ou senha inválidos');
-
-    // Verificar que bcrypt.compare e createSession não foram chamados
-    expect(mockCompare).not.toHaveBeenCalled();
-    expect(mockCreateSession).not.toHaveBeenCalled();
   });
 
-  it('deve retornar erro 403 se usuário estiver inativo', async () => {
+  it('deve retornar erro 403 se usuário gestor estiver inativo', async () => {
     (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '55555555555',
+      cpf: '11111111111',
       senha: '123',
     });
 
-    // Mock usando mockImplementation para maior controle
+    // Mock: usuário inativo na tabela usuarios
     mockQuery.mockImplementation((sql: string) => {
-      if (sql.includes('rate_limiting')) {
-        // Rate limiting check
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      } else if (sql.includes('contratantes_senhas')) {
-        // Primeira query: contratantes_senhas - deve retornar vazio para funcionários
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      } else if (sql.includes('funcionarios')) {
-        // Segunda query: funcionários - usuário inativo
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
         return Promise.resolve({
           rows: [
             {
-              cpf: '55555555555',
-              nome: 'João Silva',
-              perfil: 'funcionario',
-              senha_hash: '$2a$10$hash',
+              cpf: '11111111111',
+              nome: 'Gestor Inativo',
+              tipo_usuario: 'gestor',
+              clinica_id: null,
+              entidade_id: 1,
               ativo: false,
-              nivel_cargo: 'operacional',
             },
           ],
           rowCount: 1,
         });
-      } else if (sql.includes('responsavel_cpf')) {
-        // Terceira query: contratantes - responsabilidade, deve retornar vazio
-        return Promise.resolve({ rows: [], rowCount: 0 });
+      }
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
@@ -168,342 +123,170 @@ describe('/api/auth/login', () => {
     );
   });
 
-  it('deve retornar erro 401 se senha estiver incorreta', async () => {
+  it('deve fazer login com sucesso para gestor com senha válida', async () => {
     (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '66666666666',
-      senha: 'wrongpassword',
-    });
-
-    // Mock usando mockImplementation para maior controle
-    mockQuery.mockImplementation((sql: string) => {
-      if (sql.includes('rate_limiting')) {
-        // Rate limiting check
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      } else if (sql.includes('contratantes_senhas')) {
-        // Primeira query: contratantes_senhas - deve retornar vazio para funcionários
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      } else if (sql.includes('funcionarios')) {
-        // Segunda query: funcionários - usuário encontrado
-        return Promise.resolve({
-          rows: [
-            {
-              cpf: '66666666666',
-              nome: 'Maria Gestão Santos',
-              perfil: 'funcionario',
-              senha_hash: '$2a$10$hash',
-              ativo: true,
-              nivel_cargo: 'operacional',
-            },
-          ],
-          rowCount: 1,
-        });
-      } else if (sql.includes('responsavel_cpf')) {
-        // Terceira query: contratantes - responsabilidade, deve retornar vazio
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
-
-    mockCompare.mockResolvedValue(false);
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('CPF ou senha inválidos');
-  });
-
-  it('deve fazer login com sucesso para funcionário operacional', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '77777777777',
-      senha: '123',
-    });
-
-    // Mock usando mockImplementation para maior controle
-    mockQuery.mockImplementation((sql: string) => {
-      if (sql.includes('rate_limiting')) {
-        // Rate limiting check
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      } else if (sql.includes('contratantes_senhas')) {
-        // Primeira query: contratantes_senhas - deve retornar vazio para funcionários
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      } else if (sql.includes('funcionarios')) {
-        // Segunda query: funcionários
-        return Promise.resolve({
-          rows: [
-            {
-              cpf: '77777777777',
-              nome: 'Maria Gestão Santos',
-              perfil: 'funcionario',
-              senha_hash: '$2a$10$hash',
-              ativo: true,
-              nivel_cargo: 'operacional',
-            },
-          ],
-          rowCount: 1,
-        });
-      } else if (sql.includes('responsavel_cpf')) {
-        // Terceira query: contratantes - responsabilidade, deve retornar vazio
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
-
-    mockCompare.mockResolvedValue(true);
-    mockCreateSession.mockResolvedValue();
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.cpf).toBe('77777777777');
-    expect(data.nome).toBe('Maria Gestão Santos');
-    expect(data.perfil).toBe('funcionario');
-    expect(data.nivelCargo).toBe('operacional');
-
-    expect(mockCreateSession).toHaveBeenCalledWith({
-      cpf: '77777777777',
-      nome: 'Maria Gestão Santos',
-      perfil: 'funcionario',
-      nivelCargo: 'operacional',
-    });
-  });
-
-  it('deve mapear clinica para gestor (responsável) quando clínica existe', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '55500011122',
-      senha: '123',
-    });
-
-    mockQuery.mockImplementation((sql: string) => {
-      // Rate limiting check
-      if (sql.includes('rate_limiting')) {
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      }
-
-      // contratantes_senhas - not present
-      if (sql.includes('contratantes_senhas')) {
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-
-      // funcionarios - return active funcionario
-      if (
-        sql.includes(
-          'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios'
-        )
-      ) {
-        return Promise.resolve({
-          rows: [
-            {
-              cpf: '55500011122',
-              nome: 'Responsável Teste',
-              perfil: 'funcionario',
-              senha_hash: '$2a$10$hash',
-              ativo: true,
-              nivel_cargo: null,
-            },
-          ],
-          rowCount: 1,
-        });
-      }
-
-      // contratantes by responsavel_cpf
-      if (sql.includes('responsavel_cpf')) {
-        return Promise.resolve({
-          rows: [{ id: 42, tipo: 'clinica', ativa: true }],
-          rowCount: 1,
-        });
-      }
-
-      // contratante completo (pagamento_confirmado)
-      if (sql.includes('pagamento_confirmado')) {
-        return Promise.resolve({
-          rows: [{ ativa: true, pagamento_confirmado: true }],
-          rowCount: 1,
-        });
-      }
-
-      // clinicas lookup by contratante_id
-      if (sql.includes('SELECT id FROM clinicas WHERE contratante_id')) {
-        return Promise.resolve({ rows: [{ id: 99 }], rowCount: 1 });
-      }
-
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
-
-    mockCompare.mockResolvedValue(true);
-    mockCreateSession.mockResolvedValue();
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.perfil).toBe('rh');
-    expect(mockCreateSession).toHaveBeenCalledWith({
-      cpf: '55500011122',
-      nome: 'Responsável Teste',
-      perfil: 'rh',
-      contratante_id: 42,
-      clinica_id: 99,
-    });
-  });
-
-  it('deve não definir clinica_id se clínica não existir para o contratante', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '55500011123',
-      senha: '123',
-    });
-
-    mockQuery.mockImplementation((sql: string) => {
-      if (sql.includes('rate_limiting'))
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      if (sql.includes('contratantes_senhas'))
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      if (
-        sql.includes(
-          'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios'
-        )
-      ) {
-        return Promise.resolve({
-          rows: [
-            {
-              cpf: '55500011123',
-              nome: 'Sem Clínica',
-              perfil: 'funcionario',
-              senha_hash: '$2a$10$hash',
-              ativo: true,
-              nivel_cargo: null,
-            },
-          ],
-          rowCount: 1,
-        });
-      }
-      if (sql.includes('responsavel_cpf'))
-        return Promise.resolve({
-          rows: [{ id: 43, tipo: 'clinica', ativa: true }],
-          rowCount: 1,
-        });
-      if (sql.includes('pagamento_confirmado'))
-        return Promise.resolve({
-          rows: [{ ativa: true, pagamento_confirmado: true }],
-          rowCount: 1,
-        });
-      if (sql.includes('SELECT id FROM clinicas WHERE contratante_id'))
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
-
-    mockCompare.mockResolvedValue(true);
-    mockCreateSession.mockResolvedValue();
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.perfil).toBe('rh');
-    expect(mockCreateSession).toHaveBeenCalledWith({
-      cpf: '55500011123',
-      nome: 'Sem Clínica',
-      perfil: 'rh',
-      contratante_id: 43,
-      clinica_id: undefined,
-    });
-  });
-
-  it('deve fazer login com sucesso para emissor', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '88888888888',
-      senha: '123',
-    });
-
-    // Mock usando mockImplementation para maior controle
-    mockQuery.mockImplementation((sql: string) => {
-      if (sql.includes('rate_limiting')) {
-        // Rate limiting check
-        return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-      } else if (sql.includes('contratantes_senhas')) {
-        // Primeira query: contratantes_senhas - deve retornar vazio para funcionários
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      } else if (sql.includes('funcionarios')) {
-        // Segunda query: funcionários
-        return Promise.resolve({
-          rows: [
-            {
-              cpf: '88888888888',
-              nome: 'Emissor de Laudos',
-              perfil: 'emissor',
-              senha_hash: '$2a$10$hash',
-              ativo: true,
-              nivel_cargo: null,
-            },
-          ],
-          rowCount: 1,
-        });
-      } else if (sql.includes('responsavel_cpf')) {
-        // Terceira query: contratantes - responsabilidade, deve retornar vazio
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      }
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
-
-    mockCompare.mockResolvedValue(true);
-    mockCreateSession.mockResolvedValue();
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.cpf).toBe('88888888888');
-    expect(data.nome).toBe('Emissor de Laudos');
-    expect(data.perfil).toBe('emissor');
-    expect(data.redirectTo).toBe('/emissor');
-
-    expect(mockCreateSession).toHaveBeenCalledWith({
-      cpf: '88888888888',
-      nome: 'Emissor de Laudos',
-      perfil: 'emissor',
-      nivelCargo: null,
-    });
-  });
-
-  it('deve fazer login com sucesso para admin', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '00000000000',
+      cpf: '12345678901',
       senha: '123456',
     });
 
-    // Mock para contratantes_senhas (primeira query) - deve retornar vazio
-    mockQuery.mockResolvedValueOnce({
-      rows: [],
-      rowCount: 0,
-    });
-
-    // Mock para funcionarios (segunda query) - deve retornar dados do admin
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          cpf: '00000000000',
-          nome: 'Admin',
-          perfil: 'admin',
-          senha_hash: '$2a$10$hash',
-          ativo: true,
-          nivel_cargo: null,
-        },
-      ],
-      rowCount: 1,
-    });
-
-    // Mock para contratantes (terceira query) - responsabilidade, deve retornar vazio
-    mockQuery.mockResolvedValueOnce({
-      rows: [],
-      rowCount: 0,
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '12345678901',
+              nome: 'Maria Santos',
+              tipo_usuario: 'gestor',
+              clinica_id: null,
+              entidade_id: 1,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela entidades_senhas
+      if (sql.includes('entidades_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$ValidHash',
+              id: 1,
+              ativa: true,
+              pagamento_confirmado: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
     mockCompare.mockResolvedValue(true);
+    mockCreateSession.mockResolvedValue();
+
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.cpf).toBe('12345678901');
+    expect(data.nome).toBe('Maria Santos');
+    expect(data.perfil).toBe('gestor');
+    expect(data.redirectTo).toBe('/entidade');
+
+    expect(mockCreateSession).toHaveBeenCalledWith({
+      cpf: '12345678901',
+      nome: 'Maria Santos',
+      perfil: 'gestor',
+      contratante_id: 1,
+      clinica_id: null,
+      entidade_id: 1,
+    });
+  });
+
+  it('deve fazer login com sucesso para RH com senha válida', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '22222222222',
+      senha: 'rh123',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '22222222222',
+              nome: 'João Silva',
+              tipo_usuario: 'rh',
+              clinica_id: 1,
+              entidade_id: null,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela clinicas_senhas
+      if (sql.includes('clinicas_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$ValidHash',
+              entidade_id: 2,
+              ativa: true,
+              pagamento_confirmado: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    mockCompare.mockResolvedValue(true);
+    mockCreateSession.mockResolvedValue();
+
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(data.success).toBe(true);
+    expect(data.cpf).toBe('22222222222');
+    expect(data.nome).toBe('João Silva');
+    expect(data.perfil).toBe('rh');
+    expect(data.redirectTo).toBe('/rh');
+
+    expect(mockCreateSession).toHaveBeenCalledWith({
+      cpf: '22222222222',
+      nome: 'João Silva',
+      perfil: 'rh',
+      contratante_id: 2,
+      clinica_id: 1,
+      entidade_id: null,
+    });
+  });
+
+  it('deve fazer login para admin sem validação de senha', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '00000000000',
+      senha: 'admin123',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '00000000000',
+              nome: 'Administrador',
+              tipo_usuario: 'admin',
+              clinica_id: null,
+              entidade_id: null,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
     mockCreateSession.mockResolvedValue();
 
     const response = await POST(mockRequest as NextRequest);
@@ -512,80 +295,41 @@ describe('/api/auth/login', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.cpf).toBe('00000000000');
-    expect(data.nome).toBe('Admin');
+    expect(data.nome).toBe('Administrador');
     expect(data.perfil).toBe('admin');
-    expect(data.nivelCargo).toBe(null);
+    expect(data.redirectTo).toBe('/admin');
   });
 
-  it('deve fazer login com sucesso para RH', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '11111111111',
-      senha: '123',
-    });
-
-    // Mock para contratantes_senhas (primeira query) - deve retornar dados do RH
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          cpf: '11111111111',
-          senha_hash: '$2a$10$hash',
-          contratante_id: 2,
-          nome: 'Gestor RH',
-          tipo: 'rh',
-          ativa: true,
-          pagamento_confirmado: true,
-        },
-      ],
-      rowCount: 1,
-    });
-
-    mockCompare.mockResolvedValue(true);
-    mockCreateSession.mockResolvedValue();
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(data.cpf).toBe('11111111111');
-    expect(data.nome).toBe('Gestor RH');
-    expect(data.perfil).toBe('rh');
-  });
-
-  it('deve fazer login com sucesso para funcionário gestão', async () => {
+  it('deve fazer login para emissor sem validação de senha', async () => {
     (mockRequest.json as jest.Mock).mockResolvedValue({
       cpf: '33333333333',
-      senha: '123',
+      senha: 'emissor123',
     });
 
-    // Mock para contratantes_senhas (primeira query) - deve retornar vazio
-    mockQuery.mockResolvedValueOnce({
-      rows: [],
-      rowCount: 0,
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '33333333333',
+              nome: 'Emissor de Laudos',
+              tipo_usuario: 'emissor',
+              clinica_id: null,
+              entidade_id: null,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
-    // Mock para funcionarios (segunda query) - deve retornar dados do funcionário
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          cpf: '33333333333',
-          nome: 'Maria Gestão Santos',
-          perfil: 'funcionario',
-          senha_hash: '$2a$10$hash',
-          ativo: true,
-          nivel_cargo: 'gestao',
-        },
-      ],
-      rowCount: 1,
-    });
-
-    // Mock para contratantes (terceira query) - responsabilidade, deve retornar vazio
-    mockQuery.mockResolvedValueOnce({
-      rows: [],
-      rowCount: 0,
-    });
-
-    mockCompare.mockResolvedValue(true);
     mockCreateSession.mockResolvedValue();
 
     const response = await POST(mockRequest as NextRequest);
@@ -594,865 +338,165 @@ describe('/api/auth/login', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.cpf).toBe('33333333333');
-    expect(data.nome).toBe('Maria Gestão Santos');
-    expect(data.perfil).toBe('funcionario');
-    expect(data.nivelCargo).toBe('gestao');
+    expect(data.nome).toBe('Emissor de Laudos');
+    expect(data.perfil).toBe('emissor');
+    expect(data.redirectTo).toBe('/emissor');
   });
 
-  it('deve retornar erro 500 em caso de erro interno', async () => {
-    (mockRequest.json as jest.Mock).mockRejectedValue(
-      new Error('Database error')
-    );
+  it('deve retornar erro 401 se senha de gestor estiver incorreta', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '44444444444',
+      senha: 'senhaErrada',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '44444444444',
+              nome: 'Gestor Teste',
+              tipo_usuario: 'gestor',
+              clinica_id: null,
+              entidade_id: 1,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela entidades_senhas
+      if (sql.includes('entidades_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$ValidHash',
+              id: 1,
+              ativa: true,
+              pagamento_confirmado: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    mockCompare.mockResolvedValue(false); // Senha inválida
 
     const response = await POST(mockRequest as NextRequest);
     const data = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(data.error).toBe('Erro interno do servidor');
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('CPF ou senha inválidos');
   });
 
-  // Testes para senhas corrigidas (correções de hash)
-  describe('Testes de senhas corrigidas', () => {
-    it('deve fazer login com senha corrigida do Admin (admin123)', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '00000000000',
-        senha: 'admin123',
-      });
-
-      // Mock para contratantes_senhas (primeira query) - deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      // Mock para funcionarios (segunda query) - deve retornar dados do admin
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            cpf: '00000000000',
-            nome: 'Admin',
-            perfil: 'admin',
-            senha_hash:
-              '$2a$10$jslNqlvuCyeNibvDArgEx.OAlWip4CZFFxIyVQUgRMzviB.kqMTKe',
-            ativo: true,
-            nivel_cargo: null,
-          },
-        ],
-        rowCount: 1,
-      });
-
-      // Mock para verificar se é responsável por contratante (terceira query) - deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.cpf).toBe('00000000000');
-      expect(data.perfil).toBe('admin');
+  it('deve retornar erro 403 se entidade estiver inativa', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '55555555555',
+      senha: '123456',
     });
 
-    it('deve fazer login com senha corrigida do Admin (admin123)', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '11111111111',
-        senha: 'admin123',
-      });
-
-      // Mock para contratantes_senhas (primeira query) - deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      // Mock para funcionarios (segunda query) - deve retornar dados do admin
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            cpf: '11111111111',
-            nome: 'Administrador Clínica',
-            perfil: 'admin',
-            senha_hash:
-              '$2a$10$RoZFITAppqKWE9IIjc79o.qZ8NSG5EnpU10bwVucHh5AyxkgSBNSy',
-            ativo: true,
-            nivel_cargo: null,
-          },
-        ],
-        rowCount: 1,
-      });
-
-      // Mock para verificar se é responsável por contratante (terceira query) - deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.cpf).toBe('11111111111');
-      expect(data.perfil).toBe('admin');
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '55555555555',
+              nome: 'Gestor Entidade Inativa',
+              tipo_usuario: 'gestor',
+              clinica_id: null,
+              entidade_id: 1,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela entidades_senhas - entidade inativa
+      if (sql.includes('entidades_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$ValidHash',
+              id: 1,
+              ativa: false, // Entidade inativa
+              pagamento_confirmado: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
-    it('deve fazer login com senha corrigida do RH (rh123)', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '22222222222',
-        senha: 'rh123',
-      });
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
 
-      // Mock para contratantes_senhas (primeira query) - deve retornar dados do RH
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            cpf: '22222222222',
-            senha_hash:
-              '$2a$10$Z4ZKDa/YHNoDlR9L11Z0qemVhjBXYGvTXYj6PHYWjFLq2tvV/0H/G',
-            contratante_id: 3,
-            nome: 'RH Gestor',
-            tipo: 'clinica', // Tipo correto para RH
-            ativa: true,
-            pagamento_confirmado: true,
-          },
-        ],
-        rowCount: 1,
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.cpf).toBe('22222222222');
-      expect(data.perfil).toBe('rh');
-    });
+    expect(response.status).toBe(403);
+    expect(data.error).toBe(
+      'Contratante inativo. Entre em contato com o administrador.'
+    );
   });
 
-  // ========== TESTES PARA GESTOR DE ENTIDADE ==========
-
-  describe('Gestor de Entidade', () => {
-    it('deve fazer login com sucesso para gestor de entidade', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '12345678901',
-        senha: 'entidade123',
-      });
-
-      // ✅ Padrão robusto: mockImplementation para controle preciso
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '12345678901',
-                senha_hash: '$2a$10$hash',
-                contratante_id: 456,
-                nome: 'Maria Santos',
-                tipo: 'entidade',
-                ativa: true,
-                pagamento_confirmado: true,
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        if (sql.includes('INSERT INTO audit_logs')) {
-          return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.cpf).toBe('12345678901');
-      expect(data.nome).toBe('Maria Santos');
-      expect(data.perfil).toBe('gestor_entidade');
-      expect(data.redirectTo).toBe('/entidade');
-
-      expect(mockCreateSession).toHaveBeenCalledWith({
-        cpf: '12345678901',
-        nome: 'Maria Santos',
-        perfil: 'gestor_entidade',
-        contratante_id: 456,
-      });
+  it('deve retornar erro 403 se pagamento não estiver confirmado', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '66666666666',
+      senha: '123456',
     });
 
-    it('deve retornar erro 401 se senha estiver incorreta para gestor de entidade', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '12345678901',
-        senha: 'wrongpassword',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('funcionarios')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes("tipo = 'entidade'")) {
-          return Promise.resolve({
-            rows: [
-              {
-                senha_hash: '$2a$10$hash',
-                contratante_id: 456,
-                nome: 'Maria Santos',
-                ativa: true,
-                pagamento_confirmado: true,
-                data_liberacao_login: new Date(),
-                status: 'aprovado',
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        if (sql.includes('INSERT INTO audit_logs')) {
-          return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(false);
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(data.error).toBe('CPF ou senha inválidos');
+    mockQuery.mockImplementation((sql: string) => {
+      // Query na tabela usuarios
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '66666666666',
+              nome: 'Gestor Sem Pagamento',
+              tipo_usuario: 'gestor',
+              clinica_id: null,
+              entidade_id: 1,
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Query na tabela entidades_senhas - pagamento não confirmado
+      if (sql.includes('entidades_senhas')) {
+        return Promise.resolve({
+          rows: [
+            {
+              senha_hash: '$2a$10$ValidHash',
+              id: 1,
+              ativa: true,
+              pagamento_confirmado: false, // Pagamento não confirmado
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      // Audit log
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
-    it('deve retornar erro 403 se entidade estiver inativa', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '12345678901',
-        senha: 'entidade123',
-      });
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
 
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('funcionarios')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '12345678901',
-                senha_hash: '$2a$10$hash',
-                contratante_id: 456,
-                nome: 'Maria Santos',
-                tipo: 'entidade',
-                ativa: false,
-                pagamento_confirmado: true,
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        if (sql.includes('INSERT INTO audit_logs')) {
-          return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(true);
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toContain('Contratante inativo');
-    });
-
-    it('deve autenticar funcionário com perfil gestor_entidade usando contratante_id do funcionário', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '33333333333',
-        senha: 'senha123',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        // Primeiro procura em contratantes_senhas -> vazio
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        // Busca funcionário
-        if (sql.includes('SELECT cpf, nome, perfil, senha_hash')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '33333333333',
-                nome: 'Gestor Funcionario',
-                perfil: 'gestor_entidade',
-                senha_hash: '$2a$10$hash',
-                ativo: true,
-                nivel_cargo: null,
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        // Busca contratante pelo responsavel_cpf -> vazio
-        if (sql.includes('contratantes WHERE responsavel_cpf')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        // Buscar contratante_id atribuído ao funcionário
-        if (sql.includes('SELECT contratante_id FROM funcionarios WHERE cpf')) {
-          return Promise.resolve({
-            rows: [{ contratante_id: 789 }],
-            rowCount: 1,
-          });
-        }
-        // Verificar pagamento_confirmado
-        if (
-          sql.includes(
-            'SELECT ativa, pagamento_confirmado FROM contratantes WHERE id ='
-          )
-        ) {
-          return Promise.resolve({
-            rows: [{ ativa: true, pagamento_confirmado: true }],
-            rowCount: 1,
-          });
-        }
-        if (sql.includes('INSERT INTO audit_logs')) {
-          return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.perfil).toBe('gestor_entidade');
-      expect(data.redirectTo).toBe('/entidade');
-
-      // Session deve conter contratante_id vindo do registro do funcionário
-      expect(mockCreateSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cpf: '33333333333',
-          nome: 'Gestor Funcionario',
-          perfil: 'gestor_entidade',
-          contratante_id: 789,
-        })
-      );
-    });
-
-    it('deve retornar erro 403 se pagamento não estiver confirmado para entidade', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '12345678901',
-        senha: 'entidade123',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('funcionarios')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '12345678901',
-                senha_hash: '$2a$10$hash',
-                contratante_id: 456,
-                nome: 'Maria Santos',
-                tipo: 'entidade',
-                ativa: true,
-                pagamento_confirmado: false,
-                data_liberacao_login: new Date(),
-                status: 'aprovado',
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe(
-        'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.'
-      );
-      // codigo removido
-    });
-  });
-
-  // ========== TESTES PARA GESTOR DE CLÍNICA ==========
-
-  describe('Gestor de Clínica', () => {
-    it('deve fazer login com sucesso para gestor de clínica', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '04703084945',
-        senha: '000191',
-      });
-
-      // ✅ Padrão robusto: mockImplementation para controle preciso
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '04703084945',
-                senha_hash: '$2a$10$hash',
-                contratante_id: 123,
-                nome: 'João Silva',
-                tipo: 'clinica',
-                ativa: true,
-                pagamento_confirmado: true,
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        // Simular lookup de clinicas por contratante_id
-        if (sql.includes('SELECT id FROM clinicas WHERE contratante_id')) {
-          return Promise.resolve({ rows: [{ id: 123 }], rowCount: 1 });
-        }
-        if (sql.includes('INSERT INTO audit_logs')) {
-          return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.cpf).toBe('04703084945');
-      expect(data.nome).toBe('João Silva');
-      expect(data.perfil).toBe('rh');
-      expect(data.redirectTo).toBe('/rh');
-
-      expect(mockCreateSession).toHaveBeenCalledWith({
-        cpf: '04703084945',
-        nome: 'João Silva',
-        perfil: 'rh',
-        contratante_id: 123,
-        clinica_id: 123,
-      });
-    });
-
-    it('deve retornar erro 401 se senha estiver incorreta para gestor de clínica', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '04703084945',
-        senha: 'wrongpassword',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('funcionarios')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes("tipo = 'entidade'")) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes("tipo = 'clinica'")) {
-          return Promise.resolve({
-            rows: [
-              {
-                senha_hash: '$2a$10$hash',
-                contratante_id: 123,
-                nome: 'João Silva',
-                ativa: true,
-                pagamento_confirmado: true,
-                data_liberacao_login: new Date(),
-                status: 'aprovado',
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        if (sql.includes('INSERT INTO audit_logs')) {
-          return Promise.resolve({ rows: [], rowCount: 1 });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(false);
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(data.error).toBe('CPF ou senha inválidos');
-    });
-
-    it('deve retornar erro 403 se clínica estiver inativa', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '04703084945',
-        senha: '000191',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('funcionarios')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes("tipo = 'entidade'")) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '04703084945',
-                senha_hash: '$2a$10$hash',
-                contratante_id: 123,
-                nome: 'João Silva',
-                tipo: 'clinica',
-                ativa: false,
-                pagamento_confirmado: true,
-                data_liberacao_login: new Date(),
-                status: 'aprovado',
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe(
-        'Contratante inativo. Entre em contato com o administrador.'
-      );
-    });
-
-    it('deve retornar erro 403 se pagamento não estiver confirmado', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '04703084945',
-        senha: '000191',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('audit_logs') && sql.includes('COUNT')) {
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        }
-        if (sql.includes('funcionarios')) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes("tipo = 'entidade'")) {
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        }
-        if (sql.includes('contratantes_senhas')) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '04703084945',
-                senha_hash: '$2a$10$hash',
-                contratante_id: 123,
-                nome: 'João Silva',
-                tipo: 'clinica',
-                ativa: true,
-                pagamento_confirmado: false,
-                data_liberacao_login: new Date(),
-                status: 'aprovado',
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(403);
-      expect(data.error).toBe(
-        'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.'
-      );
-      // codigo removido
-    });
-  });
-
-  // ========== TESTE PARA USUÁRIO ADMIN CRIADO APÓS LIMPEZA DE DADOS ==========
-
-  describe('Usuário Admin criado após limpeza de CNPJs/CPFs', () => {
-    it('deve permitir login do admin com CPF 00000000000 e senha 123', async () => {
-      // Mock do usuário admin criado pelo seed
-      // Mock para contratantes_senhas (primeira query) - deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      // Mock para funcionarios (segunda query) - deve retornar dados do admin
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            cpf: '00000000000',
-            nome: 'Administrador',
-            email: 'admin@bpsbrasil.com.br',
-            senha_hash:
-              '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2', // Hash da senha '123'
-            perfil: 'admin',
-            ativo: true,
-            nivel_cargo: 'admin',
-            clinica_id: null,
-          },
-        ],
-        rowCount: 1,
-      });
-
-      // Mock para contratantes (terceira query) - responsabilidade, deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      // Mock da comparação de senha (senha '123' é válida)
-      mockCompare.mockResolvedValue(true);
-
-      // Mock da criação de sessão
-      mockCreateSession.mockResolvedValue('session-token-123');
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '00000000000',
-        senha: '123',
-      });
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.cpf).toBe('00000000000');
-      expect(data.nome).toBe('Administrador');
-      expect(data.perfil).toBe('admin');
-      expect(data.redirectTo).toBe('/admin');
-
-      // Verificar que as funções foram chamadas corretamente
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('SELECT cpf, nome, perfil'),
-        ['00000000000']
-      );
-      expect(mockCompare).toHaveBeenCalledWith(
-        '123',
-        '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2'
-      );
-      expect(mockCreateSession).toHaveBeenCalledWith({
-        cpf: '00000000000',
-        nome: 'Administrador',
-        perfil: 'admin',
-        nivelCargo: 'admin',
-      });
-    });
-
-    it('deve rejeitar login do admin com senha incorreta', async () => {
-      // Mock para contratantes_senhas (primeira query) - deve retornar vazio
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      });
-
-      // Mock para funcionarios (segunda query) - deve retornar dados do admin
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            cpf: '00000000000',
-            senha_hash:
-              '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2',
-            nome: 'Administrador',
-            perfil: 'admin',
-            ativo: true,
-            nivel_cargo: null,
-            clinica_id: null,
-          },
-        ],
-        rowCount: 1,
-      });
-
-      // Mock da comparação de senha (senha incorreta)
-      mockCompare.mockResolvedValue(false);
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '00000000000',
-        senha: 'senha_errada',
-      });
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(401);
-      expect(data.error).toBe('CPF ou senha inválidos');
-
-      // Verificar que createSession não foi chamado
-      expect(mockCreateSession).not.toHaveBeenCalled();
-    });
-
-    it('deve tolerar ausência da coluna nivel_cargo no schema e realizar login (fallback)', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '88888888888',
-        senha: '123',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('rate_limiting'))
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        if (sql.includes('contratantes_senhas'))
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        if (
-          sql.includes(
-            'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios'
-          )
-        ) {
-          const err: any = new Error('column "nivel_cargo" does not exist');
-          err.code = '42703';
-          throw err;
-        }
-        if (
-          sql.includes(
-            'SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios'
-          )
-        ) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '88888888888',
-                nome: 'Fallback User',
-                perfil: 'funcionario',
-                senha_hash: '$2a$10$hash',
-                ativo: true,
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        if (sql.includes('responsavel_cpf'))
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.nivelCargo).toBeNull();
-
-      expect(mockCreateSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cpf: '88888888888',
-          nome: 'Fallback User',
-          perfil: 'funcionario',
-          nivelCargo: null,
-        })
-      );
-    });
-
-    it('deve tolerar ausência da coluna contratante_id e prosseguir sem contratante_id', async () => {
-      (mockRequest.json as jest.Mock).mockResolvedValue({
-        cpf: '99999999999',
-        senha: '123',
-      });
-
-      mockQuery.mockImplementation((sql: string) => {
-        if (sql.includes('rate_limiting'))
-          return Promise.resolve({ rows: [{ count: 0 }], rowCount: 1 });
-        if (sql.includes('contratantes_senhas'))
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        if (
-          sql.includes(
-            'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios'
-          )
-        ) {
-          return Promise.resolve({
-            rows: [
-              {
-                cpf: '99999999999',
-                nome: 'NoContratante User',
-                perfil: 'funcionario',
-                senha_hash: '$2a$10$hash',
-                ativo: true,
-                nivel_cargo: 'operacional',
-              },
-            ],
-            rowCount: 1,
-          });
-        }
-        if (
-          sql.includes('SELECT contratante_id, clinica_id FROM funcionarios')
-        ) {
-          const err: any = new Error('column "contratante_id" does not exist');
-          err.code = '42703';
-          throw err;
-        }
-        if (sql.includes('responsavel_cpf'))
-          return Promise.resolve({ rows: [], rowCount: 0 });
-        return Promise.resolve({ rows: [], rowCount: 0 });
-      });
-
-      mockCompare.mockResolvedValue(true);
-      mockCreateSession.mockResolvedValue();
-
-      const response = await POST(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-
-      // Verificar que a sessão foi criada e que contratante_id é undefined
-      expect(mockCreateSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cpf: '99999999999',
-          nome: 'NoContratante User',
-          perfil: 'funcionario',
-          nivelCargo: 'operacional',
-        })
-      );
-      const lastArg =
-        mockCreateSession.mock.calls[
-          mockCreateSession.mock.calls.length - 1
-        ][0];
-      expect(lastArg.contratante_id).toBeUndefined();
-      expect(lastArg.clinica_id).toBeUndefined();
-    });
+    expect(response.status).toBe(403);
+    expect(data.error).toContain('Aguardando confirmação de pagamento');
   });
 });

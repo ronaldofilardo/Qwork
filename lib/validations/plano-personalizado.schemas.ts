@@ -163,7 +163,7 @@ export const CriarNotificacaoSchema = z.object({
     .number()
     .int()
     .positive({ message: 'ID do destinatário inválido' }),
-  destinatario_tipo: z.enum(['admin', 'gestor_entidade', 'funcionario']),
+  destinatario_tipo: z.enum(['admin', 'gestor', 'funcionario']),
   titulo: z
     .string()
     .min(3, { message: 'Título deve ter pelo menos 3 caracteres' })

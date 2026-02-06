@@ -63,13 +63,13 @@ describe('Fluxo Completo da Página de Conta da Entidade', () => {
       },
     }).as('getAccountInfo');
 
-    // 1. FAZER LOGIN COMO GESTOR_ENTIDADE (simulado)
+    // 1. FAZER LOGIN COMO gestor (simulado)
     cy.window().then((win) => {
       win.localStorage.setItem(
         'session',
         JSON.stringify({
           cpf: '87545772920',
-          perfil: 'gestor_entidade',
+          perfil: 'gestor',
           nome: 'Gestor Teste',
         })
       );
@@ -162,7 +162,7 @@ describe('Fluxo Completo da Página de Conta da Entidade', () => {
         'session',
         JSON.stringify({
           cpf: '87545772920',
-          perfil: 'gestor_entidade',
+          perfil: 'gestor',
           nome: 'Gestor Teste',
         })
       );
@@ -196,7 +196,7 @@ describe('Fluxo Completo da Página de Conta da Entidade', () => {
         'session',
         JSON.stringify({
           cpf: '87545772920',
-          perfil: 'gestor_entidade',
+          perfil: 'gestor',
           nome: 'Gestor Teste',
         })
       );

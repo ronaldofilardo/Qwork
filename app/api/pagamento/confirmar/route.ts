@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import util from 'util';
-import { query, criarContaResponsavel, ativarContratante } from '@/lib/db';
+import { query, criarContaResponsavel } from '@/lib/db';
 import { calcularParcelas } from '@/lib/parcelas-helper';
 import { aceitarContrato } from '@/lib/contratos/contratos';
 import { criarNotificacao } from '@/lib/notifications/create-notification';
+import { ativarEntidade } from '@/lib/entidade-activation';
 
 /**
  * API POST /api/pagamento/confirmar
@@ -70,10 +71,10 @@ export async function POST(request: NextRequest) {
     let pagamentoResult;
     try {
       pagamentoResult = await query(
-        `SELECT p.id, p.contratante_id, p.contrato_id, p.status, c.nome as contratante_nome,
+        `SELECT p.id, p.contratante_id, p.contrato_id, p.status, c.nome as entidade_nome,
                 c.tipo, c.cnpj, c.responsavel_cpf, c.responsavel_nome, c.responsavel_email, c.responsavel_celular
          FROM pagamentos p
-         JOIN contratantes c ON p.contratante_id = c.id
+         JOIN entidades c ON p.contratante_id = c.id
          WHERE p.id = $1`,
         [pagamento_id]
       );
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[PAGAMENTO_CONFIRMAR] Dados do pagamento encontrados:', {
       id: pagamento.id,
-      contratante_id: pagamento.contratante_id,
+      entidade_id: pagamento.contratante_id,
       cnpj: pagamento.cnpj,
       tipo: pagamento.tipo,
       responsavel_cpf: pagamento.responsavel_cpf,
@@ -259,7 +260,7 @@ export async function POST(request: NextRequest) {
                 total_parcelas: numero,
                 vencimento: parcela.data_vencimento,
                 valor: parcela.valor,
-                contratante_id: pagamento.contratante_id,
+                entidade_id: pagamento.contratante_id,
               },
               link_acao: '/rh/conta#pagamentos',
               botao_texto: 'Ver Pagamentos',
@@ -267,7 +268,7 @@ export async function POST(request: NextRequest) {
             });
 
             console.log(
-              `[NOTIFICAÇÃO] Parcela ${parcela.numero}/${numero} criada para contratante ${pagamento.contratante_id}`
+              `[NOTIFICAÇÃO] Parcela ${parcela.numero}/${numero} criada para entidade ${pagamento.contratante_id}`
             );
           } catch (notifError) {
             console.error(
@@ -293,13 +294,13 @@ export async function POST(request: NextRequest) {
     try {
       // Marcar contratante como ativo/confirmado (não altera contratos.status)
       await query(
-        `UPDATE contratantes SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+        `UPDATE entidades SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
         [pagamento.contratante_id]
       );
 
       acessoLiberado = true;
 
-      // Criar login do responsável usando função centralizada e ativar contratante
+      // Criar login do responsável usando função centralizada e ativar entidade
       try {
         try {
           await criarContaResponsavel(pagamento.contratante_id);
@@ -311,20 +312,20 @@ export async function POST(request: NextRequest) {
           );
         }
 
-        // Tentar ativar contratante mesmo sem recibo (recibos são gerados sob demanda)
+        // Tentar ativar entidade mesmo sem recibo (recibos são gerados sob demanda)
         try {
-          const ativ = await ativarContratante(pagamento.contratante_id);
+          const ativ = await ativarEntidade(pagamento.contratante_id);
           if (ativ.success) {
             acessoLiberado = true;
           } else {
             console.warn(
-              '[PAGAMENTO_CONFIRMAR] ativarContratante não completou:',
+              '[PAGAMENTO_CONFIRMAR] ativarEntidade não completou:',
               ativ.message
             );
           }
         } catch (ativErr) {
           console.warn(
-            '[PAGAMENTO_CONFIRMAR] Erro ao ativar contratante (ignorado):',
+            '[PAGAMENTO_CONFIRMAR] Erro ao ativar entidade (ignorado):',
             ativErr?.message || ativErr
           );
         }
@@ -336,7 +337,7 @@ export async function POST(request: NextRequest) {
       }
     } catch (markErr) {
       console.warn(
-        '[PAGAMENTO_CONFIRMAR] Falha ao marcar contratante ativo (ignorado):',
+        '[PAGAMENTO_CONFIRMAR] Falha ao marcar entidade ativa (ignorado):',
         markErr?.message || markErr
       );
     }
@@ -372,9 +373,9 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Garantir que contratante esteja como aprovado/ativo após pagamento
+        // Garantir que entidade esteja como aprovada/ativa após pagamento
         await query(
-          `UPDATE contratantes SET status = 'aprovado', ativa = true, pagamento_confirmado = true, data_liberacao_login = COALESCE(data_liberacao_login, NOW()), aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          `UPDATE entidades SET status = 'aprovado', ativa = true, pagamento_confirmado = true, data_liberacao_login = COALESCE(data_liberacao_login, NOW()), aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
           [pagamento.contratante_id]
         );
 
@@ -392,18 +393,18 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          const ativRes = await ativarContratante(pagamento.contratante_id);
+          const ativRes = await ativarEntidade(pagamento.contratante_id);
           if (ativRes.success) {
             acessoLiberado = true;
           } else {
             console.warn(
-              '[PAGAMENTO_CONFIRMAR] ativarContratante após aceite retornou:',
+              '[PAGAMENTO_CONFIRMAR] ativarEntidade após aceite retornou:',
               ativRes.message
             );
           }
         } catch (ativErr) {
           console.warn(
-            '[PAGAMENTO_CONFIRMAR] Erro ao ativar contratante após aceite (ignorado):',
+            '[PAGAMENTO_CONFIRMAR] Erro ao ativar entidade após aceite (ignorado):',
             ativErr?.message || ativErr
           );
         }
@@ -422,9 +423,9 @@ export async function POST(request: NextRequest) {
       '[PAGAMENTO_CONFIRMAR] Iniciando ativação e liberação de login (sem dependência de recibo)'
     );
     try {
-      // 1. Ativar contratante
+      // 1. Ativar entidade
       await query(
-        `UPDATE contratantes 
+        `UPDATE entidades 
          SET ativa = true,
              status = 'aprovado',
              pagamento_confirmado = true,
@@ -454,12 +455,11 @@ export async function POST(request: NextRequest) {
       );
 
       if (loginExists.rows.length === 0) {
-        // Determinar perfil baseado no tipo de contratante (entidade → gestor_entidade)
-        const perfil =
-          pagamento.tipo === 'entidade' ? 'gestor_entidade' : 'emissor';
+        // Determinar perfil baseado no tipo de contratante (entidade → gestor)
+        const perfil = pagamento.tipo === 'entidade' ? 'gestor' : 'emissor';
 
         // IMPORTANTE: nivel_cargo só pode ser definido para perfil 'funcionario'
-        // Neste fluxo criamos apenas perfis de gestor_entidade ou emissor, portanto manter NULL
+        // Neste fluxo criamos apenas perfis de gestor ou emissor, portanto manter NULL
         const nivelCargo = null;
 
         // Inserir com senha em texto plano - sistema fará hash automaticamente no primeiro login
@@ -479,7 +479,7 @@ export async function POST(request: NextRequest) {
           await query('BEGIN');
 
           const insertRes = await query(
-            `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, nivel_cargo, contratante_id, clinica_id, empresa_id, criado_em, atualizado_em)
+            `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, nivel_cargo, entidade_id, clinica_id, empresa_id, criado_em, atualizado_em)
              VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id, cpf, perfil`,
             [
               pagamento.responsavel_cpf,
@@ -500,7 +500,7 @@ export async function POST(request: NextRequest) {
             `[PAGAMENTO_CONFIRMAR] ✅ Login criado com sucesso: ID=${insertRes.rows[0].id}, perfil=${insertRes.rows[0].perfil}, senha=últimos 6 dígitos do CNPJ`
           );
 
-          // Garantir que haja uma senha padronizada na tabela contratantes_senhas
+          // Garantir que haja uma senha padronizada na tabela entidades_senhas
           try {
             await query('SELECT criar_senha_inicial_entidade($1)', [
               pagamento.contratante_id,
@@ -548,8 +548,8 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Pagamento confirmado com sucesso! Acesso liberado.',
       pagamento_id: pagamento_id,
-      contratante_id: pagamento.contratante_id,
-      contratante_nome: pagamento.contratante_nome,
+      entidade_id: pagamento.contratante_id,
+      entidade_nome: pagamento.entidade_nome,
       acesso_liberado: acessoLiberado,
       login_liberado: loginLiberado,
       proximos_passos: [
@@ -588,10 +588,10 @@ export async function POST(request: NextRequest) {
 
         // Obter contratante associado (se ainda disponível)
         const pInfo = await query(
-          'SELECT contratante_id, contrato_id FROM pagamentos WHERE id = $1',
+          'SELECT entidade_id, contrato_id FROM pagamentos WHERE id = $1',
           [pagamento_id]
         );
-        const contratanteIdForRollback = pInfo.rows[0]?.contratante_id || null;
+        const entidadeIdForRollback = pInfo.rows[0]?.entidade_id || null;
         const contratoIdFromPayment = pInfo.rows[0]?.contrato_id || null;
 
         // Reverter pagamento para pendente
@@ -605,15 +605,15 @@ export async function POST(request: NextRequest) {
             "UPDATE contratos SET status = 'pendente', aceito = false WHERE id = $1",
             [contratoIdFromPayment]
           );
-        } else if (contratanteIdForRollback) {
+        } else if (entidadeIdForRollback) {
           await query(
-            "UPDATE contratos SET status = 'pendente', aceito = false WHERE contratante_id = $1",
-            [contratanteIdForRollback]
+            "UPDATE contratos SET status = 'pendente', aceito = false WHERE entidade_id = $1",
+            [entidadeIdForRollback]
           );
         }
 
         // Voltar pré-contrato para fase de definição
-        if (contratanteIdForRollback) {
+        if (entidadeIdForRollback) {
           await query(
             `UPDATE contratacao_personalizada
              SET status = 'aguardando_valor_admin',
@@ -622,14 +622,14 @@ export async function POST(request: NextRequest) {
                  numero_funcionarios_estimado = NULL,
                  payment_link_token = NULL,
                  payment_link_expiracao = NULL
-             WHERE contratante_id = $1`,
-            [contratanteIdForRollback]
+             WHERE entidade_id = $1`,
+            [entidadeIdForRollback]
           );
 
-          // Marcar contratante como pendente novamente
+          // Marcar entidade como pendente novamente
           await query(
-            `UPDATE contratantes SET status = 'pendente', pagamento_confirmado = false, ativa = false WHERE id = $1`,
-            [contratanteIdForRollback]
+            `UPDATE entidades SET status = 'pendente', pagamento_confirmado = false, ativa = false WHERE id = $1`,
+            [entidadeIdForRollback]
           );
         }
 
@@ -675,9 +675,9 @@ export async function GET(request: NextRequest) {
     }
 
     const pagamentoResult = await query(
-      `SELECT p.*, c.nome as contratante_nome, c.pagamento_confirmado
+      `SELECT p.*, c.nome as entidade_nome, c.pagamento_confirmado
        FROM pagamentos p
-       JOIN contratantes c ON p.contratante_id = c.id
+       JOIN entidades c ON p.entidade_id = c.id
        WHERE p.id = $1`,
       [pagamentoId]
     );

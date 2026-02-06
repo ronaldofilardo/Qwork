@@ -23,10 +23,10 @@ const client = new Client({
     console.log('Contratante:', contratanteRes.rows[0]);
 
     const cs = await client.query(
-      'SELECT * FROM contratantes_senhas WHERE cpf = $1',
+      'SELECT * FROM entidades_senhas WHERE cpf = $1',
       [CPF]
     );
-    console.log('contratantes_senhas rows:', cs.rows);
+    console.log('entidades_senhas rows:', cs.rows);
 
     const func = await client.query(
       'SELECT * FROM funcionarios WHERE cpf = $1',

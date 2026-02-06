@@ -36,7 +36,7 @@ describe('POST /api/entidade/lote/[id]/relatorio', () => {
 
   it('gera PDF e chama autoTable apenas uma vez (sem duplicação)', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 77,
       cpf: '52998224725',
     });
@@ -65,7 +65,7 @@ describe('POST /api/entidade/lote/[id]/relatorio', () => {
           setor: 'Operacional',
           funcao: 'estagio',
           nivel_cargo: 'gestao',
-          avaliacao_status: 'concluida',
+          avaliacao_status: 'concluido',
           data_conclusao: '2026-01-25T00:00:00Z',
         },
       ],
@@ -87,7 +87,7 @@ describe('POST /api/entidade/lote/[id]/relatorio', () => {
 
   it('processa corretamente quando lote possui hash_pdf (não deve falhar)', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 77,
       cpf: '52998224725',
     });
@@ -117,7 +117,7 @@ describe('POST /api/entidade/lote/[id]/relatorio', () => {
           setor: 'Operacional',
           funcao: 'estagio',
           nivel_cargo: 'gestao',
-          avaliacao_status: 'concluida',
+          avaliacao_status: 'concluido',
           data_conclusao: '2026-01-25T00:00:00Z',
         },
       ],

@@ -13,6 +13,11 @@ jest.mock('@/lib/session', () => ({
   createSession: jest.fn(),
 }));
 
+jest.mock('@/lib/rate-limit', () => ({
+  rateLimit: jest.fn(() => jest.fn(() => null)), // Desabilita rate limit para testes
+  RATE_LIMIT_CONFIGS: { auth: {} },
+}));
+
 jest.mock('@/lib/auditoria/auditoria', () => ({
   extrairContextoRequisicao: () => ({
     ip_address: '127.0.0.1',
@@ -35,11 +40,11 @@ describe('/api/auth/login - gestor entidade', () => {
     POST = mod.POST;
   });
 
-  it.skip('deve autenticar gestor via contratantes_senhas e retornar perfil gestor_entidade (temporariamente skiped - depende de cookie/session mocks)', async () => {
+  it.skip('deve autenticar gestor via entidades_senhas e retornar perfil gestor (temporariamente skiped - depende de cookie/session mocks)', async () => {
     const senha = 'senhaSegura123';
     const hash = await bcrypt.hash(senha, 10);
 
-    // Mock da query retornando um gestor em contratantes_senhas
+    // Mock da query retornando um gestor em entidades_senhas
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -64,13 +69,14 @@ describe('/api/auth/login - gestor entidade', () => {
     const data = await response.json();
 
     // debug
+    console.log(
       'mockQuery.results:',
       mockQuery.mock.results.map((r) => r && r.value)
     );
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.perfil).toBe('gestor_entidade');
+    expect(data.perfil).toBe('gestor');
     expect(data.redirectTo).toBe('/entidade');
   });
 });

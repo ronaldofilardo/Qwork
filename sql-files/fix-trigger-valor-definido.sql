@@ -1,16 +1,16 @@
--- Corrigir função da trigger notificar_valor_definido para buscar de contratantes
+-- Corrigir função da trigger notificar_valor_definido para buscar de entidades (renomeado de contratantes)
 CREATE OR REPLACE FUNCTION public.notificar_valor_definido()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $function$
 DECLARE
-  v_contratante_nome TEXT;
+  v_entidade_nome TEXT;
   v_gestor_cpf TEXT;
 BEGIN
-  -- Buscar dados do contratante (corrigido de clinicas para contratantes)
-  SELECT nome, responsavel_cpf INTO v_contratante_nome, v_gestor_cpf
-  FROM contratantes
-  WHERE id = NEW.contratante_id;
+  -- Buscar dados da entidade (corrigido de clinicas para contratantes, agora renomeado para entidades)
+  SELECT nome, responsavel_cpf INTO v_entidade_nome, v_gestor_cpf
+  FROM entidades
+  WHERE id = NEW.entidade_id;
 
   -- Notificar gestor do contratante
   INSERT INTO notificacoes (
@@ -21,7 +21,7 @@ BEGIN
     'valor_definido',
     'media',
     v_gestor_cpf,
-    'gestor_entidade',
+    'gestor',
     'Valor Definido para Plano Personalizado',
     'O valor do seu plano personalizado foi definido. Valor por funcionario: R$ ' ||
       TO_CHAR(NEW.valor_por_funcionario, 'FM999G999G990D00') ||

@@ -12,8 +12,8 @@ CREATE POLICY avaliacao_resets_insert_policy ON avaliacao_resets
   WITH CHECK (
     -- backend processes podem inserir
     current_setting('app.is_backend', true) = '1'
-    -- ou apenas RH e gestor_entidade (REMOVIDO admin)
-    OR (current_setting('app.current_user_perfil', true) IN ('rh','gestor_entidade'))
+    -- ou apenas RH e gestor (REMOVIDO admin)
+    OR (current_setting('app.current_user_perfil', true) IN ('rh','gestor'))
   );
 
 -- 2. AVALIACOES_OWN_UPDATE: Garantir que apenas funcionario pode atualizar

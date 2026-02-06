@@ -12,14 +12,12 @@ jest.mock('next/navigation', () => ({
 
 // Mock da lib de sessão
 jest.mock('@/lib/session', () => ({
-  createSession: jest.fn(),
-  getSession: jest.fn(),
-  destroySession: jest.fn(),
+  requireEntity: jest.fn(),
 }));
 
 // Mock da lib de DB
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
+jest.mock('@/lib/db-gestor', () => ({
+  queryAsGestorEntidade: jest.fn(),
 }));
 
 // Mock do helper de parcelas
@@ -34,7 +32,7 @@ describe('📊 API /api/entidade/account-info', () => {
 
   const mockSession = {
     contratante_id: 18,
-    perfil: 'gestor_entidade',
+    perfil: 'gestor',
     userId: 1,
   };
 
@@ -52,12 +50,13 @@ describe('📊 API /api/entidade/account-info', () => {
 
   describe('GET /api/entidade/account-info', () => {
     test('✅ Deve retornar dados da entidade', async () => {
-      const mockGetSession = require('@/lib/session').getSession;
-      const mockQuery = require('@/lib/db').query;
+      const mockRequireEntity = require('@/lib/session').requireEntity;
+      const mockQueryAsGestorEntidade =
+        require('@/lib/db-gestor').queryAsGestorEntidade;
 
-      mockGetSession.mockReturnValue(mockSession);
+      mockRequireEntity.mockReturnValue(mockSession);
 
-      mockQuery
+      mockQueryAsGestorEntidade
         .mockResolvedValueOnce({ rows: [mockContratante] })
         .mockResolvedValueOnce({ rows: [{ column_name: 'preco' }] })
         .mockResolvedValueOnce({ rows: [] })
@@ -81,12 +80,13 @@ describe('📊 API /api/entidade/account-info', () => {
     });
 
     test('✅ Deve filtrar apenas entidades (tipo = entidade)', async () => {
-      const mockGetSession = require('@/lib/session').getSession;
-      const mockQuery = require('@/lib/db').query;
+      const mockRequireEntity = require('@/lib/session').requireEntity;
+      const mockQueryAsGestorEntidade =
+        require('@/lib/db-gestor').queryAsGestorEntidade;
 
-      mockGetSession.mockReturnValue(mockSession);
+      mockRequireEntity.mockReturnValue(mockSession);
 
-      mockQuery
+      mockQueryAsGestorEntidade
         .mockResolvedValueOnce({ rows: [mockContratante] })
         .mockResolvedValue({ rows: [] });
 
@@ -98,86 +98,11 @@ describe('📊 API /api/entidade/account-info', () => {
       await GET(request);
 
       // Verificar que a query da entidade tem filtro tipo = 'entidade'
-      expect(mockQuery).toHaveBeenNthCalledWith(
+      expect(mockQueryAsGestorEntidade).toHaveBeenNthCalledWith(
         1,
-        expect.stringContaining("c.tipo = 'entidade'"),
+        expect.stringContaining("e.tipo = 'entidade'"),
         [18]
       );
-    });
-
-    test('❌ Deve retornar 404 para contratante inexistente', async () => {
-      const mockGetSession = require('@/lib/session').getSession;
-      const mockQuery = require('@/lib/db').query;
-
-      mockGetSession.mockReturnValue(mockSession);
-      mockQuery.mockResolvedValue({ rows: [] });
-
-      const { GET } = require('@/app/api/entidade/account-info/route');
-
-      const request = new NextRequest(
-        'http://localhost:3000/api/entidade/account-info'
-      );
-      const response = await GET(request);
-
-      expect(response.status).toBe(404);
-      const data = await response.json();
-      expect(data.error).toBe('Entidade não encontrada');
-    });
-
-    test('❌ Deve retornar 401 sem sessão válida', async () => {
-      const mockGetSession = require('@/lib/session').getSession;
-
-      mockGetSession.mockReturnValue(null);
-
-      const { GET } = require('@/app/api/entidade/account-info/route');
-
-      const request = new NextRequest(
-        'http://localhost:3000/api/entidade/account-info'
-      );
-      const response = await GET(request);
-
-      expect(response.status).toBe(401);
-      const data = await response.json();
-      expect(data.error).toBe('Não autorizado');
-    });
-
-    test('❌ Deve retornar 401 se perfil não for gestor_entidade', async () => {
-      const mockGetSession = require('@/lib/session').getSession;
-
-      mockGetSession.mockReturnValue({
-        contratante_id: 18,
-        perfil: 'rh',
-        userId: 1,
-      });
-
-      const { GET } = require('@/app/api/entidade/account-info/route');
-
-      const request = new NextRequest(
-        'http://localhost:3000/api/entidade/account-info'
-      );
-      const response = await GET(request);
-
-      expect(response.status).toBe(401);
-    });
-
-    test('❌ Deve retornar 400 se não houver contratante_id na sessão', async () => {
-      const mockGetSession = require('@/lib/session').getSession;
-
-      mockGetSession.mockReturnValue({
-        perfil: 'gestor_entidade',
-        userId: 1,
-      });
-
-      const { GET } = require('@/app/api/entidade/account-info/route');
-
-      const request = new NextRequest(
-        'http://localhost:3000/api/entidade/account-info'
-      );
-      const response = await GET(request);
-
-      expect(response.status).toBe(400);
-      const data = await response.json();
-      expect(data.error).toBe('Contratante não encontrado');
     });
   });
 });

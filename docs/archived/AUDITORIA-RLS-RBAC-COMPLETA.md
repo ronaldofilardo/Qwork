@@ -28,15 +28,15 @@ Esta auditoria identificou **13 inconsistências críticas** e **8 inconsistênc
 
 - Documentação: [docs/security/GUIA-COMPLETO-RLS-RBAC.md:59-62](docs/security/GUIA-COMPLETO-RLS-RBAC.md#L59-L62)
 - Código: [lib/db.ts:1466-1700](lib/db.ts#L1466-L1700) (função `criarContaResponsavel`)
-- Migration: [database/migrations/201_fix_gestor_entidade_as_funcionario.sql](database/migrations/201_fix_gestor_entidade_as_funcionario.sql)
+- Migration: [database/migrations/201_fix_gestor_as_funcionario.sql](database/migrations/201_fix_gestor_as_funcionario.sql)
 
 **Descrição:**
 A documentação afirma que Gestor Entidade **NÃO** deve ter entrada na tabela `funcionarios`:
 
 ```markdown
-##### Gestor Entidade (`perfil='gestor_entidade'`)
+##### Gestor Entidade (`perfil='gestor'`)
 
-- **Tabelas:** Apenas `contratantes_senhas` (SEM entrada em `funcionarios`)
+- **Tabelas:** Apenas `entidades_senhas` (SEM entrada em `funcionarios`)
 ```
 
 **Realidade no código:**
@@ -45,15 +45,15 @@ A documentação afirma que Gestor Entidade **NÃO** deve ter entrada na tabela 
 // lib/db.ts - criarContaResponsavel()
 // Para tipo === 'entidade' (Gestores Entidade):
 // NÃO cria registro em `funcionarios`
-// Apenas cria entrada em `contratantes_senhas` com bcrypt
+// Apenas cria entrada em `entidades_senhas` com bcrypt
 ```
 
 **Problema:**  
 A migration 201 foi criada para **remover** gestores entidade da tabela `funcionarios`, mas:
 
 1. Não há garantia de que novos gestores entidade não sejam criados em `funcionarios` por algum fluxo alternativo
-2. As políticas RLS em `funcionarios` não explicitam bloqueio para `gestor_entidade`
-3. A constraint `funcionarios_owner_check` não previne `perfil='gestor_entidade'`
+2. As políticas RLS em `funcionarios` não explicitam bloqueio para `gestor`
+3. A constraint `funcionarios_owner_check` não previne `perfil='gestor'`
 
 **Impacto:** 🔴 **CRÍTICO**
 
@@ -64,10 +64,10 @@ A migration 201 foi criada para **remover** gestores entidade da tabela `funcion
 **Recomendação:**
 
 ```sql
--- Adicionar constraint para prevenir gestor_entidade em funcionarios
+-- Adicionar constraint para prevenir gestor em funcionarios
 ALTER TABLE funcionarios
-ADD CONSTRAINT funcionarios_no_gestor_entidade
-CHECK (perfil != 'gestor_entidade');
+ADD CONSTRAINT funcionarios_no_gestor
+CHECK (perfil != 'gestor');
 ```
 
 ---
@@ -392,27 +392,27 @@ GRANT qwork_system TO qwork_app_user;
 **Código:**
 
 ```typescript
-// Fallbacks para contratantes_senhas (placeholder ou texto plano)
+// Fallbacks para entidades_senhas (placeholder ou texto plano)
 if (!senhaValida) {
   const senhaTrim = typeof senha === 'string' ? senha.trim() : senha;
 
   // 1) Placeholder format: 'PLACEHOLDER_<senha>'
   if (gestor.senha_hash === `PLACEHOLDER_${senhaTrim}`) {
     const novoHash = await bcrypt.hash(senhaTrim, 10);
-    await query(
-      'UPDATE contratantes_senhas SET senha_hash = $1 WHERE cpf = $2',
-      [novoHash, cpf]
-    );
+    await query('UPDATE entidades_senhas SET senha_hash = $1 WHERE cpf = $2', [
+      novoHash,
+      cpf,
+    ]);
     senhaValida = true;
   }
 
   // 2) Texto plano armazenado
   if (!senhaValida && gestor.senha_hash === senhaTrim) {
     const novoHash = await bcrypt.hash(senhaTrim, 10);
-    await query(
-      'UPDATE contratantes_senhas SET senha_hash = $1 WHERE cpf = $2',
-      [novoHash, cpf]
-    );
+    await query('UPDATE entidades_senhas SET senha_hash = $1 WHERE cpf = $2', [
+      novoHash,
+      cpf,
+    ]);
     senhaValida = true;
   }
 }
@@ -1053,7 +1053,7 @@ $$ LANGUAGE plpgsql;
 
 ### Prioridade 2 (Esta Semana)
 
-- [ ] **#1** - Criar constraint bloqueando gestor_entidade em funcionarios
+- [ ] **#1** - Criar constraint bloqueando gestor em funcionarios
 - [ ] **#5** - Adicionar validação em funções helper RLS
 - [ ] **#6** - Corrigir DROP POLICY em tabelas erradas
 - [ ] **#8** - Remover fallbacks inseguros de senha em produção
@@ -1090,7 +1090,7 @@ $$ LANGUAGE plpgsql;
 
 - [Guia Completo RLS/RBAC](docs/security/GUIA-COMPLETO-RLS-RBAC.md)
 - [Migration 001 - Security](database/migrations/001_security_rls_rbac.sql)
-- [Migration 201 - Fix Gestor Entidade](database/migrations/201_fix_gestor_entidade_as_funcionario.sql)
+- [Migration 201 - Fix Gestor Entidade](database/migrations/201_fix_gestor_as_funcionario.sql)
 - [lib/db.ts](lib/db.ts)
 - [PostgreSQL RLS Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
 

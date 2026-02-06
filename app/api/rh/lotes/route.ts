@@ -99,7 +99,9 @@ export const GET = async (req: Request) => {
     // empresaCheck.rows[0].clinica_id contém o clinica_id da empresa
     const clinicaId = empresaCheck.rows[0].clinica_id;
 
-    console.log(`[DEBUG /api/rh/lotes] user=${user?.cpf || 'unknown'} empresa_id=${empresaId} clinica_id=${clinicaId}`);
+    console.log(
+      `[DEBUG /api/rh/lotes] user=${user?.cpf || 'unknown'} empresa_id=${empresaId} clinica_id=${clinicaId}`
+    );
 
     let lotesQuery;
     try {
@@ -116,7 +118,7 @@ export const GET = async (req: Request) => {
           ec.nome as empresa_nome,
           la.hash_pdf,
           COUNT(a.id) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
           COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
           fe.solicitado_por,
           fe.solicitado_em,
@@ -126,16 +128,26 @@ export const GET = async (req: Request) => {
         LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
         LEFT JOIN avaliacoes a ON la.id = a.lote_id
         LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
+        WHERE la.empresa_id = $1 AND la.clinica_id = $2
         GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, la.liberado_por, f.nome, ec.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
         ORDER BY la.liberado_em DESC
-        LIMIT $1
+        LIMIT $3
       `,
-        [limit]
+        [empresaId, clinicaId, limit]
       );
-      console.log(`[DEBUG /api/rh/lotes] query returned rows=${lotesQuery.rowCount}`);
+      console.log(
+        `[DEBUG /api/rh/lotes] query returned rows=${lotesQuery.rowCount}`
+      );
     } catch (err) {
-      console.error('[ERROR /api/rh/lotes] query failed:', err, err instanceof Error ? err.stack : null);
-      return NextResponse.json({ error: 'Erro ao buscar lotes' }, { status: 500, headers: { 'X-Lotes-Error': 'query_failed' } });
+      console.error(
+        '[ERROR /api/rh/lotes] query failed:',
+        err,
+        err instanceof Error ? err.stack : null
+      );
+      return NextResponse.json(
+        { error: 'Erro ao buscar lotes' },
+        { status: 500, headers: { 'X-Lotes-Error': 'query_failed' } }
+      );
     }
 
     const lotes = lotesQuery.rows.map((lote: any) => ({

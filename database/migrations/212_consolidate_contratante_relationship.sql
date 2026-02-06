@@ -103,10 +103,10 @@ BEGIN
   FROM funcionarios
   WHERE perfil = 'rh' AND contratante_id IS NULL;
   
-  -- Count gestor_entidade without contratante_id
+  -- Count gestor without contratante_id
   SELECT COUNT(*) INTO v_gestor_without_contratante
   FROM funcionarios
-  WHERE perfil = 'gestor_entidade' AND contratante_id IS NULL;
+  WHERE perfil = 'gestor' AND contratante_id IS NULL;
   
   -- Count funcionarios without any entity
   SELECT COUNT(*) INTO v_funcionario_no_entity
@@ -123,7 +123,7 @@ BEGIN
       RAISE NOTICE 'RH without contratante_id: % (should have contratante)', v_rh_without_contratante;
     END IF;
     IF v_gestor_without_contratante > 0 THEN
-      RAISE NOTICE 'gestor_entidade without contratante_id: % (should have contratante)', v_gestor_without_contratante;
+      RAISE NOTICE 'gestor without contratante_id: % (should have contratante)', v_gestor_without_contratante;
     END IF;
     IF v_funcionario_no_entity > 0 THEN
       RAISE NOTICE 'funcionario without entity: % (should have clinica_id OR contratante_id)', v_funcionario_no_entity;
@@ -150,8 +150,8 @@ ALTER TABLE funcionarios
     (perfil = 'rh' 
      AND contratante_id IS NOT NULL)
     OR
-    -- gestor_entidade: must have contratante_id (manages entidade), no clinica_id
-    (perfil = 'gestor_entidade' 
+    -- gestor: must have contratante_id (manages entidade), no clinica_id
+    (perfil = 'gestor' 
      AND contratante_id IS NOT NULL 
      AND clinica_id IS NULL)
     OR
@@ -174,7 +174,7 @@ ALTER TABLE funcionarios VALIDATE CONSTRAINT funcionarios_entity_check;
 COMMENT ON CONSTRAINT funcionarios_entity_check ON funcionarios IS
   'Ensures funcionarios belong to correct entity based on perfil:
    - rh: contratante_id required (may also have clinica_id for specific clinica)
-   - gestor_entidade: contratante_id required, no clinica_id
+   - gestor: contratante_id required, no clinica_id
    - funcionario: clinica_id (empresa of clinica) XOR contratante_id (employee of entidade)
    - emissor/admin: no entity';
 
@@ -182,7 +182,7 @@ COMMENT ON CONSTRAINT funcionarios_entity_check ON funcionarios IS
 -- PART 5: Update indexes
 -- ========================================
 
--- Index for contratante lookups (rh, gestor_entidade, funcionario of entidade)
+-- Index for contratante lookups (rh, gestor, funcionario of entidade)
 CREATE INDEX IF NOT EXISTS idx_funcionarios_contratante_id 
   ON funcionarios(contratante_id) 
   WHERE contratante_id IS NOT NULL;

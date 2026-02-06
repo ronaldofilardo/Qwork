@@ -81,7 +81,7 @@ Exemplos:
 - ✅ Duplicatas funcionais: Mantidas versões principais/clean
   - `104_add_data_nascimento_funcionarios.sql` → deprecated (mantida 071)
   - `105_add_contratante_id_to_funcionarios.sql` → deprecated (mantida 108)
-  - `206_add_gestor_entidade_role.sql` (OLD) → deprecated, renomeada clean
+  - `206_add_gestor_role.sql` (OLD) → deprecated, renomeada clean
   - `207_add_current_user_contratante_id_helper.sql` (OLD) → deprecated, renomeada clean
   - `063_5_add_current_user_contratante_id_function.sql` → deprecated (mantida 207)
   - `211_create_dba_maintenance_role.sql` (OLD) → deprecated, renomeada neon

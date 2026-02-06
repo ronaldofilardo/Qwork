@@ -97,6 +97,8 @@ ALTER FUNCTION public.detectar_anomalia_score(p_score numeric, p_tipo character 
 
 --
 -- Name: gerar_codigo_lote(); Type: FUNCTION; Schema: public; Owner: postgres
+-- STATUS: FUNÇÃO LEGADA - REMOVIDA DO BANCO PELA MIGRATION 160
+-- Campo 'codigo' não existe mais em lotes_avaliacao. Sistema usa apenas lote.id
 --
 
 CREATE FUNCTION public.gerar_codigo_lote() RETURNS character varying
@@ -181,9 +183,9 @@ BEGIN
 
             'total_avaliacoes', COUNT(a.id),
 
-            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluida' THEN 1 END),
+            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluido' THEN 1 END),
 
-            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2)
+            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2)
 
         ) as dados,
 
@@ -307,7 +309,7 @@ BEGIN
 
             AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
 
-            AND a.status = 'concluida'
+            AND a.status = 'concluido'
 
         GROUP BY r.grupo
 
@@ -375,7 +377,7 @@ BEGIN
 
         AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
 
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
 
         AND r.grupo IN (8, 9, 10);
 
@@ -457,7 +459,7 @@ BEGIN
 
         AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
 
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
 
     GROUP BY ec.id, ec.nome, r.grupo
 
@@ -521,7 +523,7 @@ CREATE TABLE public.avaliacoes (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     lote_id integer,
-    CONSTRAINT avaliacoes_status_check CHECK (((status)::text = ANY ((ARRAY['iniciada'::character varying, 'em_andamento'::character varying, 'concluida'::character varying, 'inativada'::character varying])::text[])))
+    CONSTRAINT avaliacoes_status_check CHECK (((status)::text = ANY ((ARRAY['iniciada'::character varying, 'em_andamento'::character varying, 'concluido'::character varying, 'inativada'::character varying])::text[])))
 );
 
 ALTER TABLE public.avaliacoes OWNER TO postgres;
@@ -981,7 +983,7 @@ CREATE VIEW public.vw_comparativo_empresas AS
      JOIN public.funcionarios f ON ((ec.id = f.empresa_id)))
      JOIN public.avaliacoes a ON ((f.cpf = a.funcionario_cpf)))
      JOIN public.respostas r ON ((a.id = r.avaliacao_id)))
-  WHERE (((a.status)::text = 'concluida'::text) AND (r.grupo <= 6))
+  WHERE (((a.status)::text = 'concluido'::text) AND (r.grupo <= 6))
   GROUP BY ec.clinica_id, ec.id, ec.nome
   ORDER BY ec.clinica_id, ec.nome;
 
@@ -1009,7 +1011,7 @@ CREATE VIEW public.vw_dashboard_por_empresa AS
     count(a.id) AS total_avaliacoes,
     count(
         CASE
-            WHEN ((a.status)::text = 'concluida'::text) THEN a.id
+            WHEN ((a.status)::text = 'concluido'::text) THEN a.id
             ELSE NULL::integer
         END) AS avaliacoes_concluidas,
     count(
@@ -1024,7 +1026,7 @@ CREATE VIEW public.vw_dashboard_por_empresa AS
         END) AS avaliacoes_iniciadas,
     round((((count(
         CASE
-            WHEN ((a.status)::text = 'concluida'::text) THEN a.id
+            WHEN ((a.status)::text = 'concluido'::text) THEN a.id
             ELSE NULL::integer
         END))::numeric * 100.0) / (NULLIF(count(a.id), 0))::numeric), 2) AS percentual_conclusao
    FROM ((public.funcionarios f

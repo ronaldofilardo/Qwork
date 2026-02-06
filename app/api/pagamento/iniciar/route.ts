@@ -5,7 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      contratante_id,
+      entidade_id,
+      contratante_id, // backward compat
       contrato_id,
       _contrato_id,
       plano_id,
@@ -13,6 +14,9 @@ export async function POST(request: NextRequest) {
       valor_total,
       payment_link_token,
     } = body;
+
+    // Use entidade_id ou contratante_id (retrocompat)
+    const finalEntidadeId = entidade_id || contratante_id;
 
     let contratoIdParam = _contrato_id || contrato_id;
 
@@ -52,17 +56,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Validações básicas
-    if (!contratante_id) {
+    if (!finalEntidadeId) {
       return NextResponse.json(
-        { error: 'ID do contratante é obrigatório' },
+        { error: 'ID da entidade é obrigatório' },
         { status: 400 }
       );
     }
 
-    // Se contrato_id não foi fornecido, vamos tentar encontrar um contrato aceito associado ao contratante
+    // Se contrato_id não foi fornecido, vamos tentar encontrar um contrato aceito associado à entidade
     if (!contratoIdParam) {
       console.log(
-        `[PAGAMENTO] Nenhum contrato_id informado para contratante ${contratante_id}, buscando contrato aceito associado`
+        `[PAGAMENTO] Nenhum contrato_id informado para entidade ${finalEntidadeId}, buscando contrato aceito associado`
       );
     }
 
@@ -84,26 +88,26 @@ export async function POST(request: NextRequest) {
       contratanteResult = await query(
         `SELECT c.id, c.nome, c.plano_id, c.status, COALESCE(c.numero_funcionarios_estimado, 1) as numero_funcionarios, 
                 p.nome as plano_nome, p.tipo as plano_tipo, p.preco, ctr.id as contrato_id, ctr.aceito as contrato_aceito, ctr.valor_total as contrato_valor_total
-         FROM contratantes c
+         FROM entidades c
          LEFT JOIN planos p ON c.plano_id = p.id
          JOIN contratos ctr ON ctr.contratante_id = c.id AND ctr.id = $2
          WHERE c.id = $1`,
-        [contratante_id, contratoIdParam]
+        [finalEntidadeId, contratoIdParam]
       );
     } else {
       contratanteResult = await query(
         `SELECT c.id, c.nome, c.plano_id, c.status, COALESCE(c.numero_funcionarios_estimado, 1) as numero_funcionarios, 
                 p.nome as plano_nome, p.tipo as plano_tipo, p.preco
-         FROM contratantes c
+         FROM entidades c
          LEFT JOIN planos p ON c.plano_id = p.id
          WHERE c.id = $1`,
-        [contratante_id]
+        [finalEntidadeId]
       );
     }
 
     if (contratanteResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Contratante não encontrado' },
+        { error: 'Entidade não encontrada' },
         { status: 404 }
       );
     }
@@ -126,11 +130,11 @@ export async function POST(request: NextRequest) {
       try {
         const contratoCheck = await query(
           `SELECT id, aceito, status FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1`,
-          [contratante_id]
+          [finalEntidadeId]
         );
         if (contratoCheck.rows.length === 0) {
           console.log(
-            `[PAGAMENTO] Status inválido para contratante ${contratante_id}: ${contratante.status}`
+            `[PAGAMENTO] Status inválido para entidade ${finalEntidadeId}: ${contratante.status}`
           );
           return NextResponse.json(
             { error: 'Status inválido para pagamento' },
@@ -144,7 +148,7 @@ export async function POST(request: NextRequest) {
           !lastContrato.aceito
         ) {
           console.log(
-            `[PAGAMENTO] Status inválido para contratante ${contratante_id}: ${contratante.status} e contrato recente não permite pagamento (status=${lastContrato.status}, aceito=${lastContrato.aceito})`
+            `[PAGAMENTO] Status inválido para entidade ${finalEntidadeId}: ${contratante.status} e contrato recente não permite pagamento (status=${lastContrato.status}, aceito=${lastContrato.aceito})`
           );
           return NextResponse.json(
             { error: 'Status inválido para pagamento' },
@@ -168,7 +172,7 @@ export async function POST(request: NextRequest) {
     try {
       const pagamentoExistente = await query(
         `SELECT id, status FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1`,
-        [contratante_id]
+        [finalEntidadeId]
       );
 
       if (pagamentoExistente.rows.length > 0) {
@@ -194,7 +198,7 @@ export async function POST(request: NextRequest) {
     if (contratoIdParam) {
       const contratoRow = await query(
         `SELECT id, aceito FROM contratos WHERE id = $1 AND contratante_id = $2`,
-        [contratoIdParam, contratante_id]
+        [contratoIdParam, finalEntidadeId]
       );
       if (contratoRow.rows.length === 0 || !contratoRow.rows[0].aceito) {
         return NextResponse.json(
@@ -207,7 +211,7 @@ export async function POST(request: NextRequest) {
       try {
         const contratoRow = await query(
           `SELECT id FROM contratos WHERE contratante_id = $1 AND aceito = true LIMIT 1`,
-          [contratante_id]
+          [finalEntidadeId]
         );
         if (contratoRow.rows.length === 0) {
           return NextResponse.json(
@@ -251,7 +255,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`[PAGAMENTO] Dados calculados:`, {
-      contratante_id,
+      entidade_id: finalEntidadeId,
       plano_id: finalPlanoId,
       numero_funcionarios: finalNumeroFuncionarios,
       valor_total: finalValorTotal,
@@ -263,7 +267,7 @@ export async function POST(request: NextRequest) {
       `INSERT INTO pagamentos (
         contratante_id, contrato_id, valor, status, metodo
       ) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [contratante_id, contratoIdValido, finalValorTotal, 'pendente', 'avista']
+      [finalEntidadeId, contratoIdValido, finalValorTotal, 'pendente', 'avista']
     );
 
     const pagamentoId = pagamentoResult.rows[0].id;

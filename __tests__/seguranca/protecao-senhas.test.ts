@@ -32,13 +32,13 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
       mockQuery.mockRejectedValue(triggerError);
 
       await expect(
-        query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [18])
+        query('DELETE FROM entidades_senhas WHERE entidade_id = $1', [18])
       ).rejects.toThrow(
         'OPERAÇÃO BLOQUEADA: Delete de senhas requer autorização explícita'
       );
 
       expect(mockQuery).toHaveBeenCalledWith(
-        'DELETE FROM contratantes_senhas WHERE contratante_id = $1',
+        'DELETE FROM entidades_senhas WHERE entidade_id = $1',
         [18]
       );
     });
@@ -51,11 +51,11 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
       );
       mockQuery.mockRejectedValue(triggerError);
 
-      await expect(query('DELETE FROM contratantes_senhas')).rejects.toThrow(
+      await expect(query('DELETE FROM entidades_senhas')).rejects.toThrow(
         'OPERAÇÃO BLOQUEADA'
       );
 
-      expect(mockQuery).toHaveBeenCalledWith('DELETE FROM contratantes_senhas');
+      expect(mockQuery).toHaveBeenCalledWith('DELETE FROM entidades_senhas');
     });
 
     test('❌ TRUNCATE deve ser BLOQUEADO', async () => {
@@ -66,7 +66,7 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
       );
       mockQuery.mockRejectedValue(triggerError);
 
-      await expect(query('TRUNCATE TABLE contratantes_senhas')).rejects.toThrow(
+      await expect(query('TRUNCATE TABLE entidades_senhas')).rejects.toThrow(
         'OPERAÇÃO BLOQUEADA'
       );
     });
@@ -76,13 +76,13 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
       mockQuery.mockResolvedValue({ rowCount: 1 });
 
       const result = await query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+        'INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash) VALUES ($1, $2, $3)',
         [25, '12345678901', '$2a$10$validHash']
       );
 
       expect(result.rowCount).toBe(1);
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO contratantes_senhas'),
+        expect.stringContaining('INSERT INTO entidades_senhas'),
         expect.any(Array)
       );
     });
@@ -92,13 +92,13 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
       mockQuery.mockResolvedValue({ rowCount: 1 });
 
       const result = await query(
-        'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = NOW() WHERE contratante_id = $2',
+        'UPDATE entidades_senhas SET senha_hash = $1, atualizado_em = NOW() WHERE entidade_id = $2',
         ['$2a$10$newHash', 18]
       );
 
       expect(result.rowCount).toBe(1);
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE contratantes_senhas'),
+        expect.stringContaining('UPDATE entidades_senhas'),
         expect.any(Array)
       );
     });
@@ -200,7 +200,7 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
         cpf: '45678901234',
         tinha_senha_anterior: true,
         tem_senha_nova: true,
-        executado_por: 'gestor_rh',
+        executado_por: 'rh',
         executado_em: '2025-12-23T12:30:00Z',
         motivo: 'troca de senha',
         tipo_operacao: 'manutenção',
@@ -342,7 +342,7 @@ describe('🔒 Sistema de Proteção Crítica de Senhas', () => {
     test('🚫 Deve impedir SQL injection no motivo', async () => {
       const mockQuery = require('@/lib/db').query;
 
-      const maliciousMotivo = "'; DROP TABLE contratantes_senhas; --";
+      const maliciousMotivo = "'; DROP TABLE entidades_senhas; --";
       mockQuery.mockRejectedValue(new Error('Motivo inválido'));
 
       await expect(

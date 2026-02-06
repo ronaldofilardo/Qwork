@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
+import UploadLaudoButton from '@/components/UploadLaudoButton';
+
 interface Lote {
   id: number;
   // titulo removido - usar apenas lote.id (alinhado com laudo.id)
@@ -30,6 +32,9 @@ interface Lote {
     hash_pdf: string | null;
     _emitido?: boolean;
     emissor_nome?: string;
+    arquivo_remoto_key?: string | null;
+    arquivo_remoto_url?: string | null;
+    arquivo_remoto_uploaded_at?: string | null;
   } | null;
   notificacoes?: NotificacaoLote[];
 }
@@ -769,8 +774,22 @@ export default function EmissorDashboard() {
                       </div>
                     )}
 
-                    <div className="flex justify-end gap-2">
-                      \n{' '}
+                    <div className="flex justify-end gap-2 items-center flex-wrap">
+                      {/* Botão de upload para bucket - somente para laudos emitidos */}
+                      {lote.laudo && lote.laudo._emitido && (
+                        <UploadLaudoButton
+                          laudoId={lote.laudo.id}
+                          loteId={lote.id}
+                          status={lote.laudo.status}
+                          arquivoRemotoKey={
+                            lote.laudo.arquivo_remoto_key || null
+                          }
+                          onUploadSuccess={() => {
+                            // Recarregar lotes após upload bem-sucedido
+                            void fetchLotes(currentPage, false);
+                          }}
+                        />
+                      )}{' '}
                       {/* Botão reprocessar - apenas para lotes concluídos sem laudo EMITIDO */}
                       {lote.status === 'concluido' &&
                         (!lote.laudo || !lote.laudo._emitido) && (

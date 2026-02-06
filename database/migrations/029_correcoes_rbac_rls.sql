@@ -77,25 +77,43 @@ CREATE POLICY contratos_responsavel_insert ON contratos
     );
 
 -- ==========================================
--- 4. ADICIONAR CONTRATANTE_ID À SESSÃO
+-- 4. ADICIONAR ENTIDADE_ID À SESSÃO
 -- ==========================================
 
 -- Nota: Esta alteração requer mudanças no código da aplicação
--- para definir app.current_user_contratante_id nas sessões
+-- para definir app.current_user_entidade_id nas sessões
+-- (anteriormente app.current_user_contratante_id - manter ambos para retrocompatibilidade)
 
--- Adicionar função auxiliar para contratante_id
-CREATE OR REPLACE FUNCTION current_user_contratante_id()
+-- Adicionar função auxiliar para entidade_id (novo nome)
+CREATE OR REPLACE FUNCTION current_user_entidade_id()
 RETURNS INTEGER AS $$
 DECLARE
-    contratante_id_str VARCHAR(50);
-    contratante_id_int INTEGER;
+    entidade_id_str VARCHAR(50);
+    entidade_id_int INTEGER;
 BEGIN
-    contratante_id_str := nullif(current_setting('app.current_user_contratante_id', true), '');
-    IF contratante_id_str IS NOT NULL THEN
-        contratante_id_int := contratante_id_str::INTEGER;
-        RETURN contratante_id_int;
+    -- Tentar primeiro o novo nome (entidade_id)
+    entidade_id_str := nullif(current_setting('app.current_user_entidade_id', true), '');
+    IF entidade_id_str IS NOT NULL THEN
+        entidade_id_int := entidade_id_str::INTEGER;
+        RETURN entidade_id_int;
     END IF;
+    
+    -- Fallback para nome antigo (contratante_id) para retrocompatibilidade
+    entidade_id_str := nullif(current_setting('app.current_user_contratante_id', true), '');
+    IF entidade_id_str IS NOT NULL THEN
+        entidade_id_int := entidade_id_str::INTEGER;
+        RETURN entidade_id_int;
+    END IF;
+    
     RETURN NULL;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Manter função antiga como alias para retrocompatibilidade
+CREATE OR REPLACE FUNCTION current_user_contratante_id()
+RETURNS INTEGER AS $$
+BEGIN
+    RETURN current_user_entidade_id();
 END;
 $$ LANGUAGE plpgsql STABLE;
 
@@ -129,14 +147,27 @@ $$ LANGUAGE plpgsql;
 -- Uma abordagem melhor seria adicionar logs nas próprias políticas
 
 -- ==========================================
--- 6. POLÍTICAS MAIS RESTRITIVAS PARA CONTRATANTES_SENHAS
+-- 6. POLÍTICAS MAIS RESTRITIVAS PARA ENTIDADES_SENHAS
 -- ==========================================
+-- Nota: Tabela renomeada de 'entidades_senhas' para 'entidades_senhas' na Migration 420
 
 -- Garantir que apenas o próprio responsável possa ver sua senha
-DROP POLICY IF EXISTS contratantes_senhas_responsavel ON contratantes_senhas;
-CREATE POLICY contratantes_senhas_responsavel ON contratantes_senhas
-    FOR ALL TO PUBLIC
-    USING (cpf = current_user_cpf());
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entidades_senhas') THEN
+        DROP POLICY IF EXISTS entidades_senhas_responsavel ON entidades_senhas;
+        CREATE POLICY entidades_senhas_responsavel ON entidades_senhas
+            FOR ALL TO PUBLIC
+            USING (cpf = current_user_cpf());
+        RAISE NOTICE 'Policy entidades_senhas_responsavel criada';
+    ELSIF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entidades_senhas') THEN
+        DROP POLICY IF EXISTS entidades_senhas_responsavel ON entidades_senhas;
+        CREATE POLICY entidades_senhas_responsavel ON entidades_senhas
+            FOR ALL TO PUBLIC
+            USING (cpf = current_user_cpf());
+        RAISE NOTICE 'Policy entidades_senhas_responsavel criada (tabela será renomeada na Migration 420)';
+    END IF;
+END $$;
 
 -- ==========================================
 -- 7. VALIDAÇÕES ADICIONAIS DE SEGURANÇA

@@ -26,7 +26,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
   it('deve retornar dados do lote com grupos G1-G10 calculados', async () => {
     // Mock da sessão (sem await, retorna diretamente)
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -66,7 +66,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
           funcao: 'Desenvolvedor',
           nivel_cargo: 'operacional',
           avaliacao_id: 1,
-          avaliacao_status: 'concluida',
+          avaliacao_status: 'concluido',
           avaliacao_data_inicio: '2026-01-02T10:00:00Z',
           avaliacao_data_conclusao: '2026-01-02T12:00:00Z',
         },
@@ -166,7 +166,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
 
   it('deve retornar erro 400 quando ID inválido', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -183,7 +183,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
 
   it('deve retornar erro 404 quando lote não encontrado', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -208,7 +208,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
   // Mantemos os testes de validação e os testes de componente
   it.skip('deve calcular corretamente grupos para avaliação concluída', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -247,7 +247,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
           funcao: 'F1',
           nivel_cargo: 'operacional',
           avaliacao_id: 1,
-          avaliacao_status: 'concluida',
+          avaliacao_status: 'concluido',
           avaliacao_data_inicio: '2026-01-02',
           avaliacao_data_conclusao: '2026-01-02',
         },

@@ -13,7 +13,7 @@ describe('criarContaResponsavel - unitários', () => {
     const id = 9999;
     // Garantir que não exista contratante com esse id
     await db
-      .query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [id])
+      .query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [id])
       .catch(() => {});
     await db
       .query(
@@ -64,25 +64,22 @@ describe('criarContaResponsavel - unitários', () => {
       await expect(criarContaResponsavel(contratante)).resolves.not.toThrow();
 
       const s = await db.query(
-        'SELECT * FROM contratantes_senhas WHERE contratante_id = $1',
+        'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
         [id]
       );
       expect(s.rows.length).toBeGreaterThan(0);
 
-      const f = await db.query('SELECT * FROM funcionarios WHERE cpf = $1', [
+      const u = await db.query('SELECT * FROM usuarios WHERE cpf = $1', [
         contratante.responsavel_cpf,
       ]);
-      expect(f.rows.length).toBeGreaterThanOrEqual(0);
-      if (f.rows.length > 0) {
-        expect(f.rows[0].usuario_tipo).toBe('gestor_entidade');
-        expect(f.rows[0].perfil).toBe('gestor_entidade');
+      expect(u.rows.length).toBeGreaterThanOrEqual(0);
+      if (u.rows.length > 0) {
+        expect(u.rows[0].tipo_usuario).toBe('gestor');
       }
     } finally {
       // Limpar registros criados
       await db
-        .query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [
-          id,
-        ])
+        .query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [id])
         .catch(() => {});
       await db
         .query(
@@ -91,7 +88,7 @@ describe('criarContaResponsavel - unitários', () => {
         )
         .catch(() => {});
       await db
-        .query('DELETE FROM funcionarios WHERE cpf = $1', [
+        .query('DELETE FROM usuarios WHERE cpf = $1', [
           contratante.responsavel_cpf,
         ])
         .catch(() => {});

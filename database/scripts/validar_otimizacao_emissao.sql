@@ -229,7 +229,7 @@ inserted AS (
     tipo_solicitante,
     criado_em
   )
-  SELECT 999, 'solicitar_emissao', 'pendente', '11111111111', 'gestor_entidade', NOW()
+  SELECT 999, 'solicitar_emissao', 'pendente', '11111111111', 'gestor', NOW()
   WHERE NOT EXISTS (SELECT 1 FROM existing)
   RETURNING id, tentativas, FALSE as is_update
 )

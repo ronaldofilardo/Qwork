@@ -23,18 +23,17 @@ CREATE OR REPLACE FUNCTION prevent_modification_after_emission()
 RETURNS TRIGGER AS $$
 DECLARE
     lote_emitido_em TIMESTAMP;
-    lote_codigo VARCHAR;
 BEGIN
     -- Buscar informações do lote
-    SELECT emitido_em, codigo INTO lote_emitido_em, lote_codigo
+    SELECT emitido_em INTO lote_emitido_em
     FROM lotes_avaliacao
     WHERE id = NEW.lote_id;
     
     -- Se o laudo foi emitido, bloquear modificação
     IF lote_emitido_em IS NOT NULL THEN
         RAISE EXCEPTION 
-            'Não é possível modificar avaliação do lote % (código: %). Laudo foi emitido em %.',
-            NEW.lote_id, lote_codigo, lote_emitido_em
+            'Não é possível modificar avaliação do lote % (ID: %). Laudo foi emitido em %.',
+            NEW.lote_id, NEW.lote_id, lote_emitido_em
         USING 
             ERRCODE = 'integrity_constraint_violation',
             HINT = 'Laudos emitidos são imutáveis para garantir integridade';
@@ -93,8 +92,8 @@ BEGIN
         END IF;
         
         RAISE EXCEPTION 
-            'Não é possível alterar status do lote % após emissão do laudo. Status atual: %, tentativa: %',
-            OLD.codigo, OLD.status, NEW.status
+            'Não é possível alterar status do lote % (ID: %) após emissão do laudo. Status atual: %, tentativa: %',
+            OLD.id, OLD.id, OLD.status, NEW.status
         USING 
             ERRCODE = 'integrity_constraint_violation',
             HINT = 'Lotes com laudo emitido são imutáveis';

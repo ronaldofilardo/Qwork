@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
         COUNT(DISTINCT ec.id) as total_empresas,
         COUNT(DISTINCT f.id) as total_funcionarios,
         COUNT(DISTINCT a.id) FILTER (WHERE a.status != 'inativada') as total_avaliacoes,
-        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN f.id END) as funcionarios_avaliados
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN f.id END) as funcionarios_avaliados
       FROM clinicas c
       LEFT JOIN empresas_clientes ec ON c.id = ec.clinica_id ${empresaFilter.replace('ec.id = $2', 'ec.id = $2 AND ec.clinica_id = c.id')}
       LEFT JOIN funcionarios f ON ec.id = f.empresa_id AND f.ativo = true
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       JOIN avaliacoes a ON a.id = r.avaliacao_id
       JOIN funcionarios f ON f.cpf = a.funcionario_cpf
       JOIN empresas_clientes ec ON ec.id = f.empresa_id
-      WHERE ec.clinica_id = $1 AND a.status = 'concluida' ${empresaId ? 'AND ec.id = $2' : ''}
+      WHERE ec.clinica_id = $1 AND a.status = 'concluido' ${empresaId ? 'AND ec.id = $2' : ''}
       GROUP BY r.grupo, r.dominio
       ORDER BY r.grupo
     `,
@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
       JOIN avaliacoes a ON a.id = r.avaliacao_id
       JOIN funcionarios f ON f.cpf = a.funcionario_cpf
       JOIN empresas_clientes ec ON ec.id = f.empresa_id
-      WHERE ec.clinica_id = $1 AND a.status = 'concluida' ${empresaId ? 'AND ec.id = $2' : ''}
+      WHERE ec.clinica_id = $1 AND a.status = 'concluido' ${empresaId ? 'AND ec.id = $2' : ''}
       GROUP BY r.categoria
       ORDER BY 
         CASE r.categoria

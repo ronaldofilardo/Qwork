@@ -12,10 +12,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar sessão
     const session = getSession();
-    if (
-      !session ||
-      (session.perfil !== 'rh' && session.perfil !== 'gestor_entidade')
-    ) {
+    if (!session || (session.perfil !== 'rh' && session.perfil !== 'gestor')) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
 
@@ -30,7 +27,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Autorizar acesso: apenas RH ou gestor_entidade com acesso
+    // Autorizar acesso: apenas RH ou gestor com acesso
     if (session.perfil === 'rh') {
       try {
         await requireRHWithEmpresaAccess(Number(empresaId));
@@ -38,11 +35,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
       }
     } else {
-      // gestor_entidade
+      // gestor
       try {
         const entity = await requireEntity();
         const empresaCheck = await query(
-          'SELECT contratante_id FROM empresas_clientes WHERE id = $1',
+          'SELECT entidade_id FROM empresas_clientes WHERE id = $1',
           [parseInt(empresaId)]
         );
         if (empresaCheck.rows.length === 0) {
@@ -51,7 +48,7 @@ export async function GET(request: NextRequest) {
             { status: 404 }
           );
         }
-        if (empresaCheck.rows[0].contratante_id !== entity.contratante_id) {
+        if (empresaCheck.rows[0].entidade_id !== entity.entidade_id) {
           return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
         }
       } catch {

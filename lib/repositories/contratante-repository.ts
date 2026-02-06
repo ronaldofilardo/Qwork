@@ -6,7 +6,7 @@
 import { query } from '../db';
 import { queryWithRLS, RLSContext } from '../security/rls-context';
 
-export interface Contratante {
+export interface Entidade {
   id: number;
   tipo: 'clinica' | 'entidade';
   nome: string;
@@ -32,7 +32,7 @@ export interface Contratante {
   aprovado_por_cpf?: string;
 }
 
-export interface ContratanteComRelacionamentos extends Contratante {
+export interface EntidadeComRelacionamentos extends Entidade {
   plano?: {
     id: number;
     nome: string;
@@ -56,13 +56,13 @@ export interface ContratanteComRelacionamentos extends Contratante {
 /**
  * Busca contratante por ID com eager loading (evita N+1)
  */
-export async function findContratanteById(
+export async function findEntidadeById(
   id: number,
   options: {
     includeRelations?: boolean;
     rlsContext?: RLSContext;
   } = {}
-): Promise<ContratanteComRelacionamentos | null> {
+): Promise<EntidadeComRelacionamentos | null> {
   const { includeRelations = false, rlsContext } = options;
 
   const sql = `
@@ -89,19 +89,19 @@ export async function findContratanteById(
       ) as contrato,
       (
         SELECT COUNT(*)
-        FROM contratantes_funcionarios cf
-        WHERE cf.contratante_id = c.id AND cf.vinculo_ativo = true
+        FROM entidades_funcionarios cf
+        WHERE cf.entidade_id = c.id AND cf.vinculo_ativo = true
       ) as total_funcionarios
     `
         : ''
     }
-    FROM contratantes c
+    FROM entidades c
     ${
       includeRelations
         ? `
       LEFT JOIN planos p ON c.plano_id = p.id
-      LEFT JOIN pagamentos pg ON pg.contratante_id = c.id
-      LEFT JOIN contratos ct ON ct.contratante_id = c.id
+      LEFT JOIN pagamentos pg ON pg.entidade_id = c.id
+      LEFT JOIN contratos ct ON ct.entidade_id = c.id
     `
         : ''
     }
@@ -110,12 +110,12 @@ export async function findContratanteById(
 
   const executeQuery = rlsContext
     ? (querySql: string, queryParams: any[]) =>
-        queryWithRLS<ContratanteComRelacionamentos>(
+        queryWithRLS<EntidadeComRelacionamentos>(
           querySql,
           queryParams,
           rlsContext
         )
-    : query<ContratanteComRelacionamentos>;
+    : query<EntidadeComRelacionamentos>;
 
   const result = await executeQuery(sql, [id]);
 
@@ -123,7 +123,7 @@ export async function findContratanteById(
 }
 
 /**
- * Lista contratantes com paginação e filtros
+ * Lista entidades com paginação e filtros
  */
 export async function findContratantes(
   options: {
@@ -136,7 +136,7 @@ export async function findContratantes(
     rlsContext?: RLSContext;
   } = {}
 ): Promise<{
-  contratantes: Contratante[];
+  entidades: Entidade[];
   total: number;
   page: number;
   limit: number;
@@ -187,7 +187,7 @@ export async function findContratantes(
   const whereClause = conditions.join(' AND ');
 
   // Query de contagem
-  const countSql = `SELECT COUNT(*) as total FROM contratantes WHERE ${whereClause}`;
+  const countSql = `SELECT COUNT(*) as total FROM entidades WHERE ${whereClause}`;
 
   const executeQuery = rlsContext
     ? (querySql: string, queryParams: any[]) =>
@@ -199,7 +199,7 @@ export async function findContratantes(
 
   // Query principal com paginação
   const sql = `
-    SELECT * FROM contratantes
+    SELECT * FROM entidades
     WHERE ${whereClause}
     ORDER BY criado_em DESC
     LIMIT $${paramIndex} OFFSET $${paramIndex + 1}
@@ -207,10 +207,10 @@ export async function findContratantes(
 
   params.push(limit, offset);
 
-  const result = await executeQuery<Contratante>(sql, params);
+  const result = await executeQuery<Entidade>(sql, params);
 
   return {
-    contratantes: result.rows,
+    entidades: result.rows,
     total,
     page,
     limit,
@@ -220,11 +220,11 @@ export async function findContratantes(
 /**
  * Atualiza contratante (apenas campos permitidos)
  */
-export async function updateContratante(
+export async function updateEntidade(
   id: number,
-  data: Partial<Contratante>,
+  data: Partial<Entidade>,
   rlsContext?: RLSContext
-): Promise<Contratante> {
+): Promise<Entidade> {
   // Campos permitidos para atualização
   const allowedFields = [
     'nome',
@@ -262,7 +262,7 @@ export async function updateContratante(
   params.push(id);
 
   const sql = `
-    UPDATE contratantes
+    UPDATE entidades
     SET ${updates.join(', ')}, atualizado_em = CURRENT_TIMESTAMP
     WHERE id = $${paramIndex}
     RETURNING *
@@ -270,13 +270,13 @@ export async function updateContratante(
 
   const executeQuery = rlsContext
     ? (querySql: string, queryParams: any[]) =>
-        queryWithRLS<Contratante>(querySql, queryParams, rlsContext)
-    : query<Contratante>;
+        queryWithRLS<Entidade>(querySql, queryParams, rlsContext)
+    : query<Entidade>;
 
   const result = await executeQuery(sql, params);
 
   if (result.rows.length === 0) {
-    throw new Error('Contratante não encontrado ou sem permissão');
+    throw new Error('Entidade não encontrado ou sem permissão');
   }
 
   return result.rows[0];
@@ -285,9 +285,9 @@ export async function updateContratante(
 /**
  * Busca contratantes pendentes de aprovação (para admin)
  */
-export async function findContratantesPendentes(): Promise<Contratante[]> {
-  const result = await query<Contratante>(
-    `SELECT * FROM contratantes 
+export async function findContratantesPendentes(): Promise<Entidade[]> {
+  const result = await query<Entidade>(
+    `SELECT * FROM entidades 
      WHERE status = 'pendente' OR status = 'aguardando_pagamento'
      ORDER BY criado_em DESC`,
     []
@@ -299,14 +299,14 @@ export async function findContratantesPendentes(): Promise<Contratante[]> {
 /**
  * Verifica se contratante pode ser ativado
  */
-export async function canActivateContratante(id: number): Promise<{
+export async function canActivateEntidade(id: number): Promise<{
   canActivate: boolean;
   errors: string[];
 }> {
-  const contratante = await findContratanteById(id, { includeRelations: true });
+  const contratante = await findEntidadeById(id, { includeRelations: true });
 
   if (!contratante) {
-    return { canActivate: false, errors: ['Contratante não encontrado'] };
+    return { canActivate: false, errors: ['Entidade não encontrado'] };
   }
 
   const errors: string[] = [];

@@ -4,8 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent';
-import { ClinicasContent } from '@/components/admin/ClinicasContent';
-import { EntidadesContent } from '@/components/admin/EntidadesContent';
+import { ContratantesContent } from '@/components/admin/ContratantesContent';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';
 import { PagamentosContent } from '@/components/admin/PagamentosContent';
@@ -52,13 +51,13 @@ export default function AdminPage() {
       }
 
       // Buscar contadores de clínicas e entidades
-      const clinicasRes = await fetch('/api/admin/contratantes?tipo=clinica');
+      const clinicasRes = await fetch('/api/admin/entidades?tipo=clinica');
       if (clinicasRes.ok) {
         const data = await clinicasRes.json();
         setClinicasCount(data.total || 0);
       }
 
-      const entidadesRes = await fetch('/api/admin/contratantes?tipo=entidade');
+      const entidadesRes = await fetch('/api/admin/entidades?tipo=entidade');
       if (entidadesRes.ok) {
         const data = await entidadesRes.json();
         setEntidadesCount(data.total || 0);
@@ -134,12 +133,7 @@ export default function AdminPage() {
     }
 
     if (activeSection === 'contratantes') {
-      if (activeSubSection === 'clinicas') {
-        return <ClinicasContent />;
-      }
-      if (activeSubSection === 'entidades') {
-        return <EntidadesContent />;
-      }
+      return <ContratantesContent activeSubSection={activeSubSection} />;
     }
 
     if (activeSection === 'financeiro') {

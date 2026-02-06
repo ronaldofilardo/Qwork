@@ -36,12 +36,12 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 #### P0.2 - Mismatch de Perfil em RLS [🔴 CRÍTICA]
 
-**Problema:** Políticas RLS verificavam `perfil = 'entidade'`, mas sessão usa `'gestor_entidade'`.
+**Problema:** Políticas RLS verificavam `perfil = 'entidade'`, mas sessão usa `'gestor'`.
 
 **Solução:**
 
 - ✅ Migration `064_fix_entidade_perfil_rls.sql` criada
-- ✅ Políticas atualizadas para `IN ('entidade', 'gestor_entidade')`
+- ✅ Políticas atualizadas para `IN ('entidade', 'gestor')`
 - ✅ Aplicado a `lotes_avaliacao` e `laudos`
 
 **Arquivos criados:**
@@ -222,8 +222,8 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 ### Queries de Validação Rápida
 
 ```sql
--- 1. Verificar RLS para gestor_entidade
-SET app.current_user_perfil = 'gestor_entidade';
+-- 1. Verificar RLS para gestor
+SET app.current_user_perfil = 'gestor';
 SET app.current_user_contratante_id = '1';
 SELECT * FROM lotes_avaliacao WHERE contratante_id = 1; -- Deve retornar lotes
 

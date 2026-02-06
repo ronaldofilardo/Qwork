@@ -26,7 +26,7 @@ describe('/api/entidade/lotes', () => {
   it('deve retornar lista de lotes com sucesso', async () => {
     // Mock da sessão
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -91,7 +91,7 @@ describe('/api/entidade/lotes', () => {
 
   it('deve retornar erro 500 quando ocorre erro na consulta', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -106,7 +106,7 @@ describe('/api/entidade/lotes', () => {
 
   it('deve aceitar retorno da função validar_lote_para_laudo com campo pode_emitir_laudo', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -157,7 +157,7 @@ describe('/api/entidade/lotes', () => {
 
   it('deve aceitar retorno da função validar_lote_para_laudo com campo pode_emitir', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 
@@ -208,7 +208,7 @@ describe('/api/entidade/lotes', () => {
 
   it('deve usar a view v_fila_emissao na query de lotes da entidade', async () => {
     mockGetSession.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 

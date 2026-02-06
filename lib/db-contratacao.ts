@@ -3,7 +3,7 @@ import type {
   Plano,
   Contrato,
   Pagamento,
-  ContratanteExtendido,
+  EntidadeExtendida,
   IniciarPagamentoDTO,
   StatusPagamento,
 } from './types/contratacao';
@@ -59,15 +59,15 @@ export async function getContratoById(
 }
 
 /**
- * Buscar contratos de um contratante
+ * Buscar contratos de uma entidade
  */
-export async function getContratosByContratante(
-  contratanteId: number,
+export async function getContratosByEntidade(
+  entidadeId: number,
   session?: Session
 ): Promise<Contrato[]> {
   const result = await query<Contrato>(
     'SELECT * FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC',
-    [contratanteId],
+    [entidadeId],
     session
   );
   return result.rows;
@@ -89,7 +89,7 @@ export async function iniciarPagamento(
      VALUES ($1, $2, $3, $4, 'pendente')
      RETURNING *`,
     [
-      data.contratante_id,
+      data.entidade_id,
       data.valor,
       data.metodo,
       data.plataforma_nome || 'Simulado',
@@ -133,17 +133,30 @@ export async function confirmarPagamento(
     throw new Error('Pagamento não encontrado');
   }
 
-  // Atualizar flag de pagamento confirmado no contratante
-  await query(
-    `UPDATE contratantes 
-     SET pagamento_confirmado = true,
-         status = 'pago'
-     WHERE id = $1`,
-    [result.rows[0].contratante_id],
+  const pagamento = result.rows[0];
+
+  // Buscar contratante_id através do contrato
+  const contratoRes = await query<{ contratante_id: number }>(
+    `SELECT contratante_id FROM contratos WHERE id = $1`,
+    [pagamento.contrato_id],
     session
   );
 
-  return result.rows[0];
+  if (contratoRes.rows.length === 0) {
+    throw new Error('Contrato não encontrado para este pagamento');
+  }
+
+  // Atualizar flag de pagamento confirmado na entidade
+  await query(
+    `UPDATE entidades 
+     SET pagamento_confirmado = true,
+         status = 'pago'
+     WHERE id = $1`,
+    [contratoRes.rows[0].contratante_id],
+    session
+  );
+
+  return pagamento;
 }
 
 /**
@@ -162,15 +175,15 @@ export async function getPagamentoById(
 }
 
 /**
- * Buscar pagamentos de um contratante
+ * Buscar pagamentos de uma entidade
  */
-export async function getPagamentosByContratante(
-  contratanteId: number,
+export async function getPagamentosByEntidade(
+  entidadeId: number,
   session?: Session
 ): Promise<Pagamento[]> {
   const result = await query<Pagamento>(
     'SELECT * FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC',
-    [contratanteId],
+    [entidadeId],
     session
   );
   return result.rows;
@@ -203,19 +216,19 @@ export async function atualizarStatusPagamento(
 }
 
 // ==========================================
-// FUNÇÕES AUXILIARES PARA CONTRATANTES
+// FUNÇÕES AUXILIARES PARA ENTIDADES
 // ==========================================
 
 /**
- * Verificar se contratante pode fazer login
+ * Verificar se entidade pode fazer login
  */
-export async function contratantePodeLogar(
-  contratanteId: number,
+export async function entidadePodeLogar(
+  entidadeId: number,
   session?: Session
 ): Promise<boolean> {
   const result = await query<{ pode_logar: boolean }>(
-    'SELECT contratante_pode_logar($1) as pode_logar',
-    [contratanteId],
+    'SELECT entidade_pode_logar($1) as pode_logar',
+    [entidadeId],
     session
   );
 
@@ -223,12 +236,12 @@ export async function contratantePodeLogar(
 }
 
 /**
- * Buscar contratante com dados completos (incluindo plano, contrato, pagamento)
+ * Buscar entidade com dados completos (incluindo plano, contrato, pagamento)
  */
-export async function getContratanteCompleto(
-  contratanteId: number,
+export async function getEntidadeCompleta(
+  entidadeId: number,
   session?: Session
-): Promise<ContratanteExtendido | null> {
+): Promise<any> {
   // Detectar dinamicamente quais colunas de preço existem na tabela `planos`
   const planColsRes = await query(
     `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`,
@@ -267,13 +280,13 @@ export async function getContratanteCompleto(
             pg.status as pagamento_status,
             pg.valor as pagamento_valor,
             pg.data_pagamento as pagamento_data
-     FROM contratantes c
+     FROM entidades c
      LEFT JOIN planos p ON c.plano_id = p.id
      LEFT JOIN pagamentos pg ON pg.contratante_id = c.id
      WHERE c.id = $1
      ORDER BY pg.criado_em DESC
      LIMIT 1`,
-    [contratanteId],
+    [entidadeId],
     session
   );
 
@@ -284,7 +297,7 @@ export async function getContratanteCompleto(
   const row = result.rows[0];
 
   // Montar objeto completo
-  const contratante: ContratanteExtendido = {
+  const entidade: EntidadeExtendida = {
     id: row.id,
     tipo: row.tipo,
     nome: row.nome,
@@ -319,7 +332,7 @@ export async function getContratanteCompleto(
 
   // Adicionar dados relacionados se existirem
   if (row.plano_id) {
-    contratante.plano = {
+    entidade.plano = {
       id: row.plano_id,
       nome: row.plano_nome,
       descricao: row.plano_descricao,
@@ -332,16 +345,26 @@ export async function getContratanteCompleto(
   }
 
   if (row.pagamento_id) {
-    contratante.pagamento = {
+    entidade.pagamento = {
       id: row.pagamento_id,
-      contratante_id: row.id,
+      entidade_id: row.id,
       valor: parseFloat(row.pagamento_valor),
-      status: row.pagamento_status,
+      status: row.pagamento_status as StatusPagamento,
       data_pagamento: row.pagamento_data,
       criado_em: '',
       atualizado_em: '',
-    };
+    } as Pagamento;
   }
 
-  return contratante;
+  return entidade;
 }
+
+// === RETROCOMPATIBILIDADE - DEPRECATED ===
+/** @deprecated Use getContratosByEntidade instead */
+export const getContratosByContratante = getContratosByEntidade;
+/** @deprecated Use getPagamentosByEntidade instead */
+export const getPagamentosByContratante = getPagamentosByEntidade;
+/** @deprecated Use entidadePodeLogar instead */
+export const contratantePodeLogar = entidadePodeLogar;
+/** @deprecated Use getEntidadeCompleta instead */
+export const getContratanteCompleto = getEntidadeCompleta;

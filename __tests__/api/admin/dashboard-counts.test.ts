@@ -191,7 +191,7 @@ describe('/api/admin/empresas/[id]/avaliacoes/pendentes/count', () => {
       // Verifica que a query exclui concluídas e inativadas
       const queryCall = mockQuery.mock.calls[1];
       expect(queryCall[0]).toContain(
-        "a.status NOT IN ('concluida', 'inativada')"
+        "a.status NOT IN ('concluido', 'inativada')"
       );
     });
 
@@ -221,3 +221,4 @@ describe('/api/admin/empresas/[id]/avaliacoes/pendentes/count', () => {
     });
   });
 });
+

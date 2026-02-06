@@ -41,7 +41,7 @@ Quando uma avaliação era **inativada após conclusão**, a data de inativaçã
 ```sql
 -- DEPOIS (CORRETO)
 ultima_avaliacao_data_conclusao = CASE
-  WHEN NEW.status = 'concluida' THEN NEW.envio
+  WHEN NEW.status = 'concluido' THEN NEW.envio
   ELSE ultima_avaliacao_data_conclusao  -- Preserva valor anterior
 END
 ```
@@ -91,7 +91,7 @@ WHERE (
 
 ### Migração 073: Preservar Datas de Conclusão
 
-- ✅ Trigger atualizado: só modifica `ultima_avaliacao_data_conclusao` quando status = 'concluida'
+- ✅ Trigger atualizado: só modifica `ultima_avaliacao_data_conclusao` quando status = 'concluido'
 - ✅ Inativações não sobrescrevem datas de conclusão anteriores
 - ✅ Aplicada em `nr-bps_db` e `nr-bps_db_test`
 
@@ -273,3 +273,4 @@ ORDER BY f.nome;
 **Autor:** Sistema Copilot  
 **Revisão:** 05/01/2026  
 **Prioridade:** CRÍTICA (compliance regulatório)
+

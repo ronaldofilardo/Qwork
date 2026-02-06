@@ -137,7 +137,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 │   - contratantes.pagamento_confirmado = true                   │
 │   - contratantes.contrato_aceito = true                        │
 │   - contratantes.status = "ativo"                              │
-│ • Cria login do gestor_entidade/gestor_rh                      │
+│ • Cria login do gestor/rh                      │
 │ • Envia email com credenciais                                   │
 │ • Redireciona para tela de sucesso                              │
 └─────────────────────────────────────────────────────────────────┘

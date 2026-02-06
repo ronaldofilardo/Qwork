@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom';
-import { createContratante, query } from '@/lib/db';
+import { createEntidade, query } from '@/lib/db';
 
 // Tipo básico para sessão de teste
 interface TestSession {
@@ -20,7 +20,7 @@ describe('Integração: criar e apagar contratante (DB)', () => {
     let contratoId: number | null = null;
 
     try {
-      const contratante = await createContratante({
+      const contratante = await createEntidade({
         tipo: 'entidade',
         nome: `Teste DB ${ts}`,
         cnpj,
@@ -32,7 +32,7 @@ describe('Integração: criar e apagar contratante (DB)', () => {
         estado: 'SP',
         cep: '01234-567',
         responsavel_nome: 'Teste Responsavel',
-        responsavel_cpf: '12345678909',
+        responsavel_cpf: String(ts).slice(-11).padStart(11, '1'),
         responsavel_cargo: undefined,
         responsavel_email: `resp-${ts}@example.com`,
         responsavel_celular: '(11)90000-0001',
@@ -78,7 +78,7 @@ describe('Integração: criar e apagar contratante (DB)', () => {
 
       // Agora apagar o contratante e verificar cascade (se aplicável)
       const del = await query(
-        'DELETE FROM contratantes WHERE id = $1 RETURNING id',
+        'DELETE FROM entidades WHERE id = $1 RETURNING id',
         [contratanteId]
       );
       expect(del.rowCount).toBe(1);

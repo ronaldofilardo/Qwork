@@ -236,7 +236,7 @@ BEGIN
         FROM avaliacoes 
         WHERE data_validade < NOW() 
         AND anonimizada = false
-        AND status IN ('concluida', 'inativada')
+        AND status IN ('concluido', 'inativada')
     LOOP
         PERFORM anonimizar_avaliacao(v_avaliacao_id);
         v_anonimizadas := v_anonimizadas + 1;
@@ -381,3 +381,4 @@ COMMENT ON COLUMN avaliacoes.base_legal IS 'Base legal LGPD: contrato, obrigacao
 COMMENT ON COLUMN avaliacoes.data_validade IS 'Data após a qual os dados devem ser anonimizados (36 meses)';
 COMMENT ON TABLE historico_exclusoes IS 'Registro de auditoria para exclusões e anonimizações realizadas';
 COMMENT ON FUNCTION executar_politica_retencao() IS 'Executa política de retenção: anonimiza dados vencidos e exclui após 6 meses';
+

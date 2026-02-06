@@ -1,32 +1,33 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import AdminSidebar from "@/components/admin/AdminSidebar";
-import { NovoscadastrosContent } from "@/components/admin/NovoscadastrosContent";
-import { ClinicasContent } from "@/components/admin/ClinicasContent";
-import { EntidadesContent } from "@/components/admin/EntidadesContent";
-import { EmissoresContent } from "@/components/admin/EmissoresContent";
-import { CobrancaContent } from "@/components/admin/CobrancaContent";
-import { PagamentosContent } from "@/components/admin/PagamentosContent";
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent';
+// ❌ REMOVIDO: Imports de conteúdo de contratantes (Admin não gerencia clínicas/entidades)
+// import { ClinicasContent } from "@/components/admin/ClinicasContent";
+// import { EntidadesContent } from "@/components/admin/EntidadesContent";
+import { EmissoresContent } from '@/components/admin/EmissoresContent';
+import { CobrancaContent } from '@/components/admin/CobrancaContent';
+import { PagamentosContent } from '@/components/admin/PagamentosContent';
 
 interface Session {
   cpf: string;
   nome: string;
-  perfil: "funcionario" | "rh" | "admin" | "emissor";
+  perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
 }
 
-type MainSection = "novos-cadastros" | "contratantes" | "financeiro" | "geral";
-type _ContratantesSubSection = "clinicas" | "entidades";
-type _FinanceiroSubSection = "cobranca" | "pagamentos";
-type _GeralSubSection = "emissores";
+type MainSection = 'novos-cadastros' | 'contratantes' | 'financeiro' | 'geral';
+type _ContratantesSubSection = 'clinicas' | 'entidades';
+type _FinanceiroSubSection = 'cobranca' | 'pagamentos';
+type _GeralSubSection = 'emissores';
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeSection, setActiveSection] =
-    useState<MainSection>("novos-cadastros");
-  const [activeSubSection, setActiveSubSection] = useState<string>("");
+    useState<MainSection>('novos-cadastros');
+  const [activeSubSection, setActiveSubSection] = useState<string>('');
 
   // Contadores para badges do sidebar
   const [pendingCount, setPendingCount] = useState(0);
@@ -42,32 +43,25 @@ export default function AdminPage() {
     try {
       // Buscar contadores de pendências
       const pendingRes = await fetch(
-        "/api/admin/novos-cadastros?status=pendente"
+        '/api/admin/novos-cadastros?status=pendente'
       );
       if (pendingRes.ok) {
         const data = await pendingRes.json();
         setPendingCount(data.total || 0);
       }
 
-      // Buscar contadores de clínicas e entidades
-      const clinicasRes = await fetch("/api/admin/contratantes?tipo=clinica");
-      if (clinicasRes.ok) {
-        const data = await clinicasRes.json();
-        setClinicasCount(data.total || 0);
-      }
-
-      const entidadesRes = await fetch("/api/admin/contratantes?tipo=entidade");
-      if (entidadesRes.ok) {
-        const data = await entidadesRes.json();
-        setEntidadesCount(data.total || 0);
-      }
+      // ❌ REMOVIDO: Admin não gerencia contratantes (clínicas/entidades)
+      // Endpoints /api/admin/contratantes removidos em 04/02/2026
+      // Admin não tem acesso a tabela contratantes por política de segurança
+      setClinicasCount(0);
+      setEntidadesCount(0);
 
       // Buscar contadores financeiros (placeholder - implementar depois)
       setCobrancaPendente(0);
       setPagamentosPendentes(0);
 
       // Buscar emissores ativos
-      const emissoresRes = await fetch("/api/admin/emissores");
+      const emissoresRes = await fetch('/api/admin/emissores');
       if (emissoresRes.ok) {
         const data = await emissoresRes.json();
         if (data.success) {
@@ -78,29 +72,29 @@ export default function AdminPage() {
         }
       }
     } catch (error) {
-      console.error("Erro ao buscar contadores:", error);
+      console.error('Erro ao buscar contadores:', error);
     }
   }, []);
 
   const fetchSession = useCallback(async () => {
     try {
-      const sessionRes = await fetch("/api/auth/session");
+      const sessionRes = await fetch('/api/auth/session');
       if (!sessionRes.ok) {
-        router.push("/login");
+        router.push('/login');
         return;
       }
       const sessionData = await sessionRes.json();
 
-      if (sessionData.perfil !== "admin") {
-        router.push("/dashboard");
+      if (sessionData.perfil !== 'admin') {
+        router.push('/dashboard');
         return;
       }
 
       setSession(sessionData);
       await fetchCounts();
     } catch (error) {
-      console.error("Erro ao carregar sessão:", error);
-      router.push("/login");
+      console.error('Erro ao carregar sessão:', error);
+      router.push('/login');
     } finally {
       setLoading(false);
     }
@@ -112,34 +106,35 @@ export default function AdminPage() {
 
   const handleSectionChange = (section: MainSection, subSection?: string) => {
     setActiveSection(section);
-    setActiveSubSection(subSection || "");
+    setActiveSubSection(subSection || '');
   };
 
   const renderContent = () => {
-    if (activeSection === "novos-cadastros") {
+    if (activeSection === 'novos-cadastros') {
       return <NovoscadastrosContent onApproved={fetchCounts} />;
     }
 
-    if (activeSection === "contratantes") {
-      if (activeSubSection === "clinicas") {
-        return <ClinicasContent />;
-      }
-      if (activeSubSection === "entidades") {
-        return <EntidadesContent />;
-      }
-    }
+    // ❌ REMOVIDO: Conteúdo de contratantes (Admin não gerencia clínicas/entidades)
+    // if (activeSection === "contratantes") {
+    //   if (activeSubSection === "clinicas") {
+    //     return <ClinicasContent />;
+    //   }
+    //   if (activeSubSection === "entidades") {
+    //     return <EntidadesContent />;
+    //   }
+    // }
 
-    if (activeSection === "financeiro") {
-      if (activeSubSection === "cobranca") {
+    if (activeSection === 'financeiro') {
+      if (activeSubSection === 'cobranca') {
         return <CobrancaContent />;
       }
-      if (activeSubSection === "pagamentos") {
+      if (activeSubSection === 'pagamentos') {
         return <PagamentosContent />;
       }
     }
 
-    if (activeSection === "geral") {
-      if (activeSubSection === "emissores") {
+    if (activeSection === 'geral') {
+      if (activeSubSection === 'emissores') {
         return <EmissoresContent />;
       }
     }

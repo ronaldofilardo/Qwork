@@ -11,7 +11,7 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
-    if (!user || user.perfil !== 'gestor_entidade') {
+    if (!user || (user.perfil !== 'gestor' && user.perfil !== 'rh')) {
       return NextResponse.json(
         { error: 'Acesso negado', success: false },
         { status: 403 }
@@ -35,7 +35,7 @@ export async function POST(
     // Validar acesso do gestor de entidade ao lote
     const loteCheck = await query(
       `
-      SELECT la.id, la.contratante_id, la.status, la.emitido_em
+      SELECT la.id, la.contratante_id, la.clinica_id, la.status, la.emitido_em
       FROM lotes_avaliacao la
       WHERE la.id = $1
     `,
@@ -87,14 +87,19 @@ export async function POST(
       );
     }
 
-    // Verificar se o gestor de entidade tem acesso ao contratante do lote
-    if (!user.contratante_id || lote.contratante_id !== user.contratante_id) {
+    // Verificar se o usuário (gestor ou RH) tem acesso à entidade/clínica do lote
+    const hasAccess =
+      user.perfil === 'gestor'
+        ? user.entidade_id && lote.contratante_id === user.entidade_id
+        : user.clinica_id && lote.clinica_id === user.clinica_id;
+
+    if (!hasAccess) {
       return NextResponse.json(
         {
           error: 'Você não tem permissão para inativar avaliações neste lote',
           success: false,
-          error_code: 'permission_contratante_mismatch',
-          hint: 'Verifique se o lote pertence à sua entidade. Caso necessário, contate o administrador.',
+          error_code: 'permission_entidade_mismatch',
+          hint: 'Verifique se o lote pertence à sua entidade/clínica. Caso necessário, contate o administrador.',
         },
         { status: 403 }
       );
@@ -156,7 +161,7 @@ export async function POST(
       SELECT
         COUNT(a.id) as total_avaliacoes,
         COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
         COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
       FROM avaliacoes a

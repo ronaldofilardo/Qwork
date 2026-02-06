@@ -1,6 +1,6 @@
 -- Script de aplicacao: Migrations 206 e 207
 -- Data: 2026-01-29
--- Descricao: Adicionar role gestor_entidade no sistema RBAC
+-- Descricao: Adicionar role gestor no sistema RBAC
 
 -- ==========================================
 -- VERIFICACOES PRE-MIGRATION
@@ -15,11 +15,11 @@
 -- 1. Verificar se role ja existe
 SELECT 
   CASE 
-    WHEN COUNT(*) > 0 THEN 'AVISO: Role gestor_entidade JA EXISTE (sera atualizado)'
-    ELSE 'OK: Role gestor_entidade nao existe (sera criado)'
+    WHEN COUNT(*) > 0 THEN 'AVISO: Role gestor JA EXISTE (sera atualizado)'
+    ELSE 'OK: Role gestor nao existe (sera criado)'
   END as status
 FROM roles 
-WHERE name = 'gestor_entidade';
+WHERE name = 'gestor';
 
 -- 2. Verificar helper function
 SELECT 
@@ -55,7 +55,7 @@ WHERE table_name = 'funcionarios'
 \echo '========================================'
 \echo ''
 
-\i database/migrations/206_add_gestor_entidade_role.sql
+\i database/migrations/206_add_gestor_role.sql
 
 \echo ''
 \echo '========================================'
@@ -76,7 +76,7 @@ WHERE table_name = 'funcionarios'
 \echo ''
 
 -- 1. Verificar role foi criado
-\echo '1. Role gestor_entidade:'
+\echo '1. Role gestor:'
 SELECT 
   id,
   name,
@@ -84,7 +84,7 @@ SELECT
   hierarchy_level,
   active
 FROM roles 
-WHERE name = 'gestor_entidade';
+WHERE name = 'gestor';
 
 \echo ''
 \echo '2. Permissoes associadas:'
@@ -95,7 +95,7 @@ SELECT
 FROM roles r
 JOIN role_permissions rp ON rp.role_id = r.id
 JOIN permissions p ON p.id = rp.permission_id
-WHERE r.name = 'gestor_entidade'
+WHERE r.name = 'gestor'
 ORDER BY p.resource, p.action;
 
 \echo ''
@@ -105,7 +105,7 @@ SELECT
   COUNT(*) as total_permissions
 FROM roles r
 JOIN role_permissions rp ON rp.role_id = r.id
-WHERE r.name IN ('rh', 'gestor_entidade')
+WHERE r.name IN ('rh', 'gestor')
 GROUP BY r.name;
 
 \echo ''

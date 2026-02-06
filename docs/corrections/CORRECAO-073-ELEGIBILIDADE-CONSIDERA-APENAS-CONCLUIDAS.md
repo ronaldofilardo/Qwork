@@ -40,7 +40,7 @@ ultima_avaliacao_data_conclusao = COALESCE(NEW.envio, NEW.inativada_em)
 f.data_ultimo_lote < NOW() - INTERVAL '1 year'
 
 -- DEPOIS (CORRETO)
-f.ultima_avaliacao_status = 'concluida'
+f.ultima_avaliacao_status = 'concluido'
 AND f.ultima_avaliacao_data_conclusao < NOW() - INTERVAL '1 year'
 ```
 
@@ -59,7 +59,7 @@ RETURNS TRIGGER AS $$
     ultima_avaliacao_id = NEW.id,
     ultimo_lote_codigo = v_lote_codigo,
     ultima_avaliacao_data_conclusao = CASE
-      WHEN NEW.status = 'concluida' THEN NEW.envio
+      WHEN NEW.status = 'concluido' THEN NEW.envio
       ELSE ultima_avaliacao_data_conclusao  -- Preserva valor anterior se não for concluída
     END,
     ultima_avaliacao_status = NEW.status,
@@ -71,7 +71,7 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
-**Mudança:** Data de conclusão **só é atualizada quando status = 'concluida'**, preservando datas de conclusão anteriores mesmo após inativações.
+**Mudança:** Data de conclusão **só é atualizada quando status = 'concluido'**, preservando datas de conclusão anteriores mesmo após inativações.
 
 ### 2. Funções de Elegibilidade Corrigidas
 
@@ -90,7 +90,7 @@ WHERE
     (p_numero_lote_atual - 1 - f.indice_avaliacao) >= 1
     OR
     -- Última avaliação foi CONCLUÍDA há mais de 1 ano
-    (f.ultima_avaliacao_status = 'concluida'
+    (f.ultima_avaliacao_status = 'concluido'
      AND f.ultima_avaliacao_data_conclusao < NOW() - INTERVAL '1 year')
     OR
     -- Nunca concluiu nenhuma avaliação (apenas inativadas)
@@ -110,7 +110,7 @@ UPDATE funcionarios
 SET ultima_avaliacao_data_conclusao = (
   SELECT envio FROM avaliacoes
   WHERE funcionario_cpf = funcionarios.cpf
-    AND status = 'concluida'
+    AND status = 'concluido'
   ORDER BY envio DESC
   LIMIT 1
 )
@@ -266,3 +266,4 @@ psql -U postgres -d nr-bps_db -f scripts/tests/test-elegibilidade-fix-073.sql
 ✅ **Regra de negócio de 12 meses restaurada**
 
 **Status:** PROD-READY - Migração pode ser aplicada em produção com segurança.
+

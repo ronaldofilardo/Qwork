@@ -148,7 +148,7 @@ Se houver necessidade de limpar completamente o enum no banco:
 
 ```sql
 -- Criar novo enum sem 'liberada'
-CREATE TYPE status_avaliacao_new AS ENUM ('iniciada', 'em_andamento', 'concluida', 'inativada');
+CREATE TYPE status_avaliacao_new AS ENUM ('iniciada', 'em_andamento', 'concluido', 'inativada');
 
 -- Converter coluna
 ALTER TABLE avaliacoes ALTER COLUMN status TYPE status_avaliacao_new USING status::text::status_avaliacao_new;
@@ -172,3 +172,4 @@ Todas as referências ao status `'liberada'` foram removidas do código, alinhan
 **Arquivos modificados**: 11  
 **Migrations criadas**: 1  
 **Testes afetados**: 0 (já validavam o comportamento correto)
+

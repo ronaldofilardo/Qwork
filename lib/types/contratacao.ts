@@ -59,7 +59,7 @@ export interface Contrato {
 
 export interface Pagamento {
   id: number;
-  contratante_id: number;
+  entidade_id: number;
   contrato_id?: number;
   valor: number;
   metodo?: MetodoPagamento;
@@ -120,7 +120,7 @@ export interface ContratanteExtendido {
 // ==========================================
 
 export interface IniciarPagamentoDTO {
-  contratante_id: number;
+  entidade_id: number;
   contrato_id: number | null;
   valor: number;
   metodo: MetodoPagamento;
@@ -138,4 +138,56 @@ export interface AprovarContratanteDTO {
   contratante_id: number;
   admin_cpf: string;
   verificar_pagamento?: boolean; // Flag para forçar verificação de pagamento
+}
+
+export interface EntidadeExtendida {
+  id: number;
+  tipo: string;
+  nome: string;
+  cnpj?: string;
+  inscricao_estadual?: string;
+  email: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  responsavel_nome?: string;
+  responsavel_cpf?: string;
+  responsavel_cargo?: string;
+  responsavel_email?: string;
+  responsavel_celular?: string;
+  cartao_cnpj_path?: string;
+  contrato_social_path?: string;
+  doc_identificacao_path?: string;
+  status: string;
+  motivo_rejeicao?: string;
+  observacoes_reanalise?: string;
+  ativa: boolean;
+  criado_em: string;
+  atualizado_em: string;
+  aprovado_em?: string;
+  aprovado_por_cpf?: string;
+  plano_id?: number;
+  pagamento_confirmado?: boolean;
+  data_liberacao_login?: string;
+  plano?: {
+    id: number;
+    nome: string;
+    descricao?: string;
+    preco: number;
+    tipo: string;
+    ativo: boolean;
+    criado_em: string;
+    atualizado_em: string;
+  };
+  pagamento?: {
+    id: number;
+    entidade_id: number;
+    valor: number;
+    metodo?: string;
+    status: string;
+    data_pagamento?: string;
+    criado_em: string;
+  };
 }

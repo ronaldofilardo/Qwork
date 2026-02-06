@@ -10,27 +10,27 @@ export const GetNovosCadastrosSchema = z.object({
   status: z.string().optional(),
 });
 
-export const AprovarContratanteSchema = z.object({
+export const AprovarEntidadeSchema = z.object({
   acao: z.literal('aprovar'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
   observacoes: z.string().optional(),
 });
 
-export const RejeitarContratanteSchema = z.object({
+export const RejeitarEntidadeSchema = z.object({
   acao: z.literal('rejeitar'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
   motivo: z.string().min(10, 'Motivo deve ter pelo menos 10 caracteres'),
 });
 
 export const SolicitarReanaliseSchema = z.object({
   acao: z.literal('solicitar_reanalise'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
   mensagem: z.string().min(10, 'Mensagem deve ter pelo menos 10 caracteres'),
 });
 
 export const AprovarPersonalizadoSchema = z.object({
   acao: z.literal('aprovar_personalizado'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
   valor_por_funcionario: z
     .number()
     .positive({ message: 'Valor por funcionário deve ser positivo' }),
@@ -42,28 +42,38 @@ export const AprovarPersonalizadoSchema = z.object({
 
 export const RegenerarLinkPersonalizadoSchema = z.object({
   acao: z.literal('regenerar_link'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
 });
 
-export const DeletarContratanteSchema = z.object({
+export const DeletarEntidadeSchema = z.object({
   acao: z.literal('deletar'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
 });
 
-export const NovosCadastrosActionSchema = z.discriminatedUnion('acao', [
-  AprovarContratanteSchema,
-  RejeitarContratanteSchema,
-  SolicitarReanaliseSchema,
-  AprovarPersonalizadoSchema,
-  RegenerarLinkPersonalizadoSchema,
-  DeletarContratanteSchema,
-]);
+export const NovosCadastrosActionSchema = z.preprocess(
+  (obj) => {
+    // Normalize incoming payloads: accept both 'contratante_id' (frontend) and 'entidade_id' (server)
+    if (obj && typeof obj === 'object') {
+      const o = obj as any;
+      if (!('entidade_id' in o) && 'contratante_id' in o) {
+        return { ...o, entidade_id: o.contratante_id };
+      }
+    }
+    return obj;
+  },
+  z.discriminatedUnion('acao', [
+    AprovarEntidadeSchema,
+    RejeitarEntidadeSchema,
+    SolicitarReanaliseSchema,
+    AprovarPersonalizadoSchema,
+    RegenerarLinkPersonalizadoSchema,
+    DeletarEntidadeSchema,
+  ])
+);
 
 export type GetNovosCadastrosInput = z.infer<typeof GetNovosCadastrosSchema>;
-export type AprovarContratanteInput = z.infer<typeof AprovarContratanteSchema>;
-export type RejeitarContratanteInput = z.infer<
-  typeof RejeitarContratanteSchema
->;
+export type AprovarEntidadeInput = z.infer<typeof AprovarEntidadeSchema>;
+export type RejeitarEntidadeInput = z.infer<typeof RejeitarEntidadeSchema>;
 export type SolicitarReanaliseInput = z.infer<typeof SolicitarReanaliseSchema>;
 export type AprovarPersonalizadoInput = z.infer<
   typeof AprovarPersonalizadoSchema
@@ -71,5 +81,5 @@ export type AprovarPersonalizadoInput = z.infer<
 export type RegenerarLinkPersonalizadoInput = z.infer<
   typeof RegenerarLinkPersonalizadoSchema
 >;
-export type DeletarContratanteInput = z.infer<typeof DeletarContratanteSchema>;
+export type DeletarEntidadeInput = z.infer<typeof DeletarEntidadeSchema>;
 export type NovosCadastrosAction = z.infer<typeof NovosCadastrosActionSchema>;

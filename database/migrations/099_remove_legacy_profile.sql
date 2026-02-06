@@ -39,7 +39,7 @@ ALTER TABLE public.funcionarios DROP CONSTRAINT IF EXISTS funcionarios_perfil_ch
 ALTER TABLE public.funcionarios
   ADD CONSTRAINT funcionarios_nivel_cargo_check CHECK (
     (
-      perfil IN ('admin', 'rh', 'emissor', 'gestor_entidade')
+      perfil IN ('admin', 'rh', 'emissor', 'gestor')
     )
     OR (
       perfil = 'funcionario' AND nivel_cargo IS NOT NULL
@@ -48,7 +48,7 @@ ALTER TABLE public.funcionarios
 
 ALTER TABLE public.funcionarios
   ADD CONSTRAINT funcionarios_perfil_check CHECK (
-    perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor_entidade')
+    perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor')
   );
 
 -- 6) Atualizar políticas RLS (remover referências ao perfil legado)

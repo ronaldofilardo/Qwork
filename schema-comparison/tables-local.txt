@@ -13,7 +13,7 @@
  clinicas_empresas
  contratacao_personalizada
  contratantes
- contratantes_senhas
+ entidades_senhas
  contratos
  contratos_planos
  emissao_queue

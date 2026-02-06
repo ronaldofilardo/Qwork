@@ -33,10 +33,10 @@ async function investigarCPF() {
     console.log('   ❌ Não encontrado em contratantes\n');
   }
 
-  // 2. Verificar em contratantes_senhas
-  console.log('2️⃣ Verificando em contratantes_senhas...');
+  // 2. Verificar em entidades_senhas
+  console.log('2️⃣ Verificando em entidades_senhas...');
   const senhas = await query(
-    'SELECT contratante_id, cpf, LENGTH(senha_hash) as senha_len FROM contratantes_senhas WHERE cpf = $1',
+    'SELECT contratante_id, cpf, LENGTH(senha_hash) as senha_len FROM entidades_senhas WHERE cpf = $1',
     [cpf]
   );
 
@@ -47,7 +47,7 @@ async function investigarCPF() {
       console.log(`      Senha hash length: ${s.senha_len} chars\n`);
     }
   } else {
-    console.log('   ❌ Não encontrado em contratantes_senhas\n');
+    console.log('   ❌ Não encontrado em entidades_senhas\n');
   }
 
   // 3. Verificar em funcionarios

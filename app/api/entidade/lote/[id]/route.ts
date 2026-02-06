@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,14 +11,7 @@ export async function GET(
 ) {
   try {
     // Verificar sessão e perfil
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    if (session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    const session = await requireEntity();
 
     const loteId = parseInt(params.id);
     if (isNaN(loteId)) {
@@ -77,13 +70,13 @@ export async function GET(
       `
       SELECT
         COUNT(DISTINCT f.id) as total_funcionarios,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN f.id END) as funcionarios_concluidos,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN f.id END) as funcionarios_concluidos,
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       WHERE a.lote_id = $1 AND f.contratante_id = $2 AND a.status != 'inativada'
     `,
-      [loteId, session.contratante_id]
+      [loteId, session.entidade_id]
     );
 
     const estatisticas = statsResult.rows[0];
@@ -109,7 +102,7 @@ export async function GET(
       WHERE a.lote_id = $1 AND f.contratante_id = $2
       ORDER BY f.nome ASC
     `,
-      [loteId, session.contratante_id]
+      [loteId, session.entidade_id]
     );
 
     // Calcular médias dos grupos G1-G10 para cada funcionário
@@ -118,7 +111,7 @@ export async function GET(
         const mediasGrupos: { [key: string]: number } = {};
 
         // Apenas calcular se avaliação está concluída
-        if (row.avaliacao_status === 'concluida') {
+        if (row.avaliacao_status === 'concluido') {
           const respostasResult = await query(
             `
             SELECT grupo, AVG(valor) as media

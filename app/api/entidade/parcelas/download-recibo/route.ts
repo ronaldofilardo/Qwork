@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -13,10 +13,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request) {
   try {
-    const session = getSession();
-    if (!session || session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    const session = await requireEntity();
 
     const { searchParams } = new URL(request.url);
     const reciboId = searchParams.get('id');
@@ -35,7 +32,7 @@ export async function GET(request: Request) {
         r.numero_recibo,
         r.conteudo_pdf_path,
         r.conteudo_texto,
-        r.contratante_id
+        r.entidade_id
       FROM recibos r
       WHERE r.id = $1 AND r.ativo = true
       LIMIT 1
@@ -52,8 +49,8 @@ export async function GET(request: Request) {
 
     const recibo = reciboResult.rows[0];
 
-    // Validar autorização: recibo deve pertencer ao contratante da sessão
-    if (recibo.contratante_id !== session.contratante_id) {
+    // Validar autorização: recibo deve pertencer à entidade da sessão
+    if (recibo.entidade_id !== session.contratante_id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
 

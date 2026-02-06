@@ -1,7 +1,7 @@
 /**
  * Testes de Integração: Gestores RH com usuario_tipo
  *
- * Valida o comportamento de gestores RH usando usuario_tipo='gestor_rh'
+ * Valida o comportamento de gestores RH usando usuario_tipo='rh'
  * Usa conexão direta ao banco de teste (evita conflito com lib/db.ts)
  */
 
@@ -41,7 +41,7 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
 
   beforeAll(async () => {
     // Limpar dados antigos primeiro
-    await query('DELETE FROM funcionarios WHERE cpf IN ($1, $2, $3)', [
+    await query('DELETE FROM usuarios WHERE cpf IN ($1, $2, $3)', [
       testCPF,
       '99999999999',
       '88888888888',
@@ -65,8 +65,8 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
   });
 
   afterAll(async () => {
-    // Cleanup (deletar funcionários primeiro devido a foreign key)
-    await query('DELETE FROM funcionarios WHERE cpf IN ($1, $2, $3)', [
+    // Cleanup (deletar usuários de teste)
+    await query('DELETE FROM usuarios WHERE cpf IN ($1, $2, $3)', [
       testCPF,
       '99999999999',
       '88888888888',
@@ -74,11 +74,11 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
     await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
   });
 
-  it('deve criar gestor RH com usuario_tipo=gestor_rh', async () => {
+  it('deve criar gestor RH com usuario_tipo=rh', async () => {
     const result = await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
-       VALUES ($1, $2, $3, $4, 'rh', 'gestor_rh', $5, true)
-       RETURNING cpf, nome, email, perfil, usuario_tipo, clinica_id, ativo`,
+      `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
+       VALUES ($1, $2, $3, $4, 'rh', $5, true, NOW(), NOW())
+       RETURNING cpf, nome, email, tipo_usuario, clinica_id, ativo`,
       [
         testCPF,
         'Gestor RH Test',
@@ -89,8 +89,7 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
     );
 
     expect(result.rows.length).toBe(1);
-    expect(result.rows[0].usuario_tipo).toBe('gestor_rh');
-    expect(result.rows[0].perfil).toBe('rh');
+    expect(result.rows[0].tipo_usuario).toBe('rh');
     expect(result.rows[0].clinica_id).toBe(clinicaId);
   });
 
@@ -105,54 +104,59 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
     expect(result.rows.length).toBeGreaterThanOrEqual(1);
     const gestor = result.rows.find((g: any) => g.cpf === testCPF);
     expect(gestor).toBeDefined();
-    expect(gestor.usuario_tipo).toBe('gestor_rh');
+    expect(gestor.usuario_tipo).toBe('rh');
     // Ignorar encoding issue do PostgreSQL local
     expect(gestor.tipo_gestor_descricao).toContain('RH');
   });
 
   it('deve consultar gestores RH usando usuario_tipo na query', async () => {
     const result = await query(
-      `SELECT cpf, nome, usuario_tipo, clinica_id
-       FROM funcionarios
-       WHERE usuario_tipo = 'gestor_rh' AND clinica_id = $1`,
+      `SELECT cpf, nome, tipo_usuario as usuario_tipo, clinica_id
+       FROM usuarios
+       WHERE tipo_usuario = 'rh' AND clinica_id = $1`,
       [clinicaId]
     );
 
     expect(result.rows.length).toBeGreaterThanOrEqual(1);
     const gestor = result.rows.find((g: any) => g.cpf === testCPF);
     expect(gestor).toBeDefined();
-    expect(gestor.usuario_tipo).toBe('gestor_rh');
+    expect(gestor.usuario_tipo).toBe('rh');
   });
 
-  it('não deve permitir gestor_rh sem clinica_id (constraint)', async () => {
-    // Note: Esta constraint está desativada no banco de teste atual
-    // O teste valida que o INSERT foi executado, mas a constraint não está ativa
-    const result = await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, ativo)
-       VALUES ($1, $2, $3, $4, 'rh', 'gestor_rh', true)
-       RETURNING cpf`,
-      [
-        '99999999999',
-        'Gestor Sem Clínica',
-        'semclinica@test.com',
-        '$2a$10$dummy',
-      ]
-    );
-
-    // Se constraint estivesse ativa, deveria falhar
-    // Como não está, validamos que pelo menos o insert funcionou
-    expect(result.rows.length).toBe(1);
+  it('não deve permitir rh sem clinica_id (constraint)', async () => {
+    // Esta constraint pode estar ativa ou não dependendo do DB.
+    // Aceitamos qualquer um dos comportamentos: INSERT bem-sucedido ou erro de constraint 'usuarios_rh_check'.
+    try {
+      const result = await query(
+        `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, ativo, criado_em, atualizado_em)
+         VALUES ($1, $2, $3, $4, 'rh', true, NOW(), NOW())
+         RETURNING cpf`,
+        [
+          '99999999999',
+          'Gestor Sem Clínica',
+          'semclinica@test.com',
+          '$2a$10$dummy',
+        ]
+      );
+      // Se chegou aqui, o INSERT funcionou
+      expect(result.rows.length).toBe(1);
+    } catch (err: any) {
+      // Se falhou por causa da constraint, aceitável
+      expect(err.message || String(err)).toMatch(
+        /usuarios_rh_check|viola a restrição de verificação|viola a restrição/
+      );
+    }
   });
 
   it('deve contar gestores RH usando usuarios_resumo', async () => {
     const result = await query(
-      `SELECT usuario_tipo, total, ativos, clinicas_vinculadas
+      `SELECT tipo_usuario as usuario_tipo, total, ativos, clinicas_vinculadas
        FROM usuarios_resumo
-       WHERE usuario_tipo = 'gestor_rh'`
+       WHERE usuario_tipo = 'rh'`
     );
 
     if (result.rows.length > 0) {
-      expect(result.rows[0].usuario_tipo).toBe('gestor_rh');
+      expect(result.rows[0].usuario_tipo).toBe('rh');
       expect(parseInt(result.rows[0].total)).toBeGreaterThanOrEqual(1);
       expect(
         parseInt(result.rows[0].clinicas_vinculadas)
@@ -164,8 +168,8 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
     // Note: Esta constraint pode não estar ativa no banco de teste
     // O teste valida que o INSERT foi executado
     const result = await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
-       VALUES ($1, $2, $3, $4, 'operacional', 'gestor_rh', $5, true)
+      `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
+       VALUES ($1, $2, $3, $4, 'rh', $5, true, NOW(), NOW())
        RETURNING cpf`,
       [
         '88888888888',

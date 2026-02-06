@@ -19,7 +19,7 @@ export async function POST() {
       session.perfil === 'admin'
         ? 'admin'
         : session.perfil === 'rh'
-          ? 'gestor_entidade'
+          ? 'gestor'
           : 'funcionario';
 
     const totalMarcadas = await NotificationService.marcarTodasComoLidas(

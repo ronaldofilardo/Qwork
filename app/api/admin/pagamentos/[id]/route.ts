@@ -16,27 +16,27 @@ export async function GET(
       );
     }
 
-    const contratanteId = params.id;
+    const entidadeId = params.id;
 
-    if (!contratanteId) {
+    if (!entidadeId) {
       return NextResponse.json(
-        { error: 'ID do contratante é obrigatório' },
+        { error: 'ID da entidade é obrigatório' },
         { status: 400 }
       );
     }
 
-    // Buscar pagamento do contratante
+    // Buscar pagamento da entidade
     const pagamentoResult = await query(
       `SELECT * FROM pagamentos
-       WHERE contratante_id = $1
+       WHERE entidade_id = $1
        ORDER BY criado_em DESC
        LIMIT 1`,
-      [contratanteId]
+      [entidadeId]
     );
 
     if (pagamentoResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Pagamento não encontrado para este contratante' },
+        { error: 'Pagamento não encontrado para esta entidade' },
         { status: 404 }
       );
     }

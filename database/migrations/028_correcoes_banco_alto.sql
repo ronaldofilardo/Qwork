@@ -11,16 +11,31 @@ BEGIN;
 -- ==========================================
 
 -- Adicionar constraint de unicidade em responsavel_cpf
+-- Nota: Tabela renomeada de 'contratantes' para 'entidades' na Migration 420
 DO $$
 BEGIN
-    -- Verificar se já existe
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.table_constraints
-        WHERE constraint_name = 'contratantes_responsavel_cpf_unique'
-        AND table_name = 'contratantes'
-    ) THEN
-        ALTER TABLE contratantes
-        ADD CONSTRAINT contratantes_responsavel_cpf_unique UNIQUE (responsavel_cpf);
+    -- Verificar e adicionar na tabela entidades (se existir)
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entidades') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE constraint_name = 'entidades_responsavel_cpf_unique'
+            AND table_name = 'entidades'
+        ) THEN
+            ALTER TABLE entidades
+            ADD CONSTRAINT entidades_responsavel_cpf_unique UNIQUE (responsavel_cpf);
+            RAISE NOTICE 'Constraint entidades_responsavel_cpf_unique criada';
+        END IF;
+    -- Fallback para contratantes (antes da Migration 420)
+    ELSIF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.table_constraints
+            WHERE constraint_name = 'contratantes_responsavel_cpf_unique'
+            AND table_name = 'contratantes'
+        ) THEN
+            ALTER TABLE contratantes
+            ADD CONSTRAINT contratantes_responsavel_cpf_unique UNIQUE (responsavel_cpf);
+            RAISE NOTICE 'Constraint contratantes_responsavel_cpf_unique criada (será migrada na Migration 420)';
+        END IF;
     END IF;
 EXCEPTION
     WHEN others THEN
@@ -32,37 +47,79 @@ END $$;
 -- ==========================================
 
 -- Adicionar índices compostos para performance
-CREATE INDEX IF NOT EXISTS idx_contratantes_tipo_status_ativa
-ON contratantes (tipo, status, ativa);
-
-CREATE INDEX IF NOT EXISTS idx_contratantes_status_data_cadastro
-ON contratantes (status, criado_em DESC);
-
-CREATE INDEX IF NOT EXISTS idx_contratantes_aprovado_em
-ON contratantes (aprovado_em) WHERE aprovado_em IS NOT NULL;
+-- Nota: Adaptado para tabela 'entidades' (renomeada de 'contratantes' na Migration 420)
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entidades') THEN
+        CREATE INDEX IF NOT EXISTS idx_entidades_tipo_status_ativa
+        ON entidades (tipo, status, ativa);
+        
+        CREATE INDEX IF NOT EXISTS idx_entidades_status_data_cadastro
+        ON entidades (status, criado_em DESC);
+        
+        CREATE INDEX IF NOT EXISTS idx_entidades_aprovado_em
+        ON entidades (aprovado_em) WHERE aprovado_em IS NOT NULL;
+        
+        RAISE NOTICE 'Índices criados na tabela entidades';
+    ELSIF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes') THEN
+        CREATE INDEX IF NOT EXISTS idx_contratantes_tipo_status_ativa
+        ON contratantes (tipo, status, ativa);
+        
+        CREATE INDEX IF NOT EXISTS idx_contratantes_status_data_cadastro
+        ON contratantes (status, criado_em DESC);
+        
+        CREATE INDEX IF NOT EXISTS idx_contratantes_aprovado_em
+        ON contratantes (aprovado_em) WHERE aprovado_em IS NOT NULL;
+        
+        RAISE NOTICE 'Índices criados na tabela contratantes (serão migrados na Migration 420)';
+    END IF;
+END $$;
 
 -- ==========================================
--- 3. FUNÇÃO contratante_pode_logar() - IMPLEMENTAR
+-- 3. FUNÇÃO entidade_pode_logar() - IMPLEMENTAR
 -- ==========================================
+-- Nota: Função renomeada de 'contratante_pode_logar' para 'entidade_pode_logar' na Migration 420
 
-CREATE OR REPLACE FUNCTION public.contratante_pode_logar(p_contratante_id INTEGER)
+CREATE OR REPLACE FUNCTION public.entidade_pode_logar(p_entidade_id INTEGER)
 RETURNS BOOLEAN AS $$
 DECLARE
     v_pagamento_confirmado BOOLEAN;
     v_data_liberacao TIMESTAMP;
     v_status status_aprovacao_enum;
     v_ativa BOOLEAN;
+    v_table_name TEXT;
 BEGIN
-    SELECT pagamento_confirmado, data_liberacao_login, status, ativa
+    -- Detectar tabela correta (entidades ou contratantes)
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'entidades') THEN
+        v_table_name := 'entidades';
+    ELSIF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes') THEN
+        v_table_name := 'contratantes';
+    ELSE
+        RAISE EXCEPTION 'Tabela entidades/contratantes não encontrada';
+    END IF;
+
+    -- Executar query na tabela correta
+    EXECUTE format('
+        SELECT pagamento_confirmado, data_liberacao_login, status, ativa
+        FROM public.%I
+        WHERE id = $1
+    ', v_table_name)
     INTO v_pagamento_confirmado, v_data_liberacao, v_status, v_ativa
-    FROM public.contratantes
-    WHERE id = p_contratante_id;
+    USING p_entidade_id;
 
     -- Regra: precisa ter pagamento confirmado, data de liberação definida, status aprovado e estar ativa
     RETURN COALESCE(v_pagamento_confirmado, false)
         AND v_data_liberacao IS NOT NULL
         AND v_status = 'aprovado'
         AND COALESCE(v_ativa, false);
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Manter função antiga para retrocompatibilidade (alias)
+CREATE OR REPLACE FUNCTION public.contratante_pode_logar(p_contratante_id INTEGER)
+RETURNS BOOLEAN AS $$
+BEGIN
+    RETURN public.entidade_pode_logar(p_contratante_id);
 END;
 $$ LANGUAGE plpgsql STABLE;
 

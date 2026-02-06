@@ -48,6 +48,7 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
 
     if (planoRes.rows.length > 0) {
       planoPersonalizadoId = planoRes.rows[0].id;
+      console.log(
         '✓ Usando plano personalizado existente:',
         planoPersonalizadoId
       );
@@ -91,6 +92,7 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
   });
 
   it('deve cadastrar clínica com plano personalizado sem erro de trigger', async () => {
+    console.log(
       '\n=== SIMULAÇÃO: CADASTRO DE CLÍNICA COM PLANO PERSONALIZADO ===\n'
     );
 
@@ -182,7 +184,7 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     expect(contratacaoRes.rows[0].numero_funcionarios_estimado).toBe(2000);
 
     // ✓ Registro em contratacao_personalizada criado:
-
+    console.log(
       '  - Funcionários estimados:',
       contratacaoRes.rows[0].numero_funcionarios_estimado
     );
@@ -198,6 +200,5 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     }
 
     // \n=== ✓ SIMULAÇÃO CONCLUÍDA COM SUCESSO ===\n
-
   });
 });

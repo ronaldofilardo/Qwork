@@ -26,18 +26,23 @@ BEGIN;
 -- Excluir admins existentes
 DELETE FROM funcionarios WHERE perfil = 'admin';
 
+-- Set local session variables so audit triggers can record who performed the action
+SET LOCAL app.current_user_cpf = '00000000000';
+SET LOCAL app.current_user_perfil = 'admin';
+
 -- Inserir novo admin com senha já hasheada (substitua <HASH> se quiser outro valor)
-INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, ativo, criado_em, atualizado_em)
+INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, usuario_tipo, ativo, criado_em, atualizado_em)
 VALUES (
   '00000000000',
   'Admin Seed',
   'admin',
   '$2a$10$2/kZ5QNaljjrk2L7kEUgsuJDyX8XYQwWFXIPcs1e9obXeHrv/.8Ui',
+  'admin',
   true,
   NOW(),
   NOW()
 )
-RETURNING id, cpf, nome, perfil, ativo;
+RETURNING id, cpf, nome, perfil, usuario_tipo, ativo;
 
 -- Auditoria (se possível)
 DO $$

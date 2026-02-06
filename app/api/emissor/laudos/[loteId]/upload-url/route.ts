@@ -43,7 +43,7 @@ export const POST = async (
         la.status,
         la.emissor_cpf,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
         COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON la.id = a.lote_id

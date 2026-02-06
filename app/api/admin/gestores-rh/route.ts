@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import { logAudit, extractRequestInfo } from '@/lib/audit';
-import { validarCPF, limparCPF } from '@/lib/cpf-utils';
-import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
 /**
@@ -12,12 +8,27 @@ export const dynamic = 'force-dynamic';
  * Lista todos os gestores RH do sistema.
  *
  * NOTA: Gestores RH são armazenados em `funcionarios` com
- * `usuario_tipo = 'gestor_rh'` para separação lógica clara.
+ * `usuario_tipo = 'rh'` para separação lógica clara.
  */
 export async function GET() {
   try {
     await requireRole('admin');
 
+    // ❌ PROBLEMA: Admin NÃO deve ter acesso a clinicas e empresas_clientes
+    // Este endpoint precisa ser movido para /api/rh/ ou reimplementado
+    // Query original fazia JOIN com clinicas e empresas_clientes
+
+    return NextResponse.json(
+      {
+        error:
+          'Endpoint temporariamente desativado - admin não deve acessar clínicas/empresas',
+        details:
+          'Gestores RH devem ser gerenciados via interface de RH, não admin',
+      },
+      { status: 403 }
+    );
+
+    /* Query original problemática:
     const result = await query(`
       SELECT 
         f.cpf,
@@ -27,13 +38,13 @@ export async function GET() {
         f.perfil,
         f.ativo,
         f.clinica_id,
-        c.nome as clinica_nome,
+        c.nome as clinica_nome,  -- ❌ Admin não pode acessar clinicas
         f.criado_em,
-        COUNT(DISTINCT ec.id) as total_empresas_geridas
+        COUNT(DISTINCT ec.id) as total_empresas_geridas  -- ❌ Admin não pode acessar empresas_clientes
       FROM funcionarios f
       LEFT JOIN clinicas c ON c.id = f.clinica_id
       LEFT JOIN empresas_clientes ec ON ec.clinica_id = f.clinica_id
-      WHERE f.usuario_tipo = 'gestor_rh'
+      WHERE f.usuario_tipo = 'rh'
       GROUP BY f.cpf, f.nome, f.email, f.usuario_tipo, f.perfil, f.ativo, f.clinica_id, c.nome, f.criado_em
       ORDER BY c.nome, f.nome
     `);
@@ -42,6 +53,7 @@ export async function GET() {
       success: true,
       gestores: result.rows,
     });
+    */
   } catch (error) {
     console.error('Erro ao listar gestores RH:', error);
 
@@ -59,12 +71,25 @@ export async function GET() {
 /**
  * POST /api/admin/gestores-rh
  *
- * Cria novo gestor RH e associa a uma clínica
+ * ❌ DESATIVADO: Admin NÃO deve criar gestores RH porque:
+ * 1. Gestores RH estão vinculados a clínicas (admin não acessa clinicas)
+ * 2. Criação de RH deve ser feita no cadastro da clínica
+ * 3. Admin não deve validar existência de clínicas
  */
-export async function POST(request: NextRequest) {
+export async function POST(_request: NextRequest) {
   try {
     await requireRole('admin');
 
+    return NextResponse.json(
+      {
+        error: 'Endpoint desativado - admin não gerencia gestores RH',
+        details:
+          'Gestores RH são criados automaticamente no cadastro da clínica',
+      },
+      { status: 403 }
+    );
+
+    /* Código original problemático:
     const { cpf, nome, email, senha, clinica_id } = await request.json();
 
     // Validações
@@ -81,7 +106,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
-    // Verificar se clínica existe
+    // ❌ PROBLEMA: Verificar se clínica existe
     const clinicaResult = await query('SELECT id FROM clinicas WHERE id = $1', [
       clinica_id,
     ]);
@@ -103,7 +128,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 409 });
     }
 
-    // Verificar se já existe RH ativo na clínica
+    // ❌ PROBLEMA: Verificar se já existe RH ativo na clínica
     const rhAtivoCheck = await query(
       "SELECT cpf, nome FROM funcionarios WHERE clinica_id = $1 AND perfil = 'rh' AND ativo = true",
       [clinica_id]
@@ -122,21 +147,18 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha || '123456', 10);
 
-    // Criar gestor RH
+    // Criar gestor RH em USUARIOS (não em funcionarios)
     const result = await query(
-      `
-      INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, clinica_id, ativo
-      ) VALUES ($1, $2, $3, $4, 'rh', $5, true)
-      RETURNING cpf, nome, email, ativo, clinica_id, criado_em
-    `,
+      `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
+       VALUES ($1, $2, $3, $4, 'rh', $5, true, NOW(), NOW())
+       RETURNING cpf, nome, email, ativo, clinica_id, criado_em`,
       [cpfLimpo, nome, email, senhaHash, clinica_id]
     );
 
     // Registrar auditoria
     const { ipAddress, userAgent } = extractRequestInfo(request);
     await logAudit({
-      resource: 'funcionarios',
+      resource: 'usuarios',
       action: 'INSERT',
       resourceId: cpfLimpo,
       newData: result.rows[0] as Record<string, any>,
@@ -151,6 +173,7 @@ export async function POST(request: NextRequest) {
       },
       { status: 201 }
     );
+    */
   } catch (error) {
     console.error('Erro ao criar gestor RH:', error);
 

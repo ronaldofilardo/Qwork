@@ -17,7 +17,7 @@ describe('GET /api/entidade/lote/[id] - Exibição de dados de inativação', ()
     // Mock sessão válida
     mockGetSession.mockReturnValue({
       cpf: '12345678900',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 10,
     } as any);
 
@@ -71,7 +71,7 @@ describe('GET /api/entidade/lote/[id] - Exibição de dados de inativação', ()
           funcao: 'Gerente',
           nivel_cargo: 'gestao',
           avaliacao_id: 101,
-          avaliacao_status: 'concluida',
+          avaliacao_status: 'concluido',
           avaliacao_data_inicio: '2026-01-05T08:00:00',
           avaliacao_data_conclusao: '2026-01-05T15:00:00',
           motivo_inativacao: null,
@@ -119,7 +119,7 @@ describe('GET /api/entidade/lote/[id] - Exibição de dados de inativação', ()
       (f: any) => f.cpf === '55566677788'
     );
     expect(funcConcluido).toBeDefined();
-    expect(funcConcluido.avaliacao.status).toBe('concluida');
+    expect(funcConcluido.avaliacao.status).toBe('concluido');
     expect(funcConcluido.avaliacao.motivo_inativacao).toBeNull();
     expect(funcConcluido.avaliacao.inativada_em).toBeNull();
   });

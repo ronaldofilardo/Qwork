@@ -167,7 +167,7 @@ O sistema utiliza duas fontes de autenticação dependendo do tipo de usuário:
 ┌─────────────────────────────────────────────────┐
 │           FLUXO DE AUTENTICAÇÃO                 │
 ├─────────────────────────────────────────────────┤
-│  1. Verifica contratantes_senhas (gestores)     │
+│  1. Verifica entidades_senhas (gestores)     │
 │     ↓ Encontrado? → Login como gestor           │
 │  2. Verifica funcionarios (funcionários)        │
 │     ↓ Encontrado? → Login como funcionário      │
@@ -181,10 +181,10 @@ O sistema utiliza duas fontes de autenticação dependendo do tipo de usuário:
 
 | Tipo de Usuário            | Tabela de Autenticação | Validação                | RLS Aplicado |
 | -------------------------- | ---------------------- | ------------------------ | ------------ |
-| **gestor_entidade**        | `contratantes_senhas`  | `requireEntity()`        | ❌ Não       |
-| **rh** (gestor de clínica) | `contratantes_senhas`  | `requireClinica()`       | ❌ Não       |
+| **gestor**                 | `entidades_senhas`     | `requireEntity()`        | ❌ Não       |
+| **rh** (gestor de clínica) | `entidades_senhas`     | `requireClinica()`       | ❌ Não       |
 | **funcionario**            | `funcionarios`         | `requireAuth()`          | ✅ Sim       |
-| **admin**                  | `contratantes_senhas`  | `requireRole('admin')`   | ❌ Não       |
+| **admin**                  | `entidades_senhas`     | `requireRole('admin')`   | ❌ Não       |
 | **emissor**                | `funcionarios`         | `requireRole('emissor')` | ❌ Não       |
 
 ### Separação Arquitetural: Gestores vs Funcionários
@@ -200,7 +200,7 @@ O sistema utiliza duas fontes de autenticação dependendo do tipo de usuário:
 
 **Migrações Relacionadas:**
 
-- [201_fix_gestor_entidade_as_funcionario.sql](database/migrations/201_fix_gestor_entidade_as_funcionario.sql) - Primeira separação
+- [201_fix_gestor_as_funcionario.sql](database/migrations/201_fix_gestor_as_funcionario.sql) - Primeira separação
 - [300_update_rls_exclude_gestores.sql](database/migrations/300_update_rls_exclude_gestores.sql) - ⭐ Atualização de RLS
 - [301_cleanup_gestores_funcionarios.sql](database/migrations/301_cleanup_gestores_funcionarios.sql) - ⭐ Limpeza definitiva
 
@@ -216,9 +216,9 @@ CREATE OR REPLACE FUNCTION current_user_is_gestor()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM contratantes_senhas
+    SELECT 1 FROM entidades_senhas
     WHERE cpf_cnpj = current_setting('app.current_user_cpf', true)
-    AND perfil IN ('gestor_entidade', 'rh')
+    AND perfil IN ('gestor', 'rh')
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -300,7 +300,7 @@ const data = await queryWithSecurity('SELECT * FROM tabela WHERE ...', [
 ```typescript
 import { validateGestorContext } from '@/lib/db-gestor';
 
-// Valida via contratantes_senhas
+// Valida via entidades_senhas
 const gestor = await validateGestorContext(cpf);
 if (!gestor) {
   throw new Error('Gestor não encontrado ou inativo');
@@ -325,7 +325,7 @@ if (!funcionario) {
 ┌──────────────────────────────────────────────────┐
 │  1. Login (app/api/auth/login/route.ts)         │
 │     ↓                                            │
-│  2. Verifica contratantes_senhas OU funcionarios │
+│  2. Verifica entidades_senhas OU funcionarios │
 │     ↓                                            │
 │  3. Cria sessão com CPF + perfil + contexto      │
 │     ↓                                            │

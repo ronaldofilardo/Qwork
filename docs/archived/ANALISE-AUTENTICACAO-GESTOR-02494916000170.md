@@ -10,6 +10,7 @@
 ## ✅ DIAGNÓSTICO COMPLETO
 
 ### 1. Sistema de Geração de Senha
+
 **Status:** ✅ CORRETO
 
 **Localização:** `lib/db.ts` - função `criarContaResponsavel()` (linhas 945-1013)
@@ -17,11 +18,12 @@
 ```typescript
 // Senha baseada nos últimos 6 dígitos do CNPJ (removendo formatação)
 const cleanCnpj = contratante.cnpj.replace(/[./-]/g, '');
-const defaultPassword = cleanCnpj.slice(-6);  // ✅ Extrai corretamente
-const hashed = await bcrypt.hash(defaultPassword, 10);  // ✅ Hash bcrypt correto
+const defaultPassword = cleanCnpj.slice(-6); // ✅ Extrai corretamente
+const hashed = await bcrypt.hash(defaultPassword, 10); // ✅ Hash bcrypt correto
 ```
 
 **Validação:**
+
 - CNPJ: `02494916000170` (14 dígitos sem formatação)
 - `.slice(-6)` → `000170` ✅
 - Hash bcrypt com salt rounds = 10 ✅
@@ -29,22 +31,24 @@ const hashed = await bcrypt.hash(defaultPassword, 10);  // ✅ Hash bcrypt corre
 ---
 
 ### 2. Fluxo de Autenticação
+
 **Status:** ✅ CORRETO
 
 **Localização:** `app/api/auth/login/route.ts` (linhas 1-150)
 
 **Ordem de verificação:**
-1. ✅ Busca em `contratantes_senhas` (gestores de entidade/clínica)
+
+1. ✅ Busca em `entidades_senhas` (gestores de entidade/clínica)
 2. ✅ Se não encontrar, busca em `funcionarios`
 3. ✅ Valida senha com `bcrypt.compare()`
 4. ✅ Cria sessão com perfil correto
 
 ```typescript
-// PASSO 1: Verificar se é gestor em contratantes_senhas
+// PASSO 1: Verificar se é gestor em entidades_senhas
 const gestorResult = await query(
   `SELECT cs.cpf, cs.senha_hash, c.id as contratante_id, c.responsavel_nome as nome, 
           c.tipo, c.ativa, c.pagamento_confirmado
-   FROM contratantes_senhas cs
+   FROM entidades_senhas cs
    JOIN contratantes c ON c.id = cs.contratante_id
    WHERE cs.cpf = $1`,
   [cpf]
@@ -54,6 +58,7 @@ const gestorResult = await query(
 ---
 
 ### 3. Sistema de Hashing
+
 **Status:** ✅ CORRETO
 
 - **Algoritmo:** bcrypt
@@ -62,6 +67,7 @@ const gestorResult = await query(
 - **Formato:** `$2a$10$...` (bcrypt padrão)
 
 **Testes realizados:**
+
 ```bash
 Senha: 000170
 Hash: $2a$10$iW6AfICrF3IpP/51N/wMLOFvcIFMDWZJbzpoMMYmfbd.33O26/wL2
@@ -75,24 +81,27 @@ bcrypt.compare('000170', hash) → true ✅
 ### Situação Encontrada no Banco de Dados
 
 **Consulta realizada:**
+
 ```sql
-SELECT c.id, c.cnpj, c.responsavel_nome, c.responsavel_cpf, 
-       cs.senha_hash, LENGTH(cs.senha_hash) as hash_len 
-FROM contratantes c 
-LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id 
+SELECT c.id, c.cnpj, c.responsavel_nome, c.responsavel_cpf,
+       cs.senha_hash, LENGTH(cs.senha_hash) as hash_len
+FROM contratantes c
+LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
 WHERE c.cnpj = '02494916000170';
 ```
 
 **Resultado:**
+
 - ✅ Contratante ID 39 existe
 - ✅ CPF responsável: 87545772920
 - ✅ Tipo: entidade
 - ✅ Ativa: true
-- ❌ **SENHA EM `contratantes_senhas`: NÃO EXISTIA!**
+- ❌ **SENHA EM `entidades_senhas`: NÃO EXISTIA!**
 
 **Tabela `funcionarios`:**
+
 - ✅ Registro existe (CPF 87545772920)
-- ✅ Perfil: gestor_entidade
+- ✅ Perfil: gestor
 - ✅ Ativo: true
 - ❌ `contratante_id`: NULL (deveria ser 39)
 
@@ -108,17 +117,18 @@ const cpf = '87545772920';
 const senha = '000170';
 const senhaHash = await bcrypt.hash(senha, 10);
 
-// 1. Criar/atualizar senha em contratantes_senhas
-INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) 
+// 1. Criar/atualizar senha em entidades_senhas
+INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
 VALUES (39, '87545772920', '$2a$10$iW6...');
 
 // 2. Atualizar funcionarios
-UPDATE funcionarios 
-SET contratante_id = 39, senha_hash = '$2a$10$iW6...' 
+UPDATE funcionarios
+SET contratante_id = 39, senha_hash = '$2a$10$iW6...'
 WHERE cpf = '87545772920';
 ```
 
 **Resultado:**
+
 ```
 ✅ Senha criada com sucesso!
 ✅ Hash: $2a$10$iW6AfICrF3IpP/51N/wMLOFvcIFMDWZJbzpoMMYmfbd.33O26/wL2
@@ -134,15 +144,12 @@ WHERE cpf = '87545772920';
 1. **`__tests__/integracao-aprovacao-login-gestor.test.ts`**
    - ✅ **SEGURO** - Usa ID de teste: 999999
    - Não afeta dados reais
-   
 2. **`__tests__/integracao/correcoes-completas.test.ts`**
    - ✅ **SEGURO** - Usa MOCKS completos
    - Não executa queries reais
-   
 3. **`__tests__/correcoes-criticas.test.ts`**
    - ✅ **SEGURO** - Usa MOCKS
    - Testa bloqueio de operações perigosas
-   
 4. **`__tests__/integration/cleanup-seed-payment-flow.test.ts`**
    - ⚠️ **VALIDAÇÃO** - Testa estrutura de scripts SQL
    - Não executa no banco
@@ -152,6 +159,7 @@ WHERE cpf = '87545772920';
 **Os testes NÃO causaram a perda da senha.**
 
 O problema foi que a senha **nunca foi criada inicialmente** para esse contratante. Possíveis causas:
+
 - Contratante criado manualmente sem chamar `criarContaResponsavel()`
 - Erro silencioso durante o cadastro
 - Migração de dados incompleta
@@ -163,7 +171,7 @@ O problema foi que a senha **nunca foi criada inicialmente** para esse contratan
 ### Checklist de Validação
 
 - [x] Sistema gera senha corretamente (últimos 6 dígitos CNPJ)
-- [x] API de login busca corretamente em `contratantes_senhas`
+- [x] API de login busca corretamente em `entidades_senhas`
 - [x] bcrypt hasheia e compara senhas corretamente
 - [x] Senha restaurada para CPF 87545772920
 - [x] Registro em `funcionarios` atualizado com `contratante_id = 39`
@@ -189,7 +197,7 @@ Criar script que verifica se TODOS os contratantes aprovados têm senhas:
 SELECT c.id, c.cnpj, c.responsavel_cpf, c.status,
        CASE WHEN cs.senha_hash IS NULL THEN '❌ SEM SENHA' ELSE '✅ OK' END as status_senha
 FROM contratantes c
-LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id AND cs.cpf = c.responsavel_cpf
+LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id AND cs.cpf = c.responsavel_cpf
 WHERE c.status = 'aprovado' AND c.ativa = true
 ORDER BY c.id;
 ```
@@ -205,7 +213,7 @@ BEGIN
   IF NEW.status = 'aprovado' AND NEW.ativa = true THEN
     -- Verificar se senha existe
     IF NOT EXISTS (
-      SELECT 1 FROM contratantes_senhas 
+      SELECT 1 FROM entidades_senhas
       WHERE contratante_id = NEW.id AND cpf = NEW.responsavel_cpf
     ) THEN
       RAISE EXCEPTION 'Contratante aprovado sem senha criada!';
@@ -224,16 +232,16 @@ Adicionar teste que valida integridade senha após aprovação:
 test('Aprovação deve criar senha automaticamente', async () => {
   // Criar contratante pendente
   const id = await criarContratantePendente();
-  
+
   // Aprovar
   await aprovarContratante(id);
-  
+
   // Validar senha existe
   const senha = await query(
-    'SELECT * FROM contratantes_senhas WHERE contratante_id = $1',
+    'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
     [id]
   );
-  
+
   expect(senha.rows.length).toBe(1);
   expect(senha.rows[0].senha_hash).toMatch(/^\$2a\$10\$/);
 });
@@ -262,6 +270,7 @@ test('Aprovação deve criar senha automaticamente', async () => {
 - ✅ Testes higienizados (não afetam dados reais)
 
 **AÇÃO NECESSÁRIA:**
+
 - Implementar verificação periódica de integridade de senhas
 - Considerar adicionar trigger de proteção
 - Documentar processo de criação de contratantes

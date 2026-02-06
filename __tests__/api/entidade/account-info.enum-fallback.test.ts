@@ -13,7 +13,7 @@ describe('📌 API account-info — fallback/status legado', () => {
     const mockGetSession = require('@/lib/session').getSession;
     const mockQuery = require('@/lib/db').query;
 
-    const mockSession = { contratante_id: 18, perfil: 'gestor_entidade' };
+    const mockSession = { contratante_id: 18, perfil: 'gestor' };
     const mockContratante = {
       id: 18,
       nome: 'RELEGERE',

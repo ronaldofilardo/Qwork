@@ -45,7 +45,7 @@ ON funcionarios(contratante_id);
 ```sql
 CREATE TYPE usuario_tipo_enum AS ENUM (
     'funcionario_clinica', 'funcionario_entidade',
-    'gestor_rh', 'gestor_entidade', 'admin', 'emissor'
+    'rh', 'gestor', 'admin', 'emissor'
 );
 ALTER TABLE funcionarios ADD COLUMN usuario_tipo usuario_tipo_enum NOT NULL;
 CREATE INDEX idx_funcionarios_usuario_tipo ON funcionarios(usuario_tipo);

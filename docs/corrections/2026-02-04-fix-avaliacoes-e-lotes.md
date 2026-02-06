@@ -11,7 +11,7 @@
 ### 1. 🔴 **CRÍTICO: Avaliações não são marcadas como 'concluída'**
 
 **Problema:**  
-Quando um funcionário responde todas as 37 questões da avaliação, o sistema não atualiza o status para `'concluida'` no banco de dados. A avaliação permanece como `'em_andamento'` ou `'iniciada'`, impedindo que:
+Quando um funcionário responde todas as 37 questões da avaliação, o sistema não atualiza o status para `'concluido'` no banco de dados. A avaliação permanece como `'em_andamento'` ou `'iniciada'`, impedindo que:
 
 - O lote avance para status `'concluido'`
 - O botão "Solicitar Emissão do Laudo" seja exibido
@@ -27,7 +27,7 @@ O código em [app/api/avaliacao/respostas/route.ts](../app/api/avaliacao/respost
 **Evidências:**
 
 - Avaliação #17 do lote 21 tem 37 respostas mas status = 'iniciada'
-- Avaliação #51 (conforme screenshot) tem 37 respostas mas status != 'concluida'
+- Avaliação #51 (conforme screenshot) tem 37 respostas mas status != 'concluido'
 - Dashboard da entidade não atualiza corretamente
 
 ---
@@ -63,7 +63,7 @@ A tabela `lote_id_allocator` (criada na migration 085) não está sincronizada c
 **O que faz:**
 
 1. ✅ **Diagnóstico:** Lista todas as avaliações com 37+ respostas mas status incorreto
-2. ✅ **Correção de Dados:** Atualiza status para `'concluida'` em avaliações com 37+ respostas
+2. ✅ **Correção de Dados:** Atualiza status para `'concluido'` em avaliações com 37+ respostas
 3. ✅ **Trigger de Validação:** Cria `fn_validar_status_avaliacao()` para garantir consistência futura
 4. ✅ **Verificação:** Valida se todas as avaliações estão corretas
 
@@ -73,14 +73,14 @@ A tabela `lote_id_allocator` (criada na migration 085) não está sincronizada c
 CREATE TRIGGER trg_validar_status_avaliacao
     BEFORE UPDATE ON avaliacoes
     FOR EACH ROW
-    WHEN (OLD.status IS DISTINCT FROM NEW.status OR NEW.status != 'concluida')
+    WHEN (OLD.status IS DISTINCT FROM NEW.status OR NEW.status != 'concluido')
     EXECUTE FUNCTION fn_validar_status_avaliacao();
 ```
 
 **Comportamento:**
 
 - Antes de cada UPDATE em `avaliacoes`, verifica se tem 37+ respostas
-- Se sim e status != 'concluida', ajusta automaticamente
+- Se sim e status != 'concluido', ajusta automaticamente
 - Garante que o banco sempre reflete o estado correto
 
 ---
@@ -196,7 +196,7 @@ psql "postgresql://..." -f database/migrations/300_fix_conclusao_automatica_aval
 
 **Verificações pós-migration:**
 
-- Avaliações com 37+ respostas devem estar `'concluida'`
+- Avaliações com 37+ respostas devem estar `'concluido'`
 - Trigger `trg_validar_status_avaliacao` deve existir
 - Campo `envio` preenchido nas avaliações corrigidas
 
@@ -230,7 +230,7 @@ Compare com a saída anterior:
 
 1. Login como funcionário
 2. Responder 37 questões de uma avaliação
-3. Verificar no banco: `status = 'concluida'` e `envio IS NOT NULL`
+3. Verificar no banco: `status = 'concluido'` e `envio IS NOT NULL`
 
 **Teste 2: Criar Novo Lote**
 
@@ -279,7 +279,7 @@ SELECT
     COUNT(DISTINCT (r.grupo, r.item)) as respostas
 FROM avaliacoes a
 JOIN respostas r ON r.avaliacao_id = a.id
-WHERE a.status != 'concluida'
+WHERE a.status != 'concluido'
 GROUP BY a.id, a.status
 HAVING COUNT(DISTINCT (r.grupo, r.item)) >= 37;
 ```
@@ -319,7 +319,7 @@ Ambas as migrations são **transacionais** (usam BEGIN/COMMIT). Se houver erro d
 
 Após aplicar as migrations, verificar:
 
-- [ ] Todas as avaliações com 37+ respostas têm `status = 'concluida'`
+- [ ] Todas as avaliações com 37+ respostas têm `status = 'concluido'`
 - [ ] Campo `envio` preenchido nas avaliações concluídas
 - [ ] `lote_id_allocator.last_id` >= `MAX(id)` de lotes_avaliacao
 - [ ] Função `fn_next_lote_id()` retorna IDs únicos
@@ -347,3 +347,4 @@ Se encontrar problemas após aplicar as migrations:
 **Última atualização:** 04/02/2026  
 **Versão:** 1.0  
 **Aplicável a:** Banco de Produção (Neon) e Desenvolvimento (Local)
+

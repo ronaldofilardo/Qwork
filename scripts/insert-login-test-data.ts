@@ -92,10 +92,10 @@ async function insertLoginTestData() {
 
     // Atualiza se já existir, senão insere
     await query(`
-      UPDATE contratantes_senhas SET senha_hash = '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2' WHERE cpf = '11111111111';
-      INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash)
+      UPDATE entidades_senhas SET senha_hash = '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2' WHERE cpf = '11111111111';
+      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
       SELECT (SELECT id FROM contratantes WHERE cnpj = '55566677000188'), '11111111111', '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2'
-      WHERE NOT EXISTS (SELECT 1 FROM contratantes_senhas WHERE cpf = '11111111111');
+      WHERE NOT EXISTS (SELECT 1 FROM entidades_senhas WHERE cpf = '11111111111');
     `);
 
     // Garantir que a clínica inserida aponte para o contratante (necessário para endpoints RH)

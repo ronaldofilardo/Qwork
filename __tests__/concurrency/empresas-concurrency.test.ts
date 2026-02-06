@@ -99,6 +99,7 @@ describe('Testes de Concorrência - Empresas Clientes', () => {
       .filter((r) => r.status === 'fulfilled')
       .map((r: any) => r.value);
 
+    console.log(
       'Response statuses:',
       fulfilled.map((r: any) => r.status)
     );

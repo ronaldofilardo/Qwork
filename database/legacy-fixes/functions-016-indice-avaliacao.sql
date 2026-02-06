@@ -330,7 +330,7 @@ BEGIN
   -- Contar avaliações do lote
   SELECT 
     COUNT(*) AS total,
-    COUNT(*) FILTER (WHERE status = 'concluida') AS concluidas,
+    COUNT(*) FILTER (WHERE status = 'concluido') AS concluidas,
     COUNT(*) FILTER (WHERE status = 'inativada') AS inativadas
   INTO v_total_avaliacoes, v_avaliacoes_concluidas, v_avaliacoes_inativadas
   FROM avaliacoes

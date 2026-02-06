@@ -1,6 +1,6 @@
 /**
  * app/api/admin/novos-cadastros/route.ts
- * REFATORADO - Gerenciamento de novos cadastros de contratantes
+ * REFATORADO - Gerenciamento de novos cadastros de entidades
  *
  * ANTES: 805 linhas
  * DEPOIS: ~50 linhas
@@ -16,12 +16,12 @@ import { ROLES } from '@/lib/config/roles';
 import { GetNovosCadastrosSchema, NovosCadastrosActionSchema } from './schemas';
 import {
   handleGetNovosCadastros,
-  handleAprovarContratante,
-  handleRejeitarContratante,
+  handleAprovarEntidade,
+  handleRejeitarEntidade,
   handleSolicitarReanalise,
   handleAprovarPersonalizado,
   handleRegenerarLink,
-  handleDeletarContratante,
+  handleDeletarEntidade,
 } from './handlers';
 
 export const dynamic = 'force-dynamic';
@@ -47,10 +47,10 @@ export const POST = handleRequest({
   execute: async (input, context) => {
     switch (input.acao) {
       case 'aprovar':
-        return handleAprovarContratante(input, context);
+        return handleAprovarEntidade(input, context);
 
       case 'rejeitar':
-        return handleRejeitarContratante(input, context);
+        return handleRejeitarEntidade(input, context);
 
       case 'solicitar_reanalise':
         return handleSolicitarReanalise(input, context);
@@ -62,7 +62,7 @@ export const POST = handleRequest({
         return handleRegenerarLink(input, context);
 
       case 'deletar':
-        return handleDeletarContratante(input, context);
+        return handleDeletarEntidade(input, context);
 
       default:
         throw new Error(`Ação desconhecida: ${(input as any).acao}`);

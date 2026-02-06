@@ -172,7 +172,7 @@ BEGIN
         FROM avaliacoes
         WHERE id = COALESCE(NEW.avaliacao_id, OLD.avaliacao_id);
 
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido modificar resultados de avaliações concluídas.';
         END IF;
     END IF;
@@ -203,7 +203,7 @@ BEGIN
         FROM avaliacoes
         WHERE id = OLD.avaliacao_id;
 
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido modificar respostas de avaliações concluídas.';
         END IF;
     END IF;
@@ -227,7 +227,7 @@ CREATE TRIGGER trigger_resposta_immutability
 CREATE OR REPLACE FUNCTION protect_concluded_avaliacao()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF OLD.status = 'concluida' AND NEW.status != 'concluida' THEN
+    IF OLD.status = 'concluido' AND NEW.status != 'concluido' THEN
         RAISE EXCEPTION 'Não é permitido alterar o status de uma avaliação concluída.';
     END IF;
     RETURN NEW;
@@ -285,7 +285,7 @@ VALUES ('Teste', '12345678000199', 'teste@empresa.com', 1);
 
 ```sql
 -- Criar avaliação concluída
-INSERT INTO avaliacoes (funcionario_cpf, status) VALUES ('12345678901', 'concluida');
+INSERT INTO avaliacoes (funcionario_cpf, status) VALUES ('12345678901', 'concluido');
 -- Tentar modificar resultado
 UPDATE resultados SET score = 100 WHERE avaliacao_id = 1;
 -- Resultado esperado: ERRO "Não é permitido modificar resultados de avaliações concluídas"
@@ -373,3 +373,4 @@ WHERE tgname LIKE '%immutability%';
 **Última Atualização:** 11/12/2025  
 **Aprovado por:** Sistema Qwork  
 **Status:** ✅ Implementado e Testado
+

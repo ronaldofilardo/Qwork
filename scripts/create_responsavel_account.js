@@ -36,78 +36,59 @@ const client = new Client({
       defaultPassword
     );
 
-    // Upsert contratantes_senhas
+    // Upsert entidades_senhas
     const exists = await client.query(
-      'SELECT id FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
+      'SELECT id FROM entidades_senhas WHERE contratante_id = $1 AND cpf = $2',
       [c.id, cpfParaUsar]
     );
     if (exists.rows.length > 0) {
       await client.query(
-        'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE contratante_id = $2 AND cpf = $3',
+        'UPDATE entidades_senhas SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE contratante_id = $2 AND cpf = $3',
         [hashed, c.id, cpfParaUsar]
       );
-      console.log('Updated contratantes_senhas');
+      console.log('Updated entidades_senhas');
     } else {
       await client.query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+        'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
         [c.id, cpfParaUsar, hashed]
       );
-      console.log('Inserted contratantes_senhas');
+      console.log('Inserted entidades_senhas');
     }
 
-    // Upsert funcionarios
-    const f = await client.query('SELECT id FROM funcionarios WHERE cpf = $1', [
+    // Upsert usuarios (gestores não são funcionarios)
+    const u = await client.query('SELECT id FROM usuarios WHERE cpf = $1', [
       cpfParaUsar,
     ]);
-    const perfil = c.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
-    if (f.rows.length > 0) {
-      const fid = f.rows[0].id;
+    const tipoUsuario = c.tipo === 'entidade' ? 'gestor' : 'rh';
+    if (u.rows.length > 0) {
+      const uid = u.rows[0].id;
       await client.query(
-        'UPDATE funcionarios SET nome = $1, email = $2, perfil = $3, contratante_id = $4, ativo = true, senha_hash = $5, atualizado_em = CURRENT_TIMESTAMP WHERE id = $6',
+        'UPDATE usuarios SET nome = $1, email = $2, tipo_usuario = $3, contratante_id = $4, ativo = true, senha_hash = $5, atualizado_em = CURRENT_TIMESTAMP WHERE id = $6',
         [
           c.responsavel_nome || 'Gestor',
           c.responsavel_email || null,
-          perfil,
+          tipoUsuario,
           c.id,
           hashed,
-          fid,
+          uid,
         ]
       );
-      console.log('Updated funcionario id', fid);
-      const vinc = await client.query(
-        'SELECT * FROM contratantes_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
-        [fid, c.id]
-      );
-      if (vinc.rows.length > 0) {
-        await client.query(
-          'UPDATE contratantes_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
-          [fid, c.id]
-        );
-      } else {
-        await client.query(
-          'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
-          [fid, c.id, c.tipo || 'entidade']
-        );
-      }
+      console.log('Updated usuario id', uid);
     } else {
       const ins = await client.query(
-        `INSERT INTO funcionarios (cpf, nome, email, perfil, contratante_id, ativo, empresa_id, setor, funcao, nivel_cargo, senha_hash, criado_em, atualizado_em)
-        VALUES ($1,$2,$3,$4,$5,true,NULL,'Gestão','Gestor da Entidade','gestao',$6,NOW(),NOW()) RETURNING id`,
+        `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, contratante_id, ativo, criado_em, atualizado_em)
+        VALUES ($1,$2,$3,$4,$5,$6,true,NOW(),NOW()) RETURNING id`,
         [
           cpfParaUsar,
           c.responsavel_nome || 'Gestor',
           c.responsavel_email || null,
-          perfil,
-          c.id,
           hashed,
+          tipoUsuario,
+          c.id,
         ]
       );
       const newId = ins.rows[0].id;
-      await client.query(
-        'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
-        [newId, c.id, c.tipo || 'entidade']
-      );
-      console.log('Inserted new funcionario id', newId);
+      console.log('Inserted new usuario id', newId);
     }
 
     console.log(

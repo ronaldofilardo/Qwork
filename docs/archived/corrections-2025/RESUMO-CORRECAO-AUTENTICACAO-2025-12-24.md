@@ -21,7 +21,7 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 
 ### 2. Fluxo de Autenticação: ✅ CORRETO
 
-- API busca primeiro em `contratantes_senhas`
+- API busca primeiro em `entidades_senhas`
 - Depois busca em `funcionarios`
 - Validação bcrypt funciona corretamente
 
@@ -35,7 +35,7 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 **Encontrado no banco:**
 
 - ✅ Contratante ID 39 existe e está ativo
-- ❌ **Senha NÃO existia em `contratantes_senhas`**
+- ❌ **Senha NÃO existia em `entidades_senhas`**
 - ⚠️ Registro em `funcionarios` tinha `contratante_id = NULL`
 
 ---
@@ -45,7 +45,7 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 ### Script: `fix-senha-gestor-02494916000170.cjs`
 
 1. Gerou hash bcrypt da senha `000170`
-2. Inseriu em `contratantes_senhas`:
+2. Inseriu em `entidades_senhas`:
    - `contratante_id`: 39
    - `cpf`: 87545772920
    - `senha_hash`: $2a$10$iW6AfICrF3IpP/51N/wMLOFvcIFMDWZJbzpoMMYmfbd.33O26/wL2
@@ -135,7 +135,7 @@ node scripts/verify-gestores-senhas.cjs
 SELECT c.id, c.cnpj, c.responsavel_cpf,
        CASE WHEN cs.senha_hash IS NULL THEN '❌ SEM SENHA' ELSE '✅ OK' END
 FROM contratantes c
-LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
 WHERE c.status = 'aprovado' AND c.ativa = true;
 ```
 

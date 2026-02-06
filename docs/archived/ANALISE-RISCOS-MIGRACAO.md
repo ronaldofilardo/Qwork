@@ -105,8 +105,8 @@ WHERE perfil = 'funcionario'
 **Problema:**
 Alguns gestores de entidade podem estar **duplicados**:
 
-- Em `funcionarios` com `perfil='gestor_entidade'`
-- Em `contratantes_senhas`
+- Em `funcionarios` com `perfil='gestor'`
+- Em `entidades_senhas`
 
 **Verificação:**
 
@@ -123,14 +123,14 @@ SELECT
     ELSE 'CONTRATANTES DIFERENTES!'
   END as status
 FROM funcionarios f
-INNER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-WHERE f.perfil = 'gestor_entidade';
+INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+WHERE f.perfil = 'gestor';
 ```
 
 **Impacto:**
 
-- ❌ **PERDA DE ACESSO:** Gestor pode não conseguir logar se senha está em `contratantes_senhas`
-- ❌ **DADOS ÓRFÃOS:** Atualizações em `funcionarios` não refletem em `contratantes_senhas`
+- ❌ **PERDA DE ACESSO:** Gestor pode não conseguir logar se senha está em `entidades_senhas`
+- ❌ **DADOS ÓRFÃOS:** Atualizações em `funcionarios` não refletem em `entidades_senhas`
 
 **Solução:**
 
@@ -146,8 +146,8 @@ SELECT DISTINCT ON (cpf)
   COALESCE(f.senha_hash, cs.senha_hash) as senha_hash,
   f.id as funcionario_id
 FROM funcionarios f
-FULL OUTER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-WHERE f.perfil = 'gestor_entidade' OR cs.cpf IS NOT NULL
+FULL OUTER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+WHERE f.perfil = 'gestor' OR cs.cpf IS NOT NULL
 ORDER BY cpf, f.id NULLS LAST;
 
 -- 2. Atualizar funcionarios com senha correta
@@ -157,14 +157,14 @@ SET
   contratante_id = g.contratante_id
 FROM gestores_para_manter g
 WHERE f.cpf = g.cpf
-  AND f.perfil = 'gestor_entidade';
+  AND f.perfil = 'gestor';
 
--- 3. Remover entradas de contratantes_senhas para gestores que estão em funcionarios
-DELETE FROM contratantes_senhas cs
+-- 3. Remover entradas de entidades_senhas para gestores que estão em funcionarios
+DELETE FROM entidades_senhas cs
 WHERE EXISTS (
   SELECT 1 FROM funcionarios f
   WHERE f.cpf = cs.cpf
-  AND f.perfil = 'gestor_entidade'
+  AND f.perfil = 'gestor'
 );
 
 COMMIT;
@@ -211,13 +211,13 @@ SELECT
       AND (contratante_id IS NULL OR empresa_id IS NOT NULL OR clinica_id IS NOT NULL)
       THEN 'VIOLA: funcionario_entidade precisa apenas contratante_id'
 
-    WHEN usuario_tipo = 'gestor_rh'
+    WHEN usuario_tipo = 'rh'
       AND (clinica_id IS NULL OR contratante_id IS NOT NULL)
-      THEN 'VIOLA: gestor_rh precisa apenas clinica_id'
+      THEN 'VIOLA: rh precisa apenas clinica_id'
 
-    WHEN usuario_tipo = 'gestor_entidade'
+    WHEN usuario_tipo = 'gestor'
       AND (contratante_id IS NULL OR clinica_id IS NOT NULL OR empresa_id IS NOT NULL)
-      THEN 'VIOLA: gestor_entidade precisa apenas contratante_id'
+      THEN 'VIOLA: gestor precisa apenas contratante_id'
 
     WHEN usuario_tipo IN ('admin', 'emissor')
       AND (clinica_id IS NOT NULL OR contratante_id IS NOT NULL OR empresa_id IS NOT NULL)
@@ -248,13 +248,13 @@ WHERE usuario_tipo = 'funcionario_entidade'
 -- Corrigir gestores_rh
 UPDATE funcionarios
 SET contratante_id = NULL, empresa_id = NULL
-WHERE usuario_tipo = 'gestor_rh'
+WHERE usuario_tipo = 'rh'
   AND (contratante_id IS NOT NULL OR empresa_id IS NOT NULL);
 
 -- Corrigir gestores_entidade
 UPDATE funcionarios
 SET clinica_id = NULL, empresa_id = NULL
-WHERE usuario_tipo = 'gestor_entidade'
+WHERE usuario_tipo = 'gestor'
   AND (clinica_id IS NOT NULL OR empresa_id IS NOT NULL);
 
 -- Corrigir admin/emissor
@@ -420,8 +420,8 @@ WHERE perfil = 'funcionario'
 \echo '3. Verificando gestores duplicados...'
 SELECT COUNT(*) as total_duplicados
 FROM funcionarios f
-INNER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-WHERE f.perfil = 'gestor_entidade';
+INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+WHERE f.perfil = 'gestor';
 
 -- 4. Entradas em contratantes_funcionarios
 \echo '4. Verificando contratantes_funcionarios...'
@@ -456,11 +456,11 @@ WHERE perfil = 'funcionario'
   AND clinica_id IS NULL;
 
 -- 3. Consolidar gestores de entidade
-DELETE FROM contratantes_senhas cs
+DELETE FROM entidades_senhas cs
 WHERE EXISTS (
   SELECT 1 FROM funcionarios f
   WHERE f.cpf = cs.cpf
-  AND f.perfil = 'gestor_entidade'
+  AND f.perfil = 'gestor'
 );
 
 -- 4. Limpar contratantes_funcionarios

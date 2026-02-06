@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
  * Reset (clear) all responses for a single evaluation within a batch
  *
  * Requirements:
- * - User must be gestor_entidade from same contratante
+ * - User must be gestor from same entidade
  * - Batch must NOT be concluded, sent to emissor, or have laudo
  * - Evaluation must belong to the batch
  * - Only ONE reset per evaluation per batch allowed
@@ -23,7 +23,7 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
-    if (!user || user.perfil !== 'gestor_entidade') {
+    if (!user || user.perfil !== 'gestor') {
       return NextResponse.json(
         { error: 'Acesso negado', success: false },
         { status: 403 }
@@ -88,14 +88,14 @@ export async function POST(
 
       const lote = loteCheck.rows[0];
 
-      // Verificar se o gestor de entidade tem acesso ao contratante do lote
-      if (!user.contratante_id || lote.contratante_id !== user.contratante_id) {
+      // Verificar se o gestor de entidade tem acesso à entidade do lote
+      if (!user.entidade_id || lote.contratante_id !== user.entidade_id) {
         await query('ROLLBACK');
         return NextResponse.json(
           {
             error: 'Você não tem permissão para resetar avaliações neste lote',
             success: false,
-            error_code: 'permission_contratante_mismatch',
+            error_code: 'permission_entidade_mismatch',
             hint: 'Verifique se o lote pertence à sua entidade. Caso necessário, contate o administrador.',
           },
           { status: 403 }
@@ -219,7 +219,7 @@ export async function POST(
       );
 
       // Insert immutable audit record
-      // Use COALESCE to handle cases where gestor_entidade is not in funcionarios table
+      // Use COALESCE to handle cases where gestor is not in funcionarios table
       const auditResult = await query(
         `
         INSERT INTO avaliacao_resets (
@@ -233,8 +233,8 @@ export async function POST(
         SELECT 
           $1,
           $2,
-          COALESCE(f.id, $6),  -- Use funcionario.id if exists, otherwise use contratante_id
-          'gestor_entidade',
+          COALESCE(f.id, $6),  -- Use funcionario.id if exists, otherwise use entidade_id
+          'gestor',
           $3,
           $4
         FROM (SELECT $5::VARCHAR AS cpf) u
@@ -247,7 +247,7 @@ export async function POST(
           reason.trim(),
           respostasCount,
           user.cpf,
-          user.contratante_id || -1,
+          user.entidade_id || -1,
         ]
       );
 

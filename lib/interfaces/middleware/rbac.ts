@@ -47,10 +47,7 @@ export function rbacMiddleware(request: NextRequest): NextResponse | null {
   }
 
   if (isEntidadeRoute(pathname)) {
-    if (
-      session.perfil !== ROLES.GESTOR_ENTIDADE &&
-      session.perfil !== ROLES.ADMIN
-    ) {
+    if (session.perfil !== ROLES.GESTOR && session.perfil !== ROLES.ADMIN) {
       console.error(
         `[RBAC] Usuário ${session.cpf} (${session.perfil}) tentou acessar rota entidade ${pathname}`
       );

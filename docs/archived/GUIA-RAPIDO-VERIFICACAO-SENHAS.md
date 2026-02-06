@@ -25,7 +25,7 @@ node -e "
 const {Client} = require('pg');
 const client = new Client({connectionString: 'postgresql://postgres:123456@localhost:5432/nr-bps_db'});
 client.connect().then(() => {
-  return client.query('SELECT * FROM contratantes_senhas WHERE cpf = \$1', ['SEU_CPF_AQUI']);
+  return client.query('SELECT * FROM entidades_senhas WHERE cpf = \$1', ['SEU_CPF_AQUI']);
 }).then(res => {
   console.log(res.rows.length > 0 ? '✅ Senha existe' : '❌ Senha não existe');
   process.exit(0);
@@ -95,7 +95,7 @@ const client = new Client({
 
 client.connect()
   .then(() => client.query(
-    'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+    'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
     [CPF]
   ))
   .then(async res => {
@@ -126,7 +126,7 @@ client.connect().then(() => {
     SELECT c.id, c.cnpj, c.responsavel_nome, c.responsavel_cpf,
            CASE WHEN cs.senha_hash IS NULL THEN '❌' ELSE '✅' END as senha
     FROM contratantes c
-    LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id
+    LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
     WHERE c.status = 'aprovado' AND c.ativa = true
     ORDER BY c.id
   \`);
@@ -167,7 +167,7 @@ async function fix() {
   // Inserir/atualizar senha
   await client.query(
     `
-    INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash)
+    INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
     VALUES ($1, $2, $3)
     ON CONFLICT (contratante_id, cpf) 
     DO UPDATE SET senha_hash = EXCLUDED.senha_hash
