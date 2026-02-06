@@ -20,7 +20,7 @@ export async function GET(request: Request) {
 
     // Detectar dinamicamente qual coluna de preço existe na tabela `planos`
     // e montar EXPRESSÕES reutilizáveis para preço unitário/plano (compatibilidade com várias migrações)
-    let precoCol = null;
+    let _precoCol = null;
     let unitPriceExpr = null; // expressão para preço unitário por funcionário
     // declarar a variável fora do try para garantir escopo adequado
     let hasContratoValorPersonalizado = false;
@@ -42,17 +42,17 @@ export async function GET(request: Request) {
 
       if (cols.includes('valor_por_funcionario')) {
         unitPriceExpr = 'COALESCE(pl.valor_por_funcionario, 20.00)';
-        precoCol = 'pl.valor_por_funcionario';
+        _precoCol = 'pl.valor_por_funcionario';
       } else if (cols.includes('valor_base')) {
         unitPriceExpr = 'COALESCE(pl.valor_base, 20.00)';
-        precoCol = 'pl.valor_base';
+        _precoCol = 'pl.valor_base';
       } else if (cols.includes('preco')) {
         unitPriceExpr = 'COALESCE(pl.preco, 20.00)';
-        precoCol = 'pl.preco';
+        _precoCol = 'pl.preco';
       } else if (cols.includes('valor_fixo_anual')) {
         // valor_fixo_anual é total anual para planos básicos/premium; não é unitário, mas pode ser exibido
         unitPriceExpr = '20.00';
-        precoCol = 'pl.valor_fixo_anual';
+        _precoCol = 'pl.valor_fixo_anual';
       }
     } catch (err) {
       console.error('[API Cobrança] Erro ao detectar coluna de preço:', err);
@@ -211,7 +211,7 @@ export async function GET(request: Request) {
       ) cp ON true
       -- manter LEFT JOIN vc apenas para compatibilidade com schemas antigos (mas não necessário para o cálculo principal)
       LEFT JOIN LATERAL (
-        SELECT 0 as funcionarios_ativos
+        ${vcSelect}
       ) vc ON true
       LEFT JOIN planos pl ON COALESCE(co.plano_id, ct.plano_id) = pl.id
       LEFT JOIN LATERAL (

@@ -24,7 +24,7 @@ interface UploadLaudoButtonProps {
 }
 
 export default function UploadLaudoButton({
-  laudoId,
+  laudoId: _laudoId,
   loteId,
   status,
   arquivoRemotoKey,
@@ -66,26 +66,6 @@ export default function UploadLaudoButton({
   if (!canUpload && !canResync) {
     return null;
   }
-
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // Validação client-side
-    if (file.type !== 'application/pdf') {
-      toast.error('Apenas arquivos PDF são permitidos');
-      return;
-    }
-
-    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
-    if (file.size > MAX_SIZE) {
-      toast.error('Arquivo excede o tamanho máximo de 2 MB');
-      return;
-    }
-
-    // Iniciar upload
-    void handleUpload(file);
-  };
 
   const handleUpload = async (file: File) => {
     setIsUploading(true);
@@ -140,6 +120,26 @@ export default function UploadLaudoButton({
       setIsUploading(false);
       setUploadProgress(0);
     }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validação client-side
+    if (file.type !== 'application/pdf') {
+      toast.error('Apenas arquivos PDF são permitidos');
+      return;
+    }
+
+    const MAX_SIZE = 2 * 1024 * 1024; // 2MB
+    if (file.size > MAX_SIZE) {
+      toast.error('Arquivo excede o tamanho máximo de 2 MB');
+      return;
+    }
+
+    // Iniciar upload
+    void handleUpload(file);
   };
 
   const handleButtonClick = () => {
