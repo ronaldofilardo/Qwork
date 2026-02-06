@@ -1,12 +1,12 @@
 /**
  * Script de correção para funcionários gestores com senhas em texto plano
  *
- * PROBLEMA: Alguns funcionários (gestor_entidade/gestor_rh) foram criados com
+ * PROBLEMA: Alguns funcionários (gestor/rh) foram criados com
  * senha em texto plano no campo senha_hash em vez de hash bcrypt
  *
  * SOLUÇÃO:
  * 1. Identificar funcionários com senha em texto plano (não começa com $2b$)
- * 2. Buscar a senha correta em contratantes_senhas
+ * 2. Buscar a senha correta em entidades_senhas
  * 3. Atualizar funcionarios.senha_hash com o hash correto
  * 4. Garantir que usuario_tipo e perfil estão consistentes
  */
@@ -32,8 +32,8 @@ async function corrigirSenhasGestores() {
       f.ativo,
       LENGTH(f.senha_hash) as senha_len,
       SUBSTRING(f.senha_hash, 1, 4) as senha_prefix
-    FROM funcionarios f
-    WHERE f.usuario_tipo IN ('gestor_entidade', 'gestor_rh')
+    FROM usuarios f
+    WHERE f.tipo_usuario IN ('gestor', 'rh')
       AND (
         f.senha_hash NOT LIKE '$2b$%' 
         OR LENGTH(f.senha_hash) < 50
@@ -60,26 +60,26 @@ async function corrigirSenhasGestores() {
     );
     console.log(`   Contratante ID: ${gestor.contratante_id}`);
 
-    // Buscar senha correta em contratantes_senhas
+    // Buscar senha correta em entidades_senhas
     const senhaCorreta = await query(
-      'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1 AND contratante_id = $2',
+      'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1 AND contratante_id = $2',
       [gestor.cpf, gestor.contratante_id]
     );
 
     if (senhaCorreta.rows.length > 0) {
       const hashCorreto = senhaCorreta.rows[0].senha_hash;
       console.log(
-        `   ✅ Hash correto encontrado em contratantes_senhas (${hashCorreto.length} chars)`
+        `   ✅ Hash correto encontrado em entidades_senhas (${hashCorreto.length} chars)`
       );
 
       // Atualizar funcionarios com hash correto
-      await query('UPDATE funcionarios SET senha_hash = $1 WHERE id = $2', [
+      await query('UPDATE usuarios SET senha_hash = $1 WHERE id = $2', [
         hashCorreto,
         gestor.id,
       ]);
-      console.log(`   ✅ Senha atualizada com sucesso!`);
+      console.log(`   ✅ Senha atualizada em usuarios com sucesso!`);
     } else {
-      console.log(`   ⚠️  Hash não encontrado em contratantes_senhas`);
+      console.log(`   ⚠️  Hash não encontrado em entidades_senhas`);
       console.log(`   ℹ️  Será necessário recriar a senha para este gestor`);
     }
 
@@ -91,11 +91,11 @@ async function corrigirSenhasGestores() {
       );
       console.log(`   🔧 Corrigindo perfil para "${tipoEsperado}"...`);
 
-      await query('UPDATE funcionarios SET perfil = $1 WHERE id = $2', [
+      await query('UPDATE usuarios SET tipo_usuario = $1 WHERE id = $2', [
         tipoEsperado,
         gestor.id,
       ]);
-      console.log(`   ✅ Perfil corrigido!`);
+      console.log(`   ✅ Tipo de usuário corrigido em usuarios!`);
     }
   }
 
@@ -106,8 +106,8 @@ async function corrigirSenhasGestores() {
   // Verificação final
   const verificacao = await query(`
     SELECT COUNT(*) as total
-    FROM funcionarios
-    WHERE usuario_tipo IN ('gestor_entidade', 'gestor_rh')
+    FROM usuarios
+    WHERE tipo_usuario IN ('gestor', 'rh')
       AND senha_hash LIKE '$2b$%'
       AND LENGTH(senha_hash) >= 50
   `);
@@ -136,7 +136,7 @@ async function verificarUsuarioEspecifico(cpf: string) {
       LENGTH(f.senha_hash) as senha_len,
       SUBSTRING(f.senha_hash, 1, 10) as senha_prefix,
       c.nome as contratante_nome
-    FROM funcionarios f
+    FROM usuarios f
     LEFT JOIN contratantes c ON f.contratante_id = c.id
     WHERE f.cpf = $1
   `,
@@ -163,18 +163,18 @@ async function verificarUsuarioEspecifico(cpf: string) {
   console.log(`   Clinica ID: ${user.clinica_id || 'N/A'}`);
   console.log(`   Empresa ID: ${user.empresa_id || 'N/A'}`);
 
-  // Verificar em contratantes_senhas
+  // Verificar em entidades_senhas
   const senhaContratante = await query(
-    'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+    'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
     [cpf]
   );
 
   if (senhaContratante.rows.length > 0) {
     console.log(
-      `\n✅ Senha encontrada em contratantes_senhas (${senhaContratante.rows[0].senha_hash.length} chars)`
+      `\n✅ Senha encontrada em entidades_senhas (${senhaContratante.rows[0].senha_hash.length} chars)`
     );
   } else {
-    console.log('\n⚠️  Senha NÃO encontrada em contratantes_senhas');
+    console.log('\n⚠️  Senha NÃO encontrada em entidades_senhas');
   }
 }
 

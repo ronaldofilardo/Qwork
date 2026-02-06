@@ -12,7 +12,7 @@ import { z } from 'zod';
 
 export const IniciarPagamentoSchema = z.object({
   acao: z.literal('iniciar'),
-  contratante_id: z.number().int().positive(),
+  entidade_id: z.number().int().positive(),
   contrato_id: z.number().int().positive(),
   valor: z.number().positive(),
   metodo: z.enum(['PIX', 'Cartao', 'Boleto', 'Transferencia']),
@@ -40,19 +40,18 @@ export const GetPagamentoSchema = z
       .string()
       .optional()
       .transform((v) => (v ? parseInt(v) : undefined)),
-    contratante_id: z
+    entidade_id: z
       .string()
       .optional()
       .transform((v) => (v ? parseInt(v) : undefined)),
   })
   .transform((data) => ({
     id: data.id as number | undefined,
-    contratante_id: data.contratante_id as number | undefined,
+    entidade_id: data.entidade_id as number | undefined,
   }))
-  .refine(
-    (data) => data.id !== undefined || data.contratante_id !== undefined,
-    { message: 'Forneça id ou contratante_id' }
-  );
+  .refine((data) => data.id !== undefined || data.entidade_id !== undefined, {
+    message: 'Forneça id ou entidade_id',
+  });
 
 // Union de todos os schemas POST
 export const PagamentoActionSchema = z.discriminatedUnion('acao', [

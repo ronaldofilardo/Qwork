@@ -10,7 +10,7 @@ BEGIN;
 -- 1. CRIAR TABELA DE AUDITORIA PARA SENHAS
 -- ==========================================
 
-CREATE TABLE IF NOT EXISTS contratantes_senhas_audit (
+CREATE TABLE IF NOT EXISTS entidades_senhas_audit (
     audit_id SERIAL PRIMARY KEY,
     operacao VARCHAR(10) NOT NULL, -- 'INSERT', 'UPDATE', 'DELETE'
     contratante_id INTEGER NOT NULL,
@@ -24,25 +24,25 @@ CREATE TABLE IF NOT EXISTS contratantes_senhas_audit (
     CONSTRAINT chk_operacao CHECK (operacao IN ('INSERT', 'UPDATE', 'DELETE'))
 );
 
-CREATE INDEX idx_senhas_audit_contratante ON contratantes_senhas_audit(contratante_id);
-CREATE INDEX idx_senhas_audit_data ON contratantes_senhas_audit(executado_em);
-CREATE INDEX idx_senhas_audit_operacao ON contratantes_senhas_audit(operacao);
+CREATE INDEX idx_senhas_audit_contratante ON entidades_senhas_audit(contratante_id);
+CREATE INDEX idx_senhas_audit_data ON entidades_senhas_audit(executado_em);
+CREATE INDEX idx_senhas_audit_operacao ON entidades_senhas_audit(operacao);
 
-COMMENT ON TABLE contratantes_senhas_audit IS 'Auditoria completa de todas as operações na tabela contratantes_senhas - NUNCA DELETE DESTA TABELA';
-COMMENT ON COLUMN contratantes_senhas_audit.operacao IS 'Tipo de operação: INSERT, UPDATE ou DELETE';
-COMMENT ON COLUMN contratantes_senhas_audit.senha_hash_anterior IS 'Hash da senha antes da operação (NULL para INSERT)';
-COMMENT ON COLUMN contratantes_senhas_audit.senha_hash_nova IS 'Hash da senha após a operação (NULL para DELETE)';
+COMMENT ON TABLE entidades_senhas_audit IS 'Auditoria completa de todas as operações na tabela entidades_senhas - NUNCA DELETE DESTA TABELA';
+COMMENT ON COLUMN entidades_senhas_audit.operacao IS 'Tipo de operação: INSERT, UPDATE ou DELETE';
+COMMENT ON COLUMN entidades_senhas_audit.senha_hash_anterior IS 'Hash da senha antes da operação (NULL para INSERT)';
+COMMENT ON COLUMN entidades_senhas_audit.senha_hash_nova IS 'Hash da senha após a operação (NULL para DELETE)';
 
 -- ==========================================
 -- 2. CRIAR FUNÇÃO DE AUDITORIA AUTOMÁTICA
 -- ==========================================
 
-CREATE OR REPLACE FUNCTION fn_audit_contratantes_senhas()
+CREATE OR REPLACE FUNCTION fn_audit_entidades_senhas()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Registrar INSERT
     IF TG_OP = 'INSERT' THEN
-        INSERT INTO contratantes_senhas_audit (
+        INSERT INTO entidades_senhas_audit (
             operacao,
             contratante_id,
             cpf,
@@ -63,7 +63,7 @@ BEGIN
     
     -- Registrar UPDATE
     ELSIF TG_OP = 'UPDATE' THEN
-        INSERT INTO contratantes_senhas_audit (
+        INSERT INTO entidades_senhas_audit (
             operacao,
             contratante_id,
             cpf,
@@ -92,7 +92,7 @@ BEGIN
            OR current_setting('app.allow_senha_delete', true) != 'true' THEN
             
             -- Registrar tentativa bloqueada
-            INSERT INTO contratantes_senhas_audit (
+            INSERT INTO entidades_senhas_audit (
                 operacao,
                 contratante_id,
                 cpf,
@@ -114,7 +114,7 @@ BEGIN
         END IF;
         
         -- Se chegou aqui, está autorizado - registrar
-        INSERT INTO contratantes_senhas_audit (
+        INSERT INTO entidades_senhas_audit (
             operacao,
             contratante_id,
             cpf,
@@ -138,20 +138,20 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-COMMENT ON FUNCTION fn_audit_contratantes_senhas() IS 'Audita e BLOQUEIA operacoes nao autorizadas em contratantes_senhas';
+COMMENT ON FUNCTION fn_audit_entidades_senhas() IS 'Audita e BLOQUEIA operacoes nao autorizadas em entidades_senhas';
 
 -- ==========================================
 -- 3. CRIAR TRIGGER DE PROTEÇÃO
 -- ==========================================
 
-DROP TRIGGER IF EXISTS trg_protect_senhas ON contratantes_senhas;
+DROP TRIGGER IF EXISTS trg_protect_senhas ON entidades_senhas;
 
 CREATE TRIGGER trg_protect_senhas
-    BEFORE INSERT OR UPDATE OR DELETE ON contratantes_senhas
+    BEFORE INSERT OR UPDATE OR DELETE ON entidades_senhas
     FOR EACH ROW
-    EXECUTE FUNCTION fn_audit_contratantes_senhas();
+    EXECUTE FUNCTION fn_audit_entidades_senhas();
 
-COMMENT ON TRIGGER trg_protect_senhas ON contratantes_senhas IS 'CRITICO: Protege contra delecao acidental de senhas e audita todas as operacoes';
+COMMENT ON TRIGGER trg_protect_senhas ON entidades_senhas IS 'CRITICO: Protege contra delecao acidental de senhas e audita todas as operacoes';
 
 -- ==========================================
 -- 4. CRIAR FUNÇÃO SEGURA PARA DELETAR SENHAS
@@ -175,12 +175,12 @@ BEGIN
     PERFORM set_config('app.allow_senha_delete', 'true', true);
     
     -- Executar delete
-    DELETE FROM contratantes_senhas WHERE contratante_id = p_contratante_id;
+    DELETE FROM entidades_senhas WHERE contratante_id = p_contratante_id;
     
     -- Desabilitar deleção
     PERFORM set_config('app.allow_senha_delete', 'false', true);
     
-    RAISE NOTICE 'Senha deletada com sucesso. Operação registrada em contratantes_senhas_audit';
+    RAISE NOTICE 'Senha deletada com sucesso. Operação registrada em entidades_senhas_audit';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -204,12 +204,12 @@ BEGIN
     PERFORM set_config('app.allow_senha_delete', 'true', true);
     
     -- Contar senhas que serão deletadas
-    SELECT COUNT(*) INTO v_count FROM contratantes_senhas;
+    SELECT COUNT(*) INTO v_count FROM entidades_senhas;
     
     RAISE NOTICE 'Limpando % senhas de teste...', v_count;
     
     -- Deletar todas as senhas
-    DELETE FROM contratantes_senhas;
+    DELETE FROM entidades_senhas;
     
     -- Desabilitar deleção
     PERFORM set_config('app.allow_senha_delete', 'false', true);
@@ -241,7 +241,7 @@ SELECT
         WHEN a.operacao = 'DELETE' THEN 'DELETE_AUTORIZADO'
         ELSE 'NORMAL'
     END AS tipo_operacao
-FROM contratantes_senhas_audit a
+FROM entidades_senhas_audit a
 LEFT JOIN contratantes c ON c.id = a.contratante_id
 ORDER BY a.executado_em DESC;
 
@@ -252,8 +252,8 @@ COMMENT ON VIEW vw_auditoria_senhas IS 'View simplificada para análise de audit
 -- ==========================================
 
 -- Apenas postgres pode deletar diretamente da tabela de auditoria
-REVOKE ALL ON contratantes_senhas_audit FROM PUBLIC;
-GRANT SELECT ON contratantes_senhas_audit TO PUBLIC;
+REVOKE ALL ON entidades_senhas_audit FROM PUBLIC;
+GRANT SELECT ON entidades_senhas_audit TO PUBLIC;
 
 -- View de auditoria pode ser acessada por todos
 GRANT SELECT ON vw_auditoria_senhas TO PUBLIC;

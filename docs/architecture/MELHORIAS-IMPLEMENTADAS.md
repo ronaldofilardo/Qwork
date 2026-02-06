@@ -27,7 +27,7 @@ SELECT * FROM gestores WHERE clinica_id = 123;
 **Campos retornados:**
 
 - `cpf`, `nome`, `email`
-- `usuario_tipo` ('gestor_rh' | 'gestor_entidade')
+- `usuario_tipo` ('rh' | 'gestor')
 - `tipo_gestor_descricao` (legível)
 - `clinica_id`, `contratante_id`
 - `ativo`, `criado_em`, `atualizado_em`
@@ -93,8 +93,8 @@ usuario_tipo        | total | ativos | inativos | clinicas | contratantes | empr
 -------------------+-------+--------+----------+----------+--------------+---------
 admin              |     1 |      1 |        0 |        0 |            0 |       0
 emissor            |     5 |      4 |        1 |        2 |            0 |       0
-gestor_rh          |    12 |     12 |        0 |       12 |            0 |       0
-gestor_entidade    |     8 |      7 |        1 |        0 |            8 |       0
+rh          |    12 |     12 |        0 |       12 |            0 |       0
+gestor    |     8 |      7 |        1 |        0 |            8 |       0
 funcionario_clinica|  1250 |   1180 |       70 |       12 |            0 |      45
 funcionario_entidade|  320 |    305 |       15 |        0 |            8 |       0
 ```
@@ -148,7 +148,7 @@ funcionario_entidade|  320 |    305 |       15 |        0 |            8 |      
 
 **Mudanças:**
 
-- ✅ Query agora usa `WHERE f.usuario_tipo = 'gestor_rh'`
+- ✅ Query agora usa `WHERE f.usuario_tipo = 'rh'`
 - ✅ Retorna campo `usuario_tipo` na resposta
 - ✅ Documentação atualizada com NOTA sobre separação lógica
 
@@ -161,7 +161,7 @@ WHERE f.perfil = 'rh'
 **Depois:**
 
 ```typescript
-WHERE f.usuario_tipo = 'gestor_rh'
+WHERE f.usuario_tipo = 'rh'
 ```
 
 ---
@@ -172,7 +172,7 @@ WHERE f.usuario_tipo = 'gestor_rh'
 
 **Mudanças:**
 
-- ✅ INSERT agora inclui `usuario_tipo = 'gestor_rh'`
+- ✅ INSERT agora inclui `usuario_tipo = 'rh'`
 - ✅ Usa `senha_hash` em vez de `senha`
 - ✅ Comentário explicativo no código
 
@@ -187,7 +187,7 @@ VALUES ($1, $2, $3, $4, 'rh', $5, true)
 
 ```typescript
 INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
-VALUES ($1, $2, $3, $4, 'rh', 'gestor_rh', $5, true)
+VALUES ($1, $2, $3, $4, 'rh', 'rh', $5, true)
 ```
 
 ---

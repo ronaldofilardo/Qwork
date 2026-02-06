@@ -296,6 +296,54 @@ describe('NovoscadastrosContent', () => {
 
       alertMock.mockRestore();
     });
+
+    it('deve abrir modal de Link e QR a partir do modal de link regenerado', async () => {
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          contratante: {
+            id: 2,
+            link_pagamento:
+              'http://localhost:3000/pagamento/simulador?contratante_id=2&retry=true',
+            link_expiracao: '2025-01-03T10:00:00.000Z',
+          },
+          message: 'Link de pagamento regenerado com sucesso',
+        }),
+      });
+
+      render(<NovoscadastrosContent />);
+
+      await waitFor(() => {
+        const regenerarButton = screen.getByText('Regenerar Link');
+        fireEvent.click(regenerarButton);
+      });
+
+      const confirmarButton = screen.getByText('Confirmar');
+      fireEvent.click(confirmarButton);
+
+      // Agora o modal de link regenerado deve estar visível
+      await waitFor(() => {
+        expect(
+          screen.getByText('Link Regenerado com Sucesso')
+        ).toBeInTheDocument();
+        expect(screen.getByText('Copiar')).toBeInTheDocument();
+      });
+
+      // Clicar em 'Abrir Link e QR'
+      const abrirButton = screen.getByText('Abrir Link e QR');
+      fireEvent.click(abrirButton);
+
+      // Modal de LinkContratoPersonalizado deve abrir
+      await waitFor(() => {
+        expect(
+          screen.getByText('Contrato Personalizado Gerado')
+        ).toBeInTheDocument();
+        expect(
+          screen.getByText('QR Code para Acesso Rápido')
+        ).toBeInTheDocument();
+      });
+    });
   });
 
   describe('Filtros', () => {

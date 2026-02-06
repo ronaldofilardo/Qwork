@@ -378,7 +378,7 @@ export async function GET(request: NextRequest) {
     // Buscar avaliações concluídas na data especificada ou do lote especificado para a empresa
     let queryParams: any[] = [];
     let whereClause =
-      "a.status = 'concluida' AND f.empresa_id = $1 AND f.clinica_id = $2";
+      "a.status = 'concluido' AND f.empresa_id = $1 AND f.clinica_id = $2";
 
     if (loteIdParam) {
       // Filtrar por lote específico
@@ -429,18 +429,10 @@ export async function GET(request: NextRequest) {
       };
 
       if (loteIdParam) {
-        // Buscar informações do lote
-        const loteResult = await query(
-          'SELECT codigo, titulo FROM lotes_avaliacao WHERE id = $1',
-          [loteIdParam]
-        );
-        if (loteResult.rows.length > 0) {
-          responseData.lote = {
-            id: loteIdParam,
-            codigo: (loteResult.rows[0] as Record<string, any>).codigo,
-            titulo: (loteResult.rows[0] as Record<string, any>).titulo,
-          };
-        }
+        // Armazenar apenas o ID do lote (codigo e titulo foram removidos)
+        responseData.lote = {
+          id: loteIdParam,
+        };
       } else {
         responseData.data = dataParam;
       }
@@ -615,9 +607,7 @@ export async function GET(request: NextRequest) {
 
       // Nome do arquivo baseado em lote ou data
       const nomeArquivo = loteIdParam
-        ? `relatorio-avaliacoes-${empresa.nome}-lote-${
-            dadosRelatorio.lote?.codigo || loteIdParam
-          }.pdf`
+        ? `relatorio-avaliacoes-${empresa.nome}-lote-${loteIdParam}.pdf`
         : `relatorio-avaliacoes-${empresa.nome}-${dataParam}.pdf`;
 
       return new NextResponse(Buffer.from(pdfBuffer), {

@@ -35,16 +35,16 @@ export async function GET(
         cp.valor_total_estimado,
         cp.payment_link_expiracao,
         cp.status,
-        c.nome AS contratante_nome,
-        c.cnpj,
-        c.responsavel_nome,
-        c.responsavel_email,
-        c.plano_id,
+        e.nome AS entidade_nome,
+        e.cnpj,
+        e.responsavel_nome,
+        e.responsavel_email,
+        e.plano_id,
         p.nome AS plano_nome,
         p.tipo AS plano_tipo
       FROM contratacao_personalizada cp
-      JOIN contratantes c ON cp.contratante_id = c.id
-      LEFT JOIN planos p ON c.plano_id = p.id
+      JOIN entidades e ON cp.contratante_id = e.id
+      LEFT JOIN planos p ON e.plano_id = p.id
       WHERE cp.payment_link_token = $1`,
       [token]
     );
@@ -90,7 +90,8 @@ export async function GET(
       valido: true,
       contratacao_id: proposta.contratacao_id,
       contratante_id: proposta.contratante_id,
-      contratante_nome: proposta.contratante_nome,
+      entidade_id: proposta.contratante_id,
+      entidade_nome: proposta.entidade_nome,
       cnpj: proposta.cnpj,
       responsavel_nome: proposta.responsavel_nome,
       responsavel_email: proposta.responsavel_email,

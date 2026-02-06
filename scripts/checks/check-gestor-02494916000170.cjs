@@ -46,15 +46,15 @@ async function verificarGestor() {
     console.log(`      Ativa: ${contratante.ativa}`);
     console.log('');
 
-    // 2. Verificar senha em contratantes_senhas
-    console.log('2️⃣ Verificando senha em contratantes_senhas...');
+    // 2. Verificar senha em entidades_senhas
+    console.log('2️⃣ Verificando senha em entidades_senhas...');
     const senhaResult = await client.query(
-      'SELECT senha_hash, LENGTH(senha_hash) as hash_len FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
+      'SELECT senha_hash, LENGTH(senha_hash) as hash_len FROM entidades_senhas WHERE contratante_id = $1 AND cpf = $2',
       [contratante.id, cpf]
     );
 
     if (senhaResult.rows.length === 0) {
-      console.log('   ❌ Senha não encontrada em contratantes_senhas!');
+      console.log('   ❌ Senha não encontrada em entidades_senhas!');
     } else {
       const senhaData = senhaResult.rows[0];
       console.log('   ✅ Senha encontrada:');

@@ -1,7 +1,7 @@
 /**
  * Middleware de Proteção de Acesso Pago
  *
- * Garante que apenas contratantes com pagamento confirmado acessem rotas protegidas
+ * Garante que apenas entidades com pagamento confirmado acessem rotas protegidas
  * Uso: Importar e aplicar em rotas que exigem contrato ativo
  */
 
@@ -11,24 +11,24 @@ import { query } from './db';
 
 export interface PaidAccessValidationResult {
   allowed: boolean;
-  contratante_id?: number;
+  entidade_id?: number;
   message?: string;
   status_code?: number;
 }
 
 /**
- * Valida se contratante tem acesso pago confirmado
+ * Valida se entidade tem acesso pago confirmado
  *
- * @param contratante_id ID do contratante a validar
+ * @param entidade_id ID da entidade a validar
  * @returns Resultado da validação
  */
 export async function validatePaidAccess(
-  contratante_id: number
+  entidade_id: number
 ): Promise<PaidAccessValidationResult> {
-  if (!contratante_id) {
+  if (!entidade_id) {
     return {
       allowed: false,
-      message: 'ID do contratante não fornecido',
+      message: 'ID da entidade não fornecido',
       status_code: 400,
     };
   }
@@ -36,47 +36,44 @@ export async function validatePaidAccess(
   try {
     const result = await query(
       `SELECT id, nome, ativa, pagamento_confirmado, status 
-       FROM contratantes 
+       FROM entidades 
        WHERE id = $1`,
-      [contratante_id]
+      [entidade_id]
     );
 
     if (result.rows.length === 0) {
       return {
         allowed: false,
-        message: 'Contratante não encontrado',
+        message: 'Entidade não encontrada',
         status_code: 404,
       };
     }
 
-    const contratante = result.rows[0];
+    const entidade = result.rows[0];
 
     // Verificação dupla: ativa E pagamento confirmado
-    if (!contratante.ativa || !contratante.pagamento_confirmado) {
+    if (!entidade.ativa || !entidade.pagamento_confirmado) {
       return {
         allowed: false,
-        contratante_id,
+        entidade_id,
         message: 'Acesso negado. Pagamento não confirmado ou conta inativa.',
         status_code: 403,
       };
     }
 
     // Status adicional de validação
-    if (
-      contratante.status === 'suspenso' ||
-      contratante.status === 'cancelado'
-    ) {
+    if (entidade.status === 'suspenso' || entidade.status === 'cancelado') {
       return {
         allowed: false,
-        contratante_id,
-        message: `Conta ${contratante.status}. Entre em contato com o suporte.`,
+        entidade_id,
+        message: `Conta ${entidade.status}. Entre em contato com o suporte.`,
         status_code: 403,
       };
     }
 
     return {
       allowed: true,
-      contratante_id,
+      entidade_id,
     };
   } catch (error) {
     console.error('Erro ao validar acesso pago:', error);
@@ -95,7 +92,7 @@ export async function validatePaidAccess(
  * ```typescript
  * export async function GET(request: NextRequest) {
  *   const session = await getSession();
- *   const accessCheck = await requirePaidAccess(session.contratante_id);
+ *   const accessCheck = await requirePaidAccess(session.entidade_id);
  *
  *   if (accessCheck) {
  *     return accessCheck; // Retorna erro se acesso negado
@@ -106,16 +103,16 @@ export async function validatePaidAccess(
  * ```
  */
 export async function requirePaidAccess(
-  contratante_id: number
+  entidade_id: number
 ): Promise<NextResponse | null> {
-  const validation = await validatePaidAccess(contratante_id);
+  const validation = await validatePaidAccess(entidade_id);
 
   if (!validation.allowed) {
     return NextResponse.json(
       {
         error: validation.message || 'Acesso negado',
         requires_payment: !validation.allowed,
-        contratante_id: validation.contratante_id,
+        entidade_id: validation.entidade_id,
       },
       { status: validation.status_code || 403 }
     );
@@ -129,7 +126,7 @@ export async function requirePaidAccess(
  *
  * Exemplo:
  * ```typescript
- * export const GET = withPaidAccess(async (request, { contratante_id }) => {
+ * export const GET = withPaidAccess(async (request, { entidade_id }) => {
  *   // Sua lógica aqui, acesso já validado
  *   return NextResponse.json({ data: 'protegido' });
  * });
@@ -137,11 +134,11 @@ export async function requirePaidAccess(
  */
 export function withPaidAccess<
   T extends (...args: any[]) => Promise<NextResponse>,
->(handler: T, getContratanteId: (request: NextRequest) => Promise<number>): T {
+>(handler: T, getEntidadeId: (request: NextRequest) => Promise<number>): T {
   return (async (request: NextRequest, ...args: any[]) => {
     try {
-      const contratante_id = await getContratanteId(request);
-      const accessCheck = await requirePaidAccess(contratante_id);
+      const entidade_id = await getEntidadeId(request);
+      const accessCheck = await requirePaidAccess(entidade_id);
 
       if (accessCheck) {
         return accessCheck;
@@ -162,7 +159,7 @@ export function withPaidAccess<
  * Valida múltiplos critérios de acesso
  */
 export interface AccessCriteria {
-  contratante_id: number;
+  entidade_id: number;
   require_active?: boolean;
   require_paid?: boolean;
   allow_statuses?: string[];
@@ -172,7 +169,7 @@ export async function validateAccessCriteria(
   criteria: AccessCriteria
 ): Promise<PaidAccessValidationResult> {
   const {
-    contratante_id,
+    entidade_id,
     require_active = true,
     require_paid = true,
     allow_statuses = ['aprovado', 'ativo'],
@@ -180,50 +177,50 @@ export async function validateAccessCriteria(
 
   const result = await query(
     `SELECT id, nome, ativa, pagamento_confirmado, status 
-     FROM contratantes 
+     FROM entidades 
      WHERE id = $1`,
-    [contratante_id]
+    [entidade_id]
   );
 
   if (result.rows.length === 0) {
     return {
       allowed: false,
-      message: 'Contratante não encontrado',
+      message: 'Entidade não encontrada',
       status_code: 404,
     };
   }
 
-  const contratante = result.rows[0];
+  const entidade = result.rows[0];
 
-  if (require_active && !contratante.ativa) {
+  if (require_active && !entidade.ativa) {
     return {
       allowed: false,
-      contratante_id,
+      entidade_id,
       message: 'Conta não está ativa',
       status_code: 403,
     };
   }
 
-  if (require_paid && !contratante.pagamento_confirmado) {
+  if (require_paid && !entidade.pagamento_confirmado) {
     return {
       allowed: false,
-      contratante_id,
+      entidade_id,
       message: 'Pagamento não confirmado',
       status_code: 403,
     };
   }
 
-  if (!allow_statuses.includes(contratante.status)) {
+  if (!allow_statuses.includes(entidade.status)) {
     return {
       allowed: false,
-      contratante_id,
-      message: `Status "${contratante.status}" não permite acesso`,
+      entidade_id,
+      message: `Status "${entidade.status}" não permite acesso`,
       status_code: 403,
     };
   }
 
   return {
     allowed: true,
-    contratante_id,
+    entidade_id,
   };
 }

@@ -46,13 +46,13 @@ BEGIN
             nome = v_contratante.responsavel_nome,
             email = v_contratante.responsavel_email,
             celular = v_contratante.responsavel_celular,
-            perfil = 'gestor_entidade',
+            perfil = 'gestor',
             contratante_id = p_contratante_id,
             ativo = true,
             atualizado_em = CURRENT_TIMESTAMP
         WHERE cpf = v_contratante.responsavel_cpf;
     ELSE
-        -- Inserir novo funcionário com perfil gestor_entidade
+        -- Inserir novo funcionário com perfil gestor
         INSERT INTO funcionarios (
             cpf,
             nome,
@@ -70,7 +70,7 @@ BEGIN
             v_contratante.responsavel_nome,
             v_contratante.responsavel_email,
             v_contratante.responsavel_celular,
-            'gestor_entidade',
+            'gestor',
             p_contratante_id,
             true,
             NULL,
@@ -81,7 +81,7 @@ BEGIN
     END IF;
 
     -- Inserir ou atualizar senha
-    INSERT INTO contratantes_senhas (
+    INSERT INTO entidades_senhas (
         contratante_id,
         cpf,
         senha_hash
@@ -101,7 +101,7 @@ $$ LANGUAGE plpgsql;
 
 -- Comentário atualizado
 COMMENT ON FUNCTION criar_senha_inicial_entidade(INTEGER) IS
-'Cria ou atualiza funcionário com perfil gestor_entidade e senha baseada nos últimos 6 dígitos do CNPJ para o responsável do contratante';
+'Cria ou atualiza funcionário com perfil gestor e senha baseada nos últimos 6 dígitos do CNPJ para o responsável do contratante';
 
 -- Atualizar senhas existentes para entidades já cadastradas
 -- Isso irá recalcular as senhas baseadas nos CNPJs atuais
@@ -120,8 +120,8 @@ BEGIN
         v_senha_inicial := RIGHT(REPLACE(REPLACE(REPLACE(contratante_record.cnpj, '.', ''), '/', ''), '-', ''), 6);
         v_senha_hash := crypt(v_senha_inicial, gen_salt('bf'));
 
-        -- Atualizar senha na tabela contratantes_senhas
-        UPDATE contratantes_senhas
+        -- Atualizar senha na tabela entidades_senhas
+        UPDATE entidades_senhas
         SET senha_hash = v_senha_hash, atualizado_em = CURRENT_TIMESTAMP
         WHERE cpf = contratante_record.responsavel_cpf;
 

@@ -68,21 +68,21 @@ await query('DELETE FROM contratantes'); // NUNCA!
 ```typescript
 // ✅ CORRETO - Verificar antes de atualizar
 const existing = await query(
-  'SELECT senha_hash FROM contratantes_senhas WHERE contratante_id = $1',
+  'SELECT senha_hash FROM entidades_senhas WHERE contratante_id = $1',
   [contratanteId]
 );
 
 if (!existing.rows.length) {
   // Só cria se não existir
   await query(
-    'INSERT INTO contratantes_senhas (contratante_id, senha_hash) VALUES ($1, $2)',
+    'INSERT INTO entidades_senhas (contratante_id, senha_hash) VALUES ($1, $2)',
     [contratanteId, hashedPassword]
   );
 }
 
 // ❌ ERRADO - Sobrescreve sem verificar
 await query(
-  'UPDATE contratantes_senhas SET senha_hash = $1 WHERE contratante_id = $2',
+  'UPDATE entidades_senhas SET senha_hash = $1 WHERE contratante_id = $2',
   [newHash, contratanteId]
 );
 ```
@@ -421,7 +421,7 @@ export async function criarContratanteAtivoTeste(overrides = {}) {
     .returning('*');
 
   // Criar senha
-  await db('contratantes_senhas').insert({
+  await db('entidades_senhas').insert({
     contratante_id: contratante.id,
     senha_hash: await bcrypt.hash('Teste@123', 10),
   });

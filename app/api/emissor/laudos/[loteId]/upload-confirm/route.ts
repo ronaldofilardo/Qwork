@@ -251,10 +251,10 @@ export const POST = async (
     // Registrar auditoria
     try {
       await query(
-        `INSERT INTO audit_logs (acao, entidade, entidade_id, dados, user_role, user_id, criado_em)
-         VALUES ('laudo_upload_manual', 'laudos', $1, $2, 'emissor', $3, NOW())`,
+        `INSERT INTO audit_logs (action, resource, resource_id, new_data, user_perfil, user_cpf)
+         VALUES ('laudo_upload_manual', 'laudos', $1, $2, 'emissor', $3)`,
         [
-          laudoId,
+          laudoId.toString(),
           JSON.stringify({
             lote_id: loteId,
             hash,

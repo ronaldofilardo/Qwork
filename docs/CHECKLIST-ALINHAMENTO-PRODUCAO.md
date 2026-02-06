@@ -421,7 +421,7 @@ export async function recalcularStatusLotePorId(loteId: number) {
 -- No Neon
 SELECT la.id,  la.status,
        COUNT(a.id) as total_avaliacoes,
-       COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas
+       COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas
 FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.id = 0 -- FIXME: substituir por ID correto
@@ -715,3 +715,4 @@ echo $env:BACKBLAZE_APPLICATION_KEY
 
 **Última atualização:** 02/02/2026  
 **Status:** ✅ Pronto para validação
+

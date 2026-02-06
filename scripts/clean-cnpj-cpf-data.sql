@@ -31,7 +31,7 @@ WHERE p.tipo = 'personalizado'
 
 -- PROTEÇÃO CRÍTICA: Senhas NÃO são mais deletadas automaticamente!
 -- Use fn_delete_senha_autorizado() se realmente precisar deletar senhas
--- DELETE FROM contratantes_senhas foi REMOVIDO para evitar perda de dados
+-- DELETE FROM entidades_senhas foi REMOVIDO para evitar perda de dados
 -- Ver migração 030_protecao_senhas_critica.sql para mais detalhes
 
 -- Se você REALMENTE precisa deletar senhas (CUIDADO!):

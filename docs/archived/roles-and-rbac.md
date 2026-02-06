@@ -15,7 +15,7 @@ Este documento define claramente a separação de papéis no sistema Qwork, espe
 
 - **Criação:** Via `criarContaResponsavel()` para contratantes tipo ≠ 'entidade'
 - **Tabelas:** `funcionarios` (com perfil='rh') + `contratantes_funcionarios` (vínculo)
-- **Autenticação:** `contratantes_senhas` com bcrypt
+- **Autenticação:** `entidades_senhas` com bcrypt
 - **Permissões:**
   - ✅ Cadastrar empresas clientes
   - ✅ Cadastrar funcionários nas empresas
@@ -24,11 +24,11 @@ Este documento define claramente a separação de papéis no sistema Qwork, espe
   - ✅ Gerenciar funcionários vinculados
   - ❌ Responder avaliações (não é avaliado)
 
-#### Gestor Entidade (`perfil='gestor_entidade'`)
+#### Gestor Entidade (`perfil='gestor'`)
 
 - **Criação:** Via `criarContaResponsavel()` para contratantes tipo = 'entidade'
-- **Tabelas:** Apenas `contratantes_senhas` (SEM entrada em `funcionarios`)
-- **Autenticação:** `contratantes_senhas` com bcrypt
+- **Tabelas:** Apenas `entidades_senhas` (SEM entrada em `funcionarios`)
+- **Autenticação:** `entidades_senhas` com bcrypt
 - **Permissões:**
   - ✅ Cadastrar empresas clientes
   - ✅ Cadastrar funcionários nas empresas
@@ -55,9 +55,9 @@ Este documento define claramente a separação de papéis no sistema Qwork, espe
 
 #### Emissor (`perfil='emissor'`)
 
-- Usuário independente para emissão de laudos; **não** deve ser combinado com `gestor_entidade` ou `rh`.
+- Usuário independente para emissão de laudos; **não** deve ser combinado com `gestor` ou `rh`.
 - Permissões para emissão de laudos técnicos
-- Sistema impede programaticamente que um CPF vinculado a um Gestor RH (`perfil='rh'`) ou a um Gestor Entidade (presente em `contratantes_senhas`) seja cadastrado como `emissor`.
+- Sistema impede programaticamente que um CPF vinculado a um Gestor RH (`perfil='rh'`) ou a um Gestor Entidade (presente em `entidades_senhas`) seja cadastrado como `emissor`.
 
 #### Admin (`perfil='admin'`)
 
@@ -89,11 +89,11 @@ Este documento define claramente a separação de papéis no sistema Qwork, espe
 // Para tipo !== 'entidade' (Gestores RH):
 - Cria/atualiza registro em `funcionarios` com perfil='rh'
 - Insere vínculo em `contratantes_funcionarios`
-- Cria entrada em `contratantes_senhas` com bcrypt
+- Cria entrada em `entidades_senhas` com bcrypt
 
 // Para tipo === 'entidade' (Gestores Entidade):
 - NÃO cria registro em `funcionarios`
-- Apenas cria entrada em `contratantes_senhas` com bcrypt
+- Apenas cria entrada em `entidades_senhas` com bcrypt
 ```
 
 ### Tabelas Principais
@@ -109,7 +109,7 @@ Este documento define claramente a separação de papéis no sistema Qwork, espe
 - Armazena clínicas e entidades
 - Campo `tipo`: 'clinica' | 'entidade'
 
-#### `contratantes_senhas`
+#### `entidades_senhas`
 
 - Autenticação de gestores (RH e Entidade)
 - Hash bcrypt (12 rounds)
@@ -210,7 +210,7 @@ WHERE perfil IN ('funcionario', 'rh')  -- ERRADO! Confunde papéis
 **Situação Atual:**
 
 - Gestores Entidade NÃO aparecem em `funcionarios`
-- Autenticação apenas via `contratantes_senhas`
+- Autenticação apenas via `entidades_senhas`
 - Sem vínculos em `contratantes_funcionarios`
 
 **Isto está CORRETO e deve ser mantido.**
@@ -227,7 +227,7 @@ WHERE perfil IN ('funcionario', 'rh')  -- ERRADO! Confunde papéis
 ### Longo Prazo
 
 1. Considerar renomear tabela `funcionarios` para `usuarios` (breaking change)
-2. Adicionar campo `tipo_usuario` explícito: 'gestor_rh' | 'gestor_entidade' | 'funcionario'
+2. Adicionar campo `tipo_usuario` explícito: 'rh' | 'gestor' | 'funcionario'
 3. Criar view `vw_apenas_funcionarios` para queries comuns
 
 ## Contato

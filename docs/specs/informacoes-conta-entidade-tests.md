@@ -21,7 +21,7 @@
    - A ação de visualizar recibo deve ser imediata (abrir modal ou nova aba rapidamente).
 
 5. Segurança & Permissões
-   - A API `/api/entidade/account-info` deve ser consumida apenas por sessões `gestor_entidade`; testes devem garantir 401 para perfis indevidos.
+   - A API `/api/entidade/account-info` deve ser consumida apenas por sessões `gestor`; testes devem garantir 401 para perfis indevidos.
 
 ---
 
@@ -44,7 +44,7 @@
 Cenários principais:
 
 1. Fluxo básico (Entidade)
-   - Logar como `gestor_entidade` (mock ou fixtures)
+   - Logar como `gestor` (mock ou fixtures)
    - Visitar `/entidade/conta`
    - Validar que as seções `Contrato`, `Pagamentos` e `Recibos` aparecem
    - Abrir o primeiro pagamento com recibo e clicar em `Ver Recibo` (abrir nova aba ou modal)

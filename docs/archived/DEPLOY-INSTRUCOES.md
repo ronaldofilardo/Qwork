@@ -178,7 +178,7 @@ LIMIT 1;
 BEGIN;
 
 -- Definir contexto de gestor de entidade
-SELECT set_rls_context('gestor_entidade', NULL, NULL, 1);
+SELECT set_rls_context('gestor', NULL, NULL, 1);
 
 -- Tentar acessar contratante de outro (deve retornar vazio)
 SELECT * FROM contratantes WHERE id = 2;

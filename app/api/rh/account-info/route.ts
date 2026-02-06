@@ -14,35 +14,34 @@ export const GET = async () => {
 
     if (!clinicaId) {
       const res = await query(
-        'SELECT clinica_id, contratante_id FROM funcionarios WHERE cpf = $1 AND ativo = true LIMIT 1',
+        'SELECT clinica_id, entidade_id FROM funcionarios WHERE cpf = $1 AND ativo = true LIMIT 1',
         [session.cpf]
       );
 
       if (res.rows.length > 0) {
         // Prefer clinica_id se existir
         clinicaId = res.rows[0].clinica_id || null;
-        // Se clinica_id não existir, verificar se o funcionário está vinculado a um contratante
-        if (!clinicaId && res.rows[0].contratante_id) {
-          // Verificar se o contratante vinculado é do tipo 'clinica'
-          const contratanteRow = await query(
-            "SELECT id FROM contratantes WHERE id = $1 AND tipo = 'clinica'",
-            [res.rows[0].contratante_id]
+        // Se clinica_id não existir, verificar se o funcionário está vinculado a uma entidade
+        if (!clinicaId && res.rows[0].entidade_id) {
+          // Verificar se a entidade vinculada é do tipo 'clinica'
+          const entidadeRow = await query(
+            "SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica'",
+            [res.rows[0].entidade_id]
           );
-          if (contratanteRow.rows.length > 0)
-            clinicaId = contratanteRow.rows[0].id;
+          if (entidadeRow.rows.length > 0) clinicaId = entidadeRow.rows[0].id;
         }
       }
     }
 
-    // Fallback: se a sessão possuir contratante_id (usuário criado via fluxo de cadastro)
-    // e o contratante for do tipo 'clinica', usá-lo como clinicaId
-    if (!clinicaId && (session as any).contratante_id) {
-      const contratanteCheck = await query(
-        "SELECT id FROM contratantes WHERE id = $1 AND tipo = 'clinica'",
-        [(session as any).contratante_id]
+    // Fallback: se a sessão possuir entidade_id (usuário criado via fluxo de cadastro)
+    // e a entidade for do tipo 'clinica', usá-lo como clinicaId
+    if (!clinicaId && (session as any).entidade_id) {
+      const entidadeCheck = await query(
+        "SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica'",
+        [(session as any).entidade_id]
       );
-      if (contratanteCheck.rows.length > 0) {
-        clinicaId = contratanteCheck.rows[0].id;
+      if (entidadeCheck.rows.length > 0) {
+        clinicaId = entidadeCheck.rows[0].id;
       }
     }
 
@@ -53,7 +52,7 @@ export const GET = async () => {
       );
     }
 
-    // Buscar informações da clínica (contratante do tipo 'clinica')
+    // Buscar informações da clínica (entidade do tipo 'clinica')
     const clinicaQuery = (await query(
       `
       SELECT
@@ -67,7 +66,7 @@ export const GET = async () => {
         c.estado,
         c.responsavel_nome,
         c.criado_em
-      FROM contratantes c
+      FROM entidades c
       WHERE c.id = $1 AND c.tipo = 'clinica'
       `,
       [clinicaId]
@@ -75,25 +74,25 @@ export const GET = async () => {
 
     let clinica;
     if (clinicaQuery.rows.length === 0) {
-      // Possível que `clinicaId` seja na verdade um id da tabela `clinicas` (diferente de `contratantes`).
-      // Tentar mapear: SELECT contratante_id FROM clinicas WHERE id = $1
+      // Possível que `clinicaId` seja na verdade um id da tabela `clinicas` (diferente de `entidades`).
+      // Tentar mapear: SELECT entidade_id FROM clinicas WHERE id = $1
       const clinicasMap = (await query(
-        `SELECT contratante_id FROM clinicas WHERE id = $1 LIMIT 1`,
+        `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
         [clinicaId]
       )) || { rows: [] };
 
-      if (clinicasMap.rows.length > 0 && clinicasMap.rows[0].contratante_id) {
-        const mappedContratanteId = clinicasMap.rows[0].contratante_id;
+      if (clinicasMap.rows.length > 0 && clinicasMap.rows[0].entidade_id) {
+        const mappedEntidadeId = clinicasMap.rows[0].entidade_id;
 
-        // Rebuscar contratante (contratante_id -> contratantes)
-        const contratanteQuery = (await query(
+        // Rebuscar entidade (entidade_id -> entidades)
+        const entidadeQuery = (await query(
           `SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em, status, aprovado_em
-           FROM contratantes WHERE id = $1 AND tipo = 'clinica'`,
-          [mappedContratanteId]
+           FROM entidades WHERE id = $1 AND tipo = 'clinica'`,
+          [mappedEntidadeId]
         )) || { rows: [] };
 
-        if (contratanteQuery.rows.length > 0) {
-          clinica = contratanteQuery.rows[0];
+        if (entidadeQuery.rows.length > 0) {
+          clinica = entidadeQuery.rows[0];
           // atualizar clinicaId para o contratante real
           clinicaId = clinica.id;
         }
@@ -206,7 +205,7 @@ export const GET = async () => {
           c.id as contrato_numero
         FROM contratos_planos cp
         LEFT JOIN planos p ON cp.plano_id = p.id
-        LEFT JOIN contratos c ON c.contratante_id = COALESCE(cp.contratante_id, cp.clinica_id)
+        LEFT JOIN contratos c ON c.entidade_id = COALESCE(cp.contratante_id, cp.clinica_id)
         WHERE ${hasStatus ? "cp.status::text IN ('ativo','aprovado','aguardando_pagamento') AND" : ''}
           ($1 = cp.clinica_id OR $1 = cp.contratante_id)
         ORDER BY cp.created_at DESC
@@ -234,7 +233,7 @@ export const GET = async () => {
             c.criado_em
           FROM contratos c
           LEFT JOIN planos p ON c.plano_id = p.id
-          WHERE c.contratante_id = $1 AND c.status::text IN ('ativo','aprovado','aguardando_pagamento')
+          WHERE c.entidade_id = $1 AND c.status::text IN ('ativo','aprovado','aguardando_pagamento')
           ORDER BY c.criado_em DESC
           LIMIT 1`;
 
@@ -281,7 +280,7 @@ export const GET = async () => {
         p.detalhes_parcelas,
         p.criado_em
       FROM pagamentos p
-      WHERE p.contratante_id = $1
+      WHERE p.entidade_id = $1
       ORDER BY p.criado_em DESC
       LIMIT 5
     `;

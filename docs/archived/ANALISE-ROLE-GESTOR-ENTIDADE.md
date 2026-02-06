@@ -1,4 +1,4 @@
-# Análise: Necessidade de Role "gestor_entidade" na Tabela `roles`
+# Análise: Necessidade de Role "gestor" na Tabela `roles`
 
 **Data:** 29 de janeiro de 2026  
 **Tipo:** Análise de requisito arquitetural  
@@ -29,14 +29,14 @@ A tabela `roles` possui apenas 4 registros:
 CONTRATANTES (Tabela Unificada)
 ├── tipo='clinica'
 │   ├── Cria registro em tabela 'clinicas'
-│   ├── Gestor autentica via contratantes_senhas
+│   ├── Gestor autentica via entidades_senhas
 │   ├── Role: 'rh' (gerencia empresas + funcionários)
 │   └── Fluxo: Clínica → Empresas → Funcionários → Lotes
 │
 └── tipo='entidade'
     ├── NÃO cria registro em 'clinicas'
-    ├── Gestor autentica via contratantes_senhas
-    ├── Role: 'gestor_entidade' ⚠️ AUSENTE NA TABELA ROLES
+    ├── Gestor autentica via entidades_senhas
+    ├── Role: 'gestor' ⚠️ AUSENTE NA TABELA ROLES
     └── Fluxo: Entidade → Funcionários → Lotes (SEM empresas)
 ```
 
@@ -44,16 +44,16 @@ CONTRATANTES (Tabela Unificada)
 
 ## 📊 Comparação: Clínica vs Entidade
 
-| Aspecto                      | Clínica (RH)                        | Entidade (Gestor)     |
-| ---------------------------- | ----------------------------------- | --------------------- |
-| **Perfil usado**             | `rh`                                | `gestor_entidade`     |
-| **Registro na tabela roles** | ✅ Existe                           | ❌ **AUSENTE**        |
-| **Autenticação**             | `contratantes_senhas`               | `contratantes_senhas` |
-| **Gerencia empresas?**       | ✅ SIM (tabela `empresas_clientes`) | ❌ NÃO                |
-| **Gerencia funcionários?**   | ✅ SIM                              | ✅ SIM                |
-| **Cria/libera lotes?**       | ✅ SIM                              | ✅ SIM                |
-| **Acessa relatórios?**       | ✅ SIM                              | ✅ SIM                |
-| **Contexto de isolamento**   | `clinica_id`                        | `contratante_id`      |
+| Aspecto                      | Clínica (RH)                        | Entidade (Gestor)  |
+| ---------------------------- | ----------------------------------- | ------------------ |
+| **Perfil usado**             | `rh`                                | `gestor`           |
+| **Registro na tabela roles** | ✅ Existe                           | ❌ **AUSENTE**     |
+| **Autenticação**             | `entidades_senhas`                  | `entidades_senhas` |
+| **Gerencia empresas?**       | ✅ SIM (tabela `empresas_clientes`) | ❌ NÃO             |
+| **Gerencia funcionários?**   | ✅ SIM                              | ✅ SIM             |
+| **Cria/libera lotes?**       | ✅ SIM                              | ✅ SIM             |
+| **Acessa relatórios?**       | ✅ SIM                              | ✅ SIM             |
+| **Contexto de isolamento**   | `clinica_id`                        | `contratante_id`   |
 
 ### Diferença Chave
 
@@ -73,21 +73,20 @@ Entidade → gerencia diretamente seus próprios Funcionários (sem intermediár
 
 ## 🔍 Análise da Implementação Atual
 
-### 1. Código Usa `gestor_entidade` Extensivamente
+### 1. Código Usa `gestor` Extensivamente
 
 #### lib/db.ts - criarContaResponsavel()
 
 ```typescript
 // Linha 1621
-const perfilToSet =
-  contratanteData.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
+const perfilToSet = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
 ```
 
 #### middleware.ts
 
 ```typescript
-// Rotas de entidade verificam perfil 'gestor_entidade'
-if (session.perfil === 'gestor_entidade') {
+// Rotas de entidade verificam perfil 'gestor'
+if (session.perfil === 'gestor') {
   if (ENTIDADE_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
@@ -98,8 +97,8 @@ if (session.perfil === 'gestor_entidade') {
 
 ```sql
 -- Migration 073, 092, 093, 108, 109
--- Todas referenciam perfil='gestor_entidade'
-CHECK (perfil IN ('funcionario', 'rh', 'emissor', 'admin', 'gestor_entidade'))
+-- Todas referenciam perfil='gestor'
+CHECK (perfil IN ('funcionario', 'rh', 'emissor', 'admin', 'gestor'))
 ```
 
 ### 2. Tabela `roles` Está Desatualizada
@@ -121,7 +120,7 @@ VALUES
 
 #### Inconsistência
 
-- ❌ Role `gestor_entidade` usado no código **NÃO existe na tabela**
+- ❌ Role `gestor` usado no código **NÃO existe na tabela**
 - ❌ Role `super` existe na tabela mas **NÃO é usado no código**
 - ✅ Roles `funcionario`, `rh`, `emissor`, `admin` consistentes
 
@@ -129,7 +128,7 @@ VALUES
 
 ## 🏗️ Análise de Permissões
 
-### Permissões que `gestor_entidade` PRECISA ter
+### Permissões que `gestor` PRECISA ter
 
 Com base nas rotas e funcionalidades de entidade:
 
@@ -148,7 +147,7 @@ Com base nas rotas e funcionalidades de entidade:
 └── parcelas/            ✅ Pagamentos
 ```
 
-### Permissões que `gestor_entidade` NÃO DEVE ter
+### Permissões que `gestor` NÃO DEVE ter
 
 ```typescript
 // NÃO deve acessar:
@@ -164,13 +163,13 @@ Com base nas rotas e funcionalidades de entidade:
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id FROM public.roles r, public.permissions p
 WHERE r.name = 'rh' AND p.name IN (
-  'read:avaliacoes:clinica',      -- gestor_entidade: read:avaliacoes:entidade
-  'read:funcionarios:clinica',    -- gestor_entidade: read:funcionarios:entidade
-  'write:funcionarios:clinica',   -- gestor_entidade: write:funcionarios:entidade
-  'read:empresas:clinica',        -- gestor_entidade: ❌ NÃO (sem empresas)
-  'write:empresas:clinica',       -- gestor_entidade: ❌ NÃO (sem empresas)
-  'read:lotes:clinica',           -- gestor_entidade: read:lotes:entidade
-  'write:lotes:clinica'           -- gestor_entidade: write:lotes:entidade
+  'read:avaliacoes:clinica',      -- gestor: read:avaliacoes:entidade
+  'read:funcionarios:clinica',    -- gestor: read:funcionarios:entidade
+  'write:funcionarios:clinica',   -- gestor: write:funcionarios:entidade
+  'read:empresas:clinica',        -- gestor: ❌ NÃO (sem empresas)
+  'write:empresas:clinica',       -- gestor: ❌ NÃO (sem empresas)
+  'read:lotes:clinica',           -- gestor: read:lotes:entidade
+  'write:lotes:clinica'           -- gestor: write:lotes:entidade
 );
 ```
 
@@ -180,14 +179,14 @@ WHERE r.name = 'rh' AND p.name IN (
 
 ## 📋 Solução Proposta
 
-### Migration: Adicionar Role `gestor_entidade`
+### Migration: Adicionar Role `gestor`
 
 ```sql
--- Migration XXX_add_gestor_entidade_role.sql
+-- Migration XXX_add_gestor_role.sql
 
 BEGIN;
 
--- 1. Inserir role gestor_entidade
+-- 1. Inserir role gestor
 INSERT INTO public.roles (
   name,
   display_name,
@@ -196,7 +195,7 @@ INSERT INTO public.roles (
   active
 )
 VALUES (
-  'gestor_entidade',
+  'gestor',
   'Gestor de Entidade',
   'Gerencia funcionários de sua entidade privada (sem gestão de empresas intermediárias)',
   10,
@@ -275,11 +274,11 @@ VALUES
   )
 ON CONFLICT (name) DO NOTHING;
 
--- 3. Associar permissões ao role gestor_entidade
+-- 3. Associar permissões ao role gestor
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM public.roles r, public.permissions p
-WHERE r.name = 'gestor_entidade' AND p.name IN (
+WHERE r.name = 'gestor' AND p.name IN (
   'read:avaliacoes:entidade',
   'read:funcionarios:entidade',
   'write:funcionarios:entidade',
@@ -295,7 +294,7 @@ ON CONFLICT DO NOTHING;
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM public.roles r, public.permissions p
-WHERE r.name = 'gestor_entidade' AND p.name IN (
+WHERE r.name = 'gestor' AND p.name IN (
   'read:avaliacoes:own',      -- Pode ver próprias avaliações (caso teste)
   'read:funcionarios:own'     -- Pode ver próprios dados
 )
@@ -303,7 +302,7 @@ ON CONFLICT DO NOTHING;
 
 -- 5. Comentários
 COMMENT ON TABLE public.roles IS
-'Tabela de papéis (roles) do sistema RBAC. Incluindo gestor_entidade para entidades privadas sem gestão de empresas.';
+'Tabela de papéis (roles) do sistema RBAC. Incluindo gestor para entidades privadas sem gestão de empresas.';
 
 -- 6. Verificação
 DO $$
@@ -311,12 +310,12 @@ DECLARE
   role_count INTEGER;
   perm_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO role_count FROM public.roles WHERE name = 'gestor_entidade';
+  SELECT COUNT(*) INTO role_count FROM public.roles WHERE name = 'gestor';
   SELECT COUNT(*) INTO perm_count FROM public.role_permissions rp
   JOIN public.roles r ON r.id = rp.role_id
-  WHERE r.name = 'gestor_entidade';
+  WHERE r.name = 'gestor';
 
-  RAISE NOTICE '✅ Role gestor_entidade criado: % registro(s)', role_count;
+  RAISE NOTICE '✅ Role gestor criado: % registro(s)', role_count;
   RAISE NOTICE '✅ Permissões associadas: % permissão(ões)', perm_count;
 END $$;
 
@@ -329,7 +328,7 @@ COMMIT;
 
 ### Policies Atuais Usam `perfil='rh'`
 
-Várias policies precisam reconhecer `gestor_entidade`:
+Várias policies precisam reconhecer `gestor`:
 
 ```sql
 -- Exemplo atual (migration 001, linha 447):
@@ -355,10 +354,10 @@ USING (
 );
 
 -- Policy para Gestor Entidade (entidades com contratante_id)
-CREATE POLICY funcionarios_gestor_entidade ON public.funcionarios
+CREATE POLICY funcionarios_gestor ON public.funcionarios
 FOR SELECT TO PUBLIC
 USING (
-  current_user_perfil() = 'gestor_entidade'
+  current_user_perfil() = 'gestor'
   AND contratante_id = current_user_contratante_id()
 );
 ```
@@ -375,7 +374,7 @@ USING (
   )
   OR
   (
-    current_user_perfil() = 'gestor_entidade'
+    current_user_perfil() = 'gestor'
     AND contratante_id = current_user_contratante_id()
   )
 );
@@ -389,12 +388,12 @@ USING (
 
 ### 1. Database
 
-- [ ] **Criar migration `XXX_add_gestor_entidade_role.sql`**
-  - Inserir role `gestor_entidade` em `roles`
+- [ ] **Criar migration `XXX_add_gestor_role.sql`**
+  - Inserir role `gestor` em `roles`
   - Criar permissões específicas `*:entidade` em `permissions`
   - Associar permissões em `role_permissions`
 
-- [ ] **Criar migration `XXX_add_rls_policies_gestor_entidade.sql`**
+- [ ] **Criar migration `XXX_add_rls_policies_gestor.sql`**
   - Policies para `funcionarios`
   - Policies para `avaliacoes`
   - Policies para `lotes_avaliacao`
@@ -415,27 +414,27 @@ USING (
 
 ### 2. Backend
 
-- [x] **lib/db.ts** - Já usa `gestor_entidade` corretamente
-- [x] **middleware.ts** - Já valida `gestor_entidade` em rotas
+- [x] **lib/db.ts** - Já usa `gestor` corretamente
+- [x] **middleware.ts** - Já valida `gestor` em rotas
 - [ ] **Verificar RLS context em queries**
   - Garantir que `session.contratante_id` é setado via `SET LOCAL`
 
 ### 3. Testes
 
 - [ ] **Criar testes de role**
-  - Verificar que `gestor_entidade` pode acessar próprios funcionários
-  - Verificar que `gestor_entidade` NÃO pode acessar empresas
+  - Verificar que `gestor` pode acessar próprios funcionários
+  - Verificar que `gestor` NÃO pode acessar empresas
   - Verificar isolamento entre entidades diferentes
 
 - [ ] **Atualizar testes existentes**
-  - Fixtures que usam `gestor_entidade` devem ter role na tabela
-  - Validar RLS policies com perfil `gestor_entidade`
+  - Fixtures que usam `gestor` devem ter role na tabela
+  - Validar RLS policies com perfil `gestor`
 
 ### 4. Documentação
 
 - [ ] **Atualizar [GUIA-COMPLETO-RLS-RBAC.md](security/GUIA-COMPLETO-RLS-RBAC.md)**
-  - Adicionar seção sobre role `gestor_entidade`
-  - Matriz de permissões incluindo `gestor_entidade`
+  - Adicionar seção sobre role `gestor`
+  - Matriz de permissões incluindo `gestor`
 
 - [ ] **Atualizar [AUDITORIA-RLS-RBAC-COMPLETA.md](AUDITORIA-RLS-RBAC-COMPLETA.md)**
   - Marcar item #8 como resolvido (documentação vs implementação)
@@ -475,14 +474,14 @@ USING (
 
 ### Código Existente
 
-- [lib/db.ts:criarContaResponsavel](../lib/db.ts#L1621) - Atribui `gestor_entidade`
-- [middleware.ts](../middleware.ts) - Valida perfil `gestor_entidade`
+- [lib/db.ts:criarContaResponsavel](../lib/db.ts#L1621) - Atribui `gestor`
+- [middleware.ts](../middleware.ts) - Valida perfil `gestor`
 - [app/api/entidade/\*\*](../app/api/entidade/) - Rotas para gestores de entidade
 
 ### Migrations Relacionadas
 
 - [001_security_rls_rbac.sql](../database/migrations/001_security_rls_rbac.sql) - Tabela `roles` original
-- [073_fix_funcionarios_clinica_check_contratante.sql](../database/migrations/073_fix_funcionarios_clinica_check_contratante.sql) - Constraints para `gestor_entidade`
+- [073_fix_funcionarios_clinica_check_contratante.sql](../database/migrations/073_fix_funcionarios_clinica_check_contratante.sql) - Constraints para `gestor`
 - [108_add_contratante_id_to_funcionarios.sql](../database/migrations/108_add_contratante_id_to_funcionarios.sql) - Suporte a entidades
 
 ### Documentação
@@ -508,8 +507,8 @@ A análise em [ANALISE-CRITICA-RESPONSAVEL.md](ANALISE-CRITICA-RESPONSAVEL.md) e
 
 1. Gestor entidade realmente não deve estar na tabela `funcionarios`
 2. Constraint protetora é solução correta para isso
-3. Código já implementa lógica correta (`gestor_entidade` via `contratantes_senhas`)
-4. Migration 201 já removeu `gestor_entidade` de `funcionarios`
+3. Código já implementa lógica correta (`gestor` via `entidades_senhas`)
+4. Migration 201 já removeu `gestor` de `funcionarios`
 
 ### 🎯 Problema Real
 
@@ -529,4 +528,4 @@ A análise em [ANALISE-CRITICA-RESPONSAVEL.md](ANALISE-CRITICA-RESPONSAVEL.md) e
 
 ---
 
-**Conclusão:** Role `gestor_entidade` é NECESSÁRIO na tabela `roles` para consistência arquitetural e funcionamento completo do RBAC. Implementação é simples e de baixo risco. ✅
+**Conclusão:** Role `gestor` é NECESSÁRIO na tabela `roles` para consistência arquitetural e funcionamento completo do RBAC. Implementação é simples e de baixo risco. ✅

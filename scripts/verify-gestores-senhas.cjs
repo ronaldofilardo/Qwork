@@ -36,7 +36,7 @@ async function verificarIntegridadeSenhas() {
         c.ativa,
         c.criado_em
       FROM contratantes c
-      LEFT JOIN contratantes_senhas cs ON cs.contratante_id = c.id 
+      LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id 
         AND cs.cpf = c.responsavel_cpf
       WHERE c.status = 'aprovado' 
         AND c.ativa = true 
@@ -85,9 +85,9 @@ async function verificarIntegridadeSenhas() {
         // Gerar hash
         const hash = await bcrypt.hash(senha, 10);
 
-        // Inserir em contratantes_senhas
+        // Inserir em entidades_senhas
         await client.query(
-          'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+          'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
           [contratante.id, contratante.responsavel_cpf, hash]
         );
 

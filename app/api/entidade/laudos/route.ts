@@ -14,7 +14,7 @@ import { requireEntity } from '@/lib/session';
 export async function GET(request: NextRequest) {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     const searchParams = request.nextUrl.searchParams;
     const page = parseInt(searchParams.get('page') || '1');
@@ -24,10 +24,11 @@ export async function GET(request: NextRequest) {
 
     // Construir WHERE clause para busca
     let whereClause = 'WHERE f.contratante_id = $1';
-    const params: any[] = [contratanteId];
+    const params: any[] = [entidadeId];
 
     if (busca) {
-      whereClause += ` AND (la.codigo ILIKE $${params.length + 1} OR la.titulo ILIKE $${params.length + 1})`;
+      // Buscar por ID do lote (codigo e titulo foram removidos)
+      whereClause += ` AND CAST(la.id AS TEXT) ILIKE $${params.length + 1}`;
       params.push(`%${busca}%`);
     }
 
@@ -37,7 +38,7 @@ export async function GET(request: NextRequest) {
       SELECT
         l.id,
         l.lote_id,
-        c.nome as contratante_nome,
+        c.nome as entidade_nome,
         e.nome as emissor_nome,
         l.enviado_em,
         l.hash_pdf,
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
       JOIN funcionarios f ON f.empresa_id = la.empresa_id OR f.contratante_id = $1
-      LEFT JOIN contratantes c ON c.id = f.contratante_id
+      LEFT JOIN entidades c ON c.id = f.contratante_id
       LEFT JOIN funcionarios e ON e.cpf = l.emissor_cpf
       ${whereClause}
       ORDER BY l.enviado_em DESC

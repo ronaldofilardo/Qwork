@@ -168,7 +168,7 @@ module.exports = async function globalSetup() {
 
     // If core post-migration tables exist, skip full migration application to speed up tests
     const coreCheck = await client.query(
-      "SELECT to_regclass('public.contratantes_senhas') as cs, to_regclass('public.planos') as planos, to_regclass('public.contratacao_personalizada') as cp"
+      "SELECT to_regclass('public.entidades_senhas') as cs, to_regclass('public.planos') as planos, to_regclass('public.contratacao_personalizada') as cp"
     );
     if (
       coreCheck.rows[0].cs &&

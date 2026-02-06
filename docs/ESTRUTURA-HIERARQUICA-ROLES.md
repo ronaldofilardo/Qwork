@@ -144,7 +144,7 @@ cpf = "44444444444", nome = "Pedro", empresa_id = 20, clinica_id = 1
 contratante_id = 100, tipo = "entidade", nome = "Grande Empresa X"
 
 -- Gestor da entidade
-cpf = "55555555555", perfil = "gestor_entidade", contratante_id = 100
+cpf = "55555555555", perfil = "gestor", contratante_id = 100
 -- (NÃO tem empresa_id, NÃO tem clinica_id)
 
 -- Funcionários DA ENTIDADE
@@ -303,12 +303,12 @@ WHERE empresa_id = $1
 
 ```typescript
 // Middleware
-if (pathname.startsWith('/api/entidade') && session.perfil !== 'gestor_entidade') {
+if (pathname.startsWith('/api/entidade') && session.perfil !== 'gestor') {
   return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
 }
 
 // Autorização
-const session = requireGestorEntidade(); // Apenas perfil 'gestor_entidade'
+const session = requireGestorEntidade(); // Apenas perfil 'gestor'
 
 // Query
 WHERE contratante_id = $1  -- contratante do gestor

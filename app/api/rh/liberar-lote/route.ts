@@ -267,6 +267,15 @@ export const POST = async (req: Request) => {
     // Cada query roda em autocommit (como no fluxo Entidade), tornando o sistema mais resiliente
     // Se a reserva do laudo falhar (trigger ou concorrência), o lote e avaliações não são perdidos
 
+    // Verificar se o CPF do usuário está presente em `entidades_senhas`.
+    // A FK `lotes_avaliacao.liberado_por` referencia `entidades_senhas(cpf)`,
+    // então somente atribuímos o CPF se existir o registro — caso contrário usamos NULL.
+    const liberadoPorCheck = await query<{ exists: boolean }>(
+      `SELECT 1 FROM entidades_senhas WHERE cpf = $1 LIMIT 1`,
+      [user.cpf]
+    );
+    const liberadoPor = liberadoPorCheck.rowCount > 0 ? user.cpf : null;
+
     // Criar o lote - Gestores RH usam query direta (não RLS)
     // Usa apenas ID (sem geração de codigo)
     const loteResult = await queryAsGestorRH<LoteResult>(
@@ -282,7 +291,7 @@ export const POST = async (req: Request) => {
           `Lote ${numeroOrdem} liberado para ${empresaCheck.rows[0].nome}. Inclui ${funcionarios.length} funcionário(s) elegíveis.`,
         tipo || 'completo',
         'ativo', // Status ativo para que vá diretamente para "laudo-para-emitir"
-        user.cpf,
+        liberadoPor,
         numeroOrdem,
       ]
     );

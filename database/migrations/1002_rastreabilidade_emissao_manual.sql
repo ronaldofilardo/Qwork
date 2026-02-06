@@ -20,12 +20,12 @@ BEGIN;
 -- ============================================================================
 \echo '1. Adicionando campos de rastreabilidade em fila_emissao...'
 
--- Campo: CPF do solicitante (RH ou gestor_entidade)
+-- Campo: CPF do solicitante (RH ou gestor)
 ALTER TABLE fila_emissao
 ADD COLUMN IF NOT EXISTS solicitado_por VARCHAR(11);
 
 COMMENT ON COLUMN fila_emissao.solicitado_por IS 
-'CPF do RH ou gestor_entidade que solicitou a emissão manual do laudo';
+'CPF do RH ou gestor que solicitou a emissão manual do laudo';
 
 -- Campo: Timestamp da solicitação
 ALTER TABLE fila_emissao
@@ -34,12 +34,12 @@ ADD COLUMN IF NOT EXISTS solicitado_em TIMESTAMP DEFAULT NOW();
 COMMENT ON COLUMN fila_emissao.solicitado_em IS 
 'Timestamp exato da solicitação manual de emissão';
 
--- Campo: Tipo de solicitante (rh, gestor_entidade, admin)
+-- Campo: Tipo de solicitante (rh, gestor, admin)
 ALTER TABLE fila_emissao
 ADD COLUMN IF NOT EXISTS tipo_solicitante VARCHAR(20);
 
 COMMENT ON COLUMN fila_emissao.tipo_solicitante IS 
-'Perfil do usuário que solicitou: rh, gestor_entidade ou admin';
+'Perfil do usuário que solicitou: rh, gestor ou admin';
 
 \echo '   ✓ Campos adicionados com sucesso'
 
@@ -51,7 +51,7 @@ COMMENT ON COLUMN fila_emissao.tipo_solicitante IS
 -- Constraint: tipo_solicitante deve ser um valor válido
 ALTER TABLE fila_emissao
 ADD CONSTRAINT fila_emissao_tipo_solicitante_check
-CHECK (tipo_solicitante IN ('rh', 'gestor_entidade', 'admin') OR tipo_solicitante IS NULL);
+CHECK (tipo_solicitante IN ('rh', 'gestor', 'admin') OR tipo_solicitante IS NULL);
 
 -- Constraint: se solicitado_por existe, tipo_solicitante deve existir também
 ALTER TABLE fila_emissao
@@ -164,7 +164,7 @@ GROUP BY fe.solicitado_por, fe.tipo_solicitante
 ORDER BY total_solicitacoes DESC;
 
 COMMENT ON VIEW v_relatorio_emissoes_usuario IS 
-'Relatório estatístico de emissões por usuário (RH ou gestor_entidade) para auditoria e compliance';
+'Relatório estatístico de emissões por usuário (RH ou gestor) para auditoria e compliance';
 
 \echo '   ✓ View v_relatorio_emissoes_usuario criada'
 
@@ -194,7 +194,7 @@ BEGIN
     FROM laudos l
     INNER JOIN fila_emissao fe ON l.lote_id = fe.lote_id
     LEFT JOIN funcionarios f ON fe.solicitado_por = f.cpf
-    LEFT JOIN contratantes_senhas cs ON fe.solicitado_por = cs.cpf
+    LEFT JOIN entidades_senhas cs ON fe.solicitado_por = cs.cpf
     WHERE l.id = p_laudo_id
     AND fe.solicitado_por IS NOT NULL;
 END;

@@ -26,7 +26,7 @@
 - ✅ Corrigida - planos fixos 1, 2, 3 criados
 - ✅ Plano personalizado ID 4 existe
 
-### 5. Tabela `contratantes_senhas`
+### 5. Tabela `entidades_senhas`
 
 - ✅ Estrutura correta
 - ✅ Coluna `primeira_senha_alterada` existe (não `primeiro_acesso`)

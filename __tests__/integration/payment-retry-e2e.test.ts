@@ -102,11 +102,11 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
 
     if (cadastroResponse.status !== 201) {
       console.warn(
-        'Cadastro endpoint retornou erro, fazendo fallback via createContratante',
+        'Cadastro endpoint retornou erro, fazendo fallback via createEntidade',
         cadastroData
       );
-      const { createContratante } = await import('@/lib/db');
-      const contratante = await createContratante({
+      const { createEntidade } = await import('@/lib/db');
+      const contratante = await createEntidade({
         tipo: 'entidade',
         nome: 'Empresa E2E Retry',
         cnpj: '11111111000191',

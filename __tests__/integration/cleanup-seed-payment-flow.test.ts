@@ -8,7 +8,7 @@ describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
         'DELETE FROM pagamentos',
         'DELETE FROM contratos',
         'DELETE FROM planos p',
-        'DELETE FROM contratantes_senhas',
+        'DELETE FROM entidades_senhas',
         'DELETE FROM contratantes_funcionarios',
         'DELETE FROM lotes_avaliacao_funcionarios',
         'DELETE FROM laudos',

@@ -23,7 +23,7 @@ export const GET = async (_req: Request) => {
         ec.nome as empresa_nome,
         c.nome as clinica_nome,
         COUNT(a.id) as total_avaliacoes,
-        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+        COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
         l.status as status_laudo,
         l.id as laudo_id,
         CASE
@@ -39,7 +39,7 @@ export const GET = async (_req: Request) => {
       GROUP BY la.id, la.liberado_em, ec.nome, c.nome, l.status, l.id
       HAVING
         COUNT(a.id) > 0
-        AND COUNT(a.id) = COUNT(CASE WHEN a.status = 'concluida' THEN 1 END)
+        AND COUNT(a.id) = COUNT(CASE WHEN a.status = 'concluido' THEN 1 END)
         AND (l.id IS NULL)
       ORDER BY la.liberado_em DESC
     `,
@@ -79,3 +79,4 @@ export const GET = async (_req: Request) => {
     );
   }
 };
+

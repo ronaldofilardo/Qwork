@@ -109,7 +109,7 @@ INSERT INTO notificacoes (
 SELECT 
     'lote_concluido' as tipo,
     'media' as prioridade,
-    la.gestor_rh_cpf as destinatario_cpf,
+    la.rh_cpf as destinatario_cpf,
     'rh' as destinatario_tipo,
     'Lote de Avaliações Concluído' as titulo,
     'O lote ' || la.codigo || ' foi concluído com ' || 
@@ -120,12 +120,12 @@ SELECT
 FROM lotes_avaliacao la
 WHERE la.status = 'concluido'
   AND la.tipo = 'clinica'
-  AND la.gestor_rh_cpf IS NOT NULL
+  AND la.rh_cpf IS NOT NULL
   AND NOT EXISTS (
       SELECT 1 FROM notificacoes n 
       WHERE n.lote_id = la.id 
         AND n.tipo = 'lote_concluido'
-        AND n.destinatario_cpf = la.gestor_rh_cpf
+        AND n.destinatario_cpf = la.rh_cpf
   );
 
 -- Criar notificações para Gestor Entidade sobre lotes recém-concluídos
@@ -143,7 +143,7 @@ SELECT
     'lote_concluido' as tipo,
     'media' as prioridade,
     u.cpf as destinatario_cpf,
-    'gestor_entidade' as destinatario_tipo,
+    'gestor' as destinatario_tipo,
     'Lote de Avaliações Concluído' as titulo,
     'O lote ' || la.codigo || ' foi concluído com ' || 
     (SELECT COUNT(*) FROM avaliacoes WHERE lote_id = la.id AND status = 'concluida') || 
@@ -151,7 +151,7 @@ SELECT
     la.id as lote_id,
     NOW() as criado_em
 FROM lotes_avaliacao la
-JOIN usuarios u ON u.contratante_id = la.contratante_id AND u.perfil = 'gestor_entidade'
+JOIN usuarios u ON u.contratante_id = la.contratante_id AND u.perfil = 'gestor'
 WHERE la.status = 'concluido'
   AND la.tipo = 'entidade'
   AND la.contratante_id IS NOT NULL

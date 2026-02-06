@@ -7,7 +7,7 @@ describe('GET /api/entidade/funcionarios (denormalized columns present)', () => 
   beforeAll(() => {
     (sessionMod.requireEntity as jest.MockedFunction<any>).mockResolvedValue({
       cpf: '99900011122',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 46,
     });
   });

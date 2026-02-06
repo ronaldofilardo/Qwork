@@ -46,7 +46,7 @@ export const GET = async (_req: Request) => {
       JOIN lotes_avaliacao la ON a.lote_id = la.id
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
       WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
         AND a.envio >= NOW() - INTERVAL '7 days'
 
       UNION ALL

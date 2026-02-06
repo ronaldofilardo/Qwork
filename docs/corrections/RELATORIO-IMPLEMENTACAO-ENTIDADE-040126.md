@@ -16,10 +16,10 @@ Todas as migrations foram aplicadas com sucesso no banco de desenvolvimento (`nr
 - **Descrição**: Criada função para recuperar contratante_id do contexto RLS
 - **Arquivo**: `database/migrations/apply_migrations_manual.sql`
 
-### ✅ Migration 064 - Fix RLS para gestor_entidade
+### ✅ Migration 064 - Fix RLS para gestor
 
 - **Status**: Aplicada com sucesso
-- **Descrição**: Políticas RLS atualizadas para aceitar perfil `gestor_entidade`
+- **Descrição**: Políticas RLS atualizadas para aceitar perfil `gestor`
 - **Arquivo**: `database/migrations/064_fix_entidade_perfil_rls.sql`
 - **Políticas criadas**:
   - `lotes_entidade_select`
@@ -81,10 +81,10 @@ SELECT * FROM vw_lotes_por_contratante WHERE tipo_contratante = 'entidade';
 - ✅ Retorna dados de entidades corretamente
 - ✅ Contratante_id 56 (RELEGERE) aparece no resultado
 
-### ✅ 2. RLS para gestor_entidade
+### ✅ 2. RLS para gestor
 
 ```sql
-SET app.current_user_perfil = 'gestor_entidade';
+SET app.current_user_perfil = 'gestor';
 SET app.current_user_contratante_id = '56';
 SELECT id, codigo, titulo, status FROM lotes_avaliacao WHERE contratante_id = 56;
 ```
@@ -115,8 +115,8 @@ WHERE table_name = 'laudos' AND constraint_name = 'laudos_lote_id_unique';
 **Motivo das falhas**: Banco de teste (`nr-bps_db_test`) possui schema diferente do desenvolvimento:
 
 - ❌ Falta migration 061 para adicionar `contratante_id` em `lotes_avaliacao`
-- ❌ Constraint `funcionarios_clinica_check` não permite `gestor_entidade` sem `clinica_id`
-- ❌ Falta enum `perfil` atualizado com `gestor_entidade`
+- ❌ Constraint `funcionarios_clinica_check` não permite `gestor` sem `clinica_id`
+- ❌ Falta enum `perfil` atualizado com `gestor`
 
 ### Testes que Passam
 
@@ -141,7 +141,7 @@ O fluxo está **100% funcional** no banco `nr-bps_db`:
 1. ✅ **Criação de contratante** tipo entidade (migration 061 aplicada)
 2. ✅ **Criação de funcionários** com `contratante_id` e sem `empresa_id`
 3. ✅ **Criação de lotes** com `contratante_id` e sem `empresa_id`
-4. ✅ **RLS** permite acesso via `gestor_entidade` + `contratante_id`
+4. ✅ **RLS** permite acesso via `gestor` + `contratante_id`
 5. ✅ **Geração de laudos** via API `/api/emissor/laudos/[loteId]` com LEFT JOIN
 6. ✅ **Views de observability** mostram métricas de entidades
 7. ✅ **Audit logs** registram `contratante_id` para rastreamento
@@ -185,8 +185,8 @@ O fluxo está **100% funcional** no banco `nr-bps_db`:
 ### Para Ambiente de Teste
 
 1. ❌ Aplicar migration 061 no `nr-bps_db_test`
-2. ❌ Atualizar constraint `funcionarios_clinica_check` para aceitar `gestor_entidade`
-3. ❌ Adicionar `gestor_entidade` ao enum `perfil`
+2. ❌ Atualizar constraint `funcionarios_clinica_check` para aceitar `gestor`
+3. ❌ Adicionar `gestor` ao enum `perfil`
 4. ❌ Executar testes E2E novamente
 
 ### Para Desenvolvimento Futuro
@@ -202,7 +202,7 @@ O fluxo está **100% funcional** no banco `nr-bps_db`:
 ### Query Manual RLS - Banco nr-bps_db
 
 ```sql
-SET app.current_user_perfil = 'gestor_entidade';
+SET app.current_user_perfil = 'gestor';
 SET app.current_user_contratante_id = '56';
 SELECT * FROM lotes_avaliacao WHERE contratante_id = 56;
 ```

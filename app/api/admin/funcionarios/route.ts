@@ -3,6 +3,17 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
 
+/**
+ * ⚠️ AVISO: Este arquivo está na pasta ERRADA!
+ * Caminho atual: /api/admin/funcionarios
+ * Caminho correto: /api/rh/funcionarios
+ *
+ * Este endpoint requer perfil 'rh', não 'admin'.
+ * Admin NÃO deve ter acesso a funcionários de empresas.
+ *
+ * TODO: Mover para app/api/rh/funcionarios/route.ts
+ */
+
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {

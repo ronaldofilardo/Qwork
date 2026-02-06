@@ -119,9 +119,9 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 3. CRIAR TABELA contratantes_senhas
+-- 3. CRIAR TABELA entidades_senhas
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS contratantes_senhas (
+CREATE TABLE IF NOT EXISTS entidades_senhas (
     id SERIAL PRIMARY KEY,
     contratante_id INTEGER NOT NULL,
     cpf VARCHAR(11) NOT NULL UNIQUE,
@@ -130,23 +130,23 @@ CREATE TABLE IF NOT EXISTS contratantes_senhas (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_contratantes_senhas_contratante 
+    CONSTRAINT fk_entidades_senhas_contratante 
         FOREIGN KEY (contratante_id) 
         REFERENCES contratantes(id) 
         ON DELETE CASCADE,
     
-    CONSTRAINT contratantes_senhas_cpf_check 
+    CONSTRAINT entidades_senhas_cpf_check 
         CHECK (cpf ~ '^\d{11}$')
 );
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_senhas_cpf 
-ON contratantes_senhas(cpf);
+CREATE INDEX IF NOT EXISTS idx_entidades_senhas_cpf 
+ON entidades_senhas(cpf);
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_senhas_contratante 
-ON contratantes_senhas(contratante_id);
+CREATE INDEX IF NOT EXISTS idx_entidades_senhas_contratante 
+ON entidades_senhas(contratante_id);
 
 -- Trigger para updated_at
-CREATE OR REPLACE FUNCTION update_contratantes_senhas_updated_at()
+CREATE OR REPLACE FUNCTION update_entidades_senhas_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
@@ -154,15 +154,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_contratantes_senhas_updated_at ON contratantes_senhas;
-CREATE TRIGGER trg_contratantes_senhas_updated_at
-    BEFORE UPDATE ON contratantes_senhas
+DROP TRIGGER IF EXISTS trg_entidades_senhas_updated_at ON entidades_senhas;
+CREATE TRIGGER trg_entidades_senhas_updated_at
+    BEFORE UPDATE ON entidades_senhas
     FOR EACH ROW
-    EXECUTE FUNCTION update_contratantes_senhas_updated_at();
+    EXECUTE FUNCTION update_entidades_senhas_updated_at();
 
-COMMENT ON TABLE contratantes_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-COMMENT ON COLUMN contratantes_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
-COMMENT ON COLUMN contratantes_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
+COMMENT ON TABLE entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
+COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN entidades_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
 
 -- ============================================================================
 -- 4. CRIAR ENUM tipo_plano
@@ -357,9 +357,9 @@ END $$;
 -- Criar senha para o contratante entidade se não existir
 DO $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM contratantes_senhas WHERE cpf = '00000000000') THEN
+    IF NOT EXISTS (SELECT 1 FROM entidades_senhas WHERE cpf = '00000000000') THEN
         -- Senha: 123456 (hash bcrypt)
-        INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
+        INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
         SELECT 
             id, 
             responsavel_cpf, 
@@ -401,8 +401,8 @@ BEGIN
     RAISE NOTICE '✓ laudos.hash_pdf: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
     
     -- Verificar tabelas
-    SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'contratantes_senhas';
-    RAISE NOTICE '✓ Tabela contratantes_senhas: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
+    SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'entidades_senhas';
+    RAISE NOTICE '✓ Tabela entidades_senhas: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
     
     SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'planos';
     RAISE NOTICE '✓ Tabela planos: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
@@ -420,7 +420,7 @@ BEGIN
     SELECT COUNT(*) INTO v_count FROM contratantes WHERE tipo = 'entidade';
     RAISE NOTICE '✓ Contratantes tipo entidade: %', v_count;
     
-    SELECT COUNT(*) INTO v_count FROM contratantes_senhas;
+    SELECT COUNT(*) INTO v_count FROM entidades_senhas;
     RAISE NOTICE '✓ Senhas de contratantes: %', v_count;
     
     RAISE NOTICE '============================================================================';

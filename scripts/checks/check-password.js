@@ -3,7 +3,7 @@ import { query } from './lib/db.ts';
 async function checkPassword() {
   try {
     const result = await query(
-      'SELECT c.nome, c.cnpj, cs.cpf, cs.senha_hash FROM contratantes c JOIN contratantes_senhas cs ON c.id = cs.contratante_id WHERE cs.cpf = $1',
+      'SELECT c.nome, c.cnpj, cs.cpf, cs.senha_hash FROM contratantes c JOIN entidades_senhas cs ON c.id = cs.contratante_id WHERE cs.cpf = $1',
       ['87545772920']
     );
 

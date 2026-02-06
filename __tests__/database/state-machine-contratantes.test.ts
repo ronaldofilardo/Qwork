@@ -6,9 +6,9 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { query } from '@/lib/db';
 import {
-  createContratante,
-  aprovarContratante,
-  rejeitarContratante,
+  createEntidade,
+  aprovarEntidade,
+  rejeitarEntidade,
   solicitarReanalise,
 } from '@/lib/db';
 
@@ -47,7 +47,7 @@ describe('Máquina de Estado - Contratantes', () => {
         testCPF,
       ]);
 
-      // Usar a função createContratante existente ao invés de INSERT manual
+      // Usar a função createEntidade existente ao invés de INSERT manual
       const contratanteData = {
         tipo: 'clinica' as const,
         nome: 'Clínica Teste Estado',
@@ -69,7 +69,7 @@ describe('Máquina de Estado - Contratantes', () => {
         pagamento_confirmado: true,
       };
 
-      const result = await createContratante(contratanteData, testSession);
+      const result = await createEntidade(contratanteData, testSession);
 
       expect(result.status).toBe('pendente');
       expect(result.ativa).toBe(false);
@@ -111,7 +111,7 @@ describe('Máquina de Estado - Contratantes', () => {
         plano_id: 1,
       };
 
-      const result = await createContratante(contratanteData, testSession);
+      const result = await createEntidade(contratanteData, testSession);
       contratanteId = result.id;
     });
 

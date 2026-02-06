@@ -89,7 +89,7 @@ describe('Correção: Emissão Manual de Laudos (31/01/2026)', () => {
     // Criar avaliação concluída para o lote (usar funcionario_cpf, não funcionario_id)
     await query(
       `INSERT INTO avaliacoes (lote_id, funcionario_cpf, status, criado_em, atualizado_em)
-       VALUES ($1, $2, 'concluida', NOW(), NOW())`,
+       VALUES ($1, $2, 'concluido', NOW(), NOW())`,
       [testLoteId, '12345678901'] // CPF do funcionário criado acima
     );
   });
@@ -343,3 +343,4 @@ describe('Correção: Emissão Manual de Laudos (31/01/2026)', () => {
     });
   });
 });
+

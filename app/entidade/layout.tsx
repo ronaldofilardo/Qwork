@@ -56,7 +56,7 @@ export default function EntidadeLayout({
         }
         const sessionData = await sessionRes.json();
 
-        if (sessionData.perfil !== 'gestor_entidade') {
+        if (sessionData.perfil !== 'gestor') {
           router.push('/login');
           return;
         }

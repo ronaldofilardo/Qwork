@@ -20,7 +20,7 @@ declare global {
        */
       login(cpf: string, senha: string, perfil?: string): Chainable<void>;
       /**
-       * Convenience: login as an entity manager (gestor_entidade)
+       * Convenience: login as an entity manager (gestor)
        */
       loginAsEntidade(): Chainable<void>;
 
@@ -72,7 +72,7 @@ Cypress.Commands.add('loginAsEntidade', () => {
       body: {
         cpf: '00000000000',
         nome: 'Gestor Entidade Teste',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: 2,
       },
       failOnStatusCode: false,

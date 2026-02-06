@@ -193,7 +193,7 @@ describe('Regressão Visual - Responsividade', () => {
             nome: 'RH',
             tipo_usuario: 'rh',
             email: 'rh@test.com',
-            contratanteId: '123',
+            entidadeId: '123',
           },
         },
         status: 'authenticated',

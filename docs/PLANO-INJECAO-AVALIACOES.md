@@ -99,7 +99,7 @@ Esta distribuição simula um cenário mais realista onde:
 
 🎯 Para cada funcionário existente:
 
-- Cria 1 avaliação com status 'concluida'
+- Cria 1 avaliação com status 'concluido'
 - Gera 37 respostas aleatórias (todos os itens dos 10 grupos)
 - Calcula scores por grupo
 - Categoriza resultados (baixo/médio/alto)
@@ -128,7 +128,7 @@ liberado_por = 04703084945 (CPF do RH)
 ```sql
 funcionario_cpf = CPF do funcionário existente
 lote_id = ID do lote criado
-status = 'concluida'
+status = 'concluido'
 inicio = NOW()
 envio = NOW()
 grupo_atual = 10 (completa)
@@ -260,7 +260,7 @@ SELECT
   la.liberado_em,
   la.finalizado_em,
   COUNT(a.id) as total_avaliacoes,
-  COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as concluidas
+  COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as concluidas
 FROM lotes_avaliacao la
 LEFT JOIN avaliacoes a ON la.id = a.lote_id
 WHERE la.empresa_id = (
@@ -405,7 +405,7 @@ node scripts/injetar-avaliacoes-aleatorias.mjs
 ### Sobre Avaliações
 
 - 1 avaliação por funcionário (não histórico)
-- Status 'concluida' com data atual
+- Status 'concluido' com data atual
 - 37 respostas por avaliação (todos os 10 grupos)
 - Distribuição de respostas é ponderada para realismo
 
@@ -455,3 +455,4 @@ const grupos = [
 **Criado em**: 31/01/2026  
 **Versão**: 1.0  
 **Autor**: Sistema QWork
+

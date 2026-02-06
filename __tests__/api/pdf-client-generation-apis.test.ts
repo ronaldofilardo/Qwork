@@ -83,7 +83,7 @@ describe('API: Laudo HTML Generation', () => {
           {
             id: 1,
             funcionario_cpf: '98765432100',
-            status: 'concluida',
+            status: 'concluido',
             funcionario_nome: 'João Silva',
             funcao: 'Operador',
             setor: 'TI',
@@ -153,7 +153,7 @@ describe('API: Relatório Individual HTML Generation', () => {
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 1 },
     });
     requireRH.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       cpf: '12345678901',
       clinica_id: 1,
     });
@@ -174,7 +174,7 @@ describe('API: Relatório Individual HTML Generation', () => {
           {
             id: 1,
             funcionario_cpf: '98765432100',
-            status: 'concluida',
+            status: 'concluido',
             concluida_em: new Date(),
             funcionario_nome: 'João Silva',
             perfil: 'operacional',
@@ -214,7 +214,7 @@ describe('API: Relatório Individual HTML Generation', () => {
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 1 },
     });
     requireRH.mockResolvedValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       cpf: '12345678901',
       clinica_id: 1,
     });
@@ -258,7 +258,7 @@ describe('API: Export Funcionários CSV', () => {
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 1 },
     });
     requireRH.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       cpf: '12345678901',
       clinica_id: 1,
     });
@@ -285,7 +285,7 @@ describe('API: Export Funcionários CSV', () => {
             funcao: 'Desenvolvedor',
             matricula: '001',
             funcionario_status: 'ativo',
-            avaliacao_status: 'concluida',
+            avaliacao_status: 'concluido',
             concluida_em: new Date('2025-01-15'),
             status_descricao: 'Concluída',
           },
@@ -316,7 +316,7 @@ describe('API: Export Funcionários CSV', () => {
       user: { cpf: '12345678901', role: 'entidade', clinica_id: 2 }, // Clínica diferente
     });
     requireRH.mockReturnValue({
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       cpf: '12345678901',
       clinica_id: 2,
     });

@@ -7,8 +7,7 @@
 -- CLÍNICAS (tipo = 'clinica')
 -- ============================================================================
 
-INSERT INTO
-    contratantes (
+INSERT INTO entidades (
         tipo,
         nome,
         cnpj,
@@ -113,8 +112,7 @@ VALUES
 -- ENTIDADES (tipo = 'entidade')
 -- ============================================================================
 
-INSERT INTO
-    contratantes (
+INSERT INTO entidades (
         tipo,
         nome,
         cnpj,
@@ -240,7 +238,7 @@ VALUES
         NULL
     );
 
-UPDATE contratantes
+UPDATE entidades
 SET
     observacoes_reanalise = 'Por favor, enviar cópia legível do contrato social. O documento enviado está com qualidade ruim.'
 WHERE
@@ -256,11 +254,11 @@ WHERE
 -- Nota: Ajustar IDs conforme dados reais
 
 -- Exemplo: Funcionário ID 1 vinculado à Clínica 1
--- INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+-- INSERT INTO contratantes_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
 -- VALUES (1, 1, 'clinica', true);
 
 -- Exemplo: Funcionário ID 2 vinculado à Entidade 1
--- INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+-- INSERT INTO contratantes_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
 -- VALUES (2, 4, 'entidade', true);
 
 \echo 'Seed data inserido com sucesso!'
@@ -270,4 +268,4 @@ WHERE
 \echo '- 4 Entidades (2 aprovadas, 1 pendente, 1 em reanálise)'
 \echo ''
 \echo 'Para visualizar:'
-\echo 'SELECT tipo, nome, status FROM contratantes ORDER BY tipo, status;'
+\echo 'SELECT tipo, nome, status FROM entidades ORDER BY tipo, status;'

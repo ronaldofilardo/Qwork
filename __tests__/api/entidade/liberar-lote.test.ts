@@ -24,7 +24,7 @@ describe('/api/entidade/liberar-lote', () => {
     // Mock session
     mockRequireEntity.mockResolvedValue({
       cpf: '999',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 123,
     } as any);
 
@@ -126,7 +126,7 @@ describe('/api/entidade/liberar-lote', () => {
   it('retorna erro quando não há funcionários elegíveis para nenhuma empresa', async () => {
     mockRequireEntity.mockResolvedValue({
       cpf: '999',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 123,
     } as any);
 

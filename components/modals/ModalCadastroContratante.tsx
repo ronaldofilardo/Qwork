@@ -3,7 +3,7 @@
 import { FormEvent, useEffect } from 'react';
 import { X, Check, AlertCircle, Building2, Stethoscope } from 'lucide-react';
 import QworkLogo from '@/components/QworkLogo';
-import { TipoContratante } from '@/lib/cadastroContratante';
+import { TipoEntidade } from '@/lib/cadastroContratante';
 
 import PlanoStep from './ModalCadastroContratante/PlanoStep';
 import { useCadastroContratante } from '@/hooks/useCadastroContratante';
@@ -22,7 +22,7 @@ type _Etapa =
 interface ModalCadastroContratanteProps {
   isOpen: boolean;
   onClose: () => void;
-  tipo?: TipoContratante; // Agora opcional
+  tipo?: TipoEntidade; // Agora opcional
 }
 
 interface _DadosContratante {
@@ -422,7 +422,7 @@ export default function ModalCadastroContratante({
                           value="entidade"
                           checked={tipo === 'entidade'}
                           onChange={(e) =>
-                            setTipo(e.target.value as TipoContratante)
+                            setTipo(e.target.value as TipoEntidade)
                           }
                           className="sr-only"
                         />
@@ -452,7 +452,7 @@ export default function ModalCadastroContratante({
                           value="clinica"
                           checked={tipo === 'clinica'}
                           onChange={(e) =>
-                            setTipo(e.target.value as TipoContratante)
+                            setTipo(e.target.value as TipoEntidade)
                           }
                           className="sr-only"
                         />

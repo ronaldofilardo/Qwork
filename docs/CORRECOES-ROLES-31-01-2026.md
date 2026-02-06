@@ -7,17 +7,18 @@ Corrigir a separação de responsabilidades entre os papéis do sistema conforme
 - **admin** - totalmente independente (gestão da plataforma)
 - **emissor** - totalmente independente (emissão de laudos)
 - **rh** - gestor de clínica (gerencia **empresas clientes** da clínica e os **funcionários dessas empresas**)
-- **gestor_entidade** - gestor de entidade (gerencia apenas seus próprios funcionários)
+- **gestor** - gestor de entidade (gerencia apenas seus próprios funcionários)
 
 ## Problema Identificado
 
-A função `requireRH()` em `lib/auth-require.ts` estava permitindo acesso tanto para `rh` quanto para `gestor_entidade`, causando confusão de responsabilidades e violando o princípio de segregação de funções.
+A função `requireRH()` em `lib/auth-require.ts` estava permitindo acesso tanto para `rh` quanto para `gestor`, causando confusão de responsabilidades e violando o princípio de segregação de funções.
 
 ## Correções Realizadas
 
 ### 1. Middleware de Autenticação (`middleware.ts`)
 
 ✅ **Antes:**
+
 ```typescript
 if (session && session.perfil !== 'rh') {
   // Bloqueava apenas não-RH
@@ -26,9 +27,10 @@ if (session && session.perfil !== 'rh') {
 ```
 
 ✅ **Depois:**
+
 ```typescript
 // APENAS perfil 'rh' pode acessar rotas /rh e /api/rh
-// gestor_entidade deve usar /entidade e /api/entidade
+// gestor deve usar /entidade e /api/entidade
 if (session && session.perfil !== 'rh') {
   console.error(
     `[SECURITY] Usuário com perfil ${session.perfil} tentou acessar rota RH. Apenas gestores RH (clínica) têm acesso.`
@@ -40,14 +42,16 @@ if (session && session.perfil !== 'rh') {
 ### 2. Funções de Autenticação (`lib/auth-require.ts`)
 
 ✅ **Antes:**
+
 ```typescript
 export function requireRH(): Session {
-  // RH endpoints devem ser acessíveis apenas por 'rh' ou 'gestor_entidade'
-  return requireRole(['rh', 'gestor_entidade']);
+  // RH endpoints devem ser acessíveis apenas por 'rh' ou 'gestor'
+  return requireRole(['rh', 'gestor']);
 }
 ```
 
 ✅ **Depois:**
+
 ```typescript
 /**
  * Requer perfil de RH (gestor de clínica) - APENAS rh
@@ -58,11 +62,11 @@ export function requireRH(): Session {
 }
 
 /**
- * Requer perfil de gestor de entidade - APENAS gestor_entidade
+ * Requer perfil de gestor de entidade - APENAS gestor
  * Para gestores RH, use requireRH()
  */
 export function requireGestorEntidade(): Session {
-  return requireRole(['gestor_entidade']);
+  return requireRole(['gestor']);
 }
 
 /**
@@ -70,13 +74,14 @@ export function requireGestorEntidade(): Session {
  * Use com cautela - prefira requireRH() ou requireGestorEntidade() quando possível
  */
 export function requireGestor(): Session {
-  return requireRole(['rh', 'gestor_entidade']);
+  return requireRole(['rh', 'gestor']);
 }
 ```
 
 ### 3. Rotas de API Entidade
 
 ✅ **Rotas atualizadas:**
+
 - `app/api/entidade/lote/[id]/funcionarios/export/route.ts`
 - `app/api/entidade/lote/[id]/relatorio-individual/[avaliacaoId]/html/route.ts`
 
@@ -85,6 +90,7 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 ## Estrutura Correta de Rotas
 
 ### Rotas RH (apenas gestor de clínica)
+
 ```
 /rh/*
 /api/rh/*
@@ -98,6 +104,7 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 **Estrutura:** Clínica → Empresas Clientes → Funcionários das Empresas
 
 ### Rotas Entidade (apenas gestor de entidade)
+
 ```
 /entidade/*
 /api/entidade/*
@@ -107,6 +114,7 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 ```
 
 ### Rotas Compartilhadas (com validação interna)
+
 ```
 /api/lotes/[loteId]/solicitar-emissao/
   - RH: valida clinica_id + requireRHWithEmpresaAccess
@@ -116,21 +124,24 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 ## Validações Implementadas
 
 ### RH (gestor de clínica)
+
 1. ✅ Middleware bloqueia acesso de não-RH a `/rh/*` **empresa cliente** via `clinica_id`
-4. ✅ Gestão de **empresas clientes** vinculadas à `clinica_id`
-5. ✅ Gestão de **funcionários das empresas clientes** (vinculados a `empresa_id` + `clinica_id`)
-3. ✅ `requireRHWithEmpresaAccess()` valida acesso à empresa via `clinica_id`
-4. ✅ Gestão de funcionários vinculados a `empresa_id` + `clinica_id`
+2. ✅ Gestão de **empresas clientes** vinculadas à `clinica_id`
+3. ✅ Gestão de **funcionários das empresas clientes** (vinculados a `empresa_id` + `clinica_id`)
+4. ✅ `requireRHWithEmpresaAccess()` valida acesso à empresa via `clinica_id`
+5. ✅ Gestão de funcionários vinculados a `empresa_id` + `clinica_id`
 
 ### Gestor Entidade
+
 1. ✅ Middleware bloqueia acesso de não-entidade a `/entidade/*` e `/api/entidade/*`
-2. ✅ `requireGestorEntidade()` aceita APENAS `perfil === 'gestor_entidade'`
+2. ✅ `requireGestorEntidade()` aceita APENAS `perfil === 'gestor'`
 3. ✅ Validação de acesso via `contratante_id`
 4. ✅ Gestão de funcionários vinculados a `contratante_id`
 
 ## Arquivos Verificados e Corretos
 
 ### Rotas já com separação correta:
+
 - ✅ `app/api/rh/funcionarios/route.ts` - valida `requireRHWithEmpresaAccess`
 - ✅ `app/api/entidade/funcionarios/route.ts` - valida `contratante_id`
 - ✅ `app/api/rh/liberar-lote/route.ts` - valida `user.perfil !== 'rh'`
@@ -143,37 +154,42 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 ## Políticas de Banco de Dados (RLS)
 
 As políticas RLS no banco já estão corretas e fazem a distinção entre:
+
 - `current_user_perfil() = 'rh'` AND `clinica_id = current_user_clinica_id()`
-- `current_user_perfil() = 'gestor_entidade'` AND `contratante_id = current_user_contratante_id()`
+- `current_user_perfil() = 'gestor'` AND `contratante_id = current_user_contratante_id()`
 
 ## Fluxos de Trabalho
 
 ### Cadastro e Liberação de Conta
+
 - **Admin** - gestão da plataforma, não cria empresas/funcionários operacionais
 - **RH** - criado via `criarContaResponsavel()` para contratantes tipo ≠ 'entidade'
 - **Gestor Entidade** - criado via `criarContaResponsavel()` para contratantes tipo = 'entidade'
 
 ### Gestão de Empresas e Funcionários
+
 - **RH** (gestor de clínica):
   - A clínica em si tem apenas o RH (não tem funcionários operacionais)
   - A clínica **atende empresas clientes**
   - O RH **cadastra empresas clientes** (vinculadas à `clinica_id`)
   - O RH **cadastra funcionários** dentro de cada **empresa cliente** (vinculados a `empresa_id` + `clinica_id`)
   - Estrutura: `Clínica → Empresas Clientes → Funcionários das Empresas`
-  
 - **Gestor Entidade**:
   - Gerencia APENAS funcionários vinculados ao seu `contratante_id`
   - Não gerencia empresas (a entidade já é a "empresa")
 
 ### Liberação de Lotes
+
 - **RH** - libera lotes para **empresas clientes** da clínica (usando `clinica_id` + `empresa_id`)
 - **Gestor Entidade** - libera lotes para sua entidade (usando `contratante_id`)
 
 ### Inativação e Reset de Avaliações
+
 - **RH** - inativa/reseta avaliações de lotes das **empresas clientes** da clínica
 - **Gestor Entidade** - reseta avaliações de lotes da entidade (não tem inativação separada)
 
 ### Solicitação de Emissão de Laudos
+
 - **RH** - solicita emissão para lotes das **empresas clientes** (valida acesso à empresa via `clinica_id`)
 - **Gestor Entidade** - solicita emissão para lotes da entidade (valida `contratante_id`)
 - **Emissor** - emite laudos (independente, acessa todos os lotes liberados)
@@ -215,6 +231,6 @@ A separação de roles foi corrigida com sucesso. Agora:
 
 - **admin** e **emissor** são totalmente independentes ✅
 - **rh** gerencia empresas/funcionários da clínica ✅
-- **gestor_entidade** gerencia apenas seus próprios funcionários ✅
+- **gestor** gerencia apenas seus próprios funcionários ✅
 - Middleware, rotas e validações estão alinhados ✅
 - RLS no banco reforça a segregação ✅

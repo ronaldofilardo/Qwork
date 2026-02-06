@@ -327,10 +327,10 @@ SELECT
   ec.nome as empresa_nome
 FROM funcionarios f
 LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
-WHERE f.perfil IN ('funcionario', 'gestor_entidade')
+WHERE f.perfil IN ('funcionario', 'gestor')
 ORDER BY f.empresa_id, f.nome;
 
-COMMENT ON VIEW funcionarios_operacionais IS 'Lista de funcionários operacionais (funcionario, gestor_entidade)';
+COMMENT ON VIEW funcionarios_operacionais IS 'Lista de funcionários operacionais (funcionario, gestor)';
 
 -- View: gestores
 CREATE OR REPLACE VIEW gestores AS
@@ -344,10 +344,10 @@ SELECT
 FROM funcionarios f
 LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
 LEFT JOIN contratantes c ON f.contratante_id = c.id
-WHERE f.perfil IN ('gestor_entidade', 'rh')
+WHERE f.perfil IN ('gestor', 'rh')
 ORDER BY f.perfil, f.nome;
 
-COMMENT ON VIEW gestores IS 'Lista de gestores (gestor_entidade, rh)';
+COMMENT ON VIEW gestores IS 'Lista de gestores (gestor, rh)';
 
 -- View: usuarios_resumo
 CREATE OR REPLACE VIEW usuarios_resumo AS

@@ -4,7 +4,7 @@
 
 ---
 
-## 🎯 Sim! A correção é para RH e Gestor_Entidade
+## 🎯 Sim! A correção é para RH e gestor
 
 ### 👥 Perfis Envolvidos
 
@@ -16,9 +16,9 @@
 - **API:** `POST /api/lotes/[loteId]/solicitar-emissao`
 - **Validação:** Verifica `clinica_id` do lote vs `clinica_id` do usuário
 
-#### 2️⃣ **Gestor_Entidade (Entidades/Contratantes)** ✅
+#### 2️⃣ **gestor (Entidades/Contratantes)** ✅
 
-- **Quem:** Perfil `gestor_entidade` vinculado a um contratante
+- **Quem:** Perfil `gestor` vinculado a um contratante
 - **O que faz:** Solicita emissão de laudos para lotes de sua entidade
 - **Como:** Clica em "Solicitar Emissão" no dashboard
 - **API:** `POST /api/lotes/[loteId]/solicitar-emissao`
@@ -41,12 +41,12 @@
 
 ## 🔄 Fluxo Completo (3 Etapas Manuais)
 
-### **ETAPA 1: Solicitação (RH ou Gestor_Entidade)** 🟢
+### **ETAPA 1: Solicitação (RH ou gestor)** 🟢
 
 ```
 Lote status='concluido' (todas avaliações finalizadas)
               ↓
-RH da Clínica OU Gestor_Entidade vê notificação
+RH da Clínica OU gestor vê notificação
               ↓
 Clica "Solicitar Emissão de Laudo"
               ↓
@@ -68,7 +68,7 @@ if (lote.clinica_id && user.perfil === 'rh') {
 }
 
 // Para lotes de ENTIDADE
-if (lote.contratante_id && user.perfil === 'gestor_entidade') {
+if (lote.contratante_id && user.perfil === 'gestor') {
   // Validar contratante_id
   if (user.contratante_id !== lote.contratante_id) {
     return NextResponse.json(
@@ -223,11 +223,11 @@ Emissor ENVIA laudo (ETAPA 3) → status='enviado'
 5. Laudo não foi emitido ainda (emitido_em IS NULL)
 ```
 
-### **Para Gestor_Entidade**
+### **Para gestor**
 
 ```typescript
 // Verifica:
-1. user.perfil === 'gestor_entidade'
+1. user.perfil === 'gestor'
 2. lote.contratante_id existe
 3. user.contratante_id === lote.contratante_id
 4. Lote está em status='concluido'
@@ -250,16 +250,16 @@ Emissor ENVIA laudo (ETAPA 3) → status='enviado'
 
 ### **Quem faz o quê:**
 
-| Perfil                        | Etapa | Ação             | Status Resultado   |
-| ----------------------------- | ----- | ---------------- | ------------------ |
-| **RH** ou **Gestor_Entidade** | 1     | Solicita emissão | Lote vai para fila |
-| **Emissor**                   | 2     | Gera laudo (PDF) | `status='emitido'` |
-| **Emissor**                   | 3     | Envia laudo      | `status='enviado'` |
+| Perfil               | Etapa | Ação             | Status Resultado   |
+| -------------------- | ----- | ---------------- | ------------------ |
+| **RH** ou **gestor** | 1     | Solicita emissão | Lote vai para fila |
+| **Emissor**          | 2     | Gera laudo (PDF) | `status='emitido'` |
+| **Emissor**          | 3     | Envia laudo      | `status='enviado'` |
 
 ### **A correção beneficia:**
 
 ✅ **RH (Clínicas)** - Pode solicitar quando necessário  
-✅ **Gestor_Entidade** - Pode solicitar quando necessário  
+✅ **gestor** - Pode solicitar quando necessário  
 ✅ **Emissor** - Tem controle total da emissão  
 ✅ **Sistema** - Rastreabilidade e auditoria completa
 
@@ -267,11 +267,11 @@ Emissor ENVIA laudo (ETAPA 3) → status='enviado'
 
 ## 🚀 Conclusão
 
-**Sim, a correção é para RH e Gestor_Entidade!**
+**Sim, a correção é para RH e gestor!**
 
 A correção garante que:
 
-1. **RH** e **Gestor_Entidade** precisam **solicitar** emissão (não acontece sozinho)
+1. **RH** e **gestor** precisam **solicitar** emissão (não acontece sozinho)
 2. **Emissor** tem controle **manual** de quando gerar e quando enviar
 3. **Ninguém** perde controle do processo
 4. **Todos** ganham rastreabilidade e qualidade

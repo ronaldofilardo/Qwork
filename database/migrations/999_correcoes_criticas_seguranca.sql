@@ -34,7 +34,7 @@ DECLARE
 BEGIN
     FOR rec IN 
         SELECT cs.cpf, cs.senha_hash 
-        FROM contratantes_senhas cs
+        FROM entidades_senhas cs
         WHERE cs.senha_hash LIKE 'PLACEHOLDER_%'
     LOOP
         -- Extrair senha do placeholder
@@ -44,7 +44,7 @@ BEGIN
         -- AVISO: Esta migração marca senhas para reset obrigatório
         novo_hash := 'RESET_REQUIRED_' || senha_original;
         
-        UPDATE contratantes_senhas 
+        UPDATE entidades_senhas 
         SET senha_hash = novo_hash,
             atualizado_em = CURRENT_TIMESTAMP
         WHERE cpf = rec.cpf;
@@ -76,9 +76,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_prevenir_placeholder_senha ON contratantes_senhas;
+DROP TRIGGER IF EXISTS trg_prevenir_placeholder_senha ON entidades_senhas;
 CREATE TRIGGER trg_prevenir_placeholder_senha
-    BEFORE INSERT OR UPDATE ON contratantes_senhas
+    BEFORE INSERT OR UPDATE ON entidades_senhas
     FOR EACH ROW
     EXECUTE FUNCTION prevenir_placeholder_senha();
 
@@ -91,7 +91,7 @@ CREATE TRIGGER trg_prevenir_placeholder_senha
 
 -- Aplicar FORCE RLS em todas as tabelas sensíveis
 ALTER TABLE contratantes FORCE ROW LEVEL SECURITY;
-ALTER TABLE contratantes_senhas FORCE ROW LEVEL SECURITY;
+ALTER TABLE entidades_senhas FORCE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios FORCE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes FORCE ROW LEVEL SECURITY;
 ALTER TABLE resultados FORCE ROW LEVEL SECURITY;
@@ -196,7 +196,7 @@ DROP POLICY IF EXISTS policy_lotes_entidade ON lotes_avaliacao;
 CREATE POLICY policy_lotes_entidade ON lotes_avaliacao
     FOR SELECT
     USING (
-        current_setting('app.current_role', TRUE) IN ('rh', 'entidade', 'gestor_entidade')
+        current_setting('app.current_role', TRUE) IN ('rh', 'entidade', 'gestor')
         AND contratante_id::text = current_setting('app.current_contratante_id', TRUE)
     );
 
@@ -316,7 +316,7 @@ BEGIN
     END IF;
     
     -- Perfis que requerem contratante_id ou clinica_id
-    IF v_perfil IN ('gestor_entidade', 'rh', 'entidade') THEN
+    IF v_perfil IN ('gestor', 'rh', 'entidade') THEN
         IF (v_contratante_id IS NULL OR v_contratante_id = '') 
            AND (v_clinica_id IS NULL OR v_clinica_id = '') THEN
             RAISE EXCEPTION 'SEGURANÇA: Perfil % requer contratante_id ou clinica_id', v_perfil;
@@ -399,7 +399,7 @@ BEGIN
             ELSE '✗ CRÍTICO'
         END,
         'Encontrados ' || COUNT(*) || ' placeholders de senha'
-    FROM contratantes_senhas
+    FROM entidades_senhas
     WHERE senha_hash LIKE 'PLACEHOLDER_%';
     
     -- 4. Verificar policies por tabela

@@ -48,7 +48,7 @@ async function removeExisting(cpf: string, cnpj?: string) {
     await query('DELETE FROM empresas_clientes WHERE cnpj = $1', [cnpj]);
   // apagar funcionarios e senhas
   await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
-  await query('DELETE FROM contratantes_senhas WHERE cpf = $1', [cpf]);
+  await query('DELETE FROM entidades_senhas WHERE cpf = $1', [cpf]);
   // apagar clinicas vinculadas ao contratante com este cpf de responsável
   await query(
     `DELETE FROM clinicas WHERE contratante_id IN (SELECT id FROM contratantes WHERE responsavel_cpf = $1)`,
@@ -75,7 +75,7 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     await query('DELETE FROM funcionarios WHERE cpf LIKE $1', [
       `999${testId}%`,
     ]);
-    await query('DELETE FROM contratantes_senhas WHERE cpf LIKE $1', [
+    await query('DELETE FROM entidades_senhas WHERE cpf LIKE $1', [
       `999${testId}%`,
     ]);
     await query('DELETE FROM clinicas WHERE cnpj LIKE $1', [`999${testId}%`]);
@@ -176,7 +176,7 @@ describe('Integração: Criação de Clínica e Login RH', () => {
         '[TESTE] Aviso: funcionário não encontrado — usando validação fallback'
       );
       const senhaFallback = await query(
-        'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
         [cpfResponsavel]
       );
       expect(senhaFallback.rows.length).toBe(1);
@@ -193,9 +193,9 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     // VALIDAÇÃO 3: Simular login e verificar sessão com clinica_id
     // ============================================================================
 
-    // Verificar senha em contratantes_senhas
+    // Verificar senha em entidades_senhas
     const senhaCheck = await query(
-      'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+      'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
       [cpfResponsavel]
     );
 
@@ -350,16 +350,17 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     // Criar conta responsável
     await criarContaResponsavel(contratanteId);
 
-    // Verificar que funcionário tem perfil gestor_entidade (não rh)
-    const funcionarioCheck = await query(
-      'SELECT perfil, clinica_id FROM funcionarios WHERE cpf = $1',
+    // Verificar que RESPONSÁVEL foi criado em USUARIOS como gestor (não em funcionarios)
+    const usuarioCheck = await query(
+      'SELECT tipo_usuario, contratante_id, clinica_id FROM usuarios WHERE cpf = $1',
       [cpfResponsavel]
     );
 
-    expect(funcionarioCheck.rows.length).toBe(1);
-    expect(funcionarioCheck.rows[0].perfil).toBe('gestor_entidade');
-    expect(funcionarioCheck.rows[0].clinica_id).toBeNull();
-    // [TESTE] ✅ Gestor entidade sem clinica_id (correto)
+    expect(usuarioCheck.rows.length).toBe(1);
+    expect(usuarioCheck.rows[0].tipo_usuario).toBe('gestor');
+    expect(usuarioCheck.rows[0].contratante_id).toBe(contratanteId);
+    expect(usuarioCheck.rows[0].clinica_id).toBeNull();
+    // [TESTE] ✅ Gestor entidade cadastrado corretamente em usuarios
 
   });
 

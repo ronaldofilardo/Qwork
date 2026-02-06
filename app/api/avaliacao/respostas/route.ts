@@ -73,7 +73,7 @@ export async function POST(request: Request) {
           console.log(
             `[RESPOSTAS] ✅ Atualizado status da avaliação ${avaliacaoId} para 'em_andamento'`
           );
-        } catch (updateErr: any) {
+        } catch {
           // Se falhar, tentar com contexto de segurança
           console.warn(
             `[RESPOSTAS] ⚠️ Primeira tentativa falhou, usando transactionWithContext...`
@@ -118,10 +118,21 @@ export async function POST(request: Request) {
       `[RESPOSTAS] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
     );
 
-    // Se completou 37 respostas, marcar como concluída automaticamente
-    if (totalRespostas >= 37) {
+    // Verificar status atual da avaliação antes de tentar concluir
+    const statusCheckResult = await query(
+      `SELECT status FROM avaliacoes WHERE id = $1`,
+      [avaliacaoId]
+    );
+    const statusAtual = statusCheckResult.rows[0]?.status;
+
+    // Se completou 37 respostas E não está inativada, marcar como concluída automaticamente
+    if (
+      totalRespostas >= 37 &&
+      statusAtual !== 'inativada' &&
+      statusAtual !== 'concluido'
+    ) {
       console.log(
-        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} COMPLETA! Marcando como concluída...`
+        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} COMPLETA (${totalRespostas}/37 respostas)! Status: ${statusAtual} → concluido`
       );
 
       // ✅ Envolver TODA a lógica de conclusão em transactionWithContext
@@ -186,19 +197,19 @@ export async function POST(request: Request) {
           // Não bloquear a conclusão da avaliação por erro no cálculo
         }
 
-        // Marcar como concluída (SEMPRE executar, mesmo se houver erro nos resultados)
+        // Marcar como concluído (SEMPRE executar, mesmo se houver erro nos resultados)
         await queryTx(
           `UPDATE avaliacoes 
-           SET status = 'concluida', envio = NOW(), atualizado_em = NOW() 
+           SET status = 'concluido', envio = NOW(), atualizado_em = NOW() 
            WHERE id = $1`,
           [avaliacaoId]
         );
 
         console.log(
-          `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída`
+          `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída com sucesso`
         );
 
-        // Buscar lote_id
+        // Buscar lote_id e atualizar funcionário
         const loteResult = await queryTx(
           `SELECT la.id as lote_id, la.numero_ordem 
            FROM avaliacoes a
@@ -208,7 +219,7 @@ export async function POST(request: Request) {
         );
 
         if (loteResult.rows.length > 0) {
-          const { numero_ordem } = loteResult.rows[0];
+          const { lote_id, numero_ordem } = loteResult.rows[0];
 
           // Atualizar índice do funcionário
           await queryTx(
@@ -219,7 +230,7 @@ export async function POST(request: Request) {
           );
 
           console.log(
-            `[RESPOSTAS] ✅ Funcionário atualizado dentro da transação`
+            `[RESPOSTAS] ✅ Funcionário atualizado | Lote ${String(lote_id)} será recalculado automaticamente`
           );
         }
 
@@ -244,13 +255,32 @@ export async function POST(request: Request) {
       }
 
       console.log(
-        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} concluída e notificação enviada!`
+        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} concluída automaticamente - 37/37 respostas recebidas`
       );
 
       return NextResponse.json({
         success: true,
         completed: true,
-        message: 'Avaliação concluída com sucesso!',
+        message:
+          'Avaliação concluída com sucesso! Todas as 37 questões foram respondidas.',
+      });
+    } else if (totalRespostas >= 37 && statusAtual === 'concluido') {
+      console.log(
+        `[RESPOSTAS] ℹ️ Avaliação ${avaliacaoId} já está concluída (${totalRespostas}/37 respostas)`
+      );
+      return NextResponse.json({
+        success: true,
+        completed: true,
+        message: 'Avaliação já foi concluída anteriormente.',
+      });
+    } else if (totalRespostas >= 37 && statusAtual === 'inativada') {
+      console.log(
+        `[RESPOSTAS] ⚠️ Avaliação ${avaliacaoId} está inativada e não pode ser concluída (${totalRespostas}/37 respostas)`
+      );
+      return NextResponse.json({
+        success: true,
+        completed: false,
+        message: 'Avaliação inativada - não pode ser concluída.',
       });
     }
 

@@ -84,9 +84,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 409 });
     }
 
-    // Verificar se CPF é gestor_de_entidade via contratantes_senhas (gestor_entidade)
+    // Verificar se CPF é gestor_de_entidade via entidades_senhas (gestor)
     const gestorEntidade = await query(
-      `SELECT 1 FROM contratantes_senhas cs JOIN contratantes c ON c.id = cs.contratante_id
+      `SELECT 1 FROM entidades_senhas cs JOIN contratantes c ON c.id = cs.contratante_id
        WHERE cs.cpf = $1 AND c.tipo = 'entidade' AND c.ativa = true`,
       [cpf]
     );

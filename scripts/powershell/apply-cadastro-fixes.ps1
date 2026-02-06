@@ -123,7 +123,7 @@ Write-Host ""
 # Executar Migration 004
 Write-Host "📝 Executando Migration 004 - RLS (Row Level Security)..." -ForegroundColor Cyan
 Write-Host "   - Habilitar RLS em contratantes e contratos" -ForegroundColor Gray
-Write-Host "   - Criar policies para admin, gestor_entidade e rh" -ForegroundColor Gray
+Write-Host "   - Criar policies para admin, gestor e rh" -ForegroundColor Gray
 Write-Host "   - Criar função pode_acessar_contratante()" -ForegroundColor Gray
 Write-Host ""
 

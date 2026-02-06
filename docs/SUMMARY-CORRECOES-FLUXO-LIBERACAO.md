@@ -107,7 +107,7 @@ if (lote.clinica_id && user.perfil === 'rh') {
 **Permissão Entity:**
 
 ```typescript
-if (lote.contratante_id && user.perfil === 'gestor_entidade') {
+if (lote.contratante_id && user.perfil === 'gestor') {
   if (user.contratante_id !== lote.contratante_id) return 403;
 }
 ```

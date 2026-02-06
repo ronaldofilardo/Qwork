@@ -9,15 +9,15 @@
 **CPF específico:** 87545772920  
 **Situação encontrada:**
 
-- Registro em `funcionarios` com `perfil = 'gestor_entidade'` ❌
-- Registro em `contratantes_senhas` (tipo = 'entidade') ✅
+- Registro em `funcionarios` com `perfil = 'gestor'` ❌
+- Registro em `entidades_senhas` (tipo = 'entidade') ✅
 - Lote de avaliação (001-210126) referenciando o CPF via `liberado_por_fkey`
 
 **Regra de negócio violada:**
 
-- `gestor_entidade` NUNCA deve estar na tabela `funcionarios`
-- `gestor_entidade` só deve existir em `contratantes_senhas`
-- `gestor_entidade` NUNCA responde avaliações (não é funcionário operacional)
+- `gestor` NUNCA deve estar na tabela `funcionarios`
+- `gestor` só deve existir em `entidades_senhas`
+- `gestor` NUNCA responde avaliações (não é funcionário operacional)
 
 ## Causa Raiz 🔎
 
@@ -25,21 +25,21 @@ A função `criarContaResponsavel()` em `lib/db.ts` foi **corrigida** recentemen
 
 ## Solução Aplicada ✅
 
-### Migration 201: `201_fix_gestor_entidade_as_funcionario.sql`
+### Migration 201: `201_fix_gestor_as_funcionario.sql`
 
 **Ações sistêmicas (para todos os CPFs afetados):**
 
-1. **Identificação:** Encontra todos os CPFs com `perfil = 'gestor_entidade'` em `funcionarios`
-2. **Backup:** Cria tabela `funcionarios_backup_gestor_entidade` com registros afetados
-3. **Lotes:** Identifica lotes liberados por `gestor_entidade`
+1. **Identificação:** Encontra todos os CPFs com `perfil = 'gestor'` em `funcionarios`
+2. **Backup:** Cria tabela `funcionarios_backup_gestor` com registros afetados
+3. **Lotes:** Identifica lotes liberados por `gestor`
    - Lote `001-210126` → marcado como `status = 'cancelado'`
-   - Demais lotes → `liberado_por` mantido (CPF válido em `contratantes_senhas`)
+   - Demais lotes → `liberado_por` mantido (CPF válido em `entidades_senhas`)
 4. **Vínculos:** Remove entradas de `contratantes_funcionarios` para esses CPFs
-5. **Avaliações:** Deleta avaliações respondidas por `gestor_entidade` (se existirem — INCORRETO)
-6. **Remoção:** Deleta registros de `funcionarios` onde `perfil = 'gestor_entidade'`
+5. **Avaliações:** Deleta avaliações respondidas por `gestor` (se existirem — INCORRETO)
+6. **Remoção:** Deleta registros de `funcionarios` onde `perfil = 'gestor'`
 7. **Validação:** Confirma que:
-   - Nenhum `gestor_entidade` permanece em `funcionarios` (count = 0)
-   - Gestores ainda existem em `contratantes_senhas` (autenticação preservada)
+   - Nenhum `gestor` permanece em `funcionarios` (count = 0)
+   - Gestores ainda existem em `entidades_senhas` (autenticação preservada)
 
 ## Como Aplicar 🚀
 
@@ -52,22 +52,22 @@ pg_dump -U postgres -d nr-bps_db -F p -f "C:\apps\QWork\backups\backup_antes_201
 ### Passo 2: Aplicar migration
 
 ```powershell
-psql -U postgres -d nr-bps_db -f "C:/apps/QWork/database/migrations/201_fix_gestor_entidade_as_funcionario.sql"
+psql -U postgres -d nr-bps_db -f "C:/apps/QWork/database/migrations/201_fix_gestor_as_funcionario.sql"
 ```
 
 ### Passo 3: Verificar resultado
 
 ```sql
--- 1. Confirmar que não há mais gestor_entidade em funcionarios
-SELECT * FROM funcionarios WHERE perfil = 'gestor_entidade';
+-- 1. Confirmar que não há mais gestor em funcionarios
+SELECT * FROM funcionarios WHERE perfil = 'gestor';
 -- Resultado esperado: 0 linhas
 
 -- 2. Verificar backup foi criado
-SELECT cpf, nome, email FROM funcionarios_backup_gestor_entidade;
+SELECT cpf, nome, email FROM funcionarios_backup_gestor;
 
 -- 3. Confirmar autenticação ainda funciona
 SELECT cs.cpf, cs.contratante_id, c.nome, c.tipo
-FROM contratantes_senhas cs
+FROM entidades_senhas cs
 JOIN contratantes c ON c.id = cs.contratante_id
 WHERE c.tipo = 'entidade';
 -- Resultado esperado: CPF 87545772920 presente
@@ -87,22 +87,22 @@ WHERE codigo = '001-210126';
 - ✅ Tabela `lotes_avaliacao` (lote 001-210126 cancelado)
 - ✅ Tabela `contratantes_funcionarios` (vínculos removidos)
 - ✅ Tabela `avaliacoes` (avaliações inválidas deletadas, se existirem)
-- ✅ Autenticação de gestores_entidade **preservada** (via `contratantes_senhas`)
+- ✅ Autenticação de gestores_entidade **preservada** (via `entidades_senhas`)
 
 ### Testes de regressão:
 
-1. **Login de gestor_entidade:**
+1. **Login de gestor:**
    - CPF: 87545772920
    - Senha: (últimos 6 dígitos do CNPJ da entidade)
    - Deve autenticar normalmente via `/api/auth/login`
 
-2. **Criação de novo gestor_entidade:**
+2. **Criação de novo gestor:**
    - Usar `criarContaResponsavel()` com `tipo = 'entidade'`
    - Verificar que NÃO cria entrada em `funcionarios`
-   - Verificar que cria entrada em `contratantes_senhas`
+   - Verificar que cria entrada em `entidades_senhas`
 
 3. **Bloqueio de emissor:**
-   - Tentar criar emissor com CPF de gestor_entidade
+   - Tentar criar emissor com CPF de gestor
    - Deve rejeitar com erro 409 (trigger aplicada na migration 200)
 
 ## Prevenção Futura 🛡️
@@ -111,8 +111,8 @@ WHERE codigo = '001-210126';
 
 Triggers que impedem:
 
-- CPF de `gestor_entidade` ser cadastrado como `emissor`
-- CPF de `gestor_rh` ser cadastrado como `emissor`
+- CPF de `gestor` ser cadastrado como `emissor`
+- CPF de `rh` ser cadastrado como `emissor`
 - CPF de `emissor` ser cadastrado como gestor
 
 ### Migration 201 (esta):
@@ -134,7 +134,7 @@ BEGIN;
 
 -- Restaurar registros de funcionarios
 INSERT INTO funcionarios
-SELECT * FROM funcionarios_backup_gestor_entidade
+SELECT * FROM funcionarios_backup_gestor
 ON CONFLICT (cpf) DO NOTHING;
 
 -- Reativar lote 001-210126
@@ -149,7 +149,7 @@ COMMIT;
 
 ## Referências 📚
 
-- Migration original: `database/migrations/201_fix_gestor_entidade_as_funcionario.sql`
+- Migration original: `database/migrations/201_fix_gestor_as_funcionario.sql`
 - Migration de proteção: `database/migrations/200_prevent_gestor_emissor.sql`
 - Documentação RBAC: `docs/roles-and-rbac.md`
 - Correção em código: `lib/db.ts#L1342-L1620` (função `criarContaResponsavel`)

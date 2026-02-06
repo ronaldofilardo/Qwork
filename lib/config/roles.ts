@@ -5,7 +5,7 @@
 export const ROLES = {
   ADMIN: 'admin',
   RH: 'rh',
-  GESTOR_ENTIDADE: 'gestor_entidade',
+  GESTOR: 'gestor',
   EMISSOR: 'emissor',
   FUNCIONARIO: 'funcionario',
 } as const;
@@ -15,7 +15,7 @@ export type Role = (typeof ROLES)[keyof typeof ROLES];
 export const ROLE_HIERARCHY: Record<Role, number> = {
   admin: 100,
   emissor: 50,
-  gestor_entidade: 40,
+  gestor: 40,
   rh: 30,
   funcionario: 10,
 };
@@ -29,5 +29,5 @@ export function isAdmin(role: Role): boolean {
 }
 
 export function isGestor(role: Role): boolean {
-  return role === ROLES.RH || role === ROLES.GESTOR_ENTIDADE;
+  return role === ROLES.RH || role === ROLES.GESTOR;
 }

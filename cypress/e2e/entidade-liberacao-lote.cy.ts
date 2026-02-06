@@ -40,7 +40,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
       body: {
         cpf: '12345678901',
         nome: 'Gestor Entidade Teste',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         clinica_id: contratanteId,
       },
     }).as('getSession');
@@ -74,7 +74,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
       JSON.stringify({
         cpf: '12345678901',
         nome: 'Gestor Entidade Teste',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         clinica_id: contratanteId,
         sessionToken: 'test-token',
         lastRotation: Date.now(),
@@ -390,7 +390,7 @@ describe('Interação com Cards de Lote - Entidade', () => {
       body: {
         cpf: '12345678901',
         nome: 'Gestor Entidade',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         clinica_id: 1,
       },
     }).as('getSession');
@@ -421,7 +421,7 @@ describe('Interação com Cards de Lote - Entidade', () => {
       JSON.stringify({
         cpf: '12345678901',
         nome: 'Gestor Entidade',
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         clinica_id: 1,
         sessionToken: 'test-token',
         lastRotation: Date.now(),
@@ -628,4 +628,3 @@ describe('Interação com Cards de Lote - Entidade', () => {
     });
   });
 });
-

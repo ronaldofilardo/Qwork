@@ -8,7 +8,7 @@ export const revalidate = 0;
 export async function GET(_req: NextRequest) {
   try {
     const res = await query(
-      'SELECT id, nome, cnpj, email, telefone, status, ativa, criado_em FROM contratantes ORDER BY id DESC LIMIT 10'
+      'SELECT id, nome, cnpj, email, telefone, status, ativa, criado_em FROM entidades ORDER BY id DESC LIMIT 10'
     );
     const info = getDatabaseInfo();
     return NextResponse.json({

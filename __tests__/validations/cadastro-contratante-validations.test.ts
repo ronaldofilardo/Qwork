@@ -1,5 +1,5 @@
 /**
- * Testes de Validação para APIs de Cadastro de Contratantes
+ * Testes de Validação para APIs de Cadastro de Entidades
  *
  * Atualizado: 20/Janeiro/2026
  * Cobertura: Validações de entrada, regras de negócio, edge cases
@@ -7,7 +7,7 @@
 
 import { query } from '@/lib/db';
 
-describe('Validações: Cadastro de Contratantes', () => {
+describe('Validações: Cadastro de Entidades', () => {
   let planoFixoId: number;
   let planoPersonalizadoId: number;
 
@@ -393,13 +393,11 @@ describe('Validações: Cadastro de Contratantes', () => {
   describe('Segurança: SQL Injection Prevention', () => {
     it('deve usar prepared statements para queries', async () => {
       // Tentativa de SQL injection
-      const cnpjMalicioso = "'; DROP TABLE contratantes; --";
+      const cnpjMalicioso = "'; DROP TABLE entidades; --";
 
       // Com prepared statement, isso é tratado como string literal
       try {
-        await query(`SELECT * FROM contratantes WHERE cnpj = $1`, [
-          cnpjMalicioso,
-        ]);
+        await query(`SELECT * FROM entidades WHERE cnpj = $1`, [cnpjMalicioso]);
         // Se não lançar erro, o prepared statement protegeu corretamente
         expect(true).toBe(true);
       } catch (error) {
@@ -411,7 +409,7 @@ describe('Validações: Cadastro de Contratantes', () => {
       const tabelaExiste = await query(
         `SELECT EXISTS (
           SELECT FROM information_schema.tables 
-          WHERE table_name = 'contratantes'
+          WHERE table_name = 'entidades'
         )`
       );
       expect(tabelaExiste.rows[0].exists).toBe(true);

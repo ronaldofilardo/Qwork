@@ -186,7 +186,7 @@
    pnpm add jspdf
    ```
 
-2. **Permissões**: As novas APIs requerem perfis `gestor_entidade` ou `gestor_clinica`
+2. **Permissões**: As novas APIs requerem perfis `gestor` ou `gestor_clinica`
 
 3. **Auditoria**: Todos os eventos de pagamento são registrados automaticamente
 

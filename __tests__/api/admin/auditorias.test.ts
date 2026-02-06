@@ -111,7 +111,7 @@ describe('APIs de Auditoria', () => {
             empresa_nome: 'Empresa XYZ',
             clinica_id: 1,
             clinica_nome: 'Clínica Teste',
-            status: 'concluida',
+            status: 'concluido',
             criado_em: '2024-01-01T00:00:00.000Z',
             concluido_em: '2024-01-01T00:30:00.000Z',
             total_perguntas: 80,
@@ -129,7 +129,7 @@ describe('APIs de Auditoria', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.avaliacoes).toHaveLength(1);
-      expect(data.avaliacoes[0].status).toBe('concluida');
+      expect(data.avaliacoes[0].status).toBe('concluido');
       expect(data.avaliacoes[0].possui_anomalia).toBe(false);
     });
   });
@@ -153,3 +153,4 @@ describe('APIs de Auditoria', () => {
     });
   });
 });
+

@@ -116,11 +116,11 @@
 ### 3. payment-confirmation-integration.test.ts (9 test cases)
 
 - Chamada de criarContaResponsavel após confirmação
-- Perfil gestor_entidade para entidade
+- Perfil gestor para entidade
 - Perfil rh para clinica
 - Ativação após criação de conta
 - Prevenção de ativação se criação falhar
-- Hash de senha em contratantes_senhas
+- Hash de senha em entidades_senhas
 
 ### 4. audit-system-actions.test.ts (12 test cases)
 
@@ -185,7 +185,7 @@ pnpm test __tests__/state-machine-automatic-approval.test.ts \
 
 ```sql
 -- Verificação de login criado
-SELECT * FROM contratantes_senhas WHERE contratante_id = 9;
+SELECT * FROM entidades_senhas WHERE contratante_id = 9;
 -- ✅ CPF 87545772920, hash bcrypt confirmado
 
 -- Verificação de query sem erros
@@ -198,7 +198,7 @@ FROM funcionarios f WHERE contratante_id = 1;
 
 ## 🔒 Segurança Mantida
 
-- **Autenticação:** bcrypt hash em contratantes_senhas preservado
+- **Autenticação:** bcrypt hash em entidades_senhas preservado
 - **Auditoria:** Todas as ações rastreadas (user_cpf ou '00000000000')
 - **RLS:** Políticas de Row Level Security não afetadas
 - **Validação:** Pagamento confirmado + contrato aceito obrigatórios

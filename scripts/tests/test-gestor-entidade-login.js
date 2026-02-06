@@ -1,5 +1,5 @@
 /**
- * Script de teste para verificar login de gestor_entidade
+ * Script de teste para verificar login de gestor
  * Execução: node scripts/tests/test-gestor-entidade-login.js
  */
 
@@ -8,7 +8,7 @@ const TEST_CPF = '87545772920';
 const TEST_PASSWORD = '123456'; // Ajuste conforme a senha do usuário
 
 async function testGestorEntidadeLogin() {
-  console.log('🧪 Testando login de gestor_entidade...\n');
+  console.log('🧪 Testando login de gestor...\n');
 
   try {
     // 1. Fazer login
@@ -57,14 +57,14 @@ async function testGestorEntidadeLogin() {
     // 3. Validações
     console.log('\n✔️ Validações:');
 
-    if (sessionData.perfil !== 'gestor_entidade') {
+    if (sessionData.perfil !== 'gestor') {
       console.error(
-        '❌ ERRO: Perfil deveria ser "gestor_entidade", mas é:',
+        '❌ ERRO: Perfil deveria ser "gestor", mas é:',
         sessionData.perfil
       );
       return false;
     }
-    console.log('  ✓ Perfil correto: gestor_entidade');
+    console.log('  ✓ Perfil correto: gestor');
 
     if (!sessionData.contratante_id) {
       console.error('❌ ERRO: contratante_id não está presente na sessão');

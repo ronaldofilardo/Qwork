@@ -178,10 +178,10 @@ export async function uploadLaudoToBackblaze(
     try {
       const { query } = await import('../db');
       await query(
-        `INSERT INTO audit_logs (acao, entidade, entidade_id, dados, user_role, criado_em)
-         VALUES ('laudo_upload_backblaze_erro', 'laudos', $1, $2, 'sistema', NOW())`,
+        `INSERT INTO audit_logs (action, resource, resource_id, new_data, user_perfil)
+         VALUES ('laudo_upload_backblaze_erro', 'laudos', $1, $2, 'sistema')`,
         [
-          laudoId,
+          laudoId.toString(),
           JSON.stringify({
             erro: error instanceof Error ? error.message : String(error),
             lote_id: loteId,

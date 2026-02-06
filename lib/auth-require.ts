@@ -55,11 +55,11 @@ export function requireRH(): Session {
 }
 
 /**
- * Requer perfil de gestor de entidade - APENAS gestor_entidade
+ * Requer perfil de gestor de entidade - APENAS gestor
  * Para gestores RH, use requireRH()
  */
 export function requireGestorEntidade(): Session {
-  return requireRole(['gestor_entidade']);
+  return requireRole(['gestor']);
 }
 
 /**
@@ -67,7 +67,7 @@ export function requireGestorEntidade(): Session {
  * Use com cautela - prefira requireRH() ou requireGestorEntidade() quando possível
  */
 export function requireGestor(): Session {
-  return requireRole(['rh', 'gestor_entidade']);
+  return requireRole(['rh', 'gestor']);
 }
 
 /**
@@ -84,7 +84,7 @@ export function sessionHasAccessToLote(
   }
 
   // RH/Entidade só pode acessar lotes do seu contratante
-  if (session.perfil === 'rh' || session.perfil === 'gestor_entidade') {
+  if (session.perfil === 'rh' || session.perfil === 'gestor') {
     if (!contratanteId) {
       return false;
     }

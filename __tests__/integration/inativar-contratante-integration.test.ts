@@ -105,17 +105,17 @@ describe.skip('Inativar avaliação - integração (contratante) - OBSOLETO', ()
   /**
    * @test Valida inativação de avaliação sem violar constraints
    * @description Testa:
-   * 1. Autenticação como gestor_entidade
+   * 1. Autenticação como gestor
    * 2. Inativação via POST /api/avaliacoes/inativar
    * 3. Atualização de status da avaliação
    * 4. Atualização de status do funcionário sem violar constraints
    */
   it.skip('deve inativar avaliação sem violar constraint e atualizar funcionário', async () => {
     // SKIPPED: teste instável em CI/local por causa de conflitos de chave única/sequence em lotes
-    // Arrange - Mock auth como gestor_entidade do contratante
+    // Arrange - Mock auth como gestor do contratante
     const mockSession: Session = {
       cpf: '99900011122',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: contratanteId,
     };
     mockRequireAuth.mockResolvedValue(mockSession as any);

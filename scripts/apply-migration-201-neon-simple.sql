@@ -15,8 +15,8 @@ DROP POLICY IF EXISTS funcionarios_own_clinica ON funcionarios;
 DROP POLICY IF EXISTS funcionarios_own_entidade ON funcionarios;
 DROP POLICY IF EXISTS funcionarios_rh_clinica ON funcionarios;
 DROP POLICY IF EXISTS funcionarios_rh_all ON funcionarios;
-DROP POLICY IF EXISTS funcionarios_gestor_entidade_own ON funcionarios;
-DROP POLICY IF EXISTS funcionarios_gestor_entidade_entidade ON funcionarios;
+DROP POLICY IF EXISTS funcionarios_gestor_own ON funcionarios;
+DROP POLICY IF EXISTS funcionarios_gestor ON funcionarios;
 DROP POLICY IF EXISTS admin_all_funcionarios ON funcionarios;
 DROP POLICY IF EXISTS funcionarios_select_unified ON funcionarios;
 DROP POLICY IF EXISTS funcionarios_update_unified ON funcionarios;
@@ -39,7 +39,7 @@ CREATE POLICY funcionarios_select_simple ON funcionarios
     current_user_perfil() = 'rh'
     OR
     -- Gestor entidade vê funcionários (simplificado)
-    current_user_perfil() = 'gestor_entidade'
+    current_user_perfil() = 'gestor'
   );
 
 COMMENT ON POLICY funcionarios_select_simple ON funcionarios IS 
@@ -55,7 +55,7 @@ CREATE POLICY funcionarios_update_simple ON funcionarios
     current_user_perfil() = 'rh'
     OR
     -- Gestor entidade pode atualizar
-    current_user_perfil() = 'gestor_entidade'
+    current_user_perfil() = 'gestor'
   );
 
 COMMENT ON POLICY funcionarios_update_simple ON funcionarios IS 
@@ -71,7 +71,7 @@ CREATE POLICY funcionarios_insert_simple ON funcionarios
     current_user_perfil() = 'rh'
     OR
     -- Gestor entidade pode inserir
-    current_user_perfil() = 'gestor_entidade'
+    current_user_perfil() = 'gestor'
   );
 
 COMMENT ON POLICY funcionarios_insert_simple ON funcionarios IS 

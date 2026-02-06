@@ -149,29 +149,29 @@ export async function POST(request: Request) {
     const clinica = clinicaRes.rows[0];
 
     // Verificar se o pagamento pertence à clínica: pode ocorrer por pagamentos.clinica_id (legacy)
-    // ou por pagamentos.contratante_id apontando para um contratante com o mesmo CNPJ da clínica
+    // ou por pagamentos.entidade_id apontando para uma entidade com o mesmo CNPJ da clínica
     let belongsToClinic = false;
 
     try {
       if (pagamento.clinica_id && pagamento.clinica_id === clinicaId) {
         belongsToClinic = true;
-      } else if (pagamento.contratante_id) {
+      } else if (pagamento.entidade_id) {
         const ct = await query(
-          'SELECT id, cnpj, nome, email FROM contratantes WHERE id = $1',
-          [pagamento.contratante_id]
+          'SELECT id, cnpj, nome, email FROM entidades WHERE id = $1',
+          [pagamento.entidade_id]
         );
         if (ct.rows.length > 0 && ct.rows[0].cnpj === clinica.cnpj) {
           belongsToClinic = true;
         }
       } else if (pagamento.contrato_id) {
         const contrato = await query(
-          'SELECT contratante_id FROM contratos WHERE id = $1',
+          'SELECT entidade_id FROM contratos WHERE id = $1',
           [pagamento.contrato_id]
         );
         if (contrato.rows.length > 0) {
           const ct2 = await query(
-            'SELECT id, cnpj, nome, email FROM contratantes WHERE id = $1',
-            [contrato.rows[0].contratante_id]
+            'SELECT id, cnpj, nome, email FROM entidades WHERE id = $1',
+            [contrato.rows[0].entidade_id]
           );
           if (ct2.rows.length > 0 && ct2.rows[0].cnpj === clinica.cnpj) {
             belongsToClinic = true;
@@ -205,34 +205,34 @@ export async function POST(request: Request) {
 
     const cpRow = cpRes.rows[0] || {};
 
-    // Buscar contratante_id associado ao pagamento/contrato
-    let contratanteId: number | null = null;
+    // Buscar entidade_id associado ao pagamento/contrato
+    let entidadeId: number | null = null;
     let contratoId: number | null =
       cpRow.contrato_id || pagamento.contrato_id || null;
-    if (pagamento.contratante_id) {
-      contratanteId = pagamento.contratante_id;
+    if (pagamento.entidade_id) {
+      entidadeId = pagamento.entidade_id;
     } else if (contratoId) {
       const contratoRes = await query(
-        'SELECT contratante_id FROM contratos WHERE id = $1',
+        'SELECT entidade_id FROM contratos WHERE id = $1',
         [contratoId]
       );
       if (contratoRes.rows.length > 0) {
-        contratanteId = contratoRes.rows[0].contratante_id;
+        entidadeId = contratoRes.rows[0].entidade_id;
       }
     }
 
-    // Se ainda não temos contrato_id e temos contratante_id, tentar recuperar um contrato existente ACEITO
-    if (!contratoId && contratanteId) {
+    // Se ainda não temos contrato_id e temos entidade_id, tentar recuperar um contrato existente ACEITO
+    if (!contratoId && entidadeId) {
       const contratoRes = await query(
-        'SELECT id, aceito, status FROM contratos WHERE contratante_id = $1 AND aceito = true ORDER BY id DESC LIMIT 1',
-        [contratanteId]
+        'SELECT id, aceito, status FROM contratos WHERE entidade_id = $1 AND aceito = true ORDER BY id DESC LIMIT 1',
+        [entidadeId]
       );
       if (contratoRes.rows.length > 0) {
         contratoId = contratoRes.rows[0].id;
       } else {
         // POLÍTICA: Recibos só podem ser gerados com contrato pré-existente e aceito
         console.error(
-          `[RH/PARCELAS/GERAR-RECIBO] Contrato não encontrado ou não aceito para contratante ${contratanteId}`
+          `[RH/PARCELAS/GERAR-RECIBO] Contrato não encontrado ou não aceito para entidade ${entidadeId}`
         );
         return NextResponse.json(
           {
@@ -504,7 +504,7 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}
       contrato_id: dados.contrato_id,
       pagamento_id: dados.pagamento_id,
       clinica_id: clinicaId,
-      contratante_id: contratanteId,
+      entidade_id: entidadeId,
       parcela_numero,
       numero_recibo,
       vigencia_inicio: vigenciaInicio.toISOString().split('T')[0],

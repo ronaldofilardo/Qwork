@@ -1,11 +1,11 @@
--- Adds audit columns to contratantes_senhas and a minimal trigger
+-- Adds audit columns to entidades_senhas and a minimal trigger
 -- to synchronize status from contratacao_personalizada -> contratantes
 BEGIN;
 
-ALTER TABLE contratantes_senhas
+ALTER TABLE entidades_senhas
   ADD COLUMN IF NOT EXISTS criado_em timestamptz DEFAULT NOW();
 
-ALTER TABLE contratantes_senhas
+ALTER TABLE entidades_senhas
   ADD COLUMN IF NOT EXISTS atualizado_em timestamptz DEFAULT NOW();
 
 -- Minimal trigger function: when a contratacao_personalizada row is inserted/updated

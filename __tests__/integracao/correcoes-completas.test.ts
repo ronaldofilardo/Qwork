@@ -30,7 +30,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
   describe('🏢 Fluxo Completo: Account-Info + Autenticação', () => {
     const mockSession = {
       contratante_id: 18,
-      tipo: 'gestor_entidade',
+      tipo: 'gestor',
       userId: 1,
     };
 
@@ -49,7 +49,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       contratante_id: 18,
       cpf: '87545772920',
       nome: 'Gestor RELEGERE',
-      tipo: 'gestor_entidade',
+      tipo: 'gestor',
     };
 
     const mockSenha = {
@@ -80,7 +80,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
         [cpf]
       );
       const senhaResult = await query(
-        'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
         [cpf]
       );
 
@@ -165,7 +165,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       mockQuery.mockRejectedValueOnce(triggerError);
 
       await expect(
-        query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [18])
+        query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [18])
       ).rejects.toThrow('OPERAÇÃO BLOQUEADA');
 
       // 2. USO DA FUNÇÃO SEGURA (DEVE FUNCIONAR)
@@ -246,7 +246,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
     test('🧹 Scripts antigos vs novos', async () => {
       // Simular execução do script antigo (perigoso)
       const scriptAntigoQuery = `
-        DELETE FROM contratantes_senhas WHERE contratante_id IN (
+        DELETE FROM entidades_senhas WHERE contratante_id IN (
           SELECT id FROM contratantes WHERE tipo = 'entidade'
         );
       `;
@@ -318,7 +318,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
           ]);
 
         const senhaResult = await query(
-          'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+          'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
           [usuario.cpf]
         );
         const isValid = await bcrypt.compare(
@@ -342,14 +342,14 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
 
       // Primeira tentativa falha
       await expect(
-        query('SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1', [
+        query('SELECT senha_hash FROM entidades_senhas WHERE cpf = $1', [
           '87545772920',
         ])
       ).rejects.toThrow('Connection timeout');
 
       // Retry funciona
       const result = await query(
-        'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
         ['87545772920']
       );
       expect(result[0].senha_hash).toBe('$2a$06$validHash');
@@ -409,7 +409,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
         "SELECT id FROM contratantes WHERE tipo = 'entidade'"
       );
       const senhasResult = await query(
-        'SELECT DISTINCT contratante_id FROM contratantes_senhas'
+        'SELECT DISTINCT contratante_id FROM entidades_senhas'
       );
 
       const contratanteIds = contratantesResult.rows.map((c) => c.id);
@@ -433,7 +433,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
 
       mockGetSession.mockResolvedValue({
         contratante_id: 18,
-        tipo: 'gestor_entidade',
+        tipo: 'gestor',
       });
 
       const mockContratante = {

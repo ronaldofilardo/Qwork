@@ -1,6 +1,6 @@
 /**
  * Testes de Regressão Visual - Snapshots de Páginas
- * 
+ *
  * Estes testes garantem que o layout das páginas não quebre ou regrida
  * ao capturar snapshots da estrutura renderizada.
  */
@@ -49,7 +49,7 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve manter estrutura visual consistente', () => {
       const LoginPage = require('@/app/login/page').default;
       const { container } = render(<LoginPage />);
-      
+
       // Snapshot da estrutura
       expect(container.firstChild).toMatchSnapshot();
     });
@@ -57,11 +57,11 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve ter elementos de layout essenciais', () => {
       const LoginPage = require('@/app/login/page').default;
       const { container } = render(<LoginPage />);
-      
+
       // Verificar estrutura de containers principais
       const mainContainers = container.querySelectorAll('div[class*="flex"]');
       expect(mainContainers.length).toBeGreaterThan(0);
-      
+
       // Verificar presença de formulário
       const forms = container.querySelectorAll('form');
       expect(forms.length).toBeGreaterThan(0);
@@ -72,14 +72,14 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve manter estrutura visual consistente', () => {
       const AvaliacaoPage = require('@/app/avaliacao/page').default;
       const { container } = render(<AvaliacaoPage />);
-      
+
       expect(container.firstChild).toMatchSnapshot();
     });
 
     it('deve ter containers de layout principal', () => {
       const AvaliacaoPage = require('@/app/avaliacao/page').default;
       const { container } = render(<AvaliacaoPage />);
-      
+
       // Verificar presença de containers principais
       const mainDiv = container.querySelector('div');
       expect(mainDiv).toBeTruthy();
@@ -90,7 +90,7 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve manter estrutura visual consistente', () => {
       const ConcluidaPage = require('@/app/avaliacao/concluida/page').default;
       const { container } = render(<ConcluidaPage />);
-      
+
       expect(container.firstChild).toMatchSnapshot();
     });
   });
@@ -114,7 +114,7 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve manter estrutura visual consistente', () => {
       const AdminPage = require('@/app/admin/page').default;
       const { container } = render(<AdminPage />);
-      
+
       expect(container.firstChild).toMatchSnapshot();
     });
   });
@@ -129,7 +129,7 @@ describe('Regressão Visual - Páginas Principais', () => {
             nome: 'RH User',
             tipo_usuario: 'rh',
             email: 'rh@test.com',
-            contratanteId: '123',
+            entidadeId: '123',
           },
         },
         status: 'authenticated',
@@ -139,7 +139,7 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve manter estrutura visual consistente', () => {
       const RHDashboard = require('@/app/rh/dashboard/page').default;
       const { container } = render(<RHDashboard />);
-      
+
       expect(container.firstChild).toMatchSnapshot();
     });
   });
@@ -150,7 +150,7 @@ describe('Regressão Visual - Páginas Principais', () => {
   describe('Página Home', () => {
     it('deve redirecionar baseado em sessão', () => {
       const HomePage = require('@/app/page').default;
-      
+
       // HomePage sempre redireciona, não renderiza nada
       // Apenas verificamos que o componente existe
       expect(() => render(<HomePage />)).toThrow('NEXT_REDIRECT');
@@ -159,9 +159,10 @@ describe('Regressão Visual - Páginas Principais', () => {
 
   describe('Página Sucesso Cadastro', () => {
     it('deve manter estrutura visual consistente', () => {
-      const SucessoCadastroPage = require('@/app/sucesso-cadastro/page').default;
+      const SucessoCadastroPage =
+        require('@/app/sucesso-cadastro/page').default;
       const { container } = render(<SucessoCadastroPage />);
-      
+
       expect(container.firstChild).toMatchSnapshot();
     });
   });
@@ -170,7 +171,7 @@ describe('Regressão Visual - Páginas Principais', () => {
     it('deve manter estrutura visual consistente', () => {
       const TermosContratoPage = require('@/app/termos/contrato/page').default;
       const { container } = render(<TermosContratoPage />);
-      
+
       expect(container.firstChild).toMatchSnapshot();
     });
   });

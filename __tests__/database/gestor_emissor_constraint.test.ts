@@ -22,13 +22,11 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
       if (fnCheck.rows.length > 0) {
         await query('SELECT fn_delete_senha_autorizado($1)', [testCpf]);
       } else {
-        await query('DELETE FROM contratantes_senhas WHERE cpf = $1', [
-          testCpf,
-        ]);
+        await query('DELETE FROM entidades_senhas WHERE cpf = $1', [testCpf]);
       }
     } catch (e) {
       console.warn(
-        'Cleanup contratantes_senhas delete failed:',
+        'Cleanup entidades_senhas delete failed:',
         e && e.message ? e.message : e
       );
     }
@@ -45,8 +43,8 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
     }
   });
 
-  test('inserir emissor com CPF de gestor_entidade deve falhar', async () => {
-    // Criar contratante do tipo entidade e registrar senha (gestor_entidade)
+  test('inserir emissor com CPF de gestor deve falhar', async () => {
+    // Criar contratante do tipo entidade e registrar senha (gestor)
     const res = await query(
       'INSERT INTO contratantes (cnpj, nome, tipo, ativa, pagamento_confirmado, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id',
       [
@@ -70,7 +68,7 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
     contratanteId = res.rows[0].id;
 
     await query(
-      'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+      'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
       [contratanteId, testCpf, 'hash']
     );
 
@@ -154,13 +152,13 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
       if (fnCheck2.rows.length > 0) {
         await query('SELECT fn_delete_senha_autorizado($1)', [responsavelCpf]);
       } else {
-        await query('DELETE FROM contratantes_senhas WHERE cpf = $1', [
+        await query('DELETE FROM entidades_senhas WHERE cpf = $1', [
           responsavelCpf,
         ]);
       }
     } catch (e) {
       console.warn(
-        'Cleanup contratantes_senhas delete failed:',
+        'Cleanup entidades_senhas delete failed:',
         e && e.message ? e.message : e
       );
     }

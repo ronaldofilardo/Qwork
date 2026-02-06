@@ -50,16 +50,16 @@ SECURITY DEFINER
 LANGUAGE plpgsql
 AS $$
 BEGIN
-    -- Atualizar para 'concluida' se >= 37 respostas
+    -- Atualizar para 'concluido' se >= 37 respostas
     UPDATE avaliacoes a
     SET
-        status = 'concluida',
+        status = 'concluido',
         envio = COALESCE(
             envio,
             (SELECT MAX(r.criado_em) FROM respostas r WHERE r.avaliacao_id = a.id)
         ),
         atualizado_em = NOW()
-    WHERE a.status != 'concluida'
+    WHERE a.status != 'concluido'
       AND (
           SELECT COUNT(DISTINCT (r.grupo, r.item))
           FROM respostas r
@@ -108,7 +108,7 @@ ALTER TABLE avaliacoes DISABLE ROW LEVEL SECURITY;
 
 -- Executar correções
 UPDATE avaliacoes SET status = 'em_andamento' WHERE id = 18 AND status = 'iniciada';
-UPDATE avaliacoes SET status = 'concluida', envio = '2026-02-04 15:52:20' WHERE id = 17 AND status = 'iniciada';
+UPDATE avaliacoes SET status = 'concluido', envio = '2026-02-04 15:52:20' WHERE id = 17 AND status = 'iniciada';
 
 -- Reabilitar RLS
 ALTER TABLE avaliacoes ENABLE ROW LEVEL SECURITY;
@@ -164,3 +164,4 @@ COMMIT;
 
 **Recomendação:**
 Executar a Solução 2 (função PostgreSQL) para correção imediata, ou simplesmente aguardar a próxima vez que o funcionário acessar a avaliação (o sistema auto-corrigirá).
+

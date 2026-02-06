@@ -38,21 +38,21 @@ async function restaurarSenha() {
     // Verificar se já existe senha
     console.log('🔍 Verificando se senha já existe...');
     const existeResult = await client.query(
-      'SELECT * FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
+      'SELECT * FROM entidades_senhas WHERE contratante_id = $1 AND cpf = $2',
       [contratanteId, cpf]
     );
 
     if (existeResult.rows.length > 0) {
       console.log('   ⚠️  Senha já existe. Atualizando...');
       await client.query(
-        'UPDATE contratantes_senhas SET senha_hash = $1 WHERE contratante_id = $2 AND cpf = $3',
+        'UPDATE entidades_senhas SET senha_hash = $1 WHERE contratante_id = $2 AND cpf = $3',
         [senhaHash, contratanteId, cpf]
       );
       console.log('   ✅ Senha atualizada com sucesso!');
     } else {
       console.log('   ➕ Senha não existe. Criando...');
       await client.query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+        'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
         [contratanteId, cpf, senhaHash]
       );
       console.log('   ✅ Senha criada com sucesso!');
@@ -63,7 +63,7 @@ async function restaurarSenha() {
     // Verificar inserção
     console.log('✅ Verificando inserção...');
     const verificacao = await client.query(
-      'SELECT senha_hash, LENGTH(senha_hash) as hash_len FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
+      'SELECT senha_hash, LENGTH(senha_hash) as hash_len FROM entidades_senhas WHERE contratante_id = $1 AND cpf = $2',
       [contratanteId, cpf]
     );
 

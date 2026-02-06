@@ -51,7 +51,7 @@ describe('Correções da Conversa - Liberação de Lotes e RLS', () => {
       const user = result.rows[0];
 
       expect(user.cpf).toBe('04703084945');
-      expect(user.usuario_tipo).toBe('gestor_rh');
+      expect(user.usuario_tipo).toBe('rh');
       expect(user.ativo).toBe(true);
       expect(user.clinica_id).toBeTruthy();
       expect(user.contratante_id).toBeTruthy();

@@ -7,9 +7,9 @@
 
 ## 🎯 Objetivo
 
-Resolver o problema circular de autenticação onde gestores (gestor_entidade e rh) eram tratados inconsistentemente:
+Resolver o problema circular de autenticação onde gestores (gestor e rh) eram tratados inconsistentemente:
 
-- Às vezes como registros em `contratantes_senhas` (autenticação)
+- Às vezes como registros em `entidades_senhas` (autenticação)
 - Às vezes como registros em `funcionarios` (validação de segurança)
 
 Isso causava erro: **"SEGURANÇA: Contexto de sessão inválido - usuário não encontrado ou inativo"**
@@ -28,7 +28,7 @@ Isso causava erro: **"SEGURANÇA: Contexto de sessão inválido - usuário não 
   - `queryAsGestor()` - Query genérica sem RLS
   - `queryAsGestorRH()` - Query específica para RH
   - `queryAsGestorEntidade()` - Query específica para entidade
-  - `validateGestorContext()` - Valida via contratantes_senhas
+  - `validateGestorContext()` - Valida via entidades_senhas
   - `isGestor()`, `isGestorRH()`, `isGestorEntidade()` - Type guards
   - `logGestorAction()` - Auditoria de ações
 
@@ -72,7 +72,7 @@ Isso causava erro: **"SEGURANÇA: Contexto de sessão inválido - usuário não 
   - Identifica gestores incorretamente em funcionarios
   - Cria backup `funcionarios_backup_gestores_cleanup`
   - Remove gestores de funcionarios
-  - Valida existência em contratantes_senhas
+  - Valida existência em entidades_senhas
   - Remove avaliações e referências inválidas
 
 **3. Documentação**
@@ -193,12 +193,12 @@ export async function POST(request: Request) {
 
 ### Tabela de Decisão
 
-| Tipo de Usuário | Tabela Auth         | Validação            | Query Function     | RLS |
-| --------------- | ------------------- | -------------------- | ------------------ | --- |
-| gestor_entidade | contratantes_senhas | requireEntity()      | queryAsGestor()    | ❌  |
-| rh              | contratantes_senhas | requireClinica()     | queryAsGestor()    | ❌  |
-| funcionario     | funcionarios        | requireAuth()        | queryWithContext() | ✅  |
-| admin           | contratantes_senhas | requireRole('admin') | query()            | ❌  |
+| Tipo de Usuário | Tabela Auth      | Validação            | Query Function     | RLS |
+| --------------- | ---------------- | -------------------- | ------------------ | --- |
+| gestor          | entidades_senhas | requireEntity()      | queryAsGestor()    | ❌  |
+| rh              | entidades_senhas | requireClinica()     | queryAsGestor()    | ❌  |
+| funcionario     | funcionarios     | requireAuth()        | queryWithContext() | ✅  |
+| admin           | entidades_senhas | requireRole('admin') | query()            | ❌  |
 
 ---
 
@@ -219,7 +219,7 @@ psql $DATABASE_URL -f database/migrations/300_update_rls_exclude_gestores.sql
 psql $DATABASE_URL -f database/migrations/301_cleanup_gestores_funcionarios.sql
 
 # 4. Validar
-psql $DATABASE_URL -c "SELECT COUNT(*) FROM funcionarios WHERE cpf IN (SELECT cpf_cnpj FROM contratantes_senhas WHERE perfil IN ('gestor_entidade', 'rh'));"
+psql $DATABASE_URL -c "SELECT COUNT(*) FROM funcionarios WHERE cpf IN (SELECT cpf_cnpj FROM entidades_senhas WHERE perfil IN ('gestor', 'rh'));"
 # Deve retornar 0
 ```
 
@@ -251,7 +251,7 @@ psql $DATABASE_URL -c "SELECT COUNT(*) FROM funcionarios WHERE cpf IN (SELECT cp
 
 ### Migrações
 
-- [Migration 201](../database/migrations/201_fix_gestor_entidade_as_funcionario.sql)
+- [Migration 201](../database/migrations/201_fix_gestor_as_funcionario.sql)
 - [Migration 300](../database/migrations/300_update_rls_exclude_gestores.sql) ⭐
 - [Migration 301](../database/migrations/301_cleanup_gestores_funcionarios.sql) ⭐
 

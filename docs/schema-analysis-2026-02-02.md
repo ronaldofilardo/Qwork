@@ -37,7 +37,7 @@ Estas tabelas existem apenas em produção e são aceitáveis:
 1. auditoria_geral
 2. auditoria_recibos
 3. clinica_configuracoes
-4. contratantes_senhas_audit
+4. entidades_senhas_audit
 5. logs_admin
 6. notificacoes_traducoes
 7. payment_links

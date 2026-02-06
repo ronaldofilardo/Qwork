@@ -6,8 +6,8 @@
 export type UsuarioTipo =
   | 'funcionario_clinica'
   | 'funcionario_entidade'
-  | 'gestor_rh'
-  | 'gestor_entidade'
+  | 'rh'
+  | 'gestor'
   | 'admin'
   | 'emissor';
 
@@ -18,8 +18,8 @@ export function getUsuarioTipoLabel(tipo: UsuarioTipo): string {
   const labels: Record<UsuarioTipo, string> = {
     funcionario_clinica: 'Funcionário',
     funcionario_entidade: 'Funcionário da Entidade',
-    gestor_rh: 'Gestor RH',
-    gestor_entidade: 'Gestor da Entidade',
+    rh: 'Gestor RH',
+    gestor: 'Gestor da Entidade',
     admin: 'Administrador',
     emissor: 'Emissor de Laudos',
   };
@@ -33,8 +33,8 @@ export function getUsuarioTipoLabel(tipo: UsuarioTipo): string {
 export function mapPerfilToUsuarioTipo(perfil: string): UsuarioTipo | null {
   const map: Record<string, UsuarioTipo> = {
     funcionario: 'funcionario_clinica', // Default para funcionarios
-    rh: 'gestor_rh',
-    gestor_entidade: 'gestor_entidade',
+    rh: 'rh',
+    gestor: 'gestor',
     admin: 'admin',
     emissor: 'emissor',
   };
@@ -49,8 +49,8 @@ export function mapUsuarioTipoToPerfil(usuarioTipo: UsuarioTipo): string {
   const map: Record<UsuarioTipo, string> = {
     funcionario_clinica: 'funcionario',
     funcionario_entidade: 'funcionario',
-    gestor_rh: 'rh',
-    gestor_entidade: 'gestor_entidade',
+    rh: 'rh',
+    gestor: 'gestor',
     admin: 'admin',
     emissor: 'emissor',
   };
@@ -65,10 +65,25 @@ export function isFuncionario(tipo: UsuarioTipo): boolean {
 }
 
 /**
- * Verifica se usuario_tipo é um tipo de gestor
+ * Verifica se usuario_tipo é gestor de entidade
+ */
+export function isGestorDeEntidade(tipo: UsuarioTipo): boolean {
+  return tipo === 'gestor';
+}
+
+/**
+ * Verifica se usuario_tipo é gestor de clínica (RH)
+ */
+export function isGestorDeClinica(tipo: UsuarioTipo): boolean {
+  return tipo === 'rh';
+}
+
+/**
+ * Verifica se usuario_tipo é qualquer tipo de gestor (entidade ou clínica)
+ * @deprecated Use isGestorDeEntidade() ou isGestorDeClinica() para maior clareza
  */
 export function isGestor(tipo: UsuarioTipo): boolean {
-  return tipo === 'gestor_rh' || tipo === 'gestor_entidade';
+  return tipo === 'rh' || tipo === 'gestor';
 }
 
 /**
@@ -89,27 +104,30 @@ export function isEmissor(tipo: UsuarioTipo): boolean {
  * Verifica se usuario_tipo pode gerenciar clínica
  */
 export function podeGerenciarClinica(tipo: UsuarioTipo): boolean {
-  return tipo === 'gestor_rh' || tipo === 'admin';
+  return tipo === 'rh' || tipo === 'admin';
 }
 
 /**
  * Verifica se usuario_tipo pode gerenciar entidade
  */
 export function podeGerenciarEntidade(tipo: UsuarioTipo): boolean {
-  return tipo === 'gestor_entidade' || tipo === 'admin';
+  return tipo === 'gestor' || tipo === 'admin';
 }
 
 /**
  * Retorna SQL WHERE clause para filtrar por usuario_tipo
+ * NOTA: 'gestor' refere-se ao gestor de entidade, 'rh' é gestor de clínica
  */
 export function getSQLWhereUsuarioTipo(
-  tipo: 'funcionario' | 'gestor' | 'all'
+  tipo: 'funcionario' | 'gestor' | 'gestor_clinica' | 'all'
 ): string {
   switch (tipo) {
     case 'funcionario':
       return "usuario_tipo IN ('funcionario_clinica', 'funcionario_entidade')";
     case 'gestor':
-      return "usuario_tipo IN ('gestor_rh', 'gestor_entidade')";
+      return "usuario_tipo = 'gestor'";
+    case 'gestor_clinica':
+      return "usuario_tipo = 'rh'";
     case 'all':
       return 'usuario_tipo IS NOT NULL';
     default:
@@ -124,8 +142,8 @@ export function isValidUsuarioTipo(tipo: string): tipo is UsuarioTipo {
   const validTypes: UsuarioTipo[] = [
     'funcionario_clinica',
     'funcionario_entidade',
-    'gestor_rh',
-    'gestor_entidade',
+    'rh',
+    'gestor',
     'admin',
     'emissor',
   ];
@@ -139,8 +157,8 @@ export function getUsuarioTipoIcon(tipo: UsuarioTipo): string {
   const icons: Record<UsuarioTipo, string> = {
     funcionario_clinica: '👤',
     funcionario_entidade: '👥',
-    gestor_rh: '👔',
-    gestor_entidade: '🏢',
+    rh: '👔',
+    gestor: '🏢',
     admin: '⚙️',
     emissor: '📋',
   };
@@ -154,8 +172,8 @@ export function getUsuarioTipoColor(tipo: UsuarioTipo): string {
   const colors: Record<UsuarioTipo, string> = {
     funcionario_clinica: 'blue',
     funcionario_entidade: 'cyan',
-    gestor_rh: 'purple',
-    gestor_entidade: 'violet',
+    rh: 'purple',
+    gestor: 'violet',
     admin: 'red',
     emissor: 'green',
   };

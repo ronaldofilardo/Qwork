@@ -86,8 +86,8 @@ psql 'postgresql://neondb_owner:npg_J2QYqn5oxCzp@ep-divine-sky-acuderi7.sa-east-
 
 **O que procurar no resultado:**
 
-- ✅ Avaliação #17 tem `status = 'concluida'` e `envio IS NOT NULL`?
-- ✅ View `vw_funcionarios_por_lote` mostra `status_avaliacao = 'concluida'` para avaliação #17?
+- ✅ Avaliação #17 tem `status = 'concluido'` e `envio IS NOT NULL`?
+- ✅ View `vw_funcionarios_por_lote` mostra `status_avaliacao = 'concluido'` para avaliação #17?
 - ❌ Coluna `processamento_em` existe? (deveria estar removida)
 - ❌ Função `prevent_mutation_during_emission()` menciona `processamento_em`? (deveria ter sido atualizada)
 
@@ -194,3 +194,4 @@ Se após executar os scripts o problema persistir, coletar:
 4. Response da API `/api/entidade/lote/21` via DevTools Network
 
 **Última atualização:** 04/02/2026 00:30
+

@@ -21,11 +21,12 @@ describe('Sistema de Auditoria - Ações Automáticas', () => {
       rows: [
         {
           id: 1,
-          table_name: 'contratantes',
-          record_id: 1,
-          operation: 'UPDATE',
+          action: 'UPDATE',
+          resource: 'contratantes',
+          resource_id: '1',
+          new_data: { status: 'aprovado' },
+          user_perfil: 'admin',
           user_cpf: null,
-          changed_fields: { status: 'aprovado' },
         },
       ],
       rowCount: 1,
@@ -44,11 +45,12 @@ describe('Sistema de Auditoria - Ações Automáticas', () => {
       rows: [
         {
           id: 2,
-          table_name: 'contratantes',
-          record_id: 9,
-          operation: 'UPDATE',
+          action: 'UPDATE',
+          resource: 'contratantes',
+          resource_id: '9',
+          new_data: { ativa: true, aprovado_por_cpf: '00000000000' },
+          user_perfil: 'admin',
           user_cpf: '00000000000',
-          changed_fields: { ativa: true, aprovado_por_cpf: '00000000000' },
         },
       ],
       rowCount: 1,
@@ -94,14 +96,15 @@ describe('Sistema de Auditoria - Ações Automáticas', () => {
       rows: [
         {
           id: 3,
-          table_name: 'contratantes',
-          record_id: 1,
-          operation: 'UPDATE',
-          user_cpf: null,
-          changed_fields: {
+          action: 'UPDATE',
+          resource: 'contratantes',
+          resource_id: '1',
+          new_data: {
             status: 'aprovado',
             old_status: 'pagamento_confirmado',
           },
+          user_perfil: 'admin',
+          user_cpf: null,
         },
       ],
       rowCount: 1,
@@ -109,15 +112,15 @@ describe('Sistema de Auditoria - Ações Automáticas', () => {
 
     const result = await query(
       `SELECT * FROM audit_logs 
-       WHERE table_name = 'contratantes' 
-         AND operation = 'UPDATE' 
-         AND changed_fields->>'status' = 'aprovado'
+       WHERE resource = 'contratantes' 
+         AND action = 'UPDATE' 
+         AND new_data->>'status' = 'aprovado'
          AND user_cpf IS NULL
        ORDER BY created_at DESC LIMIT 1`
     );
 
     expect(result.rows).toHaveLength(1);
-    expect(result.rows[0].changed_fields.status).toBe('aprovado');
+    expect(result.rows[0].new_data.status).toBe('aprovado');
   });
 
   it('deve validar formato de CPF quando user_cpf não é NULL', async () => {
@@ -148,7 +151,7 @@ describe('Sistema de Auditoria - Ações Automáticas', () => {
 
     await expect(
       query(
-        `INSERT INTO audit_logs (user_cpf, table_name, operation) VALUES ($1, 'test', 'TEST')`,
+        `INSERT INTO audit_logs (user_cpf, action, resource) VALUES ($1, 'TEST', 'test')`,
         [invalidCPF]
       )
     ).rejects.toThrow('check constraint');

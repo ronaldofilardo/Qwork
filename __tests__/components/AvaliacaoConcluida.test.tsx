@@ -27,7 +27,7 @@ describe('AvaliacaoConcluidaPage - Recibo de Conclusão', () => {
     jest.clearAllMocks()
     ;(global.fetch as jest.Mock).mockResolvedValue({
       ok: true,
-      json: async () => ({ status: 'concluida' })
+      json: async () => ({ status: 'concluido' })
     })
   })
 

@@ -38,7 +38,7 @@ ALTER TABLE public.funcionarios DROP CONSTRAINT IF EXISTS funcionarios_nivel_car
 
 ALTER TABLE public.funcionarios
   ADD CONSTRAINT funcionarios_perfil_check CHECK (
-    perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor_entidade', 'cadastro')
+    perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor', 'cadastro')
   );
 
 ALTER TABLE public.funcionarios

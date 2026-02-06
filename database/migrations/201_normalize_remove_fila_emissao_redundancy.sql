@@ -201,7 +201,7 @@ COMMENT ON COLUMN auditoria_laudos.solicitado_por IS
 'CPF do usuário que solicitou a emissão (RH ou Entidade)';
 
 COMMENT ON COLUMN auditoria_laudos.tipo_solicitante IS
-'Tipo do solicitante: rh ou gestor_entidade';
+'Tipo do solicitante: rh ou gestor';
 
 COMMENT ON COLUMN auditoria_laudos.tentativas IS
 'Número de tentativas de processamento (para retry)';

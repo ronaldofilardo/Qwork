@@ -25,7 +25,7 @@ Write-Host ""
 $tables = @(
     "planos",
     "contratantes",
-    "contratantes_senhas",
+    "entidades_senhas",
     "clinicas",
     "empresas_clientes",
     "funcionarios"

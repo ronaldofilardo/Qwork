@@ -326,7 +326,7 @@ describe('RLS - Políticas de Segurança das Tabelas de Contratação', () => {
         getSession: jest.fn(() =>
           Promise.resolve({
             cpf: '123.456.789-00',
-            perfil: 'gestor_entidade',
+            perfil: 'gestor',
             clinica_id: 1,
           })
         ),

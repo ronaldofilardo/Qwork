@@ -121,7 +121,7 @@ Status: Testes já existiam desde a implementação das fases 1-4.
 
 ### Estrutura de Roles
 
-- **gestor_entidade**: Gerencia ENTIDADE (tipo='entidade')
+- **gestor**: Gerencia ENTIDADE (tipo='entidade')
 - **rh**: Gerencia CLÍNICA (tipo='clinica')
 - **Importante**: Gestores NÃO são funcionários (tabelas separadas)
 

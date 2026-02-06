@@ -4,7 +4,7 @@
  * Funções de banco de dados específicas para GESTORES (RH e Entidade)
  *
  * POLÍTICA ARQUITETURAL:
- * - Gestores NÃO estão em funcionarios (apenas em contratantes_senhas)
+ * - Gestores NÃO estão em funcionarios (apenas em entidades_senhas)
  * - Gestores NÃO usam RLS (Row Level Security)
  * - Validação de permissões via requireEntity() / requireClinica()
  * - Queries diretas sem queryWithContext()
@@ -20,14 +20,14 @@ import { PerfilUsuarioType } from './types/enums';
  * Verifica se o perfil é de um gestor (RH ou Entidade)
  */
 export function isGestor(perfil?: PerfilUsuarioType): boolean {
-  return perfil === 'rh' || perfil === 'gestor_entidade';
+  return perfil === 'rh' || perfil === 'gestor';
 }
 
 /**
  * Verifica se o perfil é especificamente gestor de entidade
  */
 export function isGestorEntidade(perfil?: PerfilUsuarioType): boolean {
-  return perfil === 'gestor_entidade';
+  return perfil === 'gestor';
 }
 
 /**
@@ -38,15 +38,15 @@ export function isGestorRH(perfil?: PerfilUsuarioType): boolean {
 }
 
 /**
- * Valida contexto de gestor via contratantes (NÃO funcionarios)
+ * Valida contexto de gestor via entidades (NÃO funcionarios)
  *
  * @param cpf CPF do gestor
- * @param perfil Perfil esperado ('rh' ou 'gestor_entidade')
+ * @param perfil Perfil esperado ('rh' ou 'gestor')
  * @returns true se o gestor existe e está ativo
  */
 async function validateGestorContext(
   cpf: string,
-  perfil: 'rh' | 'gestor_entidade'
+  perfil: 'rh' | 'gestor'
 ): Promise<boolean> {
   try {
     // Validar formato do CPF
@@ -55,31 +55,54 @@ async function validateGestorContext(
       return false;
     }
 
-    // Buscar gestor em contratantes_senhas (fonte de verdade)
-    const tipoContratante =
-      perfil === 'gestor_entidade' ? 'entidade' : 'clinica';
-
-    const result = await query(
-      `SELECT cs.cpf, c.id as contratante_id, c.tipo, c.ativa
-       FROM contratantes_senhas cs
-       JOIN contratantes c ON c.id = cs.contratante_id
-       WHERE cs.cpf = $1 AND c.tipo = $2 AND c.ativa = true`,
-      [cpf, tipoContratante]
-    );
-
-    if (result.rows.length === 0) {
-      console.error(
-        `[validateGestorContext] Gestor não encontrado ou inativo: CPF=${cpf}, Perfil=${perfil}`
+    // Buscar gestor em entidades_senhas ou clinicas_senhas (fontes de verdade)
+    if (perfil === 'gestor') {
+      // Gestores de ENTIDADE usam entidades_senhas
+      const result = await query(
+        `SELECT es.cpf, e.id as entidade_id, e.ativa
+         FROM entidades_senhas es
+         JOIN entidades e ON e.id = es.entidade_id
+         WHERE es.cpf = $1 AND e.ativa = true`,
+        [cpf]
       );
-      return false;
+
+      if (result.rows.length === 0) {
+        console.error(
+          `[validateGestorContext] Gestor de entidade não encontrado ou inativo: CPF=${cpf}`
+        );
+        return false;
+      }
+
+      const gestor = result.rows[0];
+      console.log(
+        `[validateGestorContext] ✓ Gestor de entidade validado: CPF=${cpf}, Entidade=${gestor.entidade_id}`
+      );
+
+      return true;
+    } else {
+      // Gestores RH usam clinicas_senhas
+      const result = await query(
+        `SELECT cs.cpf, cl.id as clinica_id, cl.ativa
+         FROM clinicas_senhas cs
+         JOIN clinicas cl ON cl.id = cs.clinica_id
+         WHERE cs.cpf = $1 AND cl.ativa = true`,
+        [cpf]
+      );
+
+      if (result.rows.length === 0) {
+        console.error(
+          `[validateGestorContext] Gestor RH não encontrado ou inativo: CPF=${cpf}`
+        );
+        return false;
+      }
+
+      const gestor = result.rows[0];
+      console.log(
+        `[validateGestorContext] ✓ Gestor RH validado: CPF=${cpf}, Clínica=${gestor.clinica_id}`
+      );
+
+      return true;
     }
-
-    const gestor = result.rows[0];
-    console.log(
-      `[validateGestorContext] ✓ Gestor validado: CPF=${cpf}, Contratante=${gestor.contratante_id}, Tipo=${gestor.tipo}`
-    );
-
-    return true;
   } catch (error) {
     console.error('[validateGestorContext] Erro:', error);
     return false;
@@ -89,9 +112,9 @@ async function validateGestorContext(
 /**
  * Query específica para gestores (RH e Entidade)
  *
- * NÃO usa RLS - validação via contratantes_senhas
+ * NÃO usa RLS - validação via entidades_senhas/clinicas_senhas
  * Deve ser usada apenas por endpoints que já validaram permissões com:
- * - requireEntity() para gestor_entidade
+ * - requireEntity() para gestor
  * - requireClinica() ou requireRHWithEmpresaAccess() para RH
  *
  * @param text SQL query
@@ -115,15 +138,15 @@ export async function queryAsGestor<T = Record<string, unknown>>(
     );
   }
 
-  // Validar que o gestor existe e está ativo em contratantes
+  // Validar que o gestor existe e está ativo em entidades
   const isValid = await validateGestorContext(
     session.cpf,
-    session.perfil as 'rh' | 'gestor_entidade'
+    session.perfil as 'rh' | 'gestor'
   );
 
   if (!isValid) {
     throw new Error(
-      'SEGURANÇA: Gestor não encontrado ou inativo em contratantes_senhas'
+      'SEGURANÇA: Gestor não encontrado ou inativo em entidades_senhas'
     );
   }
 
@@ -147,12 +170,12 @@ export async function queryAsGestor<T = Record<string, unknown>>(
 
 /**
  * Query específica para gestor de entidade
- * Valida que o usuário tem perfil gestor_entidade e contratante_id
+ * Valida que o usuário tem perfil gestor e entidade_id
  *
  * @param text SQL query
  * @param params Query parameters
  * @returns Query result
- * @throws Error se não for gestor_entidade ou não tiver contratante_id
+ * @throws Error se não for gestor ou não tiver entidade_id
  */
 export async function queryAsGestorEntidade<T = Record<string, unknown>>(
   text: string,
@@ -161,13 +184,11 @@ export async function queryAsGestorEntidade<T = Record<string, unknown>>(
   const session = getSession();
 
   if (!session || !isGestorEntidade(session.perfil)) {
-    throw new Error(
-      'SEGURANÇA: queryAsGestorEntidade é exclusivo para gestor_entidade'
-    );
+    throw new Error('SEGURANÇA: queryAsGestorEntidade é exclusivo para gestor');
   }
 
-  if (!session.contratante_id) {
-    throw new Error('SEGURANÇA: Sessão de gestor_entidade sem contratante_id');
+  if (!session.entidade_id) {
+    throw new Error('SEGURANÇA: Sessão de gestor sem entidade_id');
   }
 
   return queryAsGestor<T>(text, params);

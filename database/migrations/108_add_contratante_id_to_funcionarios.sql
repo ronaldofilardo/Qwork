@@ -1,6 +1,6 @@
 -- Migration 108: Adicionar coluna contratante_id em funcionarios para suportar entidades
 -- Data: 2026-01-15
--- Contexto: Funcionários de entidades (gestor_entidade) devem vincular-se à contratante (tipo='entidade')
+-- Contexto: Funcionários de entidades (gestor) devem vincular-se à contratante (tipo='entidade')
 --           Funcionários de clínicas vinculam-se a empresa_id + clinica_id
 
 BEGIN;

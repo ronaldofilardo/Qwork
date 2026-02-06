@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,17 +11,10 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const session = await Promise.resolve(getSession());
-
-    if (!session || session.perfil !== 'gestor_entidade') {
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas gestores de entidade.' },
-        { status: 403 }
-      );
-    }
+    const session = await requireEntity();
 
     // Buscar empresas associadas à entidade do gestor
-    // Nota: empresas_clientes usa clinica_id, não contratante_id
+    // Nota: empresas_clientes usa clinica_id, não entidade_id
     const empresasResult = await queryAsGestorEntidade(
       `SELECT
         ec.id,

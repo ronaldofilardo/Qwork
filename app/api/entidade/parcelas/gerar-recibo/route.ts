@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { createHash } from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
@@ -18,21 +18,13 @@ export async function POST(request: Request) {
 
   try {
     console.log('[HANDLER entidade] Getting session...');
-    const session = getSession();
+    const session = await requireEntity();
     console.log('[HANDLER entidade] Session:', session ? 'found' : 'null');
-    if (!session || session.perfil !== 'gestor_entidade') {
-      console.log(
-        '[HANDLER entidade] Unauthorized: session perfil',
-        session?.perfil
-      );
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    const contratanteId = session.contratante_id;
-    console.log('[HANDLER entidade] Contratante ID:', contratanteId);
-    if (!contratanteId) {
+    const entidadeId = session.contratante_id;
+    console.log('[HANDLER entidade] Entidade ID:', entidadeId);
+    if (!entidadeId) {
       return NextResponse.json(
-        { error: 'Contratante não encontrado' },
+        { error: 'Entidade não encontrada' },
         { status: 400 }
       );
     }
@@ -178,9 +170,9 @@ export async function POST(request: Request) {
         co.valor_total,
         co.numero_funcionarios,
         co.aceito,
-        ct.nome as contratante_nome,
-        ct.cnpj as contratante_cnpj,
-        ct.email as contratante_email,
+        e.nome as entidade_nome,
+        e.cnpj as entidade_cnpj,
+        e.email as entidade_email,
         p.id as pagamento_id,
         p.valor as pagamento_valor,
         p.status as status,
@@ -191,17 +183,17 @@ export async function POST(request: Request) {
         pl.nome as plano_nome,
         pl.tipo as plano_tipo
       FROM contratos co
-      INNER JOIN contratantes ct ON co.contratante_id = ct.id
-      INNER JOIN pagamentos p ON p.contratante_id = ct.id
+      INNER JOIN entidades e ON co.entidade_id = e.id
+      INNER JOIN pagamentos p ON p.entidade_id = e.id
       INNER JOIN planos pl ON co.plano_id = pl.id
-      WHERE ct.id = $1 AND p.id = $2 AND co.aceito = true
+      WHERE e.id = $1 AND p.id = $2 AND co.aceito = true
       LIMIT 1
     `;
 
     let dadosResult: any;
     try {
       dadosResult = await queryAsGestorEntidade(dadosQuery, [
-        contratanteId,
+        entidadeId,
         pagamento_id,
       ]);
       console.log('[HANDLER entidade] Dados query executed successfully');
@@ -331,10 +323,10 @@ export async function POST(request: Request) {
 RECIBO DE PAGAMENTO
 ${numero_recibo}
 
-CONTRATANTE:
-Nome: ${dados.contratante_nome}
-CNPJ: ${dados.contratante_cnpj || 'N/A'}
-Email: ${dados.contratante_email}
+ENTIDADE:
+Nome: ${dados.entidade_nome}
+CNPJ: ${dados.entidade_cnpj || 'N/A'}
+Email: ${dados.entidade_email}
 
 CONTRATO:
 Data de Contratação: ${new Date(dados.contratacao_at).toLocaleDateString('pt-BR')}
@@ -394,7 +386,7 @@ Gerado em: ${new Date().toLocaleString('pt-BR')}
     const insertData: any = {
       contrato_id: dados.contrato_id,
       pagamento_id: dados.pagamento_id,
-      contratante_id: contratanteId,
+      entidade_id: entidadeId,
       parcela_numero,
       numero_recibo,
       vigencia_inicio: vigenciaInicio.toISOString().split('T')[0],

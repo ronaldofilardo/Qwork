@@ -16,62 +16,62 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    // Determinar um contratante_id válido (pode vir via session.clinica_id, session.contratante_id ou tabela clinicas)
+    // Determinar um entidade_id válido (pode vir via session.clinica_id, session.entidade_id ou tabela clinicas)
     const clinicaId = session.clinica_id;
-    let contratanteId: number | null = null;
+    let entidadeId: number | null = null;
 
     if (clinicaId) {
-      // Verificar se já é um contratante (contratantes.id)
-      const contratanteCheck = await query(
-        `SELECT id FROM contratantes WHERE id = $1 AND tipo = 'clinica' LIMIT 1`,
+      // Verificar se já é uma entidade (entidades.id)
+      const entidadeCheck = await query(
+        `SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica' LIMIT 1`,
         [clinicaId]
       );
-      if (contratanteCheck.rows.length > 0) {
-        contratanteId = contratanteCheck.rows[0].id;
+      if (entidadeCheck.rows.length > 0) {
+        entidadeId = entidadeCheck.rows[0].id;
       } else {
-        // Tentar mapear tabela 'clinicas' => contratante_id
+        // Tentar mapear tabela 'clinicas' => entidade_id
         const mapRes = await query(
-          `SELECT contratante_id FROM clinicas WHERE id = $1 LIMIT 1`,
+          `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
           [clinicaId]
         );
-        if (mapRes.rows.length > 0 && mapRes.rows[0].contratante_id) {
-          contratanteId = mapRes.rows[0].contratante_id;
+        if (mapRes.rows.length > 0 && mapRes.rows[0].entidade_id) {
+          entidadeId = mapRes.rows[0].entidade_id;
         }
       }
     }
 
-    // Fallback: se a sessão conter contratante_id e esse contratante for do tipo 'clinica'
-    if (!contratanteId && (session as any).contratante_id) {
-      const contratanteCheck2 = await query(
-        `SELECT id FROM contratantes WHERE id = $1 AND tipo = 'clinica' LIMIT 1`,
-        [(session as any).contratante_id]
+    // Fallback: se a sessão conter entidade_id e essa entidade for do tipo 'clinica'
+    if (!entidadeId && (session as any).entidade_id) {
+      const entidadeCheck2 = await query(
+        `SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica' LIMIT 1`,
+        [(session as any).entidade_id]
       );
-      if (contratanteCheck2.rows.length > 0) {
-        contratanteId = contratanteCheck2.rows[0].id;
+      if (entidadeCheck2.rows.length > 0) {
+        entidadeId = entidadeCheck2.rows[0].id;
       }
     }
 
     // Último recurso: tentar obter via tabela funcionarios (pelo cpf da sessão)
-    if (!contratanteId) {
+    if (!entidadeId) {
       const funcRes = await query(
-        `SELECT clinica_id, contratante_id FROM funcionarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
+        `SELECT clinica_id, entidade_id FROM funcionarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
         [session.cpf]
       );
       if (funcRes.rows.length > 0) {
-        if (funcRes.rows[0].contratante_id)
-          contratanteId = funcRes.rows[0].contratante_id;
+        if (funcRes.rows[0].entidade_id)
+          entidadeId = funcRes.rows[0].entidade_id;
         else if (funcRes.rows[0].clinica_id) {
           const map2 = await query(
-            `SELECT contratante_id FROM clinicas WHERE id = $1 LIMIT 1`,
+            `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
             [funcRes.rows[0].clinica_id]
           );
-          if (map2.rows.length > 0 && map2.rows[0].contratante_id)
-            contratanteId = map2.rows[0].contratante_id;
+          if (map2.rows.length > 0 && map2.rows[0].entidade_id)
+            entidadeId = map2.rows[0].entidade_id;
         }
       }
     }
 
-    if (!contratanteId) {
+    if (!entidadeId) {
       return NextResponse.json(
         { error: 'Clínica não encontrada' },
         { status: 400 }
@@ -86,12 +86,12 @@ export async function GET() {
         co.valor_total,
         co.numero_funcionarios
       FROM contratos co
-      WHERE co.contratante_id = $1
+      WHERE co.entidade_id = $1
       ORDER BY co.criado_em DESC
       LIMIT 1
     `;
 
-    const contratoResult = await query(contratoQuery, [contratanteId]);
+    const contratoResult = await query(contratoQuery, [entidadeId]);
 
     if (contratoResult.rows.length === 0) {
       return NextResponse.json(
@@ -113,12 +113,12 @@ export async function GET() {
         p.status,
         p.criado_em
       FROM pagamentos p
-      WHERE p.contratante_id = $1
+      WHERE p.entidade_id = $1
       ORDER BY p.criado_em DESC
       LIMIT 1
     `;
 
-    const pagamentosResult = await query(pagamentosQuery, [contratanteId]);
+    const pagamentosResult = await query(pagamentosQuery, [entidadeId]);
 
     if (pagamentosResult.rows.length === 0) {
       return NextResponse.json({

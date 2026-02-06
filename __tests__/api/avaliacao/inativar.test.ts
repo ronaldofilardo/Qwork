@@ -67,14 +67,14 @@ describe('API Inativar Avaliação - Lógica de Negócio', () => {
   describe('Validação de Estado da Avaliação', () => {
     it('deve aceitar apenas avaliações ativas', () => {
       const statusValidos = ['iniciada', 'em_andamento', 'rascunho'];
-      const statusInvalidos = ['concluida', 'inativada'];
+      const statusInvalidos = ['concluido', 'inativada'];
 
       statusValidos.forEach(status => {
-        expect(['concluida', 'inativada']).not.toContain(status);
+        expect(['concluido', 'inativada']).not.toContain(status);
       });
 
       statusInvalidos.forEach(status => {
-        expect(['concluida', 'inativada']).toContain(status);
+        expect(['concluido', 'inativada']).toContain(status);
       });
     });
 

@@ -36,10 +36,10 @@ async function runAsRole(
         "SELECT set_config('app.current_user_clinica_id', $1, true)",
         [String(sessionVars.clinica_id)]
       );
-    if (sessionVars.contratante_id !== undefined)
+    if (sessionVars.entidade_id !== undefined)
       await client.query(
-        "SELECT set_config('app.current_user_contratante_id', $1, true)",
-        [String(sessionVars.contratante_id)]
+        "SELECT set_config('app.current_user_entidade_id', $1, true)",
+        [String(sessionVars.entidade_id)]
       );
     const res = await fn(client);
     await client.query('ROLLBACK');
@@ -53,8 +53,8 @@ async function runAsRole(
 describe('Isolamento RLS: RH e Gestores de Entidade', () => {
   let clinicaId1: number;
   let clinicaId2: number;
-  let contratanteId1: number;
-  let contratanteId2: number;
+  let entidadeId1: number;
+  let entidadeId2: number;
   let rhCpf1: string;
   let rhCpf2: string;
   let gestorCpf1: string;
@@ -68,7 +68,7 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     // Limpar dados residuais primeiro
     await query(`DELETE FROM funcionarios WHERE cpf LIKE '999%'`);
     await query(
-      `DELETE FROM contratantes WHERE cnpj IN ('11111111000111', '22222222000222', '33333333000133', '44444444000144')`
+      `DELETE FROM entidades WHERE cnpj IN ('11111111000111', '22222222000222', '33333333000133', '44444444000144')`
     );
     await query(
       `DELETE FROM clinicas WHERE cnpj IN ('11111111000111', '22222222000222')`
@@ -109,9 +109,9 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     );
     clinicaId2 = clinica2.rows[0].id;
 
-    // Criar 2 contratantes/entidades
+    // Criar 2 entidades independentes
     const contratante1 = await query(
-      `INSERT INTO contratantes (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
+      `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
       [
         'Entidade Teste 1',
@@ -131,10 +131,10 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         true,
       ]
     );
-    contratanteId1 = contratante1.rows[0].id;
+    entidadeId1 = contratante1.rows[0].id;
 
     const contratante2 = await query(
-      `INSERT INTO contratantes (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
+      `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
       [
         'Entidade Teste 2',
@@ -154,7 +154,7 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         true,
       ]
     );
-    contratanteId2 = contratante2.rows[0].id;
+    entidadeId2 = contratante2.rows[0].id;
 
     // Criar RHs (um para cada clínica)
     rhCpf1 = '11111111101';
@@ -174,14 +174,14 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     // Criar Gestores de Entidade (um para cada entidade)
     gestorCpf1 = '33333333301';
     await query(
-      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, contratante_id, ativo, nivel_cargo) 
+      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, entidade_id, ativo, nivel_cargo) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         gestorCpf1,
         'Gestor Entidade 1',
-        'gestor_entidade',
+        'gestor',
         '$2a$10$test',
-        contratanteId1,
+        entidadeId1,
         true,
         'gestao',
       ]
@@ -189,14 +189,14 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
 
     gestorCpf2 = '44444444402';
     await query(
-      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, contratante_id, ativo, nivel_cargo) 
+      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, entidade_id, ativo, nivel_cargo) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         gestorCpf2,
         'Gestor Entidade 2',
-        'gestor_entidade',
+        'gestor',
         '$2a$10$test',
-        contratanteId2,
+        entidadeId2,
         true,
         'gestao',
       ]
@@ -236,14 +236,14 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     // Criar funcionários de entidade
     funcEntidadeCpf1 = '77777777701';
     await query(
-      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, contratante_id, ativo, nivel_cargo) 
+      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, entidade_id, ativo, nivel_cargo) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         funcEntidadeCpf1,
         'Funcionário Entidade 1',
         'funcionario',
         '$2a$10$test',
-        contratanteId1,
+        entidadeId1,
         true,
         'operacional',
       ]
@@ -251,14 +251,14 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
 
     funcEntidadeCpf2 = '88888888802';
     await query(
-      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, contratante_id, ativo, nivel_cargo) 
+      `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, entidade_id, ativo, nivel_cargo) 
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
       [
         funcEntidadeCpf2,
         'Funcionário Entidade 2',
         'funcionario',
         '$2a$10$test',
-        contratanteId2,
+        entidadeId2,
         true,
         'operacional',
       ]
@@ -280,9 +280,9 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         funcEntidadeCpf2,
       ]
     );
-    await query(`DELETE FROM contratantes WHERE id IN ($1, $2)`, [
-      contratanteId1,
-      contratanteId2,
+    await query(`DELETE FROM entidades WHERE id IN ($1, $2)`, [
+      entidadeId1,
+      entidadeId2,
     ]);
     await query(`DELETE FROM clinicas WHERE id IN ($1, $2)`, [
       clinicaId1,
@@ -328,7 +328,7 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         { cpf: rhCpf1, perfil: 'rh', clinica_id: clinicaId1 },
         async (client) => {
           return await client.query(
-            `SELECT cpf, nome FROM funcionarios WHERE perfil = 'funcionario' AND contratante_id IS NOT NULL`
+            `SELECT cpf, nome FROM funcionarios WHERE perfil = 'funcionario' AND entidade_id IS NOT NULL`
           );
         }
       );
@@ -343,13 +343,13 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         'test_gestor',
         {
           cpf: gestorCpf1,
-          perfil: 'gestor_entidade',
-          contratante_id: contratanteId1,
+          perfil: 'gestor',
+          entidade_id: entidadeId1,
         },
         async (client) => {
           return await client.query(
-            `SELECT cpf, nome FROM funcionarios WHERE perfil = 'funcionario' AND contratante_id = $1`,
-            [contratanteId1]
+            `SELECT cpf, nome FROM funcionarios WHERE perfil = 'funcionario' AND entidade_id = $1`,
+            [entidadeId1]
           );
         }
       );
@@ -363,13 +363,13 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         'test_gestor',
         {
           cpf: gestorCpf1,
-          perfil: 'gestor_entidade',
-          contratante_id: contratanteId1,
+          perfil: 'gestor',
+          entidade_id: entidadeId1,
         },
         async (client) => {
           return await client.query(
-            `SELECT cpf, nome FROM funcionarios WHERE perfil = 'funcionario' AND contratante_id = $1`,
-            [contratanteId2]
+            `SELECT cpf, nome FROM funcionarios WHERE perfil = 'funcionario' AND entidade_id = $1`,
+            [entidadeId2]
           );
         }
       );
@@ -382,8 +382,8 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         'test_gestor',
         {
           cpf: gestorCpf1,
-          perfil: 'gestor_entidade',
-          contratante_id: contratanteId1,
+          perfil: 'gestor',
+          entidade_id: entidadeId1,
         },
         async (client) => {
           return await client.query(
@@ -404,14 +404,14 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
           { cpf: rhCpf1, perfil: 'rh', clinica_id: clinicaId1 },
           async (client) => {
             return await client.query(
-              `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, contratante_id, ativo, nivel_cargo) 
+              `INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, entidade_id, ativo, nivel_cargo) 
              VALUES ($1, $2, $3, $4, $5, $6, $7)`,
               [
                 '99999999901',
                 'Teste Inválido',
                 'funcionario',
                 '$2a$10$test',
-                contratanteId1,
+                entidadeId1,
                 true,
                 'operacional',
               ]
@@ -427,8 +427,8 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
           'test_gestor',
           {
             cpf: gestorCpf1,
-            perfil: 'gestor_entidade',
-            contratante_id: contratanteId1,
+            perfil: 'gestor',
+            entidade_id: entidadeId1,
           },
           async (client) => {
             return await client.query(

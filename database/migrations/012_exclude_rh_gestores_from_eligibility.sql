@@ -1,6 +1,6 @@
 -- ==========================================
 -- MIGRATION 012: Excluir Gestores/RH da Elegibilidade de Lotes
--- Descricao: Atualiza funcoes de elegibilidade para excluir funcionarios com perfil 'rh' ou 'gestor_entidade'
+-- Descricao: Atualiza funcoes de elegibilidade para excluir funcionarios com perfil 'rh' ou 'gestor'
 -- Data: 2026-01-04
 -- Versao: 1.0.0
 -- ==========================================

@@ -7,7 +7,7 @@
  * Valores válidos conforme constraint:
  * - 'iniciada' (padrão)
  * - 'em_andamento'
- * - 'concluida'
+ * - 'concluido'
  * - 'inativada'
  *
  * Correção aplicada em:
@@ -154,3 +154,4 @@ describe('Status de Avaliações - iniciada (não liberada)', () => {
     });
   });
 });
+

@@ -37,16 +37,34 @@ async function main() {
 
   const { query } = await import('@/lib/db');
 
-  // Fetch recent laudos (unbounded logic: we select recent ones and rely on idempotency)
+  // Fetch recent laudos que NÃO têm arquivo_remoto_key (já sincronizados são pulados)
   const res = await query(
-    `SELECT id, lote_id FROM laudos ORDER BY id DESC LIMIT $1`,
-    [limit]
+    `SELECT id, lote_id, arquivo_remoto_key 
+     FROM laudos 
+     WHERE arquivo_remoto_key IS NULL OR $1 = true
+     ORDER BY id DESC 
+     LIMIT $2`,
+    [force, limit]
   );
   const laudos = res.rows;
+
+  console.log(
+    `[SYNC] Encontrados ${laudos.length} laudos ${force ? '(modo --force, incluindo já sincronizados)' : 'pendentes de sincronização'}`
+  );
 
   for (const laudo of laudos) {
     const laudoId: number = laudo.id;
     const loteId: number = laudo.lote_id;
+    const arquivoRemotoKey: string | null = laudo.arquivo_remoto_key;
+
+    // Se já tem arquivo_remoto_key no DB e não está em modo force, pular
+    if (arquivoRemotoKey && !force) {
+      console.log(
+        `[SYNC] Laudo ${laudoId} já possui arquivo_remoto_key no banco (${arquivoRemotoKey}), pulando`
+      );
+      continue;
+    }
+
     const metaPath = path.join(
       process.cwd(),
       'storage',
@@ -116,7 +134,32 @@ async function main() {
 
     try {
       const res = await uploadToBackblaze(buffer, key, 'application/pdf');
-      // Persistir metadados locais
+
+      // Persistir metadados no banco de dados
+      await query(
+        `UPDATE laudos 
+         SET arquivo_remoto_provider = $1,
+             arquivo_remoto_bucket = $2,
+             arquivo_remoto_key = $3,
+             arquivo_remoto_url = $4,
+             arquivo_remoto_uploaded_at = NOW(),
+             arquivo_remoto_etag = $5,
+             arquivo_remoto_size = $6,
+             atualizado_em = NOW()
+         WHERE id = $7`,
+        [
+          'backblaze',
+          res.bucket || process.env.BACKBLAZE_BUCKET || 'laudos-qwork',
+          res.key || key,
+          res.url ||
+            `${process.env.BACKBLAZE_S2_ENDPOINT || process.env.BACKBLAZE_ENDPOINT || ''}/${process.env.BACKBLAZE_BUCKET || 'laudos-qwork'}/${res.key || key}`,
+          res.etag || null,
+          buffer.length,
+          laudoId,
+        ]
+      );
+
+      // Persistir metadados locais (compatibilidade)
       const newMeta = Object.assign({}, meta || {}, {
         arquivo_remoto: {
           provider: 'backblaze',
@@ -130,8 +173,9 @@ async function main() {
         hash: hash,
       });
       await fs.writeFile(metaPath, JSON.stringify(newMeta, null, 2));
+
       console.log(
-        `[SYNC] Upload concluído e metadados atualizados para laudo ${laudoId}`
+        `[SYNC] Upload concluído, metadados persistidos no DB e localmente para laudo ${laudoId}`
       );
     } catch (err) {
       console.error(

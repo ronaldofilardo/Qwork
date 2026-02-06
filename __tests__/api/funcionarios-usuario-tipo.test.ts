@@ -84,7 +84,7 @@ describe('Criação de Funcionários - usuario_tipo correto', () => {
       const hasValidValuesDoc =
         rhFuncionariosContent.includes('funcionario_clinica') ||
         rhFuncionariosContent.includes('funcionario_entidade') ||
-        rhFuncionariosContent.includes('gestor_rh');
+        rhFuncionariosContent.includes('rh');
 
       expect(hasValidValuesDoc).toBe(true);
     });
@@ -93,7 +93,7 @@ describe('Criação de Funcionários - usuario_tipo correto', () => {
       const hasValidValuesDoc =
         entidadeFuncionariosContent.includes('funcionario_clinica') ||
         entidadeFuncionariosContent.includes('funcionario_entidade') ||
-        entidadeFuncionariosContent.includes('gestor_entidade');
+        entidadeFuncionariosContent.includes('gestor');
 
       expect(hasValidValuesDoc).toBe(true);
     });

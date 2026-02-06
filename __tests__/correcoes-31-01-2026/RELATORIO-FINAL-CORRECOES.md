@@ -46,8 +46,8 @@ resultados_block_admin        | RESTRICTIVE | ALL
 ```
 audit_logs_admin_all          | PERMISSIVE  | SELECT  ✓ Admin gerencia logs
 audit_logs_admin_select       | PERMISSIVE  | SELECT  ✓ Admin gerencia logs
-clinicas_admin_all            | PERMISSIVE  | ALL     ✓ Admin gerencia clínicas
-contratantes_admin_all        | PERMISSIVE  | ALL     ✓ Admin gerencia contratantes
+clinicas_admin_all            | REMOVIDA    | -       ❌ Admin NÃO gerencia clínicas
+contratantes_admin_all        | REMOVIDA    | -       ❌ Admin NÃO gerencia contratantes/entidades
 permissions_admin_all         | PERMISSIVE  | ALL     ✓ Admin gerencia RBAC
 permissions_admin_select      | PERMISSIVE  | SELECT  ✓ Admin gerencia RBAC
 role_permissions_admin_all    | PERMISSIVE  | ALL     ✓ Admin gerencia RBAC

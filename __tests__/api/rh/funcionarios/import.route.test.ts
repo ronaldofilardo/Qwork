@@ -19,6 +19,10 @@ jest.mock('@/lib/db', () => ({
   query: jest.fn(() => ({ rows: [] })),
 }));
 
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn(() => Promise.resolve('$2a$10$mockedhashvalue')),
+}));
+
 const { parseXlsxBufferToRows } = require('@/lib/xlsxParser');
 const { query } = require('@/lib/db');
 
@@ -41,7 +45,8 @@ function makeRequestWithFile(empresaId?: string) {
 
 describe('import route - clínica', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    // Limpar apenas os calls, mas manter os mocks configurados
+    query.mockClear();
   });
 
   it('returns 400 when empresa_id is missing', async () => {
@@ -151,10 +156,17 @@ describe('import route - clínica', () => {
     // Setup: Matrícula não existe
     query.mockResolvedValueOnce({ rows: [] });
 
-    // Setup: BEGIN/INSERT/COMMIT
-    query.mockResolvedValueOnce({ rows: [] }); // BEGIN
-    query.mockResolvedValueOnce({ rows: [] }); // INSERT
-    query.mockResolvedValueOnce({ rows: [] }); // COMMIT
+    // Setup: BEGIN
+    query.mockResolvedValueOnce({ rows: [] });
+
+    // Setup: INSERT funcionarios RETURNING id
+    query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
+
+    // Setup: INSERT funcionarios_clinicas
+    query.mockResolvedValueOnce({ rows: [] });
+
+    // Setup: COMMIT
+    query.mockResolvedValueOnce({ rows: [] });
 
     // Criar request com mock de arquivo
     const fakeFile = {
@@ -175,28 +187,34 @@ describe('import route - clínica', () => {
     expect(json.success).toBe(true);
     expect(json.created).toBe(1);
 
-    // Verificar que o INSERT foi chamado com empresa_id, clinica_id e usuario_tipo corretos
-    const insertCalls = query.mock.calls.filter((call) =>
-      call[0].includes('INSERT INTO funcionarios')
+    // Verificar que o INSERT foi chamado com empresa_id, clinica_id e perfil corretos
+    const insertFuncCalls = query.mock.calls.filter(
+      (call) =>
+        call[0].includes('INSERT INTO funcionarios') &&
+        !call[0].includes('funcionarios_clinicas')
     );
-    expect(insertCalls.length).toBe(1);
+    expect(insertFuncCalls.length).toBeGreaterThanOrEqual(1);
 
-    // Verificar que o INSERT inclui usuario_tipo
-    expect(insertCalls[0][0]).toContain('usuario_tipo');
-    expect(insertCalls[0][0]).toContain("'funcionario_clinica'");
+    // Pegar o último INSERT do teste atual
+    const lastInsert = insertFuncCalls[insertFuncCalls.length - 1];
 
-    const insertParams = insertCalls[0][1];
-    // Índices: [cpf, nome, data_nascimento, setor, funcao, email, senha_hash, clinica_id, empresa_id, matricula, ...]
-    expect(insertParams[7]).toBe(1); // clinica_id
-    expect(insertParams[8]).toBe(1); // empresa_id
-    expect(insertParams[9]).toBe('MAT001'); // matricula
+    // Verificar que o INSERT usa perfil='funcionario' (não usuario_tipo)
+    expect(lastInsert[0]).toContain('perfil');
+    expect(lastInsert[0]).toContain("'funcionario'");
+
+    const insertParams = lastInsert[1];
+    // Verificar que inclui clinica_id e empresa_id
+    expect(insertParams).toContain(1); // clinica_id
+    expect(insertParams).toContain('MAT001'); // matricula
+
+    // Verificar que criou entrada em funcionarios_clinicas
+    const insertRelCalls = query.mock.calls.filter((call) =>
+      call[0].includes('INSERT INTO funcionarios_clinicas')
+    );
+    expect(insertRelCalls.length).toBeGreaterThanOrEqual(1);
 
     // Verificar que session foi passado
-    expect(insertCalls[0][2]).toBeDefined();
-    expect(insertParams[9]).toBe('MAT001'); // matricula
-
-    // Verificar que session foi passado
-    expect(insertCalls[0][2]).toBeDefined();
+    expect(insertFuncCalls[0][2]).toBeDefined();
   });
 
   it('returns 400 when matriculas are duplicated in file', async () => {

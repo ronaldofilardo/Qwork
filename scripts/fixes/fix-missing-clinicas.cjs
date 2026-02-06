@@ -208,10 +208,10 @@ async function migrarClinicasOrfas() {
             ]
           );
 
-          // 4) Sincronizar senha com contratantes_senhas (upsert)
+          // 4) Sincronizar senha com entidades_senhas (upsert)
           const upsert = await query(
             `
-            INSERT INTO contratantes_senhas (cpf, senha_hash, criado_em, atualizado_em)
+            INSERT INTO entidades_senhas (cpf, senha_hash, criado_em, atualizado_em)
             VALUES ($1, $2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
             ON CONFLICT (cpf) DO UPDATE SET senha_hash = EXCLUDED.senha_hash, atualizado_em = CURRENT_TIMESTAMP
             RETURNING cpf
@@ -221,7 +221,7 @@ async function migrarClinicasOrfas() {
 
           if (upsert.rows.length > 0) {
             console.log(
-              `   ✓ Senha do contratante sincronizada em contratantes_senhas para CPF ${novoFuncionarioCpf}`
+              `   ✓ Senha do contratante sincronizada em entidades_senhas para CPF ${novoFuncionarioCpf}`
             );
             await query(
               `INSERT INTO auditoria (entidade_tipo, entidade_id, acao, usuario_cpf, metadados) VALUES ('contratante', $1, 'liberar_login', NULL, $2::jsonb)`,

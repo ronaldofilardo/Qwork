@@ -6,7 +6,7 @@ const { query } = require('../../lib/db');
   try {
     const hash = await bcrypt.hash('test1234', 10);
     const res = await query(
-      'UPDATE contratantes_senhas SET senha_hash = $1 WHERE cpf = $2 RETURNING cpf',
+      'UPDATE entidades_senhas SET senha_hash = $1 WHERE cpf = $2 RETURNING cpf',
       [hash, '70495096040']
     );
     console.log('Updated rows:', res.rows);

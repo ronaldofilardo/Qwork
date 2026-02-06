@@ -183,7 +183,7 @@ await query('COMMIT');
 ### 1️⃣ Autenticação
 
 ```typescript
-- requireEntity() → user.perfil === 'gestor_entidade'
+- requireEntity() → user.perfil === 'gestor'
 - contratanteId = session.contratante_id
 ```
 
@@ -314,7 +314,7 @@ const lote = await query(
 // ✅ VALIDAÇÃO DE PERMISSÃO (RH vs Entity)
 if (lote.clinica_id && user.perfil === 'rh') {
   await requireRHWithEmpresaAccess(lote.empresa_id);
-} else if (lote.contratante_id && user.perfil === 'gestor_entidade') {
+} else if (lote.contratante_id && user.perfil === 'gestor') {
   if (user.contratante_id !== lote.contratante_id) {
     return 403; // Sem permissão
   }

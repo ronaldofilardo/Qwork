@@ -1,20 +1,20 @@
 # Resumo das Alterações - Conversa 2026-01-29
 
-## Role gestor_entidade - Implementação e Validação
+## Role gestor - Implementação e Validação
 
 ### 📝 Contexto
 
-Esta conversa focou em adicionar o role `gestor_entidade` que estava sendo usado no código (100+ referências) mas ausente na tabela `roles` do banco de dados.
+Esta conversa focou em adicionar o role `gestor` que estava sendo usado no código (100+ referências) mas ausente na tabela `roles` do banco de dados.
 
 ---
 
 ## ✅ Alterações Implementadas
 
-### 1. Migration 206: Role gestor_entidade
+### 1. Migration 206: Role gestor
 
-- **Arquivo**: `database/migrations/206_add_gestor_entidade_role_clean.sql`
+- **Arquivo**: `database/migrations/206_add_gestor_role_clean.sql`
 - **Alterações**:
-  - INSERT role `gestor_entidade` (ID=5, hierarchy=10)
+  - INSERT role `gestor` (ID=5, hierarchy=10)
   - INSERT 8 permissions com scope `:entidade`
   - INSERT 8 associações em `role_permissions`
 - **Status**: ✅ Aplicado em LOCAL, NEON e TEST
@@ -74,7 +74,7 @@ write:lotes:entidade        | lotes        | write
 
 #### Migration 206 (4 testes)
 
-- ✅ Role gestor_entidade existe com ID=5
+- ✅ Role gestor existe com ID=5
 - ✅ 8 permissions associadas ao role
 - ✅ Permissions diferentes de RH (scope :entidade vs :clinica)
 - ✅ Todas permissions esperadas presentes
@@ -97,9 +97,9 @@ write:lotes:entidade        | lotes        | write
 
 #### Validação Completa (3 testes)
 
-- ✅ Exatamente 5 roles (funcionario, rh, emissor, admin, gestor_entidade)
+- ✅ Exatamente 5 roles (funcionario, rh, emissor, admin, gestor)
 - ✅ Estrutura de roles consistente
-- ✅ Funcionários com perfil gestor_entidade permitidos
+- ✅ Funcionários com perfil gestor permitidos
 
 ---
 
@@ -141,7 +141,7 @@ Roles: 5 (ID 1-5)
 
 - **Razão**: Sistema valida `perfil` via string (VARCHAR), não via FK para roles
 - **Validação**: 100+ referências no código continuam funcionando
-- **Middleware**: Compara `session.perfil === 'gestor_entidade'` (string)
+- **Middleware**: Compara `session.perfil === 'gestor'` (string)
 - **Auth**: `requireEntity()` valida string
 - **RLS**: Policies comparam string em `current_user_perfil()`
 
@@ -169,7 +169,7 @@ Roles: 5 (ID 1-5)
 ID: 3
 Nome: Ronaldo Fill
 CPF: 87545772920
-Perfil: gestor_entidade
+Perfil: gestor
 Contratante ID: 1
 Email: ronaldofilardo@yahoo.com.br
 Status: Ativo desde 2026-01-27
@@ -184,7 +184,7 @@ Este registro continua funcionando **sem modificações** porque o sistema valid
 - [x] Migration 206 aplicada nos 3 bancos
 - [x] Migration 207 aplicada nos 3 bancos
 - [x] Migration 208 aplicada (completa em LOCAL/NEON, parcial em TEST)
-- [x] Role gestor_entidade com ID=5 consistente
+- [x] Role gestor com ID=5 consistente
 - [x] 8 permissions criadas e associadas
 - [x] Helper function RLS criada e testada
 - [x] 18 testes criados e passando ✅
@@ -198,7 +198,7 @@ Este registro continua funcionando **sem modificações** porque o sistema valid
 
 ### P2 - Curto Prazo
 
-1. Atualizar `docs/security/GUIA-COMPLETO-RLS-RBAC.md` para incluir gestor_entidade
+1. Atualizar `docs/security/GUIA-COMPLETO-RLS-RBAC.md` para incluir gestor
 2. Marcar issue #8 como resolvido em `docs/AUDITORIA-RLS-RBAC-COMPLETA.md`
 
 ### P3 - Longo Prazo
@@ -213,7 +213,7 @@ Este registro continua funcionando **sem modificações** porque o sistema valid
 
 ### Novos Arquivos
 
-- `database/migrations/206_add_gestor_entidade_role_clean.sql`
+- `database/migrations/206_add_gestor_role_clean.sql`
 - `database/migrations/207_add_current_user_contratante_id_helper_clean.sql`
 - `database/migrations/208_sync_with_neon.sql`
 - `database/migrations/208_sync_with_neon_test.sql`
@@ -224,7 +224,7 @@ Este registro continua funcionando **sem modificações** porque o sistema valid
 
 ### Banco de Dados
 
-- Tabela `roles`: +1 registro (gestor_entidade)
+- Tabela `roles`: +1 registro (gestor)
 - Tabela `permissions`: +8 registros (:entidade scope)
 - Tabela `role_permissions`: +8 associações
 - Function: `current_user_contratante_id()`

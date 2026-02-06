@@ -1,6 +1,6 @@
 -- Script de Testes: Validação de Políticas RLS
 -- Data: 2026-01-09
--- Objetivo: Testar isolamento de dados entre contratantes e validar políticas RLS
+-- Objetivo: Testar isolamento de dados entre entidades (antiga tabela: contratantes) e validar políticas RLS
 
 -- ============================================================
 -- SETUP: Criar dados de teste
@@ -9,13 +9,13 @@
 BEGIN;
 
 -- Limpar dados de teste anteriores se existirem
-DELETE FROM parcelas WHERE recibo_id IN (SELECT id FROM recibos WHERE contratante_id IN (9901, 9902));
-DELETE FROM recibos WHERE contratante_id IN (9901, 9902);
-DELETE FROM contratos WHERE contratante_id IN (9901, 9902);
-DELETE FROM contratantes WHERE id IN (9901, 9902);
+DELETE FROM parcelas WHERE recibo_id IN (SELECT id FROM recibos WHERE entidade_id IN (9901, 9902));
+DELETE FROM recibos WHERE entidade_id IN (9901, 9902);
+DELETE FROM contratos WHERE entidade_id IN (9901, 9902);
+DELETE FROM entidades WHERE id IN (9901, 9902);
 
--- Inserir 2 contratantes de teste (usando IDs diferentes)
-INSERT INTO contratantes (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+-- Inserir 2 entidades de teste (usando IDs diferentes)
+INSERT INTO entidades (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
   responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
 VALUES
   (9901, 'entidade', 'Empresa Teste A', '99111111000111', 'testa@teste.com', '11999999999',
@@ -26,7 +26,7 @@ VALUES
    'Maria Santos Teste', '99222222222', 'maria@testb.com', '11999999992');
 
 -- Inserir contratos de teste
-INSERT INTO contratos (contratante_id, numero_funcionarios, valor_total,
+INSERT INTO contratos (entidade_id, numero_funcionarios, valor_total,
   conteudo_gerado, hash_contrato, versao_contrato, aceito, status)
 VALUES
   (9901, 10, 1000.00, 'Contrato teste A', 'hash_test_a_' || gen_random_uuid()::text, '1.0', false, 'generated'),
@@ -222,10 +222,10 @@ SELECT '========================================';
 
 -- Descomentar para limpar dados de teste
 /*
-DELETE FROM parcelas WHERE recibo_id IN (SELECT id FROM recibos WHERE contratante_id IN (9901, 9902));
-DELETE FROM recibos WHERE contratante_id IN (9901, 9902);
-DELETE FROM contratos WHERE contratante_id IN (9901, 9902);
-DELETE FROM contratantes WHERE id IN (9901, 9902);
+DELETE FROM parcelas WHERE recibo_id IN (SELECT id FROM recibos WHERE entidade_id IN (9901, 9902));
+DELETE FROM recibos WHERE entidade_id IN (9901, 9902);
+DELETE FROM contratos WHERE entidade_id IN (9901, 9902);
+DELETE FROM entidades WHERE id IN (9901, 9902);
 
 SELECT 'Dados de teste removidos com sucesso' as resultado;
 */

@@ -128,7 +128,7 @@ describe('/api/rh/funcionarios/status', () => {
 
       // Verifica se UPDATE das avaliações foi chamado com RETURNING
       expect(mockQuery).toHaveBeenCalledWith(
-        "UPDATE avaliacoes SET status = 'inativada' WHERE funcionario_cpf = $1 AND status != 'concluida' RETURNING id, status",
+        "UPDATE avaliacoes SET status = 'inativada' WHERE funcionario_cpf = $1 AND status != 'concluido' RETURNING id, status",
         ['12345678901']
       );
     });
@@ -270,3 +270,4 @@ describe('/api/rh/funcionarios/status', () => {
     });
   });
 });
+

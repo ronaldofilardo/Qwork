@@ -58,6 +58,7 @@
     "migrate:tokens": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/migrations/migration-005-tokens-retomada.sql",
     "migrate:apply": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/migrations/117_add_missing_relatorio_columns.sql",
     "migrate:all": "pnpm migrate:ativacao && pnpm migrate:tokens",
+    "db:fix-schema": "node scripts/fix-database-schema.js",
     "lgpd:auditar": "tsx scripts/auditar-cpfs.ts",
     "lgpd:migrar": "psql -U postgres -h localhost -p 5432 -d nr-bps_db -f database/lgpd-compliance-migration.sql",
     "laudos:backfill-hash": "tsx scripts/backfill-laudos-hash.ts",

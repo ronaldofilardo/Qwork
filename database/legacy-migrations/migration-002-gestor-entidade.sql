@@ -1,26 +1,26 @@
--- Migration 002: Adicionar perfil gestor_entidade e ajustar relacionamentos
+-- Migration 002: Adicionar perfil gestor e ajustar relacionamentos
 -- Data: 2025-12-19
 -- Descrição: Suporte para gestores de entidade com acesso direto aos seus funcionários
 
--- Migration 002: Adicionar perfil gestor_entidade e ajustar relacionamentos
+-- Migration 002: Adicionar perfil gestor e ajustar relacionamentos
 -- Data: 2025-12-19
 -- Descrição: Suporte para gestores de entidade com acesso direto aos seus funcionários
 
 -- ============================================================================
--- ATUALIZAR CONSTRAINT DE PERFIL PARA INCLUIR GESTOR_ENTIDADE
+-- ATUALIZAR CONSTRAINT DE PERFIL PARA INCLUIR gestor
 -- ============================================================================
 
 -- Remover constraint existente
 ALTER TABLE funcionarios DROP CONSTRAINT IF EXISTS funcionarios_perfil_check;
 
--- Adicionar nova constraint com gestor_entidade
+-- Adicionar nova constraint com gestor
 ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_perfil_check
     CHECK (perfil::text = ANY (ARRAY[
         'funcionario'::character varying,
         'rh'::character varying,
         'admin'::character varying,
         'emissor'::character varying,
-        'gestor_entidade'::character varying
+        'gestor'::character varying
     ]::text[]));
 
 -- ============================================================================
@@ -41,7 +41,7 @@ CREATE INDEX IF NOT EXISTS idx_funcionarios_contratante_id ON funcionarios(contr
 
 -- Tabela para armazenar senhas hash dos gestores de entidade
 -- (responsavel_cpf em contratantes pode fazer login)
-CREATE TABLE IF NOT EXISTS contratantes_senhas (
+CREATE TABLE IF NOT EXISTS entidades_senhas (
     id SERIAL PRIMARY KEY,
     contratante_id INTEGER NOT NULL UNIQUE,
     cpf VARCHAR(11) NOT NULL,
@@ -50,24 +50,24 @@ CREATE TABLE IF NOT EXISTS contratantes_senhas (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
-    CONSTRAINT fk_contratantes_senhas_contratante 
+    CONSTRAINT fk_entidades_senhas_contratante 
         FOREIGN KEY (contratante_id) 
         REFERENCES contratantes(id) 
         ON DELETE CASCADE,
     
-    CONSTRAINT contratantes_senhas_cpf_check 
+    CONSTRAINT entidades_senhas_cpf_check 
         CHECK (LENGTH(cpf) = 11)
 );
 
 -- Índices
-CREATE INDEX IF NOT EXISTS idx_contratantes_senhas_cpf 
-ON contratantes_senhas(cpf);
+CREATE INDEX IF NOT EXISTS idx_entidades_senhas_cpf 
+ON entidades_senhas(cpf);
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_senhas_contratante 
-ON contratantes_senhas(contratante_id);
+CREATE INDEX IF NOT EXISTS idx_entidades_senhas_contratante 
+ON entidades_senhas(contratante_id);
 
 -- Trigger para atualizar timestamp
-CREATE OR REPLACE FUNCTION update_contratantes_senhas_updated_at()
+CREATE OR REPLACE FUNCTION update_entidades_senhas_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.atualizado_em = CURRENT_TIMESTAMP;
@@ -75,15 +75,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_contratantes_senhas_updated_at
-    BEFORE UPDATE ON contratantes_senhas
+CREATE TRIGGER trg_entidades_senhas_updated_at
+    BEFORE UPDATE ON entidades_senhas
     FOR EACH ROW
-    EXECUTE FUNCTION update_contratantes_senhas_updated_at();
+    EXECUTE FUNCTION update_entidades_senhas_updated_at();
 
 -- Comentários
-COMMENT ON TABLE contratantes_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-COMMENT ON COLUMN contratantes_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
-COMMENT ON COLUMN contratantes_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
+COMMENT ON TABLE entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
+COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN entidades_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
 
 -- ============================================================================
 -- FUNÇÃO AUXILIAR PARA CRIAR SENHA INICIAL PARA GESTOR DE ENTIDADE
@@ -116,7 +116,7 @@ BEGIN
     v_senha_hash := 'PLACEHOLDER_' || v_senha_inicial;
 
     -- Inserir ou atualizar senha
-    INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
+    INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
     VALUES (p_contratante_id, v_cpf, v_senha_hash, false)
     ON CONFLICT (contratante_id)
     DO UPDATE SET
@@ -134,16 +134,16 @@ COMMENT ON FUNCTION criar_senha_inicial_entidade IS 'Cria senha inicial para ges
 -- ============================================================================
 
 -- Comentário: Vistas que filtram por perfil precisam ser atualizadas
--- para incluir 'gestor_entidade' onde apropriado
+-- para incluir 'gestor' onde apropriado
 
 -- ============================================================================
 -- ROLLBACK (APENAS PARA REFERÊNCIA - NÃO EXECUTAR EM PRODUÇÃO)
 -- ============================================================================
 
 -- Para reverter (cuidado - pode causar perda de dados):
--- DROP TABLE IF EXISTS contratantes_senhas CASCADE;
+-- DROP TABLE IF EXISTS entidades_senhas CASCADE;
 -- DROP FUNCTION IF EXISTS criar_senha_inicial_entidade;
--- DROP FUNCTION IF EXISTS update_contratantes_senhas_updated_at;
+-- DROP FUNCTION IF EXISTS update_entidades_senhas_updated_at;
 -- ALTER TABLE funcionarios DROP COLUMN IF EXISTS contratante_id;
 -- -- Nota: Não é possível remover valor de enum facilmente no PostgreSQL
 
@@ -157,4 +157,4 @@ COMMENT ON FUNCTION criar_senha_inicial_entidade IS 'Cria senha inicial para ges
 -- SELECT criar_senha_inicial_entidade(id)
 -- FROM contratantes 
 -- WHERE tipo = 'entidade' AND status = 'aprovado'
--- AND id NOT IN (SELECT contratante_id FROM contratantes_senhas);
+-- AND id NOT IN (SELECT contratante_id FROM entidades_senhas);

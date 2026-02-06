@@ -60,7 +60,7 @@ Esta combinação garante:
 
 - **Criação:** Via `criarContaResponsavel()` para contratantes tipo ≠ 'entidade'
 - **Tabelas:** `funcionarios` (com perfil='rh') + `contratantes_funcionarios` (vínculo)
-- **Autenticação:** `contratantes_senhas` com bcrypt
+- **Autenticação:** `entidades_senhas` com bcrypt
 - **Permissões:**
   - ✅ Cadastrar empresas clientes
   - ✅ Cadastrar funcionários nas empresas
@@ -69,11 +69,11 @@ Esta combinação garante:
   - ✅ Gerenciar funcionários vinculados
   - ❌ Responder avaliações (não é avaliado)
 
-##### Gestor Entidade (`perfil='gestor_entidade'`)
+##### Gestor Entidade (`perfil='gestor'`)
 
 - **Criação:** Via `criarContaResponsavel()` para contratantes tipo = 'entidade'
-- **Tabelas:** Apenas `contratantes_senhas` (SEM entrada em `funcionarios`)
-- **Autenticação:** `contratantes_senhas` com bcrypt
+- **Tabelas:** Apenas `entidades_senhas` (SEM entrada em `funcionarios`)
+- **Autenticação:** `entidades_senhas` com bcrypt
 - **Permissões:**
   - ✅ Cadastrar empresas clientes
   - ✅ Cadastrar funcionários nas empresas
@@ -99,7 +99,7 @@ Esta combinação garante:
 ##### Emissor (`perfil='emissor'`)
 
 - Usuário independente para emissão de laudos
-- **NÃO** deve ser combinado com `gestor_entidade` ou `rh`
+- **NÃO** deve ser combinado com `gestor` ou `rh`
 - Sistema impede programaticamente que CPF vinculado a Gestor seja cadastrado como emissor
 
 ##### Admin (`perfil='admin'`)
@@ -183,7 +183,7 @@ CREATE POLICY employee_own_evaluations ON avaliacoes
 
 -- Imutabilidade: Não pode alterar avaliações concluídas
 CREATE POLICY immutable_completed ON avaliacoes
-  FOR UPDATE USING (status != 'concluida');
+  FOR UPDATE USING (status != 'concluido');
 ```
 
 ---
@@ -219,7 +219,7 @@ CREATE POLICY immutable_completed ON avaliacoes
 -- Tabela de perfis de usuário
 CREATE TABLE profiles (
   id UUID PRIMARY KEY,
-  role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'rh', 'gestor_entidade', 'emissor', 'funcionario')),
+  role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'rh', 'gestor', 'emissor', 'funcionario')),
   contratante_id UUID REFERENCES contratantes(id),
   cpf VARCHAR(11)
 );
@@ -233,7 +233,7 @@ CREATE TABLE funcionarios (
 );
 
 -- Tabela de senhas de gestores
-CREATE TABLE contratantes_senhas (
+CREATE TABLE entidades_senhas (
   contratante_id UUID PRIMARY KEY REFERENCES contratantes(id),
   senha_hash VARCHAR(255) NOT NULL
 );
@@ -264,8 +264,8 @@ async function criarContaResponsavel(contratanteData, responsavel) {
     });
   }
 
-  // 3. Cria entrada em `contratantes_senhas` com bcrypt (para todos)
-  await db('contratantes_senhas').insert({
+  // 3. Cria entrada em `entidades_senhas` com bcrypt (para todos)
+  await db('entidades_senhas').insert({
     contratante_id: contratanteId,
     senha_hash: await bcrypt.hash(responsavel.senha, 10),
   });

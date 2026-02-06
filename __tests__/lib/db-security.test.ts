@@ -50,17 +50,17 @@ describe('db-security.queryWithContext', () => {
     ).toBe(true);
   });
 
-  it('deve setar app.current_user_contratante_id quando perfil for gestor_entidade', async () => {
-    // Simular sessão gestor_entidade
+  it('deve setar app.current_user_contratante_id quando perfil for gestor', async () => {
+    // Simular sessão gestor
     mockGetSession.mockReturnValue({
       cpf: '22222222222',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 42,
     });
 
     mockQuery.mockImplementation((sql: string, params?: any[]) => {
-      // Para validacao de gestor_entidade, validateSessionContext consulta contratantes_senhas/contratantes
-      if (sql.includes('FROM contratantes_senhas')) {
+      // Para validacao de gestor, validateSessionContext consulta entidades_senhas/contratantes
+      if (sql.includes('FROM entidades_senhas')) {
         return Promise.resolve({
           rows: [{ cpf: '22222222222', contratante_id: 42, ativa: true }],
           rowCount: 1,

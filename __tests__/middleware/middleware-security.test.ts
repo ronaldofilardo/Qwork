@@ -235,7 +235,7 @@ describe('Middleware de Segurança', () => {
           get: jest.fn(() => ({
             value: JSON.stringify({
               cpf: '98765432100',
-              perfil: 'gestor_entidade',
+              perfil: 'gestor',
               nome: 'Gestor Entidade',
             }),
           })),

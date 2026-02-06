@@ -18,8 +18,8 @@ Após reset completo do banco de dados, várias tabelas e colunas críticas esta
    - Erro: `relação "planos" não existe`
    - Afetava: `/api/planos`
 
-3. ❌ **Tabela `contratantes_senhas` não existia**
-   - Erro: `relação "contratantes_senhas" não existe`
+3. ❌ **Tabela `entidades_senhas` não existia**
+   - Erro: `relação "entidades_senhas" não existe`
    - Afetava: `/api/auth/login`
 
 4. ❌ **Tabelas `mfa_codes` e `contratos_planos` ausentes**
@@ -44,10 +44,10 @@ ALTER TABLE lotes_avaliacao ADD COLUMN hash_pdf VARCHAR(64);
 ALTER TABLE laudos ADD COLUMN hash_pdf VARCHAR(64);
 ```
 
-#### 2. Tabela `contratantes_senhas`
+#### 2. Tabela `entidades_senhas`
 
 ```sql
-CREATE TABLE contratantes_senhas (
+CREATE TABLE entidades_senhas (
     id SERIAL PRIMARY KEY,
     contratante_id INTEGER NOT NULL,
     cpf VARCHAR(11) NOT NULL UNIQUE,
@@ -120,7 +120,7 @@ CREATE TABLE mfa_codes (
 
 - ✓ `lotes_avaliacao.hash_pdf`
 - ✓ `laudos.hash_pdf`
-- ✓ `contratantes_senhas`
+- ✓ `entidades_senhas`
 - ✓ `planos`
 - ✓ `contratos_planos`
 - ✓ `mfa_codes`
@@ -146,7 +146,7 @@ psql -U postgres -d nr-bps_db -f "C:\apps\QWork\database\fixes\fix-missing-migra
 SELECT table_name
 FROM information_schema.tables
 WHERE table_schema = 'public'
-AND table_name IN ('planos', 'contratos_planos', 'contratantes_senhas', 'mfa_codes');
+AND table_name IN ('planos', 'contratos_planos', 'entidades_senhas', 'mfa_codes');
 
 -- Verificar colunas hash_pdf
 SELECT table_name, column_name
@@ -156,7 +156,7 @@ WHERE column_name = 'hash_pdf';
 -- Verificar dados
 SELECT COUNT(*) FROM planos;
 SELECT COUNT(*) FROM contratantes WHERE tipo = 'entidade';
-SELECT COUNT(*) FROM contratantes_senhas;
+SELECT COUNT(*) FROM entidades_senhas;
 ```
 
 ## Lições Aprendidas

@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth, getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 import jsPDF from 'jspdf';
 import { applyPlugin } from 'jspdf-autotable';
 
-// Garantir que o plugin AutoTable seja aplicado ao jsPDF (servidor/SSG/SSR)
+// Garantir que o plugin AutoTable seja aplicado ao jsPDF (servidor/SSG/SSR/SSR)
 try {
   applyPlugin(jsPDF);
 } catch (err) {
@@ -33,17 +33,7 @@ export async function POST(
 ) {
   try {
     // Verificar sessão e perfil
-    let session;
-    if (typeof getSession === 'function') {
-      // getSession é síncrono (retorna Session | null) - não usar await
-      session = getSession();
-    } else {
-      session = await requireAuth();
-    }
-
-    if (!session || session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    const session = await requireEntity();
 
     const loteId = parseInt(params.id);
     if (isNaN(loteId)) {
@@ -135,12 +125,12 @@ export async function POST(
       FROM funcionarios f
       JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
       WHERE a.lote_id = $1 AND f.contratante_id = $2
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
         AND a.envio <= $3
-        AND f.perfil <> 'gestor_entidade'
+        AND f.perfil <> 'gestor'
       ORDER BY f.nome ASC
     `,
-      [loteId, session.contratante_id, cutoff]
+      [loteId, session.entidade_id, cutoff]
     );
 
     // Gerar PDF
@@ -183,7 +173,7 @@ export async function POST(
       row.setor,
       row.funcao,
       row.nivel_cargo || '-',
-      row.avaliacao_status === 'concluida' ? 'Concluída' : 'Pendente',
+      row.avaliacao_status === 'concluido' ? 'Concluída' : 'Pendente',
       row.data_conclusao
         ? new Date(row.data_conclusao).toLocaleDateString('pt-BR')
         : '-',

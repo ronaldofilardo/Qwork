@@ -217,7 +217,7 @@ BEGIN
     
     -- Criar avaliação concluída
     INSERT INTO avaliacoes (funcionario_cpf, status, envio)
-    VALUES (v_cpf, 'concluida', NOW())
+    VALUES (v_cpf, 'concluido', NOW())
     RETURNING id INTO v_avaliacao_id;
     
     -- Criar resultado
@@ -268,7 +268,7 @@ BEGIN
     
     -- Criar avaliação concluída
     INSERT INTO avaliacoes (funcionario_cpf, status, envio)
-    VALUES (v_cpf, 'concluida', NOW())
+    VALUES (v_cpf, 'concluido', NOW())
     RETURNING id INTO v_avaliacao_id;
     
     -- Criar resposta
@@ -318,7 +318,7 @@ BEGIN
     
     -- Criar avaliação concluída
     INSERT INTO avaliacoes (funcionario_cpf, status, envio)
-    VALUES (v_cpf, 'concluida', NOW())
+    VALUES (v_cpf, 'concluido', NOW())
     RETURNING id INTO v_avaliacao_id;
     
     -- Criar resultado
@@ -363,7 +363,7 @@ BEGIN
     
     -- Criar avaliação concluída
     INSERT INTO avaliacoes (funcionario_cpf, status, envio)
-    VALUES (v_cpf, 'concluida', NOW())
+    VALUES (v_cpf, 'concluido', NOW())
     RETURNING id INTO v_avaliacao_id;
     
     RAISE NOTICE '   Avaliação criada: ID %', v_avaliacao_id;
@@ -415,3 +415,4 @@ END $$;
 \echo '========================================================'
 \echo 'FIM DOS TESTES'
 \echo '========================================================'
+

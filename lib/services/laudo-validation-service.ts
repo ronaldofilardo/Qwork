@@ -56,7 +56,7 @@ export async function validarSolicitacaoEmissao(
         la.hash_pdf,
         la.emitido_em,
         COUNT(a.id) as total_avaliacoes,
-        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+        COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
         l.id as laudo_id,
         l.status as laudo_status
@@ -144,7 +144,7 @@ export async function validarGeracaoLaudo(
         la.status,
         la.hash_pdf,
         COUNT(a.id) FILTER (WHERE a.status != 'inativada') as avaliacoes_ativas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as avaliacoes_concluidas,
         l.id as laudo_id,
         l.status as laudo_status,
         l.emissor_cpf

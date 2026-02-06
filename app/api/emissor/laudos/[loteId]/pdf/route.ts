@@ -270,10 +270,7 @@ export const GET = async (
 
     // [IMUTABILIDADE]
     // Não atualizar o registro do laudo diretamente neste endpoint para evitar violar a política
-    // de imutabilidade do laudo. Se desejarmos persistir o hash, isso deve ser feito por um fluxo
-    // controlado (por exemplo, via `lib/laudo-auto` ou um job específico) que trate as triggers e
-    // as constraints de forma segura.
-    // Ex.: INSERT/UPDATE seguro em contexto que seta app.current_user_* e usa DO block para evitar aborts.
+    // de imutabilidade do laudo.
     console.log(
       '[IMUTABILIDADE] Não modificando registro do laudo (hash) neste endpoint.'
     );

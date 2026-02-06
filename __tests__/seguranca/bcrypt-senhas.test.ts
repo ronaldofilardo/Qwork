@@ -101,7 +101,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
 
         // Buscar hash do banco
         const result = await query(
-          'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+          'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
           [cpf]
         );
         const hashFromDB = result[0].senha_hash;
@@ -111,7 +111,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
 
         expect(isValid).toBe(true);
         expect(mockQuery).toHaveBeenCalledWith(
-          'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+          'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
           [cpf]
         );
       }
@@ -210,7 +210,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
         contratante_id: 18,
         cpf: '00000000001',
         nome: 'Gestor CLIENTE_A',
-        tipo: 'gestor_entidade',
+        tipo: 'gestor',
       };
 
       const H1 = `$2a$06$${'a'.repeat(53)}`;
@@ -232,7 +232,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
         [cpf]
       );
       const senhaResult = await query(
-        'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
         [cpf]
       );
 
@@ -252,7 +252,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
 
       expect(mockQuery).toHaveBeenNthCalledWith(
         2,
-        'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
         [cpf]
       );
     });
@@ -298,7 +298,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
         new Error('Acesso negado: senha_hash é confidencial')
       );
 
-      await expect(query('SELECT * FROM contratantes_senhas')).rejects.toThrow(
+      await expect(query('SELECT * FROM entidades_senhas')).rejects.toThrow(
         'Acesso negado'
       );
     });
@@ -393,7 +393,7 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
 
       // Simular reset autorizado
       const result = await query(
-        'UPDATE contratantes_senhas SET senha_hash = $1, atualizado_em = NOW() WHERE cpf = $2',
+        'UPDATE entidades_senhas SET senha_hash = $1, atualizado_em = NOW() WHERE cpf = $2',
         [novoHash, '00000000001']
       );
 
@@ -472,10 +472,10 @@ describe('🔐 Validação de Senhas Bcrypt', () => {
       const mockQuery = require('@/lib/db').query;
       expect(jest.isMockFunction(mockQuery)).toBe(true);
 
-      // Se houver chamadas, verificar se alguma tentativa de escrita em contratantes_senhas ocorreu
+      // Se houver chamadas, verificar se alguma tentativa de escrita em entidades_senhas ocorreu
       const chamadas = mockQuery.mock.calls || [];
       const proibido = new RegExp(
-        `INSERT\\s+INTO\\s+contratantes_senhas|DELETE\\s+FROM\\s+contratantes_senhas|DROP\\s+TABLE|${PROD_DB_NAME}`,
+        `INSERT\\s+INTO\\s+entidades_senhas|DELETE\\s+FROM\\s+entidades_senhas|DROP\\s+TABLE|${PROD_DB_NAME}`,
         'gi'
       );
 

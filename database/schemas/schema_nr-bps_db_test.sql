@@ -143,7 +143,7 @@ COMMENT ON TYPE public.status_aprovacao_enum IS 'Status de aprovaÃ§Ã£o: pend
 CREATE TYPE public.status_avaliacao_enum AS ENUM (
     'iniciada',
     'em_andamento',
-    'concluida',
+    'concluido',
     'inativada'
 );
 
@@ -1092,7 +1092,7 @@ BEGIN
 
         -- Se avaliaÃ§Ã£o estÃ¡ concluÃ­da, bloquear modificaÃ§Ã£o
 
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
 
             RAISE EXCEPTION 'NÃ£o Ã© permitido modificar respostas de avaliaÃ§Ãµes concluÃ­das. AvaliaÃ§Ã£o ID: %', OLD.avaliacao_id
 
@@ -1153,7 +1153,7 @@ BEGIN
 
         -- Se avaliaÃ§Ã£o estÃ¡ concluÃ­da, bloquear modificaÃ§Ã£o
 
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
 
             RAISE EXCEPTION 'NÃ£o Ã© permitido modificar resultados de avaliaÃ§Ãµes concluÃ­das. AvaliaÃ§Ã£o ID: %', OLD.avaliacao_id
 
@@ -1179,7 +1179,7 @@ BEGIN
 
         
 
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
 
             RAISE EXCEPTION 'NÃ£o Ã© permitido adicionar resultados a avaliaÃ§Ãµes jÃ¡ concluÃ­das. AvaliaÃ§Ã£o ID: %', NEW.avaliacao_id
 
@@ -1363,7 +1363,7 @@ BEGIN
 
             celular = v_contratante.responsavel_celular,
 
-            perfil = 'gestor_entidade',
+            perfil = 'gestor',
 
             contratante_id = p_contratante_id,
 
@@ -1375,7 +1375,7 @@ BEGIN
 
     ELSE
 
-        -- Inserir novo funcionário com perfil gestor_entidade
+        -- Inserir novo funcionário com perfil gestor
 
         INSERT INTO funcionarios (
 
@@ -1411,7 +1411,7 @@ BEGIN
 
             v_contratante.responsavel_celular,
 
-            'gestor_entidade',
+            'gestor',
 
             p_contratante_id,
 
@@ -1470,7 +1470,7 @@ ALTER FUNCTION public.criar_senha_inicial_entidade(p_contratante_id integer) OWN
 -- Name: FUNCTION criar_senha_inicial_entidade(p_contratante_id integer); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.criar_senha_inicial_entidade(p_contratante_id integer) IS 'Cria ou atualiza funcionário com perfil gestor_entidade e senha padrão "123" para o responsável do contratante';
+COMMENT ON FUNCTION public.criar_senha_inicial_entidade(p_contratante_id integer) IS 'Cria ou atualiza funcionário com perfil gestor e senha padrão "123" para o responsável do contratante';
 
 
 --
@@ -1771,7 +1771,7 @@ BEGIN
           (f.criado_em < NOW() - INTERVAL '6 months' AND NOT EXISTS(SELECT 1 FROM avaliacoes WHERE funcionario_cpf = f.cpf))
           OR
           -- Teve avaliações liberadas mas nunca concluiu nenhuma
-          (EXISTS(SELECT 1 FROM avaliacoes WHERE funcionario_cpf = f.cpf) AND NOT EXISTS(SELECT 1 FROM avaliacoes WHERE funcionario_cpf = f.cpf AND status = 'concluida'))
+          (EXISTS(SELECT 1 FROM avaliacoes WHERE funcionario_cpf = f.cpf) AND NOT EXISTS(SELECT 1 FROM avaliacoes WHERE funcionario_cpf = f.cpf AND status = 'concluido'))
         )
 
         UNION ALL
@@ -1948,7 +1948,7 @@ BEGIN
 
         AND anonimizada = false
 
-        AND status IN ('concluida', 'inativada')
+        AND status IN ('concluido', 'inativada')
 
     LOOP
 
@@ -2380,9 +2380,9 @@ BEGIN
 
             'total_avaliacoes', COUNT(a.id),
 
-            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluida' THEN 1 END),
+            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluido' THEN 1 END),
 
-            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2),
+            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2),
 
             'funcionarios_operacionais', COUNT(DISTINCT CASE WHEN f.nivel_cargo = 'operacional' THEN f.cpf END),
 
@@ -2510,7 +2510,7 @@ BEGIN
 
             AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
 
-            AND a.status = 'concluida'
+            AND a.status = 'concluido'
 
         GROUP BY r.grupo
 
@@ -2578,7 +2578,7 @@ BEGIN
 
         AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
 
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
 
         AND r.grupo IN (8, 9, 10);
 
@@ -2723,7 +2723,7 @@ BEGIN
 
         AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
 
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
 
     GROUP BY ec.id, ec.nome, r.grupo
 
@@ -3234,7 +3234,7 @@ BEGIN
 
     -- Gestor de entidade pode acessar apenas sua entidade
 
-    IF v_perfil = 'gestor_entidade' THEN
+    IF v_perfil = 'gestor' THEN
 
         RETURN p_contratante_id::TEXT = current_setting('app.contratante_id', TRUE);
 
@@ -3300,7 +3300,7 @@ BEGIN
 
     -- Se avaliaÃ§Ã£o estava concluÃ­da, nÃ£o permitir mudanÃ§a de status
 
-    IF OLD.status = 'concluida' AND NEW.status != 'concluida' THEN
+    IF OLD.status = 'concluido' AND NEW.status != 'concluido' THEN
 
         RAISE EXCEPTION 'NÃ£o Ã© permitido alterar o status de uma avaliaÃ§Ã£o concluÃ­da. AvaliaÃ§Ã£o ID: %', OLD.id
 
@@ -3599,10 +3599,10 @@ $$;
 ALTER FUNCTION public.sync_funcionario_clinica() OWNER TO postgres;
 
 --
--- Name: update_contratantes_senhas_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_entidades_senhas_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_contratantes_senhas_updated_at() RETURNS trigger
+CREATE FUNCTION public.update_entidades_senhas_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -3617,7 +3617,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_contratantes_senhas_updated_at() OWNER TO postgres;
+ALTER FUNCTION public.update_entidades_senhas_updated_at() OWNER TO postgres;
 
 --
 -- Name: update_contratantes_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
@@ -3904,7 +3904,7 @@ BEGIN
 
     COUNT(*) AS total,
 
-    COUNT(*) FILTER (WHERE status = 'concluida') AS concluidas,
+    COUNT(*) FILTER (WHERE status = 'concluido') AS concluidas,
 
     COUNT(*) FILTER (WHERE status = 'inativada') AS inativadas
 
@@ -4376,7 +4376,7 @@ BEGIN
 
     -- Gestor de entidade sÃ³ pode cancelar ou aceitar contrato
 
-    IF p_user_perfil = 'gestor_entidade' THEN
+    IF p_user_perfil = 'gestor' THEN
 
         IF p_status_novo = 'cancelado' THEN
 
@@ -4853,7 +4853,7 @@ CREATE TABLE public.avaliacoes (
     anonimizada boolean DEFAULT false,
     data_anonimizacao timestamp without time zone,
     CONSTRAINT avaliacoes_base_legal_check CHECK (((base_legal)::text = ANY (ARRAY[('contrato'::character varying)::text, ('obrigacao_legal'::character varying)::text, ('consentimento'::character varying)::text, ('interesse_legitimo'::character varying)::text]))),
-    CONSTRAINT avaliacoes_status_check CHECK (((status)::text = ANY (ARRAY[('iniciada'::character varying)::text, ('em_andamento'::character varying)::text, ('concluida'::character varying)::text, ('inativada'::character varying)::text])))
+    CONSTRAINT avaliacoes_status_check CHECK (((status)::text = ANY (ARRAY[('iniciada'::character varying)::text, ('em_andamento'::character varying)::text, ('concluido'::character varying)::text, ('inativada'::character varying)::text])))
 );
 
 
@@ -5345,10 +5345,10 @@ ALTER SEQUENCE public.contratantes_id_seq OWNED BY public.contratantes.id;
 
 
 --
--- Name: contratantes_senhas; Type: TABLE; Schema: public; Owner: postgres
+-- Name: entidades_senhas; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.contratantes_senhas (
+CREATE TABLE public.entidades_senhas (
     id integer NOT NULL,
     contratante_id integer NOT NULL,
     cpf character varying(11) NOT NULL,
@@ -5356,38 +5356,38 @@ CREATE TABLE public.contratantes_senhas (
     primeira_senha_alterada boolean DEFAULT false,
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT contratantes_senhas_cpf_check CHECK ((length((cpf)::text) = 11))
+    CONSTRAINT entidades_senhas_cpf_check CHECK ((length((cpf)::text) = 11))
 );
 
 
-ALTER TABLE public.contratantes_senhas OWNER TO postgres;
+ALTER TABLE public.entidades_senhas OWNER TO postgres;
 
 --
--- Name: TABLE contratantes_senhas; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: TABLE entidades_senhas; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.contratantes_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-
-
---
--- Name: COLUMN contratantes_senhas.cpf; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON TABLE public.entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
 
 
 --
--- Name: COLUMN contratantes_senhas.primeira_senha_alterada; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN entidades_senhas.cpf; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes_senhas.primeira_senha_alterada IS 'Flag para forÃ§ar alteraÃ§Ã£o de senha no primeiro acesso';
+COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
 
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: COLUMN entidades_senhas.primeira_senha_alterada; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.contratantes_senhas_id_seq
+COMMENT ON COLUMN public.entidades_senhas.primeira_senha_alterada IS 'Flag para forÃ§ar alteraÃ§Ã£o de senha no primeiro acesso';
+
+
+--
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.entidades_senhas_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -5396,13 +5396,13 @@ CREATE SEQUENCE public.contratantes_senhas_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.contratantes_senhas_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.entidades_senhas_id_seq OWNER TO postgres;
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.contratantes_senhas_id_seq OWNED BY public.contratantes_senhas.id;
+ALTER SEQUENCE public.entidades_senhas_id_seq OWNED BY public.entidades_senhas.id;
 
 
 --
@@ -5644,7 +5644,7 @@ CREATE TABLE public.funcionarios (
     contratante_id integer,
     CONSTRAINT funcionarios_clinica_check CHECK (((clinica_id IS NOT NULL) OR ((perfil)::text = ANY (ARRAY['emissor'::text, 'admin'::text])))),
     CONSTRAINT funcionarios_nivel_cargo_check CHECK ((((perfil)::text = ANY (ARRAY[('admin'::character varying)::text, ('rh'::character varying)::text, ('emissor'::character varying)::text])) OR (((perfil)::text = 'funcionario'::text) AND (nivel_cargo IS NOT NULL)))), 
-    CONSTRAINT funcionarios_perfil_check CHECK (((perfil)::text = ANY (ARRAY[('funcionario'::character varying)::text, ('rh'::character varying)::text, ('admin'::character varying)::text, ('emissor'::character varying)::text, ('gestor_entidade'::character varying)::text])))
+    CONSTRAINT funcionarios_perfil_check CHECK (((perfil)::text = ANY (ARRAY[('funcionario'::character varying)::text, ('rh'::character varying)::text, ('admin'::character varying)::text, ('emissor'::character varying)::text, ('gestor'::character varying)::text])))
 );
 
 
@@ -6235,7 +6235,7 @@ CREATE TABLE public.notificacoes (
     data_resolucao timestamp without time zone,
     resolvido_por_cpf character varying(11),
     CONSTRAINT notificacao_destinatario_valido CHECK ((length(destinatario_cpf) > 0)),
-    CONSTRAINT notificacoes_destinatario_tipo_check CHECK ((destinatario_tipo = ANY (ARRAY['admin'::text, 'gestor_entidade'::text, 'funcionario'::text, 'contratante'::text, 'clinica'::text])))
+    CONSTRAINT notificacoes_destinatario_tipo_check CHECK ((destinatario_tipo = ANY (ARRAY['admin'::text, 'gestor'::text, 'funcionario'::text, 'contratante'::text, 'clinica'::text])))
 );
 
 
@@ -7141,7 +7141,7 @@ CREATE VIEW public.vw_alertas_lotes_stuck AS
     count(a.id) AS total_avaliacoes,
     count(
         CASE
-            WHEN ((a.status)::text = 'concluida'::text) THEN 1
+            WHEN ((a.status)::text = 'concluido'::text) THEN 1
             ELSE NULL::integer
         END) AS avaliacoes_concluidas,
     la.auto_emitir_em,
@@ -7308,7 +7308,7 @@ CREATE VIEW public.vw_auditoria_avaliacoes AS
         END AS liberado,
     a.status AS avaliacao_status,
         CASE
-            WHEN ((a.status)::text = 'concluida'::text) THEN true
+            WHEN ((a.status)::text = 'concluido'::text) THEN true
             ELSE false
         END AS concluida,
         CASE
@@ -7439,7 +7439,7 @@ CREATE VIEW public.vw_auditoria_lotes AS
           WHERE (avaliacoes.lote_id = l.id)) AS total_avaliacoes,
     ( SELECT count(*) AS count
            FROM public.avaliacoes
-          WHERE ((avaliacoes.lote_id = l.id) AND ((avaliacoes.status)::text = 'concluida'::text))) AS avaliacoes_concluidas,
+          WHERE ((avaliacoes.lote_id = l.id) AND ((avaliacoes.status)::text = 'concluido'::text))) AS avaliacoes_concluidas,
     ( SELECT count(*) AS count
            FROM public.audit_logs
           WHERE (((audit_logs.resource)::text = 'lotes_avaliacao'::text) AND (audit_logs.resource_id = (l.id)::text) AND ((audit_logs.action)::text = 'UPDATE'::text) AND ((audit_logs.old_data ->> 'status'::text) <> (audit_logs.new_data ->> 'status'::text)))) AS mudancas_status
@@ -7504,7 +7504,7 @@ CREATE VIEW public.vw_comparativo_empresas AS
      JOIN public.funcionarios f ON ((ec.id = f.empresa_id)))
      JOIN public.avaliacoes a ON ((f.cpf = a.funcionario_cpf)))
      JOIN public.respostas r ON ((a.id = r.avaliacao_id)))
-  WHERE (((a.status)::text = 'concluida'::text) AND (r.grupo <= 6))
+  WHERE (((a.status)::text = 'concluido'::text) AND (r.grupo <= 6))
   GROUP BY ec.clinica_id, ec.id, ec.nome
   ORDER BY ec.clinica_id, ec.nome;
 
@@ -7554,7 +7554,7 @@ CREATE VIEW public.vw_dashboard_por_empresa AS
     count(a.id) AS total_avaliacoes,
     count(
         CASE
-            WHEN ((a.status)::text = 'concluida'::text) THEN a.id
+            WHEN ((a.status)::text = 'concluido'::text) THEN a.id
             ELSE NULL::integer
         END) AS avaliacoes_concluidas,
     count(
@@ -7569,7 +7569,7 @@ CREATE VIEW public.vw_dashboard_por_empresa AS
         END) AS avaliacoes_iniciadas,
     round((((count(
         CASE
-            WHEN ((a.status)::text = 'concluida'::text) THEN a.id
+            WHEN ((a.status)::text = 'concluido'::text) THEN a.id
             ELSE NULL::integer
         END))::numeric * 100.0) / (NULLIF(count(a.id), 0))::numeric), 2) AS percentual_conclusao
    FROM ((public.funcionarios f
@@ -7686,7 +7686,7 @@ CREATE VIEW public.vw_lotes_info AS
           WHERE (a.lote_id = la.id)) AS total_avaliacoes,
     ( SELECT count(*) AS count
            FROM public.avaliacoes a
-          WHERE ((a.lote_id = la.id) AND ((a.status)::text = 'concluida'::text))) AS avaliacoes_concluidas
+          WHERE ((a.lote_id = la.id) AND ((a.status)::text = 'concluido'::text))) AS avaliacoes_concluidas
    FROM (((public.lotes_avaliacao la
      JOIN public.clinicas c ON ((c.id = la.clinica_id)))
      JOIN public.empresas_clientes ec ON ((ec.id = la.empresa_id)))
@@ -7942,10 +7942,10 @@ ALTER TABLE ONLY public.contratantes_funcionarios ALTER COLUMN id SET DEFAULT ne
 
 
 --
--- Name: contratantes_senhas id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: entidades_senhas id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_senhas ALTER COLUMN id SET DEFAULT nextval('public.contratantes_senhas_id_seq'::regclass);
+ALTER TABLE ONLY public.entidades_senhas ALTER COLUMN id SET DEFAULT nextval('public.entidades_senhas_id_seq'::regclass);
 
 
 --
@@ -8307,19 +8307,19 @@ ALTER TABLE ONLY public.contratantes
 
 
 --
--- Name: contratantes_senhas contratantes_senhas_contratante_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: entidades_senhas entidades_senhas_contratante_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT contratantes_senhas_contratante_id_key UNIQUE (contratante_id);
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT entidades_senhas_contratante_id_key UNIQUE (contratante_id);
 
 
 --
--- Name: contratantes_senhas contratantes_senhas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: entidades_senhas entidades_senhas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT contratantes_senhas_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT entidades_senhas_pkey PRIMARY KEY (id);
 
 
 --
@@ -8997,17 +8997,17 @@ CREATE INDEX idx_contratantes_plano_tipo ON public.contratantes USING btree (pla
 
 
 --
--- Name: idx_contratantes_senhas_contratante; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_entidades_senhas_contratante; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_senhas_contratante ON public.contratantes_senhas USING btree (contratante_id);
+CREATE INDEX idx_entidades_senhas_contratante ON public.entidades_senhas USING btree (contratante_id);
 
 
 --
--- Name: idx_contratantes_senhas_cpf; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_entidades_senhas_cpf; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_senhas_cpf ON public.contratantes_senhas USING btree (cpf);
+CREATE INDEX idx_entidades_senhas_cpf ON public.entidades_senhas USING btree (cpf);
 
 
 --
@@ -9809,10 +9809,10 @@ CREATE TRIGGER trg_contratantes_funcionarios_updated_at BEFORE UPDATE ON public.
 
 
 --
--- Name: contratantes_senhas trg_contratantes_senhas_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: entidades_senhas trg_entidades_senhas_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_contratantes_senhas_updated_at BEFORE UPDATE ON public.contratantes_senhas FOR EACH ROW EXECUTE FUNCTION public.update_contratantes_senhas_updated_at();
+CREATE TRIGGER trg_entidades_senhas_updated_at BEFORE UPDATE ON public.entidades_senhas FOR EACH ROW EXECUTE FUNCTION public.update_entidades_senhas_updated_at();
 
 
 --
@@ -10155,11 +10155,11 @@ ALTER TABLE ONLY public.contratantes_funcionarios
 
 
 --
--- Name: contratantes_senhas fk_contratantes_senhas_contratante; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: entidades_senhas fk_entidades_senhas_contratante; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT fk_contratantes_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
 
 
 --
@@ -10368,10 +10368,10 @@ CREATE POLICY admin_all_contratantes ON public.contratantes USING ((current_sett
 
 
 --
--- Name: contratantes_senhas admin_all_contratantes_senhas; Type: POLICY; Schema: public; Owner: postgres
+-- Name: entidades_senhas admin_all_entidades_senhas; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY admin_all_contratantes_senhas ON public.contratantes_senhas USING ((current_setting('app.perfil'::text, true) = 'admin'::text)) WITH CHECK ((current_setting('app.perfil'::text, true) = 'admin'::text));
+CREATE POLICY admin_all_entidades_senhas ON public.entidades_senhas USING ((current_setting('app.perfil'::text, true) = 'admin'::text)) WITH CHECK ((current_setting('app.perfil'::text, true) = 'admin'::text));
 
 
 --
@@ -10438,17 +10438,17 @@ CREATE POLICY contratantes_admin_all ON public.contratantes USING ((NULLIF(curre
 
 
 --
--- Name: contratantes contratantes_gestor_entidade_select; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contratantes contratantes_gestor_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratantes_gestor_entidade_select ON public.contratantes FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor_entidade'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
+CREATE POLICY contratantes_gestor_select ON public.contratantes FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
 
 
 --
--- Name: contratantes contratantes_gestor_entidade_update; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contratantes contratantes_gestor_update; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratantes_gestor_entidade_update ON public.contratantes FOR UPDATE USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor_entidade'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text)))) WITH CHECK (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor_entidade'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
+CREATE POLICY contratantes_gestor_update ON public.contratantes FOR UPDATE USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text)))) WITH CHECK (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
 
 
 --
@@ -10473,10 +10473,10 @@ CREATE POLICY contratantes_responsavel_update ON public.contratantes FOR UPDATE 
 
 
 --
--- Name: contratantes_senhas; Type: ROW SECURITY; Schema: public; Owner: postgres
+-- Name: entidades_senhas; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.contratantes_senhas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.entidades_senhas ENABLE ROW LEVEL SECURITY;
 
 --
 -- Name: contratos_planos; Type: ROW SECURITY; Schema: public; Owner: postgres
@@ -10492,10 +10492,10 @@ CREATE POLICY contratos_planos_admin_all ON public.contratos_planos USING ((NULL
 
 
 --
--- Name: contratos_planos contratos_planos_gestor_entidade_select; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contratos_planos contratos_planos_gestor_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratos_planos_gestor_entidade_select ON public.contratos_planos FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor_entidade'::text) AND ((tipo_contratante)::text = 'entidade'::text) AND (contratante_id IN ( SELECT contratantes.id
+CREATE POLICY contratos_planos_gestor_select ON public.contratos_planos FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((tipo_contratante)::text = 'entidade'::text) AND (contratante_id IN ( SELECT contratantes.id
    FROM public.contratantes
   WHERE ((contratantes.responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))))));
 
@@ -10536,17 +10536,17 @@ CREATE POLICY funcionarios_rh_clinica ON public.funcionarios FOR SELECT USING ((
 
 
 --
--- Name: contratantes gestor_entidade_own_contratante; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contratantes gestor_own_contratante; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY gestor_entidade_own_contratante ON public.contratantes FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'gestor_entidade'::text) AND (tipo = 'entidade'::public.tipo_contratante_enum) AND ((id)::text = current_setting('app.contratante_id'::text, true))));
+CREATE POLICY gestor_own_contratante ON public.contratantes FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'gestor'::text) AND (tipo = 'entidade'::public.tipo_contratante_enum) AND ((id)::text = current_setting('app.contratante_id'::text, true))));
 
 
 --
--- Name: contratos_planos gestor_entidade_own_contratos_planos; Type: POLICY; Schema: public; Owner: postgres
+-- Name: contratos_planos gestor_own_contratos_planos; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY gestor_entidade_own_contratos_planos ON public.contratos_planos FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'gestor_entidade'::text) AND ((tipo_contratante)::text = 'entidade'::text) AND ((contratante_id)::text = current_setting('app.contratante_id'::text, true))));
+CREATE POLICY gestor_own_contratos_planos ON public.contratos_planos FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'gestor'::text) AND ((tipo_contratante)::text = 'entidade'::text) AND ((contratante_id)::text = current_setting('app.contratante_id'::text, true))));
 
 
 --
@@ -10559,7 +10559,7 @@ ALTER TABLE public.laudos ENABLE ROW LEVEL SECURITY;
 -- Name: laudos laudos_entidade_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY laudos_entidade_select ON public.laudos FOR SELECT USING (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor_entidade'::text])) AND (EXISTS ( SELECT 1
+CREATE POLICY laudos_entidade_select ON public.laudos FOR SELECT USING (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor'::text])) AND (EXISTS ( SELECT 1
    FROM public.lotes_avaliacao
   WHERE ((lotes_avaliacao.id = laudos.lote_id) AND (lotes_avaliacao.contratante_id = public.current_user_contratante_id()))))));
 
@@ -10585,28 +10585,28 @@ ALTER TABLE public.lotes_avaliacao ENABLE ROW LEVEL SECURITY;
 -- Name: lotes_avaliacao lotes_entidade_insert; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY lotes_entidade_insert ON public.lotes_avaliacao FOR INSERT WITH CHECK (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor_entidade'::text])) AND (contratante_id = public.current_user_contratante_id())));
+CREATE POLICY lotes_entidade_insert ON public.lotes_avaliacao FOR INSERT WITH CHECK (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor'::text])) AND (contratante_id = public.current_user_contratante_id())));
 
 
 --
 -- Name: lotes_avaliacao lotes_entidade_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY lotes_entidade_select ON public.lotes_avaliacao FOR SELECT USING (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor_entidade'::text])) AND (contratante_id = public.current_user_contratante_id())));
+CREATE POLICY lotes_entidade_select ON public.lotes_avaliacao FOR SELECT USING (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor'::text])) AND (contratante_id = public.current_user_contratante_id())));
 
 
 --
 -- Name: POLICY lotes_entidade_select ON lotes_avaliacao; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON POLICY lotes_entidade_select ON public.lotes_avaliacao IS 'Permite acesso de gestores de entidade (perfil gestor_entidade ou entidade) aos lotes da sua entidade';
+COMMENT ON POLICY lotes_entidade_select ON public.lotes_avaliacao IS 'Permite acesso de gestores de entidade (perfil gestor ou entidade) aos lotes da sua entidade';
 
 
 --
 -- Name: lotes_avaliacao lotes_entidade_update; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY lotes_entidade_update ON public.lotes_avaliacao FOR UPDATE USING (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor_entidade'::text])) AND (contratante_id = public.current_user_contratante_id()))) WITH CHECK (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor_entidade'::text])) AND (contratante_id = public.current_user_contratante_id())));
+CREATE POLICY lotes_entidade_update ON public.lotes_avaliacao FOR UPDATE USING (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor'::text])) AND (contratante_id = public.current_user_contratante_id()))) WITH CHECK (((public.current_user_perfil() = ANY (ARRAY['entidade'::text, 'gestor'::text])) AND (contratante_id = public.current_user_contratante_id())));
 
 
 --
@@ -10653,10 +10653,10 @@ CREATE POLICY notificacoes_contratante_update ON public.notificacoes FOR UPDATE 
 
 
 --
--- Name: contratantes_senhas own_contratante_senha; Type: POLICY; Schema: public; Owner: postgres
+-- Name: entidades_senhas own_contratante_senha; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY own_contratante_senha ON public.contratantes_senhas FOR SELECT USING (((cpf)::text = current_setting('app.cpf'::text, true)));
+CREATE POLICY own_contratante_senha ON public.entidades_senhas FOR SELECT USING (((cpf)::text = current_setting('app.cpf'::text, true)));
 
 
 --
@@ -10739,10 +10739,10 @@ CREATE POLICY rh_own_contratos_planos ON public.contratos_planos FOR SELECT USIN
 
 
 --
--- Name: contratantes_senhas update_own_senha; Type: POLICY; Schema: public; Owner: postgres
+-- Name: entidades_senhas update_own_senha; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY update_own_senha ON public.contratantes_senhas FOR UPDATE USING (((cpf)::text = current_setting('app.cpf'::text, true))) WITH CHECK (((cpf)::text = current_setting('app.cpf'::text, true)));
+CREATE POLICY update_own_senha ON public.entidades_senhas FOR UPDATE USING (((cpf)::text = current_setting('app.cpf'::text, true))) WITH CHECK (((cpf)::text = current_setting('app.cpf'::text, true)));
 
 
 --
@@ -10914,10 +10914,10 @@ GRANT SELECT,USAGE ON SEQUENCE public.contratantes_id_seq TO PUBLIC;
 
 
 --
--- Name: SEQUENCE contratantes_senhas_id_seq; Type: ACL; Schema: public; Owner: postgres
+-- Name: SEQUENCE entidades_senhas_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT SELECT,USAGE ON SEQUENCE public.contratantes_senhas_id_seq TO PUBLIC;
+GRANT SELECT,USAGE ON SEQUENCE public.entidades_senhas_id_seq TO PUBLIC;
 
 
 --
@@ -11234,4 +11234,5 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.vw_dashboard_por_empresa TO te
 --
 -- PostgreSQL database dump complete
 --
+
 

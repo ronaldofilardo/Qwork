@@ -28,12 +28,12 @@
 
 ### 🟢 BAIXAS - Verificações de autorização
 
-| Arquivo                                                                                        | Linha  | Ação Necessária                                                    | Prioridade |
-| ---------------------------------------------------------------------------------------------- | ------ | ------------------------------------------------------------------ | ---------- |
-| [app/api/rh/pendencias/route.ts](app/api/rh/pendencias/route.ts)                               | 34     | `session.perfil === 'rh'` → `session.usuario_tipo === 'gestor_rh'` | 🟢 BAIXA   |
-| [app/api/rh/laudos/route.ts](app/api/rh/laudos/route.ts)                                       | 39     | Idem                                                               | 🟢 BAIXA   |
-| [app/api/rh/laudos/[laudoId]/download/route.ts](app/api/rh/laudos/[laudoId]/download/route.ts) | 68, 70 | Atualizar verificações                                             | 🟢 BAIXA   |
-| [app/api/notificacoes/\*.ts](app/api/notificacoes)                                             | Várias | Atualizar verificações                                             | 🟢 BAIXA   |
+| Arquivo                                                                                        | Linha  | Ação Necessária                                             | Prioridade |
+| ---------------------------------------------------------------------------------------------- | ------ | ----------------------------------------------------------- | ---------- |
+| [app/api/rh/pendencias/route.ts](app/api/rh/pendencias/route.ts)                               | 34     | `session.perfil === 'rh'` → `session.usuario_tipo === 'rh'` | 🟢 BAIXA   |
+| [app/api/rh/laudos/route.ts](app/api/rh/laudos/route.ts)                                       | 39     | Idem                                                        | 🟢 BAIXA   |
+| [app/api/rh/laudos/[laudoId]/download/route.ts](app/api/rh/laudos/[laudoId]/download/route.ts) | 68, 70 | Atualizar verificações                                      | 🟢 BAIXA   |
+| [app/api/notificacoes/\*.ts](app/api/notificacoes)                                             | Várias | Atualizar verificações                                      | 🟢 BAIXA   |
 
 ---
 
@@ -87,8 +87,8 @@
 1. ✅ Analisar função `criarContaResponsavel()` atual
 2. ⏳ Substituir `perfil` por `usuario_tipo` em INSERTs
 3. ⏳ Mapear lógica de tipo:
-   - `tipo === 'entidade'` → `'gestor_entidade'`
-   - `tipo === 'clinica'` → `'gestor_rh'`
+   - `tipo === 'entidade'` → `'gestor'`
+   - `tipo === 'clinica'` → `'rh'`
 4. ⏳ Atualizar queries de validação
 5. ⏳ Testar com `npm test criarContaResponsavel`
 
@@ -151,13 +151,13 @@ const funcionario = await criarFuncionario(
 
 **Mapeamento de conversão:**
 
-| perfil (antigo)     | usuario_tipo (novo)                                 | Query Atualizada                                                        |
-| ------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
-| `'funcionario'`     | `'funcionario_clinica'` OU `'funcionario_entidade'` | `WHERE usuario_tipo IN ('funcionario_clinica', 'funcionario_entidade')` |
-| `'rh'`              | `'gestor_rh'`                                       | `WHERE usuario_tipo = 'gestor_rh'`                                      |
-| `'gestor_entidade'` | `'gestor_entidade'`                                 | `WHERE usuario_tipo = 'gestor_entidade'`                                |
-| `'admin'`           | `'admin'`                                           | `WHERE usuario_tipo = 'admin'`                                          |
-| `'emissor'`         | `'emissor'`                                         | `WHERE usuario_tipo = 'emissor'`                                        |
+| perfil (antigo) | usuario_tipo (novo)                                 | Query Atualizada                                                        |
+| --------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `'funcionario'` | `'funcionario_clinica'` OU `'funcionario_entidade'` | `WHERE usuario_tipo IN ('funcionario_clinica', 'funcionario_entidade')` |
+| `'rh'`          | `'rh'`                                              | `WHERE usuario_tipo = 'rh'`                                             |
+| `'gestor'`      | `'gestor'`                                          | `WHERE usuario_tipo = 'gestor'`                                         |
+| `'admin'`       | `'admin'`                                           | `WHERE usuario_tipo = 'admin'`                                          |
+| `'emissor'`     | `'emissor'`                                         | `WHERE usuario_tipo = 'emissor'`                                        |
 
 ---
 
@@ -176,8 +176,8 @@ export function getUsuarioTipoLabel(tipo: usuario_tipo_enum): string {
   const labels = {
     funcionario_clinica: 'Funcionário',
     funcionario_entidade: 'Funcionário da Entidade',
-    gestor_rh: 'Gestor RH',
-    gestor_entidade: 'Gestor da Entidade',
+    rh: 'Gestor RH',
+    gestor: 'Gestor da Entidade',
     admin: 'Administrador',
     emissor: 'Emissor de Laudos',
   };
@@ -189,8 +189,8 @@ export function mapPerfilToUsuarioTipo(
 ): usuario_tipo_enum | null {
   const map = {
     funcionario: 'funcionario_clinica',
-    rh: 'gestor_rh',
-    gestor_entidade: 'gestor_entidade',
+    rh: 'rh',
+    gestor: 'gestor',
     admin: 'admin',
     emissor: 'emissor',
   };

@@ -15,7 +15,7 @@ export interface AceitarContratoInput {
 
 export interface ContratoAceito {
   id: number;
-  contratante_id: number;
+  entidade_id: number;
   aceito: boolean;
   data_aceite: string;
   ip_aceite?: string;
@@ -38,12 +38,12 @@ export async function aceitarContrato(
   // 1. Buscar contrato
   const contratoResult = await query<{
     id: number;
-    contratante_id: number;
+    entidade_id: number;
     conteudo: string;
     aceito: boolean;
     hash_contrato?: string;
   }>(
-    `SELECT id, contratante_id, conteudo, aceito, hash_contrato 
+    `SELECT id, entidade_id, conteudo, aceito, hash_contrato 
      FROM contratos 
      WHERE id = $1`,
     [input.contrato_id]
@@ -71,7 +71,7 @@ export async function aceitarContrato(
        ip_aceite = $1,
        hash_contrato = $2
      WHERE id = $3
-     RETURNING id, contratante_id, aceito, data_aceite, ip_aceite, hash_contrato`,
+     RETURNING id, entidade_id, aceito, data_aceite, ip_aceite, hash_contrato`,
     [input.ip_aceite || null, hashContrato, input.contrato_id]
   );
 
@@ -87,16 +87,16 @@ export async function aceitarContrato(
     user_agent: input.user_agent,
     metadados: {
       hash_contrato: hashContrato,
-      contratante_id: contrato.contratante_id,
+      entidade_id: contrato.entidade_id,
     },
   });
 
   // 5. Atualizar status do contratante para aguardando_pagamento
   await query(
-    `UPDATE contratantes 
+    `UPDATE entidades 
      SET status = 'aguardando_pagamento'
      WHERE id = $1 AND status = 'contrato_gerado'`,
-    [contrato.contratante_id]
+    [contrato.entidade_id]
   );
 
   return contratoAceito;
@@ -155,7 +155,7 @@ export async function obterContrato(contrato_id: number) {
             p.tipo as plano_tipo,
             p.preco as plano_preco
      FROM contratos c
-     LEFT JOIN contratantes ct ON c.contratante_id = ct.id
+     LEFT JOIN entidades ct ON c.entidade_id = ct.id
      LEFT JOIN planos p ON c.plano_id = p.id
      WHERE c.id = $1`,
     [contrato_id]

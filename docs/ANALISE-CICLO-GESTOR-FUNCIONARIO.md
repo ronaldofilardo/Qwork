@@ -10,7 +10,7 @@
 
 O sistema apresenta uma **ambiguidade conceitual fundamental** sobre como classificar e tratar gestores (RH e Entidade). Existe um **ciclo lógico** onde:
 
-1. **No login/autenticação:** Gestores são buscados primariamente em `contratantes_senhas` (não são funcionários)
+1. **No login/autenticação:** Gestores são buscados primariamente em `entidades_senhas` (não são funcionários)
 2. **Na validação de segurança:** Gestores precisam existir em `funcionarios` com `usuario_tipo` específico
 3. **Na estrutura de dados:** Migrações indicam que gestores NÃO devem estar em `funcionarios`
 4. **No uso prático:** Código trata gestores ora como funcionários especiais, ora como entidades separadas
@@ -21,7 +21,7 @@ O sistema apresenta uma **ambiguidade conceitual fundamental** sobre como classi
 
 ### 1. TABELAS E FONTES DE VERDADE
 
-#### Tabela: `contratantes_senhas`
+#### Tabela: `entidades_senhas`
 
 - **Propósito:** Armazenar credenciais de gestores (clínica/entidade)
 - **Estrutura:**
@@ -39,8 +39,8 @@ O sistema apresenta uma **ambiguidade conceitual fundamental** sobre como classi
   ```sql
   cpf CHAR(11)
   nome TEXT
-  perfil TEXT -- 'funcionario', 'rh', 'admin', 'emissor', 'gestor_entidade'
-  usuario_tipo TEXT -- 'funcionario_clinica', 'funcionario_entidade', 'gestor_rh', 'gestor_entidade'
+  perfil TEXT -- 'funcionario', 'rh', 'admin', 'emissor', 'gestor'
+  usuario_tipo TEXT -- 'funcionario_clinica', 'funcionario_entidade', 'rh', 'gestor'
   contratante_id INTEGER
   clinica_id INTEGER
   senha_hash TEXT
@@ -61,20 +61,20 @@ O sistema apresenta uma **ambiguidade conceitual fundamental** sobre como classi
 ### 2. FLUXO DE AUTENTICAÇÃO (app/api/auth/login/route.ts)
 
 ```typescript
-// PASSO 1: Verificar em contratantes_senhas
+// PASSO 1: Verificar em entidades_senhas
 const gestorResult = await query(`
   SELECT cs.cpf, cs.senha_hash,
          c.id as contratante_id,
          c.responsavel_nome as nome,
          c.tipo
-  FROM contratantes_senhas cs
+  FROM entidades_senhas cs
   JOIN contratantes c ON c.id = cs.contratante_id
   WHERE cs.cpf = $1 AND c.ativa = true
 `, [cpf]);
 
 if (gestorResult.rows.length > 0) {
   // É GESTOR
-  const perfil = gestor.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
+  const perfil = gestor.tipo === 'entidade' ? 'gestor' : 'rh';
   createSession({ cpf, nome, perfil, contratante_id, clinica_id });
   return { success: true, redirectTo: '/entidade' ou '/rh' };
 }
@@ -87,12 +87,12 @@ const funcResult = await query(`
 `, [cpf]);
 
 if (funcResult.rows.length > 0) {
-  // É FUNCIONÁRIO (pode incluir gestores com perfil 'rh' ou 'gestor_entidade')
+  // É FUNCIONÁRIO (pode incluir gestores com perfil 'rh' ou 'gestor')
   createSession({ cpf, nome, perfil: funcionario.perfil, ... });
 }
 ```
 
-**🔴 PROBLEMA 1:** Login aceita gestor_entidade de **DUAS fontes diferentes**
+**🔴 PROBLEMA 1:** Login aceita gestor de **DUAS fontes diferentes**
 
 ---
 
@@ -118,8 +118,8 @@ async function validateSessionContext(cpf: string, usuario_tipo: string) {
 }
 
 // Mapeamento de perfil → usuario_tipo
-if (perfil === 'gestor_entidade') {
-  usuarioTipoParaValidacao = 'gestor_entidade';
+if (perfil === 'gestor') {
+  usuarioTipoParaValidacao = 'gestor';
 }
 
 const isValid = await validateSessionContext(cpf, usuarioTipoParaValidacao);
@@ -128,25 +128,25 @@ if (!isValid) {
 }
 ```
 
-**🔴 PROBLEMA 2:** Validação EXIGE que gestor_entidade esteja em `funcionarios`, mas:
+**🔴 PROBLEMA 2:** Validação EXIGE que gestor esteja em `funcionarios`, mas:
 
 - Login não garante isso
-- Migration 201 REMOVE gestor_entidade de funcionarios!
+- Migration 201 REMOVE gestor de funcionarios!
 
 ---
 
 ### 4. MIGRAÇÕES E DECISÕES ARQUITETURAIS
 
-#### Migration 201: `fix_gestor_entidade_as_funcionario.sql`
+#### Migration 201: `fix_gestor_as_funcionario.sql`
 
 ```sql
 -- PROPÓSITO: "Gestor Entidade NUNCA deve estar em funcionarios"
--- Remove todos os registros onde perfil = 'gestor_entidade'
+-- Remove todos os registros onde perfil = 'gestor'
 
-DELETE FROM funcionarios WHERE perfil = 'gestor_entidade';
+DELETE FROM funcionarios WHERE perfil = 'gestor';
 
 -- COMENTÁRIO:
--- "Gestores de entidade devem existir APENAS em contratantes_senhas"
+-- "Gestores de entidade devem existir APENAS em entidades_senhas"
 ```
 
 **🔴 PROBLEMA 3:** Migration **declara** que gestores não são funcionários, mas:
@@ -172,7 +172,7 @@ DELETE FROM funcionarios WHERE perfil = 'gestor_entidade';
 export async function requireEntity() {
   const session = await requireAuth();
 
-  if (session.perfil !== 'gestor_entidade') {
+  if (session.perfil !== 'gestor') {
     throw new Error('Acesso restrito a gestores de entidade');
   }
 
@@ -199,8 +199,8 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 | Aspecto             | Como Gestor                                | Como Funcionário Especial         |
 | ------------------- | ------------------------------------------ | --------------------------------- |
-| **Autenticação**    | `contratantes_senhas`                      | `funcionarios.senha_hash`         |
-| **Sessão**          | `perfil: 'gestor_entidade'`                | `usuario_tipo: 'gestor_entidade'` |
+| **Autenticação**    | `entidades_senhas`                         | `funcionarios.senha_hash`         |
+| **Sessão**          | `perfil: 'gestor'`                         | `usuario_tipo: 'gestor'`          |
 | **Permissões**      | `requireEntity()` valida em `contratantes` | RLS valida em `funcionarios`      |
 | **Segurança**       | Não precisa estar em `funcionarios`        | **EXIGE** estar em `funcionarios` |
 | **Modelo de Dados** | Entidade separada                          | Funcionário com papel especial    |
@@ -212,9 +212,9 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 ```
 1. Gestor faz login
-   └─> Autenticado via contratantes_senhas ✅
+   └─> Autenticado via entidades_senhas ✅
 
-2. Sessão criada com perfil='gestor_entidade'
+2. Sessão criada com perfil='gestor'
    └─> Não há registro em funcionarios ✅ (seguindo Migration 201)
 
 3. Gestor tenta criar lote (usa queryWithContext)
@@ -237,7 +237,7 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 | Funcionalidade                | Status      | Razão                                         |
 | ----------------------------- | ----------- | --------------------------------------------- |
-| Login de gestor_entidade      | ✅ Funciona | Usa `contratantes_senhas`                     |
+| Login de gestor               | ✅ Funciona | Usa `entidades_senhas`                        |
 | Navegação básica              | ✅ Funciona | `requireEntity()` é independente              |
 | Criação de lotes              | ❌ FALHA    | Usa `queryWithContext`                        |
 | Listagem de funcionários (RH) | ⚠️ Incerto  | Depende do endpoint                           |
@@ -270,7 +270,7 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 1. Reverter Migration 201
 2. Garantir que TODO gestor tem registro em funcionarios
-3. Sincronizar senhas entre `contratantes_senhas` e `funcionarios`
+3. Sincronizar senhas entre `entidades_senhas` e `funcionarios`
 4. Ajustar `usuario_tipo` corretamente
 
 ---
@@ -310,7 +310,7 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 ✅ **Vantagens:**
 
 - RLS/auditoria funcionam
-- Autenticação continua em `contratantes_senhas`
+- Autenticação continua em `entidades_senhas`
 - Separação conceitual mantida (registro "técnico")
 
 ❌ **Desvantagens:**
@@ -322,9 +322,9 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 🔧 **Implementação:**
 
-1. Trigger em `contratantes_senhas` → cria/atualiza `funcionarios`
+1. Trigger em `entidades_senhas` → cria/atualiza `funcionarios`
 2. `funcionarios` para gestores tem campos mínimos (cpf, perfil, ativo)
-3. `senha_hash` fica NULL em funcionarios (autenticação via contratantes_senhas)
+3. `senha_hash` fica NULL em funcionarios (autenticação via entidades_senhas)
 4. Constraint CHECK garante consistência
 
 ---
@@ -411,8 +411,8 @@ O sistema trata gestores com **duas personalidades contraditórias**:
    ```sql
    CREATE TABLE audit_logs_unified (
      user_cpf CHAR(11),
-     user_tipo TEXT, -- 'gestor_entidade', 'gestor_rh', 'funcionario'
-     fonte TEXT, -- 'contratantes_senhas', 'funcionarios'
+     user_tipo TEXT, -- 'gestor', 'rh', 'funcionario'
+     fonte TEXT, -- 'entidades_senhas', 'funcionarios'
      ...
    );
    ```
@@ -429,8 +429,8 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 4. **Migração de dados:**
    - Confirmar que Migration 201 está correta
-   - Limpar qualquer gestor_entidade remanescente em funcionarios
-   - Garantir todos os gestores têm registro em contratantes_senhas
+   - Limpar qualquer gestor remanescente em funcionarios
+   - Garantir todos os gestores têm registro em entidades_senhas
 
 ---
 
@@ -470,7 +470,7 @@ O sistema trata gestores com **duas personalidades contraditórias**:
    - [ ] Criar diagrama de decisão: quando usar query vs queryWithContext
 
 4. **Testes:**
-   - [ ] Testar login de gestor_entidade
+   - [ ] Testar login de gestor
    - [ ] Testar criação de lote
    - [ ] Testar operações de RH
    - [ ] Verificar auditoria
@@ -479,7 +479,7 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 
 ## 📚 REFERÊNCIAS
 
-- [Migration 201](../database/migrations/201_fix_gestor_entidade_as_funcionario.sql)
+- [Migration 201](../database/migrations/201_fix_gestor_as_funcionario.sql)
 - [lib/db-security.ts](../lib/db-security.ts#L25-L60)
 - [app/api/auth/login/route.ts](../app/api/auth/login/route.ts#L40-L290)
 - [app/api/entidade/liberar-lote/route.ts](../app/api/entidade/liberar-lote/route.ts)
@@ -502,7 +502,7 @@ O sistema trata gestores com **duas personalidades contraditórias**:
   - `queryAsGestor()` - Query genérica para gestores
   - `queryAsGestorRH()` - Query específica para RH
   - `queryAsGestorEntidade()` - Query específica para entidade
-  - `validateGestorContext()` - Validação via contratantes_senhas
+  - `validateGestorContext()` - Validação via entidades_senhas
   - `isGestor()`, `isGestorRH()`, `isGestorEntidade()` - Type guards
 
 **Arquivos Modificados:**
@@ -539,12 +539,12 @@ O sistema trata gestores com **duas personalidades contraditórias**:
 - ✅ [`database/migrations/301_cleanup_gestores_funcionarios.sql`](../database/migrations/301_cleanup_gestores_funcionarios.sql)
   - Remove gestores da tabela `funcionarios`
   - Cria backup em `funcionarios_backup_gestores_cleanup`
-  - Valida existência em `contratantes_senhas`
+  - Valida existência em `entidades_senhas`
   - Remove referências e avaliações inválidas
 
 **Resultado:**
 
-- ✅ Separação completa: gestores em `contratantes_senhas`, funcionários em `funcionarios`
+- ✅ Separação completa: gestores em `entidades_senhas`, funcionários em `funcionarios`
 - ✅ RLS aplicado apenas a funcionários operacionais
 - ✅ Gestores validados via `requireEntity()`/`requireClinica()`
 - ✅ Arquitetura limpa e sustentável
@@ -581,13 +581,13 @@ export async function POST(request: Request) {
 
 #### Políticas por Tipo de Usuário
 
-| Tipo                | Tabela de Autenticação | Validação                | Query Function       | RLS    |
-| ------------------- | ---------------------- | ------------------------ | -------------------- | ------ |
-| **gestor_entidade** | `contratantes_senhas`  | `requireEntity()`        | `queryAsGestor()`    | ❌ Não |
-| **rh**              | `contratantes_senhas`  | `requireClinica()`       | `queryAsGestor()`    | ❌ Não |
-| **funcionario**     | `funcionarios`         | `requireAuth()`          | `queryWithContext()` | ✅ Sim |
-| **admin**           | `contratantes_senhas`  | `requireRole('admin')`   | `query()` direta     | ❌ Não |
-| **emissor**         | `funcionarios`         | `requireRole('emissor')` | `query()` direta     | ❌ Não |
+| Tipo            | Tabela de Autenticação | Validação                | Query Function       | RLS    |
+| --------------- | ---------------------- | ------------------------ | -------------------- | ------ |
+| **gestor**      | `entidades_senhas`     | `requireEntity()`        | `queryAsGestor()`    | ❌ Não |
+| **rh**          | `entidades_senhas`     | `requireClinica()`       | `queryAsGestor()`    | ❌ Não |
+| **funcionario** | `funcionarios`         | `requireAuth()`          | `queryWithContext()` | ✅ Sim |
+| **admin**       | `entidades_senhas`     | `requireRole('admin')`   | `query()` direta     | ❌ Não |
+| **emissor**     | `funcionarios`         | `requireRole('emissor')` | `query()` direta     | ❌ Não |
 
 ---
 
@@ -613,9 +613,9 @@ export async function POST(request: Request) {
    ```
 
 2. **Testes:**
-   - [ ] Login de gestor_entidade
+   - [ ] Login de gestor
    - [ ] Login de gestor RH
-   - [ ] Criar lote como gestor_entidade
+   - [ ] Criar lote como gestor
    - [ ] Criar lote como gestor RH
    - [ ] Funcionário respondendo avaliação
    - [ ] Validar RLS policies
@@ -629,7 +629,7 @@ export async function POST(request: Request) {
 
 ## 📚 REFERÊNCIAS
 
-- [Migration 201](../database/migrations/201_fix_gestor_entidade_as_funcionario.sql) - Primeira tentativa de separação
+- [Migration 201](../database/migrations/201_fix_gestor_as_funcionario.sql) - Primeira tentativa de separação
 - [Migration 300](../database/migrations/300_update_rls_exclude_gestores.sql) - ⭐ RLS atualizado
 - [Migration 301](../database/migrations/301_cleanup_gestores_funcionarios.sql) - ⭐ Limpeza de gestores
 - [lib/db-security.ts](../lib/db-security.ts#L25-L60) - ⭐ queryWithSecurity

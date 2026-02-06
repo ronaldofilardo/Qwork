@@ -49,7 +49,7 @@ const resultado = await query(
 
 ```typescript
 // Linha 8
-const user = await requireRole(['rh', 'gestor_entidade']);
+const user = await requireRole(['rh', 'gestor']);
 ```
 
 **Análise**: Esta rota está CORRETA (não permite admin)

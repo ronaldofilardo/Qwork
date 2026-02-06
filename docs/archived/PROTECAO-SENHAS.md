@@ -6,7 +6,7 @@
 
 ## Problema Identificado
 
-Scripts de limpeza (`clean-contratantes.sql` e `clean-cnpj-cpf-data.sql`) estavam deletando senhas da tabela `contratantes_senhas`, causando perda de credenciais de acesso dos gestores de entidade.
+Scripts de limpeza (`clean-contratantes.sql` e `clean-cnpj-cpf-data.sql`) estavam deletando senhas da tabela `entidades_senhas`, causando perda de credenciais de acesso dos gestores de entidade.
 
 ## Soluções Implementadas
 
@@ -16,19 +16,19 @@ Scripts de limpeza (`clean-contratantes.sql` e `clean-cnpj-cpf-data.sql`) estava
 
 Um trigger (`trg_protect_senhas`) foi implementado que:
 
-- **BLOQUEIA** qualquer tentativa de DELETE direto na tabela `contratantes_senhas`
+- **BLOQUEIA** qualquer tentativa de DELETE direto na tabela `entidades_senhas`
 - Registra todas as operações (INSERT, UPDATE, DELETE) em uma tabela de auditoria
 - Permite DELETE apenas via função autorizada com motivo documentado
 
 ```sql
 -- Tentativa de delete direto:
-DELETE FROM contratantes_senhas WHERE cpf = '12345678901';
+DELETE FROM entidades_senhas WHERE cpf = '12345678901';
 -- ❌ ERRO: OPERAÇÃO BLOQUEADA: Delete de senhas requer autorização explícita
 ```
 
 ### 2. ✅ Tabela de Auditoria Completa
 
-**Tabela:** `contratantes_senhas_audit`
+**Tabela:** `entidades_senhas_audit`
 
 Registra automaticamente:
 
@@ -77,7 +77,7 @@ SELECT fn_delete_senha_autorizado(
 
 **Mudanças:**
 
-- ❌ Removido: `DELETE FROM contratantes_senhas`
+- ❌ Removido: `DELETE FROM entidades_senhas`
 - ✅ Adicionado: Avisos críticos e instruções de uso seguro
 - ✅ Comentários explicando a proteção
 
@@ -123,7 +123,7 @@ psql -U postgres -d nr-bps_db -f database/migrations/030_protecao_senhas_critica
 
 ```sql
 -- Testar proteção (deve falhar)
-DELETE FROM contratantes_senhas WHERE contratante_id = 18;
+DELETE FROM entidades_senhas WHERE contratante_id = 18;
 -- Esperado: ERRO: OPERAÇÃO BLOQUEADA
 
 -- Ver auditoria
@@ -186,7 +186,7 @@ SELECT
     COUNT(*) as tentativas_bloqueadas,
     executado_por,
     DATE(executado_em) as data
-FROM contratantes_senhas_audit
+FROM entidades_senhas_audit
 WHERE motivo LIKE '%BLOQUEADA%'
 GROUP BY executado_por, DATE(executado_em)
 ORDER BY data DESC;
@@ -240,7 +240,7 @@ WHERE proname LIKE '%senha%';
 
 ```sql
 -- ISSO VAI FALHAR!
-DELETE FROM contratantes_senhas WHERE cpf = '12345678901';
+DELETE FROM entidades_senhas WHERE cpf = '12345678901';
 ```
 
 **✅ FAÇA:**

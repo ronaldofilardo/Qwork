@@ -26,7 +26,7 @@ export async function GET(request: Request) {
       session.perfil === 'admin'
         ? 'admin'
         : session.perfil === 'rh'
-          ? 'gestor_entidade'
+          ? 'gestor'
           : 'funcionario';
 
     const notificacoes = await NotificationService.listar(

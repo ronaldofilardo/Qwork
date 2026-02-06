@@ -106,6 +106,7 @@ describe.skip('Emissor Dashboard', () => {
     renderWithQueryClient(<EmissorDashboard />);
 
     // Debugging: verificar se fetch foi chamado
+    console.log(
       'Fetch foi chamado?',
       mockFetchImplementation.mock.calls.length
     );

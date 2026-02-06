@@ -625,12 +625,10 @@ CREATE POLICY "lotes_rh_delete" ON lotes_avaliacao FOR DELETE TO PUBLIC USING (
     )
 );
 
--- EMISSOR: Leitura de lotes concluídos
-CREATE POLICY "lotes_emissor_select" ON lotes_avaliacao FOR
-SELECT TO PUBLIC USING (
-        current_user_perfil () = 'emissor'
-        AND status = 'concluido'
-    );
+-- EMISSOR: (DEPRECATED) Leitura de lotes concluídos
+-- Policy 'lotes_emissor_select' foi removida: emissor NÃO pode visualizar lotes/avaliacoes.
+-- Visibilidade de avaliações/lotes é exclusiva para RH e gestor.
+-- CREATE POLICY "lotes_emissor_select" ... (REMOVIDO)
 
 -- FUNCIONÁRIO: Leitura de lotes onde tem avaliação
 CREATE POLICY "lotes_funcionario_select" ON lotes_avaliacao FOR

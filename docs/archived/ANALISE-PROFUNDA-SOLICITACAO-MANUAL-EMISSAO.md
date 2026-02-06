@@ -151,12 +151,12 @@ USING (
 -- Entidade vê lotes da sua contratante
 CREATE POLICY lotes_entidade_select ON public.lotes_avaliacao FOR SELECT
 USING (
-    current_user_perfil() IN ('entidade', 'gestor_entidade')
+    current_user_perfil() IN ('entidade', 'gestor')
     AND contratante_id = current_user_contratante_id()
 );
 
--- Emissor vê lotes concluídos ou finalizados
-CREATE POLICY lotes_emissor_select ON public.lotes_avaliacao FOR SELECT
+-- Emissor vê lotes concluídos ou finalizados (DEPRECATED)
+-- Policy 'lotes_emissor_select' foi removida; emissor NÃO pode visualizar lotes/avaliacoes.
 USING (
     current_user_perfil() = 'emissor'
     AND status IN ('finalizado', 'concluido')
@@ -190,7 +190,7 @@ USING (
 -- Entidade vê laudos de seus lotes
 CREATE POLICY laudos_entidade_select ON public.laudos FOR SELECT
 USING (
-    current_user_perfil() IN ('entidade', 'gestor_entidade')
+    current_user_perfil() IN ('entidade', 'gestor')
     AND lote_id IN (
         SELECT id FROM lotes_avaliacao
         WHERE contratante_id = current_user_contratante_id()
@@ -221,7 +221,7 @@ requireRHWithEmpresaAccess(empresaId: number): Promise<Session>
 
 // Validação Entidade
 requireEntity(): Promise<Session & { contratante_id: number }>
-  → Valida perfil 'gestor_entidade'
+  → Valida perfil 'gestor'
   → Garante contratante_id na sessão
   → Verifica se contratante está ativo
 
@@ -869,7 +869,7 @@ export async function POST(
   // 2. Validar permissão baseado no tipo de lote
   if (loteData.clinica_id && user.perfil === 'rh') {
     await requireRHWithEmpresaAccess(loteData.empresa_id);
-  } else if (loteData.contratante_id && user.perfil === 'gestor_entidade') {
+  } else if (loteData.contratante_id && user.perfil === 'gestor') {
     const session = await requireEntity();
     if (session.contratante_id !== loteData.contratante_id) {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });

@@ -44,7 +44,7 @@ export async function recalcularStatusLotePorId(
       SELECT
         COUNT(a.id) as total_avaliacoes,
         COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
         COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
         COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as iniciadas,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
@@ -147,20 +147,19 @@ export async function recalcularStatusLotePorId(
         try {
           // Buscar dados do lote para criar notificação contextualizada
           const loteInfo = await q(
-            `SELECT la.liberado_por, f.perfil, la.clinica_id, la.contratante_id,
+            `SELECT la.liberado_por, f.perfil, la.clinica_id,
                     COUNT(a.id) as total_avaliacoes
              FROM lotes_avaliacao la
              LEFT JOIN funcionarios f ON f.cpf = la.liberado_por
-             LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
+             LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluido'
              WHERE la.id = $1
-             GROUP BY la.liberado_por, f.perfil, la.clinica_id, la.contratante_id`,
+             GROUP BY la.liberado_por, f.perfil, la.clinica_id`,
             [loteId]
           );
 
           if (loteInfo.rows.length > 0) {
             const lote = loteInfo.rows[0];
-            const destinatarioTipo =
-              lote.perfil === 'rh' ? 'gestor_entidade' : 'gestor_entidade';
+            const destinatarioTipo = lote.perfil === 'rh' ? 'gestor' : 'gestor';
 
             await q(
               `INSERT INTO notificacoes (

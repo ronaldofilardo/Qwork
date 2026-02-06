@@ -24,7 +24,7 @@ BEGIN
     
     -- Verificar se conta já existe
     SELECT EXISTS(
-        SELECT 1 FROM contratantes_senhas 
+        SELECT 1 FROM entidades_senhas 
         WHERE contratante_id = p_contratante_id 
         AND cpf = v_contratante.responsavel_cpf
     ) INTO v_existe_conta;
@@ -40,8 +40,8 @@ BEGIN
     -- Criar hash bcrypt da senha
     v_senha_hash := crypt(v_senha_temporaria, gen_salt('bf'));
     
-    -- Inserir senha na tabela contratantes_senhas
-    INSERT INTO contratantes_senhas (
+    -- Inserir senha na tabela entidades_senhas
+    INSERT INTO entidades_senhas (
         contratante_id, 
         cpf, 
         senha_hash, 
@@ -65,7 +65,7 @@ BEGIN
             ip_address, 
             created_at
         ) VALUES (
-            'contratantes_senhas', 
+            'entidades_senhas', 
             'CREATE', 
             p_contratante_id, 
             'Conta responsável criada automaticamente via fluxo personalizado', 

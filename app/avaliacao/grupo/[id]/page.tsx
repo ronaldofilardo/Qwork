@@ -74,7 +74,7 @@ export default function AvaliacaoGrupoPage() {
         const statusResponse = await fetch('/api/avaliacao/status');
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          if (statusData.status === 'concluida') {
+          if (statusData.status === 'concluido') {
             // Avaliação já concluída, redirecionar para relatório
             router.push('/avaliacao/concluida');
             return;
@@ -90,7 +90,7 @@ export default function AvaliacaoGrupoPage() {
           }
 
           // Se a avaliação foi concluída, limpa o grupo de retomada do storage
-          if (statusData.status === 'concluida') {
+          if (statusData.status === 'concluido') {
             clearGrupoRetomadaFromStorage();
           }
         }

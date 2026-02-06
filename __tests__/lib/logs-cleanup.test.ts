@@ -26,9 +26,9 @@ jest.mock('@/lib/session', () => ({
     if (!session) {
       throw new Error('Não autenticado');
     }
-    if (session.perfil !== 'gestor_entidade') {
+    if (session.perfil !== 'gestor') {
       console.log(
-        `[DEBUG] requireEntity: Perfil ${session.perfil} não é gestor_entidade`
+        `[DEBUG] requireEntity: Perfil ${session.perfil} não é gestor`
       );
       throw new Error('Acesso restrito a gestores de entidade');
     }
@@ -79,7 +79,7 @@ describe('Limpeza de logs - requireAuth', () => {
   it('NÃO deve logar "[DEBUG] requireAuth: Sessão válida" quando sessão é válida', async () => {
     const mockSession = {
       cpf: '12345678901',
-      perfil: 'gestor_entidade' as const,
+      perfil: 'gestor' as const,
       contratante_id: 1,
     };
     mockGetSession.mockReturnValue(mockSession);
@@ -123,7 +123,7 @@ describe('Limpeza de logs - requireEntity', () => {
   it('NÃO deve logar "[DEBUG] requireEntity: Acesso autorizado" quando autorização é bem-sucedida', async () => {
     const mockSession = {
       cpf: '12345678901',
-      perfil: 'gestor_entidade' as const,
+      perfil: 'gestor' as const,
       contratante_id: 1,
     };
     mockGetSession.mockReturnValue(mockSession);
@@ -143,7 +143,7 @@ describe('Limpeza de logs - requireEntity', () => {
   it('deve manter log quando entidade está inativa (caso de erro)', async () => {
     const mockSession = {
       cpf: '12345678901',
-      perfil: 'gestor_entidade' as const,
+      perfil: 'gestor' as const,
       contratante_id: 1,
     };
     mockGetSession.mockReturnValue(mockSession);
@@ -165,7 +165,7 @@ describe('Limpeza de logs - requireEntity', () => {
     );
   });
 
-  it('deve manter log quando perfil não é gestor_entidade (caso de erro)', async () => {
+  it('deve manter log quando perfil não é gestor (caso de erro)', async () => {
     const mockSession = {
       cpf: '12345678901',
       perfil: 'rh' as const,
@@ -178,9 +178,7 @@ describe('Limpeza de logs - requireEntity', () => {
 
     // Logs de erro devem ser mantidos
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      expect.stringContaining(
-        '[DEBUG] requireEntity: Perfil rh não é gestor_entidade'
-      )
+      expect.stringContaining('[DEBUG] requireEntity: Perfil rh não é gestor')
     );
   });
 });

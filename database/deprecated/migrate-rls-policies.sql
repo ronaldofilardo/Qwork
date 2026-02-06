@@ -154,7 +154,7 @@ BEGIN
         FROM avaliacoes
         WHERE id = OLD.avaliacao_id;
         
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido modificar resultados de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
                 USING HINT = 'Resultados de avaliações concluídas são imutáveis.',
                       ERRCODE = '23506';
@@ -166,7 +166,7 @@ BEGIN
         FROM avaliacoes
         WHERE id = NEW.avaliacao_id;
         
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido adicionar resultados a avaliações já concluídas. Avaliação ID: %', NEW.avaliacao_id
                 USING HINT = 'Finalize a avaliação antes de adicionar resultados.',
                       ERRCODE = '23506';
@@ -210,7 +210,7 @@ BEGIN
         FROM avaliacoes
         WHERE id = OLD.avaliacao_id;
         
-        IF v_status = 'concluida' THEN
+        IF v_status = 'concluido' THEN
             RAISE EXCEPTION 'Não é permitido modificar respostas de avaliações concluídas. Avaliação ID: %', OLD.avaliacao_id
                 USING HINT = 'Respostas de avaliações concluídas são imutáveis.',
                       ERRCODE = '23506';
@@ -248,7 +248,7 @@ BEGIN
         RETURN NEW;
     END IF;
     
-    IF OLD.status = 'concluida' AND NEW.status != 'concluida' THEN
+    IF OLD.status = 'concluido' AND NEW.status != 'concluido' THEN
         RAISE EXCEPTION 'Não é permitido alterar o status de uma avaliação concluída. Avaliação ID: %', OLD.id
             USING HINT = 'Avaliações concluídas não podem ter seu status alterado.',
                   ERRCODE = '23506';

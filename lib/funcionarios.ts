@@ -13,8 +13,8 @@ import bcrypt from 'bcryptjs';
 export type UsuarioTipo =
   | 'funcionario_clinica'
   | 'funcionario_entidade'
-  | 'gestor_rh'
-  | 'gestor_entidade'
+  | 'rh'
+  | 'gestor'
   | 'admin'
   | 'emissor';
 
@@ -37,26 +37,26 @@ export interface DadosFuncionarioClinica extends DadosFuncionarioBase {
   tipo: 'funcionario_clinica';
   empresa_id: number;
   clinica_id: number;
-  contratante_id?: never;
+  entidade_id?: never;
 }
 
 export interface DadosFuncionarioEntidade extends DadosFuncionarioBase {
   tipo: 'funcionario_entidade';
-  contratante_id: number;
+  entidade_id: number;
   empresa_id?: never;
   clinica_id?: never;
 }
 
 export interface DadosGestorRH extends DadosFuncionarioBase {
-  tipo: 'gestor_rh';
+  tipo: 'rh';
   clinica_id: number;
-  contratante_id?: never;
+  entidade_id?: never;
   empresa_id?: never;
 }
 
 export interface DadosGestorEntidade extends DadosFuncionarioBase {
-  tipo: 'gestor_entidade';
-  contratante_id: number;
+  tipo: 'gestor';
+  entidade_id: number;
   clinica_id?: never;
   empresa_id?: never;
 }
@@ -64,7 +64,7 @@ export interface DadosGestorEntidade extends DadosFuncionarioBase {
 export interface DadosAdmin extends DadosFuncionarioBase {
   tipo: 'admin' | 'emissor';
   clinica_id?: never;
-  contratante_id?: never;
+  entidade_id?: never;
   empresa_id?: never;
 }
 
@@ -101,8 +101,8 @@ function validarDadosFuncionario(dados: DadosFuncionario): void {
           'Funcionário de clínica requer empresa_id e clinica_id'
         );
       }
-      if (dados.contratante_id) {
-        throw new Error('Funcionário de clínica não pode ter contratante_id');
+      if (dados.entidade_id) {
+        throw new Error('Funcionário de clínica não pode ter entidade_id');
       }
       if (!dados.setor || !dados.funcao) {
         throw new Error('Funcionário de clínica requer setor e função');
@@ -110,8 +110,8 @@ function validarDadosFuncionario(dados: DadosFuncionario): void {
       break;
 
     case 'funcionario_entidade':
-      if (!dados.contratante_id) {
-        throw new Error('Funcionário de entidade requer contratante_id');
+      if (!dados.entidade_id) {
+        throw new Error('Funcionário de entidade requer entidade_id');
       }
       if (dados.empresa_id || dados.clinica_id) {
         throw new Error(
@@ -123,18 +123,18 @@ function validarDadosFuncionario(dados: DadosFuncionario): void {
       }
       break;
 
-    case 'gestor_rh':
+    case 'rh':
       if (!dados.clinica_id) {
         throw new Error('Gestor RH requer clinica_id');
       }
-      if (dados.contratante_id || dados.empresa_id) {
-        throw new Error('Gestor RH não pode ter contratante_id ou empresa_id');
+      if (dados.entidade_id || dados.empresa_id) {
+        throw new Error('Gestor RH não pode ter entidade_id ou empresa_id');
       }
       break;
 
-    case 'gestor_entidade':
-      if (!dados.contratante_id) {
-        throw new Error('Gestor de entidade requer contratante_id');
+    case 'gestor':
+      if (!dados.entidade_id) {
+        throw new Error('Gestor de entidade requer entidade_id');
       }
       if (dados.clinica_id || dados.empresa_id) {
         throw new Error(
@@ -145,9 +145,9 @@ function validarDadosFuncionario(dados: DadosFuncionario): void {
 
     case 'admin':
     case 'emissor':
-      if (dados.clinica_id || dados.contratante_id || dados.empresa_id) {
+      if (dados.clinica_id || dados.entidade_id || dados.empresa_id) {
         throw new Error(
-          'Admin/Emissor não pode ter vínculos (clinica_id, contratante_id, empresa_id)'
+          'Admin/Emissor não pode ter vínculos (clinica_id, entidade_id, empresa_id)'
         );
       }
       break;
@@ -201,7 +201,7 @@ export async function criarFuncionario(dados: DadosFuncionario): Promise<any> {
     // Vínculos condicionais
     empresa_id: 'empresa_id' in dados ? dados.empresa_id : null,
     clinica_id: 'clinica_id' in dados ? dados.clinica_id : null,
-    contratante_id: 'contratante_id' in dados ? dados.contratante_id : null,
+    entidade_id: 'entidade_id' in dados ? dados.entidade_id : null,
   };
 
   // INSERT unificado
@@ -210,7 +210,7 @@ export async function criarFuncionario(dados: DadosFuncionario): Promise<any> {
       cpf, nome, email, senha_hash, usuario_tipo,
       data_nascimento, setor, funcao, matricula, nivel_cargo,
       turno, escala, ativo,
-      empresa_id, clinica_id, contratante_id,
+      empresa_id, clinica_id, entidade_id,
       criado_em, atualizado_em
     ) VALUES (
       $1, $2, $3, $4, $5,
@@ -221,7 +221,7 @@ export async function criarFuncionario(dados: DadosFuncionario): Promise<any> {
     ) RETURNING 
       id, cpf, nome, email, usuario_tipo,
       data_nascimento, setor, funcao, matricula, nivel_cargo,
-      empresa_id, clinica_id, contratante_id, ativo`,
+      empresa_id, clinica_id, entidade_id, ativo`,
     [
       insertData.cpf,
       insertData.nome,
@@ -238,7 +238,7 @@ export async function criarFuncionario(dados: DadosFuncionario): Promise<any> {
       insertData.ativo,
       insertData.empresa_id,
       insertData.clinica_id,
-      insertData.contratante_id,
+      insertData.entidade_id,
     ]
   );
 
@@ -317,12 +317,12 @@ export async function atualizarFuncionario(
  */
 export async function buscarFuncionariosPorVinculo(
   tipo: UsuarioTipo,
-  vinculo: { clinica_id?: number; contratante_id?: number }
+  vinculo: { clinica_id?: number; entidade_id?: number }
 ): Promise<any[]> {
   let whereClause = 'usuario_tipo = $1';
   const params: any[] = [tipo];
 
-  if (tipo === 'funcionario_clinica' || tipo === 'gestor_rh') {
+  if (tipo === 'funcionario_clinica' || tipo === 'rh') {
     if (!vinculo.clinica_id) {
       throw new Error('clinica_id é obrigatório para este tipo');
     }
@@ -330,19 +330,19 @@ export async function buscarFuncionariosPorVinculo(
     params.push(vinculo.clinica_id);
   }
 
-  if (tipo === 'funcionario_entidade' || tipo === 'gestor_entidade') {
-    if (!vinculo.contratante_id) {
-      throw new Error('contratante_id é obrigatório para este tipo');
+  if (tipo === 'funcionario_entidade' || tipo === 'gestor') {
+    if (!vinculo.entidade_id) {
+      throw new Error('entidade_id é obrigatório para este tipo');
     }
-    whereClause += ' AND contratante_id = $2';
-    params.push(vinculo.contratante_id);
+    whereClause += ' AND entidade_id = $2';
+    params.push(vinculo.entidade_id);
   }
 
   const result = await query(
     `SELECT 
       id, cpf, nome, email, usuario_tipo,
       data_nascimento, setor, funcao, matricula, nivel_cargo,
-      empresa_id, clinica_id, contratante_id, ativo,
+      empresa_id, clinica_id, entidade_id, ativo,
       criado_em, atualizado_em
      FROM funcionarios
      WHERE ${whereClause}
@@ -358,7 +358,7 @@ export async function buscarFuncionariosPorVinculo(
  */
 export async function verificarVinculo(
   cpf: string,
-  vinculo: { clinica_id?: number; contratante_id?: number }
+  vinculo: { clinica_id?: number; entidade_id?: number }
 ): Promise<boolean> {
   const cpfLimpo = normalizeCPF(cpf);
 
@@ -368,9 +368,9 @@ export async function verificarVinculo(
      AND (
        (clinica_id = $2 AND $2 IS NOT NULL)
        OR
-       (contratante_id = $3 AND $3 IS NOT NULL)
+       (entidade_id = $3 AND $3 IS NOT NULL)
      )`,
-    [cpfLimpo, vinculo.clinica_id || null, vinculo.contratante_id || null]
+    [cpfLimpo, vinculo.clinica_id || null, vinculo.entidade_id || null]
   );
 
   return result.rows.length > 0;

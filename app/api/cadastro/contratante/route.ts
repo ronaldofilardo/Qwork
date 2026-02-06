@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TipoContratante, StatusAprovacao } from '@/lib/db';
+import { TipoEntidade, StatusAprovacao } from '@/lib/db';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -60,7 +60,7 @@ function validarEmail(email: string): boolean {
   return regex.test(email);
 }
 
-// Salvar arquivo: salvar localmente em `public/uploads/contratantes` (sempre local)
+// Salvar arquivo: salvar localmente em `public/uploads/entidades` (sempre local)
 async function salvarArquivo(
   file: File,
   tipo: string,
@@ -90,8 +90,8 @@ async function salvarArquivo(
     const isServerlessProd =
       process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
     const uploadDir = isServerlessProd
-      ? path.join(os.tmpdir(), 'qwork', 'uploads', 'contratantes', cnpj)
-      : path.join(process.cwd(), 'public', 'uploads', 'contratantes', cnpj);
+      ? path.join(os.tmpdir(), 'qwork', 'uploads', 'entidades', cnpj)
+      : path.join(process.cwd(), 'public', 'uploads', 'entidades', cnpj);
 
     // Criar diretório se não existir
     if (!existsSync(uploadDir)) {
@@ -104,7 +104,7 @@ async function salvarArquivo(
 
     await writeFile(filepath, buffer);
 
-    return `/uploads/contratantes/${cnpj}/${filename}`;
+    return `/uploads/entidades/${cnpj}/${filename}`;
   } catch (error) {
     console.error('Erro ao salvar arquivo:', error);
     throw new Error('Erro ao salvar arquivo');
@@ -115,7 +115,7 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
 
   // Extrair dados básicos
-  const tipo = formData.get('tipo') as TipoContratante;
+  const tipo = formData.get('tipo') as TipoEntidade;
   const nome = formData.get('nome') as string;
   const cnpj = formData.get('cnpj') as string;
   const inscricaoEstadual = formData.get('inscricao_estadual') as string | null;
@@ -413,7 +413,7 @@ export async function POST(request: NextRequest) {
       }
       // Verificar se email já existe
       const emailCheck = await txClient.query(
-        'SELECT id FROM contratantes WHERE email = $1',
+        'SELECT id FROM entidades WHERE email = $1',
         [email]
       );
       if (emailCheck.rows.length > 0) {
@@ -422,21 +422,28 @@ export async function POST(request: NextRequest) {
 
       // Verificar se CNPJ já existe
       const cnpjCheck = await txClient.query(
-        'SELECT id FROM contratantes WHERE cnpj = $1',
+        'SELECT id FROM entidades WHERE cnpj = $1',
         [cnpjLimpo]
       );
       if (cnpjCheck.rows.length > 0) {
         throw new Error('CNPJ já cadastrado no sistema');
       }
 
-      // Inserir contratante
-      const contratanteResult = await txClient.query<{
+      console.info(
+        JSON.stringify({
+          event: 'cadastro_cnpj_check',
+          found: cnpjCheck.rows.length,
+        })
+      );
+
+      // Inserir entidade
+      const entidadeResult = await txClient.query<{
         id: number;
         nome: string;
-        tipo: TipoContratante;
+        tipo: TipoEntidade;
         status: StatusAprovacao;
       }>(
-        `INSERT INTO contratantes (
+        `INSERT INTO entidades (
           tipo, nome, cnpj, inscricao_estadual, email, telefone,
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
@@ -469,16 +476,23 @@ export async function POST(request: NextRequest) {
           planoId || null,
         ]
       );
-      const contratante = contratanteResult.rows[0];
+      const entidade = entidadeResult.rows[0];
+
+      console.info(
+        JSON.stringify({
+          event: 'cadastro_entity_inserted',
+          entidade_id: entidade.id,
+        })
+      );
 
       // Persistir numero de funcionários estimado
       if (numeroFuncionarios && Number(numeroFuncionarios) > 0) {
         await txClient.query(
-          'UPDATE contratantes SET numero_funcionarios_estimado = $1 WHERE id = $2',
-          [numeroFuncionarios, contratante.id]
+          'UPDATE entidades SET numero_funcionarios_estimado = $1 WHERE id = $2',
+          [numeroFuncionarios, entidade.id]
         );
         console.log('[CADASTRO] numero_funcionarios_estimado persistido', {
-          contratanteId: contratante.id,
+          entidadeId: entidade.id,
           numeroFuncionarios,
         });
       }
@@ -526,13 +540,7 @@ export async function POST(request: NextRequest) {
             const contratoIns = await txClient.query<{ id: number }>(
               `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, aceito, conteudo)
                VALUES ($1, $2, $3, $4, 'aguardando_pagamento', false, $5) RETURNING id`,
-              [
-                contratante.id,
-                planoId,
-                numeroFuncionarios,
-                valorTotal,
-                conteudo,
-              ]
+              [entidade.id, planoId, numeroFuncionarios, valorTotal, conteudo]
             );
             contratoIdCreated = contratoIns.rows[0].id;
 
@@ -542,8 +550,8 @@ export async function POST(request: NextRequest) {
             // Log de evento específico
             console.info(
               JSON.stringify({
-                event: 'cadastro_contratante_contract_created',
-                contratante_id: contratante.id,
+                event: 'cadastro_entidade_contract_created',
+                entidade_id: entidade.id,
                 contrato_id: contratoIdCreated,
                 plano_id: planoId,
                 valor_total: valorTotal,
@@ -559,13 +567,13 @@ export async function POST(request: NextRequest) {
               `INSERT INTO contratacao_personalizada (
                 contratante_id, numero_funcionarios_estimado, status, criado_em, atualizado_em
               ) VALUES ($1, $2, 'aguardando_valor_admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-              [contratante.id, numeroFuncionarios || null]
+              [entidade.id, numeroFuncionarios || null]
             );
 
             console.info(
               JSON.stringify({
-                event: 'cadastro_contratante_personalizado_created',
-                contratante_id: contratante.id,
+                event: 'cadastro_entidade_personalizado_created',
+                entidade_id: entidade.id,
                 plano_id: planoId,
                 numero_funcionarios: numeroFuncionarios,
                 status: 'aguardando_valor_admin',
@@ -573,14 +581,14 @@ export async function POST(request: NextRequest) {
             );
           } else if (requiresPayment) {
             // Para outros tipos de plano, seguir o fluxo normal de simulador
-            simuladorUrl = `/pagamento/simulador?contratante_id=${contratante.id}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`;
+            simuladorUrl = `/pagamento/simulador?entidade_id=${entidade.id}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`;
           }
         }
 
         console.info(
           JSON.stringify({
-            event: 'cadastro_contratante_payment_check',
-            contratante_id: contratante.id,
+            event: 'cadastro_entidade_payment_check',
+            entidade_id: entidade.id,
             plano_id: planoId,
             plano_tipo: p?.tipo,
             plano_nome: p?.nome,
@@ -596,7 +604,7 @@ export async function POST(request: NextRequest) {
 
       // Retornar dados para fora da transação
       return {
-        contratante,
+        entidade,
         requiresPayment,
         simuladorUrl,
         contratoIdCreated,
@@ -610,8 +618,8 @@ export async function POST(request: NextRequest) {
     // Log de sucesso
     console.info(
       JSON.stringify({
-        event: 'cadastro_contratante_success',
-        contratante_id: result.contratante.id,
+        event: 'cadastro_entidade_success',
+        entidade_id: result.entidade.id,
         requiresPayment: result.requiresPayment,
         simuladorUrl: result.simuladorUrl,
         plano_id: planoId,
@@ -624,7 +632,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        id: result.contratante.id,
+        id: result.entidade.id,
         requires_payment: result.requiresPayment,
         simulador_url: result.simuladorUrl,
         contrato_id: result.contratoIdCreated,
@@ -641,11 +649,11 @@ export async function POST(request: NextRequest) {
             ? 'Cadastro realizado! Aceite o contrato gerado para prosseguir ao simulador.'
             : 'Cadastro realizado! Prossiga para o simulador de pagamento.'
           : 'Cadastro realizado com sucesso! Aguarde análise do administrador.',
-        contratante: {
-          id: result.contratante.id,
-          nome: result.contratante.nome,
-          tipo: result.contratante.tipo,
-          status: result.contratante.status,
+        entidade: {
+          id: result.entidade.id,
+          nome: result.entidade.nome,
+          tipo: result.entidade.tipo,
+          status: result.entidade.status,
         },
       },
       { status: 201 }
@@ -655,7 +663,7 @@ export async function POST(request: NextRequest) {
 
     console.error(
       JSON.stringify({
-        event: 'cadastro_contratante_error',
+        event: 'cadastro_entidade_error',
         error: String(error),
         code: (error as any)?.code,
         constraint: (error as any)?.constraint,
@@ -682,13 +690,13 @@ export async function POST(request: NextRequest) {
 
       // Verificar violação de unicidade (PostgreSQL error code 23505)
       if ((error as any).code === '23505') {
-        if ((error as any).constraint === 'contratantes_email_unique') {
+        if ((error as any).constraint === 'entidades_email_unique') {
           return NextResponse.json(
             { error: 'Email já cadastrado no sistema' },
             { status: 409 }
           );
         }
-        if ((error as any).constraint === 'contratantes_cnpj_unique') {
+        if ((error as any).constraint === 'entidades_cnpj_unique') {
           return NextResponse.json(
             { error: 'CNPJ já cadastrado no sistema' },
             { status: 409 }

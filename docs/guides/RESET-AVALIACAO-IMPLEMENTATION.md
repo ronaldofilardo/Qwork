@@ -11,7 +11,7 @@ Implementação completa da funcionalidade de reset de avaliações, permitindo 
 
 ### Regras de Negócio
 
-- ✅ Reset disponível apenas para roles: `rh` e `gestor_entidade`
+- ✅ Reset disponível apenas para roles: `rh` e `gestor`
 - ✅ Apenas 1 reset por avaliação por lote (constraint única)
 - ✅ Bloqueio se lote estiver: `concluido`, `concluded`, `enviado_emissor`, `a_emitir`, `emitido`
 - ✅ Motivo obrigatório (mínimo 5 caracteres)
@@ -79,7 +79,7 @@ CREATE TABLE avaliacao_resets (
 
 #### POST /api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset
 
-- **Autenticação**: `gestor_entidade` do mesmo contratante
+- **Autenticação**: `gestor` do mesmo contratante
 - Mesma estrutura da API RH
 
 ### UI Implementada
@@ -173,7 +173,7 @@ CREATE TABLE avaliacao_resets (
 
 ### RBAC
 
-- ✅ Apenas roles autorizadas (`rh`, `gestor_entidade`)
+- ✅ Apenas roles autorizadas (`rh`, `gestor`)
 - ✅ Verificação de tenant (clinica/contratante)
 
 ### RLS
@@ -230,7 +230,7 @@ pnpm dev
 
 ## Notas Técnicas
 
-1. **Perfil correto**: `gestor_entidade` (não `responsavel`)
+1. **Perfil correto**: `gestor` (não `responsavel`)
 2. **Constraint única**: Previne duplo reset automaticamente
 3. **Transação atômica**: Garante consistência (audit + delete + update)
 4. **RLS simplificado**: Join direto em `lotes_avaliacao.contratante_id`

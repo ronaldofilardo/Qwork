@@ -46,10 +46,10 @@ export async function GET(request: NextRequest) {
         p.metodo as pagamento_metodo,
         p.numero_parcelas,
         p.valor as pagamento_valor
-      FROM contratantes c
-      LEFT JOIN contratos cont ON cont.contratante_id = c.id
+      FROM entidades c
+      LEFT JOIN contratos cont ON cont.entidade_id = c.id
       LEFT JOIN planos pl ON pl.id = cont.plano_id
-      LEFT JOIN pagamentos p ON p.contratante_id = c.id
+      LEFT JOIN pagamentos p ON p.entidade_id = c.id
       WHERE c.id = $1
       ORDER BY p.data_pagamento DESC
       LIMIT 1`,

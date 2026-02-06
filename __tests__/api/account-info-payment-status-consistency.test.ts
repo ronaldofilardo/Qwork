@@ -100,23 +100,21 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
         ok: true,
         json: async () => ({
           session: {
-            perfil: 'gestor_entidade',
+            perfil: 'gestor',
             contratante_id: testContratanteEntidadeId,
           },
         }),
       });
 
       const mockGetSession = jest.fn(() => ({
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: testContratanteEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
         getSession: mockGetSession,
       }));
 
-      const { GET } = await import(
-        '@/app/api/entidade/account-info/route'
-      );
+      const { GET } = await import('@/app/api/entidade/account-info/route');
       // limpar mocks de módulos para próximas execuções
       jest.resetModules();
       jest.clearAllMocks();
@@ -156,7 +154,7 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
       testPagamentoId = pagRes.rows[0].id;
 
       const mockGetSession = jest.fn(() => ({
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: testContratanteEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
@@ -201,7 +199,7 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
       testPagamentoId = pagRes.rows[0].id;
 
       const mockGetSession = jest.fn(() => ({
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: testContratanteEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
@@ -338,7 +336,7 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
       testPagamentoId = pagRes.rows[0].id;
 
       const mockGetSession = jest.fn(() => ({
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: testContratanteEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({

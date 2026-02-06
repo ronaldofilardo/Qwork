@@ -18,7 +18,7 @@
 - [x] Bifurcação para tipo='entidade' vs outros tipos
 - [x] Gestor RH criado em `funcionarios` com perfil='rh'
 - [x] Gestor Entidade NÃO criado em `funcionarios`
-- [x] Ambos autenticam via `contratantes_senhas` com bcrypt
+- [x] Ambos autenticam via `entidades_senhas` com bcrypt
 
 **Status:** ✅ CONFORME
 **Observações:**
@@ -188,7 +188,7 @@ Gestores RH são armazenados na tabela `funcionarios` com `perfil='rh'`, o que p
 
 1. **Refatoração de Nomenclatura (Breaking Change)**
    - Renomear `funcionarios` → `usuarios`
-   - Adicionar campo `tipo_usuario: 'gestor_rh' | 'gestor_entidade' | 'funcionario'`
+   - Adicionar campo `tipo_usuario: 'rh' | 'gestor' | 'funcionario'`
    - Criar views de compatibilidade
 
 2. **Testes Adicionais**
@@ -206,7 +206,7 @@ Gestores RH são armazenados na tabela `funcionarios` com `perfil='rh'`, o que p
 ✅ **O sistema está CONFORME** com a separação de roles:
 
 1. **Gestores RH:** Criados em `funcionarios` com `perfil='rh'`, permissões para gerenciar empresas/funcionários/lotes
-2. **Gestores Entidade:** NÃO criados em `funcionarios`, apenas em `contratantes_senhas`, permissões similares a RH
+2. **Gestores Entidade:** NÃO criados em `funcionarios`, apenas em `entidades_senhas`, permissões similares a RH
 3. **Funcionários:** Criados em `funcionarios` com `perfil='funcionario'`, apenas respondem avaliações
 4. **Middleware:** Rotas separadas e protegidas corretamente
 5. **RLS Policies:** Políticas granulares por perfil

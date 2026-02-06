@@ -128,7 +128,7 @@
   SELECT COUNT(*) FROM avaliacoes
   WHERE data_validade < NOW()
   AND anonimizada = false
-  AND status IN ('concluida', 'inativada');
+  AND status IN ('concluido', 'inativada');
   -- Meta: 0 (todas devem estar anonimizadas)
   ```
 
@@ -342,3 +342,4 @@ CREATE INDEX IF NOT EXISTS idx_avaliacoes_data_validade ON avaliacoes(data_valid
 
 **Data de conclusão:** **/**/\_**\_  
 **Responsável pela validação:** ********\_\_\_**********
+

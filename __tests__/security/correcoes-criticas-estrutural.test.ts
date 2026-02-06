@@ -291,7 +291,7 @@ describe('🔒 Segurança Crítica - Validação Estrutural', () => {
 
       const tabelasSensiveis = [
         'contratantes',
-        'contratantes_senhas',
+        'entidades_senhas',
         'funcionarios',
         'avaliacoes',
         'laudos',

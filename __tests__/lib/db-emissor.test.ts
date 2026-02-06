@@ -15,10 +15,8 @@ describe('lib/db - criarEmissorIndependente', () => {
   });
 
   afterEach(async () => {
-    // Limpar emissores de teste
-    await query(
-      "DELETE FROM funcionarios WHERE cpf LIKE '999%' AND perfil = 'emissor'"
-    );
+    // Limpar emissores de teste (agora armazenados em usuarios)
+    await query("DELETE FROM usuarios WHERE cpf LIKE '999%'");
   });
 
   it('deve criar emissor com clinica_id NULL', async () => {
@@ -45,15 +43,14 @@ describe('lib/db - criarEmissorIndependente', () => {
     expect(emissor.email).toBe('emissor1@teste.com');
     expect(emissor.clinica_id).toBeNull();
 
-    // Verificar que foi inserido no banco
+    // Verificar que foi inserido no banco (tabela usuarios)
     const result = await query(
-      'SELECT cpf, nome, email, perfil, clinica_id, ativo FROM funcionarios WHERE cpf = $1',
+      'SELECT cpf, nome, email, role, ativo FROM usuarios WHERE cpf = $1',
       ['99900000001']
     );
 
     expect(result.rows.length).toBe(1);
-    expect(result.rows[0].perfil).toBe('emissor');
-    expect(result.rows[0].clinica_id).toBeNull();
+    expect(result.rows[0].role).toBe('emissor');
     expect(result.rows[0].ativo).toBe(true);
   });
 
@@ -81,9 +78,9 @@ describe('lib/db - criarEmissorIndependente', () => {
     // Verificar que bcrypt.hash foi chamado com a senha customizada
     expect(bcrypt.hash).toHaveBeenCalledWith(senhaCustomizada, 10);
 
-    // Verificar no banco
+    // Verificar no banco (usuarios)
     const result = await query(
-      'SELECT senha_hash FROM funcionarios WHERE cpf = $1',
+      'SELECT senha_hash FROM usuarios WHERE cpf = $1',
       ['99900000002']
     );
 
@@ -138,7 +135,7 @@ describe('lib/db - criarEmissorIndependente', () => {
     expect(emissor.cpf).toBe('99900000004');
 
     // Verificar no banco
-    const result = await query('SELECT cpf FROM funcionarios WHERE cpf = $1', [
+    const result = await query('SELECT cpf FROM usuarios WHERE cpf = $1', [
       '99900000004',
     ]);
 
@@ -189,7 +186,7 @@ describe('lib/db - criarEmissorIndependente', () => {
       mockSession
     );
 
-    // Tentar criar novamente com mesmo CPF
+    // Tentar criar novamente com mesmo CPF - deve fazer upsert (não lançar)
     await expect(
       criarEmissorIndependente(
         '99900000006',
@@ -198,7 +195,14 @@ describe('lib/db - criarEmissorIndependente', () => {
         undefined,
         mockSession
       )
-    ).rejects.toThrow();
+    ).resolves.not.toThrow();
+
+    // Verificar que há apenas um registro na tabela usuarios
+    const res = await query(
+      'SELECT COUNT(*) as cnt FROM usuarios WHERE cpf = $1',
+      ['99900000006']
+    );
+    expect(parseInt(res.rows[0].cnt, 10)).toBe(1);
   });
 
   it('deve criar emissor sem session (para scripts)', async () => {

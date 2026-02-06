@@ -123,7 +123,7 @@ export async function GET(request: Request) {
       JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
       JOIN empresas_clientes ec ON f.empresa_id = ec.id
       WHERE a.lote_id = $1 AND ec.clinica_id = $2
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
         AND a.envio <= $3
       ORDER BY f.nome ASC
     `,
@@ -170,7 +170,7 @@ export async function GET(request: Request) {
       row.setor,
       row.funcao,
       row.nivel_cargo || '-',
-      row.avaliacao_status === 'concluida' ? 'Concluída' : 'Pendente',
+      row.avaliacao_status === 'concluido' ? 'Concluída' : 'Pendente',
       row.data_conclusao
         ? new Date(row.data_conclusao).toLocaleDateString('pt-BR')
         : '-',

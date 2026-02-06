@@ -1,6 +1,8 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { StatusAvaliacao } from '@/lib/types/avaliacao-status';
+import { StatusLote } from '@/lib/types/lote-status';
 
 export const dynamic = 'force-dynamic';
 async function updateLotesStatus(cpf: string) {
@@ -24,12 +26,12 @@ async function updateLotesStatus(cpf: string) {
     const statsResult = await query(
       `
       SELECT
-        COUNT(*) FILTER (WHERE a.status != 'inativada') as ativas,
-        COUNT(*) FILTER (WHERE a.status = 'concluida') as concluidas
+        COUNT(*) FILTER (WHERE a.status != $1) as ativas,
+        COUNT(*) FILTER (WHERE a.status = $2) as concluidas
       FROM avaliacoes a
-      WHERE a.lote_id = $1
+      WHERE a.lote_id = $3
     `,
-      [lote.id]
+      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDO, lote.id]
     );
 
     const { ativas, concluidas } = statsResult.rows[0];
@@ -41,7 +43,7 @@ async function updateLotesStatus(cpf: string) {
     );
 
     // Não alterar status manuais (cancelado, finalizado)
-    if (['cancelado', 'finalizado'].includes(lote.status)) {
+    if ([StatusLote.CANCELADO, StatusLote.FINALIZADO].includes(lote.status)) {
       console.log(
         `[INFO] Lote ${lote.id} possui status manual '${lote.status}', não será alterado`
       );
@@ -49,11 +51,11 @@ async function updateLotesStatus(cpf: string) {
     }
 
     // Calcular novo status baseado nas avaliações
-    let novoStatus = 'ativo';
+    let novoStatus = StatusLote.ATIVO;
     if (ativasNum === 0) {
-      novoStatus = 'rascunho'; // Nenhuma avaliação ativa
+      novoStatus = StatusLote.RASCUNHO; // Nenhuma avaliação ativa
     } else if (concluidasNum === ativasNum) {
-      novoStatus = 'concluido'; // Todas concluídas
+      novoStatus = StatusLote.CONCLUIDO; // Todas concluídas
     }
 
     if (novoStatus !== lote.status) {
@@ -66,10 +68,7 @@ async function updateLotesStatus(cpf: string) {
         `[INFO] Lote ${lote.id} alterado de '${lote.status}' para '${novoStatus}'`
       );
 
-      // REMOVIDO: Emissão automática de laudo
-      // Agora o laudo só é emitido quando o EMISSOR decidir manualmente
-      // O RH/Entidade deve usar o botão "Solicitar Emissão" e aguardar o emissor processar
-      if (novoStatus === 'concluido') {
+      if (novoStatus === StatusLote.CONCLUIDO) {
         console.log(
           `[INFO] Lote ${lote.id} está concluído e pronto para solicitação de emissão manual`
         );
@@ -132,8 +131,8 @@ export async function PUT(request: NextRequest) {
     if (!ativo) {
       // Desligando da empresa: marcar avaliações não concluídas como 'inativada' (concluídas permanecem)
       const updateResult = await query(
-        "UPDATE avaliacoes SET status = 'inativada' WHERE funcionario_cpf = $1 AND status != 'concluida' RETURNING id, status",
-        [cpf]
+        'UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != $3 RETURNING id, status',
+        [StatusAvaliacao.INATIVADA, cpf, StatusAvaliacao.CONCLUIDO]
       );
       console.log(
         `[INFO] Inativadas ${updateResult.rowCount} avaliações do funcionário ${cpf}`

@@ -22,7 +22,7 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
 
     // Preparar DB
     await db
-      .query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [id])
+      .query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [id])
       .catch(() => {});
     await db
       .query(
@@ -66,25 +66,22 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
       ).resolves.not.toThrow();
 
       const s = await db.query(
-        'SELECT * FROM contratantes_senhas WHERE contratante_id = $1',
+        'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
         [id]
       );
       expect(s.rows.length).toBeGreaterThan(0);
 
-      const f = await db.query('SELECT * FROM funcionarios WHERE cpf = $1', [
+      const u = await db.query('SELECT * FROM usuarios WHERE cpf = $1', [
         contratante.responsavel_cpf,
       ]);
-      expect(f.rows.length).toBeGreaterThanOrEqual(0);
-      if (f.rows.length > 0) {
-        expect(f.rows[0].usuario_tipo).toBe('gestor_entidade');
-        expect(f.rows[0].perfil).toBe('gestor_entidade');
+      expect(u.rows.length).toBeGreaterThanOrEqual(0);
+      if (u.rows.length > 0) {
+        expect(u.rows[0].tipo_usuario).toBe('gestor');
       }
     } finally {
       // Cleanup
       await db
-        .query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [
-          id,
-        ])
+        .query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [id])
         .catch(() => {});
       await db
         .query(
@@ -93,7 +90,7 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
         )
         .catch(() => {});
       await db
-        .query('DELETE FROM funcionarios WHERE cpf = $1', [
+        .query('DELETE FROM usuarios WHERE cpf = $1', [
           contratante.responsavel_cpf,
         ])
         .catch(() => {});
@@ -115,7 +112,7 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
 
     // Preparar DB: contratante e senha existente
     await db
-      .query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [id])
+      .query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [id])
       .catch(() => {});
     await db
       .query(
@@ -156,7 +153,7 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
     // Inserir senha anterior
     await db
       .query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1,$2,$3)',
+        'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1,$2,$3)',
         [id, contratante.responsavel_cpf, '$2a$10$oldhasholdhasholdhasholdha']
       )
       .catch(() => {});
@@ -167,25 +164,23 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
       ).resolves.not.toThrow();
 
       const s = await db.query(
-        'SELECT * FROM contratantes_senhas WHERE contratante_id = $1 AND cpf = $2',
+        'SELECT * FROM entidades_senhas WHERE contratante_id = $1 AND cpf = $2',
         [id, contratante.responsavel_cpf]
       );
       expect(s.rows.length).toBeGreaterThan(0);
       // senha deve existir e ter hash atualizado (length > 0)
       expect(s.rows[0].senha_hash.length).toBeGreaterThan(0);
 
-      const f = await db.query('SELECT * FROM funcionarios WHERE cpf = $1', [
+      const u = await db.query('SELECT * FROM usuarios WHERE cpf = $1', [
         contratante.responsavel_cpf,
       ]);
-      if (f.rows.length > 0) {
-        expect(f.rows[0].usuario_tipo).toBe('gestor_entidade');
+      if (u.rows.length > 0) {
+        expect(u.rows[0].tipo_usuario).toBe('gestor');
       }
     } finally {
       // Cleanup
       await db
-        .query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [
-          id,
-        ])
+        .query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [id])
         .catch(() => {});
       await db
         .query(
@@ -194,7 +189,7 @@ describe('criarContaResponsavel - integração (mocks DB)', () => {
         )
         .catch(() => {});
       await db
-        .query('DELETE FROM funcionarios WHERE cpf = $1', [
+        .query('DELETE FROM usuarios WHERE cpf = $1', [
           contratante.responsavel_cpf,
         ])
         .catch(() => {});

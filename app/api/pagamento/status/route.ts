@@ -17,9 +17,9 @@ export async function GET(request: NextRequest) {
     }
 
     const pagamentoResult = await query(
-      `SELECT p.*, c.nome as contratante_nome, c.pagamento_confirmado
+      `SELECT p.*, e.nome as entidade_nome, e.pagamento_confirmado
        FROM pagamentos p
-       JOIN contratantes c ON p.contratante_id = c.id
+       JOIN entidades e ON p.entidade_id = e.id
        WHERE p.id = $1`,
       [pagamentoId]
     );

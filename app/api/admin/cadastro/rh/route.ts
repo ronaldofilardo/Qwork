@@ -90,11 +90,11 @@ export async function POST(request: NextRequest) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha, 10);
 
-    // Inserir novo RH com usuario_tipo='gestor_rh' (separação lógica)
+    // Inserir novo RH em USUARIOS (não em funcionarios - gestores vão para usuarios)
     const result = await query(
-      `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, usuario_tipo, clinica_id, ativo)
-       VALUES ($1, $2, $3, $4, 'rh', 'gestor_rh', $5, true)
-       RETURNING cpf, nome, email, perfil, usuario_tipo, clinica_id, ativo`,
+      `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
+       VALUES ($1, $2, $3, $4, 'rh', $5, true, NOW(), NOW())
+       RETURNING cpf, nome, email, tipo_usuario, clinica_id, ativo`,
       [cpfLimpo, nome, email, senhaHash, clinica_id]
     );
 
@@ -103,7 +103,7 @@ export async function POST(request: NextRequest) {
     // Log de auditoria
     await logAudit({
       acao: 'INSERT',
-      recurso: 'funcionarios',
+      recurso: 'usuarios',
       recurso_id: novoRH.cpf,
       usuario_cpf: session.cpf,
       detalhes: {

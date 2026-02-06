@@ -3,7 +3,7 @@
  *
  * Valida as correções críticas implementadas:
  * 1. queryAsGestor configura variáveis de sessão para auditoria
- * 2. FK liberado_por referencia contratantes_senhas (não funcionarios)
+ * 2. FK liberado_por referencia entidades_senhas (não funcionarios)
  * 3. Endpoints de gestores usam queryAsGestor (não query direto)
  * 4. Gestores NÃO estão em funcionarios
  */
@@ -28,15 +28,15 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
   const TEST_CONTRATANTE_ID = 2;
 
   beforeAll(async () => {
-    // Garantir que gestor existe em contratantes_senhas
+    // Garantir que gestor existe em entidades_senhas
     const gestorExists = await query(
-      'SELECT cpf FROM contratantes_senhas WHERE cpf = $1',
+      'SELECT cpf FROM entidades_senhas WHERE cpf = $1',
       [TEST_CPF_GESTOR]
     );
 
     if (gestorExists.rowCount === 0) {
       throw new Error(
-        `Gestor ${TEST_CPF_GESTOR} não existe em contratantes_senhas. Execute migrations antes dos testes.`
+        `Gestor ${TEST_CPF_GESTOR} não existe em entidades_senhas. Execute migrations antes dos testes.`
       );
     }
   });
@@ -54,7 +54,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
     it('deve configurar app.current_user_cpf antes da query', async () => {
       setSession({
         cpf: TEST_CPF_GESTOR,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: TEST_CONTRATANTE_ID,
       });
 
@@ -88,7 +88,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
     it('deve configurar app.current_user_perfil antes da query', async () => {
       setSession({
         cpf: TEST_CPF_GESTOR,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: TEST_CONTRATANTE_ID,
       });
 
@@ -109,7 +109,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
         call[1]?.includes('app.current_user_perfil')
       );
       expect(perfilSetConfig).toBeDefined();
-      expect(perfilSetConfig[1]).toContain('gestor_entidade');
+      expect(perfilSetConfig[1]).toContain('gestor');
     });
 
     it('deve lançar erro se sessão não existir', async () => {
@@ -134,7 +134,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
   });
 
   describe('2. FK liberado_por - Integridade Referencial', () => {
-    it('FK lotes_avaliacao.liberado_por deve referenciar contratantes_senhas(cpf)', async () => {
+    it('FK lotes_avaliacao.liberado_por deve referenciar entidades_senhas(cpf)', async () => {
       const result = await query(`
         SELECT 
           tc.constraint_name,
@@ -155,7 +155,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       expect(result.rowCount).toBeGreaterThan(0);
 
       const fk = result.rows[0];
-      expect(fk.foreign_table_name).toBe('contratantes_senhas');
+      expect(fk.foreign_table_name).toBe('entidades_senhas');
       expect(fk.foreign_column_name).toBe('cpf');
     });
 
@@ -182,9 +182,9 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
   });
 
   describe('3. Validação de Dados - Gestor 87545772920', () => {
-    it('gestor deve existir em contratantes_senhas', async () => {
+    it('gestor deve existir em entidades_senhas', async () => {
       const result = await query(
-        'SELECT cpf, contratante_id FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT cpf, contratante_id FROM entidades_senhas WHERE cpf = $1',
         [TEST_CPF_GESTOR]
       );
 
@@ -267,7 +267,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
 
       setSession({
         cpf: TEST_CPF_GESTOR,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
         contratante_id: TEST_CONTRATANTE_ID,
       });
 
@@ -278,7 +278,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       ]);
       await query('SELECT set_config($1, $2, false)', [
         'app.current_user_perfil',
-        'gestor_entidade',
+        'gestor',
       ]);
 
       // Gerar código único
@@ -314,7 +314,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
 
       expect(auditResult.rowCount).toBeGreaterThan(0);
       expect(auditResult.rows[0].user_cpf).toBe(TEST_CPF_GESTOR);
-      expect(auditResult.rows[0].user_perfil).toBe('gestor_entidade');
+      expect(auditResult.rows[0].user_perfil).toBe('gestor');
       expect(auditResult.rows[0].action).toBe('INSERT');
 
       // Limpar dados de teste
@@ -339,9 +339,9 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
   });
 
   describe('7. Migration 304 - Validação de Integridade', () => {
-    it('todos gestores em contratantes_senhas devem ter contratante_id', async () => {
+    it('todos gestores em entidades_senhas devem ter contratante_id', async () => {
       const result = await query(
-        'SELECT cpf FROM contratantes_senhas WHERE contratante_id IS NULL'
+        'SELECT cpf FROM entidades_senhas WHERE contratante_id IS NULL'
       );
 
       expect(result.rowCount).toBe(0);
@@ -351,7 +351,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       const result = await query(`
         SELECT la.id, la.liberado_por
         FROM lotes_avaliacao la
-        LEFT JOIN contratantes_senhas cs ON la.liberado_por = cs.cpf
+        LEFT JOIN entidades_senhas cs ON la.liberado_por = cs.cpf
         WHERE cs.cpf IS NULL
       `);
 
@@ -363,7 +363,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
         SELECT indexname
         FROM pg_indexes
         WHERE schemaname = 'public'
-          AND (indexname = 'idx_contratantes_senhas_contratante_id'
+          AND (indexname = 'idx_entidades_senhas_contratante_id'
             OR indexname = 'idx_lotes_avaliacao_liberado_por')
       `);
 

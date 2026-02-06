@@ -152,11 +152,11 @@ describe('API Cadastro Contratante - Integração', () => {
         [mockCNPJ]
       );
 
-      // Testar diretamente a função createContratante (que é chamada pela API)
-      const { createContratante } = await import('@/lib/db');
+      // Testar diretamente a função createEntidade (que é chamada pela API)
+      const { createEntidade } = await import('@/lib/db');
 
       await expect(
-        createContratante({
+        createEntidade({
           tipo: 'entidade',
           nome: 'Nova Empresa',
           cnpj: mockCNPJ, // CNPJ duplicado
@@ -394,7 +394,7 @@ describe('RLS - Row Level Security', () => {
 
     const policyNames = result.rows.map((r) => r.policyname);
     expect(policyNames).toContain('admin_all_contratantes');
-    expect(policyNames).toContain('gestor_entidade_own_contratante');
+    expect(policyNames).toContain('gestor_own_contratante');
   });
 
   it('deve ter função pode_acessar_contratante', async () => {

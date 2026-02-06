@@ -59,6 +59,9 @@ export const GET = async (req: Request) => {
         l.enviado_em,
         l.hash_pdf,
         l.emissor_cpf,
+        l.arquivo_remoto_key,
+        l.arquivo_remoto_url,
+        l.arquivo_remoto_uploaded_at,
         f.nome as emissor_nome,
         fe.solicitado_por,
         fe.solicitado_em,
@@ -73,7 +76,7 @@ export const GET = async (req: Request) => {
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
-      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
           WHEN la.status = 'ativo' THEN 1
@@ -225,6 +228,10 @@ export const GET = async (req: Request) => {
               hash_pdf: lote.hash_pdf || laudoHashFromFile || null,
               emissor_nome: lote.emissor_nome || null,
               emissor_cpf: lote.emissor_cpf || null,
+              arquivo_remoto_key: lote.arquivo_remoto_key || null,
+              arquivo_remoto_url: lote.arquivo_remoto_url || null,
+              arquivo_remoto_uploaded_at:
+                lote.arquivo_remoto_uploaded_at || null,
               _emitido: laudoEmitido, // Flag auxiliar para facilitar filtros no frontend
             }
           : laudoFileExists
@@ -237,6 +244,10 @@ export const GET = async (req: Request) => {
                 hash_pdf: lote.hash_pdf || laudoHashFromFile || null,
                 emissor_nome: lote.emissor_nome || null,
                 emissor_cpf: lote.emissor_cpf || null,
+                arquivo_remoto_key: lote.arquivo_remoto_key || null,
+                arquivo_remoto_url: lote.arquivo_remoto_url || null,
+                arquivo_remoto_uploaded_at:
+                  lote.arquivo_remoto_uploaded_at || null,
                 _emitido: true,
               }
             : null;

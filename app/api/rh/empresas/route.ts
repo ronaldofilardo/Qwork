@@ -54,7 +54,7 @@ export async function GET() {
                       telefone, endereco, cidade, estado, cep,
               (SELECT COUNT(*) FROM funcionarios WHERE empresa_id = empresas_clientes.id AND ativo = true) as total_funcionarios,
               (SELECT COUNT(*) FROM lotes_avaliacao WHERE empresa_id = empresas_clientes.id) as total_avaliacoes,
-              (SELECT COUNT(*) FROM avaliacoes a JOIN lotes_avaliacao l ON a.lote_id = l.id WHERE l.empresa_id = empresas_clientes.id AND a.status = 'concluida') as avaliacoes_concluidas
+              (SELECT COUNT(*) FROM avaliacoes a JOIN lotes_avaliacao l ON a.lote_id = l.id WHERE l.empresa_id = empresas_clientes.id AND a.status = 'concluido') as avaliacoes_concluidas
         FROM empresas_clientes
         WHERE ativa = true AND clinica_id = $1
         ORDER BY nome`,

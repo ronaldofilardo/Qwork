@@ -19,11 +19,11 @@ describe('criarContaResponsavel', () => {
     jest.restoreAllMocks();
     // Limpar dados criados nos testes
     await db.query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id = $1',
+      'DELETE FROM entidades_senhas WHERE contratante_id = $1',
       [10]
     );
     await db.query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id = $1',
+      'DELETE FROM entidades_senhas WHERE contratante_id = $1',
       [20]
     );
     await db.query('DELETE FROM contratantes WHERE id IN ($1,$2)', [10, 20]);
@@ -56,10 +56,10 @@ describe('criarContaResponsavel', () => {
 
     await expect(db.criarContaResponsavel(contratante)).resolves.not.toThrow();
 
-    // Verificar registro em contratantes_senhas
+    // Verificar registro em entidades_senhas
     const senhaRows = (
       await db.query(
-        'SELECT cpf, senha_hash FROM contratantes_senhas WHERE contratante_id = $1',
+        'SELECT cpf, senha_hash FROM entidades_senhas WHERE contratante_id = $1',
         [10]
       )
     ).rows;
@@ -105,7 +105,7 @@ describe('criarContaResponsavel', () => {
 
     const row = (
       await db.query(
-        'SELECT primeira_senha_alterada FROM contratantes_senhas WHERE contratante_id = $1',
+        'SELECT primeira_senha_alterada FROM entidades_senhas WHERE contratante_id = $1',
         [30]
       )
     ).rows[0];
@@ -115,7 +115,7 @@ describe('criarContaResponsavel', () => {
 
     // Limpeza
     await db.query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id = $1',
+      'DELETE FROM entidades_senhas WHERE contratante_id = $1',
       [30]
     );
     await db.query('DELETE FROM contratantes WHERE id = $1', [30]);
@@ -220,13 +220,13 @@ describe('criarContaResponsavel', () => {
 
     // Cleanup
     await db.query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id = $1',
+      'DELETE FROM entidades_senhas WHERE contratante_id = $1',
       [11]
     );
     await db.query('DELETE FROM contratantes WHERE id = $1', [11]);
   });
 
-  test('quando responsavel_cpf ausente, cria senha em contratantes_senhas com CPF igual ao CNPJ limpo e não cria funcionario', async () => {
+  test('quando responsavel_cpf ausente, cria senha em entidades_senhas com CPF igual ao CNPJ limpo e não cria funcionario', async () => {
     const contratante = {
       id: 40,
       tipo: 'entidade',
@@ -257,7 +257,7 @@ describe('criarContaResponsavel', () => {
 
     const senhaRow = (
       await db.query(
-        'SELECT cpf FROM contratantes_senhas WHERE contratante_id = $1',
+        'SELECT cpf FROM entidades_senhas WHERE contratante_id = $1',
         [40]
       )
     ).rows[0];
@@ -274,7 +274,7 @@ describe('criarContaResponsavel', () => {
 
     // Cleanup
     await db.query(
-      'DELETE FROM contratantes_senhas WHERE contratante_id = $1',
+      'DELETE FROM entidades_senhas WHERE contratante_id = $1',
       [40]
     );
     await db.query('DELETE FROM contratantes WHERE id = $1', [40]);

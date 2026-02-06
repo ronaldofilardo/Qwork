@@ -13,7 +13,7 @@ describe('db-security — validateSessionContext (regressions)', () => {
     jest.clearAllMocks();
   });
 
-  it('✅ aceita RH que existe em `funcionarios` (não deve checar `contratantes_senhas`)', async () => {
+  it('✅ aceita RH que existe em `funcionarios` (não deve checar `entidades_senhas`)', async () => {
     mockGetSession.mockReturnValue({
       cpf: '19477306061',
       nome: 'Jailson do RH',
@@ -23,10 +23,7 @@ describe('db-security — validateSessionContext (regressions)', () => {
 
     // Mock behavior: consultas internas feitas por queryWithContext
     mockQuery.mockImplementation(async (text: string, params?: any[]) => {
-      if (
-        typeof text === 'string' &&
-        text.includes('FROM contratantes_senhas')
-      ) {
+      if (typeof text === 'string' && text.includes('FROM entidades_senhas')) {
         // comportamento antigo: não deve ser chamado para RH — se chamado, retorna vazio
         return { rows: [], rowCount: 0 } as any;
       }

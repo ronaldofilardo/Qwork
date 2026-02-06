@@ -464,7 +464,7 @@ describe('LoginPage', () => {
     ['admin', '/admin', '00000000000'],
     ['rh', '/rh', '11111111111'],
     ['funcionario', '/dashboard', '22222222222'],
-    ['gestor_entidade', '/entidade', '33333333333'],
+    ['gestor', '/entidade', '33333333333'],
   ] as const;
 
   it.each(redirectCases)(

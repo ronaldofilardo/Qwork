@@ -12,13 +12,13 @@ A proposta de introduzir papel **"responsavel"** para resolver o problema arquit
 
 ### ❌ Problema Real
 
-O problema NÃO é o nome do papel (`gestor_entidade` vs `responsavel`).
+O problema NÃO é o nome do papel (`gestor` vs `responsavel`).
 
 O problema É:
 
 1. **Mistura de conceitos:** Gestores (que administram) sendo colocados na tabela `funcionarios` (que são gerenciados)
 2. **Violação de separação de responsabilidades:** Tabela `funcionarios` deveria conter APENAS pessoas que respondem avaliações
-3. **Inconsistência arquitetural:** Duas formas de autenticar gestores (via `funcionarios` vs `contratantes_senhas`)
+3. **Inconsistência arquitetural:** Duas formas de autenticar gestores (via `funcionarios` vs `entidades_senhas`)
 
 ---
 
@@ -75,7 +75,7 @@ O problema É:
 | **Tabela funcionarios?**     | ✅ SIM (precisa de clinica_id)  | ❌ NÃO (sem clinica_id) | ✅ SIM                      |
 | **Constraint clinica_check** | Satisfeito                      | ⚠️ VIOLARIA             | Satisfeito                  |
 | **Responde avaliações?**     | ❌ NÃO                          | ❌ NÃO                  | ✅ SIM                      |
-| **Autenticação**             | `contratantes_senhas`           | `contratantes_senhas`   | CPF + senha                 |
+| **Autenticação**             | `entidades_senhas`              | `entidades_senhas`      | CPF + senha                 |
 
 ---
 
@@ -83,7 +83,7 @@ O problema É:
 
 ### Proposta Apresentada
 
-Criar novo papel `"responsavel"` para substituir `"gestor_entidade"`.
+Criar novo papel `"responsavel"` para substituir `"gestor"`.
 
 ### Problemas com Esta Abordagem
 
@@ -91,7 +91,7 @@ Criar novo papel `"responsavel"` para substituir `"gestor_entidade"`.
 
 ```typescript
 // ANTES (problemático)
-perfil: 'gestor_entidade' em funcionarios ❌
+perfil: 'gestor' em funcionarios ❌
 
 // DEPOIS com "responsavel" (AINDA problemático)
 perfil: 'responsavel' em funcionarios ❌
@@ -108,7 +108,7 @@ type Perfil =
   | 'rh'
   | 'funcionario'
   | 'emissor'
-  | 'gestor_entidade' // ← deprecado mas existente
+  | 'gestor' // ← deprecado mas existente
   | 'responsavel'; // ← novo mas resolve nada
 
 // Migrations, testes, RLS policies, middleware - TUDO precisa ser duplicado
@@ -144,9 +144,9 @@ export async function criarContaResponsavel(contratanteId: number) {
 
   if (contratante.rows[0].tipo === 'entidade') {
     // ✅ CORRETO: NÃO cria em funcionarios
-    // Apenas cria em contratantes_senhas
+    // Apenas cria em entidades_senhas
     await query(
-      'INSERT INTO contratantes_senhas (cpf, senha_hash, contratante_id) VALUES ($1, $2, $3)',
+      'INSERT INTO entidades_senhas (cpf, senha_hash, contratante_id) VALUES ($1, $2, $3)',
       [contratante.rows[0].responsavel_cpf, hashedPassword, contratanteId]
     );
   } else {
@@ -157,7 +157,7 @@ export async function criarContaResponsavel(contratanteId: number) {
     );
 
     await query(
-      'INSERT INTO contratantes_senhas (cpf, senha_hash, contratante_id) VALUES ($1, $2, $3)',
+      'INSERT INTO entidades_senhas (cpf, senha_hash, contratante_id) VALUES ($1, $2, $3)',
       [cpf, hashedPassword, contratanteId]
     );
   }
@@ -167,15 +167,15 @@ export async function criarContaResponsavel(contratanteId: number) {
 #### 2. **Adicionar Constraint Protetora**
 
 ```sql
--- Migration: XXX_prevent_gestor_entidade_in_funcionarios.sql
+-- Migration: XXX_prevent_gestor_in_funcionarios.sql
 
--- Garantir que gestor_entidade NUNCA seja inserido em funcionarios
+-- Garantir que gestor NUNCA seja inserido em funcionarios
 ALTER TABLE funcionarios
-ADD CONSTRAINT funcionarios_no_gestor_entidade
-CHECK (perfil != 'gestor_entidade');
+ADD CONSTRAINT funcionarios_no_gestor
+CHECK (perfil != 'gestor');
 
-COMMENT ON CONSTRAINT funcionarios_no_gestor_entidade ON funcionarios IS
-'Gestores de entidade NÃO devem estar em funcionarios. Eles são autenticados via contratantes_senhas apenas.';
+COMMENT ON CONSTRAINT funcionarios_no_gestor ON funcionarios IS
+'Gestores de entidade NÃO devem estar em funcionarios. Eles são autenticados via entidades_senhas apenas.';
 ```
 
 #### 3. **Limpar Dados Existentes**
@@ -185,12 +185,12 @@ COMMENT ON CONSTRAINT funcionarios_no_gestor_entidade ON funcionarios IS
 
 -- Remover gestores entidade de funcionarios (se houver)
 DELETE FROM funcionarios
-WHERE perfil = 'gestor_entidade';
+WHERE perfil = 'gestor';
 
--- Verificar que não há gestor_entidade com clinica_id
+-- Verificar que não há gestor com clinica_id
 SELECT cpf, nome
 FROM funcionarios
-WHERE perfil = 'gestor_entidade' AND clinica_id IS NOT NULL;
+WHERE perfil = 'gestor' AND clinica_id IS NOT NULL;
 -- Deve retornar 0 linhas
 ```
 
@@ -199,9 +199,9 @@ WHERE perfil = 'gestor_entidade' AND clinica_id IS NOT NULL;
 A documentação em [docs/security/GUIA-COMPLETO-RLS-RBAC.md](docs/security/GUIA-COMPLETO-RLS-RBAC.md) já afirma corretamente:
 
 ```markdown
-##### Gestor Entidade (`perfil='gestor_entidade'`)
+##### Gestor Entidade (`perfil='gestor'`)
 
-- **Tabelas:** Apenas `contratantes_senhas` (SEM entrada em `funcionarios`)
+- **Tabelas:** Apenas `entidades_senhas` (SEM entrada em `funcionarios`)
 ```
 
 ✅ **Documentação está correta. Código está correto. Apenas falta constraint.**
@@ -221,31 +221,31 @@ A análise lista **87 verificações** necessárias. Vamos categorizá-las:
    → Gestor Entidade já existe e funciona
 
 ❌ Middleware - adicionar suporte para 'responsavel'
-   → Middleware já suporta gestor_entidade
+   → Middleware já suporta gestor
 
 ❌ Rotas API - validar permissões para novo papel
-   → Rotas já validam gestor_entidade
+   → Rotas já validam gestor
 
 ❌ RLS Policies - reconhecer 'responsavel'
-   → Policies já reconhecem gestor_entidade
+   → Policies já reconhecem gestor
 
 ❌ Testes - atualizar fixtures
-   → Fixtures funcionam com gestor_entidade
+   → Fixtures funcionam com gestor
 
 ❌ Componentes UI - verificar novo papel
-   → UI já renderiza corretamente para gestor_entidade
+   → UI já renderiza corretamente para gestor
 
 ❌ Documentação - criar guia de migração
    → Sem necessidade se não há migração
 ```
 
-**Resultado:** ~80% dos itens são desnecessários se mantivermos `gestor_entidade` corretamente.
+**Resultado:** ~80% dos itens são desnecessários se mantivermos `gestor` corretamente.
 
 #### Itens Realmente Necessários:
 
 ```
 ✅ Adicionar constraint em funcionarios
-✅ Verificar RLS policies não bloqueiam gestor_entidade incorretamente
+✅ Verificar RLS policies não bloqueiam gestor incorretamente
 ✅ Corrigir problema #2 (contratantes_funcionarios vs contratante_id)
 ```
 
@@ -284,7 +284,7 @@ A análise lista **87 verificações** necessárias. Vamos categorizá-las:
 
 ```sql
 -- 1. Criar migration (5 min)
-CREATE OR REPLACE MIGRATION XXX_prevent_gestor_entidade_in_funcionarios AS $$
+CREATE OR REPLACE MIGRATION XXX_prevent_gestor_in_funcionarios AS $$
 
   -- Verificar se há gestores entidade em funcionarios (não deveria haver)
   DO $$
@@ -293,24 +293,24 @@ CREATE OR REPLACE MIGRATION XXX_prevent_gestor_entidade_in_funcionarios AS $$
   BEGIN
     SELECT COUNT(*) INTO gestor_count
     FROM funcionarios
-    WHERE perfil = 'gestor_entidade';
+    WHERE perfil = 'gestor';
 
     IF gestor_count > 0 THEN
       RAISE WARNING 'Encontrados % gestores entidade em funcionarios. Serão removidos.', gestor_count;
 
       -- Remover (já não deveriam existir após migration 201)
-      DELETE FROM funcionarios WHERE perfil = 'gestor_entidade';
+      DELETE FROM funcionarios WHERE perfil = 'gestor';
     END IF;
   END $$;
 
   -- Adicionar constraint
   ALTER TABLE funcionarios
-  ADD CONSTRAINT funcionarios_no_gestor_entidade
-  CHECK (perfil != 'gestor_entidade');
+  ADD CONSTRAINT funcionarios_no_gestor
+  CHECK (perfil != 'gestor');
 
   -- Comentário explicativo
-  COMMENT ON CONSTRAINT funcionarios_no_gestor_entidade ON funcionarios IS
-  'Gestores de entidade NÃO são funcionários. São autenticados via contratantes_senhas.';
+  COMMENT ON CONSTRAINT funcionarios_no_gestor ON funcionarios IS
+  'Gestores de entidade NÃO são funcionários. São autenticados via entidades_senhas.';
 
 $$;
 ```
@@ -334,7 +334,7 @@ export async function criarContaResponsavel(contratanteId: number) {
       );
     }
 
-    // Criar apenas em contratantes_senhas (já está correto)
+    // Criar apenas em entidades_senhas (já está correto)
     // ...
   }
 }
@@ -343,13 +343,13 @@ export async function criarContaResponsavel(contratanteId: number) {
 ```typescript
 // 3. Adicionar teste de regressão (30 min)
 describe('Constraint: Gestor Entidade não em funcionarios', () => {
-  it('deve impedir inserção de gestor_entidade em funcionarios', async () => {
+  it('deve impedir inserção de gestor em funcionarios', async () => {
     await expect(
       query(
         'INSERT INTO funcionarios (cpf, nome, perfil) VALUES ($1, $2, $3)',
-        ['99999999999', 'Gestor Teste', 'gestor_entidade']
+        ['99999999999', 'Gestor Teste', 'gestor']
       )
-    ).rejects.toThrow(/funcionarios_no_gestor_entidade/);
+    ).rejects.toThrow(/funcionarios_no_gestor/);
   });
 
   it('deve permitir outros perfis', async () => {
@@ -369,19 +369,19 @@ describe('Constraint: Gestor Entidade não em funcionarios', () => {
 ### 1. ✅ RESOLVIDO: Gestor Entidade em `funcionarios`
 
 **Status:** Implementado constraint protetora  
-**Migration:** XXX_prevent_gestor_entidade_in_funcionarios.sql  
+**Migration:** XXX_prevent_gestor_in_funcionarios.sql  
 **Data:** 29/01/2026
 
 **Solução Implementada:**
 
-- Constraint `funcionarios_no_gestor_entidade` impede inserções
+- Constraint `funcionarios_no_gestor` impede inserções
 - Validação adicional em `criarContaResponsavel()`
 - Testes de regressão adicionados
 
 **Arquitetura Confirmada:**
 
-- Gestor RH: `funcionarios` (perfil='rh') + `contratantes_senhas` ✅
-- Gestor Entidade: `contratantes_senhas` APENAS ✅
+- Gestor RH: `funcionarios` (perfil='rh') + `entidades_senhas` ✅
+- Gestor Entidade: `entidades_senhas` APENAS ✅
 - Funcionário: `funcionarios` (perfil='funcionario') ✅
 ```
 
@@ -426,13 +426,13 @@ INSERT INTO papeis (id, nome, nome_exibicao, descricao) VALUES
 ### Prioridade 1 - HOJE (2 horas)
 
 - [x] ~~Criar papel "responsavel"~~ ❌ NÃO FAZER
-- [ ] ✅ Criar constraint `funcionarios_no_gestor_entidade`
+- [ ] ✅ Criar constraint `funcionarios_no_gestor`
 - [ ] ✅ Adicionar validação em `criarContaResponsavel()`
 - [ ] ✅ Criar testes de regressão
 
 ### Prioridade 2 - Esta Semana
 
-- [ ] Verificar RLS policies para gestor_entidade (problema #9 da auditoria)
+- [ ] Verificar RLS policies para gestor (problema #9 da auditoria)
 - [ ] Resolver problema #2 (contratantes_funcionarios vs contratante_id)
 - [ ] Adicionar índices RLS (problema #10)
 
@@ -457,9 +457,9 @@ INSERT INTO papeis (id, nome, nome_exibicao, descricao) VALUES
 
 - [Auditoria RLS/RBAC Completa](AUDITORIA-RLS-RBAC-COMPLETA.md) - Problema #1
 - [Guia Completo RLS/RBAC](security/GUIA-COMPLETO-RLS-RBAC.md) - Arquitetura correta
-- [Migration 201](../database/migrations/201_fix_gestor_entidade_as_funcionario.sql) - Limpeza já realizada
+- [Migration 201](../database/migrations/201_fix_gestor_as_funcionario.sql) - Limpeza já realizada
 - [lib/db.ts:criarContaResponsavel](../lib/db.ts#L1466) - Implementação correta
 
 ---
 
-**Conclusão:** Manter `gestor_entidade` como está + adicionar constraint protetora = Solução simples, robusta e alinhada com a arquitetura existente. ✅
+**Conclusão:** Manter `gestor` como está + adicionar constraint protetora = Solução simples, robusta e alinhada com a arquitetura existente. ✅

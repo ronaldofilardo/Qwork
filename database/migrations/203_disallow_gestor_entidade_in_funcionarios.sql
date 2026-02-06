@@ -1,9 +1,9 @@
--- Migration 203: Proibir 'gestor_entidade' em funcionarios
+-- Migration 203: Proibir 'gestor' em funcionarios
 -- Data: 22/01/2026
 
 BEGIN;
 
 ALTER TABLE funcionarios
-ADD CONSTRAINT no_gestor_entidade_in_funcionarios CHECK (perfil <> 'gestor_entidade');
+ADD CONSTRAINT no_gestor_in_funcionarios CHECK (perfil <> 'gestor');
 
 COMMIT;

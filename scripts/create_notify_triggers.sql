@@ -15,16 +15,17 @@ DO $$
 DECLARE
   tbl text;
   tables text[] := ARRAY[
-    'contratantes',
+    'entidades',
     'planos',
     'contratos',
     'pagamentos',
     'recibos',
-    'documentos_contratantes',
+    'documentos_entidades',
     'funcionarios',
     'empresas_clientes',
-    'contratantes_funcionarios'
+    'entidades_funcionarios'
   ];
+  -- Nota: Tabelas renomeadas - 'contratantes' -> 'entidades', 'documentos_contratantes' -> 'documentos_entidades', 'contratantes_funcionarios' -> 'entidades_funcionarios'
 BEGIN
   FOREACH tbl IN ARRAY tables LOOP
     BEGIN
@@ -45,7 +46,7 @@ END$$;
 -- o REFRESH MATERIALIZED VIEW CONCURRENTLY de forma controlada (para evitar bloqueios).
 
 -- Como desfazer (opcional):
--- DROP TRIGGER IF EXISTS trg_notify_contratantes ON contratantes;
+-- DROP TRIGGER IF EXISTS trg_notify_entidades ON entidades; -- (renomeado de contratantes)
 -- DROP FUNCTION notify_refresh_mv_admin();
 
 COMMENT ON FUNCTION notify_refresh_mv_admin() IS 'Emite NOTIFY refresh_mv_admin para indicar que a view materializada deve ser atualizada (payload: tabela|OPERACAO)';

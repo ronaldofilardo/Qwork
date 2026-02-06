@@ -17,7 +17,7 @@ Clarificar e documentar formalmente a separação de roles no sistema, especialm
 
 Documentação oficial do sistema de roles contendo:
 
-- ✅ **Definições claras** de cada perfil (funcionario, rh, gestor_entidade, emissor, admin)
+- ✅ **Definições claras** de cada perfil (funcionario, rh, gestor, emissor, admin)
 - ✅ **Matriz de permissões** detalhada por ação e role
 - ✅ **Implementação atual** com referências ao código
 - ✅ **Arquivos críticos** para auditoria com links diretos
@@ -47,9 +47,9 @@ Relatório de auditoria executada contendo:
 
 ### Gestores Entidade
 
-- **Armazenamento:** Apenas `contratantes_senhas` (NÃO em `funcionarios`)
+- **Armazenamento:** Apenas `entidades_senhas` (NÃO em `funcionarios`)
 - **Separação:** Completa desde a criação
-- **Autenticação:** Via `contratantes_senhas` com bcrypt
+- **Autenticação:** Via `entidades_senhas` com bcrypt
 
 ### Funcionários
 

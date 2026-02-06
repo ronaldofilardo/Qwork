@@ -55,7 +55,7 @@ describe('RH - Emissão e Bloqueio de Inativação (E2E)', () => {
             escala: '8h',
             avaliacao: {
               id: 20,
-              status: 'concluida',
+              status: 'concluido',
               data_inicio: '2025-12-01T08:00:00',
               data_conclusao: '2025-12-02T10:00:00',
             },

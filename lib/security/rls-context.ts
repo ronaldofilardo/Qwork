@@ -7,7 +7,7 @@ import { query } from '../db';
 
 export interface RLSContext {
   clinica_id?: number;
-  contratante_id?: number;
+  entidade_id?: number;
   perfil?: string;
   cpf?: string;
 }
@@ -61,10 +61,8 @@ export async function queryWithRLS<T = any>(
       await query(`SET LOCAL app.current_clinica_id = $1`, [ctx.clinica_id]);
     }
 
-    if (ctx.contratante_id) {
-      await query(`SET LOCAL app.current_contratante_id = $1`, [
-        ctx.contratante_id,
-      ]);
+    if (ctx.entidade_id) {
+      await query(`SET LOCAL app.current_entidade_id = $1`, [ctx.entidade_id]);
     }
 
     if (ctx.perfil) {
@@ -106,11 +104,11 @@ export function gerarPoliticaRLS(
 }
 
 /**
- * Políticas RLS recomendadas para contratantes
+ * Políticas RLS recomendadas para entidades
  */
 export const POLITICAS_CONTRATANTES = {
   select: gerarPoliticaRLS(
-    'contratantes',
+    'entidades',
     'contratantes_select_policy',
     'SELECT',
     `
@@ -118,12 +116,12 @@ export const POLITICAS_CONTRATANTES = {
     (current_setting('app.current_perfil', true) = 'admin')
     OR
     -- Gestor vê apenas seu contratante
-    (id = current_setting('app.current_contratante_id', true)::int)
+    (id = current_setting('app.current_entidade_id', true)::int)
   `
   ),
 
   update: gerarPoliticaRLS(
-    'contratantes',
+    'entidades',
     'contratantes_update_policy',
     'UPDATE',
     `
@@ -131,7 +129,7 @@ export const POLITICAS_CONTRATANTES = {
     (current_setting('app.current_perfil', true) = 'admin')
     OR
     -- Gestor pode atualizar apenas seu contratante
-    (id = current_setting('app.current_contratante_id', true)::int)
+    (id = current_setting('app.current_entidade_id', true)::int)
   `
   ),
 };
@@ -155,7 +153,7 @@ export const POLITICAS_FUNCIONARIOS = {
     EXISTS (
       SELECT 1 FROM contratantes_funcionarios cf
       WHERE cf.funcionario_id = funcionarios.id
-      AND cf.contratante_id = current_setting('app.current_contratante_id', true)::int
+      AND cf.entidade_id = current_setting('app.current_entidade_id', true)::int
       AND cf.vinculo_ativo = true
     )
     OR
@@ -197,7 +195,7 @@ CREATE POLICY avaliacoes_select_policy ON avaliacoes FOR SELECT USING (
       EXISTS (
         SELECT 1 FROM contratantes_funcionarios cf
         WHERE cf.funcionario_id = f.id
-        AND cf.contratante_id = current_setting('app.current_contratante_id', true)::int
+        AND cf.entidade_id = current_setting('app.current_entidade_id', true)::int
       )
     )
   )
@@ -212,7 +210,7 @@ CREATE POLICY laudos_select_policy ON laudos FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM empresas_clientes ec
     WHERE ec.id = laudos.empresa_id
-    AND ec.contratante_id = current_setting('app.current_contratante_id', true)::int
+    AND ec.entidade_id = current_setting('app.current_entidade_id', true)::int
   )
 );
 
@@ -230,7 +228,7 @@ COMMENT ON POLICY funcionarios_select_policy ON funcionarios IS
 export function withRLSFromSession<T>(
   session: {
     clinica_id?: number;
-    contratante_id?: number;
+    entidade_id?: number;
     perfil?: string;
     cpf?: string;
   },
@@ -238,7 +236,7 @@ export function withRLSFromSession<T>(
 ): Promise<T> {
   setRLSContext({
     clinica_id: session.clinica_id,
-    contratante_id: session.contratante_id,
+    entidade_id: session.entidade_id,
     perfil: session.perfil,
     cpf: session.cpf,
   });

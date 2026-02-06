@@ -15,15 +15,61 @@ SET
   atualizado_em = CURRENT_TIMESTAMP
 WHERE id = 14;
 
--- 2. Criar conta de login para o responsável (senha padrão: 123456)
-INSERT INTO funcionarios (cpf, nome, email, data_nascimento, senha_hash, perfil, ativo, contratante_id, criado_em, atualizado_em)
-VALUES (
-  '84666497005',
-  'Triagem On-line',
-  'opkop@koko.com',
-  '1980-01-01',  -- Data fictícia
-  '$2a$10$k78cXndJSIOJnoK5anDohe8KHvwPMSrhexZ1zvFUIGzvWJ5HLIeQS', -- senha: 123456
-  'gestor_entidade',
+-- 2. Criar conta de login para o responsável em USUARIOS (gestores não vão para funcionarios)
+-- Determinar se é clínica ou entidade para saber o tipo_usuario
+DO $$
+DECLARE
+    v_tipo VARCHAR(20);
+    v_clinica_id INTEGER;
+    v_contratante_id INTEGER := 14;
+BEGIN
+    SELECT tipo INTO v_tipo FROM contratantes WHERE id = v_contratante_id;
+    
+    IF v_tipo = 'clinica' THEN
+        -- Buscar clinica_id
+        SELECT id INTO v_clinica_id FROM clinicas WHERE contratante_id = v_contratante_id LIMIT 1;
+        
+        INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, clinica_id, ativo, criado_em, atualizado_em)
+        VALUES (
+            '84666497005',
+            'Triagem On-line',
+            'opkop@koko.com',
+            '$2a$10$k78cXndJSIOJnoK5anDohe8KHvwPMSrhexZ1zvFUIGzvWJ5HLIeQS',
+            'rh',
+            v_clinica_id,
+            true,
+            NOW(),
+            NOW()
+        )
+        ON CONFLICT (cpf) DO UPDATE SET
+            tipo_usuario = 'rh',
+            clinica_id = v_clinica_id,
+            ativo = true,
+            senha_hash = EXCLUDED.senha_hash,
+            atualizado_em = NOW();
+    ELSE
+        -- Tipo entidade
+        INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, contratante_id, ativo, criado_em, atualizado_em)
+        VALUES (
+            '84666497005',
+            'Triagem On-line',
+            'opkop@koko.com',
+            '$2a$10$k78cXndJSIOJnoK5anDohe8KHvwPMSrhexZ1zvFUIGzvWJ5HLIeQS',
+            'gestor',
+            v_contratante_id,
+            true,
+            NOW(),
+            NOW()
+        )
+        ON CONFLICT (cpf) DO UPDATE SET
+            tipo_usuario = 'gestor',
+            contratante_id = v_contratante_id,
+            ativo = true,
+            senha_hash = EXCLUDED.senha_hash,
+            atualizado_em = NOW();
+    END IF;
+END $$;
+  'gestor',
   true,
   14,
   CURRENT_TIMESTAMP,
@@ -34,7 +80,7 @@ SET
   ativo = true,
   contratante_id = 14,
   data_nascimento = COALESCE(funcionarios.data_nascimento, '1980-01-01'::date),
-  perfil = 'gestor_entidade';
+  perfil = 'gestor';
 
 -- 3. Verificar resultados
 SELECT 'Contratante ativado:' as info, id, nome, status, ativa, pagamento_confirmado 

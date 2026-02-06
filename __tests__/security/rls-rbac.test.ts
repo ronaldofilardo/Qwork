@@ -242,7 +242,7 @@ describe('Row Level Security (RLS) Tests', () => {
       await query(`SET LOCAL app.current_user_perfil = 'admin'`);
 
       const result = await query(
-        "SELECT COUNT(*) as count FROM funcionarios WHERE usuario_tipo = 'gestor_rh'"
+        "SELECT COUNT(*) as count FROM funcionarios WHERE usuario_tipo = 'rh'"
       );
 
       expect(parseInt(result.rows[0].count)).toBeGreaterThanOrEqual(1);
@@ -254,7 +254,7 @@ describe('Row Level Security (RLS) Tests', () => {
         `
         SELECT COUNT(*) as count 
         FROM funcionarios 
-        WHERE usuario_tipo = 'gestor_rh' AND clinica_id = $1
+        WHERE usuario_tipo = 'rh' AND clinica_id = $1
       `,
         [clinicaId]
       );
@@ -269,7 +269,7 @@ describe('Row Level Security (RLS) Tests', () => {
         `
         SELECT COUNT(*) as count 
         FROM funcionarios 
-        WHERE usuario_tipo = 'gestor_rh' AND clinica_id != $1
+        WHERE usuario_tipo = 'rh' AND clinica_id != $1
       `,
         [clinicaId]
       );
@@ -433,38 +433,171 @@ describe('Row Level Security (RLS) Tests', () => {
       );
     });
 
-    it('deve ver TODAS as avaliações', async () => {
-      const result = await query('SELECT COUNT(*) as count FROM avaliacoes');
-
-      expect(result.rows[0].count).toBeDefined();
+    it('❌ NÃO deve ver avaliacoes (acesso exclusivo de RH e gestor)', async () => {
+      // Admin NÃO tem permissão para visualizar avaliações
+      await expect(
+        query('SELECT COUNT(*) as count FROM avaliacoes')
+      ).rejects.toThrow(); // Deve falhar por falta de policy RLS
     });
 
-    it('deve ver TODAS as empresas', async () => {
+    it('❌ NÃO deve ver empresas_clientes (gerenciadas por RH)', async () => {
+      // Admin NÃO tem permissão para acessar empresas_clientes
+      await expect(
+        query('SELECT COUNT(*) as count FROM empresas_clientes')
+      ).rejects.toThrow(); // Deve falhar por falta de policy RLS
+    });
+
+    it('❌ NÃO deve ver lotes_avaliacao (gerenciados por RH e gestor)', async () => {
+      // Admin NÃO tem permissão para visualizar lotes
+      await expect(
+        query('SELECT COUNT(*) as count FROM lotes_avaliacao')
+      ).rejects.toThrow(); // Deve falhar por falta de policy RLS
+    });
+
+    it('❌ NÃO deve ver laudos (gerenciados por emissor)', async () => {
+      // Admin NÃO tem permissão para visualizar laudos
+      await expect(
+        query('SELECT COUNT(*) as count FROM laudos')
+      ).rejects.toThrow(); // Deve falhar por falta de policy RLS
+    });
+
+    it('❌ NÃO deve ver clínicas (gerenciadas por RH)', async () => {
+      // Admin NÃO tem permissão para acessar clínicas
+      await expect(
+        query('SELECT COUNT(*) as count FROM clinicas')
+      ).rejects.toThrow(); // Deve falhar por falta de policy RLS
+    });
+
+    it('✅ DEVE ver contratantes (SELECT/INSERT/UPDATE/DELETE para gerenciar gestores)', async () => {
+      // Admin pode gerenciar contratantes para aprovar cadastros e vincular gestores (Migration 301)
+      const result = await query('SELECT COUNT(*) as count FROM contratantes');
+
+      expect(parseInt(result.rows[0].count)).toBeGreaterThanOrEqual(0);
+    });
+
+    it('✅ DEVE poder INSERIR contratantes (para aprovar novos cadastros)', async () => {
+      // Admin pode criar contratantes
       const result = await query(
-        'SELECT COUNT(*) as count FROM empresas_clientes'
+        `INSERT INTO contratantes (
+          tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+          responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
+          cartao_cnpj_path, ativa
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
+        [
+          'clinica',
+          'Clínica Teste Admin',
+          '12345678000190',
+          'teste@clinica.com',
+          '11999999999',
+          'Rua Teste, 123',
+          'São Paulo',
+          'SP',
+          '01234567',
+          'João Silva',
+          '12345678901',
+          'Diretor',
+          'joao@clinica.com',
+          '11999999999',
+          '/path/cartao.pdf',
+          true,
+        ]
       );
 
-      expect(result.rows[0].count).toBeDefined();
+      expect(result.rows).toHaveLength(1);
+      expect(result.rows[0]).toHaveProperty('id');
+
+      // Limpar dados de teste
+      await query('DELETE FROM contratantes WHERE cnpj = $1', [
+        '12345678000190',
+      ]);
     });
 
-    it('deve ver TODOS os lotes', async () => {
-      const result = await query(
-        'SELECT COUNT(*) as count FROM lotes_avaliacao'
+    it('✅ DEVE poder ATUALIZAR contratantes (para manter informações)', async () => {
+      // Criar contratante de teste
+      const insertResult = await query(
+        `INSERT INTO contratantes (
+          tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+          responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
+          cartao_cnpj_path, ativa
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
+        [
+          'entidade',
+          'Entidade Teste Admin',
+          '98765432000180',
+          'teste@entidade.com',
+          '11999999998',
+          'Av Teste, 456',
+          'Rio de Janeiro',
+          'RJ',
+          '02345678',
+          'Maria Santos',
+          '98765432101',
+          'Gerente',
+          'maria@entidade.com',
+          '11999999998',
+          '/path/cartao2.pdf',
+          true,
+        ]
       );
 
-      expect(result.rows[0].count).toBeDefined();
+      const contratanteId = insertResult.rows[0].id;
+
+      // Admin pode modificar contratantes
+      const updateResult = await query(
+        'UPDATE contratantes SET nome = $1, ativa = $2 WHERE id = $3 RETURNING nome, ativa',
+        ['Entidade Teste Admin Atualizada', false, contratanteId]
+      );
+
+      expect(updateResult.rows).toHaveLength(1);
+      expect(updateResult.rows[0].nome).toBe('Entidade Teste Admin Atualizada');
+      expect(updateResult.rows[0].ativa).toBe(false);
+
+      // Limpar dados de teste
+      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
     });
 
-    it('deve ver TODOS os laudos', async () => {
-      const result = await query('SELECT COUNT(*) as count FROM laudos');
+    it('✅ DEVE poder DELETAR contratantes (com cuidado)', async () => {
+      // Criar contratante de teste
+      const insertResult = await query(
+        `INSERT INTO contratantes (
+          tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+          responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
+          cartao_cnpj_path, ativa
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) RETURNING id`,
+        [
+          'clinica',
+          'Clínica Para Deletar',
+          '11111111000111',
+          'deletar@clinica.com',
+          '11999999997',
+          'Rua Delete, 789',
+          'Belo Horizonte',
+          'MG',
+          '03456789',
+          'Pedro Costa',
+          '11122233344',
+          'Coordenador',
+          'pedro@clinica.com',
+          '11999999997',
+          '/path/cartao3.pdf',
+          false,
+        ]
+      );
 
-      expect(result.rows[0].count).toBeDefined();
-    });
+      const contratanteId = insertResult.rows[0].id;
 
-    it('deve ver TODAS as clínicas', async () => {
-      const result = await query('SELECT COUNT(*) as count FROM clinicas');
+      // Admin pode excluir contratantes
+      const deleteResult = await query(
+        'DELETE FROM contratantes WHERE id = $1',
+        [contratanteId]
+      );
 
-      expect(parseInt(result.rows[0].count)).toBeGreaterThanOrEqual(1);
+      // Verificar se foi deletado
+      const checkResult = await query(
+        'SELECT COUNT(*) as count FROM contratantes WHERE id = $1',
+        [contratanteId]
+      );
+      expect(parseInt(checkResult.rows[0].count)).toBe(0);
     });
 
     it('deve poder gerenciar qualquer empresa de qualquer clínica', async () => {

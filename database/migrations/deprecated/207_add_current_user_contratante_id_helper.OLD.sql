@@ -62,9 +62,9 @@ COMMIT;
 -- ==========================================
 
 /*
--- Em lib/db.ts, ao fazer query com sessão de gestor_entidade:
+-- Em lib/db.ts, ao fazer query com sessão de gestor:
 
-if (session.perfil === 'gestor_entidade' && session.contratante_id) {
+if (session.perfil === 'gestor' && session.contratante_id) {
   await query(
     'SET LOCAL app.current_user_contratante_id = $1',
     [session.contratante_id]
@@ -73,11 +73,11 @@ if (session.perfil === 'gestor_entidade' && session.contratante_id) {
 
 -- Em RLS policy:
 
-CREATE POLICY funcionarios_gestor_entidade_read
+CREATE POLICY funcionarios_gestor_read
 ON funcionarios
 FOR SELECT
 USING (
-  current_user_perfil() = 'gestor_entidade'
+  current_user_perfil() = 'gestor'
   AND contratante_id = current_user_contratante_id()
 );
 */

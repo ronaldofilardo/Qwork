@@ -40,7 +40,7 @@ Validar que a emissão de laudos é **completamente manual**, seguindo o fluxo c
 
 - **Confirmado:** Endpoint NÃO emite automaticamente
 - **Ação:** Apenas registra solicitação na `fila_emissao`
-- **Perfis:** Valida acesso de RH (clinica_id) e gestor_entidade (contratante_id)
+- **Perfis:** Valida acesso de RH (clinica_id) e gestor (contratante_id)
 
 ### 2. Banco de Dados Corrigido
 
@@ -98,7 +98,7 @@ Dado que o ambiente de teste requer configuração complexa (RLS, triggers de au
 
 ### Cenário 2: Fluxo Entidade → Emissor
 
-1. **Login como gestor_entidade**
+1. **Login como gestor**
 2. Criar lote, completar avaliações
 3. Solicitar emissão
 4. **Mesmas verificações do Cenário 1 (passos 4-10)**
@@ -175,7 +175,7 @@ WHERE proname = 'fn_recalcular_status_lote_on_avaliacao_update';
 ## 📝 Notas Importantes
 
 - **Backward Compatibility:** Laudos já enviados não são afetados
-- **Perfis Impactados:** RH, gestor_entidade, emissor
+- **Perfis Impactados:** RH, gestor, emissor
 - **Breaking Change:** NÃO - apenas corrige comportamento incorreto
 - **Rollback:** Caso necessário, restaurar migration 095 (não recomendado)
 

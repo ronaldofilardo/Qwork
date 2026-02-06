@@ -31,7 +31,7 @@ VALUES (
         'pdf',
         'Relatório executivo com principais indicadores',
         '{"grupos": [1,2,3,4,5,6], "graficos": ["barras", "pizza"], "estatisticas": true, "recomendacoes": true}',
-        '{"periodo": "ultimo_mes", "status": ["concluida"]}'
+        '{"periodo": "ultimo_mes", "status": ["concluido"]}'
     ),
     (
         'Análise Detalhada por Empresa',
@@ -82,8 +82,8 @@ BEGIN
         jsonb_build_object(
             'total_funcionarios', COUNT(DISTINCT f.cpf),
             'total_avaliacoes', COUNT(a.id),
-            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluida' THEN 1 END),
-            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2),
+            'avaliacoes_concluidas', COUNT(CASE WHEN a.status = 'concluido' THEN 1 END),
+            'taxa_conclusao', ROUND((COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) * 100.0 / NULLIF(COUNT(a.id), 0)), 2),
             'funcionarios_operacionais', COUNT(DISTINCT CASE WHEN f.nivel_cargo = 'operacional' THEN f.cpf END),
             'funcionarios_gestao', COUNT(DISTINCT CASE WHEN f.nivel_cargo = 'gestao' THEN f.cpf END)
         ) as dados,
@@ -148,7 +148,7 @@ BEGIN
         LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
         WHERE f.clinica_id = p_clinica_id 
             AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
-            AND a.status = 'concluida'
+            AND a.status = 'concluido'
         GROUP BY r.grupo
         ORDER BY r.grupo
     ) dados_grupos;
@@ -182,7 +182,7 @@ BEGIN
     LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
     WHERE f.clinica_id = p_clinica_id 
         AND (p_empresa_id IS NULL OR ec.id = p_empresa_id)
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
         AND r.grupo IN (8, 9, 10);
         
 END;

@@ -270,7 +270,7 @@ test('❌ DELETE direto deve ser BLOQUEADO', async () => {
 
   // Verificar que operação é bloqueada
   await expect(
-    query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [18])
+    query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [18])
   ).rejects.toThrow('OPERAÇÃO BLOQUEADA');
 });
 ```

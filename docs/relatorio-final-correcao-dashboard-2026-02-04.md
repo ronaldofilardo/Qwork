@@ -40,7 +40,7 @@ Dashboard da entidade (Lote #1 e Lote #21) não atualizava corretamente:
 **Ações:**
 
 1. Desabilitou temporariamente todos os triggers (incluindo auditoria)
-2. Atualizou status da avaliação #17 para 'concluida' com timestamp de envio
+2. Atualizou status da avaliação #17 para 'concluido' com timestamp de envio
 3. Atualizou status da avaliação #18 para 'em_andamento'
 4. Reabilitou todos os triggers
 
@@ -172,3 +172,4 @@ O sistema agora:
 **Desenvolvedor:** GitHub Copilot (Claude Sonnet 4.5)  
 **Revisado por:** Sistema de QA Automatizado  
 **Aprovado em:** 04/02/2026 19:23 UTC
+

@@ -15,7 +15,8 @@ export enum PerfilUsuario {
   // Emissor é um usuário INDEPENDENTE: NÃO deve ser associado a `clinica_id`/`empresa_id`.
   // Acesso global para emissão de laudos; a visibilidade é gerida por RLS explicitamente.
   EMISSOR = 'emissor',
-  GESTOR_ENTIDADE = 'gestor_entidade',
+  // Gestor de Entidade: gera funcionários DIRETAMENTE (sem passar por clínica/empresa)
+  GESTOR = 'gestor',
   CADASTRO = 'cadastro',
 }
 
@@ -24,7 +25,7 @@ export type PerfilUsuarioType =
   | 'rh'
   | 'admin'
   | 'emissor'
-  | 'gestor_entidade'
+  | 'gestor'
   | 'cadastro';
 
 /**
@@ -34,7 +35,7 @@ export type PerfilUsuarioType =
 export enum StatusAvaliacao {
   INICIADA = 'iniciada',
   EM_ANDAMENTO = 'em_andamento',
-  CONCLUIDA = 'concluida',
+  CONCLUIDO = 'concluido',
   INATIVADA = 'inativada',
 }
 
@@ -128,7 +129,7 @@ export const PERFIS_VALIDOS: PerfilUsuarioType[] = [
   'rh',
   'admin',
   'emissor',
-  'gestor_entidade',
+  'gestor',
 ];
 export const STATUS_AVALIACAO_VALIDOS: StatusAvaliacaoType[] = [
   'iniciada',
@@ -192,12 +193,12 @@ export type TipoPlanoType = 'fixo' | 'personalizado' | 'basico' | 'premium';
  * Tipo de contratante
  * @enum {string}
  */
-export enum TipoContratante {
+export enum TipoEntidade {
   CLINICA = 'clinica',
   ENTIDADE = 'entidade',
 }
 
-export type TipoContratanteType = 'clinica' | 'entidade';
+export type TipoEntidadeType = 'clinica' | 'entidade';
 
 /**
  * Validadores de tipo expandidos
@@ -217,8 +218,8 @@ export const ExtendedTypeValidators = {
     return Object.values(TipoPlano).includes(value as TipoPlano);
   },
 
-  isTipoContratante: (value: string): value is TipoContratanteType => {
-    return Object.values(TipoContratante).includes(value as TipoContratante);
+  isTipoEntidade: (value: string): value is TipoEntidadeType => {
+    return Object.values(TipoEntidade).includes(value as TipoEntidade);
   },
 };
 
@@ -239,7 +240,7 @@ export const STATUS_CONTRATACAO_PERSONALIZADA_VALIDOS: StatusContratacaoPersonal
 
 export const TIPO_PLANO_VALIDOS: TipoPlanoType[] = ['fixo', 'personalizado'];
 
-export const TIPO_CONTRATANTE_VALIDOS: TipoContratanteType[] = [
+export const TIPO_ENTIDADE_VALIDOS: TipoEntidadeType[] = [
   'clinica',
   'entidade',
 ];
@@ -268,7 +269,7 @@ export const TipoPlanoLabels: Record<TipoPlanoType, string> = {
   premium: 'Plano Premium',
 };
 
-export const TipoContratanteLabels: Record<TipoContratanteType, string> = {
+export const TipoEntidadeLabels: Record<TipoEntidadeType, string> = {
   clinica: 'Serviço de Medicina Ocupacional',
   entidade: 'Empresa Privada',
 };

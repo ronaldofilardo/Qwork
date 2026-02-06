@@ -35,12 +35,12 @@ export async function POST(request: NextRequest) {
       const contratacaoResult = await query(
         `SELECT 
           cp.*,
-          c.nome AS contratante_nome,
-          c.cnpj,
-          c.responsavel_nome,
-          c.plano_id
+          e.nome AS entidade_nome,
+          e.cnpj,
+          e.responsavel_nome,
+          e.plano_id
         FROM contratacao_personalizada cp
-        JOIN contratantes c ON cp.contratante_id = c.id
+        JOIN entidades e ON cp.contratante_id = e.id
         WHERE cp.id = $1`,
         [contratacao_id]
       );
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       // Criar contrato padrão
       const contratoConteudo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS - PLANO PERSONALIZADO
 
-CONTRATANTE: ${contratacao.contratante_nome}
+ENTIDADE: ${contratacao.entidade_nome}
 CNPJ: ${contratacao.cnpj}
 RESPONSÁVEL: ${contratacao.responsavel_nome}
 
@@ -79,7 +79,7 @@ VALOR TOTAL: R$ ${parseFloat(contratacao.valor_total_estimado).toFixed(2)}
 
 [Cláusulas do contrato padrão serão inseridas aqui]
 
-Status: Aguardando Aceite do Contratante`;
+Status: Aguardando Aceite da Entidade`;
 
       const contratoResult = await query(
         `INSERT INTO contratos (
@@ -119,7 +119,7 @@ Status: Aguardando Aceite do Contratante`;
         resourceId: contratacao_id,
         details: JSON.stringify({
           contratante_id: contratacao.contratante_id,
-          contratante_nome: contratacao.contratante_nome,
+          entidade_nome: contratacao.entidade_nome,
           numero_funcionarios: contratacao.numero_funcionarios_estimado,
           valor_total: contratacao.valor_total_estimado,
           contrato_id: contratoId,

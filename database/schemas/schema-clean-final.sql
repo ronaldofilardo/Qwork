@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS avaliacoes (
         status IN (
             'iniciada',
             'em_andamento',
-            'concluida'
+            'concluido'
         )
     ),
     grupo_atual INT DEFAULT 1,

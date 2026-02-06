@@ -55,7 +55,7 @@ ALTER TABLE notificacoes
 
 ALTER TABLE notificacoes
   ADD CONSTRAINT notificacoes_destinatario_tipo_check
-  CHECK (destinatario_tipo IN ('admin', 'gestor_entidade', 'funcionario', 'contratante', 'clinica'));
+  CHECK (destinatario_tipo IN ('admin', 'gestor', 'funcionario', 'contratante', 'clinica'));
 
 -- ==========================================
 -- FASE 4: FUNÇÃO PARA RESOLVER NOTIFICAÇÕES

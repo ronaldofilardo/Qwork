@@ -10,8 +10,8 @@ DO $$ BEGIN
   CREATE TYPE usuario_tipo_enum AS ENUM (
     'funcionario_clinica',
     'funcionario_entidade', 
-    'gestor_rh',
-    'gestor_entidade',
+    'rh',
+    'gestor',
     'admin',
     'emissor'
   );
@@ -32,8 +32,8 @@ SET usuario_tipo = CASE perfil
         THEN 'funcionario_entidade'::usuario_tipo_enum
       ELSE 'funcionario_clinica'::usuario_tipo_enum
     END
-  WHEN 'rh' THEN 'gestor_rh'::usuario_tipo_enum
-  WHEN 'gestor_entidade' THEN 'gestor_entidade'::usuario_tipo_enum
+  WHEN 'rh' THEN 'rh'::usuario_tipo_enum
+  WHEN 'gestor' THEN 'gestor'::usuario_tipo_enum
   WHEN 'admin' THEN 'admin'::usuario_tipo_enum
   WHEN 'emissor' THEN 'emissor'::usuario_tipo_enum
   ELSE 'funcionario_clinica'::usuario_tipo_enum

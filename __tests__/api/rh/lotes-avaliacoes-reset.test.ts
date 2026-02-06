@@ -143,7 +143,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
         rows: [
           {
             id: 1,
-            status: 'concluida',
+            status: 'concluido',
             funcionario_cpf: '12345678901',
             funcionario_nome: 'João Silva',
           },
@@ -262,7 +262,7 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
         rows: [
           {
             id: 1,
-            status: 'concluida',
+            status: 'concluido',
             funcionario_cpf: '12345678901',
             funcionario_nome: 'João Silva',
           },
@@ -423,3 +423,4 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
     });
   });
 });
+

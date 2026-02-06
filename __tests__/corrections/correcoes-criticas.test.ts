@@ -4,7 +4,7 @@
  * Cobertura:
  * - API account-info corrigida (contratantes ao invés de empresas_clientes)
  * - Sistema de proteção crítica de senhas
- * - Auditoria de operações em contratantes_senhas
+ * - Auditoria de operações em entidades_senhas
  * - Funções seguras de deleção
  * - Validação de senhas bcrypt
  */
@@ -71,7 +71,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       const mockGetSession = require('@/lib/session').getSession;
       mockGetSession.mockReturnValue({
         contratante_id: 18,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
       });
 
       // Mock das queries
@@ -124,7 +124,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       const mockGetSession = require('@/lib/session').getSession;
       mockGetSession.mockReturnValue({
         contratante_id: 999,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
       });
 
       const mockQuery = require('@/lib/db').query;
@@ -147,7 +147,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       const mockGetSession = require('@/lib/session').getSession;
       mockGetSession.mockReturnValue({
         contratante_id: 18,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
       });
 
       const mockQuery = require('@/lib/db').query;
@@ -201,7 +201,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       );
 
       await expect(
-        query('DELETE FROM contratantes_senhas WHERE contratante_id = $1', [18])
+        query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [18])
       ).rejects.toThrow(
         'OPERAÇÃO BLOQUEADA: Delete de senhas requer autorização explícita'
       );
@@ -212,13 +212,13 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       const result = await query(
-        'INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+        'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
         [25, '12345678901', '$2a$10$hashbcrypt']
       );
 
       expect(result.rowCount).toBe(1);
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO contratantes_senhas'),
+        expect.stringContaining('INSERT INTO entidades_senhas'),
         expect.any(Array)
       );
     });
@@ -228,13 +228,13 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       mockQuery.mockResolvedValue({ rows: [], rowCount: 1 });
 
       const result = await query(
-        'UPDATE contratantes_senhas SET senha_hash = $1 WHERE contratante_id = $2',
+        'UPDATE entidades_senhas SET senha_hash = $1 WHERE contratante_id = $2',
         ['$2a$10$novoHash', 18]
       );
 
       expect(result.rowCount).toBe(1);
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('UPDATE contratantes_senhas'),
+        expect.stringContaining('UPDATE entidades_senhas'),
         expect.any(Array)
       );
     });
@@ -312,7 +312,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
 
         // Buscar hash do banco
         const result = await query(
-          'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+          'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
           [cpf]
         );
         const hash = result.rows[0].senha_hash;
@@ -323,7 +323,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
 
         // Verificar que a query foi chamada corretamente
         expect(mockQuery).toHaveBeenCalledWith(
-          'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+          'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
           [cpf]
         );
       }
@@ -350,7 +350,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       });
 
       const result = await query(
-        'SELECT senha_hash FROM contratantes_senhas WHERE cpf = $1',
+        'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
         ['87545772920']
       );
       const hash = result.rows[0].senha_hash;
@@ -372,7 +372,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
           contratante_id: 18,
           cpf: '87545772920',
           nome: 'Gestor RELEGERE',
-          tipo: 'gestor_entidade',
+          tipo: 'gestor',
         },
         senha_hash:
           '$2a$06$eSfK/ZmLMeal4xTA93vYYeqrZ9LWZS4qGJDZFMUYgPVynNipjQFvO',
@@ -411,12 +411,12 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       mockQuery.mockRejectedValue(new Error('OPERAÇÃO BLOQUEADA'));
 
       await expect(
-        query('DELETE FROM contratantes_senhas WHERE cpf = $1', ['87545772920'])
+        query('DELETE FROM entidades_senhas WHERE cpf = $1', ['87545772920'])
       ).rejects.toThrow('OPERAÇÃO BLOQUEADA');
 
       // Verificar que auditoria seria chamada (mesmo que falhe)
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('DELETE FROM contratantes_senhas'),
+        expect.stringContaining('DELETE FROM entidades_senhas'),
         expect.any(Array)
       );
     });
@@ -436,7 +436,7 @@ describe('🔧 Correções Críticas - Testes Robustos', () => {
       const mockGetSession = require('@/lib/session').getSession;
       mockGetSession.mockReturnValue({
         contratante_id: 18,
-        perfil: 'gestor_entidade',
+        perfil: 'gestor',
       });
 
       const mockQuery = require('@/lib/db').query;

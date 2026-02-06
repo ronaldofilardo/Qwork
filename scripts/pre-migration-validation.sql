@@ -72,7 +72,7 @@ WHERE perfil = 'funcionario'
 -- 3. GESTORES DE ENTIDADE DUPLICADOS
 -- ==========================================
 
-\echo '3. Gestores de entidade duplicados (funcionarios + contratantes_senhas)...'
+\echo '3. Gestores de entidade duplicados (funcionarios + entidades_senhas)...'
 \echo ''
 
 SELECT 
@@ -86,15 +86,15 @@ SELECT
     ELSE 'CONTRATANTES DIFERENTES - PROBLEMA!'
   END as status
 FROM funcionarios f
-INNER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-WHERE f.perfil = 'gestor_entidade';
+INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+WHERE f.perfil = 'gestor';
 
 \echo ''
 \echo 'Total de gestores duplicados:'
 SELECT COUNT(*) as total_duplicados
 FROM funcionarios f
-INNER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-WHERE f.perfil = 'gestor_entidade';
+INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+WHERE f.perfil = 'gestor';
 
 \echo ''
 \echo '==========================================\n'
@@ -229,8 +229,8 @@ SELECT
   COUNT(*) as total,
   CASE WHEN COUNT(*) > 0 THEN '🔴 CRÍTICO' ELSE '✅ OK' END as status
 FROM funcionarios f
-INNER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-WHERE f.perfil = 'gestor_entidade'
+INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+WHERE f.perfil = 'gestor'
 
 UNION ALL
 

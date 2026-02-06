@@ -36,7 +36,7 @@ SELECT
   la.liberado_por,
   CASE 
     WHEN f.perfil = 'rh' THEN 'rh'
-    WHEN f.perfil = 'gestor_entidade' THEN 'gestor_entidade'
+    WHEN f.perfil = 'gestor' THEN 'gestor'
     ELSE 'admin'
   END,
   0,  -- Resetar tentativas para 0 (pronto para processar)

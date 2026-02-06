@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     // Espera multipart/form-data com campo 'file'
     const formData = await request.formData();
@@ -197,9 +197,12 @@ export async function POST(request: Request) {
       let created = 0;
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
-        await queryAsGestorEntidade(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, contratante_id, ativo, matricula, nivel_cargo, turno, escala, usuario_tipo)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',$8,true,$9,$10,$11,$12,'funcionario_entidade')`,
+
+        // 1. Inserir funcionário (sem colunas de FK)
+        const insertResult = await queryAsGestorEntidade(
+          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, contratante_id, matricula, nivel_cargo, turno, escala)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,$12)
+           RETURNING id`,
           [
             r.cpf,
             r.nome,
@@ -208,13 +211,23 @@ export async function POST(request: Request) {
             r.funcao,
             r.email,
             senhaHash,
-            contratanteId,
+            entidadeId,
             r.matricula || null,
             r.nivel_cargo || null,
             r.turno || null,
             r.escala || null,
           ]
         );
+
+        const funcionarioId = insertResult.rows[0].id;
+
+        // 2. Criar relacionamento na tabela funcionarios_entidades
+        await queryAsGestorEntidade(
+          `INSERT INTO funcionarios_entidades (funcionario_id, contratante_id, ativo, data_vinculo)
+           VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
+          [funcionarioId, entidadeId]
+        );
+
         created++;
       }
 
@@ -225,7 +238,7 @@ export async function POST(request: Request) {
           ? `***${String(session.cpf).slice(-4)}`
           : session.cpf;
       console.log(
-        `[AUDIT] Importação em massa: ${created} funcionários importados pela entidade ${contratanteId} por ${maskedCpf}`
+        `[AUDIT] Importação em massa: ${created} funcionários importados pela entidade ${entidadeId} por ${maskedCpf}`
       );
 
       return NextResponse.json({ success: true, created });

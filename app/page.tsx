@@ -10,7 +10,7 @@ export default function HomePage() {
 
   // Redirecionamento baseado no perfil da sessão
   switch (session.perfil) {
-    case 'gestor_entidade':
+    case 'gestor':
       redirect('/entidade');
       break;
     case 'rh':

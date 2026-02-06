@@ -41,7 +41,7 @@ async function getContratantesPendentes(input: GetContratantesInput) {
       c.status_aprovacao,
       c.criado_em,
       p.nome as plano_nome
-    FROM contratantes c
+    FROM entidades c
     LEFT JOIN planos p ON c.plano_id = p.id
     WHERE ($1::text IS NULL OR c.status_aprovacao = $1)
     ORDER BY c.criado_em DESC
@@ -50,7 +50,7 @@ async function getContratantesPendentes(input: GetContratantesInput) {
 
   const result = await query(sql, [status || null, limit, offset]);
   return {
-    contratantes: result.rows,
+    entidades: result.rows,
     total: result.rowCount,
   };
 }
@@ -71,23 +71,23 @@ export const GET = handleRequest<GetContratantesInput>({
 });
 
 // Exemplo de POST com validação mais complexa
-const AprovarContratanteSchema = z.object({
-  contratante_id: z.number().positive(),
+const AprovarEntidadeSchema = z.object({
+  entidade_id: z.number().positive(),
   observacoes: z.string().max(500).optional(),
 });
 
 export const POST = handleRequest({
   allowedRoles: [ROLES.ADMIN],
-  validate: AprovarContratanteSchema,
+  validate: AprovarEntidadeSchema,
 
   execute: async (input, context) => {
     requireSession(context);
 
-    const { contratante_id, observacoes } = input;
+    const { entidade_id, observacoes } = input;
 
     // Lógica de aprovação
     const sql = `
-      UPDATE contratantes
+      UPDATE entidades
       SET 
         status_aprovacao = 'aprovado',
         aprovado_por = $1,
@@ -100,16 +100,16 @@ export const POST = handleRequest({
     const result = await query(sql, [
       context.session.cpf,
       observacoes || null,
-      contratante_id,
+      entidade_id,
     ]);
 
     if (result.rowCount === 0) {
       // Usar createApiError para garantir Error instance com código e status
-      throw createApiError('Contratante não encontrado', 'NOT_FOUND', 404);
+      throw createApiError('Entidade não encontrado', 'NOT_FOUND', 404);
     }
 
     return {
-      message: 'Contratante aprovado com sucesso',
+      message: 'Entidade aprovado com sucesso',
       contratante: result.rows[0],
     };
   },

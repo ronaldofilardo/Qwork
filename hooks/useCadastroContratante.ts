@@ -11,7 +11,7 @@ import {
   validarEtapaDados,
   validarEtapaResponsavel,
   gerarContratoSimulado,
-  TipoContratante,
+  TipoEntidade,
   DadosContratante as DC,
   DadosResponsavel as DR,
   Arquivos as AR,
@@ -20,7 +20,7 @@ import {
 
 export type UseCadastroDeps = {
   apiFetcher?: Fetcher;
-  initialTipo?: TipoContratante;
+  initialTipo?: TipoEntidade;
 };
 
 export function useCadastroContratante({
@@ -35,7 +35,7 @@ export function useCadastroContratante({
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
-  const [tipo, setTipo] = useState<TipoContratante>(initialTipo || 'entidade');
+  const [tipo, setTipo] = useState<TipoEntidade>(initialTipo || 'entidade');
   const [cnpjError, setCnpjError] = useState('');
   const [planos, setPlanos] = useState<Plano[]>([]);
   const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);

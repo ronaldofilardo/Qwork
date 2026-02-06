@@ -28,14 +28,14 @@ export async function GET(
         cp.valor_total_estimado,
         cp.status,
         cp.payment_link_expiracao,
-        c.nome as contratante_nome,
-        c.email as contratante_email,
-        c.cnpj as contratante_cnpj,
+        e.nome as entidade_nome,
+        e.email as entidade_email,
+        e.cnpj as entidade_cnpj,
         p.nome as plano_nome,
         p.id as plano_id
        FROM contratacao_personalizada cp
-       JOIN contratantes c ON c.id = cp.contratante_id
-       JOIN planos p ON p.id = c.plano_id
+       JOIN entidades e ON e.id = cp.contratante_id
+       JOIN planos p ON p.id = e.plano_id
        WHERE cp.payment_link_token = $1 
        AND cp.status IN ('valor_definido', 'aguardando_pagamento')`,
       [token]
@@ -65,9 +65,10 @@ export async function GET(
       valido: true,
       contratacao_id: data.contratacao_id,
       contratante_id: data.contratante_id,
-      contratante_nome: data.contratante_nome,
-      contratante_email: data.contratante_email,
-      contratante_cnpj: data.contratante_cnpj,
+      entidade_id: data.contratante_id,
+      entidade_nome: data.entidade_nome,
+      entidade_email: data.entidade_email,
+      entidade_cnpj: data.entidade_cnpj,
       plano_nome: data.plano_nome,
       plano_id: data.plano_id,
       valor_por_funcionario: parseFloat(data.valor_por_funcionario || '0'),
@@ -108,9 +109,9 @@ export async function POST(
         cp.valor_por_funcionario,
         cp.numero_funcionarios_estimado,
         cp.valor_total_estimado,
-        c.plano_id
+        e.plano_id
        FROM contratacao_personalizada cp
-       JOIN contratantes c ON c.id = cp.contratante_id
+       JOIN entidades e ON e.id = cp.contratante_id
        WHERE cp.payment_link_token = $1
          AND cp.payment_link_expiracao > NOW()`,
       [token]
@@ -162,13 +163,13 @@ export async function POST(
         })
       );
 
-      // Buscar dados do contratante para retornar com o contrato
-      const contratanteRes = await query(
-        `SELECT nome, cnpj, email FROM contratantes WHERE id = $1`,
+      // Buscar dados do contratante/entidade para retornar com o contrato
+      const entidadeRes = await query(
+        `SELECT nome, cnpj, email FROM entidades WHERE id = $1`,
         [proposta.contratante_id]
       );
 
-      const contratante = contratanteRes.rows[0];
+      const entidade = entidadeRes.rows[0];
 
       return NextResponse.json({
         success: true,
@@ -176,9 +177,10 @@ export async function POST(
         contrato: {
           id: contratoId,
           contratante_id: proposta.contratante_id,
-          contratante_nome: contratante.nome,
-          contratante_cnpj: contratante.cnpj,
-          contratante_email: contratante.email,
+          entidade_id: proposta.contratante_id,
+          entidade_nome: entidade.nome,
+          entidade_cnpj: entidade.cnpj,
+          entidade_email: entidade.email,
           plano_id: proposta.plano_id,
           numero_funcionarios: proposta.numero_funcionarios_estimado,
           valor_total: proposta.valor_total_estimado,

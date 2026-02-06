@@ -107,7 +107,7 @@ async function showResults() {
         `SELECT DISTINCT a.id, a.envio
          FROM avaliacoes a
          JOIN resultados r ON a.id = r.avaliacao_id
-         WHERE a.funcionario_cpf = $1 AND a.status = 'concluida'
+         WHERE a.funcionario_cpf = $1 AND a.status = 'concluido'
          ORDER BY a.envio DESC`,
         [cpf]
       );
@@ -172,7 +172,7 @@ async function showResults() {
             FROM avaliacoes a
             JOIN respostas r ON a.id = r.avaliacao_id
             WHERE a.funcionario_cpf = $1
-              AND a.status = 'concluida'
+              AND a.status = 'concluido'
               AND r.grupo = $2
             GROUP BY a.id
           ) sub
@@ -201,3 +201,4 @@ async function showResults() {
 
 // Executar
 showResults();
+

@@ -12,7 +12,7 @@ Implementação completa de rastreabilidade para solicitações manuais de emiss
 
 ### ✅ O que foi corrigido
 
-**Problema Identificado**: O fluxo de emissão manual **não registrava o solicitante** (RH ou gestor_entidade), tornando impossível responder perguntas de auditoria como:
+**Problema Identificado**: O fluxo de emissão manual **não registrava o solicitante** (RH ou gestor), tornando impossível responder perguntas de auditoria como:
 
 - "Quem solicitou a emissão do lote X?"
 - "Quantas emissões o usuário Y solicitou?"
@@ -32,14 +32,14 @@ Implementação completa de rastreabilidade para solicitações manuais de emiss
 ALTER TABLE fila_emissao
 ADD COLUMN solicitado_por VARCHAR(11),        -- CPF do solicitante
 ADD COLUMN solicitado_em TIMESTAMP DEFAULT NOW(), -- Quando solicitou
-ADD COLUMN tipo_solicitante VARCHAR(20);      -- rh | gestor_entidade | admin
+ADD COLUMN tipo_solicitante VARCHAR(20);      -- rh | gestor | admin
 ```
 
 #### 2. Constraints de Validação
 
 ```sql
 -- Tipo deve ser válido
-CHECK (tipo_solicitante IN ('rh', 'gestor_entidade', 'admin') OR tipo_solicitante IS NULL)
+CHECK (tipo_solicitante IN ('rh', 'gestor', 'admin') OR tipo_solicitante IS NULL)
 
 -- Se tem solicitante, deve ter tipo
 CHECK (solicitado_por IS NULL OR (solicitado_por IS NOT NULL AND tipo_solicitante IS NOT NULL))
@@ -63,7 +63,7 @@ CREATE VIEW v_auditoria_emissoes AS
 SELECT
     l.id AS laudo_id,
     l.lote_id,
-    
+
 
     -- Solicitante
     fe.solicitado_por AS solicitante_cpf,
@@ -222,7 +222,7 @@ WHERE cpf = '87545772920';
 ```sql
 SELECT
     fe.lote_id,
-    
+
     fe.solicitado_por,
     fe.tipo_solicitante,
     fe.solicitado_em

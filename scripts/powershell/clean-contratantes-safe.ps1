@@ -78,7 +78,7 @@ Write-Info "Contando registros antes da limpeza..."
 $counts = psql -U postgres -d $database -t -c @"
 SELECT 
     (SELECT COUNT(*) FROM contratantes) as contratantes,
-    (SELECT COUNT(*) FROM contratantes_senhas) as senhas,
+    (SELECT COUNT(*) FROM entidades_senhas) as senhas,
     (SELECT COUNT(*) FROM contratos) as contratos,
     (SELECT COUNT(*) FROM pagamentos) as pagamentos;
 "@
@@ -145,7 +145,7 @@ Write-Info "Verificando resultado..."
 $countsAfter = psql -U postgres -d $database -t -c @"
 SELECT 
     (SELECT COUNT(*) FROM contratantes) as contratantes,
-    (SELECT COUNT(*) FROM contratantes_senhas) as senhas,
+    (SELECT COUNT(*) FROM entidades_senhas) as senhas,
     (SELECT COUNT(*) FROM contratos) as contratos,
     (SELECT COUNT(*) FROM pagamentos) as pagamentos;
 "@
@@ -157,7 +157,7 @@ Write-Host ""
 
 # Verificar auditoria de senhas
 Write-Info "Verificando proteção de senhas..."
-$senhasAudit = psql -U postgres -d $database -t -c "SELECT COUNT(*) FROM contratantes_senhas_audit WHERE operacao = 'DELETE';" 2>&1
+$senhasAudit = psql -U postgres -d $database -t -c "SELECT COUNT(*) FROM entidades_senhas_audit WHERE operacao = 'DELETE';" 2>&1
 
 if ($LASTEXITCODE -eq 0) {
     Write-Success "Sistema de auditoria funcionando corretamente"

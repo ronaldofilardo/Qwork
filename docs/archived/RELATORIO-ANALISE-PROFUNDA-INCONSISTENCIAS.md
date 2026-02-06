@@ -14,9 +14,9 @@ contratantes = clínicas OU entidades
 │   └─ funcionarios.clinica_id obrigatório
 │   └─ armazenados em: funcionarios com perfil='rh'
 │
-├─ gestor_entidade → gerencia entidade (contratante_id = entidade)
+├─ gestor → gerencia entidade (contratante_id = entidade)
 │   └─ contratante_id obrigatório, clinica_id=NULL
-│   └─ armazenados em: funcionarios com perfil='gestor_entidade'
+│   └─ armazenados em: funcionarios com perfil='gestor'
 │
 └─ funcionario → pode pertencer a:
     ├─ Empresa de clínica (empresa_id + clinica_id)
@@ -32,25 +32,25 @@ contratantes = clínicas OU entidades
 **Problema:**  
 Sistema armazena gestores de entidade em **DOIS** locais diferentes:
 
-1. **`funcionarios`** com `perfil='gestor_entidade'`
-2. **`contratantes_senhas`**
+1. **`funcionarios`** com `perfil='gestor'`
+2. **`entidades_senhas`**
 
 **Evidências:**
 
 ```typescript
 // lib/db.ts - criarContaResponsavel()
-const perfilToSet = contratanteData.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
-// Cria em funcionarios com perfil gestor_entidade
+const perfilToSet = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
+// Cria em funcionarios com perfil gestor
 
 // Também existe:
-INSERT INTO contratantes_senhas (contratante_id, cpf, senha_hash)
+INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
 // Cria senha em tabela separada
 ```
 
 ```sql
 -- __tests__/integration/rls-isolamento-rh-gestor.test.ts
 INSERT INTO funcionarios (cpf, nome, perfil, senha_hash, contratante_id, ativo, nivel_cargo)
-VALUES ($1, $2, 'gestor_entidade', $4, $5, $6, $7)
+VALUES ($1, $2, 'gestor', $4, $5, $6, $7)
 -- Gestor criado na tabela funcionarios
 ```
 
@@ -97,7 +97,7 @@ ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_clinica_id_check CHECK (
 ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_owner_check CHECK (
   (clinica_id IS NOT NULL AND contratante_id IS NULL)
   OR (contratante_id IS NOT NULL AND clinica_id IS NULL)
-  OR (perfil IN ('emissor', 'admin', 'gestor_entidade', 'rh'))
+  OR (perfil IN ('emissor', 'admin', 'gestor', 'rh'))
 ) NOT VALID;
 ```
 
@@ -149,7 +149,7 @@ CREATE POLICY funcionarios_select_policy ON funcionarios FOR SELECT USING (
 
 1. **Tabela fantasma:** `contratantes_funcionarios` existe mas não é usada consistentemente
 2. **Conversão de tipo:** `clinica_id::text` é anti-pattern para comparação de inteiros
-3. **Gestor de entidade:** Política não considera perfil `gestor_entidade` corretamente
+3. **Gestor de entidade:** Política não considera perfil `gestor` corretamente
 4. **RH sem contexto:** RH pode não ter `clinica_id` em sessão por mapeamento falho
 
 **Evidências de Falha:**
@@ -188,10 +188,10 @@ async function validateSessionContext(
   cpf: string,
   perfil: string
 ): Promise<boolean> {
-  if (perfil === 'gestor_entidade') {
-    // Busca em contratantes_senhas
+  if (perfil === 'gestor') {
+    // Busca em entidades_senhas
     const result = await query(
-      'SELECT cs.cpf FROM contratantes_senhas cs JOIN contratantes c ...',
+      'SELECT cs.cpf FROM entidades_senhas cs JOIN contratantes c ...',
       [cpf]
     );
     return result.rows.length > 0;
@@ -208,9 +208,9 @@ async function validateSessionContext(
       return true;
     }
 
-    // Se não encontrou, busca em contratantes_senhas TAMBÉM
+    // Se não encontrou, busca em entidades_senhas TAMBÉM
     const gestorResult = await query(
-      'SELECT cs.cpf FROM contratantes_senhas cs ...',
+      'SELECT cs.cpf FROM entidades_senhas cs ...',
       [cpf]
     );
 
@@ -227,7 +227,7 @@ async function validateSessionContext(
 
 **Problemas:**
 
-1. **Perfil RH duplicado:** RH pode estar em `funcionarios` **OU** `contratantes_senhas`
+1. **Perfil RH duplicado:** RH pode estar em `funcionarios` **OU** `entidades_senhas`
 2. **Gestor entidade duplicado:** Mesma ambiguidade
 3. **Lógica condicional complexa:** 3 caminhos diferentes para validação
 4. **Queries redundantes:** Múltiplas consultas para mesmo objetivo
@@ -419,7 +419,7 @@ Documentação afirma separação clara, mas implementação diverge.
 
 ### Gestores Entidade
 
-- Armazenamento: Apenas `contratantes_senhas` (NÃO em `funcionarios`)
+- Armazenamento: Apenas `entidades_senhas` (NÃO em `funcionarios`)
 - Separação: Completa desde a criação
 ```
 
@@ -427,8 +427,7 @@ Documentação afirma separação clara, mas implementação diverge.
 
 ```typescript
 // lib/db.ts - criarContaResponsavel()
-const perfilToSet =
-  contratanteData.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
+const perfilToSet = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
 
 await query(
   `INSERT INTO funcionarios (cpf, nome, perfil, contratante_id, ...)
@@ -472,11 +471,11 @@ await query(
 
 ### 🔐 RBAC / Autenticação
 
-| #   | Problema                              | Severidade | Componentes                           |
-| --- | ------------------------------------- | ---------- | ------------------------------------- |
-| 1   | Gestores em múltiplas tabelas         | 🔴 Crítica | `funcionarios`, `contratantes_senhas` |
-| 2   | Validação de sessão ambígua           | 🔴 Crítica | `validateSessionContext()`            |
-| 3   | Mapeamento de `clinica_id` em runtime | 🟡 Alta    | Middleware                            |
+| #   | Problema                              | Severidade | Componentes                        |
+| --- | ------------------------------------- | ---------- | ---------------------------------- |
+| 1   | Gestores em múltiplas tabelas         | 🔴 Crítica | `funcionarios`, `entidades_senhas` |
+| 2   | Validação de sessão ambígua           | 🔴 Crítica | `validateSessionContext()`         |
+| 3   | Mapeamento de `clinica_id` em runtime | 🟡 Alta    | Middleware                         |
 
 ### 🔌 APIs Backend
 
@@ -503,7 +502,7 @@ await query(
 
 **Decisão necessária:**
 
-- **Opção A:** Gestores de entidade APENAS em `contratantes_senhas`
+- **Opção A:** Gestores de entidade APENAS em `entidades_senhas`
   - ✅ Separação clara
   - ❌ Requires major refactor
 - **Opção B:** Gestores de entidade APENAS em `funcionarios`
@@ -515,8 +514,8 @@ await query(
   CREATE TYPE usuario_tipo_enum AS ENUM (
     'funcionario_clinica',  -- Vinculado a empresa+clinica
     'funcionario_entidade', -- Vinculado a entidade
-    'gestor_rh',            -- Gestor de clínica
-    'gestor_entidade',      -- Gestor de entidade
+    'rh',            -- Gestor de clínica
+    'gestor',      -- Gestor de entidade
     'admin',
     'emissor'
   );
@@ -548,12 +547,12 @@ ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_owner_exclusive CHECK (
    AND clinica_id IS NULL)
   OR
   -- Gestor RH: clinica_id obrigatório
-  (usuario_tipo = 'gestor_rh'
+  (usuario_tipo = 'rh'
    AND clinica_id IS NOT NULL
    AND contratante_id IS NULL)
   OR
   -- Gestor entidade: contratante_id obrigatório
-  (usuario_tipo = 'gestor_entidade'
+  (usuario_tipo = 'gestor'
    AND contratante_id IS NOT NULL
    AND clinica_id IS NULL)
   OR
@@ -578,11 +577,11 @@ CREATE POLICY funcionarios_unified_select ON funcionarios FOR SELECT USING (
   (current_setting('app.current_perfil', true) = 'admin')
   OR
   -- Gestor RH vê funcionários de sua clínica
-  (current_setting('app.current_perfil', true) = 'gestor_rh'
+  (current_setting('app.current_perfil', true) = 'rh'
    AND clinica_id = current_setting('app.current_clinica_id', true)::int)
   OR
   -- Gestor entidade vê funcionários de sua entidade
-  (current_setting('app.current_perfil', true) = 'gestor_entidade'
+  (current_setting('app.current_perfil', true) = 'gestor'
    AND contratante_id = current_setting('app.current_contratante_id', true)::int)
   OR
   -- Funcionário vê apenas próprios dados
@@ -715,13 +714,13 @@ async function validateSessionContext(
 
 ### 3. Gestor RH
 
-- **Armazenamento:** `funcionarios` com `usuario_tipo='gestor_rh'`
+- **Armazenamento:** `funcionarios` com `usuario_tipo='rh'`
 - **Vínculos:** `clinica_id` (obrigatório)
 - **Acesso:** Gerencia empresas e funcionários da clínica
 
 ### 4. Gestor de Entidade
 
-- **Armazenamento:** `funcionarios` com `usuario_tipo='gestor_entidade'`
+- **Armazenamento:** `funcionarios` com `usuario_tipo='gestor'`
 - **Vínculos:** `contratante_id` (obrigatório)
 - **Acesso:** Gerencia funcionários da entidade
 ```

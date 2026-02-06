@@ -15,8 +15,8 @@ BEGIN
         CREATE TYPE usuario_tipo_enum AS ENUM (
             'funcionario_clinica',
             'funcionario_entidade',
-            'gestor_rh',
-            'gestor_entidade',
+            'rh',
+            'gestor',
             'admin',
             'emissor'
         );

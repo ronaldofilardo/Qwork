@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         (cp.payment_link_token IS NOT NULL AND cp.payment_link_expiracao > NOW()) AS payment_link_generated,
         (SELECT id FROM contratos WHERE contratante_id = c.id ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
         (SELECT aceito FROM contratos WHERE contratante_id = c.id ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
-      FROM contratantes c
+      FROM entidades c
       LEFT JOIN contratacao_personalizada cp ON cp.contratante_id = c.id
       WHERE c.id = $1`;
     } else {
@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
         false AS payment_link_generated,
         (SELECT id FROM contratos WHERE contratante_id = c.id ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
         (SELECT aceito FROM contratos WHERE contratante_id = c.id ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
-      FROM contratantes c
+      FROM entidades c
       WHERE c.id = $1`;
     }
 

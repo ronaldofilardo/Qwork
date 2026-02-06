@@ -74,7 +74,7 @@ describe('Regressão Visual - Componentes RH', () => {
           nome: 'RH User',
           tipo_usuario: 'rh',
           email: 'rh@test.com',
-          contratanteId: '123',
+          entidadeId: '123',
         },
       },
       status: 'authenticated',

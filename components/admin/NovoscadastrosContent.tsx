@@ -105,6 +105,7 @@ export function NovoscadastrosContent({
     link: string;
     expiracao: string;
     contratanteNome: string;
+    contratoId?: number;
   } | null>(null);
   const [linkCopiado, setLinkCopiado] = useState(false);
   const [_contratoData, _setContratoData] = useState<any>(null);
@@ -324,7 +325,10 @@ export function NovoscadastrosContent({
 
         // Preparar dados para o modal de link usando os dados retornados
         const modalData = {
-          contratoId: data.contratante.id,
+          contratoId:
+            data.contratante.contrato_id ||
+            data.contratante.contratacao_id ||
+            data.contratante.id,
           contratanteNome: data.contratante.nome,
           valorPorFuncionario: data.contratante.valor_por_funcionario,
           numeroFuncionarios: data.contratante.numero_funcionarios,
@@ -1090,6 +1094,25 @@ export function NovoscadastrosContent({
               </p>
 
               <div className="flex justify-end pt-4 border-t">
+                <button
+                  onClick={() => {
+                    // Abrir modal de link com QR
+                    setContratoPersonalizadoData({
+                      contratoId: regeneratedLinkData.contratoId || 0,
+                      contratanteNome: regeneratedLinkData.contratanteNome,
+                      valorPorFuncionario: 0,
+                      numeroFuncionarios: 0,
+                      valorTotal: 0,
+                      linkContrato: regeneratedLinkData.link,
+                    });
+                    setShowRegeneratedLinkModal(false);
+                    setShowLinkContratoModal(true);
+                  }}
+                  className="mr-2 px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
+                >
+                  Abrir Link e QR
+                </button>
+
                 <button
                   onClick={() => {
                     setShowRegeneratedLinkModal(false);

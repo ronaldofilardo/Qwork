@@ -23,7 +23,7 @@ const client = new pg.Client({
 
   if (contratanteId) {
     await client.query(
-      'UPDATE contratantes_senhas SET senha_hash = $1 WHERE contratante_id = $2 AND cpf = $3',
+      'UPDATE entidades_senhas SET senha_hash = $1 WHERE contratante_id = $2 AND cpf = $3',
       [hash, contratanteId, cpf]
     );
   }

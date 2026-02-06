@@ -705,7 +705,7 @@
       "qualityScore": 50
     },
     {
-      "path": "__tests__\\lib\\contratantes_senhas.schema.test.ts",
+      "path": "__tests__\\lib\\entidades_senhas.schema.test.ts",
       "hasJSDoc": false,
       "hasTypeImports": false,
       "hasBeforeEach": false,

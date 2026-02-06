@@ -66,7 +66,7 @@ node scripts/check-cpf.ts <CPF>
 
 #### check-data.ts
 
-Exibe estatísticas gerais de funcionários e contratantes_senhas.
+Exibe estatísticas gerais de funcionários e entidades_senhas.
 
 ```bash
 node scripts/check-data.ts

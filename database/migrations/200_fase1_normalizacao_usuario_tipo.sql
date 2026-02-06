@@ -20,8 +20,8 @@ DO $$ BEGIN
   CREATE TYPE usuario_tipo_enum AS ENUM (
     'funcionario_clinica',  -- Funcionário vinculado a empresa+clinica
     'funcionario_entidade', -- Funcionário vinculado diretamente à entidade
-    'gestor_rh',            -- Gestor de clínica (RH)
-    'gestor_entidade',      -- Gestor de entidade
+    'rh',            -- Gestor de clínica (RH)
+    'gestor',      -- Gestor de entidade
     'admin',                -- Administrador da plataforma
     'emissor'               -- Emissor de laudos (independente)
   );
@@ -58,8 +58,8 @@ UPDATE funcionarios SET usuario_tipo =
           THEN 'funcionario_entidade'::usuario_tipo_enum
         ELSE 'funcionario_clinica'::usuario_tipo_enum
       END
-    WHEN 'rh' THEN 'gestor_rh'::usuario_tipo_enum
-    WHEN 'gestor_entidade' THEN 'gestor_entidade'::usuario_tipo_enum
+    WHEN 'rh' THEN 'rh'::usuario_tipo_enum
+    WHEN 'gestor' THEN 'gestor'::usuario_tipo_enum
     WHEN 'admin' THEN 'admin'::usuario_tipo_enum
     WHEN 'emissor' THEN 'emissor'::usuario_tipo_enum
     ELSE 'funcionario_clinica'::usuario_tipo_enum -- fallback
@@ -114,12 +114,12 @@ ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_usuario_tipo_exclusivo CHEC
    AND clinica_id IS NULL)
   OR
   -- Gestor RH: clinica_id obrigatório, contratante_id NULL
-  (usuario_tipo = 'gestor_rh' 
+  (usuario_tipo = 'rh' 
    AND clinica_id IS NOT NULL 
    AND contratante_id IS NULL)
   OR
   -- Gestor entidade: contratante_id obrigatório, clinica_id NULL
-  (usuario_tipo = 'gestor_entidade' 
+  (usuario_tipo = 'gestor' 
    AND contratante_id IS NOT NULL 
    AND clinica_id IS NULL 
    AND empresa_id IS NULL)
@@ -143,8 +143,8 @@ COMMENT ON COLUMN funcionarios.usuario_tipo IS
 'Tipo de usuário no sistema:
 - funcionario_clinica: Funcionário de empresa intermediária (clinica_id + empresa_id)
 - funcionario_entidade: Funcionário direto de entidade (contratante_id)
-- gestor_rh: Gestor de clínica (clinica_id)
-- gestor_entidade: Gestor de entidade (contratante_id)
+- rh: Gestor de clínica (clinica_id)
+- gestor: Gestor de entidade (contratante_id)
 - admin: Administrador global (sem vínculos)
 - emissor: Emissor de laudos (sem vínculos)';
 

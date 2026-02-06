@@ -21,8 +21,8 @@ Inicialmente, o sistema armazenava apenas funcionários operacionais. Com a evol
 CREATE TYPE usuario_tipo_enum AS ENUM (
   'funcionario_clinica',   -- Funcionário operacional (empresa)
   'funcionario_entidade',  -- Funcionário operacional (entidade)
-  'gestor_rh',             -- Gestor administrativo (clínica)
-  'gestor_entidade',       -- Gestor administrativo (entidade)
+  'rh',             -- Gestor administrativo (clínica)
+  'gestor',       -- Gestor administrativo (entidade)
   'admin',                 -- Administrador da plataforma
   'emissor'                -- Emissor de laudos
 );
@@ -39,7 +39,7 @@ CREATE TYPE usuario_tipo_enum AS ENUM (
 - `funcionario_clinica`: `empresa_id` + `clinica_id`
 - `funcionario_entidade`: `contratante_id`
 
-**Criado por:** RH ou gestor_entidade via `/api/rh/funcionarios/import`
+**Criado por:** RH ou gestor via `/api/rh/funcionarios/import`
 
 **Características:**
 
@@ -50,7 +50,7 @@ CREATE TYPE usuario_tipo_enum AS ENUM (
 
 ---
 
-### 2. GESTOR RH (`gestor_rh`)
+### 2. GESTOR RH (`rh`)
 
 **Papel:** Administrador de clínica (empresa intermediária)  
 **Tabela:** `funcionarios`  
@@ -71,10 +71,10 @@ CREATE TYPE usuario_tipo_enum AS ENUM (
 
 ---
 
-### 3. GESTOR ENTIDADE (`gestor_entidade`)
+### 3. GESTOR ENTIDADE (`gestor`)
 
 **Papel:** Administrador de entidade contratante  
-**Tabelas:** `contratantes` (dados) + `contratantes_senhas` (autenticação)  
+**Tabelas:** `contratantes` (dados) + `entidades_senhas` (autenticação)  
 **Campos obrigatórios em funcionarios:** `contratante_id`  
 **Campos proibidos:** `clinica_id`, `empresa_id`
 
@@ -85,9 +85,9 @@ CREATE TYPE usuario_tipo_enum AS ENUM (
 - Gerencia seus próprios funcionários
 - Cria lotes de avaliação diretos
 - Solicita emissão de laudos
-- Perfil dinâmico: `'gestor_entidade'` (no login)
+- Perfil dinâmico: `'gestor'` (no login)
 
-**Login:** Via tabela `contratantes_senhas` → mapeado para perfil `gestor_entidade`
+**Login:** Via tabela `entidades_senhas` → mapeado para perfil `gestor`
 
 ---
 
@@ -170,13 +170,13 @@ Estatísticas por tipo de usuário (dashboard).
 ### Login de Gestores (`/api/auth/login`)
 
 ```
-1. Verificar contratantes_senhas
-   ├─ Se encontrado E tipo='entidade' → perfil='gestor_entidade'
+1. Verificar entidades_senhas
+   ├─ Se encontrado E tipo='entidade' → perfil='gestor'
    ├─ Se encontrado E tipo='clinica' → perfil='rh'
    └─ Verificar pagamento_confirmado
 
 2. Se não encontrado → Verificar funcionarios
-   ├─ usuario_tipo='gestor_rh' → perfil='rh'
+   ├─ usuario_tipo='rh' → perfil='rh'
    ├─ usuario_tipo='funcionario_*' → perfil='funcionario'
    ├─ usuario_tipo='admin' → perfil='admin'
    └─ usuario_tipo='emissor' → perfil='emissor'
@@ -193,7 +193,7 @@ Estatísticas por tipo de usuário (dashboard).
 ```typescript
 const gestores = await query(
   `SELECT * FROM funcionarios 
-   WHERE usuario_tipo IN ('gestor_rh', 'gestor_entidade') 
+   WHERE usuario_tipo IN ('rh', 'gestor') 
    AND ativo = true`
 );
 ```
@@ -203,7 +203,7 @@ const gestores = await query(
 ```typescript
 const gestores = await query(
   `SELECT * FROM funcionarios 
-   WHERE perfil IN ('rh', 'gestor_entidade')` // ❌ perfil é legado
+   WHERE perfil IN ('rh', 'gestor')` // ❌ perfil é legado
 );
 ```
 
@@ -222,7 +222,7 @@ const gestores = await query(`SELECT * FROM gestores WHERE clinica_id = $1`, [
 ```typescript
 const gestores = await query(
   `SELECT cpf, nome, email FROM funcionarios 
-   WHERE usuario_tipo = 'gestor_rh' AND clinica_id = $1`,
+   WHERE usuario_tipo = 'rh' AND clinica_id = $1`,
   [clinicaId]
 );
 ```
@@ -235,7 +235,7 @@ const gestores = await query(
  *
  * Retorna gestores de RH e entidade.
  * NOTA: Gestores são armazenados em `funcionarios` com
- * `usuario_tipo` = 'gestor_rh' ou 'gestor_entidade'
+ * `usuario_tipo` = 'rh' ou 'gestor'
  */
 export async function GET(request: NextRequest) {
   const gestores = await query(`SELECT * FROM gestores WHERE ativo = true`);
@@ -264,12 +264,12 @@ ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_usuario_tipo_exclusivo CHEC
    AND clinica_id IS NULL)
   OR
   -- Gestor RH: clinica_id obrigatório
-  (usuario_tipo = 'gestor_rh'
+  (usuario_tipo = 'rh'
    AND clinica_id IS NOT NULL
    AND contratante_id IS NULL)
   OR
   -- Gestor entidade: contratante_id obrigatório
-  (usuario_tipo = 'gestor_entidade'
+  (usuario_tipo = 'gestor'
    AND contratante_id IS NOT NULL
    AND clinica_id IS NULL
    AND empresa_id IS NULL)

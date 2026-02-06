@@ -182,7 +182,7 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
     );
     expect(funcionarioVerif.rows.length).toBe(1);
     expect(funcionarioVerif.rows[0].ativo).toBe(true);
-    expect(funcionarioVerif.rows[0].perfil).toBe('gestor_entidade');
+    expect(funcionarioVerif.rows[0].perfil).toBe('gestor');
 
     // Senha deve ser texto plano (será hasheada no primeiro login)
     expect(funcionarioVerif.rows[0].senha_hash).toBe(senhaEsperada);

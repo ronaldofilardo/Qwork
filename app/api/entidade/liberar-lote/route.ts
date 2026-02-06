@@ -35,7 +35,7 @@ export const POST = async (req: Request) => {
       );
     }
 
-    const contratanteId = session.contratante_id as number;
+    const entidadeId = session.entidade_id as number;
 
     // ✅ PADRONIZAÇÃO: Gestor sempre registrado como liberado_por
     // O CPF do gestor autenticado é usado mesmo que não seja funcionário formal
@@ -44,13 +44,13 @@ export const POST = async (req: Request) => {
     // Buscar as empresas que têm funcionários vinculados a esta entidade
     const empresasRes = await queryAsGestorEntidade(
       `SELECT DISTINCT empresa_id FROM funcionarios WHERE contratante_id = $1 AND empresa_id IS NOT NULL AND ativo = true`,
-      [contratanteId]
+      [entidadeId]
     );
 
     // Verificar se existem funcionários vinculados diretamente à entidade (empresa_id IS NULL)
     const hasEntidadeFuncsRes = await queryAsGestorEntidade(
       `SELECT 1 FROM funcionarios WHERE contratante_id = $1 AND empresa_id IS NULL AND ativo = true LIMIT 1`,
-      [contratanteId]
+      [entidadeId]
     );
 
     const resultados: any[] = [];
@@ -147,15 +147,15 @@ export const POST = async (req: Request) => {
         continue;
       }
 
-      // ✅ CORREÇÃO: Entity usa contratante_id (não clinica_id/empresa_id)
-      // XOR constraint exige: contratante_id OU clinica_id (não ambos)
+      // ✅ CORREÇÃO: Entity usa entidade_id (não clinica_id/empresa_id)
+      // XOR constraint exige: entidade_id OU clinica_id (não ambos)
       // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
       const loteResult = await queryAsGestorEntidade(
         `INSERT INTO lotes_avaliacao (contratante_id, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
         [
-          contratanteId,
+          entidadeId,
           descricao ||
-            `Lote ${String(numeroOrdem)} liberado para entidade ${contratanteId}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis da empresa ${String(empresaCheck.rows[0].nome)}.`,
+            `Lote ${String(numeroOrdem)} liberado para entidade ${entidadeId}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis da empresa ${String(empresaCheck.rows[0].nome)}.`,
           tipo || 'completo',
           session.cpf,
           numeroOrdem,
@@ -241,13 +241,13 @@ export const POST = async (req: Request) => {
 
     // Se houver funcionários vinculados diretamente à entidade, processar um lote "da entidade"
     if (hasEntidadeFuncsRes.rowCount > 0) {
-      // Usar nome do contratante para exibir
-      const contratanteRes = await queryAsGestorEntidade(
-        `SELECT nome FROM contratantes WHERE id = $1`,
-        [contratanteId]
+      // Usar nome da entidade para exibir
+      const entidadeRes = await queryAsGestorEntidade(
+        `SELECT nome FROM entidades WHERE id = $1`,
+        [entidadeId]
       );
-      const contratanteNome =
-        contratanteRes.rowCount > 0 ? contratanteRes.rows[0].nome : 'Entidade';
+      const entidadeNome =
+        entidadeRes.rowCount > 0 ? entidadeRes.rows[0].nome : 'Entidade';
 
       // Próximo numero de ordem para lotes sem empresa (usamos empresa_id IS NULL)
       const numeroOrdemResult = await queryAsGestorEntidade(
@@ -258,13 +258,13 @@ export const POST = async (req: Request) => {
       // Calcular elegibilidade para contratante usando função nova
       const elegibilidadeResult = await queryAsGestorEntidade(
         `SELECT * FROM calcular_elegibilidade_lote_contratante($1::integer, $2::integer)`,
-        [contratanteId, numeroOrdem]
+        [entidadeId, numeroOrdem]
       );
 
       let funcionariosElegiveis = elegibilidadeResult.rows;
 
       console.log(
-        `[ENTIDADE-CONTRATANTE] Contratante ${contratanteId}: ${funcionariosElegiveis.length} funcionários elegíveis`
+        `[ENTIDADE-CONTRATANTE] Contratante ${entidadeId}: ${funcionariosElegiveis.length} funcionários elegíveis`
       );
       console.log(
         `[DEBUG] Elegíveis:`,
@@ -307,16 +307,16 @@ export const POST = async (req: Request) => {
       console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
 
       if (funcionariosElegiveis.length > 0) {
-        // ✅ CORREÇÃO: Lote de entidade usa apenas contratante_id
-        // XOR constraint: contratante_id (não clinica_id/empresa_id)
+        // ✅ CORREÇÃO: Lote de entidade usa apenas entidade_id
+        // XOR constraint: entidade_id (não clinica_id/empresa_id)
         // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
         const loteResult = await queryAsGestorEntidade(
           `INSERT INTO lotes_avaliacao (contratante_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
           [
-            contratanteId,
+            entidadeId,
             descricao ||
-              `Lote ${String(numeroOrdem)} liberado para ${String(contratanteNome)}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis vinculados diretamente à entidade.`,
+              `Lote ${String(numeroOrdem)} liberado para ${String(entidadeNome)}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis vinculados diretamente à entidade.`,
             tipo || 'completo',
             session.cpf,
             numeroOrdem,
@@ -355,8 +355,8 @@ export const POST = async (req: Request) => {
               'lotes_avaliacao',
               lote.id,
               JSON.stringify({
-                contratante_id: contratanteId,
-                contratante_nome: contratanteNome,
+                entidade_id: entidadeId,
+                entidade_nome: entidadeNome,
                 tipo: tipo || 'completo',
                 lote_id: lote.id,
                 descricao: descricao || null,
@@ -379,7 +379,7 @@ export const POST = async (req: Request) => {
 
         resultados.push({
           empresaId: null,
-          empresaNome: contratanteNome,
+          empresaNome: entidadeNome,
           created: true,
           loteId: lote.id,
           numero_ordem: lote.numero_ordem,
@@ -389,7 +389,7 @@ export const POST = async (req: Request) => {
       } else {
         resultados.push({
           empresaId: null,
-          empresaNome: contratanteNome,
+          empresaNome: entidadeNome,
           created: false,
           message: 'Nenhum funcionário elegível encontrado para a entidade',
         });

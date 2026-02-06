@@ -67,7 +67,7 @@ export async function GET(
         ec.criado_em,
         COUNT(DISTINCT f.cpf) as total_funcionarios,
         COUNT(DISTINCT a.id) as total_avaliacoes,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN a.id END) as avaliacoes_liberadas
       FROM empresas_clientes ec
       LEFT JOIN funcionarios f ON f.empresa_id = ec.id AND f.perfil = 'funcionario'

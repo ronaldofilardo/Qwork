@@ -219,7 +219,7 @@ SELECT COUNT(*) FROM avaliacoes WHERE base_legal IS NULL;
 SELECT COUNT(*) FROM avaliacoes
 WHERE data_validade < NOW()
 AND anonimizada = false
-AND status IN ('concluida', 'inativada');
+AND status IN ('concluido', 'inativada');
 ```
 
 ### Verificações Mensais
@@ -238,7 +238,7 @@ ORDER BY mes DESC;
 SELECT
   COUNT(*) FILTER (WHERE anonimizada = true) * 100.0 / COUNT(*) as taxa_anonimizacao
 FROM avaliacoes
-WHERE status IN ('concluida', 'inativada');
+WHERE status IN ('concluido', 'inativada');
 ```
 
 ---
@@ -299,3 +299,4 @@ Em caso de dúvidas ou problemas:
 **Data da Migração:** 20 de dezembro de 2025  
 **Versão:** 1.0.0  
 **Status:** ✅ Pronto para produção
+

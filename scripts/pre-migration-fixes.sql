@@ -110,26 +110,26 @@ BEGIN
   -- Contar duplicados
   SELECT COUNT(*) INTO total_duplicados
   FROM funcionarios f
-  INNER JOIN contratantes_senhas cs ON cs.cpf = f.cpf
-  WHERE f.perfil = 'gestor_entidade';
+  INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
+  WHERE f.perfil = 'gestor';
   
   IF total_duplicados > 0 THEN
-    -- Copiar senhas de contratantes_senhas para funcionarios (se necessário)
+    -- Copiar senhas de entidades_senhas para funcionarios (se necessário)
     UPDATE funcionarios f
     SET 
       senha_hash = cs.senha_hash,
       atualizado_em = CURRENT_TIMESTAMP
-    FROM contratantes_senhas cs
+    FROM entidades_senhas cs
     WHERE f.cpf = cs.cpf
-      AND f.perfil = 'gestor_entidade'
+      AND f.perfil = 'gestor'
       AND (f.senha_hash IS NULL OR f.senha_hash = '');
     
-    -- Remover de contratantes_senhas (dados agora estão em funcionarios)
-    DELETE FROM contratantes_senhas cs
+    -- Remover de entidades_senhas (dados agora estão em funcionarios)
+    DELETE FROM entidades_senhas cs
     WHERE EXISTS (
       SELECT 1 FROM funcionarios f 
       WHERE f.cpf = cs.cpf 
-      AND f.perfil = 'gestor_entidade'
+      AND f.perfil = 'gestor'
     );
     
     RAISE NOTICE '   ✓ % gestores de entidade consolidados', total_duplicados;

@@ -74,7 +74,7 @@ describe('DetalhesFuncionario - Funcionalidades Básicas', () => {
           avaliacoes: [
             {
               id: 1,
-              status: 'concluida',
+              status: 'concluido',
               status_display: 'concluída',
               inicio: '2024-01-01T00:00:00Z',
               envio: '2024-01-15T00:00:00Z',
@@ -197,3 +197,4 @@ describe('DetalhesFuncionario - Funcionalidades Básicas', () => {
     });
   });
 });
+

@@ -24,10 +24,10 @@ Este documento descreve a arquitetura de autenticação dual-source do sistema e
 │                  TABELAS DE AUTENTICAÇÃO                    │
 ├─────────────────────────────────────────────────────────────┤
 │                                                             │
-│  contratantes_senhas (gestores)                             │
+│  entidades_senhas (gestores)                             │
 │  ├── cpf_cnpj (PK)                                          │
 │  ├── senha_hash                                             │
-│  ├── perfil: 'gestor_entidade' | 'rh' | 'admin'            │
+│  ├── perfil: 'gestor' | 'rh' | 'admin'            │
 │  ├── contratante_id (FK → entidades)                        │
 │  ├── clinica_id (FK → clinicas)                             │
 │  └── ativo                                                  │
@@ -58,11 +58,11 @@ Este documento descreve a arquitetura de autenticação dual-source do sistema e
 ### Endpoint: `/api/auth/login`
 
 ```typescript
-// 1. Verifica contratantes_senhas primeiro
+// 1. Verifica entidades_senhas primeiro
 const contratante = await query(
   `
   SELECT cpf_cnpj, senha_hash, perfil, contratante_id, clinica_id
-  FROM contratantes_senhas
+  FROM entidades_senhas
   WHERE cpf_cnpj = $1 AND ativo = true
 `,
   [cpf]
@@ -122,7 +122,7 @@ return { success: false, error: 'Credenciais inválidas' };
                      ▼
          ┌───────────────────────┐
          │ Buscar em             │
-         │ contratantes_senhas   │
+         │ entidades_senhas   │
          └───────────┬───────────┘
                      │
             ┌────────┴────────┐
@@ -170,7 +170,7 @@ export async function validateGestorContext(cpf: string) {
       contratante_id,
       clinica_id,
       ativo
-    FROM contratantes_senhas
+    FROM entidades_senhas
     WHERE cpf_cnpj = $1
   `,
     [cpf]
@@ -270,14 +270,14 @@ export async function queryWithSecurity<T = any>(
 
 ### Funções Disponíveis
 
-| Função                    | Usuários     | RLS  | Validação               | Uso                   |
-| ------------------------- | ------------ | ---- | ----------------------- | --------------------- |
-| `queryWithSecurity()`     | Todos        | Auto | Auto                    | ⭐ Recomendado        |
-| `queryAsGestor()`         | Gestores     | ❌   | Via contratantes_senhas | Quando tipo conhecido |
-| `queryAsGestorRH()`       | RH           | ❌   | Via requireClinica()    | Endpoints de RH       |
-| `queryAsGestorEntidade()` | Entidade     | ❌   | Via requireEntity()     | Endpoints de entidade |
-| `queryWithContext()`      | Funcionários | ✅   | Via funcionarios        | Quando tipo conhecido |
-| `query()`                 | Sistema      | ❌   | Nenhuma                 | Apenas admin/setup    |
+| Função                    | Usuários     | RLS  | Validação            | Uso                   |
+| ------------------------- | ------------ | ---- | -------------------- | --------------------- |
+| `queryWithSecurity()`     | Todos        | Auto | Auto                 | ⭐ Recomendado        |
+| `queryAsGestor()`         | Gestores     | ❌   | Via entidades_senhas | Quando tipo conhecido |
+| `queryAsGestorRH()`       | RH           | ❌   | Via requireClinica() | Endpoints de RH       |
+| `queryAsGestorEntidade()` | Entidade     | ❌   | Via requireEntity()  | Endpoints de entidade |
+| `queryWithContext()`      | Funcionários | ✅   | Via funcionarios     | Quando tipo conhecido |
+| `query()`                 | Sistema      | ❌   | Nenhuma              | Apenas admin/setup    |
 
 ### Exemplo de Uso
 
@@ -324,9 +324,9 @@ CREATE OR REPLACE FUNCTION current_user_is_gestor()
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM contratantes_senhas
+    SELECT 1 FROM entidades_senhas
     WHERE cpf_cnpj = current_setting('app.current_user_cpf', true)
-    AND perfil IN ('gestor_entidade', 'rh')
+    AND perfil IN ('gestor', 'rh')
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -358,7 +358,7 @@ CREATE POLICY avaliacoes_own_select ON avaliacoes
 | `empresas_clientes`   | ❌ Não    | Gestores acessam múltiplas empresas          |
 | `laudos`              | ❌ Não    | Gestores gerenciam laudos de todas empresas  |
 | `lotes_avaliacao`     | ❌ Não    | Gestores criam lotes para múltiplas empresas |
-| `contratantes_senhas` | ❌ Não    | Tabela de autenticação, sem RLS              |
+| `entidades_senhas`    | ❌ Não    | Tabela de autenticação, sem RLS              |
 
 ### Desabilitando RLS (quando necessário)
 

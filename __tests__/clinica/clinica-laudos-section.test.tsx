@@ -162,7 +162,6 @@ describe('LaudosSection', () => {
       {
         id: 1,
         lote_id: 1,
-        lote_
         lote_titulo: 'Teste',
         empresa_nome: 'Empresa A',
         status: 'processando',

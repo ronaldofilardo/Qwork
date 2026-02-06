@@ -40,7 +40,7 @@ describe('Lote — Resetar avaliação (fluxo)', () => {
   });
 
   it("após reset a avaliação volta a 'iniciada' (UI atualiza)", () => {
-    // Preparar duas respostas sequenciais: antes -> 'concluida', depois -> 'iniciada'
+    // Preparar duas respostas sequenciais: antes -> 'concluido', depois -> 'iniciada'
     const initial = {
       success: true,
       lote: { id: 4, titulo: 'Lote 4', status: 'ativo' },
@@ -53,7 +53,7 @@ describe('Lote — Resetar avaliação (fluxo)', () => {
           funcao: 'Operador',
           avaliacao: {
             id: 10,
-            status: 'concluida',
+            status: 'concluido',
             data_inicio: null,
             data_conclusao: new Date().toISOString(),
           },
@@ -110,3 +110,4 @@ describe('Lote — Resetar avaliação (fluxo)', () => {
       });
   });
 });
+

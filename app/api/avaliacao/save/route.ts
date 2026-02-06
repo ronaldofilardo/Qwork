@@ -126,7 +126,7 @@ export async function POST(request: Request) {
       // Marcar como concluída
       await queryWithContext(
         `UPDATE avaliacoes 
-         SET status = 'concluida', envio = NOW(), atualizado_em = NOW() 
+         SET status = 'concluido', envio = NOW(), atualizado_em = NOW() 
          WHERE id = $1`,
         [avaliacaoId]
       );
@@ -185,3 +185,4 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Erro ao salvar' }, { status: 500 });
   }
 }
+

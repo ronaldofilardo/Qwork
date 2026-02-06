@@ -118,7 +118,7 @@ ALTER TABLE auditoria_laudos
 ADD CONSTRAINT chk_tipo_solicitante_valid
 CHECK (
   tipo_solicitante IS NULL
-  OR tipo_solicitante IN ('rh', 'gestor_entidade', 'admin', 'emissor')
+  OR tipo_solicitante IN ('rh', 'gestor', 'admin', 'emissor')
 );
 ```
 
@@ -215,7 +215,7 @@ SELECT * FROM inserted
 | `observacoes`      | text         | -           | Observações adicionais                              |
 | `criado_em`        | timestamp    | ✓           | Data/hora do registro                               |
 | `solicitado_por`   | varchar(11)  | \*          | CPF do solicitante (obrigatório para ações manuais) |
-| `tipo_solicitante` | varchar(20)  | -           | Tipo: rh, gestor_entidade, admin, emissor           |
+| `tipo_solicitante` | varchar(20)  | -           | Tipo: rh, gestor, admin, emissor                    |
 | `tentativas`       | integer      | -           | Contador de tentativas (retry)                      |
 | `erro`             | text         | -           | Mensagem de erro (se houver)                        |
 

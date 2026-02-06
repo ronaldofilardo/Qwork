@@ -1,23 +1,13 @@
 import { NextResponse } from 'next/server';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const session = getSession();
-    if (!session || session.perfil !== 'gestor_entidade') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    const contratanteId = session.contratante_id;
-    if (!contratanteId) {
-      return NextResponse.json(
-        { error: 'Contratante não encontrado' },
-        { status: 400 }
-      );
-    }
+    const session = await requireEntity();
+    const entidadeId = session.contratante_id;
 
     // Detectar dinamicamente quais colunas de preço existem na tabela `planos`
     const planColsRes = await queryAsGestorEntidade(
@@ -53,9 +43,7 @@ export async function GET() {
       LIMIT 1
     `;
 
-    const res = await queryAsGestorEntidade(contratoPlanoQuery, [
-      contratanteId,
-    ]);
+    const res = await queryAsGestorEntidade(contratoPlanoQuery, [entidadeId]);
     if (res.rows.length === 0) {
       return NextResponse.json(null);
     }
@@ -68,7 +56,7 @@ export async function GET() {
     try {
       const pagamentoRes = await queryAsGestorEntidade(
         `SELECT data_pagamento FROM pagamentos WHERE contratante_id = $1 AND status = 'pago' AND data_pagamento IS NOT NULL ORDER BY data_pagamento DESC LIMIT 1`,
-        [contratanteId]
+        [entidadeId]
       );
       if (pagamentoRes.rows.length > 0) {
         vigencia_inicio = String(pagamentoRes.rows[0].data_pagamento);

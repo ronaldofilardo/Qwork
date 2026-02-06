@@ -1,4 +1,4 @@
-# Status do Gestor_Entidade Após Refatoração
+# Status do gestor Após Refatoração
 
 **Data**: 01/02/2026  
 **Status**: ✅ Funcional - Separação Completa Implementada
@@ -7,9 +7,9 @@
 
 ## 🎯 Resumo Executivo
 
-O **gestor_entidade** agora possui separação arquitetural completa de funcionários operacionais:
+O **gestor** agora possui separação arquitetural completa de funcionários operacionais:
 
-- ✅ Autenticação via `contratantes_senhas` (não mudou)
+- ✅ Autenticação via `entidades_senhas` (não mudou)
 - ✅ Validação via `validateGestorContext()` (novo)
 - ✅ Queries sem RLS via `queryAsGestor()` (novo)
 - ✅ **NÃO** está mais em `funcionarios` (mudança crítica)
@@ -24,7 +24,7 @@ O **gestor_entidade** agora possui separação arquitetural completa de funcion�
 ┌─────────────────────────────────────────┐
 │  PROBLEMA: Dualidade Circular           │
 ├─────────────────────────────────────────┤
-│  1. Login → contratantes_senhas ✓       │
+│  1. Login → entidades_senhas ✓       │
 │  2. Validação → funcionarios ❌          │
 │     (gestor não estava lá!)             │
 │  3. queryWithContext → RLS ❌            │
@@ -39,8 +39,8 @@ O **gestor_entidade** agora possui separação arquitetural completa de funcion�
 ┌─────────────────────────────────────────┐
 │  SOLUÇÃO: Separação Completa            │
 ├─────────────────────────────────────────┤
-│  1. Login → contratantes_senhas ✓       │
-│  2. Validação → contratantes_senhas ✓   │
+│  1. Login → entidades_senhas ✓       │
+│  2. Validação → entidades_senhas ✓   │
 │     (via validateGestorContext)         │
 │  3. queryAsGestor → SEM RLS ✓          │
 │     (acessa todas as empresas)          │
@@ -55,7 +55,7 @@ O **gestor_entidade** agora possui separação arquitetural completa de funcion�
 ### 1. Login em `/api/auth/login`
 
 ```typescript
-// Busca gestor_entidade em contratantes_senhas
+// Busca gestor em entidades_senhas
 const gestor = await query(
   `
   SELECT 
@@ -64,7 +64,7 @@ const gestor = await query(
     perfil,
     contratante_id,
     ativo
-  FROM contratantes_senhas
+  FROM entidades_senhas
   WHERE cpf_cnpj = $1 AND ativo = true
 `,
   [cpf]
@@ -75,7 +75,7 @@ if (gestor && (await bcrypt.compare(senha, gestor.senha_hash))) {
   // Cria sessão
   await createSession({
     cpf: gestor.cpf_cnpj,
-    perfil: 'gestor_entidade',
+    perfil: 'gestor',
     contratanteId: gestor.contratante_id,
   });
 
@@ -110,11 +110,11 @@ export async function requireEntity() {
 export async function requireEntity() {
   const session = await getSession();
 
-  if (session.perfil !== 'gestor_entidade') {
+  if (session.perfil !== 'gestor') {
     throw new Error('Acesso negado');
   }
 
-  // ✅ Valida em contratantes_senhas
+  // ✅ Valida em entidades_senhas
   const gestor = await validateGestorContext(session.cpf);
 
   return {
@@ -224,28 +224,28 @@ const funcionarios = await queryAsGestor(
 
 ## 🗄️ Estrutura de Dados (MUDOU)
 
-### Gestor_Entidade no Banco
+### gestor no Banco
 
 ```sql
--- ✅ Gestor ESTÁ em contratantes_senhas
+-- ✅ Gestor ESTÁ em entidades_senhas
 SELECT
   cpf_cnpj,
   perfil,
   contratante_id,
   ativo
-FROM contratantes_senhas
-WHERE perfil = 'gestor_entidade';
+FROM entidades_senhas
+WHERE perfil = 'gestor';
 
 -- Exemplo de resultado:
 -- cpf_cnpj     | perfil           | contratante_id | ativo
--- 12345678901  | gestor_entidade  | 42             | true
+-- 12345678901  | gestor  | 42             | true
 
 
 -- ✅ Gestor NÃO está em funcionarios (após Migration 301)
 SELECT * FROM funcionarios
 WHERE cpf IN (
-  SELECT cpf_cnpj FROM contratantes_senhas
-  WHERE perfil = 'gestor_entidade'
+  SELECT cpf_cnpj FROM entidades_senhas
+  WHERE perfil = 'gestor'
 );
 
 -- Deve retornar: 0 linhas
@@ -254,7 +254,7 @@ WHERE cpf IN (
 ### Empresas do Gestor
 
 ```sql
--- Listar todas as empresas do gestor_entidade
+-- Listar todas as empresas do gestor
 SELECT
   e.id,
   e.cnpj,
@@ -264,9 +264,9 @@ SELECT
 FROM empresas_clientes e
 WHERE e.contratante_id = (
   SELECT contratante_id
-  FROM contratantes_senhas
+  FROM entidades_senhas
   WHERE cpf_cnpj = '12345678901' -- CPF do gestor
-  AND perfil = 'gestor_entidade'
+  AND perfil = 'gestor'
 );
 ```
 
@@ -288,7 +288,7 @@ curl -X POST http://localhost:3000/api/auth/login \
 # Resposta esperada
 {
   "success": true,
-  "perfil": "gestor_entidade",
+  "perfil": "gestor",
   "redirectTo": "/entidade"
 }
 ```
@@ -336,13 +336,13 @@ curl -X POST http://localhost:3000/api/entidade/liberar-lote \
 
 Após aplicar as migrações, verifique:
 
-- [ ] Login de gestor_entidade funciona
+- [ ] Login de gestor funciona
 - [ ] Dashboard `/entidade` carrega sem erros
 - [ ] Listagem de lotes funciona (`/api/entidade/lotes`)
 - [ ] Listagem de funcionários funciona (`/api/entidade/funcionarios`)
 - [ ] Criação de lote funciona (`/api/entidade/liberar-lote`)
 - [ ] Gestor NÃO aparece em tabela `funcionarios`
-- [ ] Gestor aparece em `contratantes_senhas`
+- [ ] Gestor aparece em `entidades_senhas`
 - [ ] Logs não mostram erros de RLS ou "usuário não encontrado"
 
 ---
@@ -379,15 +379,15 @@ Ver [TROUBLESHOOTING-DESENVOLVIMENTO.md](./TROUBLESHOOTING-DESENVOLVIMENTO.md) p
 
 ## 🔄 Comparação: Antes vs Depois
 
-| Aspecto                  | Antes                | Depois                      |
-| ------------------------ | -------------------- | --------------------------- |
-| **Login**                | contratantes_senhas  | contratantes_senhas ✓ Igual |
-| **Validação**            | funcionarios ❌      | contratantes_senhas ✓       |
-| **Query Function**       | queryWithContext ❌  | query/queryAsGestor ✓       |
-| **RLS Aplicado**         | Sim ❌ (erro)        | Não ✓ (correto)             |
-| **Tabela funcionarios**  | Gestor presente ❌   | Gestor ausente ✓            |
-| **Acesso Multi-Empresa** | Bloqueado por RLS ❌ | Liberado ✓                  |
-| **Performance**          | Lenta (RLS)          | Rápida (sem RLS)            |
+| Aspecto                  | Antes                | Depois                   |
+| ------------------------ | -------------------- | ------------------------ |
+| **Login**                | entidades_senhas     | entidades_senhas ✓ Igual |
+| **Validação**            | funcionarios ❌      | entidades_senhas ✓       |
+| **Query Function**       | queryWithContext ❌  | query/queryAsGestor ✓    |
+| **RLS Aplicado**         | Sim ❌ (erro)        | Não ✓ (correto)          |
+| **Tabela funcionarios**  | Gestor presente ❌   | Gestor ausente ✓         |
+| **Acesso Multi-Empresa** | Bloqueado por RLS ❌ | Liberado ✓               |
+| **Performance**          | Lenta (RLS)          | Rápida (sem RLS)         |
 
 ---
 
@@ -403,7 +403,7 @@ Ver [TROUBLESHOOTING-DESENVOLVIMENTO.md](./TROUBLESHOOTING-DESENVOLVIMENTO.md) p
 
 ## ✅ Conclusão
 
-O gestor_entidade **está funcional e correto** após a refatoração. A separação arquitetural:
+O gestor **está funcional e correto** após a refatoração. A separação arquitetural:
 
 - ✅ Elimina erros "usuário não encontrado"
 - ✅ Melhora performance (sem RLS desnecessário)

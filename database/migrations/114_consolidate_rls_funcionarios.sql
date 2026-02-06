@@ -6,7 +6,7 @@
 
 -- CONTEXTO:
 -- - RH (perfil 'rh'): Gerenciam funcionários de SUA clínica (clinica_id)
--- - Gestor de Entidade (perfil 'gestor_entidade'): Gerenciam funcionários de SUA entidade (contratante_id)
+-- - Gestor de Entidade (perfil 'gestor'): Gerenciam funcionários de SUA entidade (contratante_id)
 -- - Admin (perfil 'admin'): Gerenciam RH, emissores e outros admins (gestão de usuários do sistema)
 -- - Funcionários (perfil 'funcionario'): Visualizam/editam apenas seus próprios dados
 -- - Emissores (perfil 'emissor'): Visualizam apenas RH e emissores (independentes, acesso global)
@@ -135,59 +135,59 @@ COMMENT ON POLICY "funcionarios_rh_delete" ON funcionarios IS
 -- GESTOR DE ENTIDADE: Gestão de funcionários da ENTIDADE
 -- ========================================
 
-CREATE POLICY "funcionarios_gestor_entidade_select" ON funcionarios
+CREATE POLICY "funcionarios_gestor_select" ON funcionarios
 FOR SELECT TO PUBLIC
 USING (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND contratante_id IS NOT NULL
   AND contratante_id = NULLIF(current_setting('app.current_user_contratante_id', true), '')::INTEGER
   AND clinica_id IS NULL -- Gestor de entidade só vê funcionários de entidade (não de clínica)
 );
 
-COMMENT ON POLICY "funcionarios_gestor_entidade_select" ON funcionarios IS
+COMMENT ON POLICY "funcionarios_gestor_select" ON funcionarios IS
 'Gestor de entidade visualiza apenas funcionários de SUA entidade (isolamento por contratante_id)';
 
-CREATE POLICY "funcionarios_gestor_entidade_insert" ON funcionarios
+CREATE POLICY "funcionarios_gestor_insert" ON funcionarios
 FOR INSERT TO PUBLIC
 WITH CHECK (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND contratante_id IS NOT NULL
   AND contratante_id = NULLIF(current_setting('app.current_user_contratante_id', true), '')::INTEGER
   AND clinica_id IS NULL -- Gestor cria funcionários para entidade, não para clínica
   AND perfil = 'funcionario' -- Gestor só cria funcionários comuns
 );
 
-COMMENT ON POLICY "funcionarios_gestor_entidade_insert" ON funcionarios IS
+COMMENT ON POLICY "funcionarios_gestor_insert" ON funcionarios IS
 'Gestor de entidade cria funcionários apenas em SUA entidade (isolamento por contratante_id)';
 
-CREATE POLICY "funcionarios_gestor_entidade_update" ON funcionarios
+CREATE POLICY "funcionarios_gestor_update" ON funcionarios
 FOR UPDATE TO PUBLIC
 USING (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND contratante_id IS NOT NULL
   AND contratante_id = NULLIF(current_setting('app.current_user_contratante_id', true), '')::INTEGER
   AND clinica_id IS NULL
 )
 WITH CHECK (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND contratante_id = NULLIF(current_setting('app.current_user_contratante_id', true), '')::INTEGER
   AND clinica_id IS NULL
 );
 
-COMMENT ON POLICY "funcionarios_gestor_entidade_update" ON funcionarios IS
+COMMENT ON POLICY "funcionarios_gestor_update" ON funcionarios IS
 'Gestor de entidade atualiza funcionários apenas de SUA entidade (isolamento por contratante_id)';
 
-CREATE POLICY "funcionarios_gestor_entidade_delete" ON funcionarios
+CREATE POLICY "funcionarios_gestor_delete" ON funcionarios
 FOR DELETE TO PUBLIC
 USING (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND contratante_id IS NOT NULL
   AND contratante_id = NULLIF(current_setting('app.current_user_contratante_id', true), '')::INTEGER
   AND clinica_id IS NULL
   AND perfil = 'funcionario'
 );
 
-COMMENT ON POLICY "funcionarios_gestor_entidade_delete" ON funcionarios IS
+COMMENT ON POLICY "funcionarios_gestor_delete" ON funcionarios IS
 'Gestor de entidade deleta (inativa) funcionários apenas de SUA entidade';
 
 -- ========================================

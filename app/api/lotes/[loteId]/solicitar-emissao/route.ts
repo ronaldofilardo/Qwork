@@ -88,7 +88,7 @@ export async function POST(
           { status: 403 }
         );
       }
-    } else if (lote.contratante_id && user.perfil === 'gestor_entidade') {
+    } else if (lote.contratante_id && user.perfil === 'gestor') {
       // Lote de entidade - validar contratante_id
       // O user já vem autenticado com contratante_id do requireAuth()
       if (user.contratante_id !== lote.contratante_id) {
@@ -161,6 +161,9 @@ export async function POST(
       console.log(`[INFO] Advisory lock adquirido para lote ${loteId}`);
 
       // Registrar solicitação manual na auditoria
+      // Normalizar `tipo_solicitante` para satisfazer CHECK constraints
+      const tipoSolicitante = user.perfil === 'gestor' ? 'gestor' : user.perfil;
+
       await query(
         `INSERT INTO auditoria_laudos (
            lote_id, 
@@ -179,7 +182,7 @@ export async function POST(
           user.cpf,
           user.nome || `${user.perfil} sem nome`,
           user.cpf, // solicitado_por
-          user.perfil, // tipo_solicitante
+          tipoSolicitante, // tipo_solicitante normalizado
           request.headers.get('x-forwarded-for') ||
             request.headers.get('x-real-ip'),
           `Solicitação manual de emissão por ${user.perfil} - Lote ${lote.id}`,
@@ -223,7 +226,7 @@ export async function POST(
          SELECT * FROM updated
          UNION ALL
          SELECT * FROM inserted`,
-        [loteId, user.cpf, user.perfil]
+        [loteId, user.cpf, tipoSolicitante]
       );
 
       const result = insertResult.rows[0];
@@ -241,12 +244,15 @@ export async function POST(
         `[INFO] Lote ${loteId} adicionado à fila de emissão manual pelo emissor`
       );
 
-      await query('COMMIT');
-
-      // 10. Criar notificação de sucesso
+      // 10. Criar notificação de sucesso ANTES do COMMIT (dentro da transação)
       // Normalizar tipo de destinatário para satisfazer CHECK constraint
-      const destinatarioTipo =
-        user.perfil === 'rh' ? 'funcionario' : user.perfil;
+      // Valores aceitos: 'admin', 'gestor', 'funcionario', 'contratante', 'clinica'
+      let destinatarioTipo: string = user.perfil;
+      if (user.perfil === 'rh') {
+        destinatarioTipo = 'funcionario';
+      } else if (user.perfil === 'gestor') {
+        destinatarioTipo = 'gestor';
+      }
 
       await query(
         `INSERT INTO notificacoes (
@@ -276,6 +282,9 @@ export async function POST(
         ]
       );
 
+      // COMMIT apenas após notificação criada com sucesso
+      await query('COMMIT');
+
       console.log(
         `[INFO] ✓ Solicitação de emissão registrada com sucesso para lote ${loteId}`
       );
@@ -296,14 +305,18 @@ export async function POST(
         emissaoError
       );
 
-      // Registrar erro no sistema
+      // Registrar erro no sistema (incluir `titulo` que é NOT NULL)
+      const tituloNotificacao = 'Erro ao registrar solicitação de emissão';
+      const mensagemNotificacao = `Erro ao registrar solicitação de emissão do lote ${loteId}: ${
+        emissaoError instanceof Error
+          ? emissaoError.message
+          : String(emissaoError)
+      }`;
+
       await query(
-        `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em)
-         VALUES ('erro_critico_solicitacao_emissao', $1, $2, NOW())`,
-        [
-          `Erro ao registrar solicitação de emissão do lote ${loteId}: ${emissaoError instanceof Error ? emissaoError.message : String(emissaoError)}`,
-          loteId,
-        ]
+        `INSERT INTO notificacoes_admin (tipo, titulo, mensagem, lote_id, criado_em)
+         VALUES ('erro_critico_solicitacao_emissao', $1, $2, $3, NOW())`,
+        [tituloNotificacao, mensagemNotificacao, loteId]
       );
 
       return NextResponse.json(

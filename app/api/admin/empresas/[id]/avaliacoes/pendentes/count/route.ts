@@ -16,7 +16,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const user = await requireRole(['rh', 'gestor_entidade']);
+    const user = await requireRole(['rh', 'gestor']);
 
     const empresaId = parseInt(params.id);
 

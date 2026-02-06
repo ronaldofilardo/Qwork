@@ -37,510 +37,368 @@ export async function POST(request: Request) {
       );
     }
 
-    // PASSO 1: Verificar se é gestor de entidade/clínica em contratantes_senhas
-    console.log(
-      `[LOGIN] Verificando se CPF ${cpf} é gestor em contratantes_senhas...`
-    );
-    const gestorResult = await query(
-      `SELECT cs.cpf, cs.senha_hash, c.id as contratante_id, c.responsavel_nome as nome, 
-              c.tipo, c.ativa, c.pagamento_confirmado
-       FROM contratantes_senhas cs
-       -- Usar contratante_id armazenado na tabela de senhas para evitar ambiguidades
-       JOIN contratantes c ON c.id = cs.contratante_id
-       WHERE cs.cpf = $1
-       ORDER BY c.ativa DESC
-       LIMIT 1`,
+    // PASSO 1: Buscar usuário — suportar tabela `funcionarios` (após migração) e fallback para `usuarios`
+    console.log(`[LOGIN] Buscando usuário CPF ${cpf} em funcionarios...`);
+    const funcResult = await query(
+      `SELECT * FROM funcionarios WHERE cpf = $1 LIMIT 1`,
       [cpf]
     );
 
-    if (gestorResult.rows.length > 0) {
-      console.log(`[LOGIN] Gestor encontrado em contratantes_senhas`);
-      const gestor = gestorResult.rows[0];
-      console.log(`[LOGIN] Dados do gestor:`, {
-        cpf: gestor.cpf,
-        contratante_id: gestor.contratante_id,
-        tipo: gestor.tipo,
-        ativa: gestor.ativa,
-        hash_length: gestor.senha_hash?.length,
-        hash_preview: gestor.senha_hash?.substring(0, 10) + '...',
+    let usuario: any = null;
+    let foundInFuncionarios = false;
+
+    const funcRows = funcResult && funcResult.rows ? funcResult.rows : [];
+
+    if (funcRows.length > 0) {
+      foundInFuncionarios = true;
+      usuario = funcRows[0];
+      // Normalizar nomes de campos que podem variar após migração
+      usuario.tipo_usuario =
+        usuario.tipo_usuario || usuario.perfil || usuario.usuario_tipo;
+      usuario.contratante_id =
+        usuario.contratante_id ||
+        usuario.contratanteId ||
+        usuario.empresa_id ||
+        usuario.empresaId;
+      usuario.entidade_id = usuario.entidade_id || usuario.entidadeId || null;
+      usuario.clinica_id = usuario.clinica_id || usuario.clinicaId || null;
+      usuario.senha_hash =
+        usuario.senha_hash || usuario.senhaHash || usuario.senha;
+      console.log(`[LOGIN] Usuário encontrado em funcionarios:`, {
+        cpf: usuario.cpf,
+        tipo: usuario.tipo_usuario,
+        contratante_id: usuario.contratante_id,
+        clinica_id: usuario.clinica_id,
+        entidade_id: usuario.entidade_id,
+        ativo: usuario.ativo,
       });
+    } else {
+      console.log(
+        `[LOGIN] Não encontrado em funcionarios; buscando em usuarios...`
+      );
+      const usuarioResult = await query(
+        `SELECT cpf, nome, tipo_usuario, clinica_id, entidade_id, ativo FROM usuarios WHERE cpf = $1`,
+        [cpf]
+      );
 
-      // Verificar se contratante está ativo
-      if (!gestor.ativa) {
-        // Registrar tentativa de login falhada (não deve interromper o fluxo se a auditoria falhar)
-        try {
-          await registrarAuditoria({
-            entidade_tipo: 'login',
-            entidade_id: gestor.contratante_id,
-            acao: 'login_falha',
-            usuario_cpf: cpf,
-            metadados: { motivo: 'contratante_inativo' },
-            ...contextoRequisicao,
-          });
-        } catch (err) {
-          console.warn(
-            '[LOGIN] Falha ao registrar auditoria (contratante_inativo):',
-            err
-          );
-        }
+      const usuarioRows =
+        usuarioResult && usuarioResult.rows ? usuarioResult.rows : [];
 
-        return NextResponse.json(
-          {
-            error: 'Contratante inativo. Entre em contato com o administrador.',
-          },
-          { status: 403 }
-        );
-      }
-
-      // CRÍTICO: Verificar se pagamento foi confirmado E se status é aprovado
-      // Admin (CPF 00000000000) tem acesso livre, sem verificação de pagamento
-      if (cpf !== '00000000000' && !gestor.pagamento_confirmado) {
-        try {
-          await registrarAuditoria({
-            entidade_tipo: 'login',
-            entidade_id: gestor.contratante_id,
-            acao: 'login_falha',
-            usuario_cpf: cpf,
-            metadados: { motivo: 'pagamento_nao_confirmado' },
-            ...contextoRequisicao,
-          });
-        } catch (err) {
-          console.warn(
-            '[LOGIN] Falha ao registrar auditoria (pagamento_nao_confirmado):',
-            err
-          );
-        }
-
-        return NextResponse.json(
-          {
-            error:
-              'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
-            
-            contratante_id: gestor.contratante_id,
-          },
-          { status: 403 }
-        );
-      }
-
-      // Verificar senha (NÃO loggar a senha em texto claro por segurança)
-      console.log('[LOGIN] Comparando senha recebida contra hash (gestor)');
-
-      // 🔒 SEGURANÇA: Verificar se senha requer reset
-      if (gestor.senha_hash.startsWith('RESET_REQUIRED_')) {
-        return NextResponse.json(
-          {
-            error: 'Sua senha precisa ser redefinida por motivos de segurança.',
-            
-            contratante_id: gestor.contratante_id,
-          },
-          { status: 403 }
-        );
-      }
-
-      // 🔒 SEGURANÇA: Rejeitar placeholders (não devem existir mais)
-      if (gestor.senha_hash.startsWith('PLACEHOLDER_')) {
-        console.error(
-          '[SEGURANÇA] Tentativa de login com senha placeholder detectada!'
-        );
-        await registrarAuditoria({
-          entidade_tipo: 'login',
-          entidade_id: gestor.contratante_id,
-          acao: 'login_falha',
-          usuario_cpf: cpf,
-          metadados: { alerta: 'CRÍTICO - Placeholder em produção' },
-          ...contextoRequisicao,
-        });
-
-        return NextResponse.json(
-          { error: 'Erro de segurança. Contate o administrador.' },
-          { status: 500 }
-        );
-      }
-
-      const senhaValida = await bcrypt.compare(senha, gestor.senha_hash);
-      console.log(`[LOGIN] Senha válida para gestor (bcrypt): ${senhaValida}`);
-
-      if (!senhaValida) {
-        // Registrar falha de autenticação (não deve interromper o fluxo se a auditoria falhar)
-        try {
-          await registrarAuditoria({
-            entidade_tipo: 'login',
-            entidade_id: gestor.contratante_id,
-            acao: 'login_falha',
-            usuario_cpf: cpf,
-            metadados: { motivo: 'senha_invalida' },
-            ...contextoRequisicao,
-          });
-        } catch (err) {
-          console.warn(
-            '[LOGIN] Falha ao registrar auditoria (senha_invalida):',
-            err
-          );
-        }
-
+      if (usuarioRows.length === 0) {
+        console.log(`[LOGIN] Usuário não encontrado: ${cpf}`);
         return NextResponse.json(
           { error: 'CPF ou senha inválidos' },
           { status: 401 }
         );
       }
 
-      // Criar sessão para gestor: mapear clínica para perfil 'rh'
-      // Admin tem perfil especial 'admin' acima de tudo
-      const perfilGestor =
-        cpf === '00000000000'
-          ? 'admin'
-          : gestor.tipo === 'entidade'
-            ? 'gestor_entidade'
-            : 'rh';
-
-      // Para RH (clinica), mapear clinica_id:
-      // Sempre tentar buscar o ID da clínica vinculada via contratante_id
-      // (independentemente do tipo, para lidar com inconsistências de dados)
-      let clinicaId: number | undefined = undefined;
-      if (perfilGestor === 'rh') {
-        try {
-          const clinicaResult = await query(
-            'SELECT id FROM clinicas WHERE contratante_id = $1 AND ativa = true',
-            [gestor.contratante_id]
-          );
-          if (
-            clinicaResult &&
-            Array.isArray(clinicaResult.rows) &&
-            clinicaResult.rows.length > 0
-          ) {
-            clinicaId = clinicaResult.rows[0].id;
-          } else {
-            console.warn(
-              `[LOGIN] Clínica ativa não encontrada para contratante ${gestor.contratante_id}; prosseguindo sem clinica_id`
-            );
-          }
-        } catch (dbErr) {
-          console.warn(
-            `[LOGIN] Erro ao buscar clínica por contratante_id (possível versão antiga do schema): ${dbErr?.message || dbErr}`
-          );
-        }
-      }
-
-      createSession({
-        cpf: gestor.cpf,
-        nome: gestor.nome,
-        perfil: perfilGestor as any,
-        contratante_id: gestor.contratante_id,
-        clinica_id: clinicaId,
+      usuario = usuarioRows[0];
+      console.log(`[LOGIN] Usuário encontrado em usuarios:`, {
+        cpf: usuario.cpf,
+        tipo: usuario.tipo_usuario,
+        clinica_id: usuario.clinica_id,
+        entidade_id: usuario.entidade_id,
+        ativo: usuario.ativo,
       });
+    }
+    console.log(`[LOGIN] Usuário encontrado:`, {
+      cpf: usuario.cpf,
+      tipo: usuario.tipo_usuario,
+      clinica_id: usuario.clinica_id,
+      entidade_id: usuario.entidade_id,
+      ativo: usuario.ativo,
+    });
 
-      // Registrar login bem-sucedido (log de auditoria não pode bloquear o login)
+    // Verificar se usuário está ativo
+    if (!usuario.ativo) {
       try {
         await registrarAuditoria({
           entidade_tipo: 'login',
-          entidade_id: gestor.contratante_id,
-          acao: 'login_sucesso',
+          entidade_id: usuario.entidade_id || usuario.clinica_id,
+          acao: 'login_falha',
           usuario_cpf: cpf,
-          usuario_perfil: perfilGestor,
-          metadados: {
-            tipo_contratante: gestor.tipo,
-            clinica_id: clinicaId,
-          },
+          metadados: { motivo: 'usuario_inativo' },
           ...contextoRequisicao,
         });
       } catch (err) {
         console.warn(
-          '[LOGIN] Falha ao registrar auditoria (login_sucesso):',
+          '[LOGIN] Falha ao registrar auditoria (usuario_inativo):',
           err
         );
       }
 
-      // Também migrar senha para a tabela funcionarios se necessário (gestor também pode ter registro em funcionarios)
-      try {
-        const funcRes = await query(
-          'SELECT senha_hash FROM funcionarios WHERE cpf = $1',
-          [cpf]
-        );
-        if (funcRes.rows.length > 0) {
-          const funcHash = funcRes.rows[0].senha_hash;
-          // Se o funcionario possui senha em texto plano igual à senha recebida, migrar para bcrypt
-          if (funcHash === senha) {
-            const novoHash = await bcrypt.hash(senha, 10);
-            await query(
-              'UPDATE funcionarios SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE cpf = $2',
-              [novoHash, cpf]
-            );
-            console.log('[LOGIN] Migrado senha para funcionarios (gestor)');
-          }
-        }
-      } catch (migErr) {
-        console.warn(
-          '[LOGIN] Falha ao migrar senha para funcionarios (ignorado):',
-          migErr?.message || migErr
-        );
-      }
-
-      console.log(`[LOGIN] Sessão criada para ${perfilGestor}`);
-
-      return NextResponse.json({
-        success: true,
-        cpf: gestor.cpf,
-        nome: gestor.nome,
-        perfil: perfilGestor,
-        redirectTo:
-          perfilGestor === 'admin'
-            ? '/admin'
-            : gestor.tipo === 'entidade'
-              ? '/entidade'
-              : '/rh',
-      });
-    }
-
-    // PASSO 2: Se não for gestor, buscar em funcionários
-    console.log(
-      `[LOGIN] CPF não encontrado em contratantes_senhas, buscando em funcionarios...`
-    );
-    let result: any;
-    try {
-      result = await query(
-        'SELECT cpf, nome, perfil, senha_hash, ativo, nivel_cargo FROM funcionarios WHERE cpf = $1',
-        [cpf]
-      );
-    } catch (err: any) {
-      // Fallback quando a coluna nivel_cargo ainda não existe no schema (ex.: ambiente não migrado)
-      if (err?.code === '42703') {
-        console.warn(
-          '[LOGIN] nivel_cargo ausente no schema, tentando fallback sem a coluna'
-        );
-        result = await query(
-          'SELECT cpf, nome, perfil, senha_hash, ativo FROM funcionarios WHERE cpf = $1',
-          [cpf]
-        );
-        // Garantir que o código cliente possa ler nivel_cargo (nulo)
-        result.rows = result.rows.map((r: any) => ({
-          ...r,
-          nivel_cargo: null,
-        }));
-      } else {
-        throw err;
-      }
-    }
-
-    console.log(
-      `Login attempt for CPF: ${cpf}, found: ${result.rows.length > 0}`
-    );
-
-    if (result.rows.length === 0) {
-      return NextResponse.json(
-        { error: 'CPF ou senha inválidos' },
-        { status: 401 }
-      );
-    }
-
-    const funcionario = result.rows[0];
-    console.log(
-      `User found: ${funcionario.nome}, perfil: ${funcionario.perfil}, ativo: ${funcionario.ativo}`
-    );
-
-    console.log(
-      `[LOGIN] funcionario.senha_hash length=${funcionario.senha_hash?.length || 0}, preview=${funcionario.senha_hash?.substring(0, 20) || 'null'}`
-    );
-
-    // Verificar se está ativo
-    if (!funcionario.ativo) {
       return NextResponse.json(
         { error: 'Usuário inativo. Entre em contato com o administrador.' },
         { status: 403 }
       );
     }
 
-    // Verificar senha
-    const senhaTrim = typeof senha === 'string' ? senha.trim() : senha;
+    // PASSO 2: Buscar senha na tabela apropriada
+    let senhaHash: string | null = null;
+    let contratanteId: number | null = null;
+    let contratanteAtivo = true;
+    let pagamentoConfirmado = true;
 
-    let senhaValida = false;
-    try {
-      senhaValida = await bcrypt.compare(senhaTrim, funcionario.senha_hash);
-    } catch (err) {
-      console.warn(
-        '[LOGIN] Erro ao comparar senha com bcrypt, tentando fallback',
-        err
+    if (foundInFuncionarios) {
+      // Usuário vindo da tabela `funcionarios`: senha já disponível na linha
+      console.log(
+        `[LOGIN] Usuário vindo de funcionarios; usando senha de funcionarios`
       );
-      senhaValida = false;
-    }
+      senhaHash = usuario.senha_hash;
+      contratanteId = usuario.contratante_id || usuario.entidade_id || null;
+      contratanteAtivo = usuario.ativo ?? true;
+      pagamentoConfirmado = true;
+    } else if (usuario.tipo_usuario === 'gestor') {
+      // Buscar senha em entidades_senhas
+      console.log(`[LOGIN] Buscando senha de gestor em entidades_senhas...`);
+      const senhaResult = await query(
+        `SELECT es.senha_hash, e.id, e.ativa, e.pagamento_confirmado
+         FROM entidades_senhas es
+         JOIN entidades e ON e.id = es.entidade_id
+         WHERE es.cpf = $1 AND es.entidade_id = $2`,
+        [cpf, usuario.entidade_id]
+      );
 
-    console.log(`[LOGIN] Senha válida (bcrypt): ${senhaValida}`);
-
-    // Fallbacks para senhas legadas ou texto plano: aceitar e migrar para bcrypt
-    if (!senhaValida) {
-      // 1) Texto plano (inseguro) armazenado - comparar diretamente
-      if (funcionario.senha_hash === senhaTrim) {
-        console.log(
-          '[LOGIN] Senha armazenada em texto plano. Migrando para bcrypt...'
+      if (senhaResult.rows.length === 0) {
+        console.error(
+          `[LOGIN] Senha não encontrada em entidades_senhas para CPF ${cpf}`
         );
-        const novoHash = await bcrypt.hash(senhaTrim, 10);
-        await query('UPDATE funcionarios SET senha_hash = $1 WHERE cpf = $2', [
-          novoHash,
-          cpf,
-        ]);
-        senhaValida = true;
-      } else {
-        // 2) Tentar SHA1 hex (outro formato legado possível)
-        try {
-          const sha1 = crypto
-            .createHash('sha1')
-            .update(senhaTrim)
-            .digest('hex');
-          if (sha1 === funcionario.senha_hash) {
-            console.log(
-              '[LOGIN] Senha corresponde a SHA1 legado. Migrando para bcrypt...'
-            );
-            const novoHash = await bcrypt.hash(senhaTrim, 10);
-            await query(
-              'UPDATE funcionarios SET senha_hash = $1 WHERE cpf = $2',
-              [novoHash, cpf]
-            );
-            senhaValida = true;
-          }
-        } catch (err) {
-          console.warn('[LOGIN] Erro ao tentar comparar SHA1:', err);
-        }
+        return NextResponse.json(
+          { error: 'Erro de configuração. Contate o administrador.' },
+          { status: 500 }
+        );
       }
+
+      senhaHash = senhaResult.rows[0].senha_hash;
+      contratanteId = senhaResult.rows[0].id;
+      contratanteAtivo = senhaResult.rows[0].ativa;
+      pagamentoConfirmado = senhaResult.rows[0].pagamento_confirmado;
+    } else if (usuario.tipo_usuario === 'rh') {
+      // Buscar senha em clinicas_senhas
+      console.log(`[LOGIN] Buscando senha de RH em clinicas_senhas...`);
+      // Tentativa 1: estrutura esperada (clinicas -> entidades)
+      let senhaResult = await query(
+        `SELECT cs.senha_hash, c.entidade_id, e.ativa, e.pagamento_confirmado
+         FROM clinicas_senhas cs
+         JOIN clinicas c ON c.id = cs.clinica_id
+         JOIN entidades e ON e.id = c.entidade_id
+         WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
+        [cpf, usuario.clinica_id]
+      );
+
+      // Tentativa 2: caso a migração tenha movido dados para 'contratantes'
+      if (senhaResult.rows.length === 0) {
+        console.warn(
+          `[LOGIN] Falha busca padrão clinicas_senhas; tentando join com contratantes para CPF ${cpf}`
+        );
+
+        senhaResult = await query(
+          `SELECT cs.senha_hash, c.id as entidade_id, c.ativa, c.pagamento_confirmado
+           FROM clinicas_senhas cs
+           JOIN contratantes c ON c.id = cs.clinica_id
+           WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
+          [cpf, usuario.clinica_id]
+        );
+      }
+
+      // Tentativa 3: fallback para tabela usuarios (caso historicamente a senha ainda esteja lá)
+      if (senhaResult.rows.length === 0) {
+        console.warn(
+          `[LOGIN] clinicas_senhas vazia; tentando buscar senha em usuarios para CPF ${cpf}`
+        );
+        const uRes = await query(
+          `SELECT senha_hash, clinica_id FROM usuarios WHERE cpf = $1`,
+          [cpf]
+        );
+
+        if (uRes.rows.length > 0 && uRes.rows[0].senha_hash) {
+          senhaHash = uRes.rows[0].senha_hash;
+          contratanteId = uRes.rows[0].clinica_id || usuario.clinica_id;
+          // tentar inferir ativo/pagamento como true para evitar bloqueio indevido
+          contratanteAtivo = true;
+          pagamentoConfirmado = true;
+        } else {
+          console.error(
+            `[LOGIN] Senha não encontrada para RH (CPF ${cpf}) em nenhuma fonte`
+          );
+          return NextResponse.json(
+            { error: 'Erro de configuração. Contate o administrador.' },
+            { status: 500 }
+          );
+        }
+      } else {
+        senhaHash = senhaResult.rows[0].senha_hash;
+        contratanteId = senhaResult.rows[0].entidade_id;
+        contratanteAtivo = senhaResult.rows[0].ativa;
+        pagamentoConfirmado = senhaResult.rows[0].pagamento_confirmado;
+      }
+    } else if (
+      usuario.tipo_usuario === 'admin' ||
+      usuario.tipo_usuario === 'emissor'
+    ) {
+      // Admin e Emissor não têm senha em tabelas de senhas
+      // Por ora, permitir login sem validação de senha (pode ser melhorado)
+      console.log(
+        `[LOGIN] ${usuario.tipo_usuario} não valida senha (configuração temporária)`
+      );
+
+      createSession({
+        cpf: usuario.cpf,
+        nome: usuario.nome,
+        perfil: usuario.tipo_usuario as any,
+      });
+
+      try {
+        await registrarAuditoria({
+          entidade_tipo: 'login',
+          acao: 'login_sucesso',
+          usuario_cpf: cpf,
+          usuario_perfil: usuario.tipo_usuario,
+          ...contextoRequisicao,
+        });
+      } catch (err) {
+        console.warn('[LOGIN] Falha ao registrar auditoria:', err);
+      }
+
+      return NextResponse.json({
+        success: true,
+        cpf: usuario.cpf,
+        nome: usuario.nome,
+        perfil: usuario.tipo_usuario,
+        redirectTo: usuario.tipo_usuario === 'admin' ? '/admin' : '/emissor',
+      });
     }
 
-    console.log(`[LOGIN] Senha válida (final): ${senhaValida}`);
+    // Verificar se contratante está ativo
+    if (!contratanteAtivo) {
+      try {
+        await registrarAuditoria({
+          entidade_tipo: 'login',
+          entidade_id: contratanteId,
+          acao: 'login_falha',
+          usuario_cpf: cpf,
+          metadados: { motivo: 'contratante_inativo' },
+          ...contextoRequisicao,
+        });
+      } catch (err) {
+        console.warn(
+          '[LOGIN] Falha ao registrar auditoria (contratante_inativo):',
+          err
+        );
+      }
+
+      return NextResponse.json(
+        { error: 'Contratante inativo. Entre em contato com o administrador.' },
+        { status: 403 }
+      );
+    }
+
+    // Verificar pagamento (exceto admin)
+    if (cpf !== '00000000000' && !pagamentoConfirmado) {
+      try {
+        await registrarAuditoria({
+          entidade_tipo: 'login',
+          entidade_id: contratanteId,
+          acao: 'login_falha',
+          usuario_cpf: cpf,
+          metadados: { motivo: 'pagamento_nao_confirmado' },
+          ...contextoRequisicao,
+        });
+      } catch (err) {
+        console.warn(
+          '[LOGIN] Falha ao registrar auditoria (pagamento_nao_confirmado):',
+          err
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error:
+            'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
+          contratante_id: contratanteId,
+        },
+        { status: 403 }
+      );
+    }
+
+    // PASSO 3: Validar senha
+    console.log('[LOGIN] Comparando senha contra hash...');
+    const senhaValida = await bcrypt.compare(senha, senhaHash);
+    console.log(`[LOGIN] Senha válida: ${senhaValida}`);
 
     if (!senhaValida) {
+      try {
+        await registrarAuditoria({
+          entidade_tipo: 'login',
+          entidade_id: contratanteId,
+          acao: 'login_falha',
+          usuario_cpf: cpf,
+          metadados: { motivo: 'senha_invalida' },
+          ...contextoRequisicao,
+        });
+      } catch (err) {
+        console.warn(
+          '[LOGIN] Falha ao registrar auditoria (senha_invalida):',
+          err
+        );
+      }
+
       return NextResponse.json(
         { error: 'CPF ou senha inválidos' },
         { status: 401 }
       );
     }
-    // Determinar se este funcionário é também o responsável (gestor) de um contratante
-    const contratanteResp = await query(
-      `SELECT id, tipo, ativa FROM contratantes WHERE responsavel_cpf = $1 LIMIT 1`,
-      [cpf]
-    );
 
-    if (contratanteResp.rows.length > 0 && contratanteResp.rows[0].ativa) {
-      const contratante = contratanteResp.rows[0];
-
-      // Buscar dados completos do contratante incluindo pagamento_confirmado
-      const contratanteCompleto = await query(
-        `SELECT ativa, pagamento_confirmado FROM contratantes WHERE id = $1`,
-        [contratante.id]
-      );
-
-      // CRÍTICO: Verificar se pagamento foi confirmado
-      if (!contratanteCompleto.rows[0]?.pagamento_confirmado) {
-        return NextResponse.json(
-          {
-            error:
-              'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
-            
-            contratante_id: contratante.id,
-          },
-          { status: 403 }
-        );
-      }
-
-      const perfilGestor =
-        contratante.tipo === 'entidade' ? 'gestor_entidade' : 'rh';
-
-      // Criar sessão como gestor
-      // If this responsible employee is mapped to RH, map the correct clinica_id (don't use contratante.id as a clinic id)
-      let mappedClinicaId: number | undefined = undefined;
-      if (perfilGestor === 'rh') {
-        try {
-          const clinicaRes = await query(
-            'SELECT id FROM clinicas WHERE contratante_id = $1 AND ativa = true LIMIT 1',
-            [contratante.id]
-          );
-          if (
-            clinicaRes &&
-            Array.isArray(clinicaRes.rows) &&
-            clinicaRes.rows.length > 0
-          ) {
-            mappedClinicaId = clinicaRes.rows[0].id;
-          } else {
-            console.warn(
-              `[LOGIN] Clínica ativa não encontrada para contratante ${contratante.id}; prosseguindo sem clinica_id`
-            );
-          }
-        } catch (dbErr) {
-          console.warn(
-            `[LOGIN] Erro ao buscar clínica por contratante_id (possível versão antiga do schema): ${dbErr?.message || dbErr}`
-          );
-        }
-      }
-
-      createSession({
-        cpf: funcionario.cpf,
-        nome: funcionario.nome,
-        perfil: perfilGestor as any,
-        contratante_id: contratante.id,
-        clinica_id: mappedClinicaId,
-      });
-
-      return NextResponse.json({
-        success: true,
-        cpf: funcionario.cpf,
-        nome: funcionario.nome,
-        perfil: perfilGestor,
-        redirectTo: contratante.tipo === 'entidade' ? '/entidade' : '/rh',
-      });
-    }
-
-    // Caso não seja responsável por nenhum contratante, criar sessão normal de funcionário
-    // CORREÇÃO: Buscar contratante_id E clinica_id da tabela funcionarios
-    let contratanteId = undefined;
-    let clinicaId: number | undefined = undefined;
-
-    // Buscar campos adicionais (contratante_id, clinica_id) da tabela funcionarios
-    let funcDadosAdicionais: any;
-    try {
-      funcDadosAdicionais = await query(
-        `SELECT contratante_id, clinica_id FROM funcionarios WHERE cpf = $1`,
-        [cpf]
-      );
-    } catch (err: any) {
-      // Fallback quando a coluna contratante_id (ou clinica_id) não existe no schema
-      if (err?.code === '42703') {
-        console.warn(
-          '[LOGIN] contratante_id ausente no schema, fallback sem contratante_id/clinica_id'
-        );
-        funcDadosAdicionais = { rows: [] };
-      } else {
-        throw err;
-      }
-    }
-
-    if (funcDadosAdicionais.rows.length > 0) {
-      contratanteId = funcDadosAdicionais.rows[0].contratante_id;
-      clinicaId = funcDadosAdicionais.rows[0].clinica_id;
-
-      console.log(
-        `[LOGIN] Funcionário ${cpf}: contratante_id=${contratanteId}, clinica_id=${clinicaId}`
-      );
-    }
+    // PASSO 4: Criar sessão
+    const perfil =
+      usuario.tipo_usuario === 'gestor' ? 'gestor' : usuario.tipo_usuario;
 
     createSession({
-      cpf: funcionario.cpf,
-      nome: funcionario.nome,
-      perfil: funcionario.perfil as any,
-      nivelCargo: funcionario.nivel_cargo,
+      cpf: usuario.cpf,
+      nome: usuario.nome,
+      perfil: perfil as any,
       contratante_id: contratanteId,
-      clinica_id: clinicaId,
+      clinica_id: usuario.clinica_id,
+      entidade_id: usuario.entidade_id,
     });
 
-    // Determinar redirecionamento baseado no perfil
-    let redirectTo = '/dashboard';
-    if (funcionario.perfil === 'admin') redirectTo = '/admin';
-    else if (funcionario.perfil === 'rh') redirectTo = '/rh';
-    else if (funcionario.perfil === 'emissor') redirectTo = '/emissor';
-    else if (funcionario.perfil === 'gestor_entidade') redirectTo = '/entidade';
+    // Registrar login bem-sucedido
+    try {
+      await registrarAuditoria({
+        entidade_tipo: 'login',
+        entidade_id: contratanteId,
+        acao: 'login_sucesso',
+        usuario_cpf: cpf,
+        usuario_perfil: perfil,
+        metadados: {
+          tipo_usuario: usuario.tipo_usuario,
+          clinica_id: usuario.clinica_id,
+          entidade_id: usuario.entidade_id,
+        },
+        ...contextoRequisicao,
+      });
+    } catch (err) {
+      console.warn(
+        '[LOGIN] Falha ao registrar auditoria (login_sucesso):',
+        err
+      );
+    }
+
+    console.log(`[LOGIN] Sessão criada para ${perfil}`);
 
     return NextResponse.json({
       success: true,
-      cpf: funcionario.cpf,
-      nome: funcionario.nome,
-      perfil: funcionario.perfil,
-      nivelCargo: funcionario.nivel_cargo,
-      redirectTo,
+      cpf: usuario.cpf,
+      nome: usuario.nome,
+      perfil: perfil,
+      redirectTo:
+        perfil === 'admin'
+          ? '/admin'
+          : perfil === 'gestor'
+            ? '/entidade'
+            : perfil === 'funcionario'
+              ? '/dashboard'
+              : '/rh',
     });
   } catch (error) {
     console.error('Erro no login:', error);

@@ -93,7 +93,7 @@ export default function PaymentSimulator({
         if (token) {
           body.token = token;
         } else if (contratanteId && planoId) {
-          body.contratante_id = contratanteId;
+          body.entidade_id = contratanteId;
           body.plano_id = planoId;
           if (numeroFuncionarios) body.numero_funcionarios = numeroFuncionarios;
         } else if (valorTotal) {
@@ -212,7 +212,7 @@ export default function PaymentSimulator({
                   if (token) {
                     body.token = token;
                   } else if (contratanteId && planoId) {
-                    body.contratante_id = contratanteId;
+                    body.entidade_id = contratanteId;
                     body.plano_id = planoId;
                     if (numeroFuncionarios)
                       body.numero_funcionarios = numeroFuncionarios;

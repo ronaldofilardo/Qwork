@@ -88,7 +88,7 @@ ALTER TABLE funcionarios
   ADD CONSTRAINT funcionarios_clinica_or_contratante_check
   CHECK (
     (perfil IN ('funcionario', 'rh') AND clinica_id IS NOT NULL AND contratante_id IS NULL) OR
-    (perfil = 'gestor_entidade' AND contratante_id IS NOT NULL AND clinica_id IS NULL) OR
+    (perfil = 'gestor' AND contratante_id IS NOT NULL AND clinica_id IS NULL) OR
     (perfil IN ('emissor', 'admin') AND clinica_id IS NULL AND contratante_id IS NULL)
   ) NOT VALID;
 
@@ -468,7 +468,7 @@ BEGIN
   END IF;
 
   -- Validação extra: perfil válido
-  IF v_perfil NOT IN ('funcionario', 'rh', 'emissor', 'admin', 'gestor_entidade') THEN
+  IF v_perfil NOT IN ('funcionario', 'rh', 'emissor', 'admin', 'gestor') THEN
     RAISE EXCEPTION 'SECURITY: Invalid perfil "%"', v_perfil;
   END IF;
 
@@ -892,7 +892,7 @@ ORDER BY created_at DESC LIMIT 10;
 2. [OWASP - Broken Access Control](https://owasp.org/Top10/A01_2021-Broken_Access_Control/)
 3. [LGPD - Art. 46 (Princípio da Necessidade)](http://www.planalto.gov.br/ccivil_03/_ato2015-2018/2018/lei/l13709.htm)
 4. Migration 108: `add_contratante_id_to_funcionarios.sql`
-5. Migration 201: `fix_gestor_entidade_as_funcionario.sql`
+5. Migration 201: `fix_gestor_as_funcionario.sql`
 6. Migration 020: `remove_admin_operational_rls.sql`
 
 ---

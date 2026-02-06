@@ -29,7 +29,7 @@ Este documento detalha as correções de **6 vulnerabilidades críticas** de seg
 ```sql
 -- Trigger para prevenir placeholders
 CREATE TRIGGER trg_prevenir_placeholder_senha
-    BEFORE INSERT OR UPDATE ON contratantes_senhas
+    BEFORE INSERT OR UPDATE ON entidades_senhas
     FOR EACH ROW
     EXECUTE FUNCTION prevenir_placeholder_senha();
 ```
@@ -101,7 +101,7 @@ CREATE POLICY avaliacoes_select_contratante ON avaliacoes
 -- Policy corrigida para lotes
 CREATE POLICY policy_lotes_entidade ON lotes_avaliacao
     FOR SELECT USING (
-        current_setting('app.current_role', TRUE) IN ('rh', 'entidade', 'gestor_entidade')
+        current_setting('app.current_role', TRUE) IN ('rh', 'entidade', 'gestor')
         AND contratante_id::text = current_setting('app.current_contratante_id', TRUE)
     );
 ```
@@ -178,7 +178,7 @@ CREATE INDEX idx_contratantes_responsavel_cpf_rls ON contratantes(responsavel_cp
 ```sql
 -- Aplicar FORCE RLS em TODAS as tabelas sensíveis
 ALTER TABLE contratantes FORCE ROW LEVEL SECURITY;
-ALTER TABLE contratantes_senhas FORCE ROW LEVEL SECURITY;
+ALTER TABLE entidades_senhas FORCE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios FORCE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes FORCE ROW LEVEL SECURITY;
 ALTER TABLE resultados FORCE ROW LEVEL SECURITY;
@@ -402,7 +402,7 @@ Após deployment:
 
 - [ ] Migration executada sem erros
 - [ ] Função `verificar_seguranca_rls()` retorna apenas status OK
-- [ ] Zero placeholders no banco: `SELECT COUNT(*) FROM contratantes_senhas WHERE senha_hash LIKE 'PLACEHOLDER_%'` = 0
+- [ ] Zero placeholders no banco: `SELECT COUNT(*) FROM entidades_senhas WHERE senha_hash LIKE 'PLACEHOLDER_%'` = 0
 - [ ] FORCE RLS ativo: todas tabelas sensíveis
 - [ ] Índices criados: mínimo 11 índices RLS
 - [ ] Event trigger ativo: `trg_audit_policy_ddl`

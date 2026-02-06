@@ -4,7 +4,7 @@ describe('Entidade - Inativar Avaliação (fluxo básico)', () => {
     cy.request('POST', '/api/test/session', {
       cpf: '22222222222',
       nome: 'Gestor Entidade Teste',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       contratante_id: 1,
     });
 

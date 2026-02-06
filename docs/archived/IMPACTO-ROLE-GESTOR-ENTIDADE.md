@@ -1,4 +1,4 @@
-# 📊 Relatório de Impacto: Adicionar Role `gestor_entidade` na Tabela `roles`
+# 📊 Relatório de Impacto: Adicionar Role `gestor` na Tabela `roles`
 
 **Data:** 29 de janeiro de 2026  
 **Analista:** Sistema de Auditoria  
@@ -13,14 +13,14 @@
 
 **Situação Atual:**
 
-- Sistema usa perfil `'gestor_entidade'` como **string literal** no código
-- Tabela `roles` **NÃO contém** registro para `gestor_entidade`
+- Sistema usa perfil `'gestor'` como **string literal** no código
+- Tabela `roles` **NÃO contém** registro para `gestor`
 - Funcionalidade está implementada e **funcionando via string**
 - 100+ referências no código validam perfil como string
 
 **Mudança Proposta:**
 
-- Adicionar registro formal de role `'gestor_entidade'` na tabela `roles`
+- Adicionar registro formal de role `'gestor'` na tabela `roles`
 - Criar permissões específicas em `permissions`
 - Associar permissões via `role_permissions`
 - **IMPORTANTE:** Código continua usando `perfil` como string (sem mudança)
@@ -29,7 +29,7 @@
 
 | Categoria          | Impacto  | Afetado? | Mudanças Necessárias                       |
 | ------------------ | -------- | -------- | ------------------------------------------ |
-| **Middleware**     | 🟢 ZERO  | ❌ NÃO   | Já usa string `gestor_entidade`            |
+| **Middleware**     | 🟢 ZERO  | ❌ NÃO   | Já usa string `gestor`                     |
 | **Autenticação**   | 🟢 ZERO  | ❌ NÃO   | `lib/session.ts` valida perfil como string |
 | **APIs Backend**   | 🟢 ZERO  | ❌ NÃO   | `requireEntity()` valida perfil string     |
 | **RLS Policies**   | 🟡 BAIXO | ✅ SIM   | Adicionar policies específicas (opcional)  |
@@ -58,30 +58,30 @@
 
 ```typescript
 // Linha 56-58
-gestor_entidade: [
+gestor: [
   '/api/contratacao/personalizado/pre-cadastro',
   '/api/contratacao/personalizado/aceitar-contrato',
   '/api/contratacao/personalizado/cancelar',
 ],
 
 // Linha 152-156
-} else if (session.perfil === 'gestor_entidade') {
+} else if (session.perfil === 'gestor') {
   if (
-    CONTRATACAO_ROUTES.gestor_entidade.some((route) =>
+    CONTRATACAO_ROUTES.gestor.some((route) =>
       pathname.startsWith(route)
     )
   )
 
 // Linha 294
-} else if (session.perfil === 'gestor_entidade') {
+} else if (session.perfil === 'gestor') {
 
 // Linha 365
-if (session && session.perfil !== 'gestor_entidade') {
+if (session && session.perfil !== 'gestor') {
 ```
 
 #### Análise de Impacto
 
-- **Tipo de validação:** Comparação de string `session.perfil === 'gestor_entidade'`
+- **Tipo de validação:** Comparação de string `session.perfil === 'gestor'`
 - **Depende de tabela roles?** ❌ NÃO
 - **Mudanças necessárias:** ❌ NENHUMA
 - **Motivo:** Middleware valida perfil diretamente da sessão (cookie), não consulta banco
@@ -103,12 +103,12 @@ Request → Cookie bps-session → Parse JSON → session.perfil (string)
 
 ```typescript
 // Linha 31-33 (comentário da política)
-// 'gestor_entidade': Gestor de ENTIDADE CONTRATANTE
+// 'gestor': Gestor de ENTIDADE CONTRATANTE
 //                    → TEM contratante_id obrigatório
 //                    → Opera lotes da própria entidade
 
 // Linha 36
-contratante_id?: number; // Apenas para perfil 'gestor_entidade'
+contratante_id?: number; // Apenas para perfil 'gestor'
 
 // Linha 274-321 - Função requireEntity()
 export async function requireEntity(): Promise<
@@ -116,7 +116,7 @@ export async function requireEntity(): Promise<
 > {
   const session = await requireAuth();
 
-  if (session.perfil !== 'gestor_entidade') {
+  if (session.perfil !== 'gestor') {
     throw new Error('Acesso restrito a gestores de entidade');
   }
 
@@ -135,7 +135,7 @@ export async function requireEntity(): Promise<
 
 #### Análise de Impacto
 
-- **Tipo de validação:** String literal `session.perfil !== 'gestor_entidade'`
+- **Tipo de validação:** String literal `session.perfil !== 'gestor'`
 - **Consulta banco?** ✅ SIM, mas consulta `contratantes`, não `roles`
 - **Depende de tabela roles?** ❌ NÃO
 - **Mudanças necessárias:** ❌ NENHUMA
@@ -144,7 +144,7 @@ export async function requireEntity(): Promise<
 
 ```
 requireEntity() → getSession() → Parse cookie
-  → Validar perfil === 'gestor_entidade' (string)
+  → Validar perfil === 'gestor' (string)
   → Consultar contratantes (validar tipo='entidade')
   → Retornar session
 ```
@@ -173,7 +173,7 @@ app / api / entidade / laudos / route.ts;
 
 ```typescript
 export async function GET() {
-  const entity = await requireEntity(); // Valida perfil === 'gestor_entidade'
+  const entity = await requireEntity(); // Valida perfil === 'gestor'
   // ...
 }
 ```
@@ -191,7 +191,7 @@ export async function GET() {
 // __tests__/api/entidade/funcionarios.test.ts
 mockRequireEntity.mockResolvedValue({
   cpf: '12345678900',
-  perfil: 'gestor_entidade', // String literal
+  perfil: 'gestor', // String literal
   contratante_id: 1,
 });
 ```
@@ -208,21 +208,21 @@ mockRequireEntity.mockResolvedValue({
 -- Migration 064: Fix entidade perfil RLS
 CREATE POLICY entidade_lotes_select ON lotes_avaliacao
 FOR SELECT USING (
-  current_user_perfil() IN ('entidade', 'gestor_entidade')
+  current_user_perfil() IN ('entidade', 'gestor')
   AND contratante_id = current_user_contratante_id()
 );
 
 -- Migration 114: Consolidate RLS funcionarios
-CREATE POLICY funcionarios_gestor_entidade_select ON funcionarios
+CREATE POLICY funcionarios_gestor_select ON funcionarios
 FOR SELECT USING (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND contratante_id = current_setting('app.current_user_contratante_id', true)::INTEGER
 );
 
 -- Migration 113: Avaliacao resets
 CREATE POLICY avaliacao_resets_gestor_select ON avaliacao_resets
 FOR SELECT USING (
-  current_setting('app.current_user_perfil', true) = 'gestor_entidade'
+  current_setting('app.current_user_perfil', true) = 'gestor'
   AND EXISTS (
     SELECT 1 FROM funcionarios f WHERE ...
   )
@@ -231,7 +231,7 @@ FOR SELECT USING (
 
 #### Análise de Impacto
 
-- **Tipo de validação:** `current_user_perfil() = 'gestor_entidade'` (string)
+- **Tipo de validação:** `current_user_perfil() = 'gestor'` (string)
 - **Depende de tabela roles?** ❌ NÃO
 - **Mudanças necessárias:** ⚠️ OPCIONAL (adicionar policies mais granulares)
 
@@ -320,10 +320,10 @@ INSERT INTO roles (name, display_name, hierarchy_level) VALUES
 #### Mudança Proposta
 
 ```sql
--- Migration XXX_add_gestor_entidade_role.sql
+-- Migration XXX_add_gestor_role.sql
 INSERT INTO roles (name, display_name, description, hierarchy_level)
 VALUES (
-  'gestor_entidade',
+  'gestor',
   'Gestor de Entidade',
   'Gerencia funcionários de entidade privada (sem empresas)',
   10
@@ -347,7 +347,7 @@ ALTER TABLE funcionarios
 
 ALTER TABLE funcionarios
   ADD CONSTRAINT funcionarios_perfil_check
-  CHECK (perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor_entidade'));
+  CHECK (perfil IN ('funcionario', 'rh', 'admin', 'emissor', 'gestor'));
 ```
 
 **Observação:** Constraint valida valores permitidos como string, **não referencia tabela `roles`**.
@@ -358,7 +358,7 @@ ALTER TABLE funcionarios
 
 ```sql
 -- Exemplos encontrados no código
-SELECT * FROM funcionarios WHERE perfil = 'gestor_entidade';
+SELECT * FROM funcionarios WHERE perfil = 'gestor';
 SELECT * FROM funcionarios WHERE perfil = 'rh' AND clinica_id = $1;
 SELECT * FROM funcionarios WHERE perfil IN ('admin', 'emissor');
 ```
@@ -369,7 +369,7 @@ SELECT * FROM funcionarios WHERE perfil IN ('admin', 'emissor');
 
 ```sql
 -- lib/db.ts
-SET LOCAL app.current_user_perfil = 'gestor_entidade';
+SET LOCAL app.current_user_perfil = 'gestor';
 ```
 
 **Impacto:** ❌ ZERO (seta string na session)
@@ -398,7 +398,7 @@ JOIN roles r ON r.name = f.perfil; -- NÃO EXISTE!
 const mockSession = {
   cpf: '12345678900',
   nome: 'Gestor Teste',
-  perfil: 'gestor_entidade', // String literal
+  perfil: 'gestor', // String literal
   contratante_id: 1,
 };
 
@@ -411,15 +411,15 @@ jest.spyOn(sessionModule, 'getSession').mockReturnValue(mockSession);
 // Padrão em testes de integração
 await query(`
   INSERT INTO funcionarios (cpf, nome, perfil, contratante_id)
-  VALUES ('11111111111', 'Gestor', 'gestor_entidade', 1)
+  VALUES ('11111111111', 'Gestor', 'gestor', 1)
 `);
 ```
 
 ##### Validações
 
 ```typescript
-expect(session.perfil).toBe('gestor_entidade'); // String literal
-expect(funcionario.perfil).not.toBe('gestor_entidade'); // Negação
+expect(session.perfil).toBe('gestor'); // String literal
+expect(funcionario.perfil).not.toBe('gestor'); // Negação
 ```
 
 #### Análise de Impacto
@@ -434,9 +434,9 @@ expect(funcionario.perfil).not.toBe('gestor_entidade'); // Negação
 
 ```typescript
 // __tests__/integration/entidade-rls-integration.test.ts
-describe('RLS Integration: gestor_entidade visibility', () => {
-  it('gestor_entidade deve ver avaliações do funcionário vinculado', async () => {
-    await query(`SET LOCAL app.current_user_perfil = 'gestor_entidade'`);
+describe('RLS Integration: gestor visibility', () => {
+  it('gestor deve ver avaliações do funcionário vinculado', async () => {
+    await query(`SET LOCAL app.current_user_perfil = 'gestor'`);
     // ...
   });
 });
@@ -448,7 +448,7 @@ describe('RLS Integration: gestor_entidade visibility', () => {
 
 ```typescript
 // __tests__/api/entidade/funcionarios.test.ts
-test('❌ Deve retornar 401 se perfil não for gestor_entidade', async () => {
+test('❌ Deve retornar 401 se perfil não for gestor', async () => {
   mockGetSession.mockReturnValue({ perfil: 'funcionario' });
   // ...
 });
@@ -460,7 +460,7 @@ test('❌ Deve retornar 401 se perfil não for gestor_entidade', async () => {
 
 ```typescript
 // __tests__/e2e/cadastro-plano-fixo-completo.test.ts
-expect(funcionario.perfil).toBe('gestor_entidade');
+expect(funcionario.perfil).toBe('gestor');
 ```
 
 **Impacto:** ❌ ZERO (valida string do banco)
@@ -477,7 +477,7 @@ expect(funcionario.perfil).toBe('gestor_entidade');
 
 ```typescript
 switch (session.perfil) {
-  case 'gestor_entidade':
+  case 'gestor':
     redirect('/entidade');
   case 'rh':
     redirect('/rh');
@@ -488,7 +488,7 @@ switch (session.perfil) {
 ##### Validação de Layout (app/entidade/layout.tsx)
 
 ```typescript
-if (sessionData.perfil !== 'gestor_entidade') {
+if (sessionData.perfil !== 'gestor') {
   redirect('/auth/login');
 }
 ```
@@ -497,7 +497,7 @@ if (sessionData.perfil !== 'gestor_entidade') {
 
 ```typescript
 interface NotificationHubProps {
-  usuarioTipo: 'admin' | 'gestor_entidade';
+  usuarioTipo: 'admin' | 'gestor';
 }
 ```
 
@@ -511,9 +511,9 @@ interface NotificationHubProps {
 
 ```
 1. Login → POST /api/auth/login
-2. Server cria cookie com perfil='gestor_entidade' (string)
+2. Server cria cookie com perfil='gestor' (string)
 3. Frontend lê session via getSession()
-4. Frontend valida session.perfil === 'gestor_entidade'
+4. Frontend valida session.perfil === 'gestor'
 5. Renderiza layout/componentes adequados
 ```
 
@@ -554,10 +554,10 @@ interface NotificationHubProps {
 ### Fase 1: Adicionar Role na Tabela (Obrigatório)
 
 ```sql
--- Migration XXX_add_gestor_entidade_role.sql
+-- Migration XXX_add_gestor_role.sql
 BEGIN;
 
--- 1. Inserir role gestor_entidade
+-- 1. Inserir role gestor
 INSERT INTO public.roles (
   name,
   display_name,
@@ -566,7 +566,7 @@ INSERT INTO public.roles (
   active
 )
 VALUES (
-  'gestor_entidade',
+  'gestor',
   'Gestor de Entidade',
   'Gerencia funcionários de sua entidade privada (sem gestão de empresas intermediárias)',
   10,
@@ -595,7 +595,7 @@ ON CONFLICT (name) DO NOTHING;
 INSERT INTO public.role_permissions (role_id, permission_id)
 SELECT r.id, p.id
 FROM public.roles r, public.permissions p
-WHERE r.name = 'gestor_entidade' AND p.name IN (
+WHERE r.name = 'gestor' AND p.name IN (
   'read:avaliacoes:entidade',
   'read:funcionarios:entidade',
   'write:funcionarios:entidade',
@@ -613,20 +613,20 @@ DECLARE
   role_count INTEGER;
   perm_count INTEGER;
 BEGIN
-  SELECT COUNT(*) INTO role_count FROM public.roles WHERE name = 'gestor_entidade';
+  SELECT COUNT(*) INTO role_count FROM public.roles WHERE name = 'gestor';
   SELECT COUNT(*) INTO perm_count FROM public.role_permissions rp
   JOIN public.roles r ON r.id = rp.role_id
-  WHERE r.name = 'gestor_entidade';
+  WHERE r.name = 'gestor';
 
   IF role_count = 0 THEN
-    RAISE EXCEPTION 'ERRO: Role gestor_entidade não foi criado';
+    RAISE EXCEPTION 'ERRO: Role gestor não foi criado';
   END IF;
 
   IF perm_count = 0 THEN
-    RAISE WARNING 'AVISO: Nenhuma permissão associada ao role gestor_entidade';
+    RAISE WARNING 'AVISO: Nenhuma permissão associada ao role gestor';
   END IF;
 
-  RAISE NOTICE '✅ Role gestor_entidade criado: % registro(s)', role_count;
+  RAISE NOTICE '✅ Role gestor criado: % registro(s)', role_count;
   RAISE NOTICE '✅ Permissões associadas: % permissão(ões)', perm_count;
 END $$;
 
@@ -669,7 +669,7 @@ COMMIT;
 ### Fase 3: Adicionar Policies RBAC (Opcional)
 
 ```sql
--- Migration XXX_add_rbac_policies_gestor_entidade.sql
+-- Migration XXX_add_rbac_policies_gestor.sql
 BEGIN;
 
 -- Policy baseada em permissões RBAC (exemplo)
@@ -711,15 +711,15 @@ COMMIT;
 #### Arquivos a Atualizar
 
 1. **docs/security/GUIA-COMPLETO-RLS-RBAC.md**
-   - Adicionar `gestor_entidade` na matriz de permissões
+   - Adicionar `gestor` na matriz de permissões
    - Documentar que role agora existe na tabela
 
 2. **docs/AUDITORIA-RLS-RBAC-COMPLETA.md**
    - Marcar problema #8 como ✅ RESOLVIDO
-   - Adicionar seção "Resolução: Role gestor_entidade adicionado"
+   - Adicionar seção "Resolução: Role gestor adicionado"
 
 3. **README.md** (se houver seção de papéis)
-   - Adicionar `gestor_entidade` na lista de perfis
+   - Adicionar `gestor` na lista de perfis
 
 **Tempo estimado:** 30 minutos  
 **Risco:** 🟢 ZERO (apenas documentação)
@@ -730,11 +730,9 @@ COMMIT;
 
 ```typescript
 // __tests__/database/role-gestor-entidade.test.ts
-describe('Role gestor_entidade na tabela roles', () => {
-  it('deve existir registro para gestor_entidade', async () => {
-    const result = await query(
-      "SELECT * FROM roles WHERE name = 'gestor_entidade'"
-    );
+describe('Role gestor na tabela roles', () => {
+  it('deve existir registro para gestor', async () => {
+    const result = await query("SELECT * FROM roles WHERE name = 'gestor'");
 
     expect(result.rows.length).toBe(1);
     expect(result.rows[0].display_name).toBe('Gestor de Entidade');
@@ -747,7 +745,7 @@ describe('Role gestor_entidade na tabela roles', () => {
       FROM roles r
       JOIN role_permissions rp ON rp.role_id = r.id
       JOIN permissions p ON p.id = rp.permission_id
-      WHERE r.name = 'gestor_entidade'
+      WHERE r.name = 'gestor'
     `);
 
     expect(result.rows.length).toBeGreaterThan(0);
@@ -759,14 +757,14 @@ describe('Role gestor_entidade na tabela roles', () => {
 
   it('validação de perfil via string continua funcionando', async () => {
     // Simular sessão
-    await query(`SET LOCAL app.current_user_perfil = 'gestor_entidade'`);
+    await query(`SET LOCAL app.current_user_perfil = 'gestor'`);
 
     // Validar que policies existentes ainda funcionam
     const result = await query(`
       SELECT current_user_perfil() as perfil
     `);
 
-    expect(result.rows[0].perfil).toBe('gestor_entidade');
+    expect(result.rows[0].perfil).toBe('gestor');
   });
 });
 ```
@@ -785,7 +783,7 @@ describe('Role gestor_entidade na tabela roles', () => {
 
 **Cenário:**
 
-- Migration tenta inserir role `gestor_entidade` mas já existe
+- Migration tenta inserir role `gestor` mas já existe
 
 **Mitigação:**
 
@@ -958,13 +956,13 @@ Executar Fase 1:
 
 ```bash
 # Criar migration
-touch database/migrations/202_add_gestor_entidade_role.sql
+touch database/migrations/202_add_gestor_role.sql
 
 # Aplicar migration
-psql -U postgres -d nr-bps_db -f database/migrations/202_add_gestor_entidade_role.sql
+psql -U postgres -d nr-bps_db -f database/migrations/202_add_gestor_role.sql
 
 # Validar
-psql -U postgres -d nr-bps_db -c "SELECT * FROM roles WHERE name = 'gestor_entidade';"
+psql -U postgres -d nr-bps_db -c "SELECT * FROM roles WHERE name = 'gestor';"
 ```
 
 ---

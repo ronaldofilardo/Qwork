@@ -1,14 +1,15 @@
 # Relatório de Comparação de Schemas
+
 **Data:** 04/02/2026 11:16:18  
 **Produção:** Neon Cloud (neondb)  
 **Desenvolvimento:** Local PostgreSQL (nr-bps_db)
 
 ---
 
-
 ## 1. TRIGGERS
 
 ### Triggers em PRODUÇÃO (63):
+
 ```
 audit_avaliacoes|avaliacoes|EXECUTE FUNCTION audit_trigger_func()
 audit_avaliacoes|avaliacoes|EXECUTE FUNCTION audit_trigger_func()
@@ -32,7 +33,7 @@ tr_contratantes_sync_status_ativa|contratantes|EXECUTE FUNCTION contratantes_syn
 tr_contratantes_sync_status_ativa_personalizado|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado()
 tr_contratantes_sync_status_ativa_personalizado|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado()
 trg_audit_laudo_creation|laudos|EXECUTE FUNCTION audit_laudo_creation()
-trg_contratantes_senhas_updated_at|contratantes_senhas|EXECUTE FUNCTION update_contratantes_senhas_updated_at()
+trg_entidades_senhas_updated_at|entidades_senhas|EXECUTE FUNCTION update_entidades_senhas_updated_at()
 trg_contratantes_updated_at|contratantes|EXECUTE FUNCTION update_contratantes_updated_at()
 trg_enforce_laudo_id_equals_lote|laudos|EXECUTE FUNCTION trg_enforce_laudo_id_equals_lote()
 trg_gerar_numero_recibo|recibos|EXECUTE FUNCTION trigger_gerar_numero_recibo()
@@ -41,16 +42,16 @@ trg_immutable_laudo|laudos|EXECUTE FUNCTION prevent_update_laudo_enviado()
 trg_laudo_jobs_updated_at|laudo_generation_jobs|EXECUTE FUNCTION set_updated_at_column()
 trg_notificacoes_admin_updated|notificacoes_admin|EXECUTE FUNCTION atualizar_notificacao_admin_timestamp()
 trg_pdf_jobs_update_timestamp|pdf_jobs|EXECUTE FUNCTION update_pdf_jobs_timestamp()
-trg_prevent_contratante_emissor|contratantes_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
-trg_prevent_contratante_emissor|contratantes_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
+trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
+trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_laudo_lote_id_change|laudos|EXECUTE FUNCTION prevent_laudo_lote_id_change()
 trg_protect_avaliacao_after_emit|avaliacoes|EXECUTE FUNCTION prevent_modification_avaliacao_when_lote_emitted()
 trg_protect_avaliacao_after_emit|avaliacoes|EXECUTE FUNCTION prevent_modification_avaliacao_when_lote_emitted()
-trg_protect_senhas|contratantes_senhas|EXECUTE FUNCTION fn_audit_contratantes_senhas()
-trg_protect_senhas|contratantes_senhas|EXECUTE FUNCTION fn_audit_contratantes_senhas()
-trg_protect_senhas|contratantes_senhas|EXECUTE FUNCTION fn_audit_contratantes_senhas()
+trg_protect_senhas|entidades_senhas|EXECUTE FUNCTION fn_audit_entidades_senhas()
+trg_protect_senhas|entidades_senhas|EXECUTE FUNCTION fn_audit_entidades_senhas()
+trg_protect_senhas|entidades_senhas|EXECUTE FUNCTION fn_audit_entidades_senhas()
 trg_recalc_lote_on_avaliacao_update|avaliacoes|EXECUTE FUNCTION fn_recalcular_status_lote_on_avaliacao_update()
 trg_recibos_atualizar_data|recibos|EXECUTE FUNCTION atualizar_data_modificacao()
 trg_recibos_criar_pdf_job|recibos|EXECUTE FUNCTION trigger_criar_pdf_job()
@@ -76,6 +77,7 @@ trigger_resultado_immutability|resultados|EXECUTE FUNCTION check_resultado_immut
 ```
 
 ### Triggers em DESENVOLVIMENTO (72):
+
 ```
 audit_avaliacoes|avaliacoes|EXECUTE FUNCTION audit_trigger_func()
 audit_avaliacoes|avaliacoes|EXECUTE FUNCTION audit_trigger_func()
@@ -103,7 +105,7 @@ tr_contratantes_sync_status_ativa_robust|contratantes|EXECUTE FUNCTION contratan
 tr_contratantes_sync_status_ativa_robust|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_robust()
 trg_audit_laudo_creation|laudos|EXECUTE FUNCTION audit_laudo_creation()
 trg_audit_lote_status|lotes_avaliacao|EXECUTE FUNCTION audit_lote_status_change()
-trg_contratantes_senhas_updated_at|contratantes_senhas|EXECUTE FUNCTION update_contratantes_senhas_updated_at()
+trg_entidades_senhas_updated_at|entidades_senhas|EXECUTE FUNCTION update_entidades_senhas_updated_at()
 trg_contratantes_updated_at|contratantes|EXECUTE FUNCTION update_contratantes_updated_at()
 trg_enforce_laudo_id_equals_lote|laudos|EXECUTE FUNCTION trg_enforce_laudo_id_equals_lote()
 trg_gerar_numero_recibo|recibos|EXECUTE FUNCTION trigger_gerar_numero_recibo()
@@ -113,8 +115,8 @@ trg_immutable_lote|lotes_avaliacao|EXECUTE FUNCTION prevent_update_finalized_lot
 trg_laudo_jobs_updated_at|laudo_generation_jobs|EXECUTE FUNCTION set_updated_at_column()
 trg_notificacoes_admin_updated|notificacoes_admin|EXECUTE FUNCTION atualizar_notificacao_admin_timestamp()
 trg_pdf_jobs_update_timestamp|pdf_jobs|EXECUTE FUNCTION update_pdf_jobs_timestamp()
-trg_prevent_contratante_emissor|contratantes_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
-trg_prevent_contratante_emissor|contratantes_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
+trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
+trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_laudo_lote_id_change|laudos|EXECUTE FUNCTION prevent_laudo_lote_id_change()
@@ -122,9 +124,9 @@ trg_protect_avaliacao_after_emit|avaliacoes|EXECUTE FUNCTION prevent_modificatio
 trg_protect_avaliacao_after_emit|avaliacoes|EXECUTE FUNCTION prevent_modification_avaliacao_when_lote_emitted()
 trg_protect_lote_after_emit|lotes_avaliacao|EXECUTE FUNCTION prevent_modification_lote_when_laudo_emitted()
 trg_protect_lote_after_emit|lotes_avaliacao|EXECUTE FUNCTION prevent_modification_lote_when_laudo_emitted()
-trg_protect_senhas|contratantes_senhas|EXECUTE FUNCTION fn_audit_contratantes_senhas()
-trg_protect_senhas|contratantes_senhas|EXECUTE FUNCTION fn_audit_contratantes_senhas()
-trg_protect_senhas|contratantes_senhas|EXECUTE FUNCTION fn_audit_contratantes_senhas()
+trg_protect_senhas|entidades_senhas|EXECUTE FUNCTION fn_audit_entidades_senhas()
+trg_protect_senhas|entidades_senhas|EXECUTE FUNCTION fn_audit_entidades_senhas()
+trg_protect_senhas|entidades_senhas|EXECUTE FUNCTION fn_audit_entidades_senhas()
 trg_recalc_lote_on_avaliacao_update|avaliacoes|EXECUTE FUNCTION fn_recalcular_status_lote_on_avaliacao_update()
 trg_recibos_atualizar_data|recibos|EXECUTE FUNCTION atualizar_data_modificacao()
 trg_recibos_criar_pdf_job|recibos|EXECUTE FUNCTION trigger_criar_pdf_job()
@@ -154,6 +156,7 @@ trigger_resultado_immutability|resultados|EXECUTE FUNCTION check_resultado_immut
 ### ⚠️ Diferenças:
 
 **Triggers faltando em PRODUÇÃO:**
+
 - prevent_avaliacao_delete_after_emission
 - prevent_avaliacao_update_after_emission
 - prevent_lote_update_after_emission
@@ -169,15 +172,16 @@ trigger_resultado_immutability|resultados|EXECUTE FUNCTION check_resultado_immut
 - trigger_prevent_lote_mutation_during_emission
 
 **Triggers extras em PRODUÇÃO (não estão em DEV):**
+
 - tr_contratantes_sync_status_ativa
 - tr_contratantes_sync_status_ativa
 - trg_sync_personalizado_status
 - trigger_atualizar_ultima_avaliacao
 
-
 ## 2. VIEWS
 
 ### Views em PRODUÇÃO (15):
+
 ```
 audit_stats_by_user
 suspicious_activity
@@ -197,6 +201,7 @@ vw_recibos_completos
 ```
 
 ### Views em DESENVOLVIMENTO (17):
+
 ```
 audit_stats_by_user
 equipe_administrativa
@@ -220,19 +225,21 @@ vw_recibos_completos
 ### ⚠️ Diferenças:
 
 **Views faltando em PRODUÇÃO:**
+
 - equipe_administrativa
 - funcionarios_operacionais
 - gestores
 - usuarios_resumo
 
 **Views extras em PRODUÇÃO:**
+
 - v_auditoria_emissoes
 - v_relatorio_emissoes_usuario
-
 
 ## 3. FUNÇÕES
 
 ### Funções em PRODUÇÃO (142):
+
 ```
 armor
 armor
@@ -281,7 +288,7 @@ digest
 encrypt
 encrypt_iv
 execute_maintenance
-fn_audit_contratantes_senhas
+fn_audit_entidades_senhas
 fn_buscar_solicitante_laudo
 fn_create_funcionario_autorizado
 fn_delete_senha_autorizado
@@ -361,7 +368,7 @@ sync_personalizado_status
 trg_enforce_laudo_id_equals_lote
 trigger_criar_pdf_job
 trigger_gerar_numero_recibo
-update_contratantes_senhas_updated_at
+update_entidades_senhas_updated_at
 update_contratantes_updated_at
 update_pdf_jobs_timestamp
 upsert_laudo
@@ -379,6 +386,7 @@ verificar_integridade_recibo
 ```
 
 ### Funções em DESENVOLVIMENTO (143):
+
 ```
 armor
 armor
@@ -428,7 +436,7 @@ digest
 encrypt
 encrypt_iv
 execute_maintenance
-fn_audit_contratantes_senhas
+fn_audit_entidades_senhas
 fn_buscar_solicitante_laudo
 fn_create_funcionario_autorizado
 fn_delete_senha_autorizado
@@ -508,7 +516,7 @@ sync_personalizado_status
 trg_enforce_laudo_id_equals_lote
 trigger_criar_pdf_job
 trigger_gerar_numero_recibo
-update_contratantes_senhas_updated_at
+update_entidades_senhas_updated_at
 update_contratantes_updated_at
 update_pdf_jobs_timestamp
 upsert_laudo
@@ -528,6 +536,7 @@ verificar_integridade_recibo
 ### ⚠️ Diferenças:
 
 **Funções faltando em PRODUÇÃO:**
+
 - contratantes_sync_status_ativa_robust
 - fn_reservar_id_laudo_on_lote_insert
 - fn_validar_transicao_status_lote
@@ -537,6 +546,7 @@ verificar_integridade_recibo
 - prevent_mutation_during_emission
 
 **Funções extras em PRODUÇÃO:**
+
 - fn_limpar_tokens_expirados
 - fn_marcar_token_usado
 - fn_reconcluir_lote_for_emergencia
@@ -544,10 +554,10 @@ verificar_integridade_recibo
 - notificar_pre_cadastro_criado
 - notificar_valor_definido
 
-
 ## 4. CONSTRAINTS
 
 ### Constraints em PRODUÇÃO (394):
+
 ```
 450562_451195_1_not_null|_deprecated_fila_emissao|CHECK
 450562_451195_2_not_null|_deprecated_fila_emissao|CHECK
@@ -656,21 +666,21 @@ contratantes_pkey|contratantes|PRIMARY KEY
 contratantes_plano_id_fkey|contratantes|FOREIGN KEY
 contratantes_responsavel_cpf_check|contratantes|CHECK
 contratantes_responsavel_cpf_unique|contratantes|UNIQUE
-450562_451155_1_not_null|contratantes_senhas|CHECK
-450562_451155_2_not_null|contratantes_senhas|CHECK
-450562_451155_3_not_null|contratantes_senhas|CHECK
-450562_451155_4_not_null|contratantes_senhas|CHECK
-contratantes_senhas_cpf_check|contratantes_senhas|CHECK
-contratantes_senhas_cpf_key|contratantes_senhas|UNIQUE
-contratantes_senhas_pkey|contratantes_senhas|PRIMARY KEY
-fk_contratantes_senhas_contratante|contratantes_senhas|FOREIGN KEY
-450562_467368_1_not_null|contratantes_senhas_audit|CHECK
-450562_467368_2_not_null|contratantes_senhas_audit|CHECK
-450562_467368_3_not_null|contratantes_senhas_audit|CHECK
-450562_467368_4_not_null|contratantes_senhas_audit|CHECK
-450562_467368_8_not_null|contratantes_senhas_audit|CHECK
-chk_operacao|contratantes_senhas_audit|CHECK
-contratantes_senhas_audit_pkey|contratantes_senhas_audit|PRIMARY KEY
+450562_451155_1_not_null|entidades_senhas|CHECK
+450562_451155_2_not_null|entidades_senhas|CHECK
+450562_451155_3_not_null|entidades_senhas|CHECK
+450562_451155_4_not_null|entidades_senhas|CHECK
+entidades_senhas_cpf_check|entidades_senhas|CHECK
+entidades_senhas_cpf_key|entidades_senhas|UNIQUE
+entidades_senhas_pkey|entidades_senhas|PRIMARY KEY
+fk_entidades_senhas_contratante|entidades_senhas|FOREIGN KEY
+450562_467368_1_not_null|entidades_senhas_audit|CHECK
+450562_467368_2_not_null|entidades_senhas_audit|CHECK
+450562_467368_3_not_null|entidades_senhas_audit|CHECK
+450562_467368_4_not_null|entidades_senhas_audit|CHECK
+450562_467368_8_not_null|entidades_senhas_audit|CHECK
+chk_operacao|entidades_senhas_audit|CHECK
+entidades_senhas_audit_pkey|entidades_senhas_audit|PRIMARY KEY
 450562_451166_1_not_null|contratos|CHECK
 450562_451166_2_not_null|contratos|CHECK
 450562_451166_6_not_null|contratos|CHECK
@@ -724,7 +734,7 @@ funcionarios_matricula_key|funcionarios|UNIQUE
 funcionarios_nivel_cargo_check|funcionarios|CHECK
 funcionarios_perfil_check|funcionarios|CHECK
 funcionarios_pkey|funcionarios|PRIMARY KEY
-no_gestor_entidade_in_funcionarios|funcionarios|CHECK
+no_gestor_in_funcionarios|funcionarios|CHECK
 450562_451209_1_not_null|laudo_arquivos_remotos|CHECK
 450562_451209_2_not_null|laudo_arquivos_remotos|CHECK
 450562_451209_3_not_null|laudo_arquivos_remotos|CHECK
@@ -946,6 +956,7 @@ usuarios_pkey|usuarios|PRIMARY KEY
 ```
 
 ### Constraints em DESENVOLVIMENTO (410):
+
 ```
 2200_420131_1_not_null|_deprecated_fila_emissao|CHECK
 2200_420131_2_not_null|_deprecated_fila_emissao|CHECK
@@ -1058,21 +1069,21 @@ contratantes_pkey|contratantes|PRIMARY KEY
 contratantes_plano_id_fkey|contratantes|FOREIGN KEY
 contratantes_responsavel_cpf_check|contratantes|CHECK
 contratantes_responsavel_cpf_unique|contratantes|UNIQUE
-2200_420081_1_not_null|contratantes_senhas|CHECK
-2200_420081_2_not_null|contratantes_senhas|CHECK
-2200_420081_3_not_null|contratantes_senhas|CHECK
-2200_420081_4_not_null|contratantes_senhas|CHECK
-contratantes_senhas_cpf_check|contratantes_senhas|CHECK
-contratantes_senhas_cpf_key|contratantes_senhas|UNIQUE
-contratantes_senhas_pkey|contratantes_senhas|PRIMARY KEY
-fk_contratantes_senhas_contratante|contratantes_senhas|FOREIGN KEY
-2200_425731_1_not_null|contratantes_senhas_audit|CHECK
-2200_425731_2_not_null|contratantes_senhas_audit|CHECK
-2200_425731_3_not_null|contratantes_senhas_audit|CHECK
-2200_425731_4_not_null|contratantes_senhas_audit|CHECK
-2200_425731_8_not_null|contratantes_senhas_audit|CHECK
-chk_operacao|contratantes_senhas_audit|CHECK
-contratantes_senhas_audit_pkey|contratantes_senhas_audit|PRIMARY KEY
+2200_420081_1_not_null|entidades_senhas|CHECK
+2200_420081_2_not_null|entidades_senhas|CHECK
+2200_420081_3_not_null|entidades_senhas|CHECK
+2200_420081_4_not_null|entidades_senhas|CHECK
+entidades_senhas_cpf_check|entidades_senhas|CHECK
+entidades_senhas_cpf_key|entidades_senhas|UNIQUE
+entidades_senhas_pkey|entidades_senhas|PRIMARY KEY
+fk_entidades_senhas_contratante|entidades_senhas|FOREIGN KEY
+2200_425731_1_not_null|entidades_senhas_audit|CHECK
+2200_425731_2_not_null|entidades_senhas_audit|CHECK
+2200_425731_3_not_null|entidades_senhas_audit|CHECK
+2200_425731_4_not_null|entidades_senhas_audit|CHECK
+2200_425731_8_not_null|entidades_senhas_audit|CHECK
+chk_operacao|entidades_senhas_audit|CHECK
+entidades_senhas_audit_pkey|entidades_senhas_audit|PRIMARY KEY
 2200_420092_1_not_null|contratos|CHECK
 2200_420092_2_not_null|contratos|CHECK
 2200_420092_6_not_null|contratos|CHECK
@@ -1134,7 +1145,7 @@ funcionarios_owner_check|funcionarios|CHECK
 funcionarios_perfil_check|funcionarios|CHECK
 funcionarios_pkey|funcionarios|PRIMARY KEY
 funcionarios_usuario_tipo_exclusivo|funcionarios|CHECK
-no_gestor_entidade_in_funcionarios|funcionarios|CHECK
+no_gestor_in_funcionarios|funcionarios|CHECK
 2200_420157_1_not_null|laudo_arquivos_remotos|CHECK
 2200_420157_2_not_null|laudo_arquivos_remotos|CHECK
 2200_420157_3_not_null|laudo_arquivos_remotos|CHECK
@@ -1362,12 +1373,13 @@ usuarios_pkey|usuarios|PRIMARY KEY
 ### ⚠️ Diferenças:
 
 **Constraints faltando em PRODUÇÃO:**
+
 - 2200_420131_1_not_null
 - 2200_420131_2_not_null
 - 2200_425284_1_not_null
 - 2200_425284_2_not_null
 - 2200_425284_3_not_null
-- _migration_issues_pkey
+- \_migration_issues_pkey
 - 2200_419982_1_not_null
 - 2200_419990_10_not_null
 - 2200_419990_1_not_null
@@ -1595,6 +1607,7 @@ usuarios_pkey|usuarios|PRIMARY KEY
 - 2200_423618_4_not_null
 
 **Constraints extras em PRODUÇÃO:**
+
 - 450562_451195_1_not_null
 - 450562_451195_2_not_null
 - 450562_450568_1_not_null
@@ -1811,10 +1824,10 @@ usuarios_pkey|usuarios|PRIMARY KEY
 - 450562_467568_2_not_null
 - 450562_467568_4_not_null
 
-
 ## 5. TABELAS
 
 ### Tabelas em PRODUÇÃO (53):
+
 ```
 _backup_fila_emissao_20260204
 _deprecated_fila_emissao
@@ -1833,8 +1846,8 @@ clinicas
 clinicas_empresas
 contratacao_personalizada
 contratantes
-contratantes_senhas
-contratantes_senhas_audit
+entidades_senhas
+entidades_senhas_audit
 contratos
 contratos_planos
 emissao_queue
@@ -1872,6 +1885,7 @@ usuarios
 ```
 
 ### Tabelas em DESENVOLVIMENTO (54):
+
 ```
 _backup_fila_emissao_20260204
 _deprecated_fila_emissao
@@ -1890,8 +1904,8 @@ clinica_configuracoes
 clinicas
 clinicas_empresas
 contratantes
-contratantes_senhas
-contratantes_senhas_audit
+entidades_senhas
+entidades_senhas_audit
 contratos
 contratos_planos
 emissao_queue
@@ -1932,19 +1946,20 @@ usuarios
 ### ⚠️ Diferenças:
 
 **Tabelas faltando em PRODUÇÃO:**
-- _migration_issues
+
+- \_migration_issues
 - fila_emissao
 
 **Tabelas extras em PRODUÇÃO:**
+
 - contratacao_personalizada
 
-
 ## 6. COLUNAS DAS PRINCIPAIS TABELAS
-
 
 ### Tabela: **lotes_avaliacao**
 
 **PRODUÇÃO:**
+
 ```
 id|integer|NO
 clinica_id|integer|YES
@@ -1968,6 +1983,7 @@ processamento_em|timestamp without time zone|YES
 ```
 
 **DESENVOLVIMENTO:**
+
 ```
 id|integer|NO
 clinica_id|integer|YES
@@ -1992,13 +2008,14 @@ motivo_emergencia|text|YES
 ```
 
 **⚠️ Diferenças detectadas:**
+
 - Colunas faltando em PROD: modo_emergencia, motivo_emergencia
 - Colunas extras em PROD: processamento_em
-
 
 ### Tabela: **laudos**
 
 **PRODUÇÃO:**
+
 ```
 id|integer|NO
 lote_id|integer|NO
@@ -2019,6 +2036,7 @@ hash_pdf|character varying|YES
 ```
 
 **DESENVOLVIMENTO:**
+
 ```
 id|integer|NO
 lote_id|integer|NO
@@ -2044,12 +2062,13 @@ hash_relatorio_setor|character varying|YES
 ```
 
 **⚠️ Diferenças detectadas:**
-- Colunas faltando em PROD: job_id, arquivo_remoto_provider, arquivo_remoto_bucket, arquivo_remoto_key, arquivo_remoto_url
 
+- Colunas faltando em PROD: job_id, arquivo_remoto_provider, arquivo_remoto_bucket, arquivo_remoto_key, arquivo_remoto_url
 
 ### Tabela: **avaliacoes**
 
 **PRODUÇÃO:**
+
 ```
 id|integer|NO
 funcionario_cpf|character|NO
@@ -2066,6 +2085,7 @@ concluida_em|timestamp without time zone|YES
 ```
 
 **DESENVOLVIMENTO:**
+
 ```
 id|integer|NO
 funcionario_cpf|character|NO
@@ -2083,10 +2103,10 @@ concluida_em|timestamp without time zone|YES
 
 ✅ **Colunas alinhadas!**
 
-
 ### Tabela: **funcionarios**
 
 **PRODUÇÃO:**
+
 ```
 id|integer|NO
 cpf|character|NO
@@ -2121,6 +2141,7 @@ usuario_tipo|USER-DEFINED|NO
 ```
 
 **DESENVOLVIMENTO:**
+
 ```
 id|integer|NO
 cpf|character|NO
@@ -2155,13 +2176,14 @@ ultimo_lote_codigo|character varying|YES
 ```
 
 **⚠️ Diferenças detectadas:**
+
 - Colunas faltando em PROD: ultimo_lote_codigo
 - Colunas extras em PROD: data_admissao
-
 
 ### Tabela: **audit_logs**
 
 **PRODUÇÃO:**
+
 ```
 id|bigint|NO
 user_cpf|character|YES
@@ -2180,6 +2202,7 @@ clinica_id|integer|YES
 ```
 
 **DESENVOLVIMENTO:**
+
 ```
 id|bigint|NO
 user_cpf|character|YES
@@ -2198,11 +2221,11 @@ clinica_id|integer|YES
 ```
 
 ✅ **Colunas alinhadas!**
-
 
 ### Tabela: **auditoria_laudos**
 
 **PRODUÇÃO:**
+
 ```
 id|bigint|NO
 lote_id|integer|NO
@@ -2221,6 +2244,7 @@ erro|text|YES
 ```
 
 **DESENVOLVIMENTO:**
+
 ```
 id|bigint|NO
 lote_id|integer|NO
@@ -2239,7 +2263,6 @@ erro|text|YES
 ```
 
 ✅ **Colunas alinhadas!**
-
 
 ---
 
@@ -2248,7 +2271,7 @@ erro|text|YES
 ⚠️ **ATENÇÃO!** Foram detectadas 468 diferenças entre os schemas.
 
 **Recomendações:**
+
 1. Revise cada diferença listada acima
 2. Execute as migrations faltantes em produção
 3. Valide o funcionamento após aplicar as correções
-

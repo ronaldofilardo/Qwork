@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    const session = await requireRole(['gestor_entidade', 'rh']);
+    const session = await requireRole(['gestor', 'rh']);
 
     // Buscar plano ativo do contratante
     const result = await query(

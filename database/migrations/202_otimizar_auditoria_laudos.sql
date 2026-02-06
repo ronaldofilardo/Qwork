@@ -58,7 +58,7 @@ COMMENT ON CONSTRAINT chk_solicitation_has_requester ON auditoria_laudos IS
 ALTER TABLE auditoria_laudos
 ADD CONSTRAINT chk_tipo_solicitante_valid
 CHECK (
-  tipo_solicitante IS NULL OR tipo_solicitante IN ('rh', 'gestor_entidade', 'admin', 'emissor')
+  tipo_solicitante IS NULL OR tipo_solicitante IN ('rh', 'gestor', 'admin', 'emissor')
 );
 
 COMMENT ON CONSTRAINT chk_tipo_solicitante_valid ON auditoria_laudos IS 
@@ -139,7 +139,7 @@ COMMENT ON COLUMN auditoria_laudos.solicitado_por IS
 'CPF do usuario que solicitou a acao (RH ou Entidade). Obrigatorio para acoes manuais.';
 
 COMMENT ON COLUMN auditoria_laudos.tipo_solicitante IS 
-'Tipo do solicitante: rh, gestor_entidade, admin, emissor. Obrigatório quando solicitado_por preenchido.';
+'Tipo do solicitante: rh, gestor, admin, emissor. Obrigatório quando solicitado_por preenchido.';
 
 COMMENT ON COLUMN auditoria_laudos.tentativas IS 
 'Contador de tentativas de processamento para retry logic. Default 0.';

@@ -6,7 +6,7 @@ describe('RLS: context visibility in queries', () => {
     const session: Session = {
       cpf: '99999999999',
       nome: 'Teste RLS',
-      perfil: 'gestor_entidade',
+      perfil: 'gestor',
       clinica_id: undefined,
     } as Session;
 

@@ -257,8 +257,8 @@ CREATE TYPE public.tipo_plano AS ENUM (
 CREATE TYPE public.usuario_tipo_enum AS ENUM (
     'funcionario_clinica',
     'funcionario_entidade',
-    'gestor_rh',
-    'gestor_entidade',
+    'rh',
+    'gestor',
     'admin',
     'emissor'
 );
@@ -1202,11 +1202,11 @@ BEGIN
 
   
 
-  -- SECURITY: For gestor_entidade perfil, contratante_id is mandatory
+  -- SECURITY: For gestor perfil, contratante_id is mandatory
 
-  IF v_id IS NULL AND current_user_perfil() = 'gestor_entidade' THEN
+  IF v_id IS NULL AND current_user_perfil() = 'gestor' THEN
 
-    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor_entidade.';
+    RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not set for perfil gestor.';
 
   END IF;
 
@@ -1220,9 +1220,9 @@ EXCEPTION
 
     -- For non-gestor users, NULL is acceptable
 
-    IF current_user_perfil() = 'gestor_entidade' THEN
+    IF current_user_perfil() = 'gestor' THEN
 
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor.';
 
     END IF;
 
@@ -1230,9 +1230,9 @@ EXCEPTION
 
   WHEN SQLSTATE '22023' THEN
 
-    IF current_user_perfil() = 'gestor_entidade' THEN
+    IF current_user_perfil() = 'gestor' THEN
 
-      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor_entidade.';
+      RAISE EXCEPTION 'SECURITY: app.current_user_contratante_id not configured for gestor.';
 
     END IF;
 
@@ -1249,7 +1249,7 @@ $$;
 
 COMMENT ON FUNCTION public.current_user_contratante_id() IS 'Returns current user contratante_id from session context.
 
-   RAISES EXCEPTION if not set for perfil gestor_entidade (prevents NULL bypass).
+   RAISES EXCEPTION if not set for perfil gestor (prevents NULL bypass).
 
    Returns NULL for other perfis (acceptable).';
 
@@ -1896,7 +1896,7 @@ BEGIN
 
     LEFT JOIN funcionarios f ON fe.solicitado_por = f.cpf
 
-    LEFT JOIN contratantes_senhas cs ON fe.solicitado_por = cs.cpf
+    LEFT JOIN entidades_senhas cs ON fe.solicitado_por = cs.cpf
 
     WHERE l.id = p_laudo_id
 
@@ -3669,10 +3669,10 @@ $$;
 
 
 --
--- Name: update_contratantes_senhas_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_entidades_senhas_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.update_contratantes_senhas_updated_at() RETURNS trigger
+CREATE FUNCTION public.update_entidades_senhas_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -4044,7 +4044,7 @@ BEGIN
 
     -- Perfis que requerem contratante_id ou clinica_id
 
-    IF v_perfil IN ('gestor_entidade', 'rh', 'entidade') THEN
+    IF v_perfil IN ('gestor', 'rh', 'entidade') THEN
 
         IF (v_contratante_id IS NULL OR v_contratante_id = '') 
 
@@ -5154,7 +5154,7 @@ COMMENT ON COLUMN public.avaliacao_resets.requested_by_user_id IS 'User ID who r
 -- Name: COLUMN avaliacao_resets.requested_by_role; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.avaliacao_resets.requested_by_role IS 'Role of the user at the time of reset (rh or gestor_entidade)';
+COMMENT ON COLUMN public.avaliacao_resets.requested_by_role IS 'Role of the user at the time of reset (rh or gestor)';
 
 
 --
@@ -5503,10 +5503,10 @@ ALTER SEQUENCE public.contratantes_id_seq OWNED BY public.contratantes.id;
 
 
 --
--- Name: contratantes_senhas; Type: TABLE; Schema: public; Owner: -
+-- Name: entidades_senhas; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.contratantes_senhas (
+CREATE TABLE public.entidades_senhas (
     id integer NOT NULL,
     contratante_id integer NOT NULL,
     cpf character varying(11) NOT NULL,
@@ -5516,36 +5516,36 @@ CREATE TABLE public.contratantes_senhas (
     updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     criado_em timestamp with time zone DEFAULT CURRENT_TIMESTAMP,
     atualizado_em timestamp with time zone,
-    CONSTRAINT contratantes_senhas_cpf_check CHECK (((cpf)::text ~ '^\d{11}$'::text))
+    CONSTRAINT entidades_senhas_cpf_check CHECK (((cpf)::text ~ '^\d{11}$'::text))
 );
 
 
 --
--- Name: TABLE contratantes_senhas; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE entidades_senhas; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.contratantes_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-
-
---
--- Name: COLUMN contratantes_senhas.cpf; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.contratantes_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON TABLE public.entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
 
 
 --
--- Name: COLUMN contratantes_senhas.primeira_senha_alterada; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN entidades_senhas.cpf; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.contratantes_senhas.primeira_senha_alterada IS 'Flag para forÃ§ar alteraÃ§Ã£o de senha no primeiro acesso';
+COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
 
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: COLUMN entidades_senhas.primeira_senha_alterada; Type: COMMENT; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.contratantes_senhas_id_seq
+COMMENT ON COLUMN public.entidades_senhas.primeira_senha_alterada IS 'Flag para forÃ§ar alteraÃ§Ã£o de senha no primeiro acesso';
+
+
+--
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.entidades_senhas_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -5555,10 +5555,10 @@ CREATE SEQUENCE public.contratantes_senhas_id_seq
 
 
 --
--- Name: contratantes_senhas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: entidades_senhas_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.contratantes_senhas_id_seq OWNED BY public.contratantes_senhas.id;
+ALTER SEQUENCE public.entidades_senhas_id_seq OWNED BY public.entidades_senhas.id;
 
 
 --
@@ -5739,7 +5739,7 @@ CREATE TABLE public.fila_emissao (
     solicitado_em timestamp without time zone DEFAULT now(),
     tipo_solicitante character varying(20),
     CONSTRAINT chk_fila_emissao_solicitante CHECK (((solicitado_por IS NULL) OR ((solicitado_por IS NOT NULL) AND (tipo_solicitante IS NOT NULL)))),
-    CONSTRAINT fila_emissao_tipo_solicitante_check CHECK ((((tipo_solicitante)::text = ANY (ARRAY[('rh'::character varying)::text, ('gestor_entidade'::character varying)::text, ('admin'::character varying)::text])) OR (tipo_solicitante IS NULL)))
+    CONSTRAINT fila_emissao_tipo_solicitante_check CHECK ((((tipo_solicitante)::text = ANY (ARRAY[('rh'::character varying)::text, ('gestor'::character varying)::text, ('admin'::character varying)::text])) OR (tipo_solicitante IS NULL)))
 );
 
 ALTER TABLE ONLY public.fila_emissao FORCE ROW LEVEL SECURITY;
@@ -5784,7 +5784,7 @@ COMMENT ON COLUMN public.fila_emissao.erro IS 'Mensagem do último erro ocorrido
 -- Name: COLUMN fila_emissao.solicitado_por; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.fila_emissao.solicitado_por IS 'CPF do RH ou gestor_entidade que solicitou a emissão manual do laudo';
+COMMENT ON COLUMN public.fila_emissao.solicitado_por IS 'CPF do RH ou gestor que solicitou a emissão manual do laudo';
 
 
 --
@@ -5798,7 +5798,7 @@ COMMENT ON COLUMN public.fila_emissao.solicitado_em IS 'Timestamp exato da solic
 -- Name: COLUMN fila_emissao.tipo_solicitante; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.fila_emissao.tipo_solicitante IS 'Perfil do usuário que solicitou: rh, gestor_entidade ou admin';
+COMMENT ON COLUMN public.fila_emissao.tipo_solicitante IS 'Perfil do usuário que solicitou: rh, gestor ou admin';
 
 
 --
@@ -6884,7 +6884,7 @@ CREATE VIEW public.v_relatorio_emissoes_usuario AS
 -- Name: VIEW v_relatorio_emissoes_usuario; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON VIEW public.v_relatorio_emissoes_usuario IS 'Relatório estatístico de emissões por usuário (RH ou gestor_entidade) para auditoria e compliance';
+COMMENT ON VIEW public.v_relatorio_emissoes_usuario IS 'Relatório estatístico de emissões por usuário (RH ou gestor) para auditoria e compliance';
 
 
 --
@@ -7032,10 +7032,10 @@ ALTER TABLE ONLY public.contratantes ALTER COLUMN id SET DEFAULT nextval('public
 
 
 --
--- Name: contratantes_senhas id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: entidades_senhas id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes_senhas ALTER COLUMN id SET DEFAULT nextval('public.contratantes_senhas_id_seq'::regclass);
+ALTER TABLE ONLY public.entidades_senhas ALTER COLUMN id SET DEFAULT nextval('public.entidades_senhas_id_seq'::regclass);
 
 
 --
@@ -7319,19 +7319,19 @@ ALTER TABLE ONLY public.contratantes
 
 
 --
--- Name: contratantes_senhas contratantes_senhas_cpf_key; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: entidades_senhas entidades_senhas_cpf_key; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT contratantes_senhas_cpf_key UNIQUE (cpf);
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT entidades_senhas_cpf_key UNIQUE (cpf);
 
 
 --
--- Name: contratantes_senhas contratantes_senhas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: entidades_senhas entidades_senhas_pkey; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT contratantes_senhas_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT entidades_senhas_pkey PRIMARY KEY (id);
 
 
 --
@@ -7655,10 +7655,10 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: contratantes_senhas_contratante_cpf_unique; Type: INDEX; Schema: public; Owner: -
+-- Name: entidades_senhas_contratante_cpf_unique; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE UNIQUE INDEX contratantes_senhas_contratante_cpf_unique ON public.contratantes_senhas USING btree (contratante_id, cpf);
+CREATE UNIQUE INDEX entidades_senhas_contratante_cpf_unique ON public.entidades_senhas USING btree (contratante_id, cpf);
 
 
 --
@@ -7886,17 +7886,17 @@ CREATE INDEX idx_contratantes_data_liberacao ON public.contratantes USING btree 
 
 
 --
--- Name: idx_contratantes_senhas_contratante; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_entidades_senhas_contratante; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_contratantes_senhas_contratante ON public.contratantes_senhas USING btree (contratante_id);
+CREATE INDEX idx_entidades_senhas_contratante ON public.entidades_senhas USING btree (contratante_id);
 
 
 --
--- Name: idx_contratantes_senhas_cpf; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_entidades_senhas_cpf; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_contratantes_senhas_cpf ON public.contratantes_senhas USING btree (cpf);
+CREATE INDEX idx_entidades_senhas_cpf ON public.entidades_senhas USING btree (cpf);
 
 
 --
@@ -8551,10 +8551,10 @@ COMMENT ON TRIGGER prevent_lote_update_after_emission ON public.lotes_avaliacao 
 
 
 --
--- Name: contratantes_senhas trg_contratantes_senhas_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: entidades_senhas trg_entidades_senhas_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_contratantes_senhas_updated_at BEFORE UPDATE ON public.contratantes_senhas FOR EACH ROW EXECUTE FUNCTION public.update_contratantes_senhas_updated_at();
+CREATE TRIGGER trg_entidades_senhas_updated_at BEFORE UPDATE ON public.entidades_senhas FOR EACH ROW EXECUTE FUNCTION public.update_entidades_senhas_updated_at();
 
 
 --
@@ -8804,11 +8804,11 @@ ALTER TABLE ONLY public.avaliacoes
 
 
 --
--- Name: contratantes_senhas fk_contratantes_senhas_contratante; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: entidades_senhas fk_entidades_senhas_contratante; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes_senhas
-    ADD CONSTRAINT fk_contratantes_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.entidades_senhas
+    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
 
 
 --
@@ -9156,7 +9156,7 @@ CREATE POLICY avaliacao_resets_delete_policy ON public.avaliacao_resets FOR DELE
 -- Name: avaliacao_resets avaliacao_resets_insert_policy; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR INSERT WITH CHECK (((current_setting('app.is_backend'::text, true) = '1'::text) OR (current_setting('app.current_user_perfil'::text, true) = ANY (ARRAY['rh'::text, 'gestor_entidade'::text, 'admin'::text]))));
+CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR INSERT WITH CHECK (((current_setting('app.is_backend'::text, true) = '1'::text) OR (current_setting('app.current_user_perfil'::text, true) = ANY (ARRAY['rh'::text, 'gestor'::text, 'admin'::text]))));
 
 
 --
@@ -9166,7 +9166,7 @@ CREATE POLICY avaliacao_resets_insert_policy ON public.avaliacao_resets FOR INSE
 CREATE POLICY avaliacao_resets_select_policy ON public.avaliacao_resets FOR SELECT USING ((EXISTS ( SELECT 1
    FROM (public.avaliacoes av
      JOIN public.lotes_avaliacao lot ON ((av.lote_id = lot.id)))
-  WHERE ((av.id = avaliacao_resets.avaliacao_id) AND (((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND (lot.clinica_id = (current_setting('app.current_user_clinica_id'::text, true))::integer)) OR ((current_setting('app.current_user_perfil'::text, true) = 'gestor_entidade'::text) AND (lot.contratante_id = (current_setting('app.current_user_contratante_id'::text, true))::integer)))))));
+  WHERE ((av.id = avaliacao_resets.avaliacao_id) AND (((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND (lot.clinica_id = (current_setting('app.current_user_clinica_id'::text, true))::integer)) OR ((current_setting('app.current_user_perfil'::text, true) = 'gestor'::text) AND (lot.contratante_id = (current_setting('app.current_user_contratante_id'::text, true))::integer)))))));
 
 
 --
@@ -9353,7 +9353,7 @@ COMMENT ON POLICY funcionarios_delete_simple ON public.funcionarios IS 'Polític
 -- Name: funcionarios funcionarios_insert_simple; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY funcionarios_insert_simple ON public.funcionarios FOR INSERT WITH CHECK (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor_entidade'::text)));
+CREATE POLICY funcionarios_insert_simple ON public.funcionarios FOR INSERT WITH CHECK (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor'::text)));
 
 
 --
@@ -9409,7 +9409,7 @@ CREATE POLICY funcionarios_rh_update ON public.funcionarios FOR UPDATE USING (((
 -- Name: funcionarios funcionarios_select_simple; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY funcionarios_select_simple ON public.funcionarios FOR SELECT USING (((public.current_user_perfil() = 'admin'::text) OR ((public.current_user_perfil() = 'funcionario'::text) AND ((cpf)::text = public.current_user_cpf())) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor_entidade'::text)));
+CREATE POLICY funcionarios_select_simple ON public.funcionarios FOR SELECT USING (((public.current_user_perfil() = 'admin'::text) OR ((public.current_user_perfil() = 'funcionario'::text) AND ((cpf)::text = public.current_user_cpf())) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor'::text)));
 
 
 --
@@ -9423,7 +9423,7 @@ COMMENT ON POLICY funcionarios_select_simple ON public.funcionarios IS 'Polític
 -- Name: funcionarios funcionarios_update_simple; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY funcionarios_update_simple ON public.funcionarios FOR UPDATE USING (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor_entidade'::text)));
+CREATE POLICY funcionarios_update_simple ON public.funcionarios FOR UPDATE USING (((public.current_user_perfil() = 'admin'::text) OR (public.current_user_perfil() = 'rh'::text) OR (public.current_user_perfil() = 'gestor'::text)));
 
 
 --

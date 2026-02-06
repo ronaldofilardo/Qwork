@@ -10,11 +10,11 @@ import {
   iniciarPagamento,
   confirmarPagamento,
   getPagamentoById,
-  getPagamentosByContratante,
+  getPagamentosByEntidade,
   atualizarStatusPagamento,
 } from '@/lib/db-contratacao';
 import { logAudit, extractRequestInfo } from '@/lib/audit';
-import { ativarContratante } from '@/lib/contratante-activation';
+import { ativarEntidade } from '@/lib/entidade-activation';
 import {
   criarContaResponsavel,
   criarSenhaInicialEntidade,
@@ -39,9 +39,9 @@ export async function handleGetPagamento(
 ) {
   const { session } = context;
 
-  // Exige sessão e permite apenas admin ou responsável do contratante
+  // Exige sessão e permite apenas admin ou responsável da entidade
   requireSession(context);
-  if (session.perfil !== 'admin' && !session.contratante_id) {
+  if (session.perfil !== 'admin' && !session.entidade_id) {
     throw new Error('Não autorizado');
   }
 
@@ -58,9 +58,9 @@ export async function handleGetPagamento(
     };
   }
 
-  if (input.contratante_id) {
-    const pagamentos = await getPagamentosByContratante(
-      input.contratante_id,
+  if (input.entidade_id) {
+    const pagamentos = await getPagamentosByEntidade(
+      input.entidade_id,
       session
     );
 
@@ -70,7 +70,7 @@ export async function handleGetPagamento(
     };
   }
 
-  throw new Error('Forneça id ou contratante_id');
+  throw new Error('Forneça id ou entidade_id');
 }
 
 // ============================================================================
@@ -85,7 +85,7 @@ export async function handleIniciarPagamento(
 
   const pagamento = await iniciarPagamento(
     {
-      contratante_id: input.contratante_id,
+      entidade_id: input.entidade_id,
       contrato_id: input.contrato_id,
       valor: input.valor,
       metodo: input.metodo as any,
@@ -102,7 +102,7 @@ export async function handleIniciarPagamento(
       action: 'INSERT',
       resourceId: pagamento.id,
       newData: {
-        contratante_id: input.contratante_id,
+        entidade_id: input.entidade_id,
         contrato_id: input.contrato_id,
         valor: input.valor,
         metodo: input.metodo,
@@ -159,9 +159,9 @@ export async function handleConfirmarPagamento(
   // Fluxo pós-pagamento: ativação/contas/recibo
   let contaCriada = false;
   try {
-    // Marcar pagamento confirmado no contratante
+    // Marcar pagamento confirmado na entidade
     await query(
-      `UPDATE contratantes 
+      `UPDATE entidades 
        SET pagamento_confirmado = true,
            metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
              'pagamento_id', $1::int,
@@ -169,21 +169,21 @@ export async function handleConfirmarPagamento(
              'metodo_pagamento', $2
            )
        WHERE id = $3`,
-      [input.pagamento_id, pagamento.metodo, pagamento.contratante_id]
+      [input.pagamento_id, pagamento.metodo, pagamento.entidade_id]
     );
 
-    // Buscar contratante para próximas etapas
-    const contratanteResult = await query(
+    // Buscar entidade para próximas etapas
+    const entidadeResult = await query(
       `SELECT id, nome, cnpj, responsavel_cpf, responsavel_email, responsavel_telefone
-       FROM contratantes WHERE id = $1`,
-      [pagamento.contratante_id]
+       FROM entidades WHERE id = $1`,
+      [pagamento.entidade_id]
     );
 
-    if (contratanteResult.rows.length === 0) {
-      throw new Error('Contratante não encontrado após pagamento');
+    if (entidadeResult.rows.length === 0) {
+      throw new Error('Entidade não encontrada após pagamento');
     }
 
-    const contratante = contratanteResult.rows[0] as {
+    const entidade = entidadeResult.rows[0] as {
       responsavel_cpf?: string;
       responsavel_email?: string;
       responsavel_telefone?: string;
@@ -191,19 +191,19 @@ export async function handleConfirmarPagamento(
       id: number;
     };
 
-    // Ativar contratante
-    await ativarContratante({
-      contratante_id: pagamento.contratante_id,
+    // Ativar entidade
+    await ativarEntidade({
+      entidade_id: pagamento.entidade_id,
       motivo: `Ativação automática após confirmação do pagamento ${input.pagamento_id}`,
     });
 
     // Criar conta do responsável (se ainda não existe)
     try {
-      const cpfNumeros = contratante.responsavel_cpf?.replace(/\D/g, '');
+      const cpfNumeros = entidade.responsavel_cpf?.replace(/\D/g, '');
       if (cpfNumeros) {
         // Criar senha inicial no banco (se aplicável) e em seguida criar a conta
         try {
-          await criarSenhaInicialEntidade(contratante.id);
+          await criarSenhaInicialEntidade(entidade.id);
         } catch (e) {
           // Não falhar se a criação da senha inicial falhar
           console.warn(
@@ -212,7 +212,7 @@ export async function handleConfirmarPagamento(
           );
         }
 
-        await criarContaResponsavel(contratante.id);
+        await criarContaResponsavel(entidade.id);
         contaCriada = true;
       }
     } catch (err: any) {

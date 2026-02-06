@@ -230,7 +230,7 @@ BEGIN
 
     -- Criar avaliação concluída
     INSERT INTO avaliacoes (funcionario_cpf, status, inicio, envio)
-    VALUES (v_cpf, 'concluida', NOW(), NOW())
+    VALUES (v_cpf, 'concluido', NOW(), NOW())
     RETURNING id INTO v_avaliacao_id;
 
     -- Criar resultado
@@ -285,3 +285,4 @@ END $$;
 \echo '========================================================'
 \echo 'FIM DOS TESTES'
 \echo '========================================================'
+

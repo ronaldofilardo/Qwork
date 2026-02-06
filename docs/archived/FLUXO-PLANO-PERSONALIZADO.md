@@ -173,7 +173,7 @@ Documentação do fluxo end-to-end para contratação de plano personalizado, de
 **Backend:**
 
 - `POST /api/auth/criar-senha`
-- Insere em `contratantes_senhas`:
+- Insere em `entidades_senhas`:
   - `cpf={CPF_RESPONSAVEL}`
   - `senha_hash={BCRYPT_HASH}`
   - `contratante_id={ID_CONTRATANTE}`
@@ -222,7 +222,7 @@ Documentação do fluxo end-to-end para contratação de plano personalizado, de
                          ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │ 6. Cria Senha e Libera Login                                    │
-│    └─> contratantes_senhas + data_liberacao_login               │
+│    └─> entidades_senhas + data_liberacao_login               │
 └─────────────────────────────────────────────────────────────────┘
 ```
 

@@ -62,7 +62,7 @@ $senhaTexto = "senha123"
 # Para teste, usar um hash simples
 $senhaHash = "`$2b`$10`$abcdefghijklmnopqrstuvwxyz1234567890ABCDEFGHIJK"
 
-$insertSenha = "INSERT INTO contratantes_senhas (cpf, senha_hash, primeira_senha_alterada, contratante_id) VALUES ('$cpfResponsavel', '$senhaHash', false, $contratanteId) ON CONFLICT (cpf) DO UPDATE SET senha_hash = '$senhaHash', contratante_id = $contratanteId RETURNING id;"
+$insertSenha = "INSERT INTO entidades_senhas (cpf, senha_hash, primeira_senha_alterada, contratante_id) VALUES ('$cpfResponsavel', '$senhaHash', false, $contratanteId) ON CONFLICT (cpf) DO UPDATE SET senha_hash = '$senhaHash', contratante_id = $contratanteId RETURNING id;"
 
 $senhaIdResult = psql -U postgres -d nr-bps_db -t -A -c $insertSenha 2>&1
 $senhaId = ($senhaIdResult | Select-String -Pattern '^\d+$').Matches.Value

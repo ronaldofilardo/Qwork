@@ -54,7 +54,7 @@ async function fixResultadosFaltantes() {
       FROM avaliacoes a
       LEFT JOIN resultados r ON a.id = r.avaliacao_id
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.status = 'concluida' 
+      WHERE a.status = 'concluido' 
         AND r.id IS NULL
       ORDER BY a.id
     `);
@@ -131,7 +131,7 @@ async function fixResultadosFaltantes() {
     const estatisticasFinais = await client.query(`
       SELECT 
         COUNT(DISTINCT a.id) as total_avaliacoes,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as concluidas,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as concluidas,
         COUNT(DISTINCT r.avaliacao_id) as com_resultados
       FROM avaliacoes a
       LEFT JOIN resultados r ON a.id = r.avaliacao_id
@@ -165,3 +165,4 @@ async function fixResultadosFaltantes() {
 
 // Executar o script
 fixResultadosFaltantes();
+

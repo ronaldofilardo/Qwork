@@ -86,7 +86,7 @@ export async function GET(request: NextRequest) {
       JOIN lotes_avaliacao la ON a.lote_id = la.id
       WHERE a.lote_id = $1
         AND a.funcionario_cpf = $2
-        AND a.status = 'concluida'
+        AND a.status = 'concluido'
         AND f.clinica_id = $3
     `,
       [loteId, cpfFilter, clinicaId]

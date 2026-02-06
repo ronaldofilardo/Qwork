@@ -235,8 +235,8 @@ ORDER BY total DESC;
 -- Resultado esperado:
 -- funcionario_clinica    | 150
 -- funcionario_entidade   | 30
--- gestor_rh             | 10
--- gestor_entidade       | 5
+-- rh             | 10
+-- gestor       | 5
 -- emissor               | 3
 -- admin                 | 2
 ```

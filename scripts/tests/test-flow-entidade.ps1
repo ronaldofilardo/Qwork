@@ -58,7 +58,7 @@ Write-Host "`n[2/5] Criando senha para gestor..."
 $cpf = "11111111111"
 $senhaHash = "`$2b`$10`$XxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXxXx"
 
-$insertSenha = "INSERT INTO contratantes_senhas (cpf, senha_hash, contratante_id, primeira_senha_alterada) VALUES ('$cpf', '$senhaHash', $contratanteId, false) ON CONFLICT (cpf) DO UPDATE SET contratante_id = $contratanteId RETURNING id;"
+$insertSenha = "INSERT INTO entidades_senhas (cpf, senha_hash, contratante_id, primeira_senha_alterada) VALUES ('$cpf', '$senhaHash', $contratanteId, false) ON CONFLICT (cpf) DO UPDATE SET contratante_id = $contratanteId RETURNING id;"
 
 $senhaId = (psql -U postgres -d nr-bps_db -t -A -c $insertSenha 2>&1 | Select-String -Pattern '^\d+$').Matches.Value
 Write-Host "[OK] Senha criada: ID $senhaId"

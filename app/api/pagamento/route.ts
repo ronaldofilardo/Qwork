@@ -47,8 +47,8 @@ export const GET = handleRequest({
       id: searchParams.get('id')
         ? parseInt(searchParams.get('id') as string, 10)
         : undefined,
-      contratante_id: searchParams.get('contratante_id')
-        ? parseInt(searchParams.get('contratante_id') as string, 10)
+      entidade_id: searchParams.get('entidade_id')
+        ? parseInt(searchParams.get('entidade_id') as string, 10)
         : undefined,
     };
   },

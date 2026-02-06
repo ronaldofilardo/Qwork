@@ -17,7 +17,7 @@ constraint: 'funcionarios_clinica_check'
 A constraint `funcionarios_clinica_check` estava configurada para aceitar apenas:
 
 - `clinica_id IS NOT NULL`, OU
-- `perfil IN ('emissor', 'admin', 'gestor_entidade')`
+- `perfil IN ('emissor', 'admin', 'gestor')`
 
 **Mas NÃO aceitava `contratante_id` como alternativa válida.**
 
@@ -134,7 +134,7 @@ Error: Contexto de sessão inválido: usuário não encontrado ou inativo
 ### Causa Raiz
 
 O gestor RH (contratante_id=10, tipo 'clinica') não tinha registro na tabela `funcionarios`.  
-A função `validateSessionContext()` buscava apenas em `funcionarios`, não considerando gestores que existem apenas em `contratantes_senhas`.
+A função `validateSessionContext()` buscava apenas em `funcionarios`, não considerando gestores que existem apenas em `entidades_senhas`.
 
 ### Solução Aplicada
 
@@ -147,8 +147,8 @@ RETURNING id; -- retornou id = 16
 ```
 
 2. **Melhorada lógica de `validateSessionContext()` em [lib/db-security.ts](c:/apps/QWork/lib/db-security.ts#L25-L100):**
-   - Para perfil 'rh': busca primeiro em `funcionarios`, depois em `contratantes_senhas` (gestores de clínica)
-   - Para perfil 'gestor_entidade': busca apenas em `contratantes_senhas`
+   - Para perfil 'rh': busca primeiro em `funcionarios`, depois em `entidades_senhas` (gestores de clínica)
+   - Para perfil 'gestor': busca apenas em `entidades_senhas`
    - Para demais perfis: busca apenas em `funcionarios`
 
 ---
@@ -158,7 +158,7 @@ RETURNING id; -- retornou id = 16
 - ✅ [database/migrations/073_fix_funcionarios_clinica_check_contratante.sql](c:/apps/QWork/database/migrations/073_fix_funcionarios_clinica_check_contratante.sql) - Constraint para aceitar contratante_id
 - ✅ [database/migrations/074_fix_audit_trigger_allow_null_perfil.sql](c:/apps/QWork/database/migrations/074_fix_audit_trigger_allow_null_perfil.sql) - Trigger permite user_perfil NULL
 - ✅ [database/migrations/013b_create_nivel_cargo_enum_column.sql](c:/apps/QWork/database/migrations/013b_create_nivel_cargo_enum_column.sql) - Migration idempotente para criar enum `nivel_cargo_enum` e coluna `funcionarios.nivel_cargo` em ambientes de teste
-- ✅ [database/migrations/013c_modify_nivel_cargo_constraint_remove_rh.sql](c:/apps/QWork/database/migrations/013c_modify_nivel_cargo_constraint_remove_rh.sql) - Remove `nivel_cargo` para perfis que não devem tê-lo (`rh`, `gestor_entidade`) e ajusta constraint para exigir `nivel_cargo` apenas para `perfil = 'funcionario'`
+- ✅ [database/migrations/013c_modify_nivel_cargo_constraint_remove_rh.sql](c:/apps/QWork/database/migrations/013c_modify_nivel_cargo_constraint_remove_rh.sql) - Remove `nivel_cargo` para perfis que não devem tê-lo (`rh`, `gestor`) e ajusta constraint para exigir `nivel_cargo` apenas para `perfil = 'funcionario'`
 - ✅ [lib/session.ts](c:/apps/QWork/lib/session.ts#L306-L360) - Melhorada função `requireClinica()`
 - ✅ [lib/db-security.ts](c:/apps/QWork/lib/db-security.ts#L25-L100) - Melhorada validação de contexto para RH
 - ✅ Banco de dados: constraints atualizadas + registros criados
@@ -211,7 +211,7 @@ curl -X POST http://localhost:3000/api/rh/empresas \
 
 1. **Sempre aplicar migrations em ordem** (usar script de setup ou sequencial)
 2. **Garantir criação de registro `clinicas` ao aprovar contratante tipo 'clinica'**
-3. **Criar registro em `funcionarios` para gestores RH** ou ajustar lógica para aceitar gestores apenas em `contratantes_senhas`
-   - Observação: os perfis de gestão **não devem receber** `nivel_cargo`. Em particular, `perfil = 'rh'` e `perfil = 'gestor_entidade'` devem ter `nivel_cargo = NULL`.
+3. **Criar registro em `funcionarios` para gestores RH** ou ajustar lógica para aceitar gestores apenas em `entidades_senhas`
+   - Observação: os perfis de gestão **não devem receber** `nivel_cargo`. Em particular, `perfil = 'rh'` e `perfil = 'gestor'` devem ter `nivel_cargo = NULL`.
 4. **Usar `queryWithContext()` quando possível** para popular contexto de auditoria
 5. **Manter audit_logs.user_perfil como NULL-able** para operações sem contexto

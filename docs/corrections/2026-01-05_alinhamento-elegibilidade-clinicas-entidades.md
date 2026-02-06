@@ -87,7 +87,7 @@ interface Funcionario {
 **Exibição melhorada na tabela:**
 
 ```tsx
-{funcionario.ultima_avaliacao_status === 'concluida' && (
+{funcionario.ultima_avaliacao_status === 'concluido' && (
   <div className="mt-1">
     {funcionario.tem_avaliacao_recente ? (
       <span className="... bg-blue-100 text-blue-800">
@@ -168,4 +168,5 @@ João Silva | 001-010125 | [Concluída] | 15/12/2024
 ---
 
 **Conclusão:** O fluxo de elegibilidade de clínicas agora está **100% alinhado** com o de entidades. A única diferença estrutural é que clínicas têm o subnível "empresa", mas os critérios de elegibilidade (12 meses, índice, novos funcionários) são idênticos.
+
 

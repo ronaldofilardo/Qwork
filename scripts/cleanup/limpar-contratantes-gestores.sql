@@ -29,13 +29,13 @@ WHERE tipo = 'entidade'
 ORDER BY id;
 
 \echo ''
-\echo '2. GESTORES ENTIDADE (contratantes_senhas):'
+\echo '2. GESTORES ENTIDADE (entidades_senhas):'
 SELECT 
     cs.cpf,
     cs.contratante_id,
     c.nome,
     cs.criado_em
-FROM contratantes_senhas cs
+FROM entidades_senhas cs
 JOIN contratantes c ON c.id = cs.contratante_id
 WHERE c.tipo = 'entidade'
 ORDER BY cs.contratante_id;
@@ -51,7 +51,7 @@ SELECT
 FROM funcionarios f
 JOIN contratantes c ON c.id = f.contratante_id
 WHERE c.tipo = 'entidade'
-  AND f.perfil = 'gestor_entidade'
+  AND f.perfil = 'gestor'
 ORDER BY f.contratante_id;
 
 \echo ''
@@ -138,9 +138,9 @@ WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
 DELETE FROM funcionarios
 WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
 
--- 7. Deletar senhas dos gestores (contratantes_senhas)
-\echo 'Deletando senhas dos gestores (contratantes_senhas)...'
-DELETE FROM contratantes_senhas
+-- 7. Deletar senhas dos gestores (entidades_senhas)
+\echo 'Deletando senhas dos gestores (entidades_senhas)...'
+DELETE FROM entidades_senhas
 WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
 
 -- 8. Deletar pagamentos relacionados
@@ -185,8 +185,8 @@ UNION ALL
 
 SELECT 
     COUNT(*) as gestores_restantes,
-    'gestores em contratantes_senhas' as tabela
-FROM contratantes_senhas cs
+    'gestores em entidades_senhas' as tabela
+FROM entidades_senhas cs
 LEFT JOIN contratantes c ON c.id = cs.contratante_id
 WHERE c.tipo = 'entidade' OR c.id IS NULL;
 

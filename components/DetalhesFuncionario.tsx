@@ -294,7 +294,7 @@ export default function DetalhesFuncionario({
                     <div
                       key={avaliacao.id}
                       className={`border rounded-lg p-4 ${
-                        avaliacao.status === 'concluida'
+                        avaliacao.status === 'concluido'
                           ? 'bg-green-50 border-green-200'
                           : avaliacao.status === 'inativada'
                             ? 'bg-red-50 border-red-200'
@@ -312,7 +312,7 @@ export default function DetalhesFuncionario({
                         </div>
                         <span
                           className={`px-2 py-1 text-xs rounded-full font-medium ${
-                            avaliacao.status === 'concluida'
+                            avaliacao.status === 'concluido'
                               ? 'bg-green-100 text-green-800'
                               : avaliacao.status === 'inativada'
                                 ? 'bg-red-100 text-red-800'
@@ -383,3 +383,4 @@ export default function DetalhesFuncionario({
     </div>
   );
 }
+

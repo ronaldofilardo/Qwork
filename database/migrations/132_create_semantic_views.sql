@@ -21,8 +21,8 @@ SELECT
   usuario_tipo,
   perfil,
   CASE 
-    WHEN usuario_tipo = 'gestor_rh' THEN 'RH (Clínica)'
-    WHEN usuario_tipo = 'gestor_entidade' THEN 'Entidade'
+    WHEN usuario_tipo = 'rh' THEN 'RH (Clínica)'
+    WHEN usuario_tipo = 'gestor' THEN 'Entidade'
     ELSE 'Outro'
   END as tipo_gestor_descricao,
   clinica_id,
@@ -31,7 +31,7 @@ SELECT
   criado_em,
   atualizado_em
 FROM funcionarios
-WHERE usuario_tipo IN ('gestor_rh', 'gestor_entidade');
+WHERE usuario_tipo IN ('rh', 'gestor');
 
 COMMENT ON VIEW gestores IS 
 'View semântica para todos os gestores do sistema.
@@ -137,8 +137,8 @@ ORDER BY
   CASE usuario_tipo
     WHEN 'admin' THEN 1
     WHEN 'emissor' THEN 2
-    WHEN 'gestor_rh' THEN 3
-    WHEN 'gestor_entidade' THEN 4
+    WHEN 'rh' THEN 3
+    WHEN 'gestor' THEN 4
     WHEN 'funcionario_clinica' THEN 5
     WHEN 'funcionario_entidade' THEN 6
   END;
