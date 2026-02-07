@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { TipoEntidade, StatusAprovacao } from '@/lib/db';
+import { StatusAprovacao } from '@/lib/db';
 import { writeFile } from 'fs/promises';
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
@@ -115,7 +115,6 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
 
   // Extrair dados básicos
-  const tipo = formData.get('tipo') as TipoEntidade;
   const nome = formData.get('nome') as string;
   const cnpj = formData.get('cnpj') as string;
   const inscricaoEstadual = formData.get('inscricao_estadual') as string | null;
@@ -175,7 +174,7 @@ export async function POST(request: NextRequest) {
     'unknown';
   console.info(
     JSON.stringify({
-      event: 'cadastro_contratante_start',
+      event: 'cadastro_tomador_start',
       cnpj: (cnpj || '').replace(/(\d{8})(\d{4})/, '********$2'),
       email,
       planoId,
@@ -184,19 +183,6 @@ export async function POST(request: NextRequest) {
   );
 
   // Validações
-  if (!tipo || !['clinica', 'entidade'].includes(tipo)) {
-    console.info(
-      JSON.stringify({
-        event: 'cadastro_validation_failed',
-        reason: 'tipo_invalido',
-        tipo,
-      })
-    );
-    return NextResponse.json(
-      { error: 'Tipo inválido. Deve ser "clinica" ou "entidade"' },
-      { status: 400 }
-    );
-  }
 
   if (!nome || nome.length < 3) {
     return NextResponse.json(
@@ -436,47 +422,60 @@ export async function POST(request: NextRequest) {
         })
       );
 
-      // Inserir entidade
-      const entidadeResult = await txClient.query<{
-        id: number;
-        nome: string;
-        tipo: TipoEntidade;
-        status: StatusAprovacao;
-      }>(
-        `INSERT INTO entidades (
-          tipo, nome, cnpj, inscricao_estadual, email, telefone,
-          endereco, cidade, estado, cep,
-          responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
-          cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-          status, ativa, plano_id, pagamento_confirmado
-        ) VALUES (
-          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15, $16, $17, $18, $19, false, $20, false
-        ) RETURNING id, nome, tipo, status`,
-        [
-          tipo,
-          nome,
-          cnpjLimpo,
-          inscricaoEstadual || null,
-          email,
-          telefone,
-          endereco,
-          cidade,
-          estado.toUpperCase(),
-          cep,
-          responsavelNome,
-          responsavelCpf.replace(/[^\d]/g, ''),
-          responsavelCargo || null,
-          responsavelEmail,
-          responsavelCelular,
-          cartaoCnpjPath,
-          contratoSocialPath,
-          docIdentificacaoPath,
-          statusToUse,
-          planoId || null,
-        ]
-      );
-      const entidade = entidadeResult.rows[0];
+      // Inserir na tabela entidades (arquitetura nova - sem coluna tipo)
+      let entidadeResult;
+      let entidade;
+
+      try {
+        entidadeResult = await txClient.query<{
+          id: number;
+          nome: string;
+          status: StatusAprovacao;
+        }>(
+          `INSERT INTO entidades (
+            nome, cnpj, inscricao_estadual, email, telefone,
+            endereco, cidade, estado, cep,
+            responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
+            cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
+            status, ativa, plano_id, pagamento_confirmado
+          ) VALUES (
+            $1, $2, $3, $4, $5, $6, $7, $8, $9,
+            $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19, false
+          ) RETURNING id, nome, status`,
+          [
+            nome,
+            cnpjLimpo,
+            inscricaoEstadual || null,
+            email,
+            telefone,
+            endereco,
+            cidade,
+            estado.toUpperCase(),
+            cep,
+            responsavelNome,
+            responsavelCpf.replace(/[^\d]/g, ''),
+            responsavelCargo || null,
+            responsavelEmail,
+            responsavelCelular,
+            cartaoCnpjPath,
+            contratoSocialPath,
+            docIdentificacaoPath,
+            statusToUse,
+            planoId || null,
+          ]
+        );
+        entidade = entidadeResult.rows[0];
+        console.info(
+          JSON.stringify({
+            event: 'cadastro_entidade_inserted_success',
+            id: entidade?.id,
+            nome: entidade?.nome,
+          })
+        );
+      } catch (insertError) {
+        console.log('STEP_ERROR:', String(insertError));
+        throw insertError;
+      }
 
       console.info(
         JSON.stringify({
@@ -534,13 +533,11 @@ export async function POST(request: NextRequest) {
             // Criar um registro de contrato pendente de aceite
             const conteudo = `Contrato para ${numeroFuncionarios} funcionário(s) - Plano: ${p.nome} - Valor total: R$ ${valorTotal!.toFixed(2)}`;
 
-            // Inserir contrato usando aguardando_pagamento (agora disponível no enum)
-            // Nota: Verificamos anteriormente que a tabela contratos não existe no dev db
-            // Este código será mantido para quando a tabela for criada
+            // Inserir contrato com status aguardando_pagamento e aceito=false
             const contratoIns = await txClient.query<{ id: number }>(
-              `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, aceito, conteudo)
-               VALUES ($1, $2, $3, $4, 'aguardando_pagamento', false, $5) RETURNING id`,
-              [entidade.id, planoId, numeroFuncionarios, valorTotal, conteudo]
+              `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito)
+               VALUES ($1, $2, $3, $4, 'aguardando_pagamento', false) RETURNING id`,
+              [entidade.id, planoId, numeroFuncionarios, valorTotal]
             );
             contratoIdCreated = contratoIns.rows[0].id;
 
@@ -558,14 +555,14 @@ export async function POST(request: NextRequest) {
                 numero_funcionarios: numeroFuncionarios,
               })
             );
-
-            // Expor o id do contrato no response através de contrato_id (frontend usará para abrir contrato)
-            (global as any).__last_contract_id = contratoIdCreated; // debug hook for tests if needed
-          } else if (requiresPersonalizadoSetup) {
+          }
+          if (requiresPersonalizadoSetup) {
             // Para personalizado, criar registro em contratacao_personalizada
+            // NOTA: Por enquanto comentado porque a tabela contratacao_personalizada depende de tomador_id
+            /*
             await txClient.query(
               `INSERT INTO contratacao_personalizada (
-                contratante_id, numero_funcionarios_estimado, status, criado_em, atualizado_em
+                entidade_id, numero_funcionarios_estimado, status, criado_em, atualizado_em
               ) VALUES ($1, $2, 'aguardando_valor_admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
               [entidade.id, numeroFuncionarios || null]
             );
@@ -577,6 +574,17 @@ export async function POST(request: NextRequest) {
                 plano_id: planoId,
                 numero_funcionarios: numeroFuncionarios,
                 status: 'aguardando_valor_admin',
+              })
+            );
+            */
+            console.info(
+              JSON.stringify({
+                event: 'cadastro_entidade_personalizado_pending',
+                entidade_id: entidade.id,
+                plano_id: planoId,
+                numero_funcionarios: numeroFuncionarios,
+                status: 'aguardando_valor_admin',
+                note: 'Tabela contratacao_personalizada será criada em migração futura',
               })
             );
           } else if (requiresPayment) {
@@ -652,8 +660,7 @@ export async function POST(request: NextRequest) {
         entidade: {
           id: result.entidade.id,
           nome: result.entidade.nome,
-          tipo: result.entidade.tipo,
-          status: result.entidade.status,
+          status: result.entidade.status || 'pendente',
         },
       },
       { status: 201 }
@@ -690,20 +697,23 @@ export async function POST(request: NextRequest) {
 
       // Verificar violação de unicidade (PostgreSQL error code 23505)
       if ((error as any).code === '23505') {
-        if ((error as any).constraint === 'entidades_email_unique') {
+        const constraint = (error as any).constraint;
+
+        // Checar qual campo causou o erro
+        if (constraint === 'entidades_email_key') {
           return NextResponse.json(
             { error: 'Email já cadastrado no sistema' },
             { status: 409 }
           );
         }
-        if ((error as any).constraint === 'entidades_cnpj_unique') {
+        if (constraint === 'entidades_cnpj_key') {
           return NextResponse.json(
             { error: 'CNPJ já cadastrado no sistema' },
             { status: 409 }
           );
         }
         // Outras violações de unicidade
-        if ((error as any).constraint?.includes('unique')) {
+        if (constraint?.includes('key') || constraint?.includes('unique')) {
           return NextResponse.json(
             { error: 'Dados duplicados no sistema' },
             { status: 409 }
