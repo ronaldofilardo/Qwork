@@ -115,6 +115,7 @@ export async function POST(request: NextRequest) {
   const formData = await request.formData();
 
   // Extrair dados básicos
+  const tipo = (formData.get('tipo') as string) || 'entidade'; // Padrão: entidade se não informado
   const nome = formData.get('nome') as string;
   const cnpj = formData.get('cnpj') as string;
   const inscricaoEstadual = formData.get('inscricao_estadual') as string | null;
@@ -397,20 +398,28 @@ export async function POST(request: NextRequest) {
           statusToUse = 'aguardando_pagamento' as StatusAprovacao;
         }
       }
-      // Verificar se email já existe
-      const emailCheck = await txClient.query(
-        'SELECT id FROM entidades WHERE email = $1',
-        [email]
-      );
+      // Verificar se email já existe (em ambas as tabelas se clinica)
+      let emailCheckQuery = 'SELECT id FROM entidades WHERE email = $1';
+      let emailCheckParams: any[] = [email];
+      
+      if (tipo === 'clinica') {
+        emailCheckQuery = 'SELECT id FROM clinicas WHERE email = $1';
+      }
+      
+      const emailCheck = await txClient.query(emailCheckQuery, emailCheckParams);
       if (emailCheck.rows.length > 0) {
         throw new Error('Email já cadastrado no sistema');
       }
 
-      // Verificar se CNPJ já existe
-      const cnpjCheck = await txClient.query(
-        'SELECT id FROM entidades WHERE cnpj = $1',
-        [cnpjLimpo]
-      );
+      // Verificar se CNPJ já existe (em ambas as tabelas se clinica)
+      let cnpjCheckQuery = 'SELECT id FROM entidades WHERE cnpj = $1';
+      let cnpjCheckParams: any[] = [cnpjLimpo];
+      
+      if (tipo === 'clinica') {
+        cnpjCheckQuery = 'SELECT id FROM clinicas WHERE cnpj = $1';
+      }
+      
+      const cnpjCheck = await txClient.query(cnpjCheckQuery, cnpjCheckParams);
       if (cnpjCheck.rows.length > 0) {
         throw new Error('CNPJ já cadastrado no sistema');
       }
@@ -422,56 +431,95 @@ export async function POST(request: NextRequest) {
         })
       );
 
-      // Inserir na tabela entidades (arquitetura nova - sem coluna tipo)
+      // Inserir na tabela correta baseado no tipo
       let entidadeResult;
       let entidade;
 
       try {
-        entidadeResult = await txClient.query<{
-          id: number;
-          nome: string;
-          status: StatusAprovacao;
-        }>(
-          `INSERT INTO entidades (
-            nome, cnpj, inscricao_estadual, email, telefone,
-            endereco, cidade, estado, cep,
-            responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
-            cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-            status, ativa, plano_id, pagamento_confirmado
-          ) VALUES (
-            $1, $2, $3, $4, $5, $6, $7, $8, $9,
-            $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19, false
-          ) RETURNING id, nome, status`,
-          [
-            nome,
-            cnpjLimpo,
-            inscricaoEstadual || null,
-            email,
-            telefone,
-            endereco,
-            cidade,
-            estado.toUpperCase(),
-            cep,
-            responsavelNome,
-            responsavelCpf.replace(/[^\d]/g, ''),
-            responsavelCargo || null,
-            responsavelEmail,
-            responsavelCelular,
-            cartaoCnpjPath,
-            contratoSocialPath,
-            docIdentificacaoPath,
-            statusToUse,
-            planoId || null,
-          ]
-        );
-        entidade = entidadeResult.rows[0];
-        console.info(
-          JSON.stringify({
-            event: 'cadastro_entidade_inserted_success',
-            id: entidade?.id,
-            nome: entidade?.nome,
-          })
-        );
+        // Se tipo='clinica': inserir em clinicas; Se tipo='entidade': inserir em entidades
+        if (tipo === 'clinica') {
+          // Inserir em tabela clinicas
+          entidadeResult = await txClient.query<{
+            id: number;
+            nome: string;
+          }>(
+            `INSERT INTO clinicas (
+              nome, cnpj, inscricao_estadual, email, telefone,
+              endereco, cidade, estado, cep, ativa, criado_em, atualizado_em
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+            ) RETURNING id, nome`,
+            [
+              nome,
+              cnpjLimpo,
+              inscricaoEstadual || null,
+              email,
+              telefone,
+              endereco,
+              cidade,
+              estado.toUpperCase(),
+              cep,
+            ]
+          );
+          entidade = entidadeResult.rows[0];
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_clinica_inserted_success',
+              id: entidade?.id,
+              nome: entidade?.nome,
+              tipo: 'clinica',
+            })
+          );
+        } else {
+          // Inserir em tabela entidades (padrão)
+          entidadeResult = await txClient.query<{
+            id: number;
+            nome: string;
+            status: StatusAprovacao;
+          }>(
+            `INSERT INTO entidades (
+              nome, cnpj, inscricao_estadual, email, telefone,
+              endereco, cidade, estado, cep,
+              responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
+              cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
+              status, ativa, plano_id, pagamento_confirmado, tipo
+            ) VALUES (
+              $1, $2, $3, $4, $5, $6, $7, $8, $9,
+              $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19, false, $20
+            ) RETURNING id, nome, status`,
+            [
+              nome,
+              cnpjLimpo,
+              inscricaoEstadual || null,
+              email,
+              telefone,
+              endereco,
+              cidade,
+              estado.toUpperCase(),
+              cep,
+              responsavelNome,
+              responsavelCpf.replace(/[^\d]/g, ''),
+              responsavelCargo || null,
+              responsavelEmail,
+              responsavelCelular,
+              cartaoCnpjPath,
+              contratoSocialPath,
+              docIdentificacaoPath,
+              statusToUse,
+              planoId || null,
+              tipo,
+            ]
+          );
+          entidade = entidadeResult.rows[0];
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_entidade_inserted_success',
+              id: entidade?.id,
+              nome: entidade?.nome,
+              tipo: 'entidade',
+            })
+          );
+        }
       } catch (insertError) {
         console.log('STEP_ERROR:', String(insertError));
         throw insertError;
@@ -483,6 +531,75 @@ export async function POST(request: NextRequest) {
           entidade_id: entidade.id,
         })
       );
+
+      // Buscar dados completos da entidade/clínica para criar conta
+      let tombadorCompleto: any;
+      if (tipo === 'clinica') {
+        const clinicaRes = await txClient.query(
+          'SELECT * FROM clinicas WHERE id = $1',
+          [entidade.id]
+        );
+        if (clinicaRes.rows.length > 0) {
+          tombadorCompleto = clinicaRes.rows[0];
+        }
+      } else {
+        const entidadeRes = await txClient.query(
+          'SELECT * FROM entidades WHERE id = $1',
+          [entidade.id]
+        );
+        if (entidadeRes.rows.length > 0) {
+          tombadorCompleto = entidadeRes.rows[0];
+        }
+      }
+
+      // Criar conta responsável (gera credenciais de login)
+      let boasVindasUrl: string | null = null;
+      let credenciais: { login: string; senha: string } | null = null;
+      
+      if (tombadorCompleto) {
+        try {
+          // Chamar criarContaResponsavel (fora de transação interna)
+          const { criarContaResponsavel } = await import('@/lib/db');
+          
+          // Preparar objeto com dados necessários
+          const tomadorComTipo = {
+            ...tombadorCompleto,
+            tipo,
+            responsavel_nome: responsavelNome,
+            responsavel_cpf: responsavelCpf.replace(/[^\d]/g, ''),
+            responsavel_email: responsavelEmail,
+            responsavel_celular: responsavelCelular,
+          };
+          
+          // Criar conta (sem passar session para evitar transação dentro de transação)
+          await criarContaResponsavel(tomadorComTipo);
+          
+          // Montar credenciais
+          const cleanCnpj = cnpjLimpo;
+          const loginCredencial = responsavelCpf.replace(/[^\d]/g, '');
+          const senhaCredencial = cleanCnpj.slice(-6);
+          
+          credenciais = {
+            login: loginCredencial,
+            senha: senhaCredencial,
+          };
+          
+          // Montar URL para boas-vindas
+          boasVindasUrl = `/boas-vindas?tomador_id=${entidade.id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
+          
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_conta_responsavel_criada',
+              entidade_id: entidade.id,
+              tipo,
+              credenciais_criadas: true,
+            })
+          );
+        } catch (criarContaError) {
+          console.error('[CADASTRO] Erro ao criar conta responsável:', criarContaError);
+          // Não falhar o cadastro se a criação de conta falhar - isso é tratável depois
+        }
+      }
 
       // Persistir numero de funcionários estimado
       if (numeroFuncionarios && Number(numeroFuncionarios) > 0) {
@@ -619,6 +736,8 @@ export async function POST(request: NextRequest) {
         valorPorFuncionario,
         numeroFuncionarios,
         valorTotal,
+        boasVindasUrl,
+        credenciais,
       };
     });
     // Transação comitada automaticamente se chegou aqui
@@ -643,6 +762,8 @@ export async function POST(request: NextRequest) {
         id: result.entidade.id,
         requires_payment: result.requiresPayment,
         simulador_url: result.simuladorUrl,
+        boasVindasUrl: result.boasVindasUrl,
+        credenciais: result.credenciais,
         contrato_id: result.contratoIdCreated,
         requires_contract_acceptance: result.contratoIdCreated !== null,
         payment_info: result.requiresPayment
@@ -652,15 +773,16 @@ export async function POST(request: NextRequest) {
               valor_total: result.valorTotal,
             }
           : null,
-        message: result.requiresPayment
-          ? result.contratoIdCreated
-            ? 'Cadastro realizado! Aceite o contrato gerado para prosseguir ao simulador.'
-            : 'Cadastro realizado! Prossiga para o simulador de pagamento.'
-          : 'Cadastro realizado com sucesso! Aguarde análise do administrador.',
+        message: result.contratoIdCreated
+          ? 'Cadastro e contrato realizado! Revise os termos e clique em aceitar.'
+          : result.requiresPayment
+            ? 'Cadastro realizado! Prossiga para o simulador de pagamento.'
+            : 'Cadastro realizado com sucesso! Aguarde análise do administrador.',
         entidade: {
           id: result.entidade.id,
           nome: result.entidade.nome,
           status: result.entidade.status || 'pendente',
+          tipo: tipo,
         },
       },
       { status: 201 }
