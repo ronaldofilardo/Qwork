@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';
 import UploadLaudoButton from '@/components/UploadLaudoButton';
+import { usePWAInstall } from '@/hooks/usePWAInstall';
 
 interface Lote {
   id: number;
@@ -15,6 +16,7 @@ interface Lote {
   clinica_nome: string;
   liberado_em: string;
   total_avaliacoes: number;
+  pagamento_pendente?: boolean;
   emissao_automatica?: boolean;
   solicitado_por?: string | null;
   solicitado_em?: string | null;
@@ -60,6 +62,7 @@ export default function EmissorDashboard() {
   const router = useRouter();
   const { mutate: reprocessarLaudo, isPending: isReprocessando } =
     useReprocessarLaudo();
+  const { canInstall, handleInstallClick } = usePWAInstall();
 
   const fetchLotes = useCallback(
     async (page: number, reset: boolean = false) => {
@@ -447,6 +450,28 @@ export default function EmissorDashboard() {
               </p>
             </div>
             <div className="flex gap-3">
+              {canInstall && (
+                <button
+                  onClick={handleInstallClick}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors flex items-center gap-2"
+                  title="Instalar aplicativo na tela inicial"
+                >
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  Instalar App
+                </button>
+              )}
               <button
                 onClick={handleRefresh}
                 disabled={loading}
@@ -570,6 +595,23 @@ export default function EmissorDashboard() {
                         </span>
                       </div>
                     </div>
+
+                    {/* Aviso de Pagamento Pendente */}
+                    {lote.pagamento_pendente && (
+                      <div className="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded-r">
+                        <div className="flex items-start gap-3">
+                          <span className="text-xl">⏳</span>
+                          <div>
+                            <p className="font-semibold text-yellow-800">
+                              Aguardando Pagamento
+                            </p>
+                            <p className="text-sm text-yellow-700 mt-1">
+                              Este lote foi solicitado para emissão e aguarda confirmação de pagamento do cliente antes de ser liberado para emissão.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
                       <div>
