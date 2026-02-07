@@ -124,7 +124,7 @@ Esta combinação garante:
 #### `empresas_clientes`
 
 ```sql
--- Admin: Acesso total
+-- Admin: Acesso administrativo apenas (tomadores, planos, emissores)
 CREATE POLICY admin_full_access ON empresas_clientes
   FOR ALL USING (auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin'));
 

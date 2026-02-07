@@ -127,7 +127,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
       'rg.pdf'
     );
 
-    const { POST } = await import('@/app/api/cadastro/contratante/route');
+    const { POST } = await import('@/app/api/cadastro/tomadores/route');
     const request = new (await import('next/server')).NextRequest(
       'http://localhost:3000/api/cadastro/contratante',
       {

@@ -65,7 +65,7 @@ describe('E2E - Fluxo de Retry de Pagamento', () => {
     // \n=== ETAPA 1: Cadastro Inicial ===
 
     const { POST: cadastroPost } =
-      await import('@/app/api/cadastro/contratante/route');
+      await import('@/app/api/cadastro/tomadores/route');
 
     const formData = new FormData();
     formData.append('tipo', 'entidade');

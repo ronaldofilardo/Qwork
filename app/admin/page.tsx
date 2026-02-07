@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent';
-import { ContratantesContent } from '@/components/admin/ContratantesContent';
+import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';
 import { PagamentosContent } from '@/components/admin/PagamentosContent';
@@ -16,8 +16,8 @@ interface Session {
   perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
 }
 
-type MainSection = 'novos-cadastros' | 'contratantes' | 'financeiro' | 'geral';
-type _ContratantesSubSection = 'clinicas' | 'entidades';
+type MainSection = 'novos-cadastros' | 'tomadores' | 'financeiro' | 'geral';
+type _tomadoresSubSection = 'clinicas' | 'entidades';
 type _FinanceiroSubSection = 'cobranca' | 'pagamentos' | 'planos';
 type _GeralSubSection = 'emissores';
 
@@ -132,8 +132,8 @@ export default function AdminPage() {
       return <NovoscadastrosContent onApproved={fetchCounts} />;
     }
 
-    if (activeSection === 'contratantes') {
-      return <ContratantesContent activeSubSection={activeSubSection} />;
+    if (activeSection === 'tomadores') {
+      return <TomadoresContent activeSubSection={activeSubSection} />;
     }
 
     if (activeSection === 'financeiro') {
@@ -218,3 +218,4 @@ export default function AdminPage() {
     </div>
   );
 }
+

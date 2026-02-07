@@ -32,8 +32,8 @@ async function validateSessionContext(
     // Validação: todos os usuários estão em funcionarios
     // Importante: usar 'perfil' (que vem da sessão de login), não 'usuario_tipo' (enum interno)
     const result = await query(
-      `SELECT cpf, perfil, ativo, clinica_id, contratante_id 
-       FROM funcionarios 
+      `SELECT cpf, perfil, ativo, clinica_id, entidade_id
+       FROM funcionarios
        WHERE cpf = $1 AND perfil = $2`,
       [cpf, perfil]
     );

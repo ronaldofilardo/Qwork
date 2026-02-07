@@ -4,7 +4,7 @@ jest.mock('@/lib/db', () => ({
   query: jest.fn(),
 }));
 
-import { POST } from '@/app/api/cadastro/contratante/route';
+import { POST } from '@/app/api/cadastro/tomadores/route';
 import { query } from '@/lib/db';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;

@@ -17,7 +17,7 @@ interface Session {
   perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
 }
 
-type MainSection = 'novos-cadastros' | 'contratantes' | 'financeiro' | 'geral';
+type MainSection = 'novos-cadastros' | 'tomadores' | 'financeiro' | 'geral';
 type _ContratantesSubSection = 'clinicas' | 'entidades';
 type _FinanceiroSubSection = 'cobranca' | 'pagamentos';
 type _GeralSubSection = 'emissores';

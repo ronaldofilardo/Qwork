@@ -57,7 +57,7 @@ describe('Integração - Cadastro Plano Personalizado', () => {
   });
 
   it('deve criar contratante e registro em contratacao_personalizada e notificar admins', async () => {
-    const { POST } = await import('@/app/api/cadastro/contratante/route');
+    const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const payload = {
       tipo: 'entidade',

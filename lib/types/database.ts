@@ -12,8 +12,9 @@ export interface Funcionario {
   nome: string;
   perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
   ativo: boolean;
-  clinica_id: number;
-  empresa_id: number;
+  clinica_id?: number;
+  empresa_id?: number;
+  entidade_id?: number;
   setor?: string;
   funcao?: string;
   matricula?: string;
@@ -62,8 +63,9 @@ export interface LoteAvaliacao {
     | 'finalizado';
   liberado_em: string;
   liberado_por: string;
-  empresa_id: number;
-  clinica_id: number;
+  empresa_id?: number;
+  clinica_id?: number;
+  entidade_id?: number;
   laudo_enviado_em?: string;
   emitido_em?: string;
   // Hash SHA-256 do PDF gerado para o lote (quando aplicável)

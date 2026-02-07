@@ -13,12 +13,12 @@ describe('criarContaResponsavel - cria clínica se ausente', () => {
     (db.query as any) = realQuery;
   });
 
-  it('deve tentar criar clinica quando não existe para o contratante', async () => {
+  it('deve tentar criar clinica quando não existe para a entidade', async () => {
     // Mock sequencial responses based on sql snippets
     const mockQuery = jest
       .spyOn(db, 'query')
       .mockImplementation(async (sql: string, params?: any[]) => {
-        if (sql.includes('SELECT * FROM contratantes WHERE id = $1')) {
+        if (sql.includes('SELECT * FROM entidades WHERE id = $1')) {
           return {
             rows: [
               {
@@ -29,20 +29,19 @@ describe('criarContaResponsavel - cria clínica se ausente', () => {
                 email: 'x@example.com',
                 telefone: '1234',
                 endereco: 'Rua A',
+                tipo: 'clinica',
               },
             ],
             rowCount: 1,
           };
         }
-        if (
-          sql.includes('SELECT id FROM entidades_senhas WHERE contratante_id')
-        ) {
+        if (sql.includes('SELECT id FROM clinicas_senhas WHERE clinica_id')) {
           return { rows: [], rowCount: 0 };
         }
         if (sql.includes('SELECT id FROM funcionarios WHERE cpf = $1')) {
           return { rows: [], rowCount: 0 };
         }
-        if (sql.includes('SELECT id FROM clinicas WHERE contratante_id = $1')) {
+        if (sql.includes('SELECT id FROM clinicas WHERE entidade_id = $1')) {
           // simulate no clinic present
           return { rows: [], rowCount: 0 };
         }
