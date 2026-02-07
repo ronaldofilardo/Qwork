@@ -8,12 +8,15 @@
 ## 🎯 PARTE 1: PERMISSÕES INCORRETAS DO ADMIN
 
 ### ❌ Problema Identificado
+
 O admin tem permissões operacionais indevidas. Segundo a definição correta em `roles`:
+
 > **Admin:** Administrador do sistema - gerencia APENAS aspectos administrativos: tomadores [clínicas e entidades], planos e emissores. NÃO tem acesso operacional (empresas, funcionários, avaliações, lotes, laudos)
 
 ### 📍 Locais com "Admin tem acesso total" ou "admin_todas_empresas"
 
 #### **Migrações SQL**
+
 1. **database/migrations/501_adicionar_empresa_id.sql**
    - Linha 96-102: Policy `admin_todas_empresas` ON `empresas_clientes`
    - **Ação:** REMOVER policy completa
@@ -32,11 +35,13 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
    - **Ação:** REMOVER todas as policies operacionais para admin
 
 #### **Schemas**
+
 5. **database/schemas/schema_nr-bps_db_test.sql**
    - Linha 2784: Function `is_admin_or_master()` com comment "acesso total"
    - **Ação:** REVISAR função ou REMOVER se obsoleta
 
 #### **Documentação**
+
 6. **docs/RELATORIO-AUDITORIA-PERMISSOES-ADMIN-EMISSOR.md**
    - Linha 75, 299: Menciona policies removidas e acesso total
    - **Ação:** ATUALIZAR para refletir estado correto
@@ -70,6 +75,7 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
     - **Ação:** ARQUIVADO - apenas documentar que está deprecated
 
 #### **Deprecated** (Pasta database/migrations/deprecated)
+
 14. Arquivos já movidos para deprecated:
     - `001_security_rls_rbac.OLD.sql`
     - `020_remove_admin_operational_rls.sql`
@@ -89,6 +95,7 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
 
 **ANTIGA (OBSOLETA):** `contratante_id` era usado para ambos tipos (clínica e entidade)  
 **NOVA (CORRETA):**
+
 - Entidades: `entidade_id` (tabela `entidades`)
 - Clínicas: `clinica_id` + `empresa_id` (tabelas `clinicas` e `empresas_clientes`)
 
@@ -133,29 +140,15 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
    - **Status:** OBSOLETA - arquitetura antiga
 
 #### **Migrações 999 (Hotfixes):**
-10-17. **database/migrations/999_*.sql** (8 arquivos):
-    - `999_reserva_id_laudo_on_lote_insert.sql`
-    - `999_padronizacao_status_avaliacao_concluido.sql`
-    - `999_fix_missing_audit_and_validator.sql`
-    - `999_fix_contratos_numero_contrato.sql` ⚠️
-    - `999_fix_audit_lote_and_status_security.sql`
-    - `999_fix_audit_laudo_trigger.sql`
-    - `999_correcoes_criticas_seguranca.sql` ⚠️
-    - `999_consolidacao_tipo_plano.sql` ⚠️
-    - **Status:** REVISAR individualmente - algumas podem ser importantes
+
+10-17. **database/migrations/999\_\*.sql** (8 arquivos): - `999_reserva_id_laudo_on_lote_insert.sql` - `999_padronizacao_status_avaliacao_concluido.sql` - `999_fix_missing_audit_and_validator.sql` - `999_fix_contratos_numero_contrato.sql` ⚠️ - `999_fix_audit_lote_and_status_security.sql` - `999_fix_audit_laudo_trigger.sql` - `999_correcoes_criticas_seguranca.sql` ⚠️ - `999_consolidacao_tipo_plano.sql` ⚠️ - **Status:** REVISAR individualmente - algumas podem ser importantes
 
 #### **Deprecated (Já movidas):**
-18+. **database/migrations/deprecated/** (37 arquivos):
-    - `105_add_contratante_id_to_funcionarios.sql` ✅
-    - `062_add_calcular_elegibilidade_lote_contratante.sql` ✅
-    - `062_add_calcular_elegibilidade_lote_contratante_clean.sql` ✅
-    - `030_protecao_senhas_critica.OLD.sql` ✅
-    - `030_protecao_senhas_critica_ascii.sql` ✅
-    - `207_add_current_user_contratante_id_helper.OLD.sql` ✅
-    - Entre outros...
-    - **Status:** MANTER (já está deprecated)
+
+18+. **database/migrations/deprecated/** (37 arquivos): - `105_add_contratante_id_to_funcionarios.sql` ✅ - `062_add_calcular_elegibilidade_lote_contratante.sql` ✅ - `062_add_calcular_elegibilidade_lote_contratante_clean.sql` ✅ - `030_protecao_senhas_critica.OLD.sql` ✅ - `030_protecao_senhas_critica_ascii.sql` ✅ - `207_add_current_user_contratante_id_helper.OLD.sql` ✅ - Entre outros... - **Status:** MANTER (já está deprecated)
 
 #### **Não Encontradas (Bom sinal - já foram removidas):**
+
 - `400b_correcao_parcial.sql` ✅ NÃO EXISTE
 - `400c_estrutura_organizacional_final.sql` ✅ NÃO EXISTE
 - `422_update_views_for_entidades.sql` ✅ NÃO EXISTE
@@ -170,15 +163,17 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
 ## 🎯 PARTE 3: REFERÊNCIAS A `contratante_id` NO CÓDIGO
 
 ### 📊 Estatísticas
+
 - **lib/**: 93 ocorrências
 - **app/**: 150+ ocorrências (mais resultados disponíveis)
 - **components/**: 22 ocorrências
-- **__tests__/**: 100+ ocorrências
+- ****tests**/**: 100+ ocorrências
 - **Total estimado:** ~450+ ocorrências
 
 ### 🔍 Categorização
 
 #### **A. MANTER (Retrocompatibilidade/Transição Legítima)**
+
 1. **lib/session.ts**
    - Linhas 37-38: `contratante_id?: number; // @deprecated`
    - Linha 200, 273-313: Funções `requireEntity()` com fallback
@@ -195,19 +190,20 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
 #### **B. REVISAR E REFATORAR (Uso Misto Entidade/Clínica)**
 
 ##### **APIs que precisam distinguir entidade vs clínica:**
-4. **app/api/pagamento/*** (12 arquivos)
+
+4. **app/api/pagamento/\*** (12 arquivos)
    - `iniciar/route.ts`: Linha 9-19 aceita `contratante_id || entidade_id`
    - `simulador/route.ts`: Linha 18-30 aceita ambos
    - `simular/route.ts`: Linha 18-80 lógica com `contratante_id`
    - `confirmar/route.ts`: 70+ ocorrências (ativa entidade, cria conta, gera recibos)
    - **Ação:** REFATORAR para usar explicitamente `entidade_id` ou `clinica_id`
 
-5. **app/api/proposta/*** (2 arquivos)
+5. **app/api/proposta/\*** (2 arquivos)
    - `[token]/route.ts`: Busca proposta por `contratante_id`
    - `aceitar/route.ts`: Aceita proposta usando `contratante_id`
    - **Ação:** REFATORAR - propostas são apenas para entidades, usar `entidade_id`
 
-6. **app/api/entidade/*** (15 arquivos)
+6. **app/api/entidade/\*** (15 arquivos)
    - Todos os endpoints de entidade usam `session.contratante_id`
    - **Ação:** REFATORAR para `session.entidade_id`
 
@@ -228,6 +224,7 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
     - **Ação:** REFATORAR ou DEPRECAR - substituir por `/api/public/entidade` e `/api/public/clinica`
 
 #### **C. LIB - FUNÇÕES CORE**
+
 11. **lib/db-gestor.ts**
     - Linhas 261-308: Valida acesso do gestor usando `contratante_id`
     - **Ação:** REFATORAR para `entidade_id`
@@ -253,6 +250,7 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
     - **Ação:** REFATORAR para aceitar `entidade_id` ou `clinica_id` via parâmetro de tipo
 
 #### **D. COMPONENTS (Frontend)**
+
 17. **components/modals/ModalContrato.tsx**
     - Linha 15: Interface com `contratante_id: number`
     - **Ação:** REFATORAR para `entidade_id` ou `tomador_id: { tipo, id }`
@@ -261,13 +259,14 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
     - Linhas 94, 174: Envia `contratante_id` para API
     - **Ação:** REFATORAR para enviar `entidade_id`
 
-19. **components/admin/*** (2 arquivos)
+19. **components/admin/\*** (2 arquivos)
     - `NovoscadastrosContent.tsx`: Usa `contratante_id` para simulador
     - `CobrancaContent.tsx`: Interface com `contratante_id`
     - **Ação:** REFATORAR para usar `entidade_id` ou `clinica_id` dependendo do tipo
 
 #### **E. TESTES**
-20. **__tests__/*** (100+ ocorrências em ~30 arquivos)
+
+20. ****tests**/\*** (100+ ocorrências em ~30 arquivos)
     - Diversos testes usam `contratante_id`
     - **Ação:** ATUALIZAR testes após refatoração do código principal
 
@@ -276,7 +275,9 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
 ## 📋 PLANO DE AÇÃO RECOMENDADO
 
 ### **FASE 1: LIMPEZA IMEDIATA (Sem Risco)**
+
 ✅ **Remover migrações obsoletas confirmadas:**
+
 1. Mover para `deprecated/`:
    - `420_rename_contratantes_to_entidades.sql`
    - `421_rename_contratantes_funcionarios.sql`
@@ -286,33 +287,36 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
    - `400_remove_gestores_from_funcionarios_final.sql`
    - `400_corrigir_estrutura_entidades_empresas.sql`
 
-✅ **Remover policies incorretas do Admin:**
-2. Migration nova: `502_remover_admin_operacional.sql`
-   ```sql
-   -- Remover policies operacionais do admin
-   DROP POLICY IF EXISTS admin_todas_empresas ON empresas_clientes;
-   DROP POLICY IF EXISTS admin_all_avaliacoes ON avaliacoes;
-   DROP POLICY IF EXISTS admin_all_funcionarios ON funcionarios;
-   -- etc para todas as policies operacionais
-   ```
+✅ **Remover policies incorretas do Admin:** 2. Migration nova: `502_remover_admin_operacional.sql`
 
-✅ **Atualizar documentação:**
-3. Corrigir docs mencionados na Parte 1
-4. Adicionar nota em README sobre arquitetura correta
+```sql
+-- Remover policies operacionais do admin
+DROP POLICY IF EXISTS admin_todas_empresas ON empresas_clientes;
+DROP POLICY IF EXISTS admin_all_avaliacoes ON avaliacoes;
+DROP POLICY IF EXISTS admin_all_funcionarios ON funcionarios;
+-- etc para todas as policies operacionais
+```
+
+✅ **Atualizar documentação:** 3. Corrigir docs mencionados na Parte 1 4. Adicionar nota em README sobre arquitetura correta
 
 ### **FASE 2: REFATORAÇÃO GRADUAL (Médio Prazo)**
+
 🔄 **Substituir `contratante_id` por `entidade_id` onde aplicável:**
+
 1. Começar pelas funções core em `lib/`
 2. Depois APIs em `app/api/`
 3. Por último componentes em `components/`
 4. Atualizar testes conforme refatoração
 
 🔄 **Migration de dados (se necessário):**
+
 1. Verificar se existem dados com `contratante_id` no banco
 2. Criar migration para migrar para `entidade_id` ou `clinica_id`
 
 ### **FASE 3: CLEANUP FINAL (Longo Prazo)**
+
 🧹 **Remover retrocompatibilidade:**
+
 1. Remover campos `@deprecated` de `lib/session.ts`
 2. Remover schemas Zod com `contratante_id`
 3. Atualizar toda documentação final
@@ -321,14 +325,14 @@ O admin tem permissões operacionais indevidas. Segundo a definição correta em
 
 ## 📊 RESUMO EXECUTIVO
 
-| Categoria | Itens Encontrados | Ação Recomendada |
-|-----------|-------------------|------------------|
-| **Permissões Admin Incorretas** | 14 locais | REMOVER policies, CORRIGIR docs |
-| **Migrações Obsoletas** | 9 confirmadas | MOVER para deprecated/ |
-| **Migrações Deprecated** | 37 já movidas | MANTER como está |
-| **Migrações 999 (hotfix)** | 8 arquivos | REVISAR individualmente |
-| **Código `contratante_id`** | ~450+ ocorrências | REFATORAR gradualmente |
-| **Testes** | 100+ ocorrências | ATUALIZAR após refatoração |
+| Categoria                       | Itens Encontrados | Ação Recomendada                |
+| ------------------------------- | ----------------- | ------------------------------- |
+| **Permissões Admin Incorretas** | 14 locais         | REMOVER policies, CORRIGIR docs |
+| **Migrações Obsoletas**         | 9 confirmadas     | MOVER para deprecated/          |
+| **Migrações Deprecated**        | 37 já movidas     | MANTER como está                |
+| **Migrações 999 (hotfix)**      | 8 arquivos        | REVISAR individualmente         |
+| **Código `contratante_id`**     | ~450+ ocorrências | REFATORAR gradualmente          |
+| **Testes**                      | 100+ ocorrências  | ATUALIZAR após refatoração      |
 
 ---
 

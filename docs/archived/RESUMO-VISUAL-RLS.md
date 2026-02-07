@@ -313,4 +313,3 @@ PÓS-IMPLEMENTAÇÃO:
 **Documento gerado em: 11/12/2025**  
 **Qwork - Sistema de Avaliação Psicossocial**  
 **Versão: 2.0**
-

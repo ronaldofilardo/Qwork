@@ -9,12 +9,12 @@
 
 ### ✅ Todas as 4 Fases Concluídas
 
-| Fase | Status | Descrição |
-|------|--------|-----------|
+| Fase       | Status               | Descrição                                 |
+| ---------- | -------------------- | ----------------------------------------- |
 | **FASE 1** | ✅ **100% Completa** | Limpeza de migrações obsoletas e policies |
-| **FASE 2** | ✅ **100% Completa** | Atualização de roles e documentação |
-| **FASE 3** | ✅ **100% Completa** | Migrations aplicadas no banco de dados |
-| **FASE 4** | ✅ **100% Completa** | Build e validação final |
+| **FASE 2** | ✅ **100% Completa** | Atualização de roles e documentação       |
+| **FASE 3** | ✅ **100% Completa** | Migrations aplicadas no banco de dados    |
+| **FASE 4** | ✅ **100% Completa** | Build e validação final                   |
 
 ---
 
@@ -37,6 +37,7 @@
 ### ✅ 1.2 Policies Admin Removidas
 
 **Migration 502 criada e executada:**
+
 ```sql
 -- Policies removidas:
 ✅ admin_todas_empresas (empresas_clientes)
@@ -63,6 +64,7 @@
 **Arquivo:** `database/migrations/501_adicionar_empresa_id.sql`
 
 **Mudança:**
+
 ```sql
 -- ANTES:
 CREATE POLICY admin_todas_empresas ON empresas_clientes
@@ -101,8 +103,9 @@ CREATE POLICY admin_todas_empresas ON empresas_clientes
 **Arquivo:** `database/migrations/503_atualizar_descricao_role_admin.sql`
 
 **Mudança no banco:**
+
 ```sql
-UPDATE roles 
+UPDATE roles
 SET description = 'Administrador do sistema - gerencia APENAS aspectos administrativos: tomadores (clínicas e entidades), planos e emissores. NÃO tem acesso operacional (empresas, funcionários, avaliações, lotes, laudos)'
 WHERE name = 'admin';
 ```
@@ -115,10 +118,10 @@ WHERE name = 'admin';
 
 ### ✅ 3.1 Migrations Executadas
 
-| Migration | Status | Descrição |
-|-----------|--------|-----------|
-| **502** | ✅ **COMMIT** | Policies admin removidas com sucesso |
-| **503** | ✅ **COMMIT** | Role admin atualizada (UPDATE 1) |
+| Migration | Status        | Descrição                            |
+| --------- | ------------- | ------------------------------------ |
+| **502**   | ✅ **COMMIT** | Policies admin removidas com sucesso |
+| **503**   | ✅ **COMMIT** | Role admin atualizada (UPDATE 1)     |
 
 **Banco de dados:** `nr-bps_db` (PostgreSQL 17.5)
 
@@ -135,6 +138,7 @@ pnpm run build
 ```
 
 **Resultado:**
+
 ```
 ✓ Compiled successfully
 ✓ Linting and checking validity of types
@@ -148,11 +152,13 @@ pnpm run build
 ### ✅ 4.2 Status dos Testes
 
 **Testes executados:** 474 total
+
 - ✅ **413 testes passando** (87.1%)
 - ⚠️ **50 testes falhando** (10.5%) - Mesmos erros pré-existentes
 - ⏭️ **11 testes pulados** (2.3%)
 
 **Análise:** Os testes que falharam são os **mesmos que falhavam antes** da limpeza, confirmando que:
+
 1. Nenhuma regressão foi introduzida
 2. Os erros existentes são de testes legados que precisam atualização
 3. A limpeza não quebrou funcionalidades existentes
@@ -163,30 +169,30 @@ pnpm run build
 
 ### Arquivos Modificados
 
-| Categoria | Quantidade | Detalhes |
-|-----------|------------|----------|
-| **Migrations Movidas** | 7 | Para `deprecated/` |
-| **Migrations Criadas** | 2 | `502_*` e `503_*` |
-| **Migrations Editadas** | 1 | `501_adicionar_empresa_id.sql` |
-| **Docs Atualizados** | 3 | Guias e referências |
-| **Total de Arquivos** | **13** | |
+| Categoria               | Quantidade | Detalhes                       |
+| ----------------------- | ---------- | ------------------------------ |
+| **Migrations Movidas**  | 7          | Para `deprecated/`             |
+| **Migrations Criadas**  | 2          | `502_*` e `503_*`              |
+| **Migrations Editadas** | 1          | `501_adicionar_empresa_id.sql` |
+| **Docs Atualizados**    | 3          | Guias e referências            |
+| **Total de Arquivos**   | **13**     |                                |
 
 ### Linhas de Código
 
-| Operação | Linhas |
-|----------|--------|
-| Código Removido | ~150 linhas (policies e permissões incorretas) |
-| Código Adicionado | ~140 linhas (migrations 502 e 503) |
-| Documentação Atualizada | ~25 linhas |
+| Operação                | Linhas                                         |
+| ----------------------- | ---------------------------------------------- |
+| Código Removido         | ~150 linhas (policies e permissões incorretas) |
+| Código Adicionado       | ~140 linhas (migrations 502 e 503)             |
+| Documentação Atualizada | ~25 linhas                                     |
 
 ### Impacto no Banco de Dados
 
-| Operação | Quantidade |
-|----------|------------|
-| Policies Removidas | 15+ policies incorretas |
-| Permissões Removidas | 10+ permissões operacionais |
-| Roles Atualizadas | 1 (role admin) |
-| Comentários Corrigidos | 5 tabelas |
+| Operação               | Quantidade                  |
+| ---------------------- | --------------------------- |
+| Policies Removidas     | 15+ policies incorretas     |
+| Permissões Removidas   | 10+ permissões operacionais |
+| Roles Atualizadas      | 1 (role admin)              |
+| Comentários Corrigidos | 5 tabelas                   |
 
 ---
 
@@ -197,12 +203,14 @@ pnpm run build
 **Decisão:** Manter retrocompatibilidade temporária
 
 **Justificativa:**
+
 1. ~450+ ocorrências no código
 2. Campos marcados como `@deprecated` em `lib/session.ts`
 3. Refatoração completa requer planejamento adicional
 4. Sistema funciona corretamente com campos legacy
 
-**Plano Futuro:** 
+**Plano Futuro:**
+
 - FASE 2B (não executada agora): Refatoração gradual de `contratante_id` → `entidade_id`/`clinica_id`
 - FASE 3 (não executada agora): Remoção completa de campos `@deprecated`
 - Pode ser feito em sprint futuro sem urgência
@@ -249,6 +257,7 @@ pnpm run build
 ### Backup e Rollback:
 
 ✅ **Todas as mudanças estão commitadas no Git**
+
 - Migrações podem ser revertidas com migrations de rollback (se necessário)
 - Arquivos deprecated podem ser restaurados facilmente
 - Documentação antiga está no histórico do Git

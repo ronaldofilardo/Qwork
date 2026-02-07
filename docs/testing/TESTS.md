@@ -1,161 +1,95 @@
-# Testes do Sistema Qwork
+# 🧪 Testes - QWork
 
-Este documento descreve os testes implementados para as funcionalidades de relatório de avaliação psicossocial.
+## 🚀 Início Rápido
 
-## Configuração dos Testes
+**Novo por aqui?** Comece com: [`__tests__/QUICKSTART.md`](__tests__/QUICKSTART.md)
 
-### Dependências Instaladas
+## 📚 Documentação
+
+Toda a documentação de testes está em [`__tests__/`](__tests__/):
+
+| Arquivo                                                        | Descrição                  | Para Quem          |
+| -------------------------------------------------------------- | -------------------------- | ------------------ |
+| **[QUICKSTART.md](__tests__/QUICKSTART.md)**                   | Guia rápido de início      | 🚀 Todos           |
+| **[INDEX.md](__tests__/INDEX.md)**                             | Índice master de navegação | 📚 Desenvolvedores |
+| **[README.md](__tests__/README.md)**                           | Estrutura completa         | 📖 Desenvolvedores |
+| **[SUMMARY.md](__tests__/SUMMARY.md)**                         | Sumário executivo          | 🎯 Gestores        |
+| **[SANITIZATION-GUIDE.md](__tests__/SANITIZATION-GUIDE.md)**   | Como sanitizar testes      | 🔧 Desenvolvedores |
+| **[SANITIZATION-REPORT.md](__tests__/SANITIZATION-REPORT.md)** | Relatório de métricas      | 📊 Gestores        |
+| **[INVENTORY.md](__tests__/INVENTORY.md)**                     | Inventário completo        | 📋 Analistas       |
+
+## 🛠️ Comandos Principais
 
 ```bash
-pnpm add --save-dev jest @testing-library/react @testing-library/jest-dom @testing-library/user-event jest-environment-jsdom @types/jest
-```
-
-### Arquivos de Configuração
-
-- `jest.config.cjs`: Configuração principal do Jest
-- `jest.setup.js`: Setup global dos testes com mocks
-- `package.json`: Scripts de teste adicionados
-
-### Scripts Disponíveis
-
-```bash
-# Executar todos os testes
+# Executar testes
 pnpm test
 
-# Executar testes em modo watch
-pnpm run test:watch
+# Analisar qualidade
+pnpm quality:tests-analyze
 
-# Executar testes com relatório de cobertura
-pnpm run test:coverage
+# Com cobertura
+pnpm test:coverage
+
+# Validar mocks
+pnpm validate:mocks
 ```
 
-## Estrutura dos Testes
+## ✨ Exemplo de Referência (100/100)
 
-### 1. Testes de API
+**[tests/api/emissor/laudos/hash-sha256-laudo.test.ts](tests/api/emissor/laudos/hash-sha256-laudo.test.ts)**
 
-#### `/api/avaliacao/status`
+Este arquivo é um exemplo perfeito de teste sanitizado. Use-o como template!
 
-- **Arquivo**: `__tests__/api/avaliacao/status.test.ts`
-- **Cobertura**:
-  - Retorna status "nao_iniciada" quando não há avaliação
-  - Retorna status da avaliação existente
-  - Trata erro de autenticação
-  - Trata erro de consulta ao banco
+## 📊 Status Atual
 
-#### `/api/avaliacao/resultados`
+```
+Total de Testes: 494
+Score Médio: 55/100
+Meta: 75+/100
 
-- **Arquivo**: `__tests__/api/avaliacao/resultados.test.ts`
-- **Cobertura**:
-  - Retorna resultados da avaliação concluída
-  - Retorna erro 404 quando não há avaliação concluída
-  - Trata erro de autenticação
-  - Trata erro de consulta ao banco
-
-### 2. Testes de Componentes
-
-#### DashboardPage
-
-- **Arquivo**: `__tests__/components/Dashboard.test.tsx`
-- **Cobertura**:
-  - Renderiza corretamente o componente
-  - Mostra estado de loading inicial
-
-#### AvaliacaoConcluidaPage
-
-- **Arquivo**: `__tests__/components/AvaliacaoConcluida.test.tsx`
-- **Cobertura**:
-  - Renderiza corretamente o componente
-  - Mostra estado de loading
-
-## Funcionalidades Testadas
-
-### ✅ APIs
-
-- ✅ Endpoint de status da avaliação
-- ✅ Endpoint de resultados da avaliação
-- ✅ Autenticação e autorização
-- ✅ Tratamento de erros
-- ✅ Validação de dados
-
-### ✅ Componentes
-
-- ✅ Renderização básica dos componentes
-- ✅ Estados de loading
-- ✅ Integração com APIs (parcial)
-
-### ✅ Integração
-
-- ✅ Comunicação entre frontend e backend
-- ✅ Fluxo completo de dados
-
-## Executando os Testes
-
-### Todos os Testes
-
-```bash
-pnpm test
+✅ JSDoc:        48%
+⚠️ Type Imports: 0.6%
+✅ beforeEach:   62%
 ```
 
-### Testes Específicos
+**Detalhes**: Ver [SANITIZATION-REPORT.md](__tests__/SANITIZATION-REPORT.md)
 
-```bash
-# Apenas APIs
-npx jest __tests__/api/
+## 🎯 Estrutura
 
-# Apenas componentes
-npx jest __tests__/components/
+```
+__tests__/               # Testes gerais
+├── api/                 # Testes de API
+├── components/          # Testes de componentes
+├── hooks/               # Testes de hooks
+├── lib/                 # Testes de utilitários
+├── visual-regression/   # Testes visuais
+└── [docs...]            # Documentação
 
-# Teste específico
-npx jest __tests__/api/avaliacao/status.test.ts
+tests/                   # Testes de API isolados
+└── api/
+    └── emissor/
+        └── laudos/
 ```
 
-### Com Cobertura
+## 📖 Links Úteis
 
-```bash
-pnpm run test:coverage
-```
+### Documentação
 
-## Mocks Utilizados
+- 🚀 [Guia Rápido](__tests__/QUICKSTART.md) - Comece aqui
+- 📚 [Índice Master](__tests__/INDEX.md) - Navegação completa
+- 🔧 [Como Sanitizar](__tests__/SANITIZATION-GUIDE.md) - Passo a passo
 
-### Módulos Mockados
+### Código
 
-- `next/navigation`: Router do Next.js
-- `next/server`: API routes do Next.js
-- `@/components/Header`: Componente de cabeçalho
-- `@/lib/db`: Conexão com banco de dados
-- `@/lib/session`: Autenticação de sessão
-- `@/lib/questoes`: Dados dos questionários
+- ✨ [Exemplo 100/100](tests/api/emissor/laudos/hash-sha256-laudo.test.ts)
+- 🛠️ [Ferramenta de Análise](scripts/analyze-test-quality.cjs)
 
-### Fetch Global
+### Políticas
 
-O `global.fetch` é mockado para simular chamadas de API sem dependências externas.
+- 📋 [Política de Mocks](docs/testing/MOCKS_POLICY.md)
+- 📋 [Política de Qualidade](docs/testing/QUALITY-POLICY.md)
 
-## Cobertura de Testes
+---
 
-Os testes cobrem os cenários principais das funcionalidades implementadas:
-
-1. **Verificação de status da avaliação**
-2. **Recuperação de resultados**
-3. **Exibição no dashboard**
-4. **Relatório completo**
-5. **Tratamento de erros**
-
-## Melhorias Futuras
-
-- Aumentar cobertura dos testes de componentes
-- Adicionar testes de integração end-to-end
-- Implementar testes de performance
-- Adicionar testes de acessibilidade
-
-## Comandos Úteis
-
-```bash
-# Limpar cache do Jest
-npx jest --clearCache
-
-# Executar testes em modo verbose
-npx jest --verbose
-
-# Executar apenas testes que falharam anteriormente
-npx jest --onlyFailures
-```
+**Documentação completa**: [`__tests__/`](__tests__/)  
+**Última atualização**: 31 de Janeiro de 2026
