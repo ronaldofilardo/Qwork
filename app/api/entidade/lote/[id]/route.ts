@@ -30,6 +30,7 @@ export async function GET(
         la.status,
         la.criado_em,
         la.liberado_em,
+        COALESCE(la.pagamento_pendente, false) as pagamento_pendente,
         l.emitido_em as laudo_emitido_em,
         CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
         fe.solicitado_em as emissao_solicitado_em,
@@ -49,11 +50,11 @@ export async function GET(
         AND EXISTS (
           SELECT 1 FROM avaliacoes a 
           JOIN funcionarios f ON a.funcionario_cpf = f.cpf 
-          WHERE a.lote_id = la.id AND f.contratante_id = $2
+          WHERE a.lote_id = la.id AND f.tomador_id = $2
         )
       LIMIT 1
     `,
-      [loteId, session.contratante_id]
+      [loteId, session.entidade_id]
     );
 
     if (loteResult.rows.length === 0) {
@@ -74,7 +75,7 @@ export async function GET(
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND f.contratante_id = $2 AND a.status != 'inativada'
+      WHERE a.lote_id = $1 AND f.tomador_id = $2 AND a.status != 'inativada'
     `,
       [loteId, session.entidade_id]
     );
@@ -99,7 +100,7 @@ export async function GET(
         (SELECT COUNT(DISTINCT (r.grupo, r.item)) FROM respostas r WHERE r.avaliacao_id = a.id) as total_respostas
       FROM funcionarios f
       JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND f.contratante_id = $2
+      WHERE a.lote_id = $1 AND f.tomador_id = $2
       ORDER BY f.nome ASC
     `,
       [loteId, session.entidade_id]

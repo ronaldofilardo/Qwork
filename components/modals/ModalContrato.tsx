@@ -241,6 +241,13 @@ export default function ModalContrato({
                       })
                     );
 
+                    // Redirecionar para boas-vindas se credenciais foram geradas
+                    if (data.boasVindasUrl) {
+                      console.info('[CONTRATO] Redirecionando para boas-vindas');
+                      router.push(data.boasVindasUrl);
+                      return;
+                    }
+
                     // Redirecionar diretamente para o simulador se URL fornecida
                     if (data.simulador_url) {
                       window.location.href = data.simulador_url;

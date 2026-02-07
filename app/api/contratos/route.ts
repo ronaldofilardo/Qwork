@@ -151,6 +151,8 @@ export async function POST(request: NextRequest) {
 
       let loginLiberadoImediatamente = false;
       let simuladorUrl = `/pagamento/simulador?tomador_id=${updated.tomador_id}&plano_id=${updated.plano_id}&numero_funcionarios=${updated.numero_funcionarios}&contrato_id=${updated.id}`;
+      let boasVindasUrl: string | null = null;
+      let credenciais: { login: string; senha: string } | null = null;
 
       if (skipPaymentPhase) {
         try {
@@ -170,11 +172,38 @@ export async function POST(request: NextRequest) {
             // Criar conta responsável (libera login)
             await criarContaResponsavel(tomadorData);
 
-            // Atualizar tomador para marcar como ativo e pagamento confirmado
+            // Atualizar tomador para marcar como ativo
             await query(
-              `UPDATE entidades SET ativa = true, pagamento_confirmado = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`,
+              `UPDATE entidades SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`,
               [updated.tomador_id]
             );
+
+            // Calcular credenciais (mesmo que em criarContaResponsavel)
+            let cnpj = tomadorData.cnpj;
+            if (!cnpj) {
+              const cnpjRes = await query(
+                'SELECT cnpj FROM entidades WHERE id = $1',
+                [tomadorData.id]
+              );
+              if (cnpjRes.rows.length > 0) {
+                cnpj = cnpjRes.rows[0].cnpj;
+              }
+            }
+
+            if (cnpj) {
+              const cleanCnpj = cnpj.replace(/[./-]/g, '');
+              const loginCredencial =
+                tomadorData.responsavel_cpf || cleanCnpj;
+              const senhaCredencial = cleanCnpj.slice(-6);
+
+              credenciais = {
+                login: loginCredencial,
+                senha: senhaCredencial,
+              };
+
+              // Criar URL para boas-vindas
+              boasVindasUrl = `/boas-vindas?tomador_id=${updated.tomador_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
+            }
 
             // Log de auditoria
             console.info(
@@ -217,6 +246,8 @@ export async function POST(request: NextRequest) {
           success: true,
           contrato: updated,
           simulador_url: simuladorUrl,
+          boasVindasUrl,
+          credenciais,
           loginLiberadoImediatamente,
           skip_payment_phase: skipPaymentPhase,
         },
