@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { X, FileText, Loader2 } from 'lucide-react';
 import ContratoPadrao from '@/components/terms/ContratoPadrao';
 
@@ -12,7 +13,7 @@ interface ModalContratoProps {
 
 interface Contrato {
   id: number;
-  contratante_id: number;
+  tomador_id: number;
   plano_id: number;
   conteudo: string;
   aceito: boolean;
@@ -29,9 +30,11 @@ export default function ModalContrato({
   onClose,
   contratoId,
 }: ModalContratoProps) {
+  const router = useRouter();
   const [contrato, setContrato] = useState<Contrato | null>(null);
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState('');
+  const [skipPaymentPhase, setSkipPaymentPhase] = useState(false);
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
@@ -74,6 +77,14 @@ export default function ModalContrato({
       buscarContrato();
     }
   }, [isOpen, contratoId, buscarContrato]);
+
+  // Detectar feature flag de pular pagamento
+  useEffect(() => {
+    const skipPayment =
+      typeof window !== 'undefined' &&
+      (window as any).NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
+    setSkipPaymentPhase(skipPayment);
+  }, []);
 
   // Reset checkbox and evaluate initial scroll state quando modal abre ou contrato muda
   useEffect(() => {
@@ -236,6 +247,21 @@ export default function ModalContrato({
                       return;
                     }
 
+                    // Se login foi liberado automaticamente (feature flag ativada)
+                    if (data.loginLiberadoImediatamente) {
+                      console.info(
+                        '[CONTRATO] Login liberado automaticamente após aceite'
+                      );
+                      alert(
+                        'Contrato aceito com sucesso!\n\n' +
+                          'Seu acesso foi liberado imediatamente.\n' +
+                          'Login: CPF do responsável + últimos 6 dígitos do CNPJ como senha.\n\n' +
+                          'Redirecionando para login...'
+                      );
+                      router.push('/login');
+                      return;
+                    }
+
                     // Caso contrário, apenas fechar e recarregar página para atualizar estado
                     onClose();
                     window.location.reload();
@@ -259,6 +285,8 @@ export default function ModalContrato({
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Processando...
                   </>
+                ) : skipPaymentPhase ? (
+                  '✓ Aceitar Contrato e Liberar Acesso'
                 ) : (
                   '✓ Aceitar Contrato e Prosseguir para Pagamento'
                 )}

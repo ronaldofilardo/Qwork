@@ -5,8 +5,8 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const {
-      entidade_id,
-      contratante_id, // backward compat
+      tomador_id,
+      entidade_id, // backward compat
       contrato_id,
       _contrato_id,
       plano_id,
@@ -15,8 +15,23 @@ export async function POST(request: NextRequest) {
       payment_link_token,
     } = body;
 
-    // Use entidade_id ou contratante_id (retrocompat)
-    const finalEntidadeId = entidade_id || contratante_id;
+    // Verificar feature flag de pular fase de pagamento
+    const skipPaymentPhase = process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
+    if (skipPaymentPhase) {
+      console.warn(
+        '[PAGAMENTO] Tentativa de iniciar pagamento com SKIP_PAYMENT_PHASE ativado'
+      );
+      return NextResponse.json(
+        {
+          error:
+            'A fase de pagamento está temporariamente inativa. O acesso é liberado diretamente após aceitar o contrato.',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Use tomador_id ou entidade_id (retrocompat)
+    const finalTomadorId = tomador_id || entidade_id;
 
     let contratoIdParam = _contrato_id || contrato_id;
 
@@ -56,17 +71,17 @@ export async function POST(request: NextRequest) {
     }
 
     // Validações básicas
-    if (!finalEntidadeId) {
+    if (!finalTomadorId) {
       return NextResponse.json(
-        { error: 'ID da entidade é obrigatório' },
+        { error: 'ID do tomador é obrigatório' },
         { status: 400 }
       );
     }
 
-    // Se contrato_id não foi fornecido, vamos tentar encontrar um contrato aceito associado à entidade
+    // Se contrato_id não foi fornecido, vamos tentar encontrar um contrato aceito associado ao tomador
     if (!contratoIdParam) {
       console.log(
-        `[PAGAMENTO] Nenhum contrato_id informado para entidade ${finalEntidadeId}, buscando contrato aceito associado`
+        `[PAGAMENTO] Nenhum contrato_id informado para tomador ${finalTomadorId}, buscando contrato aceito associado`
       );
     }
 
@@ -80,61 +95,63 @@ export async function POST(request: NextRequest) {
       contratoIdParam = consumedPaymentLinkContratoId;
     }
 
-    // Buscar dados do contratante
+    // Buscar dados do tomador
     // Se um contrato específico foi informado, buscar juntando a tabela contratos para garantir
-    // que o contrato pertence ao contratante (e permitir passar contrato_id como $2 na query)
-    let contratanteResult;
+    // que o contrato pertence ao tomador (e permitir passar contrato_id como $2 na query)
+    let tomadorResult;
     if (contratoIdParam) {
-      contratanteResult = await query(
-        `SELECT c.id, c.nome, c.plano_id, c.status, COALESCE(c.numero_funcionarios_estimado, 1) as numero_funcionarios, 
+      tomadorResult = await query(
+        `SELECT t.id, t.nome, t.plano_id, t.status, COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios, 
+                t.tipo,
                 p.nome as plano_nome, p.tipo as plano_tipo, p.preco, ctr.id as contrato_id, ctr.aceito as contrato_aceito, ctr.valor_total as contrato_valor_total
-         FROM entidades c
-         LEFT JOIN planos p ON c.plano_id = p.id
-         JOIN contratos ctr ON ctr.contratante_id = c.id AND ctr.id = $2
-         WHERE c.id = $1`,
-        [finalEntidadeId, contratoIdParam]
+         FROM tomadores t
+         LEFT JOIN planos p ON t.plano_id = p.id
+         JOIN contratos ctr ON ctr.tomador_id = t.id AND ctr.id = $2
+         WHERE t.id = $1`,
+        [finalTomadorId, contratoIdParam]
       );
     } else {
-      contratanteResult = await query(
-        `SELECT c.id, c.nome, c.plano_id, c.status, COALESCE(c.numero_funcionarios_estimado, 1) as numero_funcionarios, 
+      tomadorResult = await query(
+        `SELECT t.id, t.nome, t.plano_id, t.status, COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios, 
+                t.tipo,
                 p.nome as plano_nome, p.tipo as plano_tipo, p.preco
-         FROM entidades c
-         LEFT JOIN planos p ON c.plano_id = p.id
-         WHERE c.id = $1`,
-        [finalEntidadeId]
+         FROM tomadores t
+         LEFT JOIN planos p ON t.plano_id = p.id
+         WHERE t.id = $1`,
+        [finalTomadorId]
       );
     }
 
-    if (contratanteResult.rows.length === 0) {
+    if (tomadorResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Entidade não encontrada' },
+        { error: 'Tomador não encontrado' },
         { status: 404 }
       );
     }
 
-    const contratante = contratanteResult.rows[0];
+    const tomador = tomadorResult.rows[0];
 
     // Se a consulta retornou valor_total do contrato, mapear para compatibilidade
-    if (contratante.contrato_valor_total) {
-      contratante.valor_total = contratante.contrato_valor_total;
+    if (tomador.contrato_valor_total) {
+      tomador.valor_total = tomador.contrato_valor_total;
     }
 
-    // Verificar se o contratante tem status válido para iniciar pagamento
-    // Normalmente exigimos que o contratante esteja em 'aguardando_pagamento'.
+    // Verificar se o tomador tem status válido para iniciar pagamento
+    // Normalmente exigimos que o tomador esteja em 'aguardando_pagamento'.
     // Para casos de plano personalizado, um contrato pode ter sido criado com
-    // status 'aguardando_pagamento' mesmo que o contratante ainda esteja 'pendente'.
+    // status 'aguardando_pagamento' mesmo que o tomador ainda esteja 'pendente'.
     // Neste caso, permitimos iniciar o pagamento quando houver um contrato
     // com status 'aguardando_pagamento' ou com `aceito = true`.
-    if (contratante.status !== 'aguardando_pagamento') {
+    if (tomador.status !== 'aguardando_pagamento') {
       // checar se existe um contrato que justifique iniciar o pagamento
       try {
         const contratoCheck = await query(
-          `SELECT id, aceito, status FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1`,
-          [finalEntidadeId]
+          `SELECT id, aceito, status FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1`,
+          [finalTomadorId]
         );
         if (contratoCheck.rows.length === 0) {
           console.log(
-            `[PAGAMENTO] Status inválido para entidade ${finalEntidadeId}: ${contratante.status}`
+            `[PAGAMENTO] Status inválido para tomador ${finalTomadorId}: ${tomador.status}`
           );
           return NextResponse.json(
             { error: 'Status inválido para pagamento' },
@@ -148,7 +165,7 @@ export async function POST(request: NextRequest) {
           !lastContrato.aceito
         ) {
           console.log(
-            `[PAGAMENTO] Status inválido para entidade ${finalEntidadeId}: ${contratante.status} e contrato recente não permite pagamento (status=${lastContrato.status}, aceito=${lastContrato.aceito})`
+            `[PAGAMENTO] Status inválido para tomador ${finalTomadorId}: ${tomador.status} e contrato recente não permite pagamento (status=${lastContrato.status}, aceito=${lastContrato.aceito})`
           );
           return NextResponse.json(
             { error: 'Status inválido para pagamento' },
@@ -157,10 +174,7 @@ export async function POST(request: NextRequest) {
         }
         // caso contrário, permitimos continuar (contrato está aguardando pagamento ou já aceito)
       } catch (err) {
-        console.error(
-          '[PAGAMENTO] Erro ao checar contratos do contratante:',
-          err
-        );
+        console.error('[PAGAMENTO] Erro ao checar contratos do tomador:', err);
         return NextResponse.json(
           { error: 'Erro ao processar solicitação de pagamento' },
           { status: 500 }
@@ -168,11 +182,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verificar se já existe pagamento pendente/recente para este contratante
+    // Verificar se já existe pagamento pendente/recente para este tomador
     try {
       const pagamentoExistente = await query(
-        `SELECT id, status FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1`,
-        [finalEntidadeId]
+        `SELECT id, status FROM pagamentos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1`,
+        [finalTomadorId]
       );
 
       if (pagamentoExistente.rows.length > 0) {
@@ -193,12 +207,12 @@ export async function POST(request: NextRequest) {
 
     // Exigir contrato aceito (removendo suporte ao fluxo legado)
     // Se um contrato específico foi fornecido, valida-lo; caso contrário, buscar
-    // um contrato aceito associado ao contratante.
+    // um contrato aceito associado ao tomador.
     let contratoIdValido: number | null = null;
     if (contratoIdParam) {
       const contratoRow = await query(
-        `SELECT id, aceito FROM contratos WHERE id = $1 AND contratante_id = $2`,
-        [contratoIdParam, finalEntidadeId]
+        `SELECT id, aceito FROM contratos WHERE id = $1 AND tomador_id = $2`,
+        [contratoIdParam, finalTomadorId]
       );
       if (contratoRow.rows.length === 0 || !contratoRow.rows[0].aceito) {
         return NextResponse.json(
@@ -210,8 +224,8 @@ export async function POST(request: NextRequest) {
     } else {
       try {
         const contratoRow = await query(
-          `SELECT id FROM contratos WHERE contratante_id = $1 AND aceito = true LIMIT 1`,
-          [finalEntidadeId]
+          `SELECT id FROM contratos WHERE tomador_id = $1 AND aceito = true LIMIT 1`,
+          [finalTomadorId]
         );
         if (contratoRow.rows.length === 0) {
           return NextResponse.json(
@@ -237,55 +251,58 @@ export async function POST(request: NextRequest) {
     }
 
     // Usar dados fornecidos ou calcular baseado no plano
-    const finalPlanoId = plano_id || contratante.plano_id;
+    const finalPlanoId = plano_id || tomador.plano_id;
     const finalNumeroFuncionarios =
-      numero_funcionarios || contratante.numero_funcionarios || 1;
+      numero_funcionarios || tomador.numero_funcionarios || 1;
     let finalValorTotal = valor_total;
 
     if (!finalValorTotal) {
-      // Preferir valor_total já calculado no contratante quando disponível
-      if (contratante.valor_total) {
-        finalValorTotal = contratante.valor_total;
-      } else if (contratante.plano_tipo === 'fixo') {
+      // Preferir valor_total já calculado no tomador quando disponível
+      if (tomador.valor_total) {
+        finalValorTotal = tomador.valor_total;
+      } else if (tomador.plano_tipo === 'fixo') {
         finalValorTotal = 20.0 * finalNumeroFuncionarios; // R$20 por funcionário para planos fixos
       } else {
         finalValorTotal =
-          parseFloat(contratante.preco || '0') * finalNumeroFuncionarios;
+          parseFloat(tomador.preco || '0') * finalNumeroFuncionarios;
       }
     }
 
     console.log(`[PAGAMENTO] Dados calculados:`, {
-      entidade_id: finalEntidadeId,
+      tomador_id: finalTomadorId,
+      tipo: tomador.tipo,
       plano_id: finalPlanoId,
       numero_funcionarios: finalNumeroFuncionarios,
       valor_total: finalValorTotal,
-      plano_tipo: contratante.plano_tipo,
+      plano_tipo: tomador.plano_tipo,
     });
 
     // Criar registro de pagamento (associado ao contrato aceito)
     const pagamentoResult = await query(
       `INSERT INTO pagamentos (
-        contratante_id, contrato_id, valor, status, metodo
+        tomador_id, contrato_id, valor, status, metodo
       ) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [finalEntidadeId, contratoIdValido, finalValorTotal, 'pendente', 'avista']
+      [finalTomadorId, contratoIdValido, finalValorTotal, 'pendente', 'avista']
     );
 
     const pagamentoId = pagamentoResult.rows[0].id;
 
     const valorPorFuncionario =
-      contratante.plano_tipo === 'fixo'
+      tomador.plano_tipo === 'fixo'
         ? 20.0
         : finalValorTotal / finalNumeroFuncionarios;
 
     return NextResponse.json({
       success: true,
       pagamento_id: pagamentoId,
+      tomador_id: finalTomadorId,
+      tipo: tomador.tipo,
       valor: parseFloat(finalValorTotal),
       valor_plano: valorPorFuncionario,
       valor_unitario: valorPorFuncionario,
       numero_funcionarios: finalNumeroFuncionarios,
-      plano_nome: contratante.plano_nome,
-      contratante_nome: contratante.nome,
+      plano_nome: tomador.plano_nome,
+      tomador_nome: tomador.nome,
       message: 'Pagamento iniciado com sucesso',
     });
   } catch (error: any) {
