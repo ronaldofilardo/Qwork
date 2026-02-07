@@ -129,17 +129,24 @@ export async function GET(request: Request) {
     const cpSelectColsExpr = cpSelectCols.join(', ');
 
     // Detectar qual coluna em `funcionarios` referencia o contratante/entidade
-    // pode ser 'entidade_id' (padrão novo) ou 'contratante_id' (bases antigas)
+    // A tabela funcionarios usa clinica_id e empresa_id (não entidade_id/contratante_id)
+    // Precisamos contar funcionários vinculados através de empresa_id ou clinica_id
     let funcionarioIdCol: string | null = null;
     if (process.env.NODE_ENV === 'test') {
       // Em testes as queries são mockadas; não executar checagem adicional que consumiria mocks
-      funcionarioIdCol = 'entidade_id';
+      funcionarioIdCol = 'empresa_id';
     } else {
       try {
         const fcolRes = await query(
-          `SELECT column_name FROM information_schema.columns WHERE table_name = 'funcionarios' AND column_name IN ('entidade_id','contratante_id')`
+          `SELECT column_name FROM information_schema.columns WHERE table_name = 'funcionarios' AND column_name IN ('empresa_id','clinica_id')`
         );
-        funcionarioIdCol = fcolRes.rows[0]?.column_name || null;
+        // Preferir empresa_id (para entidades), fallback para clinica_id
+        const cols = fcolRes.rows.map((r: any) => r.column_name);
+        funcionarioIdCol = cols.includes('empresa_id')
+          ? 'empresa_id'
+          : cols.includes('clinica_id')
+            ? 'clinica_id'
+            : null;
       } catch (err) {
         console.error(
           '[API Cobrança] Erro ao detectar coluna em funcionarios:',
@@ -149,7 +156,7 @@ export async function GET(request: Request) {
     }
 
     const vcSelect = funcionarioIdCol
-      ? `SELECT COUNT(*) as funcionarios_ativos FROM funcionarios f WHERE f.${funcionarioIdCol} = ct.id AND f.ativo = true`
+      ? `SELECT COUNT(*) as funcionarios_ativos FROM funcionarios f WHERE (f.empresa_id = ct.id OR f.clinica_id = ct.id) AND f.ativo = true`
       : `SELECT 0 as funcionarios_ativos`;
 
     // Seleção defensiva para o lateral JOIN em `contratos`: se a coluna `valor_personalizado` não existir,
@@ -172,8 +179,8 @@ export async function GET(request: Request) {
         pl.tipo as plano_tipo,
         -- número estimado informado na contratação (priorizar contrato personalizado, depois contratos_planos (se coluna existir), depois contratante)
         COALESCE(co.numero_funcionarios${hasCpNumeroFuncionariosEstimado ? ', cp.numero_funcionarios_estimado' : ''}, ct.numero_funcionarios_estimado) as numero_funcionarios_estimado,
-        -- número atual de funcionários: contar vinculados ativos (cobrir ambos os esquemas entidade_id/contratante_id)
-        (SELECT COUNT(*) FROM funcionarios f WHERE (f.entidade_id = ct.id OR f.contratante_id = ct.id) AND f.ativo = true) as numero_funcionarios_atual,
+        -- número atual de funcionários: contar vinculados ativos (funcionarios usa empresa_id e clinica_id)
+        (SELECT COUNT(*) FROM funcionarios f WHERE (f.empresa_id = ct.id OR f.clinica_id = ct.id) AND f.ativo = true) as numero_funcionarios_atual,
         pg.id as pagamento_id,
         pg.valor as pagamento_valor,
         pg.status as pagamento_status,

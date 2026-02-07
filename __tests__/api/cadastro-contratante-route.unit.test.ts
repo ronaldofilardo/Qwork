@@ -32,7 +32,7 @@ describe('Route POST - unitário (sem DB real)', () => {
     }));
 
     // Importar o handler após mock
-    const { POST } = await import('@/app/api/cadastro/contratante/route');
+    const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const formData = new FormData();
     formData.append('tipo', 'entidade');

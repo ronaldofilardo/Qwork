@@ -97,7 +97,7 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     );
 
     const { POST: cadastroPost } =
-      await import('@/app/api/cadastro/contratante/route');
+      await import('@/app/api/cadastro/tomadores/route');
 
     class FakeFormData {
       private data: Map<string, string | number | object> = new Map();

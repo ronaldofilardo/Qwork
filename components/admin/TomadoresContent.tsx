@@ -3,11 +3,11 @@
 import { useState, useEffect } from 'react';
 import { Building2, MapPin, Phone, Mail, User, Filter } from 'lucide-react';
 
-type TipoContratante = 'clinica' | 'entidade';
+type TipoTomador = 'clinica' | 'entidade';
 
-interface Contratante {
+interface Tomador {
   id: string;
-  tipo: TipoContratante;
+  tipo: TipoTomador;
   nome: string;
   cnpj: string;
   endereco?: string;
@@ -25,42 +25,43 @@ interface Contratante {
   created_at: string;
 }
 
-export function ContratantesContent({
+export function TomadoresContent({
   activeSubSection,
 }: {
   activeSubSection?: string;
 }) {
-  const [contratantes, setContratantes] = useState<Contratante[]>([]);
+  const [tomadores, setTomadores] = useState<Tomador[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filtro, setFiltro] = useState<TipoContratante | 'todos'>(
+  const [filtro, setFiltro] = useState<TipoTomador | 'todos'>(
     activeSubSection === 'clinicas'
       ? 'clinica'
       : activeSubSection === 'entidades'
         ? 'entidade'
         : 'todos'
   );
-  const [contratanteSelecionado, setContratanteSelecionado] =
-    useState<Contratante | null>(null);
+  const [tomadorSelecionado, setTomadorSelecionado] = useState<Tomador | null>(
+    null
+  );
 
-  const fetchContratantes = async () => {
+  const fetchTomadores = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/admin/entidades');
       if (res.ok) {
         const data = await res.json();
         if (data.success) {
-          setContratantes(data.entidades || []);
+          setTomadores(data.entidades || []);
         }
       }
     } catch (error) {
-      console.error('Erro ao buscar contratantes:', error);
+      console.error('Erro ao buscar tomadores:', error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchContratantes();
+    fetchTomadores();
   }, []);
 
   useEffect(() => {
@@ -73,7 +74,7 @@ export function ContratantesContent({
     );
   }, [activeSubSection]);
 
-  const contratantesFiltrados = contratantes.filter(
+  const tomadoresFiltrados = tomadores.filter(
     (c) => filtro === 'todos' || c.tipo === filtro
   );
 
@@ -91,7 +92,7 @@ export function ContratantesContent({
       <div className="bg-white rounded-lg shadow p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Contratantes</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Tomadores</h1>
             <p className="text-sm text-gray-600 mt-1">
               Visualização de clínicas e entidades com seus gestores
             </p>
@@ -102,7 +103,7 @@ export function ContratantesContent({
             <select
               value={filtro}
               onChange={(e) =>
-                setFiltro(e.target.value as TipoContratante | 'todos')
+                setFiltro(e.target.value as TipoTomador | 'todos')
               }
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
@@ -117,15 +118,13 @@ export function ContratantesContent({
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-blue-500 rounded-full" />
             <span className="text-gray-600">
-              Clínicas:{' '}
-              {contratantes.filter((c) => c.tipo === 'clinica').length}
+              Clínicas: {tomadores.filter((c) => c.tipo === 'clinica').length}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-purple-500 rounded-full" />
             <span className="text-gray-600">
-              Entidades:{' '}
-              {contratantes.filter((c) => c.tipo === 'entidade').length}
+              Entidades: {tomadores.filter((c) => c.tipo === 'entidade').length}
             </span>
           </div>
         </div>
@@ -133,14 +132,14 @@ export function ContratantesContent({
 
       {/* Grid de Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {contratantesFiltrados.map((contratante) => (
+        {tomadoresFiltrados.map((tomador) => (
           <div
-            key={contratante.id}
-            onClick={() => setContratanteSelecionado(contratante)}
+            key={tomador.id}
+            onClick={() => setTomadorSelecionado(tomador)}
             className="bg-white rounded-lg shadow hover:shadow-lg transition-shadow cursor-pointer p-6 border-l-4"
             style={{
               borderLeftColor:
-                contratante.tipo === 'clinica' ? '#3b82f6' : '#a855f7',
+                tomador.tipo === 'clinica' ? '#3b82f6' : '#a855f7',
             }}
           >
             {/* Header do Card */}
@@ -148,14 +147,12 @@ export function ContratantesContent({
               <div className="flex items-center gap-3">
                 <div
                   className={`p-2 rounded-lg ${
-                    contratante.tipo === 'clinica'
-                      ? 'bg-blue-100'
-                      : 'bg-purple-100'
+                    tomador.tipo === 'clinica' ? 'bg-blue-100' : 'bg-purple-100'
                   }`}
                 >
                   <Building2
                     className={`h-6 w-6 ${
-                      contratante.tipo === 'clinica'
+                      tomador.tipo === 'clinica'
                         ? 'text-blue-600'
                         : 'text-purple-600'
                     }`}
@@ -164,55 +161,53 @@ export function ContratantesContent({
                 <div>
                   <span
                     className={`text-xs font-semibold px-2 py-1 rounded ${
-                      contratante.tipo === 'clinica'
+                      tomador.tipo === 'clinica'
                         ? 'bg-blue-100 text-blue-700'
                         : 'bg-purple-100 text-purple-700'
                     }`}
                   >
-                    {contratante.tipo === 'clinica' ? 'CLÍNICA' : 'ENTIDADE'}
+                    {tomador.tipo === 'clinica' ? 'CLÍNICA' : 'ENTIDADE'}
                   </span>
                 </div>
               </div>
 
               <span
                 className={`text-xs font-medium px-2 py-1 rounded ${
-                  contratante.ativo
+                  tomador.ativo
                     ? 'bg-green-100 text-green-700'
                     : 'bg-gray-100 text-gray-700'
                 }`}
               >
-                {contratante.ativo ? 'Ativo' : 'Inativo'}
+                {tomador.ativo ? 'Ativo' : 'Inativo'}
               </span>
             </div>
 
             {/* Nome e CNPJ */}
             <h3 className="font-bold text-gray-900 text-lg mb-1 line-clamp-2">
-              {contratante.nome}
+              {tomador.nome}
             </h3>
-            <p className="text-sm text-gray-600 mb-4">
-              CNPJ: {contratante.cnpj}
-            </p>
+            <p className="text-sm text-gray-600 mb-4">CNPJ: {tomador.cnpj}</p>
 
             {/* Informações de Contato */}
             <div className="space-y-2 mb-4 text-sm">
-              {contratante.cidade && contratante.estado && (
+              {tomador.cidade && tomador.estado && (
                 <div className="flex items-center gap-2 text-gray-600">
                   <MapPin className="h-4 w-4" />
                   <span>
-                    {contratante.cidade}/{contratante.estado}
+                    {tomador.cidade}/{tomador.estado}
                   </span>
                 </div>
               )}
-              {contratante.telefone && (
+              {tomador.telefone && (
                 <div className="flex items-center gap-2 text-gray-600">
                   <Phone className="h-4 w-4" />
-                  <span>{contratante.telefone}</span>
+                  <span>{tomador.telefone}</span>
                 </div>
               )}
-              {contratante.email && (
+              {tomador.email && (
                 <div className="flex items-center gap-2 text-gray-600">
                   <Mail className="h-4 w-4" />
-                  <span className="truncate">{contratante.email}</span>
+                  <span className="truncate">{tomador.email}</span>
                 </div>
               )}
             </div>
@@ -223,22 +218,20 @@ export function ContratantesContent({
                 <User className="h-4 w-4 text-gray-400" />
                 <span className="text-gray-500 font-medium">Gestor:</span>
               </div>
-              {contratante.gestor ? (
+              {tomador.gestor ? (
                 <div className="mt-2 text-sm">
                   <p className="font-semibold text-gray-900">
-                    {contratante.gestor.nome}
+                    {tomador.gestor.nome}
                   </p>
-                  <p className="text-gray-600">{contratante.gestor.email}</p>
+                  <p className="text-gray-600">{tomador.gestor.email}</p>
                   <span
                     className={`inline-block mt-1 text-xs px-2 py-0.5 rounded ${
-                      contratante.gestor.perfil === 'rh'
+                      tomador.gestor.perfil === 'rh'
                         ? 'bg-blue-50 text-blue-700'
                         : 'bg-purple-50 text-purple-700'
                     }`}
                   >
-                    {contratante.gestor.perfil === 'rh'
-                      ? 'RH'
-                      : 'Gestor Entidade'}
+                    {tomador.gestor.perfil === 'rh' ? 'RH' : 'Gestor Entidade'}
                   </span>
                 </div>
               ) : (
@@ -252,10 +245,10 @@ export function ContratantesContent({
       </div>
 
       {/* Modal de Detalhes */}
-      {contratanteSelecionado && (
+      {tomadorSelecionado && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setContratanteSelecionado(null)}
+          onClick={() => setTomadorSelecionado(null)}
         >
           <div
             className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
@@ -267,14 +260,14 @@ export function ContratantesContent({
                 <div className="flex items-center gap-3">
                   <div
                     className={`p-3 rounded-lg ${
-                      contratanteSelecionado.tipo === 'clinica'
+                      tomadorSelecionado.tipo === 'clinica'
                         ? 'bg-blue-100'
                         : 'bg-purple-100'
                     }`}
                   >
                     <Building2
                       className={`h-8 w-8 ${
-                        contratanteSelecionado.tipo === 'clinica'
+                        tomadorSelecionado.tipo === 'clinica'
                           ? 'text-blue-600'
                           : 'text-purple-600'
                       }`}
@@ -283,49 +276,48 @@ export function ContratantesContent({
                   <div>
                     <span
                       className={`text-sm font-semibold px-3 py-1 rounded ${
-                        contratanteSelecionado.tipo === 'clinica'
+                        tomadorSelecionado.tipo === 'clinica'
                           ? 'bg-blue-100 text-blue-700'
                           : 'bg-purple-100 text-purple-700'
                       }`}
                     >
-                      {contratanteSelecionado.tipo === 'clinica'
+                      {tomadorSelecionado.tipo === 'clinica'
                         ? 'CLÍNICA'
                         : 'ENTIDADE'}
                     </span>
                   </div>
                 </div>
                 <button
-                  onClick={() => setContratanteSelecionado(null)}
+                  onClick={() => setTomadorSelecionado(null)}
                   className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
                 >
                   ×
                 </button>
               </div>
 
-              {/* Dados do Contratante */}
+              {/* Dados do tomador */}
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {contratanteSelecionado.nome}
+                    {tomadorSelecionado.nome}
                   </h2>
                   <p className="text-gray-600">
-                    CNPJ: {contratanteSelecionado.cnpj}
+                    CNPJ: {tomadorSelecionado.cnpj}
                   </p>
                 </div>
 
                 {/* Endereço Completo */}
-                {contratanteSelecionado.endereco && (
+                {tomadorSelecionado.endereco && (
                   <div className="bg-gray-50 p-4 rounded-lg">
                     <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
                       <MapPin className="h-5 w-5 text-gray-600" />
                       Endereço
                     </h3>
                     <p className="text-gray-700">
-                      {contratanteSelecionado.endereco}
+                      {tomadorSelecionado.endereco}
                     </p>
                     <p className="text-gray-700">
-                      {contratanteSelecionado.cidade}/
-                      {contratanteSelecionado.estado}
+                      {tomadorSelecionado.cidade}/{tomadorSelecionado.estado}
                     </p>
                   </div>
                 )}
@@ -334,16 +326,16 @@ export function ContratantesContent({
                 <div className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="font-semibold text-gray-900 mb-3">Contato</h3>
                   <div className="space-y-2">
-                    {contratanteSelecionado.telefone && (
+                    {tomadorSelecionado.telefone && (
                       <div className="flex items-center gap-2 text-gray-700">
                         <Phone className="h-5 w-5 text-gray-600" />
-                        <span>{contratanteSelecionado.telefone}</span>
+                        <span>{tomadorSelecionado.telefone}</span>
                       </div>
                     )}
-                    {contratanteSelecionado.email && (
+                    {tomadorSelecionado.email && (
                       <div className="flex items-center gap-2 text-gray-700">
                         <Mail className="h-5 w-5 text-gray-600" />
-                        <span>{contratanteSelecionado.email}</span>
+                        <span>{tomadorSelecionado.email}</span>
                       </div>
                     )}
                   </div>
@@ -355,25 +347,25 @@ export function ContratantesContent({
                     <User className="h-5 w-5 text-gray-600" />
                     Gestor Responsável
                   </h3>
-                  {contratanteSelecionado.gestor ? (
+                  {tomadorSelecionado.gestor ? (
                     <div className="space-y-2">
                       <p className="font-semibold text-gray-900">
-                        {contratanteSelecionado.gestor.nome}
+                        {tomadorSelecionado.gestor.nome}
                       </p>
                       <p className="text-gray-700">
-                        CPF: {contratanteSelecionado.gestor.cpf}
+                        CPF: {tomadorSelecionado.gestor.cpf}
                       </p>
                       <p className="text-gray-700">
-                        Email: {contratanteSelecionado.gestor.email}
+                        Email: {tomadorSelecionado.gestor.email}
                       </p>
                       <span
                         className={`inline-block text-sm px-3 py-1 rounded ${
-                          contratanteSelecionado.gestor.perfil === 'rh'
+                          tomadorSelecionado.gestor.perfil === 'rh'
                             ? 'bg-blue-100 text-blue-700'
                             : 'bg-purple-100 text-purple-700'
                         }`}
                       >
-                        {contratanteSelecionado.gestor.perfil === 'rh'
+                        {tomadorSelecionado.gestor.perfil === 'rh'
                           ? 'RH'
                           : 'Gestor Entidade'}
                       </span>
@@ -381,7 +373,7 @@ export function ContratantesContent({
                   ) : (
                     <div className="bg-amber-50 border border-amber-200 rounded p-3">
                       <p className="text-amber-800">
-                        ⚠️ Este contratante não possui gestor vinculado
+                        ⚠️ Este tomador não possui gestor vinculado
                       </p>
                     </div>
                   )}
@@ -390,9 +382,9 @@ export function ContratantesContent({
                 {/* Data de Cadastro */}
                 <div className="text-sm text-gray-600">
                   Cadastrado em:{' '}
-                  {new Date(
-                    contratanteSelecionado.created_at
-                  ).toLocaleDateString('pt-BR')}
+                  {new Date(tomadorSelecionado.created_at).toLocaleDateString(
+                    'pt-BR'
+                  )}
                 </div>
               </div>
             </div>
@@ -400,13 +392,13 @@ export function ContratantesContent({
         </div>
       )}
 
-      {/* Mensagem quando não há contratantes */}
-      {contratantesFiltrados.length === 0 && (
+      {/* Mensagem quando não há tomadors */}
+      {tomadoresFiltrados.length === 0 && (
         <div className="bg-white rounded-lg shadow p-12 text-center">
           <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-600 text-lg">
             {filtro === 'todos'
-              ? 'Nenhum contratante cadastrado'
+              ? 'Nenhum tomador cadastrado'
               : `Nenhuma ${filtro} cadastrada`}
           </p>
         </div>

@@ -353,7 +353,7 @@ export async function getEntidadeCompleta(
       data_pagamento: row.pagamento_data,
       criado_em: '',
       atualizado_em: '',
-    } as Pagamento;
+    } as any; // Usar any para evitar conflito de tipos
   }
 
   return entidade;

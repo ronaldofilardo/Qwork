@@ -107,7 +107,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     // 1. CADASTRO DA EMPRESA COM PLANO PERSONALIZADO
     const { POST: cadastroPost } =
-      await import('@/app/api/cadastro/contratante/route');
+      await import('@/app/api/cadastro/tomadores/route');
 
     class FakeFormData {
       private data: Map<string, any> = new Map();

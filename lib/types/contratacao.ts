@@ -45,7 +45,7 @@ export interface Plano {
 
 export interface Contrato {
   id: number;
-  contratante_id: number;
+  entidade_id: number;
   plano_id: number;
   conteudo: string;
   aceito: boolean;
@@ -59,7 +59,8 @@ export interface Contrato {
 
 export interface Pagamento {
   id: number;
-  entidade_id: number;
+  entidade_id?: number;
+  clinica_id?: number;
   contrato_id?: number;
   valor: number;
   metodo?: MetodoPagamento;
@@ -134,11 +135,14 @@ export interface ConfirmarPagamentoDTO {
   comprovante_path?: string;
 }
 
-export interface AprovarContratanteDTO {
-  contratante_id: number;
+export interface AprovarEntidadeDTO {
+  entidade_id: number;
   admin_cpf: string;
   verificar_pagamento?: boolean; // Flag para forçar verificação de pagamento
 }
+
+// Alias para compatibilidade temporária
+export type AprovarContratanteDTO = AprovarEntidadeDTO;
 
 export interface EntidadeExtendida {
   id: number;

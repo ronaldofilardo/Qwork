@@ -16,7 +16,7 @@ export interface Session {
   // POLÍTICA DE NEGÓCIO - PAPÉIS E PERMISSÕES:
   //
   // 'admin': Gestão da PLATAFORMA (financeiro, auditoria, configurações globais)
-  //          → NÃO tem clinica_id/contratante_id operacional
+  //          → NÃO tem clinica_id/entidade_id operacional
   //          → NÃO pode criar/editar empresas, funcionários, lotes
   //          → PODE acessar dados para auditorias/relatórios (via APIs /api/admin/*)
   //
@@ -29,13 +29,13 @@ export interface Session {
   //            → NÃO vinculado a clinica_id/empresa_id
   //            → Acessa lotes finalizados de qualquer clínica para emitir laudos
   //
-  // 'gestor': Gestor de ENTIDADE CONTRATANTE (ex.: grande empresa com múltiplas unidades)
-  //                    → TEM entidade_id obrigatório
-  //                    → Opera lotes da própria entidade
+  // 'gestor': Gestor de ENTIDADE (ex.: grande empresa com múltiplas unidades)
+  //           → TEM entidade_id obrigatório
+  //           → Opera lotes da própria entidade
   clinica_id?: number; // Apenas para perfil 'rh'
   entidade_id?: number; // Apenas para perfil 'gestor'
-  // Retrocompat - manter contratante_id durante transição
-  contratante_id?: number; // @deprecated Use entidade_id
+  // Retrocompatibilidade: manter contratante_id temporariamente durante a transição
+  contratante_id?: number; // @deprecated Use entidade_id or clinica_id where appropriate
   sessionLogId?: number;
   sessionToken?: string; // Token único para rotação
   mfaVerified?: boolean; // Indica se MFA foi verificado
@@ -198,13 +198,13 @@ export async function requireRHWithEmpresaAccess(
   }
 
   // Tentar mapear clinica_id via entidade_id (ou contratante_id legacy) se não estiver na sessão
-  if (!session.clinica_id && (session.entidade_id || session.contratante_id)) {
+  if (!session.clinica_id && session.entidade_id) {
     console.log(
       `[DEBUG] requireRHWithEmpresaAccess: RH ${session.cpf} sem clinica_id - tentando mapear via entidade_id`
     );
 
     try {
-      const entidadeIdParaBusca = session.entidade_id || session.contratante_id;
+      const entidadeIdParaBusca = session.entidade_id || session.entidade_id;
       const fallback = await query(
         `SELECT cl.id, cl.ativa, c.tipo 
          FROM clinicas cl
@@ -281,7 +281,7 @@ export async function requireEntity(): Promise<
     throw new Error('Acesso restrito a gestores de entidade');
   }
 
-  if (!session.contratante_id) {
+  if (!session.entidade_id) {
     console.log(
       `[DEBUG] requireEntity: Gestor ${session.cpf} sem contratante_id na sessão`
     );
@@ -291,12 +291,12 @@ export async function requireEntity(): Promise<
   // Verificar se entidade existe e é ativo
   const entidadeResult = await query(
     "SELECT id, tipo, ativa FROM entidades WHERE id = $1 AND tipo = 'entidade'",
-    [session.entidade_id || session.contratante_id]
+    [session.entidade_id || session.entidade_id]
   );
 
   if (entidadeResult.rows.length === 0) {
     console.log(
-      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.contratante_id} não encontrada ou não é entidade`
+      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.entidade_id} não encontrada ou não é entidade`
     );
     throw new Error('Entidade não encontrada');
   }
@@ -305,7 +305,7 @@ export async function requireEntity(): Promise<
 
   if (!entidade.ativa) {
     console.log(
-      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.contratante_id} está inativa`
+      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.entidade_id} está inativa`
     );
     throw new Error('Entidade inativa. Entre em contato com o suporte.');
   }
@@ -335,11 +335,10 @@ export async function requireClinica(): Promise<
       `[DEBUG] requireClinica: Gestor ${session.cpf} sem clinica_id na sessão - tentando mapear via entidade_id`
     );
 
-    // Tentar mapear a clínica a partir do entidade_id (ou contratante_id legacy) presente na sessão
-    if (session.entidade_id || session.contratante_id) {
+    // Tentar mapear a clínica a partir do entidade_id presente na sessão
+    if (session.entidade_id) {
       try {
-        const entidadeIdParaBusca =
-          session.entidade_id || session.contratante_id;
+        const entidadeIdParaBusca = session.entidade_id;
         // Buscar clínica vinculada à entidade
         const fallback = await query(
           `SELECT cl.id, cl.ativa, c.tipo 
@@ -356,7 +355,7 @@ export async function requireClinica(): Promise<
           // Verificar se contratante é realmente do tipo 'clinica'
           if (mapped.tipo !== 'clinica') {
             console.log(
-              `[DEBUG] requireClinica: Contratante ${session.contratante_id} tem tipo '${mapped.tipo}', não 'clinica'`
+              `[DEBUG] requireClinica: Contratante ${session.entidade_id} tem tipo '${mapped.tipo}', não 'clinica'`
             );
             throw new Error('Contratante não é do tipo clínica');
           }
@@ -378,9 +377,9 @@ export async function requireClinica(): Promise<
           createSession(session);
         } else {
           console.log(
-            `[DEBUG] requireClinica: Nenhuma clínica encontrada para contratante_id ${session.contratante_id}`
+            `[DEBUG] requireClinica: Nenhuma clínica encontrada para contratante_id ${session.entidade_id}`
           );
-          const msg = `Clínica não identificada na sessão para contratante_id ${session.contratante_id}. Verifique se o cadastro da clínica foi concluído.`;
+          const msg = `Clínica não identificada na sessão para contratante_id ${session.entidade_id}. Verifique se o cadastro da clínica foi concluído.`;
           throw new Error(msg);
         }
       } catch (err) {
@@ -391,8 +390,8 @@ export async function requireClinica(): Promise<
         throw err instanceof Error
           ? err
           : new Error(
-              session.contratante_id
-                ? `Clínica não identificada na sessão para contratante_id ${session.contratante_id}`
+              session.entidade_id
+                ? `Clínica não identificada na sessão para contratante_id ${session.entidade_id}`
                 : 'Clínica não identificada na sessão'
             );
       }
@@ -413,11 +412,11 @@ export async function requireClinica(): Promise<
     );
 
     // Tentativa de fallback: mapear clínica a partir do contratante_id se presente na sessão
-    if (session.contratante_id) {
+    if (session.entidade_id) {
       try {
         const fallback = await query(
           'SELECT id, ativa FROM clinicas WHERE entidade_id = $1 LIMIT 1',
-          [session.contratante_id]
+          [session.entidade_id]
         );
 
         if (fallback.rows.length > 0) {
@@ -445,8 +444,8 @@ export async function requireClinica(): Promise<
           `[DEBUG] requireClinica: Falha ao mapear clínica via contratante_id (fallback): ${err?.message || err}`
         );
         throw new Error(
-          session.contratante_id
-            ? `Clínica não identificada na sessão para contratante_id ${session.contratante_id}`
+          session.entidade_id
+            ? `Clínica não identificada na sessão para contratante_id ${session.entidade_id}`
             : 'Clínica não identificada na sessão'
         );
       }

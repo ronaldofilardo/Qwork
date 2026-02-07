@@ -15,11 +15,11 @@ import {
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
 export type AdminSection =
-  | 'contratantes'
+  | 'tomadores'
   | 'financeiro'
   | 'geral'
   | 'novos-cadastros';
-export type ContratantesSubSection = 'clinicas' | 'entidades';
+export type TomadoresSubSection = 'clinicas' | 'entidades';
 export type ClinicasTab = 'dados' | 'auditorias' | 'financeiro';
 export type EntidadesTab = 'dados' | 'auditorias';
 export type FinanceiroSubSection = 'cobranca' | 'pagamentos' | 'planos';
@@ -168,38 +168,36 @@ export default function AdminSidebar({
         onClick={() => onSectionChange('novos-cadastros')}
       />
 
-      {/* Contratantes - Admin visualiza contratantes para gerenciar usuários gestores */}
+      {/* Tomadores - Admin visualiza tomadores (clientes do QWork: entidades e clínicas) */}
       <MenuItem
         icon={Building2}
-        label="Contratantes"
-        isActive={activeSection === 'contratantes'}
+        label="Tomadores"
+        isActive={activeSection === 'tomadores'}
         onClick={() => {
-          toggleSection('contratantes');
-          onSectionChange('contratantes', 'lista');
+          toggleSection('tomadores');
+          onSectionChange('tomadores', 'lista');
         }}
         hasSubMenu
-        isExpanded={isExpanded('contratantes')}
+        isExpanded={isExpanded('tomadores')}
       />
 
-      {isExpanded('contratantes') && (
+      {isExpanded('tomadores') && (
         <div className="border-l-2 border-gray-200 ml-4">
           <SubMenuItem
             label="Clínicas"
             count={counts.clinicas}
             isActive={
-              activeSection === 'contratantes' &&
-              activeSubSection === 'clinicas'
+              activeSection === 'tomadores' && activeSubSection === 'clinicas'
             }
-            onClick={() => onSectionChange('contratantes', 'clinicas')}
+            onClick={() => onSectionChange('tomadores', 'clinicas')}
           />
           <SubMenuItem
             label="Entidades"
             count={counts.entidades}
             isActive={
-              activeSection === 'contratantes' &&
-              activeSubSection === 'entidades'
+              activeSection === 'tomadores' && activeSubSection === 'entidades'
             }
-            onClick={() => onSectionChange('contratantes', 'entidades')}
+            onClick={() => onSectionChange('tomadores', 'entidades')}
           />
         </div>
       )}

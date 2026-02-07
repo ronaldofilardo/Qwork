@@ -161,7 +161,7 @@ END $$;
 -- 5. COMENTÁRIOS FINAIS
 -- ==========================================
 
-COMMENT ON TABLE public.usuarios IS 'Usuários do sistema (admin, emissor, rh, gestor) - admin tem acesso total via RBAC';
+COMMENT ON TABLE public.usuarios IS 'Usuários do sistema (admin, emissor, rh, gestor) - admin tem acesso administrativo apenas (tomadores, planos, emissores)';
 COMMENT ON TABLE public.funcionarios IS 'Funcionários avaliados de empresas/entidades - admin NÃO tem acesso';
 COMMENT ON TABLE public.clinicas IS 'Clínicas parceiras - admin NÃO tem acesso (gerenciado por RH)';
 COMMENT ON TABLE public.contratantes IS 'Entidades e clínicas contratantes - admin tem acesso completo para gestão de gestores';

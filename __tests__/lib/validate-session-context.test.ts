@@ -89,7 +89,7 @@ describe('db-security — validateSessionContext (regressions)', () => {
     });
 
     await expect(queryWithContext('SELECT 1')).rejects.toThrow(
-      'Contexto de sessão inválido: usuário não encontrado ou inativo'
+      'SEGURANÇA: Contexto de sessão inválido - usuário não encontrado ou inativo'
     );
 
     expect(mockQuery).toHaveBeenCalledWith(

@@ -37,7 +37,7 @@ describe('gerarHTMLRelatorioIndividual', () => {
     expect(html).toContain('Relatório Individual de Avaliação');
     expect(html).toContain('Fulano Teste');
     expect(html).toContain('CPF');
-    expect(html).toContain('Lote 1');
+    expect(html).toContain('ID do Lote: 1');
     expect(html).toContain('Demandas - Grupo 1 - Grupo 1');
     expect(html).toContain('Média: 62.5');
   });

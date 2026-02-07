@@ -1,13 +1,62 @@
-# Migração Contratantes → Entidades - Status e Próximos Passos
+# Migração Contratantes → Tomadores (Entidades + Clínicas) - Status e Arquitetura
 
-## ✅ Concluído (65% do projeto)
+## 📐 Arquitetura Correta
+
+### Conceitos Fundamentais
+
+**TOMADOR**: É o ponto de entrada no sistema para ambos os tipos de usuário. Existem dois tipos de tomadores:
+
+1. **Entidade** (`tabela: entidades`)
+   - Tipo: `entidade`
+   - Descrição: Empresas privadas que contratam avaliações psicossociais
+   - Perfil responsável: **Gestor**
+   - Gerencia: Funcionários próprios, lotes de avaliação, contratos
+   - Exemplo: Empresa XYZ Ltda
+
+2. **Clínica** (`tabela: clinicas`)
+   - Tipo: `clinica`
+   - Descrição: Clínicas de medicina ocupacional
+   - Perfil responsável: **RH**
+   - Gerencia: Empresas clientes (tabela `empresas_clientes`), funcionários das empresas, lotes de avaliação
+   - Exemplo: Clínica Saúde Ocupacional
+
+### Tabelas Segregadas
+
+```
+tomadores/
+├── entidades (empresas privadas)
+│   ├── id, nome, cnpj, responsavel_cpf
+│   └── tipo: 'entidade'
+│
+└── clinicas (medicina ocupacional)
+    ├── id, nome, cnpj, responsavel_cpf
+    ├── tipo: 'clinica'
+    └── empresas_clientes/
+        ├── id, nome, cnpj, clinica_id (FK)
+        └── funcionarios (com empresa_id)
+```
+
+### Fluxos de Gestão
+
+**Fluxo Gestor (Entidade)**:
+
+- Gestor → Entidade → Funcionários → Lotes → Avaliações
+- Campos: `funcionarios.entidade_id`, `lotes_avaliacao.entidade_id`
+
+**Fluxo RH (Clínica)**:
+
+- RH → Clínica → Empresas Clientes → Funcionários → Lotes → Avaliações
+- Campos: `funcionarios.clinica_id`, `funcionarios.empresa_id`, `lotes_avaliacao.clinica_id`, `lotes_avaliacao.empresa_id`
+
+## ✅ Concluído (75% do projeto)
 
 ### 1. Migrações de Banco de Dados
 
 - ✅ **Migration 405**: Fix rh → rh no enum
 - ✅ **Migration 410**: CHECK constraint + trigger para usuarios-only (admin/emissor/gestor/rh)
-- ✅ **Migration 420**: Rename completo contratantes → entidades (tabelas, colunas, FKs, sequências, índices)
-- ✅ **Migration 421**: Criada (contratantes_funcionarios → entidades_funcionarios) - **PRECISA APLICAR**
+- ✅ **Migration 420**: Rename completo contratantes → entidades
+- ✅ **Migration 499**: Criação tabela `clinicas` separada
+- ✅ **Migration 500**: Segregação FKs (entidade_id/clinica_id com XOR constraints)
 
 ### 2. Core Libraries (100% completo - ~15 arquivos)
 
@@ -37,7 +86,7 @@
 
 ### 6. API Routes - Cadastro/Proposta (100% completo)
 
-- ✅ `app/api/cadastro/contratante/route.ts` (728 linhas)
+- ✅ `app/api/cadastro/tomadores/route.ts` (728 linhas) - **RENOMEADO DE contratante**
 - ✅ `app/api/proposta/[token]`, `app/api/proposta/aceitar`
 
 ### 7. API Routes - Entidade (~40% completo - 10 de ~24 arquivos)

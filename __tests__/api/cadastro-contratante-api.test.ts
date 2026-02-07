@@ -72,7 +72,7 @@ describe('API Cadastro Contratante - Integração', () => {
 
   describe('POST /api/cadastro/contratante', () => {
     it('deve validar CNPJ obrigatório', async () => {
-      const { POST } = await import('@/app/api/cadastro/contratante/route');
+      const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
       const formData = new FormData();
       formData.append('tipo', 'entidade');
@@ -94,7 +94,7 @@ describe('API Cadastro Contratante - Integração', () => {
     });
 
     it('deve validar formato de CNPJ', async () => {
-      const { POST } = await import('@/app/api/cadastro/contratante/route');
+      const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
       const formData = new FormData();
       formData.append('tipo', 'entidade');
@@ -188,7 +188,7 @@ describe('API Cadastro Contratante - Integração', () => {
       const testEmail = `nofiles-${Date.now()}@test.local`;
 
       try {
-        const { POST } = await import('@/app/api/cadastro/contratante/route');
+        const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
         // Garantir que não exista contratante com este CNPJ/email antes de criar
         await query('DELETE FROM contratantes WHERE cnpj = $1', [

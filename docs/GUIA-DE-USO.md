@@ -104,7 +104,7 @@
 1. **Perfis Disponíveis**
    - `funcionario`: Acesso básico (apenas avaliação)
    - `rh`: Acesso ao dashboard e relatórios
-   - `admin`: Acesso total (gestão + dashboard)
+   - `admin`: Acesso administrativo (tomadores, planos, emissores) - SEM acesso operacional
 
 2. **Gerenciar Senhas**
    - Senha padrão na importação: `123456`

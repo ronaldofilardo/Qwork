@@ -69,7 +69,7 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
   });
 
   it('deve criar contratante com plano FIXO em status aguardando_pagamento', async () => {
-    const { POST } = await import('@/app/api/cadastro/contratante/route');
+    const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const payload = {
       tipo: 'entidade',
@@ -119,7 +119,7 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
   });
 
   it('deve criar contratante com plano PERSONALIZADO em status pendente', async () => {
-    const { POST } = await import('@/app/api/cadastro/contratante/route');
+    const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const payload = {
       tipo: 'entidade',

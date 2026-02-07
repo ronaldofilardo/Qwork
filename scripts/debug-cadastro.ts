@@ -1,6 +1,6 @@
 (async () => {
   try {
-    const { POST } = await import('../app/api/cadastro/contratante/route');
+    const { POST } = await import('../app/api/cadastro/tomadores/route');
 
     class FakeFormData {
       private data: Map<string, any> = new Map();

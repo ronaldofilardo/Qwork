@@ -44,7 +44,7 @@ describe('✅ Validação UI - Plano Personalizado Sem Redirecionamento', () => 
   it('deve retornar requires_payment=false e mensagem adequada para plano personalizado', async () => {
     // \n=== TESTE: RESPOSTA API PARA PLANO PERSONALIZADO ===\n
 
-    const { POST } = await import('@/app/api/cadastro/contratante/route');
+    const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     class MockFormData {
       private data: Map<string, any> = new Map();

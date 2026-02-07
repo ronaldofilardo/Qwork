@@ -134,35 +134,6 @@ export const GET = async () => {
       [clinica.id, session.cpf]
     )) || { rows: [] };
 
-    // Buscar snapshot de cadastro (primeiro snapshot inserido - dados originais do cadastro)
-    let cadastroOriginal = null;
-    let cadastroOriginalCreatedAt = null;
-    try {
-      const snColsRes = await query(
-        `SELECT column_name FROM information_schema.columns WHERE table_name = 'contratantes_snapshots' AND column_name IN ('payload','criado_em')`
-      );
-      const snapsExists =
-        Array.isArray(snColsRes.rows) && snColsRes.rows.length > 0;
-      if (snapsExists) {
-        const snapshotRes = (await query(
-          `SELECT payload, criado_em FROM contratantes_snapshots WHERE contratante_id = $1 ORDER BY criado_em ASC LIMIT 1`,
-          [clinica.id]
-        )) || { rows: [] };
-        if (snapshotRes.rows.length > 0) {
-          cadastroOriginal = snapshotRes.rows[0].payload;
-          cadastroOriginalCreatedAt = snapshotRes.rows[0].criado_em;
-        }
-      } else {
-        // tabela de snapshots ausente no esquema atual — seguir sem snapshot
-        cadastroOriginal = null;
-        cadastroOriginalCreatedAt = null;
-      }
-    } catch (err) {
-      console.error('Erro ao verificar/consultar contratantes_snapshots:', err);
-      cadastroOriginal = null;
-      cadastroOriginalCreatedAt = null;
-    }
-
     // Buscar plano ativo da clínica (se existir)
     let plano = null;
     try {
@@ -456,8 +427,6 @@ export const GET = async () => {
         estado: clinica.estado || null,
         responsavel_nome: clinica.responsavel_nome || null,
         criado_em: clinica.criado_em || null,
-        cadastro_original: cadastroOriginal,
-        cadastro_original_created_at: cadastroOriginalCreatedAt,
         plano: plano
           ? {
               numero_funcionarios_estimado: plano.numero_funcionarios_estimado,

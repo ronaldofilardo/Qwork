@@ -3,7 +3,7 @@ import path from 'path';
 
 async function main() {
   try {
-    const { POST } = await import('../app/api/cadastro/contratante/route');
+    const { POST } = await import('../app/api/cadastro/tomadores/route');
 
     // Minimal FormData-like mock: only .get used by handler
     const samplePath = path.join(
