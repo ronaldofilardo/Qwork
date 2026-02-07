@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { getContratosByContratante } from '@/lib/db-contratacao';
-import { query } from '@/lib/db';
+import { getContratosBytomador } from '@/lib/db-contratacao';
+import { query, criarContaResponsavel } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,16 +9,17 @@ export const dynamic = 'force-dynamic';
  * GET: Buscar contratos
  * Query params:
  * - id: ID do contrato específico
- * - contratante_id: Listar contratos de um contratante
+ * - tomador_id: Listar contratos de um tomador
  *
- * IMPORTANTE: Buscar contrato por ID não requer autenticação (novos contratantes precisam visualizar)
- * Listar contratos de contratante SIM requer autenticação
+ * IMPORTANTE: Buscar contrato por ID não requer autenticação (novos tomadores precisam visualizar)
+ * Listar contratos de tomador SIM requer autenticação
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const contratanteId = searchParams.get('contratante_id');
+    const tomadorId =
+      searchParams.get('tomador_id') || searchParams.get('tomador_id');
 
     // Buscar contrato específico por ID - NÃO requer autenticação
     if (id) {
@@ -39,15 +40,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Listar contratos de contratante - REQUER autenticação
-    if (contratanteId) {
+    // Listar contratos de tomador - REQUER autenticação
+    if (tomadorId) {
       const session = getSession();
       if (!session) {
         return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
       }
 
-      const contratos = await getContratosByContratante(
-        parseInt(contratanteId),
+      const contratos = await getContratosBytomador(
+        parseInt(tomadorId),
         session
       );
 
@@ -58,7 +59,7 @@ export async function GET(request: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: 'Parâmetros inválidos. Forneça id ou contratante_id' },
+      { error: 'Parâmetros inválidos. Forneça id ou tomador_id' },
       { status: 400 }
     );
   } catch (error) {
@@ -80,10 +81,10 @@ export async function GET(request: NextRequest) {
  * POST: Criar ou aceitar contrato
  * Body:
  * - acao: 'criar' | 'aceitar'
- * - Para criar: { contratante_id, plano_id, ip_aceite? }
+ * - Para criar: { tomador_id, plano_id, ip_aceite? }
  * - Para aceitar: { contrato_id, ip_aceite }
  *
- * IMPORTANTE: Aceite de contrato NÃO requer autenticação (novos contratantes)
+ * IMPORTANTE: Aceite de contrato NÃO requer autenticação (novos tomadors)
  * Criação de contrato SIM requer autenticação (apenas admin)
  */
 export async function POST(request: NextRequest) {
@@ -91,7 +92,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { acao } = body;
 
-    // AÇÃO: ACEITAR - Não requer autenticação (novos contratantes em cadastro)
+    // AÇÃO: ACEITAR - Não requer autenticação (novos tomadors em cadastro)
     if (acao === 'aceitar') {
       const { contrato_id, ip_aceite } = body;
 
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       // Buscar contrato
       const contratoRes = await query(
-        `SELECT id, contratante_id, plano_id, numero_funcionarios, valor_total, aceito FROM contratos WHERE id = $1`,
+        `SELECT id, tomador_id, plano_id, numero_funcionarios, valor_total, aceito FROM contratos WHERE id = $1`,
         [contrato_id]
       );
 
@@ -126,7 +127,7 @@ export async function POST(request: NextRequest) {
 
       // Se já aceito, retornar sucesso com url do simulador
       if (contratoRow.aceito) {
-        const simuladorUrl = `/pagamento/simulador?contratante_id=${contratoRow.contratante_id}&plano_id=${contratoRow.plano_id}&numero_funcionarios=${contratoRow.numero_funcionarios}&contrato_id=${contratoRow.id}`;
+        const simuladorUrl = `/pagamento/simulador?tomador_id=${contratoRow.tomador_id}&plano_id=${contratoRow.plano_id}&numero_funcionarios=${contratoRow.numero_funcionarios}&contrato_id=${contratoRow.id}`;
         return NextResponse.json(
           {
             success: true,
@@ -145,20 +146,80 @@ export async function POST(request: NextRequest) {
 
       const updated = updateRes.rows[0];
 
-      const simuladorUrl = `/pagamento/simulador?contratante_id=${updated.contratante_id}&plano_id=${updated.plano_id}&numero_funcionarios=${updated.numero_funcionarios}&contrato_id=${updated.id}`;
+      // Verificar feature flag para pular fase de pagamento
+      const skipPaymentPhase = process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
 
-      console.info(
-        JSON.stringify({
-          event: 'contrato_aceito',
-          contrato_id: updated.id,
-          contratante_id: updated.contratante_id,
-          ip_aceite: clientIp,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      let loginLiberadoImediatamente = false;
+      let simuladorUrl = `/pagamento/simulador?tomador_id=${updated.tomador_id}&plano_id=${updated.plano_id}&numero_funcionarios=${updated.numero_funcionarios}&contrato_id=${updated.id}`;
+
+      if (skipPaymentPhase) {
+        try {
+          // Buscar dados completos do tomador para criar conta
+          const tomadorRes = await query(
+            `SELECT * FROM entidades WHERE id = $1`,
+            [updated.tomador_id]
+          );
+
+          if (tomadorRes.rows.length === 0) {
+            console.error(
+              `[CONTRATOS] Entidade ${updated.tomador_id} não encontrada para liberação de login`
+            );
+          } else {
+            const tomadorData = tomadorRes.rows[0];
+
+            // Criar conta responsável (libera login)
+            await criarContaResponsavel(tomadorData);
+
+            // Atualizar tomador para marcar como ativo e pagamento confirmado
+            await query(
+              `UPDATE entidades SET ativa = true, pagamento_confirmado = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`,
+              [updated.tomador_id]
+            );
+
+            // Log de auditoria
+            console.info(
+              JSON.stringify({
+                event: 'contrato_aceito_com_liberacao_login_automatica',
+                contrato_id: updated.id,
+                tomador_id: updated.tomador_id,
+                ip_aceite: clientIp,
+                skip_payment_phase: true,
+                timestamp: new Date().toISOString(),
+              })
+            );
+
+            loginLiberadoImediatamente = true;
+            simuladorUrl = null; // Não usar simulador se pagamento foi pulado
+          }
+        } catch (err) {
+          console.error(
+            '[CONTRATOS] Erro ao liberar login automaticamente após aceite:',
+            err
+          );
+          // Se houver erro, continuar com simulador como fallback
+          loginLiberadoImediatamente = false;
+        }
+      } else {
+        // Log normal quando pagamento está ativado
+        console.info(
+          JSON.stringify({
+            event: 'contrato_aceito',
+            contrato_id: updated.id,
+            tomador_id: updated.tomador_id,
+            ip_aceite: clientIp,
+            timestamp: new Date().toISOString(),
+          })
+        );
+      }
 
       return NextResponse.json(
-        { success: true, contrato: updated, simulador_url: simuladorUrl },
+        {
+          success: true,
+          contrato: updated,
+          simulador_url: simuladorUrl,
+          loginLiberadoImediatamente,
+          skip_payment_phase: skipPaymentPhase,
+        },
         { status: 200 }
       );
     }
@@ -170,11 +231,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (acao === 'criar') {
-      const { contratante_id, plano_id, ip_aceite } = body;
+      const { tomador_id, plano_id, ip_aceite } = body;
 
-      if (!contratante_id || !plano_id) {
+      if (!tomador_id || !plano_id) {
         return NextResponse.json(
-          { error: 'Dados incompletos. Forneça contratante_id e plano_id' },
+          { error: 'Dados incompletos. Forneça tomador_id e plano_id' },
           { status: 400 }
         );
       }
