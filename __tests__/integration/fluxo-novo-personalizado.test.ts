@@ -5,13 +5,13 @@ import crypto from 'crypto';
  * Teste de integração: Fluxo completo do plano personalizado (novo fluxo correto)
  *
  * Fluxo esperado:
- * 1. Contratante cadastra-se com plano personalizado
+ * 1. tomador cadastra-se com plano personalizado
  * 2. Sistema confirma recebimento e informa que está em análise
  * 3. Admin recebe pré-cadastro em status 'aguardando_valor_admin'
  * 4. Admin define número de funcionários e valor → Sistema gera link da proposta
- * 5. Contratante acessa link e vê proposta (plano, funcionários, valor)
- * 6. Contratante aceita proposta → Redireciona para contrato padrão
- * 7. Contratante aceita contrato → Redireciona para simulador de pagamento
+ * 5. tomador acessa link e vê proposta (plano, funcionários, valor)
+ * 6. tomador aceita proposta → Redireciona para contrato padrão
+ * 7. tomador aceita contrato → Redireciona para simulador de pagamento
  * 8. Sistema simula pagamento → Libera login
  */
 
@@ -30,7 +30,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
   const cnpjTeste = '82.457.916/0001-57';
   const cpfResponsavel = '123.456.789-00';
   let planoPersonalizadoId: number;
-  let contratanteId: number;
+  let tomadorId: number;
   let contratacaoId: number;
   let token: string;
   let contratoId: number;
@@ -46,41 +46,42 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     }
 
     planoPersonalizadoId = planoResult.rows[0].id;
+    console.log(
       '✓ Usando plano personalizado existente:',
       planoPersonalizadoId
     );
 
     // Limpar registros de teste anteriores
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
-    await query('DELETE FROM contratantes WHERE responsavel_cpf = $1', [
+    await query('DELETE FROM entidades WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM entidades WHERE responsavel_cpf = $1', [
       cpfResponsavel,
     ]);
   });
 
   afterAll(async () => {
     // Limpar dados criados no teste
-    if (contratanteId) {
+    if (tomadorId) {
       await query(
-        'DELETE FROM contratacao_personalizada WHERE contratante_id = $1',
-        [contratanteId]
+        'DELETE FROM contratacao_personalizada WHERE tomador_id = $1',
+        [tomadorId]
       );
-      await query('DELETE FROM contratos WHERE contratante_id = $1', [
-        contratanteId,
+      await query('DELETE FROM contratos WHERE tomador_id = $1', [
+        tomadorId,
       ]);
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+      await query('DELETE FROM entidades WHERE id = $1', [tomadorId]);
     }
   });
 
-  it('Etapa 1: Contratante cadastra-se com plano personalizado', async () => {
-    // \n=== ETAPA 1: CADASTRO DO CONTRATANTE ===
+  it('Etapa 1: tomador cadastra-se com plano personalizado', async () => {
+    // \n=== ETAPA 1: CADASTRO DO tomador ===
 
     const formData = new FormData();
     formData.append('tipo', 'clinica');
@@ -118,7 +119,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     );
 
     const response = await fetch(
-      'http://localhost:3000/api/cadastro/contratante',
+      'http://localhost:3000/api/cadastro/tomador',
       {
         method: 'POST',
         body: formData,
@@ -129,18 +130,18 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
 
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
-    expect(data.contratante).toBeDefined();
-    expect(data.contratante.status).toBe('pendente');
+    expect(data.tomador).toBeDefined();
+    expect(data.tomador.status).toBe('pendente');
 
-    contratanteId = data.id;
+    tomadorId = data.id;
   });
 
   it('Etapa 2: Verificar pré-cadastro criado com status aguardando_valor_admin', async () => {
     // \n=== ETAPA 2: VERIFICAR PRÉ-CADASTRO ===
 
     const result = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(result.rows.length).toBe(1);
@@ -150,6 +151,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     expect(contratacao.numero_funcionarios_estimado).toBe(3000);
 
     contratacaoId = contratacao.id;
+    console.log(
       '✓ Funcionários estimados:',
       contratacao.numero_funcionarios_estimado
     );
@@ -212,7 +214,7 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
 
   });
 
-  it('Etapa 5: Contratante aceita proposta', async () => {
+  it('Etapa 5: tomador aceita proposta', async () => {
     // \n=== ETAPA 5: ACEITAR PROPOSTA ===
 
     const response = await fetch('http://localhost:3000/api/proposta/aceitar', {
@@ -254,9 +256,9 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
 
     expect(result.rows[0].status).toBe('aguardando_aceite_contrato');
 
-    // \n=== ✓ FLUXO COMPLETO VALIDADO COM SUCESSO ===
-
-      'Próximo passo: Contratante aceita contrato → Simulador de pagamento → Liberação de login'
+    // === ✓ FLUXO COMPLETO VALIDADO COM SUCESSO ===
+    console.log(
+      'Próximo passo: tomador aceita contrato → Simulador de pagamento → Liberação de login'
     );
   });
 });
