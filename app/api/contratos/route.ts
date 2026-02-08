@@ -156,27 +156,40 @@ export async function POST(request: NextRequest) {
 
       if (skipPaymentPhase) {
         try {
-          // Buscar dados completos do tomador para criar conta
-          const tomadorRes = await query(
+          // Buscar dados completos do tomador (pode ser entidade ou clinica)
+          let tomadorRes = await query(
             `SELECT * FROM entidades WHERE id = $1`,
             [updated.tomador_id]
           );
 
+          // Se não encontrou em entidades, tenta clinicas
+          let tabelaTomador = 'entidades';
+          if (tomadorRes.rows.length === 0) {
+            tomadorRes = await query(
+              `SELECT * FROM clinicas WHERE id = $1`,
+              [updated.tomador_id]
+            );
+            tabelaTomador = 'clinicas';
+          }
+
           if (tomadorRes.rows.length === 0) {
             console.error(
-              `[CONTRATOS] Entidade ${updated.tomador_id} não encontrada para liberação de login`
+              `[CONTRATOS] Tomador ${updated.tomador_id} não encontrado em nenhuma tabela para liberação de login`
             );
           } else {
             const tomadorData = tomadorRes.rows[0];
+
+            // Garantir que tipo esteja definido (pode não estar em clinicas antigos)
+            if (!tomadorData.tipo) {
+              tomadorData.tipo = tabelaTomador === 'clinicas' ? 'clinica' : 'entidade';
+            }
 
             // Criar conta responsável (libera login)
             await criarContaResponsavel(tomadorData);
 
             // Atualizar tomador para marcar como ativo
-            await query(
-              `UPDATE entidades SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`,
-              [updated.tomador_id]
-            );
+            const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
+            await query(updateTableQuery, [updated.tomador_id]);
 
             // Calcular credenciais (mesmo que em criarContaResponsavel)
             let cnpj = tomadorData.cnpj;

@@ -438,17 +438,22 @@ export async function POST(request: NextRequest) {
       try {
         // Se tipo='clinica': inserir em clinicas; Se tipo='entidade': inserir em entidades
         if (tipo === 'clinica') {
-          // Inserir em tabela clinicas
+          // Inserir em tabela clinicas - MESMO SCHEMA DE ENTIDADES
           entidadeResult = await txClient.query<{
             id: number;
             nome: string;
+            status: StatusAprovacao;
           }>(
             `INSERT INTO clinicas (
               nome, cnpj, inscricao_estadual, email, telefone,
-              endereco, cidade, estado, cep, ativa, criado_em, atualizado_em
+              endereco, cidade, estado, cep,
+              responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
+              cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
+              status, ativa, plano_id, pagamento_confirmado, tipo
             ) VALUES (
-              $1, $2, $3, $4, $5, $6, $7, $8, $9, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-            ) RETURNING id, nome`,
+              $1, $2, $3, $4, $5, $6, $7, $8, $9,
+              $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19, false, $20
+            ) RETURNING id, nome, status`,
             [
               nome,
               cnpjLimpo,
@@ -459,6 +464,17 @@ export async function POST(request: NextRequest) {
               cidade,
               estado.toUpperCase(),
               cep,
+              responsavelNome,
+              responsavelCpf.replace(/[^\d]/g, ''),
+              responsavelCargo || null,
+              responsavelEmail,
+              responsavelCelular,
+              cartaoCnpjPath,
+              contratoSocialPath,
+              docIdentificacaoPath,
+              statusToUse,
+              planoId || null,
+              'clinica', // tipo padrão para clinicas
             ]
           );
           entidade = entidadeResult.rows[0];
@@ -532,79 +548,14 @@ export async function POST(request: NextRequest) {
         })
       );
 
-      // Buscar dados completos da entidade/clínica para criar conta
-      let tombadorCompleto: any;
-      if (tipo === 'clinica') {
-        const clinicaRes = await txClient.query(
-          'SELECT * FROM clinicas WHERE id = $1',
-          [entidade.id]
-        );
-        if (clinicaRes.rows.length > 0) {
-          tombadorCompleto = clinicaRes.rows[0];
-        }
-      } else {
-        const entidadeRes = await txClient.query(
-          'SELECT * FROM entidades WHERE id = $1',
-          [entidade.id]
-        );
-        if (entidadeRes.rows.length > 0) {
-          tombadorCompleto = entidadeRes.rows[0];
-        }
-      }
-
-      // Criar conta responsável (gera credenciais de login)
-      let boasVindasUrl: string | null = null;
-      let credenciais: { login: string; senha: string } | null = null;
-      
-      if (tombadorCompleto) {
-        try {
-          // Chamar criarContaResponsavel (fora de transação interna)
-          const { criarContaResponsavel } = await import('@/lib/db');
-          
-          // Preparar objeto com dados necessários
-          const tomadorComTipo = {
-            ...tombadorCompleto,
-            tipo,
-            responsavel_nome: responsavelNome,
-            responsavel_cpf: responsavelCpf.replace(/[^\d]/g, ''),
-            responsavel_email: responsavelEmail,
-            responsavel_celular: responsavelCelular,
-          };
-          
-          // Criar conta (sem passar session para evitar transação dentro de transação)
-          await criarContaResponsavel(tomadorComTipo);
-          
-          // Montar credenciais
-          const cleanCnpj = cnpjLimpo;
-          const loginCredencial = responsavelCpf.replace(/[^\d]/g, '');
-          const senhaCredencial = cleanCnpj.slice(-6);
-          
-          credenciais = {
-            login: loginCredencial,
-            senha: senhaCredencial,
-          };
-          
-          // Montar URL para boas-vindas
-          boasVindasUrl = `/boas-vindas?tomador_id=${entidade.id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
-          
-          console.info(
-            JSON.stringify({
-              event: 'cadastro_conta_responsavel_criada',
-              entidade_id: entidade.id,
-              tipo,
-              credenciais_criadas: true,
-            })
-          );
-        } catch (criarContaError) {
-          console.error('[CADASTRO] Erro ao criar conta responsável:', criarContaError);
-          // Não falhar o cadastro se a criação de conta falhar - isso é tratável depois
-        }
-      }
+      // NOVO FLUXO: Credentials são criados APENAS após aceitar o contrato
+      // Não criar conta responsável aqui - será feito em /api/contratos quando usuário aceitar
 
       // Persistir numero de funcionários estimado
       if (numeroFuncionarios && Number(numeroFuncionarios) > 0) {
+        const tableName = tipo === 'clinica' ? 'clinicas' : 'entidades';
         await txClient.query(
-          'UPDATE entidades SET numero_funcionarios_estimado = $1 WHERE id = $2',
+          `UPDATE ${tableName} SET numero_funcionarios_estimado = $1 WHERE id = $2`,
           [numeroFuncionarios, entidade.id]
         );
         console.log('[CADASTRO] numero_funcionarios_estimado persistido', {
@@ -620,111 +571,103 @@ export async function POST(request: NextRequest) {
       let valorPorFuncionario: number | null = null;
       let contratoIdCreated: number | null = null;
 
-      if (planoId) {
-        const planoRes = await txClient.query(
-          'SELECT preco, tipo, nome FROM planos WHERE id = $1',
-          [planoId]
-        );
-        const p = planoRes.rows[0];
-        if (p) {
-          // Para plano fixo, sempre R$20 por funcionário
-          valorPorFuncionario = p.tipo === 'fixo' ? 20.0 : Number(p.preco || 0);
+      // NOVO FLUXO: SEMPRE criar contrato, mesmo sem plano
+      // O contrato será exibido para aceite ANTES da criação de credenciais
+      try {
+        let planoNome = 'Contrato de Serviços QWork';
+        let statusContrato = 'aguardando_aceite';
+        
+        if (planoId) {
+          const planoRes = await txClient.query(
+            'SELECT preco, tipo, nome FROM planos WHERE id = $1',
+            [planoId]
+          );
+          const p = planoRes.rows[0];
+          if (p) {
+            planoNome = p.nome;
+            // Para plano fixo, sempre R$20 por funcionário
+            valorPorFuncionario = p.tipo === 'fixo' ? 20.0 : Number(p.preco || 0);
 
-          if (p.tipo === 'fixo' && numeroFuncionarios) {
-            // Calcular valor total para plano fixo
-            valorTotal = valorPorFuncionario * numeroFuncionarios;
-            requiresPayment = valorTotal > 0;
-          } else if (p.tipo === 'personalizado') {
-            // Para personalizado, usar o preço base se existir
-            requiresPayment = valorPorFuncionario > 0;
-            valorTotal = valorPorFuncionario;
-          }
+            if (p.tipo === 'fixo' && numeroFuncionarios) {
+              // Calcular valor total para plano fixo
+              valorTotal = valorPorFuncionario * numeroFuncionarios;
+              requiresPayment = valorTotal > 0;
+              if (requiresPayment) {
+                statusContrato = 'aguardando_pagamento';
+              }
+            } else if (p.tipo === 'personalizado') {
+              // Para personalizado, usar o preço base se existir
+              requiresPayment = valorPorFuncionario > 0;
+              valorTotal = valorPorFuncionario;
+              statusContrato = 'aguardando_pagamento';
+            }
 
-          // Criar contrato de aceite antecipado para planos fixos (contract-first)
-          if (
-            requiresPayment &&
-            p.tipo === 'fixo' &&
-            numeroFuncionarios &&
-            Number(numeroFuncionarios) > 0
-          ) {
-            // Criar um registro de contrato pendente de aceite
-            const conteudo = `Contrato para ${numeroFuncionarios} funcionário(s) - Plano: ${p.nome} - Valor total: R$ ${valorTotal!.toFixed(2)}`;
+            if (requiresPersonalizadoSetup) {
+              console.info(
+                JSON.stringify({
+                  event: 'cadastro_entidade_personalizado_pending',
+                  entidade_id: entidade.id,
+                  plano_id: planoId,
+                  numero_funcionarios: numeroFuncionarios,
+                  status: 'aguardando_valor_admin',
+                  note: 'Tabela contratacao_personalizada será criada em migração futura',
+                })
+              );
+            } else if (requiresPayment) {
+              // Para outros tipos de plano, seguir o fluxo normal de simulador
+              simuladorUrl = `/pagamento/simulador?entidade_id=${entidade.id}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`;
+            }
 
-            // Inserir contrato com status aguardando_pagamento e aceito=false
-            const contratoIns = await txClient.query<{ id: number }>(
-              `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito)
-               VALUES ($1, $2, $3, $4, 'aguardando_pagamento', false) RETURNING id`,
-              [entidade.id, planoId, numeroFuncionarios, valorTotal]
-            );
-            contratoIdCreated = contratoIns.rows[0].id;
-
-            // Não fornecer o simulador direto: exigir aceite do contrato antes
-            simuladorUrl = null;
-
-            // Log de evento específico
             console.info(
               JSON.stringify({
-                event: 'cadastro_entidade_contract_created',
+                event: 'cadastro_entidade_payment_check',
                 entidade_id: entidade.id,
-                contrato_id: contratoIdCreated,
                 plano_id: planoId,
+                plano_tipo: p?.tipo,
+                plano_nome: p?.nome,
+                valor_por_funcionario: valorPorFuncionario,
+                numero_funcionarios: numeroFuncionarios,
                 valor_total: valorTotal,
-                numero_funcionarios: numeroFuncionarios,
+                requiresPayment,
+                simuladorUrl,
+                novo_fluxo: 'contract-first',
               })
             );
-          }
-          if (requiresPersonalizadoSetup) {
-            // Para personalizado, criar registro em contratacao_personalizada
-            // NOTA: Por enquanto comentado porque a tabela contratacao_personalizada depende de tomador_id
-            /*
-            await txClient.query(
-              `INSERT INTO contratacao_personalizada (
-                entidade_id, numero_funcionarios_estimado, status, criado_em, atualizado_em
-              ) VALUES ($1, $2, 'aguardando_valor_admin', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-              [entidade.id, numeroFuncionarios || null]
-            );
-
-            console.info(
-              JSON.stringify({
-                event: 'cadastro_entidade_personalizado_created',
-                entidade_id: entidade.id,
-                plano_id: planoId,
-                numero_funcionarios: numeroFuncionarios,
-                status: 'aguardando_valor_admin',
-              })
-            );
-            */
-            console.info(
-              JSON.stringify({
-                event: 'cadastro_entidade_personalizado_pending',
-                entidade_id: entidade.id,
-                plano_id: planoId,
-                numero_funcionarios: numeroFuncionarios,
-                status: 'aguardando_valor_admin',
-                note: 'Tabela contratacao_personalizada será criada em migração futura',
-              })
-            );
-          } else if (requiresPayment) {
-            // Para outros tipos de plano, seguir o fluxo normal de simulador
-            simuladorUrl = `/pagamento/simulador?entidade_id=${entidade.id}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`;
           }
         }
 
+        // CRIAR CONTRATO SEMPRE (com ou sem plano)
+        const conteudoContrato = 
+          valorTotal !== null 
+            ? `Contrato para ${numeroFuncionarios || 1} funcionário(s) - Plano: ${planoNome} - Valor total: R$ ${valorTotal.toFixed(2)}`
+            : `Contrato de Serviços - ${planoNome}`;
+
+        const contratoIns = await txClient.query<{ id: number }>(
+          `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito)
+           VALUES ($1, $2, $3, $4, $5, false) RETURNING id`,
+          [
+            entidade.id, 
+            planoId || null, 
+            numeroFuncionarios || null, 
+            valorTotal, 
+            statusContrato
+          ]
+        );
+        contratoIdCreated = contratoIns.rows[0].id;
+
         console.info(
           JSON.stringify({
-            event: 'cadastro_entidade_payment_check',
+            event: 'cadastro_contract_created',
             entidade_id: entidade.id,
-            plano_id: planoId,
-            plano_tipo: p?.tipo,
-            plano_nome: p?.nome,
-            valor_por_funcionario: valorPorFuncionario,
-            numero_funcionarios: numeroFuncionarios,
-            valor_total: valorTotal,
+            contrato_id: contratoIdCreated,
+            plano_id: planoId || null,
+            status: statusContrato,
             requiresPayment,
-            simuladorUrl,
-            novo_fluxo: 'contract-first',
           })
         );
+      } catch (contratoError) {
+        console.error('[CADASTRO] Erro ao criar contrato:', contratoError);
+        throw contratoError;
       }
 
       // Retornar dados para fora da transação
@@ -736,8 +679,6 @@ export async function POST(request: NextRequest) {
         valorPorFuncionario,
         numeroFuncionarios,
         valorTotal,
-        boasVindasUrl,
-        credenciais,
       };
     });
     // Transação comitada automaticamente se chegou aqui
@@ -762,8 +703,6 @@ export async function POST(request: NextRequest) {
         id: result.entidade.id,
         requires_payment: result.requiresPayment,
         simulador_url: result.simuladorUrl,
-        boasVindasUrl: result.boasVindasUrl,
-        credenciais: result.credenciais,
         contrato_id: result.contratoIdCreated,
         requires_contract_acceptance: result.contratoIdCreated !== null,
         payment_info: result.requiresPayment
