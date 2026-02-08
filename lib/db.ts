@@ -754,8 +754,8 @@ export interface TransactionClient {
 
 // ============================================================================
 // ====================================================================
-// HELPERS PARA ENTIDADES (Clínicas e Entidades Contratantes)
-// Anteriormente "HELPERS PARA CONTRATANTES" - renomeado na Migration 420
+// HELPERS PARA ENTIDADES (Clínicas e Entidades tomadors)
+// Anteriormente "HELPERS PARA tomadorS" - renomeado na Migration 420
 // ============================================================================
 
 export type TipoEntidade = 'clinica' | 'entidade';
@@ -805,7 +805,7 @@ export interface EntidadeFuncionario {
   id: number;
   funcionario_id: number;
   entidade_id: number;
-  tipo_contratante: TipoEntidade;
+  tipo_tomador: TipoEntidade;
   vinculo_ativo: boolean;
   data_inicio: Date;
   data_fim?: Date;
@@ -882,7 +882,7 @@ export async function getEntidadesPendentes(
 }
 
 /**
- * Criar novo contratante (via modal de cadastro)
+ * Criar novo tomador (via modal de cadastro)
  */
 export async function createEntidade(
   data: Omit<
@@ -892,7 +892,7 @@ export async function createEntidade(
   session?: Session
 ): Promise<Entidade> {
   if (DEBUG_DB) {
-    console.debug('[CREATE_CONTRATANTE] Iniciando criação com dados:', {
+    console.debug('[CREATE_tomador] Iniciando criação com dados:', {
       tipo: data.tipo,
       nome: data.nome,
       cnpj: data.cnpj,
@@ -1074,13 +1074,13 @@ export async function createEntidade(
       throw err;
     }
   }
-  const contratanteCriado = result.rows[0];
-  console.log('[CREATE_CONTRATANTE] Entidade criado com sucesso:', {
-    id: contratanteCriado.id,
-    cnpj: contratanteCriado.cnpj,
-    tipo: contratanteCriado.tipo,
+  const tomadorCriado = result.rows[0];
+  console.log('[CREATE_tomador] Entidade criado com sucesso:', {
+    id: tomadorCriado.id,
+    cnpj: tomadorCriado.cnpj,
+    tipo: tomadorCriado.tipo,
   });
-  return contratanteCriado;
+  return tomadorCriado;
 }
 
 /**
@@ -1159,7 +1159,7 @@ export async function aprovarEntidade(
 export async function ativarEntidade(
   id: number,
   session?: Session
-): Promise<{ success: boolean; message: string; contratante?: Entidade }> {
+): Promise<{ success: boolean; message: string; tomador?: Entidade }> {
   // Verificar estado atual
   const checkResult = await query<{
     pagamento_confirmado: boolean;
@@ -1217,7 +1217,7 @@ export async function ativarEntidade(
   );
 
   if (result.rows.length === 0) {
-    return { success: false, message: 'Falha ao ativar contratante' };
+    return { success: false, message: 'Falha ao ativar tomador' };
   }
 
   console.log(`[ativarEntidade] Entidade ativado: ${result.rows[0].nome}`);
@@ -1225,7 +1225,7 @@ export async function ativarEntidade(
   return {
     success: true,
     message: 'Entidade ativado com sucesso',
-    contratante: result.rows[0],
+    tomador: result.rows[0],
   };
 }
 
@@ -1274,7 +1274,7 @@ export async function solicitarReanalise(
 }
 
 /**
- * Criar vínculo polimórfico entre funcionário e contratante
+ * Criar vínculo polimórfico entre funcionário e tomador
  */
 export async function vincularFuncionarioEntidade(
   funcionarioId: number,
@@ -1283,7 +1283,7 @@ export async function vincularFuncionarioEntidade(
   session?: Session
 ): Promise<EntidadeFuncionario> {
   const result = await query<EntidadeFuncionario>(
-    `INSERT INTO entidades_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
+    `INSERT INTO entidades_funcionarios (funcionario_id, entidade_id, tipo_tomador, vinculo_ativo)
      VALUES ($1, $2, $3, true)
      ON CONFLICT (funcionario_id, entidade_id) 
      DO UPDATE SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP
@@ -1314,7 +1314,7 @@ export async function getEntidadeDeFuncionario(
 }
 
 /**
- * Buscar funcionários de um contratante
+ * Buscar funcionários de um tomador
  */
 export async function getFuncionariosDeEntidade(
   entidadeId: number,
@@ -1385,9 +1385,9 @@ export async function contarFuncionariosAtivos(
     `SELECT COUNT(DISTINCT f.cpf) as total
      FROM contratos_planos cp
      LEFT JOIN funcionarios f ON (
-       (cp.tipo_contratante = 'clinica' AND f.clinica_id = cp.clinica_id AND f.status = 'ativo')
+       (cp.tipo_tomador = 'clinica' AND f.clinica_id = cp.clinica_id AND f.status = 'ativo')
        OR 
-       (cp.tipo_contratante = 'entidade' AND f.entidade_id = cp.entidade_id AND f.status = 'ativo')
+       (cp.tipo_tomador = 'entidade' AND f.entidade_id = cp.entidade_id AND f.status = 'ativo')
      )
      WHERE cp.id = $1`,
     [contratoId],
@@ -1478,52 +1478,52 @@ export async function getContratosPlanos(
 }
 
 /**
- * Criar conta para responsável do contratante
+ * Criar conta para responsável do tomador
  */
 export async function criarContaResponsavel(
-  contratante: number | Entidade,
+  tomador: number | Entidade,
   session?: Session
 ) {
-  let contratanteData: Entidade;
+  let tomadorData: Entidade;
 
   // Se recebeu um número (ID), buscar os dados da entidade
-  if (typeof contratante === 'number') {
+  if (typeof tomador === 'number') {
     const result = await query(
       'SELECT * FROM entidades WHERE id = $1',
-      [contratante],
+      [tomador],
       session
     );
     if (result.rows.length === 0) {
-      throw new Error(`Entidade ${contratante} não encontrado`);
+      throw new Error(`Entidade ${tomador} não encontrado`);
     }
-    contratanteData = result.rows[0] as Entidade;
+    tomadorData = result.rows[0] as Entidade;
   } else {
-    contratanteData = contratante;
+    tomadorData = tomador;
   }
 
   if (DEBUG_DB) {
     console.debug('[CRIAR_CONTA] Iniciando criação de conta para:', {
-      id: contratanteData.id,
-      cnpj: contratanteData.cnpj,
-      responsavel_cpf: contratanteData.responsavel_cpf,
-      tipo: contratanteData.tipo,
+      id: tomadorData.id,
+      cnpj: tomadorData.cnpj,
+      responsavel_cpf: tomadorData.responsavel_cpf,
+      tipo: tomadorData.tipo,
     });
   }
 
   // Se CNPJ não estiver no objeto, buscar do banco
-  let cnpj = contratanteData.cnpj;
+  let cnpj = tomadorData.cnpj;
   if (!cnpj) {
     if (DEBUG_DB)
       console.debug(
         '[CRIAR_CONTA] CNPJ não encontrado no objeto, buscando do banco...'
       );
-    const contratanteResult = await query(
+    const tomadorResult = await query(
       'SELECT cnpj FROM entidades WHERE id = $1',
-      [contratanteData.id],
+      [tomadorData.id],
       session
     );
-    if (contratanteResult.rows.length > 0) {
-      cnpj = contratanteResult.rows[0].cnpj;
+    if (tomadorResult.rows.length > 0) {
+      cnpj = tomadorResult.rows[0].cnpj;
       if (DEBUG_DB)
         console.debug('[CRIAR_CONTA] CNPJ encontrado no banco:', cnpj);
     }
@@ -1533,9 +1533,9 @@ export async function criarContaResponsavel(
   if (!cnpj) {
     console.error(
       '[CRIAR_CONTA ERROR] CNPJ não encontrado nem no objeto nem no banco:',
-      contratanteData
+      tomadorData
     );
-    throw new Error('CNPJ do contratante é obrigatório para criar conta');
+    throw new Error('CNPJ do tomador é obrigatório para criar conta');
   }
 
   // Senha baseada nos últimos 6 dígitos do CNPJ (removendo formatação)
@@ -1544,70 +1544,27 @@ export async function criarContaResponsavel(
   const hashed = await bcrypt.hash(defaultPassword, 10);
 
   // Para entidades sem CPF do responsável, usar CNPJ como identificador
-  const cpfParaUsar = contratanteData.responsavel_cpf || cleanCnpj;
+  const cpfParaUsar = tomadorData.responsavel_cpf || cleanCnpj;
 
   if (DEBUG_DB) {
     console.debug(`[CRIAR_CONTA] CPF: ${cpfParaUsar}, CNPJ: ${cnpj}`);
   }
 
   // 1. Determinar tipo de usuário e tabela de senha
-  const tipoUsuario = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
+  const tipoUsuario = tomadorData.tipo === 'entidade' ? 'gestor' : 'rh';
   const tabelaSenha =
     tipoUsuario === 'gestor' ? 'entidades_senhas' : 'clinicas_senhas';
   const campoId = tipoUsuario === 'gestor' ? 'entidade_id' : 'clinica_id';
 
-  // 2. Para RH, precisamos buscar/criar a clínica primeiro
-  let referenceId = contratanteData.id;
-  if (tipoUsuario === 'rh') {
-    try {
-      const clinicaResult = await query(
-        'SELECT id FROM clinicas WHERE entidade_id = $1 LIMIT 1',
-        [contratanteData.id],
-        session
-      );
-      if (clinicaResult.rows.length > 0) {
-        referenceId = clinicaResult.rows[0].id;
-      } else {
-        // Criar clínica vinculada à entidade
-        const ins = await query(
-          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, entidade_id, ativa, criado_em, atualizado_em)
-           VALUES ($1,$2,$3,$4,$5,$6, true, NOW(), NOW())
-           ON CONFLICT (cnpj)
-           DO UPDATE SET entidade_id = EXCLUDED.entidade_id, ativa = true, atualizado_em = CURRENT_TIMESTAMP
-           RETURNING id`,
-          [
-            contratanteData.nome,
-            contratanteData.cnpj,
-            contratanteData.email || null,
-            contratanteData.telefone || null,
-            contratanteData.endereco || null,
-            contratanteData.id,
-          ],
-          session
-        );
-        referenceId = ins.rows.length > 0 ? ins.rows[0].id : null;
-
-        if (!referenceId) {
-          // Fallback: tentar obter clínica por entidade_id ou cnpj
-          const sel = await query(
-            'SELECT id FROM clinicas WHERE entidade_id = $1 OR cnpj = $2 LIMIT 1',
-            [contratanteData.id, contratanteData.cnpj],
-            session
-          );
-          referenceId = sel.rows.length > 0 ? sel.rows[0].id : null;
-        }
-
-        if (DEBUG_DB && referenceId) {
-          console.debug(
-            `[CRIAR_CONTA] Clínica criada/identificada id=${referenceId}`
-          );
-        }
-      }
-    } catch (err) {
-      console.error('[CRIAR_CONTA] Erro ao buscar/criar clinica:', err);
-      throw err;
-    }
+  // 2. Para RH (clinica), o registro já foi inserido diretamente na tabela clinicas
+  // Durante o cadastro, quando tipo='clinica', era feito INSERT INTO clinicas direto
+  // Portanto, tomadorData.id JÁ É o clinica_id, sem necessidade de buscar por entidade_id
+  let referenceId = tomadorData.id;
+  
+  if (DEBUG_DB) {
+    console.debug(`[CRIAR_CONTA] tipo=${tomadorData.tipo}, tipoUsuario=${tipoUsuario}, referenceId=${referenceId}, tabelaSenha=${tabelaSenha}`);
   }
+
 
   // 3. Criar senha na tabela apropriada (entidades_senhas ou clinicas_senhas)
   try {
@@ -1681,7 +1638,7 @@ export async function criarContaResponsavel(
     if (tipoUsuario === 'rh') {
       clinicaId = referenceId;
     } else {
-      usuarioEntidadeId = contratanteData.id;
+      usuarioEntidadeId = tomadorData.id;
     }
 
     // Verificar se usuário já existe
@@ -1699,8 +1656,8 @@ export async function criarContaResponsavel(
              clinica_id = $4, entidade_id = $5, ativo = true, atualizado_em = CURRENT_TIMESTAMP 
          WHERE cpf = $6`,
         [
-          contratanteData.responsavel_nome || 'Gestor',
-          contratanteData.responsavel_email || null,
+          tomadorData.responsavel_nome || 'Gestor',
+          tomadorData.responsavel_email || null,
           tipoUsuario,
           clinicaId,
           usuarioEntidadeId,
@@ -1720,8 +1677,8 @@ export async function criarContaResponsavel(
          VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [
           cpfParaUsar,
-          contratanteData.responsavel_nome || 'Gestor',
-          contratanteData.responsavel_email || null,
+          tomadorData.responsavel_nome || 'Gestor',
+          tomadorData.responsavel_email || null,
           tipoUsuario,
           clinicaId,
           usuarioEntidadeId,
@@ -1744,7 +1701,7 @@ export async function criarContaResponsavel(
   }
 
   console.log(
-    `Conta processada para responsável ${cpfParaUsar} do contratante ${contratanteData.id} (senha padrão definida)`
+    `Conta processada para responsável ${cpfParaUsar} do tomador ${tomadorData.id} (senha padrão definida)`
   );
 }
 
@@ -1758,7 +1715,7 @@ export async function criarSenhaInicialEntidade(
 ): Promise<void> {
   await query('SELECT criar_senha_inicial_entidade($1)', [entidadeId], session);
 
-  console.log(`Senha inicial criada para entidade contratante ${entidadeId}`);
+  console.log(`Senha inicial criada para entidade tomador ${entidadeId}`);
 }
 
 /**
@@ -1857,9 +1814,9 @@ export async function criarEmissorIndependente(
 /**
  * @deprecated Use getEntidadesByTipo ao invés. Será removido após refatoração completa.
  */
-export const getContratantesByTipo = getEntidadesByTipo;
+export const gettomadorsByTipo = getEntidadesByTipo;
 
 /**
  * @deprecated Use getEntidadesPendentes ao invés. Será removido após refatoração completa.
  */
-export const getContratantesPendentes = getEntidadesPendentes;
+export const gettomadorsPendentes = getEntidadesPendentes;
