@@ -400,25 +400,28 @@ export async function POST(request: NextRequest) {
       }
       // Verificar se email já existe (em ambas as tabelas se clinica)
       let emailCheckQuery = 'SELECT id FROM entidades WHERE email = $1';
-      let emailCheckParams: any[] = [email];
-      
+      const emailCheckParams: any[] = [email];
+
       if (tipo === 'clinica') {
         emailCheckQuery = 'SELECT id FROM clinicas WHERE email = $1';
       }
-      
-      const emailCheck = await txClient.query(emailCheckQuery, emailCheckParams);
+
+      const emailCheck = await txClient.query(
+        emailCheckQuery,
+        emailCheckParams
+      );
       if (emailCheck.rows.length > 0) {
         throw new Error('Email já cadastrado no sistema');
       }
 
       // Verificar se CNPJ já existe (em ambas as tabelas se clinica)
       let cnpjCheckQuery = 'SELECT id FROM entidades WHERE cnpj = $1';
-      let cnpjCheckParams: any[] = [cnpjLimpo];
-      
+      const cnpjCheckParams: any[] = [cnpjLimpo];
+
       if (tipo === 'clinica') {
         cnpjCheckQuery = 'SELECT id FROM clinicas WHERE cnpj = $1';
       }
-      
+
       const cnpjCheck = await txClient.query(cnpjCheckQuery, cnpjCheckParams);
       if (cnpjCheck.rows.length > 0) {
         throw new Error('CNPJ já cadastrado no sistema');
@@ -576,7 +579,7 @@ export async function POST(request: NextRequest) {
       try {
         let planoNome = 'Contrato de Serviços QWork';
         let statusContrato = 'aguardando_aceite';
-        
+
         if (planoId) {
           const planoRes = await txClient.query(
             'SELECT preco, tipo, nome FROM planos WHERE id = $1',
@@ -586,7 +589,8 @@ export async function POST(request: NextRequest) {
           if (p) {
             planoNome = p.nome;
             // Para plano fixo, sempre R$20 por funcionário
-            valorPorFuncionario = p.tipo === 'fixo' ? 20.0 : Number(p.preco || 0);
+            valorPorFuncionario =
+              p.tipo === 'fixo' ? 20.0 : Number(p.preco || 0);
 
             if (p.tipo === 'fixo' && numeroFuncionarios) {
               // Calcular valor total para plano fixo
@@ -637,20 +641,22 @@ export async function POST(request: NextRequest) {
         }
 
         // CRIAR CONTRATO SEMPRE (com ou sem plano)
-        const conteudoContrato = 
-          valorTotal !== null 
-            ? `Contrato para ${numeroFuncionarios || 1} funcionário(s) - Plano: ${planoNome} - Valor total: R$ ${valorTotal.toFixed(2)}`
-            : `Contrato de Serviços - ${planoNome}`;
+        // conteudoContrato não é armazenado - contratos usam conteúdo padrão unificado
+        // const conteudoContrato =
+        //   valorTotal !== null
+        //     ? `Contrato para ${numeroFuncionarios || 1} funcionário(s) - Plano: ${planoNome} - Valor total: R$ ${valorTotal.toFixed(2)}`
+        //     : `Contrato de Serviços - ${planoNome}`;
 
         const contratoIns = await txClient.query<{ id: number }>(
-          `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito)
-           VALUES ($1, $2, $3, $4, $5, false) RETURNING id`,
+          `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito, tipo_tomador)
+           VALUES ($1, $2, $3, $4, $5, false, $6) RETURNING id`,
           [
-            entidade.id, 
-            planoId || null, 
-            numeroFuncionarios || null, 
-            valorTotal, 
-            statusContrato
+            entidade.id,
+            planoId || null,
+            numeroFuncionarios || null,
+            valorTotal,
+            statusContrato,
+            tipo, // 'entidade' ou 'clinica'
           ]
         );
         contratoIdCreated = contratoIns.rows[0].id;
@@ -662,6 +668,7 @@ export async function POST(request: NextRequest) {
             contrato_id: contratoIdCreated,
             plano_id: planoId || null,
             status: statusContrato,
+            tipo_tomador: tipo,
             requiresPayment,
           })
         );
