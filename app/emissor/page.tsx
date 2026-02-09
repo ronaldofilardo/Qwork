@@ -606,7 +606,9 @@ export default function EmissorDashboard() {
                               Aguardando Pagamento
                             </p>
                             <p className="text-sm text-yellow-700 mt-1">
-                              Este lote foi solicitado para emissão e aguarda confirmação de pagamento do cliente antes de ser liberado para emissão.
+                              Este lote foi solicitado para emissão e aguarda
+                              confirmação de pagamento do cliente antes de ser
+                              liberado para emissão.
                             </p>
                           </div>
                         </div>
@@ -859,7 +861,7 @@ export default function EmissorDashboard() {
                         );
 
                         const label = laudoDisponivelParaDownload
-                          ? 'Laudo Psicossocial'
+                          ? 'Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)'
                           : lote.emissao_automatica
                             ? !laudoFoiEmitido
                               ? 'Pré-visualização'

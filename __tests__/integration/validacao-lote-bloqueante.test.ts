@@ -182,7 +182,7 @@ describe('Validação de Lote Bloqueante', () => {
       await query(`SET LOCAL app.current_user_cpf = $1`, [cpf3]);
       await query(
         `INSERT INTO avaliacoes (lote_id, funcionario_cpf, status, inicio, envio) 
-         VALUES ($1, $2, 'concluido', NOW(), NOW())`,
+         VALUES ($1, $2, 'concluida', NOW(), NOW())`,
         [loteId, cpf3]
       );
       await query(`RESET app.current_user_cpf`);
@@ -238,7 +238,7 @@ describe('Validação de Lote Bloqueante', () => {
       await query(`SET LOCAL app.current_user_cpf = $1`, [cpf4]);
       await query(
         `INSERT INTO avaliacoes (lote_id, funcionario_cpf, status, inicio, envio) 
-         VALUES ($1, $2, 'concluido', NOW(), NOW())`,
+         VALUES ($1, $2, 'concluida', NOW(), NOW())`,
         [loteId, cpf4]
       );
       await query(`RESET app.current_user_cpf`);
@@ -311,7 +311,7 @@ describe('Validação de Lote Bloqueante', () => {
       await query(`SET LOCAL app.current_user_cpf = $1`, [cpf6]);
       await query(
         `INSERT INTO avaliacoes (lote_id, funcionario_cpf, status, inicio, envio) 
-         VALUES ($1, $2, 'concluido', NOW(), NOW())`,
+         VALUES ($1, $2, 'concluida', NOW(), NOW())`,
         [loteId, cpf6]
       );
       await query(`RESET app.current_user_cpf`);
@@ -319,7 +319,7 @@ describe('Validação de Lote Bloqueante', () => {
       await query(`SET LOCAL app.current_user_cpf = $1`, [cpf7]);
       await query(
         `INSERT INTO avaliacoes (lote_id, funcionario_cpf, status, inicio, envio) 
-         VALUES ($1, $2, 'concluido', NOW(), NOW())`,
+         VALUES ($1, $2, 'concluida', NOW(), NOW())`,
         [loteId, cpf7]
       );
       await query(`RESET app.current_user_cpf`);
@@ -336,7 +336,7 @@ describe('Validação de Lote Bloqueante', () => {
       const counts = await query(
         `SELECT 
            COUNT(*) as totais,
-           COUNT(*) FILTER (WHERE status = 'concluido') as concluidas,
+           COUNT(*) FILTER (WHERE status = 'concluida' OR status = 'concluido') as concluidas,
            COUNT(*) FILTER (WHERE status = 'inativada') as inativadas
          FROM avaliacoes 
          WHERE lote_id = $1`,

@@ -1,10 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { query } from '@/lib/db'
-import { requireRole } from '@/lib/session'
+import { NextRequest, NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { requireRole } from '@/lib/session';
 
 /**
  * GET /api/admin/clinicas/[id]/gestores
- * 
+ *
  * Lista gestores RH (perfil 'rh') associados a uma clínica específica
  */
 export async function GET(
@@ -13,38 +13,52 @@ export async function GET(
 ) {
   try {
     // Validar permissão de admin
-    await requireRole('admin')
+    await requireRole('admin');
 
-    const clinicaId = parseInt(params.id)
+    const clinicaId = parseInt(params.id);
 
     if (isNaN(clinicaId)) {
-      return NextResponse.json({ error: 'ID da clínica inválido' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'ID da clínica inválido' },
+        { status: 400 }
+      );
     }
 
-    // Verificar se a clínica existe (busca em contratantes)
-    const clinicaResult = await query<{ id: number; nome: string; responsavel_nome: string; responsavel_cpf: string; responsavel_email: string; responsavel_celular: string }>(
-      'SELECT id, nome, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular FROM contratantes WHERE id = $1 AND tipo = \'clinica\'',
+    // Verificar se a clínica existe (busca na tabela clinicas)
+    const clinicaResult = await query<{
+      id: number;
+      nome: string;
+      responsavel_nome: string;
+      responsavel_cpf: string;
+      responsavel_email: string;
+      responsavel_celular: string;
+    }>(
+      'SELECT id, nome, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular FROM clinicas WHERE id = $1',
       [clinicaId]
-    )
+    );
 
     if (clinicaResult.rows.length === 0) {
-      return NextResponse.json({ error: 'Clínica não encontrada' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'Clínica não encontrada' },
+        { status: 404 }
+      );
     }
 
-    const clinica = clinicaResult.rows[0]
+    const clinica = clinicaResult.rows[0];
 
     // Buscar gestores RH da clínica (mantém busca em funcionarios para RHs adicionais)
     interface GestorRow {
-      cpf: string
-      nome: string
-      email: string
-      ativo: boolean
-      criado_em: string
-      atualizado_em: string
-      total_empresas_geridas: string
+      cpf: string;
+      nome: string;
+      email: string;
+      ativo: boolean;
+      criado_em: string;
+      atualizado_em: string;
+      total_empresas_geridas: string;
     }
 
-    const result = await query<GestorRow>(`
+    const result = await query<GestorRow>(
+      `
       SELECT 
         f.cpf,
         f.nome,
@@ -58,9 +72,11 @@ export async function GET(
       WHERE f.clinica_id = $1 AND f.perfil = 'rh'
       GROUP BY f.cpf, f.nome, f.email, f.ativo, f.criado_em, f.atualizado_em
       ORDER BY f.nome
-    `, [clinicaId])
+    `,
+      [clinicaId]
+    );
 
-    // Adicionar responsável do contratante à lista
+    // Adicionar responsável do tomador à lista
     const gestores = [
       {
         cpf: clinica.responsavel_cpf,
@@ -70,26 +86,29 @@ export async function GET(
         criado_em: null,
         atualizado_em: null,
         total_empresas_geridas: '0',
-        is_responsavel: true
+        is_responsavel: true,
       },
-      ...result.rows.map(g => ({ ...g, is_responsavel: false }))
-    ]
+      ...result.rows.map((g) => ({ ...g, is_responsavel: false })),
+    ];
 
     return NextResponse.json({
       success: true,
       clinica: {
         id: clinica.id,
-        nome: clinica.nome
+        nome: clinica.nome,
       },
-      gestores
-    })
+      gestores,
+    });
   } catch (error) {
-    console.error('Erro ao buscar gestores da clínica:', error)
-    
+    console.error('Erro ao buscar gestores da clínica:', error);
+
     if (error instanceof Error && error.message === 'Sem permissão') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
-    
-    return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
+
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

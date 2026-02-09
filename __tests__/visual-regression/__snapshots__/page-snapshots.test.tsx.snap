@@ -510,7 +510,7 @@ exports[`Regressão Visual - Páginas Principais Página Termos de Contrato deve
       </p>
       <p>
         <em>
-          Esta cláusula aplica-se exclusivamente às Partes Contratantes, não a funcionários ou terceiros.
+          Esta cláusula aplica-se exclusivamente às Partes tomadores, não a funcionários ou terceiros.
         </em>
       </p>
       <hr />
@@ -694,7 +694,7 @@ exports[`Regressão Visual - Páginas Principais Página Termos de Contrato deve
         ✅
          
         <strong>
-          Este contrato é neutro, sem valores financeiros, sem dados identificadores do usuário, e aplica-se uniformemente a todos os tipos de contratantes.
+          Este contrato é neutro, sem valores financeiros, sem dados identificadores do usuário, e aplica-se uniformemente a todos os tipos de tomadores.
         </strong>
         <br />
         ✅

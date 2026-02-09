@@ -9,10 +9,10 @@ import { z } from 'zod';
  * Schema: Criar Pré-Cadastro
  */
 export const CriarPreCadastroSchema = z.object({
-  contratante_id: z
+  tomador_id: z
     .number()
     .int()
-    .positive({ message: 'ID do contratante deve ser um número positivo' }),
+    .positive({ message: 'ID do tomador deve ser um número positivo' }),
   numero_funcionarios_estimado: z
     .number()
     .int()
@@ -20,7 +20,7 @@ export const CriarPreCadastroSchema = z.object({
     .max(10000, {
       message: 'Número máximo de funcionários é 10.000 para plano único',
     }),
-  justificativa_contratante: z
+  justificativa_tomador: z
     .string()
     .min(20, {
       message: 'Justificativa deve ter pelo menos 20 caracteres',
@@ -123,7 +123,7 @@ export const ListarContratacoesQuerySchema = z.object({
       'cancelado',
     ])
     .optional(),
-  contratante_id: z
+  tomador_id: z
     .string()
     .transform((val) => parseInt(val, 10))
     .pipe(z.number().int().positive())

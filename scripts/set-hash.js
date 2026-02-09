@@ -11,20 +11,20 @@ const client = new pg.Client({
 (async () => {
   const cpf = process.argv[2];
   const senha = process.argv[3];
-  const contratanteId = process.argv[4];
+  const tomadorId = process.argv[4];
 
   if (!cpf || !senha) {
-    console.error('Uso: node set-hash.js <CPF> <Senha> [ContratanteID]');
+    console.error('Uso: node set-hash.js <CPF> <Senha> [tomadorID]');
     process.exit(1);
   }
 
   await client.connect();
   const hash = await bcrypt.hash(senha, 10);
 
-  if (contratanteId) {
+  if (tomadorId) {
     await client.query(
-      'UPDATE entidades_senhas SET senha_hash = $1 WHERE contratante_id = $2 AND cpf = $3',
-      [hash, contratanteId, cpf]
+      'UPDATE entidades_senhas SET senha_hash = $1 WHERE tomador_id = $2 AND cpf = $3',
+      [hash, tomadorId, cpf]
     );
   }
 

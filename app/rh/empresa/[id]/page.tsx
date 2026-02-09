@@ -26,9 +26,6 @@ const EditEmployeeModal = dynamic(
   () => import('@/components/EditEmployeeModal'),
   { ssr: false }
 );
-const RelatorioSetor = dynamic(() => import('@/components/RelatorioSetor'), {
-  ssr: false,
-});
 const DetalhesFuncionario = dynamic(
   () => import('@/components/DetalhesFuncionario'),
   { ssr: false }
@@ -114,11 +111,6 @@ export default function EmpresaDashboardPage() {
   const [funcionarioParaEditar, setFuncionarioParaEditar] =
     useState<Funcionario | null>(null);
   const [cpfDetalhes, setCpfDetalhes] = useState<string | null>(null);
-  const [showRelatorioSetor, setShowRelatorioSetor] = useState(false);
-  const [loteIdRelatorioSetor, setLoteIdRelatorioSetor] = useState<
-    number | null
-  >(null);
-  const [setoresDisponiveis, setSetoresDisponiveis] = useState<string[]>([]);
   const [showLiberarModal, setShowLiberarModal] = useState(false);
 
   // === VERIFICAÇÃO DE SESSÃO ===
@@ -213,30 +205,6 @@ export default function EmpresaDashboardPage() {
     router.push('/login');
   }, [router]);
 
-  const abrirRelatorioSetor = useCallback(
-    async (loteId: number) => {
-      try {
-        const response = await fetch(
-          `/api/rh/funcionarios?empresa_id=${empresaId}`
-        );
-        if (response.ok) {
-          const respData = await response.json();
-          const funcionariosList = respData.funcionarios || [];
-          const setores = [
-            ...new Set(funcionariosList.map((f: any) => f.setor)),
-          ].filter(Boolean) as string[];
-          setSetoresDisponiveis(setores.sort());
-          setLoteIdRelatorioSetor(loteId);
-          setShowRelatorioSetor(true);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar setores:', error);
-        alert('Erro ao carregar setores disponíveis');
-      }
-    },
-    [empresaId]
-  );
-
   // === LOADING STATE ===
   if (loading || !session || !empresa) {
     return (
@@ -328,7 +296,6 @@ export default function EmpresaDashboardPage() {
                 onLoteClick={(loteId) =>
                   router.push(`/rh/empresa/${empresaId}/lote/${loteId}`)
                 }
-                onRelatorioSetor={abrirRelatorioSetor}
                 onDownloadLaudo={handleDownloadLaudo}
               />
             </div>
@@ -540,17 +507,6 @@ export default function EmpresaDashboardPage() {
             if (typeof loteId === 'number' && loteId > 0) {
               router.push(`/rh/empresa/${empresaId}/lote/${loteId}`);
             }
-          }}
-        />
-      )}
-
-      {showRelatorioSetor && loteIdRelatorioSetor && (
-        <RelatorioSetor
-          loteId={loteIdRelatorioSetor}
-          setores={setoresDisponiveis}
-          onClose={() => {
-            setShowRelatorioSetor(false);
-            setLoteIdRelatorioSetor(null);
           }}
         />
       )}

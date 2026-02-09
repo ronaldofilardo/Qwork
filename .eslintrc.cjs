@@ -1,13 +1,3 @@
-/**
- * ESLint Configuration - Quality Baseline Strategy
- *
- * This configuration implements a phased approach to eliminate the build/lint warning loop:
- * 1. Legacy code (existing files): warnings only - won't break builds
- * 2. New/modified code: stricter rules to prevent regressions
- * 3. Critical safety rules: always errors (security, runtime safety)
- *
- * @see docs/QUALITY_BASELINE_PLAN.md for migration plan and metrics
- */
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',

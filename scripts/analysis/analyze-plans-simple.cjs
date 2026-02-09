@@ -25,16 +25,16 @@ async function analyzePlansStructure() {
       console.log(`ID ${p.id}: ${p.nome} (tipo: ${p.tipo})`);
     });
 
-    console.log('\n=== CAMPOS PLANO NA TABELA CONTRATANTES ===');
-    const contratantesCols = await client.query(`
+    console.log('\n=== CAMPOS PLANO NA TABELA tomadores ===');
+    const tomadoresCols = await client.query(`
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns
-      WHERE table_name = 'contratantes'
+      WHERE table_name = 'tomadores'
       AND column_name LIKE '%plano%'
       ORDER BY column_name
     `);
 
-    contratantesCols.rows.forEach((col) => {
+    tomadoresCols.rows.forEach((col) => {
       console.log(
         `  ${col.column_name}: ${col.data_type} (${col.is_nullable})`
       );

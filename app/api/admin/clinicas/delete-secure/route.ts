@@ -14,7 +14,7 @@ interface ClinicaInfo {
   cnpj: string;
   ativa: boolean;
   tipo?: string; // Para diferenciar clinica/entidade
-  contratante_id?: number; // Para clínicas associadas a entidades
+  tomador_id?: number; // Para clínicas associadas a entidades
 }
 
 interface CountResult {
@@ -68,16 +68,16 @@ export async function POST(request: NextRequest) {
     // 4. Obter informações da clínica/entidade
     // Primeiro tenta na tabela clinicas (clínicas aprovadas)
     let clinicaResult = await query<ClinicaInfo>(
-      'SELECT id, nome, cnpj, ativa, contratante_id FROM clinicas WHERE id = $1',
+      'SELECT id, nome, cnpj, ativa FROM clinicas WHERE id = $1',
       [clinicaId]
     );
 
     let tipoEntidade = 'clinica';
 
-    // Se não encontrou na tabela clinicas, tenta na tabela contratantes (entidades)
+    // Se não encontrou na tabela clinicas, tenta na tabela entidades
     if (clinicaResult.rows.length === 0) {
       clinicaResult = await query<ClinicaInfo>(
-        'SELECT id, nome, cnpj, ativa, tipo FROM contratantes WHERE id = $1',
+        'SELECT id, nome, cnpj, ativa FROM entidades WHERE id = $1',
         [clinicaId]
       );
       tipoEntidade = 'entidade';
@@ -226,22 +226,22 @@ export async function POST(request: NextRequest) {
            INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
            WHERE f.clinica_id = $1`;
 
-      if (clinica.contratante_id) {
+      if (clinica.tomador_id) {
         // Incluir contagens da entidade associada
-        gestoresQuery += ' OR contratante_id = $2';
-        funcionariosQuery += ' OR contratante_id = $2';
-        avaliacoesQuery += ` OR f.contratante_id = $2`;
+        gestoresQuery += ' OR entidade_id = $2';
+        funcionariosQuery += ' OR entidade_id = $2';
+        avaliacoesQuery += ` OR f.entidade_id = $2`;
       }
     } else {
       // Para entidades
       gestoresQuery =
-        "SELECT COUNT(*) as count FROM funcionarios WHERE contratante_id = $1 AND perfil IN ('admin', 'rh')";
+        "SELECT COUNT(*) as count FROM funcionarios WHERE entidade_id = $1 AND perfil IN ('admin', 'rh')";
       empresasQuery = 'SELECT 0 as count'; // Entidades não têm empresas diretamente
       funcionariosQuery =
-        'SELECT COUNT(*) as count FROM funcionarios WHERE contratante_id = $1';
+        'SELECT COUNT(*) as count FROM funcionarios WHERE entidade_id = $1';
       avaliacoesQuery = `SELECT COUNT(*) as count FROM avaliacoes a
            INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-           WHERE f.contratante_id = $1`;
+           WHERE f.entidade_id = $1`;
     }
 
     // Preparar parâmetros condicionalmente (evita passar params a queries sem placeholders)
@@ -259,21 +259,21 @@ export async function POST(request: NextRequest) {
       await Promise.all([
         query<CountResult>(
           gestoresQuery,
-          tipoEntidade === 'clinica' && clinica.contratante_id
-            ? [clinicaId, clinica.contratante_id]
+          tipoEntidade === 'clinica' && clinica.tomador_id
+            ? [clinicaId, clinica.tomador_id]
             : [clinicaId]
         ),
         empresasPromise,
         query<CountResult>(
           funcionariosQuery,
-          tipoEntidade === 'clinica' && clinica.contratante_id
-            ? [clinicaId, clinica.contratante_id]
+          tipoEntidade === 'clinica' && clinica.tomador_id
+            ? [clinicaId, clinica.tomador_id]
             : [clinicaId]
         ),
         query<CountResult>(
           avaliacoesQuery,
-          tipoEntidade === 'clinica' && clinica.contratante_id
-            ? [clinicaId, clinica.contratante_id]
+          tipoEntidade === 'clinica' && clinica.tomador_id
+            ? [clinicaId, clinica.tomador_id]
             : [clinicaId]
         ),
       ]);
@@ -313,8 +313,8 @@ export async function POST(request: NextRequest) {
           clinicaId,
         ]);
 
-        // 4. Se a clínica tiver contratante_id, deletar a entidade associada
-        if (clinica.contratante_id) {
+        // 4. Se a clínica tiver tomador_id, deletar a entidade associada
+        if (clinica.tomador_id) {
           // Reatribuir referências da entidade para NULL (órfão) ou admin
           // Buscar um admin ativo para reatribuir
           const reassignAdmin = await query(
@@ -327,101 +327,96 @@ export async function POST(request: NextRequest) {
 
           if (reassignCpf) {
             await query(
-              'UPDATE lotes_avaliacao SET liberado_por = $1 WHERE liberado_por IN (SELECT cpf FROM funcionarios WHERE contratante_id = $2)',
-              [reassignCpf, clinica.contratante_id]
+              'UPDATE lotes_avaliacao SET liberado_por = $1 WHERE liberado_por IN (SELECT cpf FROM usuarios WHERE entidade_id = $2)',
+              [reassignCpf, clinica.tomador_id]
             );
             await query(
-              'UPDATE laudos SET emissor_cpf = $1 WHERE emissor_cpf IN (SELECT cpf FROM funcionarios WHERE contratante_id = $2)',
-              [reassignCpf, clinica.contratante_id]
+              'UPDATE laudos SET emissor_cpf = $1 WHERE emissor_cpf IN (SELECT cpf FROM usuarios WHERE entidade_id = $2)',
+              [reassignCpf, clinica.tomador_id]
             );
           } else {
             // Se não houver admin, setar como NULL
             await query(
-              'UPDATE lotes_avaliacao SET liberado_por = NULL WHERE liberado_por IN (SELECT cpf FROM funcionarios WHERE contratante_id = $1)',
-              [clinica.contratante_id]
+              'UPDATE lotes_avaliacao SET liberado_por = NULL WHERE liberado_por IN (SELECT cpf FROM usuarios WHERE entidade_id = $1)',
+              [clinica.tomador_id]
             );
             await query(
-              'UPDATE laudos SET emissor_cpf = NULL WHERE emissor_cpf IN (SELECT cpf FROM funcionarios WHERE contratante_id = $1)',
-              [clinica.contratante_id]
+              'UPDATE laudos SET emissor_cpf = NULL WHERE emissor_cpf IN (SELECT cpf FROM usuarios WHERE entidade_id = $1)',
+              [clinica.tomador_id]
             );
           }
 
-          // Deletar funcionários associados à entidade PRIMEIRO (evita triggers)
-          await query('DELETE FROM funcionarios WHERE contratante_id = $1', [
-            clinica.contratante_id,
+          // Deletar usuários associados à entidade PRIMEIRO (evita triggers)
+          await query('DELETE FROM usuarios WHERE entidade_id = $1', [
+            clinica.tomador_id,
           ]);
 
           // Deletar recibos associados (se existir)
           if (hasRecibos) {
-            await query('DELETE FROM recibos WHERE contratante_id = $1', [
-              clinica.contratante_id,
+            await query('DELETE FROM recibos WHERE tomador_id = $1', [
+              clinica.tomador_id,
             ]);
           }
 
           // Deletar pagamentos associados (se existir)
           if (hasPagamentos) {
-            await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
-              clinica.contratante_id,
+            await query('DELETE FROM pagamentos WHERE tomador_id = $1', [
+              clinica.tomador_id,
             ]);
           }
 
           // Deletar contratos associados (se existir)
           if (hasContratos) {
-            await query('DELETE FROM contratos WHERE contratante_id = $1', [
-              clinica.contratante_id,
+            await query('DELETE FROM contratos WHERE tomador_id = $1', [
+              clinica.tomador_id,
             ]);
           }
 
-          // Deletar senhas de forma segura (se função existir)
-          if (hasFnDeleteSenha) {
-            await query('SELECT fn_delete_senha_autorizado($1, $2)', [
-              clinica.contratante_id,
-              `Exclusão de entidade associada à clínica ${clinica.nome} por administrador ${admin.nome}`,
-            ]);
+          // Finalmente deletar a entidade associada
+          if (clinica.id && tipoEntidade === 'clinica') {
+            await query(
+              'DELETE FROM entidades WHERE id = (SELECT entidade_id FROM clinicas WHERE id = $1)',
+              [clinicaId]
+            );
           }
-
-          // Finalmente deletar a entidade
-          await query('DELETE FROM contratantes WHERE id = $1', [
-            clinica.contratante_id,
-          ]);
         }
 
         // 4. Deletar a clínica
         await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
       } else {
-        // Se for entidade (tabela contratantes), deletar dependências primeiro
+        // Se for entidade (tabela entidades), deletar dependências primeiro
         // Reatribuir referências em lotes e laudos para o administrador, para evitar FKs
         await query(
-          'UPDATE lotes_avaliacao SET liberado_por = $1 WHERE liberado_por IN (SELECT cpf FROM funcionarios WHERE contratante_id = $2)',
+          'UPDATE lotes_avaliacao SET liberado_por = $1 WHERE liberado_por IN (SELECT cpf FROM funcionarios WHERE entidade_id = $2)',
           [session.cpf, clinicaId]
         );
         await query(
-          'UPDATE laudos SET emissor_cpf = $1 WHERE emissor_cpf IN (SELECT cpf FROM funcionarios WHERE contratante_id = $2)',
+          'UPDATE laudos SET emissor_cpf = $1 WHERE emissor_cpf IN (SELECT cpf FROM funcionarios WHERE entidade_id = $2)',
           [session.cpf, clinicaId]
         );
 
         // 1. Deletar funcionários associados à entidade PRIMEIRO (evita triggers)
-        await query('DELETE FROM funcionarios WHERE contratante_id = $1', [
+        await query('DELETE FROM funcionarios WHERE entidade_id = $1', [
           clinicaId,
         ]);
 
         // 2. Deletar recibos associados (se existir)
         if (hasRecibos) {
-          await query('DELETE FROM recibos WHERE contratante_id = $1', [
+          await query('DELETE FROM recibos WHERE entidade_id = $1', [
             clinicaId,
           ]);
         }
 
         // 3. Deletar pagamentos associados (se existir)
         if (hasPagamentos) {
-          await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
+          await query('DELETE FROM pagamentos WHERE entidade_id = $1', [
             clinicaId,
           ]);
         }
 
         // 4. Deletar contratos associados (se existir)
         if (hasContratos) {
-          await query('DELETE FROM contratos WHERE contratante_id = $1', [
+          await query('DELETE FROM contratos WHERE entidade_id = $1', [
             clinicaId,
           ]);
         }
@@ -434,8 +429,8 @@ export async function POST(request: NextRequest) {
           ]);
         }
 
-        // 6. Finalmente deletar da tabela contratantes
-        await query('DELETE FROM contratantes WHERE id = $1', [clinicaId]);
+        // 6. Finalmente deletar da tabela entidades
+        await query('DELETE FROM entidades WHERE id = $1', [clinicaId]);
       }
 
       // Registrar sucesso no log (usar placeholders completos para evitar ambiguidade de tipo)

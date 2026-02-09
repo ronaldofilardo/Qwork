@@ -15,8 +15,8 @@ const ModalContrato = dynamic(
 
 interface PropostaData {
   valido: boolean;
-  contratante_nome: string;
-  contratante_cnpj: string;
+  tomador_nome: string;
+  tomador_cnpj: string;
   valor_por_funcionario: number;
   numero_funcionarios: number;
   valor_total: number;
@@ -176,13 +176,13 @@ export default function AceitarPropostaPage() {
               <div>
                 <label className="text-sm text-gray-500">Nome da Empresa</label>
                 <p className="text-lg font-medium text-gray-900">
-                  {proposta.contratante_nome}
+                  {proposta.tomador_nome}
                 </p>
               </div>
               <div>
                 <label className="text-sm text-gray-500">CNPJ</label>
                 <p className="text-lg font-medium text-gray-900">
-                  {proposta.contratante_cnpj}
+                  {proposta.tomador_cnpj}
                 </p>
               </div>
             </div>

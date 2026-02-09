@@ -115,18 +115,18 @@ export async function PATCH(request: NextRequest) {
 }
 
 /**
- * GET /api/admin/cobranca/parcela/historico?contratante_id=X
+ * GET /api/admin/cobranca/parcela/historico?tomador_id=X
  *
- * Retorna histórico de pagamentos de um contratante
+ * Retorna histórico de pagamentos de um tomador
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = request.nextUrl;
-    const contratanteId = searchParams.get('contratante_id');
+    const tomadorId = searchParams.get('tomador_id');
 
-    if (!contratanteId) {
+    if (!tomadorId) {
       return NextResponse.json(
-        { error: 'contratante_id é obrigatório' },
+        { error: 'tomador_id é obrigatório' },
         { status: 400 }
       );
     }
@@ -151,9 +151,9 @@ export async function GET(request: NextRequest) {
       INNER JOIN contratos ct ON ct.id = p.contrato_id
       INNER JOIN planos pl ON pl.id = ct.plano_id
       LEFT JOIN recibos r ON r.pagamento_id = p.id
-      WHERE p.contratante_id = $1
+      WHERE p.tomador_id = $1
       ORDER BY p.data_pagamento DESC`,
-      [contratanteId]
+      [tomadorId]
     );
 
     return NextResponse.json({

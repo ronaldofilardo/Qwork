@@ -258,7 +258,7 @@ export async function logGestorAction(
         JSON.stringify({
           ...details,
           perfil: session.perfil,
-          contratante_id: session.contratante_id,
+          tomador_id: session.tomador_id,
           clinica_id: session.clinica_id,
           is_gestor: true,
         }),
@@ -291,21 +291,21 @@ export async function validateGestorEmpresaAccess(
     throw new Error('SEGURANÇA: Acesso restrito a gestores');
   }
 
-  // Gestor de entidade: verifica se empresa está vinculada ao contratante
+  // Gestor de entidade: verifica se empresa está vinculada ao tomador
   if (isGestorEntidade(session.perfil)) {
-    if (!session.contratante_id) {
-      throw new Error('SEGURANÇA: Gestor de entidade sem contratante_id');
+    if (!session.tomador_id) {
+      throw new Error('SEGURANÇA: Gestor de entidade sem tomador_id');
     }
 
     const result = await query(
       `SELECT 1 FROM empresas_clientes 
-       WHERE id = $1 AND contratante_id = $2`,
-      [empresaId, session.contratante_id]
+       WHERE id = $1 AND tomador_id = $2`,
+      [empresaId, session.tomador_id]
     );
 
     if (result.rowCount === 0) {
       console.error(
-        `[validateGestorEmpresaAccess] Empresa ${empresaId} não pertence ao contratante ${session.contratante_id}`
+        `[validateGestorEmpresaAccess] Empresa ${empresaId} não pertence ao tomador ${session.tomador_id}`
       );
       return false;
     }

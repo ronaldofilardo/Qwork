@@ -19,7 +19,7 @@ BEGIN
         -- Tentar preencher automaticamente baseado no responsavel_cpf
         UPDATE entidades_senhas cs
         SET contratante_id = c.id
-        FROM contratantes c
+        FROM tomadores c
         WHERE cs.contratante_id IS NULL
           AND cs.cpf = c.responsavel_cpf;
         

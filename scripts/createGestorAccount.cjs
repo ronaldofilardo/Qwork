@@ -21,7 +21,7 @@ require('./load-env.cjs').loadEnv();
 
     // Buscar contratante pelo responsavel
     const contratanteRes = await client.query(
-      'SELECT id, cnpj, responsavel_nome, responsavel_email, responsavel_celular, tipo FROM contratantes WHERE responsavel_cpf = $1 LIMIT 1',
+      'SELECT id, cnpj, responsavel_nome, responsavel_email, responsavel_celular, tipo FROM tomadores WHERE responsavel_cpf = $1 LIMIT 1',
       [cpf]
     );
 
@@ -80,18 +80,18 @@ require('./load-env.cjs').loadEnv();
 
       // Upsert vinculo
       const vinc = await client.query(
-        'SELECT * FROM contratantes_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
+        'SELECT * FROM tomadores_funcionarios WHERE funcionario_id = $1 AND contratante_id = $2',
         [fid, contratante.id]
       );
       if (vinc.rows.length > 0) {
         await client.query(
-          'UPDATE contratantes_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
+          'UPDATE tomadores_funcionarios SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP WHERE funcionario_id = $1 AND contratante_id = $2',
           [fid, contratante.id]
         );
         console.log('Ativado vínculo existente');
       } else {
         await client.query(
-          'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
+          'INSERT INTO tomadores_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
           [fid, contratante.id, contratante.tipo || 'entidade']
         );
         console.log('Criado vínculo funcionario -> contratante');
@@ -112,7 +112,7 @@ require('./load-env.cjs').loadEnv();
       console.log('Inserido novo funcionario id=', newId);
 
       await client.query(
-        'INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
+        'INSERT INTO tomadores_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo) VALUES ($1, $2, $3, true)',
         [newId, contratante.id, contratante.tipo || 'entidade']
       );
       console.log('Criado vínculo para novo funcionario');

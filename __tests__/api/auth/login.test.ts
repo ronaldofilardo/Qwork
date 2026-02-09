@@ -184,7 +184,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       cpf: '12345678901',
       nome: 'Maria Santos',
       perfil: 'gestor',
-      contratante_id: 1,
+      tomador_id: 1,
       clinica_id: null,
       entidade_id: 1,
     });
@@ -251,7 +251,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       cpf: '22222222222',
       nome: 'João Silva',
       perfil: 'rh',
-      contratante_id: 2,
+      tomador_id: 2,
       clinica_id: 1,
       entidade_id: null,
     });
@@ -445,7 +445,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
 
     expect(response.status).toBe(403);
     expect(data.error).toBe(
-      'Contratante inativo. Entre em contato com o administrador.'
+      'tomador inativo. Entre em contato com o administrador.'
     );
   });
 

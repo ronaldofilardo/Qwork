@@ -8,7 +8,7 @@ Descrição:
 
 Tarefas:
 
-- Revisar e identificar testes de integração que falham por `unique constraint` ou dados ausentes (ex.: `planos_nome_key`, `contratantes_responsavel_cpf_unique`).
+- Revisar e identificar testes de integração que falham por `unique constraint` ou dados ausentes (ex.: `planos_nome_key`, `tomadores_responsavel_cpf_unique`).
 - Atualizar scripts de seed/test fixtures para garantir isolamento (usar IDs dinâmicos ou limpar antes de inserir).
 - Garantir que testes criem e apaguem seus próprios dados, evitando dependência de dados globais.
 

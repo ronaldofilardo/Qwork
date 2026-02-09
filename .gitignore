@@ -62,3 +62,5 @@ uploads/
 
 # Allow lib/storage module (code) while ignoring repo's runtime storage folder
 !lib/storage/
+.vercel
+.env*.local

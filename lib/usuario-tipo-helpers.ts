@@ -119,14 +119,14 @@ export function podeGerenciarEntidade(tipo: UsuarioTipo): boolean {
  * NOTA: 'gestor' refere-se ao gestor de entidade, 'rh' é gestor de clínica
  */
 export function getSQLWhereUsuarioTipo(
-  tipo: 'funcionario' | 'gestor' | 'gestor_clinica' | 'all'
+  tipo: 'funcionario' | 'gestor' | 'rh' | 'admin' | 'emissor' | 'all'
 ): string {
   switch (tipo) {
     case 'funcionario':
       return "usuario_tipo IN ('funcionario_clinica', 'funcionario_entidade')";
     case 'gestor':
       return "usuario_tipo = 'gestor'";
-    case 'gestor_clinica':
+    case 'rh':
       return "usuario_tipo = 'rh'";
     case 'all':
       return 'usuario_tipo IS NOT NULL';

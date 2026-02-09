@@ -13,7 +13,7 @@ O frontend está chamando `/api/pagamento/processar` **DIRETAMENTE** após a sim
 ### Logs do Erro
 
 ```
-[DEBUG] Query local (19ms): UPDATE contratantes
+[DEBUG] Query local (19ms): UPDATE tomadores
          SET status = 'aprovado',
              ativa = true,
              pagamento_confirmado = true
@@ -123,7 +123,7 @@ const iniciarRes = await fetch('/api/pagamento/iniciar', {
   method: 'POST',
   body: JSON.stringify({
     contrato_id,
-    contratante_id,
+    tomador_id,
     metodo_pagamento,
     numero_parcelas,
     valor_total,
@@ -194,7 +194,7 @@ POST /api/pagamento/iniciar
 POST /api/pagamento/confirmar
 # Deve:
 # - Atualizar pagamento para 'pago'
-# - Atualizar contratante: status='aprovado', ativa=true, pagamento_confirmado=true
+# - Atualizar tomador: status='aprovado', ativa=true, pagamento_confirmado=true
 # - Criar recibo
 # - Liberar login
 ```

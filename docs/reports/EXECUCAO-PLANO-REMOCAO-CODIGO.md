@@ -307,7 +307,7 @@ it('deve gerar codigo sequencial', async () => {
 
 - `__tests__/rh/dashboard-lotes-laudos.test.tsx`
 - `__tests__/visual-regression/component-specific.test.tsx`
-- `__tests__/integration/inativar-contratante-integration.test.ts`
+- `__tests__/integration/inativar-tomador-integration.test.ts`
 - `__tests__/security/audit-logs.test.ts`
 - `__tests__/lotes/*.test.ts` (múltiplos)
 - `__tests__/api/entidade/liberar-lote.test.ts`

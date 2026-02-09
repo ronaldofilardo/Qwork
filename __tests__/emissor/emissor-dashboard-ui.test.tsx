@@ -69,7 +69,7 @@ describe('Emissor Dashboard UI', () => {
     });
   });
 
-  it('mostra botão Laudo Psicossocial e dados do emissor quando laudo emitido', async () => {
+  it('mostra botão Laudo de Identificação e Mapeamento de Riscos Psicossociais e dados do emissor quando laudo emitido', async () => {
     render(
       <QueryClientProvider>
         <EmissorDashboard />
@@ -84,13 +84,13 @@ describe('Emissor Dashboard UI', () => {
     fireEvent.click(screen.getByText('✅ Laudo Emitido'));
 
     await waitFor(() => {
-      expect(screen.getByText('Laudo Psicossocial')).toBeInTheDocument();
+      expect(screen.getByText('Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)')).toBeInTheDocument();
       expect(screen.getByText('Emissor: Dra. Maria')).toBeInTheDocument();
       expect(screen.getByText('def456')).toBeInTheDocument();
     });
 
     // Click should attempt to download
-    const btn = screen.getByText('Laudo Psicossocial');
+    const btn = screen.getByText('Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)');
 
     fireEvent.click(btn);
 

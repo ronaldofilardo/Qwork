@@ -14,7 +14,7 @@ async function run() {
     pg.id as pagamento_id,
     pg.valor as pagamento_valor,
     COALESCE(cp.valor_pago, pg.valor, (COALESCE(co.numero_funcionarios, cp.numero_funcionarios_estimado, ct.numero_funcionarios_estimado, 0) * CASE WHEN pl.tipo = 'personalizado' THEN COALESCE(co.valor_personalizado, cp.valor_personalizado_por_funcionario, (cp.valor_pago / NULLIF(cp.numero_funcionarios_estimado,0)), 0) ELSE COALESCE(cp.valor_personalizado_por_funcionario, (cp.valor_pago / NULLIF(cp.numero_funcionarios_estimado,0)), COALESCE(pl.valor_por_funcionario, pl.valor_base, pl.preco, 20.00)) END))::numeric as valor_pago
-  FROM contratantes ct
+  FROM tomadores ct
   LEFT JOIN LATERAL (
     SELECT c.id, c.plano_id, c.numero_funcionarios, c.valor_personalizado
     FROM contratos c

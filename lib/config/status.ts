@@ -30,7 +30,7 @@ export const LAUDO_STATUS = {
 
 export type LaudoStatus = (typeof LAUDO_STATUS)[keyof typeof LAUDO_STATUS];
 
-export const CONTRATANTE_STATUS = {
+export const tomador_STATUS = {
   PENDENTE: 'pendente',
   APROVADO: 'aprovado',
   REJEITADO: 'rejeitado',
@@ -38,8 +38,8 @@ export const CONTRATANTE_STATUS = {
   INATIVO: 'inativo',
 } as const;
 
-export type ContratanteStatus =
-  (typeof CONTRATANTE_STATUS)[keyof typeof CONTRATANTE_STATUS];
+export type tomadorStatus =
+  (typeof tomador_STATUS)[keyof typeof tomador_STATUS];
 
 export function isStatusValid<T extends string>(
   status: T,

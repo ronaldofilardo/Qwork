@@ -1,6 +1,6 @@
 -- Migration: Adicionar coluna clinica_id na tabela recibos
 -- Data: 2026-01-19
--- Descrição: Permite associar recibos também a clínicas (além de contratantes)
+-- Descrição: Permite associar recibos também a clínicas (além de tomadores)
 
 ALTER TABLE recibos 
 ADD COLUMN IF NOT EXISTS clinica_id INTEGER;

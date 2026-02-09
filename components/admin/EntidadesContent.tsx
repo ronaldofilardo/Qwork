@@ -16,7 +16,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import AdminConfirmDeleteModal from '@/components/modals/AdminConfirmDeleteModal';
-import ModalCadastroContratante from '@/components/modals/ModalCadastroContratante';
+import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 
 interface Entidade {
   id: number;
@@ -49,10 +49,10 @@ export function EntidadesContent() {
   const fetchEntidades = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/admin/contratantes?tipo=entidade');
+      const res = await fetch('/api/admin/tomadores?tipo=entidade');
       if (res.ok) {
         const data = await res.json();
-        setEntidades(data.contratantes || []);
+        setEntidades(data.tomadores || []);
       }
     } catch (error) {
       console.error('Erro ao buscar entidades:', error);
@@ -327,7 +327,7 @@ export function EntidadesContent() {
       )}
 
       {/* Modal de cadastro de nova entidade */}
-      <ModalCadastroContratante
+      <ModalCadastrotomador
         isOpen={showCadastroModal}
         onClose={() => setShowCadastroModal(false)}
         tipo="entidade"

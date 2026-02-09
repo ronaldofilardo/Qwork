@@ -5,10 +5,10 @@ import { query } from '@/lib/db';
  * GET /api/proposta/[token]
  *
  * Busca dados da proposta personalizada através do token
- * Usado pela página /proposta/[token] para exibir detalhes ao contratante
+ * Usado pela página /proposta/[token] para exibir detalhes da entidade
  *
  * Retorna:
- * - dados da proposta (contratante, plano, valores)
+ * - dados da proposta (entidade, plano, valores)
  * - validade do token
  */
 export async function GET(
@@ -29,7 +29,7 @@ export async function GET(
     const result = await query(
       `SELECT 
         cp.id AS contratacao_id,
-        cp.contratante_id,
+        cp.entidade_id,
         cp.numero_funcionarios_estimado,
         cp.valor_por_funcionario,
         cp.valor_total_estimado,
@@ -43,7 +43,7 @@ export async function GET(
         p.nome AS plano_nome,
         p.tipo AS plano_tipo
       FROM contratacao_personalizada cp
-      JOIN entidades e ON cp.contratante_id = e.id
+      JOIN entidades e ON cp.entidade_id = e.id
       LEFT JOIN planos p ON e.plano_id = p.id
       WHERE cp.payment_link_token = $1`,
       [token]
@@ -89,8 +89,7 @@ export async function GET(
     return NextResponse.json({
       valido: true,
       contratacao_id: proposta.contratacao_id,
-      contratante_id: proposta.contratante_id,
-      entidade_id: proposta.contratante_id,
+      entidade_id: proposta.entidade_id,
       entidade_nome: proposta.entidade_nome,
       cnpj: proposta.cnpj,
       responsavel_nome: proposta.responsavel_nome,

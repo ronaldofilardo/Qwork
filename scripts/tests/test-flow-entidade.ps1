@@ -16,17 +16,17 @@ Write-Host "[1/5] Cadastrando contratante tipo ENTIDADE..."
 $cnpjTeste = "11111111000199"
 
 # Tentar pegar existente primeiro
-$existente = (psql -U postgres -d nr-bps_db -t -A -c "SELECT id FROM contratantes WHERE cnpj = '$cnpjTeste';" 2>&1 | Select-String -Pattern '^\d+$').Matches.Value
+$existente = (psql -U postgres -d nr-bps_db -t -A -c "SELECT id FROM tomadores WHERE cnpj = '$cnpjTeste';" 2>&1 | Select-String -Pattern '^\d+$').Matches.Value
 
 if ($existente) {
     $contratanteId = $existente
     Write-Host "[OK] Usando contratante existente: ID $contratanteId"
     
     # Atualizar para garantir que está ativo
-    psql -U postgres -d nr-bps_db -c "UPDATE contratantes SET ativa = true, pagamento_confirmado = true, status = 'aprovado', data_primeiro_pagamento = COALESCE(data_primeiro_pagamento, NOW()) WHERE id = $contratanteId;" 2>&1 | Out-Null
+    psql -U postgres -d nr-bps_db -c "UPDATE tomadores SET ativa = true, pagamento_confirmado = true, status = 'aprovado', data_primeiro_pagamento = COALESCE(data_primeiro_pagamento, NOW()) WHERE id = $contratanteId;" 2>&1 | Out-Null
 } else {
     $insertContratante = @"
-INSERT INTO contratantes (
+INSERT INTO tomadores (
     tipo, nome, cnpj, email, telefone,
     endereco, cidade, estado, cep,
     responsavel_nome, responsavel_cpf, responsavel_cargo,
@@ -101,7 +101,7 @@ for ($i = 1; $i -le 5; $i++) {
     if ($funcId) {
         $funcIds += $funcId
         # Associar funcionário à entidade e empresa
-        $assocQuery = "INSERT INTO contratantes_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;"
+        $assocQuery = "INSERT INTO tomadores_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;"
         psql -U postgres -d nr-bps_db -c $assocQuery 2>&1 | Out-Null
     }
 }
@@ -141,7 +141,7 @@ SELECT
     c.id,
     c.nome,
     c.tipo as subtipo
-FROM contratantes c 
+FROM tomadores c 
 WHERE c.id = $contratanteId
 UNION ALL
 SELECT 
@@ -157,6 +157,6 @@ SELECT
     COUNT(*)::int,
     'Total: ' || COUNT(*),
     NULL
-FROM contratantes_funcionarios cf 
+FROM tomadores_funcionarios cf 
 WHERE cf.contratante_id = $contratanteId;
 "

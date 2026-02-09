@@ -14,7 +14,7 @@ jest.mock('next-auth/react', () => ({
       user: {
         id: '1',
         nome: 'Gestor Clínica',
-        tipo_usuario: 'gestor_clinica',
+        tipo_usuario: 'rh',
         email: 'gestor@clinica.com',
         clinica_id: '123',
       },

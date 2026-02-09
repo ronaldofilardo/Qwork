@@ -22,11 +22,9 @@ async function testar() {
     const data = await response.json();
 
     if (data.success) {
-      console.log(
-        `✅ Sucesso! Total de contratantes: ${data.contratantes.length}\n`
-      );
+      console.log(`✅ Sucesso! Total de tomadors: ${data.tomadors.length}\n`);
 
-      const personalizados = data.contratantes.filter(
+      const personalizados = data.tomadors.filter(
         (c) =>
           c.contratacao_personalizada_id &&
           c.contratacao_status === 'aguardando_valor_admin'

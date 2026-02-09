@@ -1,0 +1,350 @@
+/**
+ * Testes para requireRHWithEmpresaAccess
+ * Validação de controle de acesso seguro entre clínicas e empresas
+ */
+
+import { query } from '@/lib/db';
+import { requireRHWithEmpresaAccess, requireAuth } from '@/lib/session';
+
+// Mock das dependências
+jest.mock('@/lib/db');
+jest.mock('@/lib/session', () => ({
+  ...jest.requireActual('@/lib/session'),
+  requireAuth: jest.fn(),
+  requireRHWithEmpresaAccess:
+    jest.requireActual('@/lib/session').requireRHWithEmpresaAccess,
+}));
+
+const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const sessionModule = require('@/lib/session');
+
+describe('requireRHWithEmpresaAccess - Controle de Acesso Seguro', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    sessionModule.getSession.mockReturnValue(null);
+  });
+
+  describe('Acesso de Admin', () => {
+    it('deve NEGAR acesso para perfil admin (não é operacional)', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '11111111111',
+        nome: 'Admin Teste',
+        perfil: 'admin',
+      });
+
+      await expect(requireRHWithEmpresaAccess(1)).rejects.toThrow(
+        'Apenas gestores RH ou administradores podem acessar empresas'
+      );
+
+      // Admin não deve ter acesso operacional a empresas
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it('deve NEGAR acesso para outro admin (sem exceção de compatibilidade)', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '00000000000',
+        nome: 'Admin Alternativo',
+        perfil: 'admin',
+      });
+
+      await expect(requireRHWithEmpresaAccess(999)).rejects.toThrow(
+        'Apenas gestores RH ou administradores podem acessar empresas'
+      );
+
+      // Admin não acessa empresas/dados operacionais
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Validação Granular de Permissões RH', () => {
+    it('deve permitir acesso quando RH pertence à mesma clínica da empresa', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '22222222222',
+        nome: 'RH Teste',
+        perfil: 'rh',
+      });
+
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1,
+        }) // Consulta empresa
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1,
+        }); // Consulta RH
+
+      const result = await requireRHWithEmpresaAccess(10);
+
+      expect(result.perfil).toBe('rh');
+      expect(result.cpf).toBe('22222222222');
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      expect(mockQuery).toHaveBeenCalledWith(
+        'SELECT clinica_id FROM empresas_clientes WHERE id = $1',
+        [10]
+      );
+      expect(mockQuery).toHaveBeenCalledWith(
+        'SELECT clinica_id FROM funcionarios WHERE cpf = $1',
+        ['22222222222']
+      );
+    });
+
+    it('deve negar acesso quando RH pertence a clínica diferente', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '33333333333',
+        nome: 'RH Outra Clínica',
+        perfil: 'rh',
+      });
+
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1,
+        }) // Empresa da clínica 1
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 2 }],
+          rowCount: 1,
+        }); // RH da clínica 2
+
+      await expect(requireRHWithEmpresaAccess(10)).rejects.toThrow(
+        'Você não tem permissão para acessar esta empresa'
+      );
+
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+    });
+
+    it('deve negar acesso para perfil funcionario', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '44444444444',
+        nome: 'Funcionário Teste',
+        perfil: 'funcionario',
+      });
+
+      await expect(requireRHWithEmpresaAccess(1)).rejects.toThrow(
+        'Apenas gestores RH ou administradores podem acessar empresas'
+      );
+
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Validação de Dados', () => {
+    it('deve retornar erro quando empresa não existe', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '55555555555',
+        nome: 'RH Teste',
+        perfil: 'rh',
+      });
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      });
+
+      await expect(requireRHWithEmpresaAccess(999)).rejects.toThrow(
+        'Empresa não encontrada'
+      );
+
+      expect(mockQuery).toHaveBeenCalledWith(
+        'SELECT clinica_id FROM empresas_clientes WHERE id = $1',
+        [999]
+      );
+    });
+
+    it('deve retornar erro quando RH não existe', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '66666666666',
+        nome: 'RH Fantasma',
+        perfil: 'rh',
+      });
+
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 1 }],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({
+          rows: [],
+          rowCount: 0,
+        });
+
+      await expect(requireRHWithEmpresaAccess(10)).rejects.toThrow(
+        'Gestor RH não encontrado'
+      );
+    });
+  });
+
+  describe('Relacionamento clinicas_empresas', () => {
+    it('deve validar relacionamento correto entre clínica e múltiplas empresas', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '77777777777',
+        nome: 'RH Multi-Empresa',
+        perfil: 'rh',
+      });
+
+      const empresasIds = [1, 2, 3];
+      for (const empresaId of empresasIds) {
+        mockQuery
+          .mockResolvedValueOnce({
+            rows: [{ clinica_id: 5 }],
+            rowCount: 1,
+          })
+          .mockResolvedValueOnce({
+            rows: [{ clinica_id: 5 }],
+            rowCount: 1,
+          });
+
+        const result = await requireRHWithEmpresaAccess(empresaId);
+        expect(result.cpf).toBe('77777777777');
+      }
+
+      expect(mockQuery).toHaveBeenCalledTimes(empresasIds.length * 2);
+    });
+
+    it('deve garantir isolamento entre clínicas diferentes', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '88888888888',
+        nome: 'RH Clínica A',
+        perfil: 'rh',
+      });
+
+      // Tentar acessar empresa de outra clínica
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 10 }],
+          rowCount: 1,
+        }) // Empresa clínica 10
+        .mockResolvedValueOnce({
+          rows: [{ clinica_id: 20 }],
+          rowCount: 1,
+        }); // RH clínica 20
+
+      await expect(requireRHWithEmpresaAccess(100)).rejects.toThrow(
+        'Você não tem permissão para acessar esta empresa'
+      );
+    });
+  });
+
+  describe('Casos Edge', () => {
+    it('deve lidar com empresaId null/undefined', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '99999999999',
+        nome: 'RH Teste',
+        perfil: 'rh',
+      });
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      });
+
+      await expect(requireRHWithEmpresaAccess(null as any)).rejects.toThrow();
+    });
+
+    it('deve mapear clinica via contratante_id quando sessao referencia contratante', async () => {
+      // Usar isolateModules com Promise para manipular async corretamente
+      const result: any = await new Promise((resolve, reject) => {
+        jest.isolateModules(() => {
+          try {
+            jest.resetModules();
+            const mockDb = require('@/lib/db');
+            mockDb.query = mockQuery;
+
+            const sessionMod = require('@/lib/session');
+            sessionMod.getSession = jest.fn(() => ({
+              cpf: '12121212121',
+              nome: 'RH Mapeamento',
+              perfil: 'rh',
+              clinica_id: 56,
+              contratante_id: 56,
+            }));
+
+            mockQuery
+              .mockResolvedValueOnce({
+                rows: [{ clinica_id: 20 }],
+                rowCount: 1,
+              }) // Consulta empresa
+              .mockResolvedValueOnce({
+                rows: [{ id: 20, ativa: true }],
+                rowCount: 1,
+              }); // Fallback clinica via contratante
+
+            const { requireRHWithEmpresaAccess: fn } = require('@/lib/session');
+
+            fn(8)
+              .then((r: any) => resolve(r))
+              .catch((e: any) => reject(e));
+          } catch (e) {
+            reject(e);
+          }
+        });
+      });
+
+      expect(result.perfil).toBe('rh');
+      expect(result.cpf).toBe('12121212121');
+      expect(result.clinica_id).toBe(20);
+    });
+
+    it('deve lidar com erro de banco de dados', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '10101010101',
+        nome: 'RH Teste',
+        perfil: 'rh',
+      });
+
+      mockQuery.mockRejectedValueOnce(new Error('Database connection failed'));
+
+      await expect(requireRHWithEmpresaAccess(1)).rejects.toThrow(
+        'Database connection failed'
+      );
+    });
+
+    it('deve rejeitar admin com empresaId inválido (admin não tem acesso operacional)', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '12121212121',
+        nome: 'Admin Teste',
+        perfil: 'admin',
+      });
+
+      // Admin NÃO deve ter acesso operacional mesmo com tipo válido de empresaId
+      await expect(requireRHWithEmpresaAccess('999' as any)).rejects.toThrow(
+        'Apenas gestores RH ou administradores podem acessar empresas'
+      );
+    });
+  });
+
+  describe('Performance e Cache', () => {
+    it('deve rejeitar admin sem fazer consultas (admin não é operacional)', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '13131313131',
+        nome: 'Admin Performance',
+        perfil: 'admin',
+      });
+
+      await expect(requireRHWithEmpresaAccess(1)).rejects.toThrow(
+        'Apenas gestores RH ou administradores podem acessar empresas'
+      );
+      
+      // Admin é rejeitado antes de qualquer consulta ao banco
+      expect(mockQuery).toHaveBeenCalledTimes(0);
+    });
+
+    it('deve fazer duas consultas para RH (empresa + funcionário)', async () => {
+      sessionModule.getSession.mockReturnValue({
+        cpf: '14141414141',
+        nome: 'RH Performance',
+        perfil: 'rh',
+      });
+
+      mockQuery.mockResolvedValue({
+        rows: [{ clinica_id: 1 }],
+        rowCount: 1,
+      });
+
+      await requireRHWithEmpresaAccess(1);
+
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+    });
+  });
+});

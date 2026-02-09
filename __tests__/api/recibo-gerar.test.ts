@@ -31,17 +31,17 @@ describe('API Recibo - POST /api/recibo/gerar', () => {
       ],
     });
 
-    // Mock: buscar dados do contrato, pagamento, contratante, plano
+    // Mock: buscar dados do contrato, pagamento, tomador, plano
     query.mockResolvedValueOnce({
       rows: [
         {
           contrato_id: 1,
-          contratante_id: 1,
+          tomador_id: 1,
           plano_id: 1,
           contrato_valor_total: 15000.0,
           numero_funcionarios: 50,
-          contratante_nome: 'Empresa XYZ',
-          contratante_cnpj: '12.345.678/0001-90',
+          tomador_nome: 'Empresa XYZ',
+          tomador_cnpj: '12.345.678/0001-90',
           numero_funcionarios_estimado: 50,
           pagamento_valor: 15000.0,
           pagamento_metodo: 'boleto',
@@ -97,15 +97,15 @@ describe('API Recibo - POST /api/recibo/gerar', () => {
     query.mockResolvedValueOnce({
       rows: [
         {
-          contratante_id: 1,
+          tomador_id: 1,
           pagamento_valor: 15000.0,
           pagamento_metodo: 'boleto',
           data_pagamento: '2025-12-22T10:00:00Z',
           numero_parcelas: 1,
           numero_funcionarios: 50,
           valor_por_funcionario: 300.0,
-          contratante_nome: 'Empresa XYZ',
-          contratante_cnpj: '12.345.678/0001-90',
+          tomador_nome: 'Empresa XYZ',
+          tomador_cnpj: '12.345.678/0001-90',
           numero_funcionarios_estimado: 50,
         },
       ],
@@ -196,7 +196,7 @@ describe('API Recibo - GET /api/recibo/gerar', () => {
           vigencia_fim: '2026-12-21',
           numero_funcionarios_cobertos: 50,
           valor_total_anual: 15000.0,
-          contratante_nome: 'Empresa XYZ',
+          tomador_nome: 'Empresa XYZ',
         },
       ],
     });

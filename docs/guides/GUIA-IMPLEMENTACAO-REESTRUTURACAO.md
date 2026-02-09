@@ -22,7 +22,7 @@ CREATE TABLE usuarios (
     senha_hash TEXT NOT NULL,
     tipo_usuario usuario_tipo_enum NOT NULL, -- 'admin', 'emissor', 'gestor', 'rh'
     clinica_id INTEGER,
-    contratante_id INTEGER,
+    tomador_id INTEGER,
     ativo BOOLEAN DEFAULT TRUE NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
@@ -31,12 +31,12 @@ CREATE TABLE usuarios (
 
 #### Regras de Negócio:
 
-| tipo_usuario | clinica_id  | contratante_id | Descrição                  |
-| ------------ | ----------- | -------------- | -------------------------- |
-| `admin`      | NULL        | NULL           | Administrador do sistema   |
-| `emissor`    | NULL        | NULL           | Emissor de laudos          |
-| `rh`         | OBRIGATÓRIO | NULL           | Gestor de clínica          |
-| `gestor`     | NULL        | OBRIGATÓRIO    | Gestor de empresa/entidade |
+| tipo_usuario | clinica_id  | tomador_id  | Descrição                  |
+| ------------ | ----------- | ----------- | -------------------------- |
+| `admin`      | NULL        | NULL        | Administrador do sistema   |
+| `emissor`    | NULL        | NULL        | Emissor de laudos          |
+| `rh`         | OBRIGATÓRIO | NULL        | Gestor de clínica          |
+| `gestor`     | NULL        | OBRIGATÓRIO | Gestor de empresa/entidade |
 
 ### 2. Tabela `funcionarios` (Modificada)
 
@@ -48,7 +48,7 @@ CREATE TABLE funcionarios (
     email VARCHAR(100),
     usuario_tipo usuario_tipo_enum NOT NULL, -- 'funcionario_clinica' ou 'funcionario_entidade'
     empresa_id INTEGER, -- Para funcionários de empresas clientes
-    contratante_id INTEGER, -- Para funcionários de entidades
+    tomador_id INTEGER, -- Para funcionários de entidades
     clinica_id INTEGER,
     setor VARCHAR(50),
     funcao VARCHAR(50),
@@ -58,10 +58,10 @@ CREATE TABLE funcionarios (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-    -- Constraint: deve ter OU empresa_id OU contratante_id (nunca ambos)
+    -- Constraint: deve ter OU empresa_id OU tomador_id (nunca ambos)
     CONSTRAINT funcionarios_vinculo_check CHECK (
-        (empresa_id IS NOT NULL AND contratante_id IS NULL) OR
-        (empresa_id IS NULL AND contratante_id IS NOT NULL)
+        (empresa_id IS NOT NULL AND tomador_id IS NULL) OR
+        (empresa_id IS NULL AND tomador_id IS NOT NULL)
     )
 );
 ```
@@ -154,7 +154,7 @@ interface Usuario {
   senha_hash: string;
   tipo_usuario: 'admin' | 'emissor' | 'gestor' | 'rh';
   clinica_id?: number;
-  contratante_id?: number;
+  tomador_id?: number;
   ativo: boolean;
   criado_em: Date;
   atualizado_em: Date;
@@ -169,7 +169,7 @@ interface Funcionario {
   // senha_hash removido
   usuario_tipo: 'funcionario_clinica' | 'funcionario_entidade';
   empresa_id?: number;
-  contratante_id?: number;
+  tomador_id?: number;
   clinica_id?: number;
   setor?: string;
   funcao?: string;
@@ -220,7 +220,7 @@ async function login(cpf: string, senha: string) {
     email: user.email,
     tipo_usuario: user.tipo_usuario,
     clinica_id: user.clinica_id,
-    contratante_id: user.contratante_id,
+    tomador_id: user.tomador_id,
   };
 }
 ```
@@ -239,7 +239,7 @@ export async function GET(req: Request) {
   }
 
   let query =
-    'SELECT id, cpf, nome, email, tipo_usuario, clinica_id, contratante_id, ativo FROM usuarios';
+    'SELECT id, cpf, nome, email, tipo_usuario, clinica_id, tomador_id, ativo FROM usuarios';
   let params: any[] = [];
 
   // RH vê apenas usuários da sua clínica
@@ -250,8 +250,8 @@ export async function GET(req: Request) {
 
   // Gestor entidade vê apenas usuários da sua entidade
   if (session.tipo_usuario === 'gestor') {
-    query += ' WHERE contratante_id = $1';
-    params.push(session.contratante_id);
+    query += ' WHERE tomador_id = $1';
+    params.push(session.tomador_id);
   }
 
   const usuarios = await db.query(query, params);
@@ -273,7 +273,7 @@ export async function GET(req: Request) {
   let query = `
     SELECT 
       id, cpf, nome, email, usuario_tipo, 
-      empresa_id, contratante_id, clinica_id,
+      empresa_id, tomador_id, clinica_id,
       setor, funcao, matricula, nivel_cargo, ativo
     FROM funcionarios
     WHERE usuario_tipo IN ('funcionario_clinica', 'funcionario_entidade')
@@ -289,8 +289,8 @@ export async function GET(req: Request) {
 
   // Gestor entidade vê apenas funcionários da sua entidade
   if (session.tipo_usuario === 'gestor') {
-    query += ' AND contratante_id = $1';
-    params.push(session.contratante_id);
+    query += ' AND tomador_id = $1';
+    params.push(session.tomador_id);
   }
 
   const funcionarios = await db.query(query, params);
@@ -345,7 +345,7 @@ export default function Header() {
 **⚠️ IMPORTANTE:** Admin NÃO tem acesso a:
 
 - Clínicas (tabela `clinicas`)
-- Contratantes/Entidades (tabela `contratantes`)
+- tomadores/Entidades (tabela `tomadores`)
 - Empresas clientes (tabela `empresas_clientes`)
 - Funcionários (tabela `funcionarios`)
 
@@ -377,7 +377,7 @@ CREATE POLICY gestor_own_entidade_usuarios ON usuarios
 FOR SELECT TO authenticated
 USING (
   current_setting('app.tipo_usuario') = 'gestor' AND
-  contratante_id = current_setting('app.contratante_id')::integer
+  tomador_id = current_setting('app.tomador_id')::integer
 );
 
 -- Usuário vê apenas seus próprios dados
@@ -404,7 +404,7 @@ CREATE POLICY gestor_own_entidade_funcionarios ON funcionarios
 FOR ALL TO authenticated
 USING (
   current_setting('app.tipo_usuario') = 'gestor' AND
-  contratante_id = current_setting('app.contratante_id')::integer
+  tomador_id = current_setting('app.tomador_id')::integer
 );
 ````
 
@@ -493,8 +493,8 @@ GROUP BY usuario_tipo;
 SELECT
   tipo_usuario,
   COUNT(*) FILTER (WHERE clinica_id IS NOT NULL) as com_clinica,
-  COUNT(*) FILTER (WHERE contratante_id IS NOT NULL) as com_contratante,
-  COUNT(*) FILTER (WHERE clinica_id IS NULL AND contratante_id IS NULL) as sem_vinculo
+  COUNT(*) FILTER (WHERE tomador_id IS NOT NULL) as com_tomador,
+  COUNT(*) FILTER (WHERE clinica_id IS NULL AND tomador_id IS NULL) as sem_vinculo
 FROM usuarios
 GROUP BY tipo_usuario;
 ```

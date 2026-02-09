@@ -13,21 +13,21 @@
 SET session_replication_role = 'replica';
 
 -- ============================================================================
--- 1. LIMPAR TABELAS QUE FAZEM REFERÊNCIA A CONTRATANTES
+-- 1. LIMPAR TABELAS QUE FAZEM REFERÊNCIA A tomadores
 -- ============================================================================
 
--- Limpar pagamentos relacionados a contratantes
-DELETE FROM pagamentos WHERE contratante_id IN (SELECT id FROM contratantes);
+-- Limpar pagamentos relacionados a tomadores
+DELETE FROM pagamentos WHERE contratante_id IN (SELECT id FROM tomadores);
 
--- Limpar contratos relacionados a contratantes
-DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes);
+-- Limpar contratos relacionados a tomadores
+DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM tomadores);
 
--- Limpar planos relacionados a contratantes (através da tabela contratantes)
+-- Limpar planos relacionados a tomadores (através da tabela tomadores)
 -- ATENÇÃO: Não deletar planos fixos compartilhados automaticamente (ex: planos seed/mercadoria).
--- Apenas remover planos do tipo 'personalizado' que estejam vinculados a contratantes.
+-- Apenas remover planos do tipo 'personalizado' que estejam vinculados a tomadores.
 DELETE FROM planos p
 WHERE p.tipo = 'personalizado'
-  AND p.id IN (SELECT plano_id FROM contratantes WHERE plano_id IS NOT NULL);
+  AND p.id IN (SELECT plano_id FROM tomadores WHERE plano_id IS NOT NULL);
 
 -- PROTEÇÃO CRÍTICA: Senhas NÃO são mais deletadas automaticamente!
 -- Use fn_delete_senha_autorizado() se realmente precisar deletar senhas
@@ -37,8 +37,8 @@ WHERE p.tipo = 'personalizado'
 -- Se você REALMENTE precisa deletar senhas (CUIDADO!):
 -- SELECT fn_delete_senha_autorizado(contratante_id, 'motivo da deleção');
 
--- Limpar funcionários relacionados a contratantes
-DELETE FROM contratantes_funcionarios WHERE contratante_id IN (SELECT id FROM contratantes);
+-- Limpar funcionários relacionados a tomadores
+DELETE FROM tomadores_funcionarios WHERE contratante_id IN (SELECT id FROM tomadores);
 
 -- ============================================================================
 -- 2. LIMPAR TABELAS QUE FAZEM REFERÊNCIA A FUNCIONÁRIOS
@@ -101,8 +101,8 @@ DELETE FROM clinicas_empresas WHERE clinica_id IN (SELECT id FROM clinicas);
 -- 5. LIMPAR TABELAS PRINCIPAIS (que contêm CNPJ/CPF)
 -- ============================================================================
 
--- Limpar contratantes (contém CNPJ)
-DELETE FROM contratantes;
+-- Limpar tomadores (contém CNPJ)
+DELETE FROM tomadores;
 
 -- Limpar funcionários (contém CPF)
 DELETE FROM funcionarios;
@@ -118,7 +118,7 @@ DELETE FROM clinicas;
 -- ============================================================================
 
 -- Resetar sequences para começar do 1 novamente
-ALTER SEQUENCE contratantes_id_seq RESTART WITH 1;
+ALTER SEQUENCE tomadores_id_seq RESTART WITH 1;
 ALTER SEQUENCE clinicas_id_seq RESTART WITH 1;
 ALTER SEQUENCE empresas_clientes_id_seq RESTART WITH 1;
 ALTER SEQUENCE funcionarios_id_seq RESTART WITH 1;
@@ -138,7 +138,7 @@ SET session_replication_role = 'origin';
 -- ============================================================================
 
 -- Verificar se ainda existem CNPJs nas tabelas principais
-SELECT 'contratantes' as tabela, COUNT(*) as registros_com_cnpj FROM contratantes WHERE cnpj IS NOT NULL AND cnpj != ''
+SELECT 'tomadores' as tabela, COUNT(*) as registros_com_cnpj FROM tomadores WHERE cnpj IS NOT NULL AND cnpj != ''
 UNION ALL
 SELECT 'clinicas' as tabela, COUNT(*) as registros_com_cnpj FROM clinicas WHERE cnpj IS NOT NULL AND cnpj != ''
 UNION ALL

@@ -19,7 +19,7 @@ SELECT
     c.id as organizacao_id,
     'entidade' as tipo_organizacao
 FROM entidades_senhas es
-JOIN contratantes c ON c.id = es.contratante_id
+JOIN tomadores c ON c.id = es.contratante_id
 WHERE c.tipo = 'entidade' AND c.ativa = true
 UNION ALL
 SELECT 
@@ -90,7 +90,7 @@ SELECT
     c.nome as nome_organizacao,
     c.id as organizacao_id
 FROM entidades_senhas es
-JOIN contratantes c ON c.id = es.contratante_id
+JOIN tomadores c ON c.id = es.contratante_id
 WHERE c.tipo = 'entidade' AND c.ativa = true
 UNION ALL
 SELECT 
@@ -104,22 +104,22 @@ WHERE cl.ativa = true;
 
 COMMENT ON VIEW gestores IS 'Todos os gestores (entidade e clínica/RH)';
 
--- 6. v_contratantes_stats (estatísticas por contratante)
-CREATE OR REPLACE VIEW v_contratantes_stats AS
+-- 6. v_tomadores_stats (estatísticas por contratante)
+CREATE OR REPLACE VIEW v_tomadores_stats AS
 SELECT 
     c.id as contratante_id,
     c.nome,
     c.tipo,
     COUNT(DISTINCT CASE WHEN c.tipo = 'entidade' THEN fe.funcionario_id END) as total_funcionarios_entidade,
     COUNT(DISTINCT CASE WHEN c.tipo = 'clinica' THEN fc.funcionario_id END) as total_funcionarios_clinica
-FROM contratantes c
+FROM tomadores c
 LEFT JOIN funcionarios_entidades fe ON fe.contratante_id = c.id AND fe.ativo = true
 LEFT JOIN clinicas cl ON cl.contratante_id = c.id
 LEFT JOIN empresas_clientes ec ON ec.clinica_id = cl.id
 LEFT JOIN funcionarios_clinicas fc ON fc.empresa_id = ec.id AND fc.ativo = true
 GROUP BY c.id, c.nome, c.tipo;
 
-COMMENT ON VIEW v_contratantes_stats IS 'Estatísticas de contratantes';
+COMMENT ON VIEW v_tomadores_stats IS 'Estatísticas de tomadores';
 
 \echo '✓ Views recriadas com sucesso'
 

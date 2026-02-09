@@ -395,14 +395,14 @@ if (typeof beforeAll === 'function') {
       const client = new Client({ connectionString: dbUrl });
       await client.connect();
 
-      // Executar fix que cria contratantes se ausente (arquivo idempotente)
+      // Executar fix que cria tomadors se ausente (arquivo idempotente)
       try {
         const sql = fs.readFileSync(
           path.join(
             __dirname,
             'database',
             'fixes',
-            'create-contratantes-if-missing.sql'
+            'create-tomadors-if-missing.sql'
           ),
           'utf-8'
         );
@@ -410,11 +410,11 @@ if (typeof beforeAll === 'function') {
       } catch (err) {
         // Se falhar, tentar versão minimal sem ENUMs
         console.warn(
-          'Falha ao aplicar create-contratantes-if-missing.sql (tentar fallback):',
+          'Falha ao aplicar create-tomadors-if-missing.sql (tentar fallback):',
           err.message || err
         );
         await client.query(`
-          CREATE TABLE IF NOT EXISTS contratantes (
+          CREATE TABLE IF NOT EXISTS tomadors (
             id SERIAL PRIMARY KEY,
             tipo TEXT,
             nome VARCHAR(200),
@@ -442,38 +442,38 @@ if (typeof beforeAll === 'function') {
             __dirname,
             'database',
             'fixes',
-            'add-contratantes-columns-and-joins.sql'
+            'add-tomadors-columns-and-joins.sql'
           ),
           'utf-8'
         );
         await client.query(sql2);
       } catch (err) {
         console.warn(
-          'Falha ao aplicar add-contratantes-columns-and-joins.sql:',
+          'Falha ao aplicar add-tomadors-columns-and-joins.sql:',
           err.message || err
         );
       }
 
-      // Inserir contratantes faltantes referenciados por funcionarios ou lotes (garantia de integridade para testes)
+      // Inserir tomadors faltantes referenciados por funcionarios ou lotes (garantia de integridade para testes)
       try {
         await client.query(`
-          INSERT INTO contratantes (id, tipo, nome, cnpj, email, ativa)
-          SELECT DISTINCT f.contratante_id, 'entidade', 'Auto Seed contratante ' || f.contratante_id, '00000000000000', 'auto-seed@tests.local', true
+          INSERT INTO tomadors (id, tipo, nome, cnpj, email, ativa)
+          SELECT DISTINCT f.tomador_id, 'entidade', 'Auto Seed tomador ' || f.tomador_id, '00000000000000', 'auto-seed@tests.local', true
           FROM funcionarios f
-          LEFT JOIN contratantes c ON f.contratante_id = c.id
-          WHERE f.contratante_id IS NOT NULL AND c.id IS NULL
+          LEFT JOIN tomadors c ON f.tomador_id = c.id
+          WHERE f.tomador_id IS NOT NULL AND c.id IS NULL
         `);
 
         await client.query(`
-          INSERT INTO contratantes (id, tipo, nome, cnpj, email, ativa)
-          SELECT DISTINCT l.contratante_id, 'entidade', 'Auto Seed contratante ' || l.contratante_id, '00000000000000', 'auto-seed@tests.local', true
+          INSERT INTO tomadors (id, tipo, nome, cnpj, email, ativa)
+          SELECT DISTINCT l.tomador_id, 'entidade', 'Auto Seed tomador ' || l.tomador_id, '00000000000000', 'auto-seed@tests.local', true
           FROM lotes_avaliacao l
-          LEFT JOIN contratantes c ON l.contratante_id = c.id
-          WHERE l.contratante_id IS NOT NULL AND c.id IS NULL
+          LEFT JOIN tomadors c ON l.tomador_id = c.id
+          WHERE l.tomador_id IS NOT NULL AND c.id IS NULL
         `);
       } catch (err) {
         console.warn(
-          'Falha ao inserir contratantes faltantes (possível ausência de tabelas funcionarios/lotes):',
+          'Falha ao inserir tomadors faltantes (possível ausência de tabelas funcionarios/lotes):',
           err.message || err
         );
       }
@@ -494,10 +494,10 @@ if (typeof beforeAll === 'function') {
         );
       }
 
-      // Adicionar colunas que podem estar ausentes na tabela contratantes
+      // Adicionar colunas que podem estar ausentes na tabela tomadors
       try {
         await client.query(`
-          ALTER TABLE contratantes
+          ALTER TABLE tomadors
             ADD COLUMN IF NOT EXISTS telefone VARCHAR(20),
             ADD COLUMN IF NOT EXISTS endereco TEXT,
             ADD COLUMN IF NOT EXISTS cidade VARCHAR(100),
@@ -521,23 +521,23 @@ if (typeof beforeAll === 'function') {
         `);
 
         await client.query(
-          `CREATE INDEX IF NOT EXISTS idx_contratantes_tipo ON contratantes (tipo)`
+          `CREATE INDEX IF NOT EXISTS idx_tomadors_tipo ON tomadors (tipo)`
         );
         await client.query(
-          `CREATE INDEX IF NOT EXISTS idx_contratantes_status ON contratantes (status)`
+          `CREATE INDEX IF NOT EXISTS idx_tomadors_status ON tomadors (status)`
         );
         await client.query(
-          `CREATE INDEX IF NOT EXISTS idx_contratantes_cnpj ON contratantes (cnpj)`
+          `CREATE INDEX IF NOT EXISTS idx_tomadors_cnpj ON tomadors (cnpj)`
         );
         await client.query(
-          `CREATE INDEX IF NOT EXISTS idx_contratantes_ativa ON contratantes (ativa)`
+          `CREATE INDEX IF NOT EXISTS idx_tomadors_ativa ON tomadors (ativa)`
         );
         await client.query(
-          `CREATE INDEX IF NOT EXISTS idx_contratantes_tipo_ativa ON contratantes (tipo, ativa)`
+          `CREATE INDEX IF NOT EXISTS idx_tomadors_tipo_ativa ON tomadors (tipo, ativa)`
         );
       } catch (err) {
         console.warn(
-          'Falha ao adicionar colunas/indexes em contratantes:',
+          'Falha ao adicionar colunas/indexes em tomadors:',
           err.message || err
         );
       }
@@ -575,7 +575,7 @@ if (typeof beforeAll === 'function') {
 
       await client.end();
       console.log(
-        '✅ Bootstrap de DB: contratantes e views assegurados para testes'
+        '✅ Bootstrap de DB: tomadors e views assegurados para testes'
       );
     } catch (err) {
       console.warn(

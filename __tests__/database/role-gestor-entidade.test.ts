@@ -5,7 +5,7 @@
  * Valida as mudancas implementadas:
  * - Migration 206: Role gestor existe com ID=5
  * - Migration 206: 8 permissions associadas ao role
- * - Migration 207: Helper function current_user_contratante_id()
+ * - Migration 207: Helper function current_user_tomador_id()
  * - Migration 208: Tabelas sincronizadas com Neon
  */
 
@@ -49,8 +49,8 @@ describe('Role gestor - Database Integration', () => {
           action: 'read',
         },
         {
-          name: 'read:contratante:own',
-          resource: 'contratantes',
+          name: 'read:tomador:own',
+          resource: 'tomadors',
           action: 'read',
         },
         {
@@ -61,8 +61,8 @@ describe('Role gestor - Database Integration', () => {
         { name: 'read:laudos:entidade', resource: 'laudos', action: 'read' },
         { name: 'read:lotes:entidade', resource: 'lotes', action: 'read' },
         {
-          name: 'write:contratante:own',
-          resource: 'contratantes',
+          name: 'write:tomador:own',
+          resource: 'tomadors',
           action: 'write',
         },
         {
@@ -107,34 +107,34 @@ describe('Role gestor - Database Integration', () => {
   });
 
   describe('Migration 207 - Helper Function', () => {
-    it('deve ter funcao current_user_contratante_id criada', async () => {
+    it('deve ter funcao current_user_tomador_id criada', async () => {
       const result = await query(
         `SELECT proname, prorettype::regtype as return_type
          FROM pg_proc
          WHERE proname = $1`,
-        ['current_user_contratante_id']
+        ['current_user_tomador_id']
       );
 
       expect(result.rows).toHaveLength(1);
       expect(result.rows[0]).toMatchObject({
-        proname: 'current_user_contratante_id',
+        proname: 'current_user_tomador_id',
         return_type: 'integer',
       });
     });
 
     it('deve retornar NULL quando nao ha contexto', async () => {
       const result = await query(
-        'SELECT current_user_contratante_id() as result'
+        'SELECT current_user_tomador_id() as result'
       );
 
       expect(result.rows[0].result).toBeNull();
     });
 
-    it('deve retornar contratante_id quando contexto existe', async () => {
+    it('deve retornar tomador_id quando contexto existe', async () => {
       await query(`BEGIN`);
-      await query(`SET LOCAL app.current_user_contratante_id = '123'`);
+      await query(`SET LOCAL app.current_user_tomador_id = '123'`);
       const result = await query(
-        'SELECT current_user_contratante_id() as result'
+        'SELECT current_user_tomador_id() as result'
       );
       await query(`ROLLBACK`);
 
@@ -260,24 +260,24 @@ describe('Role gestor - Database Integration', () => {
   });
 
   describe('Validacao de Funcionario Real', () => {
-    it('deve permitir funcionario com perfil gestor e contratante_id', async () => {
+    it('deve permitir funcionario com perfil gestor e tomador_id', async () => {
       // Validar que estrutura permite o registro existente no Neon
       const result = await query(
         `SELECT 
            COUNT(*) FILTER (WHERE perfil = 'gestor') as gestor_count,
-           COUNT(*) FILTER (WHERE perfil = 'gestor' AND contratante_id IS NOT NULL) as com_contratante
+           COUNT(*) FILTER (WHERE perfil = 'gestor' AND tomador_id IS NOT NULL) as com_tomador
          FROM funcionarios`
       );
 
       // Pode ter 0 ou mais, mas estrutura deve permitir
       const gestorCount = parseInt(result.rows[0].gestor_count);
-      const comContratante = parseInt(result.rows[0].com_contratante);
+      const comtomador = parseInt(result.rows[0].com_tomador);
 
       expect(gestorCount).toBeGreaterThanOrEqual(0);
 
-      // Se houver gestores, devem ter contratante_id
+      // Se houver gestores, devem ter tomador_id
       if (gestorCount > 0) {
-        expect(comContratante).toBeGreaterThan(0);
+        expect(comtomador).toBeGreaterThan(0);
       }
     });
   });

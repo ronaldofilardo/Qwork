@@ -1,11 +1,7 @@
 import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
-import {
-  getFuncionariosPorLote,
-  getLoteInfo,
-  getLoteEstatisticas,
-} from '@/lib/queries';
+import { getFuncionariosPorLote, getLoteInfo } from '@/lib/queries';
+import { transactionWithContext } from '@/lib/db-security';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
 
 export const dynamic = 'force-dynamic';
 
@@ -73,89 +69,121 @@ export const GET = async (
       );
     }
 
-    // Buscar estatísticas do lote
-    const estatisticas = await getLoteEstatisticas(parseInt(loteId));
+    // Buscar estatísticas e funcionários dentro de transactionWithContext para RLS funcionar
+    let estatisticas: any;
+    let funcionarios: any[];
+    let dadosInativacao: any = {};
+    let funcionariosComGrupos: any[] = [];
 
-    // Buscar funcionários do lote usando a função utilitária
-    const funcionarios = await getFuncionariosPorLote(
-      parseInt(loteId),
-      parseInt(empresaId),
-      clinicaId
-    );
+    try {
+      await transactionWithContext(async (queryTx) => {
+        // Buscar estatísticas do lote
+        const statsResult = await queryTx(
+          `
+          SELECT
+            COUNT(a.id) as total_avaliacoes,
+            COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
+            COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
+            COUNT(CASE WHEN a.status = 'iniciada' OR a.status = 'em_andamento' THEN 1 END) as avaliacoes_pendentes
+          FROM avaliacoes a
+          WHERE a.lote_id = $1
+        `,
+          [loteId]
+        );
+        estatisticas = statsResult.rows[0];
 
-    // Buscar dados de inativação para todas as avaliações do lote
-    const inativacaoResult = await query(
-      `
-      SELECT
-        id as avaliacao_id,
-        inativada_em as data_inativacao,
-        motivo_inativacao
-      FROM avaliacoes
-      WHERE lote_id = $1 AND status = 'inativada'
-    `,
-      [loteId]
-    );
+        // Buscar funcionários do lote
+        funcionarios = await getFuncionariosPorLote(
+          parseInt(loteId),
+          parseInt(empresaId),
+          clinicaId
+        );
 
-    const dadosInativacao = inativacaoResult.rows.reduce(
-      (acc: any, row: any) => {
-        acc[row.avaliacao_id] = {
-          data_inativacao: row.data_inativacao,
-          motivo_inativacao: row.motivo_inativacao,
-        };
-        return acc;
-      },
-      {}
-    );
+        // Buscar dados de inativação para todas as avaliações do lote
+        const inativacaoResult = await queryTx(
+          `
+          SELECT
+            id as avaliacao_id,
+            inativada_em as data_inativacao,
+            motivo_inativacao
+          FROM avaliacoes
+          WHERE lote_id = $1 AND status = 'inativada'
+        `,
+          [loteId]
+        );
 
-    // Calcular médias dos grupos para cada funcionário
-    const funcionariosComGrupos = await Promise.all(
-      funcionarios.map(async (func) => {
-        const mediasGrupos: { [key: string]: number } = {};
+        dadosInativacao = inativacaoResult.rows.reduce((acc: any, row: any) => {
+          acc[row.avaliacao_id] = {
+            data_inativacao: row.data_inativacao,
+            motivo_inativacao: row.motivo_inativacao,
+          };
+          return acc;
+        }, {});
 
-        // Apenas calcular se avaliação está concluída
-        if (func.status_avaliacao === 'concluido') {
-          const respostasResult = await query(
-            `
-            SELECT grupo, AVG(valor) as media
-            FROM respostas
-            WHERE avaliacao_id = $1
-            GROUP BY grupo
-            ORDER BY grupo
-          `,
-            [func.avaliacao_id]
-          );
+        // Calcular médias dos grupos para cada funcionário
+        funcionariosComGrupos = await Promise.all(
+          funcionarios.map(async (func) => {
+            const mediasGrupos: { [key: string]: number } = {};
 
-          respostasResult.rows.forEach((row: any) => {
-            mediasGrupos[`g${row.grupo}`] = parseFloat(row.media);
-          });
-        }
+            // Apenas calcular se avaliação está concluída
+            if (
+              func.status_avaliacao === 'concluida' ||
+              func.status_avaliacao === 'concluido'
+            ) {
+              const respostasResult = await queryTx(
+                `
+                SELECT grupo, AVG(valor) as media
+                FROM respostas
+                WHERE avaliacao_id = $1
+                GROUP BY grupo
+                ORDER BY grupo
+              `,
+                [func.avaliacao_id]
+              );
 
-        // Incluir dados de inativação se existirem
-        const dadosInativacaoAvaliacao =
-          dadosInativacao[func.avaliacao_id] || {};
+              respostasResult.rows.forEach((row: any) => {
+                mediasGrupos[`g${row.grupo}`] = parseFloat(row.media);
+              });
+            }
 
-        return {
-          cpf: func.cpf,
-          nome: func.nome,
-          setor: func.setor,
-          funcao: func.funcao,
-          matricula: func.matricula,
-          nivel_cargo: func.nivel_cargo,
-          turno: func.turno,
-          escala: func.escala,
-          avaliacao: {
-            id: func.avaliacao_id,
-            status: func.status_avaliacao,
-            data_inicio: func.data_inicio,
-            data_conclusao: func.data_conclusao,
-            data_inativacao: dadosInativacaoAvaliacao.data_inativacao || null,
-            motivo_inativacao:
-              dadosInativacaoAvaliacao.motivo_inativacao || null,
-          },
-          grupos: mediasGrupos,
-        };
-      })
-    );
+            // Incluir dados de inativação se existirem
+            const dadosInativacaoAvaliacao =
+              dadosInativacao[func.avaliacao_id] || {};
+
+            return {
+              cpf: func.cpf,
+              nome: func.nome,
+              setor: func.setor,
+              funcao: func.funcao,
+              matricula: func.matricula,
+              nivel_cargo: func.nivel_cargo,
+              turno: func.turno,
+              escala: func.escala,
+              avaliacao: {
+                id: func.avaliacao_id,
+                status: func.status_avaliacao,
+                data_inicio: func.data_inicio,
+                data_conclusao: func.data_conclusao,
+                data_inativacao:
+                  dadosInativacaoAvaliacao.data_inativacao || null,
+                motivo_inativacao:
+                  dadosInativacaoAvaliacao.motivo_inativacao || null,
+              },
+              grupos: mediasGrupos,
+            };
+          })
+        );
+      });
+    } catch (error) {
+      console.error('Erro ao buscar dados do lote em transação:', error);
+      return NextResponse.json(
+        {
+          error: 'Erro ao buscar dados do lote',
+          success: false,
+        },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,

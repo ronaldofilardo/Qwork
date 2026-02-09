@@ -6,15 +6,15 @@
 
 /**
  * Tabela: funcionarios
+ * IMPORTANTE: Relacionamentos com entidades/clínicas/empresas são gerenciados via
+ * tabelas intermediárias funcionarios_entidades e funcionarios_clinicas
  */
 export interface Funcionario {
+  id?: number;
   cpf: string;
   nome: string;
-  perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
+  perfil: 'funcionario' | 'rh' | 'admin' | 'emissor' | 'gestor';
   ativo: boolean;
-  clinica_id?: number;
-  empresa_id?: number;
-  entidade_id?: number;
   setor?: string;
   funcao?: string;
   matricula?: string;
@@ -23,6 +23,37 @@ export interface Funcionario {
   escala?: string;
   email?: string;
   senha_hash?: string;
+  data_nascimento?: string;
+  usuario_tipo?: 'funcionario' | 'rh' | 'gestor' | 'emissor' | 'admin';
+}
+
+/**
+ * Tabela: funcionarios_entidades
+ * Relacionamento M:N entre funcionários e entidades (tomadores tipo='entidade')
+ * Entidades são empresas particulares que administram seus próprios funcionários
+ */
+export interface FuncionarioEntidade {
+  id: number;
+  funcionario_id: number;
+  entidade_id: number;
+  ativo: boolean;
+  data_vinculo: string;
+  data_desvinculo?: string;
+}
+
+/**
+ * Tabela: funcionarios_clinicas
+ * Relacionamento M:N entre funcionários e empresas clientes (via clínicas)
+ * Clínicas de medicina ocupacional administram empresas (clientes) e seus funcionários
+ */
+export interface FuncionarioClinica {
+  id: number;
+  funcionario_id: number;
+  clinica_id: number;
+  empresa_id: number;
+  ativo: boolean;
+  data_vinculo: string;
+  data_desvinculo?: string;
 }
 
 /**
@@ -117,12 +148,15 @@ export interface Laudo {
  */
 export interface FuncionarioComAvaliacao extends Omit<
   Funcionario,
-  'perfil' | 'ativo' | 'clinica_id' | 'email' | 'senha_hash'
+  'perfil' | 'ativo' | 'email' | 'senha_hash'
 > {
   avaliacao_id: number;
   status_avaliacao: string;
   data_conclusao?: string;
   data_inicio: string;
+  // Identificadores de contexto (entidade ou clínica)
+  source_id?: number;
+  source_type?: 'entidade' | 'clinica';
 }
 
 /**

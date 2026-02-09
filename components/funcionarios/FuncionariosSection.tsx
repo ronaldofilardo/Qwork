@@ -69,8 +69,8 @@ interface Funcionario {
 interface FuncionariosSectionProps {
   /** Tipo de contexto: 'entidade' ou 'clinica' */
   contexto: 'entidade' | 'clinica';
-  /** ID da entidade (contratante_id) ou clínica */
-  contratanteId?: number;
+  /** ID da entidade (tomador_id) ou clínica */
+  tomadorId?: number;
   /** ID da empresa (para clínica) */
   empresaId?: number;
   /** Nome da empresa (para exibição) */
@@ -83,7 +83,7 @@ interface FuncionariosSectionProps {
 
 export default function FuncionariosSection({
   contexto,
-  contratanteId,
+  tomadorId,
   empresaId,
   empresaNome,
   onRefresh,
@@ -160,7 +160,7 @@ export default function FuncionariosSection({
   useEffect(() => {
     loadFuncionarios();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [contexto, empresaId, contratanteId]);
+  }, [contexto, empresaId, tomadorId]);
 
   // Filtrar funcionários
   useEffect(() => {
@@ -747,4 +747,3 @@ export default function FuncionariosSection({
     </div>
   );
 }
-

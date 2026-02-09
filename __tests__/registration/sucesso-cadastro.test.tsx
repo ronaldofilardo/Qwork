@@ -10,9 +10,9 @@ import userEvent from '@testing-library/user-event';
 import SucessoCadastroPage from '@/app/sucesso-cadastro/page';
 
 /**
- * Interface para sessão de contratante
+ * Interface para sessão de tomador
  */
-interface MockContratante {
+interface Mocktomador {
   id: number;
   nome: string;
   tipo?: 'empresa' | 'clinica' | 'entidade';
@@ -85,8 +85,8 @@ describe('SucessoCadastroPage', () => {
     // Arrange: Sem ID na URL
     mockGet.mockReturnValue(null);
 
-    // Arrange: Sessão retorna contratante com pagamento confirmado
-    const mockContratante: MockContratante = {
+    // Arrange: Sessão retorna tomador com pagamento confirmado
+    const mocktomador: Mocktomador = {
       id: 1,
       nome: 'Empresa Teste',
       pagamento_confirmado: true,
@@ -96,7 +96,7 @@ describe('SucessoCadastroPage', () => {
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ contratante: mockContratante }),
+        json: () => Promise.resolve({ tomador: mocktomador }),
       } as Response)
     );
 
@@ -118,7 +118,7 @@ describe('SucessoCadastroPage', () => {
     mockGet.mockReturnValue(null);
 
     // Arrange: Sessão retorna clínica com pagamento confirmado, sem contrato
-    const mockClinica: MockContratante = {
+    const mockClinica: Mocktomador = {
       id: 77,
       nome: 'Clinica Nova',
       tipo: 'clinica',
@@ -129,7 +129,7 @@ describe('SucessoCadastroPage', () => {
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ contratante: mockClinica }),
+        json: () => Promise.resolve({ tomador: mockClinica }),
       } as Response)
     );
 
@@ -142,7 +142,7 @@ describe('SucessoCadastroPage', () => {
     });
 
     // Arrange: Agora testar tipo 'entidade'
-    const mockEntidade: MockContratante = {
+    const mockEntidade: Mocktomador = {
       id: 88,
       nome: 'Entidade Teste',
       tipo: 'entidade',
@@ -153,7 +153,7 @@ describe('SucessoCadastroPage', () => {
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ contratante: mockEntidade }),
+        json: () => Promise.resolve({ tomador: mockEntidade }),
       } as Response)
     );
 
@@ -184,7 +184,7 @@ describe('SucessoCadastroPage', () => {
       } as Response)
     );
 
-    // Arrange: API /api/public/contratante retorna erro
+    // Arrange: API /api/public/tomador retorna erro
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: false,
@@ -221,8 +221,8 @@ describe('SucessoCadastroPage', () => {
       } as Response)
     );
 
-    // Arrange: API /api/public/contratante retorna dados básicos
-    const mockContratanteBasico: MockContratante = {
+    // Arrange: API /api/public/tomador retorna dados básicos
+    const mocktomadorBasico: Mocktomador = {
       id: 123,
       nome: 'Empresa Teste',
       pagamento_confirmado: false,
@@ -232,7 +232,7 @@ describe('SucessoCadastroPage', () => {
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ contratante: mockContratanteBasico }),
+        json: () => Promise.resolve({ tomador: mocktomadorBasico }),
       } as Response)
     );
 
@@ -270,8 +270,8 @@ describe('SucessoCadastroPage', () => {
     // Arrange: Sem ID na URL
     mockGet.mockReturnValue(null);
 
-    // Arrange: 1) /api/auth/session retorna contratante com plano
-    const mockContratanteComPlano: MockContratante = {
+    // Arrange: 1) /api/auth/session retorna tomador com plano
+    const mocktomadorComPlano: Mocktomador = {
       id: 55,
       nome: 'Empresa Teste',
       pagamento_confirmado: false,
@@ -282,7 +282,7 @@ describe('SucessoCadastroPage', () => {
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ contratante: mockContratanteComPlano }),
+        json: () => Promise.resolve({ tomador: mocktomadorComPlano }),
       } as Response)
     );
 
@@ -309,7 +309,7 @@ describe('SucessoCadastroPage', () => {
     (global.fetch as Mock).mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
-        json: () => Promise.resolve({ success: true, contratante_id: 55 }),
+        json: () => Promise.resolve({ success: true, tomador_id: 55 }),
       } as Response)
     );
 

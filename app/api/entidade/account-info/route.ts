@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = await requireEntity();
-    const entidadeId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     // Buscar informações da entidade
     const entidadeQuery = `
@@ -23,7 +23,7 @@ export async function GET() {
         e.estado,
         e.criado_em
       FROM entidades e
-      WHERE e.id = $1 AND e.tipo = 'entidade'
+      WHERE e.id = $1
       LIMIT 1
     `;
 
@@ -124,7 +124,7 @@ export async function GET() {
             cp.created_at as criado_em
           FROM contratos_planos cp
           LEFT JOIN planos p ON cp.plano_id = p.id
-          WHERE cp.contratante_id = $1
+          WHERE cp.entidade_id = $1
           ORDER BY cp.created_at DESC
           LIMIT 1
         `;

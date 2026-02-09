@@ -47,7 +47,7 @@ const pool = new Pool({
       a.lote_id,
       a.funcionario_id,
       f.nome AS funcionario_nome,
-      f.contratante_id,
+      f.tomador_id,
       f.clinica_id AS funcionario_clinica
     FROM avaliacoes a
     LEFT JOIN funcionarios f ON f.id = a.funcionario_id
@@ -61,7 +61,7 @@ const pool = new Pool({
       `      → funcionario_id: ${aval.funcionario_id} (${aval.funcionario_nome || 'N/A'})`
     );
     console.log(
-      `      → funcionario_contratante: ${aval.contratante_id || 'NULL'}`
+      `      → funcionario_tomador: ${aval.tomador_id || 'NULL'}`
     );
     console.log(
       `      → funcionario_clinica: ${aval.funcionario_clinica || 'NULL'}\n`

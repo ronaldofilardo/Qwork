@@ -30,7 +30,7 @@ export interface IPlanoStrategy {
    */
   gerarConteudoContrato(
     dados: DadosPlano,
-    dadosContratante: DadosContratante
+    dadostomador: Dadostomador
   ): Promise<string>;
 
   /**
@@ -42,9 +42,9 @@ export interface IPlanoStrategy {
   ): ResultadoPagamento;
 
   /**
-   * Verificar se contratante pode usar este plano
+   * Verificar se tomador pode usar este plano
    */
-  verificarElegibilidade(contratanteId: number): boolean;
+  verificarElegibilidade(tomadorId: number): boolean;
 }
 
 /**
@@ -64,7 +64,7 @@ export interface DadosPlano {
   parcelas?: number;
 }
 
-export interface DadosContratante {
+export interface Dadostomador {
   id: number;
   nome: string;
   cnpj: string;
@@ -143,7 +143,7 @@ export class PlanoFixoStrategy implements IPlanoStrategy {
 
   async gerarConteudoContrato(
     dados: DadosPlano,
-    dadosContratante: DadosContratante
+    dadostomador: Dadostomador
   ): Promise<string> {
     const valorTotal = this.calcularValorTotal(dados);
     const dataAtual = new Date().toLocaleDateString('pt-BR');
@@ -154,15 +154,15 @@ QWORK - AVALIAÇÃO PSICOSSOCIAL
 
 Data: ${dataAtual}
 
-CONTRATANTE: ${dadosContratante.nome}
-CNPJ: ${dadosContratante.cnpj}
-Tipo: ${dadosContratante.tipo === 'clinica' ? 'Serviço de Medicina Ocupacional' : 'Empresa Privada'}
-Endereço: ${dadosContratante.endereco}, ${dadosContratante.cidade}/${dadosContratante.estado}
+tomador: ${dadostomador.nome}
+CNPJ: ${dadostomador.cnpj}
+Tipo: ${dadostomador.tipo === 'clinica' ? 'Serviço de Medicina Ocupacional' : 'Empresa Privada'}
+Endereço: ${dadostomador.endereco}, ${dadostomador.cidade}/${dadostomador.estado}
 
 Representante Legal:
-Nome: ${dadosContratante.responsavel.nome}
-CPF: ${dadosContratante.responsavel.cpf}
-Cargo: ${dadosContratante.responsavel.cargo}
+Nome: ${dadostomador.responsavel.nome}
+CPF: ${dadostomador.responsavel.cpf}
+Cargo: ${dadostomador.responsavel.cargo}
 
 CLÁUSULA PRIMEIRA - DO OBJETO
 Prestação de serviços de avaliação psicossocial através da plataforma QWork.
@@ -196,7 +196,7 @@ Vigência de 12 (doze) meses a partir da data de assinatura.
     };
   }
 
-  verificarElegibilidade(_contratanteId: number): boolean {
+  verificarElegibilidade(_tomadorId: number): boolean {
     // Plano fixo está disponível para todos
     return true;
   }
@@ -243,7 +243,7 @@ export class PlanoPersonalizadoStrategy implements IPlanoStrategy {
 
   async gerarConteudoContrato(
     dados: DadosPlano,
-    dadosContratante: DadosContratante
+    dadostomador: Dadostomador
   ): Promise<string> {
     if (!dados.valorPorFuncionario) {
       throw new Error(
@@ -260,15 +260,15 @@ QWORK - AVALIAÇÃO PSICOSSOCIAL PARA MEDICINA OCUPACIONAL
 
 Data: ${dataAtual}
 
-CONTRATANTE: ${dadosContratante.nome}
-CNPJ: ${dadosContratante.cnpj}
+tomador: ${dadostomador.nome}
+CNPJ: ${dadostomador.cnpj}
 Tipo: Serviço de Medicina Ocupacional
-Endereço: ${dadosContratante.endereco}, ${dadosContratante.cidade}/${dadosContratante.estado}
+Endereço: ${dadostomador.endereco}, ${dadostomador.cidade}/${dadostomador.estado}
 
 Representante Legal:
-Nome: ${dadosContratante.responsavel.nome}
-CPF: ${dadosContratante.responsavel.cpf}
-Cargo: ${dadosContratante.responsavel.cargo}
+Nome: ${dadostomador.responsavel.nome}
+CPF: ${dadostomador.responsavel.cpf}
+Cargo: ${dadostomador.responsavel.cargo}
 
 CLÁUSULA PRIMEIRA - DO OBJETO
 Prestação de serviços personalizados de avaliação psicossocial para Medicina Ocupacional.
@@ -307,9 +307,9 @@ CLÁUSULA QUINTA - DAS ESPECIFICIDADES DO SERVIÇO MÉDICO OCUPACIONAL
     };
   }
 
-  verificarElegibilidade(_contratanteId: number): boolean {
+  verificarElegibilidade(_tomadorId: number): boolean {
     // Plano personalizado disponível apenas para serviços de Medicina Ocupacional
-    // Em produção, verificar tipo do contratante no banco
+    // Em produção, verificar tipo do tomador no banco
     return true;
   }
 }

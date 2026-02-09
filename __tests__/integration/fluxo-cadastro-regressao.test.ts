@@ -23,13 +23,13 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
   const cnpjBase = String(ts).slice(-11) + '0001';
   const cnpjFixo = `9${cnpjBase}90`.slice(0, 14);
   const cpfResp = `${String(ts).slice(-11, -1)}0`;
-  let contratanteId: number | null = null;
+  let tomadorId: number | null = null;
   let contratoId: number | null = null;
   let pagamentoId: number | null = null;
 
   beforeEach(() => {
     // Reset de variáveis antes de cada teste
-    contratanteId = null;
+    tomadorId = null;
     contratoId = null;
     pagamentoId = null;
   });
@@ -41,8 +41,8 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
         await query('DELETE FROM pagamentos WHERE id = $1', [pagamentoId]);
       if (contratoId)
         await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
-      if (contratanteId)
-        await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+      if (tomadorId)
+        await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
       await query('DELETE FROM funcionarios WHERE cpf = $1', [cpfResp]);
       await query('DELETE FROM notificacoes WHERE destinatario_cpf = $1', [
         cpfResp,
@@ -54,7 +54,7 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
       console.warn('Limpeza pós-teste incompleta:', err);
     }
 
-    contratanteId = null;
+    tomadorId = null;
     contratoId = null;
     pagamentoId = null;
   });
@@ -72,7 +72,7 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
   /**
    * @test Fluxo completo com plano fixo (pagamento à vista)
    * @description Valida:
-   * 1. Criação de contratante com plano fixo
+   * 1. Criação de tomador com plano fixo
    * 2. Criação e aceite de contrato
    * 3. Inicialização de pagamento
    * 4. Confirmação de pagamento
@@ -80,8 +80,8 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
    * 6. Criação de conta gestor
    * 7. Primeiro login e hash bcrypt
    */
-  test('Plano fixo: cria contratante, confirma pagamento e permite login do gestor', async () => {
-    // Arrange - Inserir contratante com plano fixo
+  test('Plano fixo: cria tomador, confirma pagamento e permite login do gestor', async () => {
+    // Arrange - Inserir tomador com plano fixo
     const plano = await query(
       "SELECT id FROM planos WHERE tipo = 'fixo' AND ativo = true LIMIT 1"
     );
@@ -92,7 +92,7 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
     const planoId = plano.rows[0].id;
 
     const res = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, 
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         endereco, cidade, estado, cep,
@@ -112,16 +112,16 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
       ]
     );
 
-    contratanteId = res.rows[0].id;
-    expect(contratanteId).toBeGreaterThan(0);
+    tomadorId = res.rows[0].id;
+    expect(tomadorId).toBeGreaterThan(0);
 
     // Act 1 - Criar e aceitar contrato
     const contratoRes = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, aceito, hash_contrato, criado_em)
+      `INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
        SELECT $1, plano_id, true, md5(random()::text), CURRENT_TIMESTAMP
-       FROM contratantes WHERE id = $1
+       FROM tomadors WHERE id = $1
        RETURNING id`,
-      [contratanteId]
+      [tomadorId]
     );
 
     contratoId = contratoRes.rows[0].id;
@@ -129,10 +129,10 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
 
     // Act 2 - Inicializar pagamento
     const pagamentoRes = await query(
-      `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
+      `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
        VALUES ($1, $2, 1500.00, 'pendente', 'boleto', 1, CURRENT_TIMESTAMP)
        RETURNING id`,
-      [contratanteId, contratoId]
+      [tomadorId, contratoId]
     );
 
     pagamentoId = pagamentoRes.rows[0].id;
@@ -169,20 +169,20 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
       'Pagamento deve estar marcado como pago'
     );
 
-    // Assert 3 - Verificar ativação do contratante
-    const contratanteCheck = await query(
-      'SELECT status, ativa, pagamento_confirmado, aprovado_em FROM contratantes WHERE id = $1',
-      [contratanteId]
+    // Assert 3 - Verificar ativação do tomador
+    const tomadorCheck = await query(
+      'SELECT status, ativa, pagamento_confirmado, aprovado_em FROM tomadors WHERE id = $1',
+      [tomadorId]
     );
-    expect(contratanteCheck.rows[0].status).toBe(
+    expect(tomadorCheck.rows[0].status).toBe(
       'aprovado',
       'Status deve ser aprovado'
     );
-    expect(contratanteCheck.rows[0].ativa).toBe(
+    expect(tomadorCheck.rows[0].ativa).toBe(
       true,
-      'Contratante deve estar ativo'
+      'tomador deve estar ativo'
     );
-    expect(contratanteCheck.rows[0].pagamento_confirmado).toBe(
+    expect(tomadorCheck.rows[0].pagamento_confirmado).toBe(
       true,
       'Pagamento deve estar confirmado'
     );
@@ -237,7 +237,7 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
   /**
    * @test Fluxo de pagamento parcelado com notificações
    * @description Valida:
-   * 1. Criação de contratante com pagamento parcelado (3 parcelas)
+   * 1. Criação de tomador com pagamento parcelado (3 parcelas)
    * 2. Confirmação de pagamento parcelado
    * 3. Criação automática de notificações para parcelas futuras
    */
@@ -252,7 +252,7 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
     const cnpjParcelado = cnpjFixo.slice(0, -2) + '55';
 
     const insert = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, 
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         endereco, cidade, estado, cep,
@@ -272,26 +272,26 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
       ]
     );
 
-    contratanteId = insert.rows[0].id;
-    expect(contratanteId).toBeGreaterThan(0);
+    tomadorId = insert.rows[0].id;
+    expect(tomadorId).toBeGreaterThan(0);
 
     // Act 1 - Criar contrato
     const contratoRes = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, aceito, hash_contrato, criado_em)
+      `INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
        SELECT $1, plano_id, true, md5(random()::text), CURRENT_TIMESTAMP
-       FROM contratantes WHERE id = $1
+       FROM tomadors WHERE id = $1
        RETURNING id`,
-      [contratanteId]
+      [tomadorId]
     );
 
     contratoId = contratoRes.rows[0].id;
 
     // Act 2 - Inicializar pagamento com 3 parcelas
     const pagamentoRes = await query(
-      `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
+      `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
        VALUES ($1, $2, 3000.00, 'pendente', 'boleto', 3, CURRENT_TIMESTAMP)
        RETURNING id`,
-      [contratanteId, contratoId]
+      [tomadorId, contratoId]
     );
 
     pagamentoId = pagamentoRes.rows[0].id;
@@ -322,21 +322,21 @@ describe('Fluxo Cadastro - Suite de Regressão', () => {
 
     // Assert 2 - Procurar notificações para parcelas futuras
     const parcelsNotifs = await query(
-      `SELECT * FROM notificacoes WHERE destinatario_tipo = 'contratante' AND tipo = 'parcela_pendente' AND destinatario_cpf IS NOT NULL`
+      `SELECT * FROM notificacoes WHERE destinatario_tipo = 'tomador' AND tipo = 'parcela_pendente' AND destinatario_cpf IS NOT NULL`
     );
 
-    // Assert 3 - Deve encontrar notificações associadas ao contratante atual
+    // Assert 3 - Deve encontrar notificações associadas ao tomador atual
     const found = parcelsNotifs.rows.some((r: any) => {
       const ctx =
         typeof r.dados_contexto === 'string'
           ? JSON.parse(r.dados_contexto)
           : r.dados_contexto;
-      return ctx && ctx.contratante_id === contratanteId;
+      return ctx && ctx.tomador_id === tomadorId;
     });
 
     expect(found).toBe(
       true,
-      'Devem existir notificações de parcelas futuras para o contratante'
+      'Devem existir notificações de parcelas futuras para o tomador'
     );
   }, 20000);
 });

@@ -3,7 +3,7 @@ import { query } from '../lib/db';
 async function debug() {
   try {
     const contrat = await query(
-      "SELECT id FROM contratantes WHERE cnpj='55566677000188'"
+      "SELECT id FROM tomadors WHERE cnpj='55566677000188'"
     );
     console.log('contrat:', contrat.rows);
 
@@ -11,7 +11,7 @@ async function debug() {
     if (!contratId) return;
 
     const pagamentos = await query(
-      'SELECT id, status, numero_parcelas, criado_em, data_pagamento FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC',
+      'SELECT id, status, numero_parcelas, criado_em, data_pagamento FROM pagamentos WHERE tomador_id = $1 ORDER BY criado_em DESC',
       [contratId]
     );
     console.log('pagamentos:', pagamentos.rows);

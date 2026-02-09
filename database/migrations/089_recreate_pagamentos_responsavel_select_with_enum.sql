@@ -8,7 +8,7 @@ CREATE POLICY pagamentos_responsavel_select ON pagamentos
     FOR SELECT TO PUBLIC
     USING (
         EXISTS (
-            SELECT 1 FROM contratantes c
+            SELECT 1 FROM tomadores c
             WHERE c.id = pagamentos.contratante_id
             AND c.responsavel_cpf = current_user_cpf()
             AND c.status = 'aprovado'::status_aprovacao_enum

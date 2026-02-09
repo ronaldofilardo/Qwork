@@ -38,14 +38,14 @@ resultados_block_admin        | RESTRICTIVE | ALL
 
 ---
 
-#### 2. `contratantes_admin_all` (contratantes)
+#### 2. `tomadores_admin_all` (tomadores)
 
 ```sql
--- OBSERVAÇÃO: esta política foi REMOVIDA. Admin NÃO gerencia contratantes/entidades.
+-- OBSERVAÇÃO: esta política foi REMOVIDA. Admin NÃO gerencia tomadores/entidades.
 -- Recomendação: uso de políticas específicas para gestões de gestor.
 ```
 
-**Justificativa**: ❌ Política removida. Admin não tem acesso operacional a contratantes; gestores de entidade são responsáveis.
+**Justificativa**: ❌ Política removida. Admin não tem acesso operacional a tomadores; gestores de entidade são responsáveis.
 
 ---
 
@@ -95,12 +95,12 @@ USING (
 
 ## 📊 RESUMO
 
-| Categoria               | Quantidade | Status     | Descrição                                              |
-| ----------------------- | ---------- | ---------- | ------------------------------------------------------ |
-| **RESTRICTIVE Block**   | 7          | ✅ CORRETO | Bloqueiam admin de dados operacionais                  |
-| **PERMISSIVE Admin**    | 5          | ✅ CORRETO | Tabelas administrativas (clinicas, contratantes, RBAC) |
-| **PERMISSIVE Restrita** | 1          | ✅ CORRETO | Funcionários RH/emissor apenas                         |
-| **TOTAL**               | 13         | ✅ CORRETO | Todas as políticas são legítimas                       |
+| Categoria               | Quantidade | Status     | Descrição                                           |
+| ----------------------- | ---------- | ---------- | --------------------------------------------------- |
+| **RESTRICTIVE Block**   | 7          | ✅ CORRETO | Bloqueiam admin de dados operacionais               |
+| **PERMISSIVE Admin**    | 5          | ✅ CORRETO | Tabelas administrativas (clinicas, tomadores, RBAC) |
+| **PERMISSIVE Restrita** | 1          | ✅ CORRETO | Funcionários RH/emissor apenas                      |
+| **TOTAL**               | 13         | ✅ CORRETO | Todas as políticas são legítimas                    |
 
 ---
 

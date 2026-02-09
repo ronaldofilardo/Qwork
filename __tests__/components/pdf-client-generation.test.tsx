@@ -30,7 +30,7 @@ describe('LaudoDownloadClient', () => {
     <html>
       <head><title>Laudo Teste</title></head>
       <body>
-        <h1>Laudo Psicossocial</h1>
+        <h1>Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)</h1>
         <p>Conteúdo do laudo para teste</p>
       </body>
     </html>

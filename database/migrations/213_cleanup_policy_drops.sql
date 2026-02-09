@@ -47,7 +47,7 @@ SELECT 'empresas_clientes', 'empresas_rh_update' UNION ALL
 SELECT 'empresas_clientes', 'empresas_block_admin' UNION ALL
 SELECT 'clinicas', 'clinicas_own_select' UNION ALL
 SELECT 'clinicas', 'clinicas_admin_all' UNION ALL
-SELECT 'contratantes', 'contratantes_admin_all' UNION ALL
+SELECT 'tomadores', 'tomadores_admin_all' UNION ALL
 SELECT 'roles', 'roles_admin_all' UNION ALL
 SELECT 'permissions', 'permissions_admin_all' UNION ALL
 SELECT 'role_permissions', 'role_permissions_admin_all' UNION ALL

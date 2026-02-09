@@ -15,7 +15,7 @@ Write-Host ""
 # Definir variáveis
 $MIGRATIONS_DIR = "database/migrations"
 $MIG_410 = "$MIGRATIONS_DIR/410_enforce_usuarios_only_for_accounts.sql"
-$MIG_420 = "$MIGRATIONS_DIR/420_rename_contratantes_to_entidades.sql"
+$MIG_420 = "$MIGRATIONS_DIR/420_rename_tomadores_to_entidades.sql"
 $DB_DEV = "nr-bps_db"
 $DB_TEST = "nr-bps_db_test"
 $DB_USER = "postgres"
@@ -24,7 +24,7 @@ $DB_PORT = "5432"
 
 Write-Host "Migrations a serem aplicadas:" -ForegroundColor Yellow
 Write-Host "  1. Migration 410: Enforce usuarios-only para contas" -ForegroundColor White
-Write-Host "  2. Migration 420: Rename contratantes → entidades" -ForegroundColor White
+Write-Host "  2. Migration 420: Rename tomadores → entidades" -ForegroundColor White
 Write-Host ""
 
 # Função para aplicar migration
@@ -88,12 +88,12 @@ if (-not $success) {
 }
 
 # ====================================================================
-# MIGRATION 420: Rename contratantes → entidades
+# MIGRATION 420: Rename tomadores → entidades
 # ====================================================================
 
 Write-Host ""
 Write-Host "==================================================" -ForegroundColor Cyan
-Write-Host "PARTE 2: MIGRATION 420 (Rename contratantes)" -ForegroundColor Cyan
+Write-Host "PARTE 2: MIGRATION 420 (Rename tomadores)" -ForegroundColor Cyan
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -128,5 +128,5 @@ Write-Host "  3. Validar aplicação e código atualizado" -ForegroundColor Whit
 Write-Host ""
 Write-Host "Arquivos a serem revisados:" -ForegroundColor Yellow
 Write-Host "  - database/migrations/410_enforce_usuarios_only_for_accounts.sql" -ForegroundColor White
-Write-Host "  - database/migrations/420_rename_contratantes_to_entidades.sql" -ForegroundColor White
+Write-Host "  - database/migrations/420_rename_tomadores_to_entidades.sql" -ForegroundColor White
 Write-Host ""

@@ -16,7 +16,7 @@ import crypto from 'crypto';
  * 3. Sistema calcula valor_total
  * 4. Sistema gera token único de acesso
  * 5. Sistema atualiza status para 'valor_definido'
- * 6. Sistema retorna link para envio ao contratante
+ * 6. Sistema retorna link para envio ao tomador
  *
  * Body:
  * - contratacao_id: ID do registro em contratacao_personalizada
@@ -24,7 +24,7 @@ import crypto from 'crypto';
  * - valor_por_funcionario: Valor negociado por funcionário
  *
  * Retorna:
- * - link_proposta: URL com token para contratante acessar e aceitar
+ * - link_proposta: URL com token para tomador acessar e aceitar
  */
 export async function POST(request: NextRequest) {
   try {
@@ -79,13 +79,13 @@ export async function POST(request: NextRequest) {
       const contratacaoResult = await query(
         `SELECT 
           cp.id,
-          cp.contratante_id,
+          cp.entidade_id,
           cp.status,
-          c.nome AS contratante_nome,
-          c.responsavel_email,
+          c.nome AS tomador_nome,
+          c.email AS responsavel_email,
           c.cnpj
         FROM contratacao_personalizada cp
-        JOIN contratantes c ON cp.contratante_id = c.id
+        JOIN entidades c ON cp.entidade_id = c.id
         WHERE cp.id = $1`,
         [contratacao_id]
       );
@@ -131,13 +131,13 @@ export async function POST(request: NextRequest) {
         [numFunc, valorFunc, valorTotal, token, expiracao, contratacao_id]
       );
 
-      // Atualizar contratante para aguardando_aceite
+      // Atualizar entidade para aguardando_aceite
       await query(
-        `UPDATE contratantes 
+        `UPDATE entidades 
         SET status = 'aguardando_aceite',
             atualizado_em = NOW()
         WHERE id = $1`,
-        [contratacao.contratante_id]
+        [contratacao.entidade_id]
       );
 
       // Registrar auditoria
@@ -146,8 +146,8 @@ export async function POST(request: NextRequest) {
         action: 'UPDATE',
         resourceId: contratacao_id,
         details: JSON.stringify({
-          contratante_id: contratacao.contratante_id,
-          contratante_nome: contratacao.contratante_nome,
+          entidade_id: contratacao.entidade_id,
+          tomador_nome: contratacao.tomador_nome,
           numero_funcionarios: numFunc,
           valor_por_funcionario: valorFunc,
           valor_total: valorTotal,
@@ -167,8 +167,8 @@ export async function POST(request: NextRequest) {
         JSON.stringify({
           event: 'personalizado_valor_definido',
           contratacao_id,
-          contratante_id: contratacao.contratante_id,
-          contratante_nome: contratacao.contratante_nome,
+          entidade_id: contratacao.entidade_id,
+          tomador_nome: contratacao.tomador_nome,
           numero_funcionarios: numFunc,
           valor_total: valorTotal,
           link_proposta: linkProposta,
@@ -190,9 +190,9 @@ export async function POST(request: NextRequest) {
             valor_por_funcionario: valorFunc,
             valor_total: valorTotal,
           },
-          contratante_info: {
-            id: contratacao.contratante_id,
-            nome: contratacao.contratante_nome,
+          tomador_info: {
+            id: contratacao.entidade_id,
+            nome: contratacao.tomador_nome,
             email: contratacao.responsavel_email,
             cnpj: contratacao.cnpj,
           },

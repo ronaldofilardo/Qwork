@@ -29,12 +29,12 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
 
   describe('🏢 Fluxo Completo: Account-Info + Autenticação', () => {
     const mockSession = {
-      contratante_id: 18,
+      tomador_id: 18,
       tipo: 'gestor',
       userId: 1,
     };
 
-    const mockContratante = {
+    const mocktomador = {
       id: 18,
       nome: 'RELEGERE',
       cnpj: '12345678000123',
@@ -46,7 +46,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
 
     const mockFuncionario = {
       id: 1,
-      contratante_id: 18,
+      tomador_id: 18,
       cpf: '87545772920',
       nome: 'Gestor RELEGERE',
       tipo: 'gestor',
@@ -94,14 +94,14 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       // Criar sessão
       await mockCreateSession({
         userId: mockFuncionario.id,
-        contratanteId: 18,
+        tomadorId: 18,
       });
       expect(mockCreateSession).toHaveBeenCalled();
 
       // 2. ACCOUNT-INFO
       mockGetSession.mockResolvedValue(mockSession);
       mockQuery
-        .mockResolvedValueOnce([mockContratante]) // contratantes
+        .mockResolvedValueOnce([mocktomador]) // tomadors
         .mockResolvedValueOnce([]) // contratos
         .mockResolvedValueOnce([]); // pagamentos
 
@@ -114,15 +114,15 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       const accountData = await response.json();
 
       expect(response.status).toBe(200);
-      expect(accountData.contratante.id).toBe(18);
-      expect(accountData.contratante.nome).toBe('RELEGERE');
+      expect(accountData.tomador.id).toBe(18);
+      expect(accountData.tomador.nome).toBe('RELEGERE');
 
-      // Verificar que usou contratantes, não empresas_clientes
+      // Verificar que usou tomadors, não empresas_clientes
       const queries = mockQuery.mock.calls;
-      const contratantesQuery = queries.find((call) =>
-        call[0].includes('FROM contratantes')
+      const tomadorsQuery = queries.find((call) =>
+        call[0].includes('FROM tomadors')
       );
-      expect(contratantesQuery).toBeTruthy();
+      expect(tomadorsQuery).toBeTruthy();
 
       // 3. LOGOUT
       mockDestroySession.mockResolvedValue(true);
@@ -165,7 +165,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       mockQuery.mockRejectedValueOnce(triggerError);
 
       await expect(
-        query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [18])
+        query('DELETE FROM entidades_senhas WHERE tomador_id = $1', [18])
       ).rejects.toThrow('OPERAÇÃO BLOQUEADA');
 
       // 2. USO DA FUNÇÃO SEGURA (DEVE FUNCIONAR)
@@ -185,7 +185,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       const mockAuditRecord = {
         audit_id: 1,
         operacao: 'DELETE',
-        contratante_nome: 'RELEGERE',
+        tomador_nome: 'RELEGERE',
         cpf: '87545772920',
         executado_por: 'sistema_teste',
         executado_em: new Date(),
@@ -209,21 +209,21 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
         {
           audit_id: 1,
           operacao: 'INSERT',
-          contratante_nome: 'RELEGERE',
+          tomador_nome: 'RELEGERE',
           cpf: '87545772920',
           executado_em: '2025-12-23T10:00:00Z',
         },
         {
           audit_id: 2,
           operacao: 'UPDATE',
-          contratante_nome: 'RELEGERE',
+          tomador_nome: 'RELEGERE',
           cpf: '87545772920',
           executado_em: '2025-12-23T11:00:00Z',
         },
         {
           audit_id: 3,
           operacao: 'DELETE',
-          contratante_nome: 'RELEGERE',
+          tomador_nome: 'RELEGERE',
           cpf: '87545772920',
           executado_em: '2025-12-23T12:00:00Z',
         },
@@ -246,8 +246,8 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
     test('🧹 Scripts antigos vs novos', async () => {
       // Simular execução do script antigo (perigoso)
       const scriptAntigoQuery = `
-        DELETE FROM entidades_senhas WHERE contratante_id IN (
-          SELECT id FROM contratantes WHERE tipo = 'entidade'
+        DELETE FROM entidades_senhas WHERE tomador_id IN (
+          SELECT id FROM tomadors WHERE tipo = 'entidade'
         );
       `;
 
@@ -276,7 +276,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       const mockExecutions = [
         { command: 'pg_dump', success: true, description: 'Backup criado' },
         {
-          command: 'psql -f clean-contratantes.sql',
+          command: 'psql -f clean-tomadors.sql',
           success: true,
           description: 'Limpeza executada',
         },
@@ -293,7 +293,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
 
       // Verificar ordem de execução
       expect(mockExecutions[0].command).toContain('pg_dump'); // Backup primeiro
-      expect(mockExecutions[1].command).toContain('clean-contratantes.sql'); // Depois limpeza
+      expect(mockExecutions[1].command).toContain('clean-tomadors.sql'); // Depois limpeza
       expect(mockExecutions[2].command).toContain('vw_auditoria_senhas'); // Finalmente auditoria
     });
   });
@@ -304,9 +304,9 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
 
       // Simular 3 usuários logando simultaneamente
       const usuarios = [
-        { cpf: '87545772920', senha: '000170', contratante_id: 18 },
-        { cpf: '45678901234', senha: '000133', contratante_id: 23 },
-        { cpf: '56789012345', senha: '000144', contratante_id: 24 },
+        { cpf: '87545772920', senha: '000170', tomador_id: 18 },
+        { cpf: '45678901234', senha: '000133', tomador_id: 23 },
+        { cpf: '56789012345', senha: '000144', tomador_id: 24 },
       ];
 
       // Todas as queries devem funcionar independentemente
@@ -314,7 +314,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
         mockQuery
           .mockResolvedValueOnce([{ senha_hash: '$2a$06$validHash' }])
           .mockResolvedValueOnce([
-            { contratante: { id: usuario.contratante_id } },
+            { tomador: { id: usuario.tomador_id } },
           ]);
 
         const senhaResult = await query(
@@ -385,46 +385,46 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
   });
 
   describe('🔍 Validação de Dados e Consistência', () => {
-    test('🔗 Integridade referencial contratantes ↔ senhas', async () => {
+    test('🔗 Integridade referencial tomadors ↔ senhas', async () => {
       const mockQuery = require('@/lib/db').query;
 
-      // Verificar que todos os contratantes têm senhas
-      const mockContratantes = [
+      // Verificar que todos os tomadors têm senhas
+      const mocktomadors = [
         { id: 18, nome: 'RELEGERE', tipo: 'entidade' },
         { id: 23, nome: 'ABC', tipo: 'entidade' },
         { id: 24, nome: 'Forte', tipo: 'entidade' },
       ];
 
       const mockSenhas = [
-        { contratante_id: 18, cpf: '87545772920' },
-        { contratante_id: 23, cpf: '45678901234' },
-        { contratante_id: 24, cpf: '56789012345' },
+        { tomador_id: 18, cpf: '87545772920' },
+        { tomador_id: 23, cpf: '45678901234' },
+        { tomador_id: 24, cpf: '56789012345' },
       ];
 
       mockQuery
-        .mockResolvedValueOnce(mockContratantes)
+        .mockResolvedValueOnce(mocktomadors)
         .mockResolvedValueOnce(mockSenhas);
 
-      const contratantesResult = await query(
-        "SELECT id FROM contratantes WHERE tipo = 'entidade'"
+      const tomadorsResult = await query(
+        "SELECT id FROM tomadors WHERE tipo = 'entidade'"
       );
       const senhasResult = await query(
-        'SELECT DISTINCT contratante_id FROM entidades_senhas'
+        'SELECT DISTINCT tomador_id FROM entidades_senhas'
       );
 
-      const contratanteIds = contratantesResult.rows.map((c) => c.id);
-      const senhaContratanteIds = senhasResult.rows.map(
-        (s) => s.contratante_id
+      const tomadorIds = tomadorsResult.rows.map((c) => c.id);
+      const senhatomadorIds = senhasResult.rows.map(
+        (s) => s.tomador_id
       );
 
-      // Todos os contratantes devem ter senhas
-      const allHavePasswords = contratanteIds.every((id) =>
-        senhaContratanteIds.includes(id)
+      // Todos os tomadors devem ter senhas
+      const allHavePasswords = tomadorIds.every((id) =>
+        senhatomadorIds.includes(id)
       );
 
       expect(allHavePasswords).toBe(true);
-      expect(contratanteIds).toHaveLength(3);
-      expect(senhaContratanteIds).toHaveLength(3);
+      expect(tomadorIds).toHaveLength(3);
+      expect(senhatomadorIds).toHaveLength(3);
     });
 
     test('📋 Consistência de dados account-info', async () => {
@@ -432,11 +432,11 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       const mockQuery = require('@/lib/db').query;
 
       mockGetSession.mockResolvedValue({
-        contratante_id: 18,
+        tomador_id: 18,
         tipo: 'gestor',
       });
 
-      const mockContratante = {
+      const mocktomador = {
         id: 18,
         nome: 'RELEGERE',
         numero_funcionarios: 50,
@@ -454,7 +454,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       ];
 
       mockQuery
-        .mockResolvedValueOnce([mockContratante])
+        .mockResolvedValueOnce([mocktomador])
         .mockResolvedValueOnce(mockContratos)
         .mockResolvedValueOnce(mockPagamentos);
 
@@ -467,7 +467,7 @@ describe('🔄 Integração Completa - Correções Críticas', () => {
       const data = await response.json();
 
       // Verificar estrutura completa
-      expect(data).toHaveProperty('contratante');
+      expect(data).toHaveProperty('tomador');
       expect(data).toHaveProperty('contratos');
       expect(data).toHaveProperty('pagamentos');
 

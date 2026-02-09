@@ -46,9 +46,9 @@ async function createTestRHUser() {
   try {
     console.log('🔧 Criando usuário RH de teste...');
 
-    // Primeiro, criar um contratante de teste
-    const contratanteResult = await query(`
-      INSERT INTO contratantes (
+    // Primeiro, criar um tomador de teste
+    const tomadorResult = await query(`
+      INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         ativa, status, pagamento_confirmado
@@ -68,21 +68,21 @@ async function createTestRHUser() {
       RETURNING id
     `);
 
-    const contratanteId = contratanteResult.rows[0].id;
-    console.log(`✅ Contratante criado/atualizado com ID: ${contratanteId}`);
+    const tomadorId = tomadorResult.rows[0].id;
+    console.log(`✅ tomador criado/atualizado com ID: ${tomadorId}`);
 
     // Agora criar a senha para o RH
     await query(
       `
-      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada)
+      INSERT INTO entidades_senhas (tomador_id, cpf, senha_hash, primeira_senha_alterada)
       VALUES ($1, $2, $3, true)
-      ON CONFLICT (contratante_id) DO UPDATE SET
+      ON CONFLICT (tomador_id) DO UPDATE SET
         cpf = EXCLUDED.cpf,
         senha_hash = EXCLUDED.senha_hash,
         primeira_senha_alterada = true
     `,
       [
-        contratanteId,
+        tomadorId,
         '11111111111',
         '$2a$10$qFf73.uHvCCBGdBXS64LNeMsNXorsmRqfIyXFACTY733BlIRleOiy', // hash para 'rh123'
       ]
@@ -93,9 +93,9 @@ async function createTestRHUser() {
     // Verificar se foi criado corretamente
     const verifyResult = await query(
       `
-      SELECT cs.cpf, c.nome as contratante_nome, c.ativa
+      SELECT cs.cpf, c.nome as tomador_nome, c.ativa
       FROM entidades_senhas cs
-      JOIN contratantes c ON c.id = cs.contratante_id
+      JOIN tomadors c ON c.id = cs.tomador_id
       WHERE cs.cpf = $1
     `,
       ['11111111111']

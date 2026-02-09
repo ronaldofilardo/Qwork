@@ -6,25 +6,25 @@ const GESTORES_CPF = ['87545772920', '16543102047', '04703084945'];
 
 async function main() {
   console.log('=========================================');
-  console.log('VERIFICANDO CONTRATANTE_ID DOS LOTES');
+  console.log('VERIFICANDO tomador_ID DOS LOTES');
   console.log('=========================================\n');
 
-  // 1. Buscar contratante_id dos gestores
-  console.log('[1] Contratante_id dos gestores:');
+  // 1. Buscar tomador_id dos gestores
+  console.log('[1] tomador_id dos gestores:');
   const gestores = await query(
-    `SELECT cpf, nome, perfil, contratante_id FROM funcionarios WHERE cpf = ANY($1)`,
+    `SELECT cpf, nome, perfil, tomador_id FROM funcionarios WHERE cpf = ANY($1)`,
     [GESTORES_CPF]
   );
   console.table(gestores.rows);
 
-  // 2. Buscar lotes e verificar contratante_id
+  // 2. Buscar lotes e verificar tomador_id
   console.log('\n[2] Lotes dos gestores (liberado_por):');
   const lotes = await query(
     `
     SELECT 
       id, codigo, titulo, status,
       liberado_por,
-      contratante_id,
+      tomador_id,
       empresa_id,
       clinica_id,
       liberado_em
@@ -36,19 +36,19 @@ async function main() {
   );
   console.table(lotes.rows);
 
-  // 3. Verificar se contratante_id está NULL ou incorreto
+  // 3. Verificar se tomador_id está NULL ou incorreto
   const lotesProblematicos = lotes.rows.filter(
-    (l: any) => l.contratante_id === null
+    (l: any) => l.tomador_id === null
   );
 
   if (lotesProblematicos.length > 0) {
     console.log('\n⚠️ PROBLEMA ENCONTRADO:');
     console.log(
-      `${lotesProblematicos.length} lotes têm contratante_id NULL!\n`
+      `${lotesProblematicos.length} lotes têm tomador_id NULL!\n`
     );
     console.log('Esses lotes NÃO serão visíveis para o gestor devido ao RLS:');
     console.log(
-      'POLICY policy_lotes_entidade filtra por: contratante_id = app.current_contratante_id\n'
+      'POLICY policy_lotes_entidade filtra por: tomador_id = app.current_tomador_id\n'
     );
 
     console.log('Lotes problemáticos:');
@@ -60,15 +60,15 @@ async function main() {
       const gestor = gestores.rows.find(
         (g: any) => g.cpf === lote.liberado_por
       );
-      if (gestor && gestor.contratante_id) {
+      if (gestor && gestor.tomador_id) {
         console.log(
-          `UPDATE lotes_avaliacao SET contratante_id = ${gestor.contratante_id} WHERE id = ${lote.id}; -- ${lote.codigo}`
+          `UPDATE lotes_avaliacao SET tomador_id = ${gestor.tomador_id} WHERE id = ${lote.id}; -- ${lote.codigo}`
         );
       }
     }
   } else {
     console.log(
-      '\n✅ Todos os lotes têm contratante_id preenchido corretamente!'
+      '\n✅ Todos os lotes têm tomador_id preenchido corretamente!'
     );
   }
 

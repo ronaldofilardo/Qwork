@@ -38,7 +38,7 @@ async function main() {
         a.lote_id,
         lt.clinica_id,
         f.nome AS funcionario_nome,
-        f.contratante_id AS funcionario_contratante
+        f.tomador_id AS funcionario_tomador
       FROM laudos l
       LEFT JOIN avaliacoes a ON a.id = l.avaliacao_id
       LEFT JOIN lotes_avaliacao lt ON lt.id = a.lote_id
@@ -52,7 +52,7 @@ async function main() {
         `      → funcionario_id: ${laudo.funcionario_id} (${laudo.funcionario_nome || 'N/A'})`
       );
       console.log(
-        `      → funcionario_contratante: ${laudo.funcionario_contratante || 'NULL'}`
+        `      → funcionario_tomador: ${laudo.funcionario_tomador || 'NULL'}`
       );
       console.log(`      → avaliacao_id: ${laudo.avaliacao_id}`);
       console.log(`      → lote_id: ${laudo.lote_id}`);
@@ -105,33 +105,33 @@ async function main() {
 
       // Laudo 2 → entidade 35
       const func2 = await pool.query(`
-        SELECT f.id, f.nome, f.contratante_id
+        SELECT f.id, f.nome, f.tomador_id
         FROM laudos l
         JOIN funcionarios f ON f.id = l.funcionario_id
         WHERE l.id = 2
       `);
 
-      if (func2.rows.length > 0 && func2.rows[0].contratante_id !== 35) {
+      if (func2.rows.length > 0 && func2.rows[0].tomador_id !== 35) {
         await pool.query(
           `
           UPDATE funcionarios 
-          SET contratante_id = 35 
+          SET tomador_id = 35 
           WHERE id = $1
         `,
           [func2.rows[0].id]
         );
         console.log(
-          `      ✅ Laudo 2: Funcionário ${func2.rows[0].id} (${func2.rows[0].nome}) → contratante_id: 35`
+          `      ✅ Laudo 2: Funcionário ${func2.rows[0].id} (${func2.rows[0].nome}) → tomador_id: 35`
         );
       } else if (func2.rows.length > 0) {
         console.log(
-          `      ✓  Laudo 2: Funcionário ${func2.rows[0].id} → contratante_id: 35 (já correto)`
+          `      ✓  Laudo 2: Funcionário ${func2.rows[0].id} → tomador_id: 35 (já correto)`
         );
       }
 
       // Laudo 3 → clínica 37 (precisa ter funcionário da clínica 37)
       const func3 = await pool.query(`
-        SELECT f.id, f.nome, f.clinica_id, f.contratante_id
+        SELECT f.id, f.nome, f.clinica_id, f.tomador_id
         FROM laudos l
         JOIN funcionarios f ON f.id = l.funcionario_id
         WHERE l.id = 3
@@ -193,27 +193,27 @@ async function main() {
 
       // Laudo 4 → entidade 37
       const func4 = await pool.query(`
-        SELECT f.id, f.nome, f.contratante_id
+        SELECT f.id, f.nome, f.tomador_id
         FROM laudos l
         JOIN funcionarios f ON f.id = l.funcionario_id
         WHERE l.id = 4
       `);
 
-      if (func4.rows.length > 0 && func4.rows[0].contratante_id !== 37) {
+      if (func4.rows.length > 0 && func4.rows[0].tomador_id !== 37) {
         await pool.query(
           `
           UPDATE funcionarios 
-          SET contratante_id = 37 
+          SET tomador_id = 37 
           WHERE id = $1
         `,
           [func4.rows[0].id]
         );
         console.log(
-          `      ✅ Laudo 4: Funcionário ${func4.rows[0].id} (${func4.rows[0].nome}) → contratante_id: 37`
+          `      ✅ Laudo 4: Funcionário ${func4.rows[0].id} (${func4.rows[0].nome}) → tomador_id: 37`
         );
       } else if (func4.rows.length > 0) {
         console.log(
-          `      ✓  Laudo 4: Funcionário ${func4.rows[0].id} → contratante_id: 37 (já correto)`
+          `      ✓  Laudo 4: Funcionário ${func4.rows[0].id} → tomador_id: 37 (já correto)`
         );
       }
 
@@ -227,13 +227,13 @@ async function main() {
           l.id,
           l.numero_laudo,
           f.nome AS funcionario_nome,
-          f.contratante_id,
+          f.tomador_id,
           f.clinica_id,
           e.nome AS entidade_nome,
           c.nome AS clinica_nome
         FROM laudos l
         LEFT JOIN funcionarios f ON f.id = l.funcionario_id
-        LEFT JOIN entidades e ON e.id = f.contratante_id
+        LEFT JOIN entidades e ON e.id = f.tomador_id
         LEFT JOIN clinicas c ON c.id = f.clinica_id
         ORDER BY l.id
       `);
@@ -241,9 +241,9 @@ async function main() {
       for (const laudo of laudosAfter.rows) {
         console.log(`   ✅ Laudo ${laudo.id} (${laudo.numero_laudo})`);
         console.log(`      → Funcionário: ${laudo.funcionario_nome}`);
-        if (laudo.contratante_id) {
+        if (laudo.tomador_id) {
           console.log(
-            `      → Entidade: ID ${laudo.contratante_id} (${laudo.entidade_nome})`
+            `      → Entidade: ID ${laudo.tomador_id} (${laudo.entidade_nome})`
           );
         }
         if (laudo.clinica_id) {

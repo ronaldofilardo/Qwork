@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 
-// Script para listar contratantes
+// Script para listar tomadors
 import { query } from '../lib/db.ts';
 
-async function listContratantes() {
+async function listtomadors() {
   try {
-    console.log('📋 Listando contratantes...');
+    console.log('📋 Listando tomadors...');
 
     const result = await query(`
       SELECT id, nome, tipo, responsavel_cpf, ativa, criado_em
-      FROM contratantes
+      FROM tomadors
       ORDER BY id
     `);
 
-    console.log(`Encontrados ${result.rows.length} contratantes:\n`);
+    console.log(`Encontrados ${result.rows.length} tomadors:\n`);
 
     result.rows.forEach((row, index) => {
       console.log(`${index + 1}. ID: ${row.id}`);
@@ -25,8 +25,8 @@ async function listContratantes() {
       console.log('');
     });
   } catch (error) {
-    console.error('Erro ao listar contratantes:', error);
+    console.error('Erro ao listar tomadors:', error);
   }
 }
 
-listContratantes();
+listtomadors();

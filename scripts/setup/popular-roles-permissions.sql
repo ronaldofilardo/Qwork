@@ -41,7 +41,7 @@ ALTER SEQUENCE permissions_id_seq RESTART WITH 1;
 -- ============================================================================
 
 INSERT INTO roles (name, display_name, description, hierarchy_level, active) VALUES
-('admin', 'Administrador', 'Administrador do sistema - gerencia APENAS aspectos administrativos: clínicas, entidades (antigas: contratantes), planos e emissores. NÃO tem acesso operacional (empresas, funcionários, avaliações, lotes, laudos)', 100, true),
+('admin', 'Administrador', 'Administrador do sistema - gerencia APENAS aspectos administrativos: clínicas, entidades (antigas: tomadores), planos e emissores. NÃO tem acesso operacional (empresas, funcionários, avaliações, lotes, laudos)', 100, true),
 ('emissor', 'Emissor de Laudos', 'Profissional responsável pela emissão e assinatura de laudos médicos - papel independente', 80, true),
 ('rh', 'Gestor de Clínica (RH)', 'Gestor de clínica responsável por gerenciar empresas clientes e seus funcionários', 60, true),
 ('gestor', 'Gestor de Entidade', 'Gestor de empresa contratante responsável por gerenciar funcionários da própria empresa', 40, true),
@@ -58,7 +58,7 @@ SELECT id, name, display_name, hierarchy_level FROM roles ORDER BY hierarchy_lev
 -- PERMISSIONS - Permissões Granulares
 -- ============================================================================
 -- Format: resource:action
--- Recursos: clinicas, entidades (antigas: contratantes), funcionarios, avaliacoes, lotes, laudos, planos, emissores
+-- Recursos: clinicas, entidades (antigas: tomadores), funcionarios, avaliacoes, lotes, laudos, planos, emissores
 -- Ações: create, read, update, delete, manage, approve, reject, emit, assign
 -- ============================================================================
 
@@ -68,7 +68,7 @@ INSERT INTO permissions (name, resource, action, description) VALUES
 ('clinicas:read', 'clinicas', 'read', 'Visualizar clínicas'),
 ('clinicas:approve', 'clinicas', 'approve', 'Aprovar cadastros de clínicas');
 
--- Permissões de ENTIDADES (antigas: contratantes)
+-- Permissões de ENTIDADES (antigas: tomadores)
 INSERT INTO permissions (name, resource, action, description) VALUES
 ('entidades:manage', 'entidades', 'manage', 'Gerenciar entidades (CRUD completo)'),
 ('entidades:read', 'entidades', 'read', 'Visualizar entidades'),
@@ -138,7 +138,7 @@ SELECT COUNT(*) as total_permissions FROM permissions;
 -- ============================================================================
 -- ADMIN - Apenas Gestão Administrativa (NÃO operacional)
 -- ============================================================================
--- Admin gerencia ESTRUTURA do sistema: clínicas, entidades (antigas: contratantes), planos, emissores
+-- Admin gerencia ESTRUTURA do sistema: clínicas, entidades (antigas: tomadores), planos, emissores
 -- Admin NÃO acessa: empresas clientes, funcionários, avaliações, lotes, laudos
 INSERT INTO role_permissions (role_id, permission_id)
 SELECT 
@@ -150,7 +150,7 @@ WHERE name IN (
     'clinicas:manage',
     'clinicas:read',
     'clinicas:approve',
-    -- Entidades (antigas: contratantes) (aprovação e gestão)
+    -- Entidades (antigas: tomadores) (aprovação e gestão)
     'entidades:manage',
     'entidades:read',
     'entidades:approve',

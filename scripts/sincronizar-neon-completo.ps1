@@ -210,7 +210,7 @@ DROP VIEW IF EXISTS vw_funcionarios_completo CASCADE;
 -- 3.1 Criar entidades_senhas (senhas de gestores de entidade)
 CREATE TABLE IF NOT EXISTS entidades_senhas (
     id SERIAL PRIMARY KEY,
-    contratante_id INTEGER NOT NULL REFERENCES contratantes(id) ON DELETE CASCADE,
+    contratante_id INTEGER NOT NULL REFERENCES tomadores(id) ON DELETE CASCADE,
     cpf VARCHAR(11) NOT NULL,
     senha_hash TEXT NOT NULL,
     primeira_senha_alterada BOOLEAN DEFAULT false,
@@ -247,7 +247,7 @@ CREATE INDEX IF NOT EXISTS idx_clinicas_senhas_clinica ON clinicas_senhas(clinic
 CREATE TABLE IF NOT EXISTS funcionarios_entidades (
     id SERIAL PRIMARY KEY,
     funcionario_id INTEGER NOT NULL REFERENCES funcionarios(id) ON DELETE CASCADE,
-    contratante_id INTEGER NOT NULL REFERENCES contratantes(id) ON DELETE CASCADE,
+    contratante_id INTEGER NOT NULL REFERENCES tomadores(id) ON DELETE CASCADE,
     ativo BOOLEAN DEFAULT true,
     data_vinculo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_desvinculo TIMESTAMP,
@@ -290,7 +290,7 @@ CREATE INDEX IF NOT EXISTS idx_func_clinicas_ativo ON funcionarios_clinicas(ativ
 CREATE OR REPLACE FUNCTION validate_entidade_tipo()
 RETURNS TRIGGER AS `$`$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM contratantes WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
+    IF NOT EXISTS (SELECT 1 FROM tomadores WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
         RAISE EXCEPTION 'contratante_id % não é do tipo entidade', NEW.contratante_id;
     END IF;
     RETURN NEW;
@@ -306,7 +306,7 @@ FOR EACH ROW EXECUTE FUNCTION validate_entidade_tipo();
 CREATE OR REPLACE FUNCTION validate_funcionario_entidade_tipo()
 RETURNS TRIGGER AS `$`$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM contratantes WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
+    IF NOT EXISTS (SELECT 1 FROM tomadores WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
         RAISE EXCEPTION 'contratante_id % não é do tipo entidade', NEW.contratante_id;
     END IF;
     RETURN NEW;
@@ -327,14 +327,14 @@ FOR EACH ROW EXECUTE FUNCTION validate_funcionario_entidade_tipo();
 \echo ''
 \echo 'PARTE 5: Migrando dados para nova estrutura...'
 
--- 5.1 Migrar senhas de ENTIDADES (se contratantes_senhas existir)
+-- 5.1 Migrar senhas de ENTIDADES (se tomadores_senhas existir)
 DO `$`$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes_senhas') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tomadores_senhas') THEN
         INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada, criado_em, atualizado_em)
         SELECT cs.contratante_id, cs.cpf, cs.senha_hash, cs.primeira_senha_alterada, cs.criado_em, cs.atualizado_em
-        FROM contratantes_senhas cs
-        JOIN contratantes c ON c.id = cs.contratante_id
+        FROM tomadores_senhas cs
+        JOIN tomadores c ON c.id = cs.contratante_id
         WHERE c.tipo = 'entidade'
         ON CONFLICT (cpf, contratante_id) DO NOTHING;
         
@@ -342,14 +342,14 @@ BEGIN
     END IF;
 END `$`$;
 
--- 5.2 Migrar senhas de CLÍNICAS (se contratantes_senhas existir)
+-- 5.2 Migrar senhas de CLÍNICAS (se tomadores_senhas existir)
 DO `$`$
 BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes_senhas') THEN
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tomadores_senhas') THEN
         INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash, primeira_senha_alterada, criado_em, atualizado_em)
         SELECT cl.id, cs.cpf, cs.senha_hash, cs.primeira_senha_alterada, cs.criado_em, cs.atualizado_em
-        FROM contratantes_senhas cs
-        JOIN contratantes c ON c.id = cs.contratante_id
+        FROM tomadores_senhas cs
+        JOIN tomadores c ON c.id = cs.contratante_id
         JOIN clinicas cl ON cl.contratante_id = c.id
         WHERE c.tipo = 'clinica'
         ON CONFLICT (cpf, clinica_id) DO NOTHING;
@@ -369,7 +369,7 @@ BEGIN
         WHERE f.contratante_id IS NOT NULL
           AND NOT EXISTS (SELECT 1 FROM information_schema.columns 
                          WHERE table_name = 'funcionarios' AND column_name = 'clinica_id')
-          AND EXISTS (SELECT 1 FROM contratantes c WHERE c.id = f.contratante_id AND c.tipo = 'entidade')
+          AND EXISTS (SELECT 1 FROM tomadores c WHERE c.id = f.contratante_id AND c.tipo = 'entidade')
         ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;
         
         RAISE NOTICE '✓ Funcionários de entidades migrados';

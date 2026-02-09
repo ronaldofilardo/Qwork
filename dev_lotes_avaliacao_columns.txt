@@ -1,0 +1,34 @@
+        column_name        |          data_type          | is_nullable |        column_default         | ordinal_position 
+---------------------------+-----------------------------+-------------+-------------------------------+------------------
+ id                        | integer                     | NO          | fn_next_lote_id()             |                1
+ clinica_id                | integer                     | YES         |                               |                3
+ empresa_id                | integer                     | YES         |                               |                4
+ descricao                 | text                        | YES         |                               |                6
+ tipo                      | character varying           | YES         | 'completo'::character varying |                7
+ status                    | character varying           | YES         | 'ativo'::status_lote_enum     |                8
+ liberado_por              | character                   | YES         |                               |                9
+ liberado_em               | timestamp without time zone | YES         | CURRENT_TIMESTAMP             |               10
+ criado_em                 | timestamp without time zone | YES         | CURRENT_TIMESTAMP             |               11
+ atualizado_em             | timestamp without time zone | YES         | CURRENT_TIMESTAMP             |               12
+ hash_pdf                  | character varying           | YES         |                               |               14
+ numero_ordem              | integer                     | NO          | 1                             |               15
+ emitido_em                | timestamp with time zone    | YES         |                               |               16
+ enviado_em                | timestamp with time zone    | YES         |                               |               17
+ setor_id                  | integer                     | YES         |                               |               23
+ laudo_enviado_em          | timestamp without time zone | YES         |                               |               24
+ finalizado_em             | timestamp without time zone | YES         |                               |               25
+ modo_emergencia           | boolean                     | YES         | false                         |               31
+ motivo_emergencia         | text                        | YES         |                               |               32
+ entidade_id               | integer                     | YES         |                               |               33
+ contratante_id            | integer                     | YES         |                               |               34
+ status_pagamento          | USER-DEFINED                | YES         |                               |               35
+ solicitacao_emissao_em    | timestamp with time zone    | YES         |                               |               36
+ valor_por_funcionario     | numeric                     | YES         |                               |               37
+ link_pagamento_token      | uuid                        | YES         |                               |               38
+ link_pagamento_expira_em  | timestamp with time zone    | YES         |                               |               39
+ link_pagamento_enviado_em | timestamp with time zone    | YES         |                               |               40
+ pagamento_metodo          | character varying           | YES         |                               |               41
+ pagamento_parcelas        | integer                     | YES         |                               |               42
+ pago_em                   | timestamp with time zone    | YES         |                               |               43
+(30 linhas)
+

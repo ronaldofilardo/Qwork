@@ -1,4 +1,4 @@
-describe('Cadastro de Contratante - Plano Fixo → Criação de Conta do Responsável', () => {
+describe('Cadastro de tomador - Plano Fixo → Criação de Conta do Responsável', () => {
   const ts = Date.now();
   const empresa = {
     nome: `Empresa Teste Plano Fixo ${ts}`,
@@ -28,12 +28,12 @@ describe('Cadastro de Contratante - Plano Fixo → Criação de Conta do Respons
     cy.intercept('POST', '/api/pagamento/**').as('pagamento');
   });
 
-  it('Deve registrar contratante com Plano Fixo e permitir login do responsável com senha padrão (últimos 6 do CNPJ)', () => {
+  it('Deve registrar tomador com Plano Fixo e permitir login do responsável com senha padrão (últimos 6 do CNPJ)', () => {
     // 1. Abrir fluxo de cadastro
     cy.visit('/login');
     cy.contains('Cadastrar Empresa').click();
 
-    // 2. Selecionar tipo de entidade / contratante
+    // 2. Selecionar tipo de entidade / tomador
     cy.get('[data-testid="tipo-entidade"]').click();
     cy.contains('Próximo').click();
 

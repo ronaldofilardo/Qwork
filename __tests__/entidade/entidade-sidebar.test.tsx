@@ -11,6 +11,13 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/entidade/dashboard',
 }));
 
+// Mock do PWAMenuItem
+jest.mock('@/components/PWAMenuItem', () => ({
+  PWAMenuItem: jest.fn(() => (
+    <div data-testid="pwa-menu-item">PWA Menu Item</div>
+  )),
+}));
+
 describe('EntidadeSidebar', () => {
   const defaultProps = {
     counts: {
@@ -32,5 +39,26 @@ describe('EntidadeSidebar', () => {
     const lastButton = buttons && buttons[buttons.length - 1];
     expect(lastButton).toBeTruthy();
     expect(lastButton?.textContent).toMatch(/Sair/);
+  });
+
+  it('renders PWA Menu Item', () => {
+    render(<EntidadeSidebar {...defaultProps} />);
+
+    expect(screen.getByTestId('pwa-menu-item')).toBeInTheDocument();
+  });
+
+  it('passes isCollapsed prop to PWAMenuItem', () => {
+    const {
+      PWAMenuItem: MockPWAMenuItem,
+    } = require('@/components/PWAMenuItem');
+
+    render(<EntidadeSidebar {...defaultProps} />);
+
+    expect(MockPWAMenuItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isCollapsed: expect.any(Boolean),
+      }),
+      expect.anything()
+    );
   });
 });

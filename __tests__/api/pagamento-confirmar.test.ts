@@ -16,7 +16,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
 
   // Cenário de confirmação com token personalizado removido (testes do fluxo personalizado excluídos).
 
-  describe('Cenário 2: Confirmação com contratante_id e plano_id', () => {
+  describe('Cenário 2: Confirmação com tomador_id e plano_id', () => {
     it('deve confirmar pagamento para plano fixo', async () => {
       mockPOST.mockResolvedValueOnce({
         status: 200,
@@ -31,7 +31,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
 
       const request = {
         json: async () => ({
-          contratante_id: 100,
+          tomador_id: 100,
           plano_id: 1,
           metodo_pagamento: 'transferencia',
           numero_parcelas: 1,
@@ -65,7 +65,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
             numero_parcelas: 3,
             valor_por_parcela: 800.0,
             data_pagamento: '2024-01-15T13:00:00Z',
-            contratante: {
+            tomador: {
               id: 102,
               nome: 'Empresa Parcelada Ltda',
               tipo: 'entidade',
@@ -84,7 +84,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
 
       const request = {
         json: async () => ({
-          contratante_id: 102,
+          tomador_id: 102,
           plano_id: 3,
           metodo_pagamento: 'cartao',
           numero_parcelas: 3,

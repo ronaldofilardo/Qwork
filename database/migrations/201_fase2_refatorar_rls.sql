@@ -147,10 +147,10 @@ COMMENT ON POLICY funcionarios_unified_delete ON funcionarios IS
 \echo '   ✓ Políticas RLS unificadas criadas'
 
 -- ==========================================
--- 4. AVALIAR TABELA contratantes_funcionarios
+-- 4. AVALIAR TABELA tomadores_funcionarios
 -- ==========================================
 
-\echo '4. Avaliando uso de contratantes_funcionarios...'
+\echo '4. Avaliando uso de tomadores_funcionarios...'
 
 DO $$
 DECLARE
@@ -159,14 +159,14 @@ DECLARE
 BEGIN
   -- Verificar se tabela tem dados
   SELECT COUNT(*) INTO total_registros 
-  FROM contratantes_funcionarios;
+  FROM tomadores_funcionarios;
   
   IF total_registros = 0 THEN
-    RAISE NOTICE 'Tabela contratantes_funcionarios vazia';
+    RAISE NOTICE 'Tabela tomadores_funcionarios vazia';
     RAISE NOTICE 'RECOMENDAÇÃO: Considerar remoção ou população da tabela';
     uso_ativo := false;
   ELSE
-    RAISE NOTICE 'Tabela contratantes_funcionarios tem % registros', total_registros;
+    RAISE NOTICE 'Tabela tomadores_funcionarios tem % registros', total_registros;
     uso_ativo := true;
   END IF;
   
@@ -178,7 +178,7 @@ BEGIN
   );
   
   INSERT INTO migration_201_status VALUES (
-    'contratantes_funcionarios',
+    'tomadores_funcionarios',
     CASE WHEN uso_ativo THEN 'EM_USO' ELSE 'VAZIA' END,
     total_registros
   );
@@ -187,13 +187,13 @@ END $$;
 \echo '   ✓ Avaliação concluída'
 
 -- ==========================================
--- 5. POPULAR contratantes_funcionarios (OPCIONAL)
+-- 5. POPULAR tomadores_funcionarios (OPCIONAL)
 -- ==========================================
 
-\echo '5. Populando contratantes_funcionarios (se necessário)...'
+\echo '5. Populando tomadores_funcionarios (se necessário)...'
 
 -- Popular para funcionários de clínica via clinica→contratante
-INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+INSERT INTO tomadores_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
 SELECT 
   f.id,
   c.id,
@@ -201,16 +201,16 @@ SELECT
   f.ativo
 FROM funcionarios f
 JOIN clinicas cl ON cl.id = f.clinica_id
-JOIN contratantes c ON c.id = cl.contratante_id
+JOIN tomadores c ON c.id = cl.contratante_id
 WHERE f.usuario_tipo = 'funcionario_clinica'
   AND NOT EXISTS (
-    SELECT 1 FROM contratantes_funcionarios cf 
+    SELECT 1 FROM tomadores_funcionarios cf 
     WHERE cf.funcionario_id = f.id 
     AND cf.contratante_id = c.id
   );
 
 -- Popular para funcionários de entidade (vínculo direto)
-INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+INSERT INTO tomadores_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
 SELECT 
   f.id,
   f.contratante_id,
@@ -220,7 +220,7 @@ FROM funcionarios f
 WHERE f.usuario_tipo = 'funcionario_entidade'
   AND f.contratante_id IS NOT NULL
   AND NOT EXISTS (
-    SELECT 1 FROM contratantes_funcionarios cf 
+    SELECT 1 FROM tomadores_funcionarios cf 
     WHERE cf.funcionario_id = f.id 
     AND cf.contratante_id = f.contratante_id
   );
@@ -233,24 +233,24 @@ WHERE f.usuario_tipo = 'funcionario_entidade'
 
 \echo '6. Criando trigger de sincronização...'
 
-CREATE OR REPLACE FUNCTION sync_contratantes_funcionarios()
+CREATE OR REPLACE FUNCTION sync_tomadores_funcionarios()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Ao inserir funcionário, criar vínculo automático
   IF (TG_OP = 'INSERT') THEN
     -- Funcionário de clínica
     IF NEW.usuario_tipo = 'funcionario_clinica' AND NEW.clinica_id IS NOT NULL THEN
-      INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+      INSERT INTO tomadores_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
       SELECT NEW.id, c.id, c.tipo, NEW.ativo
       FROM clinicas cl
-      JOIN contratantes c ON c.id = cl.contratante_id
+      JOIN tomadores c ON c.id = cl.contratante_id
       WHERE cl.id = NEW.clinica_id
       ON CONFLICT DO NOTHING;
     END IF;
     
     -- Funcionário de entidade
     IF NEW.usuario_tipo = 'funcionario_entidade' AND NEW.contratante_id IS NOT NULL THEN
-      INSERT INTO contratantes_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
+      INSERT INTO tomadores_funcionarios (funcionario_id, contratante_id, tipo_contratante, vinculo_ativo)
       VALUES (NEW.id, NEW.contratante_id, 'entidade', NEW.ativo)
       ON CONFLICT DO NOTHING;
     END IF;
@@ -259,7 +259,7 @@ BEGIN
   -- Ao atualizar status ativo, sincronizar vínculo
   IF (TG_OP = 'UPDATE') THEN
     IF NEW.ativo != OLD.ativo THEN
-      UPDATE contratantes_funcionarios
+      UPDATE tomadores_funcionarios
       SET vinculo_ativo = NEW.ativo,
           atualizado_em = CURRENT_TIMESTAMP
       WHERE funcionario_id = NEW.id;
@@ -270,14 +270,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS trg_sync_contratantes_funcionarios ON funcionarios;
-CREATE TRIGGER trg_sync_contratantes_funcionarios
+DROP TRIGGER IF EXISTS trg_sync_tomadores_funcionarios ON funcionarios;
+CREATE TRIGGER trg_sync_tomadores_funcionarios
   AFTER INSERT OR UPDATE ON funcionarios
   FOR EACH ROW
-  EXECUTE FUNCTION sync_contratantes_funcionarios();
+  EXECUTE FUNCTION sync_tomadores_funcionarios();
 
-COMMENT ON FUNCTION sync_contratantes_funcionarios() IS
-'Sincroniza automaticamente vínculos em contratantes_funcionarios ao criar/atualizar funcionários';
+COMMENT ON FUNCTION sync_tomadores_funcionarios() IS
+'Sincroniza automaticamente vínculos em tomadores_funcionarios ao criar/atualizar funcionários';
 
 \echo '   ✓ Trigger criado'
 

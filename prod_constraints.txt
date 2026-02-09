@@ -1,0 +1,496 @@
+table_name|column_name|constraint_type|foreign_table_name|foreign_column_name
+_deprecated_fila_emissao||CHECK||
+_deprecated_fila_emissao||CHECK||
+_deprecated_fila_emissao||CHECK|_deprecated_fila_emissao|solicitado_por
+_deprecated_fila_emissao||CHECK|_deprecated_fila_emissao|tipo_solicitante
+_deprecated_fila_emissao|lote_id|FOREIGN KEY|lotes_avaliacao|id
+_deprecated_fila_emissao|lote_id|UNIQUE|_deprecated_fila_emissao|lote_id
+_deprecated_fila_emissao|id|PRIMARY KEY|_deprecated_fila_emissao|id
+_deprecated_fila_emissao||CHECK|_deprecated_fila_emissao|tipo_solicitante
+_migration_issues||CHECK||
+_migration_issues||CHECK||
+_migration_issues||CHECK||
+_migration_issues|id|PRIMARY KEY|_migration_issues|id
+analise_estatistica||CHECK||
+analise_estatistica|avaliacao_id|FOREIGN KEY|avaliacoes|id
+analise_estatistica|id|PRIMARY KEY|analise_estatistica|id
+audit_access_denied||CHECK||
+audit_access_denied||CHECK||
+audit_access_denied||CHECK||
+audit_access_denied||CHECK||
+audit_access_denied|id|PRIMARY KEY|audit_access_denied|id
+audit_logs||CHECK||
+audit_logs||CHECK||
+audit_logs||CHECK||
+audit_logs||CHECK||
+audit_logs|clinica_id|FOREIGN KEY|clinicas|id
+audit_logs|contratante_id|FOREIGN KEY|entidades|id
+audit_logs|id|PRIMARY KEY|audit_logs|id
+audit_logs||CHECK|audit_logs|user_cpf
+auditoria||CHECK||
+auditoria||CHECK||
+auditoria||CHECK||
+auditoria||CHECK||
+auditoria||CHECK||
+auditoria|id|PRIMARY KEY|auditoria|id
+auditoria_geral||CHECK||
+auditoria_geral||CHECK||
+auditoria_geral||CHECK||
+auditoria_geral|id|PRIMARY KEY|auditoria_geral|id
+auditoria_laudos||CHECK||
+auditoria_laudos||CHECK||
+auditoria_laudos||CHECK||
+auditoria_laudos||CHECK||
+auditoria_laudos||CHECK||
+auditoria_laudos|id|PRIMARY KEY|auditoria_laudos|id
+auditoria_laudos||CHECK|auditoria_laudos|acao
+auditoria_laudos||CHECK|auditoria_laudos|solicitado_por
+auditoria_laudos||CHECK|auditoria_laudos|status
+auditoria_laudos||CHECK|auditoria_laudos|tipo_solicitante
+auditoria_laudos|lote_id|FOREIGN KEY|lotes_avaliacao|id
+auditoria_recibos||CHECK||
+auditoria_recibos||CHECK||
+auditoria_recibos||CHECK||
+auditoria_recibos||CHECK||
+auditoria_recibos||CHECK||
+auditoria_recibos|id|PRIMARY KEY|auditoria_recibos|id
+auditoria_recibos|recibo_id|FOREIGN KEY|recibos|id
+avaliacao_resets||CHECK||
+avaliacao_resets||CHECK||
+avaliacao_resets||CHECK||
+avaliacao_resets||CHECK||
+avaliacao_resets||CHECK||
+avaliacao_resets||CHECK||
+avaliacao_resets||CHECK||
+avaliacao_resets|avaliacao_id|FOREIGN KEY|avaliacoes|id
+avaliacao_resets|lote_id|FOREIGN KEY|lotes_avaliacao|id
+avaliacao_resets|id|PRIMARY KEY|avaliacao_resets|id
+avaliacoes||CHECK||
+avaliacoes||CHECK||
+avaliacoes|funcionario_cpf|FOREIGN KEY|funcionarios|cpf
+avaliacoes|lote_id|FOREIGN KEY|lotes_avaliacao|id
+avaliacoes|id|PRIMARY KEY|avaliacoes|id
+avaliacoes||CHECK|avaliacoes|status
+avaliacoes|funcionario_cpf|FOREIGN KEY|funcionarios|cpf
+clinica_configuracoes||CHECK||
+clinica_configuracoes||CHECK||
+clinica_configuracoes|clinica_id|FOREIGN KEY|clinicas|id
+clinica_configuracoes||CHECK|clinica_configuracoes|cor_primaria
+clinica_configuracoes||CHECK|clinica_configuracoes|cor_secundaria
+clinica_configuracoes||CHECK|clinica_configuracoes|formato_data_preferencial
+clinica_configuracoes|id|PRIMARY KEY|clinica_configuracoes|id
+clinica_configuracoes|clinica_id|UNIQUE|clinica_configuracoes|clinica_id
+clinicas||CHECK||
+clinicas||CHECK||
+clinicas|cnpj|UNIQUE|clinicas|cnpj
+clinicas|id|PRIMARY KEY|clinicas|id
+clinicas_empresas||CHECK||
+clinicas_empresas||CHECK||
+clinicas_empresas|clinica_id|FOREIGN KEY|clinicas|id
+clinicas_empresas|empresa_id|FOREIGN KEY|empresas_clientes|id
+clinicas_empresas|clinica_id|PRIMARY KEY|clinicas_empresas|empresa_id
+clinicas_empresas|clinica_id|PRIMARY KEY|clinicas_empresas|clinica_id
+clinicas_empresas|empresa_id|PRIMARY KEY|clinicas_empresas|empresa_id
+clinicas_empresas|empresa_id|PRIMARY KEY|clinicas_empresas|clinica_id
+clinicas_senhas||CHECK||
+clinicas_senhas||CHECK||
+clinicas_senhas||CHECK||
+clinicas_senhas||CHECK||
+clinicas_senhas|cpf|UNIQUE|clinicas_senhas|clinica_id
+clinicas_senhas|cpf|UNIQUE|clinicas_senhas|cpf
+clinicas_senhas|clinica_id|UNIQUE|clinicas_senhas|cpf
+clinicas_senhas|clinica_id|UNIQUE|clinicas_senhas|clinica_id
+clinicas_senhas|clinica_id|FOREIGN KEY|clinicas|id
+clinicas_senhas||CHECK|clinicas_senhas|cpf
+clinicas_senhas|cpf|UNIQUE|clinicas_senhas|cpf
+clinicas_senhas|id|PRIMARY KEY|clinicas_senhas|id
+contratacao_personalizada||CHECK||
+contratacao_personalizada|contratante_id|FOREIGN KEY|entidades|id
+contratacao_personalizada|id|PRIMARY KEY|contratacao_personalizada|id
+contratos||CHECK||
+contratos||CHECK||
+contratos||CHECK||
+contratos||CHECK||
+contratos||CHECK||
+contratos|contratante_id|FOREIGN KEY|entidades|id
+contratos|id|PRIMARY KEY|contratos|id
+contratos|plano_id|FOREIGN KEY|planos|id
+contratos_planos||CHECK||
+contratos_planos||CHECK||
+contratos_planos||CHECK||
+contratos_planos||CHECK|contratos_planos|tipo_contratante
+contratos_planos|clinica_id|FOREIGN KEY|clinicas|id
+contratos_planos||CHECK|contratos_planos|clinica_id
+contratos_planos||CHECK|contratos_planos|contratante_id
+contratos_planos|contratante_id|FOREIGN KEY|entidades|id
+contratos_planos||CHECK|contratos_planos|modalidade_pagamento
+contratos_planos|id|PRIMARY KEY|contratos_planos|id
+contratos_planos|plano_id|FOREIGN KEY|planos|id
+contratos_planos||CHECK|contratos_planos|tipo_contratante
+contratos_planos||CHECK|contratos_planos|tipo_pagamento
+emissao_queue||CHECK||
+emissao_queue||CHECK||
+emissao_queue||CHECK||
+emissao_queue||CHECK||
+emissao_queue||CHECK||
+emissao_queue||CHECK||
+emissao_queue|lote_id|FOREIGN KEY|lotes_avaliacao|id
+emissao_queue|id|PRIMARY KEY|emissao_queue|id
+empresas_clientes||CHECK||
+empresas_clientes||CHECK||
+empresas_clientes||CHECK||
+empresas_clientes||CHECK||
+empresas_clientes|clinica_id|FOREIGN KEY|clinicas|id
+empresas_clientes|cnpj|UNIQUE|empresas_clientes|cnpj
+empresas_clientes|contratante_id|FOREIGN KEY|entidades|id
+empresas_clientes||CHECK|empresas_clientes|contratante_id
+empresas_clientes||CHECK|empresas_clientes|clinica_id
+empresas_clientes|id|PRIMARY KEY|empresas_clientes|id
+empresas_clientes|clinica_id|FOREIGN KEY|clinicas|id
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK||
+entidades||CHECK|entidades|tipo
+entidades|cnpj|UNIQUE|entidades|cnpj
+entidades|email|UNIQUE|entidades|email
+entidades||CHECK|entidades|estado
+entidades|id|PRIMARY KEY|entidades|id
+entidades|plano_id|FOREIGN KEY|planos|id
+entidades||CHECK|entidades|responsavel_cpf
+entidades|responsavel_cpf|UNIQUE|entidades|responsavel_cpf
+entidades_senhas||CHECK||
+entidades_senhas||CHECK||
+entidades_senhas||CHECK||
+entidades_senhas||CHECK||
+entidades_senhas||CHECK|entidades_senhas|cpf
+entidades_senhas|cpf|UNIQUE|entidades_senhas|cpf
+entidades_senhas|id|PRIMARY KEY|entidades_senhas|id
+entidades_senhas|entidade_id|FOREIGN KEY|entidades|id
+fila_emissao||CHECK||
+fila_emissao||CHECK||
+fila_emissao|lote_id|FOREIGN KEY|lotes_avaliacao|id
+fila_emissao|id|PRIMARY KEY|fila_emissao|id
+funcionarios||CHECK||
+funcionarios||CHECK||
+funcionarios||CHECK||
+funcionarios||CHECK||
+funcionarios||CHECK||
+funcionarios|clinica_id|FOREIGN KEY|clinicas|id
+funcionarios|contratante_id|FOREIGN KEY|entidades|id
+funcionarios|ultima_avaliacao_id|FOREIGN KEY|avaliacoes|id
+funcionarios||CHECK|funcionarios|perfil
+funcionarios||CHECK|funcionarios|contratante_id
+funcionarios||CHECK|funcionarios|clinica_id
+funcionarios|clinica_id|FOREIGN KEY|clinicas|id
+funcionarios|cpf|UNIQUE|funcionarios|cpf
+funcionarios|empresa_id|FOREIGN KEY|empresas_clientes|id
+funcionarios|matricula|UNIQUE|funcionarios|matricula
+funcionarios||CHECK|funcionarios|perfil
+funcionarios||CHECK|funcionarios|nivel_cargo
+funcionarios||CHECK|funcionarios|empresa_id
+funcionarios||CHECK|funcionarios|perfil
+funcionarios||CHECK|funcionarios|contratante_id
+funcionarios||CHECK|funcionarios|clinica_id
+funcionarios||CHECK|funcionarios|perfil
+funcionarios|id|PRIMARY KEY|funcionarios|id
+funcionarios||CHECK|funcionarios|perfil
+funcionarios_clinicas||CHECK||
+funcionarios_clinicas||CHECK||
+funcionarios_clinicas||CHECK||
+funcionarios_clinicas|empresa_id|FOREIGN KEY|empresas_clientes|id
+funcionarios_clinicas|funcionario_id|FOREIGN KEY|funcionarios|id
+funcionarios_clinicas|id|PRIMARY KEY|funcionarios_clinicas|id
+funcionarios_clinicas|funcionario_id|UNIQUE|funcionarios_clinicas|empresa_id
+funcionarios_clinicas|empresa_id|UNIQUE|funcionarios_clinicas|funcionario_id
+funcionarios_clinicas|empresa_id|UNIQUE|funcionarios_clinicas|empresa_id
+funcionarios_clinicas|funcionario_id|UNIQUE|funcionarios_clinicas|funcionario_id
+funcionarios_entidades||CHECK||
+funcionarios_entidades||CHECK||
+funcionarios_entidades||CHECK||
+funcionarios_entidades|contratante_id|FOREIGN KEY|entidades|id
+funcionarios_entidades|funcionario_id|FOREIGN KEY|funcionarios|id
+funcionarios_entidades|id|PRIMARY KEY|funcionarios_entidades|id
+funcionarios_entidades|funcionario_id|UNIQUE|funcionarios_entidades|funcionario_id
+funcionarios_entidades|contratante_id|UNIQUE|funcionarios_entidades|funcionario_id
+funcionarios_entidades|contratante_id|UNIQUE|funcionarios_entidades|contratante_id
+funcionarios_entidades|funcionario_id|UNIQUE|funcionarios_entidades|contratante_id
+laudo_arquivos_remotos||CHECK||
+laudo_arquivos_remotos||CHECK||
+laudo_arquivos_remotos||CHECK||
+laudo_arquivos_remotos||CHECK||
+laudo_arquivos_remotos||CHECK||
+laudo_arquivos_remotos||CHECK||
+laudo_arquivos_remotos|laudo_id|FOREIGN KEY|laudos|id
+laudo_arquivos_remotos|id|PRIMARY KEY|laudo_arquivos_remotos|id
+laudo_downloads||CHECK||
+laudo_downloads||CHECK||
+laudo_downloads|arquivo_remoto_id|FOREIGN KEY|laudo_arquivos_remotos|id
+laudo_downloads|laudo_id|FOREIGN KEY|laudos|id
+laudo_downloads|id|PRIMARY KEY|laudo_downloads|id
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs||CHECK||
+laudo_generation_jobs|lote_id|FOREIGN KEY|lotes_avaliacao|id
+laudo_generation_jobs|id|PRIMARY KEY|laudo_generation_jobs|id
+laudos||CHECK||
+laudos||CHECK||
+laudos||CHECK|laudos|emissor_cpf
+laudos||CHECK|laudos|status
+laudos||CHECK|laudos|emitido_em
+laudos||CHECK|laudos|enviado_em
+laudos||CHECK|laudos|emissor_cpf
+laudos||CHECK|laudos|emitido_em
+laudos||CHECK|laudos|emitido_em
+laudos||CHECK|laudos|status
+laudos||CHECK|laudos|hash_pdf
+laudos||CHECK|laudos|hash_pdf
+laudos||CHECK|laudos|status
+laudos||CHECK|laudos|status
+laudos|emissor_cpf|FOREIGN KEY|funcionarios|cpf
+laudos|lote_id|FOREIGN KEY|lotes_avaliacao|id
+laudos|lote_id|FOREIGN KEY|lotes_avaliacao|id
+laudos|emissor_cpf|FOREIGN KEY|funcionarios|cpf
+laudos|emissor_cpf|FOREIGN KEY|funcionarios|cpf
+laudos||CHECK|laudos|lote_id
+laudos||CHECK|laudos|id
+laudos|emissor_cpf|UNIQUE|laudos|lote_id
+laudos|lote_id|UNIQUE|laudos|emissor_cpf
+laudos|lote_id|UNIQUE|laudos|lote_id
+laudos|emissor_cpf|UNIQUE|laudos|emissor_cpf
+laudos|lote_id|FOREIGN KEY|lotes_avaliacao|id
+laudos|lote_id|UNIQUE|laudos|lote_id
+laudos|id|PRIMARY KEY|laudos|id
+logs_admin||CHECK||
+logs_admin||CHECK||
+logs_admin||CHECK||
+logs_admin|id|PRIMARY KEY|logs_admin|id
+lote_id_allocator||CHECK||
+lotes_avaliacao||CHECK||
+lotes_avaliacao||CHECK||
+lotes_avaliacao|clinica_id|FOREIGN KEY|clinicas|id
+lotes_avaliacao|clinica_id|FOREIGN KEY|clinicas|id
+lotes_avaliacao||CHECK|lotes_avaliacao|clinica_id
+lotes_avaliacao||CHECK|lotes_avaliacao|contratante_id
+lotes_avaliacao|contratante_id|FOREIGN KEY|entidades|id
+lotes_avaliacao|empresa_id|FOREIGN KEY|empresas_clientes|id
+lotes_avaliacao|empresa_id|UNIQUE|lotes_avaliacao|empresa_id
+lotes_avaliacao|numero_ordem|UNIQUE|lotes_avaliacao|empresa_id
+lotes_avaliacao|numero_ordem|UNIQUE|lotes_avaliacao|numero_ordem
+lotes_avaliacao|empresa_id|UNIQUE|lotes_avaliacao|numero_ordem
+lotes_avaliacao|liberado_por|FOREIGN KEY|entidades_senhas|cpf
+lotes_avaliacao|id|PRIMARY KEY|lotes_avaliacao|id
+lotes_avaliacao||CHECK|lotes_avaliacao|status
+lotes_avaliacao||CHECK|lotes_avaliacao|tipo
+mfa_codes||CHECK||
+mfa_codes||CHECK||
+mfa_codes||CHECK||
+mfa_codes||CHECK||
+mfa_codes|cpf|FOREIGN KEY|funcionarios|cpf
+mfa_codes|id|PRIMARY KEY|mfa_codes|id
+migration_guidelines||CHECK||
+migration_guidelines||CHECK||
+migration_guidelines||CHECK||
+migration_guidelines|id|PRIMARY KEY|migration_guidelines|id
+notificacoes||CHECK||
+notificacoes||CHECK||
+notificacoes||CHECK||
+notificacoes||CHECK||
+notificacoes||CHECK||
+notificacoes||CHECK||
+notificacoes||CHECK||
+notificacoes||CHECK|notificacoes|destinatario_cpf
+notificacoes||CHECK|notificacoes|destinatario_tipo
+notificacoes|id|PRIMARY KEY|notificacoes|id
+notificacoes_admin||CHECK||
+notificacoes_admin||CHECK||
+notificacoes_admin||CHECK||
+notificacoes_admin||CHECK||
+notificacoes_admin|contratante_id|FOREIGN KEY|entidades|id
+notificacoes_admin|contrato_id|FOREIGN KEY|contratos|id
+notificacoes_admin|pagamento_id|FOREIGN KEY|pagamentos|id
+notificacoes_admin|lote_id|FOREIGN KEY|lotes_avaliacao|id
+notificacoes_admin|id|PRIMARY KEY|notificacoes_admin|id
+notificacoes_traducoes||CHECK||
+notificacoes_traducoes||CHECK||
+notificacoes_traducoes||CHECK||
+notificacoes_traducoes||CHECK||
+notificacoes_traducoes||CHECK||
+notificacoes_traducoes||CHECK|notificacoes_traducoes|categoria
+notificacoes_traducoes|id|PRIMARY KEY|notificacoes_traducoes|id
+notificacoes_traducoes|idioma|UNIQUE|notificacoes_traducoes|idioma
+notificacoes_traducoes|chave_traducao|UNIQUE|notificacoes_traducoes|chave_traducao
+notificacoes_traducoes|chave_traducao|UNIQUE|notificacoes_traducoes|idioma
+notificacoes_traducoes|idioma|UNIQUE|notificacoes_traducoes|chave_traducao
+pagamentos||CHECK||
+pagamentos||CHECK||
+pagamentos||CHECK||
+pagamentos||CHECK|pagamentos|numero_parcelas
+pagamentos|contrato_id|FOREIGN KEY|contratos|id
+pagamentos|idempotency_key|UNIQUE|pagamentos|idempotency_key
+pagamentos|id|PRIMARY KEY|pagamentos|id
+payment_links||CHECK||
+payment_links||CHECK||
+payment_links||CHECK||
+payment_links||CHECK||
+payment_links||CHECK||
+payment_links|contrato_id|FOREIGN KEY|contratos|id
+payment_links|id|PRIMARY KEY|payment_links|id
+payment_links|token|UNIQUE|payment_links|token
+pdf_jobs||CHECK||
+pdf_jobs||CHECK||
+pdf_jobs||CHECK||
+pdf_jobs||CHECK||
+pdf_jobs||CHECK||
+pdf_jobs||CHECK||
+pdf_jobs||CHECK||
+pdf_jobs|id|PRIMARY KEY|pdf_jobs|id
+pdf_jobs|recibo_id|FOREIGN KEY|recibos|id
+pdf_jobs|recibo_id|UNIQUE|pdf_jobs|recibo_id
+pdf_jobs||CHECK|pdf_jobs|status
+permissions||CHECK||
+permissions||CHECK||
+permissions||CHECK||
+permissions||CHECK||
+permissions|name|UNIQUE|permissions|name
+permissions|id|PRIMARY KEY|permissions|id
+planos||CHECK||
+planos||CHECK||
+planos||CHECK||
+planos|id|PRIMARY KEY|planos|id
+policy_expression_backups||CHECK||
+policy_expression_backups||CHECK||
+policy_expression_backups||CHECK||
+policy_expression_backups||CHECK||
+policy_expression_backups|id|PRIMARY KEY|policy_expression_backups|id
+questao_condicoes||CHECK||
+questao_condicoes||CHECK||
+questao_condicoes|id|PRIMARY KEY|questao_condicoes|id
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos||CHECK||
+recibos|clinica_id|FOREIGN KEY|clinicas|id
+recibos|contratante_id|FOREIGN KEY|entidades|id
+recibos|contrato_id|FOREIGN KEY|contratos|id
+recibos|pagamento_id|FOREIGN KEY|pagamentos|id
+recibos||CHECK|recibos|clinica_id
+recibos||CHECK|recibos|contratante_id
+recibos||CHECK|recibos|numero_funcionarios_cobertos
+recibos||CHECK|recibos|numero_parcelas
+recibos|numero_recibo|UNIQUE|recibos|numero_recibo
+recibos|pagamento_id|UNIQUE|recibos|pagamento_id
+recibos|id|PRIMARY KEY|recibos|id
+recibos||CHECK|recibos|valor_por_funcionario
+recibos||CHECK|recibos|valor_total_anual
+recibos||CHECK|recibos|vigencia_fim
+recibos||CHECK|recibos|vigencia_inicio
+relatorio_templates||CHECK||
+relatorio_templates||CHECK||
+relatorio_templates||CHECK||
+relatorio_templates|id|PRIMARY KEY|relatorio_templates|id
+relatorio_templates||CHECK|relatorio_templates|tipo
+respostas||CHECK||
+respostas||CHECK||
+respostas||CHECK||
+respostas||CHECK||
+respostas||CHECK||
+respostas|avaliacao_id|FOREIGN KEY|avaliacoes|id
+respostas|avaliacao_id|FOREIGN KEY|avaliacoes|id
+respostas|item|UNIQUE|respostas|avaliacao_id
+respostas|grupo|UNIQUE|respostas|item
+respostas|avaliacao_id|UNIQUE|respostas|avaliacao_id
+respostas|avaliacao_id|UNIQUE|respostas|grupo
+respostas|avaliacao_id|UNIQUE|respostas|item
+respostas|grupo|UNIQUE|respostas|avaliacao_id
+respostas|grupo|UNIQUE|respostas|grupo
+respostas|item|UNIQUE|respostas|item
+respostas|item|UNIQUE|respostas|grupo
+respostas|id|PRIMARY KEY|respostas|id
+respostas||CHECK|respostas|valor
+resultados||CHECK||
+resultados||CHECK||
+resultados||CHECK||
+resultados||CHECK||
+resultados||CHECK||
+resultados|avaliacao_id|FOREIGN KEY|avaliacoes|id
+resultados|avaliacao_id|FOREIGN KEY|avaliacoes|id
+resultados|grupo|UNIQUE|resultados|avaliacao_id
+resultados|avaliacao_id|UNIQUE|resultados|avaliacao_id
+resultados|grupo|UNIQUE|resultados|grupo
+resultados|avaliacao_id|UNIQUE|resultados|grupo
+resultados||CHECK|resultados|categoria
+resultados|id|PRIMARY KEY|resultados|id
+role_permissions||CHECK||
+role_permissions||CHECK||
+role_permissions|permission_id|FOREIGN KEY|permissions|id
+role_permissions|permission_id|PRIMARY KEY|role_permissions|role_id
+role_permissions|role_id|PRIMARY KEY|role_permissions|permission_id
+role_permissions|role_id|PRIMARY KEY|role_permissions|role_id
+role_permissions|permission_id|PRIMARY KEY|role_permissions|permission_id
+role_permissions|role_id|FOREIGN KEY|roles|id
+roles||CHECK||
+roles||CHECK||
+roles||CHECK||
+roles|name|UNIQUE|roles|name
+roles|id|PRIMARY KEY|roles|id
+session_logs||CHECK||
+session_logs||CHECK||
+session_logs||CHECK||
+session_logs||CHECK||
+session_logs||CHECK||
+session_logs|id|PRIMARY KEY|session_logs|id
+templates_contrato||CHECK||
+templates_contrato||CHECK||
+templates_contrato||CHECK||
+templates_contrato||CHECK||
+templates_contrato|nome|UNIQUE|templates_contrato|nome
+templates_contrato|id|PRIMARY KEY|templates_contrato|id
+templates_contrato||CHECK|templates_contrato|tipo_template
+tokens_retomada_pagamento||CHECK||
+tokens_retomada_pagamento||CHECK||
+tokens_retomada_pagamento||CHECK||
+tokens_retomada_pagamento||CHECK||
+tokens_retomada_pagamento||CHECK||
+tokens_retomada_pagamento||CHECK|tokens_retomada_pagamento|criado_em
+tokens_retomada_pagamento||CHECK|tokens_retomada_pagamento|expira_em
+tokens_retomada_pagamento|contratante_id|FOREIGN KEY|entidades|id
+tokens_retomada_pagamento|contrato_id|FOREIGN KEY|contratos|id
+tokens_retomada_pagamento|id|PRIMARY KEY|tokens_retomada_pagamento|id
+tokens_retomada_pagamento|token|UNIQUE|tokens_retomada_pagamento|token
+usuarios||CHECK||
+usuarios||CHECK||
+usuarios||CHECK||
+usuarios||CHECK||
+usuarios|clinica_id|FOREIGN KEY|clinicas|id
+usuarios||CHECK|usuarios|cpf
+usuarios|cpf|UNIQUE|usuarios|cpf
+usuarios|entidade_id|FOREIGN KEY|entidades|id
+usuarios||CHECK|usuarios|clinica_id
+usuarios||CHECK|usuarios|tipo_usuario
+usuarios||CHECK|usuarios|entidade_id
+usuarios|id|PRIMARY KEY|usuarios|id
+usuarios||CHECK|usuarios|tipo_usuario
+usuarios||CHECK|usuarios|entidade_id
+usuarios||CHECK|usuarios|clinica_id
+(494 linhas)

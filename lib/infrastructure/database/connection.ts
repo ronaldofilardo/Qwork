@@ -29,7 +29,12 @@ if (databaseUrlCheck && databaseUrlCheck.includes('_test')) {
 }
 
 // VALIDAÇÃO CRÍTICA: Bloquear nr-bps_db em ambiente de teste
-if (environment === 'test' || isRunningTests) {
+// Mas permitir durante build (NODE_ENV=production sem JEST_WORKER_ID)
+const isReallyTest =
+  (environment === 'test' || isRunningTests) &&
+  process.env.NODE_ENV !== 'production';
+
+if (isReallyTest) {
   const suspectVars = [
     process.env.DATABASE_URL,
     process.env.LOCAL_DATABASE_URL,

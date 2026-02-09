@@ -23,11 +23,11 @@ const client = new Client(process.env.TEST_DATABASE_URL);
     );
     console.log('Planos disponíveis:', planosResult.rows);
 
-    // Verificar contratantes existentes
-    const contratantesResult = await client.query(
-      'SELECT cnpj, status, ativa FROM contratantes LIMIT 5'
+    // Verificar tomadores existentes
+    const tomadoresResult = await client.query(
+      'SELECT cnpj, status, ativa FROM tomadores LIMIT 5'
     );
-    console.log('Contratantes existentes:', contratantesResult.rows);
+    console.log('tomadores existentes:', tomadoresResult.rows);
 
     await client.end();
   } catch (e) {

@@ -76,19 +76,19 @@ export function requireGestor(): Session {
 export function sessionHasAccessToLote(
   session: Session,
   loteId: number,
-  contratanteId?: number
+  tomadorId?: number
 ): boolean {
   // Emissor tem acesso a lotes concluídos/finalizados/ativos (RLS no banco)
   if (session.perfil === 'emissor') {
     return true; // RLS já filtra no banco
   }
 
-  // RH/Entidade só pode acessar lotes do seu contratante
+  // RH/Entidade só pode acessar lotes do seu tomador
   if (session.perfil === 'rh' || session.perfil === 'gestor') {
-    if (!contratanteId) {
+    if (!tomadorId) {
       return false;
     }
-    return session.contratante_id === contratanteId;
+    return session.tomador_id === tomadorId;
   }
 
   // Admin NÃO tem acesso operacional implícito a lotes (não é emissor nem RH)
@@ -164,11 +164,11 @@ export function withAuth<T extends any[]>(
 export function getRLSContext(session: Session): {
   role: string;
   userId: string;
-  contratanteId: string;
+  tomadorId: string;
 } {
   return {
     role: session.perfil,
     userId: session.cpf,
-    contratanteId: String(session.contratante_id || ''),
+    tomadorId: String(session.tomador_id || ''),
   };
 }

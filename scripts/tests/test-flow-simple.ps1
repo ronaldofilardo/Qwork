@@ -22,10 +22,10 @@ Write-Host "[OK] Planos cadastrados: $($planosCount.Trim())"
 Write-Host "`n[2/6] Cadastrando contratante..."
 $cnpjTeste = "12345678000199"
 
-$deleteResult = psql -U postgres -d nr-bps_db -c "DELETE FROM contratantes WHERE cnpj = '$cnpjTeste';" 2>&1 | Out-Null
+$deleteResult = psql -U postgres -d nr-bps_db -c "DELETE FROM tomadores WHERE cnpj = '$cnpjTeste';" 2>&1 | Out-Null
 
 $insertQuery = @"
-INSERT INTO contratantes (
+INSERT INTO tomadores (
     tipo, nome, cnpj, inscricao_estadual, email, telefone,
     endereco, cidade, estado, cep,
     responsavel_nome, responsavel_cpf, responsavel_cargo,
@@ -75,7 +75,7 @@ if ($senhaId) {
 
 # 4. APROVAR E ATIVAR CONTRATANTE
 Write-Host "`n[4/6] Aprovando e ativando contratante..."
-$ativarQuery = "UPDATE contratantes SET status = 'aprovado', aprovado_em = NOW(), aprovado_por_cpf = '00000000000', pagamento_confirmado = true, data_primeiro_pagamento = NOW(), ativa = true, atualizado_em = NOW() WHERE id = $contratanteId;"
+$ativarQuery = "UPDATE tomadores SET status = 'aprovado', aprovado_em = NOW(), aprovado_por_cpf = '00000000000', pagamento_confirmado = true, data_primeiro_pagamento = NOW(), ativa = true, atualizado_em = NOW() WHERE id = $contratanteId;"
 
 psql -U postgres -d nr-bps_db -c $ativarQuery | Out-Null
 Write-Host "[OK] Contratante aprovado e ativado"
@@ -100,7 +100,7 @@ for ($i = 1; $i -le 3; $i++) {
         $funcId = $funcId.Trim()
         $funcIds += $funcId
         # Associar funcionario a empresa e contratante
-        $assocQuery = "INSERT INTO contratantes_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;"
+        $assocQuery = "INSERT INTO tomadores_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;"
         psql -U postgres -d nr-bps_db -c $assocQuery | Out-Null
     }
 }
@@ -130,10 +130,10 @@ Write-Host "========================================`n"
 
 # Verificar estado final
 Write-Host "Estado final do contratante:"
-psql -U postgres -d nr-bps_db -c "SELECT id, nome, status, ativa, pagamento_confirmado FROM contratantes WHERE id = $contratanteId;"
+psql -U postgres -d nr-bps_db -c "SELECT id, nome, status, ativa, pagamento_confirmado FROM tomadores WHERE id = $contratanteId;"
 
 Write-Host "`nFuncionarios associados:"
-psql -U postgres -d nr-bps_db -c "SELECT f.id, f.nome, f.cpf FROM funcionarios f JOIN contratantes_funcionarios cf ON f.id = cf.funcionario_id WHERE cf.contratante_id = $contratanteId LIMIT 5;"
+psql -U postgres -d nr-bps_db -c "SELECT f.id, f.nome, f.cpf FROM funcionarios f JOIN tomadores_funcionarios cf ON f.id = cf.funcionario_id WHERE cf.contratante_id = $contratanteId LIMIT 5;"
 
 Write-Host "`nLotes criados:"
 psql -U postgres -d nr-bps_db -c "SELECT l.id, l.codigo, l.criado_em FROM lotes_avaliacao l WHERE l.empresa_id = $empresaId;"

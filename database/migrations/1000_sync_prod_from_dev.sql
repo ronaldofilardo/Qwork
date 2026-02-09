@@ -72,8 +72,8 @@ COMMENT ON FUNCTION prevent_lote_status_change_after_emission IS 'Impede mudanç
 
 -- ==========================================
 
--- Trigger: tr_contratantes_sync_status_ativa_robust
-CREATE OR REPLACE FUNCTION contratantes_sync_status_ativa_robust()
+-- Trigger: tr_tomadores_sync_status_ativa_robust
+CREATE OR REPLACE FUNCTION tomadores_sync_status_ativa_robust()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Versão robusta da sincronização de status_ativa
@@ -84,13 +84,13 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-DROP TRIGGER IF EXISTS tr_contratantes_sync_status_ativa_robust ON contratantes;
-CREATE TRIGGER tr_contratantes_sync_status_ativa_robust
-  BEFORE INSERT OR UPDATE ON contratantes
+DROP TRIGGER IF EXISTS tr_tomadores_sync_status_ativa_robust ON tomadores;
+CREATE TRIGGER tr_tomadores_sync_status_ativa_robust
+  BEFORE INSERT OR UPDATE ON tomadores
   FOR EACH ROW
-  EXECUTE FUNCTION contratantes_sync_status_ativa_robust();
+  EXECUTE FUNCTION tomadores_sync_status_ativa_robust();
 
-COMMENT ON FUNCTION contratantes_sync_status_ativa_robust IS 'Sincroniza status_ativa com status de forma robusta';
+COMMENT ON FUNCTION tomadores_sync_status_ativa_robust IS 'Sincroniza status_ativa com status de forma robusta';
 
 -- ==========================================
 
@@ -343,7 +343,7 @@ SELECT
   COALESCE(ec.nome, c.nome) as entidade_nome
 FROM funcionarios f
 LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
-LEFT JOIN contratantes c ON f.contratante_id = c.id
+LEFT JOIN tomadores c ON f.contratante_id = c.id
 WHERE f.perfil IN ('gestor', 'rh')
 ORDER BY f.perfil, f.nome;
 
@@ -360,7 +360,7 @@ SELECT
   COALESCE(ec.nome, c.nome, cl.nome) as vinculo_nome
 FROM funcionarios f
 LEFT JOIN empresas_clientes ec ON f.empresa_id = ec.id
-LEFT JOIN contratantes c ON f.contratante_id = c.id
+LEFT JOIN tomadores c ON f.contratante_id = c.id
 LEFT JOIN clinicas cl ON f.clinica_id = cl.id
 ORDER BY f.criado_em DESC;
 

@@ -1,7 +1,7 @@
 -- Adiciona colunas de auditoria criados/atualizados onde testes esperam
 BEGIN;
 
-ALTER TABLE IF EXISTS contratantes
+ALTER TABLE IF EXISTS tomadores
   ADD COLUMN IF NOT EXISTS criado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   ADD COLUMN IF NOT EXISTS atualizado_em TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 

@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS contratos_planos (
   id SERIAL PRIMARY KEY,
   plano_id INTEGER REFERENCES planos(id),
   clinica_id INTEGER REFERENCES clinicas(id),
-  contratante_id INTEGER REFERENCES contratantes(id),
+  contratante_id INTEGER REFERENCES tomadores(id),
   tipo_contratante VARCHAR(20) NOT NULL CHECK (tipo_contratante IN ('clinica','entidade')),
   valor_personalizado_por_funcionario DECIMAL(10,2),
   inicio_vigencia DATE NOT NULL DEFAULT CURRENT_DATE,

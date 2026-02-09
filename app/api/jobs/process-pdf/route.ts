@@ -61,7 +61,7 @@ export function POST(_: NextRequest) {
       try {
         // Buscar dados do recibo
         const reciboResult = await query(
-          `SELECT r.id, r.numero_recibo, r.contratante_id 
+          `SELECT r.id, r.numero_recibo, r.tomador_id 
            FROM recibos r 
            WHERE r.id = $1 AND r.pdf IS NULL`,
           [job.recibo_id]
@@ -106,7 +106,7 @@ export function POST(_: NextRequest) {
         await markJobCompleted(job.id);
 
         // Criar notificação
-        await createReciboNotification(recibo.id, recibo.contratante_id);
+        await createReciboNotification(recibo.id, recibo.tomador_id);
 
         results.processed++;
         results.succeeded++;

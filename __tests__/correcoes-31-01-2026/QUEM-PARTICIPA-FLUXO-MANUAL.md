@@ -16,13 +16,13 @@
 - **API:** `POST /api/lotes/[loteId]/solicitar-emissao`
 - **Validação:** Verifica `clinica_id` do lote vs `clinica_id` do usuário
 
-#### 2️⃣ **gestor (Entidades/Contratantes)** ✅
+#### 2️⃣ **gestor (Entidades/tomadores)** ✅
 
-- **Quem:** Perfil `gestor` vinculado a um contratante
+- **Quem:** Perfil `gestor` vinculado a um tomador
 - **O que faz:** Solicita emissão de laudos para lotes de sua entidade
 - **Como:** Clica em "Solicitar Emissão" no dashboard
 - **API:** `POST /api/lotes/[loteId]/solicitar-emissao`
-- **Validação:** Verifica `contratante_id` do lote vs `contratante_id` do usuário
+- **Validação:** Verifica `tomador_id` do lote vs `tomador_id` do usuário
 
 #### 3️⃣ **Emissor** ✅
 
@@ -68,11 +68,11 @@ if (lote.clinica_id && user.perfil === 'rh') {
 }
 
 // Para lotes de ENTIDADE
-if (lote.contratante_id && user.perfil === 'gestor') {
-  // Validar contratante_id
-  if (user.contratante_id !== lote.contratante_id) {
+if (lote.tomador_id && user.perfil === 'gestor') {
+  // Validar tomador_id
+  if (user.tomador_id !== lote.tomador_id) {
     return NextResponse.json(
-      { error: 'Acesso negado: contratante não corresponde' },
+      { error: 'Acesso negado: tomador não corresponde' },
       { status: 403 }
     );
   }
@@ -228,8 +228,8 @@ Emissor ENVIA laudo (ETAPA 3) → status='enviado'
 ```typescript
 // Verifica:
 1. user.perfil === 'gestor'
-2. lote.contratante_id existe
-3. user.contratante_id === lote.contratante_id
+2. lote.tomador_id existe
+3. user.tomador_id === lote.tomador_id
 4. Lote está em status='concluido'
 5. Laudo não foi emitido ainda (emitido_em IS NULL)
 ```

@@ -84,10 +84,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'CPF já cadastrado' }, { status: 409 });
     }
 
-    // Verificar se CPF é gestor_de_entidade via entidades_senhas (gestor)
+    // Verificar se CPF é gestor de entidade ou RH de clínica
+    // Gestores de entidades estão em entidades_senhas
     const gestorEntidade = await query(
-      `SELECT 1 FROM entidades_senhas cs JOIN contratantes c ON c.id = cs.contratante_id
-       WHERE cs.cpf = $1 AND c.tipo = 'entidade' AND c.ativa = true`,
+      `SELECT 1 FROM entidades_senhas WHERE cpf = $1 LIMIT 1`,
       [cpf]
     );
 
@@ -95,11 +95,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'CPF pertence a um gestor de entidade; não pode ser cadastrado como emissor',
+            'CPF pertence a um gestor; não pode ser cadastrado como emissor',
         },
         { status: 409 }
       );
     }
+
+    // Verificar se CPF é RH de clínica
+    // const gestorClinica = await query(
+    //   `SELECT 1 FROM clinicas WHERE responsavel_cpf = $1 LIMIT 1`,
+    //   [cpf]
+    // );
 
     // Validações adicionais com funções específicas
     const cpfLimpo = cpf.replace(/\D/g, '');

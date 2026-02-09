@@ -15,7 +15,7 @@ interface ModalLinkContratoPersonalizadoProps {
   isOpen: boolean;
   onClose: () => void;
   contratoId: number;
-  contratanteNome: string;
+  tomadorNome: string;
   valorPorFuncionario: number;
   numeroFuncionarios: number;
   valorTotal: number;
@@ -27,7 +27,7 @@ export default function ModalLinkContratoPersonalizado({
   isOpen,
   onClose,
   contratoId,
-  contratanteNome,
+  tomadorNome,
   valorPorFuncionario,
   numeroFuncionarios,
   valorTotal,
@@ -97,7 +97,7 @@ export default function ModalLinkContratoPersonalizado({
               <h2 className="text-xl font-bold text-gray-800">
                 Contrato Personalizado Gerado
               </h2>
-              <p className="text-sm text-gray-600">{contratanteNome}</p>
+              <p className="text-sm text-gray-600">{tomadorNome}</p>
             </div>
           </div>
           <button
@@ -145,12 +145,9 @@ export default function ModalLinkContratoPersonalizado({
             </h3>
             <ol className="list-decimal list-inside space-y-2 text-sm text-orange-800">
               <li>Copie o link abaixo ou use o QR Code</li>
+              <li>Envie para o tomador por email, WhatsApp ou outro meio</li>
               <li>
-                Envie para o contratante por email, WhatsApp ou outro meio
-              </li>
-              <li>
-                O contratante acessará o link para visualizar e aceitar o
-                contrato
+                O tomador acessará o link para visualizar e aceitar o contrato
               </li>
               <li>Após aceite, será redirecionado para pagamento</li>
               <li>
@@ -223,11 +220,11 @@ export default function ModalLinkContratoPersonalizado({
               ⚠️ Status Atual: Aguardando Aceite e Pagamento
             </p>
             <p className="text-xs text-yellow-800">
-              O login do contratante será liberado automaticamente após o fluxo
+              O login do tomador será liberado automaticamente após o fluxo
               completo:
             </p>
             <ol className="text-xs text-yellow-800 space-y-1 ml-4 list-decimal">
-              <li>Contratante acessa o link e visualiza o contrato</li>
+              <li>tomador acessa o link e visualiza o contrato</li>
               <li>Aceita os termos do contrato</li>
               <li>Realiza o pagamento</li>
               <li>

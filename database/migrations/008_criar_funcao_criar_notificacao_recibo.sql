@@ -13,7 +13,7 @@ DECLARE
 BEGIN
   -- Buscar nome do contratante
   SELECT nome INTO v_contratante_nome
-  FROM contratantes
+  FROM tomadores
   WHERE id = p_contratante_id;
 
   -- Criar notificação

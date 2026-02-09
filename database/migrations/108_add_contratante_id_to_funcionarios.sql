@@ -15,7 +15,7 @@ COMMENT ON COLUMN funcionarios.contratante_id IS
 -- 2. Adicionar foreign key para garantir integridade
 ALTER TABLE funcionarios
   ADD CONSTRAINT fk_funcionarios_contratante
-  FOREIGN KEY (contratante_id) REFERENCES contratantes(id)
+  FOREIGN KEY (contratante_id) REFERENCES tomadores(id)
   ON DELETE CASCADE;
 
 -- 3. Criar índice para performance em queries de entidade
@@ -36,10 +36,10 @@ ALTER TABLE funcionarios
 COMMENT ON CONSTRAINT funcionarios_clinica_check ON funcionarios IS
 'Permite funcionarios sem clinica_id quando vinculados a um contratante (entidade) ou perfis especiais.';
 
--- 5. Backfill: atualizar funcionários de gestores_entidade vinculados via contratantes_funcionarios
+-- 5. Backfill: atualizar funcionários de gestores_entidade vinculados via tomadores_funcionarios
 UPDATE funcionarios f
 SET contratante_id = cf.contratante_id
-FROM contratantes_funcionarios cf
+FROM tomadores_funcionarios cf
 WHERE f.id = cf.funcionario_id
   AND cf.tipo_contratante = 'entidade'
   AND f.contratante_id IS NULL;

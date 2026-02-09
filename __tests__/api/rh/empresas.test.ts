@@ -1,20 +1,18 @@
 import { GET, POST } from '@/app/api/rh/empresas/route';
 
 // Mock do módulo de banco de dados
-jest.mock('@/lib/db-security', () => ({
-  queryWithContext: jest.fn(),
+jest.mock('@/lib/db', () => ({
+  query: jest.fn(),
 }));
 
 jest.mock('@/lib/session', () => ({
   requireClinica: jest.fn(),
 }));
 
-import { queryWithContext } from '@/lib/db-security';
+import { query } from '@/lib/db';
 import { requireClinica } from '@/lib/session';
 
-const mockQueryWithContext = queryWithContext as jest.MockedFunction<
-  typeof queryWithContext
->;
+const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireClinica = requireClinica as jest.MockedFunction<
   typeof requireClinica
 >;
@@ -38,6 +36,14 @@ describe('/api/rh/empresas', () => {
           email: 'empresaA@teste.com',
           ativa: true,
           criado_em: '2025-01-01T00:00:00Z',
+          telefone: '(11) 3000-0000',
+          endereco: 'Rua A, 100',
+          cidade: 'São Paulo',
+          estado: 'SP',
+          cep: '01234-567',
+          total_funcionarios: 5,
+          total_avaliacoes: 2,
+          avaliacoes_concluidas: 1,
         },
         {
           id: 2,
@@ -46,10 +52,18 @@ describe('/api/rh/empresas', () => {
           email: 'empresaB@teste.com',
           ativa: true,
           criado_em: '2025-01-02T00:00:00Z',
+          telefone: '(11) 3000-0001',
+          endereco: 'Rua B, 200',
+          cidade: 'São Paulo',
+          estado: 'SP',
+          cep: '01234-568',
+          total_funcionarios: 3,
+          total_avaliacoes: 1,
+          avaliacoes_concluidas: 0,
         },
       ];
 
-      mockQueryWithContext.mockResolvedValueOnce({ rows: mockEmpresas });
+      mockQuery.mockResolvedValueOnce({ rows: mockEmpresas });
 
       const response = await GET();
       const data = await response.json();
@@ -62,8 +76,16 @@ describe('/api/rh/empresas', () => {
         cnpj: '12.345.678/0001-01',
         email: 'empresaA@teste.com',
         ativa: true,
+        total_funcionarios: 5,
       });
       expect(data[1].nome).toBe('Empresa B');
+
+      // Verifica se a query usa funcionarios_clinicas corretamente
+      expect(mockQuery).toHaveBeenCalledWith(
+        expect.stringContaining('funcionarios_clinicas'),
+        expect.any(Array),
+        expect.any(Object)
+      );
     });
 
     it('deve retornar erro 403 quando RH não tem clinica_id', async () => {
@@ -80,7 +102,7 @@ describe('/api/rh/empresas', () => {
     });
 
     it('deve retornar erro 500 em caso de falha na query', async () => {
-      mockQueryWithContext.mockRejectedValueOnce(new Error('Erro de conexão'));
+      mockQuery.mockRejectedValueOnce(new Error('Erro de conexão'));
 
       const response = await GET();
       const data = await response.json();
@@ -123,7 +145,7 @@ describe('/api/rh/empresas', () => {
       ];
 
       // Mock da criação
-      mockQueryWithContext.mockResolvedValueOnce({ rows: mockResult });
+      mockQuery.mockResolvedValueOnce({ rows: mockResult });
 
       const request = new Request('http://localhost:3000/api/rh/empresas', {
         method: 'POST',
@@ -175,7 +197,7 @@ describe('/api/rh/empresas', () => {
       );
       constraintError.code = '23505';
       constraintError.constraint = 'empresas_clientes_cnpj_key';
-      mockQueryWithContext.mockRejectedValueOnce(constraintError);
+      mockQuery.mockRejectedValueOnce(constraintError);
 
       const request = new Request('http://localhost:3000/api/rh/empresas', {
         method: 'POST',

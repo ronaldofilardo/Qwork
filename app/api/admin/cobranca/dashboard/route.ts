@@ -70,8 +70,8 @@ export async function GET(_request: NextRequest) {
     const parcelasVencidasResult = await query(
       `SELECT
         p.id as pagamento_id,
-        c.id as contratante_id,
-        c.nome as contratante_nome,
+        c.id as tomador_id,
+        c.nome as tomador_nome,
         c.email,
         c.telefone,
         parcela->>'numero' as parcela_numero,
@@ -80,7 +80,7 @@ export async function GET(_request: NextRequest) {
         CURRENT_DATE - (parcela->>'data_vencimento')::date as dias_atraso,
         parcela->>'status' as status_parcela
       FROM pagamentos p
-      INNER JOIN contratantes c ON c.id = p.contratante_id
+      INNER JOIN tomadors c ON c.id = p.tomador_id
       CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
       WHERE p.detalhes_parcelas IS NOT NULL
         AND parcela->>'status' = 'pendente'
@@ -93,14 +93,14 @@ export async function GET(_request: NextRequest) {
     const proximosVencimentosResult = await query(
       `SELECT
         p.id as pagamento_id,
-        c.nome as contratante_nome,
+        c.nome as tomador_nome,
         c.email,
         parcela->>'numero' as parcela_numero,
         (parcela->>'valor')::numeric as parcela_valor,
         (parcela->>'data_vencimento')::date as data_vencimento,
         (parcela->>'data_vencimento')::date - CURRENT_DATE as dias_ate_vencimento
       FROM pagamentos p
-      INNER JOIN contratantes c ON c.id = p.contratante_id
+      INNER JOIN tomadors c ON c.id = p.tomador_id
       CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
       WHERE p.detalhes_parcelas IS NOT NULL
         AND parcela->>'status' = 'pendente'
@@ -109,7 +109,7 @@ export async function GET(_request: NextRequest) {
       LIMIT 10`
     );
 
-    // Query 10: Contratantes inadimplentes
+    // Query 10: tomadors inadimplentes
     const inadimplentesResult = await query(
       `SELECT
         c.id,
@@ -120,8 +120,8 @@ export async function GET(_request: NextRequest) {
         SUM((parcela->>'valor')::numeric) as valor_total_vencido,
         MIN((parcela->>'data_vencimento')::date) as primeira_parcela_vencida,
         MAX(CURRENT_DATE - (parcela->>'data_vencimento')::date) as dias_maior_atraso
-      FROM contratantes c
-      INNER JOIN pagamentos p ON p.contratante_id = c.id
+      FROM tomadors c
+      INNER JOIN pagamentos p ON p.tomador_id = c.id
       CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
       WHERE parcela->>'status' = 'pendente'
         AND (parcela->>'data_vencimento')::date < CURRENT_DATE

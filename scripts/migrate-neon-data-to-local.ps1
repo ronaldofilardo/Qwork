@@ -1,5 +1,5 @@
 # Migração de dados Neon Cloud → nr-bps_db
-# Migra: planos, contratantes, clínicas, empresas, funcionários (com dependências)
+# Migra: planos, tomadores, clínicas, empresas, funcionários (com dependências)
 
 Write-Host "🔄 Migração de Dados: Neon Cloud → nr-bps_db" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
@@ -12,7 +12,7 @@ Write-Host "📊 Verificando dados no Neon Cloud..." -ForegroundColor Yellow
 $check = psql --dbname=$NEON_URL --tuples-only --no-align -c @"
 SELECT 
     (SELECT COUNT(*) FROM planos) as planos,
-    (SELECT COUNT(*) FROM contratantes) as contratantes,
+    (SELECT COUNT(*) FROM tomadores) as tomadores,
     (SELECT COUNT(*) FROM clinicas) as clinicas,
     (SELECT COUNT(*) FROM empresas_clientes) as empresas,
     (SELECT COUNT(*) FROM funcionarios) as funcionarios;
@@ -24,7 +24,7 @@ Write-Host ""
 # Ordem de migração (respeita foreign keys)
 $tables = @(
     "planos",
-    "contratantes",
+    "tomadores",
     "entidades_senhas",
     "clinicas",
     "empresas_clientes",
@@ -75,7 +75,7 @@ Write-Host "📊 Verificando migração..." -ForegroundColor Yellow
 $result = psql --dbname=$LOCAL_URL --tuples-only --no-align --field-separator=' | ' -c @"
 SELECT 'planos' as tabela, COUNT(*) as registros FROM planos
 UNION ALL
-SELECT 'contratantes', COUNT(*) FROM contratantes
+SELECT 'tomadores', COUNT(*) FROM tomadores
 UNION ALL
 SELECT 'clinicas', COUNT(*) FROM clinicas
 UNION ALL

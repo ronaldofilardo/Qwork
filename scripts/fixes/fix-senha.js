@@ -1,7 +1,7 @@
 const { query, criarContaResponsavel } = require('./lib/db');
 
 async function criarSenha() {
-  const contratante = {
+  const tomador = {
     id: 39,
     responsavel_cpf: '87545772920',
     responsavel_nome: 'RONALDO FILARDO',
@@ -17,7 +17,7 @@ async function criarSenha() {
     clinica_id: null,
   };
 
-  await criarContaResponsavel(contratante, session);
+  await criarContaResponsavel(tomador, session);
   console.log('Senha criada com sucesso');
 }
 

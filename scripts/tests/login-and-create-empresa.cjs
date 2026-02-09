@@ -10,7 +10,7 @@ const { query } = require('../../lib/db');
 
     // Calcular senha a partir do CNPJ do contratante (últimos 6 dígitos)
     const resp = await query(
-      'SELECT c.cnpj FROM contratantes c JOIN funcionarios f ON f.contratante_id = c.id WHERE f.cpf = $1 LIMIT 1',
+      'SELECT c.cnpj FROM tomadores c JOIN funcionarios f ON f.contratante_id = c.id WHERE f.cpf = $1 LIMIT 1',
       [cpf]
     );
     const cnpj = resp.rows[0]?.cnpj || '';

@@ -1,6 +1,6 @@
--- Migração: Criar clínicas faltantes para contratantes ativos tipo 'clinica'
+-- Migração: Criar clínicas faltantes para tomadores ativos tipo 'clinica'
 -- Data: 2026-01-26
--- Objetivo: Corrigir dados órfãos de contratantes sem entrada em clinicas
+-- Objetivo: Corrigir dados órfãos de tomadores sem entrada em clinicas
 
 DO $$
 DECLARE
@@ -21,7 +21,7 @@ BEGIN
       c.endereco,
       c.cnpj,
       c.responsavel_cpf
-    FROM contratantes c
+    FROM tomadores c
     WHERE c.tipo = 'clinica'
       AND c.ativa = true
       AND c.pagamento_confirmado = true
@@ -85,9 +85,9 @@ END $$;
 
 -- Verificação pós-migração
 SELECT 
-  'Contratantes tipo clinica SEM clinica' as status,
+  'tomadores tipo clinica SEM clinica' as status,
   COUNT(*) as total
-FROM contratantes c
+FROM tomadores c
 WHERE c.tipo = 'clinica'
   AND c.ativa = true
   AND c.pagamento_confirmado = true

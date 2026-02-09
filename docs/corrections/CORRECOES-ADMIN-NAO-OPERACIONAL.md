@@ -13,7 +13,7 @@
 
 **Solução:**
 
-- Admin pode ver auditorias de: clínicas, contratantes, planos, emissores (administrativo)
+- Admin pode ver auditorias de: clínicas, tomadores, planos, emissores (administrativo)
 - Admin NÃO pode ver auditorias de: laudos, lotes, avaliações, empresas, funcionários (operacional)
 
 ### 2. Views de Auditoria
@@ -49,7 +49,7 @@ DROP VIEW IF EXISTS vw_auditoria_lotes;
 
 Garantir que todas as rotas em `/api/admin/*` sejam APENAS administrativas:
 
-- ✅ `/api/admin/contratantes` - OK (administrativo)
+- ✅ `/api/admin/tomadores` - OK (administrativo)
 - ✅ `/api/admin/clinicas` - OK (administrativo)
 - ✅ `/api/admin/planos` - OK (administrativo)
 - ✅ `/api/admin/emissores` - OK (administrativo)
@@ -86,7 +86,7 @@ export const POST = async (req: Request) => {
 **Admin deve ter acesso a:**
 
 - ✅ Clínicas (manage, approve)
-- ✅ Contratantes/Entidades (manage, approve)
+- ✅ tomadores/Entidades (manage, approve)
 - ✅ Planos (manage)
 - ✅ Emissores (manage)
 - ✅ Roles e Permissions (manage)

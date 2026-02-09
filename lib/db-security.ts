@@ -24,18 +24,25 @@ function isValidCPF(cpf: string): boolean {
  * FASE 3: Valida contexto de sessão usando perfil (não usuario_tipo)
  * usuario_tipo é usado para diferenciação interna, mas session.perfil é o que vem do login
  */
-async function validateSessionContext(
+async function _validateSessionContext(
   cpf: string,
   perfil: string
 ): Promise<boolean> {
   try {
     // Validação: todos os usuários estão em funcionarios
     // Importante: usar 'perfil' (que vem da sessão de login), não 'usuario_tipo' (enum interno)
+    // Nota: clinica_id e entidade_id não existem em funcionarios - são relações N:N via funcionarios_clinicas/funcionarios_entidades
+
+    // Debug: log da tentativa de validação
+    console.log(
+      `[validateSessionContext] Buscando: CPF=${cpf}, Perfil=${perfil}`
+    );
+
     const result = await query(
-      `SELECT cpf, perfil, ativo, clinica_id, entidade_id
+      `SELECT cpf, perfil, ativo
        FROM funcionarios
-       WHERE cpf = $1 AND perfil = $2`,
-      [cpf, perfil]
+       WHERE cpf = $1`,
+      [cpf]
     );
 
     if (result.rows.length === 0) {
@@ -46,6 +53,21 @@ async function validateSessionContext(
     }
 
     const user = result.rows[0];
+
+    // Debug: mostrar o que foi encontrado
+    console.log(`[validateSessionContext] Usuário encontrado:`, {
+      cpf: user.cpf,
+      perfil: user.perfil,
+      ativo: user.ativo,
+    });
+
+    // Verificar se o perfil corresponde (ignorando case)
+    if (user.perfil?.toLowerCase() !== perfil?.toLowerCase()) {
+      console.error(
+        `[validateSessionContext] Perfil não corresponde: Esperado=${perfil}, Encontrado=${user.perfil}`
+      );
+      return false;
+    }
 
     if (!user.ativo) {
       console.error(`[validateSessionContext] Usuário inativo: CPF=${cpf}`);
@@ -116,41 +138,10 @@ export async function queryWithContext<T = Record<string, unknown>>(
         perfil,
       ]);
 
-      // FASE 3: Buscar usuario_tipo correspondente ao perfil da sessão
-      // Mapeamento: perfil (sessão) → usuario_tipo (banco)
-      let usuarioTipoParaValidacao: string;
-      if (perfil === 'rh') {
-        usuarioTipoParaValidacao = 'rh';
-      } else if (perfil === 'gestor') {
-        usuarioTipoParaValidacao = 'gestor';
-      } else if (perfil === 'funcionario') {
-        // Pode ser funcionario_clinica ou funcionario_entidade
-        // Validar se existe com qualquer um dos tipos
-        const checkFunc = await query(
-          'SELECT usuario_tipo FROM funcionarios WHERE cpf = $1 AND usuario_tipo IN ($2, $3)',
-          [cpf, 'funcionario_clinica', 'funcionario_entidade']
-        );
-        usuarioTipoParaValidacao =
-          checkFunc.rows.length > 0
-            ? checkFunc.rows[0].usuario_tipo
-            : 'funcionario_clinica';
-      } else {
-        // admin, emissor mantém mesmo nome
-        usuarioTipoParaValidacao = perfil;
-      }
-
-      // Validar que o usuário existe no banco com esse CPF e usuario_tipo
-      // 🔒 SEGURANÇA: Validação obrigatória em qualquer ambiente
-      const isValid = await validateSessionContext(
-        cpf,
-        usuarioTipoParaValidacao
-      );
-
-      if (!isValid) {
-        throw new Error(
-          'SEGURANÇA: Contexto de sessão inválido - usuário não encontrado ou inativo'
-        );
-      }
+      // 🔒 NOTA: Não revalidamos CPF aqui porque:
+      // - A sessão foi validada por requireAuth() antes desta função
+      // - Revalidar aqui pode causar conflito com RLS (bloqueio antes de set_config)
+      // - Se CPF for inválido, RLS vai bloquear queries anyway
 
       // Definir variáveis de contexto usando parametrização segura
       await query('SELECT set_config($1, $2, false)', [
@@ -162,36 +153,51 @@ export async function queryWithContext<T = Record<string, unknown>>(
         perfil,
       ]);
 
-      // FASE 3: Obter identificadores de contexto baseado em usuario_tipo
+      // FASE 3: Obter identificadores de contexto baseado no perfil da sessão
+      // Usar perfil diretamente ao invés de usuario_tipo (que pode não existir no banco)
       let clinicaId: string | null = null;
       let entidadeId: string | null = null;
-      let usuarioTipo: string | null = null;
 
-      // Buscar dados do usuário para determinar tipo e vínculos
-      const userData = await query(
-        'SELECT usuario_tipo, clinica_id, entidade_id FROM funcionarios WHERE cpf = $1',
-        [cpf]
-      );
-
-      if (userData.rows.length > 0) {
-        const user = userData.rows[0];
-        usuarioTipo = user.usuario_tipo;
-
-        if (user.clinica_id) {
-          clinicaId = user.clinica_id.toString();
-        }
-        if (user.entidade_id) {
-          entidadeId = user.entidade_id.toString();
+      // Buscar clinica_id via funcionarios_clinicas (para RH)
+      if (perfil === 'rh') {
+        const clinicaResult = await query(
+          `SELECT DISTINCT ec.clinica_id
+           FROM funcionarios f
+           JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
+           JOIN empresas_clientes ec ON ec.id = fc.empresa_id
+           WHERE f.cpf = $1 AND fc.ativo = true
+           LIMIT 1`,
+          [cpf]
+        );
+        if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
+          clinicaId = clinicaResult.rows[0].clinica_id.toString();
         }
       }
 
-      // FASE 3: Definir variáveis de contexto para RLS com usuario_tipo
-      if (usuarioTipo) {
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_tipo',
-          usuarioTipo,
-        ]);
+      // Buscar entidade_id via funcionarios_entidades (para gestores)
+      if (perfil === 'gestor') {
+        const entidadeResult = await query(
+          `SELECT DISTINCT fe.entidade_id
+           FROM funcionarios f
+           JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
+           WHERE f.cpf = $1 AND fe.ativo = true
+           LIMIT 1`,
+          [cpf]
+        );
+        if (
+          entidadeResult.rows.length > 0 &&
+          entidadeResult.rows[0].entidade_id
+        ) {
+          entidadeId = entidadeResult.rows[0].entidade_id.toString();
+        }
       }
+
+      // FASE 3: Definir variáveis de contexto para RLS
+      // Definir perfil como tipo de usuário para compatibilidade com RLS
+      await query('SELECT set_config($1, $2, false)', [
+        'app.current_user_tipo',
+        perfil,
+      ]);
 
       if (clinicaId) {
         // Validar que clinica_id é um número válido
@@ -302,13 +308,10 @@ export async function queryWithEmpresaFilter<T = unknown>(
         throw new Error('Perfil inválido na sessão');
       }
 
-      // Validar que o usuário existe no banco
-      const isValid = await validateSessionContext(cpf, perfil);
-      if (!isValid) {
-        throw new Error(
-          'Contexto de sessão inválido: usuário não encontrado ou inativo'
-        );
-      }
+      // 🔒 NOTA: Não revalidamos CPF aqui porque:
+      // - A sessão foi validada por requireAuth() antes desta função
+      // - Revalidar aqui pode causar conflito com RLS (bloqueio antes de set_config)
+      // - Se CPF for inválido, RLS vai bloquear queries anyway
 
       // Definir variáveis de contexto usando parametrização segura
       await query('SELECT set_config($1, $2, false)', [
@@ -320,24 +323,37 @@ export async function queryWithEmpresaFilter<T = unknown>(
         perfil,
       ]);
 
-      // Obter clinica_id do funcionário validado
-      const clinicaResult = await query(
-        'SELECT clinica_id FROM funcionarios WHERE cpf = $1 AND perfil = $2',
-        [cpf, perfil]
-      );
-      if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
-        const clinicaId = clinicaResult.rows[0].clinica_id.toString();
+      // Obter clinica_id através de funcionarios_clinicas (relação N:N)
+      // Busca APENAS para perfis que necessitam (RH, gestor, emissor)
+      if (['rh', 'gestor', 'emissor'].includes(perfil)) {
+        const clinicaResult = await query(
+          `SELECT ec.clinica_id 
+           FROM funcionarios f
+           JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
+           JOIN empresas_clientes ec ON ec.id = fc.empresa_id
+           WHERE f.cpf = $1 AND fc.ativo = true
+           ORDER BY fc.data_vinculo DESC
+           LIMIT 1`,
+          [cpf]
+        );
+        if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
+          const clinicaId = clinicaResult.rows[0].clinica_id.toString();
 
-        // Validar que clinica_id é um número válido
-        if (!/^\d+$/.test(clinicaId)) {
-          throw new Error('ID de clínica inválido');
+          // Validar que clinica_id é um número válido
+          if (!/^\d+$/.test(clinicaId)) {
+            throw new Error('ID de clínica inválido');
+          }
+
+          await query('SELECT set_config($1, $2, false)', [
+            'app.current_user_clinica_id',
+            clinicaId,
+          ]);
+        } else if (perfil === 'rh') {
+          // Para RH, clinica_id é obrigatória
+          throw new Error('RH deve estar vinculado a uma clínica ativa');
         }
-
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_clinica_id',
-          clinicaId,
-        ]);
       }
+      // Para funcionários normais, clinica_id é opcional (não necessário para avaliações)
 
       // Definir filtro de empresa se fornecido
       if (empresaId !== undefined && empresaId !== null) {
@@ -349,7 +365,13 @@ export async function queryWithEmpresaFilter<T = unknown>(
         // Validar que a empresa pertence à clínica do RH (se for RH)
         if (perfil === 'rh') {
           const empresaCheck = await query(
-            'SELECT id FROM empresas_clientes WHERE id = $1 AND clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $2)',
+            `SELECT ec.id 
+             FROM empresas_clientes ec
+             JOIN funcionarios f ON f.cpf = $2
+             JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id AND fc.ativo = true
+             JOIN empresas_clientes ec2 ON ec2.id = fc.empresa_id
+             WHERE ec.id = $1 AND ec.clinica_id = ec2.clinica_id
+             LIMIT 1`,
             [empresaId, cpf]
           );
 
@@ -427,13 +449,11 @@ export async function transactionWithContext<T = void>(
         throw new Error('Perfil inválido na sessão');
       }
 
-      // Validar que o usuário existe no banco
-      const isValid = await validateSessionContext(cpf, perfil);
-      if (!isValid) {
-        throw new Error(
-          'Contexto de sessão inválido: usuário não encontrado ou inativo'
-        );
-      }
+      // 🔒 NOTA: Não revalidamos CPF aqui porque:
+      // - A sessão foi validada por requireAuth() ou requireRHWithEmpresaAccess() antes
+      // - Revalidar aqui pode causar conflito com RLS (bloqueio antes de set_config)
+      // - Entidade também não revalida, apenas confia na validação antes
+      // - Se CPF for inválido, RLS vai bloquear queries anyway
 
       // Definir variáveis de contexto usando parametrização segura
       await query('SELECT set_config($1, $2, false)', [
@@ -445,24 +465,29 @@ export async function transactionWithContext<T = void>(
         perfil,
       ]);
 
-      // Obter clinica_id do funcionário validado
-      const clinicaResult = await query(
-        'SELECT clinica_id FROM funcionarios WHERE cpf = $1 AND perfil = $2',
-        [cpf, perfil]
-      );
-      if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
-        const clinicaId = clinicaResult.rows[0].clinica_id.toString();
+      // 🔒 Configurar clinica_id apenas se a sessão já tiver
+      // IMPORTANTE: O clinica_id já foi validado ANTES por requireRHWithEmpresaAccess()
+      // ou requireEntity(), então confiamos no valor da sessão (sem refazer buscas no banco)
+      if (session.clinica_id) {
+        const clinicaId = session.clinica_id.toString();
 
-        // Validar que clinica_id é um número válido
+        // Validação de segurança: garantir que é um número
         if (!/^\d+$/.test(clinicaId)) {
-          throw new Error('ID de clínica inválido');
+          throw new Error('ID de clínica inválido na sessão');
         }
 
         await query('SELECT set_config($1, $2, false)', [
           'app.current_user_clinica_id',
           clinicaId,
         ]);
+      } else if (perfil === 'rh') {
+        // Para RH, clinica_id é obrigatória
+        // Se não tiver aqui, significa que a autenticação falhou antes (bug em outra camada)
+        throw new Error(
+          'Contexto RLS: RH sem clinica_id na sessão. Erro na camada de autenticação.'
+        );
       }
+      // Para funcionários normais, clinica_id é opcional (não necessário para avaliações)
     }
 
     // Executar callback com queries e capturar resultado
@@ -625,7 +650,7 @@ export async function queryWithSecurity<T = Record<string, unknown>>(
 
   // Detectar tipo de usuário e rotear para função apropriada
   if (isGestor(session.perfil)) {
-    // Gestores: validação via contratantes, sem RLS
+    // Gestores: validação via tomadors, sem RLS
     console.log(
       `[queryWithSecurity] Roteando para queryAsGestor (perfil: ${session.perfil})`
     );

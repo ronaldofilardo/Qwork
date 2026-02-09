@@ -8,14 +8,13 @@ export const revalidate = 0;
 /**
  * POST /api/entidade/lote/[id]/solicitar-emissao
  * Solicitar emissão de laudo para um lote
- * 
+ *
  * Ações:
  * 1. Validar que lote pertence à entidade
  * 2. Validar que tem avaliações concluídas
- * 3. Contar funcionários com avaliações concluídas (para cobrança)
- * 4. Marcar lote como pagamento_pendente=true
- * 5. Criar registro em fila de emissão
- * 6. Notificar admin
+ * 3. Contar funcionários com avaliações concluídas
+ * 4. Criar registro em fila de emissão
+ * 5. Registrar solicitação em audit_log
  */
 export async function POST(
   request: Request,
@@ -41,16 +40,11 @@ export async function POST(
         la.tipo,
         la.status,
         la.criado_em,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN f.id END) as funcionarios_concluidos
+        COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN f.id END) as funcionarios_concluidos
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON a.lote_id = la.id
       LEFT JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE la.id = $1 
-        AND EXISTS (
-          SELECT 1 FROM avaliacoes a2
-          JOIN funcionarios f2 ON a2.funcionario_cpf = f2.cpf 
-          WHERE a2.lote_id = la.id AND f2.tomador_id = $2
-        )
+      WHERE la.id = $1 AND la.entidade_id = $2
       GROUP BY la.id, la.tipo, la.status, la.criado_em
       LIMIT 1
     `,
@@ -70,14 +64,13 @@ export async function POST(
     if (!lote.funcionarios_concluidos || lote.funcionarios_concluidos === 0) {
       return NextResponse.json(
         {
-          error:
-            'Lote não possui avaliações concluídas para solicitar emissão',
+          error: 'Lote não possui avaliações concluídas para solicitar emissão',
         },
         { status: 400 }
       );
     }
 
-    // Verificar se já foi solicitada emissão (pagamento pendente)
+    // Verificar se já foi solicitada emissão
     const jaExisteResult = await query(
       `SELECT id FROM v_fila_emissao WHERE lote_id = $1 LIMIT 1`,
       [loteId]
@@ -92,12 +85,6 @@ export async function POST(
         { status: 409 }
       );
     }
-
-    // Marcar lote como pagamento pendente
-    await query(
-      `UPDATE lotes_avaliacao SET pagamento_pendente = true WHERE id = $1`,
-      [loteId]
-    );
 
     // Criar registro em fila de emissão (se tabela existe) ou apenas registrar a solicitação
     // Aqui estamos criando um registro que o admin verá no dashboard

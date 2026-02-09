@@ -1,9 +1,9 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ConfirmacaoStep from '@/components/modals/ModalCadastroContratante/ConfirmacaoStep';
+import ConfirmacaoStep from '@/components/modals/ModalCadastroTomadorSteps/ConfirmacaoStep';
 
 describe('ConfirmacaoStep', () => {
-  const dadosContratante = {
+  const dadostomador = {
     nome: 'ACME',
     cnpj: '11.444.777/0001-61',
     email: 'a@a.com',
@@ -31,7 +31,7 @@ describe('ConfirmacaoStep', () => {
     const setConfirm = jest.fn();
     render(
       <ConfirmacaoStep
-        dadosContratante={dadosContratante}
+        dadostomador={dadostomador}
         dadosResponsavel={dadosResponsavel}
         arquivos={arquivos}
         confirmacaoFinalAceita={false}

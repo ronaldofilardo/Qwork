@@ -15,15 +15,15 @@ export async function GET(
 
     const res = await query(
       `SELECT cp.id as contratacao_id,
-              cp.contratante_id,
-              c.nome as contratante_nome,
+              cp.entidade_id,
+              c.nome as tomador_nome,
               cp.numero_funcionarios_estimado as numero_funcionarios,
               cp.valor_total_estimado as valor_total,
               cp.valor_por_funcionario,
               cp.status,
               cp.payment_link_expiracao
        FROM contratacao_personalizada cp
-       JOIN contratantes c ON c.id = cp.contratante_id
+       JOIN entidades c ON c.id = cp.entidade_id
        WHERE cp.id = $1 LIMIT 1`,
       [id]
     );
@@ -56,8 +56,8 @@ export async function GET(
     return NextResponse.json({
       valido: true,
       contratacao_id: cp.contratacao_id,
-      contratante_id: cp.contratante_id,
-      contratante_nome: cp.contratante_nome,
+      entidade_id: cp.entidade_id,
+      tomador_nome: cp.tomador_nome,
       numero_funcionarios: parseInt(cp.numero_funcionarios, 10),
       valor_total: parseFloat(cp.valor_total),
       valor_por_funcionario: parseFloat(cp.valor_por_funcionario || '0'),

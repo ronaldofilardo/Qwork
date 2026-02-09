@@ -8,14 +8,14 @@ async function checkColumns() {
 
     console.log('=== VERIFICANDO ESTRUTURA DAS COLUNAS ===');
 
-    // Verificar estrutura da tabela contratantes
-    const contratantes = await client.query(`
+    // Verificar estrutura da tabela tomadores
+    const tomadores = await client.query(`
       SELECT column_name, data_type, udt_name
       FROM information_schema.columns
-      WHERE table_name = 'contratantes' AND column_name = 'plano_tipo'
+      WHERE table_name = 'tomadores' AND column_name = 'plano_tipo'
     `);
 
-    console.log('Coluna plano_tipo em contratantes:', contratantes.rows[0]);
+    console.log('Coluna plano_tipo em tomadores:', tomadores.rows[0]);
 
     // Verificar estrutura da tabela planos
     const planos = await client.query(`

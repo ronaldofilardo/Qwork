@@ -22,7 +22,7 @@ describe('API: relatorio de lote', () => {
     jest.clearAllMocks();
     getSession.mockReturnValue({
       perfil: 'gestor',
-      contratante_id: 42,
+      tomador_id: 42,
     });
   });
 
@@ -63,7 +63,7 @@ describe('API: relatorio de lote', () => {
               setor: 'A',
               funcao: 'T',
               nivel_cargo: 'N1',
-              avaliacao_status: 'concluido',
+              avaliacao_status: 'concluida',
               data_conclusao: emitidoEm,
             },
           ],

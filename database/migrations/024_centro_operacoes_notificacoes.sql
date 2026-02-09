@@ -149,7 +149,7 @@ $$ LANGUAGE plpgsql;
 DROP POLICY IF EXISTS notificacoes_gestor_own ON notificacoes;
 DROP POLICY IF EXISTS notificacoes_gestor_update ON notificacoes;
 
--- Nova política para contratantes (entidades)
+-- Nova política para tomadores (entidades)
 CREATE POLICY notificacoes_contratante_own ON notificacoes
   FOR SELECT
   TO PUBLIC

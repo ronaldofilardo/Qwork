@@ -43,40 +43,40 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 2.5 ADICIONAR COLUNA pagamento_confirmado em contratantes
+-- 2.5 ADICIONAR COLUNA pagamento_confirmado em tomadores
 -- ============================================================================
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' 
+        WHERE table_name = 'tomadores' 
         AND column_name = 'pagamento_confirmado'
     ) THEN
-        ALTER TABLE contratantes ADD COLUMN pagamento_confirmado BOOLEAN DEFAULT FALSE;
-        COMMENT ON COLUMN contratantes.pagamento_confirmado IS 'Flag que indica se o pagamento foi confirmado para o contratante';
+        ALTER TABLE tomadores ADD COLUMN pagamento_confirmado BOOLEAN DEFAULT FALSE;
+        COMMENT ON COLUMN tomadores.pagamento_confirmado IS 'Flag que indica se o pagamento foi confirmado para o contratante';
         -- Garantir valor padrão para registros existentes
-        UPDATE contratantes SET pagamento_confirmado = FALSE WHERE pagamento_confirmado IS NULL;
-        RAISE NOTICE 'Coluna pagamento_confirmado adicionada em contratantes';
+        UPDATE tomadores SET pagamento_confirmado = FALSE WHERE pagamento_confirmado IS NULL;
+        RAISE NOTICE 'Coluna pagamento_confirmado adicionada em tomadores';
     ELSE
-        RAISE NOTICE 'Coluna pagamento_confirmado já existe em contratantes';
+        RAISE NOTICE 'Coluna pagamento_confirmado já existe em tomadores';
     END IF;
 END $$;
 
 -- ============================================================================
--- 2.6 ADICIONAR COLUNA numero_funcionarios_estimado em contratantes
+-- 2.6 ADICIONAR COLUNA numero_funcionarios_estimado em tomadores
 -- ============================================================================
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' 
+        WHERE table_name = 'tomadores' 
         AND column_name = 'numero_funcionarios_estimado'
     ) THEN
-        ALTER TABLE contratantes ADD COLUMN numero_funcionarios_estimado INTEGER;
-        COMMENT ON COLUMN contratantes.numero_funcionarios_estimado IS 'Número estimado de funcionários para o contratante';
-        RAISE NOTICE 'Coluna numero_funcionarios_estimado adicionada em contratantes';
+        ALTER TABLE tomadores ADD COLUMN numero_funcionarios_estimado INTEGER;
+        COMMENT ON COLUMN tomadores.numero_funcionarios_estimado IS 'Número estimado de funcionários para o contratante';
+        RAISE NOTICE 'Coluna numero_funcionarios_estimado adicionada em tomadores';
     ELSE
-        RAISE NOTICE 'Coluna numero_funcionarios_estimado já existe em contratantes';
+        RAISE NOTICE 'Coluna numero_funcionarios_estimado já existe em tomadores';
     END IF;
 END $$;
 
@@ -101,20 +101,20 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 2.8 ADICIONAR COLUNA plano_id em contratantes
+-- 2.8 ADICIONAR COLUNA plano_id em tomadores
 -- ============================================================================
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' 
+        WHERE table_name = 'tomadores' 
         AND column_name = 'plano_id'
     ) THEN
-        ALTER TABLE contratantes ADD COLUMN plano_id INTEGER REFERENCES planos(id);
-        COMMENT ON COLUMN contratantes.plano_id IS 'ID do plano associado ao contratante';
-        RAISE NOTICE 'Coluna plano_id adicionada em contratantes';
+        ALTER TABLE tomadores ADD COLUMN plano_id INTEGER REFERENCES planos(id);
+        COMMENT ON COLUMN tomadores.plano_id IS 'ID do plano associado ao contratante';
+        RAISE NOTICE 'Coluna plano_id adicionada em tomadores';
     ELSE
-        RAISE NOTICE 'Coluna plano_id já existe em contratantes';
+        RAISE NOTICE 'Coluna plano_id já existe em tomadores';
     END IF;
 END $$;
 
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS entidades_senhas (
     
     CONSTRAINT fk_entidades_senhas_contratante 
         FOREIGN KEY (contratante_id) 
-        REFERENCES contratantes(id) 
+        REFERENCES tomadores(id) 
         ON DELETE CASCADE,
     
     CONSTRAINT entidades_senhas_cpf_check 
@@ -161,7 +161,7 @@ CREATE TRIGGER trg_entidades_senhas_updated_at
     EXECUTE FUNCTION update_entidades_senhas_updated_at();
 
 COMMENT ON TABLE entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em tomadores - usado para login';
 COMMENT ON COLUMN entidades_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
 
 -- ============================================================================
@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS contratos_planos (
     id SERIAL PRIMARY KEY,
     plano_id INTEGER REFERENCES planos(id),
     clinica_id INTEGER REFERENCES clinicas(id),
-    contratante_id INTEGER REFERENCES contratantes(id),
+    contratante_id INTEGER REFERENCES tomadores(id),
     tipo_contratante VARCHAR(20) NOT NULL CHECK (tipo_contratante IN ('clinica', 'entidade')),
     
     -- Para plano personalizado
@@ -307,9 +307,9 @@ COMMENT ON TABLE mfa_codes IS 'Códigos de autenticação multifator (MFA) para 
 DO $$
 BEGIN
     -- Verificar se existe algum contratante tipo 'entidade' com id = 1
-    IF NOT EXISTS (SELECT 1 FROM contratantes WHERE id = 1 AND tipo = 'entidade') THEN
+    IF NOT EXISTS (SELECT 1 FROM tomadores WHERE id = 1 AND tipo = 'entidade') THEN
         -- Se não existe, criar um contratante de teste
-        INSERT INTO contratantes (
+        INSERT INTO tomadores (
             id, 
             tipo, 
             nome, 
@@ -346,7 +346,7 @@ BEGIN
         ON CONFLICT (id) DO NOTHING;
         
         -- Resetar sequence se necessário
-        PERFORM setval('contratantes_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM contratantes));
+        PERFORM setval('tomadores_id_seq', (SELECT COALESCE(MAX(id), 0) + 1 FROM tomadores));
         
         RAISE NOTICE 'Contratante tipo entidade criado para testes';
     ELSE
@@ -365,7 +365,7 @@ BEGIN
             responsavel_cpf, 
             '$2b$10$7GqKvJx9YH1NXZmJz4Qz7.7mVJ0hR5jKxW8qN8P9vZ7nU5xJ0xQ1W',
             false
-        FROM contratantes 
+        FROM tomadores 
         WHERE tipo = 'entidade' 
         AND responsavel_cpf = '00000000000';
         
@@ -417,11 +417,11 @@ BEGIN
     SELECT COUNT(*) INTO v_count FROM planos;
     RAISE NOTICE '✓ Planos cadastrados: %', v_count;
     
-    SELECT COUNT(*) INTO v_count FROM contratantes WHERE tipo = 'entidade';
-    RAISE NOTICE '✓ Contratantes tipo entidade: %', v_count;
+    SELECT COUNT(*) INTO v_count FROM tomadores WHERE tipo = 'entidade';
+    RAISE NOTICE '✓ tomadores tipo entidade: %', v_count;
     
     SELECT COUNT(*) INTO v_count FROM entidades_senhas;
-    RAISE NOTICE '✓ Senhas de contratantes: %', v_count;
+    RAISE NOTICE '✓ Senhas de tomadores: %', v_count;
     
     RAISE NOTICE '============================================================================';
 END $$;

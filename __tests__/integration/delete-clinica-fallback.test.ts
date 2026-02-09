@@ -30,7 +30,7 @@ describe('POST /api/admin/clinicas/delete-secure - fallback quando tabela contra
       }
 
       if (
-        /SELECT id, nome, cnpj, ativa, tipo FROM contratantes WHERE id =/i.test(
+        /SELECT id, nome, cnpj, ativa, tipo FROM tomadors WHERE id =/i.test(
           sql
         )
       ) {
@@ -79,10 +79,10 @@ describe('POST /api/admin/clinicas/delete-secure - fallback quando tabela contra
       }
 
       // DELETE recibos/pagamentos executa sem problemas
-      if (/DELETE FROM recibos WHERE contratante_id =/i.test(sql)) {
+      if (/DELETE FROM recibos WHERE tomador_id =/i.test(sql)) {
         return Promise.resolve({ rows: [] });
       }
-      if (/DELETE FROM pagamentos WHERE contratante_id =/i.test(sql)) {
+      if (/DELETE FROM pagamentos WHERE tomador_id =/i.test(sql)) {
         return Promise.resolve({ rows: [] });
       }
 
@@ -115,8 +115,8 @@ describe('POST /api/admin/clinicas/delete-secure - fallback quando tabela contra
         return Promise.resolve({ rows: [{ reg: 'logs_exclusao_clinicas' }] });
       }
 
-      // Excluir contratantes final
-      if (/DELETE FROM contratantes WHERE id =/i.test(sql)) {
+      // Excluir tomadors final
+      if (/DELETE FROM tomadors WHERE id =/i.test(sql)) {
         return Promise.resolve({ rows: [] });
       }
 

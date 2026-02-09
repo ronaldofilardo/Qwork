@@ -90,7 +90,7 @@ FROM (
 ) AS subquery
 WHERE lotes_avaliacao.id = subquery.id;
 
--- Atualizar lotes sem empresa (contratantes diretos) com numero_ordem sequencial
+-- Atualizar lotes sem empresa (tomadores diretos) com numero_ordem sequencial
 UPDATE lotes_avaliacao
 SET numero_ordem = subquery.rn
 FROM (

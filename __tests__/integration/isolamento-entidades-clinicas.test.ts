@@ -20,7 +20,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
   let avaliacaoEntidadeId: number;
 
   // Dados da Clínica
-  let contratanteClinicaId: number;
+  let tomadorClinicaId: number;
   let clinicaId: number;
   let rhCpf: string;
   let empresaId: number;
@@ -35,16 +35,16 @@ describe('Isolamento: Entidades vs Clínicas', () => {
     // SETUP ENTIDADE
     // ========================================
 
-    // 1. Criar contratante tipo 'entidade'
+    // 1. Criar entidade
     const entidadeResult = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
+        ativa, pagamento_confirmado, status
       ) VALUES (
         'entidade', $1, $2, $3, '1199999999', 'Rua Entidade', 'São Paulo', 'SP', '01234567',
         'Resp Entidade', '11111111111', $4, '11988888888',
-        true, true
+        true, true, 'ativa'
       ) RETURNING id`,
       [
         `Entidade Isolamento ${timestamp}`,
@@ -73,7 +73,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
     funcEntidadeCpf = `${String(timestamp + 2000).slice(-11)}`;
     await query(
       `INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, contratante_id, ativo, nivel_cargo
+        cpf, nome, email, senha_hash, perfil, tomador_id, ativo, nivel_cargo
       ) VALUES ($1, 'Func Entidade Iso', $2, $3, 'funcionario', $4, true, 'operacional')`,
       [
         funcEntidadeCpf,
@@ -86,7 +86,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
     // 4. Criar lote de entidade
     const loteEntResult = await query(
       `INSERT INTO lotes_avaliacao (
-        contratante_id, codigo, titulo, tipo, status, liberado_por, numero_ordem
+        tomador_id, codigo, titulo, tipo, status, liberado_por, numero_ordem
       ) VALUES ($1, $2, $3, 'completo', 'ativo', $4, 1)
       RETURNING id`,
       [
@@ -112,34 +112,21 @@ describe('Isolamento: Entidades vs Clínicas', () => {
     // SETUP CLÍNICA
     // ========================================
 
-    // 1. Criar contratante tipo 'clinica'
+    // 1. Criar clínica
     const contClinicaResult = await query(
-      `INSERT INTO contratantes (
-        tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
-        responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
+      `INSERT INTO clinicas (
+        nome, cnpj, email, ativa
       ) VALUES (
-        'clinica', $1, $2, $3, '1199999999', 'Rua Clínica', 'São Paulo', 'SP', '01234567',
-        'Resp Clínica', '22222222222', $4, '11988888888',
-        true, true
+        $1, $2, $3, true
       ) RETURNING id`,
       [
         `Clínica Isolamento ${timestamp}`,
         `${String(timestamp).slice(-8)}0002${String(timestamp % 100).padStart(2, '0')}`,
         `clinica_iso${timestamp}@teste.com`,
-        `resp_cli${timestamp}@teste.com`,
       ]
     );
-    contratanteClinicaId = contClinicaResult.rows[0].id;
-
-    // 2. Criar registro na tabela clinicas
-    const clinicaResult = await query(
-      `INSERT INTO clinicas (contratante_id, nome, ativa, criado_em)
-       VALUES ($1, $2, true, NOW())
-       RETURNING id`,
-      [contratanteClinicaId, `Clínica Isolamento ${timestamp}`]
-    );
-    clinicaId = clinicaResult.rows[0].id;
+    tomadorClinicaId = contClinicaResult.rows[0].id;
+    clinicaId = tomadorClinicaId;
 
     // 3. Criar gestor RH
     rhCpf = `${String(timestamp + 3000).slice(-11)}`;
@@ -227,9 +214,9 @@ describe('Isolamento: Entidades vs Clínicas', () => {
     if (clinicaId) {
       await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
     }
-    if (contratanteClinicaId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [
-        contratanteClinicaId,
+    if (tomadorClinicaId) {
+      await query('DELETE FROM tomadors WHERE id = $1', [
+        tomadorClinicaId,
       ]);
     }
 
@@ -251,14 +238,14 @@ describe('Isolamento: Entidades vs Clínicas', () => {
       await query('DELETE FROM usuarios WHERE cpf = $1', [gestorEntidadeCpf]);
     }
     if (entidadeId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [entidadeId]);
+      await query('DELETE FROM tomadors WHERE id = $1', [entidadeId]);
     }
   });
 
   describe('1. Isolamento de Funcionários', () => {
     it('funcionário de ENTIDADE NÃO deve aparecer em query de CLÍNICA', async () => {
       const result = await query(
-        `SELECT cpf, contratante_id, clinica_id, empresa_id
+        `SELECT cpf, tomador_id, clinica_id, empresa_id
          FROM funcionarios
          WHERE clinica_id = $1 AND cpf = $2`,
         [clinicaId, funcEntidadeCpf]
@@ -269,26 +256,26 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('funcionário de EMPRESA/CLÍNICA NÃO deve aparecer em query de ENTIDADE', async () => {
       const result = await query(
-        `SELECT cpf, contratante_id, clinica_id, empresa_id
+        `SELECT cpf, tomador_id, clinica_id, empresa_id
          FROM funcionarios
-         WHERE contratante_id = $1 AND cpf = $2`,
+         WHERE tomador_id = $1 AND cpf = $2`,
         [entidadeId, funcClinicaCpf]
       );
 
       expect(result.rows.length).toBe(0); // NÃO deve encontrar
     });
 
-    it('query de funcionários de ENTIDADE deve retornar APENAS funcionários com contratante_id', async () => {
+    it('query de funcionários de ENTIDADE deve retornar APENAS funcionários com tomador_id', async () => {
       const result = await query(
-        `SELECT cpf, contratante_id, clinica_id, empresa_id
+        `SELECT cpf, tomador_id, clinica_id, empresa_id
          FROM funcionarios
-         WHERE contratante_id = $1`,
+         WHERE tomador_id = $1`,
         [entidadeId]
       );
 
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((func) => {
-        expect(func.contratante_id).toBe(entidadeId);
+        expect(func.tomador_id).toBe(entidadeId);
         expect(func.clinica_id).toBeNull();
         expect(func.empresa_id).toBeNull();
       });
@@ -296,7 +283,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('query de funcionários de CLÍNICA deve retornar APENAS funcionários com clinica_id', async () => {
       const result = await query(
-        `SELECT cpf, contratante_id, clinica_id, empresa_id
+        `SELECT cpf, tomador_id, clinica_id, empresa_id
          FROM funcionarios
          WHERE clinica_id = $1`,
         [clinicaId]
@@ -305,7 +292,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((func) => {
         expect(func.clinica_id).toBe(clinicaId);
-        expect(func.contratante_id).toBeNull();
+        expect(func.tomador_id).toBeNull();
         expect(func.empresa_id).not.toBeNull();
       });
     });
@@ -314,7 +301,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
   describe('2. Isolamento de Lotes', () => {
     it('lote de ENTIDADE NÃO deve aparecer em query de CLÍNICA', async () => {
       const result = await query(
-        `SELECT id, contratante_id, clinica_id, empresa_id
+        `SELECT id, tomador_id, clinica_id, empresa_id
          FROM lotes_avaliacao
          WHERE clinica_id = $1 AND id = $2`,
         [clinicaId, loteEntidadeId]
@@ -325,26 +312,26 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('lote de CLÍNICA NÃO deve aparecer em query de ENTIDADE', async () => {
       const result = await query(
-        `SELECT id, contratante_id, clinica_id, empresa_id
+        `SELECT id, tomador_id, clinica_id, empresa_id
          FROM lotes_avaliacao
-         WHERE contratante_id = $1 AND id = $2`,
+         WHERE tomador_id = $1 AND id = $2`,
         [entidadeId, loteClinicaId]
       );
 
       expect(result.rows.length).toBe(0); // NÃO deve encontrar
     });
 
-    it('query de lotes de ENTIDADE deve retornar APENAS lotes com contratante_id', async () => {
+    it('query de lotes de ENTIDADE deve retornar APENAS lotes com tomador_id', async () => {
       const result = await query(
-        `SELECT id, contratante_id, clinica_id, empresa_id
+        `SELECT id, tomador_id, clinica_id, empresa_id
          FROM lotes_avaliacao
-         WHERE contratante_id = $1`,
+         WHERE tomador_id = $1`,
         [entidadeId]
       );
 
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((lote) => {
-        expect(lote.contratante_id).toBe(entidadeId);
+        expect(lote.tomador_id).toBe(entidadeId);
         expect(lote.clinica_id).toBeNull();
         expect(lote.empresa_id).toBeNull();
       });
@@ -352,7 +339,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('query de lotes de CLÍNICA deve retornar APENAS lotes com clinica_id', async () => {
       const result = await query(
-        `SELECT id, contratante_id, clinica_id, empresa_id
+        `SELECT id, tomador_id, clinica_id, empresa_id
          FROM lotes_avaliacao
          WHERE clinica_id = $1`,
         [clinicaId]
@@ -361,7 +348,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((lote) => {
         expect(lote.clinica_id).toBe(clinicaId);
-        expect(lote.contratante_id).toBeNull();
+        expect(lote.tomador_id).toBeNull();
         expect(lote.empresa_id).not.toBeNull();
       });
     });
@@ -370,7 +357,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
   describe('3. Isolamento de Avaliações', () => {
     it('avaliação de funcionário ENTIDADE NÃO deve aparecer em query de CLÍNICA', async () => {
       const result = await query(
-        `SELECT a.id, f.contratante_id, f.clinica_id
+        `SELECT a.id, f.tomador_id, f.clinica_id
          FROM avaliacoes a
          JOIN funcionarios f ON a.funcionario_cpf = f.cpf
          WHERE f.clinica_id = $1 AND a.id = $2`,
@@ -382,10 +369,10 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('avaliação de funcionário CLÍNICA NÃO deve aparecer em query de ENTIDADE', async () => {
       const result = await query(
-        `SELECT a.id, f.contratante_id, f.clinica_id
+        `SELECT a.id, f.tomador_id, f.clinica_id
          FROM avaliacoes a
          JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-         WHERE f.contratante_id = $1 AND a.id = $2`,
+         WHERE f.tomador_id = $1 AND a.id = $2`,
         [entidadeId, avaliacaoClinicaId]
       );
 
@@ -394,18 +381,18 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('query de avaliações de ENTIDADE deve respeitar isolamento', async () => {
       const result = await query(
-        `SELECT a.id, a.lote_id, f.contratante_id, f.clinica_id, l.contratante_id as lote_contratante_id
+        `SELECT a.id, a.lote_id, f.tomador_id, f.clinica_id, l.tomador_id as lote_tomador_id
          FROM avaliacoes a
          JOIN funcionarios f ON a.funcionario_cpf = f.cpf
          JOIN lotes_avaliacao l ON a.lote_id = l.id
-         WHERE f.contratante_id = $1 AND l.contratante_id = $1`,
+         WHERE f.tomador_id = $1 AND l.tomador_id = $1`,
         [entidadeId]
       );
 
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((aval) => {
-        expect(aval.contratante_id).toBe(entidadeId);
-        expect(aval.lote_contratante_id).toBe(entidadeId);
+        expect(aval.tomador_id).toBe(entidadeId);
+        expect(aval.lote_tomador_id).toBe(entidadeId);
         expect(aval.clinica_id).toBeNull();
       });
     });
@@ -429,50 +416,50 @@ describe('Isolamento: Entidades vs Clínicas', () => {
   });
 
   describe('4. Validar Exclusividade de Campos', () => {
-    it('funcionário NÃO pode ter contratante_id E clinica_id ao mesmo tempo', async () => {
+    it('funcionário NÃO pode ter tomador_id E clinica_id ao mesmo tempo', async () => {
       const allFuncs = await query(
-        `SELECT cpf, contratante_id, clinica_id
+        `SELECT cpf, tomador_id, clinica_id
          FROM funcionarios
-         WHERE contratante_id IS NOT NULL AND clinica_id IS NOT NULL`
+         WHERE tomador_id IS NOT NULL AND clinica_id IS NOT NULL`
       );
 
       expect(allFuncs.rows.length).toBe(0); // ZERO registros com ambos preenchidos
     });
 
-    it('lote NÃO pode ter contratante_id E clinica_id ao mesmo tempo', async () => {
+    it('lote NÃO pode ter tomador_id E clinica_id ao mesmo tempo', async () => {
       const allLotes = await query(
-        `SELECT id, contratante_id, clinica_id
+        `SELECT id, tomador_id, clinica_id
          FROM lotes_avaliacao
-         WHERE contratante_id IS NOT NULL AND clinica_id IS NOT NULL`
+         WHERE tomador_id IS NOT NULL AND clinica_id IS NOT NULL`
       );
 
       expect(allLotes.rows.length).toBe(0); // ZERO registros com ambos preenchidos
     });
 
-    it('funcionário de entidade DEVE ter contratante_id E NÃO ter clinica_id/empresa_id', async () => {
+    it('funcionário de entidade DEVE ter tomador_id E NÃO ter clinica_id/empresa_id', async () => {
       const result = await query(
-        `SELECT cpf, contratante_id, clinica_id, empresa_id
+        `SELECT cpf, tomador_id, clinica_id, empresa_id
          FROM funcionarios
          WHERE cpf = $1`,
         [funcEntidadeCpf]
       );
 
       expect(result.rows.length).toBe(1);
-      expect(result.rows[0].contratante_id).toBe(entidadeId);
+      expect(result.rows[0].tomador_id).toBe(entidadeId);
       expect(result.rows[0].clinica_id).toBeNull();
       expect(result.rows[0].empresa_id).toBeNull();
     });
 
-    it('funcionário de empresa DEVE ter clinica_id E empresa_id E NÃO ter contratante_id', async () => {
+    it('funcionário de empresa DEVE ter clinica_id E empresa_id E NÃO ter tomador_id', async () => {
       const result = await query(
-        `SELECT cpf, contratante_id, clinica_id, empresa_id
+        `SELECT cpf, tomador_id, clinica_id, empresa_id
          FROM funcionarios
          WHERE cpf = $1`,
         [funcClinicaCpf]
       );
 
       expect(result.rows.length).toBe(1);
-      expect(result.rows[0].contratante_id).toBeNull();
+      expect(result.rows[0].tomador_id).toBeNull();
       expect(result.rows[0].clinica_id).toBe(clinicaId);
       expect(result.rows[0].empresa_id).toBe(empresaId);
     });
@@ -481,7 +468,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
   describe('5. Validar Contagem de Recursos', () => {
     it('deve contar corretamente funcionários de ENTIDADE vs CLÍNICA', async () => {
       const countEntidade = await query(
-        `SELECT COUNT(*) as total FROM funcionarios WHERE contratante_id = $1`,
+        `SELECT COUNT(*) as total FROM funcionarios WHERE tomador_id = $1`,
         [entidadeId]
       );
 
@@ -499,7 +486,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
 
     it('deve contar corretamente lotes de ENTIDADE vs CLÍNICA', async () => {
       const countEntidade = await query(
-        `SELECT COUNT(*) as total FROM lotes_avaliacao WHERE contratante_id = $1`,
+        `SELECT COUNT(*) as total FROM lotes_avaliacao WHERE tomador_id = $1`,
         [entidadeId]
       );
 

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { obterContrato } from '@/lib/contratos/contratos';
 
 export async function GET(
   request: NextRequest,
@@ -15,12 +15,10 @@ export async function GET(
       );
     }
 
-    const contratoResult = await query(
-      `SELECT * FROM contratos WHERE id = $1`,
-      [contratoId]
-    );
+    // Usar função obterContrato que já faz JOIN com tomadores
+    const contrato = await obterContrato(parseInt(contratoId));
 
-    if (contratoResult.rows.length === 0) {
+    if (!contrato) {
       return NextResponse.json(
         { error: 'Contrato não encontrado' },
         { status: 404 }
@@ -29,7 +27,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      contrato: contratoResult.rows[0],
+      contrato,
     });
   } catch (error) {
     console.error('Erro ao consultar contrato:', error);

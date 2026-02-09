@@ -16,13 +16,13 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 ### **P0 - Prioridade Crítica** (Segurança e Funcionalidade Básica)
 
-#### P0.1 - Variável de Sessão `contratante_id` [🔴 CRÍTICA]
+#### P0.1 - Variável de Sessão `tomador_id` [🔴 CRÍTICA]
 
-**Problema:** Variável `app.current_user_contratante_id` não era definida no contexto da sessão PostgreSQL, causando falha total em políticas RLS.
+**Problema:** Variável `app.current_user_tomador_id` não era definida no contexto da sessão PostgreSQL, causando falha total em políticas RLS.
 
 **Solução:**
 
-- ✅ Adicionado `SET LOCAL app.current_user_contratante_id` em `lib/db.ts`
+- ✅ Adicionado `SET LOCAL app.current_user_tomador_id` em `lib/db.ts`
 - ✅ Incluído em `generateRLSQuery()` para Neon (produção)
 - ✅ Aplicado em transações locais (desenvolvimento/testes)
 
@@ -60,7 +60,7 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 - ✅ Alterado `JOIN` para `LEFT JOIN` em queries críticas
 - ✅ Adicionado `COALESCE(ec.nome, cont.nome)` para fallback de dados
-- ✅ Incluído `LEFT JOIN contratantes` em todas as queries relevantes
+- ✅ Incluído `LEFT JOIN tomadores` em todas as queries relevantes
 
 **Arquivos modificados:**
 
@@ -99,7 +99,7 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 **Solução:**
 
-- ✅ APIs ajustadas para aceitar `contratante_id` como first-class citizen
+- ✅ APIs ajustadas para aceitar `tomador_id` como first-class citizen
 - ✅ LEFT JOINs aplicados em todas as queries de listagem
 - ✅ Fallback de nome via `COALESCE()`
 
@@ -114,7 +114,7 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 #### P1.2 - Fallback de Template de Laudo [🟡 ALTA]
 
-**Problema:** Função de geração de laudo não buscava dados do contratante quando `empresa_id = NULL`.
+**Problema:** Função de geração de laudo não buscava dados do tomador quando `empresa_id = NULL`.
 
 **Solução:**
 
@@ -136,7 +136,7 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 **Solução:**
 
-- ✅ Queries de cron ajustadas para incluir `contratante_id IS NOT NULL`
+- ✅ Queries de cron ajustadas para incluir `tomador_id IS NOT NULL`
 - ✅ LEFT JOINs para buscar lotes sem `clinica_id`
 - ✅ Validação de cobertura em `emissao-automatica/status`
 
@@ -157,7 +157,7 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 **Solução:**
 
 - ✅ Migration `066_observability_views.sql` criada
-- ✅ Views agregadas: `vw_lotes_por_contratante`, `vw_alertas_lotes_stuck`
+- ✅ Views agregadas: `vw_lotes_por_tomador`, `vw_alertas_lotes_stuck`
 - ✅ Métricas de emissão e health check incluindo entidades
 - ✅ Índices de performance adicionados
 
@@ -169,20 +169,20 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 
 ---
 
-#### P2.2 - Auditoria com `contratante_id` [🟠 MÉDIA]
+#### P2.2 - Auditoria com `tomador_id` [🟠 MÉDIA]
 
-**Problema:** Audit logs não registravam `contratante_id`, perdendo rastreabilidade.
+**Problema:** Audit logs não registravam `tomador_id`, perdendo rastreabilidade.
 
 **Solução:**
 
-- ✅ Migration `067_audit_contratante_id.sql` criada
-- ✅ Coluna `contratante_id` adicionada a `audit_logs`
+- ✅ Migration `067_audit_tomador_id.sql` criada
+- ✅ Coluna `tomador_id` adicionada a `audit_logs`
 - ✅ Função `audit_log_with_context()` usa `current_setting` como fallback
-- ✅ View `vw_audit_trail_por_contratante` para consultas rápidas
+- ✅ View `vw_audit_trail_por_tomador` para consultas rápidas
 
 **Arquivos criados:**
 
-- `database/migrations/067_audit_contratante_id.sql`
+- `database/migrations/067_audit_tomador_id.sql`
 
 **Impacto:** Trilha de auditoria completa para ações de entidades.
 
@@ -224,20 +224,20 @@ Foram identificadas e corrigidas **10 falhas críticas e de alta prioridade** qu
 ```sql
 -- 1. Verificar RLS para gestor
 SET app.current_user_perfil = 'gestor';
-SET app.current_user_contratante_id = '1';
-SELECT * FROM lotes_avaliacao WHERE contratante_id = 1; -- Deve retornar lotes
+SET app.current_user_tomador_id = '1';
+SELECT * FROM lotes_avaliacao WHERE tomador_id = 1; -- Deve retornar lotes
 
 -- 2. Verificar constraint UNIQUE em laudos
 SELECT lote_id, COUNT(*) FROM laudos GROUP BY lote_id HAVING COUNT(*) > 1;
 -- Deve retornar 0 linhas
 
 -- 3. Verificar métricas de entidades
-SELECT * FROM vw_lotes_por_contratante WHERE tipo_contratante = 'entidade';
+SELECT * FROM vw_lotes_por_tomador WHERE tipo_tomador = 'entidade';
 -- Deve retornar dados agregados
 
 -- 4. Verificar audit logs
-SELECT * FROM vw_audit_trail_por_contratante WHERE tipo_contratante = 'entidade' LIMIT 10;
--- Deve retornar logs com contratante_id preenchido
+SELECT * FROM vw_audit_trail_por_tomador WHERE tipo_tomador = 'entidade' LIMIT 10;
+-- Deve retornar logs com tomador_id preenchido
 ```
 
 ---

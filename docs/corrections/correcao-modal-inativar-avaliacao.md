@@ -15,7 +15,7 @@ O `ModalInativarAvaliacao` estava tentando fazer uma validação prévia via GET
 POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar
 ```
 
-### Entidade (Contratante)
+### Entidade (tomador)
 
 ```
 POST /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar
@@ -104,7 +104,7 @@ SELECT COUNT(*) FROM fila_emissao WHERE lote_id = $1
 ### ✅ Validação 3: Permissões
 
 - **RH:** Verifica `clinica_id` via `requireRHWithEmpresaAccess`
-- **Entidade:** Verifica `contratante_id` do usuário
+- **Entidade:** Verifica `tomador_id` do usuário
 
 ## Princípio da Imutabilidade
 

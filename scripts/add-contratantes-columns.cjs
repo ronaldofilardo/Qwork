@@ -6,8 +6,8 @@ const { Client } = require('pg');
   });
   try {
     await client.connect();
-    console.log('Applying ALTER TABLE contratantes...');
-    await client.query(`ALTER TABLE contratantes
+    console.log('Applying ALTER TABLE tomadores...');
+    await client.query(`ALTER TABLE tomadores
       ADD COLUMN IF NOT EXISTS telefone VARCHAR(20),
       ADD COLUMN IF NOT EXISTS endereco TEXT,
       ADD COLUMN IF NOT EXISTS cidade VARCHAR(100),
@@ -31,26 +31,23 @@ const { Client } = require('pg');
     `);
 
     await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_contratantes_tipo ON contratantes (tipo)`
+      `CREATE INDEX IF NOT EXISTS idx_tomadores_tipo ON tomadores (tipo)`
     );
     await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_contratantes_status ON contratantes (status)`
+      `CREATE INDEX IF NOT EXISTS idx_tomadores_status ON tomadores (status)`
     );
     await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_contratantes_cnpj ON contratantes (cnpj)`
+      `CREATE INDEX IF NOT EXISTS idx_tomadores_cnpj ON tomadores (cnpj)`
     );
     await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_contratantes_ativa ON contratantes (ativa)`
+      `CREATE INDEX IF NOT EXISTS idx_tomadores_ativa ON tomadores (ativa)`
     );
     await client.query(
-      `CREATE INDEX IF NOT EXISTS idx_contratantes_tipo_ativa ON contratantes (tipo, ativa)`
+      `CREATE INDEX IF NOT EXISTS idx_tomadores_tipo_ativa ON tomadores (tipo, ativa)`
     );
-    console.log('ALTER TABLE contratantes applied successfully');
+    console.log('ALTER TABLE tomadores applied successfully');
   } catch (err) {
-    console.error(
-      'Error applying ALTER TABLE contratantes:',
-      err.message || err
-    );
+    console.error('Error applying ALTER TABLE tomadores:', err.message || err);
     process.exit(1);
   } finally {
     await client.end();

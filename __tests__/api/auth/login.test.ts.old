@@ -446,7 +446,7 @@ describe('/api/auth/login', () => {
           rowCount: 1,
         });
       } else if (sql.includes('responsavel_cpf')) {
-        // Terceira query: contratantes - responsabilidade, deve retornar vazio
+        // Terceira query: tomadores - responsabilidade, deve retornar vazio
         return Promise.resolve({ rows: [], rowCount: 0 });
       }
       return Promise.resolve({ rows: [], rowCount: 0 });
@@ -500,7 +500,7 @@ describe('/api/auth/login', () => {
       rowCount: 1,
     });
 
-    // Mock para contratantes (terceira query) - responsabilidade, deve retornar vazio
+    // Mock para tomadores (terceira query) - responsabilidade, deve retornar vazio
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
@@ -588,7 +588,7 @@ describe('/api/auth/login', () => {
       rowCount: 1,
     });
 
-    // Mock para contratantes (terceira query) - responsabilidade, deve retornar vazio
+    // Mock para tomadores (terceira query) - responsabilidade, deve retornar vazio
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
@@ -925,7 +925,7 @@ describe('/api/auth/login', () => {
           });
         }
         // Busca contratante pelo responsavel_cpf -> vazio
-        if (sql.includes('contratantes WHERE responsavel_cpf')) {
+        if (sql.includes('tomadores WHERE responsavel_cpf')) {
           return Promise.resolve({ rows: [], rowCount: 0 });
         }
         // Buscar contratante_id atribuído ao funcionário
@@ -938,7 +938,7 @@ describe('/api/auth/login', () => {
         // Verificar pagamento_confirmado
         if (
           sql.includes(
-            'SELECT ativa, pagamento_confirmado FROM contratantes WHERE id ='
+            'SELECT ativa, pagamento_confirmado FROM tomadores WHERE id ='
           )
         ) {
           return Promise.resolve({
@@ -1251,7 +1251,7 @@ describe('/api/auth/login', () => {
         rowCount: 1,
       });
 
-      // Mock para contratantes (terceira query) - responsabilidade, deve retornar vazio
+      // Mock para tomadores (terceira query) - responsabilidade, deve retornar vazio
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 0,

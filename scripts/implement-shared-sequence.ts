@@ -49,11 +49,11 @@ async function generateSharedSequenceSQL(nextId: number) {
   console.log('📝 Gerando SQL para SEQUENCE compartilhada...\n');
 
   const sql = `-- ================================================================
--- SPRINT 0: SEQUENCE Compartilhada para IDs de Contratantes
+-- SPRINT 0: SEQUENCE Compartilhada para IDs de tomadors
 -- Data: ${new Date().toISOString()}
 -- ================================================================
 -- OBJETIVO: Clínicas e Entidades compartilham sequência de IDs
--- SEM BURACOS, como se fossem uma única tabela "contratantes"
+-- SEM BURACOS, como se fossem uma única tabela "tomadors"
 -- ================================================================
 
 BEGIN;
@@ -62,14 +62,14 @@ BEGIN;
 -- 1. Criar SEQUENCE compartilhada
 -- ================================================================
 
-CREATE SEQUENCE IF NOT EXISTS seq_contratantes_id
+CREATE SEQUENCE IF NOT EXISTS seq_tomadors_id
   START WITH ${nextId}
   INCREMENT BY 1
   NO MINVALUE
   NO MAXVALUE
   CACHE 1;
 
-COMMENT ON SEQUENCE seq_contratantes_id IS 'Sequência compartilhada para IDs de entidades e clínicas (contratantes independentes)';
+COMMENT ON SEQUENCE seq_tomadors_id IS 'Sequência compartilhada para IDs de entidades e clínicas (tomadors independentes)';
 
 -- ================================================================
 -- 2. Ajustar sequences existentes (se existirem)
@@ -95,18 +95,18 @@ END $$;
 
 -- Entidades usam a sequence compartilhada
 ALTER TABLE entidades 
-  ALTER COLUMN id SET DEFAULT nextval('seq_contratantes_id');
+  ALTER COLUMN id SET DEFAULT nextval('seq_tomadors_id');
 
 -- Clínicas usam a sequence compartilhada
 ALTER TABLE clinicas 
-  ALTER COLUMN id SET DEFAULT nextval('seq_contratantes_id');
+  ALTER COLUMN id SET DEFAULT nextval('seq_tomadors_id');
 
 -- ================================================================
 -- 4. Ajustar valor atual da sequence
 -- ================================================================
 
 -- Garantir que a sequence esteja no próximo valor após o maior ID
-SELECT setval('seq_contratantes_id', 
+SELECT setval('seq_tomadors_id', 
   GREATEST(
     COALESCE((SELECT MAX(id) FROM entidades), 0),
     COALESCE((SELECT MAX(id) FROM clinicas), 0)
@@ -118,14 +118,14 @@ SELECT setval('seq_contratantes_id',
 -- 5. Criar função helper para inserções manuais
 -- ================================================================
 
-CREATE OR REPLACE FUNCTION get_next_contratante_id()
+CREATE OR REPLACE FUNCTION get_next_tomador_id()
 RETURNS INTEGER AS $$
 BEGIN
-  RETURN nextval('seq_contratantes_id');
+  RETURN nextval('seq_tomadors_id');
 END;
 $$ LANGUAGE plpgsql;
 
-COMMENT ON FUNCTION get_next_contratante_id() IS 'Retorna o próximo ID disponível para entidades/clínicas';
+COMMENT ON FUNCTION get_next_tomador_id() IS 'Retorna o próximo ID disponível para entidades/clínicas';
 
 COMMIT;
 
@@ -152,7 +152,7 @@ WHERE table_name = 'clinicas' AND column_name = 'id';
 SELECT 
   last_value as current_value,
   is_called
-FROM seq_contratantes_id;
+FROM seq_tomadors_id;
 `;
 
   return sql;
@@ -177,14 +177,14 @@ async function validateSharedSequence(pool: Pool, env: string) {
   const checkSeq = await pool.query(`
     SELECT EXISTS (
       SELECT FROM pg_sequences 
-      WHERE schemaname = 'public' AND sequencename = 'seq_contratantes_id'
+      WHERE schemaname = 'public' AND sequencename = 'seq_tomadors_id'
     ) as exists;
   `);
 
   if (!checkSeq.rows[0].exists) {
-    throw new Error(`Sequence seq_contratantes_id não existe em ${env}!`);
+    throw new Error(`Sequence seq_tomadors_id não existe em ${env}!`);
   }
-  console.log(`   ✅ Sequence seq_contratantes_id criada`);
+  console.log(`   ✅ Sequence seq_tomadors_id criada`);
 
   // Verificar defaults das colunas
   const checkDefaults = await pool.query(`
@@ -199,17 +199,17 @@ async function validateSharedSequence(pool: Pool, env: string) {
   `);
 
   for (const row of checkDefaults.rows) {
-    if (!row.column_default?.includes('seq_contratantes_id')) {
+    if (!row.column_default?.includes('seq_tomadors_id')) {
       throw new Error(
-        `${row.table_name}.id não usa seq_contratantes_id em ${env}!`
+        `${row.table_name}.id não usa seq_tomadors_id em ${env}!`
       );
     }
-    console.log(`   ✅ ${row.table_name}.id → seq_contratantes_id`);
+    console.log(`   ✅ ${row.table_name}.id → seq_tomadors_id`);
   }
 
   // Verificar valor atual da sequence
   const seqValue = await pool.query(
-    `SELECT last_value FROM seq_contratantes_id;`
+    `SELECT last_value FROM seq_tomadors_id;`
   );
   console.log(`   ✅ Sequence atual: ${seqValue.rows[0].last_value}`);
 
@@ -218,9 +218,9 @@ async function validateSharedSequence(pool: Pool, env: string) {
 
   const testResult = await pool.query(`
     SELECT 
-      nextval('seq_contratantes_id') as next_id_1,
-      nextval('seq_contratantes_id') as next_id_2,
-      nextval('seq_contratantes_id') as next_id_3;
+      nextval('seq_tomadors_id') as next_id_1,
+      nextval('seq_tomadors_id') as next_id_2,
+      nextval('seq_tomadors_id') as next_id_3;
   `);
 
   const ids = testResult.rows[0];
@@ -243,7 +243,7 @@ async function validateSharedSequence(pool: Pool, env: string) {
 async function main() {
   try {
     console.log('='.repeat(70));
-    console.log('SPRINT 0: SEQUENCE COMPARTILHADA PARA IDs DE CONTRATANTES');
+    console.log('SPRINT 0: SEQUENCE COMPARTILHADA PARA IDs DE tomadorS');
     console.log('='.repeat(70));
     console.log(
       '\nOBJETIVO: Entidades e Clínicas com IDs sequenciais SEM BURACOS\n'
@@ -264,9 +264,9 @@ async function main() {
 
     // Salvar SQL
     const fs = await import('fs/promises');
-    await fs.writeFile('sql-files/shared-sequence-contratantes.sql', sql);
+    await fs.writeFile('sql-files/shared-sequence-tomadors.sql', sql);
     console.log(
-      '📄 SQL salvo em: sql-files/shared-sequence-contratantes.sql\n'
+      '📄 SQL salvo em: sql-files/shared-sequence-tomadors.sql\n'
     );
 
     // 5. Executar no DEV

@@ -1,83 +1,102 @@
 import { POST } from '@/app/api/entidade/liberar-lote/route';
 import * as sessionMod from '@/lib/session';
-import { query } from '@/lib/db';
+import * as dbGestorMod from '@/lib/db-gestor';
 
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
+jest.mock('@/lib/db-gestor', () => ({
+  queryAsGestorEntidade: jest.fn(),
 }));
 
 jest.mock('@/lib/session', () => ({
   requireEntity: jest.fn(),
+  getSession: jest.fn(),
 }));
 
-const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQueryAsGestorEntidade =
+  dbGestorMod.queryAsGestorEntidade as jest.MockedFunction<
+    typeof dbGestorMod.queryAsGestorEntidade
+  >;
 const mockRequireEntity = sessionMod.requireEntity as jest.MockedFunction<
   typeof sessionMod.requireEntity
+>;
+const mockGetSession = sessionMod.getSession as jest.MockedFunction<
+  typeof sessionMod.getSession
 >;
 
 describe('/api/entidade/liberar-lote', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock padrão de sessão para gestor de entidade
+    mockGetSession.mockReturnValue({
+      cpf: '87545772920',
+      nome: 'Gestor Teste',
+      perfil: 'gestor',
+      entidade_id: 5,
+      tomador_id: 5,
+    } as any);
   });
 
   it('deve criar lote para funcionários vinculados diretamente à entidade', async () => {
     // Mock session
     mockRequireEntity.mockResolvedValue({
-      cpf: '999',
+      cpf: '87545772920',
       perfil: 'gestor',
-      contratante_id: 123,
+      entidade_id: 5,
     } as any);
 
-    // 1) gestorCheck -> não existe (simular gestor externo)
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    // 2) empresasRes -> empty
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    // 3) hasEntidadeFuncsRes -> exists
-    mockQuery.mockResolvedValueOnce({ rows: [{ 1: 1 }], rowCount: 1 } as any);
-    // 4) contratanteRes -> retorna nome
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ nome: 'Entidade Teste' }],
+    // 1) hasEntidadeFuncsRes -> exists
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ 1: 1 }],
       rowCount: 1,
     } as any);
-    // 4) numeroOrdemResult for empresa_id IS NULL
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ numero_ordem: 5 }],
+    // 2) entidadeRes -> retorna nome da entidade
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ nome: 'Entidade Teste LTDA' }],
       rowCount: 1,
     } as any);
-    // 5) elegibilidadeResult -> retorna lista de funcionarios elegiveis
-    mockQuery.mockResolvedValueOnce({
+    // 3) numeroOrdemResult for lotes de entidade
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ numero_ordem: 1 }],
+      rowCount: 1,
+    } as any);
+    // 4) calcular_elegibilidade_lote_tomador -> retorna lista de funcionarios elegiveis
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
       rows: [
         {
           funcionario_cpf: '11122233344',
-          funcionario_nome: 'Fulano',
-          motivo_inclusao: 'novo',
+          funcionario_nome: 'Fulano da Silva',
+          motivo_inclusao: 'Funcionario novo (nunca avaliado)',
+          indice_atual: 0,
+          dias_sem_avaliacao: null,
+          prioridade: 'ALTA',
+        },
+        {
+          funcionario_cpf: '22233344455',
+          funcionario_nome: 'Ciclano Souza',
+          motivo_inclusao: 'Funcionario novo (nunca avaliado)',
           indice_atual: 0,
           dias_sem_avaliacao: null,
           prioridade: 'ALTA',
         },
       ],
-      rowCount: 1,
+      rowCount: 2,
     } as any);
-    // 6) dataFiltro query (no filter) - but code won't call dataFiltro if not provided
-    // 7) nivelFiltro (no tipo provided)
-    // 8) gerar_codigo_lote
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ codigo: 'ENT-001' }],
-      rowCount: 1,
-    } as any);
-    // 9) insert lote result
-    mockQuery.mockResolvedValueOnce({
+    // 5) insert lote result (entidade_id, não tomador_id)
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
       rows: [
         {
-          id: 777,
+          id: 100,
           liberado_em: new Date().toISOString(),
-          numero_ordem: 5,
+          numero_ordem: 1,
         },
       ],
       rowCount: 1,
     } as any);
-    // 10+) inserts de avaliacoes (one per funcionario), we can return success
-    mockQuery.mockResolvedValue({ rows: [], rowCount: 1 } as any);
+    // 6+) inserts de avaliacoes (uma por funcionario) + audit_log
+    mockQueryAsGestorEntidade.mockResolvedValue({
+      rows: [],
+      rowCount: 1,
+    } as any);
 
     const response = await POST(
       new Request('http://localhost/api/entidade/liberar-lote', {
@@ -87,73 +106,70 @@ describe('/api/entidade/liberar-lote', () => {
     );
     const data = await response.json();
 
+    if (response.status !== 200) {
+      console.log('❌ ERRO DE TESTE:', JSON.stringify(data, null, 2));
+    }
+
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(Array.isArray(data.resultados)).toBe(true);
-    expect(data.resultados.length).toBeGreaterThanOrEqual(1);
+    expect(data.resultados.length).toBe(1);
     expect(data.resultados[0].created).toBe(true);
     expect(data.resultados[0].empresaId).toBeNull();
+    expect(data.resultados[0].loteId).toBe(100);
     expect(data.resultados[0].avaliacoesCriadas).toBeGreaterThanOrEqual(0);
 
     // Deve registrar auditoria para o lote criado (inserção de audit_logs)
-    const calledWithAudit = mockQuery.mock.calls.some(
+    const calledWithAudit = mockQueryAsGestorEntidade.mock.calls.some(
       (call) =>
         typeof call[0] === 'string' &&
         call[0].includes('INSERT INTO audit_logs')
     );
     expect(calledWithAudit).toBe(true);
 
-    // Se o gestor não é um funcionário, não devemos ter tentado inserir em `funcionarios`
-    const attemptedFuncionarioInsert = mockQuery.mock.calls.some(
+    // Verificar que o INSERT foi feito com entidade_id (não tomador_id)
+    const loteInsertCall = mockQueryAsGestorEntidade.mock.calls.find(
       (call) =>
         typeof call[0] === 'string' &&
-        call[0].includes('INSERT INTO funcionarios')
-    );
-    expect(attemptedFuncionarioInsert).toBe(false);
-
-    // Verificar que o INSERT no lote foi feito com liberado_por = NULL (parâmetro 9 na query de lote de entidade)
-    const loteInsertCall = mockQuery.mock.calls.find(
-      (call) =>
-        typeof call[0] === 'string' &&
-        call[0].includes('INSERT INTO lotes_avaliacao')
+        call[0].includes('INSERT INTO lotes_avaliacao') &&
+        call[0].includes('entidade_id')
     );
     expect(loteInsertCall).toBeDefined();
     const loteParams = loteInsertCall[1] as any[];
-    // Para lotes de entidade o nono parâmetro (index 8) é `liberado_por` na nossa query
-    expect(loteParams[8]).toBeNull();
+    // Primeiro parâmetro deve ser o entidade_id (5)
+    expect(loteParams[0]).toBe(5);
   });
 
-  it('retorna erro quando não há funcionários elegíveis para nenhuma empresa', async () => {
+  it('retorna erro quando não há funcionários elegíveis para a entidade', async () => {
     mockRequireEntity.mockResolvedValue({
-      cpf: '999',
+      cpf: '87545772920',
       perfil: 'gestor',
-      contratante_id: 123,
+      entidade_id: 5,
     } as any);
 
-    // 1) gestorCheck -> assume gestor is registrado (existente)
-    mockQuery.mockResolvedValueOnce({ rows: [{ 1: 1 }], rowCount: 1 } as any);
-    // 2) empresasRes -> one company
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ empresa_id: 10 }],
-      rowCount: 1,
-    } as any);
-    // 3) hasEntidadeFuncsRes -> none
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-
-    // 3) empresaCheck -> returns company
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 10, nome: 'Empresa X', clinica_id: 5 }],
+    // 1) hasEntidadeFuncsRes -> existe funcionários vinculados
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ 1: 1 }],
       rowCount: 1,
     } as any);
 
-    // 4) numeroOrdemResult
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ numero_ordem: 7 }],
+    // 2) entidadeRes -> retorna nome da entidade
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ nome: 'Entidade Sem Elegíveis LTDA' }],
       rowCount: 1,
     } as any);
 
-    // 5) calcular_elegibilidade_lote -> returns empty list
-    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // 3) numeroOrdemResult
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ numero_ordem: 1 }],
+      rowCount: 1,
+    } as any);
+
+    // 4) calcular_elegibilidade_lote_tomador -> retorna lista vazia (nenhum elegível)
+    mockQueryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
+    } as any);
 
     const response = await POST(
       new Request('http://localhost/api/entidade/liberar-lote', {
@@ -164,10 +180,21 @@ describe('/api/entidade/liberar-lote', () => {
 
     const data = await response.json();
 
+    if (response.status !== 400) {
+      console.log(
+        '❌ ERRO DE TESTE (esperava 400):',
+        JSON.stringify(data, null, 2)
+      );
+    }
+
     expect(response.status).toBe(400);
     expect(data.success).toBe(false);
     expect(data.error).toBe('Nenhum funcionário elegível encontrado');
-    expect(data.detalhes).toMatch(/Empresa X/);
+    expect(data.detalhes).toMatch(
+      /Não foram encontrados funcionários elegíveis/
+    );
     expect(Array.isArray(data.resultados)).toBe(true);
+    expect(data.resultados.length).toBe(1);
+    expect(data.resultados[0].created).toBe(false);
   });
 });

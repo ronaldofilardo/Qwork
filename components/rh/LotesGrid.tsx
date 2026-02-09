@@ -15,7 +15,6 @@ interface LotesGridProps {
   }>;
   downloadingLaudo: number | null;
   onLoteClick: (loteId: number) => void;
-  onRelatorioSetor: (loteId: number) => void;
   onDownloadLaudo: (laudo: any) => void;
   onRefresh?: () => void;
 }
@@ -28,7 +27,6 @@ export function LotesGrid({
   laudos,
   downloadingLaudo,
   onLoteClick,
-  onRelatorioSetor,
   onDownloadLaudo,
   onRefresh: _onRefresh,
 }: LotesGridProps) {
@@ -191,27 +189,31 @@ export function LotesGrid({
                   </span>
                 </div>
               )}
-            </div>
 
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onRelatorioSetor(lote.id);
-              }}
-              disabled={!isPronto}
-              title={
-                !isPronto &&
-                lote.motivos_bloqueio &&
-                lote.motivos_bloqueio.length > 0
-                  ? `Bloqueado: ${lote.motivos_bloqueio.join('; ')}`
-                  : isPronto
-                    ? 'Gerar relatório por setor'
-                    : 'Aguardando conclusão das avaliações'
-              }
-              className="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-4"
-            >
-              📋 Relatório por Setor
-            </button>
+              {/* Status de Pagamento (NOVO FLUXO) */}
+              {(lote as any).status_pagamento && (
+                <div className="flex justify-between text-sm pt-2 border-t">
+                  <span>Status pagamento:</span>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full font-medium ${
+                      (lote as any).status_pagamento === 'aguardando_cobranca'
+                        ? 'bg-orange-100 text-orange-800'
+                        : (lote as any).status_pagamento ===
+                            'aguardando_pagamento'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-green-100 text-green-800'
+                    }`}
+                  >
+                    {(lote as any).status_pagamento === 'aguardando_cobranca'
+                      ? '⏳ Aguardando Link'
+                      : (lote as any).status_pagamento ===
+                          'aguardando_pagamento'
+                        ? '💳 Link Enviado'
+                        : '✓ Pago'}
+                  </span>
+                </div>
+              )}
+            </div>
 
             {/* Seção de Emissão Solicitada */}
             {emissaoSolicitada && (

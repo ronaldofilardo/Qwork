@@ -152,7 +152,7 @@ export async function POST(
       SELECT
         COUNT(a.id) as total_avaliacoes,
         COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
         COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
       FROM avaliacoes a

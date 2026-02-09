@@ -1,8 +1,8 @@
 #!/usr/bin/env tsx
 /**
- * Script de utilitário para E2E: insere um contratante, contrato aceito e um pagamento pendente
- * Retorna JSON na saída padrão: { contratanteId, contratoId, pagamentoId }
- * Uso: npx tsx scripts/insert-e2e-contratante.ts -- --cnpj 123... --cpf 000... --nome "Empresa" --email a@b
+ * Script de utilitário para E2E: insere um tomador, contrato aceito e um pagamento pendente
+ * Retorna JSON na saída padrão: { tomadorId, contratoId, pagamentoId }
+ * Uso: npx tsx scripts/insert-e2e-tomador.ts -- --cnpj 123... --cpf 000... --nome "Empresa" --email a@b
  */
 import { query } from '../lib/db';
 
@@ -45,9 +45,9 @@ async function run() {
   try {
     const { cnpj, cpf, nome, email } = argv;
 
-    // Inserir contratante
-    const contratanteRes = await query(
-      `INSERT INTO contratantes (
+    // Inserir tomador
+    const tomadorRes = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         endereco, cidade, estado, cep, status, ativa, numero_funcionarios_estimado
@@ -59,30 +59,30 @@ async function run() {
       [nome, cnpj, email, cpf]
     );
 
-    const contratanteId = contratanteRes.rows[0].id;
+    const tomadorId = tomadorRes.rows[0].id;
 
     // Criar contrato (aceito true)
     const contratoRes = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, aceito, hash_contrato, criado_em)
+      `INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
        SELECT $1, plano_id, true, md5(random()::text), CURRENT_TIMESTAMP
-       FROM contratantes WHERE id = $1
+       FROM tomadors WHERE id = $1
        RETURNING id`,
-      [contratanteId]
+      [tomadorId]
     );
 
     const contratoId = contratoRes.rows[0].id;
 
     // Inicializar pagamento
     const pagamentoRes = await query(
-      `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
+      `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
        VALUES ($1, $2, 1500.00, 'pendente', 'boleto', 1, CURRENT_TIMESTAMP)
        RETURNING id`,
-      [contratanteId, contratoId]
+      [tomadorId, contratoId]
     );
 
     const pagamentoId = pagamentoRes.rows[0].id;
 
-    console.log(JSON.stringify({ contratanteId, contratoId, pagamentoId }));
+    console.log(JSON.stringify({ tomadorId, contratoId, pagamentoId }));
     process.exit(0);
   } catch (err: any) {
     console.error('ERROR', err && err.message ? err.message : err);

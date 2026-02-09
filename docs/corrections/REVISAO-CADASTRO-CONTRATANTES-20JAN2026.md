@@ -1,4 +1,4 @@
-# Revisão Completa do Fluxo de Cadastro de Contratantes
+# Revisão Completa do Fluxo de Cadastro de tomadores
 
 **Data:** 20 de Janeiro de 2026  
 **Responsável:** Sistema de Revisão Automatizado  
@@ -8,7 +8,7 @@
 
 ## 📋 Resumo Executivo
 
-Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clínicas e entidades) para ambos os tipos de planos: **Fixo** e **Personalizado**. O código foi atualizado, código legado foi marcado como obsoleto, e uma suíte abrangente de testes foi criada para garantir robustez e confiabilidade.
+Foi realizada uma revisão completa do fluxo de cadastro de tomadores (clínicas e entidades) para ambos os tipos de planos: **Fixo** e **Personalizado**. O código foi atualizado, código legado foi marcado como obsoleto, e uma suíte abrangente de testes foi criada para garantir robustez e confiabilidade.
 
 ---
 
@@ -29,7 +29,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 
 ### ✅ 3. Documentação Atualizada
 
-- Criado guia completo: `docs/guides/FLUXO-CADASTRO-CONTRATANTES.md`
+- Criado guia completo: `docs/guides/FLUXO-CADASTRO-tomadores.md`
 - Documenta ambos os fluxos (Fixo e Personalizado)
 - Inclui diagramas, validações, regras de negócio
 - Lista arquivos principais e seus status
@@ -48,7 +48,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 ### Documentação
 
 ```
-✅ docs/guides/FLUXO-CADASTRO-CONTRATANTES.md (NOVO)
+✅ docs/guides/FLUXO-CADASTRO-tomadores.md (NOVO)
    - Documentação completa de ambos os fluxos
    - 500+ linhas de documentação detalhada
    - Diagramas mermaid, exemplos de código
@@ -81,7 +81,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 ### Testes de Validação
 
 ```
-✅ __tests__/validations/cadastro-contratante-validations.test.ts (NOVO)
+✅ __tests__/validations/cadastro-tomador-validations.test.ts (NOVO)
    - 11 suítes de teste, 45+ casos
    - Validações: CNPJ, CPF, Email, CEP, UF
    - Regras de negócio, edge cases
@@ -110,7 +110,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 **Fluxo:**
 
 ```
-1. Cadastro Inicial (/api/cadastro/contratante)
+1. Cadastro Inicial (/api/cadastro/tomador)
    ↓
 2. Criação Automática de Contrato
    ↓
@@ -120,7 +120,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
    ↓
 5. Webhook Pagamento
    ↓
-6. Ativação Automática (ativarContratante)
+6. Ativação Automática (ativartomador)
    ↓
 7. Criação de Conta Responsável (criarContaResponsavel)
    ↓
@@ -136,8 +136,8 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 
 **Arquivos principais:**
 
-- `app/api/cadastro/contratante/route.ts` (510-540)
-- `lib/contratante-activation.ts`
+- `app/api/cadastro/tomador/route.ts` (510-540)
+- `lib/tomador-activation.ts`
 - `lib/db.ts` (1342-1450)
 
 ### Plano Personalizado ✅
@@ -148,7 +148,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 **Fluxo:**
 
 ```
-1. Cadastro Inicial (/api/cadastro/contratante)
+1. Cadastro Inicial (/api/cadastro/tomador)
    ↓
 2. Registro em contratacao_personalizada
    ↓
@@ -156,7 +156,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
    ↓
 4. Geração de Token e Link (48h validade)
    ↓
-5. Contratante Acessa Link (/api/proposta/[token])
+5. tomador Acessa Link (/api/proposta/[token])
    ↓
 6. Aceite da Proposta (/api/proposta/aceitar)
    ↓
@@ -184,7 +184,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 
 **Arquivos principais:**
 
-- `app/api/cadastro/contratante/route.ts` (560-575)
+- `app/api/cadastro/tomador/route.ts` (560-575)
 - `app/api/admin/novos-cadastros/handlers.ts` (189-340)
 - `app/api/proposta/[token]/route.ts`
 - `app/api/proposta/aceitar/route.ts`
@@ -211,7 +211,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 - ✅ Criação automática de contrato
 - ✅ Aceite de contrato
 - ✅ Confirmação de pagamento
-- ✅ Ativação de contratante
+- ✅ Ativação de tomador
 - ✅ Criação de conta responsável
 - ✅ Validação de senha e login
 - ✅ Registros de auditoria
@@ -314,7 +314,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
    ```bash
    pnpm test __tests__/e2e/cadastro-plano-fixo-completo.test.ts
    pnpm test __tests__/e2e/cadastro-plano-personalizado-completo.test.ts
-   pnpm test __tests__/validations/cadastro-contratante-validations.test.ts
+   pnpm test __tests__/validations/cadastro-tomador-validations.test.ts
    pnpm test __tests__/integration/cadastro-fluxo-completo-integration.test.ts
    ```
 
@@ -369,7 +369,7 @@ Foi realizada uma revisão completa do fluxo de cadastro de contratantes (clíni
 
 ## 📞 Suporte
 
-**Documentação:** `docs/guides/FLUXO-CADASTRO-CONTRATANTES.md`  
+**Documentação:** `docs/guides/FLUXO-CADASTRO-tomadores.md`  
 **Testes:** `__tests__/e2e/`, `__tests__/validations/`, `__tests__/integration/`  
 **Código:** `app/api/cadastro/`, `app/api/admin/novos-cadastros/`, `app/api/proposta/`
 

@@ -1,4 +1,4 @@
-describe('Cadastro de Contratante - Plano Personalizado', () => {
+describe('Cadastro de tomador - Plano Personalizado', () => {
   const ts = Date.now();
   const empresa = {
     nome: `Empresa Teste Plano Personalizado ${ts}`,

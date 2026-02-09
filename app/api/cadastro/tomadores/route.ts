@@ -577,7 +577,6 @@ export async function POST(request: NextRequest) {
       // NOVO FLUXO: SEMPRE criar contrato, mesmo sem plano
       // O contrato será exibido para aceite ANTES da criação de credenciais
       try {
-        let planoNome = 'Contrato de Serviços QWork';
         let statusContrato = 'aguardando_aceite';
 
         if (planoId) {
@@ -587,10 +586,10 @@ export async function POST(request: NextRequest) {
           );
           const p = planoRes.rows[0];
           if (p) {
-            planoNome = p.nome;
             // Para plano fixo, sempre R$20 por funcionário
             valorPorFuncionario =
               p.tipo === 'fixo' ? 20.0 : Number(p.preco || 0);
+            const _planoNome = p.nome;
 
             if (p.tipo === 'fixo' && numeroFuncionarios) {
               // Calcular valor total para plano fixo

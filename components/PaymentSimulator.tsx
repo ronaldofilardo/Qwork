@@ -47,7 +47,7 @@ interface Simulacao {
 }
 
 interface PaymentSimulatorProps {
-  contratanteId?: number;
+  tomadorId?: number;
   planoId?: number;
   token?: string;
   valorTotal?: number;
@@ -60,7 +60,7 @@ interface PaymentSimulatorProps {
 // ============================================================================
 
 export default function PaymentSimulator({
-  contratanteId,
+  tomadorId,
   planoId,
   token,
   valorTotal,
@@ -71,7 +71,7 @@ export default function PaymentSimulator({
   const [error, setError] = useState<string | null>(null);
   const [simulacao, setSimulacao] = useState<Simulacao | null>(null);
   const [valorCalculado, setValorCalculado] = useState(0);
-  const [contratanteInfo, setContratanteInfo] = useState<any>(null);
+  const [tomadorInfo, settomadorInfo] = useState<any>(null);
   const [planoInfo, setPlanoInfo] = useState<any>(null);
 
   // Estados de seleção
@@ -92,8 +92,8 @@ export default function PaymentSimulator({
 
         if (token) {
           body.token = token;
-        } else if (contratanteId && planoId) {
-          body.entidade_id = contratanteId;
+        } else if (tomadorId && planoId) {
+          body.entidade_id = tomadorId;
           body.plano_id = planoId;
           if (numeroFuncionarios) body.numero_funcionarios = numeroFuncionarios;
         } else if (valorTotal) {
@@ -117,7 +117,7 @@ export default function PaymentSimulator({
 
         setSimulacao(data.simulacoes);
         setValorCalculado(data.valor_total);
-        setContratanteInfo(data.contratante);
+        settomadorInfo(data.tomador);
         setPlanoInfo(data.plano);
 
         // Selecionar PIX por padrão
@@ -132,7 +132,7 @@ export default function PaymentSimulator({
     };
 
     carregarSimulacao();
-  }, [token, contratanteId, planoId, numeroFuncionarios, valorTotal]);
+  }, [token, tomadorId, planoId, numeroFuncionarios, valorTotal]);
 
   // ============================================================================
   // FUNÇÕES
@@ -211,8 +211,8 @@ export default function PaymentSimulator({
 
                   if (token) {
                     body.token = token;
-                  } else if (contratanteId && planoId) {
-                    body.entidade_id = contratanteId;
+                  } else if (tomadorId && planoId) {
+                    body.entidade_id = tomadorId;
                     body.plano_id = planoId;
                     if (numeroFuncionarios)
                       body.numero_funcionarios = numeroFuncionarios;
@@ -239,7 +239,7 @@ export default function PaymentSimulator({
 
                   setSimulacao(data.simulacoes);
                   setValorCalculado(data.valor_total);
-                  setContratanteInfo(data.contratante);
+                  settomadorInfo(data.tomador);
                   setPlanoInfo(data.plano);
 
                   // Selecionar PIX por padrão
@@ -278,9 +278,9 @@ export default function PaymentSimulator({
         <h1 className="text-3xl font-bold text-gray-800 mb-2">
           Simulador de Pagamento
         </h1>
-        {contratanteInfo && (
+        {tomadorInfo && (
           <p className="text-gray-600">
-            <strong>Contratante:</strong> {contratanteInfo.nome}
+            <strong>tomador:</strong> {tomadorInfo.nome}
           </p>
         )}
         {planoInfo && (

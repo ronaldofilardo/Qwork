@@ -107,7 +107,7 @@ export const GET = async (req: Request) => {
         la.liberado_por,
         f.nome as liberado_por_nome,
         COUNT(a.id) as total_avaliacoes,
-        COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
+        COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
         COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas
       FROM lotes_avaliacao la
       LEFT JOIN funcionarios f ON la.liberado_por = f.cpf

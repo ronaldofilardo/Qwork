@@ -46,7 +46,7 @@ describe('/api/entidade/funcionarios', () => {
       cpf: '52998224725',
       nome: 'Gestor Entidade',
       perfil: 'gestor',
-      contratante_id: 77,
+      tomador_id: 77,
     });
 
     // Simular query retornando um gestor e um funcionário
@@ -100,13 +100,13 @@ describe('/api/entidade/funcionarios', () => {
     }
   });
 
-  test('✅ POST deve criar funcionário e vincular em contratantes_funcionarios', async () => {
+  test('✅ POST deve criar funcionário e vincular em tomadors_funcionarios', async () => {
     // Mockar sessão de gestor de entidade
     sessionMod.requireEntity.mockResolvedValue({
       cpf: '52998224725',
       nome: 'Gestor Entidade',
       perfil: 'gestor',
-      contratante_id: 77,
+      tomador_id: 77,
     });
 
     // 1) SELECT existing cpf -> nenhum
@@ -122,9 +122,9 @@ describe('/api/entidade/funcionarios', () => {
         },
       ],
     });
-    // 3) SELECT contratantes_funcionarios -> nenhum
+    // 3) SELECT tomadors_funcionarios -> nenhum
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
-    // 4) INSERT contratantes_funcionarios -> sucesso
+    // 4) INSERT tomadors_funcionarios -> sucesso
     mockQuery.mockResolvedValueOnce({ rowCount: 1 });
 
     const { POST } = await import('@/app/api/entidade/funcionarios/route');
@@ -148,7 +148,7 @@ describe('/api/entidade/funcionarios', () => {
     expect(body.success).toBe(true);
 
     const insertCall = mockQuery.mock.calls.find((call: any) =>
-      String(call[0]).includes('INSERT INTO contratantes_funcionarios')
+      String(call[0]).includes('INSERT INTO tomadors_funcionarios')
     );
     expect(insertCall).toBeDefined();
     expect(insertCall![1]).toEqual([123, 77, 'entidade']);

@@ -34,7 +34,7 @@ A função `criarContaResponsavel()` em `lib/db.ts` foi **corrigida** recentemen
 3. **Lotes:** Identifica lotes liberados por `gestor`
    - Lote `001-210126` → marcado como `status = 'cancelado'`
    - Demais lotes → `liberado_por` mantido (CPF válido em `entidades_senhas`)
-4. **Vínculos:** Remove entradas de `contratantes_funcionarios` para esses CPFs
+4. **Vínculos:** Remove entradas de `tomadores_funcionarios` para esses CPFs
 5. **Avaliações:** Deleta avaliações respondidas por `gestor` (se existirem — INCORRETO)
 6. **Remoção:** Deleta registros de `funcionarios` onde `perfil = 'gestor'`
 7. **Validação:** Confirma que:
@@ -66,9 +66,9 @@ SELECT * FROM funcionarios WHERE perfil = 'gestor';
 SELECT cpf, nome, email FROM funcionarios_backup_gestor;
 
 -- 3. Confirmar autenticação ainda funciona
-SELECT cs.cpf, cs.contratante_id, c.nome, c.tipo
+SELECT cs.cpf, cs.tomador_id, c.nome, c.tipo
 FROM entidades_senhas cs
-JOIN contratantes c ON c.id = cs.contratante_id
+JOIN tomadores c ON c.id = cs.tomador_id
 WHERE c.tipo = 'entidade';
 -- Resultado esperado: CPF 87545772920 presente
 
@@ -85,7 +85,7 @@ WHERE codigo = '001-210126';
 
 - ✅ Tabela `funcionarios` (registros incorretos removidos)
 - ✅ Tabela `lotes_avaliacao` (lote 001-210126 cancelado)
-- ✅ Tabela `contratantes_funcionarios` (vínculos removidos)
+- ✅ Tabela `tomadores_funcionarios` (vínculos removidos)
 - ✅ Tabela `avaliacoes` (avaliações inválidas deletadas, se existirem)
 - ✅ Autenticação de gestores_entidade **preservada** (via `entidades_senhas`)
 

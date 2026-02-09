@@ -11,20 +11,20 @@
 - Alterada a coluna `entidade_id` da tabela `auditoria` para permitir valores NULL
 - Modificado o tipo `AuditoriaInput` em `lib/auditoria/auditoria.ts` para `entidade_id?: number | null`
 
-### 2. Erro na View v_contratantes_stats
+### 2. Erro na View v_tomadores_stats
 
-**Problema**: A view `v_contratantes_stats` não existia, causando erro na API de cobrança.
+**Problema**: A view `v_tomadores_stats` não existia, causando erro na API de cobrança.
 
 **Solução**:
 
-- Criada a view que conta funcionários ativos por contratante:
+- Criada a view que conta funcionários ativos por tomador:
 
 ```sql
-CREATE VIEW v_contratantes_stats AS
-SELECT contratante_id as id, COUNT(*) as funcionarios_ativos
+CREATE VIEW v_tomadores_stats AS
+SELECT tomador_id as id, COUNT(*) as funcionarios_ativos
 FROM funcionarios
 WHERE ativo = true
-GROUP BY contratante_id
+GROUP BY tomador_id
 ```
 
 ### 3. Erro na Coluna "role" vs "tipo_usuario"
@@ -60,7 +60,7 @@ Este comando executa o script `scripts/fix-database-schema.js` que aplica todas 
 ## Status das Correções
 
 - ✅ Auditoria permite entidade_id nulo
-- ✅ View v_contratantes_stats criada
+- ✅ View v_tomadores_stats criada
 - ✅ Tabela usuarios atualizada com colunas necessárias
 - ✅ Código sincronizado com schema do banco
 

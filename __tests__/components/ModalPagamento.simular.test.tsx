@@ -31,7 +31,7 @@ describe('ModalPagamento - simulação de pagamento (dev)', () => {
             Promise.resolve({
               success: true,
               message: 'Pagamento simulado com sucesso',
-              contratante_id: 10,
+              tomador_id: 10,
             }),
         });
       }
@@ -48,7 +48,7 @@ describe('ModalPagamento - simulação de pagamento (dev)', () => {
       <ModalPagamento
         isOpen={true}
         onClose={() => {}}
-        contratanteId={10}
+        tomadorId={10}
         contratoId={99}
         valor={499}
         planoNome="Plano Básico"
@@ -142,7 +142,7 @@ describe('ModalPagamento - simulação de pagamento (dev)', () => {
       <ModalPagamento
         isOpen={true}
         onClose={() => {}}
-        contratanteId={10}
+        tomadorId={10}
         contratoId={99}
         valor={499}
         planoNome="Plano Básico"

@@ -369,7 +369,7 @@ describe('import route', () => {
     );
     expect(insertRelCalls.length).toBeGreaterThanOrEqual(1);
 
-    // Verificar que contratante_id foi passado como parâmetro
+    // Verificar que tomador_id foi passado como parâmetro
     expect(lastInsert[1]).toBeDefined();
     expect(Array.isArray(lastInsert[1])).toBe(true);
     expect(lastInsert[1]).toContain(1); // entidade_id mockado

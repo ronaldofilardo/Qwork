@@ -55,7 +55,7 @@ export async function POST(
     const loteResult = await query(
       `
       SELECT 
-        id, status, codigo, contratante_id
+        id, status, codigo, tomador_id
       FROM lotes_avaliacao
       WHERE id = $1
     `,

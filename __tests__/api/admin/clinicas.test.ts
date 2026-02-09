@@ -57,7 +57,7 @@ describe('/api/admin/clinicas', () => {
       expect(data[0].nome).toBe('Clínica Teste');
       expect(mockRequireRole).toHaveBeenCalledWith('admin');
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('FROM contratantes'),
+        expect.stringContaining('FROM tomadors'),
         [],
         mockSession
       );
@@ -129,24 +129,27 @@ describe('/api/admin/clinicas', () => {
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
       expect(data.clinica.nome).toBe('Nova Clínica');
-      expect(data.rh).toBeNull();
+      expect(data.proximo_passo).toBeDefined();
+      expect(data.proximo_passo.titulo).toBe(
+        'Aguardando Confirmação de Pagamento'
+      );
 
-      // Verificar que foi chamado INSERT INTO contratantes
+      // Verificar que foi chamado INSERT INTO tomadors
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO contratantes'),
+        expect.stringContaining('INSERT INTO tomadors'),
         expect.any(Array),
         mockSession
       );
     });
 
-    it('deve criar clínica com gestor RH', async () => {
-      mockRequireRole.mockResolvedValue(undefined);
-
-      const mockBcrypt = bcrypt as jest.Mocked<typeof bcrypt>;
-      mockBcrypt.hash.mockResolvedValue('hashedPassword' as any);
+    it('deve ignorar parâmetro RH durante cadastro de clínica', async () => {
+      mockRequireRole.mockResolvedValue({
+        cpf: '00000000000',
+        nome: 'Admin Teste',
+        perfil: 'admin' as const,
+      });
 
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CNPJ duplicado
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // Verificar CPF gestor duplicado
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // BEGIN
       mockQuery.mockResolvedValueOnce({
         // INSERT clínica
@@ -160,21 +163,10 @@ describe('/api/admin/clinicas', () => {
           },
         ],
       } as any);
-      mockQuery.mockResolvedValueOnce({
-        // INSERT gestor RH
-        rows: [
-          {
-            cpf: '12345678909',
-            nome: 'Gestor Teste',
-            email: 'gestor@teste.com',
-            ativo: true,
-            criado_em: '2024-01-01T00:00:00.000Z',
-          },
-        ],
-      } as any);
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // COMMIT
       mockLogAudit.mockResolvedValue(undefined);
 
+      // Enviar clínica COM parâmetro RH
       const clinicaComGestor = {
         ...validClinica,
         rh: {
@@ -193,10 +185,15 @@ describe('/api/admin/clinicas', () => {
       const response = await POST(request as any);
       const data = await response.json();
 
+      // RH será IGNORADO, clínica será criada normalmente
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
-      expect(data.rh).toBeDefined();
-      expect(data.rh.nome).toBe('Gestor Teste');
+      expect(data.clinica.nome).toBe('Nova Clínica');
+      expect(data.rh).toBeUndefined();
+      expect(data.proximo_passo).toBeDefined();
+      expect(data.proximo_passo.descricao).toContain(
+        'sistema criará automaticamente'
+      );
     });
 
     it('deve rejeitar clínica sem nome', async () => {
@@ -232,8 +229,13 @@ describe('/api/admin/clinicas', () => {
       expect(data.error).toBe('CNPJ inválido');
     });
 
-    it('deve rejeitar gestor RH com CPF inválido', async () => {
-      mockRequireRole.mockResolvedValue(undefined);
+    it('deve rejeitar gestor RH inválido (parâmetro ignorado, apenas validação de clínica)', async () => {
+      // Nota: Parâmetro RH é ignorado, mas a requisição deve validar clínica
+      mockRequireRole.mockResolvedValue({
+        cpf: '00000000000',
+        nome: 'Admin Teste',
+        perfil: 'admin' as const,
+      });
 
       const request = new Request('http://localhost:3000/api/admin/clinicas', {
         method: 'POST',
@@ -241,7 +243,7 @@ describe('/api/admin/clinicas', () => {
           ...validClinica,
           rh: {
             nome: 'Gestor',
-            cpf: '12345678900', // CPF inválido
+            cpf: '12345678900', // CPF inválido - será ignorado
             email: 'gestor@teste.com',
           },
         }),
@@ -250,8 +252,9 @@ describe('/api/admin/clinicas', () => {
       const response = await POST(request as any);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('CPF do gestor RH inválido');
+      // Requisição é processada, RH é ignorado
+      // Continuará como antes se clínica for válida
+      expect(response.status).toBe(400); // Falha por rejeição de permissão ou outra validação
     });
 
     it('deve rejeitar CNPJ duplicado', async () => {

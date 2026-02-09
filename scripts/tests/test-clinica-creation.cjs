@@ -15,21 +15,21 @@ async function testClinicaCreation() {
   try {
     await client.connect();
 
-    // Primeiro, verificar se há contratantes do tipo clinica pendentes
-    const contratantesResult = await client.query(`
-      SELECT id, nome, tipo, status FROM contratantes
+    // Primeiro, verificar se há tomadores do tipo clinica pendentes
+    const tomadoresResult = await client.query(`
+      SELECT id, nome, tipo, status FROM tomadores
       WHERE tipo = 'clinica' AND status = 'pendente'
       LIMIT 1
     `);
 
-    if (contratantesResult.rows.length === 0) {
+    if (tomadoresResult.rows.length === 0) {
       console.log(
         'Nenhum contratante clinica pendente encontrado. Criando um...'
       );
 
       // Criar um contratante clinica de teste
       const insertResult = await client.query(`
-        INSERT INTO contratantes (
+        INSERT INTO tomadores (
           tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
           status, ativa
@@ -48,13 +48,13 @@ async function testClinicaCreation() {
       return;
     }
 
-    const contratante = contratantesResult.rows[0];
+    const contratante = tomadoresResult.rows[0];
     console.log('Encontrado contratante clinica pendente:', contratante);
 
     // Aprovar o contratante (simulando a função aprovarContratante)
     await client.query(
       `
-      UPDATE contratantes
+      UPDATE tomadores
       SET status = 'aprovado',
           ativa = true,
           aprovado_em = CURRENT_TIMESTAMP,

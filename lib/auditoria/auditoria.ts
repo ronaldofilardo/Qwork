@@ -7,7 +7,7 @@ import { query } from '../db';
 import crypto from 'crypto';
 
 export type EntidadeTipo =
-  | 'contratante'
+  | 'tomador'
   | 'contrato'
   | 'pagamento'
   | 'recibo'
@@ -96,7 +96,7 @@ export async function registrarAuditoria(
   `,
     [
       input.entidade_tipo,
-      input.entidade_id,
+      input.entidade_id || 0, // Use 0 as default when entidade_id is not provided
       input.acao,
       input.status_anterior || null,
       input.status_novo || null,

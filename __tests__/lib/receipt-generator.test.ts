@@ -48,7 +48,7 @@ describe.skip('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
-      // Mock - busca contratante
+      // Mock - busca tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
@@ -123,7 +123,7 @@ describe.skip('receipt-generator', () => {
       });
 
       const result = await gerarRecibo({
-        contratante_id: 3,
+        tomador_id: 3,
         pagamento_id: 2,
         contrato_id: 1,
         emitido_por_cpf: '12345678901',
@@ -147,7 +147,7 @@ describe.skip('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
-      // 2) contratante
+      // 2) tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
@@ -204,7 +204,7 @@ describe.skip('receipt-generator', () => {
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
       const result = await gerarRecibo({
-        contratante_id: 56,
+        tomador_id: 56,
         pagamento_id: 50,
         contrato_id: 1,
       });
@@ -222,8 +222,8 @@ describe.skip('receipt-generator', () => {
         numero_recibo: 'REC-20250101-0001',
         vigencia_inicio: new Date('2025-01-01'),
         vigencia_fim: new Date('2025-12-31'),
-        contratante_nome: 'Empresa Teste',
-        contratante_cnpj: '12345678000199',
+        tomador_nome: 'Empresa Teste',
+        tomador_cnpj: '12345678000199',
         valor_total: 1200.0,
         numero_funcionarios_cobertos: 10,
         forma_pagamento: 'pix',

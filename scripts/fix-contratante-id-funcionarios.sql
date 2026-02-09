@@ -17,7 +17,7 @@ BEGIN
   ) THEN
     ALTER TABLE funcionarios
       ADD CONSTRAINT fk_funcionarios_contratante
-      FOREIGN KEY (contratante_id) REFERENCES contratantes(id)
+      FOREIGN KEY (contratante_id) REFERENCES tomadores(id)
       ON DELETE CASCADE;
   END IF;
 END$$;
@@ -36,13 +36,13 @@ ALTER TABLE funcionarios
     OR perfil IN ('emissor', 'admin', 'gestao')
   ) NOT VALID;
 
--- 5. Backfill: popular a coluna contratante_id a partir de contratantes_funcionarios (se existir)
+-- 5. Backfill: popular a coluna contratante_id a partir de tomadores_funcionarios (se existir)
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes_funcionarios') THEN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tomadores_funcionarios') THEN
     UPDATE funcionarios f
     SET contratante_id = cf.contratante_id
-    FROM contratantes_funcionarios cf
+    FROM tomadores_funcionarios cf
     WHERE f.id = cf.funcionario_id
       AND cf.tipo_contratante = 'entidade'
       AND f.contratante_id IS NULL;

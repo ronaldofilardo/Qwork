@@ -49,7 +49,7 @@ TRUNCATE TABLE analise_estatistica CASCADE;
 
 -- Tabelas de funcionários
 TRUNCATE TABLE funcionarios CASCADE;
-TRUNCATE TABLE contratantes_funcionarios CASCADE;
+TRUNCATE TABLE tomadores_funcionarios CASCADE;
 
 -- Tabelas de empresas clientes
 TRUNCATE TABLE clinicas_empresas CASCADE;
@@ -63,10 +63,10 @@ TRUNCATE TABLE contratacao_personalizada CASCADE;
 TRUNCATE TABLE historico_contratos_planos CASCADE;
 TRUNCATE TABLE contratos_planos CASCADE;
 
--- Tabelas de contratantes (entidades)
-TRUNCATE TABLE contratantes_snapshots CASCADE;
+-- Tabelas de tomadores (entidades)
+TRUNCATE TABLE tomadores_snapshots CASCADE;
 TRUNCATE TABLE entidades_senhas CASCADE;
-TRUNCATE TABLE contratantes CASCADE;
+TRUNCATE TABLE tomadores CASCADE;
 
 -- Tabelas de clínicas
 TRUNCATE TABLE clinicas CASCADE;
@@ -107,7 +107,7 @@ COMMIT;
 
 SELECT 'clinicas' AS tabela, COUNT(*) AS registros FROM clinicas
 UNION ALL
-SELECT 'contratantes', COUNT(*) FROM contratantes
+SELECT 'tomadores', COUNT(*) FROM tomadores
 UNION ALL
 SELECT 'usuarios', COUNT(*) FROM usuarios
 UNION ALL

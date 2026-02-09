@@ -6,28 +6,28 @@ const {
 
 async function run(cnpj = '63403935000139') {
   try {
-    console.log('[INFO] Buscando contratante por CNPJ:', cnpj);
-    const contratanteRes = await query(
-      'SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em FROM contratantes WHERE cnpj = $1 LIMIT 1',
+    console.log('[INFO] Buscando tomador por CNPJ:', cnpj);
+    const tomadorRes = await query(
+      'SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em FROM tomadors WHERE cnpj = $1 LIMIT 1',
       [cnpj]
     );
-    if (!contratanteRes.rows.length) {
-      console.log('Nenhum contratante encontrado para esse CNPJ');
+    if (!tomadorRes.rows.length) {
+      console.log('Nenhum tomador encontrado para esse CNPJ');
       return;
     }
-    const contratante = contratanteRes.rows[0];
-    const contratanteId = contratante.id;
-    console.log('[INFO] contratante_id =', contratanteId);
+    const tomador = tomadorRes.rows[0];
+    const tomadorId = tomador.id;
+    console.log('[INFO] tomador_id =', tomadorId);
 
     // buscar contratos_planos
     const planosRes = await query(
       `SELECT cp.*, p.nome as plano_nome, p.tipo as plano_tipo, c.id as contrato_numero
        FROM contratos_planos cp
        LEFT JOIN planos p on cp.plano_id = p.id
-       LEFT JOIN contratos c ON c.contratante_id = COALESCE(cp.contratante_id, cp.clinica_id)
-       WHERE ($1 = cp.clinica_id OR $1 = cp.contratante_id)
+       LEFT JOIN contratos c ON c.tomador_id = COALESCE(cp.tomador_id, cp.clinica_id)
+       WHERE ($1 = cp.clinica_id OR $1 = cp.tomador_id)
        ORDER BY cp.created_at DESC LIMIT 1`,
-      [contratanteId]
+      [tomadorId]
     );
 
     let plano = null;
@@ -40,9 +40,9 @@ async function run(cnpj = '63403935000139') {
         `SELECT c.id, c.plano_id, p.nome as plano_nome, p.tipo as plano_tipo, c.valor_total, c.numero_funcionarios, c.status, c.criado_em
          FROM contratos c
          LEFT JOIN planos p ON c.plano_id = p.id
-         WHERE c.contratante_id = $1 AND c.status::text IN ('ativo','aprovado','aguardando_pagamento')
+         WHERE c.tomador_id = $1 AND c.status::text IN ('ativo','aprovado','aguardando_pagamento')
          ORDER BY c.criado_em DESC LIMIT 1`,
-        [contratanteId]
+        [tomadorId]
       );
       if (contratoRes.rows.length > 0) {
         const c = contratoRes.rows[0];
@@ -62,8 +62,8 @@ async function run(cnpj = '63403935000139') {
     // pagamentos
     const pagamentosRes = await query(
       `SELECT id, valor, status, numero_parcelas, metodo, data_pagamento, plataforma_nome, detalhes_parcelas, criado_em
-       FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC`,
-      [contratanteId]
+       FROM pagamentos WHERE tomador_id = $1 ORDER BY criado_em DESC`,
+      [tomadorId]
     );
 
     const pagamentos = [];
@@ -169,11 +169,7 @@ async function run(cnpj = '63403935000139') {
 
     console.log('--- Resultado (simulado) ---');
     console.log(
-      JSON.stringify(
-        { contratante, plano, pagamentos, pagamento_resumo },
-        null,
-        2
-      )
+      JSON.stringify({ tomador, plano, pagamentos, pagamento_resumo }, null, 2)
     );
   } catch (err) {
     console.error('Erro', err);

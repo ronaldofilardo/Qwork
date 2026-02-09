@@ -12,7 +12,7 @@
  clinicas
  clinicas_empresas
  contratacao_personalizada
- contratantes
+ tomadores
  entidades_senhas
  contratos
  contratos_planos

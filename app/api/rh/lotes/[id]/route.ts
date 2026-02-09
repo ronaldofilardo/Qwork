@@ -1,4 +1,4 @@
-import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
+import { getSession, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
@@ -8,8 +8,15 @@ export const GET = async (
   req: Request,
   { params }: { params: { id: string } }
 ) => {
-  const user = await requireAuth();
-  if (!user || user.perfil !== 'rh') {
+  const user = getSession();
+  if (!user) {
+    return NextResponse.json(
+      { error: 'Não autorizado', success: false },
+      { status: 401 }
+    );
+  }
+
+  if (user.perfil !== 'rh') {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }

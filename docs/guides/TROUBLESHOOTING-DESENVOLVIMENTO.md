@@ -83,7 +83,7 @@ const result = await queryAsGestor(`SELECT ...`, [params]);
 
 ```sql
 -- Gestor deve estar APENAS em entidades_senhas
-SELECT cpf_cnpj, perfil, contratante_id, ativo
+SELECT cpf_cnpj, perfil, tomador_id, ativo
 FROM entidades_senhas
 WHERE perfil = 'gestor';
 

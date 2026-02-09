@@ -118,7 +118,7 @@ export const GET = async (req: Request) => {
           ec.nome as empresa_nome,
           la.hash_pdf,
           COUNT(a.id) as total_avaliacoes,
-          COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
+          COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
           COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
           fe.solicitado_por,
           fe.solicitado_em,

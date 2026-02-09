@@ -1,4 +1,4 @@
-# Fluxo de Aprovação e Liberação de Login - Contratantes
+# Fluxo de Aprovação e Liberação de Login - tomadores
 
 **Última atualização:** 24/12/2025  
 **Status:** ✅ Documentação Completa
@@ -7,7 +7,7 @@
 
 ## 📋 Visão Geral
 
-Este documento detalha o fluxo completo desde a **aprovação de um novo contratante** até a **liberação do login**, diferenciando os dois tipos: **Entidade** e **Clínica**.
+Este documento detalha o fluxo completo desde a **aprovação de um novo tomador** até a **liberação do login**, diferenciando os dois tipos: **Entidade** e **Clínica**.
 
 ---
 
@@ -16,7 +16,7 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. CADASTRO INICIAL                                             │
-│    - Contratante preenche formulário                            │
+│    - tomador preenche formulário                            │
 │    - Status inicial: 'pendente'                                 │
 │    - Flags: ativa=false, pagamento_confirmado=false             │
 └────────────────────────────┬────────────────────────────────────┘
@@ -37,12 +37,12 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
                      │                     motivo_rejeicao preenchido
                      ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 3. APROVAÇÃO (handleAprovarContratante)                         │
+│ 3. APROVAÇÃO (handleAprovartomador)                         │
 │    API: POST /api/admin/novos-cadastros                         │
-│    Handler: handlers.ts → handleAprovarContratante()            │
+│    Handler: handlers.ts → handleAprovartomador()            │
 │                                                                  │
 │    Executa:                                                     │
-│    → aprovarContratante(id, admin_cpf, session)                 │
+│    → aprovartomador(id, admin_cpf, session)                 │
 │      - Status: 'pendente' → 'aprovado'                          │
 │      - aprovado_em = NOW()                                      │
 │      - aprovado_por_cpf = admin_cpf                             │
@@ -50,24 +50,24 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 │    → SE tipo='clinica':                                         │
 │      - INSERT INTO clinicas (...) VALUES (...)                  │
 │      - Cria registro na tabela 'clinicas'                       │
-│      - clinica.contratante_id = contratante.id                  │
+│      - clinica.tomador_id = tomador.id                  │
 │                                                                  │
 │    → Log Audit: 'liberar_login' action                          │
 └────────────────────────────┬────────────────────────────────────┘
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│ 4. ATIVAÇÃO (ativarContratante)                                 │
-│    Módulo: lib/contratante-activation.ts                        │
+│ 4. ATIVAÇÃO (ativartomador)                                 │
+│    Módulo: lib/tomador-activation.ts                        │
 │                                                                  │
 │    Validações:                                                  │
-│    ✓ contratante.ativa == false (não pode ativar já ativo)     │
-│    ✓ contratante.status != 'cancelado'                          │
-│    ✓ contratante.pagamento_confirmado == true                   │
+│    ✓ tomador.ativa == false (não pode ativar já ativo)     │
+│    ✓ tomador.status != 'cancelado'                          │
+│    ✓ tomador.pagamento_confirmado == true                   │
 │      OU isencao_manual=true (requer admin_cpf)                  │
 │                                                                  │
 │    Atualização:                                                 │
-│    → UPDATE contratantes SET                                    │
+│    → UPDATE tomadores SET                                    │
 │        ativa = true,                                            │
 │        status = 'aprovado',                                     │
 │        data_liberacao_login = NOW(),                            │
@@ -81,14 +81,14 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 ┌─────────────────────────────────────────────────────────────────┐
 │ 5. CRIAÇÃO DE CONTA (criarContaResponsavel)                     │
 │    Módulo: lib/db.ts                                            │
-│    Chamado por: contratante-activation.ts após ativação         │
+│    Chamado por: tomador-activation.ts após ativação         │
 │                                                                  │
 │    Gera Senha:                                                  │
 │    → defaultPassword = últimos 6 dígitos do CNPJ (sem formatação)│
 │    → hashed = bcrypt.hash(defaultPassword, 10)                  │
 │                                                                  │
 │    1. INSERT/UPDATE entidades_senhas:                        │
-│       - contratante_id                                          │
+│       - tomador_id                                          │
 │       - cpf (responsavel_cpf)                                   │
 │       - senha_hash (bcrypt)                                     │
 │                                                                  │
@@ -96,9 +96,9 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 │       → INSERT/UPDATE funcionarios:                             │
 │         - cpf = responsavel_cpf                                 │
 │         - perfil = 'rh'                                         │
-│         - contratante_id                                        │
+│         - tomador_id                                        │
 │         - senha_hash (bcrypt)                                   │
-│       → INSERT contratantes_funcionarios (vínculo)              │
+│       → INSERT tomadores_funcionarios (vínculo)              │
 │                                                                  │
 │       SE tipo == 'entidade':                                    │
 │       → NÃO cria funcionario                                    │
@@ -109,7 +109,7 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 ┌─────────────────────────────────────────────────────────────────┐
 │ 6. LOGIN LIBERADO                                               │
 │    Credenciais:                                                 │
-│    - CPF: contratante.responsavel_cpf                           │
+│    - CPF: tomador.responsavel_cpf                           │
 │    - Senha: últimos 6 dígitos do CNPJ                           │
 │                                                                  │
 │    Tabelas de Autenticação:                                     │
@@ -128,7 +128,7 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 
 - Representa uma **empresa direta** que contrata o sistema
 - **Não** gerencia outras empresas
-- Relacionamento: `contratante (entidade) → empresas_clientes → funcionarios`
+- Relacionamento: `tomador (entidade) → empresas_clientes → funcionarios`
 
 #### Fluxo de Aprovação
 
@@ -141,18 +141,18 @@ Este documento detalha o fluxo completo desde a **aprovação de um novo contrat
 #### Estrutura de Dados
 
 ```sql
--- Contratante entidade
-contratantes:
+-- tomador entidade
+tomadores:
   id=7, tipo='entidade', nome='Empresa ABC Ltda',
   responsavel_cpf='12345678901', cnpj='12345678000100'
 
 -- Senha do responsável
 entidades_senhas:
-  contratante_id=7, cpf='12345678901', senha_hash='$2b$10...'
+  tomador_id=7, cpf='12345678901', senha_hash='$2b$10...'
 
 -- Empresas associadas (pode ser a própria entidade ou subsidiárias)
 empresas_clientes:
-  id=3, nome='Empresa ABC', contratante_id=7, clinica_id=NULL
+  id=3, nome='Empresa ABC', tomador_id=7, clinica_id=NULL
 
 -- ❌ NÃO existe em funcionarios com perfil especial
 ```
@@ -160,7 +160,7 @@ empresas_clientes:
 #### Login da Entidade
 
 - **Endpoint**: `/api/auth/login` ou `/api/auth/login-entidade`
-- **Validação**: Busca em `entidades_senhas` WHERE `cpf = ? AND contratante_id = ?`
+- **Validação**: Busca em `entidades_senhas` WHERE `cpf = ? AND tomador_id = ?`
 - **Perfil retornado**: `gestor` ou `rh` (derivado da sessão)
 
 ---
@@ -170,7 +170,7 @@ empresas_clientes:
 #### Características
 
 - Representa uma **clínica** que gerencia **múltiplas empresas clientes**
-- Relacionamento: `contratante (clinica) → clinica → empresas_clientes → funcionarios`
+- Relacionamento: `tomador (clinica) → clinica → empresas_clientes → funcionarios`
 
 #### Fluxo de Aprovação
 
@@ -178,8 +178,8 @@ empresas_clientes:
    - Status muda para 'aprovado'
    - **Cria registro em `clinicas`** automaticamente
      ```sql
-     INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, contratante_id)
-     VALUES (...) ON CONFLICT (contratante_id) DO NOTHING
+     INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, tomador_id)
+     VALUES (...) ON CONFLICT (tomador_id) DO NOTHING
      ```
 2. ✅ **Confirmação de Pagamento**: Automática via simulador de pagamento
 3. ✅ **Ativação AUTOMÁTICA**: `ativa=true` imediatamente após confirmação de pagamento
@@ -190,30 +190,30 @@ empresas_clientes:
 #### Estrutura de Dados
 
 ```sql
--- Contratante clínica
-contratantes:
+-- tomador clínica
+tomadores:
   id=8, tipo='clinica', nome='Clínica BPS Saúde',
   responsavel_cpf='98765432100', cnpj='98765432000199'
 
 -- Registro da clínica criado automaticamente na aprovação
 clinicas:
-  id=1, nome='Clínica BPS Saúde', contratante_id=8, cnpj='98765432000199'
+  id=1, nome='Clínica BPS Saúde', tomador_id=8, cnpj='98765432000199'
 
 -- Senha do responsável
 entidades_senhas:
-  contratante_id=8, cpf='98765432100', senha_hash='$2b$10...'
+  tomador_id=8, cpf='98765432100', senha_hash='$2b$10...'
 
 -- ❌ NÃO existe em funcionarios (responsável não é funcionário)
 
 -- Empresas gerenciadas pela clínica
 empresas_clientes:
-  id=4, nome='Empresa XYZ', clinica_id=1, contratante_id=NULL
+  id=4, nome='Empresa XYZ', clinica_id=1, tomador_id=NULL
 ```
 
 #### Login da Clínica
 
 - **Endpoint**: `/api/auth/login` ou `/api/auth/login-clinica`
-- **Validação**: Busca em `entidades_senhas` WHERE `cpf = ? AND contratante_id = ?`
+- **Validação**: Busca em `entidades_senhas` WHERE `cpf = ? AND tomador_id = ?`
 - **Perfil retornado**: `gestor_clinica` ou `rh` (derivado da sessão)
 
 ---
@@ -223,9 +223,9 @@ empresas_clientes:
 ### 1. **Aprovação SEM Ativação Automática**
 
 ```typescript
-// lib/db.ts → aprovarContratante()
+// lib/db.ts → aprovartomador()
 // ❌ NÃO ativa automaticamente
-UPDATE contratantes
+UPDATE tomadores
 SET status = 'aprovado',
     aprovado_em = CURRENT_TIMESTAMP,
     aprovado_por_cpf = $2
@@ -244,11 +244,11 @@ WHERE id = $1
 
 ```typescript
 // Após confirmação de pagamento no simulador:
-// Sistema chama ativarContratante() automaticamente
-// lib/contratante-activation.ts → ativarContratante()
-if (!contratante.pagamento_confirmado && !isencao_manual) {
+// Sistema chama ativartomador() automaticamente
+// lib/tomador-activation.ts → ativartomador()
+if (!tomador.pagamento_confirmado && !isencao_manual) {
   throw new Error(
-    'Não é possível ativar contratante sem pagamento confirmado. Use isencao_manual apenas em casos excepcionais.'
+    'Não é possível ativar tomador sem pagamento confirmado. Use isencao_manual apenas em casos excepcionais.'
   );
 }
 ```
@@ -265,11 +265,11 @@ if (!contratante.pagamento_confirmado && !isencao_manual) {
 ### 3. **Criação de Conta APÓS Ativação**
 
 ```typescript
-// lib/contratante-activation.ts → ativarContratante()
+// lib/tomador-activation.ts → ativartomador()
 await query('COMMIT'); // Ativação comitada
 
 try {
-  await criarContaResponsavel(contratante_id);
+  await criarContaResponsavel(tomador_id);
 } catch (accountError) {
   console.error('Erro ao criar conta responsável:', accountError);
   result.warning = 'Conta responsável não foi criada automaticamente.';
@@ -322,23 +322,23 @@ ERROR: valor NULL na coluna "usuario_cpf" da relação "audit_logs" viola a rest
 
 ## 🐛 Erros Comuns e Diagnóstico
 
-### ❌ Erro: "Contratante não pode ser ativado"
+### ❌ Erro: "tomador não pode ser ativado"
 
 **Mensagem completa:**
 
 ```
-Não é possível ativar contratante sem pagamento confirmado.
+Não é possível ativar tomador sem pagamento confirmado.
 ```
 
 **Causa:**
 
-- `contratante.pagamento_confirmado = false`
+- `tomador.pagamento_confirmado = false`
 - Tentativa de ativar sem isenção manual
 
 **Solução:**
 
-1. Confirmar pagamento via admin: `UPDATE contratantes SET pagamento_confirmado=true WHERE id=?`
-2. OU usar isenção manual: `ativarContratante({ contratante_id, isencao_manual: true, admin_cpf })`
+1. Confirmar pagamento via admin: `UPDATE tomadores SET pagamento_confirmado=true WHERE id=?`
+2. OU usar isenção manual: `ativartomador({ tomador_id, isencao_manual: true, admin_cpf })`
 
 ---
 
@@ -357,7 +357,7 @@ Conta responsável não foi criada automaticamente.
 
 **Solução:**
 
-1. Verificar `entidades_senhas` se senha existe: `SELECT * FROM entidades_senhas WHERE contratante_id=?`
+1. Verificar `entidades_senhas` se senha existe: `SELECT * FROM entidades_senhas WHERE tomador_id=?`
 2. Sistema tentará recriar automaticamente no próximo login
 3. Verificar logs de erro para identificar a causa raiz
 4. **Não é necessário intervenção manual** - processo é automatizado
@@ -369,15 +369,15 @@ Conta responsável não foi criada automaticamente.
 **Causa:**
 
 - Registro na tabela `clinicas` não foi criado durante aprovação
-- Possível falha silenciosa no `aprovarContratante()`
+- Possível falha silenciosa no `aprovartomador()`
 
 **Diagnóstico:**
 
 ```sql
 -- Verificar se clinica existe
-SELECT c.id as contratante_id, c.nome, cl.id as clinica_id
-FROM contratantes c
-LEFT JOIN clinicas cl ON cl.contratante_id = c.id
+SELECT c.id as tomador_id, c.nome, cl.id as clinica_id
+FROM tomadores c
+LEFT JOIN clinicas cl ON cl.tomador_id = c.id
 WHERE c.tipo='clinica' AND c.id=?;
 
 -- Se clinica_id for NULL, verificar logs e reexecutar aprovação
@@ -389,7 +389,7 @@ WHERE c.tipo='clinica' AND c.id=?;
 
 **Causa:**
 
-- Contratante aprovado mas não ativado (`ativa=false`)
+- tomador aprovado mas não ativado (`ativa=false`)
 - Pagamento ainda não confirmado no simulador
 - Senha não criada em `entidades_senhas`
 
@@ -400,8 +400,8 @@ WHERE c.tipo='clinica' AND c.id=?;
 SELECT
   c.id, c.tipo, c.ativa, c.status, c.pagamento_confirmado,
   cs.cpf, cs.senha_hash
-FROM contratantes c
-LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
+FROM tomadores c
+LEFT JOIN entidades_senhas cs ON cs.tomador_id = c.id
 WHERE c.id = ?;
 ```
 
@@ -415,7 +415,7 @@ WHERE c.id = ?;
 
 ---
 
-## 📊 Estados do Contratante
+## 📊 Estados do tomador
 
 | Campo                  | Pendente     | Aprovado (Aguardando) | Ativo (Liberado) | Rejeitado     |
 | ---------------------- | ------------ | --------------------- | ---------------- | ------------- |
@@ -445,7 +445,7 @@ const senhaResult = await query(
   [cpf]
 );
 // Valida bcrypt.compare(senha, senha_hash)
-// Session: { perfil: 'gestor', contratante_id }
+// Session: { perfil: 'gestor', tomador_id }
 ```
 
 ### **Clínica**
@@ -453,11 +453,11 @@ const senhaResult = await query(
 ```typescript
 // Busca em entidades_senhas (IGUAL à entidade)
 const senhaResult = await query(
-  "SELECT cs.*, c.tipo FROM entidades_senhas cs JOIN contratantes c ON cs.contratante_id = c.id WHERE cs.cpf = $1 AND c.tipo='clinica'",
+  "SELECT cs.*, c.tipo FROM entidades_senhas cs JOIN tomadores c ON cs.tomador_id = c.id WHERE cs.cpf = $1 AND c.tipo='clinica'",
   [cpf]
 );
 // Valida bcrypt.compare(senha, senha_hash)
-// Session: { perfil: 'gestor_clinica', clinica_id, contratante_id }
+// Session: { perfil: 'gestor_clinica', clinica_id, tomador_id }
 ```
 
 **Importante:** Ambos os tipos (entidade e clínica) usam **apenas** `entidades_senhas` para autenticação.
@@ -480,7 +480,7 @@ const senhaResult = await query(
 
 Ambos simulam o fluxo completo:
 
-1. Cadastro de contratante
+1. Cadastro de tomador
 2. Aprovação por admin
 3. Confirmação de pagamento
 4. Ativação e criação de conta
@@ -494,24 +494,24 @@ Ambos simulam o fluxo completo:
 
 1. **Handlers de Aprovação**
    - [app/api/admin/novos-cadastros/handlers.ts](app/api/admin/novos-cadastros/handlers.ts)
-     - `handleAprovarContratante()` (linha ~102)
-     - `handleRejeitarContratante()` (linha ~140)
+     - `handleAprovartomador()` (linha ~102)
+     - `handleRejeitartomador()` (linha ~140)
      - `handleSolicitarReanalise()` (linha ~180)
 
-2. **Ativação de Contratante**
-   - [lib/contratante-activation.ts](lib/contratante-activation.ts)
-     - `ativarContratante()` (linha 45)
-     - `desativarContratante()` (linha 175)
+2. **Ativação de tomador**
+   - [lib/tomador-activation.ts](lib/tomador-activation.ts)
+     - `ativartomador()` (linha 45)
+     - `desativartomador()` (linha 175)
 
 3. **Criação de Conta**
    - [lib/db.ts](lib/db.ts)
      - `criarContaResponsavel()` (linha 1342)
-     - `aprovarContratante()` (linha ~950)
+     - `aprovartomador()` (linha ~950)
 
 4. **Schemas de Validação**
    - [app/api/admin/novos-cadastros/schemas.ts](app/api/admin/novos-cadastros/schemas.ts)
-     - `AprovarContratanteSchema`
-     - `RejeitarContratanteSchema`
+     - `Aprovartomadoreschema`
+     - `Rejeitartomadoreschema`
 
 ---
 
@@ -519,12 +519,12 @@ Ambos simulam o fluxo completo:
 
 Para novos desenvolvedores ou ao revisar o fluxo:
 
-- [ ] Contratante criado com `status='pendente'` e `ativa=false`
+- [ ] tomador criado com `status='pendente'` e `ativa=false`
 - [ ] Admin aprova via `/api/admin/novos-cadastros` com `acao='aprovar'`
-- [ ] `aprovarContratante()` altera `status='aprovado'` sem ativar
+- [ ] `aprovartomador()` altera `status='aprovado'` sem ativar
 - [ ] Se `tipo='clinica'`, cria registro em `clinicas` automaticamente
 - [ ] Simulador de pagamento confirma → `pagamento_confirmado=true`
-- [ ] **Ativação AUTOMÁTICA**: `ativarContratante()` executado pelo sistema
+- [ ] **Ativação AUTOMÁTICA**: `ativartomador()` executado pelo sistema
 - [ ] `criarContaResponsavel()` cria senha em `entidades_senhas`
 - [ ] **Ambos os tipos** (entidade e clínica) NÃO criam em `funcionarios`
 - [ ] Senha padrão = últimos 6 dígitos do CNPJ (bcrypt hash)
@@ -536,15 +536,15 @@ Para novos desenvolvedores ou ao revisar o fluxo:
 
 ## 🎯 Resumo Executivo
 
-| Aspecto                         | Entidade                          | Clínica                                     |
-| ------------------------------- | --------------------------------- | ------------------------------------------- |
-| **Criação de `clinicas`?**      | ❌ Não                            | ✅ Sim (na aprovação)                       |
-| **Registro em `funcionarios`?** | ❌ Não                            | ❌ Não                                      |
-| **Autenticação via**            | `entidades_senhas`                | `entidades_senhas`                          |
-| **Perfil de login**             | `gestor`                          | `gestor_clinica`                            |
-| **Gerencia empresas?**          | Diretamente (próprias)            | Múltiplas clientes via `clinicas`           |
-| **Estrutura**                   | `contratante → empresas_clientes` | `contratante → clinica → empresas_clientes` |
-| **Ativação**                    | Automática pós-pagamento          | Automática pós-pagamento                    |
+| Aspecto                         | Entidade                      | Clínica                                 |
+| ------------------------------- | ----------------------------- | --------------------------------------- |
+| **Criação de `clinicas`?**      | ❌ Não                        | ✅ Sim (na aprovação)                   |
+| **Registro em `funcionarios`?** | ❌ Não                        | ❌ Não                                  |
+| **Autenticação via**            | `entidades_senhas`            | `entidades_senhas`                      |
+| **Perfil de login**             | `gestor`                      | `gestor_clinica`                        |
+| **Gerencia empresas?**          | Diretamente (próprias)        | Múltiplas clientes via `clinicas`       |
+| **Estrutura**                   | `tomador → empresas_clientes` | `tomador → clinica → empresas_clientes` |
+| **Ativação**                    | Automática pós-pagamento      | Automática pós-pagamento                |
 
 ---
 

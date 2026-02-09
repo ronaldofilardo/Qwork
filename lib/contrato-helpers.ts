@@ -6,7 +6,7 @@
  * 2. Recibos financeiros (valores, vigência, parcelas)
  */
 
-interface DadosContratante {
+interface Dadostomador {
   nome: string;
   cnpj: string;
   endereco?: string;
@@ -29,7 +29,7 @@ interface DadosPlano {
  * Foco: prestação de serviço, escopo, responsabilidades
  */
 export function gerarContratoNeutro(
-  contratante: DadosContratante,
+  tomador: Dadostomador,
   plano: DadosPlano
 ): string {
   const dataAtual = new Date().toLocaleDateString('pt-BR', {
@@ -41,12 +41,12 @@ export function gerarContratoNeutro(
   return `
 CONTRATO DE PRESTAÇÃO DE SERVIÇOS DE AVALIAÇÃO PSICOSSOCIAL
 
-CONTRATANTE: ${contratante.nome}
-CNPJ: ${contratante.cnpj}
-${contratante.endereco ? `Endereço: ${contratante.endereco}, ${contratante.cidade} - ${contratante.estado}, CEP: ${contratante.cep}` : ''}
-Representado por: ${contratante.responsavel_nome}
-CPF: ${contratante.responsavel_cpf}
-${contratante.responsavel_cargo ? `Cargo: ${contratante.responsavel_cargo}` : ''}
+tomador: ${tomador.nome}
+CNPJ: ${tomador.cnpj}
+${tomador.endereco ? `Endereço: ${tomador.endereco}, ${tomador.cidade} - ${tomador.estado}, CEP: ${tomador.cep}` : ''}
+Representado por: ${tomador.responsavel_nome}
+CPF: ${tomador.responsavel_cpf}
+${tomador.responsavel_cargo ? `Cargo: ${tomador.responsavel_cargo}` : ''}
 
 CONTRATADA: Qwork - Sistema de Avaliação Psicossocial
 CNPJ: [A DEFINIR]
@@ -76,7 +76,7 @@ ${plano.descricao ? `Descrição: ${plano.descricao}` : ''}
 
 A CONTRATADA se compromete a:
 
-a) Disponibilizar a plataforma Qwork para acesso dos funcionários da CONTRATANTE
+a) Disponibilizar a plataforma Qwork para acesso dos funcionários da tomador
 b) Garantir a confidencialidade e segurança dos dados coletados
 c) Fornecer suporte técnico em horário comercial
 d) Gerar relatórios conforme especificado no plano contratado
@@ -85,9 +85,9 @@ f) Cumprir todas as normas da Lei Geral de Proteção de Dados (LGPD)
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-3. RESPONSABILIDADES DA CONTRATANTE
+3. RESPONSABILIDADES DA tomador
 
-A CONTRATANTE se compromete a:
+A tomador se compromete a:
 
 a) Fornecer cadastro atualizado dos funcionários a serem avaliados
 b) Orientar os funcionários sobre o processo de avaliação
@@ -104,7 +104,7 @@ O prazo de vigência será estabelecido no recibo de pagamento, emitido após a 
 
 O contrato poderá ser rescindido por qualquer das partes mediante notificação prévia de 30 dias.
 
-Em caso de rescisão antecipada pela CONTRATANTE, não haverá reembolso proporcional.
+Em caso de rescisão antecipada pela tomador, não haverá reembolso proporcional.
 
 Em caso de não renovação ao fim da vigência, o acesso à plataforma será bloqueado, mas os dados permanecerão armazenados por 5 anos conforme LGPD.
 
@@ -114,7 +114,7 @@ Em caso de não renovação ao fim da vigência, o acesso à plataforma será bl
 
 Todos os direitos autorais sobre a plataforma Qwork, metodologia COPSOQ III e materiais relacionados pertencem à CONTRATADA.
 
-Os dados coletados são de propriedade da CONTRATANTE, respeitadas as limitações da LGPD.
+Os dados coletados são de propriedade da tomador, respeitadas as limitações da LGPD.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -143,9 +143,9 @@ Foro: Comarca de [CIDADE], renunciando a qualquer outro por mais privilegiado qu
 E por estarem de acordo, as partes assinam digitalmente o presente contrato.
 
 _____________________________________
-${contratante.nome}
-CONTRATANTE
-CPF/CNPJ: ${contratante.cnpj}
+${tomador.nome}
+tomador
+CPF/CNPJ: ${tomador.cnpj}
 
 _____________________________________
 Qwork - Sistema de Avaliação Psicossocial
@@ -163,7 +163,7 @@ IP de aceite: [A SER REGISTRADO AUTOMATICAMENTE]
  */
 export function gerarTextoRecibo(dados: {
   numero_recibo: string;
-  contratante: DadosContratante;
+  tomador: Dadostomador;
   plano: DadosPlano;
   vigencia_inicio: string;
   vigencia_fim: string;
@@ -188,11 +188,11 @@ export function gerarTextoRecibo(dados: {
 Número do Recibo: ${dados.numero_recibo}
 Data de Emissão: ${dataEmissao}
 
-CONTRATANTE
-Nome/Razão Social: ${dados.contratante.nome}
-CNPJ: ${dados.contratante.cnpj}
-Responsável: ${dados.contratante.responsavel_nome}
-CPF Responsável: ${dados.contratante.responsavel_cpf}
+tomador
+Nome/Razão Social: ${dados.tomador.nome}
+CNPJ: ${dados.tomador.cnpj}
+Responsável: ${dados.tomador.responsavel_nome}
+CPF Responsável: ${dados.tomador.responsavel_cpf}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -245,27 +245,27 @@ Documento gerado automaticamente em ${dataEmissao}
  * Valida dados antes de gerar contrato
  */
 export function validarDadosContrato(
-  contratante: DadosContratante,
+  tomador: Dadostomador,
   plano: DadosPlano
 ): { valido: boolean; erros: string[] } {
   const erros: string[] = [];
 
-  if (!contratante.nome || contratante.nome.trim().length < 3) {
-    erros.push('Nome do contratante inválido');
+  if (!tomador.nome || tomador.nome.trim().length < 3) {
+    erros.push('Nome do tomador inválido');
   }
 
-  if (!contratante.cnpj || contratante.cnpj.length < 14) {
+  if (!tomador.cnpj || tomador.cnpj.length < 14) {
     erros.push('CNPJ inválido');
   }
 
   if (
-    !contratante.responsavel_nome ||
-    contratante.responsavel_nome.trim().length < 3
+    !tomador.responsavel_nome ||
+    tomador.responsavel_nome.trim().length < 3
   ) {
     erros.push('Nome do responsável inválido');
   }
 
-  if (!contratante.responsavel_cpf || contratante.responsavel_cpf.length < 11) {
+  if (!tomador.responsavel_cpf || tomador.responsavel_cpf.length < 11) {
     erros.push('CPF do responsável inválido');
   }
 

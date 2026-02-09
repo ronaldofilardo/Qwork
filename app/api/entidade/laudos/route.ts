@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Construir WHERE clause para busca
-    let whereClause = 'WHERE f.contratante_id = $1';
+    let whereClause = 'WHERE la.entidade_id = $1';
     const params: any[] = [entidadeId];
 
     if (busca) {
@@ -38,16 +38,15 @@ export async function GET(request: NextRequest) {
       SELECT
         l.id,
         l.lote_id,
-        c.nome as entidade_nome,
-        e.nome as emissor_nome,
+        e.nome as entidade_nome,
+        em.nome as emissor_nome,
         l.enviado_em,
         l.hash_pdf,
         l.status
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
-      JOIN funcionarios f ON f.empresa_id = la.empresa_id OR f.contratante_id = $1
-      LEFT JOIN entidades c ON c.id = f.contratante_id
-      LEFT JOIN funcionarios e ON e.cpf = l.emissor_cpf
+      LEFT JOIN entidades e ON e.id = la.entidade_id
+      LEFT JOIN usuarios em ON em.cpf = l.emissor_cpf
       ${whereClause}
       ORDER BY l.enviado_em DESC
       LIMIT $${params.length + 1} OFFSET $${params.length + 2}
@@ -61,7 +60,6 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(DISTINCT l.id) as total
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
-      JOIN funcionarios f ON f.empresa_id = la.empresa_id OR f.contratante_id = $1
       ${whereClause}
     `,
       params

@@ -33,7 +33,7 @@ WHERE l.lote_id IN (SELECT id FROM lotes_avaliacao WHERE codigo = '001-040126');
 
 -- (Opcional) localizar contratante pelo CPF de login fornecido
 SELECT id AS contratante_id, nome, responsavel_cpf
-FROM contratantes
+FROM tomadores
 WHERE responsavel_cpf = '87545772920';
 
 

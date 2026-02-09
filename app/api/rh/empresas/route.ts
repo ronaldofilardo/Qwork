@@ -43,7 +43,7 @@ function handleDatabaseError(error: any): NextResponse {
  */
 export async function GET() {
   try {
-    // Garantir que o gestor RH tem clínica válida (aplica fallback por contratante_id)
+    // Garantir que o gestor RH tem clínica válida
     const session = await requireClinica();
 
     // requireClinica já garante que session.clinica_id exista e que a clínica seja válida
@@ -52,9 +52,9 @@ export async function GET() {
     const result = await query(
       `SELECT id, nome, cnpj, email, ativa, criado_em,
                       telefone, endereco, cidade, estado, cep,
-              (SELECT COUNT(*) FROM funcionarios WHERE empresa_id = empresas_clientes.id AND ativo = true) as total_funcionarios,
+              (SELECT COUNT(*) FROM funcionarios_clinicas WHERE empresa_id = empresas_clientes.id AND ativo = true) as total_funcionarios,
               (SELECT COUNT(*) FROM lotes_avaliacao WHERE empresa_id = empresas_clientes.id) as total_avaliacoes,
-              (SELECT COUNT(*) FROM avaliacoes a JOIN lotes_avaliacao l ON a.lote_id = l.id WHERE l.empresa_id = empresas_clientes.id AND a.status = 'concluido') as avaliacoes_concluidas
+              (SELECT COUNT(*) FROM avaliacoes a JOIN lotes_avaliacao l ON a.lote_id = l.id WHERE l.empresa_id = empresas_clientes.id AND a.status = 'concluida') as avaliacoes_concluidas
         FROM empresas_clientes
         WHERE ativa = true AND clinica_id = $1
         ORDER BY nome`,
@@ -70,13 +70,13 @@ export async function GET() {
     if (
       error instanceof Error &&
       (error.message.includes('Clínica não identificada') ||
-        error.message.includes('Contratante não é do tipo clínica') ||
+        error.message.includes('tomador não é do tipo clínica') ||
         error.message.includes('Clínica inativa'))
     ) {
       return NextResponse.json(
         {
           error: error.message,
-          hint: 'Verifique se a clínica vinculada ao contratante foi criada e está ativa. Contate o suporte se necessário.',
+          hint: 'Verifique se a clínica foi criada e está ativa. Contate o suporte se necessário.',
         },
         { status: 403 }
       );

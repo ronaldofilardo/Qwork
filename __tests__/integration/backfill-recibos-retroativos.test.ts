@@ -16,12 +16,12 @@ import path from 'path';
 
 describe('Backfill de Recibos Retroativos', () => {
   let testPagamentoId: number;
-  let testContratanteId: number;
+  let testtomadorId: number;
 
   beforeAll(async () => {
-    // Criar contratante de teste
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    // Criar tomador de teste
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         nome, cnpj, responsavel_cpf, responsavel_nome, responsavel_email,
         tipo, numero_funcionarios_estimado
       ) VALUES (
@@ -29,17 +29,17 @@ describe('Backfill de Recibos Retroativos', () => {
         'Responsável Teste', 'teste@backfill.com', 'clinica', 10
       ) RETURNING id`
     );
-    testContratanteId = contratanteResult.rows[0].id;
+    testtomadorId = tomadorResult.rows[0].id;
 
     // Criar pagamento de teste (anterior a 30/12/2025)
     const pagamentoResult = await query(
       `INSERT INTO pagamentos (
-        contratante_id, valor, metodo, status, data_pagamento,
+        tomador_id, valor, metodo, status, data_pagamento,
         numero_parcelas, numero_funcionarios
       ) VALUES (
         $1, 500.00, 'pix', 'pago', '2025-12-15'::date, 1, 10
       ) RETURNING id`,
-      [testContratanteId]
+      [testtomadorId]
     );
     testPagamentoId = pagamentoResult.rows[0].id;
   });
@@ -52,9 +52,9 @@ describe('Backfill de Recibos Retroativos', () => {
       ]);
       await query('DELETE FROM pagamentos WHERE id = $1', [testPagamentoId]);
     }
-    if (testContratanteId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [
-        testContratanteId,
+    if (testtomadorId) {
+      await query('DELETE FROM tomadors WHERE id = $1', [
+        testtomadorId,
       ]);
     }
   });
@@ -62,7 +62,7 @@ describe('Backfill de Recibos Retroativos', () => {
   describe('Geração de Recibo com PDF e Hash', () => {
     it('deve gerar recibo com PDF BYTEA e hash SHA-256', async () => {
       const reciboData = {
-        contratante_id: testContratanteId,
+        tomador_id: testtomadorId,
         pagamento_id: testPagamentoId,
         contrato_id: 1,
         emitido_por_cpf: 'SISTEMA_TEST',
@@ -133,7 +133,7 @@ describe('Backfill de Recibos Retroativos', () => {
     it('não deve duplicar recibo se executado duas vezes', async () => {
       // Tentar gerar recibo novamente para mesmo pagamento
       const reciboData = {
-        contratante_id: testContratanteId,
+        tomador_id: testtomadorId,
         pagamento_id: testPagamentoId,
         contrato_id: 1,
       };
@@ -155,7 +155,7 @@ describe('Backfill de Recibos Retroativos', () => {
       // Tentar inserir recibo duplicado diretamente no banco
       const tentativaDuplicata = query(
         `INSERT INTO recibos (
-          numero_recibo, contratante_id, pagamento_id,
+          numero_recibo, tomador_id, pagamento_id,
           vigencia_inicio, vigencia_fim, numero_funcionarios_cobertos,
           valor_total_anual, forma_pagamento, numero_parcelas, valor_parcela,
           pdf, hash_pdf
@@ -164,7 +164,7 @@ describe('Backfill de Recibos Retroativos', () => {
           10, 500.00, 'pix', 1, 500.00,
           decode('504b', 'hex'), 'dummy_hash'
         )`,
-        [testContratanteId, testPagamentoId]
+        [testtomadorId, testPagamentoId]
       );
 
       await expect(tentativaDuplicata).rejects.toThrow(/unique|duplicate/i);
@@ -245,9 +245,9 @@ describe('Backfill de Recibos Retroativos', () => {
     it('deve retornar apenas pagamentos sem recibo até data limite', async () => {
       // Query usada pelo script de backfill
       const result = await query(
-        `SELECT p.id, p.contratante_id, c.tipo
+        `SELECT p.id, p.tomador_id, c.tipo
          FROM pagamentos p
-         JOIN contratantes c ON p.contratante_id = c.id
+         JOIN tomadors c ON p.tomador_id = c.id
          WHERE p.data_pagamento <= $1
            AND p.status = 'pago'
            AND NOT EXISTS (
@@ -263,7 +263,7 @@ describe('Backfill de Recibos Retroativos', () => {
       if (result.rows.length > 0) {
         const pag = result.rows[0];
         expect(pag.id).toBeDefined();
-        expect(pag.contratante_id).toBeDefined();
+        expect(pag.tomador_id).toBeDefined();
         expect(pag.tipo).toMatch(/clinica|entidade/);
       }
     });

@@ -17,7 +17,7 @@ describe('API /api/admin/cobranca', () => {
   test('retorna campos esperados e suporta filtro por cnpj', async () => {
     const fakeRows = [
       {
-        contratante_id: 1,
+        tomador_id: 1,
         cnpj: '02494916000170',
         contrato_id: 35,
         plano_id: 4,
@@ -50,7 +50,7 @@ describe('API /api/admin/cobranca', () => {
     expect(data.success).toBe(true);
     expect(Array.isArray(data.contratos)).toBe(true);
     expect(data.contratos[0]).toMatchObject({
-      contratante_id: 1,
+      tomador_id: 1,
       cnpj: '02494916000170',
       contrato_id: 35,
       plano_id: 4,

@@ -7,8 +7,8 @@ describe('CobrancaContent', () => {
     {
       id: 10,
       numero_contrato: 10,
-      tipo_contratante: 'entidade',
-      nome_contratante: 'Empresa Teste',
+      tipo_tomador: 'entidade',
+      nome_tomador: 'Empresa Teste',
       cnpj: '12345678000199',
       contrato_id: 99,
       plano_id: 1,
@@ -30,8 +30,8 @@ describe('CobrancaContent', () => {
     {
       id: 11,
       numero_contrato: 11,
-      tipo_contratante: 'clinica',
-      nome_contratante: 'Clínica Parcelada',
+      tipo_tomador: 'clinica',
+      nome_tomador: 'Clínica Parcelada',
       cnpj: '99887766000100',
       contrato_id: 100,
       plano_id: 2,
@@ -91,9 +91,9 @@ describe('CobrancaContent', () => {
     );
 
     // Cabeçalhos básicos exigidos
-    expect(
-      (await screen.findAllByText('Contratante ID')).length
-    ).toBeGreaterThan(0);
+    expect((await screen.findAllByText('tomador ID')).length).toBeGreaterThan(
+      0
+    );
     // 'Contrato ID' foi removido do layout; verificar colunas essenciais
     expect((await screen.findAllByText('Plano ID')).length).toBeGreaterThan(0);
     expect((await screen.findAllByText('Plano Preço')).length).toBeGreaterThan(
@@ -183,8 +183,8 @@ describe('CobrancaContent', () => {
       {
         id: 20,
         numero_contrato: 20,
-        tipo_contratante: 'entidade',
-        nome_contratante: 'Entrada Teste',
+        tipo_tomador: 'entidade',
+        nome_tomador: 'Entrada Teste',
         cnpj: '11111111000111',
         contrato_id: 101,
         plano_id: 3,
@@ -276,7 +276,7 @@ describe('CobrancaContent', () => {
           json: async () => ({
             contratos: [
               {
-                contratante_id: 1,
+                tomador_id: 1,
                 cnpj: '02494916000170',
                 contrato_id: 35,
                 plano_id: 4,
@@ -286,8 +286,8 @@ describe('CobrancaContent', () => {
                 pagamento_valor: 20.0,
                 pagamento_status: 'pago',
                 data_pagamento: '2025-12-24T14:18:47.37561',
-                tipo_contratante: 'entidade',
-                nome_contratante: 'Entidade Teste',
+                tipo_tomador: 'entidade',
+                nome_tomador: 'Entidade Teste',
                 numero_contrato: 35,
                 plano_tipo: 'fixo',
                 numero_funcionarios_estimado: 10,
@@ -320,7 +320,7 @@ describe('CobrancaContent', () => {
     const fixtures = {
       contratos: [
         {
-          contratante_id: 56,
+          tomador_id: 56,
           cnpj: '02494916000170',
           plano_nome: 'Plano Fixo Teste',
           plano_tipo: 'fixo',
@@ -329,12 +329,12 @@ describe('CobrancaContent', () => {
           numero_funcionarios_atual: 15,
           valor_pago: 300,
           data_pagamento: '2025-12-27T00:00:00Z',
-          tipo_contratante: 'entidade',
-          nome_contratante: 'Entidade Exemplo',
+          tipo_tomador: 'entidade',
+          nome_tomador: 'Entidade Exemplo',
           status: 'ativo',
         },
         {
-          contratante_id: 55,
+          tomador_id: 55,
           cnpj: '09110380000191',
           plano_nome: 'Plano Personalizado',
           plano_tipo: 'personalizado',
@@ -343,8 +343,8 @@ describe('CobrancaContent', () => {
           numero_funcionarios_atual: 0,
           valor_pago: 8400,
           data_pagamento: '2025-12-27T00:00:00Z',
-          tipo_contratante: 'clinica',
-          nome_contratante: 'Clínica Exemplo',
+          tipo_tomador: 'clinica',
+          nome_tomador: 'Clínica Exemplo',
           status: 'ativo',
         },
       ],
@@ -383,10 +383,10 @@ describe('CobrancaContent', () => {
         contratos: [
           {
             id: 1,
-            contratante_id: 57,
+            tomador_id: 57,
             cnpj: '41877277000184',
-            nome_contratante: 'Teste NaN',
-            tipo_contratante: 'clinica',
+            nome_tomador: 'Teste NaN',
+            tipo_tomador: 'clinica',
             plano_id: 1,
             plano_preco: null,
             numero_funcionarios_estimado: 150,
@@ -401,10 +401,10 @@ describe('CobrancaContent', () => {
           },
           {
             id: 2,
-            contratante_id: 58,
+            tomador_id: 58,
             cnpj: '00000000000100',
-            nome_contratante: 'Outro Teste',
-            tipo_contratante: 'entidade',
+            nome_tomador: 'Outro Teste',
+            tipo_tomador: 'entidade',
             plano_id: 2,
             plano_preco: 360,
             numero_funcionarios_estimado: 1,

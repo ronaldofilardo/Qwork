@@ -23,7 +23,7 @@ SELECT
     r.vigencia_inicio,
     r.vigencia_fim
 FROM pagamentos p
-INNER JOIN contratantes c ON c.id = p.contratante_id
+INNER JOIN tomadores c ON c.id = p.contratante_id
 INNER JOIN contratos ct ON ct.id = p.contrato_id
 INNER JOIN planos pl ON pl.id = ct.plano_id
 LEFT JOIN recibos r ON r.pagamento_id = p.id
@@ -42,7 +42,7 @@ SELECT
     parcela->>'data_vencimento' as data_vencimento,
     parcela->>'status' as parcela_status
 FROM pagamentos p
-INNER JOIN contratantes c ON c.id = p.contratante_id
+INNER JOIN tomadores c ON c.id = p.contratante_id
 CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
 WHERE p.detalhes_parcelas IS NOT NULL
 ORDER BY c.nome, (parcela->>'numero')::int;
@@ -60,7 +60,7 @@ SELECT
     CURRENT_DATE - (parcela->>'data_vencimento')::date as dias_atraso,
     parcela->>'status' as status_parcela
 FROM pagamentos p
-INNER JOIN contratantes c ON c.id = p.contratante_id
+INNER JOIN tomadores c ON c.id = p.contratante_id
 CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
 WHERE p.detalhes_parcelas IS NOT NULL
   AND parcela->>'status' = 'pendente'
@@ -77,7 +77,7 @@ SELECT
     (parcela->>'data_vencimento')::date as data_vencimento,
     (parcela->>'data_vencimento')::date - CURRENT_DATE as dias_ate_vencimento
 FROM pagamentos p
-INNER JOIN contratantes c ON c.id = p.contratante_id
+INNER JOIN tomadores c ON c.id = p.contratante_id
 CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
 WHERE p.detalhes_parcelas IS NOT NULL
   AND parcela->>'status' = 'pendente'
@@ -97,7 +97,7 @@ SELECT
     COUNT(DISTINCT CASE WHEN parcela->>'status' = 'pendente' THEN parcela->>'numero' END) as parcelas_pendentes,
     SUM(CASE WHEN parcela->>'status' = 'pago' THEN (parcela->>'valor')::numeric ELSE 0 END) as valor_pago,
     SUM(CASE WHEN parcela->>'status' = 'pendente' THEN (parcela->>'valor')::numeric ELSE 0 END) as valor_pendente
-FROM contratantes c
+FROM tomadores c
 INNER JOIN pagamentos p ON p.contratante_id = c.id
 INNER JOIN contratos ct ON ct.id = p.contrato_id
 INNER JOIN planos pl ON pl.id = ct.plano_id
@@ -182,7 +182,7 @@ SELECT
     SUM((parcela->>'valor')::numeric) as valor_total_vencido,
     MIN((parcela->>'data_vencimento')::date) as primeira_parcela_vencida,
     MAX(CURRENT_DATE - (parcela->>'data_vencimento')::date) as dias_maior_atraso
-FROM contratantes c
+FROM tomadores c
 INNER JOIN pagamentos p ON p.contratante_id = c.id
 CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
 WHERE parcela->>'status' = 'pendente'

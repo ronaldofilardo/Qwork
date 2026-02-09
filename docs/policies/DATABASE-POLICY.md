@@ -193,8 +193,8 @@ O sistema utiliza duas fontes de autenticação dependendo do tipo de usuário:
 
 **Justificativa:**
 
-1. **Gestores** são contratantes com perfil administrativo (entidade ou clínica)
-2. **Funcionários** são operacionais, vinculados a empresas dos contratantes
+1. **Gestores** são tomadores com perfil administrativo (entidade ou clínica)
+2. **Funcionários** são operacionais, vinculados a empresas dos tomadores
 3. Gestores acessam dados de múltiplas empresas (sem RLS)
 4. Funcionários acessam apenas dados da própria empresa (com RLS)
 
@@ -252,8 +252,8 @@ import {
 
 // Gestor genérico
 const result = await queryAsGestor(
-  'SELECT * FROM empresas_clientes WHERE contratante_id = $1',
-  [contratanteId]
+  'SELECT * FROM empresas_clientes WHERE tomador_id = $1',
+  [tomadorId]
 );
 
 // RH específico

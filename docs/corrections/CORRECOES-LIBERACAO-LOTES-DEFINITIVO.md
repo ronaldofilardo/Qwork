@@ -150,7 +150,7 @@ await queryAsGestorEntidade('SELECT ...');
 
 Validações automáticas:
 
-- ✅ Todos gestores em `entidades_senhas` têm `contratante_id`
+- ✅ Todos gestores em `entidades_senhas` têm `tomador_id`
 - ✅ Todos lotes têm `liberado_por` válido em `entidades_senhas`
 - ✅ Índices de performance criados
 - ✅ Comentários de documentação adicionados
@@ -158,7 +158,7 @@ Validações automáticas:
 **Resultado**:
 
 ```
-       tabela        | total_gestores | com_contratante_id | sem_contratante_id
+       tabela        | total_gestores | com_tomador_id | sem_tomador_id
 ---------------------+----------------+--------------------+--------------------
  entidades_senhas |              1 |                  1 |                  0
  lotes_avaliacao     |              0 |                  0 |                  0
@@ -174,8 +174,8 @@ Validações automáticas:
 
 ```sql
 -- ✅ Em entidades_senhas (tabela correta)
-SELECT cpf, contratante_id FROM entidades_senhas WHERE cpf = '87545772920';
-     cpf     | contratante_id
+SELECT cpf, tomador_id FROM entidades_senhas WHERE cpf = '87545772920';
+     cpf     | tomador_id
 -------------+----------------
  87545772920 |              2
 
@@ -185,8 +185,8 @@ SELECT cpf FROM funcionarios WHERE cpf = '87545772920';
 -----
 (0 linhas)
 
--- ✅ Contratante ativo
-SELECT id, responsavel_cpf, status FROM contratantes WHERE responsavel_cpf = '87545772920';
+-- ✅ tomador ativo
+SELECT id, responsavel_cpf, status FROM tomadores WHERE responsavel_cpf = '87545772920';
  id | responsavel_cpf |  status
 ----+-----------------+----------
   2 | 87545772920     | aprovado
@@ -204,17 +204,17 @@ const session = await requireEntity();
 
 // 2. Busca funcionários elegíveis
 const funcionarios = await queryAsGestorEntidade(
-  'SELECT * FROM calcular_elegibilidade_lote_contratante($1, $2)',
-  [contratanteId, numeroOrdem]
+  'SELECT * FROM calcular_elegibilidade_lote_tomador($1, $2)',
+  [tomadorId, numeroOrdem]
 );
 
 // 3. Cria lote (queryAsGestorEntidade configura sessão automaticamente)
 const lote = await queryAsGestorEntidade(
   `INSERT INTO lotes_avaliacao 
-   (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
+   (codigo, tomador_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
    VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7) 
    RETURNING id, codigo, liberado_em, numero_ordem`,
-  [codigo, contratanteId, titulo, descricao, tipo, session.cpf, numeroOrdem]
+  [codigo, tomadorId, titulo, descricao, tipo, session.cpf, numeroOrdem]
 );
 
 // 4. Trigger de auditoria executa com sucesso

@@ -13,7 +13,7 @@ async function run() {
 
   try {
     const contratante = await client.query(
-      `SELECT * FROM contratantes WHERE regexp_replace(cnpj, '[^0-9]', '', 'g') = $1 LIMIT 1`,
+      `SELECT * FROM tomadores WHERE regexp_replace(cnpj, '[^0-9]', '', 'g') = $1 LIMIT 1`,
       [cnpj]
     );
     console.log('Contratante:', contratante.rows[0]);

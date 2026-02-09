@@ -94,7 +94,7 @@ criado_em, atualizado_em, clinica_id, empresa_id, matricula,
 turno, escala, ultima_avaliacao_id, ultimo_lote_codigo,
 ultima_avaliacao_data_conclusao, ultima_avaliacao_status,
 ultimo_motivo_inativacao, data_ultimo_lote, data_nascimento,
-contratante_id, indice_avaliacao, usuario_tipo
+tomador_id, indice_avaliacao, usuario_tipo
 ```
 
 #### Colunas EXTRAS no NEON (4 colunas):

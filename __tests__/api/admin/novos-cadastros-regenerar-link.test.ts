@@ -1,12 +1,12 @@
 /**
  * Testes para API /api/admin/novos-cadastros - Ação 'regenerar_link'
- * - Regeneração de links para contratantes aguardando pagamento
+ * - Regeneração de links para tomadors aguardando pagamento
  * - Lógica direta sem chamadas HTTP
  */
 
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/admin/novos-cadastros/route';
-import { query, getContratanteById } from '@/lib/db';
+import { query, gettomadorById } from '@/lib/db';
 
 // Mocks
 jest.mock('@/lib/db');
@@ -22,8 +22,8 @@ jest.mock('@/lib/audit', () => ({
 }));
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockGetContratanteById = getContratanteById as jest.MockedFunction<
-  typeof getContratanteById
+const mockGettomadorById = gettomadorById as jest.MockedFunction<
+  typeof gettomadorById
 >;
 const { getSession } = require('@/lib/session');
 const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
@@ -46,11 +46,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
 
   describe('POST - regenerar_link', () => {
     it('deve regenerar link com sucesso para plano fixo', async () => {
-      const contratanteId = 1;
+      const tomadorId = 1;
 
-      // Mock do getContratanteById
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Clínica Teste',
         status: 'aguardando_pagamento',
         plano_tipo: 'fixo',
@@ -60,11 +60,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         ativa: false,
       });
 
-      // Mock da busca de dados do contratante
+      // Mock da busca de dados do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             nome: 'Clínica Teste',
             cnpj: '12345678000123',
             responsavel_nome: 'João Silva',
@@ -89,7 +89,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         rowCount: 1,
       });
 
-      // Mock da atualização do contratante
+      // Mock da atualização do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 1,
@@ -101,7 +101,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -112,20 +112,20 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.contratante.link_pagamento).toContain(
-        '/pagamento/simulador?contratante_id='
+      expect(data.tomador.link_pagamento).toContain(
+        '/pagamento/simulador?tomador_id='
       );
-      expect(data.contratante.link_pagamento).toContain('plano_id=');
-      expect(data.contratante.status).toBe('aguardando_pagamento');
+      expect(data.tomador.link_pagamento).toContain('plano_id=');
+      expect(data.tomador.status).toBe('aguardando_pagamento');
       expect(data.message).toBe('Link de pagamento regenerado com sucesso');
     });
 
     it('deve regenerar link com sucesso para plano personalizado', async () => {
-      const contratanteId = 2;
+      const tomadorId = 2;
 
-      // Mock do getContratanteById
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Empresa Teste',
         status: 'aguardando_pagamento',
         plano_tipo: 'personalizado',
@@ -135,11 +135,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         ativa: false,
       });
 
-      // Mock da busca de dados do contratante
+      // Mock da busca de dados do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             nome: 'Empresa Teste',
             cnpj: '12345678000123',
             responsavel_nome: 'Maria Silva',
@@ -175,7 +175,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         rowCount: 1,
       });
 
-      // Mock da atualização do contratante
+      // Mock da atualização do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 1,
@@ -187,7 +187,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -198,19 +198,19 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.contratante.link_pagamento).toContain(
-        '/pagamento/simulador?contratante_id='
+      expect(data.tomador.link_pagamento).toContain(
+        '/pagamento/simulador?tomador_id='
       );
-      expect(data.contratante.link_pagamento).toContain('plano_id=');
-      expect(data.contratante.status).toBe('aguardando_pagamento');
+      expect(data.tomador.link_pagamento).toContain('plano_id=');
+      expect(data.tomador.status).toBe('aguardando_pagamento');
     });
 
     it('deve regenerar link para plano personalizado usando contratacao_personalizada quando não existem contratos', async () => {
-      const contratanteId = 3;
+      const tomadorId = 3;
 
-      // Mock do getContratanteById
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Empresa Teste 2',
         status: 'aguardando_pagamento',
         plano_tipo: 'personalizado',
@@ -220,11 +220,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         ativa: false,
       });
 
-      // Mock da busca de dados do contratante
+      // Mock da busca de dados do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             nome: 'Empresa Teste 2',
             cnpj: '98765432000199',
             responsavel_nome: 'Pedro Lopes',
@@ -268,7 +268,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         rowCount: 1,
       });
 
-      // Mock da atualização do contratante
+      // Mock da atualização do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 1,
@@ -280,7 +280,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -292,19 +292,19 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       // como é personalizado, link deve apontar para pagamento/personalizado
-      expect(data.contratante.link_pagamento).toContain(
-        '/pagamento/personalizado?contratante_id='
+      expect(data.tomador.link_pagamento).toContain(
+        '/pagamento/personalizado?tomador_id='
       );
-      expect(data.contratante.link_pagamento).toContain('plano_id=');
-      expect(data.contratante.status).toBe('aguardando_pagamento');
+      expect(data.tomador.link_pagamento).toContain('plano_id=');
+      expect(data.tomador.status).toBe('aguardando_pagamento');
     });
 
-    it('deve rejeitar regeneração para contratante não aguardando pagamento', async () => {
-      const contratanteId = 1;
+    it('deve rejeitar regeneração para tomador não aguardando pagamento', async () => {
+      const tomadorId = 1;
 
-      // Mock do getContratanteById com status diferente
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById com status diferente
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Clínica Teste',
         status: 'aprovado', // Status diferente
         plano_tipo: 'fixo',
@@ -320,7 +320,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -331,16 +331,16 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toContain(
-        'Regeneração de link só é permitida para contratantes aguardando pagamento'
+        'Regeneração de link só é permitida para tomadors aguardando pagamento'
       );
     });
 
-    it('deve rejeitar contratante já ativo', async () => {
-      const contratanteId = 1;
+    it('deve rejeitar tomador já ativo', async () => {
+      const tomadorId = 1;
 
-      // Mock do getContratanteById
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Clínica Teste',
         status: 'aguardando_pagamento',
         plano_tipo: 'fixo',
@@ -350,11 +350,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         ativa: false,
       });
 
-      // Mock da busca de dados com contratante ativo
+      // Mock da busca de dados com tomador ativo
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             ativa: true, // Já ativo
             pagamento_confirmado: false,
           },
@@ -368,7 +368,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -381,12 +381,12 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
       expect(data.error).toContain('já está ativo');
     });
 
-    it('deve rejeitar contratante com pagamento já confirmado', async () => {
-      const contratanteId = 1;
+    it('deve rejeitar tomador com pagamento já confirmado', async () => {
+      const tomadorId = 1;
 
-      // Mock do getContratanteById
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Clínica Teste',
         status: 'aguardando_pagamento',
         plano_tipo: 'fixo',
@@ -400,7 +400,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             ativa: false,
             pagamento_confirmado: true, // Já confirmado
           },
@@ -414,7 +414,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -428,11 +428,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
     });
 
     it('deve rejeitar plano personalizado sem contrato', async () => {
-      const contratanteId = 2;
+      const tomadorId = 2;
 
-      // Mock do getContratanteById
-      mockGetContratanteById.mockResolvedValueOnce({
-        id: contratanteId,
+      // Mock do gettomadorById
+      mockGettomadorById.mockResolvedValueOnce({
+        id: tomadorId,
         nome: 'Empresa Teste',
         status: 'aguardando_pagamento',
         plano_tipo: 'personalizado',
@@ -442,11 +442,11 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
         ativa: false,
       });
 
-      // Mock da busca de dados do contratante
+      // Mock da busca de dados do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             plano_tipo: 'personalizado',
             ativa: false,
             pagamento_confirmado: false,
@@ -467,7 +467,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            id: contratanteId,
+            id: tomadorId,
             acao: 'regenerar_link',
           }),
         }
@@ -522,8 +522,8 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
       expect(data.error).toContain('Ação inválida');
     });
 
-    it('deve rejeitar contratante não encontrado', async () => {
-      mockGetContratanteById.mockResolvedValueOnce(null);
+    it('deve rejeitar tomador não encontrado', async () => {
+      mockGettomadorById.mockResolvedValueOnce(null);
 
       const request = new NextRequest(
         'http://localhost:3000/api/admin/novos-cadastros',
@@ -541,7 +541,7 @@ describe('/api/admin/novos-cadastros - regenerar_link', () => {
       const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(data.error).toContain('Contratante não encontrado');
+      expect(data.error).toContain('tomador não encontrado');
     });
   });
 });

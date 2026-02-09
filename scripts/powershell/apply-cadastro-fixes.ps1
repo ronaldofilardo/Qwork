@@ -1,5 +1,5 @@
 #!/usr/bin/env pwsh
-# Script para aplicar correções de cadastro de contratantes
+# Script para aplicar correções de cadastro de tomadores
 # Executa migrations 003 e 004
 
 param(
@@ -10,7 +10,7 @@ param(
 $ErrorActionPreference = "Stop"
 
 Write-Host "=============================================" -ForegroundColor Cyan
-Write-Host "  APLICAR CORREÇÕES - CADASTRO CONTRATANTES " -ForegroundColor Cyan
+Write-Host "  APLICAR CORREÇÕES - CADASTRO tomadores " -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -98,7 +98,7 @@ if ($DryRun) {
 # Executar Migration 003
 Write-Host "📝 Executando Migration 003 - Correções de Schema..." -ForegroundColor Cyan
 Write-Host "   - Adicionar status ao ENUM" -ForegroundColor Gray
-Write-Host "   - Adicionar colunas contrato_id e plano_tipo em contratantes" -ForegroundColor Gray
+Write-Host "   - Adicionar colunas contrato_id e plano_tipo em tomadores" -ForegroundColor Gray
 Write-Host "   - Adicionar colunas em contratos (valor_personalizado, metadados)" -ForegroundColor Gray
 Write-Host "   - Criar função criar_senha_inicial_entidade()" -ForegroundColor Gray
 Write-Host "   - Criar trigger sync_contratante_plano_tipo" -ForegroundColor Gray
@@ -122,7 +122,7 @@ Write-Host ""
 
 # Executar Migration 004
 Write-Host "📝 Executando Migration 004 - RLS (Row Level Security)..." -ForegroundColor Cyan
-Write-Host "   - Habilitar RLS em contratantes e contratos" -ForegroundColor Gray
+Write-Host "   - Habilitar RLS em tomadores e contratos" -ForegroundColor Gray
 Write-Host "   - Criar policies para admin, gestor e rh" -ForegroundColor Gray
 Write-Host "   - Criar função pode_acessar_contratante()" -ForegroundColor Gray
 Write-Host ""
@@ -155,9 +155,9 @@ if ($checkEnum -match "aguardando_pagamento") {
 }
 
 # Verificar colunas
-$checkColumns = psql -U postgres -d $dbName -t -c "SELECT column_name FROM information_schema.columns WHERE table_name = 'contratantes' AND column_name IN ('contrato_id', 'plano_tipo');" 2>&1
+$checkColumns = psql -U postgres -d $dbName -t -c "SELECT column_name FROM information_schema.columns WHERE table_name = 'tomadores' AND column_name IN ('contrato_id', 'plano_tipo');" 2>&1
 if ($checkColumns -match "contrato_id" -and $checkColumns -match "plano_tipo") {
-    Write-Host "✅ Colunas adicionadas em contratantes" -ForegroundColor Green
+    Write-Host "✅ Colunas adicionadas em tomadores" -ForegroundColor Green
 } else {
     Write-Host "⚠️  Colunas podem não ter sido criadas corretamente" -ForegroundColor Yellow
 }
@@ -171,9 +171,9 @@ if ($checkFunction -match "criar_senha_inicial_entidade") {
 }
 
 # Verificar RLS
-$checkRLS = psql -U postgres -d $dbName -t -c "SELECT relname FROM pg_class WHERE relname IN ('contratantes', 'contratos') AND relrowsecurity = true;" 2>&1
-if ($checkRLS -match "contratantes" -and $checkRLS -match "contratos") {
-    Write-Host "✅ RLS habilitado em contratantes e contratos" -ForegroundColor Green
+$checkRLS = psql -U postgres -d $dbName -t -c "SELECT relname FROM pg_class WHERE relname IN ('tomadores', 'contratos') AND relrowsecurity = true;" 2>&1
+if ($checkRLS -match "tomadores" -and $checkRLS -match "contratos") {
+    Write-Host "✅ RLS habilitado em tomadores e contratos" -ForegroundColor Green
 } else {
     Write-Host "⚠️  RLS pode não ter sido habilitado corretamente" -ForegroundColor Yellow
 }

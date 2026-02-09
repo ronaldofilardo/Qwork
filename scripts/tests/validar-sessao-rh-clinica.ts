@@ -1,7 +1,7 @@
 /**
  * Script de validação: Sessão RH com mapeamento de clinica_id
  *
- * Objetivo: Verificar se o mapeamento de clinica_id via contratante_id
+ * Objetivo: Verificar se o mapeamento de clinica_id via tomador_id
  * está funcionando corretamente e persistindo na sessão.
  *
  * Correção implementada:
@@ -26,17 +26,17 @@ async function validarSessaoRHClinica(): Promise<ValidationResult> {
     // 1. Verificar se existe um RH sem clinica_id na tabela funcionarios
     console.log('\n1️⃣  Verificando RHs sem clinica_id...');
     const rhSemClinica = await query(
-      `SELECT f.cpf, f.nome, f.contratante_id, f.clinica_id
+      `SELECT f.cpf, f.nome, f.tomador_id, f.clinica_id
        FROM funcionarios f
        WHERE f.perfil = 'rh' 
-       AND f.contratante_id IS NOT NULL
+       AND f.tomador_id IS NOT NULL
        LIMIT 5`
     );
 
     if (rhSemClinica.rows.length === 0) {
       return {
         success: false,
-        message: 'Nenhum RH encontrado com contratante_id definido',
+        message: 'Nenhum RH encontrado com tomador_id definido',
       };
     }
 
@@ -44,24 +44,24 @@ async function validarSessaoRHClinica(): Promise<ValidationResult> {
     rhSemClinica.rows.forEach((rh) => {
       console.log(`   - CPF: ${rh.cpf}, Nome: ${rh.nome}`);
       console.log(
-        `     contratante_id: ${rh.contratante_id}, clinica_id: ${rh.clinica_id || 'NULL'}`
+        `     tomador_id: ${rh.tomador_id}, clinica_id: ${rh.clinica_id || 'NULL'}`
       );
     });
 
-    // 2. Verificar se existe clínica para esses contratantes
+    // 2. Verificar se existe clínica para esses tomadors
     console.log('\n2️⃣  Verificando clínicas associadas...');
     for (const rh of rhSemClinica.rows) {
       const clinica = await query(
         `SELECT cl.id, cl.nome, cl.ativa, c.tipo
          FROM clinicas cl
-         INNER JOIN contratantes c ON c.id = cl.contratante_id
-         WHERE cl.contratante_id = $1`,
-        [rh.contratante_id]
+         INNER JOIN tomadors c ON c.id = cl.tomador_id
+         WHERE cl.tomador_id = $1`,
+        [rh.tomador_id]
       );
 
       if (clinica.rows.length === 0) {
         console.log(
-          `   ⚠️  RH ${rh.cpf}: SEM clínica para contratante_id ${rh.contratante_id}`
+          `   ⚠️  RH ${rh.cpf}: SEM clínica para tomador_id ${rh.tomador_id}`
         );
       } else {
         const cl = clinica.rows[0];
@@ -71,7 +71,7 @@ async function validarSessaoRHClinica(): Promise<ValidationResult> {
 
         if (cl.tipo !== 'clinica') {
           console.log(
-            `   ⚠️  ATENÇÃO: Contratante tem tipo '${cl.tipo}', não 'clinica'!`
+            `   ⚠️  ATENÇÃO: tomador tem tipo '${cl.tipo}', não 'clinica'!`
           );
         }
 
@@ -106,17 +106,17 @@ async function validarSessaoRHClinica(): Promise<ValidationResult> {
     // 4. Análise de integridade
     console.log('\n4️⃣  Análise de integridade...');
 
-    // Contar RHs sem clinica_id mas com contratante_id
+    // Contar RHs sem clinica_id mas com tomador_id
     const rhPendentes = await query(
       `SELECT COUNT(*) as total
        FROM funcionarios
        WHERE perfil = 'rh' 
-       AND contratante_id IS NOT NULL
+       AND tomador_id IS NOT NULL
        AND clinica_id IS NULL`
     );
 
     console.log(
-      `   • RHs com contratante_id mas SEM clinica_id: ${rhPendentes.rows[0].total}`
+      `   • RHs com tomador_id mas SEM clinica_id: ${rhPendentes.rows[0].total}`
     );
 
     // Contar clínicas sem RH

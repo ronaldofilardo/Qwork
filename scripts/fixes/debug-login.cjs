@@ -16,7 +16,7 @@ async function testLogin() {
       `SELECT cs.cpf, cs.senha_hash, c.id as contratante_id, c.responsavel_nome as nome,
               c.tipo, c.ativa, c.pagamento_confirmado
        FROM entidades_senhas cs
-       JOIN contratantes c ON c.id = cs.contratante_id
+       JOIN tomadores c ON c.id = cs.contratante_id
        WHERE cs.cpf = $1`,
       [cpf]
     );

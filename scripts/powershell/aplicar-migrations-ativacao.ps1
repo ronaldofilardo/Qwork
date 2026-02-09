@@ -100,9 +100,9 @@ $env:PGPASSWORD = "123456"
 try {
     $query = @"
 SELECT 
-  'Contratantes válidos' as tipo,
+  'tomadores válidos' as tipo,
   COUNT(*) as total
-FROM contratantes
+FROM tomadores
 WHERE ativa = true AND pagamento_confirmado = true
 
 UNION ALL
@@ -110,7 +110,7 @@ UNION ALL
 SELECT 
   'Inconsistências' as tipo,
   COUNT(*) as total
-FROM vw_contratantes_inconsistentes;
+FROM vw_tomadores_inconsistentes;
 "@
 
     $result = psql -U $DB_USER -h $DB_HOST -p $DB_PORT -d $DB_NAME -t -A -c $query

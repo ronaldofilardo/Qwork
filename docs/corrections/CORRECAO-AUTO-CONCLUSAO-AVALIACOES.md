@@ -63,7 +63,7 @@ graph LR
 ✅ Não precisam "finalizar manualmente"
 ✅ Redirecionamento automático ao completar
 
-### Para RH/Entidade (Clínica e Contratante)
+### Para RH/Entidade (Clínica e tomador)
 
 ✅ Notificação imediata quando lote completa
 ✅ Botão "Solicitar emissão do laudo" aparece automaticamente
@@ -73,7 +73,7 @@ graph LR
 
 ✅ Zero inconsistências de status
 ✅ Código centralizado e testável
-✅ Funciona para **ambos os perfis**: `rh` (clínica) e `gestor` (contratante)
+✅ Funciona para **ambos os perfis**: `rh` (clínica) e `gestor` (tomador)
 
 ## 📋 Arquivos Modificados
 
@@ -107,7 +107,7 @@ graph LR
 ### Teste 3: Clínica vs Entidade
 
 1. Testar com usuário `perfil='rh'` (clínica)
-2. Testar com usuário `perfil='gestor'` (contratante)
+2. Testar com usuário `perfil='gestor'` (tomador)
 3. ✅ Ambos devem funcionar identicamente
 
 ## 📊 Impacto

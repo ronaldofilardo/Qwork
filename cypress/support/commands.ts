@@ -64,7 +64,7 @@ Cypress.Commands.add(
 
 // Convenience: login as an entity manager (uses default test CPF)
 Cypress.Commands.add('loginAsEntidade', () => {
-  // Create a session that includes contratante_id so entitlement checks pass
+  // Create a session that includes tomador_id so entitlement checks pass
   return cy
     .request({
       method: 'POST',
@@ -73,7 +73,7 @@ Cypress.Commands.add('loginAsEntidade', () => {
         cpf: '00000000000',
         nome: 'Gestor Entidade Teste',
         perfil: 'gestor',
-        contratante_id: 2,
+        tomador_id: 2,
       },
       failOnStatusCode: false,
     })

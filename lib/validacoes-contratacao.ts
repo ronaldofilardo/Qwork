@@ -194,8 +194,8 @@ export const MENSAGENS_ERRO = {
   VALOR_INVALIDO: 'Valor inválido',
 };
 
-// Validação completa de formulário de contratante
-export interface ErrosFormularioContratante {
+// Validação completa de formulário de tomador
+export interface ErrosFormulariotomador {
   nome?: string;
   cnpj?: string;
   email?: string;
@@ -214,7 +214,7 @@ export interface ErrosFormularioContratante {
   doc_identificacao?: string;
 }
 
-export function validarFormularioContratante(dados: {
+export function validarFormulariotomador(dados: {
   nome: string;
   cnpj: string;
   email: string;
@@ -231,8 +231,8 @@ export function validarFormularioContratante(dados: {
   cartao_cnpj: File | null;
   contrato_social: File | null;
   doc_identificacao: File | null;
-}): ErrosFormularioContratante {
-  const erros: ErrosFormularioContratante = {};
+}): ErrosFormulariotomador {
+  const erros: ErrosFormulariotomador = {};
 
   // Validar campos de texto obrigatórios
   if (!validarCampoObrigatorio(dados.nome)) {

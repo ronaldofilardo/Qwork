@@ -32,14 +32,14 @@ jest.mock('@/lib/session', () => ({
       );
       throw new Error('Acesso restrito a gestores de entidade');
     }
-    if (!session.contratante_id) {
-      throw new Error('Contratante não identificado na sessão');
+    if (!session.tomador_id) {
+      throw new Error('tomador não identificado na sessão');
     }
 
     // Mock da query de validação
     const result = await mockQuery(
-      "SELECT id, tipo, ativa FROM contratantes WHERE id = $1 AND tipo = 'entidade'",
-      [session.contratante_id]
+      "SELECT id, tipo, ativa FROM tomadors WHERE id = $1 AND tipo = 'entidade'",
+      [session.tomador_id]
     );
 
     if (result.rows.length === 0) {
@@ -48,7 +48,7 @@ jest.mock('@/lib/session', () => ({
 
     if (!result.rows[0].ativa) {
       console.log(
-        `[DEBUG] requireEntity: Contratante ${session.contratante_id} está inativo`
+        `[DEBUG] requireEntity: tomador ${session.tomador_id} está inativo`
       );
       throw new Error('Entidade inativa. Entre em contato com o suporte.');
     }
@@ -80,7 +80,7 @@ describe('Limpeza de logs - requireAuth', () => {
     const mockSession = {
       cpf: '12345678901',
       perfil: 'gestor' as const,
-      contratante_id: 1,
+      tomador_id: 1,
     };
     mockGetSession.mockReturnValue(mockSession);
 
@@ -124,7 +124,7 @@ describe('Limpeza de logs - requireEntity', () => {
     const mockSession = {
       cpf: '12345678901',
       perfil: 'gestor' as const,
-      contratante_id: 1,
+      tomador_id: 1,
     };
     mockGetSession.mockReturnValue(mockSession);
     mockQuery.mockResolvedValue({
@@ -144,7 +144,7 @@ describe('Limpeza de logs - requireEntity', () => {
     const mockSession = {
       cpf: '12345678901',
       perfil: 'gestor' as const,
-      contratante_id: 1,
+      tomador_id: 1,
     };
     mockGetSession.mockReturnValue(mockSession);
     mockQuery.mockResolvedValue({
@@ -158,7 +158,7 @@ describe('Limpeza de logs - requireEntity', () => {
 
     // Logs de erro devem ser mantidos
     expect(consoleLogSpy).toHaveBeenCalledWith(
-      expect.stringContaining('[DEBUG] requireEntity: Contratante')
+      expect.stringContaining('[DEBUG] requireEntity: tomador')
     );
     expect(consoleLogSpy).toHaveBeenCalledWith(
       expect.stringContaining('está inativo')

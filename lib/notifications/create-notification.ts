@@ -34,7 +34,7 @@ export type TipoNotificacao =
  */
 export type TipoDestinatario =
   | 'admin'
-  | 'contratante'
+  | 'tomador'
   | 'clinica'
   | 'funcionario'
   | 'gestor';
@@ -87,8 +87,8 @@ export interface ResolverPorContextoParams {
  * ```typescript
  * const id = await criarNotificacao({
  *   tipo: 'parcela_pendente',
- *   destinatario_id: contratante.id,
- *   destinatario_tipo: 'contratante',
+ *   destinatario_id: tomador.id,
+ *   destinatario_tipo: 'tomador',
  *   titulo: 'Parcela 2/6 vencendo em 05/02',
  *   mensagem: 'Você tem uma parcela pendente no valor de R$ 499,90',
  *   dados_contexto: { numero_parcela: 2, total_parcelas: 6, valor: 499.90 },
@@ -130,27 +130,27 @@ export async function criarNotificacao(
   // Buscar CPF do destinatário baseado no tipo
   let destinatarioCpf: string;
 
-  if (destinatario_tipo === 'contratante') {
+  if (destinatario_tipo === 'tomador') {
     const result = await query(
-      'SELECT responsavel_cpf FROM contratantes WHERE id = $1',
+      'SELECT responsavel_cpf FROM tomadors WHERE id = $1',
       [destinatario_id]
     );
     if (result.rows.length === 0) {
-      throw new Error(`Contratante com ID ${destinatario_id} não encontrado`);
+      throw new Error(`tomador com ID ${destinatario_id} não encontrado`);
     }
     destinatarioCpf = result.rows[0].responsavel_cpf;
   } else if (destinatario_tipo === 'clinica') {
-    // Buscar CPF do responsável através do contratante vinculado à clínica
+    // Buscar CPF do responsável através do tomador vinculado à clínica
     const result = await query(
       `SELECT c.responsavel_cpf 
        FROM clinicas cl 
-       INNER JOIN contratantes c ON cl.contratante_id = c.id 
+       INNER JOIN tomadors c ON cl.tomador_id = c.id 
        WHERE cl.id = $1`,
       [destinatario_id]
     );
     if (result.rows.length === 0) {
       throw new Error(
-        `Clínica com ID ${destinatario_id} não encontrada ou sem contratante vinculado`
+        `Clínica com ID ${destinatario_id} não encontrada ou sem tomador vinculado`
       );
     }
     destinatarioCpf = result.rows[0].responsavel_cpf;
@@ -167,30 +167,30 @@ export async function criarNotificacao(
     throw new Error(`Tipo de destinatário não suportado: ${destinatario_tipo}`);
   }
 
-  // Determinar contratante_id baseado no tipo
-  let contratanteId: number | null = null;
+  // Determinar tomador_id baseado no tipo
+  let tomadorId: number | null = null;
 
-  if (destinatario_tipo === 'contratante') {
-    contratanteId = destinatario_id;
+  if (destinatario_tipo === 'tomador') {
+    tomadorId = destinatario_id;
   } else if (destinatario_tipo === 'funcionario') {
-    // Buscar contratante_id do funcionário
+    // Buscar tomador_id do funcionário
     const funcResult = await query(
-      'SELECT contratante_id FROM funcionarios WHERE cpf = $1',
+      'SELECT tomador_id FROM funcionarios WHERE cpf = $1',
       [destinatarioCpf]
     );
-    contratanteId = funcResult.rows[0]?.contratante_id || null;
+    tomadorId = funcResult.rows[0]?.tomador_id || null;
   }
 
-  if (!contratanteId) {
+  if (!tomadorId) {
     throw new Error(
-      `Não foi possível determinar contratante_id para ${destinatario_tipo}:${destinatario_id}`
+      `Não foi possível determinar tomador_id para ${destinatario_tipo}:${destinatario_id}`
     );
   }
 
-  // Anexar contratante_id dentro do dados_contexto (schema atual não tem coluna contratante_id)
+  // Anexar tomador_id dentro do dados_contexto (schema atual não tem coluna tomador_id)
   const payloadDadosContexto: Record<string, any> = {
     ...(dados_contexto as Record<string, any>),
-    contratante_id: contratanteId,
+    tomador_id: tomadorId,
   };
 
   // Deduplicação: evitar criar múltiplas notificações para a mesma parcela/pagamento
@@ -224,7 +224,7 @@ export async function criarNotificacao(
     // continuar normalmente se checagem falhar
   }
 
-  // Inserir notificação (contratante_id fica dentro de dados_contexto)
+  // Inserir notificação (tomador_id fica dentro de dados_contexto)
   const result = await query(
     `INSERT INTO notificacoes (
       tipo, destinatario_cpf, destinatario_tipo,
@@ -331,7 +331,7 @@ export async function resolverNotificacoesPorContexto(
  *
  * @example
  * ```typescript
- * const notificacoes = await buscarNotificacoesNaoResolvidas(123, 'contratante', {
+ * const notificacoes = await buscarNotificacoesNaoResolvidas(123, 'tomador', {
  *   tipo: 'parcela_pendente'
  * });
  * ```
@@ -347,13 +347,13 @@ export async function buscarNotificacoesNaoResolvidas(
   // Buscar CPF do destinatário baseado no tipo
   let destinatarioCpf: string;
 
-  if (destinatario_tipo === 'contratante') {
+  if (destinatario_tipo === 'tomador') {
     const result = await query(
-      'SELECT responsavel_cpf FROM contratantes WHERE id = $1',
+      'SELECT responsavel_cpf FROM tomadors WHERE id = $1',
       [destinatario_id]
     );
     if (result.rows.length === 0) {
-      throw new Error(`Contratante com ID ${destinatario_id} não encontrado`);
+      throw new Error(`tomador com ID ${destinatario_id} não encontrado`);
     }
     destinatarioCpf = result.rows[0].responsavel_cpf;
   } else if (destinatario_tipo === 'clinica') {
@@ -414,7 +414,7 @@ export async function buscarNotificacoesNaoResolvidas(
  *
  * @example
  * ```typescript
- * const contadores = await contarNotificacoesNaoResolvidas(123, 'contratante');
+ * const contadores = await contarNotificacoesNaoResolvidas(123, 'tomador');
  * console.log(contadores); // { parcela_pendente: 3, lote_concluido: 1, total: 4 }
  * ```
  */
@@ -425,13 +425,13 @@ export async function contarNotificacoesNaoResolvidas(
   // Buscar CPF do destinatário baseado no tipo
   let destinatarioCpf: string;
 
-  if (destinatario_tipo === 'contratante') {
+  if (destinatario_tipo === 'tomador') {
     const result = await query(
-      'SELECT responsavel_cpf FROM contratantes WHERE id = $1',
+      'SELECT responsavel_cpf FROM tomadors WHERE id = $1',
       [destinatario_id]
     );
     if (result.rows.length === 0) {
-      throw new Error(`Contratante com ID ${destinatario_id} não encontrado`);
+      throw new Error(`tomador com ID ${destinatario_id} não encontrado`);
     }
     destinatarioCpf = result.rows[0].responsavel_cpf;
   } else if (destinatario_tipo === 'clinica') {

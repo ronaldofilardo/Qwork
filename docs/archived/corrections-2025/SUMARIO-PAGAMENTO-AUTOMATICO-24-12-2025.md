@@ -7,7 +7,7 @@
 
 ## 📋 Mudanças Implementadas
 
-### 1. Máquina de Estados (lib/state-machine/contratante-state.ts)
+### 1. Máquina de Estados (lib/state-machine/tomador-state.ts)
 
 **Alteração principal:** Remoção de requisitos de aprovação manual
 
@@ -18,7 +18,7 @@
   - Comentário adicionado: "Recibo é gerado sob demanda - não é pré-requisito"
   - Validação de `recibo_gerado` removida
 
-### 2. Função ativarContratante (lib/db.ts)
+### 2. Função ativartomador (lib/db.ts)
 
 **Alteração principal:** Aceita ativação sem recibo prévio
 
@@ -32,12 +32,12 @@
 
 **Alteração principal:** Integração com funções centralizadas
 
-- **Linha 3:** Adicionados imports `criarContaResponsavel` e `ativarContratante`
+- **Linha 3:** Adicionados imports `criarContaResponsavel` e `ativartomador`
 - **Linhas 382-404:** Substituída criação manual de `funcionarios` por `criarContaResponsavel()`
 - **Linhas 450-476:** Adicionado fluxo pós-aceite:
   ```typescript
-  await criarContaResponsavel(contratante_id);
-  await ativarContratante(contratante_id);
+  await criarContaResponsavel(tomador_id);
+  await ativartomador(tomador_id);
   ```
 
 ### 4. Sistema de Auditoria (Database Migrations)
@@ -57,7 +57,7 @@
 
 **Alteração principal:** Renderização condicional de botões
 
-- **Linha 49:** Adicionada propriedade `requer_aprovacao_manual?: boolean` ao type `Contratante`
+- **Linha 49:** Adicionada propriedade `requer_aprovacao_manual?: boolean` ao type `tomador`
 - **Linha 816:** Botão "Aprovar" escondido quando `requer_aprovacao_manual !== false`
 - **Linha 857:** Botão "Forçar Aprovação" também condicional
 
@@ -67,7 +67,7 @@
   ```sql
   CASE
     WHEN c.pagamento_confirmado = true
-      AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.contratante_id = c.id AND ct.aceito = true)
+      AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.tomador_id = c.id AND ct.aceito = true)
     THEN false
     ELSE true
   END AS requer_aprovacao_manual
@@ -81,18 +81,18 @@
 
 **Migration 100:** Coluna data_liberacao_login
 
-- `ALTER TABLE contratantes ADD COLUMN data_liberacao_login TIMESTAMP`
-- Índice: `idx_contratantes_data_liberacao_login`
+- `ALTER TABLE tomadores ADD COLUMN data_liberacao_login TIMESTAMP`
+- Índice: `idx_tomadores_data_liberacao_login`
 
 **Migration 102:** População de dados
 
-- Popula `data_liberacao_login` para contratantes ativos existentes
+- Popula `data_liberacao_login` para tomadores ativos existentes
 
 **Migrations 103-105:** Correção de schema (funcionarios)
 
 - **103:** Adiciona colunas de avaliação (ultimo*lote_codigo, ultima_avaliacao*\*)
 - **104:** Adiciona `data_nascimento DATE`
-- **105:** Adiciona `contratante_id INTEGER` com FK para contratantes
+- **105:** Adiciona `tomador_id INTEGER` com FK para tomadores
 
 ---
 
@@ -106,7 +106,7 @@
 - canActivateAccount sem recibo (4 cenários)
 - Fluxo completo automático
 
-### 2. ativar-contratante-sem-recibo.test.ts (6 test cases)
+### 2. ativar-tomador-sem-recibo.test.ts (6 test cases)
 
 - Validação de requisitos de ativação
 - Transições de status sem admin
@@ -148,7 +148,7 @@
 - Coluna data_liberacao_login e índice (100)
 - Colunas de avaliação em funcionarios (103)
 - Coluna data_nascimento (104)
-- Coluna contratante_id com FK (105)
+- Coluna tomador_id com FK (105)
 - 25 colunas em funcionarios pós-migrações
 - Query complexa com todas as novas colunas
 
@@ -160,7 +160,7 @@
 
 ```bash
 pnpm test __tests__/state-machine-automatic-approval.test.ts \
-          __tests__/ativar-contratante-sem-recibo.test.ts \
+          __tests__/ativar-tomador-sem-recibo.test.ts \
           __tests__/audit-system-actions.test.ts
 ```
 
@@ -168,7 +168,7 @@ pnpm test __tests__/state-machine-automatic-approval.test.ts \
 
 - ✅ state-machine-automatic-approval.test.ts (8 passed)
 - ✅ audit-system-actions.test.ts (10 passed)
-- ✅ ativar-contratante-sem-recibo.test.ts (4 passed)
+- ✅ ativar-tomador-sem-recibo.test.ts (4 passed)
 
 ### Migrações Aplicadas
 
@@ -179,18 +179,18 @@ pnpm test __tests__/state-machine-automatic-approval.test.ts \
 - ✅ 102_populate_data_liberacao_login.sql
 - ✅ 103_add_missing_ultima_avaliacao_columns.sql
 - ✅ 104_add_data_nascimento_funcionarios.sql
-- ✅ 105_add_contratante_id_to_funcionarios.sql
+- ✅ 105_add_tomador_id_to_funcionarios.sql
 
 ### Validações de Database
 
 ```sql
 -- Verificação de login criado
-SELECT * FROM entidades_senhas WHERE contratante_id = 9;
+SELECT * FROM entidades_senhas WHERE tomador_id = 9;
 -- ✅ CPF 87545772920, hash bcrypt confirmado
 
 -- Verificação de query sem erros
-SELECT f.id, f.cpf, f.data_nascimento, f.contratante_id
-FROM funcionarios f WHERE contratante_id = 1;
+SELECT f.id, f.cpf, f.data_nascimento, f.tomador_id
+FROM funcionarios f WHERE tomador_id = 1;
 -- ✅ Query executada sem erro "column does not exist"
 ```
 
@@ -216,7 +216,7 @@ FROM funcionarios f WHERE contratante_id = 1;
 
 ### Depois
 
-1. Pagamento confirmado → `criarContaResponsavel()` + `ativarContratante()`
+1. Pagamento confirmado → `criarContaResponsavel()` + `ativartomador()`
 2. Status "aprovado" imediato
 3. Login liberado instantaneamente
 4. Admin não precisa intervir (botão "Aprovar" escondido)

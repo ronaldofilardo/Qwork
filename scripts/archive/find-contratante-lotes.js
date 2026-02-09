@@ -1,24 +1,24 @@
 import { query } from '../../lib/db.ts';
 
-async function findContratanteELotes() {
+async function findtomadorELotes() {
   try {
-    // Primeiro, encontrar o contratante
-    const contratanteResult = await query(
-      'SELECT id, nome, tipo, responsavel_cpf FROM contratantes WHERE responsavel_cpf = $1',
+    // Primeiro, encontrar o tomador
+    const tomadorResult = await query(
+      'SELECT id, nome, tipo, responsavel_cpf FROM tomadors WHERE responsavel_cpf = $1',
       ['87545772920']
     );
 
-    if (contratanteResult.rows.length === 0) {
-      console.log('Contratante não encontrado com CPF 87545772920');
+    if (tomadorResult.rows.length === 0) {
+      console.log('tomador não encontrado com CPF 87545772920');
       return;
     }
 
-    const contratante = contratanteResult.rows[0];
-    console.log('Contratante encontrado:');
-    console.log('- ID:', contratante.id);
-    console.log('- Nome:', contratante.nome);
-    console.log('- Tipo:', contratante.tipo);
-    console.log('- Responsável CPF:', contratante.responsavel_cpf);
+    const tomador = tomadorResult.rows[0];
+    console.log('tomador encontrado:');
+    console.log('- ID:', tomador.id);
+    console.log('- Nome:', tomador.nome);
+    console.log('- Tipo:', tomador.tipo);
+    console.log('- Responsável CPF:', tomador.responsavel_cpf);
     console.log('');
 
     // Agora buscar os lotes
@@ -38,13 +38,13 @@ async function findContratanteELotes() {
       FROM lotes_avaliacao la
       JOIN avaliacoes a ON a.lote_id = la.id
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      JOIN contratantes_funcionarios cf ON cf.funcionario_id = f.id
+      JOIN tomadors_funcionarios cf ON cf.funcionario_id = f.id
       LEFT JOIN usuarios u ON la.liberado_por = u.id
-      WHERE cf.contratante_id = $1 AND cf.vinculo_ativo = true
+      WHERE cf.tomador_id = $1 AND cf.vinculo_ativo = true
       GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, u.nome
       ORDER BY la.criado_em DESC
     `,
-      [contratante.id]
+      [tomador.id]
     );
 
     console.log(`Lotes de avaliação encontrados: ${lotesResult.rows.length}`);
@@ -75,4 +75,4 @@ async function findContratanteELotes() {
   }
 }
 
-findContratanteELotes();
+findtomadorELotes();

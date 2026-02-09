@@ -3,7 +3,7 @@ import util from 'util';
 import { query, criarContaResponsavel } from '@/lib/db';
 import { calcularParcelas } from '@/lib/parcelas-helper';
 import { aceitarContrato } from '@/lib/contratos/contratos';
-import { criarNotificacao } from '@/lib/notifications/create-notification';
+// import { criarNotificacao } from '@/lib/notifications/create-notification'; // DESABILITADO: Geração de pendências desativada
 import { ativarEntidade } from '@/lib/entidade-activation';
 
 /**
@@ -16,7 +16,7 @@ import { ativarEntidade } from '@/lib/entidade-activation';
  *
  * Política: CONTRATO PRIMEIRO (contract-first)
  * - O contrato deve estar explicitamente aceito ANTES do pagamento ser confirmado.
- * - Esta rota NÃO realiza aceitação ou ativação automática do contratante.
+ * - Esta rota NÃO realiza aceitação ou ativação automática da entidade.
  */
 
 export async function POST(request: NextRequest) {
@@ -62,19 +62,15 @@ export async function POST(request: NextRequest) {
     }
     console.log('[HANDLER] Pagamento ID válido, continuando...');
 
-    // TODO: Código de fallback de recibo foi removido temporariamente pois estava usando
-    // variáveis (reciboId, contratoId, pagamento) antes de serem definidas.
-    // Precisa ser reposicionado APÓS a busca do pagamento do banco.
-
-    // Buscar pagamento e dados completos do contratante
+    // Buscar pagamento e dados completos do tomador
     console.log('[HANDLER] Buscando pagamento no banco...');
     let pagamentoResult;
     try {
       pagamentoResult = await query(
-        `SELECT p.id, p.contratante_id, p.contrato_id, p.status, c.nome as entidade_nome,
-                c.tipo, c.cnpj, c.responsavel_cpf, c.responsavel_nome, c.responsavel_email, c.responsavel_celular
+        `SELECT p.id, p.tomador_id, p.contrato_id, p.status, t.nome as tomador_nome,
+                t.tipo, t.cnpj, t.responsavel_cpf, t.responsavel_nome, t.responsavel_email, t.responsavel_celular
          FROM pagamentos p
-         JOIN entidades c ON p.contratante_id = c.id
+         JOIN tomadores t ON p.tomador_id = t.id
          WHERE p.id = $1`,
         [pagamento_id]
       );
@@ -106,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     console.log('[PAGAMENTO_CONFIRMAR] Dados do pagamento encontrados:', {
       id: pagamento.id,
-      entidade_id: pagamento.contratante_id,
+      tomador_id: pagamento.tomador_id,
       cnpj: pagamento.cnpj,
       tipo: pagamento.tipo,
       responsavel_cpf: pagamento.responsavel_cpf,
@@ -236,6 +232,10 @@ export async function POST(request: NextRequest) {
         );
 
         // 🔔 CRIAR NOTIFICAÇÕES PARA PARCELAS FUTURAS
+        // ⚠️ DESABILITADO: Geração de pendências de pagamento desabilitada no fluxo de cadastro de entidades
+        // O fluxo atual não exige pagamento no momento do cadastro
+        // Manter parcelas estruturadas no banco, mas sem notificações automáticas
+        /* DESABILITADO - Sem geração de pendências
         console.log(
           `[NOTIFICAÇÃO] Criando notificações para ${parcelas.length - 1} parcelas futuras`
         );
@@ -250,8 +250,8 @@ export async function POST(request: NextRequest) {
 
             await criarNotificacao({
               tipo: 'parcela_pendente',
-              destinatario_id: pagamento.contratante_id,
-              destinatario_tipo: 'contratante',
+              destinatario_id: pagamento.tomador_id,
+              destinatario_tipo: 'tomador', // mantém compatibilidade com tipo TipoDestinatario
               titulo: `Parcela ${parcela.numero}/${numero} - Vence em ${vencimentoFormatado}`,
               mensagem: `Você tem uma parcela pendente no valor de R$ ${parcela.valor.toFixed(2).replace('.', ',')} com vencimento em ${vencimentoFormatado}.`,
               dados_contexto: {
@@ -260,7 +260,7 @@ export async function POST(request: NextRequest) {
                 total_parcelas: numero,
                 vencimento: parcela.data_vencimento,
                 valor: parcela.valor,
-                entidade_id: pagamento.contratante_id,
+                tomador_id: pagamento.tomador_id,
               },
               link_acao: '/rh/conta#pagamentos',
               botao_texto: 'Ver Pagamentos',
@@ -268,7 +268,7 @@ export async function POST(request: NextRequest) {
             });
 
             console.log(
-              `[NOTIFICAÇÃO] Parcela ${parcela.numero}/${numero} criada para entidade ${pagamento.contratante_id}`
+              `[NOTIFICAÇÃO] Parcela ${parcela.numero}/${numero} criada para tomador ${pagamento.tomador_id}`
             );
           } catch (notifError) {
             console.error(
@@ -278,6 +278,7 @@ export async function POST(request: NextRequest) {
             // Não interromper fluxo por erro de notificação
           }
         }
+        */
       }
     } catch (err) {
       console.error('Erro ao persistir detalhes_parcelas:', err);
@@ -291,53 +292,122 @@ export async function POST(request: NextRequest) {
     // --- Liberar login no aceite do pagamento (sem alterar o contrato) ---
     // Política: manter `contratos` como pendente para que o admin possa aprovar,
     // mas liberar login/acesso ao confirmar o pagamento.
+    // SWITCH(tipo): ativa entidade ou clinica e cria conta apropriada
     try {
-      // Marcar contratante como ativo/confirmado (não altera contratos.status)
-      await query(
-        `UPDATE entidades SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
-        [pagamento.contratante_id]
+      // Buscar o tipo do tomador para determinar qual tabela ativar
+      const tipoResult = await query(
+        `SELECT tipo FROM tomadores WHERE id = $1`,
+        [pagamento.tomador_id]
       );
 
-      acessoLiberado = true;
+      if (tipoResult.rows.length === 0) {
+        throw new Error('Tomador não encontrado para buscar tipo');
+      }
 
-      // Criar login do responsável usando função centralizada e ativar entidade
-      try {
-        try {
-          await criarContaResponsavel(pagamento.contratante_id);
-          loginLiberado = true;
-        } catch (createErr) {
-          console.warn(
-            '[PAGAMENTO_CONFIRMAR] Falha ao criar conta do responsável via criarContaResponsavel (ignorado):',
-            createErr?.message || createErr
-          );
-        }
+      const tipo = tipoResult.rows[0].tipo;
+      console.log('[PAGAMENTO_CONFIRMAR] Tipo do tomador:', tipo);
 
-        // Tentar ativar entidade mesmo sem recibo (recibos são gerados sob demanda)
+      if (tipo === 'entidade') {
+        // ========== FLUXO ENTIDADE ==========
+        // Marcar entidade como ativa/confirmada
+        await query(
+          `UPDATE entidades SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          [pagamento.tomador_id]
+        );
+
+        acessoLiberado = true;
+
+        // Criar login do gestor usando função centralizada
         try {
-          const ativ = await ativarEntidade(pagamento.contratante_id);
-          if (ativ.success) {
-            acessoLiberado = true;
-          } else {
+          try {
+            await criarContaResponsavel(pagamento.tomador_id);
+            loginLiberado = true;
+          } catch (createErr) {
             console.warn(
-              '[PAGAMENTO_CONFIRMAR] ativarEntidade não completou:',
-              ativ.message
+              '[PAGAMENTO_CONFIRMAR] Falha ao criar conta do gestor (ignorado):',
+              createErr?.message || createErr
             );
           }
-        } catch (ativErr) {
+
+          // Ativar entidade mesmo sem recibo (recibos são gerados sob demanda)
+          try {
+            const ativ = await ativarEntidade(pagamento.tomador_id);
+            if (ativ.success) {
+              acessoLiberado = true;
+            } else {
+              console.warn(
+                '[PAGAMENTO_CONFIRMAR] ativarEntidade não completou:',
+                ativ.message
+              );
+            }
+          } catch (ativErr) {
+            console.warn(
+              '[PAGAMENTO_CONFIRMAR] Erro ao ativar entidade (ignorado):',
+              ativErr?.message || ativErr
+            );
+          }
+        } catch (loginErr) {
           console.warn(
-            '[PAGAMENTO_CONFIRMAR] Erro ao ativar entidade (ignorado):',
-            ativErr?.message || ativErr
+            '[PAGAMENTO_CONFIRMAR] Erro ao liberar login entidade (ignorado):',
+            loginErr?.message || loginErr
           );
         }
-      } catch (loginErr) {
+      } else if (tipo === 'clinica') {
+        // ========== FLUXO CLINICA ==========
+        // Marcar clinica como ativa/confirmada
+        await query(
+          `UPDATE clinicas SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          [pagamento.tomador_id]
+        );
+
+        acessoLiberado = true;
+
+        // Criar login do RH usando função centralizada
+        try {
+          try {
+            await criarContaResponsavel(pagamento.tomador_id);
+            loginLiberado = true;
+          } catch (createErr) {
+            console.warn(
+              '[PAGAMENTO_CONFIRMAR] Falha ao criar conta do RH (ignorado):',
+              createErr?.message || createErr
+            );
+          }
+
+          // Ativar clinica
+          try {
+            // Função para ativar clinica (pode ser similar a ativarEntidade)
+            // TODO: Se não existir ativarClinica, criar uma versão similar
+            const ativ = await ativarEntidade(pagamento.tomador_id); // Reutilizando por enquanto
+            if (ativ.success) {
+              acessoLiberado = true;
+            } else {
+              console.warn(
+                '[PAGAMENTO_CONFIRMAR] ativarClinica não completou:',
+                ativ.message
+              );
+            }
+          } catch (ativErr) {
+            console.warn(
+              '[PAGAMENTO_CONFIRMAR] Erro ao ativar clinica (ignorado):',
+              ativErr?.message || ativErr
+            );
+          }
+        } catch (loginErr) {
+          console.warn(
+            '[PAGAMENTO_CONFIRMAR] Erro ao liberar login clinica (ignorado):',
+            loginErr?.message || loginErr
+          );
+        }
+      } else {
         console.warn(
-          '[PAGAMENTO_CONFIRMAR] Erro ao liberar login (ignorado):',
-          loginErr?.message || loginErr
+          '[PAGAMENTO_CONFIRMAR] Tipo de tomador desconhecido:',
+          tipo
         );
       }
     } catch (markErr) {
       console.warn(
-        '[PAGAMENTO_CONFIRMAR] Falha ao marcar entidade ativa (ignorado):',
+        '[PAGAMENTO_CONFIRMAR] Falha ao ativar tomador (ignorado):',
         markErr?.message || markErr
       );
     }
@@ -373,17 +443,17 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // Garantir que entidade esteja como aprovada/ativa após pagamento
+        // Garantir que tomador esteja como aprovado/ativo após pagamento
         await query(
           `UPDATE entidades SET status = 'aprovado', ativa = true, pagamento_confirmado = true, data_liberacao_login = COALESCE(data_liberacao_login, NOW()), aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
-          [pagamento.contratante_id]
+          [pagamento.tomador_id]
         );
 
         acessoLiberado = true;
 
         // Garantir criação de login/conta e ativação centralizada
         try {
-          await criarContaResponsavel(pagamento.contratante_id);
+          await criarContaResponsavel(pagamento.tomador_id);
           loginLiberado = true;
         } catch (createErr) {
           console.warn(
@@ -393,7 +463,7 @@ export async function POST(request: NextRequest) {
         }
 
         try {
-          const ativRes = await ativarEntidade(pagamento.contratante_id);
+          const ativRes = await ativarEntidade(pagamento.tomador_id);
           if (ativRes.success) {
             acessoLiberado = true;
           } else {
@@ -416,7 +486,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // ===== ATIVAÇÃO IMEDIATA: Criar conta de login e ativar contratante =====
+    // ===== ATIVAÇÃO IMEDIATA: Criar conta de login e ativar entidade =====
     // POLÍTICA CORRETA: Login liberado IMEDIATAMENTE após pagamento confirmado
     // Recibo é gerado SOB DEMANDA quando o usuário solicitar
     console.log(
@@ -434,108 +504,51 @@ export async function POST(request: NextRequest) {
              aprovado_por_cpf = '00000000000',
              atualizado_em = CURRENT_TIMESTAMP
          WHERE id = $1`,
-        [pagamento.contratante_id]
+        [pagamento.tomador_id]
       );
 
       acessoLiberado = true;
 
-      // 2. Criar conta de login com senha = últimos 6 dígitos do CNPJ
-      const cnpjLimpo = pagamento.cnpj.replace(/\D/g, '');
-      const senhaInicial = cnpjLimpo.slice(-6); // Últimos 6 dígitos
+      // 2. Criar credenciais de acesso (EXCLUSIVAMENTE PELO SISTEMA)
+      // Sistema cria automaticamente:
+      // - Para Entidades: senha em entidades_senhas, perfil 'gestor'
+      // - Para Clínicas: senha em clinicas_senhas, perfil 'rh'
+      // NENHUM OUTRO USUÁRIO PODE CRIAR LOGIN
 
-      // Verificar se já existe login
-      const loginExists = await query(
-        'SELECT cpf FROM funcionarios WHERE cpf = $1',
-        [pagamento.responsavel_cpf]
-      );
-
-      console.log(
-        '[PAGAMENTO_CONFIRMAR] loginExists count:',
-        loginExists.rows.length
-      );
-
-      if (loginExists.rows.length === 0) {
-        // Determinar perfil baseado no tipo de contratante (entidade → gestor)
-        const perfil = pagamento.tipo === 'entidade' ? 'gestor' : 'emissor';
-
-        // IMPORTANTE: nivel_cargo só pode ser definido para perfil 'funcionario'
-        // Neste fluxo criamos apenas perfis de gestor ou emissor, portanto manter NULL
-        const nivelCargo = null;
-
-        // Inserir com senha em texto plano - sistema fará hash automaticamente no primeiro login
-        // Tentar mapear contratante para empresa em empresas_clientes, senão deixar nulo
-        const empresaRow = await query(
-          'SELECT id FROM empresas_clientes WHERE cnpj = $1 LIMIT 1',
-          [pagamento.cnpj]
-        );
-        const empresaId = empresaRow.rows[0]?.id || null;
-        const clinicaId = null; // não lidamos com clínicas aqui no fluxo de pagamento
-        console.log(
-          `[PAGAMENTO_CONFIRMAR] Criando login para responsável: cpf=${pagamento.responsavel_cpf}, perfil=${perfil}, nivel_cargo=${nivelCargo}`
+      try {
+        // Buscar dados completos da entidade
+        const entidadeData = await query(
+          'SELECT * FROM entidades WHERE id = $1',
+          [pagamento.tomador_id]
         );
 
-        // Inserção dentro de transação explícita
-        try {
-          await query('BEGIN');
-
-          const insertRes = await query(
-            `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, nivel_cargo, entidade_id, clinica_id, empresa_id, criado_em, atualizado_em)
-             VALUES ($1, $2, $3, $4, $5, true, $6, $7, $8, $9, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING id, cpf, perfil`,
-            [
-              pagamento.responsavel_cpf,
-              pagamento.responsavel_nome,
-              pagamento.responsavel_email,
-              senhaInicial,
-              perfil,
-              nivelCargo,
-              pagamento.contratante_id,
-              clinicaId,
-              empresaId,
-            ]
+        if (entidadeData.rows.length === 0) {
+          console.error(
+            '[PAGAMENTO_CONFIRMAR] Entidade não encontrada:',
+            pagamento.tomador_id
           );
-
-          await query('COMMIT');
+        } else {
+          // Usar função centralizada que cria senha de forma segura
+          await criarContaResponsavel(entidadeData.rows[0]);
 
           console.log(
-            `[PAGAMENTO_CONFIRMAR] ✅ Login criado com sucesso: ID=${insertRes.rows[0].id}, perfil=${insertRes.rows[0].perfil}, senha=últimos 6 dígitos do CNPJ`
+            `[PAGAMENTO_CONFIRMAR] ✅ Credenciais de acesso criadas automaticamente pelo sistema:
+            - Entidade ID: ${pagamento.tomador_id}
+            - CPF: ${pagamento.responsavel_cpf}
+            - Tipo: ${pagamento.tipo}
+            - Perfil: ${pagamento.tipo === 'entidade' ? 'gestor' : 'rh'}
+            - Senha: últimos 6 dígitos do CNPJ (${pagamento.cnpj.slice(-6)})`
           );
-
-          // Garantir que haja uma senha padronizada na tabela entidades_senhas
-          try {
-            await query('SELECT criar_senha_inicial_entidade($1)', [
-              pagamento.contratante_id,
-            ]);
-            console.log(
-              '[PAGAMENTO_CONFIRMAR] criar_senha_inicial_entidade executada com sucesso'
-            );
-          } catch (fnErr) {
-            console.warn(
-              '[PAGAMENTO_CONFIRMAR] Falha ao executar criar_senha_inicial_entidade:',
-              fnErr
-            );
-          }
-        } catch (txErr: any) {
-          try {
-            await query('ROLLBACK');
-          } catch (rbErr) {
-            console.error(
-              '[PAGAMENTO_CONFIRMAR] Erro ao executar ROLLBACK:',
-              rbErr
-            );
-          }
-          console.error(
-            '[PAGAMENTO_CONFIRMAR] ❌ Erro ao criar login:',
-            txErr.message
-          );
-          // Não rethrow em test ou produção — ativação não deve bloquear confirmação de pagamento
         }
-      } else {
-        console.log(
-          `[PAGAMENTO_CONFIRMAR] Login já existe para ${pagamento.responsavel_cpf}`
-        );
-      }
 
-      loginLiberado = true;
+        loginLiberado = true;
+      } catch (credentialsErr) {
+        console.error(
+          '[PAGAMENTO_CONFIRMAR] ❌ Erro ao criar credenciais:',
+          credentialsErr
+        );
+        // Não interrompe o fluxo - credenciais podem ser criadas manualmente depois se necessário
+      }
     } catch (activationError) {
       console.error('[PAGAMENTO_CONFIRMAR] Erro na ativação:', activationError);
       // Não interromper fluxo por erro de ativação
@@ -548,8 +561,9 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Pagamento confirmado com sucesso! Acesso liberado.',
       pagamento_id: pagamento_id,
-      entidade_id: pagamento.contratante_id,
-      entidade_nome: pagamento.entidade_nome,
+      tomador_id: pagamento.tomador_id,
+      tomador_nome: pagamento.tomador_nome,
+      tipo: pagamento.tipo,
       acesso_liberado: acessoLiberado,
       login_liberado: loginLiberado,
       proximos_passos: [
@@ -586,7 +600,7 @@ export async function POST(request: NextRequest) {
         );
         await query('BEGIN');
 
-        // Obter contratante associado (se ainda disponível)
+        // Obter entidade associada (se ainda disponível)
         const pInfo = await query(
           'SELECT entidade_id, contrato_id FROM pagamentos WHERE id = $1',
           [pagamento_id]

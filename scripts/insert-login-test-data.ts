@@ -83,52 +83,52 @@ async function insertLoginTestData() {
         nivel_cargo = EXCLUDED.nivel_cargo
     `);
 
-    // Inserir contratante e assoc. de senha para RH (necessário para validação de sessão 'rh')
+    // Inserir tomador e assoc. de senha para RH (necessário para validação de sessão 'rh')
     await query(`
-      INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa)
-      SELECT 'clinica', 'Contratante Teste', '55566677000188', 'contratante@teste.com', '11911112222', 'Rua Contratante, 1', 'São Paulo', 'SP', '01234002', 'Pedro Oliveira', '11111111111', 'pedro@email.com', '11999990000', false
-      WHERE NOT EXISTS (SELECT 1 FROM contratantes WHERE cnpj = '55566677000188')
+      INSERT INTO tomadors (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa)
+      SELECT 'clinica', 'tomador Teste', '55566677000188', 'tomador@teste.com', '11911112222', 'Rua tomador, 1', 'São Paulo', 'SP', '01234002', 'Pedro Oliveira', '11111111111', 'pedro@email.com', '11999990000', false
+      WHERE NOT EXISTS (SELECT 1 FROM tomadors WHERE cnpj = '55566677000188')
     `);
 
     // Atualiza se já existir, senão insere
     await query(`
       UPDATE entidades_senhas SET senha_hash = '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2' WHERE cpf = '11111111111';
-      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
-      SELECT (SELECT id FROM contratantes WHERE cnpj = '55566677000188'), '11111111111', '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2'
+      INSERT INTO entidades_senhas (tomador_id, cpf, senha_hash)
+      SELECT (SELECT id FROM tomadors WHERE cnpj = '55566677000188'), '11111111111', '$2a$10$bOCO5aMKPsWK2QWpbxC3Zu3Y7Y2DzXboFkyVDxvXlMfTDl8kVQat2'
       WHERE NOT EXISTS (SELECT 1 FROM entidades_senhas WHERE cpf = '11111111111');
     `);
 
-    // Garantir que a clínica inserida aponte para o contratante (necessário para endpoints RH)
+    // Garantir que a clínica inserida aponte para o tomador (necessário para endpoints RH)
     await query(`
       UPDATE clinicas
-      SET contratante_id = (SELECT id FROM contratantes WHERE cnpj = '55566677000188')
+      SET tomador_id = (SELECT id FROM tomadors WHERE cnpj = '55566677000188')
       WHERE cnpj = '12345678000123';
     `);
 
     console.log('✅ Dados de teste para login inseridos com sucesso!');
 
-    // Criar contrato e pagamento para o contratante associado à clínica de teste (cnpj 55566677000188)
+    // Criar contrato e pagamento para o tomador associado à clínica de teste (cnpj 55566677000188)
     await query(`
-      INSERT INTO contratos (contratante_id, plano_id, aceito, hash_contrato, criado_em)
+      INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
       SELECT c.id, (SELECT id FROM planos WHERE ativo = true ORDER BY preco ASC LIMIT 1), true, md5(random()::text), CURRENT_TIMESTAMP
-      FROM contratantes c
+      FROM tomadors c
       WHERE c.cnpj = '55566677000188'
-      AND NOT EXISTS (SELECT 1 FROM contratos co WHERE co.contratante_id = c.id)
+      AND NOT EXISTS (SELECT 1 FROM contratos co WHERE co.tomador_id = c.id)
     `);
 
     await query(`
-      INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em, data_pagamento)
-      SELECT c.id, (SELECT id FROM contratos WHERE contratante_id = c.id ORDER BY criado_em DESC LIMIT 1), 1000.00, 'pago', 'pix', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-      FROM contratantes c
+      INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em, data_pagamento)
+      SELECT c.id, (SELECT id FROM contratos WHERE tomador_id = c.id ORDER BY criado_em DESC LIMIT 1), 1000.00, 'pago', 'pix', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+      FROM tomadors c
       WHERE c.cnpj = '55566677000188'
-      AND NOT EXISTS (SELECT 1 FROM pagamentos p WHERE p.contratante_id = c.id AND p.status = 'pago')
+      AND NOT EXISTS (SELECT 1 FROM pagamentos p WHERE p.tomador_id = c.id AND p.status = 'pago')
     `);
 
-    // Garantir que exista pelo menos um pagamento PAGO para contratante_id = 2
+    // Garantir que exista pelo menos um pagamento PAGO para tomador_id = 2
     await query(`
-      INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em, data_pagamento)
+      INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em, data_pagamento)
       SELECT 2, NULL, 1000.00, 'pago', 'pix', 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-      WHERE NOT EXISTS (SELECT 1 FROM pagamentos WHERE contratante_id = 2 AND status = 'pago')
+      WHERE NOT EXISTS (SELECT 1 FROM pagamentos WHERE tomador_id = 2 AND status = 'pago')
     `);
 
     console.log('📋 Usuários disponíveis:');

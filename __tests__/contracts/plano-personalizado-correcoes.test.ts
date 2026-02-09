@@ -19,7 +19,7 @@ describe('Fluxo Plano Personalizado - Correções Implementadas', () => {
       const mockError = {
         error: 'Número de funcionários inválido ou não informado',
         detalhes:
-          'Forneça o número de funcionários no formulário ou certifique-se de que o contratante informou no cadastro.',
+          'Forneça o número de funcionários no formulário ou certifique-se de que o tomador informou no cadastro.',
       };
 
       mockFetch.mockResolvedValueOnce({
@@ -46,7 +46,7 @@ describe('Fluxo Plano Personalizado - Correções Implementadas', () => {
     it('deve aceitar numero_funcionarios fornecido pelo admin', async () => {
       const mockResponse = {
         success: true,
-        contratante: {
+        tomador: {
           id: 1,
           numero_funcionarios: 100, // Admin sobrescreveu estimado
           valor_por_funcionario: 85.0,
@@ -72,14 +72,14 @@ describe('Fluxo Plano Personalizado - Correções Implementadas', () => {
 
       const data = await response.json();
       expect(data.success).toBe(true);
-      expect(data.contratante.numero_funcionarios).toBe(100);
-      expect(data.contratante.link_contrato).toBe('/contrato/456');
+      expect(data.tomador.numero_funcionarios).toBe(100);
+      expect(data.tomador.link_contrato).toBe('/contrato/456');
     });
 
     it('deve usar numero_funcionarios_estimado se admin não fornecer', async () => {
       const mockResponse = {
         success: true,
-        contratante: {
+        tomador: {
           id: 1,
           numero_funcionarios: 50, // Usa estimado
           valor_por_funcionario: 100.0,
@@ -105,8 +105,8 @@ describe('Fluxo Plano Personalizado - Correções Implementadas', () => {
 
       const data = await response.json();
       expect(data.success).toBe(true);
-      expect(data.contratante.numero_funcionarios).toBe(50);
-      expect(data.contratante.link_contrato).toBeDefined();
+      expect(data.tomador.numero_funcionarios).toBe(50);
+      expect(data.tomador.link_contrato).toBeDefined();
     });
   });
 
@@ -115,8 +115,8 @@ describe('Fluxo Plano Personalizado - Correções Implementadas', () => {
       const mockResponse = {
         success: true,
         message: 'Pagamento confirmado com sucesso!',
-        contratante_id: 1,
-        contratante_nome: 'Empresa Teste',
+        tomador_id: 1,
+        tomador_nome: 'Empresa Teste',
       };
 
       mockFetch.mockResolvedValueOnce({

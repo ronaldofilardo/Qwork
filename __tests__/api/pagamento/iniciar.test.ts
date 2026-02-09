@@ -14,7 +14,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     jest.resetAllMocks();
   });
 
-  it('deve retornar erro se contratante_id estiver faltando', async () => {
+  it('deve retornar erro se tomador_id estiver faltando', async () => {
     const fakeRequest: any = {
       json: async () => ({ contrato_id: 1 }),
     };
@@ -23,11 +23,11 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     expect(resp.status).toBe(400);
 
     const body = await resp.json();
-    expect(body.error).toContain('ID do contratante é obrigatório');
+    expect(body.error).toContain('ID do tomador é obrigatório');
   });
 
   it('deve retornar erro se contrato_id estiver faltando', async () => {
-    // Mock - existe contratante, mas não existe contrato aceito associado
+    // Mock - existe tomador, mas não existe contrato aceito associado
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -50,7 +50,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1 }),
+      json: async () => ({ tomador_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -60,24 +60,24 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     expect(body.error).toContain('Contrato deve ser aceito antes do pagamento');
   });
 
-  it('deve retornar erro se contratante não for encontrado', async () => {
+  it('deve retornar erro se tomador não for encontrado', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 1 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
     expect(resp.status).toBe(404);
 
     const body = await resp.json();
-    expect(body.error).toBe('Contratante não encontrado');
+    expect(body.error).toBe('tomador não encontrado');
   });
 
-  it('deve retornar erro se status do contratante não for aguardando_pagamento', async () => {
+  it('deve retornar erro se status do tomador não for aguardando_pagamento', async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -95,7 +95,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 1 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -106,7 +106,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
   });
 
   it('deve retornar pagamento existente se houver', async () => {
-    // Mock - busca contratante
+    // Mock - busca tomador
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -134,7 +134,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 1 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -148,7 +148,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
   });
 
   it('deve iniciar pagamento com sucesso', async () => {
-    // Mock - busca contratante
+    // Mock - busca tomador
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -184,7 +184,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 1 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -197,12 +197,12 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     expect(body.valor_plano).toBe(50.0); // preco (valor personalizado ou preço do plano)
     expect(body.numero_funcionarios).toBe(10);
     expect(body.plano_nome).toBe('Plano Fixo');
-    expect(body.contratante_nome).toBe('Empresa Teste');
+    expect(body.tomador_nome).toBe('Empresa Teste');
     expect(body.message).toBe('Pagamento iniciado com sucesso');
 
     // Verificar chamadas
     expect(mockQuery).toHaveBeenCalledTimes(4);
-    // Primeira chamada: busca contratante (com JOIN contratos quando contrato_id fornecido)
+    // Primeira chamada: busca tomador (com JOIN contratos quando contrato_id fornecido)
     expect(mockQuery.mock.calls[0][0]).toContain('SELECT c.id');
     expect(mockQuery.mock.calls[0][1]).toEqual([1, 1]);
     // Segunda chamada: busca pagamento existente
@@ -218,7 +218,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     // Quarta chamada: insert pagamento (agora inclui contrato_id como segundo campo)
     expect(mockQuery.mock.calls[3][0]).toContain('INSERT INTO pagamentos');
     expect(mockQuery.mock.calls[3][1]).toEqual([
-      1, // contratante_id
+      1, // tomador_id
       1, // contrato_id
       500.0, // valor
       'pendente',
@@ -227,7 +227,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
   });
 
   it('deve usar valor_total vindo do contrato quando presente', async () => {
-    // Mock - busca contratante (JOIN contratos retorna ctr.valor_total como contrato_valor_total)
+    // Mock - busca tomador (JOIN contratos retorna ctr.valor_total como contrato_valor_total)
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -261,7 +261,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 1 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -280,7 +280,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     mockQuery.mockRejectedValueOnce(new Error('Database error'));
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 1 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 1 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -293,7 +293,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
   // ========== TESTES PARA A CORREÇÃO: JOIN com contratos em vez de contratos_planos ==========
 
   it('deve usar JOIN com tabela contratos na query principal', async () => {
-    // Mock - busca contratante (com JOIN contratos)
+    // Mock - busca tomador (com JOIN contratos)
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -328,7 +328,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 15 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 15 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -337,29 +337,29 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     // Verificar que a query contém JOIN com contratos, não contratos_planos
     expect(mockQuery.mock.calls[0][0]).toContain('JOIN contratos ctr');
     expect(mockQuery.mock.calls[0][0]).not.toContain('JOIN contratos_planos');
-    expect(mockQuery.mock.calls[0][1]).toEqual([1, 15]); // contratante_id, contrato_id
+    expect(mockQuery.mock.calls[0][1]).toEqual([1, 15]); // tomador_id, contrato_id
   });
 
-  it('deve falhar quando contrato específico não existe (mesmo com contratante válido)', async () => {
-    // Mock - busca contratante retorna vazio (contrato não encontrado)
+  it('deve falhar quando contrato específico não existe (mesmo com tomador válido)', async () => {
+    // Mock - busca tomador retorna vazio (contrato não encontrado)
     mockQuery.mockResolvedValueOnce({
       rows: [],
       rowCount: 0,
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 999 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 999 }),
     };
 
     const resp: any = await POST(fakeRequest);
     expect(resp.status).toBe(404);
 
     const body = await resp.json();
-    expect(body.error).toBe('Contratante não encontrado');
+    expect(body.error).toBe('tomador não encontrado');
   });
 
-  it('deve funcionar quando contratante e contrato existem e estão relacionados', async () => {
-    // Mock - busca contratante e contrato relacionados
+  it('deve funcionar quando tomador e contrato existem e estão relacionados', async () => {
+    // Mock - busca tomador e contrato relacionados
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -395,7 +395,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 15 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 15 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -406,11 +406,11 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     expect(body.pagamento_id).toBe(400);
     expect(body.valor).toBe(100.0); // valor_total
     expect(body.plano_nome).toBe('Plano Fixo');
-    expect(body.contratante_nome).toBe('Empresa Teste Ltda');
+    expect(body.tomador_nome).toBe('Empresa Teste Ltda');
   });
 
   it('deve usar numero_funcionarios = 1 quando não especificado', async () => {
-    // Mock - busca contratante sem numero_funcionarios especificado
+    // Mock - busca tomador sem numero_funcionarios especificado
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -446,7 +446,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 15 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 15 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -463,7 +463,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
       rows: [
         {
           id: 1,
-          nome: 'Contratante Após Limpeza',
+          nome: 'tomador Após Limpeza',
           plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
@@ -491,7 +491,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     } as any);
 
     const fakeRequest: any = {
-      json: async () => ({ contratante_id: 1, contrato_id: 15 }),
+      json: async () => ({ tomador_id: 1, contrato_id: 15 }),
     };
 
     const resp: any = await POST(fakeRequest);
@@ -500,7 +500,7 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
     // Verificar que não tenta usar contratos_planos (que pode estar vazio após limpeza)
     const querySQL = mockQuery.mock.calls[0][0];
     expect(querySQL).toContain('JOIN contratos ctr');
-    expect(querySQL).toContain('ctr.contratante_id = c.id');
+    expect(querySQL).toContain('ctr.tomador_id = c.id');
     expect(querySQL).toContain('ctr.id = $2');
     expect(querySQL).not.toContain('contratos_planos');
   });

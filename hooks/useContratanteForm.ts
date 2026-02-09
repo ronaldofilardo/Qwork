@@ -1,9 +1,9 @@
 /**
- * hooks/useContratanteForm.ts
+ * hooks/usetomadorForm.ts
  *
- * Hook customizado para gerenciar estado e validação do formulário de contratante
+ * Hook customizado para gerenciar estado e validação do formulário de tomador
  *
- * EXTRAÍDO DE: components/modals/ModalCadastroContratante.tsx (1892 linhas)
+ * EXTRAÍDO DE: components/modals/ModalCadastrotomador.tsx (1892 linhas)
  * BENEFÍCIO: Reutilizável, testável isoladamente, separação de responsabilidades
  */
 
@@ -32,21 +32,21 @@ const ContracanteFormSchema = z.object({
   plano_id: z.number().int().positive('Plano obrigatório'),
 });
 
-export type ContratanteFormData = z.infer<typeof ContracanteFormSchema>;
+export type tomadorFormData = z.infer<typeof ContracanteFormSchema>;
 
 // ============================================================================
 // HOOK
 // ============================================================================
 
-export function useContratanteForm(initialData?: Partial<ContratanteFormData>) {
-  const [formData, setFormData] = useState<Partial<ContratanteFormData>>(
+export function usetomadorForm(initialData?: Partial<tomadorFormData>) {
+  const [formData, setFormData] = useState<Partial<tomadorFormData>>(
     initialData || { tipo: 'clinica' }
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const validateField = useCallback(
-    (field: keyof ContratanteFormData, value: any) => {
+    (field: keyof tomadorFormData, value: any) => {
       try {
         const fieldSchema = ContracanteFormSchema.shape[field];
         fieldSchema.parse(value);
@@ -91,7 +91,7 @@ export function useContratanteForm(initialData?: Partial<ContratanteFormData>) {
   }, [formData]);
 
   const updateField = useCallback(
-    (field: keyof ContratanteFormData, value: any) => {
+    (field: keyof tomadorFormData, value: any) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
       validateField(field, value);
     },
@@ -105,14 +105,14 @@ export function useContratanteForm(initialData?: Partial<ContratanteFormData>) {
   }, [initialData]);
 
   const submitForm = useCallback(
-    async (onSubmit: (data: ContratanteFormData) => Promise<void>) => {
+    async (onSubmit: (data: tomadorFormData) => Promise<void>) => {
       if (!validateAll()) {
         return false;
       }
 
       setIsSubmitting(true);
       try {
-        await onSubmit(formData as ContratanteFormData);
+        await onSubmit(formData as tomadorFormData);
         return true;
       } catch (error) {
         console.error('Erro ao submeter formulário:', error);

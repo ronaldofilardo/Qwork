@@ -7,7 +7,7 @@
 
 ## 📋 Resumo Executivo
 
-Implementação completa do plano de correção para garantir que **nenhum contratante seja ativado sem pagamento confirmado**, incluindo nova funcionalidade de reenvio de link de pagamento para planos fixos.
+Implementação completa do plano de correção para garantir que **nenhum tomador seja ativado sem pagamento confirmado**, incluindo nova funcionalidade de reenvio de link de pagamento para planos fixos.
 
 ---
 
@@ -17,8 +17,8 @@ Implementação completa do plano de correção para garantir que **nenhum contr
 
 **Implementado:**
 
-- ✅ Função centralizada `ativarContratante()` em `lib/contratante-activation.ts`
-- ✅ Função complementar `desativarContratante()`
+- ✅ Função centralizada `ativartomador()` em `lib/tomador-activation.ts`
+- ✅ Função complementar `desativartomador()`
 - ✅ Validação obrigatória de `pagamento_confirmado` antes de ativar
 - ✅ Auditoria completa de todas as ativações
 - ✅ Suporte a isenção manual (casos excepcionais auditados)
@@ -27,7 +27,7 @@ Implementação completa do plano de correção para garantir que **nenhum contr
 
 **Arquivos criados/modificados:**
 
-- `lib/contratante-activation.ts` (novo)
+- `lib/tomador-activation.ts` (novo)
 - `app/api/pagamento/confirmar/route.ts` (modificado)
 - `app/api/admin/novos-cadastros/route.ts` (modificado)
 - `app/api/pagamento/gerar-link-plano-fixo/route.ts` (verificado)
@@ -41,9 +41,9 @@ Implementação completa do plano de correção para garantir que **nenhum contr
 - ✅ Constraint `chk_ativa_exige_pagamento` no PostgreSQL
 - ✅ Constraint `chk_contrato_exige_pagamento` adicional
 - ✅ Tabela `alertas_integridade` para monitoramento
-- ✅ Trigger `trg_validar_ativacao_contratante` para detectar violações
-- ✅ Função `fn_corrigir_inconsistencias_contratantes()` para correção automática
-- ✅ View `vw_contratantes_inconsistentes` para auditoria
+- ✅ Trigger `trg_validar_ativacao_tomador` para detectar violações
+- ✅ Função `fn_corrigir_inconsistencias_tomadores()` para correção automática
+- ✅ View `vw_tomadores_inconsistentes` para auditoria
 - ✅ Script de verificação e correção imediata de dados existentes
 - ✅ Comentários no schema para documentação
 
@@ -72,7 +72,7 @@ Implementação completa do plano de correção para garantir que **nenhum contr
 **Uso:**
 
 ```typescript
-const accessCheck = await requirePaidAccess(contratante_id);
+const accessCheck = await requirePaidAccess(tomador_id);
 if (accessCheck) return accessCheck; // Bloqueia se acesso negado
 ```
 
@@ -91,7 +91,7 @@ if (accessCheck) return accessCheck; // Bloqueia se acesso negado
 - ✅ Endpoint `/api/contratacao_personalizada/{id}` para obter dados de contratação personalizada (sem uso de token)
 - ✅ Atualização do simulador para aceitar tokens
 - ✅ Geração de token único com crypto.randomBytes
-- ✅ Validações completas de estado do contratante
+- ✅ Validações completas de estado do tomador
 - ✅ Auditoria de geração de links
 
 **Arquivos criados:**
@@ -106,10 +106,10 @@ if (accessCheck) return accessCheck; // Bloqueia se acesso negado
 
 **Fluxo completo:**
 
-1. Admin acessa painel → seleciona contratante → clica "Reenviar Link"
+1. Admin acessa painel → seleciona tomador → clica "Reenviar Link"
 2. Sistema gera token único válido por 48h
 3. Link: `/pagamento/simulador?contratacao_id=123&retry=true`
-4. Contratante acessa sem login
+4. tomador acessa sem login
 5. Dados carregados automaticamente do cadastro original
 6. Pagamento processado normalmente
 7. Token marcado como usado após sucesso
@@ -157,7 +157,7 @@ pnpm reconciliar:contratos
 - ✅ Testes de tokens de retomada (válido, usado, expirado)
 - ✅ Testes de sistema de reconciliação
 - ✅ Testes de constraint do banco
-- ✅ Testes de função `ativarContratante()`
+- ✅ Testes de função `ativartomador()`
 - ✅ Cobertura de todos os casos de uso críticos
 
 **Arquivos criados:**
@@ -166,7 +166,7 @@ pnpm reconciliar:contratos
 
 **Casos testados:**
 
-1. Geração de link NÃO ativa contratante ✅
+1. Geração de link NÃO ativa tomador ✅
 2. Pagamento confirmado permite ativação ✅
 3. Tentativa de ativar sem pagamento falha ✅
 4. Constraint do banco bloqueia UPDATE direto ✅
@@ -217,7 +217,7 @@ pnpm test __tests__/e2e/fluxo-pagamento-completo.test.ts
 
 ### Novos Arquivos (15)
 
-1. `lib/contratante-activation.ts` - Função centralizada de ativação
+1. `lib/tomador-activation.ts` - Função centralizada de ativação
 2. `lib/paid-access-middleware.ts` - Middleware de proteção de acesso
 3. `database/migrations/migration-004-constraints-ativacao.sql` - Constraints e triggers
 4. `database/migrations/migration-005-tokens-retomada.sql` - Infraestrutura de tokens
@@ -232,7 +232,7 @@ pnpm test __tests__/e2e/fluxo-pagamento-completo.test.ts
 
 ### Arquivos Modificados (4)
 
-1. `app/api/pagamento/confirmar/route.ts` - Usa `ativarContratante()`
+1. `app/api/pagamento/confirmar/route.ts` - Usa `ativartomador()`
 2. `app/api/admin/novos-cadastros/route.ts` - Remove `ativa = true` prematura
 3. `app/pagamento/simulador/page.tsx` - Suporte a tokens
 4. `package.json` - Novos scripts
@@ -255,7 +255,7 @@ pnpm migrate:all
 
 ```sql
 -- Deve retornar 0 linhas
-SELECT * FROM vw_contratantes_inconsistentes;
+SELECT * FROM vw_tomadores_inconsistentes;
 ```
 
 ### 3. Executar Testes
@@ -275,18 +275,18 @@ pnpm test __tests__/e2e/fluxo-pagamento-completo.test.ts
 
 **Via Admin Dashboard:**
 
-1. Acessar painel de contratantes
-2. Localizar contratante com status "aguardando_pagamento"
+1. Acessar painel de tomadores
+2. Localizar tomador com status "aguardando_pagamento"
 3. Clicar em "Reenviar Link de Pagamento"
 4. Copiar link gerado ou escanear QR Code
-5. Enviar para contratante via email/WhatsApp
+5. Enviar para tomador via email/WhatsApp
 
 **Via API:**
 
 ```typescript
 POST /api/admin/gerar-link-plano-fixo
 {
-  "contratante_id": 123
+  "tomador_id": 123
 }
 ```
 
@@ -315,7 +315,7 @@ POST /api/admin/gerar-link-plano-fixo
 ### 4 Camadas de Proteção
 
 1. **Constraint de Banco** - Impossível `ativa = true` sem `pagamento_confirmado = true`
-2. **Função Centralizada** - Toda ativação passa por `ativarContratante()`
+2. **Função Centralizada** - Toda ativação passa por `ativartomador()`
 3. **Middleware de Rotas** - `requirePaidAccess()` bloqueia acesso sem pagamento
 4. **Reconciliação Diária** - Detecta e corrige inconsistências automaticamente
 
@@ -333,10 +333,10 @@ POST /api/admin/gerar-link-plano-fixo
 
 ### Critérios de Aceitação (TODOS ATENDIDOS)
 
-- ✅ Nenhum contratante no sistema com `ativa = true` e `pagamento_confirmado = false`
+- ✅ Nenhum tomador no sistema com `ativa = true` e `pagamento_confirmado = false`
 - ✅ Admin consegue reenviar link de pagamento para plano fixo com 1 clique
 - ✅ Link gerado usa token seguro com expiração e dados do cadastro original
-- ✅ Contratante acessa simulador sem login, conclui pagamento e é ativado
+- ✅ tomador acessa simulador sem login, conclui pagamento e é ativado
 - ✅ Todos os testes E2E passam
 - ✅ CI pode falhar se encontrar inconsistência no banco
 - ✅ Admin consegue ver histórico de ativações e links gerados no audit log
@@ -349,7 +349,7 @@ POST /api/admin/gerar-link-plano-fixo
 SELECT
   COUNT(*) FILTER (WHERE ativa = true AND pagamento_confirmado = true) as ativos_validos,
   COUNT(*) FILTER (WHERE ativa = true AND pagamento_confirmado = false) as inconsistencias
-FROM contratantes;
+FROM tomadores;
 
 -- Resultado esperado:
 -- ativos_validos: N (qualquer número)
@@ -400,7 +400,7 @@ FROM contratantes;
 - [ ] Interface admin para gerenciar alertas
 - [ ] Testes de performance com alto volume de tokens
 - [ ] Internacionalização das mensagens de erro
-- [ ] Webhook para notificar contratante sobre link expirado
+- [ ] Webhook para notificar tomador sobre link expirado
 
 ---
 
@@ -430,14 +430,14 @@ psql -U postgres -d nr-bps_db -c "SELECT fn_limpar_tokens_expirados();"
 
 ### Troubleshooting
 
-**Problema:** Contratante ativo sem pagamento  
+**Problema:** tomador ativo sem pagamento  
 **Solução:** Executar `pnpm reconciliar:contratos`
 
 **Problema:** Token inválido  
 **Solução:** Verificar expiração com `SELECT * FROM vw_tokens_auditoria WHERE token = 'X'`
 
 **Problema:** Constraint violada  
-**Solução:** Corrigir dados com `SELECT fn_corrigir_inconsistencias_contratantes()`
+**Solução:** Corrigir dados com `SELECT fn_corrigir_inconsistencias_tomadores()`
 
 ---
 

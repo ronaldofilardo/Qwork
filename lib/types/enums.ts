@@ -35,7 +35,7 @@ export type PerfilUsuarioType =
 export enum StatusAvaliacao {
   INICIADA = 'iniciada',
   EM_ANDAMENTO = 'em_andamento',
-  CONCLUIDO = 'concluido',
+  CONCLUIDA = 'concluida',
   INATIVADA = 'inativada',
 }
 
@@ -190,7 +190,7 @@ export enum TipoPlano {
 export type TipoPlanoType = 'fixo' | 'personalizado' | 'basico' | 'premium';
 
 /**
- * Tipo de contratante
+ * Tipo de tomador
  * @enum {string}
  */
 export enum TipoEntidade {

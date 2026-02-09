@@ -211,7 +211,7 @@ return {
 ### Query do Cron (Item 4)
 
 ```sql
-SELECT id, empresa_id, clinica_id, codigo, contratante_id
+SELECT id, empresa_id, clinica_id, codigo, tomador_id
 FROM lotes_avaliacao
 WHERE status = 'concluido'
   AND auto_emitir_em <= NOW()

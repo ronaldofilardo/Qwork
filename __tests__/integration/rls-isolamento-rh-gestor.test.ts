@@ -110,7 +110,7 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     clinicaId2 = clinica2.rows[0].id;
 
     // Criar 2 entidades independentes
-    const contratante1 = await query(
+    const tomador1 = await query(
       `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
       [
@@ -131,9 +131,9 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         true,
       ]
     );
-    entidadeId1 = contratante1.rows[0].id;
+    entidadeId1 = tomador1.rows[0].id;
 
-    const contratante2 = await query(
+    const tomador2 = await query(
       `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
       [
@@ -154,7 +154,7 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         true,
       ]
     );
-    entidadeId2 = contratante2.rows[0].id;
+    entidadeId2 = tomador2.rows[0].id;
 
     // Criar RHs (um para cada clínica)
     rhCpf1 = '11111111101';
@@ -337,7 +337,7 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     });
   });
 
-  describe('Gestor de Entidade: Isolamento por contratante', () => {
+  describe('Gestor de Entidade: Isolamento por tomador', () => {
     it('Gestor1 deve ver funcionários da entidade 1', async () => {
       const result = await runAsRole(
         'test_gestor',

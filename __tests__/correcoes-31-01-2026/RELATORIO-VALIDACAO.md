@@ -73,7 +73,7 @@
 #### Admin PODE (Apenas Administrativo):
 
 - ✅ Gerenciar `clinicas` (PERMISSIVE clinicas_admin_all)
-- ✅ Gerenciar `contratantes` (PERMISSIVE contratantes_admin_all)
+- ✅ Gerenciar `tomadores` (PERMISSIVE tomadores_admin_all)
 - ✅ Visualizar `audit_logs` (PERMISSIVE audit_logs_admin_all)
 - ✅ Gerenciar `roles` (PERMISSIVE roles_admin_all)
 - ✅ Gerenciar `permissions` (PERMISSIVE permissions_admin_all)

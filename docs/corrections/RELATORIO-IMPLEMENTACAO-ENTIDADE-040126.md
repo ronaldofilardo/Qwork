@@ -10,10 +10,10 @@ Todas as migrations foram aplicadas com sucesso no banco de desenvolvimento (`nr
 
 ## 📋 Migrations Aplicadas
 
-### ✅ Migration 063.5 - Função `current_user_contratante_id()`
+### ✅ Migration 063.5 - Função `current_user_tomador_id()`
 
 - **Status**: Aplicada com sucesso
-- **Descrição**: Criada função para recuperar contratante_id do contexto RLS
+- **Descrição**: Criada função para recuperar tomador_id do contexto RLS
 - **Arquivo**: `database/migrations/apply_migrations_manual.sql`
 
 ### ✅ Migration 064 - Fix RLS para gestor
@@ -44,55 +44,55 @@ Todas as migrations foram aplicadas com sucesso no banco de desenvolvimento (`nr
 - **Descrição**: Views para métricas e alertas de lotes/laudos
 - **Arquivo**: `database/migrations/066_observability_views.sql`
 - **Views criadas**:
-  1. `vw_lotes_por_contratante` - Métricas agregadas por contratante
+  1. `vw_lotes_por_tomador` - Métricas agregadas por tomador
   2. `vw_alertas_lotes_stuck` - Alertas de lotes sem progresso (>48h)
   3. `vw_metricas_emissao_laudos` - Estatísticas de emissão
-  4. `vw_health_check_contratantes` - Health check geral
+  4. `vw_health_check_tomadores` - Health check geral
 - **Índices criados**:
   - `idx_lotes_atualizado_em`
-  - `idx_lotes_tipo_contratante`
+  - `idx_lotes_tipo_tomador`
   - `idx_laudos_criado_em`
 
-### ✅ Migration 067 - Audit Trail com contratante_id
+### ✅ Migration 067 - Audit Trail com tomador_id
 
 - **Status**: Aplicada com sucesso
-- **Descrição**: Coluna `contratante_id` em `audit_logs` para rastreamento
-- **Arquivo**: `database/migrations/067_audit_contratante_id.sql`
+- **Descrição**: Coluna `tomador_id` em `audit_logs` para rastreamento
+- **Arquivo**: `database/migrations/067_audit_tomador_id.sql`
 - **Componentes**:
-  - Coluna `contratante_id` adicionada
-  - FK para `contratantes`
-  - Índice `idx_audit_logs_contratante_id`
+  - Coluna `tomador_id` adicionada
+  - FK para `tomadores`
+  - Índice `idx_audit_logs_tomador_id`
   - Função `audit_log_with_context()`
-  - View `vw_audit_trail_por_contratante`
+  - View `vw_audit_trail_por_tomador`
 
 ---
 
 ## 🧪 Validações Manuais Realizadas
 
-### ✅ 1. View vw_lotes_por_contratante
+### ✅ 1. View vw_lotes_por_tomador
 
 ```sql
-SELECT * FROM vw_lotes_por_contratante WHERE tipo_contratante = 'entidade';
+SELECT * FROM vw_lotes_por_tomador WHERE tipo_tomador = 'entidade';
 ```
 
 **Resultado**:
 
 - ✅ View criada e funcional
 - ✅ Retorna dados de entidades corretamente
-- ✅ Contratante_id 56 (RELEGERE) aparece no resultado
+- ✅ tomador_id 56 (RELEGERE) aparece no resultado
 
 ### ✅ 2. RLS para gestor
 
 ```sql
 SET app.current_user_perfil = 'gestor';
-SET app.current_user_contratante_id = '56';
-SELECT id, codigo, titulo, status FROM lotes_avaliacao WHERE contratante_id = 56;
+SET app.current_user_tomador_id = '56';
+SELECT id, codigo, titulo, status FROM lotes_avaliacao WHERE tomador_id = 56;
 ```
 
 **Resultado**:
 
 - ✅ RLS permite acesso ao lote 19 (código 003-040126)
-- ✅ Função `current_user_contratante_id()` funciona corretamente
+- ✅ Função `current_user_tomador_id()` funciona corretamente
 
 ### ✅ 3. Constraint de Idempotência
 
@@ -114,22 +114,22 @@ WHERE table_name = 'laudos' AND constraint_name = 'laudos_lote_id_unique';
 
 **Motivo das falhas**: Banco de teste (`nr-bps_db_test`) possui schema diferente do desenvolvimento:
 
-- ❌ Falta migration 061 para adicionar `contratante_id` em `lotes_avaliacao`
+- ❌ Falta migration 061 para adicionar `tomador_id` em `lotes_avaliacao`
 - ❌ Constraint `funcionarios_clinica_check` não permite `gestor` sem `clinica_id`
 - ❌ Falta enum `perfil` atualizado com `gestor`
 
 ### Testes que Passam
 
-1. ✅ Criar contratante do tipo entidade
-2. ✅ View vw_lotes_por_contratante funcional
-3. ✅ Função current_user_contratante_id() criada
+1. ✅ Criar tomador do tipo entidade
+2. ✅ View vw_lotes_por_tomador funcional
+3. ✅ Função current_user_tomador_id() criada
 4. ✅ gerarDadosGeraisEmpresa com fallback para entidade
 5. ✅ audit_log_with_context() criada
 
 ### Testes que Falharam (Schema Incompatível)
 
 - ❌ Criar funcionário vinculado à entidade (constraint `funcionarios_clinica_check`)
-- ❌ Criar lote sem empresa (falta coluna `contratante_id`)
+- ❌ Criar lote sem empresa (falta coluna `tomador_id`)
 - ❌ RLS visibilidade (dados não foram criados devido a falhas anteriores)
 
 ---
@@ -138,13 +138,13 @@ WHERE table_name = 'laudos' AND constraint_name = 'laudos_lote_id_unique';
 
 O fluxo está **100% funcional** no banco `nr-bps_db`:
 
-1. ✅ **Criação de contratante** tipo entidade (migration 061 aplicada)
-2. ✅ **Criação de funcionários** com `contratante_id` e sem `empresa_id`
-3. ✅ **Criação de lotes** com `contratante_id` e sem `empresa_id`
-4. ✅ **RLS** permite acesso via `gestor` + `contratante_id`
+1. ✅ **Criação de tomador** tipo entidade (migration 061 aplicada)
+2. ✅ **Criação de funcionários** com `tomador_id` e sem `empresa_id`
+3. ✅ **Criação de lotes** com `tomador_id` e sem `empresa_id`
+4. ✅ **RLS** permite acesso via `gestor` + `tomador_id`
 5. ✅ **Geração de laudos** via API `/api/emissor/laudos/[loteId]` com LEFT JOIN
 6. ✅ **Views de observability** mostram métricas de entidades
-7. ✅ **Audit logs** registram `contratante_id` para rastreamento
+7. ✅ **Audit logs** registram `tomador_id` para rastreamento
 
 ---
 
@@ -156,7 +156,7 @@ O fluxo está **100% funcional** no banco `nr-bps_db`:
 2. `database/migrations/064_fix_entidade_perfil_rls.sql` (corrigida)
 3. `database/migrations/065_laudo_idempotency.sql` (nova)
 4. `database/migrations/066_observability_views.sql` (nova, corrigida)
-5. `database/migrations/067_audit_contratante_id.sql` (nova, corrigida)
+5. `database/migrations/067_audit_tomador_id.sql` (nova, corrigida)
 
 ### Scripts
 
@@ -203,14 +203,14 @@ O fluxo está **100% funcional** no banco `nr-bps_db`:
 
 ```sql
 SET app.current_user_perfil = 'gestor';
-SET app.current_user_contratante_id = '56';
-SELECT * FROM lotes_avaliacao WHERE contratante_id = 56;
+SET app.current_user_tomador_id = '56';
+SELECT * FROM lotes_avaliacao WHERE tomador_id = 56;
 ```
 
 **Output**:
 
 ```
- id |   codigo   |     titulo     |  status   | contratante_id
+ id |   codigo   |     titulo     |  status   | tomador_id
 ----+------------+----------------+-----------+----------------
  19 | 003-040126 | tests entidade | concluido |             56
 ```
@@ -218,13 +218,13 @@ SELECT * FROM lotes_avaliacao WHERE contratante_id = 56;
 ### Query View Observability
 
 ```sql
-SELECT * FROM vw_lotes_por_contratante WHERE tipo_contratante = 'entidade';
+SELECT * FROM vw_lotes_por_tomador WHERE tipo_tomador = 'entidade';
 ```
 
 **Output**:
 
 ```
-contratante_id | tipo_contratante | nome_contratante | status    | total_lotes
+tomador_id | tipo_tomador | nome_tomador | status    | total_lotes
 ---------------|------------------|------------------|-----------|-------------
 56             | entidade         | RELEGERE         | concluido | 1
 ```

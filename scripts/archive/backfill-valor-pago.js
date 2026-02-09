@@ -7,7 +7,7 @@ import { query } from '../lib/db.js';
     );
 
     const res = await query(
-      `SELECT cp.id, cp.contratante_id, cp.plano_id, cp.valor_personalizado_por_funcionario, cp.numero_funcionarios_estimado, cp.numero_funcionarios_atual
+      `SELECT cp.id, cp.tomador_id, cp.plano_id, cp.valor_personalizado_por_funcionario, cp.numero_funcionarios_estimado, cp.numero_funcionarios_atual
        FROM contratos_planos cp
        WHERE cp.valor_pago IS NULL`
     );
@@ -22,12 +22,12 @@ import { query } from '../lib/db.js';
 
     for (const r of rows) {
       const cpId = r.id;
-      const contratanteId = r.contratante_id;
+      const tomadorId = r.tomador_id;
 
-      // Obter contratante para fallback de numero_funcionarios_estimado
+      // Obter tomador para fallback de numero_funcionarios_estimado
       const ct = await query(
-        'SELECT numero_funcionarios_estimado FROM contratantes WHERE id = $1',
-        [contratanteId]
+        'SELECT numero_funcionarios_estimado FROM tomadors WHERE id = $1',
+        [tomadorId]
       );
       const ctNum = ct.rows[0]?.numero_funcionarios_estimado ?? null;
 

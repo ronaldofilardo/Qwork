@@ -98,7 +98,7 @@ export async function GET() {
           p.numero_parcelas,
           p.detalhes_parcelas
         FROM pagamentos p
-        WHERE p.contratante_id = $1
+        WHERE p.tomador_id = $1
         ORDER BY p.data_solicitacao DESC
         LIMIT 10
       `;

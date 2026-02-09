@@ -21,7 +21,7 @@ describe('NovoscadastrosContent - Aprovação Condicional', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        contratantes: [
+        tomadores: [
           {
             id: 1,
             nome: 'Teste Entidade',
@@ -46,7 +46,7 @@ describe('NovoscadastrosContent - Aprovação Condicional', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        contratantes: [
+        tomadores: [
           {
             id: 2,
             nome: 'Teste Entidade 2',
@@ -71,7 +71,7 @@ describe('NovoscadastrosContent - Aprovação Condicional', () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        contratantes: [
+        tomadores: [
           {
             id: 3,
             nome: 'Teste Entidade 3',
@@ -94,52 +94,52 @@ describe('NovoscadastrosContent - Aprovação Condicional', () => {
 
   it('deve calcular requer_aprovacao_manual corretamente no backend', async () => {
     // Simular query SQL do handler
-    const contratante = {
+    const tomador = {
       id: 1,
       pagamento_confirmado: true,
       contrato_aceito: true,
     };
 
     const requer_aprovacao_manual = !(
-      contratante.pagamento_confirmado && contratante.contrato_aceito
+      tomador.pagamento_confirmado && tomador.contrato_aceito
     );
 
     expect(requer_aprovacao_manual).toBe(false);
   });
 
   it('deve exigir aprovação manual quando pagamento não confirmado', async () => {
-    const contratante = {
+    const tomador = {
       id: 2,
       pagamento_confirmado: false,
       contrato_aceito: true,
     };
 
     const requer_aprovacao_manual = !(
-      contratante.pagamento_confirmado && contratante.contrato_aceito
+      tomador.pagamento_confirmado && tomador.contrato_aceito
     );
 
     expect(requer_aprovacao_manual).toBe(true);
   });
 
   it('deve exigir aprovação manual quando contrato não aceito', async () => {
-    const contratante = {
+    const tomador = {
       id: 3,
       pagamento_confirmado: true,
       contrato_aceito: false,
     };
 
     const requer_aprovacao_manual = !(
-      contratante.pagamento_confirmado && contratante.contrato_aceito
+      tomador.pagamento_confirmado && tomador.contrato_aceito
     );
 
     expect(requer_aprovacao_manual).toBe(true);
   });
 
-  it('deve renderizar status "Pagamento Confirmado" para contratantes pagos', async () => {
+  it('deve renderizar status "Pagamento Confirmado" para tomadores pagos', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
-        contratantes: [
+        tomadores: [
           {
             id: 4,
             nome: 'Teste Pago',
@@ -167,11 +167,11 @@ describe('Handlers API - Coluna requer_aprovacao_manual', () => {
       SELECT c.*,
         CASE 
           WHEN c.pagamento_confirmado = true 
-            AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.contratante_id = c.id AND ct.aceito = true)
+            AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.tomador_id = c.id AND ct.aceito = true)
           THEN false 
           ELSE true 
         END AS requer_aprovacao_manual
-      FROM contratantes c
+      FROM tomadores c
       WHERE c.status = 'pendente'
     `;
 

@@ -15,7 +15,7 @@ DECLARE
 BEGIN
     -- Buscar dados do contratante
     SELECT * INTO v_contratante 
-    FROM contratantes 
+    FROM tomadores 
     WHERE id = p_contratante_id;
     
     IF NOT FOUND THEN

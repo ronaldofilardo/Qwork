@@ -38,7 +38,7 @@ BEGIN
       WHERE anomalias.funcionario_cpf = p_funcionario_cpf AND anomalias.severidade = 'CRITICA'
     ) INTO v_tem_anomalia_critica;
   ELSE
-    -- Para contratantes ainda nao aplicamos detecção de anomalias; não bloquear por anomalia
+    -- Para tomadores ainda nao aplicamos detecção de anomalias; não bloquear por anomalia
     v_tem_anomalia_critica := false;
   END IF;
 

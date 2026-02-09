@@ -12,11 +12,11 @@ jest.mock('@/lib/db', () => ({
 
 // Mock da sessão
 jest.mock('@/lib/session', () => ({
-  getSession: jest.fn(),
+  requireEntity: jest.fn(),
 }));
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockGetSession = require('@/lib/session').getSession;
+const mockRequireEntity = require('@/lib/session').requireEntity;
 
 describe('/api/entidade/lotes', () => {
   beforeEach(() => {
@@ -25,9 +25,9 @@ describe('/api/entidade/lotes', () => {
 
   it('deve retornar lista de lotes com sucesso', async () => {
     // Mock da sessão
-    mockGetSession.mockReturnValue({
+    mockRequireEntity.mockResolvedValueOnce({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     // Mock da consulta principal (lotes)
@@ -41,6 +41,7 @@ describe('/api/entidade/lotes', () => {
           criado_em: '2025-11-29T10:00:00Z',
           liberado_em: '2025-12-01T10:00:00Z',
           liberado_por_nome: 'João Silva',
+          empresa_nome: 'Empresa Teste',
           total_avaliacoes: 5,
           avaliacoes_concluidas: 3,
           avaliacoes_inativadas: 0,
@@ -62,37 +63,27 @@ describe('/api/entidade/lotes', () => {
 
     expect(response.status).toBe(200);
     expect(data.lotes).toHaveLength(1);
-    // codigo removido
+    expect(data.lotes[0].empresa_nome).toBe('Empresa Teste');
     expect(data.lotes[0].total_avaliacoes).toBe(5);
     expect(data.lotes[0].avaliacoes_concluidas).toBe(3);
   });
 
-  it('deve retornar erro 401 quando não há sessão', async () => {
-    mockGetSession.mockReturnValue(null);
+  it('deve retornar erro quando requireEntity lança exceção', async () => {
+    mockRequireEntity.mockRejectedValueOnce(
+      new Error('Entidade não encontrada')
+    );
 
     const response = await GET();
     const data = await response.json();
 
-    expect(response.status).toBe(401);
-    expect(data.error).toBe('Não autorizado');
-  });
-
-  it('deve retornar erro 403 quando perfil incorreto', async () => {
-    mockGetSession.mockReturnValue({
-      perfil: 'funcionario',
-    });
-
-    const response = await GET();
-    const data = await response.json();
-
-    expect(response.status).toBe(403);
-    expect(data.error).toBe('Acesso negado');
+    expect(response.status).toBe(500);
+    expect(data.error).toBeDefined();
   });
 
   it('deve retornar erro 500 quando ocorre erro na consulta', async () => {
-    mockGetSession.mockReturnValue({
+    mockRequireEntity.mockResolvedValueOnce({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     mockQuery.mockRejectedValueOnce(new Error('Erro de banco'));
@@ -101,13 +92,13 @@ describe('/api/entidade/lotes', () => {
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data.error).toBe('Erro interno do servidor');
+    expect(data.error).toBe('Erro ao buscar lotes');
   });
 
   it('deve aceitar retorno da função validar_lote_para_laudo com campo pode_emitir_laudo', async () => {
-    mockGetSession.mockReturnValue({
+    mockRequireEntity.mockResolvedValueOnce({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     // Primeiro SELECT (lotes)
@@ -121,6 +112,7 @@ describe('/api/entidade/lotes', () => {
           criado_em: '2025-11-29T10:00:00Z',
           liberado_em: '2025-12-01T10:00:00Z',
           liberado_por_nome: 'João Silva',
+          empresa_nome: 'Empresa Teste',
           total_avaliacoes: 5,
           avaliacoes_concluidas: 5,
           avaliacoes_inativadas: 0,
@@ -156,9 +148,9 @@ describe('/api/entidade/lotes', () => {
   });
 
   it('deve aceitar retorno da função validar_lote_para_laudo com campo pode_emitir', async () => {
-    mockGetSession.mockReturnValue({
+    mockRequireEntity.mockResolvedValueOnce({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     // Primeiro SELECT (lotes)
@@ -172,6 +164,7 @@ describe('/api/entidade/lotes', () => {
           criado_em: '2025-11-29T10:00:00Z',
           liberado_em: '2025-12-01T10:00:00Z',
           liberado_por_nome: 'João Silva',
+          empresa_nome: 'Empresa Teste 2',
           total_avaliacoes: 5,
           avaliacoes_concluidas: 5,
           avaliacoes_inativadas: 0,
@@ -207,9 +200,9 @@ describe('/api/entidade/lotes', () => {
   });
 
   it('deve usar a view v_fila_emissao na query de lotes da entidade', async () => {
-    mockGetSession.mockReturnValue({
+    mockRequireEntity.mockResolvedValueOnce({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     mockQuery.mockResolvedValueOnce({
@@ -222,6 +215,7 @@ describe('/api/entidade/lotes', () => {
           criado_em: '2025-11-29T10:00:00Z',
           liberado_em: '2025-12-01T10:00:00Z',
           liberado_por_nome: 'João Silva',
+          empresa_nome: 'Empresa Teste',
           total_avaliacoes: 5,
           avaliacoes_concluidas: 3,
           avaliacoes_inativadas: 0,

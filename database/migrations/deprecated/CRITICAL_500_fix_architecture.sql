@@ -6,9 +6,9 @@
 -- OBJETIVO: Implementar a arquitetura correta conforme especificação:
 --
 -- ARQUITETURA CORRETA:
--- 1. contratantes (tipo: 'clinica' ou 'entidade')
+-- 1. tomadores (tipo: 'clinica' ou 'entidade')
 -- 2. clinicas (com clinicas_senhas separada)
--- 3. entidades (conceitual, usar contratantes com tipo='entidade')
+-- 3. entidades (conceitual, usar tomadores com tipo='entidade')
 -- 4. entidades_senhas (senhas de gestores de entidade)
 -- 5. clinicas_senhas (senhas de RH de clínica)
 -- 6. funcionarios SEM colunas clinica_id, empresa_id, contratante_id
@@ -34,7 +34,7 @@ BEGIN;
 -- 1.1 Criar entidades_senhas (para gestores de entidade)
 CREATE TABLE IF NOT EXISTS entidades_senhas (
     id SERIAL PRIMARY KEY,
-    contratante_id INTEGER NOT NULL REFERENCES contratantes(id) ON DELETE CASCADE,
+    contratante_id INTEGER NOT NULL REFERENCES tomadores(id) ON DELETE CASCADE,
     cpf VARCHAR(11) NOT NULL,
     senha_hash TEXT NOT NULL,
     primeira_senha_alterada BOOLEAN DEFAULT false,
@@ -51,7 +51,7 @@ CREATE INDEX IF NOT EXISTS idx_entidades_senhas_contratante ON entidades_senhas(
 CREATE OR REPLACE FUNCTION validate_entidade_tipo()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM contratantes WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
+    IF NOT EXISTS (SELECT 1 FROM tomadores WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
         RAISE EXCEPTION 'contratante_id % não é do tipo entidade', NEW.contratante_id;
     END IF;
     RETURN NEW;
@@ -84,17 +84,17 @@ CREATE INDEX IF NOT EXISTS idx_clinicas_senhas_clinica ON clinicas_senhas(clinic
 \echo '✓ Tabela clinicas_senhas criada'
 
 -- ====================================================================
--- PARTE 2: MIGRAR DADOS DE contratantes_senhas
+-- PARTE 2: MIGRAR DADOS DE tomadores_senhas
 -- ====================================================================
 
 \echo ''
-\echo 'PARTE 2: Migrando dados de contratantes_senhas...'
+\echo 'PARTE 2: Migrando dados de tomadores_senhas...'
 
 -- 2.1 Migrar senhas de ENTIDADES
 INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash, primeira_senha_alterada, criado_em, atualizado_em)
 SELECT cs.contratante_id, cs.cpf, cs.senha_hash, cs.primeira_senha_alterada, cs.criado_em, cs.atualizado_em
-FROM contratantes_senhas cs
-JOIN contratantes c ON c.id = cs.contratante_id
+FROM tomadores_senhas cs
+JOIN tomadores c ON c.id = cs.contratante_id
 WHERE c.tipo = 'entidade'
 ON CONFLICT (cpf, contratante_id) DO NOTHING;
 
@@ -103,8 +103,8 @@ ON CONFLICT (cpf, contratante_id) DO NOTHING;
 -- 2.2 Migrar senhas de CLÍNICAS (RH)
 INSERT INTO clinicas_senhas (clinica_id, cpf, senha_hash, primeira_senha_alterada, criado_em, atualizado_em)
 SELECT cl.id, cs.cpf, cs.senha_hash, cs.primeira_senha_alterada, cs.criado_em, cs.atualizado_em
-FROM contratantes_senhas cs
-JOIN contratantes c ON c.id = cs.contratante_id
+FROM tomadores_senhas cs
+JOIN tomadores c ON c.id = cs.contratante_id
 JOIN clinicas cl ON cl.contratante_id = c.id
 WHERE c.tipo = 'clinica'
 ON CONFLICT (cpf, clinica_id) DO NOTHING;
@@ -122,7 +122,7 @@ ON CONFLICT (cpf, clinica_id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS funcionarios_entidades (
     id SERIAL PRIMARY KEY,
     funcionario_id INTEGER NOT NULL REFERENCES funcionarios(id) ON DELETE CASCADE,
-    contratante_id INTEGER NOT NULL REFERENCES contratantes(id) ON DELETE CASCADE,
+    contratante_id INTEGER NOT NULL REFERENCES tomadores(id) ON DELETE CASCADE,
     ativo BOOLEAN DEFAULT true,
     data_vinculo TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     data_desvinculo TIMESTAMP,
@@ -138,7 +138,7 @@ CREATE INDEX IF NOT EXISTS idx_func_entidades_ativo ON funcionarios_entidades(at
 CREATE OR REPLACE FUNCTION validate_funcionario_entidade_tipo()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NOT EXISTS (SELECT 1 FROM contratantes WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
+    IF NOT EXISTS (SELECT 1 FROM tomadores WHERE id = NEW.contratante_id AND tipo = 'entidade') THEN
         RAISE EXCEPTION 'contratante_id % não é do tipo entidade', NEW.contratante_id;
     END IF;
     RETURN NEW;
@@ -184,7 +184,7 @@ FROM funcionarios f
 WHERE f.contratante_id IS NOT NULL
   AND f.clinica_id IS NULL
   AND f.empresa_id IS NULL
-  AND EXISTS (SELECT 1 FROM contratantes c WHERE c.id = f.contratante_id AND c.tipo = 'entidade')
+  AND EXISTS (SELECT 1 FROM tomadores c WHERE c.id = f.contratante_id AND c.tipo = 'entidade')
 ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;
 
 \echo '✓ Funcionários de entidades migrados'
@@ -299,7 +299,7 @@ COMMENT ON VIEW vw_funcionarios_completo IS 'View helper com todos os vínculos 
 \echo 'PRÓXIMOS PASSOS:'
 \echo '1. Atualizar código para usar entidades_senhas e clinicas_senhas'
 \echo '2. Atualizar queries de funcionarios para usar as novas tabelas de relacionamento'
-\echo '3. Remover referências a contratantes_senhas no código'
+\echo '3. Remover referências a tomadores_senhas no código'
 \echo ''
 
 COMMIT;

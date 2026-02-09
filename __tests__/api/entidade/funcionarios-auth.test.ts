@@ -68,7 +68,7 @@ describe('/api/entidade/funcionarios - acesso por perfil', () => {
 
   it('POST deve criar funcionário quando autorizado e dados válidos', async () => {
     mockRequireEntity.mockResolvedValue({
-      contratante_id: 71,
+      tomador_id: 71,
       cpf: '66840536033',
     });
 
@@ -85,7 +85,7 @@ describe('/api/entidade/funcionarios - acesso por perfil', () => {
             setor: 'RH',
             funcao: 'Assistente',
             data_nascimento: '1990-01-01',
-            contratante_id: 71,
+            tomador_id: 71,
           },
         ],
       });
@@ -116,6 +116,6 @@ describe('/api/entidade/funcionarios - acesso por perfil', () => {
     const insertCallArgs = mockQuery.mock.calls[1];
     expect(insertCallArgs[0]).toMatch(/INSERT INTO funcionarios/);
     expect(insertCallArgs[1][0]).toBe('71188557076');
-    expect(insertCallArgs[1][8]).toBe(71); // contratante_id param
+    expect(insertCallArgs[1][8]).toBe(71); // tomador_id param
   });
 });

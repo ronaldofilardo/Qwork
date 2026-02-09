@@ -57,7 +57,7 @@
       "qualityScore": 50
     },
     {
-      "path": "__tests__\\api\\admin\\contratantes-delete-and-get-personalizado.test.ts",
+      "path": "__tests__\\api\\admin\\tomadores-delete-and-get-personalizado.test.ts",
       "hasJSDoc": false,
       "hasTypeImports": false,
       "hasBeforeEach": false,
@@ -69,7 +69,7 @@
       "qualityScore": 50
     },
     {
-      "path": "__tests__\\api\\admin\\contratantes-put.test.ts",
+      "path": "__tests__\\api\\admin\\tomadores-put.test.ts",
       "hasJSDoc": false,
       "hasTypeImports": false,
       "hasBeforeEach": false,
@@ -1089,7 +1089,7 @@
       "qualityScore": 65
     },
     {
-      "path": "__tests__\\api\\admin\\contratantes-delete.test.ts",
+      "path": "__tests__\\api\\admin\\tomadores-delete.test.ts",
       "hasJSDoc": false,
       "hasTypeImports": false,
       "hasBeforeEach": true,
@@ -1101,7 +1101,7 @@
       "qualityScore": 65
     },
     {
-      "path": "__tests__\\api\\admin\\contratantes.test.ts",
+      "path": "__tests__\\api\\admin\\tomadores.test.ts",
       "hasJSDoc": false,
       "hasTypeImports": false,
       "hasBeforeEach": true,
@@ -4041,7 +4041,7 @@
       "qualityScore": 70
     },
     {
-      "path": "__tests__\\separacao-novos-cadastros-vs-contratantes.test.ts",
+      "path": "__tests__\\separacao-novos-cadastros-vs-tomadores.test.ts",
       "hasJSDoc": true,
       "hasTypeImports": false,
       "hasBeforeEach": false,
@@ -4209,7 +4209,7 @@
       "qualityScore": 85
     },
     {
-      "path": "__tests__\\api\\admin\\contratantes-delete-protection.test.ts",
+      "path": "__tests__\\api\\admin\\tomadores-delete-protection.test.ts",
       "hasJSDoc": true,
       "hasTypeImports": false,
       "hasBeforeEach": true,
@@ -4977,7 +4977,7 @@
       "qualityScore": 85
     },
     {
-      "path": "__tests__\\database\\state-machine-contratantes.test.ts",
+      "path": "__tests__\\database\\state-machine-tomadores.test.ts",
       "hasJSDoc": true,
       "hasTypeImports": false,
       "hasBeforeEach": true,
@@ -5289,7 +5289,7 @@
       "qualityScore": 85
     },
     {
-      "path": "__tests__\\lib\\get-contratantes-pendentes.test.ts",
+      "path": "__tests__\\lib\\get-tomadores-pendentes.test.ts",
       "hasJSDoc": true,
       "hasTypeImports": false,
       "hasBeforeEach": true,

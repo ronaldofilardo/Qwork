@@ -42,9 +42,9 @@ export async function validarLoteParaLaudo(
       l.id,
       l.status,
       COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_avaliacoes,
-      COUNT(a.id) FILTER (WHERE a.status = 'concluido') as avaliacoes_concluidas,
+      COUNT(a.id) FILTER (WHERE a.status = 'concluida') as avaliacoes_concluidas,
       COUNT(a.id) FILTER (WHERE a.status = 'inativada') as avaliacoes_inativadas,
-      COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento', 'concluido')) as avaliacoes_ativas
+      COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento', 'concluida')) as avaliacoes_ativas
     FROM lotes_avaliacao l
     LEFT JOIN avaliacoes a ON l.id = a.lote_id
     WHERE l.id = $1
@@ -130,13 +130,13 @@ export async function validarLoteParaLaudo(
             SELECT DISTINCT item 
             FROM respostas r2
             JOIN avaliacoes a2 ON r2.avaliacao_id = a2.id
-            WHERE r2.grupo = g AND a2.status = 'concluido' AND a2.lote_id = $1
+            WHERE r2.grupo = g AND a2.status = 'concluida' AND a2.lote_id = $1
           ) items
         ) as total_questoes_necessarias
       FROM respostas r
       JOIN avaliacoes a ON r.avaliacao_id = a.id
       WHERE a.lote_id = $1
-        AND a.status = 'concluido'
+        AND a.status = 'concluida'
         AND r.grupo IN (1, 2, 3, 4, 5, 6, 7, 8)
     `,
       [loteId]

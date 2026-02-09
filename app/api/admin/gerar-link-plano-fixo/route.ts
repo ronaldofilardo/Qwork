@@ -8,17 +8,17 @@ import { getBaseUrl } from '@/lib/utils/get-base-url';
  * POST /api/admin/gerar-link-plano-fixo
  *
  * Gera link de pagamento direto para planos fixos e personalizados
- * Permite regenerar links de pagamento para contratantes aguardando pagamento
+ * Permite regenerar links de pagamento para tomadors aguardando pagamento
  *
  * Requisitos:
  * - Sessão de admin válida
- * - Contratante com status 'aguardando_pagamento'
- * - Contratante com plano_id associado (fixo ou personalizado)
+ * - tomador com status 'aguardando_pagamento'
+ * - tomador com plano_id associado (fixo ou personalizado)
  * - Para planos fixos: numero_funcionarios_estimado no cadastro
  * - Para planos personalizados: contrato com valor_total definido
  *
  * Body:
- * - contratante_id: ID do contratante
+ * - tomador_id: ID do tomador
  *
  * Retorna:
  * - payment_link: URL completa do simulador com parâmetros diretos
@@ -37,12 +37,12 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { contratante_id } = body;
+    const { tomador_id } = body;
 
     // Validação de entrada
-    if (!contratante_id) {
+    if (!tomador_id) {
       return NextResponse.json(
-        { error: 'contratante_id é obrigatório' },
+        { error: 'tomador_id é obrigatório' },
         { status: 400 }
       );
     }
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     let transactionStarted = false;
 
     try {
-      // Buscar dados completos do contratante
-      const contratanteResult = await query(
+      // Buscar dados completos do tomador
+      const tomadorResult = await query(
         `SELECT 
           c.id,
           c.nome,
@@ -67,78 +67,78 @@ export async function POST(request: NextRequest) {
           p.tipo AS plano_tipo,
           p.preco AS plano_preco,
           p.caracteristicas AS plano_caracteristicas
-        FROM contratantes c
+        FROM tomadors c
         LEFT JOIN planos p ON c.plano_id = p.id
         WHERE c.id = $1`,
-        [contratante_id]
+        [tomador_id]
       );
 
-      if (contratanteResult.rows.length === 0) {
-        console.warn('[ADMIN] contratante not found for id', contratante_id);
+      if (tomadorResult.rows.length === 0) {
+        console.warn('[ADMIN] tomador not found for id', tomador_id);
         // Não iniciamos transação antes da busca; nada a dar rollback aqui
         return NextResponse.json(
-          { error: 'Contratante não encontrado' },
+          { error: 'tomador não encontrado' },
           { status: 404 }
         );
       }
 
-      const contratante = contratanteResult.rows[0];
-      console.log('[ADMIN] contratante loaded', {
-        contratante_id,
-        contratante,
+      const tomador = tomadorResult.rows[0];
+      console.log('[ADMIN] tomador loaded', {
+        tomador_id,
+        tomador,
       });
 
-      // Iniciar transação somente após confirmar que o contratante existe
+      // Iniciar transação somente após confirmar que o tomador existe
       await query('BEGIN');
       transactionStarted = true;
 
       // Validações de estado
       // Preferir mensagem de 'já está ativo' quando ambos flags estão setados
-      if (contratante.ativa) {
+      if (tomador.ativa) {
         console.warn(
-          '[ADMIN] contratante ativa true for id',
-          contratante_id,
-          contratante
+          '[ADMIN] tomador ativa true for id',
+          tomador_id,
+          tomador
         );
         if (transactionStarted) await query('ROLLBACK');
         return NextResponse.json(
           {
-            error: 'Contratante já está ativo. Não é necessário reenviar link.',
-            contratante_status: contratante.status,
+            error: 'tomador já está ativo. Não é necessário reenviar link.',
+            tomador_status: tomador.status,
           },
           { status: 400 }
         );
       }
 
-      if (contratante.pagamento_confirmado) {
+      if (tomador.pagamento_confirmado) {
         console.warn(
-          '[ADMIN] pagamento_confirmado true for contratante',
-          contratante_id,
-          contratante
+          '[ADMIN] pagamento_confirmado true for tomador',
+          tomador_id,
+          tomador
         );
         if (transactionStarted) await query('ROLLBACK');
         return NextResponse.json(
           {
             error:
-              'Contratante já tem pagamento confirmado. Não é necessário reenviar link.',
-            contratante_status: contratante.status,
+              'tomador já tem pagamento confirmado. Não é necessário reenviar link.',
+            tomador_status: tomador.status,
           },
           { status: 400 }
         );
       }
 
       // Validar que tem plano associado
-      if (!contratante.plano_id) {
+      if (!tomador.plano_id) {
         console.warn(
-          '[ADMIN] contratante missing plano_id',
-          contratante_id,
-          contratante
+          '[ADMIN] tomador missing plano_id',
+          tomador_id,
+          tomador
         );
         if (transactionStarted) await query('ROLLBACK');
         return NextResponse.json(
           {
             error:
-              'Contratante não possui plano associado. Configure o plano antes de gerar link.',
+              'tomador não possui plano associado. Configure o plano antes de gerar link.',
           },
           { status: 400 }
         );
@@ -148,48 +148,48 @@ export async function POST(request: NextRequest) {
       let valorTotal: number;
       let precoPorFuncionario: number;
 
-      if (contratante.plano_tipo === 'fixo') {
+      if (tomador.plano_tipo === 'fixo') {
         console.log('[ADMIN] branch=fixed plan');
         // Validar número de funcionários para plano fixo
         if (
-          !contratante.numero_funcionarios_estimado ||
-          contratante.numero_funcionarios_estimado <= 0
+          !tomador.numero_funcionarios_estimado ||
+          tomador.numero_funcionarios_estimado <= 0
         ) {
           console.warn(
             '[ADMIN] numero_funcionarios_estimado invalid',
-            contratante_id,
-            contratante.numero_funcionarios_estimado
+            tomador_id,
+            tomador.numero_funcionarios_estimado
           );
           if (transactionStarted) await query('ROLLBACK');
           return NextResponse.json(
             {
               error:
-                'Número de funcionários não foi informado no cadastro. Atualize os dados do contratante antes de gerar link.',
+                'Número de funcionários não foi informado no cadastro. Atualize os dados do tomador antes de gerar link.',
             },
             { status: 400 }
           );
         }
 
-        numeroFuncionarios = parseInt(contratante.numero_funcionarios_estimado);
-        precoPorFuncionario = parseFloat(contratante.plano_preco);
+        numeroFuncionarios = parseInt(tomador.numero_funcionarios_estimado);
+        precoPorFuncionario = parseFloat(tomador.plano_preco);
 
         // Validar limite do plano (se houver)
         const limiteCaracteristicas =
-          contratante.plano_caracteristicas?.limite_funcionarios;
+          tomador.plano_caracteristicas?.limite_funcionarios;
         const limitePlano = limiteCaracteristicas
           ? parseInt(limiteCaracteristicas)
           : null;
 
         if (limitePlano && numeroFuncionarios > limitePlano) {
           console.warn('[ADMIN] numeroFuncionarios exceeds limit', {
-            contratante_id,
+            tomador_id,
             numeroFuncionarios,
             limitePlano,
           });
           if (transactionStarted) await query('ROLLBACK');
           return NextResponse.json(
             {
-              error: `Número de funcionários (${numeroFuncionarios}) excede o limite do plano ${contratante.plano_nome} (${limitePlano}).`,
+              error: `Número de funcionários (${numeroFuncionarios}) excede o limite do plano ${tomador.plano_nome} (${limitePlano}).`,
               numero_funcionarios: numeroFuncionarios,
               limite_plano: limitePlano,
             },
@@ -199,24 +199,24 @@ export async function POST(request: NextRequest) {
 
         // Calcular valor total para plano fixo
         valorTotal = precoPorFuncionario * numeroFuncionarios;
-      } else if (contratante.plano_tipo === 'personalizado') {
+      } else if (tomador.plano_tipo === 'personalizado') {
         console.log('[ADMIN] branch=personalized plan');
         console.log('[ADMIN] personalized: calling contratoResult', {
-          contratante_id,
-          plano_id: contratante.plano_id,
+          tomador_id,
+          plano_id: tomador.plano_id,
         });
         // Para plano personalizado, buscar valor do contrato
         const contratoResult = await query(
           `SELECT numero_funcionarios, valor_total FROM contratos
-           WHERE contratante_id = $1 AND plano_id = $2
+           WHERE tomador_id = $1 AND plano_id = $2
            ORDER BY criado_em DESC LIMIT 1`,
-          [contratante_id, contratante.plano_id]
+          [tomador_id, tomador.plano_id]
         );
 
         if (contratoResult.rows.length === 0) {
           console.warn(
-            '[ADMIN] contrato not found for contratante',
-            contratante_id
+            '[ADMIN] contrato not found for tomador',
+            tomador_id
           );
           if (transactionStarted) await query('ROLLBACK');
           return NextResponse.json(
@@ -237,8 +237,8 @@ export async function POST(request: NextRequest) {
         await query('ROLLBACK');
         return NextResponse.json(
           {
-            error: `Tipo de plano "${contratante.plano_tipo}" não suportado para geração de link.`,
-            plano_tipo: contratante.plano_tipo,
+            error: `Tipo de plano "${tomador.plano_tipo}" não suportado para geração de link.`,
+            plano_tipo: tomador.plano_tipo,
           },
           { status: 400 }
         );
@@ -248,10 +248,10 @@ export async function POST(request: NextRequest) {
       let contratoId = null;
       const contratoExistenteResult = await query(
         `SELECT id FROM contratos 
-         WHERE contratante_id = $1 
+         WHERE tomador_id = $1 
          ORDER BY criado_em DESC 
          LIMIT 1`,
-        [contratante_id]
+        [tomador_id]
       );
 
       console.log('[ADMIN] contratoExistenteResult', {
@@ -268,17 +268,17 @@ export async function POST(request: NextRequest) {
                valor_total = $4,
                status = 'aguardando_pagamento'
            WHERE id = $1`,
-          [contratoId, contratante.plano_id, numeroFuncionarios, valorTotal]
+          [contratoId, tomador.plano_id, numeroFuncionarios, valorTotal]
         );
       } else {
         // Criar novo contrato
-        const contratoConteudo = `Contrato de Serviço - ${contratante.plano_nome}
+        const contratoConteudo = `Contrato de Serviço - ${tomador.plano_nome}
 
-Contratante: ${contratante.nome}
-CNPJ: ${contratante.cnpj}
-Responsável: ${contratante.responsavel_nome}
+tomador: ${tomador.nome}
+CNPJ: ${tomador.cnpj}
+Responsável: ${tomador.responsavel_nome}
 
-Plano: ${contratante.plano_nome}
+Plano: ${tomador.plano_nome}
 Número de Funcionários: ${numeroFuncionarios}
 Valor por Funcionário: R$ ${precoPorFuncionario.toFixed(2)}
 Valor Total: R$ ${valorTotal.toFixed(2)}
@@ -287,7 +287,7 @@ Status: Aguardando Pagamento`;
 
         const novoContratoResult = await query(
           `INSERT INTO contratos (
-            contratante_id,
+            tomador_id,
             plano_id,
             numero_funcionarios,
             valor_total,
@@ -297,8 +297,8 @@ Status: Aguardando Pagamento`;
           ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento', $5, $5)
           RETURNING id`,
           [
-            contratante_id,
-            contratante.plano_id,
+            tomador_id,
+            tomador.plano_id,
             numeroFuncionarios,
             valorTotal,
             contratoConteudo,
@@ -309,25 +309,25 @@ Status: Aguardando Pagamento`;
         contratoId = novoContratoResult.rows[0].id;
       }
 
-      // Atualizar status do contratante
+      // Atualizar status do tomador
       await query(
-        `UPDATE contratantes 
+        `UPDATE tomadors 
          SET status = 'aguardando_pagamento',
              ativa = false,
              pagamento_confirmado = false
          WHERE id = $1`,
-        [contratante_id]
+        [tomador_id]
       );
 
       // Registrar auditoria
       await logAudit({
-        resource: 'contratantes',
+        resource: 'tomadors',
         action: 'GENERATE_PAYMENT_LINK',
-        resourceId: contratante_id,
+        resourceId: tomador_id,
         details: JSON.stringify({
-          tipo_plano: contratante.plano_tipo,
-          plano_id: contratante.plano_id,
-          plano_nome: contratante.plano_nome,
+          tipo_plano: tomador.plano_tipo,
+          plano_id: tomador.plano_id,
+          plano_nome: tomador.plano_nome,
           numero_funcionarios: numeroFuncionarios,
           valor_total: valorTotal,
           contrato_id: contratoId,
@@ -339,16 +339,16 @@ Status: Aguardando Pagamento`;
 
       // Construir URL do link de pagamento (sem token)
       const baseUrl = getBaseUrl();
-      const paymentLink = `${baseUrl}/pagamento/simulador?contratante_id=${contratante_id}&plano_id=${contratante.plano_id}&numero_funcionarios=${numeroFuncionarios}&contrato_id=${contratoId}&retry=true`;
+      const paymentLink = `${baseUrl}/pagamento/simulador?tomador_id=${tomador_id}&plano_id=${tomador.plano_id}&numero_funcionarios=${numeroFuncionarios}&contrato_id=${contratoId}&retry=true`;
 
       // Log estruturado
       console.info(
         JSON.stringify({
-          event: `payment_link_generated_${contratante.plano_tipo}`,
-          contratante_id,
-          contratante_nome: contratante.nome,
-          plano_id: contratante.plano_id,
-          plano_nome: contratante.plano_nome,
+          event: `payment_link_generated_${tomador.plano_tipo}`,
+          tomador_id,
+          tomador_nome: tomador.nome,
+          plano_id: tomador.plano_id,
+          plano_nome: tomador.plano_nome,
           numero_funcionarios: numeroFuncionarios,
           valor_total: valorTotal,
           generated_by: session.cpf,
@@ -363,18 +363,18 @@ Status: Aguardando Pagamento`;
           payment_link: paymentLink,
           contrato_id: contratoId,
           payment_info: {
-            plano_nome: contratante.plano_nome,
-            plano_tipo: contratante.plano_tipo,
+            plano_nome: tomador.plano_nome,
+            plano_tipo: tomador.plano_tipo,
             numero_funcionarios: numeroFuncionarios,
             valor_por_funcionario: precoPorFuncionario,
             valor_total: valorTotal,
           },
-          contratante_info: {
-            id: contratante_id,
-            nome: contratante.nome,
-            cnpj: contratante.cnpj,
-            responsavel_nome: contratante.responsavel_nome,
-            responsavel_email: contratante.responsavel_email,
+          tomador_info: {
+            id: tomador_id,
+            nome: tomador.nome,
+            cnpj: tomador.cnpj,
+            responsavel_nome: tomador.responsavel_nome,
+            responsavel_email: tomador.responsavel_email,
           },
         },
       });

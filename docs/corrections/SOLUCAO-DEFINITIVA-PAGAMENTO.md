@@ -42,7 +42,7 @@ Simulação → /processar (direto) → Acesso Liberado ❌
 2. POST /api/pagamento/confirmar
    ├─ Valida que pagamento existe e está pendente
    ├─ Atualiza para status='pago'
-   ├─ Atualiza contratante: status='aprovado', ativa=true, pagamento_confirmado=true
+   ├─ Atualiza tomador: status='aprovado', ativa=true, pagamento_confirmado=true
    ├─ Cria recibo
    └─ Libera acesso
 ```
@@ -52,7 +52,7 @@ Simulação → /processar (direto) → Acesso Liberado ❌
 ✅ Login **SEMPRE** valida:
 
 ```typescript
-if (contratante.ativa && contratante.pagamento_confirmado) {
+if (tomador.ativa && tomador.pagamento_confirmado) {
   // Login permitido ✅
 } else {
   // 403 - PAGAMENTO_PENDENTE ❌
@@ -86,16 +86,16 @@ Se houver **qualquer problema**:
    ```
    POST /api/admin/gerar-link-retomada
    {
-     "contratante_id": 123,
+     "tomador_id": 123,
      "contrato_id": 456
    }
    └─ Retorna link único válido por 72h
    ```
 
-3. **Contratante acessa link**
+3. **tomador acessa link**
 
    ```
-   GET /pagamento/simulador?contratante_id=123&contrato_id=456...
+   GET /pagamento/simulador?tomador_id=123&contrato_id=456...
    └─ Valida token e permite continuar pagamento
    ```
 
@@ -161,7 +161,7 @@ Se houver **qualquer problema**:
 │ NOTIFICAÇÃO ADMIN AUTOMÁTICA         │
 │ + Permanece bloqueado                │
 │ + Admin gera link de retomada        │
-│ + Contratante pode completar         │
+│ + tomador pode completar         │
 └──────────────────────────────────────┘
 ```
 
@@ -175,7 +175,7 @@ Se houver **qualquer problema**:
 POST /api/pagamento/processar
 {
   "contrato_id": 123,
-  "contratante_id": 456,
+  "tomador_id": 456,
   "valor_total": 300
 }
 ```
@@ -256,7 +256,7 @@ const initRes = await fetch('/api/pagamento/iniciar', {
   method: 'POST',
   body: JSON.stringify({
     contrato_id,
-    contratante_id,
+    tomador_id,
   })
 });
 const { pagamento_id } = await initRes.json();
@@ -281,7 +281,7 @@ cd c:\apps\QWork\scripts\database
 
 ### 3. **Testar Completamente**
 
-- [ ] Cadastro novo contratante
+- [ ] Cadastro novo tomador
 - [ ] Simular valores
 - [ ] Iniciar pagamento
 - [ ] Tentar login (deve bloquear)

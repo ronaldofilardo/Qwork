@@ -7,12 +7,12 @@ const { Client } = require('pg');
   try {
     await client.connect();
     const r = await client.query(
-      'SELECT COUNT(*) as orphans FROM funcionarios f LEFT JOIN contratantes c ON f.contratante_id = c.id WHERE f.contratante_id IS NOT NULL AND c.id IS NULL'
+      'SELECT COUNT(*) as orphans FROM funcionarios f LEFT JOIN tomadores c ON f.contratante_id = c.id WHERE f.contratante_id IS NOT NULL AND c.id IS NULL'
     );
     console.log('funcionarios orphans:', r.rows[0].orphans);
 
     const r2 = await client.query(
-      'SELECT COUNT(*) as orphans FROM lotes_avaliacao l LEFT JOIN contratantes c ON l.contratante_id = c.id WHERE l.contratante_id IS NOT NULL AND c.id IS NULL'
+      'SELECT COUNT(*) as orphans FROM lotes_avaliacao l LEFT JOIN tomadores c ON l.contratante_id = c.id WHERE l.contratante_id IS NOT NULL AND c.id IS NULL'
     );
     console.log('lotes orphans:', r2.rows[0].orphans);
 

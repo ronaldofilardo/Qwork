@@ -5,19 +5,37 @@ import { requireEntity } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
+/**
+ * GET /api/entidade/lotes
+ *
+ * Retorna lista de lotes da entidade (arquitetura segregada)
+ *
+ * Arquitetura (conforme diagrama TOMADOR):
+ * - ENTIDADE -> Funcionários -> Avaliações -> Lote
+ * - Schema: lotes_avaliacao.entidade_id referencia entidades(id)
+ * - Constraint: lote tem clinica_id OU entidade_id (mutuamente exclusivos)
+ * - Filtro direto: WHERE la.entidade_id = entidade_id
+ *
+ * Alinhado com API de Clínica: filtro simples na tabela de lotes.
+ *
+ * @returns {Object} { lotes: Array<Lote> }
+ */
 export async function GET() {
   try {
-    // Verificar sessão e perfil
+    // Verificar sessão e extrair entidade_id do gestor autenticado
     const session = await requireEntity();
 
-    // Buscar lotes associados aos funcionários da entidade ou lotes diretamente da entidade
+    // Buscar lotes associados à entidade via entidade_id
     // Inclui informações de validação e laudos (igual à API da clínica)
     console.log(
-      `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, contratante_id: session.contratante_id })}`
+      `[DEBUG /api/entidade/lotes] session=${JSON.stringify({ perfil: session.perfil, entidade_id: session.entidade_id })}`
     );
 
     let lotesResult;
     try {
+      // Query alinhada com arquitetura de Clínica: filtro direto por entidade_id
+      // Schema define constraint: lote tem clinica_id OU entidade_id (nunca ambos)
+      // Para entidades: WHERE la.entidade_id = entidade_id
       lotesResult = await query(
         `
         SELECT DISTINCT
@@ -27,8 +45,9 @@ export async function GET() {
           la.criado_em,
           la.liberado_em,
           f2.nome as liberado_por_nome,
+          e.nome as empresa_nome,
           COUNT(DISTINCT a.id) as total_avaliacoes,
-          COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
+          COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
           COUNT(DISTINCT CASE WHEN a.status = 'inativada' THEN a.id END) as avaliacoes_inativadas,
           -- Informações de laudo
           l.id as laudo_id,
@@ -42,14 +61,14 @@ export async function GET() {
           fe.solicitado_em,
           fe.tipo_solicitante
         FROM lotes_avaliacao la
-        INNER JOIN avaliacoes a ON a.lote_id = la.id
-        INNER JOIN funcionarios func ON a.funcionario_cpf = func.cpf
+        LEFT JOIN entidades e ON la.entidade_id = e.id
+        LEFT JOIN avaliacoes a ON a.lote_id = la.id
         LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
         LEFT JOIN laudos l ON l.lote_id = la.id
         LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
         LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
-        WHERE func.contratante_id = $1
-        GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome,
+        WHERE la.entidade_id = $1
+        GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome, e.nome,
                  l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
                  fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
         ORDER BY la.criado_em DESC

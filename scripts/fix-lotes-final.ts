@@ -2,9 +2,9 @@
 /**
  * Correção FINAL: Relacionamentos dos lotes (que afetam laudos)
  *
- * - Lote 2 (Laudo 2): clinica_id=7 → contratante_id=35
- * - Lote 3 (Laudo 3): contratante_id=35 → clinica_id=37
- * - Lote 4 (Laudo 4): contratante_id=37 ✅ JÁ CORRETO
+ * - Lote 2 (Laudo 2): clinica_id=7 → tomador_id=35
+ * - Lote 3 (Laudo 3): tomador_id=35 → clinica_id=37
+ * - Lote 4 (Laudo 4): tomador_id=37 ✅ JÁ CORRETO
  */
 
 import { Pool } from 'pg';
@@ -40,14 +40,14 @@ async function main() {
         UPDATE lotes_avaliacao
         SET clinica_id = NULL,
             empresa_id = NULL,
-            contratante_id = 35,
+            tomador_id = 35,
             descricao = 'Lote 1 liberado para rlgr (entidade 35). Inclui funcionário(s) elegíveis vinculados diretamente à entidade.',
             atualizado_em = NOW()
         WHERE id = 2
       `);
 
       console.log(
-        '   ✅ Lote 2: clinica_id=7, empresa_id=6 → contratante_id=35\n'
+        '   ✅ Lote 2: clinica_id=7, empresa_id=6 → tomador_id=35\n'
       );
 
       // Lote 3 → pertence à clínica 37
@@ -97,17 +97,17 @@ async function main() {
       await pool.query(`
         UPDATE lotes_avaliacao
         SET clinica_id = 37,
-            contratante_id = NULL,
+            tomador_id = NULL,
             descricao = 'Lote 1 liberado para Pos buckei (clínica 37). Inclui funcionário(s) elegíveis.',
             atualizado_em = NOW()
         WHERE id = 3
       `);
 
-      console.log('   ✅ Lote 3: contratante_id=35 → clinica_id=37\n');
+      console.log('   ✅ Lote 3: tomador_id=35 → clinica_id=37\n');
 
       // Lote 4 já está correto
       console.log('3️⃣  Lote 4 (Laudo 4) → entidade 37\n');
-      console.log('   ✓  Lote 4: contratante_id=37 (já estava correto)\n');
+      console.log('   ✓  Lote 4: tomador_id=37 (já estava correto)\n');
 
       // Reabilitar trigger
       console.log('🔒 Reabilitando TODOS os triggers...\n');
@@ -127,12 +127,12 @@ async function main() {
           l.id AS lote_id,
           l.clinica_id,
           c.nome AS clinica_nome,
-          l.contratante_id,
+          l.tomador_id,
           e.nome AS entidade_nome,
           ld.id AS laudo_id
         FROM lotes_avaliacao l
         LEFT JOIN clinicas c ON c.id = l.clinica_id
-        LEFT JOIN entidades e ON e.id = l.contratante_id
+        LEFT JOIN entidades e ON e.id = l.tomador_id
         LEFT JOIN laudos ld ON ld.lote_id = l.id
         ORDER BY l.id
       `);
@@ -146,9 +146,9 @@ async function main() {
           console.log(
             `      ✅ clinica_id: ${lote.clinica_id} (${lote.clinica_nome})`
           );
-        } else if (lote.contratante_id) {
+        } else if (lote.tomador_id) {
           console.log(
-            `      ✅ contratante_id: ${lote.contratante_id} (${lote.entidade_nome})`
+            `      ✅ tomador_id: ${lote.tomador_id} (${lote.entidade_nome})`
           );
         } else {
           console.log(`      ⚠️  SEM VINCULO!`);

@@ -9,18 +9,18 @@
 
 ### Correções Implementadas: **10 de 10**
 
-| #      | Correção                                                | Status | Arquivo(s)                                                    |
-| ------ | ------------------------------------------------------- | ------ | ------------------------------------------------------------- |
-| 1      | Schema: contratante_id + nullable clinica_id/empresa_id | ✅     | `database/schema-complete.sql`                                |
-| 2      | Remover código emissão automática                       | ✅     | Múltiplos arquivos                                            |
-| 3      | Verificar processamento_em no schema                    | ✅     | `database/schema-complete.sql`                                |
-| 4      | Unificar validação (SQL only)                           | ✅     | `app/api/rh/lotes/route.ts`, `app/api/emissor/lotes/route.ts` |
-| 5      | UNIQUE constraint (empresa_id, numero_ordem)            | ✅     | `database/schema-complete.sql`                                |
-| 6      | ROLLBACK Entity - não necessário                        | ✅     | Confirmado intencional                                        |
-| 7      | Remover tabela lotes_avaliacao_funcionarios             | ✅     | `database/schema-complete.sql`                                |
-| 8      | Remover campos auto*emitir*\*                           | ✅     | `database/schema-complete.sql`                                |
-| 9      | Remover tabela fila_emissao                             | ✅     | `database/schema-complete.sql`                                |
-| **10** | **Corrigir INSERT Entity (contratante_id)**             | ✅     | `app/api/entidade/liberar-lote/route.ts`                      |
+| #      | Correção                                            | Status | Arquivo(s)                                                    |
+| ------ | --------------------------------------------------- | ------ | ------------------------------------------------------------- |
+| 1      | Schema: tomador_id + nullable clinica_id/empresa_id | ✅     | `database/schema-complete.sql`                                |
+| 2      | Remover código emissão automática                   | ✅     | Múltiplos arquivos                                            |
+| 3      | Verificar processamento_em no schema                | ✅     | `database/schema-complete.sql`                                |
+| 4      | Unificar validação (SQL only)                       | ✅     | `app/api/rh/lotes/route.ts`, `app/api/emissor/lotes/route.ts` |
+| 5      | UNIQUE constraint (empresa_id, numero_ordem)        | ✅     | `database/schema-complete.sql`                                |
+| 6      | ROLLBACK Entity - não necessário                    | ✅     | Confirmado intencional                                        |
+| 7      | Remover tabela lotes_avaliacao_funcionarios         | ✅     | `database/schema-complete.sql`                                |
+| 8      | Remover campos auto*emitir*\*                       | ✅     | `database/schema-complete.sql`                                |
+| 9      | Remover tabela fila_emissao                         | ✅     | `database/schema-complete.sql`                                |
+| **10** | **Corrigir INSERT Entity (tomador_id)**             | ✅     | `app/api/entidade/liberar-lote/route.ts`                      |
 
 ---
 
@@ -33,7 +33,7 @@
 **Validado:**
 
 1. ✅ Usa `calcular_elegibilidade_lote(empresa_id, numero_ordem)`
-2. ✅ Insere `clinica_id` + `empresa_id` (NULL contratante_id)
+2. ✅ Insere `clinica_id` + `empresa_id` (NULL tomador_id)
 3. ✅ Usa transação com ROLLBACK em falha
 4. ✅ Valida com `validar_lote_pre_laudo()` SQL
 5. ✅ Status evolui: rascunho → ativo → concluido
@@ -49,11 +49,11 @@ VALUES
 
 ---
 
-### ✅ FLUXO ENTITY (Direto Contratante)
+### ✅ FLUXO ENTITY (Direto tomador)
 
 **Endpoint:** `POST /api/entidade/liberar-lote`
 
-**✅ CORRIGIDO - Agora usa contratante_id:**
+**✅ CORRIGIDO - Agora usa tomador_id:**
 
 **Antes (❌ ERRO):**
 
@@ -68,15 +68,15 @@ VALUES
 
 ```typescript
 INSERT INTO lotes_avaliacao
-  (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
+  (codigo, tomador_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
 VALUES
   ($1, $2, $3, $4, $5, 'ativo', $6, $7)  // ✅ Respeita XOR constraint
 ```
 
 **Validado:**
 
-1. ✅ Usa `calcular_elegibilidade_lote_contratante(contratante_id, numero_ordem)`
-2. ✅ Insere apenas `contratante_id` (NULL clinica_id/empresa_id)
+1. ✅ Usa `calcular_elegibilidade_lote_tomador(tomador_id, numero_ordem)`
+2. ✅ Insere apenas `tomador_id` (NULL clinica_id/empresa_id)
 3. ✅ Processa múltiplas empresas sem transação global (intencional)
 4. ✅ Valida com `validar_lote_pre_laudo()` SQL
 5. ✅ Status evolui: rascunho → ativo → concluido
@@ -89,7 +89,7 @@ VALUES
 
 **Validado:**
 
-1. ✅ Valida permissão (RH vs Entity) baseado em clinica_id/contratante_id
+1. ✅ Valida permissão (RH vs Entity) baseado em clinica_id/tomador_id
 2. ✅ Requer status = 'concluido'
 3. ✅ Bloqueia se laudo já emitido
 4. ✅ Advisory lock previne race conditions
@@ -107,8 +107,8 @@ if (lote.clinica_id && user.perfil === 'rh') {
 **Permissão Entity:**
 
 ```typescript
-if (lote.contratante_id && user.perfil === 'gestor') {
-  if (user.contratante_id !== lote.contratante_id) return 403;
+if (lote.tomador_id && user.perfil === 'gestor') {
+  if (user.tomador_id !== lote.tomador_id) return 403;
 }
 ```
 
@@ -126,7 +126,7 @@ CREATE TABLE public.lotes_avaliacao (
     -- ✅ CAMPOS NULLABLE (suportam ambos os fluxos)
     clinica_id integer,                -- RH: NOT NULL, Entity: NULL
     empresa_id integer,                -- RH: NOT NULL, Entity: NULL
-    contratante_id integer,            -- RH: NULL, Entity: NOT NULL
+    tomador_id integer,            -- RH: NULL, Entity: NOT NULL
 
     titulo character varying(100) NOT NULL,
     descricao text,
@@ -144,11 +144,11 @@ CREATE TABLE public.lotes_avaliacao (
     processamento_em timestamp,
 
     -- ✅ CONSTRAINTS
-    CONSTRAINT lotes_avaliacao_clinica_or_contratante_check
+    CONSTRAINT lotes_avaliacao_clinica_or_tomador_check
         CHECK (
-            (clinica_id IS NOT NULL AND contratante_id IS NULL)
+            (clinica_id IS NOT NULL AND tomador_id IS NULL)
             OR
-            (clinica_id IS NULL AND contratante_id IS NOT NULL)
+            (clinica_id IS NULL AND tomador_id IS NOT NULL)
         ),
 
     CONSTRAINT lotes_avaliacao_empresa_numero_ordem_unique
@@ -246,7 +246,7 @@ if (inativadas === total) {
 ## 📦 MIGRAÇÕES CRIADAS (Pronto para Deploy)
 
 1. **220_fix_lotes_avaliacao_schema_entity_support.sql**
-   - Adiciona `contratante_id`
+   - Adiciona `tomador_id`
    - Torna `clinica_id`/`empresa_id` nullable
    - Adiciona XOR constraint
    - Adiciona campos: `laudo_enviado_em`, `finalizado_em`, `numero_ordem`, `processamento_em`
@@ -267,7 +267,7 @@ if (inativadas === total) {
 
 - [x] Tabela `lotes_avaliacao` com XOR constraint
 - [x] Campos nullable (clinica_id, empresa_id)
-- [x] Campo `contratante_id` adicionado
+- [x] Campo `tomador_id` adicionado
 - [x] UNIQUE constraint (empresa_id, numero_ordem)
 - [x] Campos obsoletos removidos
 - [x] Tabelas obsoletas removidas
@@ -281,8 +281,8 @@ if (inativadas === total) {
 
 ### APIs Entity
 
-- [x] Usa `calcular_elegibilidade_lote_contratante()`
-- [x] Insere apenas `contratante_id` ✅ **CORRIGIDO**
+- [x] Usa `calcular_elegibilidade_lote_tomador()`
+- [x] Insere apenas `tomador_id` ✅ **CORRIGIDO**
 - [x] Processa múltiplas empresas independentemente
 - [x] Valida com `validar_lote_pre_laudo()`
 

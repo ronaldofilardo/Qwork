@@ -23,9 +23,9 @@ export {
   buscarRecibo,
   buscarReciboPorNumero,
   cancelarRecibo,
-  listarRecibosPorContratante,
+  listarRecibosPortomador,
   // Exportar alias para manter compatibilidade com código legado
-  listarRecibosPorContratante as buscarRecibosPorContratante,
+  listarRecibosPortomador as buscarRecibosPortomador,
   type ReciboData,
   type ReciboCompleto,
 } from './generators/receipt-generator';

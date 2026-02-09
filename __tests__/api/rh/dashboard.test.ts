@@ -6,7 +6,7 @@ jest.mock('@/lib/db', () => ({
 }));
 
 jest.mock('@/lib/session', () => ({
-  requireRole: jest.fn(),
+  requireClinica: jest.fn(),
 }));
 
 jest.mock('next/cache', () => ({
@@ -14,27 +14,28 @@ jest.mock('next/cache', () => ({
 }));
 
 import { query } from '@/lib/db';
-import { requireRole } from '@/lib/session';
+import { requireClinica } from '@/lib/session';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
+const mockRequireClinica = requireClinica as jest.MockedFunction<
+  typeof requireClinica
+>;
 
 describe('/api/rh/dashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // ✅ Mock consistente seguindo política - mockResolvedValueOnce para controle preciso
-    mockRequireRole.mockResolvedValue({
-      cpf: '12345678901',
-      nome: 'RH Teste',
-      perfil: 'rh',
+    mockRequireClinica.mockResolvedValue({
       clinica_id: 1,
     });
   });
 
   it('deve retornar dados do dashboard RH com estatísticas corretas', async () => {
     const mockStats = {
+      total_empresas: 2,
+      total_funcionarios: 15,
       total_avaliacoes: 15,
-      concluidas: 12,
+      avaliacoes_concluidas: 12,
       funcionarios_avaliados: 8,
     };
 
@@ -148,8 +149,17 @@ describe('/api/rh/dashboard', () => {
       { categoria: 'alto', total: 10 },
     ];
 
+    // Mock retorna campos que o SQL retorna (com 'concluidas', não 'avaliacoes_concluidas')
+    const mockStatsSQL = {
+      total_empresas: 2,
+      total_funcionarios: 15,
+      total_avaliacoes: 15,
+      concluidas: 12, // Este campo é mapeado para 'avaliacoes_concluidas' no código
+      funcionarios_avaliados: 8,
+    };
+
     mockQuery
-      .mockResolvedValueOnce({ rows: [mockStats], rowCount: 1 }) // Stats
+      .mockResolvedValueOnce({ rows: [mockStatsSQL], rowCount: 1 }) // Stats
       .mockResolvedValueOnce({ rows: mockResultados, rowCount: 10 }) // Resultados
       .mockResolvedValueOnce({ rows: mockDistribuicao, rowCount: 3 }); // Distribuição
 
@@ -171,6 +181,8 @@ describe('/api/rh/dashboard', () => {
 
   it('deve converter media_score para number quando necessário', async () => {
     const mockStats = {
+      total_empresas: 1,
+      total_funcionarios: 5,
       total_avaliacoes: 5,
       concluidas: 3,
       funcionarios_avaliados: 2,
@@ -210,6 +222,8 @@ describe('/api/rh/dashboard', () => {
 
   it('deve retornar dados vazios quando não há avaliações', async () => {
     const mockStats = {
+      total_empresas: 0,
+      total_funcionarios: 0,
       total_avaliacoes: 0,
       concluidas: 0,
       funcionarios_avaliados: 0,
@@ -232,8 +246,8 @@ describe('/api/rh/dashboard', () => {
     expect(data.distribuicao).toHaveLength(0);
   });
 
-  it('deve retornar erro 500 quando requireRole falha', async () => {
-    mockRequireRole.mockRejectedValue(new Error('Acesso negado'));
+  it('deve retornar erro 500 quando requireClinica falha', async () => {
+    mockRequireClinica.mockRejectedValue(new Error('Clínica não identificada'));
 
     const mockRequest = {
       nextUrl: { searchParams: { get: () => null } },
@@ -241,15 +255,12 @@ describe('/api/rh/dashboard', () => {
     const response = await GET(mockRequest);
     const data = await response.json();
 
-    expect(response.status).toBe(500);
-    expect(data).toEqual({ error: 'Erro ao buscar dados' });
+    expect(response.status).toBe(403);
+    expect(data.error).toBe('Clínica não identificada');
   });
 
   it('deve retornar erro 500 quando query falha', async () => {
-    mockRequireRole.mockResolvedValue({
-      cpf: '12345678901',
-      nome: 'RH Teste',
-      perfil: 'rh',
+    mockRequireClinica.mockResolvedValue({
       clinica_id: 1,
     });
     mockQuery.mockRejectedValue(new Error('Erro de banco'));
@@ -266,6 +277,8 @@ describe('/api/rh/dashboard', () => {
 
   it('deve incluir todos os grupos do COPSOQ III nos resultados', async () => {
     const mockStats = {
+      total_empresas: 1,
+      total_funcionarios: 10,
       total_avaliacoes: 10,
       concluidas: 10,
       funcionarios_avaliados: 1,
@@ -411,7 +424,13 @@ describe('/api/rh/dashboard', () => {
     mockQuery
       .mockResolvedValueOnce({
         rows: [
-          { total_avaliacoes: 1, concluidas: 1, funcionarios_avaliados: 1 },
+          {
+            total_avaliacoes: 1,
+            concluidas: 1,
+            funcionarios_avaliados: 1,
+            total_empresas: 1,
+            total_funcionarios: 1,
+          },
         ],
         rowCount: 1,
       })
@@ -426,21 +445,25 @@ describe('/api/rh/dashboard', () => {
     // Verifica se as queries corretas foram chamadas
     expect(mockQuery).toHaveBeenCalledTimes(3);
 
-    // Query de estatísticas
+    // Query de estatísticas - deve usar funcionarios_clinicas
     expect(mockQuery.mock.calls[0][0]).toContain(
       "FILTER (WHERE a.status != 'inativada')"
     );
+    expect(mockQuery.mock.calls[0][0]).toContain('funcionarios_clinicas fc');
+    expect(mockQuery.mock.calls[0][0]).toContain('fc.funcionario_id = f.id');
     expect(mockQuery.mock.calls[0][0]).toContain('total_avaliacoes');
     expect(mockQuery.mock.calls[0][0]).toContain('concluidas');
     expect(mockQuery.mock.calls[0][0]).toContain('funcionarios_avaliados');
 
-    // Query de resultados
+    // Query de resultados - deve usar funcionarios_clinicas
     expect(mockQuery.mock.calls[1][0]).toContain('AVG(r.score)');
     expect(mockQuery.mock.calls[1][0]).toContain('media_score');
+    expect(mockQuery.mock.calls[1][0]).toContain('funcionarios_clinicas fc');
     expect(mockQuery.mock.calls[1][0]).toContain('GROUP BY r.grupo, r.dominio');
 
-    // Query de distribuição
+    // Query de distribuição - deve usar funcionarios_clinicas
     expect(mockQuery.mock.calls[2][0]).toContain('categoria');
+    expect(mockQuery.mock.calls[2][0]).toContain('funcionarios_clinicas fc');
     expect(mockQuery.mock.calls[2][0]).toContain('GROUP BY r.categoria');
   });
 });

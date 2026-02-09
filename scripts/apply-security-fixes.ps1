@@ -78,7 +78,7 @@ SELECT tablename,
 FROM pg_tables pt
 JOIN pg_class pc ON pc.relname = pt.tablename
 WHERE schemaname = 'public'
-AND tablename IN ('contratantes', 'funcionarios', 'avaliacoes')
+AND tablename IN ('tomadores', 'funcionarios', 'avaliacoes')
 ORDER BY tablename
 "@
 
@@ -139,7 +139,7 @@ SELECT COUNT(*) as total
 FROM pg_tables pt
 JOIN pg_class pc ON pc.relname = pt.tablename
 WHERE schemaname = 'public'
-AND tablename IN ('contratantes', 'funcionarios', 'avaliacoes', 'laudos', 'contratos')
+AND tablename IN ('tomadores', 'funcionarios', 'avaliacoes', 'laudos', 'contratos')
 AND relforcerowsecurity = true
 "@
 

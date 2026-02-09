@@ -156,7 +156,7 @@ SELECT
     a.envio as avaliacao_data_conclusao
 FROM funcionarios f
 JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
-WHERE a.lote_id = 21 AND f.contratante_id = 2;
+WHERE a.lote_id = 21 AND f.tomador_id = 2;
 ```
 
 ### Verificar se há erro na função prevent_mutation_during_emission:
@@ -194,4 +194,3 @@ Se após executar os scripts o problema persistir, coletar:
 4. Response da API `/api/entidade/lote/21` via DevTools Network
 
 **Última atualização:** 04/02/2026 00:30
-

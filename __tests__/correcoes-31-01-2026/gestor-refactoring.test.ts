@@ -25,7 +25,7 @@ const mockQuery = query as jest.MockedFunction<typeof query>;
 
 describe('Refatoração de Gestores - Correções Críticas', () => {
   const TEST_CPF_GESTOR = '87545772920';
-  const TEST_CONTRATANTE_ID = 2;
+  const TEST_tomador_ID = 2;
 
   beforeAll(async () => {
     // Garantir que gestor existe em entidades_senhas
@@ -55,7 +55,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       setSession({
         cpf: TEST_CPF_GESTOR,
         perfil: 'gestor',
-        contratante_id: TEST_CONTRATANTE_ID,
+        tomador_id: TEST_tomador_ID,
       });
 
       mockQuery.mockImplementation(async (sql: string) => {
@@ -67,8 +67,8 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
         return { rows: [{ count: 1 }], rowCount: 1 } as any;
       });
 
-      await queryAsGestor('SELECT COUNT(*) FROM contratantes WHERE id = $1', [
-        TEST_CONTRATANTE_ID,
+      await queryAsGestor('SELECT COUNT(*) FROM tomadors WHERE id = $1', [
+        TEST_tomador_ID,
       ]);
 
       // Verificar que set_config foi chamado para app.current_user_cpf
@@ -89,7 +89,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       setSession({
         cpf: TEST_CPF_GESTOR,
         perfil: 'gestor',
-        contratante_id: TEST_CONTRATANTE_ID,
+        tomador_id: TEST_tomador_ID,
       });
 
       mockQuery.mockImplementation(async (sql: string) => {
@@ -124,7 +124,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       setSession({
         cpf: '12345678901',
         perfil: 'funcionario',
-        contratante_id: null,
+        tomador_id: null,
       });
 
       await expect(queryAsGestor('SELECT 1')).rejects.toThrow(
@@ -184,13 +184,13 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
   describe('3. Validação de Dados - Gestor 87545772920', () => {
     it('gestor deve existir em entidades_senhas', async () => {
       const result = await query(
-        'SELECT cpf, contratante_id FROM entidades_senhas WHERE cpf = $1',
+        'SELECT cpf, tomador_id FROM entidades_senhas WHERE cpf = $1',
         [TEST_CPF_GESTOR]
       );
 
       expect(result.rowCount).toBe(1);
       expect(result.rows[0].cpf).toBe(TEST_CPF_GESTOR);
-      expect(result.rows[0].contratante_id).toBe(TEST_CONTRATANTE_ID);
+      expect(result.rows[0].tomador_id).toBe(TEST_tomador_ID);
     });
 
     it('gestor NÃO deve existir em funcionarios', async () => {
@@ -202,14 +202,14 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       expect(result.rowCount).toBe(0);
     });
 
-    it('contratante do gestor deve estar ativo', async () => {
+    it('tomador do gestor deve estar ativo', async () => {
       const result = await query(
-        'SELECT id, responsavel_cpf, status FROM contratantes WHERE responsavel_cpf = $1',
+        'SELECT id, responsavel_cpf, status FROM tomadors WHERE responsavel_cpf = $1',
         [TEST_CPF_GESTOR]
       );
 
       expect(result.rowCount).toBe(1);
-      expect(result.rows[0].id).toBe(TEST_CONTRATANTE_ID);
+      expect(result.rows[0].id).toBe(TEST_tomador_ID);
       expect(result.rows[0].status).toBe('aprovado');
     });
   });
@@ -268,7 +268,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       setSession({
         cpf: TEST_CPF_GESTOR,
         perfil: 'gestor',
-        contratante_id: TEST_CONTRATANTE_ID,
+        tomador_id: TEST_tomador_ID,
       });
 
       // Configurar variáveis de sessão manualmente (simular queryAsGestor)
@@ -287,12 +287,12 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
       // Inserir lote de teste
       const loteResult = await query(
         `INSERT INTO lotes_avaliacao 
-         (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
+         (codigo, tomador_id, titulo, descricao, tipo, status, liberado_por, numero_ordem)
          VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7) 
          RETURNING id`,
         [
           codigo,
-          TEST_CONTRATANTE_ID,
+          TEST_tomador_ID,
           'Lote Teste Auditoria',
           'Teste de auditoria com sessão',
           'completo',
@@ -339,9 +339,9 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
   });
 
   describe('7. Migration 304 - Validação de Integridade', () => {
-    it('todos gestores em entidades_senhas devem ter contratante_id', async () => {
+    it('todos gestores em entidades_senhas devem ter tomador_id', async () => {
       const result = await query(
-        'SELECT cpf FROM entidades_senhas WHERE contratante_id IS NULL'
+        'SELECT cpf FROM entidades_senhas WHERE tomador_id IS NULL'
       );
 
       expect(result.rowCount).toBe(0);
@@ -363,7 +363,7 @@ describe('Refatoração de Gestores - Correções Críticas', () => {
         SELECT indexname
         FROM pg_indexes
         WHERE schemaname = 'public'
-          AND (indexname = 'idx_entidades_senhas_contratante_id'
+          AND (indexname = 'idx_entidades_senhas_tomador_id'
             OR indexname = 'idx_lotes_avaliacao_liberado_por')
       `);
 

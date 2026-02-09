@@ -95,7 +95,7 @@ describe('API DELETE /api/admin/planos/[id] - exclusão segura de planos', () =>
     expect(data.error).toMatch(/Senha do admin inválida/);
   });
 
-  test('Sucesso quando admin fornece senha e motivo - desvincula contratantes e deleta plano', async () => {
+  test('Sucesso quando admin fornece senha e motivo - desvincula tomadors e deleta plano', async () => {
     const req = new NextRequest('http://localhost/api/admin/planos/3', {
       method: 'DELETE',
     });
@@ -122,14 +122,14 @@ describe('API DELETE /api/admin/planos/[id] - exclusão segura de planos', () =>
     expect(res.status).toBe(200);
     expect(data.success).toBe(true);
 
-    // Verificar que a transação executou os passos esperados (BEGIN -> audit -> update contratantes -> delete plano -> COMMIT)
+    // Verificar que a transação executou os passos esperados (BEGIN -> audit -> update tomadors -> delete plano -> COMMIT)
     const calls = mockQuery.mock.calls.map((c) => String(c[0]));
     const beginIdx = calls.findIndex((s) => /BEGIN/.test(s));
     const insertIdx = calls.findIndex((s) =>
       s.includes('INSERT INTO audit_logs')
     );
     const updateIdx = calls.findIndex((s) =>
-      s.includes('UPDATE contratantes SET plano_id = NULL')
+      s.includes('UPDATE tomadors SET plano_id = NULL')
     );
     const deleteIdx = calls.findIndex((s) =>
       s.includes('DELETE FROM planos WHERE id = $1')
@@ -147,10 +147,10 @@ describe('API DELETE /api/admin/planos/[id] - exclusão segura de planos', () =>
     expect(updateIdx).toBeLessThan(deleteIdx);
     expect(deleteIdx).toBeLessThan(commitIdx);
 
-    // verificar que o UPDATE contratantes foi chamado com o id correto
+    // verificar que o UPDATE tomadors foi chamado com o id correto
     const updateCall = mockQuery.mock.calls[updateIdx];
     expect(String(updateCall[0])).toContain(
-      'UPDATE contratantes SET plano_id = NULL'
+      'UPDATE tomadors SET plano_id = NULL'
     );
     expect(Array.isArray(updateCall[1])).toBe(true);
     expect(String(updateCall[1][0])).toBe('3');

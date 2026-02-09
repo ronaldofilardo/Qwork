@@ -1,5 +1,5 @@
 -- Tabela para armazenar tokens de retomada de pagamento
--- Permite que admins gerem links seguros para contratantes retomarem pagamentos
+-- Permite que admins gerem links seguros para tomadores retomarem pagamentos
 
 CREATE TABLE IF NOT EXISTS tokens_retomada_pagamento (
   id SERIAL PRIMARY KEY,
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS tokens_retomada_pagamento (
   metadata JSONB,
   
   CONSTRAINT fk_token_contratante FOREIGN KEY (contratante_id) 
-    REFERENCES contratantes(id) ON DELETE CASCADE,
+    REFERENCES tomadores(id) ON DELETE CASCADE,
   CONSTRAINT fk_token_contrato FOREIGN KEY (contrato_id) 
     REFERENCES contratos(id) ON DELETE CASCADE,
   CONSTRAINT fk_token_plano FOREIGN KEY (plano_id) 
@@ -42,7 +42,7 @@ CREATE INDEX idx_tokens_usado ON tokens_retomada_pagamento(usado, expiracao);
 
 -- Comentários de documentação
 COMMENT ON TABLE tokens_retomada_pagamento IS 
-'Armazena tokens seguros para permitir que contratantes retomem pagamentos pendentes sem refazer cadastro.';
+'Armazena tokens seguros para permitir que tomadores retomem pagamentos pendentes sem refazer cadastro.';
 
 COMMENT ON COLUMN tokens_retomada_pagamento.token IS 
 'Token único gerado para autenticar link de pagamento. Tem TTL de 48h por padrão.';
@@ -163,7 +163,7 @@ SELECT
   t.gerado_em,
   t.ip_uso
 FROM tokens_retomada_pagamento t
-JOIN contratantes c ON t.contratante_id = c.id
+JOIN tomadores c ON t.contratante_id = c.id
 LEFT JOIN planos p ON t.plano_id = p.id
 LEFT JOIN funcionarios g ON t.gerado_por = g.cpf
 ORDER BY t.gerado_em DESC;

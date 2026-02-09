@@ -318,7 +318,7 @@ vercel --prod
 ### NEXT_PUBLIC_DISABLE_ANEXOS
 
 **Status:** ⚠️ Temporariamente habilitado  
-**Propósito:** Desabilitar upload obrigatório de anexos no cadastro de contratantes
+**Propósito:** Desabilitar upload obrigatório de anexos no cadastro de tomadores
 
 - **Desenvolvimento:** Configurada em `.env.local`
 - **Produção:** Deve ser configurada na Vercel (Settings → Environment Variables)

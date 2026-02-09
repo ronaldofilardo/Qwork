@@ -51,7 +51,7 @@ async function testGestorEntidadeLogin() {
     console.log('✅ Sessão válida:', {
       nome: sessionData.nome,
       perfil: sessionData.perfil,
-      contratante_id: sessionData.contratante_id,
+      tomador_id: sessionData.tomador_id,
     });
 
     // 3. Validações
@@ -66,11 +66,11 @@ async function testGestorEntidadeLogin() {
     }
     console.log('  ✓ Perfil correto: gestor');
 
-    if (!sessionData.contratante_id) {
-      console.error('❌ ERRO: contratante_id não está presente na sessão');
+    if (!sessionData.tomador_id) {
+      console.error('❌ ERRO: tomador_id não está presente na sessão');
       return false;
     }
-    console.log('  ✓ contratante_id presente:', sessionData.contratante_id);
+    console.log('  ✓ tomador_id presente:', sessionData.tomador_id);
 
     if (loginData.redirectTo !== '/entidade') {
       console.error(

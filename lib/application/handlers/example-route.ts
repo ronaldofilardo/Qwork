@@ -18,7 +18,7 @@ import { ROLES } from '@/lib/config/roles';
 import { z } from 'zod';
 
 // Schema de validação
-const GetContratantesSchema = z.object({
+const GettomadorsSchema = z.object({
   status: z
     .enum(['pendente', 'aprovado', 'rejeitado', 'ativo', 'inativo'])
     .optional(),
@@ -26,10 +26,10 @@ const GetContratantesSchema = z.object({
   offset: z.number().min(0).default(0),
 });
 
-type GetContratantesInput = z.infer<typeof GetContratantesSchema>;
+type GettomadorsInput = z.infer<typeof GettomadorsSchema>;
 
 // Lógica de negócio isolada
-async function getContratantesPendentes(input: GetContratantesInput) {
+async function gettomadorsPendentes(input: GettomadorsInput) {
   const { status, limit, offset } = input;
 
   const sql = `
@@ -56,17 +56,17 @@ async function getContratantesPendentes(input: GetContratantesInput) {
 }
 
 // Handler da rota
-export const GET = handleRequest<GetContratantesInput>({
+export const GET = handleRequest<GettomadorsInput>({
   // Apenas admin pode acessar
   allowedRoles: [ROLES.ADMIN],
 
   // Validação do input (query params)
-  validate: GetContratantesSchema,
+  validate: GettomadorsSchema,
 
   // Lógica de negócio
   execute: async (input, context) => {
     requireSession(context);
-    return getContratantesPendentes(input);
+    return gettomadorsPendentes(input);
   },
 });
 
@@ -110,7 +110,7 @@ export const POST = handleRequest({
 
     return {
       message: 'Entidade aprovado com sucesso',
-      contratante: result.rows[0],
+      tomador: result.rows[0],
     };
   },
 });

@@ -53,7 +53,7 @@ async function finalMigration() {
         pg.status AS pagamento_status
       FROM recibos r
       JOIN contratos c ON r.contrato_id = c.id
-      JOIN contratantes ct ON r.contratante_id = ct.id
+      JOIN tomadores ct ON r.contratante_id = ct.id
       JOIN pagamentos pg ON r.pagamento_id = pg.id
       JOIN planos p ON c.plano_id = p.id
       WHERE r.ativo = true

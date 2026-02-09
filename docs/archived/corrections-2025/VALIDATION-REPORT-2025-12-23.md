@@ -55,7 +55,7 @@ if (environment === 'test' || isRunningTests) {
 ### 4. Execução de Testes em Logs Anteriores
 
 ```
-[DEBUG] Query local (271ms): DELETE FROM contratantes WHERE cnpj = $1...
+[DEBUG] Query local (271ms): DELETE FROM tomadores WHERE cnpj = $1...
 ```
 
 Todos os logs de testes mostram conexão ao banco correto.

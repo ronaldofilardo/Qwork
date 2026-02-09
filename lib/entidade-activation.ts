@@ -3,7 +3,7 @@
  *
  * Garante que NENHUMA entidade seja ativada sem pagamento confirmado
  * Todos os setters de `ativa = true` devem passar por esta função
- * (Anteriormente contratante-activation - renomeado na Migration 420)
+ * (Anteriormente tomador-activation - renomeado na Migration 420)
  */
 
 import { query, criarContaResponsavel } from './db';
@@ -295,6 +295,6 @@ export async function desativarEntidade(
 // Aliases para garantir que código antigo continue funcionando
 // Remover após verificar que não há mais uso no código
 /** @deprecated Use ativarEntidade instead */
-export const ativarContratante = ativarEntidade;
+export const ativartomador = ativarEntidade;
 /** @deprecated Use desativarEntidade instead */
-export const desativarContratante = desativarEntidade;
+export const desativartomador = desativarEntidade;

@@ -129,9 +129,52 @@ export default function LotesPage() {
     }
 
     setDownloadingLaudo(laudo.id);
-    toast.loading('Baixando laudo...', { id: `laudo-${laudo.id}` });
 
     try {
+      // Passo 1: Verificar integridade do hash
+      toast.loading('Verificando integridade do laudo...', {
+        id: `laudo-verify-${laudo.id}`,
+      });
+
+      const verifyResponse = await fetch(
+        `/api/entidade/laudos/${laudo.id}/verify-hash`
+      );
+
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json();
+        throw new Error(errorData.error || 'Erro ao verificar laudo');
+      }
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyData.hash_valido) {
+        toast.error(
+          '⚠️ ATENÇÃO: O hash do laudo não corresponde ao original! O arquivo pode ter sido modificado.',
+          { id: `laudo-verify-${laudo.id}`, duration: 8000 }
+        );
+        console.error('[HASH INVÁLIDO]', {
+          laudo_id: laudo.id,
+          hash_armazenado: verifyData.hash_armazenado,
+          hash_calculado: verifyData.hash_calculado,
+        });
+        return;
+      }
+
+      // Passo 2: Hash válido - confirmar ao usuário
+      toast.success(
+        '✅ Integridade verificada! O laudo é autêntico e não foi modificado.',
+        {
+          id: `laudo-verify-${laudo.id}`,
+          duration: 3000,
+        }
+      );
+
+      // Pequeno delay para o usuário ver a mensagem de verificação
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Passo 3: Fazer o download
+      toast.loading('Baixando laudo...', { id: `laudo-download-${laudo.id}` });
+
       const response = await fetch(`/api/entidade/laudos/${laudo.id}/download`);
 
       if (!response.ok) {
@@ -150,21 +193,16 @@ export default function LotesPage() {
       document.body.removeChild(a);
 
       toast.success('Laudo baixado com sucesso!', {
-        id: `laudo-${laudo.id}`,
+        id: `laudo-download-${laudo.id}`,
       });
     } catch (error: any) {
       console.error('Erro ao baixar laudo:', error);
       toast.error(error.message || 'Erro ao baixar laudo', {
-        id: `laudo-${laudo.id}`,
+        id: `laudo-verify-${laudo.id}`,
       });
     } finally {
       setDownloadingLaudo(null);
     }
-  }, []);
-
-  const handleRelatorioSetor = useCallback((_loteId: number) => {
-    // TODO: Implementar relatório por setor para entidade
-    toast('Funcionalidade em desenvolvimento');
   }, []);
 
   if (loading) {
@@ -203,7 +241,6 @@ export default function LotesPage() {
           laudos={laudos}
           downloadingLaudo={downloadingLaudo}
           onLoteClick={handleLoteClick}
-          onRelatorioSetor={handleRelatorioSetor}
           onDownloadLaudo={handleDownloadLaudo}
           onRefresh={loadLotes}
         />

@@ -66,7 +66,7 @@ GET /api/entidade/laudos/[laudoId]/download
 
 Validações:
 ✅ Verifica sessão de entidade (requireEntity)
-✅ Verifica se laudo pertence à entidade (contratante_id)
+✅ Verifica se laudo pertence à entidade (tomador_id)
 ✅ Verifica se laudo está 'enviado'
 ✅ Retorna PDF do banco de dados
 

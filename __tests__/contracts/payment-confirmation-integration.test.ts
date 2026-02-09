@@ -1,16 +1,16 @@
 /**
- * Testes de integração: Confirmação de pagamento → criarContaResponsavel → ativarContratante
+ * Testes de integração: Confirmação de pagamento → criarContaResponsavel → ativartomador
  */
 
-import { criarContaResponsavel, ativarContratante } from '@/lib/db';
+import { criarContaResponsavel, ativartomador } from '@/lib/db';
 
 jest.mock('@/lib/db');
 
 const mockCriarContaResponsavel = criarContaResponsavel as jest.MockedFunction<
   typeof criarContaResponsavel
 >;
-const mockAtivarContratante = ativarContratante as jest.MockedFunction<
-  typeof ativarContratante
+const mockAtivartomador = ativartomador as jest.MockedFunction<
+  typeof ativartomador
 >;
 
 // Tipo para mock de Request
@@ -31,10 +31,10 @@ interface CriarContaResponse {
   senha_gerada?: string;
 }
 
-interface AtivarContratanteResponse {
+interface AtivartomadorResponse {
   success: boolean;
   message: string;
-  contratante?: any;
+  tomador?: any;
 }
 
 describe('Confirmação de Pagamento - Criação Automática de Login', () => {
@@ -45,7 +45,7 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
   it('deve chamar criarContaResponsavel após confirmação de pagamento para entidade', () => {
     const _mockRequest: MockRequest = {
       json: jest.fn().mockResolvedValue({
-        contratante_id: 1,
+        tomador_id: 1,
         tipo: 'entidade',
       }),
     };
@@ -61,16 +61,16 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
       },
     } as CriarContaResponse);
 
-    mockAtivarContratante.mockResolvedValueOnce({
+    mockAtivartomador.mockResolvedValueOnce({
       success: true,
-      message: 'Contratante ativado',
-    } as AtivarContratanteResponse);
+      message: 'tomador ativado',
+    } as AtivartomadorResponse);
 
     // Simular confirmação de pagamento
     // Nota: Este teste valida configuração de mocks, não a chamada real
 
     expect(mockCriarContaResponsavel).toBeDefined();
-    expect(mockAtivarContratante).toBeDefined();
+    expect(mockAtivartomador).toBeDefined();
   });
 
   it('deve criar conta com perfil gestor para tipo entidade', async () => {
@@ -85,7 +85,7 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
     await criarContaResponsavel(1);
 
     const call = mockCriarContaResponsavel.mock.calls[0];
-    expect(call[0]).toBe(1); // contratante_id
+    expect(call[0]).toBe(1); // tomador_id
   });
 
   it('deve criar conta com perfil rh para tipo clinica', async () => {
@@ -99,23 +99,23 @@ describe('Confirmação de Pagamento - Criação Automática de Login', () => {
     expect(mockCriarContaResponsavel).toHaveBeenCalledWith(2);
   });
 
-  it('deve ativar contratante após criar conta com sucesso', async () => {
+  it('deve ativar tomador após criar conta com sucesso', async () => {
     mockCriarContaResponsavel.mockResolvedValueOnce({
       success: true,
     } as CriarContaResponse);
 
-    mockAtivarContratante.mockResolvedValueOnce({
+    mockAtivartomador.mockResolvedValueOnce({
       success: true,
-      message: 'Contratante ativado',
-    } as AtivarContratanteResponse);
+      message: 'tomador ativado',
+    } as AtivartomadorResponse);
 
     await criarContaResponsavel(1);
-    await ativarContratante(1);
+    await ativartomador(1);
 
-    expect(mockAtivarContratante).toHaveBeenCalledWith(1);
+    expect(mockAtivartomador).toHaveBeenCalledWith(1);
   });
 
-  it('não deve ativar contratante se criação de conta falhar', () => {
+  it('não deve ativar tomador se criação de conta falhar', () => {
     const mockRetornoFalha = {
       success: false,
       message: 'Erro ao criar conta',

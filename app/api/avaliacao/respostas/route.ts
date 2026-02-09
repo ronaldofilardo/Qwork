@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
-import { recalcularStatusLote } from '@/lib/lotes';
-import { calcularResultados } from '@/lib/calculate';
-import { grupos } from '@/lib/questoes';
+import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 
 export async function POST(request: Request) {
   try {
@@ -106,186 +104,29 @@ export async function POST(request: Request) {
     }
 
     // ✅ VERIFICAR SE COMPLETOU 37 RESPOSTAS (AUTO-CONCLUSÃO)
-    const countResult = await query(
-      `SELECT COUNT(DISTINCT (grupo, item)) as total
-       FROM respostas
-       WHERE avaliacao_id = $1`,
-      [avaliacaoId]
+    // Usando função consolidada para idempotência e consistência
+    const resultadoConclusao = await verificarEConcluirAvaliacao(
+      avaliacaoId,
+      session.cpf
     );
 
-    const totalRespostas = parseInt(countResult.rows[0]?.total || '0');
-    console.log(
-      `[RESPOSTAS] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
-    );
-
-    // Verificar status atual da avaliação antes de tentar concluir
-    const statusCheckResult = await query(
-      `SELECT status FROM avaliacoes WHERE id = $1`,
-      [avaliacaoId]
-    );
-    const statusAtual = statusCheckResult.rows[0]?.status;
-
-    // Se completou 37 respostas E não está inativada, marcar como concluída automaticamente
-    if (
-      totalRespostas >= 37 &&
-      statusAtual !== 'inativada' &&
-      statusAtual !== 'concluido'
-    ) {
-      console.log(
-        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} COMPLETA (${totalRespostas}/37 respostas)! Status: ${statusAtual} → concluido`
-      );
-
-      // ✅ Envolver TODA a lógica de conclusão em transactionWithContext
-      await transactionWithContext(async (queryTx) => {
-        try {
-          // Buscar todas as respostas para calcular resultados
-          const todasRespostasResult = await queryTx(
-            `SELECT DISTINCT ON (r.grupo, r.item) r.grupo, r.item, r.valor
-             FROM respostas r
-             WHERE r.avaliacao_id = $1
-             ORDER BY r.grupo, r.item, r.id DESC`,
-            [avaliacaoId]
-          );
-
-          // Organizar respostas por grupo
-          const respostasPorGrupo = new Map<
-            number,
-            Array<{ item: string; valor: number }>
-          >();
-          todasRespostasResult.rows.forEach((r: any) => {
-            if (!respostasPorGrupo.has(r.grupo)) {
-              respostasPorGrupo.set(r.grupo, []);
-            }
-            respostasPorGrupo
-              .get(r.grupo)!
-              .push({ item: r.item, valor: r.valor });
-          });
-
-          // Criar mapa de tipos de grupos (incluindo dominio e tipo)
-          const gruposTipo = new Map(
-            grupos.map((g) => [g.id, { dominio: g.dominio, tipo: g.tipo }])
-          );
-
-          // Calcular resultados
-          const todosResultados = calcularResultados(
-            respostasPorGrupo,
-            gruposTipo
-          );
-
-          // Salvar resultados no banco
-          for (const resultado of todosResultados) {
-            await queryTx(
-              `INSERT INTO resultados (avaliacao_id, grupo, dominio, score, categoria)
-             VALUES ($1, $2, $3, $4, $5)
-             ON CONFLICT (avaliacao_id, grupo) DO UPDATE SET score = EXCLUDED.score, categoria = EXCLUDED.categoria`,
-              [
-                avaliacaoId,
-                resultado.grupo,
-                resultado.dominio,
-                resultado.score,
-                resultado.categoria,
-              ]
-            );
-          }
-
-          console.log(`[RESPOSTAS] ✅ Resultados calculados e salvos`);
-        } catch (resultError) {
-          console.error(
-            `[RESPOSTAS] ⚠️ Erro ao calcular resultados, mas continuando conclusão:`,
-            resultError
-          );
-          // Não bloquear a conclusão da avaliação por erro no cálculo
-        }
-
-        // Marcar como concluído (SEMPRE executar, mesmo se houver erro nos resultados)
-        await queryTx(
-          `UPDATE avaliacoes 
-           SET status = 'concluido', envio = NOW(), atualizado_em = NOW() 
-           WHERE id = $1`,
-          [avaliacaoId]
-        );
-
-        console.log(
-          `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída com sucesso`
-        );
-
-        // Buscar lote_id e atualizar funcionário
-        const loteResult = await queryTx(
-          `SELECT la.id as lote_id, la.numero_ordem 
-           FROM avaliacoes a
-           JOIN lotes_avaliacao la ON a.lote_id = la.id
-           WHERE a.id = $1`,
-          [avaliacaoId]
-        );
-
-        if (loteResult.rows.length > 0) {
-          const { lote_id, numero_ordem } = loteResult.rows[0];
-
-          // Atualizar índice do funcionário
-          await queryTx(
-            `UPDATE funcionarios 
-             SET indice_avaliacao = $1, data_ultimo_lote = NOW() 
-             WHERE cpf = $2`,
-            [numero_ordem, session.cpf]
-          );
-
-          console.log(
-            `[RESPOSTAS] ✅ Funcionário atualizado | Lote ${String(lote_id)} será recalculado automaticamente`
-          );
-        }
-
-        console.log(
-          `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} marcada como concluída dentro da transação`
-        );
-      });
-
-      // Chamar recalcularStatusLote APÓS a transação de conclusão
-      const loteResult = await query(
-        `SELECT la.id as lote_id
-         FROM avaliacoes a
-         JOIN lotes_avaliacao la ON a.lote_id = la.id
-         WHERE a.id = $1`,
-        [avaliacaoId]
-      );
-
-      if (loteResult.rows.length > 0) {
-        const { lote_id } = loteResult.rows[0];
-        await recalcularStatusLote(avaliacaoId);
-        console.log(`[RESPOSTAS] ✅ Lote ${lote_id} recalculado`);
-      }
-
-      console.log(
-        `[RESPOSTAS] ✅ Avaliação ${avaliacaoId} concluída automaticamente - 37/37 respostas recebidas`
-      );
-
+    if (resultadoConclusao.concluida) {
       return NextResponse.json({
         success: true,
         completed: true,
         message:
           'Avaliação concluída com sucesso! Todas as 37 questões foram respondidas.',
       });
-    } else if (totalRespostas >= 37 && statusAtual === 'concluido') {
-      console.log(
-        `[RESPOSTAS] ℹ️ Avaliação ${avaliacaoId} já está concluída (${totalRespostas}/37 respostas)`
-      );
-      return NextResponse.json({
-        success: true,
-        completed: true,
-        message: 'Avaliação já foi concluída anteriormente.',
-      });
-    } else if (totalRespostas >= 37 && statusAtual === 'inativada') {
-      console.log(
-        `[RESPOSTAS] ⚠️ Avaliação ${avaliacaoId} está inativada e não pode ser concluída (${totalRespostas}/37 respostas)`
-      );
-      return NextResponse.json({
-        success: true,
-        completed: false,
-        message: 'Avaliação inativada - não pode ser concluída.',
-      });
     }
 
+    // Resposta padrão se não completou 37 respostas
     return NextResponse.json(
-      { success: true, completed: false },
+      {
+        success: true,
+        completed: false,
+        totalRespostas: resultadoConclusao.totalRespostas,
+        mensagem: resultadoConclusao.mensagem,
+      },
       { status: 200 }
     );
   } catch (error) {

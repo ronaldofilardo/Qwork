@@ -58,7 +58,7 @@ AND (policyname ILIKE '%admin%' OR qual ILIKE '%admin%' OR with_check ILIKE '%ad
 ORDER BY 
     CASE 
         WHEN permissive = 'RESTRICTIVE' THEN 1 
-        WHEN tablename IN ('audit_logs', 'clinicas', 'contratantes', 'roles', 'permissions', 'role_permissions') THEN 2
+        WHEN tablename IN ('audit_logs', 'clinicas', 'tomadores', 'roles', 'permissions', 'role_permissions') THEN 2
         WHEN policyname = 'admin_restricted_funcionarios' THEN 3
         ELSE 4
     END,

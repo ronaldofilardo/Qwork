@@ -16,7 +16,7 @@
     const cookie = setCookie ? setCookie.split(';')[0] : '';
 
     const listRes = await fetch(
-      'http://localhost:3000/api/admin/contratantes/list',
+      'http://localhost:3000/api/admin/tomadors/list',
       {
         headers: { Cookie: cookie },
       }

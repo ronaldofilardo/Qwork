@@ -151,7 +151,7 @@ COMMENT ON ROLE dba_maintenance IS
   'DBA maintenance role with BYPASSRLS for critical operations.
    
    USE CASES:
-   - Data migrations between clinicas/contratantes
+   - Data migrations between clinicas/tomadores
    - Bug fixes requiring cross-entity updates
    - Emergency hotfixes during incidents
    - Global reports for management

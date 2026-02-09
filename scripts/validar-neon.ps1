@@ -25,7 +25,7 @@ $env:PGPASSWORD = $NEON_PASSWORD
 # Tabelas críticas esperadas
 $expectedTables = @(
     "usuarios",
-    "contratantes",
+    "tomadores",
     "clinicas",
     "empresas_clientes",
     "funcionarios",

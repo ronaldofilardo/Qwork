@@ -32,6 +32,7 @@ export const GET = async (_req: Request) => {
     }
 
     // Buscar notificações para clínicas: avaliações concluídas e laudos enviados
+    // Nota: clinica_id vem da sessão (não existe mais em funcionarios após Migration 605)
     const notificacoesQuery = await query(
       `
       SELECT
@@ -45,8 +46,8 @@ export const GET = async (_req: Request) => {
       FROM avaliacoes a
       JOIN lotes_avaliacao la ON a.lote_id = la.id
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
-      WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
-        AND a.status = 'concluido'
+      WHERE la.clinica_id = $2
+        AND a.status = 'concluida'
         AND a.envio >= NOW() - INTERVAL '7 days'
 
       UNION ALL
@@ -62,7 +63,7 @@ export const GET = async (_req: Request) => {
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
-      WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
+      WHERE la.clinica_id = $2
         AND l.status = 'enviado'
         AND l.enviado_em >= NOW() - INTERVAL '7 days'
 
@@ -90,7 +91,7 @@ export const GET = async (_req: Request) => {
       ORDER BY data_evento DESC
       LIMIT 50
     `,
-      [user.cpf]
+      [user.cpf, user.clinica_id]
     );
 
     // Se a tabela `notificacoes` não existe, executar consulta sem o bloco de notificações

@@ -90,7 +90,7 @@ describe('Database Migrations - Validação de Schema', () => {
   });
 
   describe('Migration 100 - data_liberacao_login', () => {
-    it('deve ter coluna data_liberacao_login em contratantes', async () => {
+    it('deve ter coluna data_liberacao_login em tomadors', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
@@ -105,7 +105,7 @@ describe('Database Migrations - Validação de Schema', () => {
       const result = await query(`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns
-        WHERE table_name = 'contratantes' AND column_name = 'data_liberacao_login'
+        WHERE table_name = 'tomadors' AND column_name = 'data_liberacao_login'
       `);
 
       expect(result.rows).toHaveLength(1);
@@ -114,15 +114,15 @@ describe('Database Migrations - Validação de Schema', () => {
 
     it('deve ter índice em data_liberacao_login', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{ indexname: 'idx_contratantes_data_liberacao_login' }],
+        rows: [{ indexname: 'idx_tomadors_data_liberacao_login' }],
         rowCount: 1,
       } as any);
 
       const result = await query(`
         SELECT indexname
         FROM pg_indexes
-        WHERE tablename = 'contratantes' 
-          AND indexname = 'idx_contratantes_data_liberacao_login'
+        WHERE tablename = 'tomadors' 
+          AND indexname = 'idx_tomadors_data_liberacao_login'
       `);
 
       expect(result.rows).toHaveLength(1);
@@ -199,12 +199,12 @@ describe('Database Migrations - Validação de Schema', () => {
     });
   });
 
-  describe('Migration 105 - contratante_id em Funcionários', () => {
-    it('deve ter coluna contratante_id com foreign key', async () => {
+  describe('Migration 105 - tomador_id em Funcionários', () => {
+    it('deve ter coluna tomador_id com foreign key', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            column_name: 'contratante_id',
+            column_name: 'tomador_id',
             data_type: 'integer',
             is_nullable: 'YES',
           },
@@ -215,18 +215,18 @@ describe('Database Migrations - Validação de Schema', () => {
       const result = await query(`
         SELECT column_name, data_type, is_nullable
         FROM information_schema.columns
-        WHERE table_name = 'funcionarios' AND column_name = 'contratante_id'
+        WHERE table_name = 'funcionarios' AND column_name = 'tomador_id'
       `);
 
       expect(result.rows).toHaveLength(1);
       expect(result.rows[0].data_type).toBe('integer');
     });
 
-    it('deve ter foreign key para contratantes', async () => {
+    it('deve ter foreign key para tomadors', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            constraint_name: 'fk_funcionarios_contratante',
+            constraint_name: 'fk_funcionarios_tomador',
             constraint_type: 'FOREIGN KEY',
           },
         ],
@@ -237,16 +237,16 @@ describe('Database Migrations - Validação de Schema', () => {
         SELECT constraint_name, constraint_type
         FROM information_schema.table_constraints
         WHERE table_name = 'funcionarios' 
-          AND constraint_name = 'fk_funcionarios_contratante'
+          AND constraint_name = 'fk_funcionarios_tomador'
       `);
 
       expect(result.rows).toHaveLength(1);
       expect(result.rows[0].constraint_type).toBe('FOREIGN KEY');
     });
 
-    it('deve ter índice em contratante_id', async () => {
+    it('deve ter índice em tomador_id', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{ indexname: 'idx_funcionarios_contratante_id' }],
+        rows: [{ indexname: 'idx_funcionarios_tomador_id' }],
         rowCount: 1,
       } as any);
 
@@ -254,7 +254,7 @@ describe('Database Migrations - Validação de Schema', () => {
         SELECT indexname
         FROM pg_indexes
         WHERE tablename = 'funcionarios' 
-          AND indexname = 'idx_funcionarios_contratante_id'
+          AND indexname = 'idx_funcionarios_tomador_id'
       `);
 
       expect(result.rows).toHaveLength(1);
@@ -287,11 +287,11 @@ describe('Data Integrity - Validação Pós-Migrações', () => {
     const result = await query(
       `
       SELECT 
-        id, cpf, nome, data_nascimento, contratante_id,
+        id, cpf, nome, data_nascimento, tomador_id,
         ultima_avaliacao_data_conclusao, 
         ultima_avaliacao_status, ultimo_motivo_inativacao, data_ultimo_lote
       FROM funcionarios
-      WHERE contratante_id = $1
+      WHERE tomador_id = $1
     `,
       [1]
     );

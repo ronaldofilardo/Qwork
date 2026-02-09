@@ -9,7 +9,7 @@ CREATE OR REPLACE FUNCTION public.sync_personalizado_status() RETURNS trigger
 BEGIN
     -- Quando contratacao_personalizada muda para valor_definido, atualizar contratante
     IF NEW.status::text = 'valor_definido' AND (OLD.status IS NULL OR OLD.status::text = 'aguardando_valor_admin') THEN
-        UPDATE contratantes 
+        UPDATE tomadores 
         SET status = 'aguardando_pagamento', atualizado_em = CURRENT_TIMESTAMP 
         WHERE id = NEW.contratante_id;
         
@@ -18,7 +18,7 @@ BEGIN
     
     -- Quando pago, ativar contratante e disparar criação de conta
     IF NEW.status::text = 'pago' AND OLD.status::text = 'aguardando_pagamento' THEN
-        UPDATE contratantes 
+        UPDATE tomadores 
         SET status = 'aprovado', -- Usar 'aprovado' em vez de 'ativo' (não existe no enum)
             data_liberacao_login = CURRENT_TIMESTAMP, 
             ativa = true,
@@ -35,4 +35,4 @@ BEGIN
 END;
 $$;
 
-COMMENT ON FUNCTION public.sync_personalizado_status() IS 'Sincroniza status de contratacao_personalizada para contratantes. Cast ::text para evitar erros de comparação de enum.';
+COMMENT ON FUNCTION public.sync_personalizado_status() IS 'Sincroniza status de contratacao_personalizada para tomadores. Cast ::text para evitar erros de comparação de enum.';

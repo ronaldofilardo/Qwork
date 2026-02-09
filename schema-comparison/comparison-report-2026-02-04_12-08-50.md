@@ -31,16 +31,16 @@ enforce_laudo_immutability|laudos|EXECUTE FUNCTION check_laudo_immutability()
 prevent_avaliacao_delete_after_emission|avaliacoes|EXECUTE FUNCTION prevent_modification_after_emission()
 prevent_avaliacao_update_after_emission|avaliacoes|EXECUTE FUNCTION prevent_modification_after_emission()
 prevent_lote_update_after_emission|lotes_avaliacao|EXECUTE FUNCTION prevent_lote_status_change_after_emission()
-tr_contratantes_sync_status_ativa|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa()
-tr_contratantes_sync_status_ativa|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa()
-tr_contratantes_sync_status_ativa_personalizado|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado()
-tr_contratantes_sync_status_ativa_personalizado|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado()
-tr_contratantes_sync_status_ativa_robust|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_robust()
-tr_contratantes_sync_status_ativa_robust|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_robust()
+tr_tomadores_sync_status_ativa|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa()
+tr_tomadores_sync_status_ativa|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa()
+tr_tomadores_sync_status_ativa_personalizado|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_personalizado()
+tr_tomadores_sync_status_ativa_personalizado|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_personalizado()
+tr_tomadores_sync_status_ativa_robust|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_robust()
+tr_tomadores_sync_status_ativa_robust|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_robust()
 trg_audit_laudo_creation|laudos|EXECUTE FUNCTION audit_laudo_creation()
 trg_audit_lote_status|lotes_avaliacao|EXECUTE FUNCTION audit_lote_status_change()
 trg_entidades_senhas_updated_at|entidades_senhas|EXECUTE FUNCTION update_entidades_senhas_updated_at()
-trg_contratantes_updated_at|contratantes|EXECUTE FUNCTION update_contratantes_updated_at()
+trg_tomadores_updated_at|tomadores|EXECUTE FUNCTION update_tomadores_updated_at()
 trg_enforce_laudo_id_equals_lote|laudos|EXECUTE FUNCTION trg_enforce_laudo_id_equals_lote()
 trg_gerar_numero_recibo|recibos|EXECUTE FUNCTION trigger_gerar_numero_recibo()
 trg_immutable_laudo|laudos|EXECUTE FUNCTION prevent_update_laudo_enviado()
@@ -49,8 +49,8 @@ trg_immutable_lote|lotes_avaliacao|EXECUTE FUNCTION prevent_update_finalized_lot
 trg_laudo_jobs_updated_at|laudo_generation_jobs|EXECUTE FUNCTION set_updated_at_column()
 trg_notificacoes_admin_updated|notificacoes_admin|EXECUTE FUNCTION atualizar_notificacao_admin_timestamp()
 trg_pdf_jobs_update_timestamp|pdf_jobs|EXECUTE FUNCTION update_pdf_jobs_timestamp()
-trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
-trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
+trg_prevent_tomador_emissor|entidades_senhas|EXECUTE FUNCTION prevent_tomador_for_emissor()
+trg_prevent_tomador_emissor|entidades_senhas|EXECUTE FUNCTION prevent_tomador_for_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_laudo_lote_id_change|laudos|EXECUTE FUNCTION prevent_laudo_lote_id_change()
@@ -75,7 +75,7 @@ trg_sync_personalizado_status|contratacao_personalizada|EXECUTE FUNCTION sync_pe
 trg_validar_parcelas|contratos_planos|EXECUTE FUNCTION validar_parcelas_json()
 trg_validar_parcelas|contratos_planos|EXECUTE FUNCTION validar_parcelas_json()
 trg_validar_status_avaliacao|avaliacoes|EXECUTE FUNCTION validar_status_avaliacao()
-trg_validar_transicao_status|contratantes|EXECUTE FUNCTION validar_transicao_status_contratante()
+trg_validar_transicao_status|tomadores|EXECUTE FUNCTION validar_transicao_status_tomador()
 trg_validar_transicao_status_lote|lotes_avaliacao|EXECUTE FUNCTION fn_validar_transicao_status_lote()
 trigger_atualizar_timestamp_configuracoes|clinica_configuracoes|EXECUTE FUNCTION atualizar_timestamp_configuracoes()
 trigger_atualizar_ultima_avaliacao|avaliacoes|EXECUTE FUNCTION atualizar_ultima_avaliacao_funcionario()
@@ -115,14 +115,14 @@ enforce_laudo_immutability|laudos|EXECUTE FUNCTION check_laudo_immutability()
 prevent_avaliacao_delete_after_emission|avaliacoes|EXECUTE FUNCTION prevent_modification_after_emission()
 prevent_avaliacao_update_after_emission|avaliacoes|EXECUTE FUNCTION prevent_modification_after_emission()
 prevent_lote_update_after_emission|lotes_avaliacao|EXECUTE FUNCTION prevent_lote_status_change_after_emission()
-tr_contratantes_sync_status_ativa_personalizado|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado()
-tr_contratantes_sync_status_ativa_personalizado|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado()
-tr_contratantes_sync_status_ativa_robust|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_robust()
-tr_contratantes_sync_status_ativa_robust|contratantes|EXECUTE FUNCTION contratantes_sync_status_ativa_robust()
+tr_tomadores_sync_status_ativa_personalizado|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_personalizado()
+tr_tomadores_sync_status_ativa_personalizado|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_personalizado()
+tr_tomadores_sync_status_ativa_robust|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_robust()
+tr_tomadores_sync_status_ativa_robust|tomadores|EXECUTE FUNCTION tomadores_sync_status_ativa_robust()
 trg_audit_laudo_creation|laudos|EXECUTE FUNCTION audit_laudo_creation()
 trg_audit_lote_status|lotes_avaliacao|EXECUTE FUNCTION audit_lote_status_change()
 trg_entidades_senhas_updated_at|entidades_senhas|EXECUTE FUNCTION update_entidades_senhas_updated_at()
-trg_contratantes_updated_at|contratantes|EXECUTE FUNCTION update_contratantes_updated_at()
+trg_tomadores_updated_at|tomadores|EXECUTE FUNCTION update_tomadores_updated_at()
 trg_enforce_laudo_id_equals_lote|laudos|EXECUTE FUNCTION trg_enforce_laudo_id_equals_lote()
 trg_gerar_numero_recibo|recibos|EXECUTE FUNCTION trigger_gerar_numero_recibo()
 trg_immutable_laudo|laudos|EXECUTE FUNCTION prevent_update_laudo_enviado()
@@ -131,8 +131,8 @@ trg_immutable_lote|lotes_avaliacao|EXECUTE FUNCTION prevent_update_finalized_lot
 trg_laudo_jobs_updated_at|laudo_generation_jobs|EXECUTE FUNCTION set_updated_at_column()
 trg_notificacoes_admin_updated|notificacoes_admin|EXECUTE FUNCTION atualizar_notificacao_admin_timestamp()
 trg_pdf_jobs_update_timestamp|pdf_jobs|EXECUTE FUNCTION update_pdf_jobs_timestamp()
-trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
-trg_prevent_contratante_emissor|entidades_senhas|EXECUTE FUNCTION prevent_contratante_for_emissor()
+trg_prevent_tomador_emissor|entidades_senhas|EXECUTE FUNCTION prevent_tomador_for_emissor()
+trg_prevent_tomador_emissor|entidades_senhas|EXECUTE FUNCTION prevent_tomador_for_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_gestor_emissor|funcionarios|EXECUTE FUNCTION prevent_gestor_being_emissor()
 trg_prevent_laudo_lote_id_change|laudos|EXECUTE FUNCTION prevent_laudo_lote_id_change()
@@ -154,7 +154,7 @@ trg_respostas_set_questao|respostas|EXECUTE FUNCTION set_questao_from_item()
 trg_validar_parcelas|contratos_planos|EXECUTE FUNCTION validar_parcelas_json()
 trg_validar_parcelas|contratos_planos|EXECUTE FUNCTION validar_parcelas_json()
 trg_validar_status_avaliacao|avaliacoes|EXECUTE FUNCTION validar_status_avaliacao()
-trg_validar_transicao_status|contratantes|EXECUTE FUNCTION validar_transicao_status_contratante()
+trg_validar_transicao_status|tomadores|EXECUTE FUNCTION validar_transicao_status_tomador()
 trg_validar_transicao_status_lote|lotes_avaliacao|EXECUTE FUNCTION fn_validar_transicao_status_lote()
 trigger_atualizar_timestamp_configuracoes|clinica_configuracoes|EXECUTE FUNCTION atualizar_timestamp_configuracoes()
 trigger_garantir_template_padrao_unico|templates_contrato|EXECUTE FUNCTION garantir_template_padrao_unico()
@@ -173,8 +173,8 @@ trigger_resultado_immutability|resultados|EXECUTE FUNCTION check_resultado_immut
 
 **Triggers extras em PRODUÇÃO (não estão em DEV):**
 
-- tr_contratantes_sync_status_ativa
-- tr_contratantes_sync_status_ativa
+- tr_tomadores_sync_status_ativa
+- tr_tomadores_sync_status_ativa
 - trg_recalc_lote_on_avaliacao_change
 - trg_recalc_lote_on_avaliacao_change
 - trg_recalc_lote_on_avaliacao_change
@@ -196,7 +196,7 @@ v_auditoria_emissoes
 v_fila_emissao
 v_relatorio_emissoes_usuario
 vw_analise_grupos_negativos
-vw_audit_trail_por_contratante
+vw_audit_trail_por_tomador
 vw_auditoria_acessos_funcionarios
 vw_auditoria_acessos_rh
 vw_auditoria_senhas
@@ -218,7 +218,7 @@ suspicious_activity
 usuarios_resumo
 v_fila_emissao
 vw_analise_grupos_negativos
-vw_audit_trail_por_contratante
+vw_audit_trail_por_tomador
 vw_auditoria_acessos_funcionarios
 vw_auditoria_acessos_rh
 vw_auditoria_senhas
@@ -257,24 +257,24 @@ audit_lote_status_change
 audit_trigger_func
 audit_trigger_function
 calcular_elegibilidade_lote
-calcular_elegibilidade_lote_contratante
+calcular_elegibilidade_lote_tomador
 calcular_hash_pdf
 calcular_vigencia_fim
 check_laudo_immutability
 check_resposta_immutability
 check_resultado_immutability
-contratante_pode_logar
-contratantes_sync_status_ativa
-contratantes_sync_status_ativa_personalizado
-contratantes_sync_status_ativa_robust
+tomador_pode_logar
+tomadores_sync_status_ativa
+tomadores_sync_status_ativa_personalizado
+tomadores_sync_status_ativa_robust
 criar_conta_responsavel_personalizado
 criar_notificacao_recibo
 criar_notificacao_recibo
 crypt
 current_user_clinica_id
 current_user_clinica_id_optional
-current_user_contratante_id
-current_user_contratante_id_optional
+current_user_tomador_id
+current_user_tomador_id_optional
 current_user_cpf
 current_user_is_gestor
 current_user_perfil
@@ -314,7 +314,7 @@ gerar_dados_relatorio
 gerar_hash_auditoria
 gerar_numero_recibo
 gerar_token_retomada_pagamento
-get_contratante_funcionario
+get_tomador_funcionario
 get_resultados_por_empresa
 hmac
 hmac
@@ -352,7 +352,7 @@ pgp_sym_encrypt
 pgp_sym_encrypt
 pgp_sym_encrypt_bytea
 pgp_sym_encrypt_bytea
-prevent_contratante_for_emissor
+prevent_tomador_for_emissor
 prevent_gestor_being_emissor
 prevent_laudo_lote_id_change
 prevent_lote_mutation_during_emission
@@ -370,14 +370,14 @@ resolver_notificacoes_por_contexto
 safe_drop_policy
 set_questao_from_item
 set_updated_at_column
-sync_contratacao_status_to_contratante
+sync_contratacao_status_to_tomador
 sync_personalizado_status
 trg_enforce_laudo_id_equals_lote
 trg_recalc_lote_on_avaliacao_change
 trigger_criar_pdf_job
 trigger_gerar_numero_recibo
 update_entidades_senhas_updated_at
-update_contratantes_updated_at
+update_tomadores_updated_at
 update_pdf_jobs_timestamp
 upsert_laudo
 user_has_permission
@@ -386,7 +386,7 @@ validar_lote_pre_laudo
 validar_parcelas_json
 validar_sessao_rls
 validar_status_avaliacao
-validar_transicao_status_contratante
+validar_transicao_status_tomador
 validate_policy_table_match
 validate_rh_clinica
 verificar_inativacao_consecutiva
@@ -412,24 +412,24 @@ audit_lote_status_change
 audit_trigger_func
 audit_trigger_function
 calcular_elegibilidade_lote
-calcular_elegibilidade_lote_contratante
+calcular_elegibilidade_lote_tomador
 calcular_hash_pdf
 calcular_vigencia_fim
 check_laudo_immutability
 check_resposta_immutability
 check_resultado_immutability
-contratante_pode_logar
-contratantes_sync_status_ativa
-contratantes_sync_status_ativa_personalizado
-contratantes_sync_status_ativa_robust
+tomador_pode_logar
+tomadores_sync_status_ativa
+tomadores_sync_status_ativa_personalizado
+tomadores_sync_status_ativa_robust
 criar_conta_responsavel_personalizado
 criar_notificacao_recibo
 criar_notificacao_recibo
 crypt
 current_user_clinica_id
 current_user_clinica_id_optional
-current_user_contratante_id
-current_user_contratante_id_optional
+current_user_tomador_id
+current_user_tomador_id_optional
 current_user_cpf
 current_user_is_gestor
 current_user_perfil
@@ -465,7 +465,7 @@ gerar_dados_relatorio
 gerar_hash_auditoria
 gerar_numero_recibo
 gerar_token_retomada_pagamento
-get_contratante_funcionario
+get_tomador_funcionario
 get_resultados_por_empresa
 hmac
 hmac
@@ -501,7 +501,7 @@ pgp_sym_encrypt
 pgp_sym_encrypt
 pgp_sym_encrypt_bytea
 pgp_sym_encrypt_bytea
-prevent_contratante_for_emissor
+prevent_tomador_for_emissor
 prevent_gestor_being_emissor
 prevent_laudo_lote_id_change
 prevent_lote_mutation_during_emission
@@ -519,13 +519,13 @@ resolver_notificacoes_por_contexto
 safe_drop_policy
 set_questao_from_item
 set_updated_at_column
-sync_contratacao_status_to_contratante
+sync_contratacao_status_to_tomador
 sync_personalizado_status
 trg_enforce_laudo_id_equals_lote
 trigger_criar_pdf_job
 trigger_gerar_numero_recibo
 update_entidades_senhas_updated_at
-update_contratantes_updated_at
+update_tomadores_updated_at
 update_pdf_jobs_timestamp
 upsert_laudo
 user_has_permission
@@ -534,7 +534,7 @@ validar_lote_pre_laudo
 validar_parcelas_json
 validar_sessao_rls
 validar_status_avaliacao
-validar_transicao_status_contratante
+validar_transicao_status_tomador
 validate_policy_table_match
 validate_rh_clinica
 verificar_inativacao_consecutiva
@@ -578,7 +578,7 @@ audit_access_denied_pkey|audit_access_denied|PRIMARY KEY
 450562_451096_4_not_null|audit_logs|CHECK
 450562_451096_5_not_null|audit_logs|CHECK
 audit_logs_clinica_id_fkey|audit_logs|FOREIGN KEY
-audit_logs_contratante_id_fkey|audit_logs|FOREIGN KEY
+audit_logs_tomador_id_fkey|audit_logs|FOREIGN KEY
 audit_logs_pkey|audit_logs|PRIMARY KEY
 chk_audit_logs_user_cpf_format|audit_logs|CHECK
 450562_451108_13_not_null|auditoria|CHECK
@@ -633,38 +633,38 @@ unique_clinica_config|clinica_configuracoes|UNIQUE
 450562_450586_2_not_null|clinicas|CHECK
 clinicas_cnpj_key|clinicas|UNIQUE
 clinicas_pkey|clinicas|PRIMARY KEY
-fk_clinicas_contratante|clinicas|FOREIGN KEY
-unique_clinica_contratante|clinicas|UNIQUE
+fk_clinicas_tomador|clinicas|FOREIGN KEY
+unique_clinica_tomador|clinicas|UNIQUE
 450562_450594_1_not_null|clinicas_empresas|CHECK
 450562_450594_2_not_null|clinicas_empresas|CHECK
 clinicas_empresas_clinica_id_fkey|clinicas_empresas|FOREIGN KEY
 clinicas_empresas_empresa_id_fkey|clinicas_empresas|FOREIGN KEY
 clinicas_empresas_pkey|clinicas_empresas|PRIMARY KEY
 450562_467528_1_not_null|contratacao_personalizada|CHECK
-contratacao_personalizada_contratante_id_fkey|contratacao_personalizada|FOREIGN KEY
+contratacao_personalizada_tomador_id_fkey|contratacao_personalizada|FOREIGN KEY
 contratacao_personalizada_pkey|contratacao_personalizada|PRIMARY KEY
-450562_451142_10_not_null|contratantes|CHECK
-450562_451142_11_not_null|contratantes|CHECK
-450562_451142_12_not_null|contratantes|CHECK
-450562_451142_13_not_null|contratantes|CHECK
-450562_451142_15_not_null|contratantes|CHECK
-450562_451142_16_not_null|contratantes|CHECK
-450562_451142_1_not_null|contratantes|CHECK
-450562_451142_2_not_null|contratantes|CHECK
-450562_451142_3_not_null|contratantes|CHECK
-450562_451142_4_not_null|contratantes|CHECK
-450562_451142_6_not_null|contratantes|CHECK
-450562_451142_7_not_null|contratantes|CHECK
-450562_451142_8_not_null|contratantes|CHECK
-450562_451142_9_not_null|contratantes|CHECK
-chk_contratantes_tipo_valido|contratantes|CHECK
-contratantes_cnpj_unique|contratantes|UNIQUE
-contratantes_email_unique|contratantes|UNIQUE
-contratantes_estado_check|contratantes|CHECK
-contratantes_pkey|contratantes|PRIMARY KEY
-contratantes_plano_id_fkey|contratantes|FOREIGN KEY
-contratantes_responsavel_cpf_check|contratantes|CHECK
-contratantes_responsavel_cpf_unique|contratantes|UNIQUE
+450562_451142_10_not_null|tomadores|CHECK
+450562_451142_11_not_null|tomadores|CHECK
+450562_451142_12_not_null|tomadores|CHECK
+450562_451142_13_not_null|tomadores|CHECK
+450562_451142_15_not_null|tomadores|CHECK
+450562_451142_16_not_null|tomadores|CHECK
+450562_451142_1_not_null|tomadores|CHECK
+450562_451142_2_not_null|tomadores|CHECK
+450562_451142_3_not_null|tomadores|CHECK
+450562_451142_4_not_null|tomadores|CHECK
+450562_451142_6_not_null|tomadores|CHECK
+450562_451142_7_not_null|tomadores|CHECK
+450562_451142_8_not_null|tomadores|CHECK
+450562_451142_9_not_null|tomadores|CHECK
+chk_tomadores_tipo_valido|tomadores|CHECK
+tomadores_cnpj_unique|tomadores|UNIQUE
+tomadores_email_unique|tomadores|UNIQUE
+tomadores_estado_check|tomadores|CHECK
+tomadores_pkey|tomadores|PRIMARY KEY
+tomadores_plano_id_fkey|tomadores|FOREIGN KEY
+tomadores_responsavel_cpf_check|tomadores|CHECK
+tomadores_responsavel_cpf_unique|tomadores|UNIQUE
 450562_451155_1_not_null|entidades_senhas|CHECK
 450562_451155_2_not_null|entidades_senhas|CHECK
 450562_451155_3_not_null|entidades_senhas|CHECK
@@ -672,7 +672,7 @@ contratantes_responsavel_cpf_unique|contratantes|UNIQUE
 entidades_senhas_cpf_check|entidades_senhas|CHECK
 entidades_senhas_cpf_key|entidades_senhas|UNIQUE
 entidades_senhas_pkey|entidades_senhas|PRIMARY KEY
-fk_entidades_senhas_contratante|entidades_senhas|FOREIGN KEY
+fk_entidades_senhas_tomador|entidades_senhas|FOREIGN KEY
 450562_467368_1_not_null|entidades_senhas_audit|CHECK
 450562_467368_2_not_null|entidades_senhas_audit|CHECK
 450562_467368_3_not_null|entidades_senhas_audit|CHECK
@@ -685,20 +685,20 @@ entidades_senhas_audit_pkey|entidades_senhas_audit|PRIMARY KEY
 450562_451166_6_not_null|contratos|CHECK
 450562_451166_7_not_null|contratos|CHECK
 450562_451166_8_not_null|contratos|CHECK
-contratos_contratante_id_fkey|contratos|FOREIGN KEY
+contratos_tomador_id_fkey|contratos|FOREIGN KEY
 contratos_pkey|contratos|PRIMARY KEY
 contratos_plano_id_fkey|contratos|FOREIGN KEY
 450562_451176_1_not_null|contratos_planos|CHECK
 450562_451176_5_not_null|contratos_planos|CHECK
 450562_451176_7_not_null|contratos_planos|CHECK
-chk_contratos_planos_tipo_contratante_valido|contratos_planos|CHECK
+chk_contratos_planos_tipo_tomador_valido|contratos_planos|CHECK
 contratos_planos_clinica_id_fkey|contratos_planos|FOREIGN KEY
-contratos_planos_clinica_or_contratante|contratos_planos|CHECK
-contratos_planos_contratante_id_fkey|contratos_planos|FOREIGN KEY
+contratos_planos_clinica_or_tomador|contratos_planos|CHECK
+contratos_planos_tomador_id_fkey|contratos_planos|FOREIGN KEY
 contratos_planos_modalidade_pagamento_check|contratos_planos|CHECK
 contratos_planos_pkey|contratos_planos|PRIMARY KEY
 contratos_planos_plano_id_fkey|contratos_planos|FOREIGN KEY
-contratos_planos_tipo_contratante_check|contratos_planos|CHECK
+contratos_planos_tipo_tomador_check|contratos_planos|CHECK
 contratos_planos_tipo_pagamento_check|contratos_planos|CHECK
 450562_451185_1_not_null|emissao_queue|CHECK
 450562_451185_2_not_null|emissao_queue|CHECK
@@ -723,7 +723,7 @@ fk_empresas_clinica|empresas_clientes|FOREIGN KEY
 450562_450608_3_not_null|funcionarios|CHECK
 450562_450608_7_not_null|funcionarios|CHECK
 fk_funcionarios_clinica|funcionarios|FOREIGN KEY
-fk_funcionarios_contratante|funcionarios|FOREIGN KEY
+fk_funcionarios_tomador|funcionarios|FOREIGN KEY
 fk_funcionarios_ultima_avaliacao|funcionarios|FOREIGN KEY
 funcionarios_clinica_check|funcionarios|CHECK
 funcionarios_clinica_id_fkey|funcionarios|FOREIGN KEY
@@ -777,8 +777,8 @@ logs_admin_pkey|logs_admin|PRIMARY KEY
 450562_450630_1_not_null|lotes_avaliacao|CHECK
 fk_lotes_clinica|lotes_avaliacao|FOREIGN KEY
 lotes_avaliacao_clinica_id_fkey|lotes_avaliacao|FOREIGN KEY
-lotes_avaliacao_clinica_or_contratante_check|lotes_avaliacao|CHECK
-lotes_avaliacao_contratante_id_fkey|lotes_avaliacao|FOREIGN KEY
+lotes_avaliacao_clinica_or_tomador_check|lotes_avaliacao|CHECK
+lotes_avaliacao_tomador_id_fkey|lotes_avaliacao|FOREIGN KEY
 lotes_avaliacao_empresa_id_fkey|lotes_avaliacao|FOREIGN KEY
 lotes_avaliacao_empresa_numero_ordem_unique|lotes_avaliacao|UNIQUE
 lotes_avaliacao_liberado_por_fkey|lotes_avaliacao|FOREIGN KEY
@@ -809,7 +809,7 @@ notificacoes_pkey|notificacoes|PRIMARY KEY
 450562_451254_2_not_null|notificacoes_admin|CHECK
 450562_451254_3_not_null|notificacoes_admin|CHECK
 450562_451254_7_not_null|notificacoes_admin|CHECK
-fk_notificacoes_contratante|notificacoes_admin|FOREIGN KEY
+fk_notificacoes_tomador|notificacoes_admin|FOREIGN KEY
 fk_notificacoes_contrato|notificacoes_admin|FOREIGN KEY
 fk_notificacoes_pagamento|notificacoes_admin|FOREIGN KEY
 notificacoes_admin_lote_id_fkey|notificacoes_admin|FOREIGN KEY
@@ -877,10 +877,10 @@ questao_condicoes_pkey|questao_condicoes|PRIMARY KEY
 450562_451296_8_not_null|recibos|CHECK
 450562_451296_9_not_null|recibos|CHECK
 fk_recibos_clinica|recibos|FOREIGN KEY
-fk_recibos_contratante|recibos|FOREIGN KEY
+fk_recibos_tomador|recibos|FOREIGN KEY
 fk_recibos_contrato|recibos|FOREIGN KEY
 fk_recibos_pagamento|recibos|FOREIGN KEY
-recibos_contratante_ou_clinica_check|recibos|CHECK
+recibos_tomador_ou_clinica_check|recibos|CHECK
 recibos_numero_funcionarios_check|recibos|CHECK
 recibos_numero_parcelas_check|recibos|CHECK
 recibos_numero_recibo_key|recibos|UNIQUE
@@ -943,7 +943,7 @@ templates_contrato_tipo_template_check|templates_contrato|CHECK
 450562_467400_4_not_null|tokens_retomada_pagamento|CHECK
 450562_467400_7_not_null|tokens_retomada_pagamento|CHECK
 chk_token_expiracao|tokens_retomada_pagamento|CHECK
-fk_tokens_contratante|tokens_retomada_pagamento|FOREIGN KEY
+fk_tokens_tomador|tokens_retomada_pagamento|FOREIGN KEY
 fk_tokens_contrato|tokens_retomada_pagamento|FOREIGN KEY
 tokens_retomada_pagamento_pkey|tokens_retomada_pagamento|PRIMARY KEY
 tokens_retomada_pagamento_token_key|tokens_retomada_pagamento|UNIQUE
@@ -981,7 +981,7 @@ audit_access_denied_pkey|audit_access_denied|PRIMARY KEY
 2200_419997_4_not_null|audit_logs|CHECK
 2200_419997_5_not_null|audit_logs|CHECK
 audit_logs_clinica_id_fkey|audit_logs|FOREIGN KEY
-audit_logs_contratante_id_fkey|audit_logs|FOREIGN KEY
+audit_logs_tomador_id_fkey|audit_logs|FOREIGN KEY
 audit_logs_pkey|audit_logs|PRIMARY KEY
 chk_audit_logs_user_cpf_format|audit_logs|CHECK
 2200_420009_13_not_null|auditoria|CHECK
@@ -1040,34 +1040,34 @@ unique_clinica_config|clinica_configuracoes|UNIQUE
 2200_420048_2_not_null|clinicas|CHECK
 clinicas_cnpj_key|clinicas|UNIQUE
 clinicas_pkey|clinicas|PRIMARY KEY
-unique_clinica_contratante|clinicas|UNIQUE
+unique_clinica_tomador|clinicas|UNIQUE
 2200_420056_1_not_null|clinicas_empresas|CHECK
 2200_420056_2_not_null|clinicas_empresas|CHECK
 clinicas_empresas_clinica_id_fkey|clinicas_empresas|FOREIGN KEY
 clinicas_empresas_empresa_id_fkey|clinicas_empresas|FOREIGN KEY
 clinicas_empresas_pkey|clinicas_empresas|PRIMARY KEY
-2200_420068_10_not_null|contratantes|CHECK
-2200_420068_11_not_null|contratantes|CHECK
-2200_420068_12_not_null|contratantes|CHECK
-2200_420068_13_not_null|contratantes|CHECK
-2200_420068_15_not_null|contratantes|CHECK
-2200_420068_16_not_null|contratantes|CHECK
-2200_420068_1_not_null|contratantes|CHECK
-2200_420068_2_not_null|contratantes|CHECK
-2200_420068_3_not_null|contratantes|CHECK
-2200_420068_4_not_null|contratantes|CHECK
-2200_420068_6_not_null|contratantes|CHECK
-2200_420068_7_not_null|contratantes|CHECK
-2200_420068_8_not_null|contratantes|CHECK
-2200_420068_9_not_null|contratantes|CHECK
-chk_contratantes_tipo_valido|contratantes|CHECK
-contratantes_cnpj_unique|contratantes|UNIQUE
-contratantes_email_unique|contratantes|UNIQUE
-contratantes_estado_check|contratantes|CHECK
-contratantes_pkey|contratantes|PRIMARY KEY
-contratantes_plano_id_fkey|contratantes|FOREIGN KEY
-contratantes_responsavel_cpf_check|contratantes|CHECK
-contratantes_responsavel_cpf_unique|contratantes|UNIQUE
+2200_420068_10_not_null|tomadores|CHECK
+2200_420068_11_not_null|tomadores|CHECK
+2200_420068_12_not_null|tomadores|CHECK
+2200_420068_13_not_null|tomadores|CHECK
+2200_420068_15_not_null|tomadores|CHECK
+2200_420068_16_not_null|tomadores|CHECK
+2200_420068_1_not_null|tomadores|CHECK
+2200_420068_2_not_null|tomadores|CHECK
+2200_420068_3_not_null|tomadores|CHECK
+2200_420068_4_not_null|tomadores|CHECK
+2200_420068_6_not_null|tomadores|CHECK
+2200_420068_7_not_null|tomadores|CHECK
+2200_420068_8_not_null|tomadores|CHECK
+2200_420068_9_not_null|tomadores|CHECK
+chk_tomadores_tipo_valido|tomadores|CHECK
+tomadores_cnpj_unique|tomadores|UNIQUE
+tomadores_email_unique|tomadores|UNIQUE
+tomadores_estado_check|tomadores|CHECK
+tomadores_pkey|tomadores|PRIMARY KEY
+tomadores_plano_id_fkey|tomadores|FOREIGN KEY
+tomadores_responsavel_cpf_check|tomadores|CHECK
+tomadores_responsavel_cpf_unique|tomadores|UNIQUE
 2200_420081_1_not_null|entidades_senhas|CHECK
 2200_420081_2_not_null|entidades_senhas|CHECK
 2200_420081_3_not_null|entidades_senhas|CHECK
@@ -1075,7 +1075,7 @@ contratantes_responsavel_cpf_unique|contratantes|UNIQUE
 entidades_senhas_cpf_check|entidades_senhas|CHECK
 entidades_senhas_cpf_key|entidades_senhas|UNIQUE
 entidades_senhas_pkey|entidades_senhas|PRIMARY KEY
-fk_entidades_senhas_contratante|entidades_senhas|FOREIGN KEY
+fk_entidades_senhas_tomador|entidades_senhas|FOREIGN KEY
 2200_425731_1_not_null|entidades_senhas_audit|CHECK
 2200_425731_2_not_null|entidades_senhas_audit|CHECK
 2200_425731_3_not_null|entidades_senhas_audit|CHECK
@@ -1088,20 +1088,20 @@ entidades_senhas_audit_pkey|entidades_senhas_audit|PRIMARY KEY
 2200_420092_6_not_null|contratos|CHECK
 2200_420092_7_not_null|contratos|CHECK
 2200_420092_8_not_null|contratos|CHECK
-contratos_contratante_id_fkey|contratos|FOREIGN KEY
+contratos_tomador_id_fkey|contratos|FOREIGN KEY
 contratos_pkey|contratos|PRIMARY KEY
 contratos_plano_id_fkey|contratos|FOREIGN KEY
 2200_420102_1_not_null|contratos_planos|CHECK
 2200_420102_5_not_null|contratos_planos|CHECK
 2200_420102_7_not_null|contratos_planos|CHECK
-chk_contratos_planos_tipo_contratante_valido|contratos_planos|CHECK
+chk_contratos_planos_tipo_tomador_valido|contratos_planos|CHECK
 contratos_planos_clinica_id_fkey|contratos_planos|FOREIGN KEY
-contratos_planos_clinica_or_contratante|contratos_planos|CHECK
-contratos_planos_contratante_id_fkey|contratos_planos|FOREIGN KEY
+contratos_planos_clinica_or_tomador|contratos_planos|CHECK
+contratos_planos_tomador_id_fkey|contratos_planos|FOREIGN KEY
 contratos_planos_modalidade_pagamento_check|contratos_planos|CHECK
 contratos_planos_pkey|contratos_planos|PRIMARY KEY
 contratos_planos_plano_id_fkey|contratos_planos|FOREIGN KEY
-contratos_planos_tipo_contratante_check|contratos_planos|CHECK
+contratos_planos_tipo_tomador_check|contratos_planos|CHECK
 contratos_planos_tipo_pagamento_check|contratos_planos|CHECK
 2200_420111_1_not_null|emissao_queue|CHECK
 2200_420111_2_not_null|emissao_queue|CHECK
@@ -1116,7 +1116,7 @@ emissao_queue_pkey|emissao_queue|PRIMARY KEY
 2200_420121_3_not_null|empresas_clientes|CHECK
 empresas_clientes_clinica_id_fkey|empresas_clientes|FOREIGN KEY
 empresas_clientes_cnpj_key|empresas_clientes|UNIQUE
-empresas_clientes_contratante_id_fkey|empresas_clientes|FOREIGN KEY
+empresas_clientes_tomador_id_fkey|empresas_clientes|FOREIGN KEY
 empresas_clientes_parent_check|empresas_clientes|CHECK
 empresas_clientes_pkey|empresas_clientes|PRIMARY KEY
 fk_empresas_clinica|empresas_clientes|FOREIGN KEY
@@ -1131,7 +1131,7 @@ fila_emissao_pkey1|fila_emissao|PRIMARY KEY
 2200_420145_3_not_null|funcionarios|CHECK
 2200_420145_7_not_null|funcionarios|CHECK
 fk_funcionarios_clinica|funcionarios|FOREIGN KEY
-fk_funcionarios_contratante|funcionarios|FOREIGN KEY
+fk_funcionarios_tomador|funcionarios|FOREIGN KEY
 fk_funcionarios_ultima_avaliacao|funcionarios|FOREIGN KEY
 funcionarios_clinica_check|funcionarios|CHECK
 funcionarios_clinica_id_check|funcionarios|CHECK
@@ -1192,8 +1192,8 @@ logs_admin_pkey|logs_admin|PRIMARY KEY
 2200_420199_1_not_null|lotes_avaliacao|CHECK
 fk_lotes_clinica|lotes_avaliacao|FOREIGN KEY
 lotes_avaliacao_clinica_id_fkey|lotes_avaliacao|FOREIGN KEY
-lotes_avaliacao_clinica_or_contratante_check|lotes_avaliacao|CHECK
-lotes_avaliacao_contratante_id_fkey|lotes_avaliacao|FOREIGN KEY
+lotes_avaliacao_clinica_or_tomador_check|lotes_avaliacao|CHECK
+lotes_avaliacao_tomador_id_fkey|lotes_avaliacao|FOREIGN KEY
 lotes_avaliacao_empresa_id_fkey|lotes_avaliacao|FOREIGN KEY
 lotes_avaliacao_empresa_numero_ordem_unique|lotes_avaliacao|UNIQUE
 lotes_avaliacao_liberado_por_fkey|lotes_avaliacao|FOREIGN KEY
@@ -1224,7 +1224,7 @@ notificacoes_pkey|notificacoes|PRIMARY KEY
 2200_420231_2_not_null|notificacoes_admin|CHECK
 2200_420231_3_not_null|notificacoes_admin|CHECK
 2200_420231_7_not_null|notificacoes_admin|CHECK
-fk_notificacoes_contratante|notificacoes_admin|FOREIGN KEY
+fk_notificacoes_tomador|notificacoes_admin|FOREIGN KEY
 fk_notificacoes_contrato|notificacoes_admin|FOREIGN KEY
 fk_notificacoes_pagamento|notificacoes_admin|FOREIGN KEY
 notificacoes_admin_lote_id_fkey|notificacoes_admin|FOREIGN KEY
@@ -1292,10 +1292,10 @@ questao_condicoes_pkey|questao_condicoes|PRIMARY KEY
 2200_420279_8_not_null|recibos|CHECK
 2200_420279_9_not_null|recibos|CHECK
 fk_recibos_clinica|recibos|FOREIGN KEY
-fk_recibos_contratante|recibos|FOREIGN KEY
+fk_recibos_tomador|recibos|FOREIGN KEY
 fk_recibos_contrato|recibos|FOREIGN KEY
 fk_recibos_pagamento|recibos|FOREIGN KEY
-recibos_contratante_ou_clinica_check|recibos|CHECK
+recibos_tomador_ou_clinica_check|recibos|CHECK
 recibos_numero_funcionarios_check|recibos|CHECK
 recibos_numero_parcelas_check|recibos|CHECK
 recibos_numero_recibo_key|recibos|UNIQUE
@@ -1358,7 +1358,7 @@ templates_contrato_tipo_template_check|templates_contrato|CHECK
 2200_425764_4_not_null|tokens_retomada_pagamento|CHECK
 2200_425764_7_not_null|tokens_retomada_pagamento|CHECK
 chk_token_expiracao|tokens_retomada_pagamento|CHECK
-fk_tokens_contratante|tokens_retomada_pagamento|FOREIGN KEY
+fk_tokens_tomador|tokens_retomada_pagamento|FOREIGN KEY
 fk_tokens_contrato|tokens_retomada_pagamento|FOREIGN KEY
 tokens_retomada_pagamento_pkey|tokens_retomada_pagamento|PRIMARY KEY
 tokens_retomada_pagamento_token_key|tokens_retomada_pagamento|UNIQUE
@@ -1465,7 +1465,7 @@ usuarios_pkey|usuarios|PRIMARY KEY
 - 2200_420121_1_not_null
 - 2200_420121_2_not_null
 - 2200_420121_3_not_null
-- empresas_clientes_contratante_id_fkey
+- empresas_clientes_tomador_id_fkey
 - empresas_clientes_parent_check
 - 2200_425452_1_not_null
 - 2200_425452_2_not_null
@@ -1649,11 +1649,11 @@ usuarios_pkey|usuarios|PRIMARY KEY
 - 450562_467265_2_not_null
 - 450562_450586_1_not_null
 - 450562_450586_2_not_null
-- fk_clinicas_contratante
+- fk_clinicas_tomador
 - 450562_450594_1_not_null
 - 450562_450594_2_not_null
 - 450562_467528_1_not_null
-- contratacao_personalizada_contratante_id_fkey
+- contratacao_personalizada_tomador_id_fkey
 - contratacao_personalizada_pkey
 - 450562_451142_10_not_null
 - 450562_451142_11_not_null
@@ -1844,7 +1844,7 @@ clinica_configuracoes
 clinicas
 clinicas_empresas
 contratacao_personalizada
-contratantes
+tomadores
 entidades_senhas
 entidades_senhas_audit
 contratos
@@ -1902,7 +1902,7 @@ backup_lotes_migracao_20260130
 clinica_configuracoes
 clinicas
 clinicas_empresas
-contratantes
+tomadores
 entidades_senhas
 entidades_senhas_audit
 contratos
@@ -1973,7 +1973,7 @@ atualizado_em|timestamp without time zone|YES
 laudo_enviado_em|timestamp without time zone|YES
 finalizado_em|timestamp without time zone|YES
 numero_ordem|integer|NO
-contratante_id|integer|YES
+tomador_id|integer|YES
 emitido_em|timestamp with time zone|YES
 enviado_em|timestamp with time zone|YES
 hash_pdf|character varying|YES
@@ -1994,7 +1994,7 @@ liberado_por|character|YES
 liberado_em|timestamp without time zone|YES
 criado_em|timestamp without time zone|YES
 atualizado_em|timestamp without time zone|YES
-contratante_id|integer|YES
+tomador_id|integer|YES
 hash_pdf|character varying|YES
 numero_ordem|integer|NO
 emitido_em|timestamp with time zone|YES
@@ -2135,7 +2135,7 @@ ultima_avaliacao_status|character varying|YES
 ultimo_motivo_inativacao|text|YES
 indice_avaliacao|integer|NO
 data_ultimo_lote|timestamp without time zone|YES
-contratante_id|integer|YES
+tomador_id|integer|YES
 usuario_tipo|USER-DEFINED|NO
 ```
 
@@ -2165,7 +2165,7 @@ ultima_avaliacao_status|character varying|YES
 ultimo_motivo_inativacao|text|YES
 data_ultimo_lote|timestamp without time zone|YES
 data_nascimento|date|YES
-contratante_id|integer|YES
+tomador_id|integer|YES
 indice_avaliacao|integer|NO
 usuario_tipo|USER-DEFINED|NO
 incluido_em|timestamp without time zone|YES
@@ -2196,7 +2196,7 @@ ip_address|inet|YES
 user_agent|text|YES
 details|text|YES
 created_at|timestamp without time zone|NO
-contratante_id|integer|YES
+tomador_id|integer|YES
 clinica_id|integer|YES
 ```
 
@@ -2215,7 +2215,7 @@ ip_address|inet|YES
 user_agent|text|YES
 details|text|YES
 created_at|timestamp without time zone|NO
-contratante_id|integer|YES
+tomador_id|integer|YES
 clinica_id|integer|YES
 ```
 

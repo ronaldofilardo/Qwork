@@ -42,7 +42,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
   const testCnpj = '11222333000181'; // CNPJ válido
   const testCpfResp = '12345678909'; // CPF válido
   const testEmail = 'fluxo.completo@test.com';
-  let contratanteId: number;
+  let tomadorId: number;
   let paymentToken: string;
 
   beforeAll(async () => {
@@ -58,11 +58,11 @@ describe('Fluxo Completo - Plano Personalizado', () => {
   beforeEach(async () => {
     // Limpar dados de testes anteriores
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
@@ -70,7 +70,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
       [testCnpj]
     );
     await query(
-      "DELETE FROM notificacoes WHERE dados_contexto->>'contratacao_id' IS NOT NULL OR dados_contexto->>'contratante_id' IN (SELECT id::text FROM entidades WHERE cnpj = $1)",
+      "DELETE FROM notificacoes WHERE dados_contexto->>'contratacao_id' IS NOT NULL OR dados_contexto->>'tomador_id' IN (SELECT id::text FROM entidades WHERE cnpj = $1)",
       [testCnpj]
     );
     await query('DELETE FROM entidades WHERE cnpj = $1', [testCnpj]);
@@ -82,11 +82,11 @@ describe('Fluxo Completo - Plano Personalizado', () => {
   afterAll(async () => {
     // Limpar dados do teste
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
       [planoPersonalizadoId]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
       [planoPersonalizadoId]
     );
     await query(
@@ -187,14 +187,14 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     expect(cadastroResponse.status).toBe(201);
     expect(cadastroData.success).toBe(true);
-    expect(cadastroData.contratante.status).toBe('pendente');
+    expect(cadastroData.tomador.status).toBe('pendente');
 
-    contratanteId = cadastroData.contratante.id;
+    tomadorId = cadastroData.tomador.id;
 
     // Verificar criação em contratacao_personalizada
     const contratacaoRes = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(contratacaoRes.rows.length).toBe(1);
@@ -224,7 +224,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
           payment_link_token = $4,
           payment_link_expiracao = $5,
           atualizado_em = CURRENT_TIMESTAMP
-      WHERE contratante_id = $6
+      WHERE tomador_id = $6
     `,
       [
         valorPorFuncionario,
@@ -232,7 +232,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
         valorTotal,
         paymentToken,
         expiracao,
-        contratanteId,
+        tomadorId,
       ]
     );
 
@@ -240,11 +240,11 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     await query(
       `
       INSERT INTO contratos (
-        contratante_id, plano_id, numero_funcionarios, valor_total,
+        tomador_id, plano_id, numero_funcionarios, valor_total,
         status, criado_em
       ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento', CURRENT_TIMESTAMP)
     `,
-      [contratanteId, planoPersonalizadoId, numeroFuncionarios, valorTotal]
+      [tomadorId, planoPersonalizadoId, numeroFuncionarios, valorTotal]
     );
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
@@ -252,8 +252,8 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     // Verificar atualização em contratacao_personalizada
     const contratacaoAtualizada = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(contratacaoAtualizada.rows[0].status).toBe('valor_definido');
@@ -263,8 +263,8 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     // Verificar criação de contrato
     const contratoRes = await query(
-      'SELECT * FROM contratos WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratos WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(contratoRes.rows.length).toBe(1);
@@ -281,9 +281,9 @@ describe('Fluxo Completo - Plano Personalizado', () => {
       UPDATE contratacao_personalizada 
       SET status = 'pago',
           atualizado_em = CURRENT_TIMESTAMP
-      WHERE contratante_id = $1
+      WHERE tomador_id = $1
     `,
-      [contratanteId]
+      [tomadorId]
     );
 
     await query(
@@ -292,20 +292,20 @@ describe('Fluxo Completo - Plano Personalizado', () => {
       SET status = 'ativo',
           aceito = true,
           data_aceite = CURRENT_TIMESTAMP
-      WHERE contratante_id = $1
+      WHERE tomador_id = $1
     `,
-      [contratanteId]
+      [tomadorId]
     );
 
     await query(
       `
-      UPDATE contratantes 
+      UPDATE entidades 
       SET status = 'aprovado',
           pagamento_confirmado = true,
           ativa = true
       WHERE id = $1
     `,
-      [contratanteId]
+      [tomadorId]
     );
 
     // ✓ Pagamento confirmado com sucesso
@@ -313,15 +313,15 @@ describe('Fluxo Completo - Plano Personalizado', () => {
     // 4. VERIFICAR LIBERAÇÃO DE LOGIN
     // \n=== ETAPA 4: VERIFICAÇÃO DE LIBERAÇÃO DE LOGIN ===
 
-    // Verificar se pode criar senha para o contratante
-    const contratanteFinal = await query(
-      'SELECT * FROM contratantes WHERE id = $1',
-      [contratanteId]
+    // Verificar se pode criar senha para o tomador
+    const tomadorFinal = await query(
+      'SELECT * FROM entidades WHERE id = $1',
+      [tomadorId]
     );
 
-    expect(contratanteFinal.rows[0].status).toBe('aprovado');
-    expect(contratanteFinal.rows[0].pagamento_confirmado).toBe(true);
-    expect(contratanteFinal.rows[0].ativa).toBe(true);
+    expect(tomadorFinal.rows[0].status).toBe('aprovado');
+    expect(tomadorFinal.rows[0].pagamento_confirmado).toBe(true);
+    expect(tomadorFinal.rows[0].ativa).toBe(true);
 
     // Simular criação de senha (login liberado)
     // Usando hash simples para o teste (em produção seria bcrypt)
@@ -332,16 +332,16 @@ describe('Fluxo Completo - Plano Personalizado', () => {
 
     await query(
       `
-      INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
+      INSERT INTO entidades_senhas (tomador_id, cpf, senha_hash)
       VALUES ($1, $2, $3)
-      ON CONFLICT (contratante_id) DO UPDATE SET senha_hash = EXCLUDED.senha_hash
+      ON CONFLICT (tomador_id) DO UPDATE SET senha_hash = EXCLUDED.senha_hash
     `,
-      [contratanteId, testCpfResp, hashedPassword]
+      [tomadorId, testCpfResp, hashedPassword]
     );
 
     const senhaRes = await query(
-      'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM entidades_senhas WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(senhaRes.rows.length).toBe(1);
@@ -371,7 +371,7 @@ describe('Fluxo Completo - Plano Personalizado', () => {
       SELECT 
         c.id,
         c.nome,
-        c.status as contratante_status,
+        c.status as tomador_status,
         c.ativa,
         c.pagamento_confirmado,
         cp.status as contratacao_status,
@@ -379,18 +379,18 @@ describe('Fluxo Completo - Plano Personalizado', () => {
         ct.status as contrato_status,
         ct.aceito as contrato_aceito,
         cs.senha_hash IS NOT NULL as tem_senha
-      FROM contratantes c
-      LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
-      LEFT JOIN contratos ct ON c.id = ct.contratante_id
-      LEFT JOIN entidades_senhas cs ON c.id = cs.contratante_id
+      FROM entidades c
+      LEFT JOIN contratacao_personalizada cp ON c.id = cp.tomador_id
+      LEFT JOIN contratos ct ON c.id = ct.tomador_id
+      LEFT JOIN entidades_senhas cs ON c.id = cs.tomador_id
       WHERE c.id = $1
     `,
-      [contratanteId]
+      [tomadorId]
     );
 
     const estadoFinal = verificacaoFinal.rows[0];
 
-    expect(estadoFinal.contratante_status).toBe('aprovado');
+    expect(estadoFinal.tomador_status).toBe('aprovado');
     expect(estadoFinal.ativa).toBe(true);
     expect(estadoFinal.pagamento_confirmado).toBe(true);
     expect(estadoFinal.contratacao_status).toBe('pago');

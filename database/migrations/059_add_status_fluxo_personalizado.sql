@@ -16,12 +16,12 @@ BEGIN;
 CREATE INDEX IF NOT EXISTS idx_contratacao_personalizada_status 
 ON contratacao_personalizada(status);
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_status 
-ON contratantes(status);
+CREATE INDEX IF NOT EXISTS idx_tomadores_status 
+ON tomadores(status);
 
 -- Adicionar comentários explicativos
 COMMENT ON COLUMN contratacao_personalizada.status IS 'aguardando_valor_admin | valor_definido | aguardando_aceite_contrato | aguardando_pagamento | pago | cancelado';
-COMMENT ON COLUMN contratantes.status IS 'pendente | aguardando_aceite | aguardando_aceite_contrato | aguardando_pagamento | ativo | inativo | cancelado';
+COMMENT ON COLUMN tomadores.status IS 'pendente | aguardando_aceite | aguardando_aceite_contrato | aguardando_pagamento | ativo | inativo | cancelado';
 
 COMMIT;
 

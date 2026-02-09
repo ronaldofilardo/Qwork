@@ -15,10 +15,10 @@ Write-Host "========================================`n"
 Write-Host "[1/6] Cadastrando contratante tipo CLINICA..."
 $cnpjTeste = "33333333000199"
 
-psql -U postgres -d nr-bps_db -c "DELETE FROM contratantes WHERE cnpj = '$cnpjTeste';" 2>&1 | Out-Null
+psql -U postgres -d nr-bps_db -c "DELETE FROM tomadores WHERE cnpj = '$cnpjTeste';" 2>&1 | Out-Null
 
 $insertContratante = @"
-INSERT INTO contratantes (
+INSERT INTO tomadores (
     tipo, nome, cnpj, email, telefone,
     endereco, cidade, estado, cep,
     responsavel_nome, responsavel_cpf, responsavel_cargo,
@@ -123,7 +123,7 @@ foreach ($empresaId in $empresaIds) {
         if ($funcId) {
             $totalFunc++
             # Associar funcionário à clínica via contratante
-            $assocQuery = "INSERT INTO contratantes_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;"
+            $assocQuery = "INSERT INTO tomadores_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT (funcionario_id, contratante_id) DO NOTHING;"
             psql -U postgres -d nr-bps_db -c $assocQuery 2>&1 | Out-Null
         }
     }
@@ -169,7 +169,7 @@ SELECT
     c.id,
     c.nome,
     c.tipo
-FROM contratantes c 
+FROM tomadores c 
 WHERE c.id = $contratanteId
 UNION ALL
 SELECT 
@@ -193,6 +193,6 @@ SELECT
     COUNT(*)::int,
     'Total: ' || COUNT(*),
     NULL
-FROM contratantes_funcionarios cf 
+FROM tomadores_funcionarios cf 
 WHERE cf.contratante_id = $contratanteId;
 "

@@ -37,7 +37,7 @@ END $$;
 -- Permitir entidade_id nulo na tabela auditoria
 ALTER TABLE auditoria ALTER COLUMN entidade_id DROP NOT NULL;
 
--- Criar view v_entidades_stats se não existir (renomeada de v_contratantes_stats)
+-- Criar view v_entidades_stats se não existir (renomeada de v_tomadores_stats)
 DO $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.views WHERE table_name = 'v_entidades_stats') THEN
@@ -49,4 +49,4 @@ BEGIN
     END IF;
 END $$;
 
--- Nota: View renomeada - 'v_contratantes_stats' -> 'v_entidades_stats'
+-- Nota: View renomeada - 'v_tomadores_stats' -> 'v_entidades_stats'

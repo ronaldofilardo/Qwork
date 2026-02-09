@@ -15,11 +15,11 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 ### 1. Schema do Banco
 
-- ✅ Tabela `contratantes` unificada (tipo: `clinica` | `entidade`)
-- ✅ Coluna `contratante_id` adicionada em `lotes_avaliacao` (migration 061)
-- ✅ Constraint: `(clinica_id NOT NULL AND contratante_id NULL) OR (clinica_id NULL AND contratante_id NOT NULL)`
+- ✅ Tabela `tomadores` unificada (tipo: `clinica` | `entidade`)
+- ✅ Coluna `tomador_id` adicionada em `lotes_avaliacao` (migration 061)
+- ✅ Constraint: `(clinica_id NOT NULL AND tomador_id NULL) OR (clinica_id NULL AND tomador_id NOT NULL)`
 - ✅ `clinica_id` e `empresa_id` tornados nullable
-- ✅ Função `calcular_elegibilidade_lote_contratante()` existe para entidades
+- ✅ Função `calcular_elegibilidade_lote_tomador()` existe para entidades
 
 ### 2. RLS Policies (Parcialmente Implementadas)
 
@@ -27,18 +27,18 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
   - `lotes_entidade_select`
   - `lotes_entidade_insert`
   - `lotes_entidade_update`
-- ✅ Políticas dependem de `current_user_contratante_id()`
-- ✅ Migration 029 criou função helper `current_user_contratante_id()`
+- ✅ Políticas dependem de `current_user_tomador_id()`
+- ✅ Migration 029 criou função helper `current_user_tomador_id()`
 
 ### 3. APIs
 
-- ✅ Endpoint `/api/entidade/liberar-lote` existe e cria lotes com `contratante_id`
+- ✅ Endpoint `/api/entidade/liberar-lote` existe e cria lotes com `tomador_id`
 - ✅ Endpoint do emissor `/api/emissor/laudos/[loteId]` é genérico (não distingue tipo)
 
 ### 4. Session Management
 
 - ✅ `lib/session.ts` tem função `requireEntity()` que valida gestor
-- ✅ Session interface tem campo `contratante_id`
+- ✅ Session interface tem campo `tomador_id`
 
 ---
 
@@ -50,8 +50,8 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 **Problema:**
 
-- Função `current_user_contratante_id()` existe no banco (migration 029)
-- Mas `app.current_user_contratante_id` **NUNCA é definida** em `lib/db.ts`
+- Função `current_user_tomador_id()` existe no banco (migration 029)
+- Mas `app.current_user_tomador_id` **NUNCA é definida** em `lib/db.ts`
 - Apenas `cpf`, `perfil` e `clinica_id` são setadas via `SET LOCAL`
 
 **Impacto:**
@@ -62,7 +62,7 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 **Localização:**
 
 - `lib/db.ts` linhas 267-335 (função `query()`)
-- Falta: `SET LOCAL app.current_user_contratante_id = '...'`
+- Falta: `SET LOCAL app.current_user_tomador_id = '...'`
 
 ---
 
@@ -135,7 +135,7 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 **Problema:**
 
 - Funções de geração de laudo (`lib/laudo-calculos.ts`) assumem dados de empresa
-- Não há fallback para buscar dados do contratante quando `empresa_id = NULL`
+- Não há fallback para buscar dados do tomador quando `empresa_id = NULL`
 
 **Impacto:**
 
@@ -169,13 +169,13 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 ---
 
-### **P2.2 - Auditoria: Logs Sem `contratante_id`**
+### **P2.2 - Auditoria: Logs Sem `tomador_id`**
 
 **Gravidade:** 🔵 BAIXA
 
 **Problema:**
 
-- Audit logs podem não registrar `contratante_id`
+- Audit logs podem não registrar `tomador_id`
 - Perda de rastreabilidade
 
 ---
@@ -192,10 +192,10 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 ## 📋 Plano de Implementação (Priorizado)
 
-### ✅ Tarefa 1: Adicionar `contratante_id` ao Contexto de Sessão
+### ✅ Tarefa 1: Adicionar `tomador_id` ao Contexto de Sessão
 
 - Arquivo: `lib/db.ts`
-- Adicionar `SET LOCAL app.current_user_contratante_id` quando `session.contratante_id` existe
+- Adicionar `SET LOCAL app.current_user_tomador_id` quando `session.tomador_id` existe
 
 ### ✅ Tarefa 2: Corrigir Mismatch de Perfil em RLS
 
@@ -205,12 +205,12 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 ### ✅ Tarefa 3: Ajustar Query do Emissor para Suportar Lotes sem Empresa
 
 - Arquivo: `app/api/emissor/laudos/[loteId]/route.ts`
-- LEFT JOIN condicional e fallback para contratante
+- LEFT JOIN condicional e fallback para tomador
 
 ### ✅ Tarefa 4: Criar Lookup de Template com Fallback
 
 - Arquivo: `lib/laudo-calculos.ts`
-- Função `gerarDadosGeraisEmpresa()` buscar contratante se `empresa_id = NULL`
+- Função `gerarDadosGeraisEmpresa()` buscar tomador se `empresa_id = NULL`
 
 ### ✅ Tarefa 5: Adicionar Idempotência na Emissão
 
@@ -220,15 +220,15 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 ### ✅ Tarefa 6: Verificar/Atualizar Cron para Entidades
 
 - Arquivo: `app/api/cron/**`
-- Garantir que jobs processem lotes com `contratante_id NOT NULL`
+- Garantir que jobs processem lotes com `tomador_id NOT NULL`
 
 ### ✅ Tarefa 7: Adicionar Observability (Métricas)
 
-- Criar view agregada por `contratante_id` e `clinica_id`
+- Criar view agregada por `tomador_id` e `clinica_id`
 
 ### ✅ Tarefa 8: Melhorar Auditoria
 
-- Garantir que audit_logs inclua `contratante_id`
+- Garantir que audit_logs inclua `tomador_id`
 
 ### ✅ Tarefa 9: Criar Testes E2E
 
@@ -241,23 +241,23 @@ Garantir que o fluxo `conclusão de lote → envio ao emissor → geração do l
 
 ```sql
 -- 1. Verificar lotes de entidade existentes
-SELECT id, codigo, contratante_id, clinica_id, empresa_id, status
+SELECT id, codigo, tomador_id, clinica_id, empresa_id, status
 FROM lotes_avaliacao
-WHERE contratante_id IS NOT NULL;
+WHERE tomador_id IS NOT NULL;
 
 -- 2. Testar política RLS
 SET app.current_user_perfil = 'gestor';
-SET app.current_user_contratante_id = '1';
+SET app.current_user_tomador_id = '1';
 SELECT * FROM lotes_avaliacao; -- Deve retornar apenas lotes da entidade 1
 
 -- 3. Verificar função helper
-SELECT current_user_contratante_id(); -- Deve retornar valor ou NULL
+SELECT current_user_tomador_id(); -- Deve retornar valor ou NULL
 
 -- 4. Verificar constraints
 SELECT conname, pg_get_constraintdef(oid)
 FROM pg_constraint
 WHERE conrelid = 'lotes_avaliacao'::regclass
-AND conname LIKE '%contratante%';
+AND conname LIKE '%tomador%';
 ```
 
 ---
@@ -265,7 +265,7 @@ AND conname LIKE '%contratante%';
 ## 📊 Status de Implementação
 
 - [x] Análise completa
-- [ ] P0.1 - Sessão contratante_id
+- [ ] P0.1 - Sessão tomador_id
 - [ ] P0.2 - Fix perfil RLS
 - [ ] P0.3 - Joins condicionais
 - [ ] P0.4 - Idempotência

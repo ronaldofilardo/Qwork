@@ -26,7 +26,7 @@ async function testTrigger() {
 
     // Verificar se podemos inserir um contratante com plano_id
     const testInsert = await client.query(`
-      INSERT INTO contratantes (
+      INSERT INTO tomadores (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         plano_id, numero_funcionarios_estimado
@@ -54,7 +54,7 @@ async function testTrigger() {
     console.log('Resultado:', testInsert.rows[0]);
 
     // Limpar teste
-    await client.query(`DELETE FROM contratantes WHERE nome = 'Teste Empresa'`);
+    await client.query(`DELETE FROM tomadores WHERE nome = 'Teste Empresa'`);
 
     console.log('✓ Teste concluído - trigger funcionando!');
 

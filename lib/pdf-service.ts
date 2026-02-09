@@ -145,13 +145,13 @@ export async function generatePdfViaExternalService(
  */
 export async function createReciboNotification(
   reciboId: number,
-  contratanteId: number
+  tomadorId: number
 ): Promise<void> {
   try {
     await query(
       `INSERT INTO notificacoes (usuario_id, tipo, titulo, mensagem, link, lido, criado_em)
        VALUES ($1, 'recibo_gerado', 'Recibo Disponível', 'Seu recibo foi gerado e está pronto para download.', $2, false, CURRENT_TIMESTAMP)`,
-      [contratanteId, `/recibo/${reciboId}`]
+      [tomadorId, `/recibo/${reciboId}`]
     );
   } catch (error) {
     console.error('Erro ao criar notificação:', error);

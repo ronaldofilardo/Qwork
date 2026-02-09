@@ -28,14 +28,14 @@ describe('🩺 API RH Account-Info - Testes Básicos', () => {
   });
 });
 
-test('✅ Deve retornar plano quando registrado em contratos_planos com contratante_id', async () => {
+test('✅ Deve retornar plano quando registrado em contratos_planos com tomador_id', async () => {
   jest.isolateModules(() => {
-    const session = { cpf: '00000000000', perfil: 'rh', contratante_id: 123 };
+    const session = { cpf: '00000000000', perfil: 'rh', tomador_id: 123 };
     const clinicaRow = {
       id: 123,
-      nome: 'Clinica Contratante',
+      nome: 'Clinica tomador',
       cnpj: '63403935000139',
-      email: 'contato@contratante.com',
+      email: 'contato@tomador.com',
       telefone: null,
       endereco: null,
       cidade: null,
@@ -62,11 +62,11 @@ test('✅ Deve retornar plano quando registrado em contratos_planos com contrata
       query: jest
         .fn()
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // funcionarios query (sem clinica_id)
-        .mockResolvedValueOnce({ rows: [{ id: 123 }], rowCount: 1 }) // contratanteCheck
+        .mockResolvedValueOnce({ rows: [{ id: 123 }], rowCount: 1 }) // tomadorCheck
         .mockResolvedValueOnce({ rows: [clinicaRow], rowCount: 1 }) // clinicaQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // gestoresQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // snapshotQuery
-        .mockResolvedValueOnce({ rows: [planoRow], rowCount: 1 }) // planoQuery (contratante_id)
+        .mockResolvedValueOnce({ rows: [planoRow], rowCount: 1 }) // planoQuery (tomador_id)
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }), // pagamentosQuery
     }));
   });
@@ -75,7 +75,7 @@ test('✅ Deve retornar plano quando registrado em contratos_planos com contrata
 // Novo teste: quando não houver registro em contratos_planos, buscar em contratos
 test('✅ Fallback para plano vindo de `contratos` quando não existe em `contratos_planos`', async () => {
   jest.isolateModules(() => {
-    const session = { cpf: '00000000000', perfil: 'rh', contratante_id: 321 };
+    const session = { cpf: '00000000000', perfil: 'rh', tomador_id: 321 };
     const clinicaRow = {
       id: 321,
       nome: 'Clinica Contrato',
@@ -100,7 +100,7 @@ test('✅ Fallback para plano vindo de `contratos` quando não existe em `contra
       query: jest
         .fn()
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // funcionarios
-        .mockResolvedValueOnce({ rows: [{ id: 321 }], rowCount: 1 }) // contratanteCheck
+        .mockResolvedValueOnce({ rows: [{ id: 321 }], rowCount: 1 }) // tomadorCheck
         .mockResolvedValueOnce({ rows: [clinicaRow], rowCount: 1 }) // clinicaQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // gestores
         .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // snapshot

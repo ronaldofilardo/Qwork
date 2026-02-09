@@ -227,7 +227,7 @@ export async function handleConfirmarPagamento(
 
     return {
       success: true,
-      message: 'Pagamento confirmado e contratante ativado com sucesso',
+      message: 'Pagamento confirmado e tomador ativado com sucesso',
       pagamento,
       conta_criada: contaCriada,
       recibo_gerado: reciboGerado,

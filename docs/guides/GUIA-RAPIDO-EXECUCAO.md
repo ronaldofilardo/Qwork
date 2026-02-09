@@ -163,7 +163,7 @@ SELECT * FROM pg_policies WHERE tablename = 'contratacao_personalizada';
 ```sql
 -- Criar contratação de teste para disparar notificação
 INSERT INTO contratacao_personalizada (
-  contratante_id,
+  tomador_id,
   numero_funcionarios_estimado,
   status
 ) VALUES (

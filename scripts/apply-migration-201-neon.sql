@@ -1,4 +1,4 @@
--- Migration 201 (Neon) - APENAS RLS (sem contratantes_funcionarios)
+-- Migration 201 (Neon) - APENAS RLS (sem tomadores_funcionarios)
 -- Data: 2026-01-29
 
 BEGIN;

@@ -4,7 +4,7 @@
  *
  * Gera layout profissional com:
  * - Cabeçalho com logo QWork
- * - Dados do contratante
+ * - Dados do tomador
  * - Detalhes do plano e pagamento
  * - Vigência do contrato
  * - Hash SHA-256 no rodapé para verificação de integridade
@@ -181,13 +181,13 @@ function montarDetalhamentoPagamento(
 export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
   const {
     numero_recibo,
-    contratante_nome,
-    contratante_cnpj,
-    contratante_cpf,
-    contratante_endereco,
-    contratante_cidade,
-    contratante_estado,
-    contratante_cep,
+    tomador_nome,
+    tomador_cnpj,
+    tomador_cpf,
+    tomador_endereco,
+    tomador_cidade,
+    tomador_estado,
+    tomador_cep,
     plano_nome,
     plano_tipo,
     plano_descricao,
@@ -213,17 +213,17 @@ export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
   const dataFimFormatada = formatarData(new Date(data_fim_vigencia));
   const dataEmissao = formatarData(new Date(recibo.emitido_em || new Date()));
 
-  // Identificação do contratante (CNPJ ou CPF)
-  const identificacao = contratante_cnpj
-    ? `CNPJ: ${formatarCNPJ(contratante_cnpj)}`
-    : `CPF: ${formatarCPF(contratante_cpf || '')}`;
+  // Identificação do tomador (CNPJ ou CPF)
+  const identificacao = tomador_cnpj
+    ? `CNPJ: ${formatarCNPJ(tomador_cnpj)}`
+    : `CPF: ${formatarCPF(tomador_cpf || '')}`;
 
   // Endereço completo
   const enderecoCompleto = montarEnderecoCompleto(
-    contratante_endereco,
-    contratante_cidade,
-    contratante_estado,
-    contratante_cep
+    tomador_endereco,
+    tomador_cidade,
+    tomador_estado,
+    tomador_cep
   );
 
   // Detalhes do pagamento
@@ -439,13 +439,13 @@ export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
       <div class="numero-recibo">Nº ${numero_recibo}</div>
     </div>
 
-    <!-- DADOS DO CONTRATANTE -->
+    <!-- DADOS DO tomador -->
     <div class="secao">
-      <div class="secao-titulo">📋 Dados do Contratante</div>
+      <div class="secao-titulo">📋 Dados do tomador</div>
       <div class="destaque">
         <div class="info-item">
           <div class="info-label">Nome / Razão Social</div>
-          <div class="info-value">${contratante_nome}</div>
+          <div class="info-value">${tomador_nome}</div>
         </div>
         <div class="info-grid">
           <div class="info-item">
@@ -543,7 +543,7 @@ export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
     <!-- ASSINATURA (OPCIONAL) -->
     <div class="assinatura-section">
       <div class="assinatura-linha">
-        Assinatura do Contratante
+        Assinatura do tomador
       </div>
     </div>
 

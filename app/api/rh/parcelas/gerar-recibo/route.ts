@@ -443,7 +443,7 @@ export async function POST(request: Request) {
 RECIBO DE PAGAMENTO
 ${numero_recibo}
 
-CONTRATANTE:
+tomador:
 Nome: ${dados.clinica_nome}
 CNPJ: ${dados.clinica_cnpj || 'N/A'}
 Email: ${dados.clinica_email}

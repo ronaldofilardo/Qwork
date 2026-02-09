@@ -182,7 +182,7 @@ CREATE POLICY "empresas_admin_delete" ON empresas_clientes FOR DELETE ...
 
 - Admin pode gerenciar empresas (operacionais)
 - Empresas são gerenciadas por RH de cada clínica
-- Admin só deve gerenciar CLÍNICAS (contratantes tipo='clinica')
+- Admin só deve gerenciar CLÍNICAS (tomadores tipo='clinica')
 
 **Correção Necessária**:
 
@@ -517,7 +517,7 @@ describe('Admin Operational Access Prevention', () => {
 
 ### ✅ PODE ACESSAR (Administrativo):
 
-- Gerenciar clínicas (contratantes tipo='clinica')
+- Gerenciar clínicas (tomadores tipo='clinica')
 - Gerenciar planos e preços
 - Gerenciar emissores
 - Gerenciar usuários RH (criar, editar, inativar)

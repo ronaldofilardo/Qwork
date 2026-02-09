@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireEntity } from '@/lib/session';
+import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,7 +11,22 @@ export async function GET(
 ) {
   try {
     // Verificar sessão e perfil
-    const session = await requireEntity();
+    const session = getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+    }
+
+    if (session.perfil !== 'gestor') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+    }
+
+    if (!session.entidade_id) {
+      return NextResponse.json(
+        { error: 'Entidade não identificada' },
+        { status: 403 }
+      );
+    }
 
     const loteId = parseInt(params.id);
     if (isNaN(loteId)) {
@@ -30,7 +45,6 @@ export async function GET(
         la.status,
         la.criado_em,
         la.liberado_em,
-        COALESCE(la.pagamento_pendente, false) as pagamento_pendente,
         l.emitido_em as laudo_emitido_em,
         CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
         fe.solicitado_em as emissao_solicitado_em,
@@ -46,12 +60,7 @@ export async function GET(
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
-      WHERE la.id = $1 
-        AND EXISTS (
-          SELECT 1 FROM avaliacoes a 
-          JOIN funcionarios f ON a.funcionario_cpf = f.cpf 
-          WHERE a.lote_id = la.id AND f.tomador_id = $2
-        )
+      WHERE la.id = $1 AND la.entidade_id = $2
       LIMIT 1
     `,
       [loteId, session.entidade_id]
@@ -71,11 +80,12 @@ export async function GET(
       `
       SELECT
         COUNT(DISTINCT f.id) as total_funcionarios,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN f.id END) as funcionarios_concluidos,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN f.id END) as funcionarios_concluidos,
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND f.tomador_id = $2 AND a.status != 'inativada'
+      JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true
+      WHERE a.lote_id = $1 AND fe.entidade_id = $2 AND a.status != 'inativada'
     `,
       [loteId, session.entidade_id]
     );
@@ -100,7 +110,8 @@ export async function GET(
         (SELECT COUNT(DISTINCT (r.grupo, r.item)) FROM respostas r WHERE r.avaliacao_id = a.id) as total_respostas
       FROM funcionarios f
       JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
-      WHERE a.lote_id = $1 AND f.tomador_id = $2
+      JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true
+      WHERE a.lote_id = $1 AND fe.entidade_id = $2
       ORDER BY f.nome ASC
     `,
       [loteId, session.entidade_id]
@@ -112,7 +123,10 @@ export async function GET(
         const mediasGrupos: { [key: string]: number } = {};
 
         // Apenas calcular se avaliação está concluída
-        if (row.avaliacao_status === 'concluido') {
+        if (
+          row.avaliacao_status === 'concluida' ||
+          row.avaliacao_status === 'concluido'
+        ) {
           const respostasResult = await query(
             `
             SELECT grupo, AVG(valor) as media

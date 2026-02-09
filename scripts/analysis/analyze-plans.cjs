@@ -29,17 +29,17 @@ async function analyzePlansStructure() {
 
     console.log('=== CAMPOS RELACIONADOS NAS TABELAS ===');
 
-    // Verificar estrutura da tabela contratantes
-    const contratantesCols = await client.query(`
+    // Verificar estrutura da tabela tomadores
+    const tomadoresCols = await client.query(`
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns
-      WHERE table_name = 'contratantes'
+      WHERE table_name = 'tomadores'
       AND column_name LIKE '%plano%'
       ORDER BY column_name
     `);
 
-    console.log('Tabela CONTRATANTES - campos plano:');
-    contratantesCols.rows.forEach((col) => {
+    console.log('Tabela tomadores - campos plano:');
+    tomadoresCols.rows.forEach((col) => {
       console.log(
         `  ${col.column_name}: ${col.data_type} (${col.is_nullable})`
       );
@@ -47,14 +47,14 @@ async function analyzePlansStructure() {
 
     // Verificar se há dados existentes
     console.log('\n=== DADOS EXISTENTES ===');
-    const contratantesComPlano = await client.query(`
-      SELECT COUNT(*) as total_contratantes,
+    const tomadoresComPlano = await client.query(`
+      SELECT COUNT(*) as total_tomadores,
              COUNT(plano_id) as com_plano_id,
              COUNT(plano_tipo) as com_plano_tipo
-      FROM contratantes
+      FROM tomadores
     `);
 
-    console.log('Contratantes:', contratantesComPlano.rows[0]);
+    console.log('tomadores:', tomadoresComPlano.rows[0]);
 
     await client.end();
   } catch (error) {

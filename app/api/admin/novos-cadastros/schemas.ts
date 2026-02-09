@@ -52,11 +52,11 @@ export const DeletarEntidadeSchema = z.object({
 
 export const NovosCadastrosActionSchema = z.preprocess(
   (obj) => {
-    // Normalize incoming payloads: accept both 'contratante_id' (frontend) and 'entidade_id' (server)
+    // Normalize incoming payloads: accept both 'tomador_id' (frontend) and 'entidade_id' (server)
     if (obj && typeof obj === 'object') {
       const o = obj as any;
-      if (!('entidade_id' in o) && 'contratante_id' in o) {
-        return { ...o, entidade_id: o.contratante_id };
+      if (!('entidade_id' in o) && 'tomador_id' in o) {
+        return { ...o, entidade_id: o.tomador_id };
       }
     }
     return obj;

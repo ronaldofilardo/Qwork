@@ -1,4 +1,4 @@
-# Documentação: Acesso Admin a Contratantes
+# Documentação: Acesso Admin a tomadores
 
 **Data**: 04/02/2026  
 **Versão**: 4.0.0  
@@ -10,24 +10,24 @@
 
 ### Decisão Anterior (REVERTIDA)
 
-Inicialmente, seguindo o princípio de menor privilégio, foi decidido que **Admin não deveria ter acesso à tabela `contratantes`**, pois:
+Inicialmente, seguindo o princípio de menor privilégio, foi decidido que **Admin não deveria ter acesso à tabela `tomadores`**, pois:
 
 - Admin gerencia apenas RBAC (usuarios, roles, permissions)
-- Contratantes são gerenciados por RH e Gestor Entidade
+- tomadores são gerenciados por RH e Gestor Entidade
 
 ### Nova Decisão (ATUAL)
 
-**Admin PRECISA visualizar contratantes** pelos seguintes motivos:
+**Admin PRECISA visualizar tomadores** pelos seguintes motivos:
 
-1. **Gestão de Usuários Gestores**: Admin precisa saber quais contratantes (clínicas/entidades) existem para vincular usuários com perfis `rh` e `gestor`
-2. **Auditoria**: Admin precisa verificar quais gestores estão vinculados a quais contratantes
-3. **Suporte**: Admin precisa visualizar informações básicas de contratantes para suporte técnico
+1. **Gestão de Usuários Gestores**: Admin precisa saber quais tomadores (clínicas/entidades) existem para vincular usuários com perfis `rh` e `gestor`
+2. **Auditoria**: Admin precisa verificar quais gestores estão vinculados a quais tomadores
+3. **Suporte**: Admin precisa visualizar informações básicas de tomadores para suporte técnico
 4. **Aprovação de Cadastros**: Admin aprova novos cadastros de clínicas/entidades e precisa ver seus dados
 
 ### Princípio Aplicado
 
-- ✅ **VISUALIZAÇÃO**: Admin pode **SELECT** em `contratantes`
-- ❌ **MODIFICAÇÃO**: Admin **NÃO PODE** INSERT/UPDATE/DELETE em `contratantes`
+- ✅ **VISUALIZAÇÃO**: Admin pode **SELECT** em `tomadores`
+- ❌ **MODIFICAÇÃO**: Admin **NÃO PODE** INSERT/UPDATE/DELETE em `tomadores`
 - ❌ **DADOS OPERACIONAIS**: Admin continua **SEM ACESSO** a funcionários, avaliações, lotes
 
 ---
@@ -37,8 +37,8 @@ Inicialmente, seguindo o princípio de menor privilégio, foi decidido que **Adm
 ### 1. Criar Policy de SELECT para Admin
 
 ```sql
--- Permite admin visualizar todos os contratantes
-CREATE POLICY "contratantes_admin_select" ON public.contratantes
+-- Permite admin visualizar todos os tomadores
+CREATE POLICY "tomadores_admin_select" ON public.tomadores
 FOR SELECT TO PUBLIC
 USING (current_user_perfil() = 'admin');
 ```
@@ -47,23 +47,23 @@ USING (current_user_perfil() = 'admin');
 
 ```sql
 -- NÃO DEVE EXISTIR:
--- contratantes_admin_insert
--- contratantes_admin_update
--- contratantes_admin_delete
+-- tomadores_admin_insert
+-- tomadores_admin_update
+-- tomadores_admin_delete
 ```
 
 ---
 
 ## 📊 Estrutura de Dados
 
-### Tipo Contratante
+### Tipo tomador
 
 ```typescript
-type TipoContratante = 'clinica' | 'entidade';
+type Tipotomador = 'clinica' | 'entidade';
 
-interface Contratante {
+interface tomador {
   id: string;
-  tipo: TipoContratante;
+  tipo: Tipotomador;
   nome: string;
   cnpj: string;
   endereco?: string;
@@ -88,13 +88,13 @@ interface Contratante {
 
 ### 1. Endpoint API
 
-**Arquivo**: `app/api/admin/contratantes/route.ts`
+**Arquivo**: `app/api/admin/tomadores/route.ts`
 
 **Funcionalidades**:
 
-- `GET /api/admin/contratantes` - Lista todos os contratantes
-- `GET /api/admin/contratantes?tipo=clinica` - Filtra apenas clínicas
-- `GET /api/admin/contratantes?tipo=entidade` - Filtra apenas entidades
+- `GET /api/admin/tomadores` - Lista todos os tomadores
+- `GET /api/admin/tomadores?tipo=clinica` - Filtra apenas clínicas
+- `GET /api/admin/tomadores?tipo=entidade` - Filtra apenas entidades
 
 **Query SQL**:
 
@@ -107,7 +107,7 @@ SELECT
   u.nome as gestor_nome,
   u.email as gestor_email,
   u.perfil as gestor_perfil
-FROM contratantes c
+FROM tomadores c
 LEFT JOIN usuarios u ON (
   (c.tipo = 'clinica' AND u.clinica_id = c.id AND u.perfil = 'rh') OR
   (c.tipo = 'entidade' AND u.entidade_id = c.id AND u.perfil = 'gestor')
@@ -120,7 +120,7 @@ ORDER BY c.tipo, c.nome;
 ```json
 {
   "success": true,
-  "contratantes": [
+  "tomadores": [
     {
       "id": "uuid",
       "tipo": "clinica",
@@ -142,7 +142,7 @@ ORDER BY c.tipo, c.nome;
 
 ### 2. Componente Frontend
 
-**Arquivo**: `components/admin/ContratantesContent.tsx`
+**Arquivo**: `components/admin/tomadoresContent.tsx`
 
 **Recursos**:
 
@@ -152,7 +152,7 @@ ORDER BY c.tipo, c.nome;
 - ✅ Status ativo/inativo
 - ✅ Modal de detalhes ao clicar no card
 - ✅ Visualização de gestor vinculado
-- ✅ Alerta quando contratante não tem gestor
+- ✅ Alerta quando tomador não tem gestor
 
 **Layout do Card**:
 
@@ -182,28 +182,28 @@ ORDER BY c.tipo, c.nome;
 ```tsx
 <MenuItem
   icon={Building2}
-  label="Contratantes"
-  isActive={activeSection === 'contratantes'}
+  label="tomadores"
+  isActive={activeSection === 'tomadores'}
   onClick={() => {
-    toggleSection('contratantes');
-    onSectionChange('contratantes', 'lista');
+    toggleSection('tomadores');
+    onSectionChange('tomadores', 'lista');
   }}
   hasSubMenu
-  isExpanded={isExpanded('contratantes')}
+  isExpanded={isExpanded('tomadores')}
 />;
 
 {
-  isExpanded('contratantes') && (
+  isExpanded('tomadores') && (
     <div className="border-l-2 border-gray-200 ml-4">
       <SubMenuItem
         label="Clínicas"
         count={counts.clinicas}
-        onClick={() => onSectionChange('contratantes', 'clinicas')}
+        onClick={() => onSectionChange('tomadores', 'clinicas')}
       />
       <SubMenuItem
         label="Entidades"
         count={counts.entidades}
-        onClick={() => onSectionChange('contratantes', 'entidades')}
+        onClick={() => onSectionChange('tomadores', 'entidades')}
       />
     </div>
   );
@@ -216,24 +216,24 @@ ORDER BY c.tipo, c.nome;
 
 ```tsx
 // Import
-import { ContratantesContent } from '@/components/admin/ContratantesContent';
+import { tomadoresContent } from '@/components/admin/tomadoresContent';
 
 // Fetch contadores
-const clinicasRes = await fetch('/api/admin/contratantes?tipo=clinica');
+const clinicasRes = await fetch('/api/admin/tomadores?tipo=clinica');
 if (clinicasRes.ok) {
   const data = await clinicasRes.json();
   setClinicasCount(data.total || 0);
 }
 
-const entidadesRes = await fetch('/api/admin/contratantes?tipo=entidade');
+const entidadesRes = await fetch('/api/admin/tomadores?tipo=entidade');
 if (entidadesRes.ok) {
   const data = await entidadesRes.json();
   setEntidadesCount(data.total || 0);
 }
 
 // Renderização
-if (activeSection === 'contratantes') {
-  return <ContratantesContent />;
+if (activeSection === 'tomadores') {
+  return <tomadoresContent />;
 }
 ```
 
@@ -243,25 +243,25 @@ if (activeSection === 'contratantes') {
 
 ### Banco de Dados
 
-- [ ] Criar policy `contratantes_admin_select`
+- [ ] Criar policy `tomadores_admin_select`
 - [ ] Verificar ausência de policies admin_insert/update/delete
 - [ ] Testar query com LEFT JOIN para gestores
 
 ### Backend
 
-- [x] Criar endpoint `/api/admin/contratantes`
+- [x] Criar endpoint `/api/admin/tomadores`
 - [x] Implementar filtro por tipo (query param)
 - [x] Retornar dados de gestor vinculado
-- [x] Tratar casos de contratante sem gestor
+- [x] Tratar casos de tomador sem gestor
 
 ### Frontend
 
-- [x] Criar componente `ContratantesContent`
+- [x] Criar componente `tomadoresContent`
 - [x] Implementar grid de cards responsivo
 - [x] Adicionar filtro por tipo
 - [x] Criar modal de detalhes
 - [x] Indicadores visuais por tipo
-- [x] Alerta para contratantes sem gestor
+- [x] Alerta para tomadores sem gestor
 
 ### Integração
 
@@ -281,18 +281,18 @@ if (activeSection === 'contratantes') {
 **Fluxo**:
 
 1. Admin acessa dashboard admin
-2. Clica em "Contratantes" no sidebar
+2. Clica em "tomadores" no sidebar
 3. Clica em "Clínicas" no submenu
 4. Vê grid de cards apenas com clínicas (filtro azul)
 5. Clica em um card para ver detalhes completos
 
-### 2. Admin Identifica Contratante Sem Gestor
+### 2. Admin Identifica tomador Sem Gestor
 
-**Objetivo**: Encontrar contratantes que não têm usuário gestor vinculado
+**Objetivo**: Encontrar tomadores que não têm usuário gestor vinculado
 
 **Fluxo**:
 
-1. Admin acessa "Contratantes"
+1. Admin acessa "tomadores"
 2. Vê cards com alerta "⚠️ Sem gestor vinculado"
 3. Clica no card para ver detalhes
 4. Vai para "Usuários" criar/vincular gestor
@@ -303,7 +303,7 @@ if (activeSection === 'contratantes') {
 
 **Fluxo**:
 
-1. Admin acessa "Contratantes"
+1. Admin acessa "tomadores"
 2. Filtra por "Entidades" (filtro roxo)
 3. Localiza entidade desejada
 4. Vê nome, email e CPF do gestor no card
@@ -315,18 +315,18 @@ if (activeSection === 'contratantes') {
 
 ### Admin PODE:
 
-- ✅ Visualizar lista de contratantes
+- ✅ Visualizar lista de tomadores
 - ✅ Ver dados cadastrais (nome, CNPJ, endereço, contato)
-- ✅ Ver qual usuário é gestor de cada contratante
+- ✅ Ver qual usuário é gestor de cada tomador
 - ✅ Filtrar por tipo (clínica/entidade)
-- ✅ Identificar contratantes sem gestor
+- ✅ Identificar tomadores sem gestor
 
 ### Admin NÃO PODE:
 
-- ❌ Criar novos contratantes (feito via aprovação de cadastro)
-- ❌ Editar dados de contratantes (apenas RH/Gestor Entidade)
-- ❌ Excluir contratantes
-- ❌ Acessar funcionários dos contratantes
+- ❌ Criar novos tomadores (feito via aprovação de cadastro)
+- ❌ Editar dados de tomadores (apenas RH/Gestor Entidade)
+- ❌ Excluir tomadores
+- ❌ Acessar funcionários dos tomadores
 - ❌ Acessar avaliações ou lotes
 - ❌ Modificar empresas clientes
 
@@ -338,14 +338,14 @@ if (activeSection === 'contratantes') {
 
 ```sql
 SET LOCAL app.current_user_perfil = 'admin';
-SELECT * FROM contratantes; -- DEVE FUNCIONAR
+SELECT * FROM tomadores; -- DEVE FUNCIONAR
 ```
 
 ### Teste 2: Policy INSERT (deve falhar)
 
 ```sql
 SET LOCAL app.current_user_perfil = 'admin';
-INSERT INTO contratantes (tipo, nome, cnpj)
+INSERT INTO tomadores (tipo, nome, cnpj)
 VALUES ('clinica', 'Teste', '12345678000190'); -- DEVE FALHAR
 ```
 
@@ -355,7 +355,7 @@ VALUES ('clinica', 'Teste', '12345678000190'); -- DEVE FALHAR
 SELECT
   c.nome, c.tipo,
   u.nome as gestor, u.perfil
-FROM contratantes c
+FROM tomadores c
 LEFT JOIN usuarios u ON (
   (c.tipo = 'clinica' AND u.clinica_id = c.id AND u.perfil = 'rh') OR
   (c.tipo = 'entidade' AND u.entidade_id = c.id AND u.perfil = 'gestor')
@@ -366,43 +366,43 @@ ORDER BY c.tipo, c.nome;
 ### Teste 4: Endpoint API
 
 ```bash
-# Todos os contratantes
-curl http://localhost:3000/api/admin/contratantes
+# Todos os tomadores
+curl http://localhost:3000/api/admin/tomadores
 
 # Apenas clínicas
-curl http://localhost:3000/api/admin/contratantes?tipo=clinica
+curl http://localhost:3000/api/admin/tomadores?tipo=clinica
 
 # Apenas entidades
-curl http://localhost:3000/api/admin/contratantes?tipo=entidade
+curl http://localhost:3000/api/admin/tomadores?tipo=entidade
 ```
 
 ---
 
 ## 📝 Migração Necessária
 
-**Arquivo**: `database/migrations/302_allow_admin_select_contratantes.sql`
+**Arquivo**: `database/migrations/302_allow_admin_select_tomadores.sql`
 
 ```sql
 -- ==========================================
--- MIGRATION 302: Permitir Admin SELECT em Contratantes
--- Descrição: Admin precisa visualizar contratantes para gerenciar usuários gestores
+-- MIGRATION 302: Permitir Admin SELECT em tomadores
+-- Descrição: Admin precisa visualizar tomadores para gerenciar usuários gestores
 -- Data: 2026-02-04
 -- Versão: 1.0.0
 -- ==========================================
 
 BEGIN;
 
-\echo '✅ Criando policy para admin visualizar contratantes...'
+\echo '✅ Criando policy para admin visualizar tomadores...'
 
--- Admin pode visualizar contratantes (mas não modificar)
-CREATE POLICY "contratantes_admin_select" ON public.contratantes
+-- Admin pode visualizar tomadores (mas não modificar)
+CREATE POLICY "tomadores_admin_select" ON public.tomadores
 FOR SELECT TO PUBLIC
 USING (current_user_perfil() = 'admin');
 
-\echo '✅ Admin agora pode visualizar contratantes (somente leitura)'
+\echo '✅ Admin agora pode visualizar tomadores (somente leitura)'
 
-COMMENT ON POLICY "contratantes_admin_select" ON public.contratantes IS
-'Admin pode visualizar contratantes para gerenciar usuários gestores (rh/gestor)';
+COMMENT ON POLICY "tomadores_admin_select" ON public.tomadores IS
+'Admin pode visualizar tomadores para gerenciar usuários gestores (rh/gestor)';
 
 COMMIT;
 
@@ -410,7 +410,7 @@ COMMIT;
 -- VALIDAÇÃO PÓS-MIGRAÇÃO
 -- ==========================================
 -- SET LOCAL app.current_user_perfil = 'admin';
--- SELECT * FROM contratantes; -- DEVE FUNCIONAR
+-- SELECT * FROM tomadores; -- DEVE FUNCIONAR
 ```
 
 ---
@@ -419,11 +419,11 @@ COMMIT;
 
 ### ADMIN - Atualização
 
-| Tabela           | SELECT | INSERT | UPDATE | DELETE | Observações                                   |
-| ---------------- | ------ | ------ | ------ | ------ | --------------------------------------------- |
-| **contratantes** | ✅ ALL | ❌     | ❌     | ❌     | **SOMENTE LEITURA** - para gerenciar gestores |
+| Tabela        | SELECT | INSERT | UPDATE | DELETE | Observações                                   |
+| ------------- | ------ | ------ | ------ | ------ | --------------------------------------------- |
+| **tomadores** | ✅ ALL | ❌     | ❌     | ❌     | **SOMENTE LEITURA** - para gerenciar gestores |
 
-**Justificativa**: Admin precisa ver contratantes para vincular usuários `rh` e `gestor`, mas não pode modificar dados operacionais.
+**Justificativa**: Admin precisa ver tomadores para vincular usuários `rh` e `gestor`, mas não pode modificar dados operacionais.
 
 ---
 

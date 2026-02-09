@@ -27,17 +27,17 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
 
     for (const cnpj of testCnpjs) {
       await query(
-        'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+        'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
         [cnpj]
       );
-      await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpj]);
+      await query('DELETE FROM tomadors WHERE cnpj = $1', [cnpj]);
     }
   });
 
   it('deve salvar contrato na coluna conteudo (não conteudo_gerado)', async () => {
-    // Criar contratante de teste
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    // Criar tomador de teste
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         status, plano_id, numero_funcionarios_estimado
@@ -51,7 +51,7 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       []
     );
 
-    const contratanteId = contratanteResult.rows[0].id;
+    const tomadorId = tomadorResult.rows[0].id;
 
     // Simular request de aprovação personalizado
     const request = new NextRequest(
@@ -59,7 +59,7 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       {
         method: 'POST',
         body: JSON.stringify({
-          id: contratanteId,
+          id: tomadorId,
           acao: 'aprovar_personalizado',
           valor_por_funcionario: 15.75,
         }),
@@ -78,7 +78,7 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
     // Verificar se contrato foi criado corretamente
     const contratoResult = await query(
       'SELECT * FROM contratos WHERE id = $1',
-      [data.contratante.contratacao_id]
+      [data.tomador.contratacao_id]
     );
 
     expect(contratoResult.rows.length).toBe(1);
@@ -102,9 +102,9 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
   });
 
   it('deve salvar numero_funcionarios e valor_total corretamente', async () => {
-    // Criar contratante de teste com número diferente de funcionários
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    // Criar tomador de teste com número diferente de funcionários
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         status, plano_id, numero_funcionarios_estimado
@@ -118,14 +118,14 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       []
     );
 
-    const contratanteId = contratanteResult.rows[0].id;
+    const tomadorId = tomadorResult.rows[0].id;
 
     const request = new NextRequest(
       'http://localhost:3000/api/admin/novos-cadastros',
       {
         method: 'POST',
         body: JSON.stringify({
-          id: contratanteId,
+          id: tomadorId,
           acao: 'aprovar_personalizado',
           valor_por_funcionario: 33.0,
           numero_funcionarios: 30, // Sobrescrever o estimado
@@ -144,7 +144,7 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
     // Verificar campos calculados
     const contratoResult = await query(
       'SELECT numero_funcionarios, valor_total, valor_personalizado FROM contratos WHERE id = $1',
-      [data.contratante.contrato_id]
+      [data.tomador.contrato_id]
     );
 
     const contrato = contratoResult.rows[0];
@@ -154,9 +154,9 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
   });
 
   it('deve funcionar com numero_funcionarios fornecido no body', async () => {
-    // Criar contratante sem numero_funcionarios_estimado
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    // Criar tomador sem numero_funcionarios_estimado
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         status, plano_id
@@ -170,14 +170,14 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       []
     );
 
-    const contratanteId = contratanteResult.rows[0].id;
+    const tomadorId = tomadorResult.rows[0].id;
 
     const request = new NextRequest(
       'http://localhost:3000/api/admin/novos-cadastros',
       {
         method: 'POST',
         body: JSON.stringify({
-          id: contratanteId,
+          id: tomadorId,
           acao: 'aprovar_personalizado',
           valor_por_funcionario: 20.0,
           numero_funcionarios: 40, // Fornecer no body
@@ -196,7 +196,7 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
     // Verificar que funcionou mesmo sem estimativa inicial
     const contratoResult = await query(
       'SELECT numero_funcionarios, valor_total, conteudo FROM contratos WHERE id = $1',
-      [data.contratante.contrato_id]
+      [data.tomador.contrato_id]
     );
 
     const contrato = contratoResult.rows[0];

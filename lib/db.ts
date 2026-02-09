@@ -61,12 +61,13 @@ const { Pool } = pg;
 // Prioriza JEST_WORKER_ID para identificar testes reais
 const isRunningTests = !!process.env.JEST_WORKER_ID;
 const hasTestDatabaseUrl = !!process.env.TEST_DATABASE_URL;
+const NODE_ENV = process.env.NODE_ENV;
 
 let environment = isRunningTests
   ? 'test'
-  : process.env.NODE_ENV === 'production'
+  : NODE_ENV === 'production'
     ? 'production'
-    : process.env.NODE_ENV === 'test'
+    : NODE_ENV === 'test'
       ? 'test'
       : 'development';
 
@@ -113,7 +114,8 @@ if (process.env.TEST_DATABASE_URL) {
 // Durante build, desabilitar validações estritas
 const isNextBuild =
   process.env.npm_lifecycle_event === 'build' ||
-  process.env.npm_lifecycle_script?.includes('next build');
+  process.env.npm_lifecycle_script?.includes('next build') ||
+  (NODE_ENV === 'production' && !isRunningTests); // Assumir build se NODE_ENV=production e não é Jest
 
 if ((environment === 'test' || isRunningTests) && !isNextBuild) {
   // Verificar TODAS as variáveis de ambiente que possam conter connection strings
@@ -152,6 +154,9 @@ if ((environment === 'test' || isRunningTests) && !isNextBuild) {
 }
 
 // Validações de isolamento de ambiente
+// Durante build do Next.js, NÃO validar ambiente de teste
+// isNextBuild já definido acima
+
 if (environment === 'test' && !hasTestDatabaseUrl && !isNextBuild) {
   throw new Error(
     'ERRO DE CONFIGURAÇÃO: Ambiente detectado como "test" mas TEST_DATABASE_URL não está definida. ' +
@@ -1407,15 +1412,23 @@ export async function getNotificacoesFinanceiras(
 ) {
   let queryText = 'SELECT * FROM notificacoes_financeiras';
   const params: unknown[] = [];
+  const whereClauses: string[] = [];
+
+  // Excluir notificações de pendência de pagamento (desabilitadas)
+  whereClauses.push('tipo != $1');
+  params.push('parcela_pendente');
 
   if (contratoId) {
-    queryText += ' WHERE id = $1';
+    whereClauses.push(`id = $${params.length + 1}`);
     params.push(contratoId);
-    if (apenasNaoLidas) {
-      queryText += ' AND lida = false';
-    }
-  } else if (apenasNaoLidas) {
-    queryText += ' WHERE lida = false';
+  }
+
+  if (apenasNaoLidas) {
+    whereClauses.push(`lida = false`);
+  }
+
+  if (whereClauses.length > 0) {
+    queryText += ` WHERE ${whereClauses.join(' AND ')}`;
   }
 
   queryText += ' ORDER BY created_at DESC';
@@ -1479,27 +1492,62 @@ export async function getContratosPlanos(
 
 /**
  * Criar conta para responsável do tomador
+ * @param tomador - ID or object of tomador (entidade ou clinica)
  */
 export async function criarContaResponsavel(
   tomador: number | Entidade,
   session?: Session
 ) {
   let tomadorData: Entidade;
+  let tabelaTomadorOrigem = 'entidades'; // rastreia em qual tabela foi encontrado
 
-  // Se recebeu um número (ID), buscar os dados da entidade
+  // Se recebeu um número (ID), buscar os dados da entidade OU clinica
   if (typeof tomador === 'number') {
-    const result = await query(
-      'SELECT * FROM entidades WHERE id = $1',
+    // IMPORTANTE: Buscar em CLINICAS primeiro (pois são inseridas direto lá)
+    let result = await query(
+      'SELECT * FROM clinicas WHERE id = $1',
       [tomador],
       session
     );
-    if (result.rows.length === 0) {
-      throw new Error(`Entidade ${tomador} não encontrado`);
+
+    if (result.rows.length > 0) {
+      tomadorData = result.rows[0];
+      tabelaTomadorOrigem = 'clinicas';
+    } else {
+      // Se não encontrou em clinicas, buscar em entidades
+      result = await query(
+        'SELECT * FROM entidades WHERE id = $1',
+        [tomador],
+        session
+      );
+      if (result.rows.length === 0) {
+        throw new Error(
+          `Tomador ${tomador} não encontrado em entidades ou clinicas`
+        );
+      }
+      tomadorData = result.rows[0] as Entidade;
+      tabelaTomadorOrigem = 'entidades';
     }
-    tomadorData = result.rows[0] as Entidade;
   } else {
     tomadorData = tomador;
   }
+
+  // Se estamos usando uma clínica e não temos responsavel_cpf, buscar da entidade associada
+  // Nota: clinicas não têm relação direta com entidades no banco, então essa verificação não é necessária
+  // if (
+  //   tabelaTomadorOrigem === 'clinicas' &&
+  //   !tomadorData.responsavel_cpf &&
+  //   (tomadorData as any).entidade_id
+  // ) {
+  //   const entidadeResult = await query(
+  //     'SELECT responsavel_cpf FROM entidades WHERE id = $1',
+  //     [(tomadorData as any).entidade_id],
+  //     session
+  //   );
+  //   if (entidadeResult.rows.length > 0) {
+  //     tomadorData.responsavel_cpf = entidadeResult.rows[0].responsavel_cpf;
+  //   }
+  // }
 
   if (DEBUG_DB) {
     console.debug('[CRIAR_CONTA] Iniciando criação de conta para:', {
@@ -1507,6 +1555,7 @@ export async function criarContaResponsavel(
       cnpj: tomadorData.cnpj,
       responsavel_cpf: tomadorData.responsavel_cpf,
       tipo: tomadorData.tipo,
+      origem: tabelaTomadorOrigem,
     });
   }
 
@@ -1517,8 +1566,9 @@ export async function criarContaResponsavel(
       console.debug(
         '[CRIAR_CONTA] CNPJ não encontrado no objeto, buscando do banco...'
       );
+    // Buscar na tabela original onde foi encontrado
     const tomadorResult = await query(
-      'SELECT cnpj FROM entidades WHERE id = $1',
+      `SELECT cnpj FROM ${tabelaTomadorOrigem} WHERE id = $1`,
       [tomadorData.id],
       session
     );
@@ -1543,55 +1593,76 @@ export async function criarContaResponsavel(
   const defaultPassword = cleanCnpj.slice(-6);
   const hashed = await bcrypt.hash(defaultPassword, 10);
 
-  // Para entidades sem CPF do responsável, usar CNPJ como identificador
-  const cpfParaUsar = tomadorData.responsavel_cpf || cleanCnpj;
+  // Para entidades sem CPF do responsável, usar últimos 11 dígitos do CNPJ como identificador
+  // (campo cpf em clinicas_senhas é character varying(11), não suporta 14 dígitos)
+  const cpfParaUsar = tomadorData.responsavel_cpf || cleanCnpj.slice(-11);
 
   if (DEBUG_DB) {
     console.debug(`[CRIAR_CONTA] CPF: ${cpfParaUsar}, CNPJ: ${cnpj}`);
   }
 
-  // 1. Determinar tipo de usuário e tabela de senha
-  const tipoUsuario = tomadorData.tipo === 'entidade' ? 'gestor' : 'rh';
-  const tabelaSenha =
-    tipoUsuario === 'gestor' ? 'entidades_senhas' : 'clinicas_senhas';
-  const campoId = tipoUsuario === 'gestor' ? 'entidade_id' : 'clinica_id';
+  // 1. Determinar tipo de usuário e tabela de senha baseado na origem ou no campo tipo
+  let tipoUsuario: 'gestor' | 'rh' = 'gestor';
+  let tabelaSenha = 'entidades_senhas';
+  let campoId = 'entidade_id';
 
-  // 2. Para RH (clinica), o registro já foi inserido diretamente na tabela clinicas
-  // Durante o cadastro, quando tipo='clinica', era feito INSERT INTO clinicas direto
-  // Portanto, tomadorData.id JÁ É o clinica_id, sem necessidade de buscar por entidade_id
-  let referenceId = tomadorData.id;
-  
-  if (DEBUG_DB) {
-    console.debug(`[CRIAR_CONTA] tipo=${tomadorData.tipo}, tipoUsuario=${tipoUsuario}, referenceId=${referenceId}, tabelaSenha=${tabelaSenha}`);
+  // Se tipo está definido no objeto, usar isso
+  if (tomadorData.tipo === 'clinica') {
+    tipoUsuario = 'rh';
+    tabelaSenha = 'clinicas_senhas';
+    campoId = 'clinica_id';
+  } else if (tomadorData.tipo === 'entidade') {
+    tipoUsuario = 'gestor';
+    tabelaSenha = 'entidades_senhas';
+    campoId = 'entidade_id';
+  } else {
+    // Se tipo não está definido, usar a tabela de origem
+    if (tabelaTomadorOrigem === 'clinicas') {
+      tipoUsuario = 'rh';
+      tabelaSenha = 'clinicas_senhas';
+      campoId = 'clinica_id';
+      tomadorData.tipo = 'clinica'; // garantir que tipo esteja definido
+    } else {
+      tipoUsuario = 'gestor';
+      tabelaSenha = 'entidades_senhas';
+      campoId = 'entidade_id';
+      tomadorData.tipo = 'entidade'; // garantir que tipo esteja definido
+    }
   }
 
+  // 2. referenceId é sempre tomadorData.id (já é o clinica_id ou entidade_id correto)
+  const referenceId: number = tomadorData.id;
+
+  if (DEBUG_DB) {
+    console.debug(
+      `[CRIAR_CONTA] tipo=${tomadorData.tipo}, tipoUsuario=${tipoUsuario}, referenceId=${referenceId}, tabelaSenha=${tabelaSenha}, origem=${tabelaTomadorOrigem}`
+    );
+  }
 
   // 3. Criar senha na tabela apropriada (entidades_senhas ou clinicas_senhas)
+  // UPSERT para garantir atomicidade e evitar erros de duplicação de chave
   try {
-    const exists = await query(
-      `SELECT id FROM ${tabelaSenha} WHERE ${campoId} = $1 AND cpf = $2`,
-      [referenceId, cpfParaUsar],
+    // SQL UPSERT com ON CONFLICT - mais robusto que CHECK manual
+    const upsertQuery = `
+      INSERT INTO ${tabelaSenha} (${campoId}, cpf, senha_hash, criado_em, atualizado_em)
+      VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      ON CONFLICT (cpf) DO UPDATE
+      SET senha_hash = EXCLUDED.senha_hash, atualizado_em = CURRENT_TIMESTAMP
+      RETURNING id
+    `;
+
+    const result = await query(
+      upsertQuery,
+      [referenceId, cpfParaUsar, hashed],
       session
     );
 
-    if (exists.rows.length > 0) {
-      await query(
-        `UPDATE ${tabelaSenha} SET senha_hash = $1, atualizado_em = CURRENT_TIMESTAMP WHERE ${campoId} = $2 AND cpf = $3`,
-        [hashed, referenceId, cpfParaUsar],
-        session
-      );
+    if (result.rows.length > 0) {
       console.log(
-        `[CRIAR_CONTA] Senha atualizada em ${tabelaSenha} para CPF ${cpfParaUsar}`
+        `[CRIAR_CONTA] Senha criada/atualizada em ${tabelaSenha} para CPF ${cpfParaUsar}, campo=${campoId}, id=${referenceId}`
       );
     } else {
-      await query(
-        `INSERT INTO ${tabelaSenha} (${campoId}, cpf, senha_hash, criado_em, atualizado_em) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
-        [referenceId, cpfParaUsar, hashed],
-        session
-      );
-      console.log(
-        `[CRIAR_CONTA] Senha inserida em ${tabelaSenha} para CPF ${cpfParaUsar}`
-      );
+      throw new Error('UPSERT retornou sem resultado');
     }
   } catch (err) {
     console.error(

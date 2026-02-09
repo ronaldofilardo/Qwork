@@ -376,6 +376,7 @@ export default function DetalhesLotePage() {
   const getStatusBadge = useCallback((status: string) => {
     const statusMap: { [key: string]: { label: string; color: string } } = {
       concluida: { label: 'Concluída', color: 'bg-green-100 text-green-800' },
+      concluido: { label: 'Concluída', color: 'bg-green-100 text-green-800' }, // Legado - mesmo que concluida
       em_andamento: {
         label: 'Em andamento',
         color: 'bg-yellow-100 text-yellow-800',
@@ -567,8 +568,10 @@ export default function DetalhesLotePage() {
       const matchStatus =
         filtroStatus === 'todos' ||
         (filtroStatus === 'concluido' &&
-          func.avaliacao.status === 'concluido') ||
+          (func.avaliacao.status === 'concluida' ||
+            func.avaliacao.status === 'concluido')) ||
         (filtroStatus === 'pendente' &&
+          func.avaliacao.status !== 'concluida' &&
           func.avaliacao.status !== 'concluido' &&
           func.avaliacao.status !== 'inativada');
 
@@ -1403,7 +1406,10 @@ export default function DetalhesLotePage() {
                       className={`hover:bg-gray-50 ${
                         func.avaliacao.status === 'inativada'
                           ? 'bg-red-50 border-l-4 border-red-400'
-                          : ''
+                          : func.avaliacao.status === 'concluida' ||
+                              func.avaliacao.status === 'concluido'
+                            ? 'bg-green-50'
+                            : ''
                       }`}
                     >
                       <td className="px-3 py-2 text-sm text-gray-500 font-mono">
@@ -1436,7 +1442,8 @@ export default function DetalhesLotePage() {
                         {getStatusBadge(func.avaliacao.status)}
                       </td>
                       <td className="px-3 py-2 text-sm text-gray-600">
-                        {func.avaliacao.status === 'concluido'
+                        {func.avaliacao.status === 'concluido' ||
+                        func.avaliacao.status === 'concluida'
                           ? formatarData(func.avaliacao.data_conclusao)
                           : '-'}
                       </td>
@@ -1489,7 +1496,8 @@ export default function DetalhesLotePage() {
                       </td>
                       <td className="px-3 py-2 text-sm text-center">
                         <div className="flex gap-1 justify-center">
-                          {func.avaliacao.status !== 'concluido' &&
+                          {func.avaliacao.status !== 'concluida' &&
+                            func.avaliacao.status !== 'concluido' &&
                             func.avaliacao.status !== 'inativada' &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
@@ -1508,8 +1516,9 @@ export default function DetalhesLotePage() {
                               </button>
                             )}
                           {(func.avaliacao.status === 'iniciada' ||
-                            func.avaliacao.status === 'concluido' ||
-                            func.avaliacao.status === 'em_andamento') &&
+                            func.avaliacao.status === 'em_andamento' ||
+                            func.avaliacao.status === 'concluida' ||
+                            func.avaliacao.status === 'concluido') &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
                               <button
@@ -1530,10 +1539,14 @@ export default function DetalhesLotePage() {
                             onClick={() =>
                               gerarRelatorioFuncionario(func.cpf, func.nome)
                             }
-                            disabled={func.avaliacao.status !== 'concluido'}
+                            disabled={
+                              func.avaliacao.status !== 'concluido' &&
+                              func.avaliacao.status !== 'concluida'
+                            }
                             className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                             title={
-                              func.avaliacao.status === 'concluido'
+                              func.avaliacao.status === 'concluido' ||
+                              func.avaliacao.status === 'concluida'
                                 ? 'Gerar relatório PDF'
                                 : 'Relatório disponível apenas para avaliações concluídas'
                             }

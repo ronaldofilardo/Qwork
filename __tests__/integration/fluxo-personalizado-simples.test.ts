@@ -1,5 +1,5 @@
 /**
- * Teste de Integração Simplificado - Fluxo Plano Personalizado
+ * Teste de Integração Simplificado - Fluxo Plano Personalizado para Tomador
  *
  * Testa todo o ciclo do plano personalizado de forma simplificada:
  * 1. Cadastro → pendente
@@ -12,11 +12,11 @@ import { query } from '@/lib/db';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 
-describe('Fluxo Personalizado Simplificado', () => {
+describe('Fluxo Personalizado Simplificado - Tomador', () => {
   const cnpjTest = '11222333000199';
   const cpfTest = '11122233344';
   let planoId: number;
-  let contratanteId: number;
+  let tomadorId: number;
 
   beforeAll(async () => {
     // Buscar ou criar plano personalizado
@@ -42,27 +42,27 @@ describe('Fluxo Personalizado Simplificado', () => {
     await query('BEGIN');
     await query(
       `DELETE FROM contratacao_personalizada 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)`,
       [cnpjTest]
     );
     await query(
       `DELETE FROM contratos 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)`,
       [cnpjTest]
     );
     await query(
       `DELETE FROM entidades_senhas 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)`,
       [cnpjTest]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTest]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [cnpjTest]);
     await query('COMMIT');
   });
 
   it('deve completar o fluxo completo do plano personalizado', async () => {
     // ==== ETAPA 1: CADASTRO ====
     const cadastroRes = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, 
         endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo,
@@ -78,15 +78,15 @@ describe('Fluxo Personalizado Simplificado', () => {
       [cnpjTest, cpfTest, planoId]
     );
 
-    contratanteId = cadastroRes.rows[0].id;
-    expect(contratanteId).toBeDefined();
+    tomadorId = cadastroRes.rows[0].id;
+    expect(tomadorId).toBeDefined();
 
     // Criar entrada em contratacao_personalizada
     await query(
       `INSERT INTO contratacao_personalizada (
-        contratante_id, numero_funcionarios_estimado, status
+        tomador_id, numero_funcionarios_estimado, status
       ) VALUES ($1, 100, 'aguardando_valor_admin')`,
-      [contratanteId]
+      [tomadorId]
     );
 
     // ==== ETAPA 2: ADMIN DEFINE VALORES ====
@@ -104,26 +104,26 @@ describe('Fluxo Personalizado Simplificado', () => {
            payment_link_token = $4,
            payment_link_expiracao = $5,
            status = 'valor_definido'
-       WHERE contratante_id = $6`,
-      [valorPorFunc, numFunc, valorTotal, token, expiracao, contratanteId]
+       WHERE tomador_id = $6`,
+      [valorPorFunc, numFunc, valorTotal, token, expiracao, tomadorId]
     );
 
     // Criar contrato
     const contratoRes = await query(
       `INSERT INTO contratos (
-        contratante_id, plano_id, numero_funcionarios, 
+        tomador_id, plano_id, numero_funcionarios, 
         valor_total, status
       ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento')
       RETURNING id`,
-      [contratanteId, planoId, numFunc, valorTotal]
+      [tomadorId, planoId, numFunc, valorTotal]
     );
 
     const contratoId = contratoRes.rows[0].id;
 
     // Verificar valores
     const verificaContratacao = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(verificaContratacao.rows[0].status).toBe('valor_definido');
@@ -135,8 +135,8 @@ describe('Fluxo Personalizado Simplificado', () => {
     await query(
       `UPDATE contratacao_personalizada
        SET status = 'pago'
-       WHERE contratante_id = $1`,
-      [contratanteId]
+       WHERE tomador_id = $1`,
+      [tomadorId]
     );
 
     await query(
@@ -147,13 +147,13 @@ describe('Fluxo Personalizado Simplificado', () => {
     );
 
     await query(
-      `UPDATE contratantes
+      `UPDATE entidades
        SET status = 'aprovado', 
            pagamento_confirmado = true,
            ativa = true,
            data_liberacao_login = CURRENT_TIMESTAMP
        WHERE id = $1`,
-      [contratanteId]
+      [tomadorId]
     );
 
     // ✅ Pagamento confirmado
@@ -163,16 +163,16 @@ describe('Fluxo Personalizado Simplificado', () => {
     const senhaHash = await bcrypt.hash('Senha@123', 10);
 
     await query(
-      `INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash)
+      `INSERT INTO entidades_senhas (tomador_id, cpf, senha_hash)
        VALUES ($1, $2, $3)
-       ON CONFLICT (contratante_id) DO UPDATE SET senha_hash = EXCLUDED.senha_hash`,
-      [contratanteId, cpfTest, senhaHash]
+       ON CONFLICT (tomador_id) DO UPDATE SET senha_hash = EXCLUDED.senha_hash`,
+      [tomadorId, cpfTest, senhaHash]
     );
 
     // Verificar senha criada
     const verificaSenha = await query(
-      'SELECT * FROM entidades_senhas WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM entidades_senhas WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(verificaSenha.rows.length).toBe(1);
@@ -186,12 +186,12 @@ describe('Fluxo Personalizado Simplificado', () => {
         cp.status as contratacao_status,
         ct.status as contrato_status, ct.aceito,
         cs.senha_hash IS NOT NULL as tem_senha
-       FROM contratantes c
-       LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
-       LEFT JOIN contratos ct ON c.id = ct.contratante_id
-       LEFT JOIN entidades_senhas cs ON c.id = cs.contratante_id
+       FROM entidades c
+       LEFT JOIN contratacao_personalizada cp ON c.id = cp.tomador_id
+       LEFT JOIN contratos ct ON c.id = ct.tomador_id
+       LEFT JOIN entidades_senhas cs ON c.id = cs.tomador_id
        WHERE c.id = $1`,
-      [contratanteId]
+      [tomadorId]
     );
 
     const estado = estadoFinal.rows[0];
@@ -221,20 +221,20 @@ describe('Fluxo Personalizado Simplificado', () => {
     await query('BEGIN');
     await query(
       `DELETE FROM contratacao_personalizada 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)`,
       [cnpjTest]
     );
     await query(
       `DELETE FROM contratos 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)`,
       [cnpjTest]
     );
     await query(
       `DELETE FROM entidades_senhas 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)`,
       [cnpjTest]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTest]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [cnpjTest]);
     await query('COMMIT');
     // ✅ Limpeza concluída
 

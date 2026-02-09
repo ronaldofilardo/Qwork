@@ -32,7 +32,7 @@ ultima_avaliacao_data_conclusao = COALESCE(NEW.envio, NEW.inativada_em)
 
 ### Bug 2: Função de Elegibilidade Verifica Campo Errado
 
-**Arquivos:** `calcular_elegibilidade_lote_contratante` e `calcular_elegibilidade_lote`  
+**Arquivos:** `calcular_elegibilidade_lote_tomador` e `calcular_elegibilidade_lote`  
 **Problema:** Verificava `data_ultimo_lote` (data de criação do lote) em vez de `ultima_avaliacao_data_conclusao`
 
 ```sql
@@ -75,11 +75,11 @@ $$ LANGUAGE plpgsql;
 
 ### 2. Funções de Elegibilidade Corrigidas
 
-#### Para Contratantes (Entidades)
+#### Para tomadores (Entidades)
 
 ```sql
 WHERE
-  f.contratante_id = p_contratante_id
+  f.tomador_id = p_tomador_id
   AND f.ativo = true
   AND f.perfil = 'funcionario'
   AND (
@@ -152,7 +152,7 @@ WHERE cpf IN ('81766465200', '91412434203');
 
 ```sql
 SELECT COUNT(*) as total_elegiveis
-FROM calcular_elegibilidade_lote_contratante(1, 3)
+FROM calcular_elegibilidade_lote_tomador(1, 3)
 WHERE funcionario_cpf IN ('81766465200', '91412434203');
 ```
 
@@ -266,4 +266,3 @@ psql -U postgres -d nr-bps_db -f scripts/tests/test-elegibilidade-fix-073.sql
 ✅ **Regra de negócio de 12 meses restaurada**
 
 **Status:** PROD-READY - Migração pode ser aplicada em produção com segurança.
-

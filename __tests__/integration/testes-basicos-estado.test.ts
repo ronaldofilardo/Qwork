@@ -11,7 +11,7 @@ import { query } from '@/lib/db';
 
 describe('Testes Básicos de Estado', () => {
   let clinicaId: number;
-  let contratanteId: number;
+  let tomadorId: number;
   let empresaId: number;
   let emissorCpf: string; // Gerar dinamicamente para evitar conflitos
 
@@ -34,29 +34,29 @@ describe('Testes Básicos de Estado', () => {
     );
     clinicaId = clinicaResult.rows[0].id;
 
-    // Criar contratante (para o emissor) - tipo clinica com dados mínimos
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    // Criar entidade para o emissor
+    const entidadeResult = await query(
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
       ) VALUES (
-        'clinica', $1, $2, $3, '1122334455', 'Rua Test 123', 'São Paulo', 'SP', '01234-567',
+        'entidade', $1, $2, $3, '1122334455', 'Rua Test 123', 'São Paulo', 'SP', '01234-567',
         'Responsável Test', $4, $3, '11987654321'
       ) RETURNING id`,
       [
-        `Contratante Test ${timestamp}`,
+        `Entidade Test ${timestamp}`,
         `${timestamp.toString().slice(-14)}`,
-        `cont${timestamp}@test.com`,
+        `ent${timestamp}@test.com`,
         responsavelCpf,
       ]
     );
-    contratanteId = contratanteResult.rows[0].id;
+    tomadorId = entidadeResult.rows[0].id;
 
     // Criar emissor em entidades_senhas com CPF único (senha: 'test123')
     await query(
-      'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+      'INSERT INTO entidades_senhas (entidade_id, cpf, senha_hash) VALUES ($1, $2, $3)',
       [
-        contratanteId,
+        tomadorId,
         emissorCpf,
         '$2a$10$NNUkJ.nfWUrrDcAcwWNjH.RfMEbMfIVW5j7pVz4vTPfEfIqCzUMme',
       ]
@@ -133,11 +133,11 @@ describe('Testes Básicos de Estado', () => {
         Math.floor(Math.random() * 100000000000)
       ).padStart(11, '0');
       await query(
-        'INSERT INTO funcionarios (cpf, nome, contratante_id, usuario_tipo, senha_hash) VALUES ($1, $2, $3, $4, $5)',
+        'INSERT INTO funcionarios (cpf, nome, tomador_id, usuario_tipo, senha_hash) VALUES ($1, $2, $3, $4, $5)',
         [
           funcionarioCpf,
           'Test Func',
-          contratanteId,
+          tomadorId,
           'funcionario_entidade',
           '$2a$10$NNUkJ.nfWUrrDcAcwWNjH.RfMEbMfIVW5j7pVz4vTPfEfIqCzUMme',
         ]
@@ -193,13 +193,13 @@ describe('Testes Básicos de Estado', () => {
 
       await query(
         'UPDATE avaliacoes SET status = $1, envio = NOW() WHERE id = $2',
-        ['concluido', avalResult.rows[0].id]
+        ['concluida', avalResult.rows[0].id]
       );
 
       const check = await query('SELECT status FROM avaliacoes WHERE id = $1', [
         avalResult.rows[0].id,
       ]);
-      expect(check.rows[0].status).toBe('concluido');
+      expect(check.rows[0].status).toBe('concluida');
 
       await query(`RESET app.current_user_cpf`);
     });
@@ -214,10 +214,10 @@ describe('Testes Básicos de Estado', () => {
         [loteId, funcionarioCpf]
       );
 
-      // Atualizar para concluído (dispara o trigger)
+      // Atualizar para concluída (dispara o trigger)
       await query(
         'UPDATE avaliacoes SET status = $1, envio = NOW() WHERE id = $2',
-        ['concluido', avalResult.rows[0].id]
+        ['concluida', avalResult.rows[0].id]
       );
 
       await query(`RESET app.current_user_cpf`);

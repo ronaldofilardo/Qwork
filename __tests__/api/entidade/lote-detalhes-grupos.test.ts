@@ -27,10 +27,10 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
     // Mock da sessão (sem await, retorna diretamente)
     mockGetSession.mockReturnValue({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
-    // Mock consulta do lote - precisa buscar com JOIN para verificar contratante
+    // Mock consulta do lote - precisa buscar com JOIN para verificar tomador
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -66,7 +66,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
           funcao: 'Desenvolvedor',
           nivel_cargo: 'operacional',
           avaliacao_id: 1,
-          avaliacao_status: 'concluido',
+          avaliacao_status: 'concluida',
           avaliacao_data_inicio: '2026-01-02T10:00:00Z',
           avaliacao_data_conclusao: '2026-01-02T12:00:00Z',
         },
@@ -167,7 +167,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
   it('deve retornar erro 400 quando ID inválido', async () => {
     mockGetSession.mockReturnValue({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     const mockRequest = new Request(
@@ -184,7 +184,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
   it('deve retornar erro 404 quando lote não encontrado', async () => {
     mockGetSession.mockReturnValue({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     mockQuery.mockResolvedValueOnce({
@@ -209,7 +209,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
   it.skip('deve calcular corretamente grupos para avaliação concluída', async () => {
     mockGetSession.mockReturnValue({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
 
     // Mock consulta do lote
@@ -247,7 +247,7 @@ describe('/api/entidade/lote/[id] - Com Grupos G1-G10', () => {
           funcao: 'F1',
           nivel_cargo: 'operacional',
           avaliacao_id: 1,
-          avaliacao_status: 'concluido',
+          avaliacao_status: 'concluida',
           avaliacao_data_inicio: '2026-01-02',
           avaliacao_data_conclusao: '2026-01-02',
         },

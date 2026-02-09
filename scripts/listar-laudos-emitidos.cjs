@@ -31,7 +31,7 @@ async function listarLaudosEmitidos() {
       INNER JOIN lotes_avaliacao la ON la.id = l.lote_id
       LEFT JOIN clinicas c ON c.id = la.clinica_id
       LEFT JOIN empresas_clientes ec ON ec.id = la.empresa_id
-      LEFT JOIN contratantes cont ON cont.id = la.contratante_id
+      LEFT JOIN tomadores cont ON cont.id = la.contratante_id
       WHERE l.emitido_em IS NOT NULL
       ORDER BY l.emitido_em DESC, l.id DESC
     `);

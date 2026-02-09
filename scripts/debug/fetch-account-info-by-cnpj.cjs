@@ -8,7 +8,7 @@ async function run(cnpj = '63403935000139') {
   try {
     console.log('[INFO] Buscando contratante por CNPJ:', cnpj);
     const contratanteRes = await query(
-      'SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em FROM contratantes WHERE cnpj = $1 LIMIT 1',
+      'SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em FROM tomadores WHERE cnpj = $1 LIMIT 1',
       [cnpj]
     );
     if (!contratanteRes.rows.length) {

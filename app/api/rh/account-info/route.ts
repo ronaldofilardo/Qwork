@@ -21,28 +21,12 @@ export const GET = async () => {
       if (res.rows.length > 0) {
         // Prefer clinica_id se existir
         clinicaId = res.rows[0].clinica_id || null;
-        // Se clinica_id não existir, verificar se o funcionário está vinculado a uma entidade
-        if (!clinicaId && res.rows[0].entidade_id) {
-          // Verificar se a entidade vinculada é do tipo 'clinica'
-          const entidadeRow = await query(
-            "SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica'",
-            [res.rows[0].entidade_id]
-          );
-          if (entidadeRow.rows.length > 0) clinicaId = entidadeRow.rows[0].id;
-        }
       }
     }
 
-    // Fallback: se a sessão possuir entidade_id (usuário criado via fluxo de cadastro)
-    // e a entidade for do tipo 'clinica', usá-lo como clinicaId
-    if (!clinicaId && (session as any).entidade_id) {
-      const entidadeCheck = await query(
-        "SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica'",
-        [(session as any).entidade_id]
-      );
-      if (entidadeCheck.rows.length > 0) {
-        clinicaId = entidadeCheck.rows[0].id;
-      }
+    // Fallback: se a sessão possuir clinica_id direto
+    if (!clinicaId && (session as any).clinica_id) {
+      clinicaId = (session as any).clinica_id;
     }
 
     if (!clinicaId) {
@@ -52,50 +36,36 @@ export const GET = async () => {
       );
     }
 
-    // Buscar informações da clínica (entidade do tipo 'clinica')
+    // Buscar informações da clínica
+    // Na arquitetura segregada, clínicas estão na tabela 'clinicas'
     const clinicaQuery = (await query(
       `
       SELECT
-        c.id,
-        c.nome,
-        c.cnpj,
-        c.email,
-        c.telefone,
-        c.endereco,
-        c.cidade,
-        c.estado,
-        c.responsavel_nome,
-        c.criado_em
-      FROM entidades c
-      WHERE c.id = $1 AND c.tipo = 'clinica'
+        id,
+        nome,
+        cnpj,
+        email,
+        telefone,
+        endereco,
+        ativa,
+        criado_em
+      FROM clinicas
+      WHERE id = $1
       `,
       [clinicaId]
     )) || { rows: [] };
 
     let clinica;
     if (clinicaQuery.rows.length === 0) {
-      // Possível que `clinicaId` seja na verdade um id da tabela `clinicas` (diferente de `entidades`).
-      // Tentar mapear: SELECT entidade_id FROM clinicas WHERE id = $1
-      const clinicasMap = (await query(
-        `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
+      // Se não encontrou em clinicas, tentar buscar como entidade
+      const entidadeQuery = (await query(
+        `SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em, status, aprovado_em
+         FROM entidades WHERE id = $1`,
         [clinicaId]
       )) || { rows: [] };
 
-      if (clinicasMap.rows.length > 0 && clinicasMap.rows[0].entidade_id) {
-        const mappedEntidadeId = clinicasMap.rows[0].entidade_id;
-
-        // Rebuscar entidade (entidade_id -> entidades)
-        const entidadeQuery = (await query(
-          `SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em, status, aprovado_em
-           FROM entidades WHERE id = $1 AND tipo = 'clinica'`,
-          [mappedEntidadeId]
-        )) || { rows: [] };
-
-        if (entidadeQuery.rows.length > 0) {
-          clinica = entidadeQuery.rows[0];
-          // atualizar clinicaId para o contratante real
-          clinicaId = clinica.id;
-        }
+      if (entidadeQuery.rows.length > 0) {
+        clinica = entidadeQuery.rows[0];
       }
 
       // Se ainda não encontrou, retornar fallback genérico
@@ -176,9 +146,9 @@ export const GET = async () => {
           c.id as contrato_numero
         FROM contratos_planos cp
         LEFT JOIN planos p ON cp.plano_id = p.id
-        LEFT JOIN contratos c ON c.entidade_id = COALESCE(cp.contratante_id, cp.clinica_id)
+        LEFT JOIN contratos c ON c.entidade_id = cp.clinica_id
         WHERE ${hasStatus ? "cp.status::text IN ('ativo','aprovado','aguardando_pagamento') AND" : ''}
-          ($1 = cp.clinica_id OR $1 = cp.contratante_id)
+          $1 = cp.clinica_id
         ORDER BY cp.created_at DESC
         LIMIT 1`;
 

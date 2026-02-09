@@ -20,7 +20,7 @@ BEGIN
         nome as empresa_nome,
         cnpj
     INTO v_contratante
-    FROM contratantes
+    FROM tomadores
     WHERE id = p_contratante_id AND tipo = 'entidade';
 
     IF NOT FOUND THEN
@@ -113,7 +113,7 @@ DECLARE
 BEGIN
     FOR contratante_record IN
         SELECT id, responsavel_cpf, cnpj
-        FROM contratantes
+        FROM tomadores
         WHERE tipo = 'entidade' AND status = 'aprovado'
     LOOP
         -- Gerar nova senha

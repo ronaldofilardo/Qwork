@@ -144,7 +144,7 @@ case 'gestor': // antes era 'gestor'
 
 ```typescript
 // Função criarContaResponsavel() atualizada
-const tipoUsuario = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
+const tipoUsuario = tomadorData.tipo === 'entidade' ? 'gestor' : 'rh';
 ```
 
 ### 5. Autenticação

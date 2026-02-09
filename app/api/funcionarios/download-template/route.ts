@@ -73,6 +73,21 @@ export function GET() {
     ];
     worksheet['!cols'] = colWidths;
 
+    // Adicionar fórmula na coluna G (senha) para as linhas de exemplo
+    // Coluna G é índice 6 (0-indexed)
+    // Fórmula: =SUBSTITUTE(C2;"/";""") remove as barras da data dd/mm/aaaa
+    if (!worksheet['G2']) {
+      worksheet['G2'] = {};
+    }
+    worksheet['G2'].f = 'SUBSTITUTE(C2;"/";"")';
+    worksheet['G2'].v = '15041985'; // Valor calculated para o exemplo
+
+    if (!worksheet['G3']) {
+      worksheet['G3'] = {};
+    }
+    worksheet['G3'].f = 'SUBSTITUTE(C3;"/";"")';
+    worksheet['G3'].v = '02021990'; // Valor calculated para o exemplo
+
     // Adicionar notas/validações na primeira linha após os exemplos
     const notasRow = exemplos.length + 2;
     XLSX.utils.sheet_add_aoa(
@@ -95,10 +110,28 @@ export function GET() {
         [
           '7. Valores permitidos para nivel_cargo: operacional, gestao, gerencial, diretoria',
         ],
-        ['8. Delete estas linhas de instrução e os exemplos antes de importar'],
+        [
+          '8. A coluna G (senha) será preenchida automaticamente com SUBSTITUTE(C;"/";"")',
+        ],
+        ['9. Delete estas linhas de instrução e os exemplos antes de importar'],
       ],
       { origin: `A${notasRow}` }
     );
+
+    // Adicionar 15 linhas vazias com fórmula de senha na coluna G
+    // Essas linhas começam após as instruções
+    const primeiraLinhaVazia = notasRow + 10; // After the instructions
+    for (let i = 0; i < 15; i++) {
+      const rowNum = primeiraLinhaVazia + i;
+      const cellG = `G${rowNum}`;
+      const cellC = `C${rowNum}`;
+
+      if (!worksheet[cellG]) {
+        worksheet[cellG] = {};
+      }
+      worksheet[cellG].f = `SUBSTITUTE(${cellC};"/";"")`; // Fórmula que remove as barras
+      worksheet[cellG].v = ''; // Valor vazio até que o usuário preencha C
+    }
 
     // Criar workbook
     const workbook = XLSX.utils.book_new();

@@ -2,7 +2,7 @@ import '@testing-library/jest-dom';
 import { query } from '@/lib/db';
 
 describe('Integração: simulador de pagamento (fluxo simples)', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let contratoId: number;
   let planoId: number;
   let pagamentoId: number;
@@ -19,8 +19,8 @@ describe('Integração: simulador de pagamento (fluxo simples)', () => {
   afterAll(async () => {
     try {
       if (planoId) {
-        // Remove qualquer contratante que tenha ficado preso ao plano para evitar FK errors
-        await query('DELETE FROM contratantes WHERE plano_id = $1', [planoId]);
+        // Remove qualquer tomador (entidade) que tenha ficado preso ao plano para evitar FK errors
+        await query('DELETE FROM entidades WHERE plano_id = $1', [planoId]);
         await query('DELETE FROM planos WHERE id = $1', [planoId]);
       }
     } catch (err) {
@@ -34,17 +34,18 @@ describe('Integração: simulador de pagamento (fluxo simples)', () => {
     const cpfResp = `52999${String(Math.floor(Math.random() * 100000)).padStart(6, '0')}`; // simple unique cpf-like value
 
     const uniqueEmail = `sim-${uniqueSuffix}@test.local`;
-    const contratante = await query(
-      `INSERT INTO contratantes (tipo,nome,cnpj,email,telefone,endereco,cidade,estado,cep,responsavel_cpf,responsavel_nome,responsavel_email,responsavel_celular,numero_funcionarios_estimado,plano_id,ativa,pagamento_confirmado) VALUES ('entidade','Sim Contrat', $1, $2,'11999999999','Rua Sim','Cidade','ST','00000000',$3,'Resp Sim',$4,'11911111111',5,$5,false,false) RETURNING id, responsavel_cpf`,
+    // Criar tomador em entidades (para diferenciar de clínicas)
+    const tomador = await query(
+      `INSERT INTO entidades (tipo,nome,cnpj,email,telefone,endereco,cidade,estado,cep,responsavel_cpf,responsavel_nome,responsavel_email,responsavel_celular,numero_funcionarios_estimado,plano_id,ativa,pagamento_confirmado) VALUES ('entidade','Sim Contrat', $1, $2,'11999999999','Rua Sim','Cidade','ST','00000000',$3,'Resp Sim',$4,'11911111111',5,$5,false,false) RETURNING id, responsavel_cpf`,
       [cnpj, uniqueEmail, cpfResp, `resp-${uniqueSuffix}@test.local`, planoId]
     );
-    contratanteId = contratante.rows[0].id;
+    tomadorId = tomador.rows[0].id;
     // store generated cpf for later assertions
-    (global as any).__TEST_RESP_CPF = contratante.rows[0].responsavel_cpf;
+    (global as any).__TEST_RESP_CPF = tomador.rows[0].responsavel_cpf;
 
     const contrato = await query(
-      `INSERT INTO contratos (contratante_id,plano_id,numero_funcionarios,valor_total,status,aceito,conteudo) VALUES ($1,$2,$3,$4,'aguardando_pagamento',true,'Contrato Sim') RETURNING id`,
-      [contratanteId, planoId, 5, 500]
+      `INSERT INTO contratos (tomador_id,plano_id,numero_funcionarios,valor_total,status,aceito,conteudo) VALUES ($1,$2,$3,$4,'aguardando_pagamento',true,'Contrato Sim') RETURNING id`,
+      [tomadorId, planoId, 5, 500]
     );
     contratoId = contrato.rows[0].id;
   });
@@ -59,14 +60,14 @@ describe('Integração: simulador de pagamento (fluxo simples)', () => {
       }
       if (contratoId)
         await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
-      if (contratanteId)
-        await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+      if (tomadorId)
+        await query('DELETE FROM entidades WHERE id = $1', [tomadorId]);
     } catch (err) {
       console.warn('Erro no cleanup do teste simulador:', err);
     } finally {
       pagamentoId = 0 as any;
       contratoId = 0 as any;
-      contratanteId = 0 as any;
+      tomadorId = 0 as any;
       (global as any).__TEST_RESP_CPF = undefined;
     }
   });
@@ -77,7 +78,7 @@ describe('Integração: simulador de pagamento (fluxo simples)', () => {
 
     const req: any = {
       json: async () => ({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         contrato_id: contratoId,
         metodo_pagamento: 'parcelado',
         numero_parcelas: 3,
@@ -125,10 +126,10 @@ describe('Integração: simulador de pagamento (fluxo simples)', () => {
     ]);
     expect(r.rows.length).toBe(1);
 
-    // Verificar contratante ativado
+    // Verificar tomador (tomador entidade) ativado via view agnóstica
     const c = await query(
-      'SELECT status, ativa, pagamento_confirmado FROM contratantes WHERE id = $1',
-      [contratanteId]
+      'SELECT status, ativa, pagamento_confirmado FROM tomadores WHERE id = $1',
+      [tomadorId]
     );
     expect(c.rows[0].status).toBe('aprovado');
     expect(c.rows[0].ativa).toBe(true);

@@ -136,22 +136,22 @@ describe('Sistema de Índice de Avaliação', () => {
     });
 
     it('não deve considerar funcionário com indice = numero_ordem - 1 como atrasado (caso limite)', async () => {
-      // Criar um contratante e funcionário atrelado a ele (empresa_id = NULL)
-      // Criar contratante com email unico para evitar conflitos de unicidade em ambiente de teste
+      // Criar um tomador e funcionário atrelado a ele (empresa_id = NULL)
+      // Criar tomador com email unico para evitar conflitos de unicidade em ambiente de teste
       const timestamp = Date.now();
-      const emailContratante = `contratante+${timestamp}@teste.local`;
+      const emailtomador = `tomador+${timestamp}@teste.local`;
       const cnpjDinamico = ('00000000000000' + String(timestamp)).slice(-14);
       const responsavelCpf = ('00000000000' + String(timestamp)).slice(-11);
       const responsavelEmail = `resp+${timestamp}@teste.local`;
       const responsavelCelular = ('0000000000' + String(timestamp)).slice(-10);
-      const contratante = await query(
-        `INSERT INTO contratantes (nome, responsavel_cpf, tipo, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
+      const tomador = await query(
+        `INSERT INTO tomadors (nome, responsavel_cpf, tipo, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING id`,
         [
-          'Contratante Teste',
+          'tomador Teste',
           responsavelCpf,
           'entidade',
           cnpjDinamico,
-          emailContratante,
+          emailtomador,
           '0000000000',
           'Rua Teste, 1',
           'Cidade',
@@ -162,20 +162,20 @@ describe('Sistema de Índice de Avaliação', () => {
           responsavelCelular,
         ]
       );
-      const contratanteId = contratante.rows[0].id;
+      const tomadorId = tomador.rows[0].id;
 
       const cpfTeste = '99988877766';
       // inserir funcionário com indice = 1 e data_ultimo_lote recente
       await query(
-        `INSERT INTO funcionarios (cpf, nome, contratante_id, empresa_id, ativo, indice_avaliacao, data_ultimo_lote, perfil, nivel_cargo, senha_hash)
+        `INSERT INTO funcionarios (cpf, nome, tomador_id, empresa_id, ativo, indice_avaliacao, data_ultimo_lote, perfil, nivel_cargo, senha_hash)
          VALUES ($1, $2, $3, NULL, true, 1, NOW(), 'funcionario', 'operacional', '$2b$10$dummy.hash.for.test')`,
-        [cpfTeste, 'Limite Teste', contratanteId]
+        [cpfTeste, 'Limite Teste', tomadorId]
       );
 
       // Chamar função de elegibilidade com numero_ordem = 2 -> diff = 0
       const res = await query(
-        'SELECT funcionario_cpf FROM calcular_elegibilidade_lote_contratante($1::integer, $2::integer)',
-        [contratanteId, 2]
+        'SELECT funcionario_cpf FROM calcular_elegibilidade_lote_tomador($1::integer, $2::integer)',
+        [tomadorId, 2]
       );
 
       // Não deve conter o cpfTeste
@@ -184,7 +184,7 @@ describe('Sistema de Índice de Avaliação', () => {
 
       // Cleanup
       await query('DELETE FROM funcionarios WHERE cpf = $1', [cpfTeste]);
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+      await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
     });
   });
 

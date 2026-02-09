@@ -34,8 +34,8 @@ DROP POLICY IF EXISTS admin_all_resultados ON public.resultados;
 \echo '❌ Removendo clinicas_admin_all...'
 DROP POLICY IF EXISTS clinicas_admin_all ON public.clinicas;
 
-\echo '❌ Removendo contratantes_admin_all...'
-DROP POLICY IF EXISTS contratantes_admin_all ON public.contratantes;
+\echo '❌ Removendo tomadores_admin_all...'
+DROP POLICY IF EXISTS tomadores_admin_all ON public.tomadores;
 
 \echo '❌ Removendo admin_restricted_funcionarios (permissivo demais)...'
 DROP POLICY IF EXISTS admin_restricted_funcionarios ON public.funcionarios;

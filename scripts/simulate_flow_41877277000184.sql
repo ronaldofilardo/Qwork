@@ -1,7 +1,7 @@
 -- Simular fluxo completo para CNPJ 41.877.277/0001-84 (4x R$500)
 BEGIN;
 
--- 1) Criar entidade (antiga tabela: contratantes)
+-- 1) Criar entidade (antiga tabela: tomadores)
 INSERT INTO entidades (
   tipo, nome, cnpj, email, telefone, responsavel_cpf, responsavel_nome, responsavel_email, plano_id, numero_funcionarios_estimado, status
 ) VALUES (
@@ -50,7 +50,7 @@ BEGIN
 END;
 $$;
 
--- 4) Ativar entidade (antiga tabela: contratantes) (marca pagamento_confirmado e ativa)
+-- 4) Ativar entidade (antiga tabela: tomadores) (marca pagamento_confirmado e ativa)
 UPDATE entidades SET pagamento_confirmado = true, status = 'aprovado', data_liberacao_login = NOW(), ativa = true WHERE cnpj = '41877277000184';
 
 -- 5) Criar senha inicial e usuario gestor (NÃO em funcionarios)

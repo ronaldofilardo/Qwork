@@ -8,7 +8,7 @@ interface Session {
   cpf: string;
   nome: string;
   perfil: string;
-  contratante_id: number;
+  tomador_id: number;
 }
 
 export default function EntidadeLayout({

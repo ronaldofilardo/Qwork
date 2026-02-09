@@ -15,7 +15,7 @@ import { calcularParcelas } from '@/lib/parcelas-helper';
  */
 
 interface SimularPagamentoRequest {
-  contratante_id?: number;
+  entidade_id?: number;
   plano_id?: number;
   valor_total?: number; // Pode vir pré-definido
   numero_funcionarios?: number;
@@ -25,14 +25,14 @@ interface SimularPagamentoRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: SimularPagamentoRequest = await request.json();
-    const { contratante_id, plano_id, valor_total, numero_funcionarios } = body;
+    const { entidade_id, plano_id, valor_total, numero_funcionarios } = body;
 
     let valorCalculado = 0;
     let planoInfo = null;
-    let contratanteInfo = null;
+    let entidadeInfo = null;
 
-    // Cenário único: Contratante e plano fornecidos diretamente
-    if (contratante_id && plano_id) {
+    // Cenário único: Entidade e plano fornecidos diretamente
+    if (entidade_id && plano_id) {
       const planoResult = await query(`SELECT * FROM planos WHERE id = $1`, [
         plano_id,
       ]);
@@ -44,27 +44,25 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      const contratanteResult = await query(
+      const entidadeResult = await query(
         `SELECT id, nome, tipo, numero_funcionarios_estimado FROM entidades WHERE id = $1`,
-        [contratante_id]
+        [entidade_id]
       );
 
-      if (contratanteResult.rows.length === 0) {
+      if (entidadeResult.rows.length === 0) {
         return NextResponse.json(
-          { error: 'Entidade n\u00e3o encontrada' },
+          { error: 'Entidade não encontrada' },
           { status: 404 }
         );
       }
 
       planoInfo = planoResult.rows[0];
-      contratanteInfo = contratanteResult.rows[0];
+      entidadeInfo = entidadeResult.rows[0];
 
       // Calcular valor baseado no tipo de plano
       if (planoInfo.tipo === 'fixo') {
         const qtdFunc =
-          numero_funcionarios ||
-          contratanteInfo.numero_funcionarios_estimado ||
-          1;
+          numero_funcionarios || entidadeInfo.numero_funcionarios_estimado || 1;
         valorCalculado = parseFloat(planoInfo.preco) * qtdFunc;
       } else {
         valorCalculado = valor_total || parseFloat(planoInfo.preco);
@@ -77,7 +75,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            'Parâmetros insuficientes. Forneça contratante_id + plano_id ou valor_total',
+            'Parâmetros insuficientes. Forneça entidade_id + plano_id ou valor_total',
         },
         { status: 400 }
       );
@@ -147,7 +145,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       valor_total: valorCalculado,
-      contratante: contratanteInfo,
+      entidade: entidadeInfo,
       plano: planoInfo,
       simulacoes,
       observacoes: {

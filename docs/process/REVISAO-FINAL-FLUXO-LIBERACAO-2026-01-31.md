@@ -15,7 +15,7 @@ CREATE TABLE public.lotes_avaliacao (
     codigo character varying(20) NOT NULL,
     clinica_id integer,                    -- ✅ NULLABLE (permite Entity)
     empresa_id integer,                    -- ✅ NULLABLE (permite Entity)
-    contratante_id integer,                -- ✅ ADICIONADO (suporta Entity)
+    tomador_id integer,                -- ✅ ADICIONADO (suporta Entity)
     titulo character varying(100) NOT NULL,
     descricao text,
     tipo character varying(20) DEFAULT 'completo'::character varying,
@@ -29,10 +29,10 @@ CREATE TABLE public.lotes_avaliacao (
     numero_ordem integer DEFAULT 1 NOT NULL,
     processamento_em timestamp without time zone,
 
-    -- ✅ CONSTRAINT XOR: clinica_id OU contratante_id (não ambos)
-    CONSTRAINT lotes_avaliacao_clinica_or_contratante_check
-        CHECK ((clinica_id IS NOT NULL AND contratante_id IS NULL)
-            OR (clinica_id IS NULL AND contratante_id IS NOT NULL)),
+    -- ✅ CONSTRAINT XOR: clinica_id OU tomador_id (não ambos)
+    CONSTRAINT lotes_avaliacao_clinica_or_tomador_check
+        CHECK ((clinica_id IS NOT NULL AND tomador_id IS NULL)
+            OR (clinica_id IS NULL AND tomador_id IS NOT NULL)),
 
     -- ✅ UNIQUE: Previne duplicação de numero_ordem por empresa
     CONSTRAINT lotes_avaliacao_empresa_numero_ordem_unique
@@ -136,7 +136,7 @@ const lote = await query(
 
 - `clinica_id` → NOT NULL para RH
 - `empresa_id` → NOT NULL para RH
-- `contratante_id` → NULL para RH
+- `tomador_id` → NULL para RH
 - `liberado_por` → CPF do RH autenticado
 
 ### 5️⃣ Criação de Avaliações
@@ -174,7 +174,7 @@ await query('COMMIT');
 
 ---
 
-## 🔄 FLUXO 2: LIBERAÇÃO DE LOTE (ENTIDADE - DIRETO CONTRATANTE)
+## 🔄 FLUXO 2: LIBERAÇÃO DE LOTE (ENTIDADE - DIRETO tomador)
 
 ### Endpoint: `POST /api/entidade/liberar-lote`
 
@@ -184,7 +184,7 @@ await query('COMMIT');
 
 ```typescript
 - requireEntity() → user.perfil === 'gestor'
-- contratanteId = session.contratante_id
+- tomadorId = session.tomador_id
 ```
 
 ### 2️⃣ Buscar Empresas Vinculadas
@@ -193,10 +193,10 @@ await query('COMMIT');
 const empresas = await query(
   `SELECT DISTINCT empresa_id
    FROM funcionarios
-   WHERE contratante_id = $1
+   WHERE tomador_id = $1
      AND empresa_id IS NOT NULL
      AND ativo = true`,
-  [contratanteId]
+  [tomadorId]
 );
 
 // ✅ LOOP: Processa cada empresa independentemente (sem transação global)
@@ -206,14 +206,14 @@ for (const empresa of empresas) { ... }
 ### 3️⃣ Cálculo de Elegibilidade (Por Empresa)
 
 ```typescript
-// Usa função SQL: calcular_elegibilidade_lote_contratante(contratante_id, numero_ordem)
+// Usa função SQL: calcular_elegibilidade_lote_tomador(tomador_id, numero_ordem)
 const elegibilidadeResult = await query(
-  `SELECT * FROM calcular_elegibilidade_lote_contratante($1, $2)`,
-  [contratanteId, numeroOrdem]
+  `SELECT * FROM calcular_elegibilidade_lote_tomador($1, $2)`,
+  [tomadorId, numeroOrdem]
 );
 ```
 
-**✅ Diferença:** Calcula elegibilidade por `contratante_id` (não por empresa_id)
+**✅ Diferença:** Calcula elegibilidade por `tomador_id` (não por empresa_id)
 
 ### 4️⃣ Criação do Lote (Sem Transação Explícita)
 
@@ -246,9 +246,9 @@ const lote = await queryWithContext(
 
 - `clinica_id` → Vem de `empresas_clientes.clinica_id`
 - `empresa_id` → NOT NULL (mesmo para Entity)
-- `contratante_id` → NULL para Entity (não é gravado)
+- `tomador_id` → NULL para Entity (não é gravado)
 
-**❌ PROBLEMA IDENTIFICADO:** Entity ainda grava `clinica_id` e `empresa_id`, mas deveria gravar `contratante_id` conforme schema corrigido!
+**❌ PROBLEMA IDENTIFICADO:** Entity ainda grava `clinica_id` e `empresa_id`, mas deveria gravar `tomador_id` conforme schema corrigido!
 
 ---
 
@@ -305,7 +305,7 @@ const user = await requireAuth();
 
 // Buscar lote
 const lote = await query(
-  `SELECT id, codigo, status, clinica_id, empresa_id, contratante_id 
+  `SELECT id, codigo, status, clinica_id, empresa_id, tomador_id 
    FROM lotes_avaliacao 
    WHERE id = $1`,
   [loteId]
@@ -314,8 +314,8 @@ const lote = await query(
 // ✅ VALIDAÇÃO DE PERMISSÃO (RH vs Entity)
 if (lote.clinica_id && user.perfil === 'rh') {
   await requireRHWithEmpresaAccess(lote.empresa_id);
-} else if (lote.contratante_id && user.perfil === 'gestor') {
-  if (user.contratante_id !== lote.contratante_id) {
+} else if (lote.tomador_id && user.perfil === 'gestor') {
+  if (user.tomador_id !== lote.tomador_id) {
     return 403; // Sem permissão
   }
 } else {
@@ -378,7 +378,7 @@ await query('COMMIT');
 
 ## 🚨 PROBLEMA CRÍTICO IDENTIFICADO
 
-### ❌ Entity não grava `contratante_id` corretamente
+### ❌ Entity não grava `tomador_id` corretamente
 
 **Local:** `app/api/entidade/liberar-lote/route.ts` linha ~135
 
@@ -404,8 +404,8 @@ const loteResult = await queryWithContext(
 
 **❌ ERRO:** Está inserindo `clinica_id` e `empresa_id`, mas:
 
-1. XOR constraint exige `contratante_id` OU `clinica_id` (não ambos)
-2. Schema espera `contratante_id` para fluxo Entity
+1. XOR constraint exige `tomador_id` OU `clinica_id` (não ambos)
+2. Schema espera `tomador_id` para fluxo Entity
 3. Violará constraint quando executar
 
 **✅ CORREÇÃO NECESSÁRIA:**
@@ -413,9 +413,9 @@ const loteResult = await queryWithContext(
 ```typescript
 const loteResult = await queryWithContext(
   `INSERT INTO lotes_avaliacao 
-   (codigo, contratante_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) 
+   (codigo, tomador_id, titulo, descricao, tipo, status, liberado_por, numero_ordem) 
    VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7)`,
-  [codigo, contratanteId, titulo, descricao, tipo, session.cpf, numeroOrdem]
+  [codigo, tomadorId, titulo, descricao, tipo, session.cpf, numeroOrdem]
 );
 ```
 
@@ -442,7 +442,7 @@ const loteResult = await queryWithContext(
 
 ### ✅ CORRETO
 
-1. Schema com XOR constraint (clinica_id OU contratante_id)
+1. Schema com XOR constraint (clinica_id OU tomador_id)
 2. UNIQUE constraint em (empresa_id, numero_ordem)
 3. Validação unificada via SQL function
 4. Emissão automática completamente removida
@@ -453,12 +453,12 @@ const loteResult = await queryWithContext(
 
 ### ❌ PROBLEMA CRÍTICO
 
-**Entity liberar-lote ainda insere clinica_id/empresa_id em vez de contratante_id**
+**Entity liberar-lote ainda insere clinica_id/empresa_id em vez de tomador_id**
 
 ### ⚠️ OBSERVAÇÕES
 
 1. Entity não precisa de ROLLBACK (intencional - múltiplas empresas)
-2. Função `calcular_elegibilidade_lote_contratante` existe e funciona
+2. Função `calcular_elegibilidade_lote_tomador` existe e funciona
 3. Migrações criadas mas não aplicadas ao banco ainda
 
 ---
@@ -469,4 +469,4 @@ const loteResult = await queryWithContext(
 
 **Linhas:** ~130-150
 
-**Ação:** Alterar INSERT para usar `contratante_id` em vez de `clinica_id`/`empresa_id`
+**Ação:** Alterar INSERT para usar `tomador_id` em vez de `clinica_id`/`empresa_id`

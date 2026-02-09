@@ -5,7 +5,7 @@
 BEGIN;
 
 -- 1. Ativar contratante e confirmar pagamento
-UPDATE contratantes 
+UPDATE tomadores 
 SET 
   status = 'aprovado',  -- Status no enum (não existe 'ativo')
   ativa = true,         -- Boolean que indica se está ativa
@@ -23,7 +23,7 @@ DECLARE
     v_clinica_id INTEGER;
     v_contratante_id INTEGER := 14;
 BEGIN
-    SELECT tipo INTO v_tipo FROM contratantes WHERE id = v_contratante_id;
+    SELECT tipo INTO v_tipo FROM tomadores WHERE id = v_contratante_id;
     
     IF v_tipo = 'clinica' THEN
         -- Buscar clinica_id
@@ -84,7 +84,7 @@ SET
 
 -- 3. Verificar resultados
 SELECT 'Contratante ativado:' as info, id, nome, status, ativa, pagamento_confirmado 
-FROM contratantes WHERE id = 14;
+FROM tomadores WHERE id = 14;
 
 SELECT 'Login criado:' as info, cpf, nome, email, perfil, ativo, contratante_id 
 FROM funcionarios WHERE cpf = '84666497005';

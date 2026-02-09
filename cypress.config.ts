@@ -4,15 +4,15 @@ export default defineConfig({
   e2e: {
     baseUrl: 'http://localhost:3000',
     setupNodeEvents(on, config) {
-      // Task to insert contratante/contrato/pagamento for E2E tests
+      // Task to insert tomador/contrato/pagamento for E2E tests
       on('task', {
-        async 'db:insertTestContratante'(args: any) {
+        async 'db:insertTesttomador'(args: any) {
           const { cnpj, cpf, nome, email } = args;
           try {
             const { query } = await import('./lib/db');
 
-            const contratanteRes = await query(
-              `INSERT INTO contratantes (
+            const tomadorRes = await query(
+              `INSERT INTO tomadors (
                 tipo, nome, cnpj, email, telefone,
                 responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
                 endereco, cidade, estado, cep, status, ativa, numero_funcionarios_estimado
@@ -24,68 +24,68 @@ export default defineConfig({
               [nome, cnpj, email, cpf]
             );
 
-            const contratanteId = contratanteRes.rows[0].id;
+            const tomadorId = tomadorRes.rows[0].id;
 
             const contratoRes = await query(
-              `INSERT INTO contratos (contratante_id, plano_id, aceito, hash_contrato, criado_em)
+              `INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
                SELECT $1, plano_id, true, md5(random()::text), CURRENT_TIMESTAMP
-               FROM contratantes WHERE id = $1
+               FROM tomadors WHERE id = $1
                RETURNING id`,
-              [contratanteId]
+              [tomadorId]
             );
 
             const contratoId = contratoRes.rows[0].id;
 
             const pagamentoRes = await query(
-              `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
+              `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
                VALUES ($1, $2, 1500.00, 'pendente', 'boleto', 1, CURRENT_TIMESTAMP)
                RETURNING id`,
-              [contratanteId, contratoId]
+              [tomadorId, contratoId]
             );
 
             const pagamentoId = pagamentoRes.rows[0].id;
 
-            return { contratanteId, contratoId, pagamentoId };
+            return { tomadorId, contratoId, pagamentoId };
           } catch (err: any) {
-            console.error('Task db:insertTestContratante error:', err);
+            console.error('Task db:insertTesttomador error:', err);
             throw err;
           }
         },
 
-        async 'db:cleanupContratanteByCpf'(args: any) {
+        async 'db:cleanuptomadorByCpf'(args: any) {
           const { cpf } = args;
           try {
             const { query } = await import('./lib/db');
 
-            const contratante = await query(
-              'SELECT id FROM contratantes WHERE responsavel_cpf = $1 LIMIT 1',
+            const tomador = await query(
+              'SELECT id FROM tomadors WHERE responsavel_cpf = $1 LIMIT 1',
               [cpf]
             );
-            const contratanteId = contratante.rows[0]?.id;
+            const tomadorId = tomador.rows[0]?.id;
 
-            if (contratanteId) {
-              await query('DELETE FROM recibos WHERE contratante_id = $1', [
-                contratanteId,
+            if (tomadorId) {
+              await query('DELETE FROM recibos WHERE tomador_id = $1', [
+                tomadorId,
               ]);
-              await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
-                contratanteId,
+              await query('DELETE FROM pagamentos WHERE tomador_id = $1', [
+                tomadorId,
               ]);
-              await query('DELETE FROM contratos WHERE contratante_id = $1', [
-                contratanteId,
+              await query('DELETE FROM contratos WHERE tomador_id = $1', [
+                tomadorId,
               ]);
               await query(
                 'DELETE FROM notificacoes WHERE destinatario_cpf = $1',
                 [cpf]
               );
               await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
-              await query('DELETE FROM contratantes WHERE id = $1', [
-                contratanteId,
+              await query('DELETE FROM tomadors WHERE id = $1', [
+                tomadorId,
               ]);
             }
 
             return true;
           } catch (err: any) {
-            console.error('Task db:cleanupContratanteByCpf error:', err);
+            console.error('Task db:cleanuptomadorByCpf error:', err);
             throw err;
           }
         },
@@ -123,14 +123,14 @@ export default defineConfig({
 
             if (cnpj) {
               await query(
-                'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+                'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
                 [cnpj]
               );
               await query(
-                'DELETE FROM pagamentos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+                'DELETE FROM pagamentos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
                 [cnpj]
               );
-              await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpj]);
+              await query('DELETE FROM tomadors WHERE cnpj = $1', [cnpj]);
             }
 
             return true;
@@ -140,29 +140,29 @@ export default defineConfig({
           }
         },
 
-        async 'db:getContratante'(args: any) {
+        async 'db:gettomador'(args: any) {
           const { cnpj } = args;
           try {
             const { query } = await import('./lib/db');
             const res = await query(
-              'SELECT * FROM contratantes WHERE cnpj = $1 LIMIT 1',
+              'SELECT * FROM tomadors WHERE cnpj = $1 LIMIT 1',
               [cnpj]
             );
             return res.rows[0] || null;
           } catch (err: any) {
-            console.error('Task db:getContratante error:', err);
+            console.error('Task db:gettomador error:', err);
             throw err;
           }
         },
 
         async 'db:confirmarPagamento'(args: any) {
-          const { contratanteId } = args;
+          const { tomadorId } = args;
           try {
             const { query } = await import('./lib/db');
 
             await query(
-              'UPDATE contratantes SET pagamento_confirmado = true, status = $1 WHERE id = $2',
-              ['aprovado', contratanteId]
+              'UPDATE tomadors SET pagamento_confirmado = true, status = $1 WHERE id = $2',
+              ['aprovado', tomadorId]
             );
 
             return { success: true };
@@ -173,15 +173,15 @@ export default defineConfig({
         },
 
         async 'db:gerarTokenAtivacao'(args: any) {
-          const { contratanteId, cpf } = args;
+          const { tomadorId, cpf } = args;
           try {
             const { query } = await import('./lib/db');
             const token = `token-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 
             await query(
-              `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+              `INSERT INTO entidades_senhas (cpf, tomador_id, token_ativacao, token_expira_em)
                VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')`,
-              [cpf, contratanteId, token]
+              [cpf, tomadorId, token]
             );
 
             return { success: true, token };
@@ -206,13 +206,13 @@ export default defineConfig({
           }
         },
 
-        async 'db:insertInactiveContratante'(args: any) {
+        async 'db:insertInactivetomador'(args: any) {
           const { cnpj, cpf } = args;
           try {
             const { query } = await import('./lib/db');
 
             const res = await query(
-              `INSERT INTO contratantes (tipo, nome, cnpj, email, responsavel_nome, responsavel_cpf, status, ativa, criado_em)
+              `INSERT INTO tomadors (tipo, nome, cnpj, email, responsavel_nome, responsavel_cpf, status, ativa, criado_em)
                VALUES ('entidade', $1, $2, $3, 'Resp Inativo', $4, 'aguardando_pagamento', false, NOW()) RETURNING id`,
               [
                 `Clinica Inativa ${Date.now()}`,
@@ -224,7 +224,7 @@ export default defineConfig({
 
             return { success: true, id: res.rows[0].id };
           } catch (err: any) {
-            console.error('Task db:insertInactiveContratante error:', err);
+            console.error('Task db:insertInactivetomador error:', err);
             throw err;
           }
         },

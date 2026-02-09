@@ -38,7 +38,7 @@ export interface Notificacao {
   expira_em?: Date;
   // Campos da view
   contratacao_status?: string;
-  contratante_nome?: string;
+  tomador_nome?: string;
   expirada?: boolean;
 }
 
@@ -113,6 +113,7 @@ export class NotificationService {
       `SELECT * FROM vw_notificacoes_dashboard
        WHERE destinatario_cpf = $1 
          AND destinatario_tipo = $2
+         AND tipo != $3
          ${apenasnaoLidas ? 'AND lida = FALSE' : ''}
        ORDER BY 
          CASE prioridade
@@ -122,8 +123,8 @@ export class NotificationService {
            WHEN 'baixa' THEN 4
          END,
          criado_em DESC
-       LIMIT $3 OFFSET $4`,
-      [destinatarioCpf, destinatarioTipo, limite, offset]
+       LIMIT $4 OFFSET $5`,
+      [destinatarioCpf, destinatarioTipo, 'parcela_pendente', limite, offset]
     );
 
     return resultado.rows;

@@ -10,7 +10,5 @@ export default function NotificacoesEntidadePage() {
     router.push(url);
   };
 
-  return (
-    <CentroOperacoes tipoUsuario="contratante" onNavigate={handleNavigate} />
-  );
+  return <CentroOperacoes tipoUsuario="tomador" onNavigate={handleNavigate} />;
 }

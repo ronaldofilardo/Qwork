@@ -32,8 +32,8 @@ BEGIN
     END IF;
 END $$;
 
--- 1.2. Remover duplicatas de tr_contratantes_sync_status_ativa
-DROP TRIGGER IF EXISTS tr_contratantes_sync_status_ativa ON contratantes CASCADE;
+-- 1.2. Remover duplicatas de tr_tomadores_sync_status_ativa
+DROP TRIGGER IF EXISTS tr_tomadores_sync_status_ativa ON tomadores CASCADE;
 
 -- 1.3. Remover trigger de atualizar_ultima_avaliacao (não existe em dev)
 DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao ON avaliacoes CASCADE;
@@ -124,7 +124,7 @@ COMMENT ON COLUMN funcionarios.ultimo_lote_codigo IS
 
 -- 3.4. Adicionar contratante_id em empresas_clientes (está em dev, mas NULL permitido)
 ALTER TABLE empresas_clientes 
-    ADD COLUMN IF NOT EXISTS contratante_id INTEGER REFERENCES contratantes(id);
+    ADD COLUMN IF NOT EXISTS contratante_id INTEGER REFERENCES tomadores(id);
 
 COMMENT ON COLUMN empresas_clientes.contratante_id IS 
     'ID do contratante (para empresas que pertencem a uma entidade contratante)';

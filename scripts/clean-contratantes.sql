@@ -1,7 +1,7 @@
 -- ==========================================
 -- SCRIPT DE LIMPEZA: REMOVER TODAS AS ENTIDADES
 -- Data: 2025-12-22
--- ÚLTIMA ATUALIZAÇÃO: 2026-02-06 (Renomeação contratantes → entidades)
+-- ÚLTIMA ATUALIZAÇÃO: 2026-02-06 (Renomeação tomadores → entidades)
 -- Objetivo: Limpar todos os dados de entidades do banco nr-bps_db
 -- 
 -- ⚠️  ATENÇÃO CRÍTICA: ESTE SCRIPT REMOVE TODOS OS DADOS DE ENTIDADES!

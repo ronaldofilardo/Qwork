@@ -21,7 +21,7 @@ async function main() {
   try {
     console.log('🔍 Verificando estrutura e dados...\n');
 
-    // Verificar tabelas entidades/contratantes
+    // Verificar tabelas entidades/tomadors
     console.log('📋 Tabela ENTIDADES no DEV:');
     const devEntidades = await devPool.query(
       'SELECT id, cnpj, nome, tipo FROM entidades ORDER BY id'
@@ -33,7 +33,7 @@ async function main() {
 
     console.log('\n📋 Tabela ENTIDADES no PROD:');
     const prodEntidades = await prodPool.query(
-      'SELECT id, cnpj, nome, tipo FROM contratantes ORDER BY id'
+      'SELECT id, cnpj, nome, tipo FROM tomadors ORDER BY id'
     );
     console.log(`   ${prodEntidades.rows.length} registros:`);
     prodEntidades.rows.forEach((r) => {
@@ -62,12 +62,12 @@ async function main() {
     // Verificar funcionários
     console.log('\n📋 Tabela FUNCIONARIOS no DEV:');
     const devFunc = await devPool.query(
-      'SELECT id, cpf, nome, contratante_id, perfil FROM funcionarios ORDER BY id LIMIT 5'
+      'SELECT id, cpf, nome, tomador_id, perfil FROM funcionarios ORDER BY id LIMIT 5'
     );
     console.log(`   ${devFunc.rows.length} primeiros registros:`);
     devFunc.rows.forEach((r) => {
       console.log(
-        `   - ID ${r.id}: ${r.nome} (${r.cpf}) - Contratante: ${r.contratante_id}, Perfil: ${r.perfil}`
+        `   - ID ${r.id}: ${r.nome} (${r.cpf}) - tomador: ${r.tomador_id}, Perfil: ${r.perfil}`
       );
     });
   } finally {

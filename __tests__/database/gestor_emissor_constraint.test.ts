@@ -2,7 +2,7 @@ import { query } from '@/lib/db';
 
 describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
   const testCpf = '99988877766';
-  let contratanteId: number;
+  let tomadorId: number;
 
   afterEach(async () => {
     // Cleanup - safe to run even if inserts failed
@@ -31,12 +31,12 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
       );
     }
 
-    if (contratanteId) {
+    if (tomadorId) {
       try {
-        await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+        await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
       } catch (e) {
         console.warn(
-          'Cleanup contratantes delete failed:',
+          'Cleanup tomadors delete failed:',
           e && e.message ? e.message : e
         );
       }
@@ -44,9 +44,9 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
   });
 
   test('inserir emissor com CPF de gestor deve falhar', async () => {
-    // Criar contratante do tipo entidade e registrar senha (gestor)
+    // Criar tomador do tipo entidade e registrar senha (gestor)
     const res = await query(
-      'INSERT INTO contratantes (cnpj, nome, tipo, ativa, pagamento_confirmado, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id',
+      'INSERT INTO tomadors (cnpj, nome, tipo, ativa, pagamento_confirmado, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id',
       [
         '11111111111111',
         'Entidade Teste',
@@ -65,11 +65,11 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
         '11900000000',
       ]
     );
-    contratanteId = res.rows[0].id;
+    tomadorId = res.rows[0].id;
 
     await query(
-      'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
-      [contratanteId, testCpf, 'hash']
+      'INSERT INTO entidades_senhas (tomador_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+      [tomadorId, testCpf, 'hash']
     );
 
     const insertEmissor = `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo) VALUES ($1, $2, $3, $4, $5, $6)`;
@@ -108,12 +108,12 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
   });
 
   test('criarContaResponsavel com tipo = entidade NÃO cria registro em funcionarios', async () => {
-    // Criar contratante entidade com responsavel cpf
+    // Criar tomador entidade com responsavel cpf
     const cnpj = '22222222222222';
     const responsavelCpf = '77766655544';
 
     const res = await query(
-      'INSERT INTO contratantes (cnpj, nome, email, telefone, tipo, ativa, pagamento_confirmado, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id',
+      'INSERT INTO tomadors (cnpj, nome, email, telefone, tipo, ativa, pagamento_confirmado, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id',
       [
         cnpj,
         'Entidade CriarConta Test',
@@ -164,10 +164,10 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
     }
 
     try {
-      await query('DELETE FROM contratantes WHERE id = $1', [cid]);
+      await query('DELETE FROM tomadors WHERE id = $1', [cid]);
     } catch (e) {
       console.warn(
-        'Cleanup contratantes delete failed:',
+        'Cleanup tomadors delete failed:',
         e && e.message ? e.message : e
       );
     }

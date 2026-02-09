@@ -203,8 +203,7 @@ describe('import route - clínica', () => {
     expect(lastInsert[0]).toContain("'funcionario'");
 
     const insertParams = lastInsert[1];
-    // Verificar que inclui clinica_id e empresa_id
-    expect(insertParams).toContain(1); // clinica_id
+    // Verificar que inclui matricula (clinica_id vai para funcionarios_clinicas, não aqui)
     expect(insertParams).toContain('MAT001'); // matricula
 
     // Verificar que criou entrada em funcionarios_clinicas
@@ -212,6 +211,11 @@ describe('import route - clínica', () => {
       call[0].includes('INSERT INTO funcionarios_clinicas')
     );
     expect(insertRelCalls.length).toBeGreaterThanOrEqual(1);
+
+    // Verificar que clinica_id está em funcionarios_clinicas, não em funcionarios
+    const funcClinicasParams = insertRelCalls[0][1];
+    expect(funcClinicasParams).toContain(1); // clinica_id aqui
+    expect(funcClinicasParams).toContain(1); // empresa_id aqui
 
     // Verificar que session foi passado
     expect(insertFuncCalls[0][2]).toBeDefined();

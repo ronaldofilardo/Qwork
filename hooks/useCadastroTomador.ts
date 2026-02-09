@@ -236,7 +236,9 @@ export function useCadastroTomador({
 
       // NOVO: redirecion sempre para sucesso-cadastro com contrato
       if (data.id && data.contrato_id) {
-        setRedirectUrl(`/sucesso-cadastro?id=${data.id}&contrato_id=${data.contrato_id}`);
+        setRedirectUrl(
+          `/sucesso-cadastro?id=${data.id}&contrato_id=${data.contrato_id}`
+        );
         return {
           redirect: `/sucesso-cadastro?id=${data.id}&contrato_id=${data.contrato_id}`,
           data,
@@ -262,13 +264,7 @@ export function useCadastroTomador({
     } finally {
       setEnviando(false);
     }
-  }, [
-    api,
-    arquivos,
-    dadostomador,
-    dadosResponsavel,
-    tipo,
-  ]);
+  }, [api, arquivos, dadostomador, dadosResponsavel, tipo]);
 
   const resetarFormulario = useCallback(() => {
     setEtapaAtual('dados');

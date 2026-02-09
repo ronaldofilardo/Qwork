@@ -1,6 +1,6 @@
 -- Migration 045: Adicionar trigger para sincronizar dados entre tabelas
 -- Data: 26/12/2025
--- Descricao: Sincroniza automaticamente numero_funcionarios entre contratantes e contratacao_personalizada
+-- Descricao: Sincroniza automaticamente numero_funcionarios entre tomadores e contratacao_personalizada
 
 DO $$
 BEGIN
@@ -10,9 +10,9 @@ BEGIN
         CREATE OR REPLACE FUNCTION sync_numero_funcionarios_contratacao()
         RETURNS TRIGGER AS $func$
         BEGIN
-            -- Quando contratacao_personalizada e atualizada, sincronizar com contratantes
+            -- Quando contratacao_personalizada e atualizada, sincronizar com tomadores
             IF TG_OP = 'UPDATE' OR TG_OP = 'INSERT' THEN
-                UPDATE contratantes
+                UPDATE tomadores
                 SET numero_funcionarios_estimado = NEW.numero_funcionarios_estimado
                 WHERE id = NEW.contratante_id
                 AND (numero_funcionarios_estimado IS NULL

@@ -49,11 +49,11 @@ export const GET = async (req: Request) => {
             WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
               AND NOT EXISTS (
                 SELECT 1 FROM avaliacoes a2 
-                WHERE a2.lote_id = la.id AND a2.status != 'concluido'
+                WHERE a2.lote_id = la.id AND a2.status != 'concluida'
               )
               AND EXISTS (
                 SELECT 1 FROM avaliacoes a3 
-                WHERE a3.lote_id = la.id AND a3.status = 'concluido'
+                WHERE a3.lote_id = la.id AND a3.status = 'concluida'
               )
             GROUP BY la.id, ec.nome
             HAVING MAX(a.envio) >= NOW() - INTERVAL '7 days'

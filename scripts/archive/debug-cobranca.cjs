@@ -15,7 +15,7 @@ const { query } = require('../lib/db');
       pl.valor_por_funcionario,
       pg.id as pagamento_id,
       pg.valor as pagamento_valor
-    FROM contratantes ct
+    FROM tomadores ct
     LEFT JOIN LATERAL (
       SELECT c.id, c.plano_id, c.numero_funcionarios, c.valor_personalizado
       FROM contratos c

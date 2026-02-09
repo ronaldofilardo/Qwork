@@ -34,7 +34,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
     // Mock da busca do contrato
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ contrato: { contratante_id: 1 } }),
+      json: async () => ({ contrato: { tomador_id: 1 } }),
     } as any);
 
     // Mock do iniciar pagamento
@@ -47,7 +47,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor_plano: 50,
         numero_funcionarios: 10,
         plano_nome: 'Plano Básico',
-        contratante_nome: 'Empresa Teste',
+        tomador_nome: 'Empresa Teste',
         message: 'Pagamento iniciado com sucesso',
       }),
     } as any);
@@ -87,7 +87,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
     // Mocks para carregar dados
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ contrato: { contratante_id: 1 } }),
+      json: async () => ({ contrato: { tomador_id: 1 } }),
     } as any);
 
     mockFetch.mockResolvedValueOnce({
@@ -99,7 +99,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor_plano: 50,
         numero_funcionarios: 10,
         plano_nome: 'Plano Básico',
-        contratante_nome: 'Empresa Teste',
+        tomador_nome: 'Empresa Teste',
       }),
     } as any);
 
@@ -123,7 +123,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
     // Mocks para carregar dados
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ contrato: { contratante_id: 1 } }),
+      json: async () => ({ contrato: { tomador_id: 1 } }),
     } as any);
 
     mockFetch.mockResolvedValueOnce({
@@ -135,7 +135,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor_plano: 50,
         numero_funcionarios: 10,
         plano_nome: 'Plano Básico',
-        contratante_nome: 'Empresa Teste',
+        tomador_nome: 'Empresa Teste',
       }),
     } as any);
 
@@ -166,7 +166,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
     // Mocks para carregar dados
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ contrato: { contratante_id: 1 } }),
+      json: async () => ({ contrato: { tomador_id: 1 } }),
     } as any);
 
     mockFetch.mockResolvedValueOnce({
@@ -178,7 +178,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor_plano: 50,
         numero_funcionarios: 10,
         plano_nome: 'Plano Básico',
-        contratante_nome: 'Empresa Teste',
+        tomador_nome: 'Empresa Teste',
       }),
     } as any);
 
@@ -206,7 +206,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
     // Mocks para carregar dados
     mockFetch.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ contrato: { contratante_id: 1 } }),
+      json: async () => ({ contrato: { tomador_id: 1 } }),
     } as any);
 
     mockFetch.mockResolvedValueOnce({
@@ -218,7 +218,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor_plano: 50,
         numero_funcionarios: 10,
         plano_nome: 'Plano Básico',
-        contratante_nome: 'Empresa Teste',
+        tomador_nome: 'Empresa Teste',
       }),
     } as any);
 
@@ -275,8 +275,8 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
       json: async () => ({
         valido: true,
         contratacao_id: 123,
-        contratante_id: 42,
-        contratante_nome: 'Empresa Token',
+        tomador_id: 42,
+        tomador_nome: 'Empresa Token',
         numero_funcionarios: 25,
         valor_total: 2500,
         valor_por_funcionario: 100,
@@ -293,7 +293,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor_plano: 100,
         numero_funcionarios: 25,
         plano_nome: 'Personalizado TEST',
-        contratante_nome: 'Empresa Token',
+        tomador_nome: 'Empresa Token',
       }),
     } as any);
 
@@ -322,7 +322,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
       const lastCall = mockFetch.mock.calls[1]; // second call is iniciar
       const body = JSON.parse((lastCall[1] as any).body);
       expect(body.token).toBe('abc123');
-      expect(body.contratante_id).toBe(42);
+      expect(body.tomador_id).toBe(42);
     });
   });
 });

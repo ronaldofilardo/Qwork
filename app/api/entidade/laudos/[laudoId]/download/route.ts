@@ -14,7 +14,7 @@ export const GET = async (
 ) => {
   try {
     const session = await requireEntity();
-    const contratanteId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     const laudoId = parseInt(params.laudoId);
     if (isNaN(laudoId)) {
@@ -30,14 +30,15 @@ export const GET = async (
       SELECT
         l.id,
         l.lote_id,
-        la.contratante_id
+        la.entidade_id,
+        la.clinica_id
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.id = $1 
         AND l.status IN ('enviado', 'emitido')
-        AND la.contratante_id = $2
+        AND la.entidade_id = $2
     `,
-      [laudoId, contratanteId]
+      [laudoId, entidadeId]
     );
 
     if (laudoQuery.rows.length === 0) {

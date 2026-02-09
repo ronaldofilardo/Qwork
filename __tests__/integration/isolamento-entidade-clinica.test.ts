@@ -6,16 +6,16 @@
 import { query } from '@/lib/db';
 
 describe('Isolamento: Funcionários Entidade vs Clínica', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let clinicaId: number;
   let empresaId: number;
   let cpfFuncEntidade: string;
   let cpfFuncClinica: string;
 
   beforeAll(async () => {
-    // Criar contratante tipo entidade
-    const contratanteRes = await query(
-      `INSERT INTO contratantes (
+    // Criar tomador tipo entidade
+    const tomadorRes = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         ativa, pagamento_confirmado
@@ -28,7 +28,7 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
       ) RETURNING id`,
       []
     );
-    contratanteId = contratanteRes.rows[0].id;
+    tomadorId = tomadorRes.rows[0].id;
 
     // Criar clínica (usar apenas colunas existentes)
     const clinicaRes = await query(
@@ -55,26 +55,26 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
       '22222222222',
     ]);
 
-    // Criar funcionário vinculado à ENTIDADE (contratante_id, sem empresa/clinica)
+    // Criar funcionário vinculado à ENTIDADE (tomador_id, sem empresa/clinica)
     cpfFuncEntidade = '11111111111';
     await query(
       `INSERT INTO funcionarios (
         cpf, nome, email, senha_hash, perfil, setor, funcao, nivel_cargo,
-        contratante_id, empresa_id, clinica_id, ativo
+        tomador_id, empresa_id, clinica_id, ativo
       ) VALUES (
         $1, 'Func Entidade', 'func@entidade.com', 'hash123', 'funcionario',
         'TI', 'Desenvolvedor', 'operacional',
         $2, NULL, NULL, true
       )`,
-      [cpfFuncEntidade, contratanteId]
+      [cpfFuncEntidade, tomadorId]
     );
 
-    // Criar funcionário vinculado à CLÍNICA/EMPRESA (empresa_id + clinica_id, sem contratante)
+    // Criar funcionário vinculado à CLÍNICA/EMPRESA (empresa_id + clinica_id, sem tomador)
     cpfFuncClinica = '22222222222';
     await query(
       `INSERT INTO funcionarios (
         cpf, nome, email, senha_hash, perfil, setor, funcao, nivel_cargo,
-        contratante_id, empresa_id, clinica_id, ativo
+        tomador_id, empresa_id, clinica_id, ativo
       ) VALUES (
         $1, 'Func Clínica', 'func@clinica.com', 'hash456', 'funcionario',
         'RH', 'Analista', 'operacional',
@@ -92,13 +92,13 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
     ]);
     await query('DELETE FROM empresas_clientes WHERE id = $1', [empresaId]);
     await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
-    await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
   });
 
   test('✅ Funcionário de entidade NÃO aparece em query de clínica/empresa', async () => {
     const result = await query(
       `SELECT cpf FROM funcionarios
-       WHERE empresa_id = $1 AND clinica_id = $2 AND contratante_id IS NULL`,
+       WHERE empresa_id = $1 AND clinica_id = $2 AND tomador_id IS NULL`,
       [empresaId, clinicaId]
     );
 
@@ -110,8 +110,8 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
   test('✅ Funcionário de clínica NÃO aparece em query de entidade', async () => {
     const result = await query(
       `SELECT cpf FROM funcionarios
-       WHERE contratante_id = $1 AND empresa_id IS NULL AND clinica_id IS NULL`,
-      [contratanteId]
+       WHERE tomador_id = $1 AND empresa_id IS NULL AND clinica_id IS NULL`,
+      [tomadorId]
     );
 
     const cpfs = result.rows.map((r) => r.cpf);
@@ -119,14 +119,14 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
     expect(cpfs).not.toContain(cpfFuncClinica);
   });
 
-  test('✅ Constraint permite funcionário com contratante_id (sem empresa/clinica)', async () => {
+  test('✅ Constraint permite funcionário com tomador_id (sem empresa/clinica)', async () => {
     // Tentar inserir funcionário válido de entidade
     const cpfTest = '33333333333';
     await expect(
       query(
-        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, contratante_id, empresa_id, clinica_id, nivel_cargo, ativo)
+        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, tomador_id, empresa_id, clinica_id, nivel_cargo, ativo)
          VALUES ($1, 'Func Teste', 'teste@ent.com', 'hash', 'funcionario', $2, NULL, NULL, 'operacional', true)`,
-        [cpfTest, contratanteId]
+        [cpfTest, tomadorId]
       )
     ).resolves.not.toThrow();
 
@@ -134,13 +134,13 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
     await query('DELETE FROM funcionarios WHERE cpf = $1', [cpfTest]);
   });
 
-  test('✅ Constraint permite funcionário com empresa_id+clinica_id (sem contratante)', async () => {
+  test('✅ Constraint permite funcionário com empresa_id+clinica_id (sem tomador)', async () => {
     // Tentar inserir funcionário válido de clínica (idempotente: remover CPF antes)
     const cpfTest = '44444444444';
     await query('DELETE FROM funcionarios WHERE cpf = $1', [cpfTest]);
     await expect(
       query(
-        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, contratante_id, empresa_id, clinica_id, nivel_cargo, ativo)
+        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, tomador_id, empresa_id, clinica_id, nivel_cargo, ativo)
          VALUES ($1, 'Func Teste Cli', 'teste@cli.com', 'hash', 'funcionario', NULL, $2, $3, 'operacional', true)`,
         [cpfTest, empresaId, clinicaId]
       )
@@ -150,13 +150,13 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
     await query('DELETE FROM funcionarios WHERE cpf = $1', [cpfTest]);
   });
 
-  test('❌ Constraint REJEITA funcionário sem contratante_id nem clinica_id (exceto perfis especiais)', async () => {
+  test('❌ Constraint REJEITA funcionário sem tomador_id nem clinica_id (exceto perfis especiais)', async () => {
     const cpfInvalido = '55555555555';
 
     // Deve falhar para perfil funcionario sem vínculos
     await expect(
       query(
-        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, contratante_id, empresa_id, clinica_id, nivel_cargo, ativo)
+        `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, tomador_id, empresa_id, clinica_id, nivel_cargo, ativo)
          VALUES ($1, 'Func Inválido', 'invalido@test.com', 'hash', 'funcionario', NULL, NULL, NULL, 'operacional', true)`,
         [cpfInvalido]
       )

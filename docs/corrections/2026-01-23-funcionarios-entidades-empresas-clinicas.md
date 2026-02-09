@@ -19,7 +19,7 @@ A constraint `funcionarios_clinica_check` estava configurada para aceitar apenas
 - `clinica_id IS NOT NULL`, OU
 - `perfil IN ('emissor', 'admin', 'gestor')`
 
-**Mas NÃO aceitava `contratante_id` como alternativa válida.**
+**Mas NÃO aceitava `tomador_id` como alternativa válida.**
 
 A migration 072 tinha a lógica correta mas nunca foi aplicada ao banco de desenvolvimento.
 
@@ -31,7 +31,7 @@ A migration 072 tinha a lógica correta mas nunca foi aplicada ao banco de desen
 ALTER TABLE funcionarios DROP CONSTRAINT IF EXISTS funcionarios_clinica_check;
 ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_clinica_check CHECK (
     clinica_id IS NOT NULL
-    OR contratante_id IS NOT NULL
+    OR tomador_id IS NOT NULL
     OR perfil IN ('emissor', 'admin', 'gestao')
 ) NOT VALID;
 ```
@@ -46,17 +46,17 @@ ALTER TABLE funcionarios ADD CONSTRAINT funcionarios_clinica_check CHECK (
 
 ```
 Error: Clínica não identificada na sessão
-requireClinica: Falha ao mapear clínica via contratante_id: Clínica não identificada na sessão
+requireClinica: Falha ao mapear clínica via tomador_id: Clínica não identificada na sessão
 ```
 
 ### Causa Raiz
 
-O contratante 10 (tipo 'clinica') **não tinha registro correspondente na tabela `clinicas`**.
+O tomador 10 (tipo 'clinica') **não tinha registro correspondente na tabela `clinicas`**.
 
 A query de fallback em `requireClinica()` buscava:
 
 ```sql
-SELECT id, ativa FROM clinicas WHERE contratante_id = $1
+SELECT id, ativa FROM clinicas WHERE tomador_id = $1
 ```
 
 Mas não encontrava nada porque o registro estava ausente.
@@ -66,14 +66,14 @@ Mas não encontrava nada porque o registro estava ausente.
 1. **Criado registro da clínica:**
 
 ```sql
-INSERT INTO clinicas (contratante_id, nome, cnpj, email, telefone, endereco, ativa)
+INSERT INTO clinicas (tomador_id, nome, cnpj, email, telefone, endereco, ativa)
 VALUES (10, 'SERVMEDOcip', '09110380000191', 'jiiohoi@hiuhiu.com',
         '(87) 98464-6664', 'R. Waldemar Kost, 1130 - Curitiba/PR - 81630-180', true)
 RETURNING id; -- retornou id = 3
 ```
 
 2. **Melhorada lógica de `requireClinica()` em [lib/session.ts](c:/apps/QWork/lib/session.ts#L306-L360):**
-   - Agora busca também o `tipo` do contratante
+   - Agora busca também o `tipo` do tomador
    - Valida se é realmente do tipo 'clinica'
    - Mensagens de erro mais específicas para diagnóstico
 
@@ -133,7 +133,7 @@ Error: Contexto de sessão inválido: usuário não encontrado ou inativo
 
 ### Causa Raiz
 
-O gestor RH (contratante_id=10, tipo 'clinica') não tinha registro na tabela `funcionarios`.  
+O gestor RH (tomador_id=10, tipo 'clinica') não tinha registro na tabela `funcionarios`.  
 A função `validateSessionContext()` buscava apenas em `funcionarios`, não considerando gestores que existem apenas em `entidades_senhas`.
 
 ### Solução Aplicada
@@ -141,7 +141,7 @@ A função `validateSessionContext()` buscava apenas em `funcionarios`, não con
 1. **Criado registro do gestor RH:**
 
 ```sql
-INSERT INTO funcionarios (cpf, nome, email, perfil, ativo, clinica_id, contratante_id, senha_hash)
+INSERT INTO funcionarios (cpf, nome, email, perfil, ativo, clinica_id, tomador_id, senha_hash)
 VALUES ('04703084945', 'Tani K', 'dsoijoi@hihi.com', 'rh', true, 3, 10, '[hash]')
 RETURNING id; -- retornou id = 16
 ```
@@ -155,7 +155,7 @@ RETURNING id; -- retornou id = 16
 
 ## Arquivos Alterados
 
-- ✅ [database/migrations/073_fix_funcionarios_clinica_check_contratante.sql](c:/apps/QWork/database/migrations/073_fix_funcionarios_clinica_check_contratante.sql) - Constraint para aceitar contratante_id
+- ✅ [database/migrations/073_fix_funcionarios_clinica_check_tomador.sql](c:/apps/QWork/database/migrations/073_fix_funcionarios_clinica_check_tomador.sql) - Constraint para aceitar tomador_id
 - ✅ [database/migrations/074_fix_audit_trigger_allow_null_perfil.sql](c:/apps/QWork/database/migrations/074_fix_audit_trigger_allow_null_perfil.sql) - Trigger permite user_perfil NULL
 - ✅ [database/migrations/013b_create_nivel_cargo_enum_column.sql](c:/apps/QWork/database/migrations/013b_create_nivel_cargo_enum_column.sql) - Migration idempotente para criar enum `nivel_cargo_enum` e coluna `funcionarios.nivel_cargo` em ambientes de teste
 - ✅ [database/migrations/013c_modify_nivel_cargo_constraint_remove_rh.sql](c:/apps/QWork/database/migrations/013c_modify_nivel_cargo_constraint_remove_rh.sql) - Remove `nivel_cargo` para perfis que não devem tê-lo (`rh`, `gestor`) e ajusta constraint para exigir `nivel_cargo` apenas para `perfil = 'funcionario'`
@@ -176,7 +176,7 @@ Após o re-login, a sessão terá:
   cpf: '04703084945',
   nome: 'Tani K',
   perfil: 'rh',
-  contratante_id: 10,
+  tomador_id: 10,
   clinica_id: 3  // ← Agora será populado no login
 }
 ```
@@ -190,10 +190,10 @@ Para testar:
 1. **Funcionário de entidade:**
 
 ```bash
-# Deve funcionar agora (contratante_id=9, clinica_id=NULL, entidade_id=9)
+# Deve funcionar agora (tomador_id=9, clinica_id=NULL, entidade_id=9)
 curl -X POST http://localhost:3000/api/entidade/funcionarios \
   -H "Cookie: bps-session=..." \
-  -d '{"cpf":"82030097004","nome":"Teste","...","contratante_id":9}'
+  -d '{"cpf":"82030097004","nome":"Teste","...","tomador_id":9}'
 ```
 
 2. **Empresa de clínica:**
@@ -210,7 +210,7 @@ curl -X POST http://localhost:3000/api/rh/empresas \
 ## Prevenção Futura
 
 1. **Sempre aplicar migrations em ordem** (usar script de setup ou sequencial)
-2. **Garantir criação de registro `clinicas` ao aprovar contratante tipo 'clinica'**
+2. **Garantir criação de registro `clinicas` ao aprovar tomador tipo 'clinica'**
 3. **Criar registro em `funcionarios` para gestores RH** ou ajustar lógica para aceitar gestores apenas em `entidades_senhas`
    - Observação: os perfis de gestão **não devem receber** `nivel_cargo`. Em particular, `perfil = 'rh'` e `perfil = 'gestor'` devem ter `nivel_cargo = NULL`.
 4. **Usar `queryWithContext()` quando possível** para popular contexto de auditoria

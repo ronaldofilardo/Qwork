@@ -98,13 +98,13 @@ VALUES
   -- Contratante (própria entidade)
   (
     'read:contratante:own',
-    'contratantes',
+    'tomadores',
     'read',
     'Ler dados da própria entidade/clínica'
   ),
   (
     'write:contratante:own',
-    'contratantes',
+    'tomadores',
     'write',
     'Editar dados da própria entidade/clínica'
   )

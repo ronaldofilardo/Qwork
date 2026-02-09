@@ -25,6 +25,11 @@ export async function GET(request: NextRequest) {
     const params: any[] = [];
     let paramIndex = 1;
 
+    // Excluir notificações de pendência de pagamento (desabilitadas)
+    whereClause.push(`n.tipo != $${paramIndex}`);
+    params.push('parcela_pendente');
+    paramIndex++;
+
     if (tipo) {
       whereClause.push(`n.tipo = $${paramIndex}`);
       params.push(tipo);
@@ -46,7 +51,8 @@ export async function GET(request: NextRequest) {
         n.tipo,
         n.titulo,
         n.mensagem,
-        n.contratante_id,
+        n.entidade_id,
+        n.clinica_id,
         n.contrato_id,
         n.pagamento_id,
         n.dados_contexto,
@@ -58,12 +64,13 @@ export async function GET(request: NextRequest) {
         n.observacoes_resolucao,
         n.criado_em,
         n.atualizado_em,
-        c.nome as contratante_nome,
-        c.email as contratante_email,
-        c.tipo as contratante_tipo,
+        COALESCE(e.nome, c.nome) as tomador_nome,
+        COALESCE(e.email, c.email) as tomador_email,
+        CASE WHEN e.id IS NOT NULL THEN 'entidade' WHEN c.id IS NOT NULL THEN 'clinica' ELSE NULL END as tomador_tipo,
         cont.id as numero_contrato
       FROM notificacoes_admin n
-      LEFT JOIN contratantes c ON n.contratante_id = c.id
+      LEFT JOIN entidades e ON n.entidade_id = e.id
+      LEFT JOIN clinicas c ON n.clinica_id = c.id
       LEFT JOIN contratos cont ON n.contrato_id = cont.id
       ${whereSQL}
       ORDER BY n.criado_em DESC

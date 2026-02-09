@@ -41,7 +41,7 @@ SELECT
   pg.status AS pagamento_status
 FROM recibos r
 INNER JOIN contratos c ON r.contrato_id = c.id
-INNER JOIN contratantes ct ON r.contratante_id = ct.id
+INNER JOIN tomadores ct ON r.contratante_id = ct.id
 INNER JOIN pagamentos pg ON r.pagamento_id = pg.id
 LEFT JOIN planos p ON c.plano_id = p.id
 WHERE r.ativo = true

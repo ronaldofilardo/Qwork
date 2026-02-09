@@ -237,9 +237,13 @@ export async function detectAccessAnomalies(session: Session): Promise<{
     }
 
     // Verificar se há outros usuários com mesmo perfil na mesma clínica (RH único por clínica)
-    if (session.perfil === 'rh') {
+    if (session.perfil === 'rh' && session.clinica_id) {
       const rhCount = await query(
-        'SELECT COUNT(*) as count FROM funcionarios WHERE clinica_id = $1 AND perfil = $2 AND ativo = true',
+        `SELECT COUNT(DISTINCT f.id) as count 
+         FROM funcionarios f
+         JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
+         JOIN empresas_clientes ec ON ec.id = fc.empresa_id
+         WHERE ec.clinica_id = $1 AND f.perfil = $2 AND f.ativo = true AND fc.ativo = true`,
         [session.clinica_id, 'rh']
       );
 

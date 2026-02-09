@@ -19,7 +19,7 @@ async function generateCorrectMigrationSQL() {
 -- ARQUITETURA:
 -- - Entidades: independentes, têm funcionários direto (SEM empresas)
 -- - Clínicas: independentes, têm empresas → empresas têm funcionários
--- - Ambas são "contratantes" com IDs sequenciais compartilhados
+-- - Ambas são "tomadors" com IDs sequenciais compartilhados
 -- ================================================================
 
 BEGIN;
@@ -31,25 +31,25 @@ BEGIN;
 -- Clínicas são INDEPENDENTES, não podem ter entidade_id
 ALTER TABLE clinicas DROP COLUMN IF EXISTS entidade_id CASCADE;
 
-COMMENT ON TABLE clinicas IS 'Clínicas independentes (contratantes). Têm empresas → empresas têm funcionários.';
+COMMENT ON TABLE clinicas IS 'Clínicas independentes (tomadors). Têm empresas → empresas têm funcionários.';
 
 -- ================================================================
--- 2. REMOVER TABELAS OBSOLETAS contratantes*
+-- 2. REMOVER TABELAS OBSOLETAS tomadors*
 -- ================================================================
 
 -- Backup da audit (tem 3 registros) - apenas se existir
 DO $$ 
 BEGIN
-  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'contratantes_senhas_audit') THEN
-    CREATE TABLE IF NOT EXISTS _backup_contratantes_senhas_audit AS 
-    SELECT * FROM contratantes_senhas_audit;
+  IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'tomadors_senhas_audit') THEN
+    CREATE TABLE IF NOT EXISTS _backup_tomadors_senhas_audit AS 
+    SELECT * FROM tomadors_senhas_audit;
   END IF;
 END $$;
 
 -- Drop tabelas obsoletas
-DROP TABLE IF EXISTS contratantes_senhas CASCADE;
-DROP TABLE IF EXISTS contratantes_senhas_audit CASCADE;
-DROP TABLE IF EXISTS contratantes CASCADE;
+DROP TABLE IF EXISTS tomadors_senhas CASCADE;
+DROP TABLE IF EXISTS tomadors_senhas_audit CASCADE;
+DROP TABLE IF EXISTS tomadors CASCADE;
 
 -- ================================================================
 -- 3. CRIAR clinicas_senhas (equivalente a entidades_senhas)
@@ -89,7 +89,7 @@ COMMIT;
 -- VALIDAÇÃO FINAL
 -- ================================================================
 
--- Verificar que não existem mais FKs apontando para contratantes
+-- Verificar que não existem mais FKs apontando para tomadors
 SELECT
   tc.table_name,
   kcu.column_name,
@@ -101,7 +101,7 @@ JOIN information_schema.key_column_usage AS kcu
 JOIN information_schema.constraint_column_usage AS ccu
   ON ccu.constraint_name = tc.constraint_name
 WHERE tc.constraint_type = 'FOREIGN KEY'
-  AND ccu.table_name = 'contratantes';
+  AND ccu.table_name = 'tomadors';
 
 -- Deve retornar 0 linhas se migração for bem-sucedida
 `;
@@ -124,18 +124,18 @@ async function executeMigration(sql: string, pool: Pool, env: string) {
 async function validateMigration(pool: Pool, env: string) {
   console.log(`🔍 Validando migração no ${env}...\n`);
 
-  // Verificar que contratantes não existe mais
-  const checkContratantes = await pool.query(`
+  // Verificar que tomadors não existe mais
+  const checktomadors = await pool.query(`
     SELECT EXISTS (
       SELECT FROM information_schema.tables 
-      WHERE table_name = 'contratantes'
+      WHERE table_name = 'tomadors'
     ) as exists;
   `);
 
-  if (checkContratantes.rows[0].exists) {
-    throw new Error(`Tabela contratantes ainda existe em ${env}!`);
+  if (checktomadors.rows[0].exists) {
+    throw new Error(`Tabela tomadors ainda existe em ${env}!`);
   }
-  console.log(`   ✅ Tabela contratantes removida`);
+  console.log(`   ✅ Tabela tomadors removida`);
 
   // Verificar que clinicas_senhas existe
   const checkClinicasSenhas = await pool.query(`
@@ -176,15 +176,15 @@ async function validateMigration(pool: Pool, env: string) {
     JOIN information_schema.constraint_column_usage AS ccu
       ON ccu.constraint_name = tc.constraint_name
     WHERE tc.constraint_type = 'FOREIGN KEY'
-      AND ccu.table_name = 'contratantes';
+      AND ccu.table_name = 'tomadors';
   `);
 
   if (checkFKs.rows.length > 0) {
     throw new Error(
-      `Ainda existem ${checkFKs.rows.length} FKs apontando para contratantes em ${env}!`
+      `Ainda existem ${checkFKs.rows.length} FKs apontando para tomadors em ${env}!`
     );
   }
-  console.log(`   ✅ Nenhuma FK aponta para contratantes`);
+  console.log(`   ✅ Nenhuma FK aponta para tomadors`);
 
   console.log(
     `\n✅ Validação ${env} OK - Arquitetura independente implementada\n`
@@ -226,7 +226,7 @@ async function main() {
     );
     console.log('='.repeat(70));
     console.log(
-      '\nPróxima etapa: Sprint 0 - SEQUENCE compartilhada para IDs contratantes\n'
+      '\nPróxima etapa: Sprint 0 - SEQUENCE compartilhada para IDs tomadors\n'
     );
   } catch (error: any) {
     console.error('\n❌ ERRO:', error.message);

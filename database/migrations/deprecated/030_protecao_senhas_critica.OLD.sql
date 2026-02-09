@@ -242,7 +242,7 @@ SELECT
         ELSE 'NORMAL'
     END AS tipo_operacao
 FROM entidades_senhas_audit a
-LEFT JOIN contratantes c ON c.id = a.contratante_id
+LEFT JOIN tomadores c ON c.id = a.contratante_id
 ORDER BY a.executado_em DESC;
 
 COMMENT ON VIEW vw_auditoria_senhas IS 'View simplificada para análise de auditoria de senhas';

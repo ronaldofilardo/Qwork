@@ -113,7 +113,7 @@ export async function getLoteEstatisticas(loteId: number) {
     `
     SELECT
       COUNT(a.id) as total_avaliacoes,
-      COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
+      COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
       COUNT(CASE WHEN a.status = 'inativada' THEN 1 END) as avaliacoes_inativadas,
       COUNT(CASE WHEN a.status = 'iniciada' OR a.status = 'em_andamento' THEN 1 END) as avaliacoes_pendentes
     FROM avaliacoes a

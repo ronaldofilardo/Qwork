@@ -16,29 +16,29 @@ export async function GET(
       );
     }
 
-    const contratanteId = params.id;
+    const tomadorId = params.id;
 
-    if (!contratanteId) {
+    if (!tomadorId) {
       return NextResponse.json(
-        { error: 'ID do contratante é obrigatório' },
+        { error: 'ID do tomador é obrigatório' },
         { status: 400 }
       );
     }
 
-    // Buscar contrato do contratante
+    // Buscar contrato do tomador
     const contratoResult = await query(
       `SELECT c.*, p.nome as plano_nome, COALESCE(p.valor_por_funcionario, p.valor_base) as plano_preco
        FROM contratos c
        LEFT JOIN planos p ON c.plano_id = p.id
-       WHERE c.contratante_id = $1
+       WHERE c.tomador_id = $1
        ORDER BY c.criado_em DESC
        LIMIT 1`,
-      [contratanteId]
+      [tomadorId]
     );
 
     if (contratoResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Contrato não encontrado para este contratante' },
+        { error: 'Contrato não encontrado para este tomador' },
         { status: 404 }
       );
     }

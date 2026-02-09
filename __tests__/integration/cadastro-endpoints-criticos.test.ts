@@ -22,7 +22,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
   let testCNPJ: string;
   let testCPF: string;
   let testEmail: string;
-  let contratanteId: number;
+  let tomadorId: number;
 
   beforeAll(async () => {
     testCNPJ = `12${timestamp.toString().slice(-10)}00199`;
@@ -30,17 +30,17 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
     testEmail = `test-api-${timestamp}@test.com`;
 
     // Limpar dados anteriores
-    await query(`DELETE FROM contratantes WHERE cnpj = $1`, [testCNPJ]);
+    await query(`DELETE FROM entidades WHERE cnpj = $1`, [testCNPJ]);
     await query(`DELETE FROM funcionarios WHERE cpf = $1`, [testCPF]);
   });
 
   afterAll(async () => {
     // Cleanup
-    if (contratanteId) {
-      await query(`DELETE FROM contratos WHERE contratante_id = $1`, [
-        contratanteId,
+    if (tomadorId) {
+      await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
+        tomadorId,
       ]);
-      await query(`DELETE FROM contratantes WHERE id = $1`, [contratanteId]);
+      await query(`DELETE FROM entidades WHERE id = $1`, [tomadorId]);
     }
     await query(`DELETE FROM entidades_senhas WHERE cpf = $1`, [testCPF]);
     await query(`DELETE FROM funcionarios WHERE cpf = $1`, [testCPF]);
@@ -81,27 +81,27 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
 
       expect(response.status).toBe(201);
       expect(data.success).toBe(true);
-      expect(data.contratante).toBeDefined();
-      expect(data.contratante.cnpj).toBe(testCNPJ);
-      expect(data.contratante.email).toBe(testEmail);
+      expect(data.tomador).toBeDefined();
+      expect(data.tomador.cnpj).toBe(testCNPJ);
+      expect(data.tomador.email).toBe(testEmail);
 
-      contratanteId = data.contratante.id;
+      tomadorId = data.tomador.id;
     });
 
     it('deve criar registro em banco com status correto', async () => {
-      const result = await query(`SELECT * FROM contratantes WHERE cnpj = $1`, [
+      const result = await query(`SELECT * FROM entidades WHERE cnpj = $1`, [
         testCNPJ,
       ]);
 
       expect(result.rows.length).toBe(1);
-      const contratante = result.rows[0];
+      const tomador = result.rows[0];
 
-      expect(contratante.tipo).toBe('clinica');
-      expect(contratante.nome).toContain('Clinica Teste API');
-      expect(contratante.status).toBe('aguardando_pagamento');
-      expect(contratante.ativa).toBe(false);
-      expect(contratante.pagamento_confirmado).toBe(false);
-      expect(contratante.responsavel_cpf).toBe(testCPF);
+      expect(tomador.tipo).toBe('clinica');
+      expect(tomador.nome).toContain('Clinica Teste API');
+      expect(tomador.status).toBe('aguardando_pagamento');
+      expect(tomador.ativa).toBe(false);
+      expect(tomador.pagamento_confirmado).toBe(false);
+      expect(tomador.responsavel_cpf).toBe(testCPF);
     });
 
     it('não deve permitir cadastro duplicado com mesmo CNPJ', async () => {
@@ -173,9 +173,9 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       tokenAtivacao = `test-token-${timestamp}-${Math.random().toString(36)}`;
 
       await query(
-        `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+        `INSERT INTO entidades_senhas (cpf, tomador_id, token_ativacao, token_expira_em)
          VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')`,
-        [testCPF, contratanteId, tokenAtivacao]
+        [testCPF, tomadorId, tokenAtivacao]
       );
     });
 
@@ -218,9 +218,9 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       const tokenExpirado = `expired-${timestamp}`;
 
       await query(
-        `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+        `INSERT INTO entidades_senhas (cpf, tomador_id, token_ativacao, token_expira_em)
          VALUES ($1, $2, $3, NOW() - INTERVAL '1 hour')`,
-        [`99${testCPF.slice(2)}`, contratanteId, tokenExpirado]
+        [`99${testCPF.slice(2)}`, tomadorId, tokenExpirado]
       );
 
       const response = await fetch(
@@ -291,10 +291,10 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       expect(result.rows[0].senha_hash).not.toBe('Teste@123456'); // Não deve estar em plain text
     });
 
-    it('deve ativar contratante após definir senha', async () => {
+    it('deve ativar tomador após definir senha', async () => {
       const result = await query(
-        `SELECT ativa, status FROM contratantes WHERE id = $1`,
-        [contratanteId]
+        `SELECT ativa, status FROM entidades WHERE id = $1`,
+        [tomadorId]
       );
 
       expect(result.rows.length).toBe(1);
@@ -385,14 +385,14 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
 
       expect(cadastroRes.status).toBe(201);
       const cadastroData = await cadastroRes.json();
-      const novoContratanteId = cadastroData.contratante.id;
+      const novotomadorId = cadastroData.tomador.id;
 
       // 2. Gerar token
       const novoToken = `e2e-flow-${Date.now()}`;
       await query(
-        `INSERT INTO entidades_senhas (cpf, contratante_id, token_ativacao, token_expira_em)
+        `INSERT INTO entidades_senhas (cpf, tomador_id, token_ativacao, token_expira_em)
          VALUES ($1, $2, $3, NOW() + INTERVAL '24 hours')`,
-        [novoCPF, novoContratanteId, novoToken]
+        [novoCPF, novotomadorId, novoToken]
       );
 
       // 3. Validar token
@@ -427,20 +427,20 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       expect(senhaData.success).toBe(true);
 
       // 5. Verificar ativação
-      const contratanteRes = await query(
-        `SELECT ativa, status FROM contratantes WHERE id = $1`,
-        [novoContratanteId]
+      const tomadorRes = await query(
+        `SELECT ativa, status FROM entidades WHERE id = $1`,
+        [novotomadorId]
       );
 
-      expect(contratanteRes.rows[0].ativa).toBe(true);
-      expect(contratanteRes.rows[0].status).toBe('ativo');
+      expect(tomadorRes.rows[0].ativa).toBe(true);
+      expect(tomadorRes.rows[0].status).toBe('ativo');
 
       // Cleanup
-      await query(`DELETE FROM contratos WHERE contratante_id = $1`, [
-        novoContratanteId,
+      await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
+        novotomadorId,
       ]);
-      await query(`DELETE FROM contratantes WHERE id = $1`, [
-        novoContratanteId,
+      await query(`DELETE FROM entidades WHERE id = $1`, [
+        novotomadorId,
       ]);
       await query(`DELETE FROM entidades_senhas WHERE cpf = $1`, [novoCPF]);
     });

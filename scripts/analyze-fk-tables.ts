@@ -35,8 +35,8 @@ async function main() {
     console.log('ANÁLISE DE ESTRUTURA DAS TABELAS');
     console.log('='.repeat(60));
 
-    await analyzeTableStructure('contratantes');
-    await analyzeTableStructure('contratantes_senhas');
+    await analyzeTableStructure('tomadors');
+    await analyzeTableStructure('tomadors_senhas');
     await analyzeTableStructure('entidades_senhas');
     await analyzeTableStructure('entidades');
     await analyzeTableStructure('clinicas');

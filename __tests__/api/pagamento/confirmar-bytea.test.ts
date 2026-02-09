@@ -10,7 +10,7 @@ import { gerarRecibo } from '@/lib/receipt-generator';
 jest.mock('@/lib/db');
 jest.mock('@/lib/receipt-generator');
 jest.mock('@/lib/parcelas-helper');
-jest.mock('@/lib/contratante-activation');
+jest.mock('@/lib/entidade-activation');
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockGerarRecibo = gerarRecibo as jest.MockedFunction<typeof gerarRecibo>;
@@ -25,10 +25,10 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
   describe('POST /api/pagamento/confirmar', () => {
     const mockPagamento = {
       id: 100,
-      contratante_id: 1,
+      tomador_id: 1,
       contrato_id: 55, // necessário para geração de recibo no código
       status: 'pendente',
-      contratante_nome: 'Empresa Teste Ltda',
+      tomador_nome: 'Empresa Teste Ltda',
       tipo: 'pj',
       cnpj: '12.345.678/0001-90',
       responsavel_cpf: '123.456.789-00',
@@ -55,7 +55,7 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
         .mockResolvedValueOnce({ rows: [{ id: 100 }] }) // update status (retorna row)
         .mockResolvedValueOnce({ rows: [{ plano_tipo: 'recorrente' }] }) // query plano (não é 'fixo')
         .mockResolvedValueOnce({ rows: [] }) // buscar detalhes pagamento (parcelas)
-        .mockResolvedValueOnce({ rows: [] }) // update contratante (será feito após recibo)
+        .mockResolvedValueOnce({ rows: [] }) // update tomador (será feito após recibo)
         .mockResolvedValueOnce({ rows: [] }); // notificação
 
       // Mock do gerador de recibo
@@ -92,7 +92,7 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
       // Verificar se recibo foi gerado (ip_emissao -> null quando 'unknown')
       expect(mockGerarRecibo).toHaveBeenCalledWith(
         expect.objectContaining({
-          contratante_id: 1,
+          tomador_id: 1,
           contrato_id: 55,
           pagamento_id: 100,
           emitido_por_cpf: undefined,
@@ -106,13 +106,13 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
 
     it('deve confirmar pagamento (plano fixo) sem gerar recibo e redirecionar para /auth', async () => {
       // Cenário: pagamento com contrato/serviço fixo — novo fluxo aprovado
-      const pagamentoFixo = { ...mockPagamento, id: 101, contratante_id: 2 };
+      const pagamentoFixo = { ...mockPagamento, id: 101, tomador_id: 2 };
 
       mockQuery
         .mockResolvedValueOnce({ rows: [pagamentoFixo] }) // buscar pagamento
         .mockResolvedValueOnce({ rows: [{ id: 101 }] }) // update pagamento
         .mockResolvedValueOnce({ rows: [{ plano_tipo: 'fixo' }] }) // query plano (detecta fixo)
-        .mockResolvedValueOnce({ rows: [] }) // update contratantes (ativação)
+        .mockResolvedValueOnce({ rows: [] }) // update tomadors (ativação)
         .mockResolvedValueOnce({ rows: [] }); // possível insert funcionario
 
       const requestBody = { pagamento_id: 101, metodo_pagamento: 'pix' };
@@ -144,7 +144,7 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
         .mockResolvedValueOnce({ rows: [{ id: 100 }] }) // update pagamento
         .mockResolvedValueOnce({ rows: [{ plano_tipo: 'recorrente' }] }) // plano != fixo
         .mockResolvedValueOnce({ rows: [] }) // buscar detalhes pagamento (parcelas)
-        .mockResolvedValueOnce({ rows: [] }) // update contratante
+        .mockResolvedValueOnce({ rows: [] }) // update tomador
         .mockResolvedValueOnce({ rows: [{ id: 55 }] }) // buscar contrato_id (existe)
         .mockResolvedValueOnce({ rows: [] }) // update contratos (fallback)
         .mockResolvedValueOnce({ rows: [] }) // criar conta responsável
@@ -184,7 +184,7 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
       const pagamentoConfirmado = {
         ...mockPagamento,
         status: 'pago',
-        contratante_nome: 'Empresa Teste Ltda',
+        tomador_nome: 'Empresa Teste Ltda',
         tipo: 'pj',
         cnpj: '12.345.678/0001-90',
         responsavel_cpf: '123.456.789-00',
@@ -234,7 +234,7 @@ describe('API Pagamento Confirmar com Recibo BYTEA', () => {
         .mockResolvedValueOnce({ rows: [{ id: 100 }] }) // update pagamento
         .mockResolvedValueOnce({ rows: [{ plano_tipo: 'recorrente' }] }) // plano != fixo
         .mockResolvedValueOnce({ rows: [] }) // buscar detalhes pagamento (parcelas)
-        .mockResolvedValueOnce({ rows: [] }) // update contratante
+        .mockResolvedValueOnce({ rows: [] }) // update tomador
         .mockResolvedValueOnce({ rows: [{ id: 55 }] }) // buscar contrato_id
         .mockResolvedValueOnce({ rows: [] }) // update contratos (fallback)
         .mockResolvedValueOnce({ rows: [] }) // criar conta responsável

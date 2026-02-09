@@ -11,7 +11,7 @@ export function uniqueCode(prefix = 'CODE') {
   return `${prefix}-${ts}-${rand}`;
 }
 
-export interface CreateContratanteOptions {
+export interface CreatetomadorOptions {
   tipo?: 'entidade' | 'clinica';
   nome?: string;
   cnpj?: string;
@@ -35,7 +35,7 @@ export interface CreateContratanteOptions {
 }
 
 export interface CreateContratoOptions {
-  contratante_id: number;
+  tomador_id: number;
   plano_id?: number;
   numero_funcionarios?: number;
   valor_total?: number;
@@ -50,7 +50,7 @@ export interface CreateContratoOptions {
 }
 
 export interface CreatePagamentoOptions {
-  contratante_id: number;
+  tomador_id: number;
   contrato_id?: number | null;
   valor?: number;
   status?: 'pendente' | 'pago' | 'cancelado' | 'expirado';
@@ -60,10 +60,11 @@ export interface CreatePagamentoOptions {
 }
 
 /**
- * Cria um contratante de teste com valores padrão válidos
+ * Cria um tomador de teste com valores padrão válidos
+ * Usa tabela 'entidades' se tipo='entidade', ou 'clinicas' se tipo='clinica'
  */
-export async function createTestContratante(
-  options: CreateContratanteOptions = {}
+export async function createTesttomador(
+  options: CreatetomadorOptions = {}
 ): Promise<number> {
   const timestamp = Date.now();
   const rand = Math.random().toString(36).slice(2, 8);
@@ -90,30 +91,59 @@ export async function createTestContratante(
     responsavel_celular: options.responsavel_celular || '11988887777',
   };
 
-  const result = await query(
-    `INSERT INTO contratantes (
-       tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
-       responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
-     )
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
-     RETURNING id`,
-    [
-      defaults.tipo,
-      defaults.nome,
-      defaults.cnpj,
-      defaults.email,
-      defaults.telefone,
-      defaults.endereco,
-      defaults.cidade,
-      defaults.estado,
-      defaults.cep,
-      defaults.status,
-      defaults.responsavel_nome,
-      defaults.responsavel_cpf,
-      defaults.responsavel_email,
-      defaults.responsavel_celular,
-    ]
-  );
+  // Usar tabela entidades para tipo='entidade', clinicas para tipo='clinica'
+  const isClinica = defaults.tipo === 'clinica';
+  const tableName = isClinica ? 'clinicas' : 'entidades';
+
+  // Para clínicas, não incluir 'tipo' (não existe nessa coluna)
+  const query_text = isClinica
+    ? `INSERT INTO ${tableName} (
+         nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
+         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, true)
+       RETURNING id`
+    : `INSERT INTO ${tableName} (
+         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
+         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
+       )
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+       RETURNING id`;
+
+  const params = isClinica
+    ? [
+        defaults.nome,
+        defaults.cnpj,
+        defaults.email,
+        defaults.telefone,
+        defaults.endereco,
+        defaults.cidade,
+        defaults.estado,
+        defaults.cep,
+        defaults.status,
+        defaults.responsavel_nome,
+        defaults.responsavel_cpf,
+        defaults.responsavel_email,
+        defaults.responsavel_celular,
+      ]
+    : [
+        defaults.tipo,
+        defaults.nome,
+        defaults.cnpj,
+        defaults.email,
+        defaults.telefone,
+        defaults.endereco,
+        defaults.cidade,
+        defaults.estado,
+        defaults.cep,
+        defaults.status,
+        defaults.responsavel_nome,
+        defaults.responsavel_cpf,
+        defaults.responsavel_email,
+        defaults.responsavel_celular,
+      ];
+
+  const result = await query(query_text, params);
 
   return result.rows[0].id;
 }
@@ -135,11 +165,11 @@ export async function createTestContrato(
   };
 
   const result = await query(
-    `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, conteudo, conteudo_gerado)
+    `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, conteudo, conteudo_gerado)
      VALUES ($1, $2, $3, $4, $5, $6)
      RETURNING id`,
     [
-      options.contratante_id,
+      options.tomador_id,
       defaults.plano_id,
       defaults.numero_funcionarios,
       defaults.valor_total,
@@ -167,10 +197,10 @@ export async function createTestPagamento(
   };
 
   const result = await query(
-    `INSERT INTO pagamentos (contratante_id, valor, status, metodo)
+    `INSERT INTO pagamentos (tomador_id, valor, status, metodo)
      VALUES ($1, $2, $3, $4)
      RETURNING id`,
-    [options.contratante_id, defaults.valor, defaults.status, defaults.metodo]
+    [options.tomador_id, defaults.valor, defaults.status, defaults.metodo]
   );
 
   return result.rows[0].id;
@@ -180,7 +210,7 @@ export async function createTestPagamento(
  * Cria um recibo de teste
  */
 export async function createTestRecibo(
-  contratanteId: number,
+  tomadorId: number,
   pagamentoId: number,
   contratoId?: number
 ): Promise<number> {
@@ -188,13 +218,13 @@ export async function createTestRecibo(
 
   const result = await query(
     `INSERT INTO recibos (
-       contratante_id, pagamento_id, contrato_id, numero_recibo, 
+       tomador_id, pagamento_id, contrato_id, numero_recibo, 
        valor, descricao, emitido_em
      )
      VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP)
      RETURNING id`,
     [
-      contratanteId,
+      tomadorId,
       pagamentoId,
       contratoId || null,
       `RECIBO-${timestamp}`,
@@ -217,36 +247,40 @@ export async function cleanupTestData(): Promise<void> {
   await query(
     `DELETE FROM contratos WHERE conteudo LIKE '%gerado automaticamente%'`
   );
+  // Deletar de ambas as tabelas
   await query(
-    `DELETE FROM contratantes WHERE email LIKE 'teste-%@empresa.com' OR email LIKE 'responsavel-%@empresa.com'`
+    `DELETE FROM entidades WHERE email LIKE 'teste-%@empresa.com' OR email LIKE 'responsavel-%@empresa.com'`
+  );
+  await query(
+    `DELETE FROM clinicas WHERE email LIKE 'teste-%@empresa.com' OR email LIKE 'responsavel-%@empresa.com'`
   );
 }
 
 // Testes para as funções de factory de dados de teste
 describe('Test Data Factory', () => {
-  describe('createTestContratante', () => {
-    it('deve criar um contratante com valores padrão', async () => {
-      const id = await createTestContratante();
+  describe('createTesttomador', () => {
+    it('deve criar um tomador com valores padrão', async () => {
+      const id = await createTesttomador();
       expect(typeof id).toBe('number');
       expect(id).toBeGreaterThan(0);
     });
 
-    it('deve criar um contratante com opções customizadas', async () => {
+    it('deve criar um tomador com opções customizadas', async () => {
       const options = {
         nome: 'Empresa Customizada',
         email: `custom-${Date.now()}@empresa.com`,
         status: 'pendente' as const,
       };
-      const id = await createTestContratante(options);
+      const id = await createTesttomador(options);
       expect(typeof id).toBe('number');
     });
   });
 
   describe('createTestContrato', () => {
-    it('deve criar um contrato para um contratante existente', async () => {
-      const contratanteId = await createTestContratante();
+    it('deve criar um contrato para um tomador existente', async () => {
+      const tomadorId = await createTesttomador();
       const contratoId = await createTestContrato({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
       });
 
       expect(typeof contratoId).toBe('number');
@@ -254,9 +288,9 @@ describe('Test Data Factory', () => {
     });
 
     it('deve criar um contrato com opções customizadas', async () => {
-      const contratanteId = await createTestContratante();
+      const tomadorId = await createTesttomador();
       const options = {
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         numero_funcionarios: 50,
         valor_total: 1000,
         status: 'aprovado' as const,
@@ -267,10 +301,10 @@ describe('Test Data Factory', () => {
   });
 
   describe('createTestPagamento', () => {
-    it('deve criar um pagamento para um contratante existente', async () => {
-      const contratanteId = await createTestContratante();
+    it('deve criar um pagamento para um tomador existente', async () => {
+      const tomadorId = await createTesttomador();
       const pagamentoId = await createTestPagamento({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
       });
 
       expect(typeof pagamentoId).toBe('number');
@@ -278,9 +312,9 @@ describe('Test Data Factory', () => {
     });
 
     it('deve criar um pagamento com opções customizadas', async () => {
-      const contratanteId = await createTestContratante();
+      const tomadorId = await createTesttomador();
       const options = {
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         valor: 500,
         status: 'pago' as const,
         metodo: 'pix' as const,

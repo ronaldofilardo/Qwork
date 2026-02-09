@@ -33,7 +33,7 @@ describe('EntidadeFuncionariosPage', () => {
           ok: true,
           json: () =>
             Promise.resolve({
-              contratante_id: 1,
+              entidade_id: 1,
             }),
         });
       }

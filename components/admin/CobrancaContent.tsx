@@ -13,7 +13,7 @@ import {
 import { getStatusBadge, Parcela } from '@/lib/parcelas-helper';
 
 interface ContratoPlano {
-  contratante_id: number;
+  tomador_id: number;
   cnpj: string;
   contrato_id: number | null;
   plano_id: number | null;
@@ -21,8 +21,8 @@ interface ContratoPlano {
   plano_preco: number | null;
   id: number; // legacy: numero interno utilizado como key
   numero_contrato: number;
-  tipo_contratante: 'clinica' | 'entidade';
-  nome_contratante: string;
+  tipo_tomador: 'clinica' | 'entidade';
+  nome_tomador: string;
   plano_tipo: string;
   numero_funcionarios_estimado: number | null;
   numero_funcionarios_atual: number | null;
@@ -92,7 +92,7 @@ export function CobrancaContent() {
 
   const contratosFiltrados = contratos.filter((contrato) => {
     // Filtro por tipo
-    if (filtroTipo !== 'todos' && contrato.tipo_contratante !== filtroTipo) {
+    if (filtroTipo !== 'todos' && contrato.tipo_tomador !== filtroTipo) {
       return false;
     }
 
@@ -106,7 +106,7 @@ export function CobrancaContent() {
       const buscaLower = busca.toLowerCase();
       const buscaDigits = busca.replace(/\D/g, '');
       return (
-        contrato.nome_contratante.toLowerCase().includes(buscaLower) ||
+        contrato.nome_tomador.toLowerCase().includes(buscaLower) ||
         (contrato.cnpj &&
           contrato.cnpj.replace(/\D/g, '').includes(buscaDigits))
       );
@@ -116,10 +116,10 @@ export function CobrancaContent() {
   });
 
   const clinicas = contratosFiltrados.filter(
-    (c) => c.tipo_contratante === 'clinica'
+    (c) => c.tipo_tomador === 'clinica'
   );
   const entidades = contratosFiltrados.filter(
-    (c) => c.tipo_contratante === 'entidade'
+    (c) => c.tipo_tomador === 'entidade'
   );
 
   const formatarValor = (valor: number | string | null | undefined) => {
@@ -180,7 +180,7 @@ export function CobrancaContent() {
                   #
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                  Contratante ID
+                  tomador ID
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                   CNPJ
@@ -243,7 +243,7 @@ export function CobrancaContent() {
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">
                       <div className="text-sm font-bold text-gray-900">
-                        {contrato.contratante_id}
+                        {contrato.tomador_id}
                       </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap">

@@ -3,7 +3,7 @@
  *
  * Gera recibos de pagamento com:
  * - Número do recibo único
- * - Dados completos do contratante e plano
+ * - Dados completos do tomador e plano
  * - Vigência do contrato (início + 364 dias)
  * - PDF binário (BYTEA) com hash SHA-256
  * - Cópia local em ./storage/recibos/
@@ -19,7 +19,7 @@ import { gerarHtmlReciboTemplate } from '../templates/recibo-template';
 // ============================================================================
 
 export interface ReciboData {
-  contratante_id: number;
+  tomador_id: number;
   pagamento_id: number;
   contrato_id: number; // OBRIGATÓRIO - Não pode gerar recibo sem contrato
   emitido_por_cpf?: string;
@@ -41,13 +41,13 @@ export interface ReciboData {
 export interface ReciboCompleto {
   id: number;
   numero_recibo: string;
-  contratante_nome: string;
-  contratante_cnpj?: string;
-  contratante_cpf?: string;
-  contratante_endereco?: string;
-  contratante_cidade?: string;
-  contratante_estado?: string;
-  contratante_cep?: string;
+  tomador_nome: string;
+  tomador_cnpj?: string;
+  tomador_cpf?: string;
+  tomador_endereco?: string;
+  tomador_cidade?: string;
+  tomador_estado?: string;
+  tomador_cep?: string;
   plano_nome: string;
   plano_tipo: string;
   plano_descricao?: string;
@@ -86,7 +86,7 @@ export async function gerarRecibo(
     console.log('[RECIBO] iniciar gerarRecibo', {
       pagamento_id: data.pagamento_id,
       contrato_id: data.contrato_id,
-      contratante_id: data.contratante_id,
+      tomador_id: data.tomador_id,
     });
 
     // VALIDAÇÃO CRÍTICA: Contrato é obrigatório
@@ -133,7 +133,7 @@ export async function gerarRecibo(
 
     if (!contrato.aceito) {
       throw new Error(
-        'Contrato não foi aceito. O contratante deve aceitar o contrato antes do pagamento.'
+        'Contrato não foi aceito. O tomador deve aceitar o contrato antes do pagamento.'
       );
     }
 
@@ -143,9 +143,9 @@ export async function gerarRecibo(
       );
     }
 
-    // 2. Buscar dados do contratante
-    console.log('[RECIBO] Buscando contratante...');
-    const contratanteResult = await query<{
+    // 2. Buscar dados do tomador
+    console.log('[RECIBO] Buscando tomador...');
+    const tomadorResult = await query<{
       id: number;
       nome: string;
       cnpj?: string;
@@ -157,19 +157,19 @@ export async function gerarRecibo(
       tipo?: string;
     }>(
       `SELECT id, nome, cnpj, responsavel_cpf, endereco, cidade, estado, cep, tipo
-       FROM contratantes WHERE id = $1`,
-      [data.contratante_id]
+       FROM tomadors WHERE id = $1`,
+      [data.tomador_id]
     );
     console.log(
-      '[RECIBO] Contratante encontrado, rows:',
-      contratanteResult.rows.length
+      '[RECIBO] tomador encontrado, rows:',
+      tomadorResult.rows.length
     );
 
-    if (contratanteResult.rows.length === 0) {
-      throw new Error('Contratante não encontrado');
+    if (tomadorResult.rows.length === 0) {
+      throw new Error('tomador não encontrado');
     }
 
-    const contratante = contratanteResult.rows[0];
+    const tomador = tomadorResult.rows[0];
 
     // 3. Buscar ou usar dados do pagamento pré-carregados
     let pagamento;
@@ -286,13 +286,13 @@ export async function gerarRecibo(
     const dadosRecibo: ReciboCompleto = {
       id: 0, // Será preenchido após insert
       numero_recibo: numeroRecibo,
-      contratante_nome: contratante.nome,
-      contratante_cnpj: contratante.cnpj,
-      contratante_cpf: contratante.responsavel_cpf,
-      contratante_endereco: contratante.endereco,
-      contratante_cidade: contratante.cidade,
-      contratante_estado: contratante.estado,
-      contratante_cep: contratante.cep,
+      tomador_nome: tomador.nome,
+      tomador_cnpj: tomador.cnpj,
+      tomador_cpf: tomador.responsavel_cpf,
+      tomador_endereco: tomador.endereco,
+      tomador_cidade: tomador.cidade,
+      tomador_estado: tomador.estado,
+      tomador_cep: tomador.cep,
       plano_nome: pagamentoCompleto.plano_nome,
       plano_tipo: pagamentoCompleto.plano_tipo,
       plano_descricao: pagamentoCompleto.plano_descricao,
@@ -329,7 +329,7 @@ export async function gerarRecibo(
     // 11. Inserir recibo no banco (sem PDF - apenas registro)
     console.log('[RECIBO] Inserindo recibo no banco...', {
       numeroRecibo,
-      contratante_id: data.contratante_id,
+      tomador_id: data.tomador_id,
       pagamento_id: data.pagamento_id,
       valor_total: dadosRecibo.valor_total,
     });
@@ -339,7 +339,7 @@ export async function gerarRecibo(
       reciboResult = await query<{ id: number; numero_recibo: string }>(
         `INSERT INTO recibos (
           numero_recibo,
-          contratante_id,
+          tomador_id,
           pagamento_id,
           contrato_id,
           vigencia_inicio,
@@ -359,7 +359,7 @@ export async function gerarRecibo(
         ) RETURNING id, numero_recibo`,
         [
           numeroRecibo, // $1
-          data.contratante_id, // $2
+          data.tomador_id, // $2
           data.pagamento_id, // $3
           data.contrato_id, // $4
           dataInicio, // $5
@@ -411,13 +411,13 @@ export async function gerarRecibo(
       // Não falhar a geração do recibo por erro no UPDATE
     }
 
-    // 13. Criar notificação para o contratante
+    // 13. Criar notificação para o tomador
     try {
       await query(`SELECT criar_notificacao_recibo($1, $2, $3, $4)`, [
-        data.contratante_id,
+        data.tomador_id,
         numeroRecibo,
         dadosRecibo.valor_total,
-        contratante.responsavel_cpf,
+        tomador.responsavel_cpf,
       ]);
     } catch (notifError) {
       console.error(
@@ -502,17 +502,17 @@ export async function buscarReciboPorNumero(
 }
 
 /**
- * Listar recibos de um contratante
+ * Listar recibos de um tomador
  */
-export async function listarRecibosPorContratante(
-  contratanteId: number,
+export async function listarRecibosPortomador(
+  tomadorId: number,
   _session?: Session
 ): Promise<ReciboCompleto[]> {
   const result = await query<ReciboCompleto>(
     `SELECT * FROM recibos
-     WHERE contratante_id = $1 AND cancelado = false
+     WHERE tomador_id = $1 AND cancelado = false
      ORDER BY emitido_em DESC`,
-    [contratanteId]
+    [tomadorId]
   );
 
   return result.rows;
@@ -619,16 +619,16 @@ export function gerarHtmlRecibo(recibo: ReciboCompleto): string {
   </div>
 
   <div class="section">
-    <div class="section-title">DADOS DO CONTRATANTE</div>
+    <div class="section-title">DADOS DO tomador</div>
     <div class="field">
       <span class="field-label">Nome/Razão Social:</span>
-      ${recibo.contratante_nome}
+      ${recibo.tomador_nome}
     </div>
-    ${recibo.contratante_cnpj ? `<div class="field"><span class="field-label">CNPJ:</span> ${recibo.contratante_cnpj}</div>` : ''}
-    ${recibo.contratante_cpf ? `<div class="field"><span class="field-label">CPF:</span> ${recibo.contratante_cpf}</div>` : ''}
-    ${recibo.contratante_endereco ? `<div class="field"><span class="field-label">Endereço:</span> ${recibo.contratante_endereco}</div>` : ''}
-    ${recibo.contratante_cidade && recibo.contratante_estado ? `<div class="field"><span class="field-label">Cidade/UF:</span> ${recibo.contratante_cidade}/${recibo.contratante_estado}</div>` : ''}
-    ${recibo.contratante_cep ? `<div class="field"><span class="field-label">CEP:</span> ${recibo.contratante_cep}</div>` : ''}
+    ${recibo.tomador_cnpj ? `<div class="field"><span class="field-label">CNPJ:</span> ${recibo.tomador_cnpj}</div>` : ''}
+    ${recibo.tomador_cpf ? `<div class="field"><span class="field-label">CPF:</span> ${recibo.tomador_cpf}</div>` : ''}
+    ${recibo.tomador_endereco ? `<div class="field"><span class="field-label">Endereço:</span> ${recibo.tomador_endereco}</div>` : ''}
+    ${recibo.tomador_cidade && recibo.tomador_estado ? `<div class="field"><span class="field-label">Cidade/UF:</span> ${recibo.tomador_cidade}/${recibo.tomador_estado}</div>` : ''}
+    ${recibo.tomador_cep ? `<div class="field"><span class="field-label">CEP:</span> ${recibo.tomador_cep}</div>` : ''}
   </div>
 
   <div class="section">

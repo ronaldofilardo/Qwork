@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       if (!contratoIdFinal) {
         const contratoRes = await query(
           `INSERT INTO contratos (
-            contratante_id,
+            tomador_id,
             plano_id,
             numero_funcionarios,
             valor_total,

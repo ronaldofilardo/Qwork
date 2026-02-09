@@ -10,7 +10,7 @@ interface PagamentoInfo {
   valor_plano: number;
   numero_funcionarios: number;
   plano_nome: string;
-  contratante_nome: string;
+  tomador_nome: string;
   status: string;
 }
 
@@ -41,7 +41,7 @@ export default function PagamentoPage() {
         window.location.search
       );
       try {
-        let contratanteId: number | null = null;
+        let tomadorId: number | null = null;
         let contratoIdNumeric: number | null = null;
         let planoId: number;
         let numeroFuncionarios: number;
@@ -60,10 +60,11 @@ export default function PagamentoPage() {
           const searchParams = searchParamsGlobal;
 
           // Suporta dois modos:
-          // 1) ?contratante_id=..&plano_id=.. (direto)
+          // 1) ?tomador_id=..&plano_id=.. (direto)
           // 2) ?contratacao_id=.. (contratação personalizada) -> buscar /api/contratacao_personalizada/:id
           const contratacaoIdParam = searchParams.get('contratacao_id');
-          const contratanteIdParam = searchParams.get('contratante_id');
+          const tomadorIdParam =
+            searchParams.get('tomador_id') || searchParams.get('tomador_id');
           const planoIdParam = searchParams.get('plano_id');
           const numeroFuncionariosParam = searchParams.get(
             'numero_funcionarios'
@@ -92,9 +93,14 @@ export default function PagamentoPage() {
             // eslint-disable-next-line no-console
             console.log('DEBUG contratacaoData:', contratacaoData);
 
-            contratanteId = contratacaoData.contratante_id
-              ? parseInt(String(contratacaoData.contratante_id))
-              : null;
+            tomadorId =
+              contratacaoData.tomador_id || contratacaoData.tomador_id
+                ? parseInt(
+                    String(
+                      contratacaoData.tomador_id || contratacaoData.tomador_id
+                    )
+                  )
+                : null;
             planoId = contratacaoData.plano_id
               ? parseInt(String(contratacaoData.plano_id))
               : (undefined as any);
@@ -114,7 +120,10 @@ export default function PagamentoPage() {
                 : valorTotal,
               numero_funcionarios: numeroFuncionarios,
               plano_nome: contratacaoData.plano_nome ?? 'Plano Personalizado',
-              contratante_nome: contratacaoData.contratante_nome ?? '',
+              tomador_nome:
+                (contratacaoData.tomador_nome ||
+                  contratacaoData.tomador_nome) ??
+                '',
               status: 'aguardando_pagamento',
             });
 
@@ -122,27 +131,23 @@ export default function PagamentoPage() {
             _tokenForStart =
               contratacaoData.token || tokenFromQuery || 'abc123';
           } else {
-            if (!contratanteIdParam || !planoIdParam) {
-              throw new Error(
-                'Parâmetros obrigatórios: contratante_id e plano_id'
-              );
+            if (!tomadorIdParam || !planoIdParam) {
+              throw new Error('Parâmetros obrigatórios: tomador_id e plano_id');
             }
 
-            contratanteId = parseInt(contratanteIdParam);
+            tomadorId = parseInt(tomadorIdParam);
             planoId = parseInt(planoIdParam);
             numeroFuncionarios = numeroFuncionariosParam
               ? parseInt(numeroFuncionariosParam)
               : 1;
             valorTotal = valorTotalParam ? parseFloat(valorTotalParam) : 0;
 
-            // Buscar informações do contratante e plano
-            const contratanteRes = await fetch(
-              `/api/public/contratante/${contratanteId}`
-            );
-            if (!contratanteRes.ok) {
-              throw new Error('Contratante não encontrado');
+            // Buscar informações do tomador e plano
+            const tomadorRes = await fetch(`/api/public/tomador/${tomadorId}`);
+            if (!tomadorRes.ok) {
+              throw new Error('Tomador não encontrado');
             }
-            const contratanteData = await contratanteRes.json();
+            const tomadorData = await tomadorRes.json();
 
             // Buscar informações do plano
             const planoRes = await fetch(`/api/planos/${planoIdParam}`);
@@ -169,21 +174,21 @@ export default function PagamentoPage() {
               valor_plano: valorCalculado,
               numero_funcionarios: numeroFuncionarios,
               plano_nome: planoData.nome,
-              contratante_nome: contratanteData.nome,
+              tomador_nome: tomadorData.nome,
               status: 'aguardando_pagamento',
             });
 
             _tokenForStart = tokenFromQuery;
           }
         } else {
-          // Buscar contratante_id a partir do contrato_id (rota correta: /api/contratos)
+          // Buscar tomador_id a partir do contrato_id (rota correta: /api/contratos)
           const contratoRes = await fetch(`/api/contratos/${contratoId}`);
           if (!contratoRes.ok) {
             throw new Error('Contrato não encontrado');
           }
 
           const { contrato } = await contratoRes.json();
-          contratanteId = contrato.contratante_id;
+          tomadorId = contrato.tomador_id || contrato.tomador_id;
           contratoIdNumeric = parseInt(contratoId);
 
           // Fetch additional data needed for payment
@@ -194,7 +199,7 @@ export default function PagamentoPage() {
 
         // Iniciar pagamento usando a rota dedicada
         const payload: any = {
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           contrato_id: contratoIdNumeric,
           plano_id: planoId,
           numero_funcionarios: numeroFuncionarios,
@@ -228,8 +233,10 @@ export default function PagamentoPage() {
             data.plano_nome ??
             pagamentoInfo?.plano_nome ??
             'Plano Personalizado',
-          contratante_nome:
-            data.contratante_nome ?? pagamentoInfo?.contratante_nome ?? '',
+          tomador_nome:
+            (data.tomador_nome || data.tomador_nome) ??
+            pagamentoInfo?.tomador_nome ??
+            '',
           status:
             data.status ?? pagamentoInfo?.status ?? 'aguardando_pagamento',
         };
@@ -251,7 +258,7 @@ export default function PagamentoPage() {
     }
   }, [
     contratoId,
-    pagamentoInfo?.contratante_nome,
+    pagamentoInfo?.tomador_nome,
     pagamentoInfo?.plano_nome,
     pagamentoInfo?.status,
   ]);
@@ -377,9 +384,9 @@ export default function PagamentoPage() {
               </h2>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Contratante:</span>
+                  <span className="text-gray-600">Tomador:</span>
                   <span className="font-semibold">
-                    {pagamentoInfo.contratante_nome}
+                    {pagamentoInfo.tomador_nome || pagamentoInfo.tomador_nome}
                   </span>
                 </div>
                 <div className="flex justify-between">

@@ -59,28 +59,10 @@ DELETE TO PUBLIC USING (
     )
 );
 
--- ADMIN: Acesso completo a todas as empresas (full access)
-CREATE POLICY "empresas_admin_select" ON empresas_clientes FOR
-SELECT TO PUBLIC USING (
-    current_user_perfil() = 'admin'
-);
-
-CREATE POLICY "empresas_admin_insert" ON empresas_clientes FOR
-INSERT TO PUBLIC WITH CHECK (
-    current_user_perfil() = 'admin'
-);
-
-CREATE POLICY "empresas_admin_update" ON empresas_clientes FOR
-UPDATE TO PUBLIC USING (
-    current_user_perfil() = 'admin'
-) WITH CHECK (
-    current_user_perfil() = 'admin'
-);
-
-CREATE POLICY "empresas_admin_delete" ON empresas_clientes FOR
-DELETE TO PUBLIC USING (
-    current_user_perfil() = 'admin'
-);
+-- ADMIN: RESTRIÇÃO OPERACIONAL
+-- Admin é APENAS administrativo (tomadores, planos, emissores)
+-- NÃO tem acesso operacional a empresas_clientes
+-- Políticas admin antigos foram removidas por motivo de segurança
 
 -- ==========================================
 -- 3. VERIFICAÇÃO DE PERMISSÕES RBAC
@@ -110,7 +92,7 @@ INSERT INTO audit_logs (
 ) VALUES (
     'migrations',
     '055_admin_empresas_fix',
-    'Corrigido permissões admin para empresas_clientes - admin agora tem full access',
+    'Corrigido permissões RH para empresas_clientes - Removidas políticas admin full access',
     null,
     null
 );

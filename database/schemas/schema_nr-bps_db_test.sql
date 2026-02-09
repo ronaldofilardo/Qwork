@@ -1226,7 +1226,7 @@ BEGIN
 
     INTO v_pagamento_confirmado, v_data_liberacao, v_status, v_ativa
 
-    FROM public.contratantes
+    FROM public.tomadores
 
     WHERE id = p_contratante_id;
 
@@ -1250,10 +1250,10 @@ $$;
 ALTER FUNCTION public.contratante_pode_logar(p_contratante_id integer) OWNER TO postgres;
 
 --
--- Name: contratantes_sync_status_ativa(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: tomadores_sync_status_ativa(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.contratantes_sync_status_ativa() RETURNS trigger
+CREATE FUNCTION public.tomadores_sync_status_ativa() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     BEGIN
@@ -1276,13 +1276,13 @@ CREATE FUNCTION public.contratantes_sync_status_ativa() RETURNS trigger
     $$;
 
 
-ALTER FUNCTION public.contratantes_sync_status_ativa() OWNER TO postgres;
+ALTER FUNCTION public.tomadores_sync_status_ativa() OWNER TO postgres;
 
 --
--- Name: FUNCTION contratantes_sync_status_ativa(); Type: COMMENT; Schema: public; Owner: postgres
+-- Name: FUNCTION tomadores_sync_status_ativa(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.contratantes_sync_status_ativa() IS 'LEGACY: originalmente garantia que ativa só poderia ser true apenas se pagamento_confirmado fosse true; mantido por compatibilidade após migração para contract-first.'; 
+COMMENT ON FUNCTION public.tomadores_sync_status_ativa() IS 'LEGACY: originalmente garantia que ativa só poderia ser true apenas se pagamento_confirmado fosse true; mantido por compatibilidade após migração para contract-first.'; 
 
 
 --
@@ -1319,7 +1319,7 @@ BEGIN
 
     INTO v_contratante
 
-    FROM contratantes
+    FROM tomadores
 
     WHERE id = p_contratante_id AND tipo = 'entidade';
 
@@ -2017,22 +2017,22 @@ COMMENT ON FUNCTION public.executar_politica_retencao() IS 'Executa polÃ­tica 
 
 
 --
--- Name: fn_corrigir_inconsistencias_contratantes(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: fn_corrigir_inconsistencias_tomadores(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.fn_corrigir_inconsistencias_contratantes() RETURNS TABLE(contratante_id integer, nome_contratante character varying, acao_realizada character varying, detalhes text)
+CREATE FUNCTION public.fn_corrigir_inconsistencias_tomadores() RETURNS TABLE(contratante_id integer, nome_contratante character varying, acao_realizada character varying, detalhes text)
     LANGUAGE plpgsql
     AS $$
 BEGIN
   RETURN QUERY
   WITH inconsistentes AS (
     SELECT id, nome, ativa, pagamento_confirmado, status, contrato_gerado
-    FROM contratantes
+    FROM tomadores
     WHERE (ativa = true AND pagamento_confirmado = false)
        OR (contrato_gerado = true AND pagamento_confirmado = false)
   ),
   corrigidos AS (
-    UPDATE contratantes c
+    UPDATE tomadores c
     SET 
       ativa = false,
       status = CASE
@@ -2055,7 +2055,7 @@ BEGIN
     SELECT 
       'correcao_automatica_inconsistencia',
       'high',
-      'contratantes',
+      'tomadores',
       i.id,
       format('Contratante %s foi automaticamente desativado por inconsistÃªncia (ativo sem pagamento)', i.nome),
       jsonb_build_object(
@@ -2078,13 +2078,13 @@ END;
 $$;
 
 
-ALTER FUNCTION public.fn_corrigir_inconsistencias_contratantes() OWNER TO postgres;
+ALTER FUNCTION public.fn_corrigir_inconsistencias_tomadores() OWNER TO postgres;
 
 --
--- Name: FUNCTION fn_corrigir_inconsistencias_contratantes(); Type: COMMENT; Schema: public; Owner: postgres
+-- Name: FUNCTION fn_corrigir_inconsistencias_tomadores(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_corrigir_inconsistencias_contratantes() IS 'Corrige automaticamente contratantes com estados inconsistentes. Desativa e marca como inconsistente qualquer contratante ativo sem pagamento confirmado.';
+COMMENT ON FUNCTION public.fn_corrigir_inconsistencias_tomadores() IS 'Corrige automaticamente tomadores com estados inconsistentes. Desativa e marca como inconsistente qualquer contratante ativo sem pagamento confirmado.';
 
 
 --
@@ -2178,7 +2178,7 @@ BEGIN
     ) VALUES (
       'tentativa_ativacao_sem_pagamento',
       'critical',
-      'contratantes',
+      'tomadores',
       NEW.id,
       format('Tentativa de ativar contratante %s (ID: %s) sem pagamento confirmado', NEW.nome, NEW.id),
       jsonb_build_object(
@@ -2206,7 +2206,7 @@ ALTER FUNCTION public.fn_validar_ativacao_contratante() OWNER TO postgres;
 -- Name: FUNCTION fn_validar_ativacao_contratante(); Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON FUNCTION public.fn_validar_ativacao_contratante() IS 'Registra tentativas de ativar contratantes sem pagamento confirmado em alertas_integridade antes da constraint rejeitar.';
+COMMENT ON FUNCTION public.fn_validar_ativacao_contratante() IS 'Registra tentativas de ativar tomadores sem pagamento confirmado em alertas_integridade antes da constraint rejeitar.';
 
 
 --
@@ -2632,9 +2632,9 @@ BEGIN
 
         c.ativa
 
-    FROM contratantes c
+    FROM tomadores c
 
-    INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+    INNER JOIN tomadores_funcionarios cf ON cf.contratante_id = c.id
 
     WHERE cf.funcionario_id = p_funcionario_id
 
@@ -3620,10 +3620,10 @@ $$;
 ALTER FUNCTION public.update_entidades_senhas_updated_at() OWNER TO postgres;
 
 --
--- Name: update_contratantes_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_tomadores_updated_at(); Type: FUNCTION; Schema: public; Owner: postgres
 --
 
-CREATE FUNCTION public.update_contratantes_updated_at() RETURNS trigger
+CREATE FUNCTION public.update_tomadores_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -3638,7 +3638,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_contratantes_updated_at() OWNER TO postgres;
+ALTER FUNCTION public.update_tomadores_updated_at() OWNER TO postgres;
 
 --
 -- Name: validar_cpf_completo(character varying); Type: FUNCTION; Schema: public; Owner: postgres
@@ -5143,10 +5143,10 @@ ALTER SEQUENCE public.contratacao_personalizada_id_seq OWNED BY public.contratac
 
 
 --
--- Name: contratantes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: tomadores; Type: TABLE; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.contratantes (
+CREATE TABLE public.tomadores (
     id integer NOT NULL,
     tipo public.tipo_contratante_enum NOT NULL,
     nome character varying(200) NOT NULL,
@@ -5182,95 +5182,95 @@ CREATE TABLE public.contratantes (
     plano_tipo public.tipo_plano,
     contrato_aceito boolean DEFAULT false,
     CONSTRAINT chk_ativa_exige_pagamento CHECK (((ativa = false) OR (pagamento_confirmado = true))),
-    CONSTRAINT contratantes_estado_check CHECK ((length((estado)::text) = 2)),
-    CONSTRAINT contratantes_responsavel_cpf_check CHECK ((length((responsavel_cpf)::text) = 11))
+    CONSTRAINT tomadores_estado_check CHECK ((length((estado)::text) = 2)),
+    CONSTRAINT tomadores_responsavel_cpf_check CHECK ((length((responsavel_cpf)::text) = 11))
 );
 
 
-ALTER TABLE public.contratantes OWNER TO postgres;
+ALTER TABLE public.tomadores OWNER TO postgres;
 
 --
--- Name: TABLE contratantes; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: TABLE tomadores; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.contratantes IS 'Tabela unificada para clÃ­nicas e entidades privadas';
-
-
---
--- Name: COLUMN contratantes.tipo; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes.tipo IS 'clinica: medicina ocupacional com empresas intermediÃ¡rias | entidade: empresa privada com vÃ­nculo direto';
+COMMENT ON TABLE public.tomadores IS 'Tabela unificada para clÃ­nicas e entidades privadas';
 
 
 --
--- Name: COLUMN contratantes.responsavel_nome; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores.tipo; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes.responsavel_nome IS 'Para clÃ­nicas: gestor RH | Para entidades: responsÃ¡vel pelo cadastro';
-
-
---
--- Name: COLUMN contratantes.status; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes.status IS 'Status do cadastro: pendente, aguardando_pagamento, aprovado, cancelado, suspenso, inconsistente. TransiÃ§Ãµes vÃ¡lidas sÃ£o auditadas.';
+COMMENT ON COLUMN public.tomadores.tipo IS 'clinica: medicina ocupacional com empresas intermediÃ¡rias | entidade: empresa privada com vÃ­nculo direto';
 
 
 --
--- Name: COLUMN contratantes.ativa; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores.responsavel_nome; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes.ativa IS 'Indica se o contratante está ativo no sistema. DEFAULT false - ativação ocorre APENAS após confirmação de pagamento (LEGACY: fluxo arquivado).';
-
-
---
--- Name: COLUMN contratantes.plano_id; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes.plano_id IS 'Plano selecionado pelo contratante';
+COMMENT ON COLUMN public.tomadores.responsavel_nome IS 'Para clÃ­nicas: gestor RH | Para entidades: responsÃ¡vel pelo cadastro';
 
 
 --
--- Name: COLUMN contratantes.pagamento_confirmado; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores.status; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes.pagamento_confirmado IS 'Indica se pagamento foi confirmado. Requisito obrigatÃ³rio para ativar contratante (ativa=true).';
-
-
---
--- Name: COLUMN contratantes.data_liberacao_login; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes.data_liberacao_login IS 'Data em que o login foi liberado apÃ³s pagamento';
+COMMENT ON COLUMN public.tomadores.status IS 'Status do cadastro: pendente, aguardando_pagamento, aprovado, cancelado, suspenso, inconsistente. TransiÃ§Ãµes vÃ¡lidas sÃ£o auditadas.';
 
 
 --
--- Name: COLUMN contratantes.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores.ativa; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios informado no cadastro - usado para calcular valor total em planos personalizados';
-
-
---
--- Name: COLUMN contratantes.plano_tipo; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes.plano_tipo IS 'Tipo do plano (desnormalizado para evitar JOINs constantes)';
+COMMENT ON COLUMN public.tomadores.ativa IS 'Indica se o contratante está ativo no sistema. DEFAULT false - ativação ocorre APENAS após confirmação de pagamento (LEGACY: fluxo arquivado).';
 
 
 --
--- Name: COLUMN contratantes.contrato_aceito; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores.plano_id; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.contratantes.contrato_aceito IS 'Indica se o contratante aceitou o contrato/polÃ­tica (usado para fluxo de pagamento e notificaÃ§Ãµes)';
+COMMENT ON COLUMN public.tomadores.plano_id IS 'Plano selecionado pelo contratante';
 
 
 --
--- Name: contratantes_funcionarios; Type: TABLE; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores.pagamento_confirmado; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-CREATE TABLE public.contratantes_funcionarios (
+COMMENT ON COLUMN public.tomadores.pagamento_confirmado IS 'Indica se pagamento foi confirmado. Requisito obrigatÃ³rio para ativar contratante (ativa=true).';
+
+
+--
+-- Name: COLUMN tomadores.data_liberacao_login; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.tomadores.data_liberacao_login IS 'Data em que o login foi liberado apÃ³s pagamento';
+
+
+--
+-- Name: COLUMN tomadores.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.tomadores.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios informado no cadastro - usado para calcular valor total em planos personalizados';
+
+
+--
+-- Name: COLUMN tomadores.plano_tipo; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.tomadores.plano_tipo IS 'Tipo do plano (desnormalizado para evitar JOINs constantes)';
+
+
+--
+-- Name: COLUMN tomadores.contrato_aceito; Type: COMMENT; Schema: public; Owner: postgres
+--
+
+COMMENT ON COLUMN public.tomadores.contrato_aceito IS 'Indica se o contratante aceitou o contrato/polÃ­tica (usado para fluxo de pagamento e notificaÃ§Ãµes)';
+
+
+--
+-- Name: tomadores_funcionarios; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.tomadores_funcionarios (
     id integer NOT NULL,
     funcionario_id integer NOT NULL,
     contratante_id integer NOT NULL,
@@ -5280,31 +5280,31 @@ CREATE TABLE public.contratantes_funcionarios (
     data_fim date,
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT contratantes_funcionarios_datas_check CHECK (((data_fim IS NULL) OR (data_fim >= data_inicio)))
+    CONSTRAINT tomadores_funcionarios_datas_check CHECK (((data_fim IS NULL) OR (data_fim >= data_inicio)))
 );
 
 
-ALTER TABLE public.contratantes_funcionarios OWNER TO postgres;
+ALTER TABLE public.tomadores_funcionarios OWNER TO postgres;
 
 --
--- Name: TABLE contratantes_funcionarios; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: TABLE tomadores_funcionarios; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.contratantes_funcionarios IS 'Relacionamento polimÃ³rfico entre funcionÃ¡rios e contratantes (clÃ­nicas/entidades)';
-
-
---
--- Name: COLUMN contratantes_funcionarios.tipo_contratante; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratantes_funcionarios.tipo_contratante IS 'Redundante mas facilita queries sem join adicional';
+COMMENT ON TABLE public.tomadores_funcionarios IS 'Relacionamento polimÃ³rfico entre funcionÃ¡rios e tomadores (clÃ­nicas/entidades)';
 
 
 --
--- Name: contratantes_funcionarios_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: COLUMN tomadores_funcionarios.tipo_contratante; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.contratantes_funcionarios_id_seq
+COMMENT ON COLUMN public.tomadores_funcionarios.tipo_contratante IS 'Redundante mas facilita queries sem join adicional';
+
+
+--
+-- Name: tomadores_funcionarios_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.tomadores_funcionarios_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -5313,20 +5313,20 @@ CREATE SEQUENCE public.contratantes_funcionarios_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.contratantes_funcionarios_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.tomadores_funcionarios_id_seq OWNER TO postgres;
 
 --
--- Name: contratantes_funcionarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.contratantes_funcionarios_id_seq OWNED BY public.contratantes_funcionarios.id;
+ALTER SEQUENCE public.tomadores_funcionarios_id_seq OWNED BY public.tomadores_funcionarios.id;
 
 
 --
--- Name: contratantes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: tomadores_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
 --
 
-CREATE SEQUENCE public.contratantes_id_seq
+CREATE SEQUENCE public.tomadores_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -5335,13 +5335,13 @@ CREATE SEQUENCE public.contratantes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.contratantes_id_seq OWNER TO postgres;
+ALTER SEQUENCE public.tomadores_id_seq OWNER TO postgres;
 
 --
--- Name: contratantes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: tomadores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
 --
 
-ALTER SEQUENCE public.contratantes_id_seq OWNED BY public.contratantes.id;
+ALTER SEQUENCE public.tomadores_id_seq OWNED BY public.tomadores.id;
 
 
 --
@@ -5373,7 +5373,7 @@ COMMENT ON TABLE public.entidades_senhas IS 'Senhas hash para gestores de entida
 -- Name: COLUMN entidades_senhas.cpf; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em tomadores - usado para login';
 
 
 --
@@ -5438,7 +5438,7 @@ ALTER TABLE public.contratos OWNER TO postgres;
 -- Name: TABLE contratos; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.contratos IS 'Contratos gerados para contratantes. Fluxo simplificado sem tabelas intermediÃ¡rias.';
+COMMENT ON TABLE public.contratos IS 'Contratos gerados para tomadores. Fluxo simplificado sem tabelas intermediÃ¡rias.';
 
 
 --
@@ -6496,7 +6496,7 @@ ALTER TABLE public.pagamentos OWNER TO postgres;
 -- Name: TABLE pagamentos; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.pagamentos IS 'Registro de pagamentos de contratantes';
+COMMENT ON TABLE public.pagamentos IS 'Registro de pagamentos de tomadores';
 
 
 --
@@ -7039,7 +7039,7 @@ ALTER TABLE public.tokens_retomada_pagamento OWNER TO postgres;
 -- Name: TABLE tokens_retomada_pagamento; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON TABLE public.tokens_retomada_pagamento IS 'Armazena tokens seguros para permitir que contratantes retomem pagamentos pendentes sem refazer cadastro.';
+COMMENT ON TABLE public.tokens_retomada_pagamento IS 'Armazena tokens seguros para permitir que tomadores retomem pagamentos pendentes sem refazer cadastro.';
 
 
 --
@@ -7086,10 +7086,10 @@ ALTER SEQUENCE public.tokens_retomada_pagamento_id_seq OWNED BY public.tokens_re
 
 
 --
--- Name: v_contratantes_stats; Type: VIEW; Schema: public; Owner: postgres
+-- Name: v_tomadores_stats; Type: VIEW; Schema: public; Owner: postgres
 --
 
-CREATE VIEW public.v_contratantes_stats AS
+CREATE VIEW public.v_tomadores_stats AS
  SELECT c.id,
     c.tipo,
     c.nome,
@@ -7106,18 +7106,18 @@ CREATE VIEW public.v_contratantes_stats AS
         END) AS funcionarios_ativos,
     c.criado_em,
     c.aprovado_em
-   FROM (public.contratantes c
-     LEFT JOIN public.contratantes_funcionarios cf ON ((cf.contratante_id = c.id)))
+   FROM (public.tomadores c
+     LEFT JOIN public.tomadores_funcionarios cf ON ((cf.contratante_id = c.id)))
   GROUP BY c.id, c.tipo, c.nome, c.cnpj, c.status, c.ativa, c.responsavel_nome, c.responsavel_email, c.criado_em, c.aprovado_em;
 
 
-ALTER VIEW public.v_contratantes_stats OWNER TO postgres;
+ALTER VIEW public.v_tomadores_stats OWNER TO postgres;
 
 --
--- Name: VIEW v_contratantes_stats; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: VIEW v_tomadores_stats; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON VIEW public.v_contratantes_stats IS 'View com estatÃ­sticas agregadas de contratantes';
+COMMENT ON VIEW public.v_tomadores_stats IS 'View com estatÃ­sticas agregadas de tomadores';
 
 
 --
@@ -7149,7 +7149,7 @@ CREATE VIEW public.vw_alertas_lotes_stuck AS
    FROM ((((public.lotes_avaliacao la
      LEFT JOIN public.empresas_clientes ec ON ((la.empresa_id = ec.id)))
      LEFT JOIN public.clinicas c ON ((ec.clinica_id = c.id)))
-     LEFT JOIN public.contratantes cont ON ((la.contratante_id = cont.id)))
+     LEFT JOIN public.tomadores cont ON ((la.contratante_id = cont.id)))
      LEFT JOIN public.avaliacoes a ON ((la.id = a.lote_id)))
   WHERE (((la.status)::text = ANY ((ARRAY['ativo'::character varying, 'concluido'::character varying, 'finalizado'::character varying])::text[])) AND (la.atualizado_em < (now() - '48:00:00'::interval)))
   GROUP BY la.id,  la.status, ec.nome, cont.nome, c.nome, la.liberado_em, la.atualizado_em, la.auto_emitir_em, la.auto_emitir_agendado, la.clinica_id, la.contratante_id;
@@ -7219,7 +7219,7 @@ CREATE VIEW public.vw_audit_trail_por_contratante AS
    FROM (((public.audit_logs al
      LEFT JOIN public.funcionarios f ON ((al.user_cpf = f.cpf)))
      LEFT JOIN public.clinicas c ON ((f.clinica_id = c.id)))
-     LEFT JOIN public.contratantes cont ON ((al.contratante_id = cont.id)))
+     LEFT JOIN public.tomadores cont ON ((al.contratante_id = cont.id)))
   WHERE (al.created_at >= (now() - '90 days'::interval))
   ORDER BY al.created_at DESC;
 
@@ -7512,10 +7512,10 @@ CREATE VIEW public.vw_comparativo_empresas AS
 ALTER VIEW public.vw_comparativo_empresas OWNER TO postgres;
 
 --
--- Name: vw_contratantes_inconsistentes; Type: VIEW; Schema: public; Owner: postgres
+-- Name: vw_tomadores_inconsistentes; Type: VIEW; Schema: public; Owner: postgres
 --
 
-CREATE VIEW public.vw_contratantes_inconsistentes AS
+CREATE VIEW public.vw_tomadores_inconsistentes AS
  SELECT id,
     nome,
     cnpj,
@@ -7526,11 +7526,11 @@ CREATE VIEW public.vw_contratantes_inconsistentes AS
     status,
     data_liberacao_login,
     criado_em
-   FROM public.contratantes c
+   FROM public.tomadores c
   WHERE ((ativa = true) AND (pagamento_confirmado = false));
 
 
-ALTER VIEW public.vw_contratantes_inconsistentes OWNER TO postgres;
+ALTER VIEW public.vw_tomadores_inconsistentes OWNER TO postgres;
 
 --
 -- Name: vw_dashboard_por_empresa; Type: VIEW; Schema: public; Owner: postgres
@@ -7619,10 +7619,10 @@ COMMENT ON VIEW public.vw_funcionarios_por_lote IS 'View que combina dados de fu
 
 
 --
--- Name: vw_health_check_contratantes; Type: VIEW; Schema: public; Owner: postgres
+-- Name: vw_health_check_tomadores; Type: VIEW; Schema: public; Owner: postgres
 --
 
-CREATE VIEW public.vw_health_check_contratantes AS
+CREATE VIEW public.vw_health_check_tomadores AS
  SELECT COALESCE(la.clinica_id, la.contratante_id) AS contratante_ref_id,
         CASE
             WHEN (la.clinica_id IS NOT NULL) THEN 'clinica'::text
@@ -7645,18 +7645,18 @@ CREATE VIEW public.vw_health_check_contratantes AS
     max(la.atualizado_em) AS ultima_atividade
    FROM ((public.lotes_avaliacao la
      LEFT JOIN public.clinicas c ON ((la.clinica_id = c.id)))
-     LEFT JOIN public.contratantes cont ON ((la.contratante_id = cont.id)))
+     LEFT JOIN public.tomadores cont ON ((la.contratante_id = cont.id)))
   WHERE ((la.status)::text <> 'cancelado'::text)
   GROUP BY la.clinica_id, la.contratante_id, c.nome, cont.nome, c.ativa, cont.ativa;
 
 
-ALTER VIEW public.vw_health_check_contratantes OWNER TO postgres;
+ALTER VIEW public.vw_health_check_tomadores OWNER TO postgres;
 
 --
--- Name: VIEW vw_health_check_contratantes; Type: COMMENT; Schema: public; Owner: postgres
+-- Name: VIEW vw_health_check_tomadores; Type: COMMENT; Schema: public; Owner: postgres
 --
 
-COMMENT ON VIEW public.vw_health_check_contratantes IS 'Health check rÃ¡pido de todos os contratantes (clÃ­nicas e entidades) com lotes ativos';
+COMMENT ON VIEW public.vw_health_check_tomadores IS 'Health check rÃ¡pido de todos os tomadores (clÃ­nicas e entidades) com lotes ativos';
 
 
 --
@@ -7730,7 +7730,7 @@ CREATE VIEW public.vw_lotes_por_contratante AS
     avg((EXTRACT(epoch FROM (now() - (la.liberado_em)::timestamp with time zone)) / (86400)::numeric)) AS idade_media_dias
    FROM ((public.lotes_avaliacao la
      LEFT JOIN public.clinicas c ON ((la.clinica_id = c.id)))
-     LEFT JOIN public.contratantes cont ON ((la.contratante_id = cont.id)))
+     LEFT JOIN public.tomadores cont ON ((la.contratante_id = cont.id)))
   WHERE ((la.status)::text <> 'cancelado'::text)
   GROUP BY la.clinica_id, la.contratante_id, c.nome, cont.nome, la.status;
 
@@ -7769,7 +7769,7 @@ CREATE VIEW public.vw_metricas_emissao_laudos AS
    FROM (((public.laudos l
      JOIN public.lotes_avaliacao la ON ((l.lote_id = la.id)))
      LEFT JOIN public.clinicas c ON ((la.clinica_id = c.id)))
-     LEFT JOIN public.contratantes cont ON ((la.contratante_id = cont.id)))
+     LEFT JOIN public.tomadores cont ON ((la.contratante_id = cont.id)))
   WHERE (l.criado_em >= (now() - '30 days'::interval))
   GROUP BY la.clinica_id, la.contratante_id, c.nome, cont.nome, (date_trunc('day'::text, l.criado_em))
   ORDER BY (date_trunc('day'::text, l.criado_em)) DESC;
@@ -7828,7 +7828,7 @@ CREATE VIEW public.vw_tokens_auditoria AS
     t.gerado_em,
     t.ip_uso
    FROM (((public.tokens_retomada_pagamento t
-     JOIN public.contratantes c ON ((t.contratante_id = c.id)))
+     JOIN public.tomadores c ON ((t.contratante_id = c.id)))
      LEFT JOIN public.planos p ON ((t.plano_id = p.id)))
      LEFT JOIN public.funcionarios g ON (((t.gerado_por)::bpchar = g.cpf)))
   ORDER BY t.gerado_em DESC;
@@ -7928,17 +7928,17 @@ ALTER TABLE ONLY public.contratacao_personalizada ALTER COLUMN id SET DEFAULT ne
 
 
 --
--- Name: contratantes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: tomadores id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes ALTER COLUMN id SET DEFAULT nextval('public.contratantes_id_seq'::regclass);
+ALTER TABLE ONLY public.tomadores ALTER COLUMN id SET DEFAULT nextval('public.tomadores_id_seq'::regclass);
 
 
 --
--- Name: contratantes_funcionarios id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios id; Type: DEFAULT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_funcionarios ALTER COLUMN id SET DEFAULT nextval('public.contratantes_funcionarios_id_seq'::regclass);
+ALTER TABLE ONLY public.tomadores_funcionarios ALTER COLUMN id SET DEFAULT nextval('public.tomadores_funcionarios_id_seq'::regclass);
 
 
 --
@@ -8259,51 +8259,51 @@ ALTER TABLE ONLY public.contratacao_personalizada
 
 
 --
--- Name: contratantes contratantes_cnpj_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_cnpj_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_cnpj_unique UNIQUE (cnpj);
-
-
---
--- Name: contratantes contratantes_email_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_email_unique UNIQUE (email);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_cnpj_unique UNIQUE (cnpj);
 
 
 --
--- Name: contratantes_funcionarios contratantes_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_email_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_funcionarios
-    ADD CONSTRAINT contratantes_funcionarios_pkey PRIMARY KEY (id);
-
-
---
--- Name: contratantes_funcionarios contratantes_funcionarios_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratantes_funcionarios
-    ADD CONSTRAINT contratantes_funcionarios_unique UNIQUE (funcionario_id, contratante_id);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_email_unique UNIQUE (email);
 
 
 --
--- Name: contratantes contratantes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios tomadores_funcionarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.tomadores_funcionarios
+    ADD CONSTRAINT tomadores_funcionarios_pkey PRIMARY KEY (id);
 
 
 --
--- Name: contratantes contratantes_responsavel_cpf_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios tomadores_funcionarios_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_responsavel_cpf_unique UNIQUE (responsavel_cpf);
+ALTER TABLE ONLY public.tomadores_funcionarios
+    ADD CONSTRAINT tomadores_funcionarios_unique UNIQUE (funcionario_id, contratante_id);
+
+
+--
+-- Name: tomadores tomadores_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tomadores tomadores_responsavel_cpf_unique; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_responsavel_cpf_unique UNIQUE (responsavel_cpf);
 
 
 --
@@ -8892,108 +8892,108 @@ CREATE INDEX idx_contratacao_personalizada_token ON public.contratacao_personali
 
 
 --
--- Name: idx_contratantes_ativa; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_ativa; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_ativa ON public.contratantes USING btree (ativa);
-
-
---
--- Name: idx_contratantes_ativa_pagamento; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_ativa_pagamento ON public.contratantes USING btree (ativa, pagamento_confirmado) WHERE (ativa = true);
+CREATE INDEX idx_tomadores_ativa ON public.tomadores USING btree (ativa);
 
 
 --
--- Name: idx_contratantes_cnpj; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_ativa_pagamento; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_cnpj ON public.contratantes USING btree (cnpj);
-
-
---
--- Name: idx_contratantes_contrato_aceito; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_contrato_aceito ON public.contratantes USING btree (contrato_aceito);
+CREATE INDEX idx_tomadores_ativa_pagamento ON public.tomadores USING btree (ativa, pagamento_confirmado) WHERE (ativa = true);
 
 
 --
--- Name: idx_contratantes_data_liberacao; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_cnpj; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_data_liberacao ON public.contratantes USING btree (data_liberacao_login);
-
-
---
--- Name: idx_contratantes_funcionarios_ativo; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_funcionarios_ativo ON public.contratantes_funcionarios USING btree (vinculo_ativo);
+CREATE INDEX idx_tomadores_cnpj ON public.tomadores USING btree (cnpj);
 
 
 --
--- Name: idx_contratantes_funcionarios_composite; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_contrato_aceito; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_funcionarios_composite ON public.contratantes_funcionarios USING btree (contratante_id, tipo_contratante, vinculo_ativo);
-
-
---
--- Name: idx_contratantes_funcionarios_contratante; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_funcionarios_contratante ON public.contratantes_funcionarios USING btree (contratante_id);
+CREATE INDEX idx_tomadores_contrato_aceito ON public.tomadores USING btree (contrato_aceito);
 
 
 --
--- Name: idx_contratantes_funcionarios_funcionario; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_data_liberacao; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_funcionarios_funcionario ON public.contratantes_funcionarios USING btree (funcionario_id);
-
-
---
--- Name: idx_contratantes_funcionarios_tipo; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_funcionarios_tipo ON public.contratantes_funcionarios USING btree (tipo_contratante);
+CREATE INDEX idx_tomadores_data_liberacao ON public.tomadores USING btree (data_liberacao_login);
 
 
 --
--- Name: idx_contratantes_liberacao; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_funcionarios_ativo; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_liberacao ON public.contratantes USING btree (data_liberacao_login);
-
-
---
--- Name: idx_contratantes_pagamento; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_pagamento ON public.contratantes USING btree (pagamento_confirmado);
+CREATE INDEX idx_tomadores_funcionarios_ativo ON public.tomadores_funcionarios USING btree (vinculo_ativo);
 
 
 --
--- Name: idx_contratantes_pagamento_confirmado; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_funcionarios_composite; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_pagamento_confirmado ON public.contratantes USING btree (pagamento_confirmado);
-
-
---
--- Name: idx_contratantes_plano; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_plano ON public.contratantes USING btree (plano_id);
+CREATE INDEX idx_tomadores_funcionarios_composite ON public.tomadores_funcionarios USING btree (contratante_id, tipo_contratante, vinculo_ativo);
 
 
 --
--- Name: idx_contratantes_plano_tipo; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_funcionarios_contratante; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_plano_tipo ON public.contratantes USING btree (plano_tipo);
+CREATE INDEX idx_tomadores_funcionarios_contratante ON public.tomadores_funcionarios USING btree (contratante_id);
+
+
+--
+-- Name: idx_tomadores_funcionarios_funcionario; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_funcionarios_funcionario ON public.tomadores_funcionarios USING btree (funcionario_id);
+
+
+--
+-- Name: idx_tomadores_funcionarios_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_funcionarios_tipo ON public.tomadores_funcionarios USING btree (tipo_contratante);
+
+
+--
+-- Name: idx_tomadores_liberacao; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_liberacao ON public.tomadores USING btree (data_liberacao_login);
+
+
+--
+-- Name: idx_tomadores_pagamento; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_pagamento ON public.tomadores USING btree (pagamento_confirmado);
+
+
+--
+-- Name: idx_tomadores_pagamento_confirmado; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_pagamento_confirmado ON public.tomadores USING btree (pagamento_confirmado);
+
+
+--
+-- Name: idx_tomadores_plano; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_plano ON public.tomadores USING btree (plano_id);
+
+
+--
+-- Name: idx_tomadores_plano_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_plano_tipo ON public.tomadores USING btree (plano_tipo);
 
 
 --
@@ -9011,45 +9011,45 @@ CREATE INDEX idx_entidades_senhas_cpf ON public.entidades_senhas USING btree (cp
 
 
 --
--- Name: idx_contratantes_status; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_status; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_status ON public.contratantes USING btree (status);
-
-
---
--- Name: idx_contratantes_status_pagamento; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_status_pagamento ON public.contratantes USING btree (status, pagamento_confirmado);
+CREATE INDEX idx_tomadores_status ON public.tomadores USING btree (status);
 
 
 --
--- Name: idx_contratantes_status_plano_tipo; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_status_pagamento; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_status_plano_tipo ON public.contratantes USING btree (status, plano_tipo);
-
-
---
--- Name: idx_contratantes_status_tipo; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratantes_status_tipo ON public.contratantes USING btree (status, tipo);
+CREATE INDEX idx_tomadores_status_pagamento ON public.tomadores USING btree (status, pagamento_confirmado);
 
 
 --
--- Name: idx_contratantes_tipo; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_status_plano_tipo; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_tipo ON public.contratantes USING btree (tipo);
+CREATE INDEX idx_tomadores_status_plano_tipo ON public.tomadores USING btree (status, plano_tipo);
 
 
 --
--- Name: idx_contratantes_tipo_ativa; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_tomadores_status_tipo; Type: INDEX; Schema: public; Owner: postgres
 --
 
-CREATE INDEX idx_contratantes_tipo_ativa ON public.contratantes USING btree (tipo, ativa);
+CREATE INDEX idx_tomadores_status_tipo ON public.tomadores USING btree (status, tipo);
+
+
+--
+-- Name: idx_tomadores_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_tipo ON public.tomadores USING btree (tipo);
+
+
+--
+-- Name: idx_tomadores_tipo_ativa; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_tomadores_tipo_ativa ON public.tomadores USING btree (tipo, ativa);
 
 
 --
@@ -9795,17 +9795,17 @@ CREATE TRIGGER audit_lotes_avaliacao AFTER INSERT OR DELETE OR UPDATE ON public.
 
 
 --
--- Name: contratantes tr_contratantes_sync_status_ativa; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores tr_tomadores_sync_status_ativa; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER tr_contratantes_sync_status_ativa BEFORE INSERT OR UPDATE ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.contratantes_sync_status_ativa();
+CREATE TRIGGER tr_tomadores_sync_status_ativa BEFORE INSERT OR UPDATE ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.tomadores_sync_status_ativa();
 
 
 --
--- Name: contratantes_funcionarios trg_contratantes_funcionarios_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios trg_tomadores_funcionarios_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_contratantes_funcionarios_updated_at BEFORE UPDATE ON public.contratantes_funcionarios FOR EACH ROW EXECUTE FUNCTION public.update_contratantes_updated_at();
+CREATE TRIGGER trg_tomadores_funcionarios_updated_at BEFORE UPDATE ON public.tomadores_funcionarios FOR EACH ROW EXECUTE FUNCTION public.update_tomadores_updated_at();
 
 
 --
@@ -9816,17 +9816,17 @@ CREATE TRIGGER trg_entidades_senhas_updated_at BEFORE UPDATE ON public.entidades
 
 
 --
--- Name: contratantes trg_contratantes_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores trg_tomadores_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_contratantes_updated_at BEFORE UPDATE ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.update_contratantes_updated_at();
+CREATE TRIGGER trg_tomadores_updated_at BEFORE UPDATE ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.update_tomadores_updated_at();
 
 
 --
--- Name: contratantes trg_impedir_alteracao_critica; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores trg_impedir_alteracao_critica; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_impedir_alteracao_critica BEFORE UPDATE ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.impedir_alteracao_campos_criticos();
+CREATE TRIGGER trg_impedir_alteracao_critica BEFORE UPDATE ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.impedir_alteracao_campos_criticos();
 
 
 --
@@ -9844,19 +9844,19 @@ CREATE TRIGGER trg_planos_atualizar_data BEFORE UPDATE ON public.planos FOR EACH
 
 
 --
--- Name: contratantes trg_sync_contratante_plano_tipo; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores trg_sync_contratante_plano_tipo; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_sync_contratante_plano_tipo BEFORE INSERT OR UPDATE OF plano_id ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.sync_contratante_plano_tipo();
+CREATE TRIGGER trg_sync_contratante_plano_tipo BEFORE INSERT OR UPDATE OF plano_id ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.sync_contratante_plano_tipo();
 
 
 --
--- Name: contratantes trg_validar_ativacao_contratante; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores trg_validar_ativacao_contratante; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_validar_ativacao_contratante BEFORE UPDATE OF ativa ON public.contratantes FOR EACH ROW WHEN ((new.ativa IS DISTINCT FROM old.ativa)) EXECUTE FUNCTION public.fn_validar_ativacao_contratante();
+CREATE TRIGGER trg_validar_ativacao_contratante BEFORE UPDATE OF ativa ON public.tomadores FOR EACH ROW WHEN ((new.ativa IS DISTINCT FROM old.ativa)) EXECUTE FUNCTION public.fn_validar_ativacao_contratante();
 
-ALTER TABLE public.contratantes DISABLE TRIGGER trg_validar_ativacao_contratante;
+ALTER TABLE public.tomadores DISABLE TRIGGER trg_validar_ativacao_contratante;
 
 
 --
@@ -9867,10 +9867,10 @@ CREATE TRIGGER trg_validar_parcelas BEFORE INSERT OR UPDATE ON public.contratos_
 
 
 --
--- Name: contratantes trg_validar_transicao_status; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: tomadores trg_validar_transicao_status; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
-CREATE TRIGGER trg_validar_transicao_status BEFORE UPDATE OF status ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.validar_transicao_status_contratante();
+CREATE TRIGGER trg_validar_transicao_status BEFORE UPDATE OF status ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.validar_transicao_status_contratante();
 
 
 --
@@ -9999,7 +9999,7 @@ ALTER TABLE ONLY public.analise_estatistica
 --
 
 ALTER TABLE ONLY public.audit_logs
-    ADD CONSTRAINT audit_logs_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE SET NULL;
+    ADD CONSTRAINT audit_logs_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE SET NULL;
 
 
 --
@@ -10063,15 +10063,15 @@ ALTER TABLE ONLY public.clinicas_empresas
 --
 
 ALTER TABLE ONLY public.contratacao_personalizada
-    ADD CONSTRAINT contratacao_personalizada_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT contratacao_personalizada_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
--- Name: contratantes contratantes_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
 
 
 --
@@ -10079,7 +10079,7 @@ ALTER TABLE ONLY public.contratantes
 --
 
 ALTER TABLE ONLY public.contratos
-    ADD CONSTRAINT contratos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT contratos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -10103,7 +10103,7 @@ ALTER TABLE ONLY public.contratos_planos
 --
 
 ALTER TABLE ONLY public.contratos_planos
-    ADD CONSTRAINT contratos_planos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id);
+    ADD CONSTRAINT contratos_planos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id);
 
 
 --
@@ -10135,23 +10135,23 @@ ALTER TABLE ONLY public.empresas_clientes
 --
 
 ALTER TABLE ONLY public.clinicas
-    ADD CONSTRAINT fk_clinicas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_clinicas_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
--- Name: contratantes_funcionarios fk_contratantes_funcionarios_contratante; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios fk_tomadores_funcionarios_contratante; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_funcionarios
-    ADD CONSTRAINT fk_contratantes_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.tomadores_funcionarios
+    ADD CONSTRAINT fk_tomadores_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
--- Name: contratantes_funcionarios fk_contratantes_funcionarios_funcionario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: tomadores_funcionarios fk_tomadores_funcionarios_funcionario; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
-ALTER TABLE ONLY public.contratantes_funcionarios
-    ADD CONSTRAINT fk_contratantes_funcionarios_funcionario FOREIGN KEY (funcionario_id) REFERENCES public.funcionarios(id) ON DELETE CASCADE;
+ALTER TABLE ONLY public.tomadores_funcionarios
+    ADD CONSTRAINT fk_tomadores_funcionarios_funcionario FOREIGN KEY (funcionario_id) REFERENCES public.funcionarios(id) ON DELETE CASCADE;
 
 
 --
@@ -10159,7 +10159,7 @@ ALTER TABLE ONLY public.contratantes_funcionarios
 --
 
 ALTER TABLE ONLY public.entidades_senhas
-    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -10167,7 +10167,7 @@ ALTER TABLE ONLY public.entidades_senhas
 --
 
 ALTER TABLE ONLY public.funcionarios
-    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE SET NULL;
 
 
 --
@@ -10191,7 +10191,7 @@ ALTER TABLE ONLY public.alertas_integridade
 --
 
 ALTER TABLE ONLY public.tokens_retomada_pagamento
-    ADD CONSTRAINT fk_token_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_token_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -10285,7 +10285,7 @@ ALTER TABLE ONLY public.lotes_avaliacao
 --
 
 ALTER TABLE ONLY public.lotes_avaliacao
-    ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -10361,10 +10361,10 @@ ALTER TABLE ONLY public.role_permissions
 
 
 --
--- Name: contratantes admin_all_contratantes; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores admin_all_tomadores; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY admin_all_contratantes ON public.contratantes USING ((current_setting('app.perfil'::text, true) = 'admin'::text)) WITH CHECK ((current_setting('app.perfil'::text, true) = 'admin'::text));
+CREATE POLICY admin_all_tomadores ON public.tomadores USING ((current_setting('app.perfil'::text, true) = 'admin'::text)) WITH CHECK ((current_setting('app.perfil'::text, true) = 'admin'::text));
 
 
 --
@@ -10425,51 +10425,51 @@ CREATE POLICY avaliacoes_rh_clinica ON public.avaliacoes FOR SELECT USING ((func
 ALTER TABLE public.clinicas ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: contratantes; Type: ROW SECURITY; Schema: public; Owner: postgres
+-- Name: tomadores; Type: ROW SECURITY; Schema: public; Owner: postgres
 --
 
-ALTER TABLE public.contratantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.tomadores ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: contratantes contratantes_admin_all; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_admin_all; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratantes_admin_all ON public.contratantes USING ((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'admin'::text)) WITH CHECK ((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'admin'::text));
-
-
---
--- Name: contratantes contratantes_gestor_select; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY contratantes_gestor_select ON public.contratantes FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
+CREATE POLICY tomadores_admin_all ON public.tomadores USING ((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'admin'::text)) WITH CHECK ((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'admin'::text));
 
 
 --
--- Name: contratantes contratantes_gestor_update; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_gestor_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratantes_gestor_update ON public.contratantes FOR UPDATE USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text)))) WITH CHECK (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
-
-
---
--- Name: contratantes contratantes_public_insert; Type: POLICY; Schema: public; Owner: postgres
---
-
-CREATE POLICY contratantes_public_insert ON public.contratantes FOR INSERT WITH CHECK (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) IS NULL) OR (NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'cadastro'::text)));
+CREATE POLICY tomadores_gestor_select ON public.tomadores FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
 
 
 --
--- Name: contratantes contratantes_responsavel_select; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_gestor_update; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratantes_responsavel_select ON public.contratantes FOR SELECT USING (((responsavel_cpf)::text = public.current_user_cpf()));
+CREATE POLICY tomadores_gestor_update ON public.tomadores FOR UPDATE USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text)))) WITH CHECK (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))));
 
 
 --
--- Name: contratantes contratantes_responsavel_update; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores tomadores_public_insert; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratantes_responsavel_update ON public.contratantes FOR UPDATE USING ((((responsavel_cpf)::text = public.current_user_cpf()) AND (status = ANY (ARRAY['pendente'::public.status_aprovacao_enum, 'em_reanalise'::public.status_aprovacao_enum]))));
+CREATE POLICY tomadores_public_insert ON public.tomadores FOR INSERT WITH CHECK (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) IS NULL) OR (NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'cadastro'::text)));
+
+
+--
+-- Name: tomadores tomadores_responsavel_select; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY tomadores_responsavel_select ON public.tomadores FOR SELECT USING (((responsavel_cpf)::text = public.current_user_cpf()));
+
+
+--
+-- Name: tomadores tomadores_responsavel_update; Type: POLICY; Schema: public; Owner: postgres
+--
+
+CREATE POLICY tomadores_responsavel_update ON public.tomadores FOR UPDATE USING ((((responsavel_cpf)::text = public.current_user_cpf()) AND (status = ANY (ARRAY['pendente'::public.status_aprovacao_enum, 'em_reanalise'::public.status_aprovacao_enum]))));
 
 
 --
@@ -10495,9 +10495,9 @@ CREATE POLICY contratos_planos_admin_all ON public.contratos_planos USING ((NULL
 -- Name: contratos_planos contratos_planos_gestor_select; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY contratos_planos_gestor_select ON public.contratos_planos FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((tipo_contratante)::text = 'entidade'::text) AND (contratante_id IN ( SELECT contratantes.id
-   FROM public.contratantes
-  WHERE ((contratantes.responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))))));
+CREATE POLICY contratos_planos_gestor_select ON public.contratos_planos FOR SELECT USING (((NULLIF(current_setting('app.current_user_perfil'::text, true), ''::text) = 'gestor'::text) AND ((tipo_contratante)::text = 'entidade'::text) AND (contratante_id IN ( SELECT tomadores.id
+   FROM public.tomadores
+  WHERE ((tomadores.responsavel_cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text))))));
 
 
 --
@@ -10536,10 +10536,10 @@ CREATE POLICY funcionarios_rh_clinica ON public.funcionarios FOR SELECT USING ((
 
 
 --
--- Name: contratantes gestor_own_contratante; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores gestor_own_contratante; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY gestor_own_contratante ON public.contratantes FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'gestor'::text) AND (tipo = 'entidade'::public.tipo_contratante_enum) AND ((id)::text = current_setting('app.contratante_id'::text, true))));
+CREATE POLICY gestor_own_contratante ON public.tomadores FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'gestor'::text) AND (tipo = 'entidade'::public.tipo_contratante_enum) AND ((id)::text = current_setting('app.contratante_id'::text, true))));
 
 
 --
@@ -10677,7 +10677,7 @@ CREATE POLICY pagamentos_admin_all ON public.pagamentos USING ((public.current_u
 --
 
 CREATE POLICY pagamentos_responsavel_select ON public.pagamentos FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.contratantes c
+   FROM public.tomadores c
   WHERE ((c.id = pagamentos.contratante_id) AND ((c.responsavel_cpf)::text = public.current_user_cpf())))));
 
 
@@ -10702,10 +10702,10 @@ CREATE POLICY planos_publico_select ON public.planos FOR SELECT USING ((ativo = 
 
 
 --
--- Name: contratantes public_insert_contratantes; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores public_insert_tomadores; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY public_insert_contratantes ON public.contratantes FOR INSERT WITH CHECK (((status = 'pendente'::public.status_aprovacao_enum) OR (status = 'aguardando_pagamento'::public.status_aprovacao_enum)));
+CREATE POLICY public_insert_tomadores ON public.tomadores FOR INSERT WITH CHECK (((status = 'pendente'::public.status_aprovacao_enum) OR (status = 'aguardando_pagamento'::public.status_aprovacao_enum)));
 
 
 --
@@ -10721,10 +10721,10 @@ ALTER TABLE public.respostas ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.resultados ENABLE ROW LEVEL SECURITY;
 
 --
--- Name: contratantes rh_own_clinica_contratante; Type: POLICY; Schema: public; Owner: postgres
+-- Name: tomadores rh_own_clinica_contratante; Type: POLICY; Schema: public; Owner: postgres
 --
 
-CREATE POLICY rh_own_clinica_contratante ON public.contratantes FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'rh'::text) AND (tipo = 'clinica'::public.tipo_contratante_enum) AND (id IN ( SELECT funcionarios.contratante_id
+CREATE POLICY rh_own_clinica_contratante ON public.tomadores FOR SELECT USING (((current_setting('app.perfil'::text, true) = 'rh'::text) AND (tipo = 'clinica'::public.tipo_contratante_enum) AND (id IN ( SELECT funcionarios.contratante_id
    FROM public.funcionarios
   WHERE (((funcionarios.cpf)::text = current_setting('app.cpf'::text, true)) AND ((funcionarios.perfil)::text = 'rh'::text))))));
 
@@ -10893,24 +10893,24 @@ GRANT SELECT,USAGE ON SEQUENCE public.clinicas_id_seq TO PUBLIC;
 
 
 --
--- Name: TABLE contratantes; Type: ACL; Schema: public; Owner: postgres
+-- Name: TABLE tomadores; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT SELECT,INSERT,UPDATE ON TABLE public.contratantes TO PUBLIC;
-
-
---
--- Name: SEQUENCE contratantes_funcionarios_id_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,USAGE ON SEQUENCE public.contratantes_funcionarios_id_seq TO PUBLIC;
+GRANT SELECT,INSERT,UPDATE ON TABLE public.tomadores TO PUBLIC;
 
 
 --
--- Name: SEQUENCE contratantes_id_seq; Type: ACL; Schema: public; Owner: postgres
+-- Name: SEQUENCE tomadores_funcionarios_id_seq; Type: ACL; Schema: public; Owner: postgres
 --
 
-GRANT SELECT,USAGE ON SEQUENCE public.contratantes_id_seq TO PUBLIC;
+GRANT SELECT,USAGE ON SEQUENCE public.tomadores_funcionarios_id_seq TO PUBLIC;
+
+
+--
+-- Name: SEQUENCE tomadores_id_seq; Type: ACL; Schema: public; Owner: postgres
+--
+
+GRANT SELECT,USAGE ON SEQUENCE public.tomadores_id_seq TO PUBLIC;
 
 
 --

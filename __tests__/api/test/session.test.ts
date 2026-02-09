@@ -11,20 +11,20 @@ describe('/api/test/session', () => {
     jest.clearAllMocks();
   });
 
-  it('mapeia clinica via contratante_id quando perfil = rh e clinica existe', async () => {
+  it('mapeia clinica via tomador_id quando perfil = rh e clinica existe', async () => {
     const mockRequest: Partial<NextRequest> = {
       json: jest.fn().mockResolvedValue({
         cpf: '99900011122',
         nome: 'RH Teste',
         perfil: 'rh',
-        contratante_id: 77,
+        tomador_id: 77,
       }),
       headers: { get: jest.fn() } as any,
     };
 
-    // Simular lookup de clinica por contratante_id
+    // Simular lookup de clinica por tomador_id
     mockQuery.mockImplementation((sql: string) => {
-      if (sql.includes('SELECT id FROM clinicas WHERE contratante_id')) {
+      if (sql.includes('SELECT id FROM clinicas WHERE tomador_id')) {
         return Promise.resolve({
           rows: [{ id: 77, ativa: true }],
           rowCount: 1,
@@ -40,7 +40,7 @@ describe('/api/test/session', () => {
     expect(data.ok).toBe(true);
     expect(data.session.clinica_id).toBe(77);
     expect(mockQuery).toHaveBeenCalledWith(
-      expect.stringContaining('SELECT id FROM clinicas WHERE contratante_id'),
+      expect.stringContaining('SELECT id FROM clinicas WHERE tomador_id'),
       [77]
     );
   });
@@ -51,7 +51,7 @@ describe('/api/test/session', () => {
         cpf: '99900011123',
         nome: 'RH Sem Clinica',
         perfil: 'rh',
-        contratante_id: 88,
+        tomador_id: 88,
       }),
       headers: { get: jest.fn() } as any,
     };

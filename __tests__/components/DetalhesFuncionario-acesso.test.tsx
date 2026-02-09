@@ -25,7 +25,7 @@ const mockSession = {
   user: {
     id: 1,
     tipo: 'funcionario',
-    contratante_id: 1,
+    tomador_id: 1,
   },
   expires: '2025-12-31',
 };
@@ -115,7 +115,7 @@ describe('DetalhesFuncionario - Funcionalidades Básicas', () => {
       expect(mockPush).not.toHaveBeenCalled();
     });
 
-    it('deve permitir acesso para contratante com status aguardando_pagamento', async () => {
+    it('deve permitir acesso para tomador com status aguardando_pagamento', async () => {
       // Este teste verifica apenas o carregamento de dados, não controle de acesso
       mockFetch.mockResolvedValueOnce({
         ok: true,
@@ -197,4 +197,3 @@ describe('DetalhesFuncionario - Funcionalidades Básicas', () => {
     });
   });
 });
-

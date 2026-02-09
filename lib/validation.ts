@@ -20,8 +20,8 @@ export const PlanoSchema = z.object({
 export const ContratoPlanoSchema = z.object({
   plano_id: z.number().int().positive(),
   clinica_id: z.number().int().positive().optional(),
-  contratante_id: z.number().int().positive().optional(),
-  tipo_contratante: z.enum(['clinica', 'entidade']),
+  tomador_id: z.number().int().positive().optional(),
+  tipo_tomador: z.enum(['clinica', 'entidade']),
   valor_personalizado_por_funcionario: z.number().positive().optional(),
   numero_funcionarios_estimado: z.number().int().positive(),
   forma_pagamento: z.enum(['anual', 'mensal']).default('anual'),

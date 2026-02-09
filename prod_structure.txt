@@ -1,0 +1,855 @@
+table_name|column_name|data_type|is_nullable|column_default
+_backup_contratantes_senhas_audit|audit_id|integer|YES|
+_backup_contratantes_senhas_audit|operacao|character varying|YES|
+_backup_contratantes_senhas_audit|contratante_id|integer|YES|
+_backup_contratantes_senhas_audit|cpf|character varying|YES|
+_backup_contratantes_senhas_audit|senha_hash_anterior|character varying|YES|
+_backup_contratantes_senhas_audit|senha_hash_nova|character varying|YES|
+_backup_contratantes_senhas_audit|executado_por|character varying|YES|
+_backup_contratantes_senhas_audit|executado_em|timestamp without time zone|YES|
+_backup_contratantes_senhas_audit|ip_origem|character varying|YES|
+_backup_contratantes_senhas_audit|motivo|text|YES|
+_deprecated_fila_emissao|id|integer|NO|nextval('fila_emissao_id_seq'::regclass)
+_deprecated_fila_emissao|lote_id|integer|NO|
+_deprecated_fila_emissao|tentativas|integer|YES|0
+_deprecated_fila_emissao|max_tentativas|integer|YES|3
+_deprecated_fila_emissao|proxima_tentativa|timestamp without time zone|YES|now()
+_deprecated_fila_emissao|erro|text|YES|
+_deprecated_fila_emissao|criado_em|timestamp without time zone|YES|now()
+_deprecated_fila_emissao|atualizado_em|timestamp without time zone|YES|now()
+_deprecated_fila_emissao|solicitado_por|character varying|YES|
+_deprecated_fila_emissao|solicitado_em|timestamp without time zone|YES|now()
+_deprecated_fila_emissao|tipo_solicitante|character varying|YES|
+_migration_issues|id|integer|NO|nextval('_migration_issues_id_seq'::regclass)
+_migration_issues|migration_version|integer|NO|
+_migration_issues|issue_type|character varying|NO|
+_migration_issues|description|text|YES|
+_migration_issues|data|jsonb|YES|
+_migration_issues|resolved|boolean|YES|false
+_migration_issues|created_at|timestamp without time zone|YES|now()
+analise_estatistica|id|integer|NO|nextval('analise_estatistica_id_seq'::regclass)
+analise_estatistica|avaliacao_id|integer|YES|
+analise_estatistica|grupo|integer|YES|
+analise_estatistica|score_original|numeric|YES|
+analise_estatistica|score_ajustado|numeric|YES|
+analise_estatistica|anomalia_detectada|boolean|YES|false
+analise_estatistica|tipo_anomalia|character varying|YES|
+analise_estatistica|recomendacao|text|YES|
+analise_estatistica|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+audit_access_denied|id|bigint|NO|nextval('audit_access_denied_id_seq'::regclass)
+audit_access_denied|user_cpf|character|YES|
+audit_access_denied|user_perfil|character varying|YES|
+audit_access_denied|attempted_action|character varying|NO|
+audit_access_denied|resource|character varying|NO|
+audit_access_denied|resource_id|text|YES|
+audit_access_denied|reason|text|YES|
+audit_access_denied|query_text|text|YES|
+audit_access_denied|ip_address|inet|YES|
+audit_access_denied|created_at|timestamp without time zone|NO|CURRENT_TIMESTAMP
+audit_logs|id|bigint|NO|nextval('audit_logs_id_seq'::regclass)
+audit_logs|user_cpf|character|YES|
+audit_logs|user_perfil|character varying|YES|
+audit_logs|action|character varying|NO|
+audit_logs|resource|character varying|NO|
+audit_logs|resource_id|text|YES|
+audit_logs|old_data|jsonb|YES|
+audit_logs|new_data|jsonb|YES|
+audit_logs|ip_address|inet|YES|
+audit_logs|user_agent|text|YES|
+audit_logs|details|text|YES|
+audit_logs|created_at|timestamp without time zone|NO|CURRENT_TIMESTAMP
+audit_logs|contratante_id|integer|YES|
+audit_logs|clinica_id|integer|YES|
+audit_stats_by_user|user_cpf|character|YES|
+audit_stats_by_user|user_perfil|character varying|YES|
+audit_stats_by_user|action|character varying|YES|
+audit_stats_by_user|resource|character varying|YES|
+audit_stats_by_user|total_actions|bigint|YES|
+audit_stats_by_user|last_action_at|timestamp without time zone|YES|
+auditoria|id|integer|NO|nextval('auditoria_id_seq'::regclass)
+auditoria|entidade_tipo|character varying|NO|
+auditoria|entidade_id|integer|NO|
+auditoria|acao|character varying|NO|
+auditoria|status_anterior|character varying|YES|
+auditoria|status_novo|character varying|YES|
+auditoria|usuario_cpf|character varying|YES|
+auditoria|usuario_perfil|character varying|YES|
+auditoria|ip_address|character varying|YES|
+auditoria|user_agent|text|YES|
+auditoria|dados_alterados|jsonb|YES|
+auditoria|metadados|jsonb|YES|
+auditoria|hash_operacao|character varying|NO|
+auditoria|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+auditoria_geral|id|integer|NO|nextval('auditoria_geral_id_seq'::regclass)
+auditoria_geral|tabela_afetada|character varying|NO|
+auditoria_geral|acao|character varying|NO|
+auditoria_geral|cpf_responsavel|character varying|YES|
+auditoria_geral|dados_anteriores|jsonb|YES|
+auditoria_geral|dados_novos|jsonb|YES|
+auditoria_geral|criado_em|timestamp without time zone|YES|now()
+auditoria_laudos|id|bigint|NO|nextval('auditoria_laudos_id_seq'::regclass)
+auditoria_laudos|lote_id|integer|NO|
+auditoria_laudos|laudo_id|integer|YES|
+auditoria_laudos|emissor_cpf|character varying|YES|
+auditoria_laudos|emissor_nome|character varying|YES|
+auditoria_laudos|acao|character varying|NO|
+auditoria_laudos|status|character varying|NO|
+auditoria_laudos|ip_address|inet|YES|
+auditoria_laudos|observacoes|text|YES|
+auditoria_laudos|criado_em|timestamp without time zone|NO|now()
+auditoria_laudos|solicitado_por|character varying|YES|
+auditoria_laudos|tipo_solicitante|character varying|YES|
+auditoria_laudos|tentativas|integer|YES|0
+auditoria_laudos|erro|text|YES|
+auditoria_recibos|id|integer|NO|nextval('auditoria_recibos_id_seq'::regclass)
+auditoria_recibos|recibo_id|integer|NO|
+auditoria_recibos|acao|character varying|NO|
+auditoria_recibos|status|character varying|NO|
+auditoria_recibos|ip_address|character varying|YES|
+auditoria_recibos|observacoes|text|YES|
+auditoria_recibos|criado_em|timestamp without time zone|NO|CURRENT_TIMESTAMP
+avaliacao_resets|id|uuid|NO|gen_random_uuid()
+avaliacao_resets|avaliacao_id|integer|NO|
+avaliacao_resets|lote_id|integer|NO|
+avaliacao_resets|requested_by_user_id|integer|NO|
+avaliacao_resets|requested_by_role|character varying|NO|
+avaliacao_resets|reason|text|NO|
+avaliacao_resets|respostas_count|integer|YES|0
+avaliacao_resets|created_at|timestamp with time zone|NO|now()
+avaliacoes|id|integer|NO|nextval('avaliacoes_id_seq'::regclass)
+avaliacoes|funcionario_cpf|character|NO|
+avaliacoes|inicio|timestamp without time zone|YES|CURRENT_TIMESTAMP
+avaliacoes|envio|timestamp without time zone|YES|
+avaliacoes|status|character varying|YES|'iniciada'::character varying
+avaliacoes|grupo_atual|integer|YES|1
+avaliacoes|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+avaliacoes|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+avaliacoes|lote_id|integer|YES|
+avaliacoes|inativada_em|timestamp with time zone|YES|
+avaliacoes|motivo_inativacao|text|YES|
+avaliacoes|concluida_em|timestamp without time zone|YES|
+clinica_configuracoes|id|integer|NO|nextval('clinica_configuracoes_id_seq'::regclass)
+clinica_configuracoes|clinica_id|integer|NO|
+clinica_configuracoes|campos_customizados|jsonb|YES|'{}'::jsonb
+clinica_configuracoes|logo_url|text|YES|
+clinica_configuracoes|cor_primaria|text|YES|
+clinica_configuracoes|cor_secundaria|text|YES|
+clinica_configuracoes|template_relatorio_id|integer|YES|
+clinica_configuracoes|incluir_logo_relatorios|boolean|YES|true
+clinica_configuracoes|formato_data_preferencial|text|YES|'dd/MM/yyyy'::text
+clinica_configuracoes|criado_em|timestamp without time zone|YES|now()
+clinica_configuracoes|atualizado_em|timestamp without time zone|YES|now()
+clinica_configuracoes|atualizado_por_cpf|text|YES|
+clinicas|id|integer|NO|nextval('seq_contratantes_id'::regclass)
+clinicas|nome|character varying|NO|
+clinicas|cnpj|character|YES|
+clinicas|email|character varying|YES|
+clinicas|telefone|character varying|YES|
+clinicas|endereco|text|YES|
+clinicas|ativa|boolean|YES|true
+clinicas|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+clinicas|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+clinicas|nome_fantasia|text|YES|
+clinicas|razao_social|character varying|YES|
+clinicas|inscricao_estadual|character varying|YES|
+clinicas|cidade|character varying|YES|
+clinicas|estado|character varying|YES|
+clinicas|idioma_preferencial|USER-DEFINED|YES|'pt_BR'::idioma_suportado
+clinicas_empresas|clinica_id|integer|NO|
+clinicas_empresas|empresa_id|integer|NO|
+clinicas_empresas|criado_em|timestamp without time zone|YES|now()
+clinicas_senhas|id|integer|NO|nextval('clinicas_senhas_id_seq'::regclass)
+clinicas_senhas|clinica_id|integer|NO|
+clinicas_senhas|cpf|character varying|NO|
+clinicas_senhas|senha_hash|text|NO|
+clinicas_senhas|primeira_senha_alterada|boolean|YES|false
+clinicas_senhas|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+clinicas_senhas|updated_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+clinicas_senhas|criado_em|timestamp with time zone|YES|CURRENT_TIMESTAMP
+clinicas_senhas|atualizado_em|timestamp with time zone|YES|
+contratacao_personalizada|id|integer|NO|nextval('contratacao_personalizada_id_seq'::regclass)
+contratacao_personalizada|contratante_id|integer|YES|
+contratacao_personalizada|numero_funcionarios_estimado|integer|YES|
+contratacao_personalizada|valor_por_funcionario|numeric|YES|
+contratacao_personalizada|valor_total_estimado|numeric|YES|
+contratacao_personalizada|payment_link_token|character varying|YES|
+contratacao_personalizada|payment_link_expiracao|timestamp without time zone|YES|
+contratacao_personalizada|link_enviado_em|timestamp without time zone|YES|
+contratacao_personalizada|status|character varying|YES|'aguardando_valor'::character varying
+contratacao_personalizada|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+contratacao_personalizada|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+contratantes|id|integer|YES|
+contratantes|tipo|text|YES|
+contratantes|nome|character varying|YES|
+contratantes|cnpj|character varying|YES|
+contratantes|inscricao_estadual|character varying|YES|
+contratantes|email|character varying|YES|
+contratantes|telefone|character varying|YES|
+contratantes|endereco|text|YES|
+contratantes|cidade|character varying|YES|
+contratantes|estado|character varying|YES|
+contratantes|cep|character varying|YES|
+contratantes|responsavel_nome|character varying|YES|
+contratantes|responsavel_cpf|character varying|YES|
+contratantes|responsavel_cargo|character varying|YES|
+contratantes|responsavel_email|character varying|YES|
+contratantes|responsavel_celular|character varying|YES|
+contratantes|cartao_cnpj_path|character varying|YES|
+contratantes|contrato_social_path|character varying|YES|
+contratantes|doc_identificacao_path|character varying|YES|
+contratantes|status|USER-DEFINED|YES|
+contratantes|motivo_rejeicao|text|YES|
+contratantes|observacoes_reanalise|text|YES|
+contratantes|ativa|boolean|YES|
+contratantes|criado_em|timestamp without time zone|YES|
+contratantes|atualizado_em|timestamp without time zone|YES|
+contratantes|aprovado_em|timestamp without time zone|YES|
+contratantes|aprovado_por_cpf|character varying|YES|
+contratantes|pagamento_confirmado|boolean|YES|
+contratantes|numero_funcionarios_estimado|integer|YES|
+contratantes|plano_id|integer|YES|
+contratos|id|integer|NO|nextval('contratos_id_seq'::regclass)
+contratos|contratante_id|integer|NO|
+contratos|plano_id|integer|YES|
+contratos|numero_funcionarios|integer|YES|
+contratos|valor_total|numeric|YES|
+contratos|status|USER-DEFINED|NO|'pendente'::status_aprovacao_enum
+contratos|aceito|boolean|NO|false
+contratos|pagamento_confirmado|boolean|NO|false
+contratos|conteudo|text|YES|
+contratos|criado_em|timestamp without time zone|YES|now()
+contratos|atualizado_em|timestamp without time zone|YES|
+contratos|aceito_em|timestamp without time zone|YES|
+contratos|ip_aceite|character varying|YES|
+contratos|data_aceite|timestamp without time zone|YES|
+contratos|hash_contrato|character varying|YES|
+contratos|conteudo_gerado|text|YES|
+contratos|valor_personalizado|numeric|YES|
+contratos|payment_link_expiracao|timestamp without time zone|YES|
+contratos|link_enviado_em|timestamp without time zone|YES|
+contratos|data_pagamento|timestamp without time zone|YES|
+contratos|criado_por_cpf|character varying|YES|
+contratos|payment_link_token|character varying|YES|
+contratos_planos|id|integer|NO|nextval('contratos_planos_id_seq'::regclass)
+contratos_planos|plano_id|integer|YES|
+contratos_planos|clinica_id|integer|YES|
+contratos_planos|contratante_id|integer|YES|
+contratos_planos|tipo_contratante|character varying|NO|
+contratos_planos|valor_personalizado_por_funcionario|numeric|YES|
+contratos_planos|inicio_vigencia|date|NO|
+contratos_planos|fim_vigencia|date|YES|
+contratos_planos|ativo|boolean|YES|true
+contratos_planos|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+contratos_planos|updated_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+contratos_planos|valor_pago|numeric|YES|
+contratos_planos|tipo_pagamento|character varying|YES|
+contratos_planos|modalidade_pagamento|character varying|YES|
+contratos_planos|data_pagamento|timestamp without time zone|YES|
+contratos_planos|parcelas_json|jsonb|YES|
+emissao_queue|id|integer|NO|nextval('emissao_queue_id_seq'::regclass)
+emissao_queue|lote_id|integer|NO|
+emissao_queue|tentativas|integer|NO|0
+emissao_queue|ultimo_erro|text|YES|
+emissao_queue|proxima_execucao|timestamp with time zone|NO|now()
+emissao_queue|criado_em|timestamp with time zone|NO|now()
+emissao_queue|atualizado_em|timestamp with time zone|NO|now()
+empresas_clientes|id|integer|NO|nextval('empresas_clientes_id_seq'::regclass)
+empresas_clientes|nome|character varying|NO|
+empresas_clientes|cnpj|character varying|NO|
+empresas_clientes|email|character varying|YES|
+empresas_clientes|telefone|character varying|YES|
+empresas_clientes|endereco|text|YES|
+empresas_clientes|cidade|character varying|YES|
+empresas_clientes|estado|character varying|YES|
+empresas_clientes|cep|character varying|YES|
+empresas_clientes|ativa|boolean|YES|true
+empresas_clientes|clinica_id|integer|NO|
+empresas_clientes|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+empresas_clientes|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+empresas_clientes|contratante_id|integer|YES|
+empresas_clientes|representante_nome|text|YES|
+empresas_clientes|representante_fone|character varying|YES|
+empresas_clientes|representante_email|character varying|YES|
+empresas_clientes|responsavel_email|text|YES|
+entidades|id|integer|NO|nextval('seq_contratantes_id'::regclass)
+entidades|tipo|USER-DEFINED|NO|
+entidades|nome|character varying|NO|
+entidades|cnpj|character varying|NO|
+entidades|inscricao_estadual|character varying|YES|
+entidades|email|character varying|NO|
+entidades|telefone|character varying|NO|
+entidades|endereco|text|NO|
+entidades|cidade|character varying|NO|
+entidades|estado|character varying|NO|
+entidades|cep|character varying|NO|
+entidades|responsavel_nome|character varying|NO|
+entidades|responsavel_cpf|character varying|NO|
+entidades|responsavel_cargo|character varying|YES|
+entidades|responsavel_email|character varying|NO|
+entidades|responsavel_celular|character varying|NO|
+entidades|cartao_cnpj_path|character varying|YES|
+entidades|contrato_social_path|character varying|YES|
+entidades|doc_identificacao_path|character varying|YES|
+entidades|status|USER-DEFINED|YES|'pendente'::status_aprovacao_enum
+entidades|motivo_rejeicao|text|YES|
+entidades|observacoes_reanalise|text|YES|
+entidades|ativa|boolean|YES|true
+entidades|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+entidades|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+entidades|aprovado_em|timestamp without time zone|YES|
+entidades|aprovado_por_cpf|character varying|YES|
+entidades|pagamento_confirmado|boolean|YES|false
+entidades|numero_funcionarios_estimado|integer|YES|
+entidades|plano_id|integer|YES|
+entidades|data_primeiro_pagamento|timestamp without time zone|YES|
+entidades|data_liberacao_login|timestamp without time zone|YES|
+entidades|contrato_aceito|boolean|YES|false
+entidades_senhas|id|integer|NO|nextval('entidades_senhas_id_seq'::regclass)
+entidades_senhas|entidade_id|integer|NO|
+entidades_senhas|cpf|character varying|NO|
+entidades_senhas|senha_hash|text|NO|
+entidades_senhas|primeira_senha_alterada|boolean|YES|false
+entidades_senhas|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+entidades_senhas|updated_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+entidades_senhas|criado_em|timestamp with time zone|YES|CURRENT_TIMESTAMP
+entidades_senhas|atualizado_em|timestamp with time zone|YES|
+fila_emissao|id|integer|NO|nextval('fila_emissao_id_seq1'::regclass)
+fila_emissao|lote_id|integer|NO|
+fila_emissao|tentativas|integer|YES|0
+fila_emissao|max_tentativas|integer|YES|3
+fila_emissao|proxima_tentativa|timestamp without time zone|YES|now()
+fila_emissao|erro|text|YES|
+fila_emissao|criado_em|timestamp without time zone|YES|now()
+fila_emissao|atualizado_em|timestamp without time zone|YES|now()
+funcionarios|id|integer|NO|nextval('funcionarios_id_seq'::regclass)
+funcionarios|cpf|character|NO|
+funcionarios|nome|character varying|NO|
+funcionarios|setor|character varying|YES|
+funcionarios|funcao|character varying|YES|
+funcionarios|email|character varying|YES|
+funcionarios|senha_hash|text|NO|
+funcionarios|perfil|character varying|YES|'funcionario'::character varying
+funcionarios|ativo|boolean|YES|true
+funcionarios|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+funcionarios|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+funcionarios|clinica_id|integer|YES|
+funcionarios|empresa_id|integer|YES|
+funcionarios|matricula|character varying|YES|
+funcionarios|turno|character varying|YES|
+funcionarios|escala|character varying|YES|
+funcionarios|nivel_cargo|character varying|YES|
+funcionarios|ultima_avaliacao_id|integer|YES|
+funcionarios|ultima_avaliacao_data_conclusao|timestamp without time zone|YES|
+funcionarios|ultima_avaliacao_status|character varying|YES|
+funcionarios|ultimo_motivo_inativacao|text|YES|
+funcionarios|data_ultimo_lote|timestamp without time zone|YES|
+funcionarios|data_nascimento|date|YES|
+funcionarios|contratante_id|integer|YES|
+funcionarios|indice_avaliacao|integer|NO|0
+funcionarios|incluido_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+funcionarios|inativado_em|timestamp without time zone|YES|
+funcionarios|inativado_por|character varying|YES|
+funcionarios|ultimo_lote_codigo|character varying|YES|
+funcionarios_backup_gestores_final_400|id|integer|YES|
+funcionarios_backup_gestores_final_400|cpf|character|YES|
+funcionarios_backup_gestores_final_400|nome|character varying|YES|
+funcionarios_backup_gestores_final_400|setor|character varying|YES|
+funcionarios_backup_gestores_final_400|funcao|character varying|YES|
+funcionarios_backup_gestores_final_400|email|character varying|YES|
+funcionarios_backup_gestores_final_400|senha_hash|text|YES|
+funcionarios_backup_gestores_final_400|perfil|character varying|YES|
+funcionarios_backup_gestores_final_400|ativo|boolean|YES|
+funcionarios_backup_gestores_final_400|criado_em|timestamp without time zone|YES|
+funcionarios_backup_gestores_final_400|atualizado_em|timestamp without time zone|YES|
+funcionarios_backup_gestores_final_400|clinica_id|integer|YES|
+funcionarios_backup_gestores_final_400|empresa_id|integer|YES|
+funcionarios_backup_gestores_final_400|matricula|character varying|YES|
+funcionarios_backup_gestores_final_400|turno|character varying|YES|
+funcionarios_backup_gestores_final_400|escala|character varying|YES|
+funcionarios_backup_gestores_final_400|nivel_cargo|character varying|YES|
+funcionarios_backup_gestores_final_400|ultima_avaliacao_id|integer|YES|
+funcionarios_backup_gestores_final_400|ultima_avaliacao_data_conclusao|timestamp without time zone|YES|
+funcionarios_backup_gestores_final_400|ultima_avaliacao_status|character varying|YES|
+funcionarios_backup_gestores_final_400|ultimo_motivo_inativacao|text|YES|
+funcionarios_backup_gestores_final_400|data_ultimo_lote|timestamp without time zone|YES|
+funcionarios_backup_gestores_final_400|data_nascimento|date|YES|
+funcionarios_backup_gestores_final_400|contratante_id|integer|YES|
+funcionarios_backup_gestores_final_400|indice_avaliacao|integer|YES|
+funcionarios_backup_gestores_final_400|usuario_tipo|USER-DEFINED|YES|
+funcionarios_backup_gestores_final_400|incluido_em|timestamp without time zone|YES|
+funcionarios_backup_gestores_final_400|inativado_em|timestamp without time zone|YES|
+funcionarios_backup_gestores_final_400|inativado_por|character varying|YES|
+funcionarios_backup_gestores_final_400|ultimo_lote_codigo|character varying|YES|
+funcionarios_clinicas|id|integer|NO|nextval('funcionarios_clinicas_id_seq'::regclass)
+funcionarios_clinicas|funcionario_id|integer|NO|
+funcionarios_clinicas|empresa_id|integer|NO|
+funcionarios_clinicas|ativo|boolean|YES|true
+funcionarios_clinicas|data_vinculo|timestamp without time zone|YES|CURRENT_TIMESTAMP
+funcionarios_clinicas|data_desvinculo|timestamp without time zone|YES|
+funcionarios_entidades|id|integer|NO|nextval('funcionarios_entidades_id_seq'::regclass)
+funcionarios_entidades|funcionario_id|integer|NO|
+funcionarios_entidades|contratante_id|integer|NO|
+funcionarios_entidades|ativo|boolean|YES|true
+funcionarios_entidades|data_vinculo|timestamp without time zone|YES|CURRENT_TIMESTAMP
+funcionarios_entidades|data_desvinculo|timestamp without time zone|YES|
+gestores|cpf|character varying|YES|
+gestores|nome|character varying|YES|
+gestores|email|character varying|YES|
+gestores|usuario_tipo|USER-DEFINED|YES|
+gestores|tipo_gestor_descricao|text|YES|
+gestores|clinica_id|integer|YES|
+gestores|entidade_id|integer|YES|
+gestores|ativo|boolean|YES|
+gestores|criado_em|timestamp without time zone|YES|
+gestores|atualizado_em|timestamp without time zone|YES|
+laudo_arquivos_remotos|id|integer|NO|nextval('laudo_arquivos_remotos_id_seq'::regclass)
+laudo_arquivos_remotos|laudo_id|integer|NO|
+laudo_arquivos_remotos|provider|character varying|NO|
+laudo_arquivos_remotos|bucket|character varying|NO|
+laudo_arquivos_remotos|key|character varying|NO|
+laudo_arquivos_remotos|url|text|NO|
+laudo_arquivos_remotos|checksum|character varying|YES|
+laudo_arquivos_remotos|size_bytes|bigint|YES|
+laudo_arquivos_remotos|tipo|character varying|YES|'principal'::character varying
+laudo_arquivos_remotos|criado_por|character varying|YES|
+laudo_arquivos_remotos|criado_em|timestamp without time zone|YES|now()
+laudo_downloads|id|integer|NO|nextval('laudo_downloads_id_seq'::regclass)
+laudo_downloads|laudo_id|integer|NO|
+laudo_downloads|arquivo_remoto_id|integer|YES|
+laudo_downloads|usuario_cpf|character varying|YES|
+laudo_downloads|ip|character varying|YES|
+laudo_downloads|user_agent|text|YES|
+laudo_downloads|created_at|timestamp without time zone|YES|now()
+laudo_generation_jobs|id|bigint|NO|nextval('laudo_generation_jobs_id_seq'::regclass)
+laudo_generation_jobs|lote_id|integer|NO|
+laudo_generation_jobs|laudo_id|integer|YES|
+laudo_generation_jobs|status|character varying|NO|'queued'::character varying
+laudo_generation_jobs|attempts|smallint|NO|0
+laudo_generation_jobs|max_attempts|smallint|NO|5
+laudo_generation_jobs|last_error|text|YES|
+laudo_generation_jobs|payload|jsonb|YES|'{}'::jsonb
+laudo_generation_jobs|created_at|timestamp with time zone|NO|now()
+laudo_generation_jobs|updated_at|timestamp with time zone|NO|now()
+laudo_generation_jobs|processed_at|timestamp with time zone|YES|
+laudo_generation_jobs|finished_at|timestamp with time zone|YES|
+laudos|id|integer|NO|nextval('laudos_id_seq'::regclass)
+laudos|lote_id|integer|NO|
+laudos|emissor_cpf|character|YES|
+laudos|observacoes|text|YES|
+laudos|status|character varying|YES|'emitido'::status_laudo_enum
+laudos|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+laudos|emitido_em|timestamp without time zone|YES|
+laudos|enviado_em|timestamp without time zone|YES|
+laudos|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+laudos|hash_pdf|character varying|YES|
+laudos|job_id|bigint|YES|
+laudos|arquivo_remoto_provider|character varying|YES|
+laudos|arquivo_remoto_bucket|character varying|YES|
+laudos|arquivo_remoto_key|character varying|YES|
+laudos|arquivo_remoto_url|text|YES|
+laudos|relatorio_individual|bytea|YES|
+laudos|relatorio_lote|bytea|YES|
+laudos|relatorio_setor|bytea|YES|
+laudos|hash_relatorio_individual|character varying|YES|
+laudos|hash_relatorio_lote|character varying|YES|
+laudos|hash_relatorio_setor|character varying|YES|
+laudos|arquivo_remoto_uploaded_at|timestamp without time zone|YES|
+laudos|arquivo_remoto_etag|character varying|YES|
+laudos|arquivo_remoto_size|bigint|YES|
+logs_admin|id|integer|NO|nextval('logs_admin_id_seq'::regclass)
+logs_admin|admin_cpf|character varying|NO|
+logs_admin|acao|character varying|NO|
+logs_admin|entidade_tipo|character varying|YES|
+logs_admin|entidade_id|integer|YES|
+logs_admin|detalhes|jsonb|YES|
+logs_admin|ip_origem|character varying|YES|
+logs_admin|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+lote_id_allocator|last_id|bigint|NO|
+lotes_avaliacao|id|integer|NO|fn_next_lote_id()
+lotes_avaliacao|clinica_id|integer|YES|
+lotes_avaliacao|empresa_id|integer|YES|
+lotes_avaliacao|descricao|text|YES|
+lotes_avaliacao|tipo|character varying|YES|'completo'::character varying
+lotes_avaliacao|status|character varying|YES|'ativo'::status_lote_enum
+lotes_avaliacao|liberado_por|character|YES|
+lotes_avaliacao|liberado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+lotes_avaliacao|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+lotes_avaliacao|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+lotes_avaliacao|contratante_id|integer|YES|
+lotes_avaliacao|hash_pdf|character varying|YES|
+lotes_avaliacao|numero_ordem|integer|NO|1
+lotes_avaliacao|emitido_em|timestamp with time zone|YES|
+lotes_avaliacao|enviado_em|timestamp with time zone|YES|
+lotes_avaliacao|setor_id|integer|YES|
+lotes_avaliacao|laudo_enviado_em|timestamp without time zone|YES|
+lotes_avaliacao|finalizado_em|timestamp without time zone|YES|
+lotes_avaliacao|modo_emergencia|boolean|YES|false
+lotes_avaliacao|motivo_emergencia|text|YES|
+mfa_codes|id|integer|NO|nextval('mfa_codes_id_seq'::regclass)
+mfa_codes|cpf|character varying|NO|
+mfa_codes|code|character varying|NO|
+mfa_codes|expires_at|timestamp without time zone|NO|
+mfa_codes|used|boolean|YES|false
+mfa_codes|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+migration_guidelines|id|integer|NO|nextval('migration_guidelines_id_seq'::regclass)
+migration_guidelines|category|text|NO|
+migration_guidelines|guideline|text|NO|
+migration_guidelines|example|text|YES|
+migration_guidelines|created_at|timestamp without time zone|YES|now()
+notificacoes|id|integer|NO|nextval('notificacoes_id_seq'::regclass)
+notificacoes|tipo|USER-DEFINED|NO|
+notificacoes|prioridade|USER-DEFINED|YES|'media'::prioridade_notificacao
+notificacoes|destinatario_cpf|text|NO|
+notificacoes|destinatario_tipo|text|NO|
+notificacoes|titulo|text|NO|
+notificacoes|mensagem|text|NO|
+notificacoes|dados_contexto|jsonb|YES|
+notificacoes|link_acao|text|YES|
+notificacoes|botao_texto|text|YES|
+notificacoes|lida|boolean|YES|false
+notificacoes|data_leitura|timestamp without time zone|YES|
+notificacoes|arquivada|boolean|YES|false
+notificacoes|contratacao_personalizada_id|integer|YES|
+notificacoes|criado_em|timestamp without time zone|YES|now()
+notificacoes|expira_em|timestamp without time zone|YES|
+notificacoes|resolvida|boolean|NO|false
+notificacoes|data_resolucao|timestamp without time zone|YES|
+notificacoes|resolvido_por_cpf|character varying|YES|
+notificacoes|clinica_id|integer|YES|
+notificacoes|data_evento|timestamp without time zone|YES|
+notificacoes_admin|id|integer|NO|nextval('notificacoes_admin_id_seq'::regclass)
+notificacoes_admin|tipo|character varying|NO|
+notificacoes_admin|mensagem|text|NO|
+notificacoes_admin|lote_id|integer|YES|
+notificacoes_admin|visualizada|boolean|YES|false
+notificacoes_admin|criado_em|timestamp with time zone|YES|now()
+notificacoes_admin|titulo|character varying|NO|
+notificacoes_admin|contratante_id|integer|YES|
+notificacoes_admin|contrato_id|integer|YES|
+notificacoes_admin|pagamento_id|integer|YES|
+notificacoes_admin|dados_contexto|jsonb|YES|
+notificacoes_admin|lida|boolean|YES|false
+notificacoes_admin|resolvida|boolean|YES|false
+notificacoes_admin|data_leitura|timestamp without time zone|YES|
+notificacoes_admin|data_resolucao|timestamp without time zone|YES|
+notificacoes_admin|resolvido_por_cpf|character varying|YES|
+notificacoes_admin|observacoes_resolucao|text|YES|
+notificacoes_admin|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+notificacoes_traducoes|id|integer|NO|nextval('notificacoes_traducoes_id_seq'::regclass)
+notificacoes_traducoes|chave_traducao|text|NO|
+notificacoes_traducoes|idioma|USER-DEFINED|NO|
+notificacoes_traducoes|conteudo|text|NO|
+notificacoes_traducoes|categoria|text|NO|
+notificacoes_traducoes|criado_em|timestamp without time zone|YES|now()
+notificacoes_traducoes|atualizado_em|timestamp without time zone|YES|now()
+pagamentos|id|integer|NO|nextval('pagamentos_id_seq'::regclass)
+pagamentos|contratante_id|integer|NO|
+pagamentos|valor|numeric|NO|
+pagamentos|metodo|character varying|YES|
+pagamentos|status|character varying|YES|'pendente'::character varying
+pagamentos|plataforma_id|character varying|YES|
+pagamentos|plataforma_nome|character varying|YES|
+pagamentos|dados_adicionais|jsonb|YES|
+pagamentos|data_pagamento|timestamp without time zone|YES|
+pagamentos|data_confirmacao|timestamp without time zone|YES|
+pagamentos|comprovante_path|character varying|YES|
+pagamentos|observacoes|text|YES|
+pagamentos|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+pagamentos|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+pagamentos|numero_parcelas|integer|YES|1
+pagamentos|recibo_url|text|YES|
+pagamentos|recibo_numero|character varying|YES|
+pagamentos|detalhes_parcelas|jsonb|YES|
+pagamentos|numero_funcionarios|integer|YES|
+pagamentos|valor_por_funcionario|numeric|YES|
+pagamentos|contrato_id|integer|YES|
+pagamentos|idempotency_key|character varying|YES|
+pagamentos|external_transaction_id|character varying|YES|
+pagamentos|provider_event_id|character varying|YES|
+payment_links|id|integer|NO|nextval('payment_links_id_seq'::regclass)
+payment_links|token|character varying|NO|
+payment_links|contrato_id|integer|NO|
+payment_links|criado_por_cpf|character varying|YES|
+payment_links|usado|boolean|NO|false
+payment_links|usado_em|timestamp without time zone|YES|
+payment_links|expiracao|timestamp without time zone|YES|
+payment_links|criado_em|timestamp without time zone|NO|CURRENT_TIMESTAMP
+pdf_jobs|id|integer|NO|nextval('pdf_jobs_id_seq'::regclass)
+pdf_jobs|recibo_id|integer|NO|
+pdf_jobs|status|character varying|NO|'pending'::character varying
+pdf_jobs|attempts|integer|NO|0
+pdf_jobs|max_attempts|integer|NO|3
+pdf_jobs|error_message|text|YES|
+pdf_jobs|created_at|timestamp without time zone|NO|CURRENT_TIMESTAMP
+pdf_jobs|updated_at|timestamp without time zone|NO|CURRENT_TIMESTAMP
+pdf_jobs|processed_at|timestamp without time zone|YES|
+permissions|id|integer|NO|nextval('permissions_id_seq'::regclass)
+permissions|name|character varying|NO|
+permissions|resource|character varying|NO|
+permissions|action|character varying|NO|
+permissions|description|text|YES|
+permissions|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+planos|id|integer|NO|nextval('planos_id_seq'::regclass)
+planos|tipo|USER-DEFINED|NO|
+planos|nome|character varying|NO|
+planos|descricao|text|YES|
+planos|valor_por_funcionario|numeric|YES|
+planos|preco|numeric|YES|
+planos|limite_funcionarios|integer|YES|
+planos|ativo|boolean|YES|true
+planos|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+planos|updated_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+planos|caracteristicas|text|YES|
+policy_expression_backups|id|integer|NO|nextval('policy_expression_backups_id_seq'::regclass)
+policy_expression_backups|schema_name|text|NO|
+policy_expression_backups|table_name|text|NO|
+policy_expression_backups|policy_name|text|NO|
+policy_expression_backups|using_expr|text|YES|
+policy_expression_backups|with_check_expr|text|YES|
+policy_expression_backups|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+questao_condicoes|id|integer|NO|nextval('questao_condicoes_id_seq'::regclass)
+questao_condicoes|questao_id|integer|NO|
+questao_condicoes|questao_dependente|integer|YES|
+questao_condicoes|operador|character varying|YES|
+questao_condicoes|valor_condicao|integer|YES|
+questao_condicoes|categoria|character varying|YES|'core'::character varying
+questao_condicoes|ativo|boolean|YES|true
+questao_condicoes|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+recibos|id|integer|NO|nextval('recibos_id_seq'::regclass)
+recibos|contrato_id|integer|NO|
+recibos|pagamento_id|integer|NO|
+recibos|contratante_id|integer|YES|
+recibos|numero_recibo|character varying|NO|
+recibos|vigencia_inicio|date|NO|
+recibos|vigencia_fim|date|NO|
+recibos|numero_funcionarios_cobertos|integer|NO|
+recibos|valor_total_anual|numeric|NO|
+recibos|valor_por_funcionario|numeric|YES|
+recibos|forma_pagamento|character varying|NO|
+recibos|numero_parcelas|integer|YES|1
+recibos|valor_parcela|numeric|YES|
+recibos|detalhes_parcelas|jsonb|YES|
+recibos|descricao_pagamento|text|YES|
+recibos|conteudo_pdf_path|text|YES|
+recibos|conteudo_texto|text|YES|
+recibos|emitido_por_cpf|character varying|YES|
+recibos|ativo|boolean|YES|true
+recibos|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+recibos|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+recibos|pdf|bytea|YES|
+recibos|hash_pdf|character|YES|
+recibos|ip_emissao|inet|YES|
+recibos|emitido_por|character varying|YES|
+recibos|hash_incluso|boolean|NO|true
+recibos|backup_path|character varying|YES|
+recibos|parcela_numero|integer|YES|
+recibos|clinica_id|integer|YES|
+relatorio_templates|id|integer|NO|nextval('relatorio_templates_id_seq'::regclass)
+relatorio_templates|nome|character varying|NO|
+relatorio_templates|tipo|character varying|NO|
+relatorio_templates|descricao|text|YES|
+relatorio_templates|campos_incluidos|jsonb|YES|
+relatorio_templates|filtros_padrao|jsonb|YES|
+relatorio_templates|formato_saida|character varying|YES|'A4'::character varying
+relatorio_templates|ativo|boolean|YES|true
+relatorio_templates|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+relatorio_templates|updated_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+respostas|id|integer|NO|nextval('respostas_id_seq'::regclass)
+respostas|avaliacao_id|integer|NO|
+respostas|grupo|integer|NO|
+respostas|item|character varying|NO|
+respostas|valor|integer|NO|
+respostas|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+respostas|questao|integer|YES|
+resultados|id|integer|NO|nextval('resultados_id_seq'::regclass)
+resultados|avaliacao_id|integer|NO|
+resultados|grupo|integer|NO|
+resultados|dominio|character varying|NO|
+resultados|score|numeric|NO|
+resultados|categoria|character varying|YES|
+resultados|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+role_permissions|role_id|integer|NO|
+role_permissions|permission_id|integer|NO|
+role_permissions|granted_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+roles|id|integer|NO|nextval('roles_id_seq'::regclass)
+roles|name|character varying|NO|
+roles|display_name|character varying|NO|
+roles|description|text|YES|
+roles|hierarchy_level|integer|YES|0
+roles|active|boolean|YES|true
+roles|created_at|timestamp without time zone|YES|CURRENT_TIMESTAMP
+session_logs|id|bigint|NO|nextval('session_logs_id_seq'::regclass)
+session_logs|cpf|character varying|NO|
+session_logs|perfil|character varying|NO|
+session_logs|clinica_id|integer|YES|
+session_logs|empresa_id|integer|YES|
+session_logs|login_timestamp|timestamp without time zone|NO|CURRENT_TIMESTAMP
+session_logs|logout_timestamp|timestamp without time zone|YES|
+session_logs|ip_address|inet|YES|
+session_logs|user_agent|text|YES|
+session_logs|session_duration|interval|YES|
+session_logs|criado_em|timestamp without time zone|NO|CURRENT_TIMESTAMP
+suspicious_activity|user_cpf|character|YES|
+suspicious_activity|user_perfil|character varying|YES|
+suspicious_activity|resource|character varying|YES|
+suspicious_activity|action_count|bigint|YES|
+suspicious_activity|last_action|timestamp without time zone|YES|
+suspicious_activity|first_action|timestamp without time zone|YES|
+suspicious_activity|seconds_elapsed|numeric|YES|
+templates_contrato|id|integer|NO|nextval('templates_contrato_id_seq'::regclass)
+templates_contrato|nome|text|NO|
+templates_contrato|descricao|text|YES|
+templates_contrato|tipo_template|text|NO|
+templates_contrato|conteudo|text|NO|
+templates_contrato|ativo|boolean|YES|true
+templates_contrato|padrao|boolean|YES|false
+templates_contrato|versao|integer|YES|1
+templates_contrato|criado_em|timestamp without time zone|YES|now()
+templates_contrato|criado_por_cpf|text|YES|
+templates_contrato|atualizado_em|timestamp without time zone|YES|now()
+templates_contrato|atualizado_por_cpf|text|YES|
+templates_contrato|tags|ARRAY|YES|
+templates_contrato|metadata|jsonb|YES|'{}'::jsonb
+tokens_retomada_pagamento|id|integer|NO|nextval('tokens_retomada_pagamento_id_seq'::regclass)
+tokens_retomada_pagamento|token|character varying|NO|
+tokens_retomada_pagamento|contratante_id|integer|NO|
+tokens_retomada_pagamento|contrato_id|integer|NO|
+tokens_retomada_pagamento|usado|boolean|YES|false
+tokens_retomada_pagamento|usado_em|timestamp without time zone|YES|
+tokens_retomada_pagamento|expira_em|timestamp without time zone|NO|
+tokens_retomada_pagamento|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+usuarios|id|integer|NO|nextval('usuarios_id_seq'::regclass)
+usuarios|cpf|character varying|NO|
+usuarios|nome|character varying|NO|
+usuarios|email|character varying|YES|
+usuarios|clinica_id|integer|YES|
+usuarios|entidade_id|integer|YES|
+usuarios|ativo|boolean|YES|true
+usuarios|criado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+usuarios|atualizado_em|timestamp without time zone|YES|CURRENT_TIMESTAMP
+usuarios|tipo_usuario|USER-DEFINED|NO|
+usuarios|senha_hash|text|YES|
+v_fila_emissao|id|bigint|YES|
+v_fila_emissao|lote_id|integer|YES|
+v_fila_emissao|tentativas|integer|YES|
+v_fila_emissao|max_tentativas|integer|YES|
+v_fila_emissao|proxima_tentativa|timestamp without time zone|YES|
+v_fila_emissao|erro|text|YES|
+v_fila_emissao|criado_em|timestamp without time zone|YES|
+v_fila_emissao|atualizado_em|timestamp without time zone|YES|
+v_fila_emissao|solicitado_por|character varying|YES|
+v_fila_emissao|tipo_solicitante|character varying|YES|
+v_fila_emissao|solicitado_em|timestamp without time zone|YES|
+vw_analise_grupos_negativos|grupo|integer|YES|
+vw_analise_grupos_negativos|total_avaliacoes|bigint|YES|
+vw_analise_grupos_negativos|media_original|numeric|YES|
+vw_analise_grupos_negativos|media_ajustada|numeric|YES|
+vw_analise_grupos_negativos|desvio_padrao|numeric|YES|
+vw_analise_grupos_negativos|anomalias_detectadas|bigint|YES|
+vw_analise_grupos_negativos|scores_negativos|bigint|YES|
+vw_analise_grupos_negativos|scores_acima_limite|bigint|YES|
+vw_analise_grupos_negativos|tipos_anomalias|text|YES|
+vw_audit_trail_por_contratante|id|bigint|YES|
+vw_audit_trail_por_contratante|resource|character varying|YES|
+vw_audit_trail_por_contratante|action|character varying|YES|
+vw_audit_trail_por_contratante|resource_id|text|YES|
+vw_audit_trail_por_contratante|details|text|YES|
+vw_audit_trail_por_contratante|user_cpf|character|YES|
+vw_audit_trail_por_contratante|user_nome|character varying|YES|
+vw_audit_trail_por_contratante|clinica_id|integer|YES|
+vw_audit_trail_por_contratante|clinica_nome|character varying|YES|
+vw_audit_trail_por_contratante|contratante_id|integer|YES|
+vw_audit_trail_por_contratante|contratante_nome|character varying|YES|
+vw_audit_trail_por_contratante|tipo_contratante|USER-DEFINED|YES|
+vw_audit_trail_por_contratante|created_at|timestamp without time zone|YES|
+vw_audit_trail_por_contratante|ip_address|inet|YES|
+vw_auditoria_acessos_funcionarios|id|bigint|YES|
+vw_auditoria_acessos_funcionarios|cpf_anonimizado|character varying|YES|
+vw_auditoria_acessos_funcionarios|clinica_id|integer|YES|
+vw_auditoria_acessos_funcionarios|clinica_nome|character varying|YES|
+vw_auditoria_acessos_funcionarios|empresa_id|integer|YES|
+vw_auditoria_acessos_funcionarios|empresa_nome|character varying|YES|
+vw_auditoria_acessos_funcionarios|inclusao|timestamp without time zone|YES|
+vw_auditoria_acessos_funcionarios|inativacao|timestamp without time zone|YES|
+vw_auditoria_acessos_funcionarios|login_timestamp|timestamp without time zone|YES|
+vw_auditoria_acessos_funcionarios|logout_timestamp|timestamp without time zone|YES|
+vw_auditoria_acessos_funcionarios|session_duration|interval|YES|
+vw_auditoria_acessos_funcionarios|ip_address|inet|YES|
+vw_auditoria_acessos_rh|id|bigint|YES|
+vw_auditoria_acessos_rh|cpf|character varying|YES|
+vw_auditoria_acessos_rh|nome|character varying|YES|
+vw_auditoria_acessos_rh|clinica_id|integer|YES|
+vw_auditoria_acessos_rh|clinica_nome|character varying|YES|
+vw_auditoria_acessos_rh|login_timestamp|timestamp without time zone|YES|
+vw_auditoria_acessos_rh|logout_timestamp|timestamp without time zone|YES|
+vw_auditoria_acessos_rh|session_duration|interval|YES|
+vw_auditoria_acessos_rh|ip_address|inet|YES|
+vw_auditoria_acessos_rh|user_agent|text|YES|
+vw_comparativo_empresas|clinica_id|integer|YES|
+vw_comparativo_empresas|empresa_id|integer|YES|
+vw_comparativo_empresas|empresa_nome|character varying|YES|
+vw_comparativo_empresas|demandas_trabalho|numeric|YES|
+vw_comparativo_empresas|organizacao_conteudo|numeric|YES|
+vw_comparativo_empresas|relacoes_sociais|numeric|YES|
+vw_comparativo_empresas|lideranca|numeric|YES|
+vw_comparativo_empresas|valores_organizacionais|numeric|YES|
+vw_comparativo_empresas|saude_bem_estar|numeric|YES|
+vw_comparativo_empresas|score_geral|numeric|YES|
+vw_comparativo_empresas|funcionarios_responderam|bigint|YES|
+vw_comparativo_empresas|total_respostas|bigint|YES|
+vw_funcionarios_por_lote|cpf|character|YES|
+vw_funcionarios_por_lote|nome|character varying|YES|
+vw_funcionarios_por_lote|setor|character varying|YES|
+vw_funcionarios_por_lote|funcao|character varying|YES|
+vw_funcionarios_por_lote|matricula|character varying|YES|
+vw_funcionarios_por_lote|turno|character varying|YES|
+vw_funcionarios_por_lote|escala|character varying|YES|
+vw_funcionarios_por_lote|empresa_id|integer|YES|
+vw_funcionarios_por_lote|clinica_id|integer|YES|
+vw_funcionarios_por_lote|avaliacao_id|integer|YES|
+vw_funcionarios_por_lote|status_avaliacao|character varying|YES|
+vw_funcionarios_por_lote|data_conclusao|timestamp without time zone|YES|
+vw_funcionarios_por_lote|data_inicio|timestamp without time zone|YES|
+vw_funcionarios_por_lote|lote_id|integer|YES|
+vw_notificacoes_admin_pendentes|id|integer|YES|
+vw_notificacoes_admin_pendentes|tipo|character varying|YES|
+vw_notificacoes_admin_pendentes|titulo|character varying|YES|
+vw_notificacoes_admin_pendentes|mensagem|text|YES|
+vw_notificacoes_admin_pendentes|contratante_nome|character varying|YES|
+vw_notificacoes_admin_pendentes|contratante_tipo|USER-DEFINED|YES|
+vw_notificacoes_admin_pendentes|contratante_email|character varying|YES|
+vw_notificacoes_admin_pendentes|numero_contrato|integer|YES|
+vw_notificacoes_admin_pendentes|criado_em|timestamp with time zone|YES|
+vw_notificacoes_admin_pendentes|dias_pendente|numeric|YES|
+vw_notificacoes_admin_pendentes|dados_contexto|jsonb|YES|
+vw_notificacoes_nao_lidas|destinatario_cpf|text|YES|
+vw_notificacoes_nao_lidas|destinatario_tipo|text|YES|
+vw_notificacoes_nao_lidas|total_nao_lidas|bigint|YES|
+vw_notificacoes_nao_lidas|criticas|bigint|YES|
+vw_notificacoes_nao_lidas|altas|bigint|YES|
+vw_notificacoes_nao_lidas|ultima_notificacao|timestamp without time zone|YES|
+vw_recibos_completos|id|integer|YES|
+vw_recibos_completos|numero_recibo|character varying|YES|
+vw_recibos_completos|vigencia_inicio|date|YES|
+vw_recibos_completos|vigencia_fim|date|YES|
+vw_recibos_completos|numero_funcionarios_cobertos|integer|YES|
+vw_recibos_completos|valor_total_anual|numeric|YES|
+vw_recibos_completos|valor_por_funcionario|numeric|YES|
+vw_recibos_completos|forma_pagamento|character varying|YES|
+vw_recibos_completos|numero_parcelas|integer|YES|
+vw_recibos_completos|valor_parcela|numeric|YES|
+vw_recibos_completos|descricao_pagamento|text|YES|
+vw_recibos_completos|criado_em|timestamp without time zone|YES|
+vw_recibos_completos|contrato_id|integer|YES|
+vw_recibos_completos|contrato_conteudo|text|YES|
+vw_recibos_completos|contrato_data_aceite|timestamp without time zone|YES|
+vw_recibos_completos|contratante_nome|character varying|YES|
+vw_recibos_completos|contratante_cnpj|character varying|YES|
+vw_recibos_completos|contratante_email|character varying|YES|
+vw_recibos_completos|contratante_tipo|USER-DEFINED|YES|
+vw_recibos_completos|plano_nome|character varying|YES|
+vw_recibos_completos|plano_tipo|USER-DEFINED|YES|
+vw_recibos_completos|pagamento_metodo|character varying|YES|
+vw_recibos_completos|data_pagamento|timestamp without time zone|YES|
+vw_recibos_completos|pagamento_status|character varying|YES|
+(853 linhas)

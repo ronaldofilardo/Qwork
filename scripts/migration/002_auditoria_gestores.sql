@@ -55,7 +55,7 @@ SELECT
 FROM usuarios 
 WHERE tipo_usuario IN ('gestor', 'rh');
 
--- 3. GESTORES ENTIDADE: contratantes sem usuario vinculado
+-- 3. GESTORES ENTIDADE: tomadores sem usuario vinculado
 SELECT 
     c.id AS contratante_id,
     c.tipo,

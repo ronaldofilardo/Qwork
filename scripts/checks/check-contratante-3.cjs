@@ -7,17 +7,17 @@ const { query } = require('../../lib/db');
     console.log('='.repeat(70));
 
     const r = await query(
-      'SELECT id, responsavel_cpf, responsavel_nome, tipo, ativa, pagamento_confirmado FROM contratantes WHERE id = 3'
+      'SELECT id, responsavel_cpf, responsavel_nome, tipo, ativa, pagamento_confirmado FROM tomadores WHERE id = 3'
     );
 
     if (r.rows.length === 0) {
       console.log('❌ Contratante 3 NÃO EXISTE no banco');
 
-      // Listar contratantes disponíveis
+      // Listar tomadores disponíveis
       const todos = await query(
-        'SELECT id, responsavel_nome, tipo FROM contratantes ORDER BY id'
+        'SELECT id, responsavel_nome, tipo FROM tomadores ORDER BY id'
       );
-      console.log('\n📋 Contratantes disponíveis:');
+      console.log('\n📋 tomadores disponíveis:');
       todos.rows.forEach((c) =>
         console.log(`   - ID ${c.id}: ${c.responsavel_nome} (${c.tipo})`)
       );

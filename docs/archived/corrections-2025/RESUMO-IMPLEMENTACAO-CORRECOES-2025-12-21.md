@@ -25,7 +25,7 @@
 
 ### 3. Validações de Número de Funcionários por Plano
 
-**Arquivo**: `components/modals/ModalCadastroContratante.tsx`
+**Arquivo**: `components/modals/ModalCadastrotomador.tsx`
 
 - Validação condicional: Básico (1-99), Intermediário (100-500), Premium (100-200)
 - Mensagens de erro específicas para limites mínimos e máximos
@@ -52,7 +52,7 @@
 **Arquivos**:
 
 - `components/entidade/MeuPlanoSection.tsx` (novo)
-- `app/api/contratante/meu-plano/route.ts` (novo)
+- `app/api/tomador/meu-plano/route.ts` (novo)
 
 **Funcionalidades**:
 
@@ -65,7 +65,7 @@
 
 ### 6. API para Download de Contrato em PDF
 
-**Arquivo**: `app/api/contratante/contrato-pdf/route.ts` (novo)
+**Arquivo**: `app/api/tomador/contrato-pdf/route.ts` (novo)
 
 **Funcionalidades**:
 

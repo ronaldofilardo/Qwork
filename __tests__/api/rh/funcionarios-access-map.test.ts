@@ -10,18 +10,18 @@ jest.mock('@/lib/session', () => ({
 }));
 const sessionMod = require('@/lib/session');
 
-describe('POST /api/rh/funcionarios - mapear clinica via contratante', () => {
+describe('POST /api/rh/funcionarios - mapear clinica via tomador', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deve criar funcionário quando RH tem clinica mapeada via contratante', async () => {
+  it('deve criar funcionário quando RH tem clinica mapeada via tomador', async () => {
     sessionMod.getSession.mockReturnValue({
       cpf: '28785010049',
       nome: 'iepqiepoip poiopipoi',
       perfil: 'rh',
       clinica_id: 56,
-      contratante_id: 56,
+      tomador_id: 56,
     });
 
     // Sequência de queries esperadas:
@@ -33,7 +33,7 @@ describe('POST /api/rh/funcionarios - mapear clinica via contratante', () => {
       rows: [{ clinica_id: 20 }],
       rowCount: 1,
     });
-    // 3) requireRHWithEmpresaAccess fallback -> SELECT id, ativa FROM clinicas WHERE contratante_id = $1
+    // 3) requireRHWithEmpresaAccess fallback -> SELECT id, ativa FROM clinicas WHERE tomador_id = $1
     mockQuery.mockResolvedValueOnce({
       rows: [{ id: 20, ativa: true }],
       rowCount: 1,

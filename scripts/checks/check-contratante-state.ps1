@@ -58,7 +58,7 @@ SELECT
     aprovado_em, aprovado_por_cpf,
     data_liberacao_login, data_primeiro_pagamento,
     criado_em
-FROM contratantes 
+FROM tomadores 
 WHERE id = $ContratanteId;
 "@
 
@@ -184,16 +184,16 @@ if ($func) {
 }
 Write-Host ""
 
-# 5. VÍNCULO EM CONTRATANTES_FUNCIONARIOS
+# 5. VÍNCULO EM tomadores_FUNCIONARIOS
 if ($func) {
-    Write-Host "🔗 5. VÍNCULO EM CONTRATANTES_FUNCIONARIOS" -ForegroundColor Yellow
+    Write-Host "🔗 5. VÍNCULO EM tomadores_FUNCIONARIOS" -ForegroundColor Yellow
     Write-Host "─────────────────────────────────────────────────" -ForegroundColor Gray
     
     $fid = ($func -split '\|')[0]
     
     $queryVinc = @"
 SELECT funcionario_id, contratante_id, tipo_contratante, vinculo_ativo, criado_em
-FROM contratantes_funcionarios
+FROM tomadores_funcionarios
 WHERE funcionario_id = $fid AND contratante_id = $ContratanteId;
 "@
     
@@ -253,7 +253,7 @@ Write-Host "──────────────────────�
 $queryAudit = @"
 SELECT action, usuario_cpf, created_at, details
 FROM audit_logs
-WHERE resource = 'contratantes' AND resource_id = '$ContratanteId'
+WHERE resource = 'tomadores' AND resource_id = '$ContratanteId'
 ORDER BY created_at DESC
 LIMIT 5;
 "@

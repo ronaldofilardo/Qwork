@@ -9,12 +9,12 @@ const mockConsoleError = jest
   .spyOn(console, 'error')
   .mockImplementation(() => {});
 
-// Mock do ModalCadastroContratante
-jest.mock('@/components/modals/ModalCadastroContratante', () => ({
+// Mock do ModalCadastrotomador
+jest.mock('@/components/modals/ModalCadastrotomador', () => ({
   __esModule: true,
   default: ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) =>
     isOpen ? (
-      <div data-testid="modal-cadastro-contratante">Modal Aberto</div>
+      <div data-testid="modal-cadastro-tomador">Modal Aberto</div>
     ) : null,
 }));
 
@@ -62,7 +62,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: mockClinicas,
+          tomadores: mockClinicas,
           total: 1,
         }),
     } as Response);
@@ -81,7 +81,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: [],
+          tomadores: [],
           total: 0,
         }),
     } as Response);
@@ -120,7 +120,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: mockClinicas,
+          tomadores: mockClinicas,
           total: 1,
         }),
     } as Response);
@@ -162,7 +162,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: mockClinicas,
+          tomadores: mockClinicas,
           total: 1,
         }),
     } as Response);
@@ -173,7 +173,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: [],
+          tomadores: [],
           total: 0,
         }),
     } as Response);
@@ -199,7 +199,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: [],
+          tomadores: [],
           total: 0,
         }),
     } as Response);
@@ -273,7 +273,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: mockClinicas,
+          tomadores: mockClinicas,
           total: 1,
         }),
     } as Response);
@@ -284,7 +284,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: [],
+          tomadores: [],
           total: 0,
         }),
     } as Response);
@@ -336,7 +336,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: mockClinicas,
+          tomadores: mockClinicas,
           total: 1,
         }),
     } as Response);
@@ -347,7 +347,7 @@ describe('ClinicasContent', () => {
       json: () =>
         Promise.resolve({
           success: true,
-          contratantes: [],
+          tomadores: [],
           total: 0,
         }),
     } as Response);

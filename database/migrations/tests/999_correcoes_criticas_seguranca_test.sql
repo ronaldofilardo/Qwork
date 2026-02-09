@@ -43,7 +43,7 @@ CREATE TRIGGER trg_prevenir_placeholder_senha
 -- ============================================================================
 \echo '2. Aplicando FORCE RLS...'
 
-ALTER TABLE contratantes FORCE ROW LEVEL SECURITY;
+ALTER TABLE tomadores FORCE ROW LEVEL SECURITY;
 ALTER TABLE entidades_senhas FORCE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios FORCE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes FORCE ROW LEVEL SECURITY;
@@ -190,7 +190,7 @@ BEGIN
     FROM pg_tables pt
     JOIN pg_class pc ON pc.relname = pt.tablename
     WHERE pt.schemaname = 'public'
-    AND pt.tablename IN ('contratantes', 'funcionarios', 'avaliacoes');
+    AND pt.tablename IN ('tomadores', 'funcionarios', 'avaliacoes');
     
     -- Verificar senhas placeholder
     RETURN QUERY

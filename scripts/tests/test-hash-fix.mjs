@@ -3,14 +3,14 @@ import { criarContaResponsavel, query } from './lib/db.js';
 async function testHashStorage() {
   try {
     // Primeiro, vamos verificar se há algum contratante existente para testar
-    const contratantes = await query('SELECT * FROM contratantes LIMIT 1');
+    const tomadores = await query('SELECT * FROM tomadores LIMIT 1');
 
-    if (contratantes.rows.length === 0) {
+    if (tomadores.rows.length === 0) {
       console.log('Nenhum contratante encontrado para teste');
       return;
     }
 
-    const contratante = contratantes.rows[0];
+    const contratante = tomadores.rows[0];
     console.log(
       'Testando com contratante:',
       contratante.id,

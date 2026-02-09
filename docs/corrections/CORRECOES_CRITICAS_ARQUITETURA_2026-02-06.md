@@ -9,20 +9,20 @@ Corrigir estrutura de banco de dados para implementar a **arquitetura correta** 
 ### Estrutura INCORRETA (Antes)
 
 ```
-contratantes (tipo: 'clinica' ou 'entidade')
-├─ contratantes_senhas (UMA tabela para AMBOS os tipos) ❌
+tomadores (tipo: 'clinica' ou 'entidade')
+├─ tomadores_senhas (UMA tabela para AMBOS os tipos) ❌
 │
 funcionarios
 ├─ clinica_id (FK direta) ❌
 ├─ empresa_id (FK direta) ❌
-├─ contratante_id (FK direta) ❌
+├─ tomador_id (FK direta) ❌
 └─ Relacionamentos diretos violam arquitetura
 ```
 
 **Problemas:**
 
-1. ✗ Tabela `contratantes_senhas` mistura RH (clínica) e Gestores (entidade)
-2. ✗ Funcionários com FKs diretas (`clinica_id`, `empresa_id`, `contratante_id`)
+1. ✗ Tabela `tomadores_senhas` mistura RH (clínica) e Gestores (entidade)
+2. ✗ Funcionários com FKs diretas (`clinica_id`, `empresa_id`, `tomador_id`)
 3. ✗ Não existe `clinicas_senhas` separada
 4. ✗ Não existe `entidades_senhas` separada
 5. ✗ Queries de login misturavam tipos diferentes
@@ -32,13 +32,13 @@ funcionarios
 ### Estrutura CORRETA (Depois)
 
 ```
-contratantes (tipo: 'clinica' ou 'entidade')
+tomadores (tipo: 'clinica' ou 'entidade')
 ├─ entidades_senhas (APENAS gestores de entidade) ✓
 ├─ clinicas_senhas (APENAS RH de clínica) ✓
 │
 funcionarios (SEM FKs diretas) ✓
 ├─ funcionarios_entidades (tabela de relacionamento) ✓
-│  └─ funcionario_id -> entidade_id (FK para contratantes onde tipo='entidade')
+│  └─ funcionario_id -> entidade_id (FK para tomadores onde tipo='entidade')
 │
 ├─ funcionarios_clinicas (tabela de relacionamento) ✓
    └─ funcionario_id -> empresa_id -> clinica_id
@@ -49,7 +49,7 @@ funcionarios (SEM FKs diretas) ✓
 #### 1. **Tabelas de Senhas Separadas**
 
 - **`entidades_senhas`**: Senhas de **gestores de entidade**
-  - FK para `contratantes` (tipo='entidade')
+  - FK para `tomadores` (tipo='entidade')
   - Trigger valida tipo='entidade'
 - **`clinicas_senhas`**: Senhas de **RH de clínica**
   - FK para `clinicas`
@@ -59,10 +59,10 @@ funcionarios (SEM FKs diretas) ✓
 
 - **`funcionarios_entidades`**:
   - `funcionario_id` -> `funcionarios.id`
-  - `contratante_id` -> `contratantes.id` (onde tipo='entidade')
+  - `tomador_id` -> `tomadores.id` (onde tipo='entidade')
   - Campos: `ativo`, `data_vinculo`, `data_desvinculo`
   - Trigger valida tipo='entidade'
-  - **IMPORTANTE:** `contratante_id` aponta para `contratantes` mas representa **entidades** (tipo='entidade')
+  - **IMPORTANTE:** `tomador_id` aponta para `tomadores` mas representa **entidades** (tipo='entidade')
 
 - **`funcionarios_clinicas`**:
   - `funcionario_id` -> `funcionarios.id`
@@ -75,7 +75,7 @@ funcionarios (SEM FKs diretas) ✓
 
 - ~~`clinica_id`~~
 - ~~`empresa_id`~~
-- ~~`contratante_id`~~
+- ~~`tomador_id`~~
 
 **Colunas MANTIDAS:**
 
@@ -91,7 +91,7 @@ funcionarios (SEM FKs diretas) ✓
 
 ```sql
 CREATE TABLE entidades_senhas (
-    id, contratante_id, cpf, senha_hash,
+    id, tomador_id, cpf, senha_hash,
     primeira_senha_alterada, criado_em, atualizado_em
 );
 
@@ -106,15 +106,15 @@ CREATE TABLE clinicas_senhas (
 ```sql
 -- Migrar senhas de ENTIDADES
 INSERT INTO entidades_senhas
-SELECT * FROM contratantes_senhas cs
-JOIN contratantes c ON c.id = cs.contratante_id
+SELECT * FROM tomadores_senhas cs
+JOIN tomadores c ON c.id = cs.tomador_id
 WHERE c.tipo = 'entidade';
 
 -- Migrar senhas de CLÍNICAS (RH)
 INSERT INTO clinicas_senhas
-SELECT cs.*, cl.id FROM contratantes_senhas cs
-JOIN contratantes c ON c.id = cs.contratante_id
-JOIN clinicas cl ON cl.contratante_id = c.id
+SELECT cs.*, cl.id FROM tomadores_senhas cs
+JOIN tomadores c ON c.id = cs.tomador_id
+JOIN clinicas cl ON cl.tomador_id = c.id
 WHERE c.tipo = 'clinica';
 ```
 
@@ -122,7 +122,7 @@ WHERE c.tipo = 'clinica';
 
 ```sql
 CREATE TABLE funcionarios_entidades (
-    id, funcionario_id, contratante_id,
+    id, funcionario_id, tomador_id,
     ativo, data_vinculo, data_desvinculo
 );
 
@@ -137,9 +137,9 @@ CREATE TABLE funcionarios_clinicas (
 ```sql
 -- Funcionários de ENTIDADES
 INSERT INTO funcionarios_entidades
-SELECT id, contratante_id, ...
+SELECT id, tomador_id, ...
 FROM funcionarios
-WHERE contratante_id IS NOT NULL AND clinica_id IS NULL;
+WHERE tomador_id IS NOT NULL AND clinica_id IS NULL;
 
 -- Funcionários de CLÍNICAS
 INSERT INTO funcionarios_clinicas
@@ -162,7 +162,7 @@ DROP POLICY resultados_rh_select ON resultados;
 -- Remover colunas
 ALTER TABLE funcionarios DROP COLUMN clinica_id CASCADE;
 ALTER TABLE funcionarios DROP COLUMN empresa_id CASCADE;
-ALTER TABLE funcionarios DROP COLUMN contratante_id CASCADE;
+ALTER TABLE funcionarios DROP COLUMN tomador_id CASCADE;
 ```
 
 **Parte 6: View Helper**
@@ -171,7 +171,7 @@ ALTER TABLE funcionarios DROP COLUMN contratante_id CASCADE;
 CREATE VIEW vw_funcionarios_completo AS
 SELECT
     f.*,
-    fe.contratante_id as entidade_id,
+    fe.tomador_id as entidade_id,
     fc.empresa_id,
     ec.clinica_id,
     CASE
@@ -193,7 +193,7 @@ Recriadas as views dropadas com nova estrutura:
 3. `vw_comparativo_empresas`
 4. `funcionarios_operacionais`
 5. `gestores`
-6. `v_contratantes_stats`
+6. `v_tomadores_stats`
 
 ## 💻 CÓDIGO ATUALIZADO
 
@@ -213,7 +213,7 @@ if (perfil === 'gestor') {
   // Gestores de ENTIDADE
   const result = await query(
     `SELECT es.cpf FROM entidades_senhas es
-     JOIN contratantes c ON c.id = es.contratante_id
+     JOIN tomadores c ON c.id = es.tomador_id
      WHERE c.tipo = 'entidade'`
   );
 } else {
@@ -232,22 +232,22 @@ if (perfil === 'gestor') {
 ```typescript
 // ANTES (INCORRETO)
 await query(
-  `INSERT INTO funcionarios (..., contratante_id, ...)
+  `INSERT INTO funcionarios (..., tomador_id, ...)
    VALUES (..., $8, ...)`,
-  [..., entidadeId, ...]  // ❌ contratante_id não existe mais
+  [..., entidadeId, ...]  // ❌ tomador_id não existe mais
 );
 
 // DEPOIS (CORRETO)
 // 1. Inserir funcionário
 const result = await query(
-  `INSERT INTO funcionarios (...) -- SEM contratante_id
+  `INSERT INTO funcionarios (...) -- SEM tomador_id
    VALUES (...) RETURNING id`,
   [...]
 );
 
 // 2. Criar relacionamento
 await query(
-  `INSERT INTO funcionarios_entidades (funcionario_id, contratante_id)
+  `INSERT INTO funcionarios_entidades (funcionario_id, tomador_id)
    VALUES ($1, $2)`,
   [result.rows[0].id, entidadeId]
 );
@@ -304,7 +304,7 @@ WHERE table_name IN (
 SELECT column_name
 FROM information_schema.columns
 WHERE table_name = 'funcionarios'
-AND column_name IN ('clinica_id', 'empresa_id', 'contratante_id');
+AND column_name IN ('clinica_id', 'empresa_id', 'tomador_id');
 ```
 
 **Resultado:** ✅ Nenhuma coluna (0 linhas)
@@ -328,10 +328,10 @@ SELECT COUNT(*) FROM funcionarios_clinicas;  -- ✅ 5 funcionários
 ## 📋 CHECKLIST DE CONCLUSÃO
 
 - [x] Criar tabelas `entidades_senhas` e `clinicas_senhas`
-- [x] Migrar dados de `contratantes_senhas` para novas tabelas
+- [x] Migrar dados de `tomadores_senhas` para novas tabelas
 - [x] Criar tabelas de relacionamento `funcionarios_entidades` e `funcionarios_clinicas`
 - [x] Migrar relacionamentos existentes
-- [x] Remover colunas `clinica_id`, `empresa_id`, `contratante_id` de `funcionarios`
+- [x] Remover colunas `clinica_id`, `empresa_id`, `tomador_id` de `funcionarios`
 - [x] Atualizar `lib/db-gestor.ts`
 - [x] Atualizar `app/api/entidade/funcionarios/import/route.ts`
 - [x] Atualizar `app/api/rh/funcionarios/import/route.ts`
@@ -352,10 +352,10 @@ SELECT COUNT(*) FROM funcionarios_clinicas;  -- ✅ 5 funcionários
 
 ```sql
 -- Funcionários de ENTIDADE
-SELECT f.*, fe.contratante_id
+SELECT f.*, fe.tomador_id
 FROM funcionarios f
 JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
-WHERE fe.contratante_id = $1 AND fe.ativo = true;
+WHERE fe.tomador_id = $1 AND fe.ativo = true;
 
 -- Funcionários de CLÍNICA (via empresa)
 SELECT f.*, fc.empresa_id, ec.clinica_id
@@ -387,7 +387,7 @@ WHERE ec.clinica_id = $1 AND fc.ativo = true;
 **Verificações executadas (2026-02-06):**
 
 - ✅ Triggers `sync_funcionario_clinica`: NÃO EXISTEM - nada a remover
-- ✅ Tabela `contratantes_funcionarios`: NÃO EXISTE - nada a remover
+- ✅ Tabela `tomadores_funcionarios`: NÃO EXISTE - nada a remover
 - ✅ Views com colunas antigas: NENHUMA - todas recriadas corretamente
 
 **📊 Relatório completo:** Ver [ANALISE_COMPARATIVA_MIGRACAO_500.md](ANALISE_COMPARATIVA_MIGRACAO_500.md)

@@ -1,5 +1,5 @@
 -- Adds audit columns to entidades_senhas and a minimal trigger
--- to synchronize status from contratacao_personalizada -> contratantes
+-- to synchronize status from contratacao_personalizada -> tomadores
 BEGIN;
 
 ALTER TABLE entidades_senhas
@@ -15,7 +15,7 @@ RETURNS trigger AS $$
 BEGIN
   IF (TG_OP = 'INSERT' OR TG_OP = 'UPDATE') THEN
     IF NEW.status IS NOT NULL AND NEW.status = 'valor_definido' THEN
-      UPDATE contratantes SET status = 'valor_definido' WHERE id = NEW.contratante_id;
+      UPDATE tomadores SET status = 'valor_definido' WHERE id = NEW.contratante_id;
     END IF;
   END IF;
   RETURN NEW;

@@ -1,5 +1,5 @@
 /**
- * Testes E2E completos para o fluxo de cadastro de contratantes
+ * Testes E2E completos para o fluxo de cadastro de tomadors
  * Plano Personalizado (Admin Define Valores)
  *
  * Atualizado: 20/Janeiro/2026
@@ -7,11 +7,11 @@
  */
 
 import { query, transaction } from '@/lib/db';
-import { ativarContratante } from '@/lib/contratante-activation';
+import { ativartomador } from '@/lib/entidade-activation';
 import { randomBytes } from 'crypto';
 
-describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
-  let contratanteId: number;
+describe('E2E: Cadastro tomador - Plano Personalizado', () => {
+  let tomadorId: number;
   let contratoId: number;
   let contratacaoPersonalizadaId: number;
   let planoPersonalizadoId: number;
@@ -36,15 +36,15 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
     // Limpar dados que possam existir
     await query(
       `DELETE FROM contratacao_personalizada 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)`,
       [mockCNPJ]
     );
     await query(
       `DELETE FROM contratos 
-       WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)`,
+       WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)`,
       [mockCNPJ]
     );
-    await query(`DELETE FROM contratantes WHERE cnpj = $1`, [mockCNPJ]);
+    await query(`DELETE FROM tomadors WHERE cnpj = $1`, [mockCNPJ]);
     await query(`DELETE FROM funcionarios WHERE cpf = $1`, [
       mockResponsavelCPF,
     ]);
@@ -52,15 +52,15 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
 
   afterAll(async () => {
     // Limpar dados de teste
-    if (contratanteId) {
+    if (tomadorId) {
       await query(
-        `DELETE FROM contratacao_personalizada WHERE contratante_id = $1`,
-        [contratanteId]
+        `DELETE FROM contratacao_personalizada WHERE tomador_id = $1`,
+        [tomadorId]
       );
-      await query(`DELETE FROM contratos WHERE contratante_id = $1`, [
-        contratanteId,
+      await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
+        tomadorId,
       ]);
-      await query(`DELETE FROM contratantes WHERE id = $1`, [contratanteId]);
+      await query(`DELETE FROM tomadors WHERE id = $1`, [tomadorId]);
     }
     await query(`DELETE FROM funcionarios WHERE cpf = $1`, [
       mockResponsavelCPF,
@@ -68,9 +68,9 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
   });
 
   describe('1. Cadastro Inicial com Plano Personalizado', () => {
-    it('deve criar contratante com status pendente', async () => {
+    it('deve criar tomador com status pendente', async () => {
       const insertResult = await query(
-        `INSERT INTO contratantes (
+        `INSERT INTO tomadors (
           tipo, nome, cnpj, email, telefone,
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -86,21 +86,21 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
         [mockCNPJ, mockEmail, mockResponsavelCPF, planoPersonalizadoId]
       );
 
-      contratanteId = insertResult.rows[0].id;
-      expect(contratanteId).toBeDefined();
+      tomadorId = insertResult.rows[0].id;
+      expect(tomadorId).toBeDefined();
       expect(insertResult.rows[0].status).toBe('pendente');
     });
 
     it('deve criar registro em contratacao_personalizada', async () => {
       const insertResult = await query(
         `INSERT INTO contratacao_personalizada (
-          contratante_id, numero_funcionarios_estimado,
+          tomador_id, numero_funcionarios_estimado,
           status, criado_em, atualizado_em
         ) VALUES (
           $1, 120, 'aguardando_valor_admin',
           CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
         ) RETURNING id, status`,
-        [contratanteId]
+        [tomadorId]
       );
 
       contratacaoPersonalizadaId = insertResult.rows[0].id;
@@ -108,25 +108,25 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
       expect(insertResult.rows[0].status).toBe('aguardando_valor_admin');
     });
 
-    it('deve validar campos obrigatórios do contratante', async () => {
+    it('deve validar campos obrigatórios do tomador', async () => {
       const result = await query(
         `SELECT 
           tipo, nome, cnpj, email, responsavel_cpf, 
           status, plano_id, numero_funcionarios_estimado,
           ativa, pagamento_confirmado
-        FROM contratantes WHERE id = $1`,
-        [contratanteId]
+        FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
 
-      const contratante = result.rows[0];
-      expect(contratante.tipo).toBe('clinica');
-      expect(contratante.nome).toBe('Clínica Teste Personalizado');
-      expect(contratante.cnpj).toBe(mockCNPJ);
-      expect(contratante.status).toBe('pendente');
-      expect(contratante.plano_id).toBe(planoPersonalizadoId);
-      expect(contratante.numero_funcionarios_estimado).toBe(120);
-      expect(contratante.ativa).toBe(false);
-      expect(contratante.pagamento_confirmado).toBe(false);
+      const tomador = result.rows[0];
+      expect(tomador.tipo).toBe('clinica');
+      expect(tomador.nome).toBe('Clínica Teste Personalizado');
+      expect(tomador.cnpj).toBe(mockCNPJ);
+      expect(tomador.status).toBe('pendente');
+      expect(tomador.plano_id).toBe(planoPersonalizadoId);
+      expect(tomador.numero_funcionarios_estimado).toBe(120);
+      expect(tomador.ativa).toBe(false);
+      expect(tomador.pagamento_confirmado).toBe(false);
     });
   });
 
@@ -196,31 +196,31 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
       expect(expiracaoDate.getTime()).toBeGreaterThan(Date.now());
     });
 
-    it('deve atualizar status do contratante para aguardando_pagamento', async () => {
+    it('deve atualizar status do tomador para aguardando_pagamento', async () => {
       await query(
-        `UPDATE contratantes 
+        `UPDATE tomadors 
          SET status = 'aguardando_pagamento'
          WHERE id = $1`,
-        [contratanteId]
+        [tomadorId]
       );
 
       const result = await query(
-        `SELECT status FROM contratantes WHERE id = $1`,
-        [contratanteId]
+        `SELECT status FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
 
       expect(result.rows[0].status).toBe('aguardando_pagamento');
     });
   });
 
-  describe('3. Contratante Aceita Proposta', () => {
+  describe('3. tomador Aceita Proposta', () => {
     it('deve validar token antes de aceitar proposta', async () => {
       const result = await query(
         `SELECT 
           cp.id, cp.status, cp.payment_link_expiracao,
           cp.valor_total_estimado, c.nome
          FROM contratacao_personalizada cp
-         JOIN contratantes c ON cp.contratante_id = c.id
+         JOIN tomadors c ON cp.tomador_id = c.id
          WHERE cp.payment_link_token = $1`,
         [paymentToken]
       );
@@ -237,7 +237,7 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
     it('deve criar contrato ao aceitar proposta', async () => {
       const contratacaoResult = await query(
         `SELECT 
-          contratante_id, numero_funcionarios_estimado,
+          tomador_id, numero_funcionarios_estimado,
           valor_total_estimado, valor_por_funcionario
          FROM contratacao_personalizada WHERE id = $1`,
         [contratacaoPersonalizadaId]
@@ -247,7 +247,7 @@ describe('E2E: Cadastro Contratante - Plano Personalizado', () => {
 
       const conteudoContrato = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS - PLANO PERSONALIZADO
 
-CONTRATANTE: Clínica Teste Personalizado
+tomador: Clínica Teste Personalizado
 CNPJ: ${mockCNPJ}
 RESPONSÁVEL: Maria Santos
 
@@ -258,11 +258,11 @@ VALOR TOTAL: R$ ${parseFloat(contratacao.valor_total_estimado).toFixed(2)}
 
 [Cláusulas do contrato padrão serão inseridas aqui]
 
-Status: Aguardando Aceite do Contratante`;
+Status: Aguardando Aceite do tomador`;
 
       const contratoInsert = await query(
         `INSERT INTO contratos (
-          contratante_id, plano_id,
+          tomador_id, plano_id,
           numero_funcionarios, valor_total,
           status, aceito, conteudo, conteudo_gerado
         ) VALUES (
@@ -270,7 +270,7 @@ Status: Aguardando Aceite do Contratante`;
           'aguardando_aceite', false, $5, $5
         ) RETURNING id, status`,
         [
-          contratacao.contratante_id,
+          contratacao.tomador_id,
           planoPersonalizadoId,
           contratacao.numero_funcionarios_estimado,
           contratacao.valor_total_estimado,
@@ -327,13 +327,13 @@ Status: Aguardando Aceite do Contratante`;
   describe('5. Confirmação de Pagamento', () => {
     it('deve simular confirmação de pagamento via webhook', async () => {
       await transaction(async (txClient) => {
-        // Atualizar contratante
+        // Atualizar tomador
         await txClient.query(
-          `UPDATE contratantes 
+          `UPDATE tomadors 
            SET pagamento_confirmado = true,
                data_primeiro_pagamento = NOW()
            WHERE id = $1`,
-          [contratanteId]
+          [tomadorId]
         );
 
         // Atualizar contrato
@@ -355,10 +355,10 @@ Status: Aguardando Aceite do Contratante`;
         );
       });
 
-      const contratanteResult = await query(
+      const tomadorResult = await query(
         `SELECT pagamento_confirmado, data_primeiro_pagamento 
-         FROM contratantes WHERE id = $1`,
-        [contratanteId]
+         FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
 
       const contratoResult = await query(
@@ -371,39 +371,39 @@ Status: Aguardando Aceite do Contratante`;
         [contratacaoPersonalizadaId]
       );
 
-      expect(contratanteResult.rows[0].pagamento_confirmado).toBe(true);
-      expect(contratanteResult.rows[0].data_primeiro_pagamento).toBeDefined();
+      expect(tomadorResult.rows[0].pagamento_confirmado).toBe(true);
+      expect(tomadorResult.rows[0].data_primeiro_pagamento).toBeDefined();
       expect(contratoResult.rows[0].status).toBe('pago');
       expect(contratoResult.rows[0].data_pagamento).toBeDefined();
       expect(contratacaoResult.rows[0].status).toBe('pago');
     });
   });
 
-  describe('6. Ativação do Contratante', () => {
-    it('deve ativar contratante após pagamento confirmado', async () => {
-      const result = await ativarContratante({
-        contratante_id: contratanteId,
+  describe('6. Ativação do tomador', () => {
+    it('deve ativar tomador após pagamento confirmado', async () => {
+      const result = await ativartomador({
+        tomador_id: tomadorId,
         motivo:
           'Pagamento confirmado via webhook PIX (Plano Personalizado) - Teste E2E',
       });
 
       expect(result.success).toBe(true);
-      expect(result.contratante_id).toBe(contratanteId);
+      expect(result.tomador_id).toBe(tomadorId);
       expect(result.message).toContain('ativado com sucesso');
     });
 
-    it('deve validar status ativo do contratante', async () => {
+    it('deve validar status ativo do tomador', async () => {
       const result = await query(
         `SELECT ativa, status, data_liberacao_login, aprovado_em
-         FROM contratantes WHERE id = $1`,
-        [contratanteId]
+         FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
 
-      const contratante = result.rows[0];
-      expect(contratante.ativa).toBe(true);
-      expect(contratante.status).toBe('aprovado');
-      expect(contratante.data_liberacao_login).toBeDefined();
-      expect(contratante.aprovado_em).toBeDefined();
+      const tomador = result.rows[0];
+      expect(tomador.ativa).toBe(true);
+      expect(tomador.status).toBe('aprovado');
+      expect(tomador.data_liberacao_login).toBeDefined();
+      expect(tomador.aprovado_em).toBeDefined();
     });
   });
 
@@ -411,8 +411,8 @@ Status: Aguardando Aceite do Contratante`;
     it('deve criar conta do responsável automaticamente', async () => {
       const result = await query(
         `SELECT * FROM funcionarios 
-         WHERE cpf = $1 AND contratante_id = $2`,
-        [mockResponsavelCPF, contratanteId]
+         WHERE cpf = $1 AND tomador_id = $2`,
+        [mockResponsavelCPF, tomadorId]
       );
 
       expect(result.rows.length).toBe(1);
@@ -441,14 +441,14 @@ Status: Aguardando Aceite do Contratante`;
 
   describe('8. Fluxo Completo Integrado', () => {
     it('deve validar todo o fluxo personalizado completo', async () => {
-      // Verificar contratante
-      const contratante = await query(
-        `SELECT * FROM contratantes WHERE id = $1`,
-        [contratanteId]
+      // Verificar tomador
+      const tomador = await query(
+        `SELECT * FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
-      expect(contratante.rows[0].ativa).toBe(true);
-      expect(contratante.rows[0].pagamento_confirmado).toBe(true);
-      expect(contratante.rows[0].status).toBe('aprovado');
+      expect(tomador.rows[0].ativa).toBe(true);
+      expect(tomador.rows[0].pagamento_confirmado).toBe(true);
+      expect(tomador.rows[0].status).toBe('aprovado');
 
       // Verificar contratacao_personalizada
       const contratacao = await query(
@@ -519,10 +519,10 @@ Status: Aguardando Aceite do Contratante`;
     it('deve registrar todas as mudanças de status em audit_logs', async () => {
       const result = await query(
         `SELECT * FROM audit_logs 
-         WHERE resource = 'contratantes' 
+         WHERE resource = 'tomadors' 
          AND resource_id = $1
          ORDER BY timestamp DESC`,
-        [contratanteId]
+        [tomadorId]
       );
 
       expect(result.rows.length).toBeGreaterThan(0);

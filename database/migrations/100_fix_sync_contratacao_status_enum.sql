@@ -3,7 +3,7 @@
 -- Descrição: Remove tentativa de sincronizar status 'valor_definido' que não existe em status_aprovacao_enum
 --           A função estava causando erro "operador não existe: text = status_aprovacao_enum"
 
--- A função tentava setar status='valor_definido' em contratantes, mas esse valor não existe no enum
+-- A função tentava setar status='valor_definido' em tomadores, mas esse valor não existe no enum
 -- Simplificamos para não fazer nada - podemos implementar lógica correta mais tarde
 
 CREATE OR REPLACE FUNCTION public.sync_contratacao_status_to_contratante() RETURNS trigger

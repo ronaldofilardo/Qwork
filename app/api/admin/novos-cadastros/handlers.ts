@@ -36,24 +36,20 @@ export async function handleGetNovosCadastros(
         c.*, 
         p.tipo as plano_tipo, 
         p.nome as plano_nome,
-        cp.id as contratacao_personalizada_id,
-        cp.numero_funcionarios_estimado,
-        cp.valor_por_funcionario,
-        cp.valor_total_estimado,
-        cp.status as contratacao_status,
-      -- Indica se requer aprovação manual: quando já existe pagamento confirmado e contrato aceito, não requer aprovação manual
-      CASE WHEN c.pagamento_confirmado = true AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.contratante_id = c.id AND ct.aceito = true) THEN false ELSE true END AS requer_aprovacao_manual
+        NULL::INTEGER as contratacao_personalizada_id,
+        NULL::INTEGER as numero_funcionarios_estimado,
+        NULL::DECIMAL as valor_por_funcionario,
+        NULL::DECIMAL as valor_total_estimado,
+        NULL::VARCHAR as contratacao_status,
+        CASE WHEN c.pagamento_confirmado = true THEN false ELSE true END AS requer_aprovacao_manual
       FROM entidades c
       LEFT JOIN planos p ON c.plano_id = p.id
-      LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
       WHERE c.status = $1
     `;
     const params: string[] = [input.status];
 
-    if (input.tipo) {
-      queryText += ' AND c.tipo = $2';
-      params.push(input.tipo as string);
-    }
+    // Nota: tipo não existe em entidades - é determinado pela presença em tabelas clinicas
+    // A arquitetura segregada usa tabelas separadas para clínicas e entidades
 
     queryText += ' ORDER BY c.criado_em DESC';
 
@@ -61,44 +57,35 @@ export async function handleGetNovosCadastros(
     return {
       success: true,
       total: result.rowCount || result.rows.length,
-      contratantes: result.rows,
+      tomadores: result.rows,
     };
   }
 
   // Sem filtro de status, usar função específica mas com JOIN
-  let queryText = `
+  const queryText = `
     SELECT 
       c.*, 
       p.tipo as plano_tipo, 
       p.nome as plano_nome,
-      cp.id as contratacao_personalizada_id,
-      cp.numero_funcionarios_estimado,
-      cp.valor_por_funcionario,
-      cp.valor_total_estimado,
-      cp.status as contratacao_status,
+      NULL::INTEGER as contratacao_personalizada_id,
+      NULL::INTEGER as numero_funcionarios_estimado,
+      NULL::DECIMAL as valor_por_funcionario,
+      NULL::DECIMAL as valor_total_estimado,
+      NULL::VARCHAR as contratacao_status,
       -- Indica se requer aprovação manual: quando já existe pagamento confirmado e contrato aceito, não requer aprovação manual
-      CASE WHEN c.pagamento_confirmado = true AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.contratante_id = c.id AND ct.aceito = true) THEN false ELSE true END AS requer_aprovacao_manual
+      CASE WHEN c.pagamento_confirmado = true THEN false ELSE true END AS requer_aprovacao_manual
     FROM entidades c
     LEFT JOIN planos p ON c.plano_id = p.id
-    LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
     WHERE c.status IN ('pendente', 'aguardando_pagamento', 'em_reanalise')
   `;
 
-  if (input.tipo) {
-    queryText += ' AND c.tipo = $1';
-    const result = await query(queryText, [input.tipo]);
-    return {
-      success: true,
-      total: result.rowCount || result.rows.length,
-      contratantes: result.rows,
-    };
-  }
+  // Nota: tipo não existe em entidades - a arquitetura segregada usa tabelas separadas
 
   const result = await query(queryText);
   return {
     success: true,
     total: result.rowCount || result.rows.length,
-    contratantes: result.rows,
+    tomadores: result.rows,
   };
 }
 
@@ -273,7 +260,7 @@ export async function handleAprovarPersonalizado(
          valor_total_estimado = $3, 
          status = 'valor_definido', 
          atualizado_em = CURRENT_TIMESTAMP 
-     WHERE contratante_id = $4`,
+     WHERE tomador_id = $4`,
     [
       input.valor_por_funcionario,
       input.numero_funcionarios,
@@ -292,14 +279,14 @@ export async function handleAprovarPersonalizado(
      SET payment_link_token = $1, 
          payment_link_expiracao = $2, 
          link_enviado_em = CURRENT_TIMESTAMP 
-     WHERE contratante_id = $3`,
+     WHERE tomador_id = $3`,
     [token, expiracao, input.entidade_id]
   );
 
   // Criar contrato em contratos
   const contratoRes = await query<{ id: number }>(
     `INSERT INTO contratos (
-      contratante_id, plano_id, numero_funcionarios, valor_total, status, criado_em
+      tomador_id, plano_id, numero_funcionarios, valor_total, status, criado_em
     ) VALUES ($1, $2, $3, $4, 'aguardando_pagamento', CURRENT_TIMESTAMP) RETURNING id`,
     [
       input.entidade_id,
@@ -334,7 +321,7 @@ export async function handleAprovarPersonalizado(
 
   const linkPagamento = createPaymentLink(token);
 
-  const contratanteResp = {
+  const tomadorResp = {
     id: entidade.id,
     nome: entidade.nome,
     valor_por_funcionario: input.valor_por_funcionario,
@@ -349,8 +336,8 @@ export async function handleAprovarPersonalizado(
   return {
     success: true,
     message: 'Valores definidos e link gerado com sucesso',
-    entidade: contratanteResp,
-    contratante: contratanteResp,
+    entidade: tomadorResp,
+    tomador: tomadorResp,
   };
 }
 
@@ -381,8 +368,8 @@ export async function handleRegenerarLink(
   const contratacaoRes = await query(
     `SELECT cp.*, c.nome, c.id as entidade_id
      FROM contratacao_personalizada cp
-     JOIN entidades c ON cp.contratante_id = c.id
-     WHERE cp.contratante_id = $1
+     JOIN entidades c ON cp.entidade_id = c.id
+     WHERE cp.entidade_id = $1
        AND cp.status = 'valor_definido'`,
     [input.entidade_id]
   );
@@ -411,7 +398,7 @@ export async function handleRegenerarLink(
      SET payment_link_token = $1, 
          payment_link_expiracao = $2, 
          link_enviado_em = CURRENT_TIMESTAMP 
-     WHERE contratante_id = $3`,
+     WHERE tomador_id = $3`,
     [token, expiracao, input.entidade_id]
   );
 
@@ -435,7 +422,7 @@ export async function handleRegenerarLink(
 
   const linkPagamento = createPaymentLink(token);
 
-  const contratanteResp = {
+  const tomadorResp = {
     id: contratacao.entidade_id,
     nome: contratacao.nome,
     link_pagamento: linkPagamento,
@@ -445,8 +432,8 @@ export async function handleRegenerarLink(
   return {
     success: true,
     message: 'Link regenerado com sucesso',
-    entidade: contratanteResp,
-    contratante: contratanteResp,
+    entidade: tomadorResp,
+    tomador: tomadorResp,
   };
 }
 

@@ -42,10 +42,10 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
     expect(body.error).toBe('Acesso negado');
   });
 
-  it('deve rejeitar se lote nao pertence ao contratante', async () => {
+  it('deve rejeitar se lote nao pertence ao entidade', async () => {
     mockRequireAuth.mockResolvedValue({
       perfil: 'gestor',
-      contratante_id: 99,
+      entidade_id: 99,
       cpf: '22222222222',
     } as unknown);
 
@@ -70,7 +70,7 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
   it('deve resetar com sucesso', async () => {
     mockRequireAuth.mockResolvedValue({
       perfil: 'gestor',
-      contratante_id: 99,
+      entidade_id: 99,
       cpf: '22222222222',
       nome: 'Gestor',
     } as unknown);
@@ -80,7 +80,7 @@ describe('/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset', () => {
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.current_user_cpf
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as QueryResult<unknown>) // SET LOCAL app.current_user_perfil
       .mockResolvedValueOnce({
-        rows: [{ id: 1, empresa_id: 2, status: 'ativo', contratante_id: 99 }],
+        rows: [{ id: 1, empresa_id: 2, status: 'ativo', tomador_id: 99 }],
         rowCount: 1,
       } as QueryResult<unknown>) // loteCheck
       .mockResolvedValueOnce({

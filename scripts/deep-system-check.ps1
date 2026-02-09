@@ -276,7 +276,7 @@ $report += @"
 
 1. **Remover triggers duplicados em produção**
    - Identificados: trg_recalc_lote_on_avaliacao_change (3x)
-   - tr_contratantes_sync_status_ativa (2x)
+   - tr_tomadores_sync_status_ativa (2x)
 
 2. **Sincronizar funções**:
    - Aplicar migrations ou criar funções faltantes em dev
