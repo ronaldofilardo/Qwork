@@ -135,7 +135,6 @@ export async function POST(request: Request) {
     let senhaHash: string | null = null;
     let tomadorId: number | null = null;
     let tomadorAtivo = true;
-    let pagamentoConfirmado = true;
 
     if (foundInFuncionarios) {
       // Usuário vindo da tabela `funcionarios`: senha já disponível na linha
@@ -145,12 +144,11 @@ export async function POST(request: Request) {
       senhaHash = usuario.senha_hash;
       tomadorId = usuario.entidade_id || usuario.clinica_id || null;
       tomadorAtivo = usuario.ativo ?? true;
-      pagamentoConfirmado = true;
     } else if (usuario.tipo_usuario === 'gestor') {
       // Buscar senha em entidades_senhas
       console.log(`[LOGIN] Buscando senha de gestor em entidades_senhas...`);
       const senhaResult = await query(
-        `SELECT es.senha_hash, e.id, e.ativa, e.pagamento_confirmado
+        `SELECT es.senha_hash, e.id, e.ativa
          FROM entidades_senhas es
          JOIN entidades e ON e.id = es.entidade_id
          WHERE es.cpf = $1 AND es.entidade_id = $2`,
@@ -170,12 +168,11 @@ export async function POST(request: Request) {
       senhaHash = senhaResult.rows[0].senha_hash;
       tomadorId = senhaResult.rows[0].id;
       tomadorAtivo = senhaResult.rows[0].ativa;
-      pagamentoConfirmado = senhaResult.rows[0].pagamento_confirmado;
     } else if (usuario.tipo_usuario === 'rh') {
       // Buscar senha em clinicas_senhas
       console.log(`[LOGIN] Buscando senha de RH em clinicas_senhas...`);
       const senhaResult = await query(
-        `SELECT cs.senha_hash, c.id as clinica_id, c.ativa, c.pagamento_confirmado
+        `SELECT cs.senha_hash, c.id as clinica_id, c.ativa
          FROM clinicas_senhas cs
          JOIN clinicas c ON c.id = cs.clinica_id
          WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
@@ -198,9 +195,8 @@ export async function POST(request: Request) {
         if (uRes.rows.length > 0 && uRes.rows[0].senha_hash) {
           senhaHash = uRes.rows[0].senha_hash;
           tomadorId = uRes.rows[0].clinica_id || usuario.clinica_id;
-          // tentar inferir ativo/pagamento como true para evitar bloqueio indevido
+          // tentar inferir ativo como true para evitar bloqueio indevido
           tomadorAtivo = true;
-          pagamentoConfirmado = true;
         } else {
           console.error(
             `[LOGIN] Senha não encontrada para RH (CPF ${cpf}) em nenhuma fonte`
@@ -214,7 +210,6 @@ export async function POST(request: Request) {
         senhaHash = senhaResult.rows[0].senha_hash;
         tomadorId = senhaResult.rows[0].clinica_id;
         tomadorAtivo = senhaResult.rows[0].ativa;
-        pagamentoConfirmado = senhaResult.rows[0].pagamento_confirmado;
       }
     } else if (
       usuario.tipo_usuario === 'admin' ||
@@ -274,43 +269,6 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Tomador inativo. Entre em contato com o administrador.' },
         { status: 403 }
-      );
-    }
-
-    // 🟢 FLUXO DE SKIP PAYMENT: Se SKIP_PAYMENT_PHASE=true, permitir login mesmo sem pagamento
-    // Via variável de ambiente, setamos pagamentoConfirmado=true no banco durante pagamento
-    // Para fluxo skip, aceitamos false e deixamos user acessar
-    const skipPaymentPhase =
-      process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
-
-    if (!skipPaymentPhase && cpf !== '00000000000' && !pagamentoConfirmado) {
-      try {
-        await registrarAuditoria({
-          entidade_tipo: 'login',
-          entidade_id: tomadorId,
-          acao: 'login_falha',
-          usuario_cpf: cpf,
-          metadados: { motivo: 'pagamento_nao_confirmado' },
-          ...contextoRequisicao,
-        });
-      } catch (err) {
-        console.warn(
-          '[LOGIN] Falha ao registrar auditoria (pagamento_nao_confirmado):',
-          err
-        );
-      }
-
-      return NextResponse.json(
-        {
-          error:
-            'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
-          tomador_id: tomadorId,
-        },
-        { status: 403 }
-      );
-    } else if (skipPaymentPhase) {
-      console.log(
-        `[LOGIN] Pulando validação de pagamento (SKIP_PAYMENT_PHASE=true)`
       );
     }
 

@@ -125,23 +125,15 @@ export async function POST(request: NextRequest) {
 
       const contratoRow = contratoRes.rows[0];
 
-      // Se já aceito, retornar sucesso com url do simulador (se pagamento está ativado)
+      // Se já aceito, retornar sucesso imediato (acesso já liberado)
       if (contratoRow.aceito) {
-        const skipPaymentPhase =
-          process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
-
-        const response: any = {
-          success: true,
-          message: 'Contrato já aceito',
-        };
-
-        // Só incluir URL do simulador se pagamento está ativado (skipPaymentPhase = false)
-        if (!skipPaymentPhase) {
-          const simuladorUrl = `/pagamento/simulador?tomador_id=${contratoRow.contratante_id}&plano_id=${contratoRow.plano_id}&numero_funcionarios=${contratoRow.numero_funcionarios}&contrato_id=${contratoRow.id}`;
-          response.simulador_url = simuladorUrl;
-        }
-
-        return NextResponse.json(response, { status: 200 });
+        return NextResponse.json(
+          {
+            success: true,
+            message: 'Contrato já aceito',
+          },
+          { status: 200 }
+        );
       }
 
       // Marcar contrato como aceito (sem geração de hash — contrato padrão unificado)
@@ -151,128 +143,102 @@ export async function POST(request: NextRequest) {
       );
 
       const updated = updateRes.rows[0];
-
-      // Verificar feature flag para pular fase de pagamento
-      const skipPaymentPhase =
-        process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
-
-      let loginLiberadoImediatamente = false;
-      let simuladorUrl = `/pagamento/simulador?tomador_id=${updated.contratante_id}&plano_id=${updated.plano_id}&numero_funcionarios=${updated.numero_funcionarios}&contrato_id=${updated.id}`;
       let boasVindasUrl: string | null = null;
       let credenciais: { login: string; senha: string } | null = null;
 
-      if (skipPaymentPhase) {
-        try {
-          // Buscar dados completos do tomador usando tipo_tomador do contrato
-          // Isso garante que buscamos na tabela CORRETA com base em onde foi originalmente inserido
-          const tabelaTomador: 'entidades' | 'clinicas' =
-            updated.tipo_tomador === 'clinica' ? 'clinicas' : 'entidades';
+      try {
+        // Buscar dados completos do tomador usando tipo_tomador do contrato
+        const tabelaTomador: 'entidades' | 'clinicas' =
+          updated.tipo_tomador === 'clinica' ? 'clinicas' : 'entidades';
 
-          const tomadorRes = await query(
-            `SELECT * FROM ${tabelaTomador} WHERE id = $1`,
-            [updated.contratante_id]
-          );
+        const tomadorRes = await query(
+          `SELECT * FROM ${tabelaTomador} WHERE id = $1`,
+          [updated.contratante_id]
+        );
 
-          if (tomadorRes.rows.length === 0) {
-            console.error(
-              `[CONTRATOS] Tomador ${updated.contratante_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
-            );
-            throw new Error(
-              `Tomador não encontrado na tabela ${tabelaTomador}`
-            );
-          }
-
-          const tomadorData = tomadorRes.rows[0];
-
-          // Garantir que tipo esteja definido com base na tabela
-          if (!tomadorData.tipo) {
-            tomadorData.tipo =
-              tabelaTomador === 'clinicas' ? 'clinica' : 'entidade';
-          }
-
-          console.info(
-            JSON.stringify({
-              event: 'contrato_aceito_tomador_localizado',
-              tomador_id: updated.contratante_id,
-              tabela: tabelaTomador,
-              tipo: tomadorData.tipo,
-              tipo_tomador_contrato: updated.tipo_tomador,
-            })
-          );
-
-          // Criar conta responsável (libera login)
-          await criarContaResponsavel(tomadorData);
-
-          // Atualizar tomador para marcar como ativo
-          const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
-          await query(updateTableQuery, [updated.contratante_id]);
-
-          // Calcular credenciais (mesmo que em criarContaResponsavel)
-          let cnpj = tomadorData.cnpj;
-          if (!cnpj) {
-            const cnpjRes = await query(
-              `SELECT cnpj FROM ${tabelaTomador} WHERE id = $1`,
-              [tomadorData.id]
-            );
-            if (cnpjRes.rows.length > 0) {
-              cnpj = cnpjRes.rows[0].cnpj;
-            }
-          }
-
-          if (cnpj) {
-            const cleanCnpj = cnpj.replace(/[./-]/g, '');
-            const loginCredencial = tomadorData.responsavel_cpf || cleanCnpj;
-            const senhaCredencial = cleanCnpj.slice(-6);
-
-            credenciais = {
-              login: loginCredencial,
-              senha: senhaCredencial,
-            };
-
-            // Criar URL para boas-vindas
-            boasVindasUrl = `/boas-vindas?tomador_id=${updated.contratante_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
-          }
-
-          // Log de auditoria
-          console.info(
-            JSON.stringify({
-              event: 'contrato_aceito_com_liberacao_login_automatica',
-              contrato_id: updated.id,
-              tomador_id: updated.contratante_id,
-              ip_aceite: clientIp,
-              skip_payment_phase: true,
-              timestamp: new Date().toISOString(),
-            })
-          );
-
-          loginLiberadoImediatamente = true;
-          simuladorUrl = null; // Não usar simulador se pagamento foi pulado
-        } catch (err) {
+        if (tomadorRes.rows.length === 0) {
           console.error(
-            '[CONTRATOS] Erro ao liberar login automaticamente após aceite:',
-            err
+            `[CONTRATOS] Tomador ${updated.contratante_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
           );
-          // Se skipPaymentPhase está ativado mas houve erro, retornar erro
-          return NextResponse.json(
-            {
-              success: false,
-              error:
-                'Erro ao liberar acesso automático após aceite do contrato. Por favor, tente novamente ou entre em contato com suporte.',
-              details: err instanceof Error ? err.message : String(err),
-            },
-            { status: 500 }
+          throw new Error(
+            `Tomador não encontrado na tabela ${tabelaTomador}`
           );
         }
-      } else {
-        // Log normal quando pagamento está ativado
+
+        const tomadorData = tomadorRes.rows[0];
+
+        // Garantir que tipo esteja definido com base na tabela
+        if (!tomadorData.tipo) {
+          tomadorData.tipo =
+            tabelaTomador === 'clinicas' ? 'clinica' : 'entidade';
+        }
+
         console.info(
           JSON.stringify({
-            event: 'contrato_aceito',
+            event: 'contrato_aceito_criando_conta',
+            tomador_id: updated.contratante_id,
+            tabela: tabelaTomador,
+            tipo: tomadorData.tipo,
+            tipo_tomador_contrato: updated.tipo_tomador,
+          })
+        );
+
+        // Criar conta responsável (libera login)
+        await criarContaResponsavel(tomadorData);
+
+        // Atualizar tomador para marcar como ativo
+        const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
+        await query(updateTableQuery, [updated.contratante_id]);
+
+        // Calcular credenciais
+        let cnpj = tomadorData.cnpj;
+        if (!cnpj) {
+          const cnpjRes = await query(
+            `SELECT cnpj FROM ${tabelaTomador} WHERE id = $1`,
+            [tomadorData.id]
+          );
+          if (cnpjRes.rows.length > 0) {
+            cnpj = cnpjRes.rows[0].cnpj;
+          }
+        }
+
+        if (cnpj) {
+          const cleanCnpj = cnpj.replace(/[./-]/g, '');
+          const loginCredencial = tomadorData.responsavel_cpf || cleanCnpj;
+          const senhaCredencial = cleanCnpj.slice(-6);
+
+          credenciais = {
+            login: loginCredencial,
+            senha: senhaCredencial,
+          };
+
+          // Criar URL para boas-vindas
+          boasVindasUrl = `/boas-vindas?tomador_id=${updated.contratante_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
+        }
+
+        // Log de auditoria
+        console.info(
+          JSON.stringify({
+            event: 'contrato_aceito_conta_criada',
             contrato_id: updated.id,
             tomador_id: updated.contratante_id,
             ip_aceite: clientIp,
             timestamp: new Date().toISOString(),
           })
+        );
+      } catch (err) {
+        console.error(
+          '[CONTRATOS] Erro ao liberar login automaticamente após aceite:',
+          err
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              'Erro ao liberar acesso automático após aceite do contrato. Por favor, tente novamente ou entre em contato com suporte.',
+            details: err instanceof Error ? err.message : String(err),
+          },
+          { status: 500 }
         );
       }
 
@@ -280,11 +246,9 @@ export async function POST(request: NextRequest) {
         {
           success: true,
           contrato: updated,
-          simulador_url: simuladorUrl,
           boasVindasUrl,
           credenciais,
-          loginLiberadoImediatamente,
-          skip_payment_phase: skipPaymentPhase,
+          loginLiberadoImediatamente: true,
         },
         { status: 200 }
       );
