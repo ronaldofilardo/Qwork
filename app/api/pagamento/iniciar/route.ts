@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
       // checar se existe um contrato que justifique iniciar o pagamento
       try {
         const contratoCheck = await query(
-          `SELECT id, aceito, status FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1`,
+          `SELECT id, aceito, status FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1`,
           [finalTomadorId]
         );
         if (contratoCheck.rows.length === 0) {
@@ -214,7 +214,7 @@ export async function POST(request: NextRequest) {
     let contratoIdValido: number | null = null;
     if (contratoIdParam) {
       const contratoRow = await query(
-        `SELECT id, aceito FROM contratos WHERE id = $1 AND tomador_id = $2`,
+        `SELECT id, aceito FROM contratos WHERE id = $1 AND contratante_id = $2`,
         [contratoIdParam, finalTomadorId]
       );
       if (contratoRow.rows.length === 0 || !contratoRow.rows[0].aceito) {
@@ -227,7 +227,7 @@ export async function POST(request: NextRequest) {
     } else {
       try {
         const contratoRow = await query(
-          `SELECT id FROM contratos WHERE tomador_id = $1 AND aceito = true LIMIT 1`,
+          `SELECT id FROM contratos WHERE contratante_id = $1 AND aceito = true LIMIT 1`,
           [finalTomadorId]
         );
         if (contratoRow.rows.length === 0) {
