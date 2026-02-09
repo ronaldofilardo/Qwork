@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import QworkLogo from '@/components/QworkLogo';
-import ModalCadastroContratante from '@/components/modals/ModalCadastroContratante';
+import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 import { Building2 } from 'lucide-react';
 
 export default function LoginPage() {
@@ -168,7 +168,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <ModalCadastroContratante
+      <ModalCadastrotomador
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}
       />
