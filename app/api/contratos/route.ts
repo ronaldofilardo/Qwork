@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       // Buscar contrato com tipo_tomador para saber onde buscar
       const contratoRes = await query(
-        `SELECT id, tomador_id, plano_id, numero_funcionarios, valor_total, aceito, tipo_tomador FROM contratos WHERE id = $1`,
+        `SELECT id, contratante_id, plano_id, numero_funcionarios, valor_total, aceito, tipo_tomador FROM contratos WHERE id = $1`,
         [contrato_id]
       );
 
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest) {
 
         // Só incluir URL do simulador se pagamento está ativado (skipPaymentPhase = false)
         if (!skipPaymentPhase) {
-          const simuladorUrl = `/pagamento/simulador?tomador_id=${contratoRow.tomador_id}&plano_id=${contratoRow.plano_id}&numero_funcionarios=${contratoRow.numero_funcionarios}&contrato_id=${contratoRow.id}`;
+          const simuladorUrl = `/pagamento/simulador?tomador_id=${contratoRow.contratante_id}&plano_id=${contratoRow.plano_id}&numero_funcionarios=${contratoRow.numero_funcionarios}&contrato_id=${contratoRow.id}`;
           response.simulador_url = simuladorUrl;
         }
 
@@ -157,7 +157,7 @@ export async function POST(request: NextRequest) {
         process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
 
       let loginLiberadoImediatamente = false;
-      let simuladorUrl = `/pagamento/simulador?tomador_id=${updated.tomador_id}&plano_id=${updated.plano_id}&numero_funcionarios=${updated.numero_funcionarios}&contrato_id=${updated.id}`;
+      let simuladorUrl = `/pagamento/simulador?tomador_id=${updated.contratante_id}&plano_id=${updated.plano_id}&numero_funcionarios=${updated.numero_funcionarios}&contrato_id=${updated.id}`;
       let boasVindasUrl: string | null = null;
       let credenciais: { login: string; senha: string } | null = null;
 
@@ -170,12 +170,12 @@ export async function POST(request: NextRequest) {
 
           const tomadorRes = await query(
             `SELECT * FROM ${tabelaTomador} WHERE id = $1`,
-            [updated.tomador_id]
+            [updated.contratante_id]
           );
 
           if (tomadorRes.rows.length === 0) {
             console.error(
-              `[CONTRATOS] Tomador ${updated.tomador_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
+              `[CONTRATOS] Tomador ${updated.contratante_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
             );
             throw new Error(
               `Tomador não encontrado na tabela ${tabelaTomador}`
@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
           console.info(
             JSON.stringify({
               event: 'contrato_aceito_tomador_localizado',
-              tomador_id: updated.tomador_id,
+              tomador_id: updated.contratante_id,
               tabela: tabelaTomador,
               tipo: tomadorData.tipo,
               tipo_tomador_contrato: updated.tipo_tomador,
@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
 
           // Atualizar tomador para marcar como ativo
           const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
-          await query(updateTableQuery, [updated.tomador_id]);
+          await query(updateTableQuery, [updated.contratante_id]);
 
           // Calcular credenciais (mesmo que em criarContaResponsavel)
           let cnpj = tomadorData.cnpj;
@@ -230,7 +230,7 @@ export async function POST(request: NextRequest) {
             };
 
             // Criar URL para boas-vindas
-            boasVindasUrl = `/boas-vindas?tomador_id=${updated.tomador_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
+            boasVindasUrl = `/boas-vindas?tomador_id=${updated.contratante_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
           }
 
           // Log de auditoria
@@ -238,7 +238,7 @@ export async function POST(request: NextRequest) {
             JSON.stringify({
               event: 'contrato_aceito_com_liberacao_login_automatica',
               contrato_id: updated.id,
-              tomador_id: updated.tomador_id,
+              tomador_id: updated.contratante_id,
               ip_aceite: clientIp,
               skip_payment_phase: true,
               timestamp: new Date().toISOString(),
@@ -269,7 +269,7 @@ export async function POST(request: NextRequest) {
           JSON.stringify({
             event: 'contrato_aceito',
             contrato_id: updated.id,
-            tomador_id: updated.tomador_id,
+            tomador_id: updated.contratante_id,
             ip_aceite: clientIp,
             timestamp: new Date().toISOString(),
           })

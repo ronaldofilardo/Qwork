@@ -83,7 +83,7 @@ Status: Aguardando Aceite da Entidade`;
 
       const contratoResult = await query(
         `INSERT INTO contratos (
-          entidade_id,
+          contratante_id,
           plano_id,
           numero_funcionarios,
           valor_total,
