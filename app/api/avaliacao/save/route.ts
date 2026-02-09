@@ -2,9 +2,8 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 import { grupos } from '@/lib/questoes';
-import { recalcularStatusLote } from '@/lib/lotes';
-import { calcularResultados } from '@/lib/calculate';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
@@ -19,7 +18,6 @@ export async function POST(request: Request) {
 
     // Buscar avaliação em andamento ou criar nova se não existir
     let avaliacaoId: number;
-    let loteId: number | null = null;
     const avaliacaoResult = await query(
       `SELECT id, lote_id FROM avaliacoes
        WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
@@ -36,10 +34,8 @@ export async function POST(request: Request) {
         [session.cpf]
       );
       avaliacaoId = newAvaliacao.rows[0].id;
-      loteId = newAvaliacao.rows[0].lote_id;
     } else {
       avaliacaoId = avaliacaoResult.rows[0].id;
-      loteId = avaliacaoResult.rows[0].lote_id;
     }
 
     // Salvar respostas (upsert)
@@ -71,91 +67,14 @@ export async function POST(request: Request) {
       `[SAVE] Avaliação ${avaliacaoId}: ${totalRespostas}/${totalPerguntasObrigatorias} respostas`
     );
 
-    // Verificar se completou todas as 37 respostas
-    if (totalRespostas >= totalPerguntasObrigatorias) {
-      console.log(
-        `[SAVE] ✅ Avaliação ${avaliacaoId} COMPLETA! Marcando como concluída...`
-      );
+    // ✅ VERIFICAR SE COMPLETOU 37 RESPOSTAS (AUTO-CONCLUSÃO)
+    // Usando função consolidada para idempotência e consistência
+    const resultadoConclusao = await verificarEConcluirAvaliacao(
+      avaliacaoId,
+      session.cpf
+    );
 
-      // Buscar todas as respostas para calcular resultados
-      const todasRespostasResult = await query(
-        `SELECT DISTINCT ON (r.grupo, r.item) r.grupo, r.item, r.valor
-         FROM respostas r
-         WHERE r.avaliacao_id = $1
-         ORDER BY r.grupo, r.item, r.id DESC`,
-        [avaliacaoId]
-      );
-
-      // Organizar respostas por grupo
-      const respostasPorGrupo = new Map<
-        number,
-        Array<{ item: string; valor: number }>
-      >();
-      todasRespostasResult.rows.forEach((r: any) => {
-        if (!respostasPorGrupo.has(r.grupo)) {
-          respostasPorGrupo.set(r.grupo, []);
-        }
-        respostasPorGrupo.get(r.grupo)!.push({ item: r.item, valor: r.valor });
-      });
-
-      // Criar mapa de tipos de grupos
-      const gruposTipo = new Map(
-        grupos.map((g) => [g.id, { dominio: g.dominio, tipo: g.tipo }])
-      );
-
-      // Calcular resultados
-      const resultados = calcularResultados(respostasPorGrupo, gruposTipo);
-
-      // Salvar resultados no banco
-      for (const resultado of resultados) {
-        await query(
-          `INSERT INTO resultados (avaliacao_id, grupo, dominio, score, categoria)
-           VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (avaliacao_id, grupo)
-           DO UPDATE SET score = EXCLUDED.score, categoria = EXCLUDED.categoria`,
-          [
-            avaliacaoId,
-            resultado.grupo,
-            resultado.dominio,
-            resultado.score,
-            resultado.categoria,
-          ]
-        );
-      }
-
-      // Marcar como concluída
-      await queryWithContext(
-        `UPDATE avaliacoes 
-         SET status = 'concluido', envio = NOW(), atualizado_em = NOW() 
-         WHERE id = $1`,
-        [avaliacaoId]
-      );
-
-      // Atualizar índice do funcionário
-      if (loteId) {
-        const loteResult = await query(
-          `SELECT numero_ordem, liberado_em FROM lotes_avaliacao WHERE id = $1`,
-          [loteId]
-        );
-
-        if (loteResult.rows.length > 0) {
-          const { numero_ordem } = loteResult.rows[0];
-          await query(
-            `UPDATE funcionarios 
-             SET indice_avaliacao = $1, data_ultimo_lote = NOW() 
-             WHERE cpf = $2`,
-            [numero_ordem, session.cpf]
-          );
-        }
-
-        // Recalcular status do lote e notificar liberador
-        await recalcularStatusLote(loteId);
-      }
-
-      console.log(
-        `[SAVE] ✅ Avaliação ${avaliacaoId} concluída e notificação enviada!`
-      );
-
+    if (resultadoConclusao.concluida) {
       return NextResponse.json({
         success: true,
         avaliacaoId,
@@ -185,4 +104,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Erro ao salvar' }, { status: 500 });
   }
 }
-

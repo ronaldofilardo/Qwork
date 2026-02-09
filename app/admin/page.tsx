@@ -7,7 +7,7 @@ import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent'
 import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';
-import { PagamentosContent } from '@/components/admin/PagamentosContent';
+import PagamentosContent from '@/components/admin/PagamentosContent';
 import { PlanosContent } from '@/components/admin/PlanosContent';
 
 interface Session {
@@ -129,7 +129,7 @@ export default function AdminPage() {
 
   const renderContent = () => {
     if (activeSection === 'novos-cadastros') {
-      return <NovoscadastrosContent onApproved={fetchCounts} />;
+      return <NovoscadastrosContent _onApproved={fetchCounts} />;
     }
 
     if (activeSection === 'tomadores') {
@@ -218,4 +218,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

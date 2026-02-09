@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent';
-// ❌ REMOVIDO: Imports de conteúdo de contratantes (Admin não gerencia clínicas/entidades)
+// ❌ REMOVIDO: Imports de conteúdo de tomadores (Admin não gerencia clínicas/entidades)
 // import { ClinicasContent } from "@/components/admin/ClinicasContent";
 // import { EntidadesContent } from "@/components/admin/EntidadesContent";
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';
-import { PagamentosContent } from '@/components/admin/PagamentosContent';
+import PagamentosContent from '@/components/admin/PagamentosContent';
 
 interface Session {
   cpf: string;
@@ -18,7 +18,7 @@ interface Session {
 }
 
 type MainSection = 'novos-cadastros' | 'tomadores' | 'financeiro' | 'geral';
-type _ContratantesSubSection = 'clinicas' | 'entidades';
+type _tomadoresSubSection = 'clinicas' | 'entidades';
 type _FinanceiroSubSection = 'cobranca' | 'pagamentos';
 type _GeralSubSection = 'emissores';
 
@@ -50,9 +50,9 @@ export default function AdminPage() {
         setPendingCount(data.total || 0);
       }
 
-      // ❌ REMOVIDO: Admin não gerencia contratantes (clínicas/entidades)
-      // Endpoints /api/admin/contratantes removidos em 04/02/2026
-      // Admin não tem acesso a tabela contratantes por política de segurança
+      // ❌ REMOVIDO: Admin não gerencia tomadores (clínicas/entidades)
+      // Endpoints /api/admin/tomadores removidos em 04/02/2026
+      // Admin não tem acesso a tabela tomadores por política de segurança
       setClinicasCount(0);
       setEntidadesCount(0);
 
@@ -111,11 +111,11 @@ export default function AdminPage() {
 
   const renderContent = () => {
     if (activeSection === 'novos-cadastros') {
-      return <NovoscadastrosContent onApproved={fetchCounts} />;
+      return <NovoscadastrosContent _onApproved={fetchCounts} />;
     }
 
-    // ❌ REMOVIDO: Conteúdo de contratantes (Admin não gerencia clínicas/entidades)
-    // if (activeSection === "contratantes") {
+    // ❌ REMOVIDO: Conteúdo de tomadores (Admin não gerencia clínicas/entidades)
+    // if (activeSection === "tomadores") {
     //   if (activeSubSection === "clinicas") {
     //     return <ClinicasContent />;
     //   }
