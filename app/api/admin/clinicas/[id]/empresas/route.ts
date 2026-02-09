@@ -23,9 +23,9 @@ export async function GET(
       );
     }
 
-    // Verificar se a clínica existe (busca em contratantes)
+    // Verificar se a clínica existe (busca na tabela clinicas)
     const clinicaResult = await query<{ id: number; nome: string }>(
-      "SELECT id, nome FROM contratantes WHERE id = $1 AND tipo = 'clinica'",
+      'SELECT id, nome FROM clinicas WHERE id = $1',
       [clinicaId]
     );
 
@@ -67,10 +67,11 @@ export async function GET(
         ec.criado_em,
         COUNT(DISTINCT f.cpf) as total_funcionarios,
         COUNT(DISTINCT a.id) as total_avaliacoes,
-        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN a.id END) as avaliacoes_liberadas
       FROM empresas_clientes ec
-      LEFT JOIN funcionarios f ON f.empresa_id = ec.id AND f.perfil = 'funcionario'
+      LEFT JOIN funcionarios_clinicas fc ON fc.empresa_id = ec.id AND fc.ativo = true
+      LEFT JOIN funcionarios f ON f.id = fc.funcionario_id AND f.perfil = 'funcionario'
       LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
       WHERE ec.clinica_id = $1
       GROUP BY ec.id, ec.nome, ec.cnpj, ec.email, ec.telefone, ec.cidade, ec.estado, ec.ativa, ec.criado_em

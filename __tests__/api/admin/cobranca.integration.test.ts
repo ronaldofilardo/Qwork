@@ -9,29 +9,29 @@ jest.mock('@/lib/session', () => ({
 
 describe('API Cobrança - integração com pagamentos reais', () => {
   const testCnpj = '77777777000177';
-  let contratanteId: number;
+  let tomadorId: number;
 
   beforeAll(async () => {
     // limpar possíveis restos
     await query(
-      'DELETE FROM pagamentos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM pagamentos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
       [testCnpj]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [testCnpj]);
+    await query('DELETE FROM tomadors WHERE cnpj = $1', [testCnpj]);
 
-    // criar um plano de teste (caso não exista) e um contratante aprovado
+    // criar um plano de teste (caso não exista) e um tomador aprovado
     await query(
       `INSERT INTO planos (id, nome, tipo, preco) VALUES (999, 'Plano Teste', 'personalizado', 2000.00)
        ON CONFLICT (id) DO NOTHING`,
       []
     );
 
-    const contratanteRes = await query(
-      `INSERT INTO contratantes (
+    const tomadorRes = await query(
+      `INSERT INTO tomadors (
          tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
          responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
          status, ativa, plano_id, numero_funcionarios_estimado, pagamento_confirmado, criado_em
@@ -43,7 +43,7 @@ describe('API Cobrança - integração com pagamentos reais', () => {
       [testCnpj]
     );
 
-    contratanteId = contratanteRes.rows[0].id;
+    tomadorId = tomadorRes.rows[0].id;
 
     // Iniciar pagamento via API e confirmar como parcelado (fluxo real)
     const requestIniciar = new NextRequest(
@@ -51,7 +51,7 @@ describe('API Cobrança - integração com pagamentos reais', () => {
       {
         method: 'POST',
         body: JSON.stringify({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           contrato_id: null,
         }),
         headers: { 'content-type': 'application/json' },
@@ -91,19 +91,19 @@ describe('API Cobrança - integração com pagamentos reais', () => {
   });
 
   afterAll(async () => {
-    await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
-      contratanteId,
+    await query('DELETE FROM pagamentos WHERE tomador_id = $1', [
+      tomadorId,
     ]);
-    await query('DELETE FROM contratos WHERE contratante_id = $1', [
-      contratanteId,
+    await query('DELETE FROM contratos WHERE tomador_id = $1', [
+      tomadorId,
     ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
 
     // remover plano de teste (se criado)
     await query('DELETE FROM planos WHERE id = $1', [999]);
   });
 
-  it('deve retornar valor, data e método de pagamento para contratante com pagamento', async () => {
+  it('deve retornar valor, data e método de pagamento para tomador com pagamento', async () => {
     const request = new NextRequest('http://localhost:3000/api/admin/cobranca');
     const res = await GET(request as any);
     const data = await res.json();
@@ -138,8 +138,8 @@ describe('API Cobrança - integração com pagamentos reais', () => {
 
     // Verificar que o pagamento no DB tem detalhes_parcelas persistidos
     const pagamentoDB = await query(
-      `SELECT detalhes_parcelas FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1`,
-      [contratanteId]
+      `SELECT detalhes_parcelas FROM pagamentos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1`,
+      [tomadorId]
     );
     expect(pagamentoDB.rows.length).toBeGreaterThan(0);
     expect(pagamentoDB.rows[0].detalhes_parcelas).toBeDefined();
@@ -147,7 +147,7 @@ describe('API Cobrança - integração com pagamentos reais', () => {
     expect(pagamentoDB.rows[0].detalhes_parcelas.length).toBe(2);
   });
 
-  it('deve retornar apenas o contratante solicitado quando filtrado por CNPJ', async () => {
+  it('deve retornar apenas o tomador solicitado quando filtrado por CNPJ', async () => {
     const request = new NextRequest(
       'http://localhost:3000/api/admin/cobranca?cnpj=02494916000170'
     );

@@ -30,6 +30,7 @@ export const GET = async (req: Request) => {
       LEFT JOIN laudos l ON l.id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
+        AND (la.status_pagamento = 'pago' OR la.status_pagamento IS NULL)
     `,
       []
     );
@@ -49,8 +50,8 @@ export const GET = async (req: Request) => {
         la.tipo,
         la.status as lote_status,
         la.liberado_em,
-        COALESCE(ec.nome, cont.nome) as empresa_nome,
-        COALESCE(c.nome, cont.nome) as clinica_nome,
+        ec.nome as empresa_nome,
+        c.nome as clinica_nome,
         COUNT(a.id) as total_avaliacoes,
         l.observacoes,
         l.status as status_laudo,
@@ -71,12 +72,12 @@ export const GET = async (req: Request) => {
       LEFT JOIN funcionarios f ON l.emissor_cpf = f.cpf
       LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON ec.clinica_id = c.id
-      LEFT JOIN contratantes cont ON la.contratante_id = cont.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       WHERE la.status != 'cancelado'
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
-      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, cont.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
+        AND (la.status_pagamento = 'pago' OR la.status_pagamento IS NULL)
+      GROUP BY la.id, la.descricao, la.tipo, la.status, la.liberado_em, ec.nome, c.nome, l.observacoes, l.status, l.id, l.emitido_em, l.enviado_em, l.hash_pdf, l.emissor_cpf, l.arquivo_remoto_key, l.arquivo_remoto_url, l.arquivo_remoto_uploaded_at, f.nome, fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
       ORDER BY
         CASE
           WHEN la.status = 'ativo' THEN 1
@@ -184,7 +185,6 @@ export const GET = async (req: Request) => {
                 nome: user.nome || 'Emissor',
                 perfil: user.perfil,
                 clinica_id: null,
-                contratante_id: null,
               }
             );
 

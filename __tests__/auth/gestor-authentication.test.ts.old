@@ -35,7 +35,7 @@ describe('Autenticação Dual-Source: Gestores vs Funcionários', () => {
   beforeAll(async () => {
     // Setup: Criar contratante entidade para testes
     const entidade = await query(`
-      INSERT INTO contratantes (
+      INSERT INTO tomadores (
         cnpj,
         nome,
         email,
@@ -195,7 +195,7 @@ describe('Autenticação Dual-Source: Gestores vs Funcionários', () => {
       TEST_CPF_RH,
     ]);
     await query('DELETE FROM clinicas WHERE id = $1', [testClinicaId]);
-    await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+    await query('DELETE FROM tomadores WHERE id = $1', [testContratanteId]);
   });
 
   describe('1. Validação de Tipo de Usuário', () => {

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { X, Calculator, DollarSign } from 'lucide-react';
 import { formatarValor } from '@/lib/validacoes-contratacao';
 
-interface Contratante {
+interface tomador {
   id: number;
   tipo: 'clinica' | 'entidade';
   nome: string;
@@ -14,7 +14,7 @@ interface Contratante {
 interface ModalDefinirValorPersonalizadoProps {
   isOpen: boolean;
   onClose: () => void;
-  contratante: Contratante | null;
+  tomador: tomador | null;
   onConfirm: (valorPorFuncionario: number, numeroFuncionarios?: number) => void;
   loading?: boolean;
 }
@@ -22,7 +22,7 @@ interface ModalDefinirValorPersonalizadoProps {
 export default function ModalDefinirValorPersonalizado({
   isOpen,
   onClose,
-  contratante,
+  tomador,
   onConfirm,
   loading = false,
 }: ModalDefinirValorPersonalizadoProps) {
@@ -31,7 +31,7 @@ export default function ModalDefinirValorPersonalizado({
     useState<string>('');
   const [erro, setErro] = useState<string>('');
 
-  if (!isOpen || !contratante) return null;
+  if (!isOpen || !tomador) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,7 +51,7 @@ export default function ModalDefinirValorPersonalizado({
     // Validar número de funcionários - SEMPRE OBRIGATÓRIO
     const numeroFuncionarios = numeroFuncionariosInput
       ? parseInt(numeroFuncionariosInput, 10)
-      : contratante.numero_funcionarios_estimado;
+      : tomador.numero_funcionarios_estimado;
 
     if (!numeroFuncionarios || numeroFuncionarios <= 0) {
       setErro('Número de funcionários é obrigatório e deve ser maior que zero');
@@ -64,7 +64,7 @@ export default function ModalDefinirValorPersonalizado({
   const valorNumerico = parseFloat(valorPorFuncionario.replace(',', '.')) || 0;
   const numeroFuncionarios = numeroFuncionariosInput
     ? parseInt(numeroFuncionariosInput, 10)
-    : contratante.numero_funcionarios_estimado || 1;
+    : tomador.numero_funcionarios_estimado || 1;
   const valorTotal = valorNumerico * numeroFuncionarios;
 
   return (
@@ -77,7 +77,7 @@ export default function ModalDefinirValorPersonalizado({
               <h2 className="text-xl font-bold text-gray-800">
                 Definir Valor Personalizado
               </h2>
-              <p className="text-sm text-gray-600">{contratante.nome}</p>
+              <p className="text-sm text-gray-600">{tomador.nome}</p>
             </div>
           </div>
           <button
@@ -121,16 +121,16 @@ export default function ModalDefinirValorPersonalizado({
               value={numeroFuncionariosInput}
               onChange={(e) => setNumeroFuncionariosInput(e.target.value)}
               placeholder={
-                contratante.numero_funcionarios_estimado
-                  ? `Estimado: ${contratante.numero_funcionarios_estimado}`
+                tomador.numero_funcionarios_estimado
+                  ? `Estimado: ${tomador.numero_funcionarios_estimado}`
                   : 'Ex: 50'
               }
               className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-              required={!contratante.numero_funcionarios_estimado}
+              required={!tomador.numero_funcionarios_estimado}
               disabled={loading}
             />
             <p className="text-xs text-gray-500 mt-1">
-              {contratante.numero_funcionarios_estimado
+              {tomador.numero_funcionarios_estimado
                 ? 'Deixe vazio para usar o valor estimado no cadastro'
                 : 'Informe o número de funcionários para cálculo do valor total'}
             </p>
@@ -164,8 +164,8 @@ export default function ModalDefinirValorPersonalizado({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
             <p className="text-sm text-blue-800">
               <strong>Importante:</strong> Este valor será usado para gerar o
-              contrato. O contratante poderá visualizar e aceitar o contrato
-              através do link que será gerado.
+              contrato. O tomador poderá visualizar e aceitar o contrato através
+              do link que será gerado.
             </p>
           </div>
 

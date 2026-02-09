@@ -1,11 +1,11 @@
 describe('Entidade - Inativar Avaliação (fluxo básico)', () => {
   it('deve exibir coluna Inativar e abrir modal', () => {
-    // Logar como gestor de entidade (sessão de teste com contratante_id)
+    // Logar como gestor de entidade (sessão de teste com tomador_id)
     cy.request('POST', '/api/test/session', {
       cpf: '22222222222',
       nome: 'Gestor Entidade Teste',
       perfil: 'gestor',
-      contratante_id: 1,
+      tomador_id: 1,
     });
 
     // Interceptar API de lotes para garantir que exista um lote com funcionários (evita depender de seed)

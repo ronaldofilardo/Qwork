@@ -30,11 +30,12 @@ export async function GET(request: Request) {
     }
 
     // Buscar funcionários ativos e inativos da empresa e clínica
-    // ISOLAMENTO: Apenas funcionários vinculados à empresa/clínica (sem entidade_id)
+    // ARQUITETURA SEGREGADA: usa tabela intermediária funcionarios_clinicas
     const funcionariosResult = await query(
-      `SELECT cpf, nome, data_nascimento, setor, funcao, email, matricula, nivel_cargo, turno, escala, ativo, criado_em, atualizado_em,
-              indice_avaliacao, data_ultimo_lote,
-              ultima_avaliacao_id, ultima_avaliacao_data_conclusao, ultima_avaliacao_status, ultimo_motivo_inativacao,
+      `SELECT f.cpf, f.nome, f.data_nascimento, f.setor, f.funcao, f.email, f.matricula, 
+              f.nivel_cargo, f.turno, f.escala, f.ativo, f.criado_em, f.atualizado_em,
+              f.indice_avaliacao, f.data_ultimo_lote,
+              f.ultima_avaliacao_id, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao,
               -- Data e lote da última inativação
               (
                 SELECT MAX(a2.inativada_em) FROM avaliacoes a2 WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada'
@@ -44,12 +45,13 @@ export async function GET(request: Request) {
               ) as ultima_inativacao_lote,
               -- Verificar se tem avaliação concluída há menos de 12 meses (mesmo critério da função de elegibilidade)
               CASE 
-                WHEN COALESCE(data_ultimo_lote, ultima_avaliacao_data_conclusao) IS NOT NULL AND COALESCE(data_ultimo_lote, ultima_avaliacao_data_conclusao) >= NOW() - INTERVAL '1 year' 
+                WHEN COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) IS NOT NULL AND COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) >= NOW() - INTERVAL '1 year' 
                   THEN true 
                 ELSE false 
               END as tem_avaliacao_recente
        FROM funcionarios f
-       WHERE f.empresa_id = $1 AND f.clinica_id = $2 AND f.contratante_id IS NULL
+       INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
+       WHERE fc.empresa_id = $1 AND fc.clinica_id = $2 AND fc.ativo = true
        ORDER BY f.nome`,
       [empresaId, clinicaId]
     );
@@ -179,13 +181,14 @@ export async function POST(request: Request) {
     // Hash da senha
     const senhaHash = await bcrypt.hash(senha || '123456', 10);
 
-    // Inserir funcionário vinculado à clínica/empresa (sem entidade_id)
-    // ISOLAMENTO: funcionários de clínica pertencem a empresa_id + clinica_id, não a entidade
-    await query(
+    // ARQUITETURA SEGREGADA: Inserir em 2 etapas
+    // 1. Inserir funcionário (sem FKs de clínica/empresa)
+    const insertFuncResult = await query(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        clinica_id, empresa_id, entidade_id, matricula, nivel_cargo, turno, escala, ativo, usuario_tipo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NULL, $11, $12, $13, $14, true, $15)`,
+        matricula, nivel_cargo, turno, escala, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
+      RETURNING id`,
       [
         cpf,
         nome,
@@ -195,16 +198,25 @@ export async function POST(request: Request) {
         email,
         senhaHash,
         perfil,
-        clinicaId,
-        empresa_id,
         matricula || null,
         nivel_cargo || null,
         turno || null,
         escala || null,
-        'funcionario_clinica',
       ],
       session
     );
+
+    const funcionarioId = insertFuncResult.rows[0].id;
+
+    // 2. Criar relacionamento em funcionarios_clinicas
+    await query(
+      `INSERT INTO funcionarios_clinicas (
+        funcionario_id, clinica_id, empresa_id, ativo
+      ) VALUES ($1, $2, $3, true)`,
+      [funcionarioId, clinicaId, empresa_id],
+      session
+    );
+
     console.log(
       `[AUDIT] Funcionário ${cpf} (${nome}) criado pela clínica ${clinicaId} para empresa ${empresa_id} por ${session.cpf}`
     );
@@ -297,7 +309,7 @@ export async function PUT(request: Request) {
 
     // Verificar se funcionário existe
     const funcResult = await query(
-      'SELECT cpf, empresa_id FROM funcionarios WHERE cpf = $1',
+      'SELECT cpf FROM funcionarios WHERE cpf = $1',
       [cpf]
     );
     if (funcResult.rows.length === 0) {

@@ -27,18 +27,18 @@ describe('✅ Validação UI - Plano Personalizado Sem Redirecionamento', () => 
 
     // Limpar
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM tomadors WHERE cnpj = $1', [cnpjTeste]);
   });
 
   afterAll(async () => {
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM tomadors WHERE cnpj = $1', [cnpjTeste]);
   });
 
   it('deve retornar requires_payment=false e mensagem adequada para plano personalizado', async () => {

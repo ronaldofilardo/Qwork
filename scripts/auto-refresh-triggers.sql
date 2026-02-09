@@ -1,7 +1,7 @@
 -- Trigger para atualizar view materializada automaticamente
 -- Este trigger chama refresh_mv_admin_contratante_dashboard() após mudanças relevantes
 
--- Trigger para entidades (renomeado de contratantes)
+-- Trigger para entidades (renomeado de tomadores)
 CREATE OR REPLACE FUNCTION trigger_refresh_mv_entidades()
 RETURNS TRIGGER AS $$
 BEGIN

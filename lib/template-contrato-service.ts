@@ -38,8 +38,8 @@ export interface CriarTemplateDTO {
 export interface RenderizarContratoDTO {
   template_id: number;
   variaveis: {
-    contratante_nome: string;
-    contratante_cnpj: string;
+    tomador_nome: string;
+    tomador_cnpj: string;
     valor_total: number;
     valor_total_extenso?: string;
     valor_por_funcionario: number;

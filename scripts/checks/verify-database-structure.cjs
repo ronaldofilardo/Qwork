@@ -25,20 +25,18 @@ async function checkDatabase() {
       `\n${hasContratos ? '✓' : '✗'} Tabela 'contratos' ${hasContratos ? 'EXISTE' : 'NÃO EXISTE'}`
     );
 
-    // Verificar contratantes
-    const hasContratantes = tables.rows.some(
-      (t) => t.tablename === 'contratantes'
-    );
+    // Verificar tomadores
+    const hastomadores = tables.rows.some((t) => t.tablename === 'tomadores');
     console.log(
-      `${hasContratantes ? '✓' : '✗'} Tabela 'contratantes' ${hasContratantes ? 'EXISTE' : 'NÃO EXISTE'}`
+      `${hastomadores ? '✓' : '✗'} Tabela 'tomadores' ${hastomadores ? 'EXISTE' : 'NÃO EXISTE'}`
     );
 
-    if (hasContratantes) {
-      console.log('\n=== ESTRUTURA DA TABELA CONTRATANTES ===\n');
+    if (hastomadores) {
+      console.log('\n=== ESTRUTURA DA TABELA tomadores ===\n');
       const cols = await pool.query(`
         SELECT column_name, udt_name, is_nullable
         FROM information_schema.columns
-        WHERE table_name = 'contratantes'
+        WHERE table_name = 'tomadores'
         ORDER BY ordinal_position
       `);
       cols.rows.forEach((col) => {

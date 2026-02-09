@@ -41,8 +41,8 @@ async function run() {
     fd.append('contrato_social', blob, 'sample.pdf');
     fd.append('doc_identificacao', blob, 'sample.pdf');
 
-    console.log('Enviando /api/cadastro/contratante');
-    const res = await fetch(`${base}/api/cadastro/contratante`, {
+    console.log('Enviando /api/cadastro/tomador');
+    const res = await fetch(`${base}/api/cadastro/tomador`, {
       method: 'POST',
       body: fd,
     });
@@ -53,23 +53,23 @@ async function run() {
 
     if (res.status !== 201) {
       console.error(
-        'Falha ao criar contratante via multipart; ver logs do servidor'
+        'Falha ao criar tomador via multipart; ver logs do servidor'
       );
       process.exit(1);
     }
 
     const data = JSON.parse(text);
-    const contratanteId = data?.id || data?.contratante?.id;
-    if (!contratanteId) throw new Error('contratanteId não retornado');
+    const tomadorId = data?.id || data?.tomador?.id;
+    if (!tomadorId) throw new Error('tomadorId não retornado');
 
-    console.log('Contratante criado:', contratanteId);
+    console.log('tomador criado:', tomadorId);
 
     console.log('Chamando /api/pagamento/iniciar');
     const resInit = await fetch(`${base}/api/pagamento/iniciar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         numero_parcelas: 4,
       }),
     });

@@ -34,9 +34,9 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 
 **Encontrado no banco:**
 
-- ✅ Contratante ID 39 existe e está ativo
+- ✅ tomador ID 39 existe e está ativo
 - ❌ **Senha NÃO existia em `entidades_senhas`**
-- ⚠️ Registro em `funcionarios` tinha `contratante_id = NULL`
+- ⚠️ Registro em `funcionarios` tinha `tomador_id = NULL`
 
 ---
 
@@ -46,12 +46,12 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 
 1. Gerou hash bcrypt da senha `000170`
 2. Inseriu em `entidades_senhas`:
-   - `contratante_id`: 39
+   - `tomador_id`: 39
    - `cpf`: 87545772920
    - `senha_hash`: $2a$10$iW6AfICrF3IpP/51N/wMLOFvcIFMDWZJbzpoMMYmfbd.33O26/wL2
 
 3. Atualizou `funcionarios`:
-   - `contratante_id`: 39 (antes NULL)
+   - `tomador_id`: 39 (antes NULL)
    - `senha_hash`: sincronizado
 
 **Resultado:** ✅ Autenticação funcionando
@@ -88,7 +88,7 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 4. **`scripts/verify-gestores-senhas.cjs`** ⭐
    - **Verificação automática de integridade**
    - Cria senhas faltantes automaticamente
-   - Usar após cada aprovação de contratante
+   - Usar após cada aprovação de tomador
 
 ### Documentação
 
@@ -109,7 +109,7 @@ Após o cadastro de uma empresa (CNPJ 02494916000170), o sistema não permitia a
 ```bash
 # Executado com sucesso:
 node scripts/verify-gestores-senhas.cjs
-# Resultado: ✅ TUDO OK! Todos os contratantes aprovados têm senhas.
+# Resultado: ✅ TUDO OK! Todos os tomadores aprovados têm senhas.
 
 # Login testado:
 CPF: 87545772920
@@ -124,7 +124,7 @@ Status: ✅ FUNCIONANDO
 ### 1. Verificação Periódica
 
 ```bash
-# Executar após aprovações de contratantes
+# Executar após aprovações de tomadores
 node scripts/verify-gestores-senhas.cjs
 ```
 
@@ -134,8 +134,8 @@ node scripts/verify-gestores-senhas.cjs
 -- Consulta diária recomendada
 SELECT c.id, c.cnpj, c.responsavel_cpf,
        CASE WHEN cs.senha_hash IS NULL THEN '❌ SEM SENHA' ELSE '✅ OK' END
-FROM contratantes c
-LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
+FROM tomadores c
+LEFT JOIN entidades_senhas cs ON cs.tomador_id = c.id
 WHERE c.status = 'aprovado' AND c.ativa = true;
 ```
 

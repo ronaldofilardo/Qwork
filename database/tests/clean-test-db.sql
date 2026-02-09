@@ -12,14 +12,14 @@ DELETE FROM lotes_avaliacao;
 DELETE FROM funcionarios;
 DELETE FROM empresas_clientes;
 DELETE FROM clinicas;
-DELETE FROM contratantes;
+DELETE FROM tomadores;
 
 -- Reabilitar triggers
 SET session_replication_role = 'origin';
 
 -- Resetar sequências
 ALTER SEQUENCE clinicas_id_seq RESTART WITH 1;
-ALTER SEQUENCE contratantes_id_seq RESTART WITH 1;
+ALTER SEQUENCE tomadores_id_seq RESTART WITH 1;
 ALTER SEQUENCE empresas_clientes_id_seq RESTART WITH 1;
 ALTER SEQUENCE funcionarios_id_seq RESTART WITH 1;
 ALTER SEQUENCE avaliacoes_id_seq RESTART WITH 1;

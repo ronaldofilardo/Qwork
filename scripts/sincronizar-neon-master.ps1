@@ -205,7 +205,7 @@ if (-not $DryRun) {
         
         $criticalTables = @(
             "usuarios",
-            "contratantes",
+            "tomadores",
             "clinicas",
             "funcionarios",
             "entidades_senhas",

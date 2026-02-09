@@ -9,7 +9,7 @@ import { query } from '@/lib/db';
 
 describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
   const cnpjTeste = '29599854000150';
-  let contratanteId: number;
+  let tomadorId: number;
   let contratacaoId: number;
   let planoId: number;
 
@@ -22,18 +22,18 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
 
     // Limpar
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
       [cnpjTeste]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM tomadors WHERE cnpj = $1', [cnpjTeste]);
 
-    // Criar contratante de teste
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    // Criar tomador de teste
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         nome, cnpj, email, telefone, endereco, cidade, estado, cep, tipo, plano_id,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         status, cartao_cnpj_path, contrato_social_path, doc_identificacao_path
@@ -45,16 +45,16 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
       ) RETURNING id`,
       [cnpjTeste, planoId]
     );
-    contratanteId = contratanteResult.rows[0].id;
+    tomadorId = tomadorResult.rows[0].id;
 
     // Criar contratacao_personalizada
     const contratacaoResult = await query(
       `INSERT INTO contratacao_personalizada (
-        contratante_id, numero_funcionarios_estimado, status,
+        tomador_id, numero_funcionarios_estimado, status,
         valor_por_funcionario, valor_total_estimado
       ) VALUES ($1, 2500, 'valor_definido', 18.00, 45000.00)
       RETURNING id`,
-      [contratanteId]
+      [tomadorId]
     );
     contratacaoId = contratacaoResult.rows[0].id;
   });
@@ -63,10 +63,10 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
     await query('DELETE FROM contratacao_personalizada WHERE id = $1', [
       contratacaoId,
     ]);
-    await query('DELETE FROM contratos WHERE contratante_id = $1', [
-      contratanteId,
+    await query('DELETE FROM contratos WHERE tomador_id = $1', [
+      tomadorId,
     ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
   });
 
   it('deve redirecionar para /sucesso-cadastro após aceitar proposta', async () => {
@@ -74,7 +74,7 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
 
     // Mock session
     jest.mock('@/lib/session', () => ({
-      getSession: jest.fn(() => null), // Não autenticado (contratante novo)
+      getSession: jest.fn(() => null), // Não autenticado (tomador novo)
     }));
 
     const { POST } = await import('@/app/api/proposta/aceitar/route');
@@ -98,7 +98,7 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
 
     // Validar URL de redirecionamento
     expect(data.redirect_url).toContain('/sucesso-cadastro');
-    expect(data.redirect_url).toContain(`id=${contratanteId}`);
+    expect(data.redirect_url).toContain(`id=${tomadorId}`);
     expect(data.redirect_url).toContain('contrato_id=');
     expect(data.redirect_url).toContain('origem=personalizado');
 
@@ -113,11 +113,11 @@ describe('✅ Validação Fluxo Personalizado - Redirecionamento', () => {
 
     expect(contratoResult.rows.length).toBe(1);
     expect(contratoResult.rows[0].status).toBe('aguardando_aceite');
-    expect(contratoResult.rows[0].contratante_id).toBe(contratanteId);
+    expect(contratoResult.rows[0].tomador_id).toBe(tomadorId);
 
       id: contratoId,
       status: contratoResult.rows[0].status,
-      contratante_id: contratoResult.rows[0].contratante_id,
+      tomador_id: contratoResult.rows[0].tomador_id,
     });
 
     // Validar atualização de status

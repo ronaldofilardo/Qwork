@@ -6,12 +6,12 @@ async function checkTableStructure() {
   try {
     await client.connect();
 
-    console.log('=== ESTRUTURA DA TABELA CONTRATANTES ===');
+    console.log('=== ESTRUTURA DA TABELA tomadores ===');
 
     const columns = await client.query(`
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns
-      WHERE table_name = 'contratantes'
+      WHERE table_name = 'tomadores'
       ORDER BY ordinal_position
     `);
 
@@ -21,20 +21,20 @@ async function checkTableStructure() {
       );
     });
 
-    console.log('\n=== DADOS DE CONTRATANTES ===');
-    const contratantes = await client.query(`
+    console.log('\n=== DADOS DE tomadores ===');
+    const tomadores = await client.query(`
       SELECT id, plano_tipo
-      FROM contratantes
+      FROM tomadores
       WHERE plano_tipo IS NOT NULL
       ORDER BY id
     `);
 
-    console.log('Contratantes com plano_tipo definido:');
-    contratantes.rows.forEach((c) => {
+    console.log('tomadores com plano_tipo definido:');
+    tomadores.rows.forEach((c) => {
       console.log(`ID ${c.id}: plano_tipo = ${c.plano_tipo}`);
     });
 
-    if (contratantes.rows.length === 0) {
+    if (tomadores.rows.length === 0) {
       console.log('Nenhum contratante tem plano_tipo definido.');
     }
 

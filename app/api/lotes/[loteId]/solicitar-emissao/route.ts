@@ -22,7 +22,7 @@
  *
  * Segurança:
  * - RH: Valida acesso à empresa do lote
- * - Entidade: Valida contratante_id
+ * - Entidade: Valida tomador_id
  * - Bloqueia se laudo já foi emitido
  * - Advisory lock previne race conditions
  */
@@ -58,7 +58,7 @@ export async function POST(
         status, 
         clinica_id, 
         empresa_id, 
-        contratante_id, 
+        entidade_id, 
         emitido_em
       FROM lotes_avaliacao 
       WHERE id = $1`,
@@ -88,12 +88,12 @@ export async function POST(
           { status: 403 }
         );
       }
-    } else if (lote.contratante_id && user.perfil === 'gestor') {
-      // Lote de entidade - validar contratante_id
-      // O user já vem autenticado com contratante_id do requireAuth()
-      if (user.contratante_id !== lote.contratante_id) {
+    } else if (lote.entidade_id && user.perfil === 'gestor') {
+      // Lote de entidade - validar entidade_id
+      // O user já vem autenticado com entidade_id do requireAuth()
+      if (user.entidade_id !== lote.entidade_id) {
         console.warn(
-          `[WARN] Entidade ${user.cpf} tentou solicitar emissão de lote de outra entidade (lote: ${lote.contratante_id}, user: ${user.contratante_id})`
+          `[WARN] Entidade ${user.cpf} tentou solicitar emissão de lote de outra entidade (lote: ${lote.entidade_id}, user: ${user.entidade_id})`
         );
         return NextResponse.json(
           { error: 'Sem permissão para este lote' },
@@ -160,38 +160,12 @@ export async function POST(
       await query('SELECT pg_advisory_xact_lock($1)', [loteId]);
       console.log(`[INFO] Advisory lock adquirido para lote ${loteId}`);
 
-      // Registrar solicitação manual na auditoria
-      // Normalizar `tipo_solicitante` para satisfazer CHECK constraints
-      const tipoSolicitante = user.perfil === 'gestor' ? 'gestor' : user.perfil;
-
-      await query(
-        `INSERT INTO auditoria_laudos (
-           lote_id, 
-           acao, 
-           status, 
-           emissor_cpf, 
-           emissor_nome,
-           solicitado_por,
-           tipo_solicitante,
-           ip_address,
-           observacoes
-         )
-         VALUES ($1, 'solicitacao_manual', 'pendente', $2, $3, $4, $5, $6, $7)`,
-        [
-          loteId,
-          user.cpf,
-          user.nome || `${user.perfil} sem nome`,
-          user.cpf, // solicitado_por
-          tipoSolicitante, // tipo_solicitante normalizado
-          request.headers.get('x-forwarded-for') ||
-            request.headers.get('x-real-ip'),
-          `Solicitação manual de emissão por ${user.perfil} - Lote ${lote.id}`,
-        ]
-      );
-
       // 8. Registrar solicitação de emissão em auditoria_laudos
       // (substituiu a antiga fila_emissao - migration 201)
       // Usar INSERT com verificação prévia otimizada (migration 202)
+      // Normalizar `tipo_solicitante` para satisfazer CHECK constraints
+      const tipoSolicitante = user.perfil === 'rh' ? 'rh' : 'gestor';
+
       const insertResult = await query(
         `WITH existing AS (
            SELECT id, tentativas
@@ -238,15 +212,65 @@ export async function POST(
         console.log(`[INFO] Nova solicitação registrada para lote ${loteId}`);
       }
 
-      // 9. Registrar solicitação (NÃO emite automaticamente)
-      // O laudo será gerado manualmente pelo EMISSOR quando ele clicar no botão
-      console.log(
-        `[INFO] Lote ${loteId} adicionado à fila de emissão manual pelo emissor`
+      // 9. Atualizar lote com status de pagamento (NOVO FLUXO)
+      await query(
+        `UPDATE lotes_avaliacao
+         SET status_pagamento = 'aguardando_cobranca',
+             solicitacao_emissao_em = NOW(),
+             atualizado_em = NOW()
+         WHERE id = $1`,
+        [loteId]
       );
 
-      // 10. Criar notificação de sucesso ANTES do COMMIT (dentro da transação)
-      // Normalizar tipo de destinatário para satisfazer CHECK constraint
-      // Valores aceitos: 'admin', 'gestor', 'funcionario', 'contratante', 'clinica'
+      console.log(
+        `[INFO] Lote ${loteId} marcado como aguardando cobrança - novo fluxo de pagamento`
+      );
+
+      // 10. Criar notificação para ADMIN sobre solicitação de cobrança
+      // TODO: Ajustar para usar destinatario_cpf/destinatario_tipo ao invés de destinatario_role
+      /*
+      await query(
+        `INSERT INTO notificacoes (
+           tipo, 
+           prioridade, 
+           destinatario_role,
+           titulo, 
+           mensagem,
+           lote_id,
+           dados_contexto
+         )
+         VALUES (
+           'solicitacao_emissao'::tipo_notificacao,
+           'alta'::prioridade_notificacao,
+           'admin',
+           $1,
+           $2,
+           $3,
+           jsonb_build_object(
+             'solicitante_cpf', $4::text,
+             'solicitante_nome', $5::text,
+             'solicitante_tipo', $6::text,
+             'clinica_id', $7,
+             'empresa_id', $8,
+             'entidade_id', $9
+           )
+         )`,
+        [
+          'Nova solicitação de emissão',
+          `${user.perfil === 'rh' ? 'Clínica' : 'Entidade'} solicitou emissão de laudo para lote #${loteId}`,
+          loteId,
+          user.cpf,
+          user.nome,
+          user.perfil,
+          lote.clinica_id,
+          lote.empresa_id,
+          lote.entidade_id,
+        ]
+      );
+      */
+      console.log('[INFO] Notificação para admin temporariamente desabilitada');
+
+      // 11. Criar notificação de sucesso para o solicitante
       let destinatarioTipo: string = user.perfil;
       if (user.perfil === 'rh') {
         destinatarioTipo = 'funcionario';
@@ -276,13 +300,13 @@ export async function POST(
         [
           user.cpf,
           destinatarioTipo,
-          'Solicitação de emissão registrada',
-          `Solicitação de emissão registrada para lote #${loteId}. O laudo será gerado pelo emissor quando disponível.`,
+          'Solicitação de emissão enviada',
+          `Solicitação enviada para lote #${loteId}. Aguarde o link de pagamento.`,
           loteId,
         ]
       );
 
-      // COMMIT apenas após notificação criada com sucesso
+      // COMMIT apenas após notificações criadas com sucesso
       await query('COMMIT');
 
       console.log(
@@ -292,9 +316,10 @@ export async function POST(
       return NextResponse.json({
         success: true,
         message:
-          'Solicitação de emissão registrada com sucesso. O laudo será gerado pelo emissor.',
+          'Solicitação enviada com sucesso. Aguarde o link de pagamento.',
         lote: {
           id: lote.id,
+          status_pagamento: 'aguardando_cobranca',
         },
       });
     } catch (emissaoError) {

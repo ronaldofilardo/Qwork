@@ -27,7 +27,7 @@ describe('/api/entidade/dashboard', () => {
   it('deve retornar dados do dashboard com sucesso', async () => {
     // Mock da sessão
     mockRequireEntity.mockResolvedValue({
-      contratante_id: 1,
+      tomador_id: 1,
     });
 
     // Mock das consultas
@@ -94,7 +94,7 @@ describe('/api/entidade/dashboard', () => {
 
   it('deve retornar erro 500 quando ocorre erro na consulta', async () => {
     mockRequireEntity.mockResolvedValue({
-      contratante_id: 1,
+      tomador_id: 1,
     });
 
     mockQuery.mockRejectedValueOnce(new Error('Erro de banco'));

@@ -2,7 +2,7 @@
 
 <#
 .SYNOPSIS
-    Executa todos os testes de cadastro de contratantes
+    Executa todos os testes de cadastro de tomadores
 
 .DESCRIPTION
     Script para executar a suíte completa de testes de cadastro:
@@ -17,7 +17,7 @@
 #>
 
 Write-Host "==================================" -ForegroundColor Cyan
-Write-Host "Testes de Cadastro de Contratantes" -ForegroundColor Cyan
+Write-Host "Testes de Cadastro de tomadores" -ForegroundColor Cyan
 Write-Host "==================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -99,7 +99,7 @@ if ($ErrorCount -eq 0) {
     Write-Host "🎉 Todos os testes passaram!" -ForegroundColor Green
     Write-Host ""
     Write-Host "Próximos passos:" -ForegroundColor Cyan
-    Write-Host "1. Revisar relatório: docs/corrections/REVISAO-CADASTRO-CONTRATANTES-20JAN2026.md" -ForegroundColor Gray
+    Write-Host "1. Revisar relatório: docs/corrections/REVISAO-CADASTRO-tomadores-20JAN2026.md" -ForegroundColor Gray
     Write-Host "2. Validar em ambiente de homologação" -ForegroundColor Gray
     Write-Host "3. Planejar deploy em produção" -ForegroundColor Gray
     exit 0
@@ -109,6 +109,6 @@ if ($ErrorCount -eq 0) {
     Write-Host "Ações recomendadas:" -ForegroundColor Cyan
     Write-Host "1. Verificar erros nos logs" -ForegroundColor Gray
     Write-Host "2. Executar testes individualmente para debug" -ForegroundColor Gray
-    Write-Host "3. Consultar documentação: docs/guides/FLUXO-CADASTRO-CONTRATANTES.md" -ForegroundColor Gray
+    Write-Host "3. Consultar documentação: docs/guides/FLUXO-CADASTRO-tomadores.md" -ForegroundColor Gray
     exit 1
 }

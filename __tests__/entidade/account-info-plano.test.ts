@@ -2,9 +2,7 @@ import { GET } from '@/app/api/entidade/account-info/route';
 import '@testing-library/jest-dom';
 
 jest.mock('@/lib/session', () => ({
-  getSession: jest
-    .fn()
-    .mockReturnValue({ perfil: 'gestor', contratante_id: 99 }),
+  getSession: jest.fn().mockReturnValue({ perfil: 'gestor', entidade_id: 99 }),
 }));
 
 jest.mock('@/lib/db', () => ({

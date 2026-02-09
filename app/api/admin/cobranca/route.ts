@@ -18,169 +18,20 @@ export async function GET(request: Request) {
     const rawCnpj = url.searchParams.get('cnpj');
     const cnpj = rawCnpj ? rawCnpj.replace(/\D/g, '') : null;
 
-    // Detectar dinamicamente qual coluna de preço existe na tabela `planos`
-    // e montar EXPRESSÕES reutilizáveis para preço unitário/plano (compatibilidade com várias migrações)
-    let _precoCol = null;
-    let unitPriceExpr = null; // expressão para preço unitário por funcionário
-    // declarar a variável fora do try para garantir escopo adequado
-    let hasContratoValorPersonalizado = false;
-    try {
-      const colRes = await query(
-        "SELECT table_name, column_name FROM information_schema.columns WHERE (table_name = 'planos' AND column_name IN ('valor_base','preco','valor_por_funcionario','valor_fixo_anual')) OR (table_name = 'contratos' AND column_name = 'valor_personalizado')"
-      );
-
-      const cols = colRes.rows
-        .filter((r: any) => r.table_name === 'planos')
-        .map((r: any) => r.column_name);
-
-      // detectar se existe a coluna valor_personalizado na tabela contratos
-      hasContratoValorPersonalizado = colRes.rows.some(
-        (r: any) =>
-          r.table_name === 'contratos' &&
-          r.column_name === 'valor_personalizado'
-      );
-
-      if (cols.includes('valor_por_funcionario')) {
-        unitPriceExpr = 'COALESCE(pl.valor_por_funcionario, 20.00)';
-        _precoCol = 'pl.valor_por_funcionario';
-      } else if (cols.includes('valor_base')) {
-        unitPriceExpr = 'COALESCE(pl.valor_base, 20.00)';
-        _precoCol = 'pl.valor_base';
-      } else if (cols.includes('preco')) {
-        unitPriceExpr = 'COALESCE(pl.preco, 20.00)';
-        _precoCol = 'pl.preco';
-      } else if (cols.includes('valor_fixo_anual')) {
-        // valor_fixo_anual é total anual para planos básicos/premium; não é unitário, mas pode ser exibido
-        unitPriceExpr = '20.00';
-        _precoCol = 'pl.valor_fixo_anual';
-      }
-    } catch (err) {
-      console.error('[API Cobrança] Erro ao detectar coluna de preço:', err);
-    }
-
-    // Garantir um valor padrão para expressão unitária (evita inserir 'null' no SQL quando coluna não existe)
-    unitPriceExpr = unitPriceExpr || '20.00';
-
-    // Verificar dinamicamente quais colunas existem na tabela contratos_planos
-    // Em ambiente de teste, pular checagem para não consumir mocks (os testes
-    // já fornecem as respostas esperadas). Em dev/prod, detectar normalmente.
-    let hasCpNumeroFuncionariosEstimado = false;
-    let hasCpNumeroFuncionariosAtual = false;
-    let hasCpValorPersonalizadoPorFuncionario = false;
-    let hasCpValorPago = false;
-    if (process.env.NODE_ENV !== 'test') {
-      try {
-        const cpColsRes = await query(
-          `SELECT column_name FROM information_schema.columns WHERE table_name = 'contratos_planos' AND column_name IN ('numero_funcionarios_estimado','numero_funcionarios_atual','valor_personalizado_por_funcionario','valor_pago')`
-        );
-        const cpCols = cpColsRes.rows.map((r: any) => r.column_name);
-        hasCpNumeroFuncionariosEstimado = cpCols.includes(
-          'numero_funcionarios_estimado'
-        );
-        hasCpNumeroFuncionariosAtual = cpCols.includes(
-          'numero_funcionarios_atual'
-        );
-        hasCpValorPersonalizadoPorFuncionario = cpCols.includes(
-          'valor_personalizado_por_funcionario'
-        );
-        hasCpValorPago = cpCols.includes('valor_pago');
-      } catch (err) {
-        console.error(
-          '[API Cobrança] Erro ao detectar colunas de contratos_planos:',
-          err
-        );
-      }
-    }
-
-    // montar expressão de preço unitário considerando personalizado quando aplicável
-    // prioridade para personalizado (se coluna existir): co.valor_personalizado -> cp.valor_personalizado_por_funcionario -> cp.valor_pago / ct.numero_funcionarios_estimado
-    // quando coluna não existir, omitir co.valor_personalizado
-    const contratoValorPersonalizadoPart = hasContratoValorPersonalizado
-      ? 'co.valor_personalizado, '
-      : '';
-
-    const cpValorPersonalizadoPorFuncionarioPart =
-      hasCpValorPersonalizadoPorFuncionario
-        ? 'cp.valor_personalizado_por_funcionario, '
-        : '';
-
-    const divisorExpr = hasCpNumeroFuncionariosEstimado
-      ? 'cp.numero_funcionarios_estimado'
-      : 'ct.numero_funcionarios_estimado';
-
-    // expression to use cp.valor_pago safely (NULL when not present in schema)
-    const cpValorPagoExpr = hasCpValorPago ? 'cp.valor_pago' : 'NULL::numeric';
-
-    const unitPriceForCalcExpr = `CASE WHEN pl.tipo = 'personalizado' THEN COALESCE(${contratoValorPersonalizadoPart}${cpValorPersonalizadoPorFuncionarioPart} (${cpValorPagoExpr} / NULLIF(${divisorExpr},0)), 0) ELSE COALESCE(${cpValorPersonalizadoPorFuncionarioPart} (${cpValorPagoExpr} / NULLIF(${divisorExpr},0)), ${unitPriceExpr}) END`;
-
-    const planoPrecoExpr = `CASE WHEN pl.tipo = 'personalizado' THEN COALESCE( (pg.valor / NULLIF(${divisorExpr},0)), ${contratoValorPersonalizadoPart}${cpValorPersonalizadoPorFuncionarioPart} (${cpValorPagoExpr} / NULLIF(${divisorExpr},0)), 0) ELSE COALESCE(${cpValorPersonalizadoPorFuncionarioPart} (${cpValorPagoExpr} / NULLIF(${divisorExpr},0)), ${unitPriceExpr}) END as plano_preco`;
-
-    // Construir lista de colunas seguras para seleção de contratos_planos (evitar referências a colunas inexistentes durante parse SQL)
-    const cpSelectCols = [
-      'cp.id',
-      'cp.plano_id',
-      'cp.valor_personalizado_por_funcionario',
-    ];
-    if (hasCpNumeroFuncionariosEstimado)
-      cpSelectCols.push('cp.numero_funcionarios_estimado');
-    if (hasCpNumeroFuncionariosAtual)
-      cpSelectCols.push('cp.numero_funcionarios_atual');
-    if (hasCpValorPago) cpSelectCols.push('cp.valor_pago');
-    const cpSelectColsExpr = cpSelectCols.join(', ');
-
-    // Detectar qual coluna em `funcionarios` referencia o contratante/entidade
-    // A tabela funcionarios usa clinica_id e empresa_id (não entidade_id/contratante_id)
-    // Precisamos contar funcionários vinculados através de empresa_id ou clinica_id
-    let funcionarioIdCol: string | null = null;
-    if (process.env.NODE_ENV === 'test') {
-      // Em testes as queries são mockadas; não executar checagem adicional que consumiria mocks
-      funcionarioIdCol = 'empresa_id';
-    } else {
-      try {
-        const fcolRes = await query(
-          `SELECT column_name FROM information_schema.columns WHERE table_name = 'funcionarios' AND column_name IN ('empresa_id','clinica_id')`
-        );
-        // Preferir empresa_id (para entidades), fallback para clinica_id
-        const cols = fcolRes.rows.map((r: any) => r.column_name);
-        funcionarioIdCol = cols.includes('empresa_id')
-          ? 'empresa_id'
-          : cols.includes('clinica_id')
-            ? 'clinica_id'
-            : null;
-      } catch (err) {
-        console.error(
-          '[API Cobrança] Erro ao detectar coluna em funcionarios:',
-          err
-        );
-      }
-    }
-
-    const vcSelect = funcionarioIdCol
-      ? `SELECT COUNT(*) as funcionarios_ativos FROM funcionarios f WHERE (f.empresa_id = ct.id OR f.clinica_id = ct.id) AND f.ativo = true`
-      : `SELECT 0 as funcionarios_ativos`;
-
-    // Seleção defensiva para o lateral JOIN em `contratos`: se a coluna `valor_personalizado` não existir,
-    // expor um placeholder NULL com o mesmo nome para manter formato consistente sem causar erro de parse.
-    const lateralContratoSelectCols = hasContratoValorPersonalizado
-      ? 'c.id, c.plano_id, c.numero_funcionarios, c.valor_personalizado'
-      : 'c.id, c.plano_id, c.numero_funcionarios, NULL::numeric as valor_personalizado';
-
-    // Buscar contratantes aprovados com seus planos e última informação de pagamento
+    // Buscar entidades aprovadas com seus planos e última informação de pagamento
+    // NOTA: Esta query é para ENTIDADES apenas (empresas particulares com usuários gestores)
+    // Para CLÍNICAS, seria necessária query separada com clinica_id
     let sql = `SELECT
-        ct.id as contratante_id,
+        ct.id as tomador_id,
         ct.cnpj,
-        -- Removido: co.id as contrato_id (não será exibido)
-        COALESCE(co.plano_id, ct.plano_id) as plano_id,
+        ct.plano_id as plano_id,
         pl.nome as plano_nome,
-        ${planoPrecoExpr},
+        COALESCE(pl.valor_por_funcionario, 20.00) as plano_preco,
         ct.id as numero_contrato,
-        ct.tipo as tipo_contratante,
-        ct.nome as nome_contratante,
+        ct.nome as nome_tomador,
         pl.tipo as plano_tipo,
-        -- número estimado informado na contratação (priorizar contrato personalizado, depois contratos_planos (se coluna existir), depois contratante)
-        COALESCE(co.numero_funcionarios${hasCpNumeroFuncionariosEstimado ? ', cp.numero_funcionarios_estimado' : ''}, ct.numero_funcionarios_estimado) as numero_funcionarios_estimado,
-        -- número atual de funcionários: contar vinculados ativos (funcionarios usa empresa_id e clinica_id)
-        (SELECT COUNT(*) FROM funcionarios f WHERE (f.empresa_id = ct.id OR f.clinica_id = ct.id) AND f.ativo = true) as numero_funcionarios_atual,
+        ct.numero_funcionarios_estimado as numero_funcionarios_estimado,
+        (SELECT COUNT(*) FROM funcionarios f WHERE (f.entidade_id = ct.id OR f.clinica_id = ct.id) AND f.ativo = true) as numero_funcionarios_atual,
         pg.id as pagamento_id,
         pg.valor as pagamento_valor,
         pg.status as pagamento_status,
@@ -188,13 +39,10 @@ export async function GET(request: Request) {
         CASE WHEN pg.numero_parcelas IS NOT NULL AND pg.numero_parcelas > 1 THEN 'parcelado' ELSE 'a_vista' END as modalidade_pagamento,
         pg.numero_parcelas,
         NULL as parcelas_json,
-        -- Valor total: prioridade
-        -- 1) último pagamento registrado (pg.valor)
-        -- 2) fallback: número de funcionários * preço unitário (cálculo)
-        COALESCE(pg.valor, (COALESCE(co.numero_funcionarios, ${hasCpNumeroFuncionariosEstimado ? 'cp.numero_funcionarios_estimado, ' : ''}ct.numero_funcionarios_estimado, 0) * (${unitPriceForCalcExpr})))::numeric as valor_pago,
+        COALESCE(pg.valor, (ct.numero_funcionarios_estimado * COALESCE(pl.valor_por_funcionario, 20.00)))::numeric as valor_pago,
         CASE
-          WHEN ct.ativa = true AND ct.pagamento_confirmado = true THEN 'ativo'
-          WHEN ct.ativa = false THEN 'cancelado'
+          WHEN ct.status = 'aprovado' AND ct.pagamento_confirmado = true THEN 'ativo'
+          WHEN ct.status != 'aprovado' THEN 'cancelado'
           ELSE 'pendente'
         END as status,
         ct.criado_em as data_contratacao,
@@ -202,39 +50,22 @@ export async function GET(request: Request) {
         pg.data_pagamento as data_pagamento,
         ct.criado_em
       FROM entidades ct
-      LEFT JOIN LATERAL (
-        SELECT ${lateralContratoSelectCols}
-        FROM contratos c
-        WHERE c.contratante_id = ct.id
-        ORDER BY c.criado_em DESC NULLS LAST, c.id DESC
-        LIMIT 1
-      ) co ON true
-      LEFT JOIN LATERAL (
-        SELECT ${cpSelectColsExpr}
-        FROM contratos_planos cp
-        WHERE cp.contratante_id = ct.id
-        ORDER BY cp.created_at DESC NULLS LAST, cp.id DESC
-        LIMIT 1
-      ) cp ON true
-      -- manter LEFT JOIN vc apenas para compatibilidade com schemas antigos (mas não necessário para o cálculo principal)
-      LEFT JOIN LATERAL (
-        ${vcSelect}
-      ) vc ON true
-      LEFT JOIN planos pl ON COALESCE(co.plano_id, ct.plano_id) = pl.id
-      LEFT JOIN LATERAL (
-        SELECT p.id, p.valor, p.metodo, p.data_pagamento, p.numero_parcelas, p.plataforma_nome, p.detalhes_parcelas, p.status
-        FROM pagamentos p
-        WHERE p.contratante_id = ct.id
-        ORDER BY p.data_pagamento DESC NULLS LAST, p.criado_em DESC
-        LIMIT 1
-      ) pg ON true
+      LEFT JOIN planos pl ON ct.plano_id = pl.id
+      LEFT JOIN (
+        SELECT entidade_id, id, valor, status, metodo, data_pagamento, numero_parcelas, plataforma_nome, detalhes_parcelas
+        FROM pagamentos
+        WHERE entidade_id IS NOT NULL
+        ORDER BY data_pagamento DESC NULLS LAST, criado_em DESC
+      ) pg ON pg.entidade_id = ct.id AND pg.id = (
+        SELECT id FROM pagamentos WHERE entidade_id = ct.id ORDER BY data_pagamento DESC NULLS LAST LIMIT 1
+      )
       `;
 
     // Construir cláusulas WHERE dinamicamente
     const whereClauses: string[] = [];
     const params: any[] = [];
 
-    // Por padrão, trazer apenas contratantes aprovados
+    // Por padrão, trazer apenas tomadors aprovados
     whereClauses.push("ct.status = 'aprovado'");
 
     // Paginação e ordenação
@@ -309,10 +140,6 @@ export async function GET(request: Request) {
     // Adicionar ordenação e limites
     sql += ` ORDER BY ${sortBy} ${sortDir} LIMIT ${limit} OFFSET ${(page - 1) * limit}`;
 
-    // DEBUG: log SQL and dynamic flags to diagnose missing column errors in different DB versions
-    console.debug('[API Cobrança] hasCpValorPago:', hasCpValorPago);
-    console.debug('[API Cobrança] cpSelectColsExpr:', cpSelectColsExpr);
-    console.debug('[API Cobrança] cpValorPagoExpr:', cpValorPagoExpr);
     console.debug('[API Cobrança] Executing SQL:', sql);
 
     const result = await query(sql, params, session);

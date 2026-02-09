@@ -6,23 +6,23 @@
 
 BEGIN;
 
--- 1. Adicionar data_primeiro_pagamento em contratantes
+-- 1. Adicionar data_primeiro_pagamento em tomadores
 DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' 
+        WHERE table_name = 'tomadores' 
         AND column_name = 'data_primeiro_pagamento'
     ) THEN
-        ALTER TABLE contratantes 
+        ALTER TABLE tomadores 
         ADD COLUMN data_primeiro_pagamento TIMESTAMP;
         
-        COMMENT ON COLUMN contratantes.data_primeiro_pagamento 
+        COMMENT ON COLUMN tomadores.data_primeiro_pagamento 
         IS 'Data do primeiro pagamento confirmado do contratante';
         
-        RAISE NOTICE 'Coluna data_primeiro_pagamento adicionada em contratantes';
+        RAISE NOTICE 'Coluna data_primeiro_pagamento adicionada em tomadores';
     ELSE
-        RAISE NOTICE 'Coluna data_primeiro_pagamento já existe em contratantes';
+        RAISE NOTICE 'Coluna data_primeiro_pagamento já existe em tomadores';
     END IF;
 END $$;
 
@@ -35,13 +35,13 @@ BEGIN
         AND column_name = 'contratante_id'
     ) THEN
         ALTER TABLE empresas_clientes 
-        ADD COLUMN contratante_id INTEGER REFERENCES contratantes(id) ON DELETE CASCADE;
+        ADD COLUMN contratante_id INTEGER REFERENCES tomadores(id) ON DELETE CASCADE;
         
         CREATE INDEX idx_empresas_contratante 
         ON empresas_clientes(contratante_id);
         
         COMMENT ON COLUMN empresas_clientes.contratante_id 
-        IS 'FK para contratantes - usado no fluxo de entidades (opcional, mutuamente exclusivo com clinica_id)';
+        IS 'FK para tomadores - usado no fluxo de entidades (opcional, mutuamente exclusivo com clinica_id)';
         
         RAISE NOTICE 'Coluna contratante_id adicionada em empresas_clientes';
     ELSE

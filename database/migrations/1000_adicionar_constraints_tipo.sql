@@ -4,7 +4,7 @@
 -- Descrição: Garantir integridade referencial para campos tipo/tipo_contratante
 
 -- ============================================================================
--- PARTE 1: Validação de tipo em contratantes
+-- PARTE 1: Validação de tipo em tomadores
 -- ============================================================================
 
 -- Adicionar constraint para validar valores permitidos
@@ -13,15 +13,15 @@ BEGIN
     -- Verificar se constraint já existe
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint 
-        WHERE conname = 'chk_contratantes_tipo_valido'
+        WHERE conname = 'chk_tomadores_tipo_valido'
     ) THEN
-        ALTER TABLE contratantes 
-            ADD CONSTRAINT chk_contratantes_tipo_valido 
+        ALTER TABLE tomadores 
+            ADD CONSTRAINT chk_tomadores_tipo_valido 
             CHECK (tipo IN ('clinica', 'entidade'));
         
-        RAISE NOTICE '[OK] Constraint chk_contratantes_tipo_valido criada';
+        RAISE NOTICE '[OK] Constraint chk_tomadores_tipo_valido criada';
     ELSE
-        RAISE NOTICE '[SKIP] Constraint chk_contratantes_tipo_valido já existe';
+        RAISE NOTICE '[SKIP] Constraint chk_tomadores_tipo_valido já existe';
     END IF;
 END $$;
 
@@ -67,20 +67,20 @@ END $$;
 -- PARTE 3: Verificar dados existentes
 -- ============================================================================
 
--- Verificar se há valores inválidos em contratantes
+-- Verificar se há valores inválidos em tomadores
 DO $$ 
 DECLARE
     v_invalid_count INTEGER;
 BEGIN
     SELECT COUNT(*) INTO v_invalid_count
-    FROM contratantes
+    FROM tomadores
     WHERE tipo NOT IN ('clinica', 'entidade');
     
     IF v_invalid_count > 0 THEN
-        RAISE WARNING '[AVISO] Encontrados % registros com tipo inválido em contratantes', v_invalid_count;
-        RAISE WARNING 'Execute: SELECT id, nome, tipo FROM contratantes WHERE tipo NOT IN (''clinica'', ''entidade'')';
+        RAISE WARNING '[AVISO] Encontrados % registros com tipo inválido em tomadores', v_invalid_count;
+        RAISE WARNING 'Execute: SELECT id, nome, tipo FROM tomadores WHERE tipo NOT IN (''clinica'', ''entidade'')';
     ELSE
-        RAISE NOTICE '[OK] Todos os registros em contratantes têm tipo válido';
+        RAISE NOTICE '[OK] Todos os registros em tomadores têm tipo válido';
     END IF;
 END $$;
 
@@ -117,12 +117,12 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_indexes 
-        WHERE indexname = 'idx_contratantes_tipo'
+        WHERE indexname = 'idx_tomadores_tipo'
     ) THEN
-        CREATE INDEX idx_contratantes_tipo ON contratantes(tipo);
-        RAISE NOTICE '[OK] Índice idx_contratantes_tipo criado';
+        CREATE INDEX idx_tomadores_tipo ON tomadores(tipo);
+        RAISE NOTICE '[OK] Índice idx_tomadores_tipo criado';
     ELSE
-        RAISE NOTICE '[SKIP] Índice idx_contratantes_tipo já existe';
+        RAISE NOTICE '[SKIP] Índice idx_tomadores_tipo já existe';
     END IF;
 END $$;
 
@@ -136,11 +136,11 @@ END $$;
 \echo '==============================================================================='
 \echo ''
 \echo 'Constraints criadas:'
-\echo '  - chk_contratantes_tipo_valido'
+\echo '  - chk_tomadores_tipo_valido'
 \echo '  - chk_contratos_planos_tipo_contratante_valido (se tabela existir)'
 \echo ''
 \echo 'Índices criados:'
-\echo '  - idx_contratantes_tipo'
+\echo '  - idx_tomadores_tipo'
 \echo ''
 \echo 'Valores permitidos: ''clinica'', ''entidade'''
 \echo ''

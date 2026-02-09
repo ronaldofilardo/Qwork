@@ -15,7 +15,7 @@ WITH to_update AS (
   FROM pagamentos p
   JOIN contratos ctr ON p.contrato_id = ctr.id
   LEFT JOIN planos pl ON ctr.plano_id = pl.id
-  JOIN contratantes c ON p.contratante_id = c.id
+  JOIN tomadores c ON p.contratante_id = c.id
   WHERE (p.valor_por_funcionario IS NULL OR p.numero_funcionarios IS NULL)
 )
 UPDATE pagamentos p
@@ -32,9 +32,9 @@ WITH to_update2 AS (
          COALESCE(c.numero_funcionarios_estimado, 1) as nfunc
   FROM pagamentos p
   LEFT JOIN planos pl ON pl.id = (
-    SELECT plano_id FROM contratantes WHERE id = p.contratante_id LIMIT 1
+    SELECT plano_id FROM tomadores WHERE id = p.contratante_id LIMIT 1
   )
-  JOIN contratantes c ON p.contratante_id = c.id
+  JOIN tomadores c ON p.contratante_id = c.id
   WHERE p.contrato_id IS NULL AND (p.valor_por_funcionario IS NULL OR p.numero_funcionarios IS NULL)
 )
 UPDATE pagamentos p

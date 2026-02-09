@@ -34,7 +34,7 @@ if (-not (Test-Path $SqlFile)) {
 if (-not $Force) {
     Write-Host ""
     Write-Host "⚠️  ATENÇÃO: Este script irá remover TODOS os CNPJs e CPFs do banco de dados!" -ForegroundColor Red
-    Write-Host "Isso inclui dados de contratantes, clínicas, empresas e funcionários." -ForegroundColor Red
+    Write-Host "Isso inclui dados de tomadores, clínicas, empresas e funcionários." -ForegroundColor Red
     Write-Host ""
     $confirmation = Read-Host "Tem certeza que deseja continuar? Digite 'SIM' para confirmar"
 

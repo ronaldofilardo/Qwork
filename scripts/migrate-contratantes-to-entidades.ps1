@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-Script automatizado para completar a migração contratantes → entidades
+Script automatizado para completar a migração tomadores → entidades
 
 .DESCRIPTION
 Este script atualiza os arquivos restantes da migração que ainda referenciam
@@ -15,7 +15,7 @@ Revisar cada mudança após execução.
 $ErrorActionPreference = "Stop"
 
 Write-Host "=====================================" -ForegroundColor Cyan
-Write-Host "Migração Contratantes → Entidades" -ForegroundColor Cyan
+Write-Host "Migração tomadores → Entidades" -ForegroundColor Cyan
 Write-Host "Script de Atualização Automática" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
@@ -100,17 +100,17 @@ $replacements = @(
         Description = 'Alias lotes_avaliacao'
     },
     @{
-        Pattern = 'FROM contratantes '
+        Pattern = 'FROM tomadores '
         Replacement = 'FROM entidades '
         Description = 'Tabela FROM'
     },
     @{
-        Pattern = 'JOIN contratantes '
+        Pattern = 'JOIN tomadores '
         Replacement = 'JOIN entidades '
         Description = 'Tabela JOIN'
     },
     @{
-        Pattern = 'contratantes ct'
+        Pattern = 'tomadores ct'
         Replacement = 'entidades e'
         Description = 'Alias de tabela'
     },

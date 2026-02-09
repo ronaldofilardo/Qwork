@@ -81,7 +81,10 @@ export default function NovaAvaliacaoPage() {
           );
 
           // Se já está concluída, redirecionar para página de conclusão
-          if (avaliacaoEspecifica?.status === 'concluido') {
+          if (
+            avaliacaoEspecifica?.status === 'concluida' ||
+            avaliacaoEspecifica?.status === 'concluido'
+          ) {
             console.log(
               `[AVALIAÇÃO] Avaliação #${avaliacaoIdToUse} já está concluída, redirecionando...`
             );
@@ -102,7 +105,7 @@ export default function NovaAvaliacaoPage() {
           // Senão, buscar a mais recente não concluída
           const statusRes = await fetch('/api/avaliacao/status');
           const status = await statusRes.json();
-          if (status.status === 'concluido') {
+          if (status.status === 'concluida' || status.status === 'concluido') {
             window.location.href = '/avaliacao/concluida';
             return;
           }
@@ -130,7 +133,10 @@ export default function NovaAvaliacaoPage() {
           console.log(`[AVALIAÇÃO] Status atual: ${avaliacaoAtual.status}`);
 
           // Double-check: se concluída, redirecionar
-          if (avaliacaoAtual.status === 'concluido') {
+          if (
+            avaliacaoAtual.status === 'concluida' ||
+            avaliacaoAtual.status === 'concluido'
+          ) {
             console.warn(
               '[AVALIAÇÃO] Detectado status "concluido" - redirecionando'
             );
@@ -377,4 +383,3 @@ export default function NovaAvaliacaoPage() {
     </div>
   );
 }
-

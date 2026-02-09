@@ -169,8 +169,8 @@ describe('CentroOperacoes', () => {
     });
   });
 
-  it('calls correct API endpoint for contratante user type', async () => {
-    render(<CentroOperacoes tipoUsuario="contratante" />);
+  it('calls correct API endpoint for tomador user type', async () => {
+    render(<CentroOperacoes tipoUsuario="tomador" />);
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith('/api/rh/notificacoes');

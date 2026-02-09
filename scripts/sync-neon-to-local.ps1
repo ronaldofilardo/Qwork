@@ -89,7 +89,7 @@ Write-Host ""
 
 $verifyQuery = @"
 SELECT 
-    'contratantes' as tabela, COUNT(*) as registros FROM contratantes
+    'tomadores' as tabela, COUNT(*) as registros FROM tomadores
 UNION ALL
 SELECT 'empresas_clientes', COUNT(*) FROM empresas_clientes
 UNION ALL

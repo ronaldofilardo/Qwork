@@ -34,7 +34,7 @@ export async function GET(
         numero_recibo,
         pdf,
         hash_pdf,
-        contratante_id,
+        tomador_id,
         criado_em
        FROM recibos
        WHERE id = $1 AND ativo = true`,

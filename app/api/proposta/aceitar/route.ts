@@ -6,7 +6,7 @@ import { getBaseUrl } from '@/lib/utils/get-base-url';
 /**
  * POST /api/proposta/aceitar
  *
- * Contratante aceita proposta personalizada
+ * Entidade aceita proposta personalizada
  * Atualiza status e redireciona para página de contrato
  *
  * Body:
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
           e.responsavel_nome,
           e.plano_id
         FROM contratacao_personalizada cp
-        JOIN entidades e ON cp.contratante_id = e.id
+        JOIN entidades e ON cp.entidade_id = e.id
         WHERE cp.id = $1`,
         [contratacao_id]
       );
@@ -83,7 +83,7 @@ Status: Aguardando Aceite da Entidade`;
 
       const contratoResult = await query(
         `INSERT INTO contratos (
-          contratante_id,
+          entidade_id,
           plano_id,
           numero_funcionarios,
           valor_total,
@@ -93,7 +93,7 @@ Status: Aguardando Aceite da Entidade`;
         ) VALUES ($1, $2, $3, $4, 'aguardando_aceite', $5, $5)
         RETURNING id`,
         [
-          contratacao.contratante_id,
+          contratacao.entidade_id,
           contratacao.plano_id,
           contratacao.numero_funcionarios_estimado,
           contratacao.valor_total_estimado,
@@ -118,7 +118,7 @@ Status: Aguardando Aceite da Entidade`;
         action: 'UPDATE',
         resourceId: contratacao_id,
         details: JSON.stringify({
-          contratante_id: contratacao.contratante_id,
+          entidade_id: contratacao.entidade_id,
           entidade_nome: contratacao.entidade_nome,
           numero_funcionarios: contratacao.numero_funcionarios_estimado,
           valor_total: contratacao.valor_total_estimado,
@@ -134,7 +134,7 @@ Status: Aguardando Aceite da Entidade`;
         JSON.stringify({
           event: 'personalizado_proposta_aceita',
           contratacao_id,
-          contratante_id: contratacao.contratante_id,
+          entidade_id: contratacao.entidade_id,
           contrato_id: contratoId,
           numero_funcionarios: contratacao.numero_funcionarios_estimado,
           valor_total: contratacao.valor_total_estimado,
@@ -146,7 +146,7 @@ Status: Aguardando Aceite da Entidade`;
       return NextResponse.json({
         success: true,
         message: 'Proposta aceita com sucesso',
-        redirect_url: `${baseUrl}/sucesso-cadastro?id=${contratacao.contratante_id}&contrato_id=${contratoId}&origem=personalizado`,
+        redirect_url: `${baseUrl}/sucesso-cadastro?id=${contratacao.entidade_id}&contrato_id=${contratoId}&origem=personalizado`,
         contrato_id: contratoId,
         contratacao_id,
       });

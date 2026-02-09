@@ -34,7 +34,7 @@ CREATE TABLE IF NOT EXISTS notificacoes_admin (
     
     -- Foreign Keys
     CONSTRAINT fk_notificacoes_contratante 
-        FOREIGN KEY (contratante_id) REFERENCES contratantes (id) ON DELETE CASCADE,
+        FOREIGN KEY (contratante_id) REFERENCES tomadores (id) ON DELETE CASCADE,
     CONSTRAINT fk_notificacoes_contrato 
         FOREIGN KEY (contrato_id) REFERENCES contratos (id) ON DELETE CASCADE,
     CONSTRAINT fk_notificacoes_pagamento 
@@ -88,9 +88,10 @@ SELECT
     EXTRACT(DAY FROM (CURRENT_TIMESTAMP - n.criado_em)) AS dias_pendente,
     n.dados_contexto
 FROM notificacoes_admin n
-LEFT JOIN contratantes c ON n.contratante_id = c.id
+LEFT JOIN tomadores c ON n.contratante_id = c.id
 LEFT JOIN contratos cont ON n.contrato_id = cont.id
-WHERE n.resolvida = false
+WHERE n.resolvida = false 
+  AND n.tipo != 'parcela_pendente'
 ORDER BY n.criado_em DESC;
 
 COMMENT ON VIEW vw_notificacoes_admin_pendentes IS 'Notificações pendentes de resolução com dados contextuais';
@@ -155,7 +156,7 @@ CREATE TABLE IF NOT EXISTS tokens_retomada_pagamento (
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     
     CONSTRAINT fk_tokens_contratante 
-        FOREIGN KEY (contratante_id) REFERENCES contratantes (id) ON DELETE CASCADE,
+        FOREIGN KEY (contratante_id) REFERENCES tomadores (id) ON DELETE CASCADE,
     CONSTRAINT fk_tokens_contrato 
         FOREIGN KEY (contrato_id) REFERENCES contratos (id) ON DELETE CASCADE,
     CONSTRAINT chk_token_expiracao 

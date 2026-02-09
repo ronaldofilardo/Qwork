@@ -25,7 +25,7 @@ SELECT
     AVG(EXTRACT(EPOCH FROM (NOW() - la.liberado_em)) / 86400) as idade_media_dias
 FROM lotes_avaliacao la
 LEFT JOIN clinicas c ON la.clinica_id = c.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 WHERE la.status != 'cancelado'
 GROUP BY la.clinica_id, la.contratante_id, c.nome, cont.nome, la.status;
 
@@ -57,7 +57,7 @@ SELECT
 FROM lotes_avaliacao la
 LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
 LEFT JOIN clinicas c ON ec.clinica_id = c.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 LEFT JOIN avaliacoes a ON la.id = a.lote_id
 WHERE la.status IN ('ativo', 'concluido', 'finalizado')
   AND la.atualizado_em < NOW() - INTERVAL '48 hours'
@@ -87,7 +87,7 @@ SELECT
 FROM laudos l
 JOIN lotes_avaliacao la ON l.lote_id = la.id
 LEFT JOIN clinicas c ON la.clinica_id = c.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 WHERE l.criado_em >= NOW() - INTERVAL '30 days'
 GROUP BY la.clinica_id, la.contratante_id, c.nome, cont.nome, DATE_TRUNC('day', l.criado_em)
 ORDER BY data_emissao DESC;
@@ -98,7 +98,7 @@ COMMENT ON VIEW vw_metricas_emissao_laudos IS
 \echo '066.3 View vw_metricas_emissao_laudos criada'
 
 -- View: Health check simplificado (todos os tipos de contratante)
-CREATE OR REPLACE VIEW vw_health_check_contratantes AS
+CREATE OR REPLACE VIEW vw_health_check_tomadores AS
 SELECT
     COALESCE(la.clinica_id, la.contratante_id) as contratante_ref_id,
     CASE 
@@ -114,14 +114,14 @@ SELECT
     MAX(la.atualizado_em) as ultima_atividade
 FROM lotes_avaliacao la
 LEFT JOIN clinicas c ON la.clinica_id = c.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 WHERE la.status != 'cancelado'
 GROUP BY la.clinica_id, la.contratante_id, c.nome, cont.nome, c.ativa, cont.ativa;
 
-COMMENT ON VIEW vw_health_check_contratantes IS 
-'Health check rápido de todos os contratantes (clínicas e entidades) com lotes ativos';
+COMMENT ON VIEW vw_health_check_tomadores IS 
+'Health check rápido de todos os tomadores (clínicas e entidades) com lotes ativos';
 
-\echo '066.4 View vw_health_check_contratantes criada'
+\echo '066.4 View vw_health_check_tomadores criada'
 
 -- Create indexes to improve view performance
 CREATE INDEX IF NOT EXISTS idx_lotes_atualizado_em 

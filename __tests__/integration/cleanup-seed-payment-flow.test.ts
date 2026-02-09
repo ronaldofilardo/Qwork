@@ -9,7 +9,7 @@ describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
         'DELETE FROM contratos',
         'DELETE FROM planos p',
         'DELETE FROM entidades_senhas',
-        'DELETE FROM contratantes_funcionarios',
+        'DELETE FROM tomadors_funcionarios',
         'DELETE FROM lotes_avaliacao_funcionarios',
         'DELETE FROM laudos',
         'DELETE FROM respostas',
@@ -23,9 +23,9 @@ describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
         'DELETE FROM funcionarios',
         'DELETE FROM administradores',
         'DELETE FROM emissores',
-        'DELETE FROM contratantes',
+        'DELETE FROM tomadors',
         'DELETE FROM clinicas',
-        'ALTER SEQUENCE contratantes_id_seq',
+        'ALTER SEQUENCE tomadors_id_seq',
         'ALTER SEQUENCE clinicas_id_seq',
         'ALTER SEQUENCE empresas_clientes_id_seq',
         'ALTER SEQUENCE funcionarios_id_seq',
@@ -39,7 +39,7 @@ describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
 
       // Verificar que temos operações esperadas
       expect(expectedOperations.length).toBeGreaterThan(20);
-      expect(expectedOperations).toContain('DELETE FROM contratantes');
+      expect(expectedOperations).toContain('DELETE FROM tomadors');
       expect(expectedOperations).toContain('DELETE FROM clinicas');
       expect(expectedOperations).toContain('DELETE FROM empresas_clientes');
       expect(expectedOperations).toContain('DELETE FROM funcionarios');
@@ -77,18 +77,18 @@ describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
       const expectedQueryStructure = {
         hasJoinContratos: true,
         hasJoinContratosPlanos: false,
-        hasContratanteRelation: true,
+        hastomadorRelation: true,
         hasContratoRelation: true,
-        usesContratanteId: true,
+        usestomadorId: true,
         usesContratoId: true,
       };
 
       // Verificar estrutura esperada da query
       expect(expectedQueryStructure.hasJoinContratos).toBe(true);
       expect(expectedQueryStructure.hasJoinContratosPlanos).toBe(false);
-      expect(expectedQueryStructure.hasContratanteRelation).toBe(true);
+      expect(expectedQueryStructure.hastomadorRelation).toBe(true);
       expect(expectedQueryStructure.hasContratoRelation).toBe(true);
-      expect(expectedQueryStructure.usesContratanteId).toBe(true);
+      expect(expectedQueryStructure.usestomadorId).toBe(true);
       expect(expectedQueryStructure.usesContratoId).toBe(true);
     });
   });
@@ -102,7 +102,7 @@ describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
         '2. Reset de sequences',
         '3. Criação do usuário admin',
         '4. Verificação da criação do admin',
-        '5. Criação de contratante de teste',
+        '5. Criação de tomador de teste',
         '6. Criação de contrato de teste',
         '7. Teste da API de pagamento corrigida',
       ];

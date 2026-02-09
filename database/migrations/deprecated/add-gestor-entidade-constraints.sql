@@ -1,6 +1,6 @@
 -- Migration: Adicionar suporte para perfil 'gestor' nas constraints da tabela funcionarios
 -- Data: 2025-01-13
--- Motivo: Permitir criação automática de contas de login para gestores de entidades contratantes
+-- Motivo: Permitir criação automática de contas de login para gestores de entidades tomadores
 --         após confirmação de pagamento
 
 -- Adicionar 'gestor' ao enum de perfil

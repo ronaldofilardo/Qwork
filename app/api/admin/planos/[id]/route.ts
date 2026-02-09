@@ -285,7 +285,7 @@ export async function DELETE(
       );
 
       await query(
-        'UPDATE contratantes SET plano_id = NULL WHERE plano_id = $1',
+        'UPDATE tomadors SET plano_id = NULL WHERE plano_id = $1',
         [id]
       );
       await query('DELETE FROM planos WHERE id = $1', [id]);

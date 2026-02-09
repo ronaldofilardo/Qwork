@@ -56,9 +56,9 @@ describe('Regressão E2E: Fluxo Cadastro Completo', () => {
     cy.wait(500);
     cy.get('[data-testid="plano-card"]').first().click();
 
-    // Ao invés de passar pelo formulário de UI (flaky), inserir contratante/contrato/pagamento diretamente no DB via script de teste
+    // Ao invés de passar pelo formulário de UI (flaky), inserir tomador/contrato/pagamento diretamente no DB via script de teste
     // Inserir dados diretamente via task (mais confiável que spawn de processo)
-    cy.task('db:insertTestContratante', {
+    cy.task('db:insertTesttomador', {
       cnpj: empresa.cnpj,
       cpf: responsavel.cpf,
       nome: empresa.nome,
@@ -120,8 +120,8 @@ describe('Regressão E2E: Fluxo Cadastro Completo', () => {
     cy.url({ timeout: 10000 }).should('include', '/entidade');
     cy.contains('Painel Entidade', { timeout: 10000 }).should('be.visible');
 
-    // Limpeza: remover contratante/pagamento/recibos criados pelo task para não poluir o DB
-    cy.task('db:cleanupContratanteByCpf', { cpf: responsavel.cpf }).then(() => {
+    // Limpeza: remover tomador/pagamento/recibos criados pelo task para não poluir o DB
+    cy.task('db:cleanuptomadorByCpf', { cpf: responsavel.cpf }).then(() => {
       cy.log('Limpeza pós-teste via task executada');
     });
 

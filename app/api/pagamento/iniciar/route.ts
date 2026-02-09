@@ -16,15 +16,18 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Verificar feature flag de pular fase de pagamento
-    const skipPaymentPhase = process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
+    // ⚠️ NUNCA ativar em produção - somente para teste local
+    const skipPaymentPhase =
+      process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true' &&
+      process.env.NODE_ENV !== 'production';
     if (skipPaymentPhase) {
       console.warn(
-        '[PAGAMENTO] Tentativa de iniciar pagamento com SKIP_PAYMENT_PHASE ativado'
+        '⚠️ [SEGURANÇA] SKIP_PAYMENT_PHASE ATIVADO - Apenas em ambiente de teste!'
       );
       return NextResponse.json(
         {
           error:
-            'A fase de pagamento está temporariamente inativa. O acesso é liberado diretamente após aceitar o contrato.',
+            'A fase de pagamento está temporariamente inativa (somente para testes). Não use em produção.',
         },
         { status: 409 }
       );

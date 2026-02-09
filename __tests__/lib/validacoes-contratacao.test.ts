@@ -21,7 +21,7 @@ import {
   validarTamanhoMinimo,
   validarArquivo,
   validarTipoArquivo,
-  validarFormularioContratante,
+  validarFormulariotomador,
   MENSAGENS_ERRO,
 } from '@/lib/validacoes-contratacao';
 
@@ -285,7 +285,7 @@ describe('Validações de Contratação', () => {
     });
   });
 
-  describe('validarFormularioContratante', () => {
+  describe('validarFormulariotomador', () => {
     const dadosValidos = {
       nome: 'Clínica Teste',
       cnpj: '11.222.333/0001-81',
@@ -319,12 +319,12 @@ describe('Validações de Contratação', () => {
     });
 
     it('não deve retornar erros para dados válidos', () => {
-      const erros = validarFormularioContratante(dadosValidos);
+      const erros = validarFormulariotomador(dadosValidos);
       expect(Object.keys(erros).length).toBe(0);
     });
 
     it('deve validar campo nome obrigatório', () => {
-      const erros = validarFormularioContratante({
+      const erros = validarFormulariotomador({
         ...dadosValidos,
         nome: '',
       });
@@ -332,7 +332,7 @@ describe('Validações de Contratação', () => {
     });
 
     it('deve validar CNPJ inválido', () => {
-      const erros = validarFormularioContratante({
+      const erros = validarFormulariotomador({
         ...dadosValidos,
         cnpj: '11.222.333/0001-00',
       });
@@ -340,7 +340,7 @@ describe('Validações de Contratação', () => {
     });
 
     it('deve validar email inválido', () => {
-      const erros = validarFormularioContratante({
+      const erros = validarFormulariotomador({
         ...dadosValidos,
         email: 'email_invalido',
       });
@@ -348,7 +348,7 @@ describe('Validações de Contratação', () => {
     });
 
     it('deve validar CPF do responsável inválido', () => {
-      const erros = validarFormularioContratante({
+      const erros = validarFormulariotomador({
         ...dadosValidos,
         responsavel_cpf: '123.456.789-00',
       });
@@ -356,7 +356,7 @@ describe('Validações de Contratação', () => {
     });
 
     it('deve validar plano não selecionado', () => {
-      const erros = validarFormularioContratante({
+      const erros = validarFormulariotomador({
         ...dadosValidos,
         plano_id: null,
       });
@@ -364,7 +364,7 @@ describe('Validações de Contratação', () => {
     });
 
     it('deve validar arquivo faltando', () => {
-      const erros = validarFormularioContratante({
+      const erros = validarFormulariotomador({
         ...dadosValidos,
         cartao_cnpj: null,
       });

@@ -54,9 +54,9 @@ export async function POST(request: Request) {
       // Normalizar nomes de campos que podem variar após migração
       usuario.tipo_usuario =
         usuario.tipo_usuario || usuario.perfil || usuario.usuario_tipo;
-      usuario.contratante_id =
-        usuario.contratante_id ||
-        usuario.contratanteId ||
+      usuario.tomador_id =
+        usuario.entidade_id ||
+        usuario.clinica_id ||
         usuario.empresa_id ||
         usuario.empresaId;
       usuario.entidade_id = usuario.entidade_id || usuario.entidadeId || null;
@@ -66,8 +66,7 @@ export async function POST(request: Request) {
       console.log(`[LOGIN] Usuário encontrado em funcionarios:`, {
         cpf: usuario.cpf,
         tipo: usuario.tipo_usuario,
-        contratante_id: usuario.contratante_id,
-        clinica_id: usuario.clinica_id,
+        tomador_id: usuario.tomador_id,
         entidade_id: usuario.entidade_id,
         ativo: usuario.ativo,
       });
@@ -134,8 +133,8 @@ export async function POST(request: Request) {
 
     // PASSO 2: Buscar senha na tabela apropriada
     let senhaHash: string | null = null;
-    let contratanteId: number | null = null;
-    let contratanteAtivo = true;
+    let tomadorId: number | null = null;
+    let tomadorAtivo = true;
     let pagamentoConfirmado = true;
 
     if (foundInFuncionarios) {
@@ -144,8 +143,8 @@ export async function POST(request: Request) {
         `[LOGIN] Usuário vindo de funcionarios; usando senha de funcionarios`
       );
       senhaHash = usuario.senha_hash;
-      contratanteId = usuario.contratante_id || usuario.entidade_id || null;
-      contratanteAtivo = usuario.ativo ?? true;
+      tomadorId = usuario.entidade_id || usuario.clinica_id || null;
+      tomadorAtivo = usuario.ativo ?? true;
       pagamentoConfirmado = true;
     } else if (usuario.tipo_usuario === 'gestor') {
       // Buscar senha em entidades_senhas
@@ -169,38 +168,24 @@ export async function POST(request: Request) {
       }
 
       senhaHash = senhaResult.rows[0].senha_hash;
-      contratanteId = senhaResult.rows[0].id;
-      contratanteAtivo = senhaResult.rows[0].ativa;
+      tomadorId = senhaResult.rows[0].id;
+      tomadorAtivo = senhaResult.rows[0].ativa;
       pagamentoConfirmado = senhaResult.rows[0].pagamento_confirmado;
     } else if (usuario.tipo_usuario === 'rh') {
       // Buscar senha em clinicas_senhas
       console.log(`[LOGIN] Buscando senha de RH em clinicas_senhas...`);
-      // Tentativa 1: estrutura esperada (clinicas -> entidades)
-      let senhaResult = await query(
-        `SELECT cs.senha_hash, c.entidade_id, e.ativa, e.pagamento_confirmado
+      const senhaResult = await query(
+        `SELECT cs.senha_hash, c.id as clinica_id, c.ativa, c.pagamento_confirmado
          FROM clinicas_senhas cs
          JOIN clinicas c ON c.id = cs.clinica_id
-         JOIN entidades e ON e.id = c.entidade_id
          WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
         [cpf, usuario.clinica_id]
       );
 
-      // Tentativa 2: caso a migração tenha movido dados para 'contratantes'
-      if (senhaResult.rows.length === 0) {
-        console.warn(
-          `[LOGIN] Falha busca padrão clinicas_senhas; tentando join com contratantes para CPF ${cpf}`
-        );
+      // Removido: dados legados de 'tomadors' não são mais usados
+      // Todos os dados devem estar em entidades/clinicas
 
-        senhaResult = await query(
-          `SELECT cs.senha_hash, c.id as entidade_id, c.ativa, c.pagamento_confirmado
-           FROM clinicas_senhas cs
-           JOIN contratantes c ON c.id = cs.clinica_id
-           WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
-          [cpf, usuario.clinica_id]
-        );
-      }
-
-      // Tentativa 3: fallback para tabela usuarios (caso historicamente a senha ainda esteja lá)
+      // Fallback para tabela usuarios (caso historicamente a senha ainda esteja lá)
       if (senhaResult.rows.length === 0) {
         console.warn(
           `[LOGIN] clinicas_senhas vazia; tentando buscar senha em usuarios para CPF ${cpf}`
@@ -212,9 +197,9 @@ export async function POST(request: Request) {
 
         if (uRes.rows.length > 0 && uRes.rows[0].senha_hash) {
           senhaHash = uRes.rows[0].senha_hash;
-          contratanteId = uRes.rows[0].clinica_id || usuario.clinica_id;
+          tomadorId = uRes.rows[0].clinica_id || usuario.clinica_id;
           // tentar inferir ativo/pagamento como true para evitar bloqueio indevido
-          contratanteAtivo = true;
+          tomadorAtivo = true;
           pagamentoConfirmado = true;
         } else {
           console.error(
@@ -227,8 +212,8 @@ export async function POST(request: Request) {
         }
       } else {
         senhaHash = senhaResult.rows[0].senha_hash;
-        contratanteId = senhaResult.rows[0].entidade_id;
-        contratanteAtivo = senhaResult.rows[0].ativa;
+        tomadorId = senhaResult.rows[0].clinica_id;
+        tomadorAtivo = senhaResult.rows[0].ativa;
         pagamentoConfirmado = senhaResult.rows[0].pagamento_confirmado;
       }
     } else if (
@@ -268,36 +253,41 @@ export async function POST(request: Request) {
       });
     }
 
-    // Verificar se contratante está ativo
-    if (!contratanteAtivo) {
+    // Verificar se tomador está ativo
+    if (!tomadorAtivo) {
       try {
         await registrarAuditoria({
           entidade_tipo: 'login',
-          entidade_id: contratanteId,
+          entidade_id: tomadorId,
           acao: 'login_falha',
           usuario_cpf: cpf,
-          metadados: { motivo: 'contratante_inativo' },
+          metadados: { motivo: 'tomador_inativo' },
           ...contextoRequisicao,
         });
       } catch (err) {
         console.warn(
-          '[LOGIN] Falha ao registrar auditoria (contratante_inativo):',
+          '[LOGIN] Falha ao registrar auditoria (tomador_inativo)',
           err
         );
       }
 
       return NextResponse.json(
-        { error: 'Contratante inativo. Entre em contato com o administrador.' },
+        { error: 'Tomador inativo. Entre em contato com o administrador.' },
         { status: 403 }
       );
     }
 
-    // Verificar pagamento (exceto admin)
-    if (cpf !== '00000000000' && !pagamentoConfirmado) {
+    // 🟢 FLUXO DE SKIP PAYMENT: Se SKIP_PAYMENT_PHASE=true, permitir login mesmo sem pagamento
+    // Via variável de ambiente, setamos pagamentoConfirmado=true no banco durante pagamento
+    // Para fluxo skip, aceitamos false e deixamos user acessar
+    const skipPaymentPhase =
+      process.env.NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
+
+    if (!skipPaymentPhase && cpf !== '00000000000' && !pagamentoConfirmado) {
       try {
         await registrarAuditoria({
           entidade_tipo: 'login',
-          entidade_id: contratanteId,
+          entidade_id: tomadorId,
           acao: 'login_falha',
           usuario_cpf: cpf,
           metadados: { motivo: 'pagamento_nao_confirmado' },
@@ -314,9 +304,13 @@ export async function POST(request: Request) {
         {
           error:
             'Aguardando confirmação de pagamento. Verifique seu email para instruções ou contate o administrador.',
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
         },
         { status: 403 }
+      );
+    } else if (skipPaymentPhase) {
+      console.log(
+        `[LOGIN] Pulando validação de pagamento (SKIP_PAYMENT_PHASE=true)`
       );
     }
 
@@ -329,7 +323,7 @@ export async function POST(request: Request) {
       try {
         await registrarAuditoria({
           entidade_tipo: 'login',
-          entidade_id: contratanteId,
+          entidade_id: tomadorId,
           acao: 'login_falha',
           usuario_cpf: cpf,
           metadados: { motivo: 'senha_invalida' },
@@ -349,14 +343,17 @@ export async function POST(request: Request) {
     }
 
     // PASSO 4: Criar sessão
-    const perfil =
-      usuario.tipo_usuario === 'gestor' ? 'gestor' : usuario.tipo_usuario;
+    // IMPORTANTE: Segregação por tipo_usuario (criado automaticamente pelo sistema após pagamento):
+    // - 'gestor' = Gestor de Entidade (empresa direta) → redireciona para /entidade
+    // - 'rh' = RH de Clínica (gestor da clínica) → redireciona para /rh
+    // NENHUM outro usuário pode criar login (EXCLUSIVO DO SISTEMA)
+    const perfil = usuario.tipo_usuario;
 
     createSession({
       cpf: usuario.cpf,
       nome: usuario.nome,
       perfil: perfil as any,
-      contratante_id: contratanteId,
+      tomador_id: tomadorId,
       clinica_id: usuario.clinica_id,
       entidade_id: usuario.entidade_id,
     });
@@ -365,7 +362,7 @@ export async function POST(request: Request) {
     try {
       await registrarAuditoria({
         entidade_tipo: 'login',
-        entidade_id: contratanteId,
+        entidade_id: tomadorId,
         acao: 'login_sucesso',
         usuario_cpf: cpf,
         usuario_perfil: perfil,
@@ -394,10 +391,12 @@ export async function POST(request: Request) {
         perfil === 'admin'
           ? '/admin'
           : perfil === 'gestor'
-            ? '/entidade'
-            : perfil === 'funcionario'
-              ? '/dashboard'
-              : '/rh',
+            ? '/entidade' // Gestor de Entidade
+            : perfil === 'rh'
+              ? '/rh' // RH de Clínica
+              : perfil === 'funcionario'
+                ? '/dashboard'
+                : '/emissor',
     });
   } catch (error) {
     console.error('Erro no login:', error);

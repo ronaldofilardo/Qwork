@@ -1,7 +1,7 @@
 -- Script de compatibilidade: adiciona colunas usadas por testes e cria contratacao_personalizada mínima
 BEGIN;
 
-ALTER TABLE IF EXISTS contratantes
+ALTER TABLE IF EXISTS tomadores
   ADD COLUMN IF NOT EXISTS telefone VARCHAR(32),
   ADD COLUMN IF NOT EXISTS endereco TEXT,
   ADD COLUMN IF NOT EXISTS cidade VARCHAR(128),

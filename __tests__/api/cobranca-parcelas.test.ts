@@ -15,27 +15,27 @@ jest.mock('next/headers', () => ({
 }));
 
 describe('API Gestão de Parcelas', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let contratoId: number;
   let pagamentoId: number;
   let reciboId: number;
 
   beforeAll(async () => {
-    // Criar contratante
+    // Criar tomador
     const cont = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status)
+      `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status)
        VALUES ('entidade', 'Empresa Parcelas', '77777777000107', 'parcelas@teste.com', '11999999997',
                'Rua G', 'São Paulo', 'SP', '07000-000', 'aprovado')
        RETURNING id`
     );
-    contratanteId = cont.rows[0].id;
+    tomadorId = cont.rows[0].id;
 
     // Criar contrato
     const contr = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, conteudo_gerado)
+      `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, conteudo_gerado)
        VALUES ($1, 1, 10, 300.00, 'aprovado', 'Contrato parcelas')
        RETURNING id`,
-      [contratanteId]
+      [tomadorId]
     );
     contratoId = contr.rows[0].id;
 
@@ -62,23 +62,23 @@ describe('API Gestão de Parcelas', () => {
     ];
 
     const pag = await query(
-      `INSERT INTO pagamentos (contratante_id, metodo, valor, numero_parcelas,
+      `INSERT INTO pagamentos (tomador_id, metodo, valor, numero_parcelas,
                                numero_funcionarios, valor_por_funcionario, detalhes_parcelas, status, data_pagamento)
        VALUES ($1, 'cartao', 300.00, 3, 10, 20.00, $2, 'pago', NOW())
        RETURNING id`,
-      [contratanteId, JSON.stringify(detalhesParcelas)]
+      [tomadorId, JSON.stringify(detalhesParcelas)]
     );
     pagamentoId = pag.rows[0].id;
 
     // Criar recibo
     const rec = await query(
-      `INSERT INTO recibos (contrato_id, pagamento_id, contratante_id, vigencia_inicio, vigencia_fim,
+      `INSERT INTO recibos (contrato_id, pagamento_id, tomador_id, vigencia_inicio, vigencia_fim,
                             numero_funcionarios_cobertos, valor_total_anual, valor_por_funcionario,
                             forma_pagamento, numero_parcelas, valor_parcela, detalhes_parcelas, ativo)
        VALUES ($1, $2, $3, CURRENT_DATE, CURRENT_DATE + INTERVAL '364 days', 10, 300.00, 20.00,
                'cartao', 3, 100.00, $4, true)
        RETURNING id`,
-      [contratoId, pagamentoId, contratanteId, JSON.stringify(detalhesParcelas)]
+      [contratoId, pagamentoId, tomadorId, JSON.stringify(detalhesParcelas)]
     );
     reciboId = rec.rows[0].id;
   });
@@ -88,7 +88,7 @@ describe('API Gestão de Parcelas', () => {
     await query('DELETE FROM recibos WHERE id = $1', [reciboId]);
     await query('DELETE FROM pagamentos WHERE id = $1', [pagamentoId]);
     await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
-    await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    await query('DELETE FROM tomadores WHERE id = $1', [tomadorId]);
   });
 
   describe('PATCH /api/admin/cobranca/parcela/atualizar-status', () => {
@@ -259,7 +259,7 @@ describe('API Gestão de Parcelas', () => {
 
   describe('GET /api/admin/cobranca/parcela/historico', () => {
     beforeAll(async () => {
-      // Criar mais um pagamento para o mesmo contratante
+      // Criar mais um pagamento para o mesmo tomador
       const detalhesParcelas2 = [
         {
           numero: 1,
@@ -276,14 +276,14 @@ describe('API Gestão de Parcelas', () => {
       ];
 
       await query(
-        `INSERT INTO pagamentos (contratante_id, metodo, valor, numero_parcelas,
+        `INSERT INTO pagamentos (tomador_id, metodo, valor, numero_parcelas,
                                  numero_funcionarios, valor_por_funcionario, detalhes_parcelas, status, data_pagamento)
          VALUES ($1, 'pix', 300.00, 2, 10, 20.00, $2, 'pago', NOW() - INTERVAL '30 days')`,
-        [contratanteId, JSON.stringify(detalhesParcelas2)]
+        [tomadorId, JSON.stringify(detalhesParcelas2)]
       );
     });
 
-    it('deve retornar erro 400 se contratante_id não for fornecido', async () => {
+    it('deve retornar erro 400 se tomador_id não for fornecido', async () => {
       const { GET } = await import('@/app/api/admin/cobranca/parcela/route');
 
       const mockRequest = {
@@ -299,12 +299,12 @@ describe('API Gestão de Parcelas', () => {
       expect(data.error).toContain('obrigatório');
     });
 
-    it('deve retornar histórico de pagamentos do contratante', async () => {
+    it('deve retornar histórico de pagamentos do tomador', async () => {
       const { GET } = await import('@/app/api/admin/cobranca/parcela/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/admin/cobranca/parcela/historico?contratante_id=${contratanteId}`
+          `http://localhost:3000/api/admin/cobranca/parcela/historico?tomador_id=${tomadorId}`
         ),
       } as NextRequest;
 
@@ -323,7 +323,7 @@ describe('API Gestão de Parcelas', () => {
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/admin/cobranca/parcela/historico?contratante_id=${contratanteId}`
+          `http://localhost:3000/api/admin/cobranca/parcela/historico?tomador_id=${tomadorId}`
         ),
       } as NextRequest;
 
@@ -343,7 +343,7 @@ describe('API Gestão de Parcelas', () => {
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/admin/cobranca/parcela/historico?contratante_id=${contratanteId}`
+          `http://localhost:3000/api/admin/cobranca/parcela/historico?tomador_id=${tomadorId}`
         ),
       } as NextRequest;
 
@@ -366,7 +366,7 @@ describe('API Gestão de Parcelas', () => {
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/admin/cobranca/parcela/historico?contratante_id=${contratanteId}`
+          `http://localhost:3000/api/admin/cobranca/parcela/historico?tomador_id=${tomadorId}`
         ),
       } as NextRequest;
 
@@ -391,7 +391,7 @@ describe('API Gestão de Parcelas', () => {
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/admin/cobranca/parcela/historico?contratante_id=${contratanteId}`
+          `http://localhost:3000/api/admin/cobranca/parcela/historico?tomador_id=${tomadorId}`
         ),
       } as NextRequest;
 

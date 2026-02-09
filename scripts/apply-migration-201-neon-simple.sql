@@ -92,4 +92,4 @@ COMMENT ON POLICY funcionarios_delete_simple ON funcionarios IS
 COMMIT;
 
 \echo '=== MIGRATION 201 (NEON) CONCLUÍDA ✓'
-\echo 'NOTA: Políticas RLS simplificadas aplicadas (sem contratantes_funcionarios)'
+\echo 'NOTA: Políticas RLS simplificadas aplicadas (sem tomadores_funcionarios)'

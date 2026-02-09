@@ -18,7 +18,7 @@ describe('ModalLinkContratoPersonalizado', () => {
     isOpen: true,
     onClose: jest.fn(),
     contratoId: 123,
-    contratanteNome: 'Empresa Teste LTDA',
+    tomadorNome: 'Empresa Teste LTDA',
     valorPorFuncionario: 100.0,
     numeroFuncionarios: 50,
     valorTotal: 5000.0,
@@ -180,7 +180,7 @@ describe('ModalLinkContratoPersonalizado', () => {
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /O login do contratante será liberado automaticamente após o fluxo completo/
+        /O login do tomador será liberado automaticamente após o fluxo completo/
       )
     ).toBeInTheDocument();
   });

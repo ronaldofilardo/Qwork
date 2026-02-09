@@ -13,8 +13,8 @@ describe('📌 API account-info — fallback/status legado', () => {
     const mockGetSession = require('@/lib/session').getSession;
     const mockQuery = require('@/lib/db').query;
 
-    const mockSession = { contratante_id: 18, perfil: 'gestor' };
-    const mockContratante = {
+    const mockSession = { tomador_id: 18, perfil: 'gestor' };
+    const mocktomador = {
       id: 18,
       nome: 'RELEGERE',
       cnpj: '12345678000123',
@@ -26,10 +26,10 @@ describe('📌 API account-info — fallback/status legado', () => {
       criado_em: '2025-12-22T20:51:18.804Z',
     };
 
-    // Simular: 1) SELECT contratante 2) SELECT planCols (colunas de plano) 3) SELECT contrato com status legado 'ativo' 4) SELECT pagamentos 5) SELECT reciboCols
+    // Simular: 1) SELECT tomador 2) SELECT planCols (colunas de plano) 3) SELECT contrato com status legado 'ativo' 4) SELECT pagamentos 5) SELECT reciboCols
     mockGetSession.mockReturnValue(mockSession);
     mockQuery
-      .mockResolvedValueOnce({ rows: [mockContratante] })
+      .mockResolvedValueOnce({ rows: [mocktomador] })
       .mockResolvedValueOnce({ rows: [] }) // planColsRes
       .mockResolvedValueOnce({
         rows: [

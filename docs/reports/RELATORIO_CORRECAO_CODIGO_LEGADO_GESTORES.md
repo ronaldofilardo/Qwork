@@ -148,7 +148,7 @@ SELECT
     ELSE 'Outro'
   END as tipo_gestor_descricao,
   clinica_id,
-  entidade_id,  -- ✅ Usa entidade_id, não contratante_id
+  entidade_id,  -- ✅ Usa entidade_id, não tomador_id
   ativo,
   criado_em,
   atualizado_em
@@ -160,7 +160,7 @@ WHERE tipo_usuario IN ('rh', 'gestor');
 
 - ❌ `FROM funcionarios` → ✅ `FROM usuarios`
 - ❌ `id` → ✅ `cpf` (PK de usuarios)
-- ❌ `contratante_id` → ✅ `entidade_id`
+- ❌ `tomador_id` → ✅ `entidade_id`
 - ❌ `usuario_tipo = 'gestor'` → ✅ `tipo_usuario = 'gestor'`
 
 ---

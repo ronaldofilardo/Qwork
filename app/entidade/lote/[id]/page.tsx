@@ -202,6 +202,86 @@ export default function DetalhesLotePage() {
     [loteId, router]
   );
 
+  // Função para download de laudo com verificação de integridade
+  const handleDownloadLaudo = useCallback(async () => {
+    if (!lote?.laudo_id) {
+      toast.error('ID do laudo não disponível');
+      return;
+    }
+
+    try {
+      // Passo 1: Verificar integridade do hash
+      toast.loading('Verificando integridade do laudo...', {
+        id: `laudo-verify-${lote.laudo_id}`,
+      });
+
+      const verifyResponse = await fetch(
+        `/api/entidade/laudos/${lote.laudo_id}/verify-hash`
+      );
+
+      if (!verifyResponse.ok) {
+        const errorData = await verifyResponse.json();
+        throw new Error(errorData.error || 'Erro ao verificar laudo');
+      }
+
+      const verifyData = await verifyResponse.json();
+
+      if (!verifyData.hash_valido) {
+        toast.error(
+          '⚠️ ATENÇÃO: O hash do laudo não corresponde ao original! O arquivo pode ter sido modificado.',
+          { id: `laudo-verify-${lote.laudo_id}`, duration: 8000 }
+        );
+        console.error('[HASH INVÁLIDO]', {
+          laudo_id: lote.laudo_id,
+          hash_armazenado: verifyData.hash_armazenado,
+          hash_calculado: verifyData.hash_calculado,
+        });
+        return;
+      }
+
+      // Passo 2: Hash válido - confirmar ao usuário
+      toast.success(
+        '✅ Integridade verificada! O laudo é autêntico e não foi modificado.',
+        {
+          id: `laudo-verify-${lote.laudo_id}`,
+          duration: 3000,
+        }
+      );
+
+      // Pequeno delay para o usuário ver a mensagem de verificação
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      // Passo 3: Fazer o download
+      toast.loading('Baixando laudo...', {
+        id: `laudo-download-${lote.laudo_id}`,
+      });
+
+      const response = await fetch(
+        `/api/entidade/laudos/${lote.laudo_id}/download`
+      );
+      if (!response.ok) throw new Error('Erro ao baixar laudo');
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Laudo_${lote.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast.success('Laudo baixado com sucesso!', {
+        id: `laudo-download-${lote.laudo_id}`,
+      });
+    } catch (error: any) {
+      console.error('Erro ao baixar laudo:', error);
+      toast.error(error.message || 'Erro ao baixar laudo', {
+        id: `laudo-verify-${lote.laudo_id}`,
+      });
+    }
+  }, [lote]);
+
   useEffect(() => {
     loadLoteData();
 
@@ -390,13 +470,15 @@ export default function DetalhesLotePage() {
       // Filtro de status
       if (
         filtroStatus === 'concluido' &&
+        func.avaliacao.status !== 'concluida' &&
         func.avaliacao.status !== 'concluido'
       ) {
         return false;
       }
       if (
         filtroStatus === 'pendente' &&
-        func.avaliacao.status === 'concluido'
+        (func.avaliacao.status === 'concluida' ||
+          func.avaliacao.status === 'concluido')
       ) {
         return false;
       }
@@ -944,30 +1026,7 @@ export default function DetalhesLotePage() {
 
                 {/* Bot\u00e3o Download Laudo */}
                 <button
-                  onClick={async () => {
-                    if (!lote.laudo_id) {
-                      toast.error('ID do laudo não disponível');
-                      return;
-                    }
-                    try {
-                      const response = await fetch(
-                        `/api/entidade/laudos/${lote.laudo_id}/download`
-                      );
-                      if (!response.ok) throw new Error('Erro ao baixar laudo');
-                      const blob = await response.blob();
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `Laudo_${lote.id}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      window.URL.revokeObjectURL(url);
-                      document.body.removeChild(a);
-                      toast.success('Laudo baixado com sucesso!');
-                    } catch {
-                      toast.error('Erro ao baixar laudo');
-                    }
-                  }}
+                  onClick={handleDownloadLaudo}
                   className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
                 >
                   📄 Ver Laudo / Baixar PDF
@@ -1233,6 +1292,7 @@ export default function DetalhesLotePage() {
                         <div className="flex flex-col gap-0.5">
                           <span
                             className={`inline-flex px-1 py-0.5 text-[11px] font-semibold rounded-full ${
+                              func.avaliacao.status === 'concluida' ||
                               func.avaliacao.status === 'concluido'
                                 ? 'bg-green-100 text-green-800'
                                 : func.avaliacao.status === 'em_andamento'
@@ -1244,7 +1304,8 @@ export default function DetalhesLotePage() {
                                       : 'bg-yellow-100 text-yellow-800'
                             }`}
                           >
-                            {func.avaliacao.status === 'concluido'
+                            {func.avaliacao.status === 'concluida' ||
+                            func.avaliacao.status === 'concluido'
                               ? 'Concluída'
                               : func.avaliacao.status === 'em_andamento'
                                 ? 'Em Andamento'
@@ -1254,7 +1315,8 @@ export default function DetalhesLotePage() {
                                     ? 'Iniciada'
                                     : 'Pendente'}
                           </span>
-                          {func.avaliacao.status !== 'concluido' &&
+                          {func.avaliacao.status !== 'concluida' &&
+                            func.avaliacao.status !== 'concluido' &&
                             func.avaliacao.status !== 'inativada' &&
                             func.avaliacao.total_respostas !== undefined && (
                               <span className="text-[10px] text-gray-600">
@@ -1265,7 +1327,8 @@ export default function DetalhesLotePage() {
                       </td>
                       <td className="px-2 py-1 text-sm text-center">
                         <div className="flex gap-1 justify-center">
-                          {func.avaliacao.status !== 'concluido' &&
+                          {func.avaliacao.status !== 'concluida' &&
+                            func.avaliacao.status !== 'concluido' &&
                             func.avaliacao.status !== 'inativada' &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
@@ -1285,6 +1348,7 @@ export default function DetalhesLotePage() {
                             )}
                           {/* Show Reset for any evaluation that is NOT inativada — backend will enforce single-reset and lote constraints */}
                           {func.avaliacao.status !== 'inativada' &&
+                            func.avaliacao.status !== 'concluida' &&
                             func.avaliacao.status !== 'concluido' &&
                             !lote?.emissao_solicitada &&
                             !lote?.emitido_em && (
@@ -1331,7 +1395,8 @@ export default function DetalhesLotePage() {
                         </td>
                       ))}
                       <td className="px-2 py-1 text-center">
-                        {func.avaliacao.status === 'concluido' && (
+                        {(func.avaliacao.status === 'concluida' ||
+                          func.avaliacao.status === 'concluido') && (
                           <button
                             onClick={() =>
                               gerarRelatorioFuncionario(func.cpf, func.nome)

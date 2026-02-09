@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
-import { query } from '@/lib/db'
-import { requireRole } from '@/lib/session'
+import { NextResponse } from 'next/server';
+import { query } from '@/lib/db';
+import { requireRole } from '@/lib/session';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/admin/clinicas/stats
@@ -14,10 +14,11 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET() {
   try {
-    const session = await requireRole('admin')
+    const session = await requireRole('admin');
 
     // Query que busca estatísticas completas por clínica
-    const result = await query(`
+    const result = await query(
+      `
       SELECT
         c.id as clinica_id,
         c.nome as clinica_nome,
@@ -30,7 +31,7 @@ export async function GET() {
         -- Total de avaliações liberadas
         COUNT(DISTINCT a.id) as total_avaliacoes,
         -- Avaliações concluídas
-        COUNT(DISTINCT CASE WHEN a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
+        COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN a.id END) as avaliacoes_concluidas,
         -- Avaliações em andamento
         COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN a.id END) as avaliacoes_em_andamento
       FROM clinicas c
@@ -39,23 +40,23 @@ export async function GET() {
       LEFT JOIN avaliacoes a ON l.id = a.lote_id
       GROUP BY c.id, c.nome, c.cnpj, c.ativa
       ORDER BY c.nome
-    `, [], session)
+    `,
+      [],
+      session
+    );
 
     return NextResponse.json({
       success: true,
-      data: result.rows
-    })
+      data: result.rows,
+    });
   } catch (error) {
-    console.error('Erro ao buscar estatísticas das clínicas:', error)
+    console.error('Erro ao buscar estatísticas das clínicas:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Erro interno do servidor'
+        error: 'Erro interno do servidor',
       },
       { status: 500 }
-    )
+    );
   }
 }
-
-
-

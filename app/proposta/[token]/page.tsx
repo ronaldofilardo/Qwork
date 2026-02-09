@@ -14,8 +14,8 @@ import {
 interface PropostaData {
   valido: boolean;
   contratacao_id: number;
-  contratante_id: number;
-  contratante_nome: string;
+  tomador_id: number;
+  tomador_nome: string;
   cnpj: string;
   responsavel_nome: string;
   responsavel_email: string;
@@ -186,17 +186,17 @@ export default function PropostaPage() {
 
         {/* Card Principal */}
         <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-          {/* Informações do Contratante */}
+          {/* Informações do tomador */}
           <div className="p-6 border-b border-gray-200">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">
-              Dados do Contratante
+              Dados do tomador
             </h2>
             <div className="space-y-2">
               <div>
                 <span className="text-sm font-medium text-gray-500">
                   Empresa:
                 </span>
-                <p className="text-gray-900">{proposta.contratante_nome}</p>
+                <p className="text-gray-900">{proposta.tomador_nome}</p>
               </div>
               <div>
                 <span className="text-sm font-medium text-gray-500">CNPJ:</span>

@@ -156,7 +156,7 @@ BEGIN
             BEFORE UPDATE ON clinicas
             FOR EACH ROW
             WHEN (OLD.* IS DISTINCT FROM NEW.*)
-            EXECUTE FUNCTION update_contratantes_updated_at();
+            EXECUTE FUNCTION update_tomadores_updated_at();
         RAISE NOTICE 'Trigger trg_clinicas_updated_at criado';
     END IF;
 
@@ -165,7 +165,7 @@ BEGIN
         CREATE TRIGGER tr_clinicas_sync_status_ativa_robust
             BEFORE INSERT OR UPDATE ON clinicas
             FOR EACH ROW
-            EXECUTE FUNCTION contratantes_sync_status_ativa_robust();
+            EXECUTE FUNCTION tomadores_sync_status_ativa_robust();
         RAISE NOTICE 'Trigger tr_clinicas_sync_status_ativa_robust criado';
     END IF;
 
@@ -173,7 +173,7 @@ BEGIN
         CREATE TRIGGER tr_clinicas_sync_status_ativa_personalizado
             BEFORE INSERT OR UPDATE ON clinicas
             FOR EACH ROW
-            EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado();
+            EXECUTE FUNCTION tomadores_sync_status_ativa_personalizado();
         RAISE NOTICE 'Trigger tr_clinicas_sync_status_ativa_personalizado criado';
     END IF;
 
@@ -224,12 +224,12 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'entidades' AND column_name = 'tipo') THEN
         -- Remover constraint de verificação primeiro
-        ALTER TABLE entidades DROP CONSTRAINT IF EXISTS chk_contratantes_tipo_valido CASCADE;
+        ALTER TABLE entidades DROP CONSTRAINT IF EXISTS chk_tomadores_tipo_valido CASCADE;
         
         -- Remover índices relacionados
-        DROP INDEX IF EXISTS idx_contratantes_tipo CASCADE;
-        DROP INDEX IF EXISTS idx_contratantes_tipo_ativa CASCADE;
-        DROP INDEX IF EXISTS idx_contratantes_tipo_status_ativa CASCADE;
+        DROP INDEX IF EXISTS idx_tomadores_tipo CASCADE;
+        DROP INDEX IF EXISTS idx_tomadores_tipo_ativa CASCADE;
+        DROP INDEX IF EXISTS idx_tomadores_tipo_status_ativa CASCADE;
         
         -- Remover coluna
         ALTER TABLE entidades DROP COLUMN tipo CASCADE;

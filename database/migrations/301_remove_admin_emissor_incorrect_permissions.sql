@@ -26,8 +26,8 @@ DROP POLICY IF EXISTS "clinicas_admin_insert" ON public.clinicas;
 DROP POLICY IF EXISTS "clinicas_admin_update" ON public.clinicas;
 DROP POLICY IF EXISTS "clinicas_admin_delete" ON public.clinicas;
 
-\echo '✅ Mantendo policies de admin em contratantes (NECESSÁRIO para gestão de gestores)...'
--- Admin DEVE ter acesso completo a contratantes para gerenciar gestores
+\echo '✅ Mantendo policies de admin em tomadores (NECESSÁRIO para gestão de gestores)...'
+-- Admin DEVE ter acesso completo a tomadores para gerenciar gestores
 -- Políticas serão criadas na seção 3
 
 \echo '❌ Removendo policies de admin em empresas_clientes...'
@@ -108,27 +108,27 @@ FOR UPDATE TO PUBLIC
 USING (current_user_perfil() = 'admin')
 WITH CHECK (current_user_perfil() = 'admin');
 
-\echo '✅ Criando policies corretas para admin em contratantes...'
+\echo '✅ Criando policies corretas para admin em tomadores...'
 
--- Admin DEVE ter acesso completo a contratantes para gerenciar gestores
-DROP POLICY IF EXISTS "contratantes_admin_all" ON public.contratantes;
-CREATE POLICY "contratantes_admin_select" ON public.contratantes
+-- Admin DEVE ter acesso completo a tomadores para gerenciar gestores
+DROP POLICY IF EXISTS "tomadores_admin_all" ON public.tomadores;
+CREATE POLICY "tomadores_admin_select" ON public.tomadores
 FOR SELECT TO PUBLIC
 USING (current_user_perfil() = 'admin');
 
-DROP POLICY IF EXISTS "contratantes_admin_insert" ON public.contratantes;
-CREATE POLICY "contratantes_admin_insert" ON public.contratantes
+DROP POLICY IF EXISTS "tomadores_admin_insert" ON public.tomadores;
+CREATE POLICY "tomadores_admin_insert" ON public.tomadores
 FOR INSERT TO PUBLIC
 WITH CHECK (current_user_perfil() = 'admin');
 
-DROP POLICY IF EXISTS "contratantes_admin_update" ON public.contratantes;
-CREATE POLICY "contratantes_admin_update" ON public.contratantes
+DROP POLICY IF EXISTS "tomadores_admin_update" ON public.tomadores;
+CREATE POLICY "tomadores_admin_update" ON public.tomadores
 FOR UPDATE TO PUBLIC
 USING (current_user_perfil() = 'admin')
 WITH CHECK (current_user_perfil() = 'admin');
 
-DROP POLICY IF EXISTS "contratantes_admin_delete" ON public.contratantes;
-CREATE POLICY "contratantes_admin_delete" ON public.contratantes
+DROP POLICY IF EXISTS "tomadores_admin_delete" ON public.tomadores;
+CREATE POLICY "tomadores_admin_delete" ON public.tomadores
 FOR DELETE TO PUBLIC
 USING (current_user_perfil() = 'admin');
 
@@ -164,13 +164,13 @@ END $$;
 COMMENT ON TABLE public.usuarios IS 'Usuários do sistema (admin, emissor, rh, gestor) - admin tem acesso administrativo apenas (tomadores, planos, emissores)';
 COMMENT ON TABLE public.funcionarios IS 'Funcionários avaliados de empresas/entidades - admin NÃO tem acesso';
 COMMENT ON TABLE public.clinicas IS 'Clínicas parceiras - admin NÃO tem acesso (gerenciado por RH)';
-COMMENT ON TABLE public.contratantes IS 'Entidades e clínicas contratantes - admin tem acesso completo para gestão de gestores';
+COMMENT ON TABLE public.tomadores IS 'Entidades e clínicas tomadores - admin tem acesso completo para gestão de gestores';
 COMMENT ON TABLE public.empresas_clientes IS 'Empresas clientes - admin NÃO tem acesso (gerenciado por RH)';
 COMMENT ON TABLE public.avaliacoes IS 'Avaliações de funcionários - emissor NÃO pode visualizar (apenas RH e gestor)';
 COMMENT ON TABLE public.lotes_avaliacao IS 'Lotes de avaliações - emissor NÃO pode visualizar';
 
 \echo '✅ REMOÇÃO AGRESSIVA CONCLUÍDA!'
-\echo '✅ Admin agora tem acesso APENAS a: usuarios, contratantes, roles, permissions, role_permissions, audit_logs'
+\echo '✅ Admin agora tem acesso APENAS a: usuarios, tomadores, roles, permissions, role_permissions, audit_logs'
 \echo '✅ Emissor agora tem acesso APENAS a: laudos, fila_emissao'
 \echo '✅ Avaliações acessíveis APENAS por: rh, gestor'
 
@@ -185,7 +185,7 @@ COMMIT;
 -- 1. Testar acesso de admin:
 --    SET LOCAL app.current_user_perfil = 'admin';
 --    SELECT * FROM usuarios; -- DEVE FUNCIONAR
---    SELECT * FROM contratantes; -- DEVE FUNCIONAR (gestão de gestores)
+--    SELECT * FROM tomadores; -- DEVE FUNCIONAR (gestão de gestores)
 --    SELECT * FROM clinicas; -- DEVE FALHAR (sem policy)
 --    SELECT * FROM funcionarios; -- DEVE FALHAR (sem policy)
 --    SELECT * FROM empresas_clientes; -- DEVE FALHAR (sem policy)

@@ -6,8 +6,8 @@ import QworkLogo from '@/components/QworkLogo';
 import { AlertCircle } from 'lucide-react';
 
 interface DadosPlano {
-  contratante_id: number;
-  contratante_nome: string;
+  tomador_id: number;
+  tomador_nome: string;
   plano_id: number;
   plano_nome: string;
   numero_funcionarios: number;
@@ -48,8 +48,8 @@ export default function AceitePlanoPersonalizadoPage() {
         }
 
         setDados({
-          contratante_id: data.contratante_id,
-          contratante_nome: data.contratante_nome,
+          tomador_id: data.tomador_id,
+          tomador_nome: data.tomador_nome,
           plano_id: 0, // personalizado não tem id de plano fixo aqui
           plano_nome: 'Personalizado',
           numero_funcionarios: data.numero_funcionarios,
@@ -137,12 +137,12 @@ export default function AceitePlanoPersonalizadoPage() {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-8">
-          {/* Informações do Contratante */}
+          {/* Informações do tomador */}
           <div className="mb-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Contratante
+              tomador
             </h2>
-            <p className="text-gray-600">{dados.contratante_nome}</p>
+            <p className="text-gray-600">{dados.tomador_nome}</p>
           </div>
 
           {/* Detalhes do Plano */}

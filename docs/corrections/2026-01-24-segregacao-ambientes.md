@@ -36,23 +36,23 @@ Executado em **ambos** os bancos:
 
 ```sql
 -- nr-bps_db (dev)
-DELETE FROM funcionarios WHERE contratante_id IN (282, 283, 284);
-DELETE FROM pagamentos WHERE contratante_id IN (282, 283, 284);
-DELETE FROM contratos WHERE contratante_id IN (282, 283, 284);
-DELETE FROM contratantes WHERE id IN (282, 283, 284);
+DELETE FROM funcionarios WHERE tomador_id IN (282, 283, 284);
+DELETE FROM pagamentos WHERE tomador_id IN (282, 283, 284);
+DELETE FROM contratos WHERE tomador_id IN (282, 283, 284);
+DELETE FROM tomadores WHERE id IN (282, 283, 284);
 
 -- nr-bps_db_test (test)
 DELETE FROM notificacoes WHERE destinatario_cpf IN (...);
-DELETE FROM funcionarios WHERE contratante_id IN (282, 283, 284);
-DELETE FROM pagamentos WHERE contratante_id IN (282, 283, 284);
-DELETE FROM contratos WHERE contratante_id IN (282, 283, 284);
-DELETE FROM contratantes WHERE id IN (282, 283, 284);
+DELETE FROM funcionarios WHERE tomador_id IN (282, 283, 284);
+DELETE FROM pagamentos WHERE tomador_id IN (282, 283, 284);
+DELETE FROM contratos WHERE tomador_id IN (282, 283, 284);
+DELETE FROM tomadores WHERE id IN (282, 283, 284);
 ```
 
 **Resultado:**
 
 - Dev: 0 registros (já limpo)
-- Test: 3 contratantes + 3 funcionários + 1 pagamento + 1 contrato + 2 notificações removidos
+- Test: 3 tomadores + 3 funcionários + 1 pagamento + 1 contrato + 2 notificações removidos
 
 ### 3. Documentação Criada
 

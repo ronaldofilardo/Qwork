@@ -268,5 +268,5 @@ COMMIT;
 -- 4. Confirmar que gestores estão em entidades_senhas:
 --    SELECT cs.cpf, c.nome, c.tipo 
 --    FROM entidades_senhas cs
---    JOIN contratantes c ON c.id = cs.contratante_id
+--    JOIN tomadores c ON c.id = cs.contratante_id
 --    WHERE c.ativa = true;

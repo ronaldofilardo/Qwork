@@ -51,7 +51,7 @@ async function gerarReciboRetroativo(pagamentoId, sequencia) {
     // 1. Buscar dados do contratante
     const contratanteResult = await query(
       `SELECT c.id, c.nome, c.cnpj, c.responsavel_cpf, c.endereco, c.cidade, c.estado, c.cep, c.tipo
-       FROM contratantes c
+       FROM tomadores c
        INNER JOIN pagamentos p ON p.contratante_id = c.id
        WHERE p.id = $1`,
       [pagamentoId]
@@ -285,7 +285,7 @@ async function main() {
     const pagamentosResult = await query(
       `SELECT p.id, p.contratante_id, c.tipo, p.valor, p.data_pagamento
        FROM pagamentos p
-       JOIN contratantes c ON p.contratante_id = c.id
+       JOIN tomadores c ON p.contratante_id = c.id
        WHERE p.data_pagamento <= $1
          AND p.status = 'pago'
          AND NOT EXISTS (

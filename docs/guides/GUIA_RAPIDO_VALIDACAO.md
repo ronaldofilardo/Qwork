@@ -225,14 +225,14 @@ SELECT id, nome, clinica_id FROM empresas_clientes LIMIT 10;
 ### 4. Verificar Funcionários
 
 ```sql
--- Funcionários de entidade (devem ter apenas contratante_id)
-SELECT cpf, nome, contratante_id, clinica_id, empresa_id
+-- Funcionários de entidade (devem ter apenas tomador_id)
+SELECT cpf, nome, tomador_id, clinica_id, empresa_id
 FROM funcionarios
-WHERE contratante_id IS NOT NULL
+WHERE tomador_id IS NOT NULL
 LIMIT 5;
 
 -- Funcionários de empresa (devem ter empresa_id + clinica_id)
-SELECT cpf, nome, contratante_id, clinica_id, empresa_id
+SELECT cpf, nome, tomador_id, clinica_id, empresa_id
 FROM funcionarios
 WHERE empresa_id IS NOT NULL
 LIMIT 5;
@@ -251,8 +251,8 @@ LIMIT 10;
 ```sql
 -- Funcionários órfãos
 SELECT COUNT(*) FROM funcionarios f
-LEFT JOIN contratantes c ON f.contratante_id = c.id
-WHERE f.contratante_id IS NOT NULL AND c.id IS NULL;
+LEFT JOIN tomadores c ON f.tomador_id = c.id
+WHERE f.tomador_id IS NOT NULL AND c.id IS NULL;
 
 -- Empresas órfãs
 SELECT COUNT(*) FROM empresas_clientes e

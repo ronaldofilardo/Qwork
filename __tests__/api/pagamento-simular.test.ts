@@ -16,14 +16,14 @@ describe('API /api/pagamento/simular - Simulação de Pagamento', () => {
 
   // Cenário de simulação com token personalizado removido (testes relacionados ao fluxo personalizado a partir da geração do link foram excluídos).
 
-  describe('Cenário 2: Simulação com contratante_id e plano_id', () => {
+  describe('Cenário 2: Simulação com tomador_id e plano_id', () => {
     it('deve simular pagamento para plano fixo', async () => {
       mockPOST.mockResolvedValueOnce({
         status: 200,
         json: async () => ({
           success: true,
           valor_total: 1200.0,
-          contratante: {
+          tomador: {
             id: 100,
             nome: 'Empresa Teste Ltda',
             tipo: 'entidade',
@@ -75,7 +75,7 @@ describe('API /api/pagamento/simular - Simulação de Pagamento', () => {
 
       const request = {
         json: async () => ({
-          contratante_id: 100,
+          tomador_id: 100,
           plano_id: 1,
         }),
       } as any;

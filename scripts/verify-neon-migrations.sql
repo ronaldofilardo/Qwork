@@ -164,7 +164,7 @@ WHERE table_schema = 'public'
     'clinicas',
     'entidades'
   )
--- Nota: Tabela 'contratantes' foi renomeada para 'entidades'
+-- Nota: Tabela 'tomadores' foi renomeada para 'entidades'
 ORDER BY table_name;
 
 \echo ''

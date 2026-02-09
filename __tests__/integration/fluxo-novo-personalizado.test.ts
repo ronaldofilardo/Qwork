@@ -46,7 +46,6 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     }
 
     planoPersonalizadoId = planoResult.rows[0].id;
-    console.log(
       '✓ Usando plano personalizado existente:',
       planoPersonalizadoId
     );
@@ -151,7 +150,6 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
     expect(contratacao.numero_funcionarios_estimado).toBe(3000);
 
     contratacaoId = contratacao.id;
-    console.log(
       '✓ Funcionários estimados:',
       contratacao.numero_funcionarios_estimado
     );
@@ -256,8 +254,8 @@ describe('Fluxo Completo - Plano Personalizado (Novo Fluxo)', () => {
 
     expect(result.rows[0].status).toBe('aguardando_aceite_contrato');
 
-    // === ✓ FLUXO COMPLETO VALIDADO COM SUCESSO ===
-    console.log(
+    // \n=== ✓ FLUXO COMPLETO VALIDADO COM SUCESSO ===
+
       'Próximo passo: tomador aceita contrato → Simulador de pagamento → Liberação de login'
     );
   });

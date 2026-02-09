@@ -1,5 +1,5 @@
 /**
- * Teste de cadastro de contratante para validar fluxo completo
+ * Teste de cadastro de tomador para validar fluxo completo
  * Testa se todas as dependências estão corretas após migrations
  */
 
@@ -8,8 +8,8 @@ import { resolve } from 'path';
 
 loadEnv();
 
-async function testarCadastroContratante() {
-  const url = 'http://localhost:3000/api/cadastro/contratante';
+async function testarCadastrotomador() {
+  const url = 'http://localhost:3000/api/cadastro/tomador';
 
   const payload = {
     tipo: 'entidade',
@@ -31,7 +31,7 @@ async function testarCadastroContratante() {
     aceite_termos: true,
   };
 
-  console.log('🔄 Testando cadastro de contratante...\n');
+  console.log('🔄 Testando cadastro de tomador...\n');
   console.log('📦 Payload:', JSON.stringify(payload, null, 2));
 
   try {
@@ -53,10 +53,10 @@ async function testarCadastroContratante() {
       console.log('\n✅ CADASTRO REALIZADO COM SUCESSO!');
       console.log('\nVerificar no banco:');
       console.log(
-        `  psql -U postgres -d nr-bps_db -c "SELECT id, nome, status, pagamento_confirmado FROM contratantes WHERE email = '${payload.email}';"`
+        `  psql -U postgres -d nr-bps_db -c "SELECT id, nome, status, pagamento_confirmado FROM tomadors WHERE email = '${payload.email}';"`
       );
       console.log(
-        `  psql -U postgres -d nr-bps_db -c "SELECT * FROM auditoria WHERE entidade_tipo = 'contratante' ORDER BY criado_em DESC LIMIT 1;"`
+        `  psql -U postgres -d nr-bps_db -c "SELECT * FROM auditoria WHERE entidade_tipo = 'tomador' ORDER BY criado_em DESC LIMIT 1;"`
       );
     } else {
       console.error('\n❌ ERRO NO CADASTRO!');
@@ -68,4 +68,4 @@ async function testarCadastroContratante() {
   }
 }
 
-testarCadastroContratante();
+testarCadastrotomador();

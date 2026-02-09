@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = await requireEntity();
-    const entidadeId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     // Detectar dinamicamente quais colunas de preço existem na tabela `planos`
     const planColsRes = await queryAsGestorEntidade(
@@ -38,7 +38,7 @@ export async function GET() {
         cp.created_at as criado_em
       FROM contratos_planos cp
       LEFT JOIN planos p ON cp.plano_id = p.id
-      WHERE cp.contratante_id = $1
+      WHERE cp.entidade_id = $1
       ORDER BY cp.created_at DESC
       LIMIT 1
     `;
@@ -55,7 +55,7 @@ export async function GET() {
     let vigencia_fim: string | null = null;
     try {
       const pagamentoRes = await queryAsGestorEntidade(
-        `SELECT data_pagamento FROM pagamentos WHERE contratante_id = $1 AND status = 'pago' AND data_pagamento IS NOT NULL ORDER BY data_pagamento DESC LIMIT 1`,
+        `SELECT data_pagamento FROM pagamentos WHERE tomador_id = $1 AND status = 'pago' AND data_pagamento IS NOT NULL ORDER BY data_pagamento DESC LIMIT 1`,
         [entidadeId]
       );
       if (pagamentoRes.rows.length > 0) {

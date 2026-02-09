@@ -58,7 +58,7 @@ Crie arquivo `.github/CODEOWNERS` com:
 # Fluxos Críticos (requer aprovação de 2 pessoas)
 /app/api/auth/**                    @tech-lead @security-team
 /app/api/admin/cadastro/**          @tech-lead @backend-team
-/lib/contratante-activation.ts      @tech-lead @backend-team
+/lib/tomador-activation.ts      @tech-lead @backend-team
 
 # Emissão de laudos
 /lib/laudo-auto.ts                  @tech-lead @backend-team
@@ -159,7 +159,7 @@ Crie arquivo `.github/scripts/check-critical-paths.sh`:
 CRITICAL_PATHS=(
   "app/api/auth"
   "app/api/admin/cadastro"
-  "lib/contratante-activation.ts"
+  "lib/tomador-activation.ts"
   "lib/laudo-auto.ts"
   "app/api/entidade/lotes"
   "database/migrations"
@@ -205,7 +205,7 @@ fi
 mkdir -p .github
 cat > .github/CODEOWNERS << 'EOF'
 /app/api/auth/** @tech-lead
-/lib/contratante-activation.ts @tech-lead
+/lib/tomador-activation.ts @tech-lead
 EOF
 
 # Criar PR template

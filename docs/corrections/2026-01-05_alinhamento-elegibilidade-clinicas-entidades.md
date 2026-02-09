@@ -23,7 +23,7 @@ Alinhar o **fluxo de elegibilidade e listagem de funcionários** em **clínicas*
 
 ## ✅ Critérios de Elegibilidade (Fonte da Verdade)
 
-Baseado nas funções SQL `calcular_elegibilidade_lote` e `calcular_elegibilidade_lote_contratante`:
+Baseado nas funções SQL `calcular_elegibilidade_lote` e `calcular_elegibilidade_lote_tomador`:
 
 ### Funcionário É Elegível SE:
 
@@ -168,5 +168,3 @@ João Silva | 001-010125 | [Concluída] | 15/12/2024
 ---
 
 **Conclusão:** O fluxo de elegibilidade de clínicas agora está **100% alinhado** com o de entidades. A única diferença estrutural é que clínicas têm o subnível "empresa", mas os critérios de elegibilidade (12 meses, índice, novos funcionários) são idênticos.
-
-

@@ -106,29 +106,29 @@ export function gerarPoliticaRLS(
 /**
  * Políticas RLS recomendadas para entidades
  */
-export const POLITICAS_CONTRATANTES = {
+export const POLITICAS_tomadorS = {
   select: gerarPoliticaRLS(
     'entidades',
-    'contratantes_select_policy',
+    'tomadors_select_policy',
     'SELECT',
     `
     -- Admin vê tudo
     (current_setting('app.current_perfil', true) = 'admin')
     OR
-    -- Gestor vê apenas seu contratante
+    -- Gestor vê apenas seu tomador
     (id = current_setting('app.current_entidade_id', true)::int)
   `
   ),
 
   update: gerarPoliticaRLS(
     'entidades',
-    'contratantes_update_policy',
+    'tomadors_update_policy',
     'UPDATE',
     `
     -- Admin pode atualizar tudo
     (current_setting('app.current_perfil', true) = 'admin')
     OR
-    -- Gestor pode atualizar apenas seu contratante
+    -- Gestor pode atualizar apenas seu tomador
     (id = current_setting('app.current_entidade_id', true)::int)
   `
   ),
@@ -149,9 +149,9 @@ export const POLITICAS_FUNCIONARIOS = {
     -- RH vê funcionários da sua clínica
     (clinica_id = current_setting('app.current_clinica_id', true)::int)
     OR
-    -- Gestor de entidade vê funcionários vinculados ao contratante
+    -- Gestor de entidade vê funcionários vinculados ao tomador
     EXISTS (
-      SELECT 1 FROM contratantes_funcionarios cf
+      SELECT 1 FROM tomadors_funcionarios cf
       WHERE cf.funcionario_id = funcionarios.id
       AND cf.entidade_id = current_setting('app.current_entidade_id', true)::int
       AND cf.vinculo_ativo = true
@@ -168,7 +168,7 @@ export const POLITICAS_FUNCIONARIOS = {
  */
 export const HABILITAR_RLS_SCRIPT = `
 -- Habilitar RLS nas tabelas
-ALTER TABLE contratantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tomadors ENABLE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resultados ENABLE ROW LEVEL SECURITY;
@@ -178,8 +178,8 @@ ALTER TABLE recibos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE contratos ENABLE ROW LEVEL SECURITY;
 
 -- Aplicar políticas
-${POLITICAS_CONTRATANTES.select}
-${POLITICAS_CONTRATANTES.update}
+${POLITICAS_tomadorS.select}
+${POLITICAS_tomadorS.update}
 ${POLITICAS_FUNCIONARIOS.select}
 
 -- Política para avaliações
@@ -193,7 +193,7 @@ CREATE POLICY avaliacoes_select_policy ON avaliacoes FOR SELECT USING (
       f.clinica_id = current_setting('app.current_clinica_id', true)::int
       OR
       EXISTS (
-        SELECT 1 FROM contratantes_funcionarios cf
+        SELECT 1 FROM tomadors_funcionarios cf
         WHERE cf.funcionario_id = f.id
         AND cf.entidade_id = current_setting('app.current_entidade_id', true)::int
       )
@@ -215,11 +215,11 @@ CREATE POLICY laudos_select_policy ON laudos FOR SELECT USING (
 );
 
 -- Comentários
-COMMENT ON POLICY contratantes_select_policy ON contratantes IS
-  'RLS: Admin vê tudo, gestores veem apenas seu contratante';
+COMMENT ON POLICY tomadors_select_policy ON tomadors IS
+  'RLS: Admin vê tudo, gestores veem apenas seu tomador';
 
 COMMENT ON POLICY funcionarios_select_policy ON funcionarios IS
-  'RLS: Isola funcionários por clínica/contratante, usuário vê apenas seus dados';
+  'RLS: Isola funcionários por clínica/tomador, usuário vê apenas seus dados';
 `;
 
 /**

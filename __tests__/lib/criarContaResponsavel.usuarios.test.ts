@@ -34,7 +34,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
       9002,
       'limpeza testes',
     ]).catch(() => {});
-    await query('DELETE FROM contratantes WHERE id IN (9001, 9002)');
+    await query('DELETE FROM tomadors WHERE id IN (9001, 9002)');
   });
 
   afterAll(async () => {
@@ -51,13 +51,13 @@ describe('criarContaResponsavel - criação em usuarios', () => {
       9002,
       'limpeza testes',
     ]).catch(() => {});
-    await query('DELETE FROM contratantes WHERE id IN (9001, 9002)');
+    await query('DELETE FROM tomadors WHERE id IN (9001, 9002)');
   });
 
-  test('deve criar usuario gestor para contratante tipo entidade', async () => {
-    // Arrange: criar contratante entidade
+  test('deve criar usuario gestor para tomador tipo entidade', async () => {
+    // Arrange: criar tomador entidade
     await query(
-      `INSERT INTO contratantes (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, 
+      `INSERT INTO tomadors (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, 
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
        VALUES (9001, 'entidade', 'Empresa Teste Ltda', '11222333000144', 'contato@empresa.com', 
         '11999990001', 'Rua Teste, 123', 'São Paulo', 'SP', '01000-000',
@@ -65,7 +65,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
       []
     );
 
-    const contratante = {
+    const tomador = {
       id: 9001,
       tipo: 'entidade',
       responsavel_cpf: '11122233344',
@@ -75,7 +75,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
     } as any;
 
     // Act
-    await db.criarContaResponsavel(contratante);
+    await db.criarContaResponsavel(tomador);
 
     // Assert: verificar que foi criado em usuarios
     const usuario = await query('SELECT * FROM usuarios WHERE cpf = $1', [
@@ -84,7 +84,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
 
     expect(usuario.rows.length).toBe(1);
     expect(usuario.rows[0].tipo_usuario).toBe('gestor');
-    expect(usuario.rows[0].contratante_id).toBe(9001);
+    expect(usuario.rows[0].tomador_id).toBe(9001);
     expect(usuario.rows[0].clinica_id).toBeNull();
     expect(usuario.rows[0].ativo).toBe(true);
     expect(usuario.rows[0].nome).toBe('João Silva');
@@ -92,16 +92,16 @@ describe('criarContaResponsavel - criação em usuarios', () => {
 
     // Verificar senha em entidades_senhas
     const senha = await query(
-      'SELECT * FROM entidades_senhas WHERE cpf = $1 AND contratante_id = $2',
+      'SELECT * FROM entidades_senhas WHERE cpf = $1 AND tomador_id = $2',
       ['11122233344', 9001]
     );
     expect(senha.rows.length).toBe(1);
   });
 
-  test('deve criar usuario rh para contratante tipo clinica', async () => {
-    // Arrange: criar contratante clinica
+  test('deve criar usuario rh para tomador tipo clinica', async () => {
+    // Arrange: criar tomador clinica
     await query(
-      `INSERT INTO contratantes (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+      `INSERT INTO tomadors (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
        VALUES (9002, 'clinica', 'Clínica Teste Ltda', '55666777000188', 'contato@clinica.com',
         '11999990003', 'Av Teste, 456', 'São Paulo', 'SP', '02000-000',
@@ -109,7 +109,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
       []
     );
 
-    const contratante = {
+    const tomador = {
       id: 9002,
       tipo: 'clinica',
       responsavel_cpf: '55566677788',
@@ -119,7 +119,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
     } as any;
 
     // Act
-    await db.criarContaResponsavel(contratante);
+    await db.criarContaResponsavel(tomador);
 
     // Assert: verificar que foi criado em usuarios
     const usuario = await query('SELECT * FROM usuarios WHERE cpf = $1', [
@@ -128,7 +128,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
 
     expect(usuario.rows.length).toBe(1);
     expect(usuario.rows[0].tipo_usuario).toBe('rh');
-    expect(usuario.rows[0].contratante_id).toBeNull();
+    expect(usuario.rows[0].tomador_id).toBeNull();
     expect(usuario.rows[0].clinica_id).not.toBeNull(); // deve ter vinculado a clinica
     expect(usuario.rows[0].ativo).toBe(true);
     expect(usuario.rows[0].nome).toBe('Maria Santos');
@@ -136,16 +136,16 @@ describe('criarContaResponsavel - criação em usuarios', () => {
 
     // Verificar senha em entidades_senhas
     const senha = await query(
-      'SELECT * FROM entidades_senhas WHERE cpf = $1 AND contratante_id = $2',
+      'SELECT * FROM entidades_senhas WHERE cpf = $1 AND tomador_id = $2',
       ['55566677788', 9002]
     );
     expect(senha.rows.length).toBe(1);
   });
 
   test('deve atualizar usuario existente ao invés de criar duplicado', async () => {
-    // Arrange: criar contratante
+    // Arrange: criar tomador
     await query(
-      `INSERT INTO contratantes (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+      `INSERT INTO tomadors (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
        VALUES (9001, 'entidade', 'Empresa Teste Ltda', '11222333000144', 'contato@empresa.com',
         '11999990001', 'Rua Teste, 123', 'São Paulo', 'SP', '01000-000',
@@ -155,12 +155,12 @@ describe('criarContaResponsavel - criação em usuarios', () => {
 
     // Criar usuario previamente
     await query(
-      `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, contratante_id, ativo)
+      `INSERT INTO usuarios (cpf, nome, email, senha_hash, tipo_usuario, tomador_id, ativo)
        VALUES ('11122233344', 'João Antigo', 'joao.antigo@email.com', 'hash_antigo', 'gestor', 9001, false)`,
       []
     );
 
-    const contratante = {
+    const tomador = {
       id: 9001,
       tipo: 'entidade',
       responsavel_cpf: '11122233344',
@@ -170,7 +170,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
     } as any;
 
     // Act
-    await db.criarContaResponsavel(contratante);
+    await db.criarContaResponsavel(tomador);
 
     // Assert: verificar que foi atualizado (não duplicado)
     const usuarios = await query('SELECT * FROM usuarios WHERE cpf = $1', [
@@ -186,7 +186,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
   test('NÃO deve criar registro em funcionarios para gestores', async () => {
     // Arrange
     await query(
-      `INSERT INTO contratantes (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+      `INSERT INTO tomadors (id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
        VALUES (9001, 'entidade', 'Empresa Teste Ltda', '11222333000144', 'contato@empresa.com',
         '11999990001', 'Rua Teste, 123', 'São Paulo', 'SP', '01000-000',
@@ -194,7 +194,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
       []
     );
 
-    const contratante = {
+    const tomador = {
       id: 9001,
       tipo: 'entidade',
       responsavel_cpf: '11122233344',
@@ -204,7 +204,7 @@ describe('criarContaResponsavel - criação em usuarios', () => {
     } as any;
 
     // Act
-    await db.criarContaResponsavel(contratante);
+    await db.criarContaResponsavel(tomador);
 
     // Assert: verificar que NÃO foi criado em funcionarios
     const funcionario = await query(

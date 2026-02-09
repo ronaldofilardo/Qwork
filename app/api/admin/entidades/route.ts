@@ -14,38 +14,104 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    const tipo = searchParams.get('tipo'); // 'clinica' ou 'entidade' ou null (todos)
+    const filtroTipo = searchParams.get('tipo'); // 'clinica' ou 'entidade' ou null (todos)
 
-    // Query que busca entidades e usa os campos responsavel_* como gestor
-    // NOTA: A relação usuarios-clinicas-entidades ainda não está implementada no banco
-    // Por enquanto, usamos apenas os dados de responsavel_* da tabela entidades
-    let sql = `
-      SELECT
-        c.id,
-        c.tipo,
-        c.nome,
-        c.cnpj,
-        c.endereco,
-        c.cidade,
-        c.estado,
-        c.telefone,
-        c.email,
-        c.ativa,
-        c.criado_em,
-        c.responsavel_nome,
-        c.responsavel_cpf,
-        c.responsavel_email
-      FROM entidades c
-    `;
+    // ARQUITETURA SEGREGADA:
+    // - entidades = tomadores PARTICULARES (contrato direto)
+    // - clinicas = tomadores MEDICINA OCUPACIONAL (através de empresa)
+    // As tabelas são independentes - NÃO há FK entre elas
+    // Usamos UNION para combinar os dados de ambas as tabelas
 
+    let sql = '';
     const params: string[] = [];
 
-    if (tipo && (tipo === 'clinica' || tipo === 'entidade')) {
-      sql += ' WHERE c.tipo = $1';
-      params.push(tipo);
+    // Se filtrar por clinicas
+    if (filtroTipo === 'clinica') {
+      sql = `
+        SELECT
+          id,
+          'clinica' as tipo,
+          nome,
+          cnpj,
+          endereco,
+          COALESCE(cidade, '') as cidade,
+          COALESCE(estado, '') as estado,
+          telefone,
+          email,
+          ativa,
+          criado_em,
+          responsavel_nome,
+          responsavel_cpf,
+          responsavel_email
+        FROM clinicas
+        ORDER BY nome
+      `;
     }
-
-    sql += ' ORDER BY c.tipo, c.nome';
+    // Se filtrar por entidades
+    else if (filtroTipo === 'entidade') {
+      sql = `
+        SELECT
+          id,
+          'entidade' as tipo,
+          nome,
+          cnpj,
+          endereco,
+          COALESCE(cidade, '') as cidade,
+          COALESCE(estado, '') as estado,
+          telefone,
+          email,
+          ativa,
+          criado_em,
+          responsavel_nome,
+          responsavel_cpf,
+          responsavel_email
+        FROM entidades
+        ORDER BY nome
+      `;
+    }
+    // Se não filtrar, buscar AMBAS
+    else {
+      sql = `
+        (
+          SELECT
+            id,
+            'entidade' as tipo,
+            nome,
+            cnpj,
+            endereco,
+            COALESCE(cidade, '') as cidade,
+            COALESCE(estado, '') as estado,
+            telefone,
+            email,
+            ativa,
+            criado_em,
+            responsavel_nome,
+            responsavel_cpf,
+            responsavel_email
+          FROM entidades
+        )
+        UNION ALL
+        (
+          SELECT
+            id,
+            'clinica' as tipo,
+            nome,
+            cnpj,
+            endereco,
+            COALESCE(cidade, '') as cidade,
+            COALESCE(estado, '') as estado,
+            telefone,
+            email,
+            ativa,
+            criado_em,
+            responsavel_nome,
+            responsavel_cpf,
+            responsavel_email
+          FROM clinicas
+        )
+        ORDER BY tipo, nome
+      `;
+    }
 
     const result = await query(sql, params);
 
@@ -78,7 +144,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Se query com tipo específico, retornar com total
-    if (tipo) {
+    if (filtroTipo) {
       return NextResponse.json({
         success: true,
         total: entidades.length,

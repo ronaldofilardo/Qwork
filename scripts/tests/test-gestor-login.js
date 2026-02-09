@@ -65,7 +65,7 @@ async function testarLogin() {
       console.log('Mensagem:', data.error || 'Erro desconhecido');
 
       if (data.codigo === 'PAGAMENTO_PENDENTE') {
-        console.log('⚠️  Pagamento pendente para o contratante.');
+        console.log('⚠️  Pagamento pendente para o tomador.');
       }
     }
   } catch (error) {

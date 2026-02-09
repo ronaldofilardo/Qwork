@@ -32,12 +32,12 @@ status = 'aprovado'; // Valor válido do enum
 
 ```typescript
 // ANTES ❌
-if (contratante.ativa) {
+if (tomador.ativa) {
   /* Login permitido */
 }
 
 // DEPOIS ✅
-if (contratante.ativa && contratante.pagamento_confirmado) {
+if (tomador.ativa && tomador.pagamento_confirmado) {
   /* Login permitido */
 } else {
   return 403 - PAGAMENTO_PENDENTE;
@@ -53,7 +53,7 @@ if (contratante.ativa && contratante.pagamento_confirmado) {
 ### 4. **Sistema de Retomada de Pagamento**
 
 - Admin gera link único (válido 72h)
-- Contratante acessa link e completa pagamento
+- tomador acessa link e completa pagamento
 - Token de uso único (não pode ser reutilizado)
 
 ---

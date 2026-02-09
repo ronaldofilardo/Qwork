@@ -11,7 +11,7 @@ async function testBothPlanTypes() {
     // Teste 1: Plano Fixo
     console.log('\nTeste 1: Plano Fixo (ID 1)');
     const testFixo = await client.query(`
-      INSERT INTO contratantes (
+      INSERT INTO tomadores (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         plano_id, numero_funcionarios_estimado
@@ -39,7 +39,7 @@ async function testBothPlanTypes() {
     // Teste 2: Plano Personalizado
     console.log('\nTeste 2: Plano Personalizado (ID 3)');
     const testPersonalizado = await client.query(`
-      INSERT INTO contratantes (
+      INSERT INTO tomadores (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         plano_id, numero_funcionarios_estimado
@@ -66,7 +66,7 @@ async function testBothPlanTypes() {
 
     // Limpar testes
     await client.query(
-      `DELETE FROM contratantes WHERE nome LIKE 'Teste Empresa%'`
+      `DELETE FROM tomadores WHERE nome LIKE 'Teste Empresa%'`
     );
 
     console.log(

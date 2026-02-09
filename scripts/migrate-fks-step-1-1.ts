@@ -9,8 +9,8 @@ const prodPool = new Pool({
     'postgresql://neondb_owner:REDACTED@ep-divine-sky-a-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require',
 });
 
-async function analyzeContratantesFKs() {
-  console.log('🔍 Analisando FKs que referenciam contratantes...\n');
+async function analyzetomadorsFKs() {
+  console.log('🔍 Analisando FKs que referenciam tomadors...\n');
 
   const query = `
     SELECT
@@ -27,7 +27,7 @@ async function analyzeContratantesFKs() {
       ON ccu.constraint_name = tc.constraint_name
       AND ccu.table_schema = tc.table_schema
     WHERE tc.constraint_type = 'FOREIGN KEY'
-      AND ccu.table_name = 'contratantes'
+      AND ccu.table_name = 'tomadors'
     ORDER BY tc.table_name, kcu.column_name;
   `;
 
@@ -48,7 +48,7 @@ async function generateMigrationSQL(fks: any[]) {
   console.log('📝 Gerando SQL de migração...\n');
 
   let sql = `-- ================================================
--- ETAPA 1.1: Migração de FKs contratantes→entidades
+-- ETAPA 1.1: Migração de FKs tomadors→entidades
 -- Data: ${new Date().toISOString()}
 -- ================================================
 
@@ -58,19 +58,19 @@ BEGIN;
 
   // Drop FKs antigas
   for (const fk of fks) {
-    sql += `-- Drop FK: ${fk.table_name}.${fk.column_name} → contratantes.id\n`;
+    sql += `-- Drop FK: ${fk.table_name}.${fk.column_name} → tomadors.id\n`;
     sql += `ALTER TABLE ${fk.table_name} DROP CONSTRAINT IF EXISTS ${fk.constraint_name};\n\n`;
   }
 
   // Recriar FKs apontando para entidades
   for (const fk of fks) {
-    // Remover contratante_id se ele não fizer sentido, manter entidade_id
-    if (fk.column_name === 'contratante_id') {
+    // Remover tomador_id se ele não fizer sentido, manter entidade_id
+    if (fk.column_name === 'tomador_id') {
       console.log(
-        `   ⚠️  ${fk.table_name}.contratante_id será REMOVIDA (obsoleta)`
+        `   ⚠️  ${fk.table_name}.tomador_id será REMOVIDA (obsoleta)`
       );
-      sql += `-- Remover coluna obsoleta contratante_id\n`;
-      sql += `ALTER TABLE ${fk.table_name} DROP COLUMN IF EXISTS contratante_id;\n\n`;
+      sql += `-- Remover coluna obsoleta tomador_id\n`;
+      sql += `ALTER TABLE ${fk.table_name} DROP COLUMN IF EXISTS tomador_id;\n\n`;
     } else if (fk.column_name === 'entidade_id') {
       // Recriar FK corretamente para entidades
       const newConstraintName = `fk_${fk.table_name}_entidade_id`;
@@ -100,7 +100,7 @@ JOIN information_schema.key_column_usage AS kcu
 JOIN information_schema.constraint_column_usage AS ccu
   ON ccu.constraint_name = tc.constraint_name
 WHERE tc.constraint_type = 'FOREIGN KEY'
-  AND kcu.column_name IN ('entidade_id', 'contratante_id')
+  AND kcu.column_name IN ('entidade_id', 'tomador_id')
   AND tc.table_name IN ('${fks.map((f) => f.table_name).join("', '")}')
 ORDER BY tc.table_name;
 `;
@@ -135,8 +135,8 @@ async function validateMigration(pool: Pool, env: string) {
     JOIN information_schema.constraint_column_usage AS ccu
       ON ccu.constraint_name = tc.constraint_name
     WHERE tc.constraint_type = 'FOREIGN KEY'
-      AND (ccu.table_name = 'contratantes' OR ccu.table_name = 'entidades')
-      AND kcu.column_name IN ('contratante_id', 'entidade_id')
+      AND (ccu.table_name = 'tomadors' OR ccu.table_name = 'entidades')
+      AND kcu.column_name IN ('tomador_id', 'entidade_id')
     ORDER BY tc.table_name;
   `;
 
@@ -151,27 +151,27 @@ async function validateMigration(pool: Pool, env: string) {
   });
 
   const badFKs = result.rows.filter(
-    (r) => r.foreign_table_name === 'contratantes'
+    (r) => r.foreign_table_name === 'tomadors'
   );
   if (badFKs.length > 0) {
     throw new Error(
-      `Ainda existem ${badFKs.length} FKs apontando para contratantes!`
+      `Ainda existem ${badFKs.length} FKs apontando para tomadors!`
     );
   }
 
   console.log(
-    `\n✅ Validação ${env} OK - Nenhuma FK aponta para contratantes\n`
+    `\n✅ Validação ${env} OK - Nenhuma FK aponta para tomadors\n`
   );
 }
 
 async function main() {
   try {
     console.log('='.repeat(60));
-    console.log('ETAPA 1.1: MIGRAÇÃO DE FKs contratantes → entidades');
+    console.log('ETAPA 1.1: MIGRAÇÃO DE FKs tomadors → entidades');
     console.log('='.repeat(60) + '\n');
 
     // 1. Analisar FKs
-    const fks = await analyzeContratantesFKs();
+    const fks = await analyzetomadorsFKs();
 
     if (fks.length === 0) {
       console.log('✅ Nenhuma FK encontrada - migração não necessária\n');
@@ -183,8 +183,8 @@ async function main() {
 
     // Salvar SQL
     const fs = await import('fs/promises');
-    await fs.writeFile('sql-files/migrate-fks-contratantes.sql', sql);
-    console.log('📄 SQL salvo em: sql-files/migrate-fks-contratantes.sql\n');
+    await fs.writeFile('sql-files/migrate-fks-tomadors.sql', sql);
+    console.log('📄 SQL salvo em: sql-files/migrate-fks-tomadors.sql\n');
 
     // 3. Executar no DEV
     await executeMigration(sql, devPool, 'DEV');

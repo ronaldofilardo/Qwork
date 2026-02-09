@@ -54,7 +54,7 @@ function Invoke-ApiRequest {
 
 # 1. VERIFICAR ESTADO DO BANCO
 Write-Host "[1/6] Verificando estado do banco..." -ForegroundColor Yellow
-$tablesCheck = psql -U postgres -d nr-bps_db -c "\dt" -t | Select-String -Pattern "contratantes|funcionarios|lotes_avaliacao|planos|contratacao_personalizada"
+$tablesCheck = psql -U postgres -d nr-bps_db -c "\dt" -t | Select-String -Pattern "tomadores|funcionarios|lotes_avaliacao|planos|contratacao_personalizada"
 if ($tablesCheck) {
     Write-Host "✓ Tabelas principais existem" -ForegroundColor Green
 } else {
@@ -71,7 +71,7 @@ Write-Host "`n[2/6] Testando cadastro de contratante..." -ForegroundColor Yellow
 $cnpjTeste = "12345678000199"
 
 # Limpar cadastro anterior se existir
-psql -U postgres -d nr-bps_db -c "DELETE FROM contratantes WHERE cnpj = '$cnpjTeste';" | Out-Null
+psql -U postgres -d nr-bps_db -c "DELETE FROM tomadores WHERE cnpj = '$cnpjTeste';" | Out-Null
 
 $cadastroData = @{
     tipo = "entidade"
@@ -94,7 +94,7 @@ $cadastroData = @{
 
 # API de cadastro público não existe, vamos inserir direto no banco
 $insertQuery = @"
-INSERT INTO contratantes (
+INSERT INTO tomadores (
     tipo, nome, cnpj, inscricao_estadual, email, telefone,
     endereco, cidade, estado, cep,
     responsavel_nome, responsavel_cpf, responsavel_cargo,
@@ -144,7 +144,7 @@ if ($senhaId -match '^\d+$') {
 # 4. APROVAR E ATIVAR CONTRATANTE
 Write-Host "`n[4/6] Aprovando e ativando contratante..." -ForegroundColor Yellow
 $ativarQuery = @"
-UPDATE contratantes 
+UPDATE tomadores 
 SET status = 'aprovado',
     aprovado_em = NOW(),
     aprovado_por_cpf = '00000000000',
@@ -191,7 +191,7 @@ for ($i = 1; $i -le 3; $i++) {
     if ($funcId) {
         $funcId = $funcId.Trim()
         # Associar funcionário à empresa e contratante
-        psql -U postgres -d nr-bps_db -c "INSERT INTO contratantes_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT DO NOTHING;" | Out-Null
+        psql -U postgres -d nr-bps_db -c "INSERT INTO tomadores_funcionarios (contratante_id, funcionario_id, empresa_cliente_id) VALUES ($contratanteId, $funcId, $empresaId) ON CONFLICT DO NOTHING;" | Out-Null
     }
 }
 Write-Host "✓ 3 funcionários criados e associados" -ForegroundColor Green
@@ -224,10 +224,10 @@ Write-Host "========================================`n" -ForegroundColor Cyan
 
 # Verificar estado final
 Write-Host "Estado final do contratante:" -ForegroundColor Yellow
-psql -U postgres -d nr-bps_db -c "SELECT id, nome, status, ativa, pagamento_confirmado FROM contratantes WHERE id = $contratanteId;"
+psql -U postgres -d nr-bps_db -c "SELECT id, nome, status, ativa, pagamento_confirmado FROM tomadores WHERE id = $contratanteId;"
 
 Write-Host "`nFuncionários associados:" -ForegroundColor Yellow
-psql -U postgres -d nr-bps_db -c "SELECT f.id, f.nome, f.cpf FROM funcionarios f JOIN contratantes_funcionarios cf ON f.id = cf.funcionario_id WHERE cf.contratante_id = $contratanteId;"
+psql -U postgres -d nr-bps_db -c "SELECT f.id, f.nome, f.cpf FROM funcionarios f JOIN tomadores_funcionarios cf ON f.id = cf.funcionario_id WHERE cf.contratante_id = $contratanteId;"
 
 Write-Host "`nLotes criados:" -ForegroundColor Yellow
 psql -U postgres -d nr-bps_db -c "SELECT l.id, l.codigo, l.criado_em FROM lotes_avaliacao l WHERE l.empresa_id = $empresaId;"

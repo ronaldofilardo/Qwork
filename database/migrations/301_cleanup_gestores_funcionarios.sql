@@ -34,7 +34,7 @@ SELECT
     c.tipo as contratante_tipo
 FROM funcionarios f
 LEFT JOIN entidades_senhas cs ON f.cpf = cs.cpf
-LEFT JOIN contratantes c ON cs.contratante_id = c.id
+LEFT JOIN tomadores c ON cs.contratante_id = c.id
 WHERE f.perfil IN ('rh', 'gestor')
    OR f.usuario_tipo IN ('rh', 'gestor');
 
@@ -127,15 +127,15 @@ BEGIN
     END IF;
 END $$;
 
--- 3.3. Verificar vínculos em contratantes_funcionarios
-DELETE FROM contratantes_funcionarios cf
+-- 3.3. Verificar vínculos em tomadores_funcionarios
+DELETE FROM tomadores_funcionarios cf
 WHERE cf.funcionario_id IN (
     SELECT f.id 
     FROM funcionarios f
     WHERE f.cpf IN (SELECT cpf FROM temp_gestores_incorretos)
 );
 
-RAISE NOTICE 'Vínculos removidos de contratantes_funcionarios';
+RAISE NOTICE 'Vínculos removidos de tomadores_funcionarios';
 
 -- ============================================
 -- 4. VALIDAR EXISTÊNCIA EM entidades_senhas
@@ -214,7 +214,7 @@ BEGIN
     -- Contar gestores em entidades_senhas (deve ser > 0)
     SELECT COUNT(*) INTO v_cs_gestores
     FROM entidades_senhas cs
-    JOIN contratantes c ON c.id = cs.contratante_id
+    JOIN tomadores c ON c.id = cs.contratante_id
     WHERE c.ativa = true;
     
     -- Total de funcionários restantes
@@ -260,7 +260,7 @@ COMMIT;
 -- 3. Confirmar que gestores existem em entidades_senhas:
 --    SELECT cs.cpf, c.nome, c.tipo, c.ativa
 --    FROM entidades_senhas cs
---    JOIN contratantes c ON c.id = cs.contratante_id
+--    JOIN tomadores c ON c.id = cs.contratante_id
 --    ORDER BY c.tipo, c.nome;
 
 -- 4. Testar login de gestores:

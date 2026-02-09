@@ -16,60 +16,31 @@ export async function GET() {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    // Determinar um entidade_id válido (pode vir via session.clinica_id, session.entidade_id ou tabela clinicas)
+    // Determinar clinica_id válido
     const clinicaId = session.clinica_id;
-    let entidadeId: number | null = null;
 
-    if (clinicaId) {
-      // Verificar se já é uma entidade (entidades.id)
-      const entidadeCheck = await query(
-        `SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica' LIMIT 1`,
-        [clinicaId]
+    if (!clinicaId) {
+      return NextResponse.json(
+        { error: 'Você não está vinculado a uma clínica' },
+        { status: 403 }
       );
-      if (entidadeCheck.rows.length > 0) {
-        entidadeId = entidadeCheck.rows[0].id;
-      } else {
-        // Tentar mapear tabela 'clinicas' => entidade_id
-        const mapRes = await query(
-          `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
-          [clinicaId]
-        );
-        if (mapRes.rows.length > 0 && mapRes.rows[0].entidade_id) {
-          entidadeId = mapRes.rows[0].entidade_id;
-        }
-      }
     }
 
-    // Fallback: se a sessão conter entidade_id e essa entidade for do tipo 'clinica'
-    if (!entidadeId && (session as any).entidade_id) {
-      const entidadeCheck2 = await query(
-        `SELECT id FROM entidades WHERE id = $1 AND tipo = 'clinica' LIMIT 1`,
-        [(session as any).entidade_id]
+    // Verificar se a clínica existe (tabela clinicas)
+    const clinicaCheck = await query(
+      `SELECT id FROM clinicas WHERE id = $1 LIMIT 1`,
+      [clinicaId]
+    );
+
+    if (clinicaCheck.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Clínica não encontrada' },
+        { status: 404 }
       );
-      if (entidadeCheck2.rows.length > 0) {
-        entidadeId = entidadeCheck2.rows[0].id;
-      }
     }
 
-    // Último recurso: tentar obter via tabela funcionarios (pelo cpf da sessão)
-    if (!entidadeId) {
-      const funcRes = await query(
-        `SELECT clinica_id, entidade_id FROM funcionarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
-        [session.cpf]
-      );
-      if (funcRes.rows.length > 0) {
-        if (funcRes.rows[0].entidade_id)
-          entidadeId = funcRes.rows[0].entidade_id;
-        else if (funcRes.rows[0].clinica_id) {
-          const map2 = await query(
-            `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
-            [funcRes.rows[0].clinica_id]
-          );
-          if (map2.rows.length > 0 && map2.rows[0].entidade_id)
-            entidadeId = map2.rows[0].entidade_id;
-        }
-      }
-    }
+    // Na arquitetura segregada, clinica_id é suficiente para entidadeId
+    const entidadeId = clinicaId;
 
     if (!entidadeId) {
       return NextResponse.json(

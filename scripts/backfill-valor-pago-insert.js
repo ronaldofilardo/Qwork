@@ -26,21 +26,21 @@ import { query } from '../lib/db.js';
 
     // Primeiro, tratar planos personalizados com pagamento registrado (usar pagamento como fonte de verdade)
     const personalCandidates = await query(
-      `SELECT ct.id as contratante_id, ct.cnpj, ct.numero_funcionarios_estimado, ct.criado_em,
+      `SELECT ct.id as tomador_id, ct.cnpj, ct.numero_funcionarios_estimado, ct.criado_em,
               cp.id as contrato_plano_id, cp.numero_funcionarios_estimado as cp_numero_estimado, cp.numero_funcionarios_atual as cp_numero_atual, cp.valor_personalizado_por_funcionario, cp.valor_pago as cp_valor_pago,
               ${planColsSql},
               pg.id as pagamento_id, pg.valor as pagamento_valor
-       FROM contratantes ct
-       LEFT JOIN LATERAL (SELECT cp.* FROM contratos_planos cp WHERE cp.contratante_id = ct.id ORDER BY cp.created_at DESC NULLS LAST, cp.id DESC LIMIT 1) cp ON true
+       FROM tomadors ct
+       LEFT JOIN LATERAL (SELECT cp.* FROM contratos_planos cp WHERE cp.tomador_id = ct.id ORDER BY cp.created_at DESC NULLS LAST, cp.id DESC LIMIT 1) cp ON true
        LEFT JOIN planos pl ON COALESCE(cp.plano_id, ct.plano_id) = pl.id
-       LEFT JOIN LATERAL (SELECT p.id, p.valor FROM pagamentos p WHERE p.contratante_id = ct.id ORDER BY p.data_pagamento DESC NULLS LAST, p.criado_em DESC LIMIT 1) pg ON true
+       LEFT JOIN LATERAL (SELECT p.id, p.valor FROM pagamentos p WHERE p.tomador_id = ct.id ORDER BY p.data_pagamento DESC NULLS LAST, p.criado_em DESC LIMIT 1) pg ON true
        WHERE pl.tipo = 'personalizado' AND pg.valor IS NOT NULL
        ORDER BY ct.id`
     );
 
     // Atualizar/Inserir a partir de pagamentos para personalizados
     for (const r of personalCandidates.rows) {
-      const ctId = r.contratante_id;
+      const ctId = r.tomador_id;
       const pagamentoVal = r.pagamento_valor ? Number(r.pagamento_valor) : null;
       const numeroEstimado =
         r.cp_numero_estimado ??
@@ -72,7 +72,7 @@ import { query } from '../lib/db.js';
         dataFim.setDate(dataFim.getDate() + 364);
 
         const insertSql = `INSERT INTO contratos_planos (
-          plano_id, contratante_id, tipo_contratante, valor_personalizado_por_funcionario,
+          plano_id, tomador_id, tipo_tomador, valor_personalizado_por_funcionario,
           data_contratacao, data_fim_vigencia, numero_funcionarios_estimado, numero_funcionarios_atual,
           forma_pagamento, numero_parcelas, status, bloqueado, created_at, updated_at, valor_pago
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`;
@@ -97,21 +97,21 @@ import { query } from '../lib/db.js';
 
         inserted++;
         console.log(
-          `[BACKFILL-VALOR-PAGO-INSERT] Inserido cp id=${insertedRes.rows[0].id} para contratante ${ctId} com valor_pago=${pagamentoVal} (unit=${unit})`
+          `[BACKFILL-VALOR-PAGO-INSERT] Inserido cp id=${insertedRes.rows[0].id} para tomador ${ctId} com valor_pago=${pagamentoVal} (unit=${unit})`
         );
       }
     }
 
     // Em seguida, tratar os demais (não personalizados) que ainda não têm cp ou cp.valor_pago
     const candidates = await query(
-      `SELECT ct.id as contratante_id, ct.cnpj, ct.numero_funcionarios_estimado, ct.criado_em,
+      `SELECT ct.id as tomador_id, ct.cnpj, ct.numero_funcionarios_estimado, ct.criado_em,
               cp.id as contrato_plano_id, cp.numero_funcionarios_estimado as cp_numero_estimado, cp.numero_funcionarios_atual as cp_numero_atual, cp.valor_personalizado_por_funcionario, cp.valor_pago as cp_valor_pago,
               ${planColsSql},
               pg.id as pagamento_id, pg.valor as pagamento_valor
-       FROM contratantes ct
-       LEFT JOIN LATERAL (SELECT cp.* FROM contratos_planos cp WHERE cp.contratante_id = ct.id ORDER BY cp.created_at DESC NULLS LAST, cp.id DESC LIMIT 1) cp ON true
+       FROM tomadors ct
+       LEFT JOIN LATERAL (SELECT cp.* FROM contratos_planos cp WHERE cp.tomador_id = ct.id ORDER BY cp.created_at DESC NULLS LAST, cp.id DESC LIMIT 1) cp ON true
        LEFT JOIN planos pl ON COALESCE(cp.plano_id, ct.plano_id) = pl.id
-       LEFT JOIN LATERAL (SELECT p.id, p.valor FROM pagamentos p WHERE p.contratante_id = ct.id ORDER BY p.data_pagamento DESC NULLS LAST, p.criado_em DESC LIMIT 1) pg ON true
+       LEFT JOIN LATERAL (SELECT p.id, p.valor FROM pagamentos p WHERE p.tomador_id = ct.id ORDER BY p.data_pagamento DESC NULLS LAST, p.criado_em DESC LIMIT 1) pg ON true
        WHERE (cp.id IS NULL OR cp.valor_pago IS NULL) AND (pl.tipo IS NULL OR pl.tipo != 'personalizado')
        ORDER BY ct.id`
     );
@@ -125,7 +125,7 @@ import { query } from '../lib/db.js';
     const skipped = [];
 
     for (const r of candidates.rows) {
-      const ctId = r.contratante_id;
+      const ctId = r.tomador_id;
       const numeroEstimado =
         r.cp_numero_estimado ?? r.numero_funcionarios_estimado ?? 0;
       if (!numeroEstimado || Number(numeroEstimado) <= 0) {
@@ -195,7 +195,7 @@ import { query } from '../lib/db.js';
         dataFim.setDate(dataFim.getDate() + 364);
 
         const insertSql = `INSERT INTO contratos_planos (
-          plano_id, contratante_id, tipo_contratante, valor_personalizado_por_funcionario,
+          plano_id, tomador_id, tipo_tomador, valor_personalizado_por_funcionario,
           data_contratacao, data_fim_vigencia, numero_funcionarios_estimado, numero_funcionarios_atual,
           forma_pagamento, numero_parcelas, status, bloqueado, created_at, updated_at, valor_pago
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`;
@@ -220,7 +220,7 @@ import { query } from '../lib/db.js';
 
         inserted++;
         console.log(
-          `[BACKFILL-VALOR-PAGO-INSERT] Inserido cp id=${insertedRes.rows[0].id} para contratante ${ctId} com valor_pago=${chosenValor}`
+          `[BACKFILL-VALOR-PAGO-INSERT] Inserido cp id=${insertedRes.rows[0].id} para tomador ${ctId} com valor_pago=${chosenValor}`
         );
       }
     }

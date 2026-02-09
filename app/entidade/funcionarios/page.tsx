@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import FuncionariosSection from '@/components/funcionarios/FuncionariosSection';
 
 interface Session {
-  contratante_id: number;
+  tomador_id: number;
 }
 
 export default function FuncionariosPage() {
@@ -48,7 +48,7 @@ export default function FuncionariosPage() {
 
       <FuncionariosSection
         contexto="entidade"
-        contratanteId={session?.contratante_id}
+        tomadorId={session?.tomador_id}
         onRefresh={() => {}}
       />
     </div>

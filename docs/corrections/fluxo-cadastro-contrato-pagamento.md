@@ -11,7 +11,7 @@
 
 - **Banco de desenvolvimento (nr-bps_db):** Status enum tinha apenas `pendente`, `aprovado`, `rejeitado`, `em_reanalise`
 - **TypeScript:** StatusAprovacao incluía `aguardando_pagamento`
-- **Impacto:** INSERT INTO contratantes com status='aguardando_pagamento' falhava com erro PostgreSQL 22P02
+- **Impacto:** INSERT INTO tomadores com status='aguardando_pagamento' falhava com erro PostgreSQL 22P02
 
 ### 2. Transação não-atômica
 
@@ -55,10 +55,10 @@ status_aprovacao_enum:
 
 ### ✅ Tarefa 1.5: Adicionar coluna numero_funcionarios_estimado
 
-**Migration criada:** `database/migrations/003_add_numero_funcionarios_estimado_to_contratantes.sql`
+**Migration criada:** `database/migrations/003_add_numero_funcionarios_estimado_to_tomadores.sql`
 
 ```sql
-ALTER TABLE contratantes ADD COLUMN numero_funcionarios_estimado INTEGER NULL;
+ALTER TABLE tomadores ADD COLUMN numero_funcionarios_estimado INTEGER NULL;
 ```
 
 **Executada em:**
@@ -70,14 +70,14 @@ ALTER TABLE contratantes ADD COLUMN numero_funcionarios_estimado INTEGER NULL;
 
 ### ✅ Tarefa 2: Refatorar transação na rota
 
-**Arquivo:** `app/api/cadastro/contratante/route.ts`
+**Arquivo:** `app/api/cadastro/tomador/route.ts`
 
 #### Antes (não-atômico):
 
 ```typescript
 await db.query('BEGIN');
 try {
-  const contratante = await createContratante({ ... });
+  const tomador = await createtomador({ ... });
   // ... mais operações ...
   await db.query('COMMIT');
 } catch (error) {
@@ -88,7 +88,7 @@ try {
 **Problemas:**
 
 - Cada `db.query()` pode usar um cliente diferente do pool
-- `createContratante()` usa `query()` internamente, não compartilha transação
+- `createtomador()` usa `query()` internamente, não compartilha transação
 - ROLLBACK pode falhar se executado em cliente diferente
 
 #### Depois (atômico):
@@ -98,12 +98,12 @@ const result = await db.transaction(async (txClient) => {
   // Todas as queries usam o mesmo txClient
   const emailCheck = await txClient.query(...);
   const cnpjCheck = await txClient.query(...);
-  const contratanteResult = await txClient.query<Contratante>(...);
+  const tomadorResult = await txClient.query<tomador>(...);
 
   // ... operações dentro da transação ...
 
   return {
-    contratante,
+    tomador,
     requiresPayment,
     simuladorUrl,
     contratoIdCreated,
@@ -151,8 +151,8 @@ if (planoId) {
 }
 
 // INSERT direto, sem fallback
-const contratanteResult = await txClient.query<Contratante>(
-  `INSERT INTO contratantes (..., status, ...) VALUES (..., $19, ...)`,
+const tomadorResult = await txClient.query<tomador>(
+  `INSERT INTO tomadores (..., status, ...) VALUES (..., $19, ...)`,
   [..., statusToUse, ...]
 );
 ```
@@ -174,7 +174,7 @@ const contratanteResult = await txClient.query<Contratante>(
 **Operações (dentro de transação atômica):**
 
 1. Validar dados (email, CNPJ únicos)
-2. INSERT contratante com `status='aguardando_pagamento'`, `ativa=false`, `pagamento_confirmado=false`
+2. INSERT tomador com `status='aguardando_pagamento'`, `ativa=false`, `pagamento_confirmado=false`
 3. UPDATE numero_funcionarios_estimado (se fornecido)
 4. SELECT plano para calcular valores
 5. Se plano fixo: INSERT contrato com `status='aguardando_pagamento'`, `aceito=false`
@@ -182,7 +182,7 @@ const contratanteResult = await txClient.query<Contratante>(
 **Estado resultante no banco:**
 
 ```sql
--- Tabela: contratantes
+-- Tabela: tomadores
 status: 'aguardando_pagamento'
 ativa: false
 pagamento_confirmado: false
@@ -199,7 +199,7 @@ valor_total: <calculado>
 ```json
 {
   "success": true,
-  "id": <contratante_id>,
+  "id": <tomador_id>,
   "requires_payment": true,
   "requires_contract_acceptance": true,  ← indica que há contrato pendente
   "contrato_id": <contrato_id>,
@@ -230,7 +230,7 @@ aceito: true  ← mudou
 ```json
 {
   "success": true,
-  "simulador_url": "/pagamento/simulador?contratante_id=X&plano_id=Y&numero_funcionarios=Z"
+  "simulador_url": "/pagamento/simulador?tomador_id=X&plano_id=Y&numero_funcionarios=Z"
 }
 ```
 
@@ -244,13 +244,13 @@ aceito: true  ← mudou
 
 1. Validar contrato aceito
 2. Processar pagamento (mock ou integração real)
-3. UPDATE contratantes SET pagamento_confirmado=true, status='aprovado'
+3. UPDATE tomadores SET pagamento_confirmado=true, status='aprovado'
 4. UPDATE contratos SET status='pago' ou 'pagamento_confirmado'
 
 **Estado resultante:**
 
 ```sql
--- Tabela: contratantes
+-- Tabela: tomadores
 status: 'aprovado'  ← mudou
 pagamento_confirmado: true  ← mudou
 ativa: true  ← pode ser ativado ou aguardar aprovação admin
@@ -262,7 +262,7 @@ aceito: true
 
 ### Estado 4: Acesso Liberado
 
-**Condição:** `contratantes.pagamento_confirmado = true`
+**Condição:** `tomadores.pagamento_confirmado = true`
 
 **Ações disponíveis:**
 
@@ -283,7 +283,7 @@ aceito: true
 
 ### ✅ Código
 
-- [x] Rota `/api/cadastro/contratante` usa `db.transaction()`
+- [x] Rota `/api/cadastro/tomador` usa `db.transaction()`
 - [x] Todas as queries dentro usam `txClient`
 - [x] Não há mais `db.query('BEGIN')` ou `db.query('COMMIT')` manual
 - [x] Lógica de enum fallback removida
@@ -291,7 +291,7 @@ aceito: true
 
 ### ✅ Fluxo
 
-- [ ] POST /api/cadastro/contratante cria contratante com status correto
+- [ ] POST /api/cadastro/tomador cria tomador com status correto
 - [ ] Contrato criado se plano fixo
 - [ ] Frontend recebe `contrato_id` e `requires_contract_acceptance`
 - [ ] Rota de aceite de contrato (a implementar)
@@ -322,7 +322,7 @@ aceito: true
    ```sql
    CREATE TABLE contratos (
      id SERIAL PRIMARY KEY,
-     contratante_id INTEGER REFERENCES contratantes(id),
+     tomador_id INTEGER REFERENCES tomadores(id),
      plano_id INTEGER REFERENCES planos(id),
      numero_funcionarios INTEGER,
      valor_total DECIMAL(10,2),
@@ -347,7 +347,7 @@ aceito: true
 # Verificar enum no banco
 node scripts/checks/verify-status-enums.cjs
 
-# Verificar estrutura da tabela contratantes
+# Verificar estrutura da tabela tomadores
 node scripts/checks/verify-database-structure.cjs
 
 # Testar POST cadastro

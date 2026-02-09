@@ -19,11 +19,11 @@ const { Client } = require('pg');
     const clinicaId = clinicaRow ? clinicaRow.id : null;
 
     await client.query(
-      "INSERT INTO contratantes (tipo, nome, cnpj, email, ativa) VALUES ('entidade', 'Contratante Teste Gestor', '00000000000000', 'contratante-gestor@test', true) ON CONFLICT DO NOTHING"
+      "INSERT INTO tomadores (tipo, nome, cnpj, email, ativa) VALUES ('entidade', 'Contratante Teste Gestor', '00000000000000', 'contratante-gestor@test', true) ON CONFLICT DO NOTHING"
     );
     const contratanteRow = (
       await client.query(
-        "SELECT id FROM contratantes WHERE nome='Contratante Teste Gestor' LIMIT 1"
+        "SELECT id FROM tomadores WHERE nome='Contratante Teste Gestor' LIMIT 1"
       )
     ).rows[0];
     const contratanteId = contratanteRow ? contratanteRow.id : null;

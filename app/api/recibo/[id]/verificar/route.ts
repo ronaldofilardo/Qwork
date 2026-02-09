@@ -45,7 +45,7 @@ export async function GET(
     const metadados = await query(
       `SELECT 
         numero_recibo,
-        contratante_id,
+        tomador_id,
         criado_em,
         emitido_por,
         backup_path,

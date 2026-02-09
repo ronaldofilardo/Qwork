@@ -1,9 +1,11 @@
-require('dotenv').config({path: '.env.test'});
-const {query} = require('./lib/db.ts');
+require('dotenv').config({ path: '.env.test' });
+const { query } = require('./lib/db.ts');
 
 async function check() {
   try {
-    const result = await query("SELECT id, nome, cnpj FROM contratantes WHERE cnpj LIKE '999%'");
+    const result = await query(
+      "SELECT id, nome, cnpj FROM tomadores WHERE cnpj LIKE '999%'"
+    );
     console.log('Existing test contractors:');
     console.log(result.rows);
   } catch (err) {

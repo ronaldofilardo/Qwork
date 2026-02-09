@@ -164,24 +164,23 @@ export async function gerarDadosGeraisEmpresa(
       la.descricao,
       
       la.liberado_em,
-      COALESCE(ec.nome, cont.nome) as empresa_nome,
-      COALESCE(ec.cnpj, cont.cnpj) as cnpj,
-      COALESCE(ec.endereco, cont.endereco) as endereco,
-      COALESCE(ec.cidade, cont.cidade) as cidade,
-      COALESCE(ec.estado, cont.estado) as estado,
-      COALESCE(ec.cep, cont.cep) as cep,
-      COALESCE(c.nome, cont.nome) as clinica_nome,
+      COALESCE(e.nome, c.nome) as empresa_nome,
+      COALESCE(e.cnpj, c.cnpj) as cnpj,
+      COALESCE(e.endereco, c.endereco) as endereco,
+      COALESCE(e.cidade, c.cidade) as cidade,
+      COALESCE(e.estado, c.estado) as estado,
+      COALESCE(e.cep, c.cep) as cep,
+      c.nome as clinica_nome,
       COUNT(CASE WHEN a.status != 'inativada' THEN 1 END) as total_avaliacoes,
-      COUNT(CASE WHEN a.status = 'concluido' THEN 1 END) as avaliacoes_concluidas,
+      COUNT(CASE WHEN a.status = 'concluida' THEN 1 END) as avaliacoes_concluidas,
       MIN(a.inicio) as primeira_avaliacao,
-      MAX(CASE WHEN a.status = 'concluido' THEN a.envio END) as ultima_conclusao
+      MAX(CASE WHEN a.status = 'concluida' THEN a.envio END) as ultima_conclusao
     FROM lotes_avaliacao la
-    LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-    LEFT JOIN clinicas c ON ec.clinica_id = c.id
-    LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+    LEFT JOIN entidades e ON la.entidade_id = e.id
+    LEFT JOIN clinicas c ON la.clinica_id = c.id
     LEFT JOIN avaliacoes a ON la.id = a.lote_id
     WHERE la.id = $1
-    GROUP BY la.id, la.descricao, la.liberado_em, ec.nome, ec.cnpj, ec.endereco, ec.cidade, ec.estado, ec.cep, c.nome, cont.nome, cont.cnpj, cont.endereco, cont.cidade, cont.estado, cont.cep
+    GROUP BY la.id, la.descricao, la.liberado_em, e.nome, e.cnpj, e.endereco, e.cidade, e.estado, e.cep, c.nome, c.cnpj, c.endereco, c.cidade, c.estado, c.cep
   `,
     [loteId]
   );
@@ -195,7 +194,7 @@ export async function gerarDadosGeraisEmpresa(
   // Validação defensiva: garantir que temos dados mínimos
   if (!lote.empresa_nome) {
     console.warn(
-      `[WARN] Lote ${loteId} (${lote.id}) sem empresa/contratante associado`
+      `[WARN] Lote ${loteId} (${lote.id}) sem empresa/tomador associado`
     );
   }
 
@@ -208,7 +207,7 @@ export async function gerarDadosGeraisEmpresa(
       SUM(CASE WHEN nivel_cargo = 'gestao' THEN 1 ELSE 0 END) as gestao
     FROM funcionarios f
     JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
-    WHERE a.lote_id = $1 AND a.status = 'concluido'
+    WHERE a.lote_id = $1 AND a.status = 'concluida'
   `,
     [loteId]
   );
@@ -260,7 +259,7 @@ export async function calcularScoresPorGrupo(
       r.valor
     FROM respostas r
     JOIN avaliacoes a ON r.avaliacao_id = a.id
-    WHERE a.lote_id = $1 AND a.status = 'concluido'
+    WHERE a.lote_id = $1 AND a.status = 'concluida'
     ORDER BY r.grupo, r.avaliacao_id
   `,
     [loteId]

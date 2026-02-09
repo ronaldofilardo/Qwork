@@ -237,10 +237,11 @@ export async function POST(request: Request) {
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
 
-        // 1. Inserir funcionário com contexto de clínica/empresa
+        // ARQUITETURA SEGREGADA: Inserir em 2 etapas
+        // 1. Inserir funcionário (sem FKs diretas)
         const insertResult = await query(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, clinica_id, empresa_id)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,$12,$13)
+          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
            RETURNING id`,
           [
             r.cpf,
@@ -254,19 +255,17 @@ export async function POST(request: Request) {
             null, // nivel_cargo must be NULL for perfil funcionario_clinica to satisfy DB check
             r.turno || null,
             r.escala || null,
-            session.clinica_id,
-            empresaId,
           ],
           session
         );
 
         const funcionarioId = insertResult.rows[0].id;
 
-        // 2. Criar relacionamento na tabela funcionarios_clinicas (via empresa)
+        // 2. Criar relacionamento na tabela funcionarios_clinicas
         await query(
-          `INSERT INTO funcionarios_clinicas (funcionario_id, empresa_id, ativo, data_vinculo)
-           VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
-          [funcionarioId, empresaId],
+          `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo, data_vinculo)
+           VALUES ($1, $2, $3, true, CURRENT_TIMESTAMP)`,
+          [funcionarioId, session.clinica_id, empresaId],
           session
         );
 

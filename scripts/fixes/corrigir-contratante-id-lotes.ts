@@ -5,22 +5,22 @@ import { query } from '@/lib/db';
 
 async function main() {
   console.log('=========================================');
-  console.log('CORRIGINDO CONTRATANTE_ID DOS LOTES');
+  console.log('CORRIGINDO tomador_ID DOS LOTES');
   console.log('=========================================\n');
 
-  // Lotes do RH (04703084945, contratante_id = 2)
+  // Lotes do RH (04703084945, tomador_id = 2)
   const lotesRH = [3, 4, 5, 6, 8, 11];
 
   console.log('[1] Corrigindo lotes do RH (04703084945):');
   console.log(`   Lotes: ${lotesRH.join(', ')}`);
-  console.log('   Definindo contratante_id = 2\n');
+  console.log('   Definindo tomador_id = 2\n');
 
   const result = await query(
     `
     UPDATE lotes_avaliacao 
-    SET contratante_id = 2, atualizado_em = NOW()
-    WHERE id = ANY($1) AND contratante_id IS NULL
-    RETURNING id, codigo, titulo, contratante_id
+    SET tomador_id = 2, atualizado_em = NOW()
+    WHERE id = ANY($1) AND tomador_id IS NULL
+    RETURNING id, codigo, titulo, tomador_id
     `,
     [lotesRH]
   );
@@ -35,8 +35,8 @@ async function main() {
     SELECT 
       liberado_por,
       COUNT(*) as total_lotes,
-      COUNT(*) FILTER (WHERE contratante_id IS NOT NULL) as com_contratante_id,
-      COUNT(*) FILTER (WHERE contratante_id IS NULL) as sem_contratante_id
+      COUNT(*) FILTER (WHERE tomador_id IS NOT NULL) as com_tomador_id,
+      COUNT(*) FILTER (WHERE tomador_id IS NULL) as sem_tomador_id
     FROM lotes_avaliacao
     WHERE liberado_por IN ('87545772920', '16543102047', '04703084945')
     GROUP BY liberado_por
@@ -46,14 +46,14 @@ async function main() {
   console.table(verificacao.rows);
 
   const problemas = verificacao.rows.filter(
-    (r: any) => parseInt(r.sem_contratante_id) > 0
+    (r: any) => parseInt(r.sem_tomador_id) > 0
   );
   if (problemas.length === 0) {
     console.log(
-      '\n✅ SUCESSO: Todos os lotes agora têm contratante_id definido!'
+      '\n✅ SUCESSO: Todos os lotes agora têm tomador_id definido!'
     );
   } else {
-    console.log('\n⚠️ Ainda há lotes sem contratante_id:');
+    console.log('\n⚠️ Ainda há lotes sem tomador_id:');
     console.table(problemas);
   }
 }

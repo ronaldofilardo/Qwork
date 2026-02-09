@@ -17,7 +17,7 @@ ALTER TABLE funcionarios
 ALTER TABLE funcionarios
   ADD CONSTRAINT fk_funcionarios_contratante
   FOREIGN KEY (contratante_id)
-  REFERENCES contratantes(id)
+  REFERENCES tomadores(id)
   ON DELETE SET NULL;
 
 COMMIT;

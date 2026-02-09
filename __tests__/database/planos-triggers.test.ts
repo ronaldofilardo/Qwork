@@ -14,12 +14,12 @@ describe('Testes de Banco de Dados - Fase 2', () => {
 
     it('deve exigir filtro de tenant em queryMultiTenant', async () => {
       (queryMultiTenant as jest.Mock).mockRejectedValue(
-        new Error('clinica_id ou contratante_id')
+        new Error('clinica_id ou tomador_id')
       );
 
       await expect(
         queryMultiTenant('SELECT * FROM funcionarios', [], {})
-      ).rejects.toThrow('clinica_id ou contratante_id');
+      ).rejects.toThrow('clinica_id ou tomador_id');
     });
 
     it('deve adicionar filtro de clinica_id automaticamente', async () => {

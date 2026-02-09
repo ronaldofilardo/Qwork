@@ -15,7 +15,7 @@ jest.mock('next/headers', () => ({
 }));
 
 describe('API Gerar Link Plano Fixo', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let planoFixoId: number;
   let contratoExistenteId: number;
   const timestamp = Date.now();
@@ -31,60 +31,60 @@ describe('API Gerar Link Plano Fixo', () => {
     );
     planoFixoId = planoRes.rows[0].id;
 
-    // Criar contratante com CNPJ único
-    const contratanteRes = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
+    // Criar tomador com CNPJ único
+    const tomadorRes = await query(
+      `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
                                  responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
        VALUES ('entidade', 'Empresa Link Fixo ${shortId}', '${shortId}4444000104', 'linkfixo${shortId}@teste.com', '11999999994',
                'Rua D', 'São Paulo', 'SP', '04000-000', 'aguardando_pagamento',
                'Responsavel Link', '${cpfId}', 'resp.link@teste.com', '11987654324')
        RETURNING id`
     );
-    contratanteId = contratanteRes.rows[0].id;
+    tomadorId = tomadorRes.rows[0].id;
 
     // Criar contrato existente para teste de retry
     const contratoRes = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
+      `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
        VALUES ($1, $2, 15, 300.00, 'aguardando_pagamento', 'Contrato para retry', 'Contrato para retry')
        RETURNING id`,
-      [contratanteId, planoFixoId]
+      [tomadorId, planoFixoId]
     );
     contratoExistenteId = contratoRes.rows[0].id;
   });
 
   afterAll(async () => {
     // Limpar dados de teste
-    await query('DELETE FROM contratos WHERE contratante_id = $1', [
-      contratanteId,
+    await query('DELETE FROM contratos WHERE tomador_id = $1', [
+      tomadorId,
     ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    await query('DELETE FROM tomadores WHERE id = $1', [tomadorId]);
     await query('DELETE FROM planos WHERE id = $1', [planoFixoId]);
   });
 
   afterEach(async () => {
-    // Resetar estado do contratante entre testes - deletar e recriar para evitar restrições
-    await query('DELETE FROM contratos WHERE contratante_id = $1', [
-      contratanteId,
+    // Resetar estado do tomador entre testes - deletar e recriar para evitar restrições
+    await query('DELETE FROM contratos WHERE tomador_id = $1', [
+      tomadorId,
     ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    await query('DELETE FROM tomadores WHERE id = $1', [tomadorId]);
 
-    // Recriar contratante no estado inicial
-    const contratanteRes = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
+    // Recriar tomador no estado inicial
+    const tomadorRes = await query(
+      `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
                                  responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
        VALUES ('entidade', 'Empresa Link Fixo ${shortId}', '${shortId}4444000104', 'linkfixo${shortId}@teste.com', '11999999994',
                'Rua D', 'São Paulo', 'SP', '04000-000', 'aguardando_pagamento',
                'Responsavel Link', '${cpfId}', 'resp.link@teste.com', '11987654324')
        RETURNING id`
     );
-    contratanteId = contratanteRes.rows[0].id;
+    tomadorId = tomadorRes.rows[0].id;
 
     // Recriar contrato existente
     const contratoRes = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
+      `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
        VALUES ($1, $2, 15, 300.00, 'aguardando_pagamento', 'Contrato para retry', 'Contrato para retry')
        RETURNING id`,
-      [contratanteId, planoFixoId]
+      [tomadorId, planoFixoId]
     );
     contratoExistenteId = contratoRes.rows[0].id;
   });
@@ -111,7 +111,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: 999999,
           numero_funcionarios: 10,
         }),
@@ -130,7 +130,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 100, // Limite é 50
         }),
@@ -149,7 +149,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 10,
         }),
@@ -178,7 +178,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           contrato_id: contratoExistenteId,
           plano_id: planoFixoId,
           numero_funcionarios: 15,
@@ -200,7 +200,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 10,
         }),
@@ -210,7 +210,7 @@ describe('API Gerar Link Plano Fixo', () => {
       const data = await response.json();
 
       expect(data.payment_link).toContain('retry=true');
-      expect(data.payment_link).toContain(`contratante_id=${contratanteId}`);
+      expect(data.payment_link).toContain(`tomador_id=${tomadorId}`);
       expect(data.payment_link).toContain(`plano_id=${planoFixoId}`);
       expect(data.payment_link).toContain('numero_funcionarios=10');
 
@@ -218,18 +218,18 @@ describe('API Gerar Link Plano Fixo', () => {
       await query('DELETE FROM contratos WHERE id = $1', [data.contrato_id]);
     });
 
-    it('deve atualizar status do contratante para pendente_pagamento', async () => {
+    it('deve atualizar status do tomador para pendente_pagamento', async () => {
       const { POST } =
         await import('@/app/api/pagamento/gerar-link-plano-fixo/route');
 
       // Primeiro, mudar status para outro valor
-      await query(`UPDATE contratantes SET status = 'aprovado' WHERE id = $1`, [
-        contratanteId,
+      await query(`UPDATE tomadors SET status = 'aprovado' WHERE id = $1`, [
+        tomadorId,
       ]);
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 10,
         }),
@@ -238,7 +238,7 @@ describe('API Gerar Link Plano Fixo', () => {
       const response = await POST(mockRequest);
       const data = await response.json();
 
-      // API deve rejeitar operação para contratante aprovado
+      // API deve rejeitar operação para tomador aprovado
       expect(response.status).toBe(400);
       expect(data.error).toContain('aprovado');
     });
@@ -249,7 +249,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 25,
         }),
@@ -272,7 +272,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 10,
         }),
@@ -299,7 +299,7 @@ describe('API Gerar Link Plano Fixo', () => {
 
       const mockRequest = {
         json: async () => ({
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           plano_id: planoFixoId,
           numero_funcionarios: 10,
         }),

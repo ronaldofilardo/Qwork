@@ -91,9 +91,9 @@ if (isDevelopment && databaseUrl.includes('nr-bps_db_test')) {
 
 ```typescript
 // ✅ CORRETO: Chama a API real
-it('deve cadastrar contratante com plano fixo', async () => {
+it('deve cadastrar tomador com plano fixo', async () => {
   const request = new NextRequest(
-    'http://localhost:3000/api/cadastro/contratante',
+    'http://localhost:3000/api/cadastro/tomador',
     {
       method: 'POST',
       body: JSON.stringify({
@@ -118,9 +118,9 @@ it('deve cadastrar contratante com plano fixo', async () => {
 
 ```typescript
 // ❌ ERRADO: INSERT direto ignora lógica da aplicação
-it('deve criar contratante', async () => {
+it('deve criar tomador', async () => {
   const result = await query(`
-    INSERT INTO contratantes (tipo, nome, cnpj, status)
+    INSERT INTO tomadores (tipo, nome, cnpj, status)
     VALUES ('entidade', 'Teste', '12345678000199', 'aguardando_pagamento')
     RETURNING id
   `);
@@ -149,10 +149,10 @@ it('deve criar contratante', async () => {
 beforeEach(async () => {
   // 1. Limpar
   await query(
-    'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+    'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM tomadores WHERE cnpj = $1)',
     [testCNPJ]
   );
-  await query('DELETE FROM contratantes WHERE cnpj = $1', [testCNPJ]);
+  await query('DELETE FROM tomadores WHERE cnpj = $1', [testCNPJ]);
 
   // 2. Seed necessário (planos, por exemplo)
   // Verificar se plano existe, se não, inserir

@@ -25,8 +25,8 @@ Após reset completo do banco de dados, várias tabelas e colunas críticas esta
 4. ❌ **Tabelas `mfa_codes` e `contratos_planos` ausentes**
    - Sistema de MFA e contratos não funcional
 
-5. ⚠️ **Contratante tipo 'entidade' não encontrado**
-   - Erro: `Contratante 1 não encontrado ou não é entidade`
+5. ⚠️ **tomador tipo 'entidade' não encontrado**
+   - Erro: `tomador 1 não encontrado ou não é entidade`
    - Afetava: Todas as rotas `/api/entidade/*`
 
 ## Solução Aplicada
@@ -49,7 +49,7 @@ ALTER TABLE laudos ADD COLUMN hash_pdf VARCHAR(64);
 ```sql
 CREATE TABLE entidades_senhas (
     id SERIAL PRIMARY KEY,
-    contratante_id INTEGER NOT NULL,
+    tomador_id INTEGER NOT NULL,
     cpf VARCHAR(11) NOT NULL UNIQUE,
     senha_hash TEXT NOT NULL,
     primeira_senha_alterada BOOLEAN DEFAULT FALSE,
@@ -78,8 +78,8 @@ CREATE TABLE contratos_planos (
     id SERIAL PRIMARY KEY,
     plano_id INTEGER REFERENCES planos(id),
     clinica_id INTEGER REFERENCES clinicas(id),
-    contratante_id INTEGER REFERENCES contratantes(id),
-    tipo_contratante VARCHAR(20) NOT NULL,
+    tomador_id INTEGER REFERENCES tomadores(id),
+    tipo_tomador VARCHAR(20) NOT NULL,
     valor_personalizado_por_funcionario DECIMAL(10,2),
     inicio_vigencia DATE NOT NULL,
     fim_vigencia DATE,
@@ -107,7 +107,7 @@ CREATE TABLE mfa_codes (
 - Plano Fixo Básico: R$ 1.224,00 (até 50 funcionários)
 - Plano Fixo Premium: R$ 3.999,99 (até 200 funcionários)
 
-**Contratante entidade para testes:**
+**tomador entidade para testes:**
 
 - ID: 1
 - Tipo: entidade
@@ -128,8 +128,8 @@ CREATE TABLE mfa_codes (
 ### ✅ Dados Inseridos
 
 - ✓ 2 planos cadastrados
-- ✓ 1 contratante tipo entidade
-- ✓ 1 senha de contratante
+- ✓ 1 tomador tipo entidade
+- ✓ 1 senha de tomador
 
 ## Como Aplicar (Se Necessário no Futuro)
 
@@ -155,7 +155,7 @@ WHERE column_name = 'hash_pdf';
 
 -- Verificar dados
 SELECT COUNT(*) FROM planos;
-SELECT COUNT(*) FROM contratantes WHERE tipo = 'entidade';
+SELECT COUNT(*) FROM tomadores WHERE tipo = 'entidade';
 SELECT COUNT(*) FROM entidades_senhas;
 ```
 

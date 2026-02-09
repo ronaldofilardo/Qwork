@@ -48,7 +48,7 @@ END
 
 ### Bug #2: Função de Elegibilidade Ignorava Conclusões Recentes (Migração 074)
 
-**Arquivos:** `calcular_elegibilidade_lote_contratante`, `calcular_elegibilidade_lote`
+**Arquivos:** `calcular_elegibilidade_lote_tomador`, `calcular_elegibilidade_lote`
 
 **Problema:**
 
@@ -97,7 +97,7 @@ WHERE (
 
 ### Migração 074: Índice Atrasado vs Conclusão Recente
 
-- ✅ Função `calcular_elegibilidade_lote_contratante` corrigida
+- ✅ Função `calcular_elegibilidade_lote_tomador` corrigida
 - ✅ Função `calcular_elegibilidade_lote` corrigida (empresas/clínicas)
 - ✅ Índice atrasado agora verifica se há conclusão recente (< 1 ano)
 - ✅ Aplicada em `nr-bps_db` e `nr-bps_db_test`
@@ -117,7 +117,7 @@ WHERE (
 #### Teste 1: Miguel e Sophia NÃO Elegíveis
 
 ```sql
-SELECT COUNT(*) FROM calcular_elegibilidade_lote_contratante(56, 5)
+SELECT COUNT(*) FROM calcular_elegibilidade_lote_tomador(56, 5)
 WHERE funcionario_cpf IN ('81766465200', '91412434203');
 -- Resultado: 0 ✓
 ```
@@ -148,7 +148,7 @@ NÃO elegíveis:
 
 ```sql
 -- Funcionários com índice atrasado + conclusão recente = NÃO ELEGÍVEIS
-SELECT * FROM calcular_elegibilidade_lote_contratante(56, 5)
+SELECT * FROM calcular_elegibilidade_lote_tomador(56, 5)
 WHERE funcionario_cpf IN ('81766465200', '91412434203');
 -- Resultado: 0 linhas ✓
 ```
@@ -205,7 +205,7 @@ WHERE funcionario_cpf IN ('81766465200', '91412434203');
 
 A API `/api/entidade/liberar-lote` agora usa corretamente:
 
-- `calcular_elegibilidade_lote_contratante(contratante_id, numero_ordem)` para entidades
+- `calcular_elegibilidade_lote_tomador(tomador_id, numero_ordem)` para entidades
 - `calcular_elegibilidade_lote(empresa_id, numero_ordem)` para empresas
 
 Ambas as funções agora **respeitam a regra de 12 meses** e **não incluem funcionários com conclusão recente**, mesmo com índice atrasado.
@@ -241,12 +241,12 @@ SELECT
   f.cpf,
   f.nome,
   f.indice_avaliacao,
-  (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE contratante_id = f.contratante_id) as ultimo_lote,
+  (SELECT MAX(numero_ordem) FROM lotes_avaliacao WHERE tomador_id = f.tomador_id) as ultimo_lote,
   EXTRACT(DAY FROM NOW() - f.ultima_avaliacao_data_conclusao)::INTEGER as dias_ultima_conclusao,
   CASE
     WHEN EXISTS (
-      SELECT 1 FROM calcular_elegibilidade_lote_contratante(f.contratante_id,
-        (SELECT MAX(numero_ordem) + 1 FROM lotes_avaliacao WHERE contratante_id = f.contratante_id)
+      SELECT 1 FROM calcular_elegibilidade_lote_tomador(f.tomador_id,
+        (SELECT MAX(numero_ordem) + 1 FROM lotes_avaliacao WHERE tomador_id = f.tomador_id)
       ) WHERE funcionario_cpf = f.cpf
     ) THEN 'ELEGIVEL'
     ELSE 'NAO ELEGIVEL'
@@ -254,7 +254,7 @@ SELECT
 FROM funcionarios f
 WHERE f.ativo = true
   AND f.perfil = 'funcionario'
-  AND f.contratante_id = 56
+  AND f.tomador_id = 56
 ORDER BY f.nome;
 ```
 
@@ -273,4 +273,3 @@ ORDER BY f.nome;
 **Autor:** Sistema Copilot  
 **Revisão:** 05/01/2026  
 **Prioridade:** CRÍTICA (compliance regulatório)
-

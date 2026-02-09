@@ -53,7 +53,7 @@ JOIN lotes_avaliacao l ON a2.lote_id = l.id
 WHERE a2.funcionario_cpf = f.cpf
 
 // app/api/entidade/lote/[id]/relatorio-individual/route.ts (linha 217)
-SELECT id, codigo, clinica_id, contratante_id
+SELECT id, codigo, clinica_id, tomador_id
 FROM lotes_avaliacao WHERE id = $1
 
 // app/api/emissor/laudos/[loteId]/download/route.ts (linha 49)
@@ -234,7 +234,7 @@ const key = `laudos/lote-${loteId}/laudo-${timestamp}-${random}.pdf`;
 -- Todas as policies encontradas usam lote_id (não codigo)
 -- Exemplo de pattern:
 CREATE POLICY policy_lotes_entidade ON lotes_avaliacao
-  USING (contratante_id = app.current_contratante_id());
+  USING (tomador_id = app.current_tomador_id());
 
 CREATE POLICY admin_all_lotes ON lotes_avaliacao
   USING (current_setting('app.perfil') = 'admin');
@@ -264,12 +264,11 @@ CREATE POLICY admin_all_lotes ON lotes_avaliacao
 
 ```typescript
 // __tests__/rh/dashboard-lotes-laudos.test.tsx
-codigo: 'LOTE001'
+codigo: 'LOTE001';
 
 // __tests__/visual-regression/component-specific.test.tsx
 
-
-// __tests__/integration/inativar-contratante-integration.test.ts
+// __tests__/integration/inativar-tomador-integration.test.ts
 const codigo = await query(`SELECT gerar_codigo_lote() as codigo`);
 
 // __tests__/security/audit-logs.test.ts

@@ -1,12 +1,12 @@
 /**
  * Testes para API de verificação de pagamento
- * Endpoint: /api/contratante/verificar-pagamento
+ * Endpoint: /api/tomador/verificar-pagamento
  */
 
 import { query } from '@/lib/db';
 import { NextRequest } from 'next/server';
 import {
-  createTestContratante,
+  createTesttomador,
   createTestContrato,
   createTestPagamento,
   cleanupTestData,
@@ -21,55 +21,55 @@ jest.mock('next/headers', () => ({
 }));
 
 describe('API Verificar Pagamento', () => {
-  let contratanteComPagamento: number;
-  let contratanteSemPagamento: number;
-  let contratantePendente: number;
+  let tomadorComPagamento: number;
+  let tomadorSemPagamento: number;
+  let tomadorPendente: number;
   let contratoComPagamento: number;
   let contratoSemPagamento: number;
   let contratoPendente: number;
 
   beforeAll(async () => {
-    // Criar contratante COM pagamento confirmado
-    contratanteComPagamento = await createTestContratante({
+    // Criar tomador COM pagamento confirmado
+    tomadorComPagamento = await createTesttomador({
       nome: 'Empresa Com Pagamento',
       status: 'pago', // Status que indica pagamento confirmado
     });
     contratoComPagamento = await createTestContrato({
-      contratante_id: contratanteComPagamento,
+      tomador_id: tomadorComPagamento,
       conteudo_gerado: 'Contrato ativo',
     });
     // Atualizar contrato para status 'aprovado' que o endpoint espera
     await query(`UPDATE contratos SET status = 'aprovado' WHERE id = $1`, [
       contratoComPagamento,
     ]);
-    // Atualizar contratante para ter pagamento confirmado
+    // Atualizar tomador para ter pagamento confirmado
     await query(
-      `UPDATE contratantes SET pagamento_confirmado = true WHERE id = $1`,
-      [contratanteComPagamento]
+      `UPDATE entidades SET pagamento_confirmado = true WHERE id = $1`,
+      [tomadorComPagamento]
     );
     await createTestPagamento({
-      contratante_id: contratanteComPagamento,
+      tomador_id: tomadorComPagamento,
       contrato_id: contratoComPagamento,
       status: 'pago',
     });
 
-    // Criar contratante SEM pagamento
-    contratanteSemPagamento = await createTestContratante({
+    // Criar tomador SEM pagamento
+    tomadorSemPagamento = await createTesttomador({
       nome: 'Empresa Sem Pagamento',
       status: 'aguardando_pagamento',
     });
     contratoSemPagamento = await createTestContrato({
-      contratante_id: contratanteSemPagamento,
+      tomador_id: tomadorSemPagamento,
       conteudo_gerado: 'Contrato pendente',
     });
 
-    // Criar contratante com status PENDENTE
-    contratantePendente = await createTestContratante({
+    // Criar tomador com status PENDENTE
+    tomadorPendente = await createTesttomador({
       nome: 'Empresa Pendente',
       status: 'aguardando_pagamento',
     });
     contratoPendente = await createTestContrato({
-      contratante_id: contratantePendente,
+      tomador_id: tomadorPendente,
       conteudo_gerado: 'Contrato aguardando pagamento',
     });
   });
@@ -79,14 +79,14 @@ describe('API Verificar Pagamento', () => {
     await cleanupTestData();
   });
 
-  describe('GET /api/contratante/verificar-pagamento', () => {
-    it('deve retornar erro 400 se contratante_id não for fornecido', async () => {
+  describe('GET /api/tomador/verificar-pagamento', () => {
+    it('deve retornar erro 400 se tomador_id não for fornecido', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          'http://localhost:3000/api/contratante/verificar-pagamento'
+          'http://localhost:3000/api/tomador/verificar-pagamento'
         ),
       } as NextRequest;
 
@@ -97,13 +97,13 @@ describe('API Verificar Pagamento', () => {
       expect(data.error).toContain('obrigatório');
     });
 
-    it('deve retornar erro 404 se contratante não existir', async () => {
+    it('deve retornar erro 404 se tomador não existir', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          'http://localhost:3000/api/contratante/verificar-pagamento?contratante_id=999999'
+          'http://localhost:3000/api/tomador/verificar-pagamento?tomador_id=999999'
         ),
       } as NextRequest;
 
@@ -114,13 +114,13 @@ describe('API Verificar Pagamento', () => {
       expect(data.error).toContain('não encontrado');
     });
 
-    it('deve confirmar acesso liberado para contratante com pagamento', async () => {
+    it('deve confirmar acesso liberado para tomador com pagamento', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/contratante/verificar-pagamento?contratante_id=${contratanteComPagamento}`
+          `http://localhost:3000/api/tomador/verificar-pagamento?tomador_id=${tomadorComPagamento}`
         ),
       } as NextRequest;
 
@@ -129,20 +129,20 @@ describe('API Verificar Pagamento', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.contratante.pagamento_confirmado).toBe(true);
+      expect(data.tomador.pagamento_confirmado).toBe(true);
       expect(data.needs_payment).toBe(false);
       expect(data.access_granted).toBe(true);
       expect(data.payment_link).toBeNull();
       expect(data.message).toContain('confirmado');
     });
 
-    it('deve indicar necessidade de pagamento para contratante sem pagamento', async () => {
+    it('deve indicar necessidade de pagamento para tomador sem pagamento', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/contratante/verificar-pagamento?contratante_id=${contratanteSemPagamento}`
+          `http://localhost:3000/api/tomador/verificar-pagamento?tomador_id=${tomadorSemPagamento}`
         ),
       } as NextRequest;
 
@@ -151,7 +151,7 @@ describe('API Verificar Pagamento', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.contratante.pagamento_confirmado).toBe(false);
+      expect(data.tomador.pagamento_confirmado).toBe(false);
       expect(data.needs_payment).toBe(true);
       expect(data.access_granted).toBe(false);
       expect(data.payment_link).toBeTruthy();
@@ -159,13 +159,13 @@ describe('API Verificar Pagamento', () => {
       expect(data.message).toContain('pendente');
     });
 
-    it('deve gerar link de pagamento para contratante com status pendente', async () => {
+    it('deve gerar link de pagamento para tomador com status pendente', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/contratante/verificar-pagamento?contratante_id=${contratantePendente}`
+          `http://localhost:3000/api/tomador/verificar-pagamento?tomador_id=${tomadorPendente}`
         ),
       } as NextRequest;
 
@@ -177,19 +177,17 @@ describe('API Verificar Pagamento', () => {
       expect(data.needs_payment).toBe(true);
       expect(data.payment_link).toBeTruthy();
       expect(data.payment_link).toContain('retry=true');
-      expect(data.payment_link).toContain(
-        `contratante_id=${contratantePendente}`
-      );
+      expect(data.payment_link).toContain(`tomador_id=${tomadorPendente}`);
       expect(data.payment_link).toContain(`contrato_id=${contratoPendente}`);
     });
 
     it('deve retornar dados do contrato e plano quando existirem', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/contratante/verificar-pagamento?contratante_id=${contratanteComPagamento}`
+          `http://localhost:3000/api/tomador/verificar-pagamento?tomador_id=${tomadorComPagamento}`
         ),
       } as NextRequest;
 
@@ -206,11 +204,11 @@ describe('API Verificar Pagamento', () => {
 
     it('deve retornar dados do pagamento quando existir', async () => {
       const { GET } =
-        await import('@/app/api/contratante/verificar-pagamento/route');
+        await import('@/app/api/tomador/verificar-pagamento/route');
 
       const mockRequest = {
         nextUrl: new URL(
-          `http://localhost:3000/api/contratante/verificar-pagamento?contratante_id=${contratanteComPagamento}`
+          `http://localhost:3000/api/tomador/verificar-pagamento?tomador_id=${tomadorComPagamento}`
         ),
       } as NextRequest;
 

@@ -1,7 +1,7 @@
 # ==========================================
-# SCRIPT POWERSHELL: LIMPAR CONTRATANTES
+# SCRIPT POWERSHELL: LIMPAR tomadores
 # Data: 2025-12-22
-# Objetivo: Executar limpeza completa de contratantes no banco nr-bps_db
+# Objetivo: Executar limpeza completa de tomadores no banco nr-bps_db
 # ==========================================
 
 param(
@@ -9,11 +9,11 @@ param(
     [string]$DatabaseName = "nr-bps_db",
     [string]$Username = "postgres",
     [string]$Password = "123456",
-    [string]$SqlFile = "scripts/clean-contratantes.sql"
+    [string]$SqlFile = "scripts/clean-tomadores.sql"
 )
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "LIMPEZA COMPLETA DE CONTRATANTES" -ForegroundColor Cyan
+Write-Host "LIMPEZA COMPLETA DE tomadores" -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -34,7 +34,7 @@ Write-Host "   Arquivo SQL: $SqlFile" -ForegroundColor Yellow
 Write-Host ""
 
 # Confirmar execução
-$confirm = Read-Host "⚠️  ATENÇÃO: Este script irá REMOVER TODOS os contratantes do banco!`nDeseja continuar? (s/N)"
+$confirm = Read-Host "⚠️  ATENÇÃO: Este script irá REMOVER TODOS os tomadores do banco!`nDeseja continuar? (s/N)"
 if ($confirm -ne "s" -and $confirm -ne "S") {
     Write-Host "❌ Operação cancelada pelo usuário." -ForegroundColor Red
     exit 0

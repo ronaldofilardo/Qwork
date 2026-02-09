@@ -87,10 +87,10 @@ async function setupTestData() {
     if (checkRH.rows.length === 0) {
       // Verificar IDs existentes no banco de teste
       const clinicas = await query('SELECT id FROM clinicas LIMIT 1');
-      const contratantes = await query('SELECT id FROM contratantes LIMIT 1');
+      const tomadores = await query('SELECT id FROM tomadores LIMIT 1');
 
       const clinicaId = clinicas.rows[0]?.id || null;
-      const contratanteId = contratantes.rows[0]?.id || null;
+      const contratanteId = tomadores.rows[0]?.id || null;
 
       console.log(
         `📊 IDs disponíveis - Clínica: ${clinicaId}, Contratante: ${contratanteId}`
@@ -129,7 +129,7 @@ async function setupTestData() {
       // Se não tiver clinica_id ou contratante_id, atualizar
       if (!rh.clinica_id || !rh.contratante_id) {
         const clinicas = await query('SELECT id FROM clinicas LIMIT 1');
-        const contratantes = await query('SELECT id FROM contratantes LIMIT 1');
+        const tomadores = await query('SELECT id FROM tomadores LIMIT 1');
 
         await query(
           `
@@ -139,7 +139,7 @@ async function setupTestData() {
         `,
           [
             rh.clinica_id || clinicas.rows[0]?.id,
-            rh.contratante_id || contratantes.rows[0]?.id,
+            rh.contratante_id || tomadores.rows[0]?.id,
             '04703084945',
           ]
         );

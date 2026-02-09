@@ -7,7 +7,7 @@ import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent'
 import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';
-import PagamentosContent from '@/components/admin/PagamentosContent';
+import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
 import { PlanosContent } from '@/components/admin/PlanosContent';
 
 interface Session {

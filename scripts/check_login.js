@@ -3,7 +3,7 @@ import pg from 'pg';
 const { Client } = pg;
 
 const CPF = process.argv[2] || '04703084945';
-const CONTRATANTE_ID = process.argv[3] || '20';
+const tomador_ID = process.argv[3] || '20';
 
 const client = new Client({
   connectionString:
@@ -16,11 +16,11 @@ const client = new Client({
     await client.connect();
     console.log('Connected to DB');
 
-    const contratanteRes = await client.query(
-      'SELECT id, cnpj, responsavel_cpf, responsavel_nome, ativa, pagamento_confirmado, status FROM contratantes WHERE id = $1',
-      [CONTRATANTE_ID]
+    const tomadorRes = await client.query(
+      'SELECT id, cnpj, responsavel_cpf, responsavel_nome, ativa, pagamento_confirmado, status FROM tomadors WHERE id = $1',
+      [tomador_ID]
     );
-    console.log('Contratante:', contratanteRes.rows[0]);
+    console.log('tomador:', tomadorRes.rows[0]);
 
     const cs = await client.query(
       'SELECT * FROM entidades_senhas WHERE cpf = $1',
@@ -42,13 +42,13 @@ const client = new Client({
       );
       if (cols.rows.length > 0) {
         recibo = await client.query(
-          'SELECT id FROM recibos WHERE contratante_id = $1 AND cancelado = false LIMIT 5',
-          [CONTRATANTE_ID]
+          'SELECT id FROM recibos WHERE tomador_id = $1 AND cancelado = false LIMIT 5',
+          [tomador_ID]
         );
       } else {
         recibo = await client.query(
-          'SELECT id FROM recibos WHERE contratante_id = $1 LIMIT 5',
-          [CONTRATANTE_ID]
+          'SELECT id FROM recibos WHERE tomador_id = $1 LIMIT 5',
+          [tomador_ID]
         );
       }
     } catch (e) {
@@ -57,13 +57,13 @@ const client = new Client({
         e.message
       );
       recibo = await client.query(
-        'SELECT id FROM recibos WHERE contratante_id = $1 LIMIT 5',
-        [CONTRATANTE_ID]
+        'SELECT id FROM recibos WHERE tomador_id = $1 LIMIT 5',
+        [tomador_ID]
       );
     }
 
     console.log(
-      'recibos for contratante (count):',
+      'recibos for tomador (count):',
       recibo.rowCount,
       recibo.rows.map((r) => r.id)
     );

@@ -18,17 +18,16 @@ export async function GET() {
       SELECT
         'lote_concluido' as tipo,
         la.id as lote_id,
-        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluido') as avaliacoes_concluidas,
+        COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as avaliacoes_concluidas,
         COUNT(DISTINCT a.id) as total_avaliacoes,
         MAX(a.envio) as data_conclusao
       FROM lotes_avaliacao la
       JOIN avaliacoes a ON a.lote_id = la.id
-      JOIN funcionarios f ON f.cpf = a.funcionario_cpf
-      WHERE f.contratante_id = $1
+      WHERE la.entidade_id = $1
         AND la.status = 'ativo'
         AND a.envio >= NOW() - INTERVAL '7 days'
       GROUP BY la.id
-      HAVING COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluido') = COUNT(DISTINCT a.id)
+      HAVING COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') = COUNT(DISTINCT a.id)
       ORDER BY MAX(a.envio) DESC
       LIMIT 10
     `,
@@ -46,9 +45,8 @@ export async function GET() {
         e.nome as emissor_nome
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
-      JOIN funcionarios f ON (f.empresa_id = la.empresa_id OR f.contratante_id = $1)
-      LEFT JOIN funcionarios e ON e.cpf = l.emissor_cpf
-      WHERE f.contratante_id = $1
+      LEFT JOIN usuarios e ON e.cpf = l.emissor_cpf
+      WHERE la.entidade_id = $1
         AND l.enviado_em >= NOW() - INTERVAL '7 days'
       GROUP BY l.id, l.enviado_em, e.nome
       ORDER BY l.enviado_em DESC

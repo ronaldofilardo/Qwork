@@ -261,18 +261,9 @@ $$ LANGUAGE plpgsql;
 -- RLS Policies para notificacoes
 ALTER TABLE notificacoes ENABLE ROW LEVEL SECURITY;
 
--- Admin ve todas as notificacoes
-CREATE POLICY notificacoes_admin_full_access ON notificacoes
-  FOR ALL
-  USING (
-    EXISTS (
-      SELECT 1 FROM usuarios 
-      WHERE usuarios.cpf = notificacoes.destinatario_cpf
-        AND usuarios.role = 'admin'
-    )
-  );
-
--- Gestor ve apenas suas notificacoes
+-- Admin NÃO acessa notificações operacionais (apenas administrativo)
+-- Restringir acesso operacional apenas para gestores
+-- Gestor vê apenas suas notificações
 CREATE POLICY notificacoes_gestor_own ON notificacoes
   FOR SELECT
   USING (

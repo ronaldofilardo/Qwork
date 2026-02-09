@@ -8,7 +8,7 @@
 
 ## 🎯 Objetivo Alcançado
 
-Garantir que **ZERO** contratantes sejam ativados sem confirmação de pagamento, eliminando risco de acesso não autorizado a funcionalidades pagas.
+Garantir que **ZERO** tomadores sejam ativados sem confirmação de pagamento, eliminando risco de acesso não autorizado a funcionalidades pagas.
 
 ---
 
@@ -16,7 +16,7 @@ Garantir que **ZERO** contratantes sejam ativados sem confirmação de pagamento
 
 ### Antes
 
-❌ Contratantes podiam ser ativados sem pagamento  
+❌ tomadores podiam ser ativados sem pagamento  
 ❌ Múltiplos pontos no código setavam `ativa = true` diretamente  
 ❌ Sem validação consistente de pagamento  
 ❌ Sem recuperação automática de inconsistências  
@@ -54,7 +54,7 @@ Garantir que **ZERO** contratantes sejam ativados sem confirmação de pagamento
 
 **Novos:**
 
-- `lib/contratante-activation.ts` - Ativação centralizada
+- `lib/tomador-activation.ts` - Ativação centralizada
 - `lib/paid-access-middleware.ts` - Middleware de proteção
 - `app/api/admin/gerar-link-plano-fixo/route.ts` - Reenvio de links
 - `app/api/pagamento/validar-token/route.ts` - Validação de tokens
@@ -105,7 +105,7 @@ Token Seguro Gerado (48h TTL)
      ↓
 Link: /simulador?contratacao_id=123
      ↓
-Contratante acessa SEM login
+tomador acessa SEM login
      ↓
 Dados carregados automaticamente
      ↓
@@ -161,7 +161,7 @@ Pagamento → Ativação
 
 ### Risco Eliminado
 
-- **Antes:** Contratantes podiam acessar sistema sem pagar
+- **Antes:** tomadores podiam acessar sistema sem pagar
 - **Depois:** Impossível acesso sem pagamento confirmado
 - **Impacto:** Proteção de receita e compliance
 
@@ -217,7 +217,7 @@ Pagamento → Ativação
 
 ### Risco: Constraint bloqueia código legítimo
 
-**Mitigação:** Função `ativarContratante()` com isenção manual auditada
+**Mitigação:** Função `ativartomador()` com isenção manual auditada
 
 ### Risco: Performance degradada
 
@@ -271,7 +271,7 @@ Pagamento → Ativação
 **Query de validação:**
 
 ```sql
-SELECT COUNT(*) FROM vw_contratantes_inconsistentes;
+SELECT COUNT(*) FROM vw_tomadores_inconsistentes;
 -- Esperado: 0
 ```
 

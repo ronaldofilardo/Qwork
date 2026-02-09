@@ -30,7 +30,7 @@ DROP TABLE IF EXISTS contratacao_personalizada CASCADE;
 ALTER TABLE contratos ADD COLUMN IF NOT EXISTS conteudo_gerado TEXT;
 
 -- 5. Comentários
-COMMENT ON TABLE contratos IS 'Contratos gerados para contratantes. Fluxo simplificado sem tabelas intermediárias.';
+COMMENT ON TABLE contratos IS 'Contratos gerados para tomadores. Fluxo simplificado sem tabelas intermediárias.';
 COMMENT ON COLUMN contratos.conteudo_gerado IS 'Conteúdo completo do contrato gerado para o contratante';
 
 COMMIT;

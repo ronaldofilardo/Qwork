@@ -41,7 +41,7 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
           rowCount: 1,
         })
         .mockResolvedValueOnce({
-          // Contratante
+          // tomador
           rows: [
             {
               id: 1,
@@ -104,7 +104,7 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       });
 
       const reciboData: ReciboData = {
-        contratante_id: 1,
+        tomador_id: 1,
         pagamento_id: 1,
         contrato_id: 1,
         emitido_por_cpf: '12345678901',
@@ -133,17 +133,17 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       ); // Backup path
     });
 
-    it('deve gerar HTML com todos os dados do contratante', async () => {
+    it('deve gerar HTML com todos os dados do tomador', async () => {
       const dadosRecibo: ReciboCompleto = {
         id: 1,
         numero_recibo: 'REC-2025-00001',
-        contratante_nome: 'Empresa Teste Ltda',
-        contratante_cnpj: '12345678000199',
-        contratante_cpf: undefined,
-        contratante_endereco: 'Rua Teste, 123',
-        contratante_cidade: 'São Paulo',
-        contratante_estado: 'SP',
-        contratante_cep: '01234-567',
+        tomador_nome: 'Empresa Teste Ltda',
+        tomador_cnpj: '12345678000199',
+        tomador_cpf: undefined,
+        tomador_endereco: 'Rua Teste, 123',
+        tomador_cidade: 'São Paulo',
+        tomador_estado: 'SP',
+        tomador_cep: '01234-567',
         plano_nome: 'Plano Fixo',
         plano_tipo: 'fixo',
         plano_descricao: 'Avaliações ilimitadas',
@@ -179,7 +179,7 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       });
 
       const reciboData: ReciboData = {
-        contratante_id: 1,
+        tomador_id: 1,
         pagamento_id: 1,
         contrato_id: 1,
       };
@@ -216,14 +216,14 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
         size: 1000,
       });
 
-      await gerarRecibo({ contratante_id: 1, pagamento_id: 1, contrato_id: 1 });
+      await gerarRecibo({ tomador_id: 1, pagamento_id: 1, contrato_id: 1 });
 
       // Verificar chamada para criar_notificacao_recibo
       const notifCall = mockQuery.mock.calls.find((call) =>
         call[0].includes('criar_notificacao_recibo')
       );
       expect(notifCall).toBeDefined();
-      expect(notifCall[1]).toEqual([1, 1]); // recibo_id, contratante_id
+      expect(notifCall[1]).toEqual([1, 1]); // recibo_id, tomador_id
     });
   });
 
@@ -232,7 +232,7 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       const dadosMinimos: ReciboCompleto = {
         id: 1,
         numero_recibo: 'REC-TEST',
-        contratante_nome: 'Teste',
+        tomador_nome: 'Teste',
         plano_nome: 'Plano',
         plano_tipo: 'fixo',
         valor_total: 100,
@@ -255,7 +255,7 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       const dados: ReciboCompleto = {
         id: 1,
         numero_recibo: 'REC-TEST',
-        contratante_nome: 'Teste',
+        tomador_nome: 'Teste',
         plano_nome: 'Plano',
         plano_tipo: 'fixo',
         valor_total: 1234.56,
@@ -279,7 +279,7 @@ describe.skip('Receipt Generator - PDF com Hash', () => {
       const dados: ReciboCompleto = {
         id: 1,
         numero_recibo: 'REC-TEST',
-        contratante_nome: 'Teste',
+        tomador_nome: 'Teste',
         plano_nome: 'Plano',
         plano_tipo: 'fixo',
         valor_total: 1200,

@@ -41,10 +41,10 @@ psql -U postgres -h localhost -d nr-bps_db
 
 -- Verificar inconsistências ANTES das correções
 SELECT
-  COUNT(*) as total_contratantes,
+  COUNT(*) as total_tomadores,
   COUNT(*) FILTER (WHERE ativa = true AND pagamento_confirmado = false) as ativos_sem_pagamento,
   COUNT(*) FILTER (WHERE status = 'aguardando_pagamento') as aguardando_pagamento
-FROM contratantes;
+FROM tomadores;
 
 -- Anotar os números para comparação posterior
 -- Sair do psql
@@ -80,7 +80,7 @@ psql -U postgres -h localhost -d nr-bps_db -f database/migrations/migration-005-
 psql -U postgres -h localhost -d nr-bps_db
 
 -- DEVE retornar 0 linhas (todas inconsistências foram corrigidas)
-SELECT * FROM vw_contratantes_inconsistentes;
+SELECT * FROM vw_tomadores_inconsistentes;
 
 -- Verificar constraints instaladas
 SELECT conname, contype, pg_get_constraintdef(oid)
@@ -124,13 +124,13 @@ pnpm test
 ### 7. Testar Endpoint de Reenvio de Link
 
 ```bash
-# Criar um contratante de teste (se ainda não existir)
+# Criar um tomador de teste (se ainda não existir)
 # Depois testar endpoint via cURL ou Postman
 
 curl -X POST http://localhost:3000/api/admin/gerar-link-plano-fixo \
   -H "Content-Type: application/json" \
   -H "Cookie: session=SEU_SESSION_TOKEN" \
-  -d '{"contratante_id": 123}'
+  -d '{"tomador_id": 123}'
 ```
 
 **Resposta esperada:**
@@ -151,7 +151,7 @@ curl -X POST http://localhost:3000/api/admin/gerar-link-plano-fixo \
 1. **Acessar link gerado** no navegador (modo anônimo)
 2. **Verificar que dados são carregados** automaticamente
 3. **Simular pagamento** (ou usar modo de teste)
-4. **Verificar que contratante é ativado** após pagamento
+4. **Verificar que tomador é ativado** após pagamento
 
 ### 9. Configurar Reconciliação Diária
 
@@ -173,9 +173,9 @@ crontab -e
 ```sql
 -- Verificar que sistema está íntegro
 SELECT
-  'Contratantes ativos válidos' as metrica,
+  'tomadores ativos válidos' as metrica,
   COUNT(*) as total
-FROM contratantes
+FROM tomadores
 WHERE ativa = true AND pagamento_confirmado = true
 
 UNION ALL
@@ -183,7 +183,7 @@ UNION ALL
 SELECT
   'Inconsistências restantes' as metrica,
   COUNT(*) as total
-FROM vw_contratantes_inconsistentes
+FROM vw_tomadores_inconsistentes
 
 UNION ALL
 
@@ -196,7 +196,7 @@ WHERE expiracao > NOW() AND usado = false;
 
 **Resultado esperado:**
 
-- Contratantes ativos válidos: N (qualquer número >= 0)
+- tomadores ativos válidos: N (qualquer número >= 0)
 - **Inconsistências restantes: 0** ⬅️ CRÍTICO
 - Tokens ativos: N (qualquer número >= 0)
 
@@ -214,7 +214,7 @@ Antes de considerar deploy completo, verificar:
 - [ ] Constraint `chk_ativa_exige_pagamento` existe
 - [ ] Tabela `alertas_integridade` existe e populada (se houve correções)
 - [ ] Tabela `tokens_retomada_pagamento` existe
-- [ ] View `vw_contratantes_inconsistentes` retorna 0 linhas
+- [ ] View `vw_tomadores_inconsistentes` retorna 0 linhas
 - [ ] Funções criadas existem (fn_validar_token_pagamento, etc)
 
 ### Código
@@ -254,15 +254,15 @@ Se algum código legítimo for bloqueado pela constraint:
 
 1. **NÃO remover a constraint**
 2. Verificar se é caso de uso válido
-3. Se sim, usar função `ativarContratante()` com justificativa
+3. Se sim, usar função `ativartomador()` com justificativa
 4. Se não, corrigir o código
 
 ### Rollback Necessário
 
 ```sql
 -- Migration 004
-ALTER TABLE contratantes DROP CONSTRAINT IF EXISTS chk_ativa_exige_pagamento;
-ALTER TABLE contratantes DROP CONSTRAINT IF EXISTS chk_contrato_exige_pagamento;
+ALTER TABLE tomadores DROP CONSTRAINT IF EXISTS chk_ativa_exige_pagamento;
+ALTER TABLE tomadores DROP CONSTRAINT IF EXISTS chk_contrato_exige_pagamento;
 DROP TABLE IF EXISTS alertas_integridade CASCADE;
 
 -- Migration 005
@@ -281,11 +281,11 @@ Se sistema ficar lento após migrations:
 
 ```sql
 -- Reindexar tabelas
-REINDEX TABLE contratantes;
+REINDEX TABLE tomadores;
 REINDEX TABLE tokens_retomada_pagamento;
 
 -- Atualizar estatísticas
-ANALYZE contratantes;
+ANALYZE tomadores;
 ANALYZE tokens_retomada_pagamento;
 ```
 
@@ -305,14 +305,14 @@ ANALYZE tokens_retomada_pagamento;
 **Deploy só deve ser considerado completo quando:**
 
 ```sql
-SELECT COUNT(*) FROM vw_contratantes_inconsistentes;
+SELECT COUNT(*) FROM vw_tomadores_inconsistentes;
 -- RETORNAR: 0
 ```
 
 Se retornar > 0, executar:
 
 ```sql
-SELECT fn_corrigir_inconsistencias_contratantes();
+SELECT fn_corrigir_inconsistencias_tomadores();
 ```
 
 ---

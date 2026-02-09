@@ -35,7 +35,7 @@ sed -i.tmp '/-- Name: .* admin_all_.*; Type: POLICY/,/^$/d' "$DUMP_FILE"
 # Remover CREATE POLICY admin_all_*
 sed -i.tmp '/CREATE POLICY admin_all_/d' "$DUMP_FILE"
 sed -i.tmp '/CREATE POLICY clinicas_admin_all/d' "$DUMP_FILE"
-sed -i.tmp '/CREATE POLICY contratantes_admin_all/d' "$DUMP_FILE"
+sed -i.tmp '/CREATE POLICY tomadores_admin_all/d' "$DUMP_FILE"
 sed -i.tmp '/CREATE POLICY lotes_emissor_select/d' "$DUMP_FILE"
 
 # Remover COMMENTS sobre policies removidas

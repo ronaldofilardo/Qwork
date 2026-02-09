@@ -87,7 +87,7 @@ $checkScripts = @(
     "check-backblaze.mts",
     "check-clinicas.ts",
     "check-cobranca-sql.cjs",
-    "check-contratantes.ts",
+    "check-tomadores.ts",
     "check-cpf.ts",
     "check-data.ts",
     "check-db.ts",
@@ -205,7 +205,7 @@ foreach ($file in $tempFiles) {
 }
 
 # Arquivos temp em subdiretórios
-$checksTemp = Join-Path $scriptsRoot "checks\list-contratantes-temp.js"
+$checksTemp = Join-Path $scriptsRoot "checks\list-tomadores-temp.js"
 if (Test-Path $checksTemp) {
     Move-ScriptFile -Source $checksTemp -Destination $tempDir -Category "temp"
 }
@@ -316,7 +316,7 @@ $databaseSqlDir = Join-Path $scriptsRoot "database\sql"
 $sqlScripts = @(
     "auto-refresh-triggers.sql",
     "clean-cnpj-cpf-data.sql",
-    "clean-contratantes.sql",
+    "clean-tomadores.sql",
     "corrigir-lotes-sem-fila-emissao.sql",
     "create-validar-sessao-rls-function.sql",
     "create_notify_triggers.sql",

@@ -24,7 +24,10 @@ export async function PATCH(request: NextRequest) {
 
     // Verificar se o funcionário pertence à entidade
     const funcionarioResult = await queryAsGestorEntidade(
-      'SELECT id, cpf, nome, ativo FROM funcionarios WHERE cpf = $1 AND entidade_id = $2',
+      `SELECT f.id, f.cpf, f.nome, f.ativo 
+       FROM funcionarios f
+       INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
+       WHERE f.cpf = $1 AND fe.entidade_id = $2 AND fe.ativo = true`,
       [cpf, entidadeId]
     );
 

@@ -24,14 +24,14 @@ interface NotificacaoResult {
 }
 
 describe('Centro de Operações - Notificações Persistentes', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let clinicaId: number;
-  let contratanteCpf: string;
+  let tomadorCpf: string;
 
   beforeAll(async () => {
-    // Setup: criar contratante e clínica de teste
-    const contratante = await query(
-      `INSERT INTO contratantes (
+    // Setup: criar tomador e clínica de teste
+    const tomador = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         ativa, status, pagamento_confirmado
@@ -42,8 +42,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
         true, 'aprovado', true
       ) RETURNING id, responsavel_cpf`
     );
-    contratanteId = contratante.rows[0].id;
-    contratanteCpf = contratante.rows[0].responsavel_cpf;
+    tomadorId = tomador.rows[0].id;
+    tomadorCpf = tomador.rows[0].responsavel_cpf;
 
     const clinica = await query(
       `INSERT INTO clinicas (nome, cnpj, ativa)
@@ -56,10 +56,10 @@ describe('Centro de Operações - Notificações Persistentes', () => {
   afterAll(async () => {
     // Cleanup
     await query(`DELETE FROM notificacoes WHERE destinatario_cpf IN ($1, $2)`, [
-      contratanteCpf,
+      tomadorCpf,
       '12345678901', // CPF padrão da clínica
     ]);
-    await query(`DELETE FROM contratantes WHERE id = $1`, [contratanteId]);
+    await query(`DELETE FROM tomadors WHERE id = $1`, [tomadorId]);
     await query(`DELETE FROM clinicas WHERE id = $1`, [clinicaId]);
   });
 
@@ -67,8 +67,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
     it('deve criar notificação de parcela pendente', async () => {
       const notifId = await criarNotificacao({
         tipo: 'parcela_pendente',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Parcela 2/6 - Vence em 05/02',
         mensagem: 'Você tem uma parcela pendente de R$ 499,90',
         dados_contexto: {
@@ -112,8 +112,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
     it('deve criar notificação de laudo emitido', async () => {
       const notifId = await criarNotificacao({
         tipo: 'laudo_enviado',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Laudo do Lote TESTE-002 emitido',
         mensagem: 'Laudo disponível para download',
         dados_contexto: {
@@ -130,8 +130,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
   describe('2. Busca e Filtros', () => {
     it('deve buscar notificações não resolvidas', async () => {
       const notifs: NotificacaoResult[] = await buscarNotificacoesNaoResolvidas(
-        contratanteId,
-        'contratante'
+        tomadorId,
+        'tomador'
       );
 
       expect(notifs.length).toBeGreaterThan(0);
@@ -140,8 +140,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
 
     it('deve filtrar por tipo de notificação', async () => {
       const notifs: NotificacaoResult[] = await buscarNotificacoesNaoResolvidas(
-        contratanteId,
-        'contratante',
+        tomadorId,
+        'tomador',
         { tipo: 'parcela_pendente' }
       );
 
@@ -150,8 +150,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
 
     it('deve contar notificações por tipo', async () => {
       const contadores = await contarNotificacoesNaoResolvidas(
-        contratanteId,
-        'contratante'
+        tomadorId,
+        'tomador'
       );
 
       expect(contadores.total).toBeGreaterThan(0);
@@ -164,8 +164,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
       // Criar notificação de teste
       const notifId = await criarNotificacao({
         tipo: 'parcela_pendente',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Teste Resolução',
         mensagem: 'Notificação para teste de resolução',
       });
@@ -193,8 +193,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
       // Criar 3 notificações do mesmo lote
       await criarNotificacao({
         tipo: 'lote_concluido_aguardando_laudo',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Lote 888 - Notif 1',
         mensagem: 'Teste',
         dados_contexto: { lote_id: loteId },
@@ -202,8 +202,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
 
       await criarNotificacao({
         tipo: 'laudo_enviado',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Lote 888 - Notif 2',
         mensagem: 'Teste',
         dados_contexto: { lote_id: loteId },
@@ -211,8 +211,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
 
       await criarNotificacao({
         tipo: 'laudo_enviado',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Lote 888 - Notif 3',
         mensagem: 'Teste',
         dados_contexto: { lote_id: loteId },
@@ -239,8 +239,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
     it('não deve resolver notificação já resolvida', async () => {
       const notifId = await criarNotificacao({
         tipo: 'parcela_pendente',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Teste Dupla Resolução',
         mensagem: 'Teste',
       });
@@ -262,15 +262,15 @@ describe('Centro de Operações - Notificações Persistentes', () => {
   });
 
   describe('4. Segurança e RLS', () => {
-    it('deve isolar notificações entre contratantes', async () => {
-      // Criar outro contratante
+    it('deve isolar notificações entre tomadors', async () => {
+      // Criar outro tomador
       const outro = await query(
-        `INSERT INTO contratantes (
+        `INSERT INTO tomadors (
           tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
           ativa, status, pagamento_confirmado
         ) VALUES (
-          'entidade', 'Outro Contratante', '88888888000188', 'outro@teste.com',
+          'entidade', 'Outro tomador', '88888888000188', 'outro@teste.com',
           '11999999998', 'Rua Outro, 456', 'São Paulo', 'SP', '01234-566',
           'Outro Gestor', '88888888888', 'outro@teste.com', '11988888887',
           true, 'aprovado', true
@@ -282,15 +282,15 @@ describe('Centro de Operações - Notificações Persistentes', () => {
         // Criar notificação para o primeiro
         await criarNotificacao({
           tipo: 'parcela_pendente',
-          destinatario_id: contratanteId,
-          destinatario_tipo: 'contratante',
-          titulo: 'Notif Contratante 1',
+          destinatario_id: tomadorId,
+          destinatario_tipo: 'tomador',
+          titulo: 'Notif tomador 1',
           mensagem: 'Teste',
         });
 
         // Buscar notificações do segundo (não deve ver a do primeiro)
         const notifs: NotificacaoResult[] =
-          await buscarNotificacoesNaoResolvidas(outroId, 'contratante');
+          await buscarNotificacoesNaoResolvidas(outroId, 'tomador');
 
         expect(notifs.every((n) => n.destinatario_cpf === '99999999999')).toBe(
           true
@@ -299,21 +299,21 @@ describe('Centro de Operações - Notificações Persistentes', () => {
         await query(`DELETE FROM notificacoes WHERE destinatario_cpf = $1`, [
           '99999999999',
         ]);
-        await query(`DELETE FROM contratantes WHERE id = $1`, [outroId]);
+        await query(`DELETE FROM tomadors WHERE id = $1`, [outroId]);
       }
     });
 
-    it('deve isolar notificações entre clínicas e contratantes', async () => {
-      const notifsContratante: NotificacaoResult[] =
-        await buscarNotificacoesNaoResolvidas(contratanteId, 'contratante');
+    it('deve isolar notificações entre clínicas e tomadors', async () => {
+      const notifstomador: NotificacaoResult[] =
+        await buscarNotificacoesNaoResolvidas(tomadorId, 'tomador');
       const notifsClinica: NotificacaoResult[] =
         await buscarNotificacoesNaoResolvidas(clinicaId, 'clinica');
 
       // Não deve haver overlap
-      const idsContratante = notifsContratante.map((n) => n.id);
+      const idstomador = notifstomador.map((n) => n.id);
       const idsClinica = notifsClinica.map((n) => n.id);
 
-      const intersection = idsContratante.filter((id) =>
+      const intersection = idstomador.filter((id) =>
         idsClinica.includes(id)
       );
       expect(intersection.length).toBe(0);
@@ -324,8 +324,8 @@ describe('Centro de Operações - Notificações Persistentes', () => {
     it('deve registrar auditoria ao resolver notificação', async () => {
       const notifId = await criarNotificacao({
         tipo: 'parcela_pendente',
-        destinatario_id: contratanteId,
-        destinatario_tipo: 'contratante',
+        destinatario_id: tomadorId,
+        destinatario_tipo: 'tomador',
         titulo: 'Teste Auditoria',
         mensagem: 'Teste',
       });

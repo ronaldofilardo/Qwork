@@ -4,27 +4,27 @@
  * Valida que:
  * - Entidades [gestor] geram DIRETAMENTE funcionários, avaliações e lotes
  * - NÃO passam por clínica ou empresa intermediária
- * - contratante_id é usado para vínculo
+ * - tomador_id é usado para vínculo
  * - clinica_id e empresa_id devem ser NULL para funcionários de entidade
  */
 
 import { query } from '@/lib/db';
 
 describe('Entidades (Gestor) - Criação Direta', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let gestorCpf: string;
   let funcionarioCpf: string;
   let loteId: number;
   let avaliacaoId: number;
 
   beforeAll(async () => {
-    // Criar contratante tipo 'entidade'
+    // Criar tomador tipo 'entidade'
     const timestamp = Date.now();
     const cnpj = `${String(timestamp).slice(-8)}0001${String(timestamp % 100).padStart(2, '0')}`;
     const email = `entidade${timestamp}@teste.com`;
 
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         ativa, pagamento_confirmado
@@ -41,8 +41,8 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       ]
     );
 
-    contratanteId = contratanteResult.rows[0].id;
-    expect(contratanteId).toBeGreaterThan(0);
+    tomadorId = tomadorResult.rows[0].id;
+    expect(tomadorId).toBeGreaterThan(0);
 
     // Criar gestor da entidade na tabela usuarios
     gestorCpf = `${String(timestamp).slice(-11)}`;
@@ -57,7 +57,7 @@ describe('Entidades (Gestor) - Criação Direta', () => {
         'Gestor Teste',
         gestorEmail,
         '$2b$10$dummyhash',
-        contratanteId,
+        tomadorId,
       ]
     );
   });
@@ -76,28 +76,28 @@ describe('Entidades (Gestor) - Criação Direta', () => {
     if (gestorCpf) {
       await query('DELETE FROM usuarios WHERE cpf = $1', [gestorCpf]);
     }
-    if (contratanteId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    if (tomadorId) {
+      await query('DELETE FROM tomadors WHERE id = $1', [tomadorId]);
     }
   });
 
   describe('1. Criar Funcionário de Entidade', () => {
-    it('deve criar funcionário vinculado diretamente à entidade (contratante_id)', async () => {
+    it('deve criar funcionário vinculado diretamente à entidade (tomador_id)', async () => {
       const timestamp = Date.now();
       funcionarioCpf = `${String(timestamp + 1).slice(-11)}`;
       const funcEmail = `func${timestamp}@teste.com`;
 
       const result = await query(
         `INSERT INTO funcionarios (
-          cpf, nome, email, senha_hash, perfil, contratante_id, ativo, nivel_cargo
+          cpf, nome, email, senha_hash, perfil, tomador_id, ativo, nivel_cargo
         ) VALUES ($1, $2, $3, $4, 'funcionario', $5, true, 'operacional')
-        RETURNING id, cpf, contratante_id, clinica_id, empresa_id`,
+        RETURNING id, cpf, tomador_id, clinica_id, empresa_id`,
         [
           funcionarioCpf,
           'Funcionário Entidade Teste',
           funcEmail,
           '$2b$10$dummyhash',
-          contratanteId,
+          tomadorId,
         ]
       );
 
@@ -105,7 +105,7 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       const funcionario = result.rows[0];
 
       // VALIDAÇÕES CRÍTICAS
-      expect(funcionario.contratante_id).toBe(contratanteId);
+      expect(funcionario.tomador_id).toBe(tomadorId);
       expect(funcionario.clinica_id).toBeNull(); // Não deve ter clinica_id
       expect(funcionario.empresa_id).toBeNull(); // Não deve ter empresa_id
     });
@@ -117,9 +117,9 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       await expect(
         query(
           `INSERT INTO funcionarios (
-            cpf, nome, email, senha_hash, perfil, contratante_id, clinica_id, ativo, nivel_cargo
+            cpf, nome, email, senha_hash, perfil, tomador_id, clinica_id, ativo, nivel_cargo
           ) VALUES ($1, 'Teste Inválido', 'invalido@teste.com', 'hash', 'funcionario', $2, 1, true, 'operacional')`,
-          [cpfInvalido, contratanteId]
+          [cpfInvalido, tomadorId]
         )
       ).rejects.toThrow();
     });
@@ -131,25 +131,25 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       await expect(
         query(
           `INSERT INTO funcionarios (
-            cpf, nome, email, senha_hash, perfil, contratante_id, empresa_id, ativo, nivel_cargo
+            cpf, nome, email, senha_hash, perfil, tomador_id, empresa_id, ativo, nivel_cargo
           ) VALUES ($1, 'Teste Inválido', 'invalido@teste.com', 'hash', 'funcionario', $2, 1, true, 'operacional')`,
-          [cpfInvalido, contratanteId]
+          [cpfInvalido, tomadorId]
         )
       ).rejects.toThrow();
     });
   });
 
   describe('2. Criar Lote de Entidade', () => {
-    it('deve criar lote vinculado diretamente à entidade (contratante_id)', async () => {
+    it('deve criar lote vinculado diretamente à entidade (tomador_id)', async () => {
       const timestamp = Date.now();
       const codigo = `ENT-${timestamp}`;
 
       const result = await query(
         `INSERT INTO lotes_avaliacao (
-          contratante_id, codigo, titulo, tipo, status, liberado_por, numero_ordem
+          tomador_id, codigo, titulo, tipo, status, liberado_por, numero_ordem
         ) VALUES ($1, $2, $3, 'completo', 'ativo', $4, 1)
-        RETURNING id, contratante_id, clinica_id, empresa_id`,
-        [contratanteId, codigo, `Lote Teste Entidade ${timestamp}`, gestorCpf]
+        RETURNING id, tomador_id, clinica_id, empresa_id`,
+        [tomadorId, codigo, `Lote Teste Entidade ${timestamp}`, gestorCpf]
       );
 
       expect(result.rows.length).toBe(1);
@@ -157,21 +157,21 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       const lote = result.rows[0];
 
       // VALIDAÇÕES CRÍTICAS
-      expect(lote.contratante_id).toBe(contratanteId);
+      expect(lote.tomador_id).toBe(tomadorId);
       expect(lote.clinica_id).toBeNull(); // Lote de entidade NÃO tem clinica_id
       expect(lote.empresa_id).toBeNull(); // Lote de entidade NÃO tem empresa_id
     });
 
     it('deve listar lotes apenas da entidade do gestor', async () => {
       const result = await query(
-        `SELECT id, contratante_id, clinica_id, empresa_id
+        `SELECT id, tomador_id, clinica_id, empresa_id
          FROM lotes_avaliacao
-         WHERE contratante_id = $1 AND clinica_id IS NULL AND empresa_id IS NULL`,
-        [contratanteId]
+         WHERE tomador_id = $1 AND clinica_id IS NULL AND empresa_id IS NULL`,
+        [tomadorId]
       );
 
       expect(result.rows.length).toBeGreaterThan(0);
-      expect(result.rows[0].contratante_id).toBe(contratanteId);
+      expect(result.rows[0].tomador_id).toBe(tomadorId);
     });
   });
 
@@ -200,7 +200,7 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       expect(avaliacaoId).toBeGreaterThan(0);
 
       const result = await query(
-        `SELECT a.id, a.funcionario_cpf, f.contratante_id, f.clinica_id, f.empresa_id
+        `SELECT a.id, a.funcionario_cpf, f.tomador_id, f.clinica_id, f.empresa_id
          FROM avaliacoes a
          JOIN funcionarios f ON a.funcionario_cpf = f.cpf
          WHERE a.id = $1`,
@@ -210,7 +210,7 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       expect(result.rows.length).toBe(1);
       const dados = result.rows[0];
 
-      expect(dados.contratante_id).toBe(contratanteId);
+      expect(dados.tomador_id).toBe(tomadorId);
       expect(dados.clinica_id).toBeNull();
       expect(dados.empresa_id).toBeNull();
     });
@@ -220,10 +220,10 @@ describe('Entidades (Gestor) - Criação Direta', () => {
     it('deve confirmar que entidade NÃO tem clínica associada', async () => {
       const result = await query(
         `SELECT c.id, c.tipo,
-                (SELECT COUNT(*) FROM clinicas WHERE contratante_id = c.id) as tem_clinica
-         FROM contratantes c
+                (SELECT COUNT(*) FROM clinicas WHERE tomador_id = c.id) as tem_clinica
+         FROM tomadors c
          WHERE c.id = $1 AND c.tipo = 'entidade'`,
-        [contratanteId]
+        [tomadorId]
       );
 
       expect(result.rows.length).toBe(1);
@@ -234,30 +234,30 @@ describe('Entidades (Gestor) - Criação Direta', () => {
     it('deve validar fluxo completo: Entidade → Funcionários → Lotes → Avaliações', async () => {
       const result = await query(
         `SELECT 
-          c.id as contratante_id,
-          c.tipo as contratante_tipo,
+          c.id as tomador_id,
+          c.tipo as tomador_tipo,
           f.cpf as funcionario_cpf,
-          f.contratante_id as func_contratante_id,
+          f.tomador_id as func_tomador_id,
           f.clinica_id as func_clinica_id,
           l.id as lote_id,
-          l.contratante_id as lote_contratante_id,
+          l.tomador_id as lote_tomador_id,
           a.id as avaliacao_id
-         FROM contratantes c
-         LEFT JOIN funcionarios f ON f.contratante_id = c.id
-         LEFT JOIN lotes_avaliacao l ON l.contratante_id = c.id
+         FROM tomadors c
+         LEFT JOIN funcionarios f ON f.tomador_id = c.id
+         LEFT JOIN lotes_avaliacao l ON l.tomador_id = c.id
          LEFT JOIN avaliacoes a ON a.lote_id = l.id AND a.funcionario_cpf = f.cpf
          WHERE c.id = $1`,
-        [contratanteId]
+        [tomadorId]
       );
 
       expect(result.rows.length).toBeGreaterThan(0);
       const dados = result.rows[0];
 
       // Validar hierarquia
-      expect(dados.contratante_tipo).toBe('entidade');
-      expect(dados.func_contratante_id).toBe(contratanteId);
+      expect(dados.tomador_tipo).toBe('entidade');
+      expect(dados.func_tomador_id).toBe(tomadorId);
       expect(dados.func_clinica_id).toBeNull();
-      expect(dados.lote_contratante_id).toBe(contratanteId);
+      expect(dados.lote_tomador_id).toBe(tomadorId);
       expect(dados.avaliacao_id).toBe(avaliacaoId);
     });
   });
@@ -318,7 +318,7 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       const gestor = viewCheck.rows[0];
 
       expect(gestor.usuario_tipo).toBe('gestor');
-      expect(gestor.entidade_id).toBe(contratanteId);
+      expect(gestor.entidade_id).toBe(tomadorId);
       expect(gestor.clinica_id).toBeNull();
     });
   });

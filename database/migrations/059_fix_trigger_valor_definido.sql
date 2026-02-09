@@ -13,7 +13,7 @@ BEGIN
   -- Buscar ID, nome do contratante e CPF do gestor responsável
   SELECT c.id, c.nome, c.responsavel_cpf
   INTO v_contratante_id, v_contratante_nome, v_gestor_cpf
-  FROM contratantes c
+  FROM tomadores c
   WHERE c.id = NEW.contratante_id;
 
   -- Notificar gestor do contratante (preenchendo tanto id quanto CPF)

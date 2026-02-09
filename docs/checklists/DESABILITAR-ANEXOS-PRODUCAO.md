@@ -3,7 +3,7 @@
 ## Status do Problema
 
 ✅ Identificado: Variável `NEXT_PUBLIC_DISABLE_ANEXOS=true` não está configurada na Vercel  
-❌ Produção ainda exige anexos para cadastro de contratantes
+❌ Produção ainda exige anexos para cadastro de tomadores
 
 ## Passos para Resolver
 
@@ -26,7 +26,7 @@
 ### 3. Verificar em Produção
 
 - [ ] Acessar aplicação em produção
-- [ ] Iniciar cadastro de contratante
+- [ ] Iniciar cadastro de tomador
 - [ ] Verificar na etapa "Dados da Empresa":
   - [ ] Campos de upload devem estar **disabled**
   - [ ] Deve mostrar: "Uploads temporariamente desabilitados"
@@ -39,7 +39,7 @@
 
 - [ ] Completar um cadastro teste em produção
 - [ ] Verificar se não há erros de validação relacionados a arquivos
-- [ ] Confirmar que contratante foi cadastrado com sucesso
+- [ ] Confirmar que tomador foi cadastrado com sucesso
 
 ## Alternativa: Via CLI
 

@@ -28,7 +28,7 @@ async function verificarGestor() {
     // 1. Verificar contratante
     console.log('1️⃣ Verificando contratante...');
     const contratanteResult = await client.query(
-      'SELECT id, cnpj, responsavel_nome, responsavel_cpf, tipo, ativa FROM contratantes WHERE cnpj = $1',
+      'SELECT id, cnpj, responsavel_nome, responsavel_cpf, tipo, ativa FROM tomadores WHERE cnpj = $1',
       [cnpj]
     );
 

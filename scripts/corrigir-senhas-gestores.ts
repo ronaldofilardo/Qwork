@@ -27,7 +27,7 @@ async function corrigirSenhasGestores() {
       f.email,
       f.usuario_tipo,
       f.perfil,
-      f.contratante_id,
+      f.tomador_id,
       f.senha_hash,
       f.ativo,
       LENGTH(f.senha_hash) as senha_len,
@@ -58,12 +58,12 @@ async function corrigirSenhasGestores() {
     console.log(
       `   Senha atual: ${gestor.senha_prefix}... (${gestor.senha_len} chars)`
     );
-    console.log(`   Contratante ID: ${gestor.contratante_id}`);
+    console.log(`   tomador ID: ${gestor.tomador_id}`);
 
     // Buscar senha correta em entidades_senhas
     const senhaCorreta = await query(
-      'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1 AND contratante_id = $2',
-      [gestor.cpf, gestor.contratante_id]
+      'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1 AND tomador_id = $2',
+      [gestor.cpf, gestor.tomador_id]
     );
 
     if (senhaCorreta.rows.length > 0) {
@@ -129,15 +129,15 @@ async function verificarUsuarioEspecifico(cpf: string) {
       f.email,
       f.usuario_tipo,
       f.perfil,
-      f.contratante_id,
+      f.tomador_id,
       f.clinica_id,
       f.empresa_id,
       f.ativo,
       LENGTH(f.senha_hash) as senha_len,
       SUBSTRING(f.senha_hash, 1, 10) as senha_prefix,
-      c.nome as contratante_nome
+      c.nome as tomador_nome
     FROM usuarios f
-    LEFT JOIN contratantes c ON f.contratante_id = c.id
+    LEFT JOIN tomadors c ON f.tomador_id = c.id
     WHERE f.cpf = $1
   `,
     [cpf]
@@ -158,20 +158,20 @@ async function verificarUsuarioEspecifico(cpf: string) {
   console.log(`   Ativo: ${user.ativo}`);
   console.log(`   Senha (length): ${user.senha_len} chars`);
   console.log(`   Senha (prefix): ${user.senha_prefix}...`);
-  console.log(`   Contratante ID: ${user.contratante_id}`);
-  console.log(`   Contratante Nome: ${user.contratante_nome || 'N/A'}`);
+  console.log(`   tomador ID: ${user.tomador_id}`);
+  console.log(`   tomador Nome: ${user.tomador_nome || 'N/A'}`);
   console.log(`   Clinica ID: ${user.clinica_id || 'N/A'}`);
   console.log(`   Empresa ID: ${user.empresa_id || 'N/A'}`);
 
   // Verificar em entidades_senhas
-  const senhaContratante = await query(
+  const senhatomador = await query(
     'SELECT senha_hash FROM entidades_senhas WHERE cpf = $1',
     [cpf]
   );
 
-  if (senhaContratante.rows.length > 0) {
+  if (senhatomador.rows.length > 0) {
     console.log(
-      `\n✅ Senha encontrada em entidades_senhas (${senhaContratante.rows[0].senha_hash.length} chars)`
+      `\n✅ Senha encontrada em entidades_senhas (${senhatomador.rows[0].senha_hash.length} chars)`
     );
   } else {
     console.log('\n⚠️  Senha NÃO encontrada em entidades_senhas');

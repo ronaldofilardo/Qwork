@@ -10,7 +10,7 @@ DECLARE
 BEGIN
   -- Buscar nome do contratante
   SELECT nome INTO v_contratante_nome
-  FROM contratantes
+  FROM tomadores
   WHERE id = NEW.contratante_id;
 
   -- Inserir notificação para todos os admins

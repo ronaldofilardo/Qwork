@@ -73,7 +73,7 @@ async function main() {
           `ALTER TABLE lotes_avaliacao DISABLE ROW LEVEL SECURITY`
         );
         await client.query(
-          `INSERT INTO lotes_avaliacao (${colNames}) VALUES (${values}) ON CONFLICT (id) DO UPDATE SET clinica_id = EXCLUDED.clinica_id, contratante_id = EXCLUDED.contratante_id`,
+          `INSERT INTO lotes_avaliacao (${colNames}) VALUES (${values}) ON CONFLICT (id) DO UPDATE SET clinica_id = EXCLUDED.clinica_id, tomador_id = EXCLUDED.tomador_id`,
           data
         );
         await client.query(
@@ -103,7 +103,7 @@ async function main() {
           `ALTER TABLE lotes_avaliacao DISABLE ROW LEVEL SECURITY`
         );
         await client.query(
-          `INSERT INTO lotes_avaliacao (${colNames}) VALUES (${values}) ON CONFLICT (id) DO UPDATE SET clinica_id = EXCLUDED.clinica_id, contratante_id = EXCLUDED.contratante_id`,
+          `INSERT INTO lotes_avaliacao (${colNames}) VALUES (${values}) ON CONFLICT (id) DO UPDATE SET clinica_id = EXCLUDED.clinica_id, tomador_id = EXCLUDED.tomador_id`,
           data
         );
         await client.query(

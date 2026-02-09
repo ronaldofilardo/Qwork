@@ -40,7 +40,7 @@ CREATE INDEX IF NOT EXISTS idx_funcionarios_contratante_id ON funcionarios(contr
 -- ============================================================================
 
 -- Tabela para armazenar senhas hash dos gestores de entidade
--- (responsavel_cpf em contratantes pode fazer login)
+-- (responsavel_cpf em tomadores pode fazer login)
 CREATE TABLE IF NOT EXISTS entidades_senhas (
     id SERIAL PRIMARY KEY,
     contratante_id INTEGER NOT NULL UNIQUE,
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS entidades_senhas (
     
     CONSTRAINT fk_entidades_senhas_contratante 
         FOREIGN KEY (contratante_id) 
-        REFERENCES contratantes(id) 
+        REFERENCES tomadores(id) 
         ON DELETE CASCADE,
     
     CONSTRAINT entidades_senhas_cpf_check 
@@ -82,7 +82,7 @@ CREATE TRIGGER trg_entidades_senhas_updated_at
 
 -- Comentários
 COMMENT ON TABLE entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
-COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em tomadores - usado para login';
 COMMENT ON COLUMN entidades_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
 
 -- ============================================================================
@@ -101,7 +101,7 @@ DECLARE
 BEGIN
     -- Buscar dados do contratante
     SELECT responsavel_cpf, cnpj INTO v_cpf, v_cnpj
-    FROM contratantes
+    FROM tomadores
     WHERE id = p_contratante_id AND tipo = 'entidade';
 
     IF v_cpf IS NULL THEN
@@ -155,6 +155,6 @@ COMMENT ON FUNCTION criar_senha_inicial_entidade IS 'Cria senha inicial para ges
 -- (executar manualmente ou via script backend)
 
 -- SELECT criar_senha_inicial_entidade(id)
--- FROM contratantes 
+-- FROM tomadores 
 -- WHERE tipo = 'entidade' AND status = 'aprovado'
 -- AND id NOT IN (SELECT contratante_id FROM entidades_senhas);

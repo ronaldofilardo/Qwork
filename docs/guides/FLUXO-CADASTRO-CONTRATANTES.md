@@ -1,4 +1,4 @@
-# Fluxo de Cadastro de Contratantes - Documentação Atualizada
+# Fluxo de Cadastro de tomadores - Documentação Atualizada
 
 **Última atualização:** 20/Janeiro/2026  
 **Responsável:** Sistema de Documentação Automatizado
@@ -7,7 +7,7 @@
 
 ## Visão Geral
 
-O sistema QWork implementa dois fluxos distintos para cadastro de contratantes (clínicas e entidades):
+O sistema QWork implementa dois fluxos distintos para cadastro de tomadores (clínicas e entidades):
 
 1. **Plano Fixo** (Contract-First): Contrato → Pagamento → Liberação de Login
 2. **Plano Personalizado** (Personalização Admin): Cadastro → Admin Define Valores → Pagamento → Liberação de Login
@@ -29,7 +29,7 @@ graph TD
 
 ### 1.1 Cadastro Inicial
 
-**Endpoint:** `POST /api/cadastro/contratante`
+**Endpoint:** `POST /api/cadastro/tomador`
 
 **Dados obrigatórios:**
 
@@ -72,14 +72,14 @@ graph TD
 
 O sistema cria automaticamente um registro em `contratos`:
 
-- `contratante_id`: ID do contratante
+- `tomador_id`: ID do tomador
 - `plano_id`: ID do plano fixo
 - `numero_funcionarios`: Quantidade informada
 - `valor_total`: Calculado (R$ 20,00 × número de funcionários)
 - `status`: "aguardando_pagamento"
 - `aceito`: false
 
-**Arquivo:** [app/api/cadastro/contratante/route.ts](../../app/api/cadastro/contratante/route.ts#L510-L540)
+**Arquivo:** [app/api/cadastro/tomador/route.ts](../../app/api/cadastro/tomador/route.ts#L510-L540)
 
 ### 1.3 Aceite do Contrato
 
@@ -95,7 +95,7 @@ O sistema cria automaticamente um registro em `contratos`:
 
 **Validação:**
 
-- Contrato existe e pertence ao contratante
+- Contrato existe e pertence ao tomador
 - Status permite aceite
 
 **Resultado:**
@@ -106,7 +106,7 @@ O sistema cria automaticamente um registro em `contratos`:
 
 ### 1.4 Simulador de Pagamento PIX
 
-**Endpoint:** `GET /pagamento/simulador?contratante_id=123&plano_id=1&numero_funcionarios=50`
+**Endpoint:** `GET /pagamento/simulador?tomador_id=123&plano_id=1&numero_funcionarios=50`
 
 **Gera:**
 
@@ -129,11 +129,11 @@ O sistema cria automaticamente um registro em `contratos`:
 
 1. Valida assinatura do webhook
 2. Atualiza `registros_pagamento.status` = "confirmado"
-3. Atualiza `contratantes.pagamento_confirmado` = true
+3. Atualiza `tomadores.pagamento_confirmado` = true
 4. Atualiza `contratos.status` = "pago"
-5. Chama `ativarContratante()` que:
-   - Define `contratantes.ativa` = true
-   - Define `contratantes.status` = "aprovado"
+5. Chama `ativartomador()` que:
+   - Define `tomadores.ativa` = true
+   - Define `tomadores.status` = "aprovado"
    - Registra em `audit_logs`
    - Chama `criarContaResponsavel()`
 
@@ -152,7 +152,7 @@ O sistema cria automaticamente um registro em `contratos`:
    - `email`: responsavel_email
    - `senha_hash`: bcrypt da senha
    - `perfil`: "entidade" ou "clinica"
-   - `contratante_id`: ID do contratante
+   - `tomador_id`: ID do tomador
 4. Envia email de boas-vindas com credenciais
 
 **Status final:** `ativo` + login liberado
@@ -167,7 +167,7 @@ O sistema cria automaticamente um registro em `contratos`:
 graph TD
     A[Cadastro Inicial] --> B[Admin Define Valores]
     B --> C[Geração de Link de Pagamento]
-    C --> D[Contratante Aceita Proposta]
+    C --> D[tomador Aceita Proposta]
     D --> E[Aceite do Contrato]
     E --> F[Pagamento PIX]
     F --> G[Confirmação Automática]
@@ -176,7 +176,7 @@ graph TD
 
 ### 2.1 Cadastro Inicial
 
-**Endpoint:** `POST /api/cadastro/contratante`
+**Endpoint:** `POST /api/cadastro/tomador`
 
 **Diferenças do plano fixo:**
 
@@ -198,10 +198,10 @@ graph TD
 
 **Registros criados:**
 
-- `contratantes` (status: "pendente")
+- `tomadores` (status: "pendente")
 - `contratacao_personalizada` (status: "aguardando_valor_admin")
 
-**Arquivo:** [app/api/cadastro/contratante/route.ts](../../app/api/cadastro/contratante/route.ts#L560-L575)
+**Arquivo:** [app/api/cadastro/tomador/route.ts](../../app/api/cadastro/tomador/route.ts#L560-L575)
 
 ### 2.2 Admin Define Valores
 
@@ -214,7 +214,7 @@ graph TD
 ```json
 {
   "acao": "aprovar_personalizado",
-  "contratante_id": 123,
+  "tomador_id": 123,
   "numero_funcionarios": 100,
   "valor_por_funcionario": 18.5
 }
@@ -222,7 +222,7 @@ graph TD
 
 **Validações:**
 
-- Contratante existe
+- tomador existe
 - Plano é tipo "personalizado"
 - Valores são positivos
 
@@ -236,11 +236,11 @@ graph TD
    - `status` = "valor_definido"
 3. Gera token único (48h de validade)
 4. Cria link: `/pagamento/personalizado/{token}`
-5. Envia email para contratante com link
+5. Envia email para tomador com link
 
 **Arquivo:** [app/api/admin/novos-cadastros/handlers.ts](../../app/api/admin/novos-cadastros/handlers.ts#L189-L340)
 
-### 2.3 Contratante Acessa Link de Pagamento
+### 2.3 tomador Acessa Link de Pagamento
 
 **Endpoint:** `GET /api/proposta/[token]`
 
@@ -252,7 +252,7 @@ graph TD
 
 **Exibe:**
 
-- Dados do contratante
+- Dados do tomador
 - Plano contratado
 - Número de funcionários
 - Valor por funcionário
@@ -277,7 +277,7 @@ graph TD
 
 1. Valida status = "valor_definido"
 2. Cria contrato em `contratos`:
-   - `contratante_id`
+   - `tomador_id`
    - `plano_id`
    - `numero_funcionarios`
    - `valor_total`
@@ -310,7 +310,7 @@ Mesmo fluxo do plano fixo (ver seção 1.6).
 
 | Arquivo                                     | Responsabilidade                                       | Atualizado     |
 | ------------------------------------------- | ------------------------------------------------------ | -------------- |
-| `app/api/cadastro/contratante/route.ts`     | Cadastro inicial (fixo e personalizado)                | ✅ 18/jan/2026 |
+| `app/api/cadastro/tomador/route.ts`         | Cadastro inicial (fixo e personalizado)                | ✅ 18/jan/2026 |
 | `app/api/admin/novos-cadastros/route.ts`    | Gestão de cadastros pendentes                          | ✅ 18/jan/2026 |
 | `app/api/admin/novos-cadastros/handlers.ts` | Lógica de negócio (aprovar, rejeitar, definir valores) | ✅ 18/jan/2026 |
 | `app/api/admin/novos-cadastros/schemas.ts`  | Validação com Zod                                      | ✅ 18/jan/2026 |
@@ -330,12 +330,12 @@ Mesmo fluxo do plano fixo (ver seção 1.6).
 
 ### 3.4 Bibliotecas Core
 
-| Arquivo                         | Responsabilidade                                | Atualizado     |
-| ------------------------------- | ----------------------------------------------- | -------------- |
-| `lib/db.ts`                     | Funções de banco de dados                       | ✅ 18/jan/2026 |
-| `lib/contratante-activation.ts` | Ativação segura de contratantes                 | ✅ 18/jan/2026 |
-| `lib/cadastroContratante.ts`    | Utilitários de cadastro (formatação, validação) | ✅             |
-| `lib/cadastroApi.ts`            | Cliente API para cadastro                       | ✅             |
+| Arquivo                     | Responsabilidade                                | Atualizado     |
+| --------------------------- | ----------------------------------------------- | -------------- |
+| `lib/db.ts`                 | Funções de banco de dados                       | ✅ 18/jan/2026 |
+| `lib/tomador-activation.ts` | Ativação segura de tomadores                    | ✅ 18/jan/2026 |
+| `lib/cadastrotomador.ts`    | Utilitários de cadastro (formatação, validação) | ✅             |
+| `lib/cadastroApi.ts`        | Cliente API para cadastro                       | ✅             |
 
 ### 3.5 Arquivos Obsoletos
 
@@ -380,31 +380,31 @@ Mesmo fluxo do plano fixo (ver seção 1.6).
 
 ### 4.2 Regras de Ativação
 
-⚠️ **CRÍTICO:** Contratante só pode ser ativado (`ativa = true`) se:
+⚠️ **CRÍTICO:** tomador só pode ser ativado (`ativa = true`) se:
 
 1. `pagamento_confirmado = true` **OU**
 2. Isenção manual por admin (auditado)
 
-**Função responsável:** `ativarContratante()` em [lib/contratante-activation.ts](../../lib/contratante-activation.ts)
+**Função responsável:** `ativartomador()` em [lib/tomador-activation.ts](../../lib/tomador-activation.ts)
 
-### 4.3 Estados do Contratante
+### 4.3 Estados do tomador
 
 | Status                 | Descrição                                                     | Próximo passo        |
 | ---------------------- | ------------------------------------------------------------- | -------------------- |
 | `pendente`             | Cadastro inicial (personalizado)                              | Admin define valores |
 | `aguardando_pagamento` | Cadastro completo (fixo) ou valores definidos (personalizado) | Pagamento            |
-| `aprovado`             | Pagamento confirmado e contratante ativado                    | Uso do sistema       |
+| `aprovado`             | Pagamento confirmado e tomador ativado                        | Uso do sistema       |
 | `rejeitado`            | Cadastro rejeitado pelo admin                                 | -                    |
 | `em_reanalise`         | Admin solicitou reanálise                                     | Correção de dados    |
 
 ### 4.4 Estados da Contratação Personalizada
 
-| Status                       | Descrição                          | Próximo passo               |
-| ---------------------------- | ---------------------------------- | --------------------------- |
-| `aguardando_valor_admin`     | Cadastro inicial                   | Admin define valores        |
-| `valor_definido`             | Admin definiu valores e gerou link | Contratante aceita proposta |
-| `aguardando_aceite_contrato` | Proposta aceita, contrato criado   | Contratante aceita contrato |
-| `pago`                       | Pagamento confirmado               | Ativação                    |
+| Status                       | Descrição                          | Próximo passo           |
+| ---------------------------- | ---------------------------------- | ----------------------- |
+| `aguardando_valor_admin`     | Cadastro inicial                   | Admin define valores    |
+| `valor_definido`             | Admin definiu valores e gerou link | tomador aceita proposta |
+| `aguardando_aceite_contrato` | Proposta aceita, contrato criado   | tomador aceita contrato |
+| `pago`                       | Pagamento confirmado               | Ativação                |
 
 ---
 
@@ -414,12 +414,12 @@ Mesmo fluxo do plano fixo (ver seção 1.6).
 
 Todos os eventos críticos são registrados em `audit_logs`:
 
-- ✅ Cadastro de contratante
+- ✅ Cadastro de tomador
 - ✅ Aprovação de cadastro
 - ✅ Rejeição de cadastro
 - ✅ Definição de valores (personalizado)
 - ✅ Confirmação de pagamento
-- ✅ Ativação de contratante
+- ✅ Ativação de tomador
 - ✅ Criação de conta responsável
 
 ### 5.2 Logs Estruturados
@@ -428,8 +428,8 @@ Formato JSON para facilitar análise:
 
 ```json
 {
-  "event": "cadastro_contratante_success",
-  "contratante_id": 123,
+  "event": "cadastro_tomador_success",
+  "tomador_id": 123,
   "plano_id": 1,
   "plano_tipo": "fixo",
   "requires_payment": true,
@@ -472,11 +472,11 @@ Formato JSON para facilitar análise:
 
 ### 7.2 Arquivos de Teste
 
-- `__tests__/cadastro-contratante-completo.test.ts`
+- `__tests__/cadastro-tomador-completo.test.ts`
 - `__tests__/integration/cadastro-personalizado-integration.test.ts`
-- `__tests__/integration/cadastro-contratante-db.test.ts`
-- `__tests__/api/cadastro-contratante-api.test.ts`
-- `__tests__/api/cadastro-contratante-validation.test.ts`
+- `__tests__/integration/cadastro-tomador-db.test.ts`
+- `__tests__/api/cadastro-tomador-api.test.ts`
+- `__tests__/api/cadastro-tomador-validation.test.ts`
 
 ---
 

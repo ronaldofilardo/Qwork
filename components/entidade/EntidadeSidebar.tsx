@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Building2, ChevronDown, FileText, Users, User } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
+import { PWAMenuItem } from '@/components/PWAMenuItem';
 
 interface EntidadeSidebarProps {
   counts?: {
@@ -124,6 +125,12 @@ export default function EntidadeSidebar({
         isActive={pathname === '/entidade/conta'}
         onClick={() => router.push('/entidade/conta')}
       />
+
+      {/* Separador */}
+      <div className="my-4 border-t border-gray-200" />
+
+      {/* Seção PWA - Instalar App */}
+      <PWAMenuItem isCollapsed={isCollapsed} />
     </SidebarLayout>
   );
 }

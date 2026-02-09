@@ -58,8 +58,8 @@ Esta combinação garante:
 
 ##### Gestor RH (`perfil='rh'`)
 
-- **Criação:** Via `criarContaResponsavel()` para contratantes tipo ≠ 'entidade'
-- **Tabelas:** `funcionarios` (com perfil='rh') + `contratantes_funcionarios` (vínculo)
+- **Criação:** Via `criarContaResponsavel()` para tomadores tipo ≠ 'entidade'
+- **Tabelas:** `funcionarios` (com perfil='rh') + `tomadores_funcionarios` (vínculo)
 - **Autenticação:** `entidades_senhas` com bcrypt
 - **Permissões:**
   - ✅ Cadastrar empresas clientes
@@ -71,7 +71,7 @@ Esta combinação garante:
 
 ##### Gestor Entidade (`perfil='gestor'`)
 
-- **Criação:** Via `criarContaResponsavel()` para contratantes tipo = 'entidade'
+- **Criação:** Via `criarContaResponsavel()` para tomadores tipo = 'entidade'
 - **Tabelas:** Apenas `entidades_senhas` (SEM entrada em `funcionarios`)
 - **Autenticação:** `entidades_senhas` com bcrypt
 - **Permissões:**
@@ -85,7 +85,7 @@ Esta combinação garante:
 #### 2. Funcionário Regular (`perfil='funcionario'`)
 
 - **Criação:** Via cadastro RH/Entidade ou importação CSV
-- **Tabelas:** `funcionarios` + vínculo em `contratantes_funcionarios`
+- **Tabelas:** `funcionarios` + vínculo em `tomadores_funcionarios`
 - **Autenticação:** CPF + senha (se habilitado)
 - **Permissões:**
   - ✅ Responder avaliações atribuídas
@@ -124,39 +124,48 @@ Esta combinação garante:
 #### `empresas_clientes`
 
 ```sql
--- Admin: Acesso administrativo apenas (tomadores, planos, emissores)
-CREATE POLICY admin_full_access ON empresas_clientes
-  FOR ALL USING (auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin'));
+-- Admin: NÃO tem acesso direto (acesso administrativo apenas - tomadores, planos, emissores)
+-- RH deve usar endpoint /api/rh/empresas para gerenciar empresas com RLS
+CREATE POLICY admin_no_operational_access ON empresas_clientes
+  FOR ALL USING (current_user_perfil() != 'admin');
 
 -- RH/Entidade: Apenas da própria clínica
 CREATE POLICY rh_own_clinic ON empresas_clientes
-  FOR ALL USING (contratante_id = auth.uid());
+  FOR ALL USING (tomador_id = auth.uid());
 ```
 
 #### `funcionarios`
 
 ```sql
--- Admin: Apenas RH e Emissor (não vê funcionários regulares)
-CREATE POLICY admin_limited_access ON funcionarios
-  FOR SELECT USING (
-    auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin')
-    AND perfil IN ('rh', 'emissor')
-  );
+-- Admin: NÃO tem acesso a funcionários operacionais (apenas RH pode gerenciar)
+CREATE POLICY admin_no_access ON funcionarios
+  FOR ALL USING (current_user_perfil() != 'admin');
+
+-- RH: Vê funcionários de sua clínica
+CREATE POLICY rh_own_clinic ON funcionarios
+  FOR ALL USING (clinic_id = auth.uid());
+```
+
+FOR SELECT USING (
+auth.uid() IN (SELECT id FROM profiles WHERE role = 'admin')
+AND perfil IN ('rh', 'emissor')
+);
 
 -- RH: Apenas da própria clínica
 CREATE POLICY rh_own_employees ON funcionarios
-  FOR ALL USING (
-    EXISTS (
-      SELECT 1 FROM contratantes_funcionarios cf
-      WHERE cf.funcionario_id = funcionarios.id
-      AND cf.contratante_id = auth.uid()
-    )
-  );
+FOR ALL USING (
+EXISTS (
+SELECT 1 FROM tomadores_funcionarios cf
+WHERE cf.funcionario_id = funcionarios.id
+AND cf.tomador_id = auth.uid()
+)
+);
 
 -- Funcionário: Apenas próprios dados
 CREATE POLICY employee_own_data ON funcionarios
-  FOR SELECT USING (cpf = auth.cpf());
-```
+FOR SELECT USING (cpf = auth.cpf());
+
+````
 
 #### `avaliacoes`, `respostas_avaliacao`, `resultados`
 
@@ -173,7 +182,7 @@ CREATE POLICY rh_own_clinic ON avaliacoes
     EXISTS (
       SELECT 1 FROM lotes_avaliacao l
       WHERE l.id = avaliacoes.lote_id
-      AND l.contratante_id = auth.uid()
+      AND l.tomador_id = auth.uid()
     )
   );
 
@@ -184,7 +193,7 @@ CREATE POLICY employee_own_evaluations ON avaliacoes
 -- Imutabilidade: Não pode alterar avaliações concluídas
 CREATE POLICY immutable_completed ON avaliacoes
   FOR UPDATE USING (status != 'concluido');
-```
+````
 
 ---
 
@@ -220,7 +229,7 @@ CREATE POLICY immutable_completed ON avaliacoes
 CREATE TABLE profiles (
   id UUID PRIMARY KEY,
   role VARCHAR(50) NOT NULL CHECK (role IN ('admin', 'rh', 'gestor', 'emissor', 'funcionario')),
-  contratante_id UUID REFERENCES contratantes(id),
+  tomador_id UUID REFERENCES tomadores(id),
   cpf VARCHAR(11)
 );
 
@@ -234,7 +243,7 @@ CREATE TABLE funcionarios (
 
 -- Tabela de senhas de gestores
 CREATE TABLE entidades_senhas (
-  contratante_id UUID PRIMARY KEY REFERENCES contratantes(id),
+  tomador_id UUID PRIMARY KEY REFERENCES tomadores(id),
   senha_hash VARCHAR(255) NOT NULL
 );
 ```
@@ -244,9 +253,9 @@ CREATE TABLE entidades_senhas (
 ```typescript
 // lib/db.ts - criarContaResponsavel()
 
-async function criarContaResponsavel(contratanteData, responsavel) {
+async function criarContaResponsavel(tomadorData, responsavel) {
   // Para tipo !== 'entidade' (Gestores RH):
-  if (contratanteData.tipo !== 'entidade') {
+  if (tomadorData.tipo !== 'entidade') {
     // 1. Cria/atualiza registro em `funcionarios` com perfil='rh'
     await db('funcionarios')
       .insert({
@@ -257,16 +266,16 @@ async function criarContaResponsavel(contratanteData, responsavel) {
       .onConflict('cpf')
       .merge();
 
-    // 2. Insere vínculo em `contratantes_funcionarios`
-    await db('contratantes_funcionarios').insert({
-      contratante_id: contratanteId,
+    // 2. Insere vínculo em `tomadores_funcionarios`
+    await db('tomadores_funcionarios').insert({
+      tomador_id: tomadorId,
       funcionario_id: funcionarioId,
     });
   }
 
   // 3. Cria entrada em `entidades_senhas` com bcrypt (para todos)
   await db('entidades_senhas').insert({
-    contratante_id: contratanteId,
+    tomador_id: tomadorId,
     senha_hash: await bcrypt.hash(responsavel.senha, 10),
   });
 }

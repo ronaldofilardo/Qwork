@@ -198,10 +198,11 @@ export async function POST(request: Request) {
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
 
-        // 1. Inserir funcionário (sem colunas de FK)
+        // ARQUITETURA SEGREGADA: Inserir em 2 etapas
+        // 1. Inserir funcionário (sem FKs diretas)
         const insertResult = await queryAsGestorEntidade(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, contratante_id, matricula, nivel_cargo, turno, escala)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,$12)
+          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
            RETURNING id`,
           [
             r.cpf,
@@ -211,7 +212,6 @@ export async function POST(request: Request) {
             r.funcao,
             r.email,
             senhaHash,
-            entidadeId,
             r.matricula || null,
             r.nivel_cargo || null,
             r.turno || null,
@@ -223,7 +223,7 @@ export async function POST(request: Request) {
 
         // 2. Criar relacionamento na tabela funcionarios_entidades
         await queryAsGestorEntidade(
-          `INSERT INTO funcionarios_entidades (funcionario_id, contratante_id, ativo, data_vinculo)
+          `INSERT INTO funcionarios_entidades (funcionario_id, entidade_id, ativo, data_vinculo)
            VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
           [funcionarioId, entidadeId]
         );

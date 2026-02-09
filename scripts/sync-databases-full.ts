@@ -140,7 +140,7 @@ async function verifySync(): Promise<void> {
     // Verificar algumas tabelas chave
     const keyTables = [
       'usuarios',
-      'contratantes',
+      'tomadors',
       'clinicas',
       'lotes_avaliacao',
       'laudos',

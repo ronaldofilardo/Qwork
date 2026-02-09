@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import DadosStep from '@/components/modals/ModalCadastroContratante/DadosStep';
+import DadosStep from '@/components/modals/ModalCadastroTomadorSteps/DadosStep';
 
 const baseDados = {
   nome: '',
@@ -36,7 +36,7 @@ describe('DadosStep', () => {
     try {
       render(
         <DadosStep
-          dadosContratante={baseDados}
+          dadostomador={baseDados}
           arquivos={arquivos}
           cnpjError={''}
           onChange={handleChange}
@@ -83,7 +83,7 @@ describe('DadosStep', () => {
       try {
         render(
           <DadosStep
-            dadosContratante={baseDados}
+            dadostomador={baseDados}
             arquivos={arquivos}
             cnpjError={''}
             onChange={handleChange}

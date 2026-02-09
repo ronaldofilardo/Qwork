@@ -23,7 +23,7 @@ describe('POST /api/pagamento/iniciar - fallback quando tabela contratos ausente
         throw err;
       }
 
-      // Resposta para fallback de contratante
+      // Resposta para fallback de tomador
       if (/SELECT c.id, c.nome, c.plano_id, c.status/i.test(sql)) {
         return Promise.resolve({
           rows: [
@@ -59,7 +59,7 @@ describe('POST /api/pagamento/iniciar - fallback quando tabela contratos ausente
 
   it('deve iniciar pagamento usando fallback quando contratos não existe', async () => {
     const fakeReq: any = {
-      json: async () => ({ contratante_id: 41 }),
+      json: async () => ({ tomador_id: 41 }),
     };
 
     const res: any = await POST(fakeReq);

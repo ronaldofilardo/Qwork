@@ -24,7 +24,7 @@ describe('API Recibo PDF BYTEA', () => {
         pdf: mockPdfBuffer,
         hash_pdf:
           'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3',
-        contratante_id: 1,
+        tomador_id: 1,
         criado_em: new Date(),
       };
 
@@ -77,7 +77,7 @@ describe('API Recibo PDF BYTEA', () => {
         numero_recibo: 'REC-20251231-0001',
         pdf: mockPdfBuffer,
         hash_pdf: correctHash,
-        contratante_id: 1,
+        tomador_id: 1,
         criado_em: new Date(),
       };
 
@@ -105,7 +105,7 @@ describe('API Recibo PDF BYTEA', () => {
 
       const mockMetadados = {
         numero_recibo: 'REC-20251231-0001',
-        contratante_id: 1,
+        tomador_id: 1,
         criado_em: new Date(),
         emitido_por: '123.456.789-00',
         backup_path:

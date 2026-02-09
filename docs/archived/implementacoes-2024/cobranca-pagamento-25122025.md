@@ -40,13 +40,13 @@ if (isNaN(Number(contratoId))) {
 
 #### 2.1 API de Verificação de Pagamento
 
-- Arquivo: `app/api/contratante/verificar-pagamento/route.ts`
-- Endpoint: `GET /api/contratante/verificar-pagamento?contratante_id=X`
-- Verifica status de pagamento do contratante
+- Arquivo: `app/api/tomador/verificar-pagamento/route.ts`
+- Endpoint: `GET /api/tomador/verificar-pagamento?tomador_id=X`
+- Verifica status de pagamento do tomador
 - Retorna informações sobre pendências e link de retry se necessário
 - Campos verificados:
   - `pagamento_confirmado`
-  - `status` do contratante
+  - `status` do tomador
   - `status` do contrato
   - Existência de pagamento na tabela `pagamentos`
 
@@ -55,7 +55,7 @@ if (isNaN(Number(contratoId))) {
 - Arquivo: `middleware.ts`
 - Adicionadas rotas públicas para verificação e retry:
   - `/api/pagamento/gerar-link-plano-fixo`
-  - `/api/contratante/verificar-pagamento`
+  - `/api/tomador/verificar-pagamento`
 - Rotas protegidas requerem `pagamento_confirmado = true` para acesso
 
 ---
@@ -71,7 +71,7 @@ if (isNaN(Number(contratoId))) {
 - Arquivo: `app/api/pagamento/gerar-link-plano-fixo/route.ts`
 - Endpoint: `POST /api/pagamento/gerar-link-plano-fixo`
 - Cria contrato com status `pendente_pagamento` se não existir
-- Atualiza status do contratante para `pendente_pagamento`
+- Atualiza status do tomador para `pendente_pagamento`
 - Gera link para simulador com parâmetro `retry=true`
 - Calcula valor total baseado no plano fixo (preço × número de funcionários)
 
@@ -87,7 +87,7 @@ if (isNaN(Number(contratoId))) {
 **Fluxo de Retry:**
 
 1. Pagamento falha no primeiro processamento
-2. Sistema gera link: `/pagamento/simulador?contratante_id=X&contrato_id=Y&retry=true`
+2. Sistema gera link: `/pagamento/simulador?tomador_id=X&contrato_id=Y&retry=true`
 3. Usuário acessa link e tenta novamente
 4. Simulador usa contrato existente (não cria duplicado)
 5. Após pagamento bem-sucedido, atualiza status e libera acesso
@@ -113,7 +113,7 @@ if (isNaN(Number(contratoId))) {
   - Taxa de inadimplência
 - **Parcelas Vencidas:** Top 10 com dias de atraso
 - **Próximos Vencimentos:** Top 10 para os próximos 30 dias
-- **Inadimplentes:** Top 5 contratantes com maior atraso
+- **Inadimplentes:** Top 5 tomadores com maior atraso
 
 #### 4.2 Gestão de Parcelas
 
@@ -123,8 +123,8 @@ if (isNaN(Number(contratoId))) {
   - Atualiza status: `pago`, `pendente`, ou `cancelado`
   - Sincroniza com tabela `recibos`
   - Query robusta: procura parcela pelo número (não índice)
-- **GET:** Histórico de pagamentos por contratante
-  - Endpoint: `GET /api/admin/cobranca/parcela/historico?contratante_id=X`
+- **GET:** Histórico de pagamentos por tomador
+  - Endpoint: `GET /api/admin/cobranca/parcela/historico?tomador_id=X`
   - Retorna todos os pagamentos com detalhes de parcelas
   - Inclui informações de plano, contrato e recibo
 
@@ -132,7 +132,7 @@ if (isNaN(Number(contratoId))) {
 
 ## Estrutura de Dados
 
-### Status de Contratante
+### Status de tomador
 
 - `ativo`: Pagamento confirmado, acesso liberado
 - `pendente_pagamento`: Aguardando pagamento
@@ -168,14 +168,14 @@ if (isNaN(Number(contratoId))) {
 1. **Verificar Pagamento**
 
    ```
-   GET /api/contratante/verificar-pagamento?contratante_id=X
+   GET /api/tomador/verificar-pagamento?tomador_id=X
    ```
 
 2. **Gerar Link Plano Fixo**
 
    ```
    POST /api/pagamento/gerar-link-plano-fixo
-   Body: { contratante_id, plano_id, numero_funcionarios, contrato_id? }
+   Body: { tomador_id, plano_id, numero_funcionarios, contrato_id? }
    ```
 
 3. **Dashboard Cobrança**
@@ -193,7 +193,7 @@ if (isNaN(Number(contratoId))) {
 
 5. **Histórico Pagamentos**
    ```
-   GET /api/admin/cobranca/parcela/historico?contratante_id=X
+   GET /api/admin/cobranca/parcela/historico?tomador_id=X
    ```
 
 ### Endpoints Atualizados
@@ -213,7 +213,7 @@ if (isNaN(Number(contratoId))) {
 
 ### Teste 1: Fluxo Completo de Retry
 
-1. Registrar novo contratante com plano fixo
+1. Registrar novo tomador com plano fixo
 2. Simular falha no pagamento (desconectar internet, erro de cartão)
 3. Verificar se contrato foi criado com status `pendente_pagamento`
 4. Gerar link de retry usando API `/api/pagamento/gerar-link-plano-fixo`
@@ -222,7 +222,7 @@ if (isNaN(Number(contratoId))) {
 
 ### Teste 2: Bloqueio de Acesso
 
-1. Criar contratante com `pagamento_confirmado = false`
+1. Criar tomador com `pagamento_confirmado = false`
 2. Tentar acessar rotas protegidas (admin, rh, etc.)
 3. Verificar se middleware bloqueia acesso
 4. Usar API de verificação para obter status
@@ -254,7 +254,7 @@ Todas as 10 queries do arquivo `docs/queries/gestao-cobranca-queries.sql` foram 
 2. ✅ Expandir parcelas individuais com JSONB
 3. ✅ Parcelas vencidas para cobrança
 4. ✅ Próximos vencimentos (30 dias)
-5. ✅ Resumo financeiro por contratante
+5. ✅ Resumo financeiro por tomador
 6. ✅ Atualizar status de parcela (índice)
 7. ✅ Atualizar status de parcela (por número) - **IMPLEMENTADO**
 8. ✅ Dashboard com métricas gerais - **IMPLEMENTADO**
@@ -324,7 +324,7 @@ Todas as 10 queries do arquivo `docs/queries/gestao-cobranca-queries.sql` foram 
 
 ### Criados
 
-1. `app/api/contratante/verificar-pagamento/route.ts`
+1. `app/api/tomador/verificar-pagamento/route.ts`
 2. `app/api/pagamento/gerar-link-plano-fixo/route.ts`
 3. `app/api/admin/cobranca/dashboard/route.ts`
 4. `app/api/admin/cobranca/parcela/route.ts`

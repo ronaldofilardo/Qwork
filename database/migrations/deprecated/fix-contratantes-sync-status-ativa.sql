@@ -1,5 +1,5 @@
--- Ajuste em contratantes_sync_status_ativa: não sobrescrever status se já fornecido
-CREATE OR REPLACE FUNCTION public.contratantes_sync_status_ativa()
+-- Ajuste em tomadores_sync_status_ativa: não sobrescrever status se já fornecido
+CREATE OR REPLACE FUNCTION public.tomadores_sync_status_ativa()
 RETURNS trigger
 LANGUAGE plpgsql
 AS $$

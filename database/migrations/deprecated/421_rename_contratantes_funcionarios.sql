@@ -1,17 +1,17 @@
--- Migration 421: Rename contratantes_funcionarios to entidades_funcionarios
--- Purpose: Rename vinculation table aligning with Migration 420 (contratantes → entidades)
+-- Migration 421: Rename tomadores_funcionarios to entidades_funcionarios
+-- Purpose: Rename vinculation table aligning with Migration 420 (tomadores → entidades)
 -- Created: 2025-01-31
 
 DO $$
 BEGIN
-  RAISE NOTICE 'Starting Migration 421: Rename contratantes_funcionarios to entidades_funcionarios...';
+  RAISE NOTICE 'Starting Migration 421: Rename tomadores_funcionarios to entidades_funcionarios...';
 
   -- 1. Rename table
-  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'contratantes_funcionarios') THEN
-    ALTER TABLE IF EXISTS contratantes_funcionarios RENAME TO entidades_funcionarios;
-    RAISE NOTICE 'Renamed table: contratantes_funcionarios → entidades_funcionarios';
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'tomadores_funcionarios') THEN
+    ALTER TABLE IF EXISTS tomadores_funcionarios RENAME TO entidades_funcionarios;
+    RAISE NOTICE 'Renamed table: tomadores_funcionarios → entidades_funcionarios';
   ELSE
-    RAISE NOTICE 'Table contratantes_funcionarios does not exist (already renamed or never created)';
+    RAISE NOTICE 'Table tomadores_funcionarios does not exist (already renamed or never created)';
   END IF;
 
   -- 2. Rename column contratante_id to entidade_id
@@ -42,62 +42,62 @@ BEGIN
   IF EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE table_name = 'entidades_funcionarios' 
-    AND constraint_name = 'contratantes_funcionarios_contratante_id_fkey'
+    AND constraint_name = 'tomadores_funcionarios_contratante_id_fkey'
   ) THEN
     ALTER TABLE entidades_funcionarios 
-    RENAME CONSTRAINT contratantes_funcionarios_contratante_id_fkey 
+    RENAME CONSTRAINT tomadores_funcionarios_contratante_id_fkey 
     TO entidades_funcionarios_entidade_id_fkey;
-    RAISE NOTICE 'Renamed FK constraint: contratantes_funcionarios_contratante_id_fkey → entidades_funcionarios_entidade_id_fkey';
+    RAISE NOTICE 'Renamed FK constraint: tomadores_funcionarios_contratante_id_fkey → entidades_funcionarios_entidade_id_fkey';
   END IF;
 
   -- 5. Rename funcionario_id FK constraint (if exists)
   IF EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE table_name = 'entidades_funcionarios' 
-    AND constraint_name = 'contratantes_funcionarios_funcionario_id_fkey'
+    AND constraint_name = 'tomadores_funcionarios_funcionario_id_fkey'
   ) THEN
     ALTER TABLE entidades_funcionarios 
-    RENAME CONSTRAINT contratantes_funcionarios_funcionario_id_fkey 
+    RENAME CONSTRAINT tomadores_funcionarios_funcionario_id_fkey 
     TO entidades_funcionarios_funcionario_id_fkey;
-    RAISE NOTICE 'Renamed FK constraint: contratantes_funcionarios_funcionario_id_fkey → entidades_funcionarios_funcionario_id_fkey';
+    RAISE NOTICE 'Renamed FK constraint: tomadores_funcionarios_funcionario_id_fkey → entidades_funcionarios_funcionario_id_fkey';
   END IF;
 
   -- 6. Rename primary key constraint (if exists)
   IF EXISTS (
     SELECT 1 FROM information_schema.table_constraints 
     WHERE table_name = 'entidades_funcionarios' 
-    AND constraint_name = 'contratantes_funcionarios_pkey'
+    AND constraint_name = 'tomadores_funcionarios_pkey'
   ) THEN
     ALTER TABLE entidades_funcionarios 
-    RENAME CONSTRAINT contratantes_funcionarios_pkey 
+    RENAME CONSTRAINT tomadores_funcionarios_pkey 
     TO entidades_funcionarios_pkey;
-    RAISE NOTICE 'Renamed PK constraint: contratantes_funcionarios_pkey → entidades_funcionarios_pkey';
+    RAISE NOTICE 'Renamed PK constraint: tomadores_funcionarios_pkey → entidades_funcionarios_pkey';
   END IF;
 
   -- 7. Rename indexes (common patterns)
   IF EXISTS (
     SELECT 1 FROM pg_indexes 
     WHERE tablename = 'entidades_funcionarios' 
-    AND indexname = 'idx_contratantes_funcionarios_funcionario_id'
+    AND indexname = 'idx_tomadores_funcionarios_funcionario_id'
   ) THEN
-    ALTER INDEX idx_contratantes_funcionarios_funcionario_id 
+    ALTER INDEX idx_tomadores_funcionarios_funcionario_id 
     RENAME TO idx_entidades_funcionarios_funcionario_id;
-    RAISE NOTICE 'Renamed index: idx_contratantes_funcionarios_funcionario_id';
+    RAISE NOTICE 'Renamed index: idx_tomadores_funcionarios_funcionario_id';
   END IF;
 
   IF EXISTS (
     SELECT 1 FROM pg_indexes 
     WHERE tablename = 'entidades_funcionarios' 
-    AND indexname = 'idx_contratantes_funcionarios_contratante_id'
+    AND indexname = 'idx_tomadores_funcionarios_contratante_id'
   ) THEN
-    ALTER INDEX idx_contratantes_funcionarios_contratante_id 
+    ALTER INDEX idx_tomadores_funcionarios_contratante_id 
     RENAME TO idx_entidades_funcionarios_entidade_id;
-    RAISE NOTICE 'Renamed index: idx_contratantes_funcionarios_contratante_id';
+    RAISE NOTICE 'Renamed index: idx_tomadores_funcionarios_contratante_id';
   END IF;
 
-  -- 8. Update function sync_contratantes_funcionarios (if exists)
-  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'sync_contratantes_funcionarios') THEN
-    DROP FUNCTION IF EXISTS sync_contratantes_funcionarios() CASCADE;
+  -- 8. Update function sync_tomadores_funcionarios (if exists)
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'sync_tomadores_funcionarios') THEN
+    DROP FUNCTION IF EXISTS sync_tomadores_funcionarios() CASCADE;
     
     CREATE OR REPLACE FUNCTION sync_entidades_funcionarios()
     RETURNS TRIGGER AS $func$
@@ -130,9 +130,9 @@ BEGIN
   -- 9. Update trigger (if exists)
   IF EXISTS (
     SELECT 1 FROM pg_trigger 
-    WHERE tgname = 'trg_sync_contratantes_funcionarios'
+    WHERE tgname = 'trg_sync_tomadores_funcionarios'
   ) THEN
-    DROP TRIGGER IF EXISTS trg_sync_contratantes_funcionarios ON funcionarios;
+    DROP TRIGGER IF EXISTS trg_sync_tomadores_funcionarios ON funcionarios;
     
     CREATE TRIGGER trg_sync_entidades_funcionarios
     AFTER INSERT OR UPDATE ON funcionarios

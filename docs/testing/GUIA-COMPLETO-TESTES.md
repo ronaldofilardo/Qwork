@@ -23,12 +23,12 @@
 
 ```typescript
 // ✅ CORRETO
-const testContratanteId = 999999;
+const testtomadorId = 999999;
 const testUsuarioId = 888888;
 const testEmpresaId = 777777;
 
 // ❌ ERRADO
-const testContratanteId = 1; // Pode conflitar com dados reais!
+const testtomadorId = 1; // Pode conflitar com dados reais!
 ```
 
 **Range recomendado para IDs de teste:** 900000+
@@ -54,36 +54,36 @@ const testCnpj = '12345678000190'; // Pode parecer real
 
 ```typescript
 // ✅ CORRETO - Específico
-await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+await query('DELETE FROM tomadores WHERE id = $1', [testtomadorId]);
 await query('DELETE FROM empresas_clientes WHERE cnpj LIKE $1', ['99999%']);
 
 // ❌ ERRADO - Genérico demais
-await query('DELETE FROM contratantes'); // NUNCA!
+await query('DELETE FROM tomadores'); // NUNCA!
 ```
 
 ### 4. Proteção de Senhas de Gestores
 
-⚠️ **NUNCA sobrescrever senhas de contratantes reais:**
+⚠️ **NUNCA sobrescrever senhas de tomadores reais:**
 
 ```typescript
 // ✅ CORRETO - Verificar antes de atualizar
 const existing = await query(
-  'SELECT senha_hash FROM entidades_senhas WHERE contratante_id = $1',
-  [contratanteId]
+  'SELECT senha_hash FROM entidades_senhas WHERE tomador_id = $1',
+  [tomadorId]
 );
 
 if (!existing.rows.length) {
   // Só cria se não existir
   await query(
-    'INSERT INTO entidades_senhas (contratante_id, senha_hash) VALUES ($1, $2)',
-    [contratanteId, hashedPassword]
+    'INSERT INTO entidades_senhas (tomador_id, senha_hash) VALUES ($1, $2)',
+    [tomadorId, hashedPassword]
   );
 }
 
 // ❌ ERRADO - Sobrescreve sem verificar
 await query(
-  'UPDATE entidades_senhas SET senha_hash = $1 WHERE contratante_id = $2',
-  [newHash, contratanteId]
+  'UPDATE entidades_senhas SET senha_hash = $1 WHERE tomador_id = $2',
+  [newHash, tomadorId]
 );
 ```
 
@@ -127,9 +127,9 @@ afterAll(async () => {
 
 ```typescript
 describe('Cadastro com Plano Fixo', () => {
-  test('deve criar contratante e aguardar pagamento', async () => {
+  test('deve criar tomador e aguardar pagamento', async () => {
     // 1. Criar cadastro
-    const response = await fetch('/api/cadastro/contratante', {
+    const response = await fetch('/api/cadastro/tomador', {
       method: 'POST',
       body: JSON.stringify({
         cnpj: '99999999000199',
@@ -148,15 +148,13 @@ describe('Cadastro com Plano Fixo', () => {
     const data = await response.json();
 
     // 2. Verificar status
-    const contratante = await db('contratantes')
-      .where({ id: data.contratanteId })
-      .first();
+    const tomador = await db('tomadores').where({ id: data.tomadorId }).first();
 
-    expect(contratante.status).toBe('aguardando_pagamento');
+    expect(tomador.status).toBe('aguardando_pagamento');
 
     // 3. Verificar contrato criado
     const contrato = await db('contratos')
-      .where({ contratante_id: data.contratanteId })
+      .where({ tomador_id: data.tomadorId })
       .first();
 
     expect(contrato).toBeDefined();
@@ -173,7 +171,7 @@ describe('Cadastro com Plano Fixo', () => {
 describe('Falha de Pagamento', () => {
   test('deve manter status aguardando_pagamento após erro', async () => {
     // 1. Criar cadastro aprovado
-    const contratanteId = await criarContratanteTeste({
+    const tomadorId = await criartomadorTeste({
       status: 'aguardando_pagamento',
     });
 
@@ -181,7 +179,7 @@ describe('Falha de Pagamento', () => {
     const response = await fetch('/api/pagamento/processar', {
       method: 'POST',
       body: JSON.stringify({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         force_error: true, // Flag de teste
       }),
     });
@@ -189,11 +187,9 @@ describe('Falha de Pagamento', () => {
     expect(response.status).toBe(500);
 
     // 3. Verificar que status não mudou
-    const contratante = await db('contratantes')
-      .where({ id: contratanteId })
-      .first();
+    const tomador = await db('tomadores').where({ id: tomadorId }).first();
 
-    expect(contratante.status).toBe('aguardando_pagamento');
+    expect(tomador.status).toBe('aguardando_pagamento');
 
     // 4. Verificar que acesso não foi liberado
     const loginResponse = await fetch('/api/login', {
@@ -217,7 +213,7 @@ describe('Falha de Pagamento', () => {
 describe('Cadastro com Plano Personalizado', () => {
   test('deve criar como pendente e aguardar aprovação', async () => {
     // 1. Criar cadastro
-    const response = await fetch('/api/cadastro/contratante', {
+    const response = await fetch('/api/cadastro/tomador', {
       method: 'POST',
       body: JSON.stringify({
         cnpj: '99999999000188',
@@ -237,15 +233,13 @@ describe('Cadastro com Plano Personalizado', () => {
     const data = await response.json();
 
     // 2. Verificar status pendente
-    const contratante = await db('contratantes')
-      .where({ id: data.contratanteId })
-      .first();
+    const tomador = await db('tomadores').where({ id: data.tomadorId }).first();
 
-    expect(contratante.status).toBe('pendente');
+    expect(tomador.status).toBe('pendente');
 
     // 3. Verificar criação de contratacao_personalizada
     const personalizacao = await db('contratacao_personalizada')
-      .where({ contratante_id: data.contratanteId })
+      .where({ tomador_id: data.tomadorId })
       .first();
 
     expect(personalizacao).toBeDefined();
@@ -260,13 +254,13 @@ describe('Cadastro com Plano Personalizado', () => {
 
 ### Teste 1: Cadastro de Empresa Cliente
 
-**Objetivo:** Validar criação de empresa vinculada a contratante
+**Objetivo:** Validar criação de empresa vinculada a tomador
 
 ```typescript
 describe('Cadastro de Empresa Cliente', () => {
   test('RH deve poder cadastrar empresa', async () => {
-    // 1. Criar contratante RH ativo
-    const { contratanteId, sessionToken } = await criarContratanteAtivoTeste();
+    // 1. Criar tomador RH ativo
+    const { tomadorId, sessionToken } = await criartomadorAtivoTeste();
 
     // 2. Cadastrar empresa
     const response = await fetch('/api/empresas', {
@@ -295,7 +289,7 @@ describe('Cadastro de Empresa Cliente', () => {
       .where({ id: data.empresaId })
       .first();
 
-    expect(empresa.contratante_id).toBe(contratanteId);
+    expect(empresa.tomador_id).toBe(tomadorId);
   });
 });
 ```
@@ -308,10 +302,10 @@ describe('Cadastro de Empresa Cliente', () => {
 describe('Isolamento RLS - Empresas', () => {
   test('RH não deve ver empresas de outra clínica', async () => {
     // 1. Criar duas clínicas
-    const { sessionToken: token1 } = await criarContratanteAtivoTeste({
+    const { sessionToken: token1 } = await criartomadorAtivoTeste({
       cnpj: '99999999000166',
     });
-    const { sessionToken: token2 } = await criarContratanteAtivoTeste({
+    const { sessionToken: token2 } = await criartomadorAtivoTeste({
       cnpj: '99999999000155',
     });
 
@@ -366,7 +360,7 @@ pnpm test:integration
 pnpm test:coverage
 
 # Executar teste específico
-pnpm test -- cadastro-contratante.test.ts
+pnpm test -- cadastro-tomador.test.ts
 ```
 
 ### Comandos PERIGOSOS (nunca em produção!)
@@ -374,7 +368,7 @@ pnpm test -- cadastro-contratante.test.ts
 ```powershell
 # ❌ NUNCA EXECUTAR EM PRODUÇÃO
 # Limpar dados de teste (só em ambiente de desenvolvimento)
-psql -d qwork_test -c "DELETE FROM contratantes WHERE id >= 900000"
+psql -d qwork_test -c "DELETE FROM tomadores WHERE id >= 900000"
 psql -d qwork_test -c "DELETE FROM empresas_clientes WHERE cnpj LIKE '99999%'"
 ```
 
@@ -385,9 +379,9 @@ psql -d qwork_test -c "DELETE FROM empresas_clientes WHERE cnpj LIKE '99999%'"
 ### Criar Fixtures Reutilizáveis
 
 ```typescript
-// tests/fixtures/contratantes.ts
+// tests/fixtures/tomadores.ts
 
-export async function criarContratanteTeste(overrides = {}) {
+export async function criartomadorTeste(overrides = {}) {
   const defaultData = {
     id: 999000 + Math.floor(Math.random() * 999),
     cnpj: `9999999900${String(Math.floor(Math.random() * 100)).padStart(2, '0')}`,
@@ -397,16 +391,14 @@ export async function criarContratanteTeste(overrides = {}) {
     ...overrides,
   };
 
-  const [contratante] = await db('contratantes')
-    .insert(defaultData)
-    .returning('*');
+  const [tomador] = await db('tomadores').insert(defaultData).returning('*');
 
-  return contratante;
+  return tomador;
 }
 
-export async function criarContratanteAtivoTeste(overrides = {}) {
-  // Criar contratante
-  const contratante = await criarContratanteTeste({
+export async function criartomadorAtivoTeste(overrides = {}) {
+  // Criar tomador
+  const tomador = await criartomadorTeste({
     status: 'ativo',
     ...overrides,
   });
@@ -422,28 +414,28 @@ export async function criarContratanteAtivoTeste(overrides = {}) {
 
   // Criar senha
   await db('entidades_senhas').insert({
-    contratante_id: contratante.id,
+    tomador_id: tomador.id,
     senha_hash: await bcrypt.hash('Teste@123', 10),
   });
 
   // Criar sessão
   const sessionToken = jwt.sign(
-    { contratanteId: contratante.id, perfil: 'rh' },
+    { tomadorId: tomador.id, perfil: 'rh' },
     process.env.JWT_SECRET
   );
 
-  return { contratante, responsavel, sessionToken };
+  return { tomador, responsavel, sessionToken };
 }
 ```
 
 ### Usar Fixtures nos Testes
 
 ```typescript
-import { criarContratanteAtivoTeste } from './fixtures/contratantes';
+import { criartomadorAtivoTeste } from './fixtures/tomadores';
 
 describe('API Empresas', () => {
   test('deve listar empresas da clínica', async () => {
-    const { sessionToken } = await criarContratanteAtivoTeste();
+    const { sessionToken } = await criartomadorAtivoTeste();
 
     const response = await fetch('/api/empresas', {
       headers: { Authorization: `Bearer ${sessionToken}` },
@@ -585,7 +577,7 @@ cd scripts
 
 # Ou via SQL (CUIDADO!)
 psql -d qwork_test -c "
-  DELETE FROM contratantes WHERE id >= 900000;
+  DELETE FROM tomadores WHERE id >= 900000;
   DELETE FROM empresas_clientes WHERE cnpj LIKE '99999%';
   DELETE FROM funcionarios WHERE cpf LIKE '99999%';
 "

@@ -40,7 +40,7 @@ Resultado:
 
 - ✅ Função `obter_proximo_numero_ordem(INTEGER)` criada
 - ✅ Função `calcular_elegibilidade_lote(INTEGER, INTEGER)` criada
-- ✅ Função `calcular_elegibilidade_lote_contratante(INTEGER, INTEGER)` criada
+- ✅ Função `calcular_elegibilidade_lote_tomador(INTEGER, INTEGER)` criada
 - ✅ Coluna `lotes_avaliacao.numero_ordem` criada
 - ✅ Coluna `funcionarios.indice_avaliacao` criada
 - ✅ Coluna `funcionarios.data_ultimo_lote` criada
@@ -80,7 +80,7 @@ Mesma solução do Problema 1: aplicação das migrations 016 e 015.
 
 ```
 error: função calcular_elegibilidade_lote(unknown, unknown) não existe
-error: função calcular_elegibilidade_lote_contratante(integer, integer) não existe
+error: função calcular_elegibilidade_lote_tomador(integer, integer) não existe
 ```
 
 ### Causa Raiz
@@ -141,7 +141,7 @@ Resultado:
 \df calcular_elegibilidade_lote*
 -- Resultado:
 --   calcular_elegibilidade_lote(integer, integer)
---   calcular_elegibilidade_lote_contratante(integer, integer)
+--   calcular_elegibilidade_lote_tomador(integer, integer)
 
 -- Verificar coluna criada
 \d lotes_avaliacao
@@ -154,8 +154,8 @@ SELECT obter_proximo_numero_ordem(5);
 SELECT * FROM calcular_elegibilidade_lote(5, 1);
 -- Resultado: funcionários elegíveis para empresa 5, lote 1
 
-SELECT * FROM calcular_elegibilidade_lote_contratante(9, 1);
--- Resultado: funcionários elegíveis para contratante 9, lote 1
+SELECT * FROM calcular_elegibilidade_lote_tomador(9, 1);
+-- Resultado: funcionários elegíveis para tomador 9, lote 1
 ```
 
 ---
@@ -198,7 +198,7 @@ A migration 016 implementa o **Sistema de Índice de Avaliação**, que garante:
 
 - Função `obter_proximo_numero_ordem(empresa_id)`: retorna próximo número sequencial
 - Função `calcular_elegibilidade_lote(empresa_id, numero_lote)`: identifica quem precisa fazer avaliação (empresas)
-- Função `calcular_elegibilidade_lote_contratante(contratante_id, numero_lote)`: identifica quem precisa fazer avaliação (entidades)
+- Função `calcular_elegibilidade_lote_tomador(tomador_id, numero_lote)`: identifica quem precisa fazer avaliação (entidades)
 - Índices de performance para queries de elegibilidade
 
 ### Critérios de elegibilidade:

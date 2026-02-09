@@ -210,10 +210,10 @@ WHERE perfil IN ('admin', 'emissor')
 \echo ''
 
 -- ==========================================
--- 6. LIMPAR TABELA contratantes_funcionarios (SE EXISTIR)
+-- 6. LIMPAR TABELA tomadores_funcionarios (SE EXISTIR)
 -- ==========================================
 
-\echo '6. Verificando tabela contratantes_funcionarios...'
+\echo '6. Verificando tabela tomadores_funcionarios...'
 \echo ''
 
 DO $$
@@ -225,14 +225,14 @@ BEGIN
   SELECT EXISTS (
     SELECT FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name = 'contratantes_funcionarios'
+    AND table_name = 'tomadores_funcionarios'
   ) INTO tabela_existe;
   
   IF tabela_existe THEN
-    SELECT COUNT(*) INTO total_vinculos FROM contratantes_funcionarios;
+    SELECT COUNT(*) INTO total_vinculos FROM tomadores_funcionarios;
     
     IF total_vinculos > 0 THEN
-      TRUNCATE TABLE contratantes_funcionarios CASCADE;
+      TRUNCATE TABLE tomadores_funcionarios CASCADE;
       RAISE NOTICE '   ✓ % vínculos antigos removidos (serão recriados pela migration 201)', total_vinculos;
     ELSE
       RAISE NOTICE '   ✓ Tabela já estava vazia';

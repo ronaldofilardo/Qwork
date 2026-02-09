@@ -1,7 +1,7 @@
 /**
  * lib/domain/entities/Laudo.ts
  *
- * Entidade de domínio: Laudo Psicossocial
+ * Entidade de domínio: Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)
  *
  * Representa um laudo técnico gerado para um lote de avaliações,
  * contendo análises, scores e recomendações.

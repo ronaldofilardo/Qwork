@@ -2,15 +2,15 @@
  * Testes de Integração: Fluxo Completo de Cadastro
  *
  * Atualizado: 20/Janeiro/2026
- * Valida interação entre APIs, banco de dados e ativação de contratantes
+ * Valida interação entre APIs, banco de dados e ativação de tomadors
  */
 
 import { query, transaction } from '@/lib/db';
-import { ativarContratante } from '@/lib/contratante-activation';
+import { ativartomador } from '@/lib/entidade-activation';
 
 describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
   describe('Cenário 1: Plano Fixo - Fluxo Feliz', () => {
-    let contratanteId: number;
+    let tomadorId: number;
     let contratoId: number;
     let planoId: number;
     const timestamp = Date.now();
@@ -26,20 +26,20 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
     });
 
     afterAll(async () => {
-      if (contratanteId) {
-        await query(`DELETE FROM contratos WHERE contratante_id = $1`, [
-          contratanteId,
+      if (tomadorId) {
+        await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
+          tomadorId,
         ]);
-        await query(`DELETE FROM contratantes WHERE id = $1`, [contratanteId]);
+        await query(`DELETE FROM tomadors WHERE id = $1`, [tomadorId]);
       }
       await query(`DELETE FROM funcionarios WHERE cpf = $1`, [cpf]);
     });
 
     it('deve executar fluxo completo em uma transação', async () => {
       await transaction(async (txClient) => {
-        // 1. Criar contratante
-        const contratanteRes = await txClient.query(
-          `INSERT INTO contratantes (
+        // 1. Criar tomador
+        const tomadorRes = await txClient.query(
+          `INSERT INTO tomadors (
             tipo, nome, cnpj, email, telefone,
             endereco, cidade, estado, cep,
             responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -54,12 +54,12 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
           ) RETURNING id`,
           [cnpj, email, cpf, planoId]
         );
-        contratanteId = contratanteRes.rows[0].id;
+        tomadorId = tomadorRes.rows[0].id;
 
         // 2. Criar contrato
         const contratoRes = await txClient.query(
           `INSERT INTO contratos (
-            contratante_id, plano_id,
+            tomador_id, plano_id,
             numero_funcionarios, valor_total,
             status, aceito, conteudo
           ) VALUES (
@@ -67,7 +67,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
             'aguardando_pagamento', false,
             'Contrato de teste integração'
           ) RETURNING id`,
-          [contratanteId, planoId]
+          [tomadorId, planoId]
         );
         contratoId = contratoRes.rows[0].id;
 
@@ -81,11 +81,11 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
 
         // 4. Simular pagamento
         await txClient.query(
-          `UPDATE contratantes 
+          `UPDATE tomadors 
            SET pagamento_confirmado = true,
                data_primeiro_pagamento = NOW()
            WHERE id = $1`,
-          [contratanteId]
+          [tomadorId]
         );
 
         await txClient.query(
@@ -97,11 +97,11 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
       });
 
       // Transação comitada - verificar dados
-      const contratante = await query(
-        `SELECT * FROM contratantes WHERE id = $1`,
-        [contratanteId]
+      const tomador = await query(
+        `SELECT * FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
-      expect(contratante.rows[0].pagamento_confirmado).toBe(true);
+      expect(tomador.rows[0].pagamento_confirmado).toBe(true);
 
       const contrato = await query(`SELECT * FROM contratos WHERE id = $1`, [
         contratoId,
@@ -110,21 +110,21 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
       expect(contrato.rows[0].status).toBe('pago');
     });
 
-    it('deve ativar contratante e criar conta responsável', async () => {
-      const result = await ativarContratante({
-        contratante_id: contratanteId,
+    it('deve ativar tomador e criar conta responsável', async () => {
+      const result = await ativartomador({
+        tomador_id: tomadorId,
         motivo: 'Teste de integração - fluxo completo',
       });
 
       expect(result.success).toBe(true);
 
-      // Verificar contratante ativo
-      const contratante = await query(
-        `SELECT ativa, status FROM contratantes WHERE id = $1`,
-        [contratanteId]
+      // Verificar tomador ativo
+      const tomador = await query(
+        `SELECT ativa, status FROM tomadors WHERE id = $1`,
+        [tomadorId]
       );
-      expect(contratante.rows[0].ativa).toBe(true);
-      expect(contratante.rows[0].status).toBe('aprovado');
+      expect(tomador.rows[0].ativa).toBe(true);
+      expect(tomador.rows[0].status).toBe('aprovado');
 
       // Verificar conta criada
       const funcionario = await query(
@@ -138,10 +138,10 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
     it('deve ter registros de auditoria', async () => {
       const auditLogs = await query(
         `SELECT * FROM audit_logs 
-         WHERE resource = 'contratantes' 
+         WHERE resource = 'tomadors' 
          AND resource_id = $1
          ORDER BY timestamp DESC`,
-        [contratanteId]
+        [tomadorId]
       );
 
       expect(auditLogs.rows.length).toBeGreaterThan(0);
@@ -153,7 +153,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
   });
 
   describe('Cenário 2: Plano Personalizado - Fluxo Feliz', () => {
-    let contratanteId: number;
+    let tomadorId: number;
     let contratoId: number;
     let contratacaoId: number = 0;
     let planoId: number;
@@ -170,24 +170,24 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
     });
 
     afterAll(async () => {
-      if (contratanteId) {
+      if (tomadorId) {
         await query(
-          `DELETE FROM contratacao_personalizada WHERE contratante_id = $1`,
-          [contratanteId]
+          `DELETE FROM contratacao_personalizada WHERE tomador_id = $1`,
+          [tomadorId]
         );
-        await query(`DELETE FROM contratos WHERE contratante_id = $1`, [
-          contratanteId,
+        await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
+          tomadorId,
         ]);
-        await query(`DELETE FROM contratantes WHERE id = $1`, [contratanteId]);
+        await query(`DELETE FROM tomadors WHERE id = $1`, [tomadorId]);
       }
       await query(`DELETE FROM funcionarios WHERE cpf = $1`, [cpf]);
     });
 
     it('deve executar fluxo personalizado completo', async () => {
       await transaction(async (txClient) => {
-        // 1. Criar contratante
-        const contratanteRes = await txClient.query(
-          `INSERT INTO contratantes (
+        // 1. Criar tomador
+        const tomadorRes = await txClient.query(
+          `INSERT INTO tomadors (
             tipo, nome, cnpj, email, telefone,
             endereco, cidade, estado, cep,
             responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -202,18 +202,18 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
           ) RETURNING id`,
           [cnpj, email, cpf, planoId]
         );
-        contratanteId = contratanteRes.rows[0].id;
+        tomadorId = tomadorRes.rows[0].id;
 
         // 2. Criar contratação personalizada
         const contratacaoRes = await txClient.query(
           `INSERT INTO contratacao_personalizada (
-            contratante_id, numero_funcionarios_estimado,
+            tomador_id, numero_funcionarios_estimado,
             status, criado_em, atualizado_em
           ) VALUES (
             $1, 100, 'aguardando_valor_admin',
             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
           ) RETURNING id`,
-          [contratanteId]
+          [tomadorId]
         );
         contratacaoId = contratacaoRes.rows[0].id as number;
 
@@ -232,7 +232,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
         // 4. Criar contrato
         const contratoRes = await txClient.query(
           `INSERT INTO contratos (
-            contratante_id, plano_id,
+            tomador_id, plano_id,
             numero_funcionarios, valor_total,
             status, aceito, conteudo
           ) VALUES (
@@ -240,7 +240,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
             'aguardando_aceite', false,
             'Contrato personalizado teste integração'
           ) RETURNING id`,
-          [contratanteId, planoId]
+          [tomadorId, planoId]
         );
         contratoId = contratoRes.rows[0].id;
 
@@ -264,11 +264,11 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
 
         // 6. Simular pagamento
         await txClient.query(
-          `UPDATE contratantes 
+          `UPDATE tomadors 
            SET pagamento_confirmado = true,
                data_primeiro_pagamento = NOW()
            WHERE id = $1`,
-          [contratanteId]
+          [tomadorId]
         );
 
         await txClient.query(
@@ -297,8 +297,8 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
     });
 
     it('deve ativar e criar conta responsável', async () => {
-      const result = await ativarContratante({
-        contratante_id: contratanteId,
+      const result = await ativartomador({
+        tomador_id: tomadorId,
         motivo: 'Teste de integração - fluxo personalizado completo',
       });
 
@@ -321,9 +321,9 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
 
       try {
         await transaction(async (txClient) => {
-          // Criar contratante
+          // Criar tomador
           const res = await txClient.query(
-            `INSERT INTO contratantes (
+            `INSERT INTO tomadors (
               tipo, nome, cnpj, email, telefone,
               endereco, cidade, estado, cep,
               responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -342,7 +342,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
           // Forçar erro (FK inválida)
           await txClient.query(
             `INSERT INTO contratos (
-              contratante_id, plano_id,
+              tomador_id, plano_id,
               numero_funcionarios, valor_total,
               status
             ) VALUES (
@@ -358,9 +358,9 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
         // Erro esperado
         expect(error).toBeDefined();
 
-        // Verificar que contratante não foi criado (rollback funcionou)
+        // Verificar que tomador não foi criado (rollback funcionou)
         const result = await query(
-          `SELECT * FROM contratantes WHERE cnpj = $1`,
+          `SELECT * FROM tomadors WHERE cnpj = $1`,
           [cnpj]
         );
         expect(result.rows.length).toBe(0);
@@ -373,9 +373,9 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
       const timestamp = Date.now();
       const cnpj = `88${timestamp.toString().slice(-10)}00199`;
 
-      // Criar primeiro contratante
+      // Criar primeiro tomador
       await query(
-        `INSERT INTO contratantes (
+        `INSERT INTO tomadors (
           tipo, nome, cnpj, email, telefone,
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -392,7 +392,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
       // Tentar criar segundo com mesmo CNPJ
       await expect(
         query(
-          `INSERT INTO contratantes (
+          `INSERT INTO tomadors (
             tipo, nome, cnpj, email, telefone,
             endereco, cidade, estado, cep,
             responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -408,16 +408,16 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
       ).rejects.toThrow();
 
       // Limpar
-      await query(`DELETE FROM contratantes WHERE cnpj = $1`, [cnpj]);
+      await query(`DELETE FROM tomadors WHERE cnpj = $1`, [cnpj]);
     });
 
     it('não deve permitir ativar sem pagamento confirmado', async () => {
       const timestamp = Date.now();
       const cnpj = `77${timestamp.toString().slice(-10)}00199`;
 
-      // Criar contratante sem pagamento
+      // Criar tomador sem pagamento
       const res = await query(
-        `INSERT INTO contratantes (
+        `INSERT INTO tomadors (
           tipo, nome, cnpj, email, telefone,
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -435,14 +435,14 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
 
       // Tentar ativar
       await expect(
-        ativarContratante({
-          contratante_id: id,
+        ativartomador({
+          tomador_id: id,
           motivo: 'Tentativa inválida',
         })
       ).rejects.toThrow('sem pagamento confirmado');
 
       // Limpar
-      await query(`DELETE FROM contratantes WHERE id = $1`, [id]);
+      await query(`DELETE FROM tomadors WHERE id = $1`, [id]);
     });
   });
 
@@ -457,7 +457,7 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
 
         promises.push(
           query(
-            `INSERT INTO contratantes (
+            `INSERT INTO tomadors (
               tipo, nome, cnpj, email, telefone,
               endereco, cidade, estado, cep,
               responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
@@ -478,12 +478,12 @@ describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
 
       // Verificar que todas foram criadas
       const result = await query(
-        `SELECT COUNT(*) FROM contratantes WHERE cnpj LIKE '66${timestamp}%'`
+        `SELECT COUNT(*) FROM tomadors WHERE cnpj LIKE '66${timestamp}%'`
       );
       expect(parseInt(result.rows[0].count as string)).toBe(5);
 
       // Limpar
-      await query(`DELETE FROM contratantes WHERE cnpj LIKE '66${timestamp}%'`);
+      await query(`DELETE FROM tomadors WHERE cnpj LIKE '66${timestamp}%'`);
     });
   });
 });

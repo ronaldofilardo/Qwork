@@ -18,13 +18,13 @@ async function investigarGestores() {
     // 1. Localização do CPF
     console.log('[1] Localização atual:');
     const localizacao = await query(
-      `SELECT 'funcionarios' as tabela, cpf, nome, perfil, ativo, contratante_id
+      `SELECT 'funcionarios' as tabela, cpf, nome, perfil, ativo, tomador_id
        FROM funcionarios 
        WHERE cpf = $1
        UNION ALL
-       SELECT 'entidades_senhas' as tabela, cs.cpf, c.nome, 'gestor' as perfil, true, cs.contratante_id
+       SELECT 'entidades_senhas' as tabela, cs.cpf, c.nome, 'gestor' as perfil, true, cs.tomador_id
        FROM entidades_senhas cs
-       JOIN contratantes c ON cs.contratante_id = c.id
+       JOIN tomadors c ON cs.tomador_id = c.id
        WHERE cs.cpf = $1`,
       [cpf]
     );
@@ -39,14 +39,14 @@ async function investigarGestores() {
         la.titulo,
         la.status,
         la.liberado_por,
-        la.contratante_id,
-        COALESCE(c.nome, 'SEM CONTRATANTE') as contratante_nome,
+        la.tomador_id,
+        COALESCE(c.nome, 'SEM tomador') as tomador_nome,
         COUNT(a.id) as total_avaliacoes
       FROM lotes_avaliacao la
-      LEFT JOIN contratantes c ON la.contratante_id = c.id
+      LEFT JOIN tomadors c ON la.tomador_id = c.id
       LEFT JOIN avaliacoes a ON a.lote_id = la.id
       WHERE la.liberado_por = $1
-      GROUP BY la.id,  la.titulo, la.status, la.liberado_por, la.contratante_id, c.nome
+      GROUP BY la.id,  la.titulo, la.status, la.liberado_por, la.tomador_id, c.nome
       ORDER BY la.id DESC`,
       [cpf]
     );
@@ -71,19 +71,19 @@ async function investigarGestores() {
     console.table(laudos.rows);
 
     // 4. Verificar inconsistências
-    console.log('\n[4] Lotes sem contratante_id:');
+    console.log('\n[4] Lotes sem tomador_id:');
     const inconsistencias = await query(
       `SELECT 
         la.id,
         
         la.liberado_por,
-        la.contratante_id,
-        cs.contratante_id as gestor_contratante_id
+        la.tomador_id,
+        cs.tomador_id as gestor_tomador_id
       FROM lotes_avaliacao la
       LEFT JOIN entidades_senhas cs ON cs.cpf = la.liberado_por
       WHERE la.liberado_por = $1
-        AND la.contratante_id IS NULL
-        AND cs.contratante_id IS NOT NULL`,
+        AND la.tomador_id IS NULL
+        AND cs.tomador_id IS NOT NULL`,
       [cpf]
     );
 

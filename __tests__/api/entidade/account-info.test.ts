@@ -31,12 +31,12 @@ describe('📊 API /api/entidade/account-info', () => {
   });
 
   const mockSession = {
-    contratante_id: 18,
+    tomador_id: 18,
     perfil: 'gestor',
     userId: 1,
   };
 
-  const mockContratante = {
+  const mocktomador = {
     id: 18,
     nome: 'RELEGERE',
     cnpj: '12345678000123',
@@ -57,7 +57,7 @@ describe('📊 API /api/entidade/account-info', () => {
       mockRequireEntity.mockReturnValue(mockSession);
 
       mockQueryAsGestorEntidade
-        .mockResolvedValueOnce({ rows: [mockContratante] })
+        .mockResolvedValueOnce({ rows: [mocktomador] })
         .mockResolvedValueOnce({ rows: [{ column_name: 'preco' }] })
         .mockResolvedValueOnce({ rows: [] })
         .mockResolvedValueOnce({ rows: [{ column_name: 'criado_em' }] })
@@ -87,7 +87,7 @@ describe('📊 API /api/entidade/account-info', () => {
       mockRequireEntity.mockReturnValue(mockSession);
 
       mockQueryAsGestorEntidade
-        .mockResolvedValueOnce({ rows: [mockContratante] })
+        .mockResolvedValueOnce({ rows: [mocktomador] })
         .mockResolvedValue({ rows: [] });
 
       const { GET } = require('@/app/api/entidade/account-info/route');

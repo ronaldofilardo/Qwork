@@ -83,7 +83,7 @@ SELECT
   cs.contratante_id as senha_contratante_id,
   CASE 
     WHEN f.contratante_id = cs.contratante_id THEN 'MESMO CONTRATANTE'
-    ELSE 'CONTRATANTES DIFERENTES - PROBLEMA!'
+    ELSE 'tomadores DIFERENTES - PROBLEMA!'
   END as status
 FROM funcionarios f
 INNER JOIN entidades_senhas cs ON cs.cpf = f.cpf
@@ -156,10 +156,10 @@ WHERE perfil IN ('admin', 'emissor')
 \echo '==========================================\n'
 
 -- ==========================================
--- 6. ESTADO DA TABELA contratantes_funcionarios (SE EXISTIR)
+-- 6. ESTADO DA TABELA tomadores_funcionarios (SE EXISTIR)
 -- ==========================================
 
-\echo '6. Estado da tabela contratantes_funcionarios...'
+\echo '6. Estado da tabela tomadores_funcionarios...'
 \echo ''
 
 DO $$
@@ -170,17 +170,17 @@ BEGIN
   SELECT EXISTS (
     SELECT FROM information_schema.tables 
     WHERE table_schema = 'public' 
-    AND table_name = 'contratantes_funcionarios'
+    AND table_name = 'tomadores_funcionarios'
   ) INTO tabela_existe;
   
   IF tabela_existe THEN
-    SELECT COUNT(*) INTO total_vinculos FROM contratantes_funcionarios;
+    SELECT COUNT(*) INTO total_vinculos FROM tomadores_funcionarios;
     RAISE NOTICE 'Total de vínculos existentes: %', total_vinculos;
     
     IF total_vinculos > 0 THEN
       RAISE NOTICE 'Verificando duplicatas...';
       PERFORM funcionario_id, contratante_id, COUNT(*)
-      FROM contratantes_funcionarios
+      FROM tomadores_funcionarios
       GROUP BY funcionario_id, contratante_id
       HAVING COUNT(*) > 1;
     END IF;

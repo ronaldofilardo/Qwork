@@ -1,7 +1,7 @@
--- Seed Data: Dados de teste para Contratantes (Clínicas e Entidades)
+-- Seed Data: Dados de teste para tomadores (Clínicas e Entidades)
 -- Data: 2025-12-18
 
-\echo 'Inserindo dados de teste para contratantes...'
+\echo 'Inserindo dados de teste para tomadores...'
 
 -- ============================================================================
 -- CLÍNICAS (tipo = 'clinica')
@@ -250,15 +250,15 @@ WHERE
 
 \echo 'Criando vínculos polimórficos de teste...'
 
--- Vincular funcionários existentes a contratantes (se houver funcionários no banco)
+-- Vincular funcionários existentes a tomadores (se houver funcionários no banco)
 -- Nota: Ajustar IDs conforme dados reais
 
 -- Exemplo: Funcionário ID 1 vinculado à Clínica 1
--- INSERT INTO contratantes_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
+-- INSERT INTO tomadores_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
 -- VALUES (1, 1, 'clinica', true);
 
 -- Exemplo: Funcionário ID 2 vinculado à Entidade 1
--- INSERT INTO contratantes_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
+-- INSERT INTO tomadores_funcionarios (funcionario_id, entidade_id, tipo_contratante, vinculo_ativo)
 -- VALUES (2, 4, 'entidade', true);
 
 \echo 'Seed data inserido com sucesso!'

@@ -112,8 +112,8 @@ cy.request({
 
 **3.1 Remoção de Dependência de Clínicas**
 
-- Clínicas não existem no novo modelo (contratantes diretos)
-- Removido: Inserção de gestores_contratantes (tabela não existe)
+- Clínicas não existem no novo modelo (tomadores diretos)
+- Removido: Inserção de gestores_tomadores (tabela não existe)
 
 **3.2 Estrutura Atual**
 

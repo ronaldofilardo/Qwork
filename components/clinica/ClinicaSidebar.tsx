@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Building2, User, Bell } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
+import { PWAMenuItem } from '@/components/PWAMenuItem';
 
 interface ClinicaSidebarProps {
   counts?: {
@@ -96,6 +97,12 @@ export default function ClinicaSidebar({
         isActive={pathname === '/rh/conta'}
         onClick={() => router.push('/rh/conta')}
       />
+
+      {/* Separador */}
+      <div className="my-4 border-t border-gray-200" />
+
+      {/* Seção PWA - Instalar App */}
+      <PWAMenuItem isCollapsed={isCollapsed} />
     </SidebarLayout>
   );
 }

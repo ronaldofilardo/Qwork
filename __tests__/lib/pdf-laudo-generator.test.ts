@@ -102,7 +102,7 @@ describe('templates/laudo-html - gerarHTMLLaudoCompleto', () => {
 
   it('deve incluir título e metadados básicos', () => {
     const html = gerarHTMLLaudoCompleto(laudoPadronizado as any);
-    // Ajustado: verifica se o título contém "Laudo Psicossocial"
-    expect(html).toMatch(/<title>.*Laudo Psicossocial.*<\/title>/i);
+    // Ajustado: verifica se o título contém "Laudo de Identificação e Mapeamento de Riscos Psicossociais"
+    expect(html).toMatch(/<title>.*Laudo de Identificação e Mapeamento de Riscos Psicossociais.*<\/title>/i);
   });
 });

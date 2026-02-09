@@ -64,7 +64,7 @@ export async function GET(
         a.status as avaliacao_status,
         a.concluida_em,
         CASE 
-          WHEN a.status = 'concluido' THEN 'Concluída'
+          WHEN a.status = 'concluida' OR a.status = 'concluido' THEN 'Concluída'
           WHEN a.status = 'em_andamento' THEN 'Em Andamento'
           WHEN a.status = 'pendente' THEN 'Pendente'
           WHEN a.status = 'inativa' THEN 'Inativa'

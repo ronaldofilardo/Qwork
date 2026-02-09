@@ -29,12 +29,10 @@ interface PlanoInfo {
 }
 
 interface MeuPlanoSectionProps {
-  contratanteId: number;
+  tomadorId: number;
 }
 
-export default function MeuPlanoSection({
-  contratanteId,
-}: MeuPlanoSectionProps) {
+export default function MeuPlanoSection({ tomadorId }: MeuPlanoSectionProps) {
   const [plano, setPlano] = useState<PlanoInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [downloadingPDF, setDownloadingPDF] = useState(false);
@@ -42,7 +40,7 @@ export default function MeuPlanoSection({
   const fetchPlanoInfo = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/contratante/meu-plano`);
+      const response = await fetch(`/api/tomador/meu-plano`);
       if (response.ok) {
         const data = await response.json();
         setPlano(data.plano || null);
@@ -56,14 +54,14 @@ export default function MeuPlanoSection({
 
   useEffect(() => {
     fetchPlanoInfo();
-  }, [contratanteId]);
+  }, [tomadorId]);
 
   const handleBaixarContrato = async () => {
     if (!plano?.contrato_numero) return;
 
     try {
       setDownloadingPDF(true);
-      const response = await fetch(`/api/contratante/contrato-pdf`);
+      const response = await fetch(`/api/tomador/contrato-pdf`);
 
       if (response.ok) {
         const blob = await response.blob();

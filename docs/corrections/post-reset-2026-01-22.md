@@ -5,16 +5,16 @@
 
 ## Problemas Identificados
 
-### 1. Tabela `contratantes` - Coluna faltando
+### 1. Tabela `tomadores` - Coluna faltando
 
 - ❌ **Coluna `data_primeiro_pagamento`** não existe
 - Esta coluna é referenciada no código mas não está no schema
 
 ### 2. Tabela `empresas_clientes` - Estrutura incompatível
 
-- ❌ **Coluna `contratante_id`** não existe
+- ❌ **Coluna `tomador_id`** não existe
 - ✅ Existe **`clinica_id`** ao invés
-- **Impacto:** Sistema espera relacionamento direto contratante→empresa, mas schema usa clínica como intermediária
+- **Impacto:** Sistema espera relacionamento direto tomador→empresa, mas schema usa clínica como intermediária
 
 ### 3. Tabela `contratacao_personalizada`
 
@@ -30,20 +30,20 @@
 
 - ✅ Estrutura correta
 - ✅ Coluna `primeira_senha_alterada` existe (não `primeiro_acesso`)
-- ✅ Requer `contratante_id` (FK)
+- ✅ Requer `tomador_id` (FK)
 
 ## Fluxo Real vs Esperado
 
 ### Fluxo Esperado pelo Código
 
 ```
-Contratante → Empresas Clientes → Funcionários → Avaliações
+tomador → Empresas Clientes → Funcionários → Avaliações
 ```
 
 ### Fluxo Real do Banco
 
 ```
-Contratante → Clínica → Empresas Clientes → Funcionários → Avaliações
+tomador → Clínica → Empresas Clientes → Funcionários → Avaliações
 ```
 
 ## Correções Necessárias
@@ -51,19 +51,19 @@ Contratante → Clínica → Empresas Clientes → Funcionários → Avaliaçõe
 ### Opção 1: Adicionar coluna `data_primeiro_pagamento`
 
 ```sql
-ALTER TABLE contratantes
+ALTER TABLE tomadores
 ADD COLUMN data_primeiro_pagamento TIMESTAMP;
 ```
 
-### Opção 2: Criar tabela `clinicas` para cada contratante
+### Opção 2: Criar tabela `clinicas` para cada tomador
 
-Para cada contratante tipo "entidade", criar uma clínica correspondente:
+Para cada tomador tipo "entidade", criar uma clínica correspondente:
 
 ```sql
--- Para contratantes existentes sem clínica
+-- Para tomadores existentes sem clínica
 INSERT INTO clinicas (
     nome, cnpj, email, telefone, cidade, estado,
-    contratante_id, ativa, criado_em
+    tomador_id, ativa, criado_em
 )
 SELECT
     c.nome,
@@ -75,10 +75,10 @@ SELECT
     c.id,
     c.ativa,
     c.criado_em
-FROM contratantes c
+FROM tomadores c
 WHERE c.tipo = 'entidade'
 AND NOT EXISTS (
-    SELECT 1 FROM clinicas cl WHERE cl.contratante_id = c.id
+    SELECT 1 FROM clinicas cl WHERE cl.tomador_id = c.id
 );
 ```
 
@@ -87,13 +87,13 @@ AND NOT EXISTS (
 ```sql
 -- Adicionar coluna legado
 ALTER TABLE empresas_clientes
-ADD COLUMN contratante_id INTEGER REFERENCES contratantes(id);
+ADD COLUMN tomador_id INTEGER REFERENCES tomadores(id);
 
 -- Criar índice
-CREATE INDEX idx_empresas_contratante
-ON empresas_clientes(contratante_id);
+CREATE INDEX idx_empresas_tomador
+ON empresas_clientes(tomador_id);
 
--- Permitir empresas sem clínica mas com contratante direto
+-- Permitir empresas sem clínica mas com tomador direto
 ALTER TABLE empresas_clientes
 ALTER COLUMN clinica_id DROP NOT NULL;
 ```
@@ -102,8 +102,8 @@ ALTER COLUMN clinica_id DROP NOT NULL;
 
 **Opção 2 + 1** é a mais segura:
 
-1. Criar clínicas automáticas para contratantes tipo "entidade"
-2. Adicionar `data_primeiro_pagamento` em contratantes
+1. Criar clínicas automáticas para tomadores tipo "entidade"
+2. Adicionar `data_primeiro_pagamento` em tomadores
 3. Manter a estrutura atual que usa clínicas como intermediárias
 
 ## Script de Correção Proposto
@@ -121,7 +121,7 @@ Arquivos que precisam ser revisados:
 ## Próximos Passos
 
 1. ✅ Executar migration para adicionar `data_primeiro_pagamento`
-2. ✅ Criar clínicas para contratantes existentes
+2. ✅ Criar clínicas para tomadores existentes
 3. ⏳ Testar fluxo completo novamente
 4. ⏳ Atualizar testes automatizados
 5. ⏳ Documentar nova arquitetura

@@ -7,7 +7,7 @@ BEGIN;
 DROP VIEW IF EXISTS vw_lotes_por_contratante CASCADE;
 DROP VIEW IF EXISTS vw_alertas_lotes_stuck CASCADE;
 DROP VIEW IF EXISTS vw_metricas_emissao_laudos CASCADE;
-DROP VIEW IF EXISTS vw_health_check_contratantes CASCADE;
+DROP VIEW IF EXISTS vw_health_check_tomadores CASCADE;
 
 -- Converter tipo de coluna status para status_lote
 ALTER TABLE IF EXISTS lotes_avaliacao ALTER COLUMN status TYPE status_lote USING status::status_lote;

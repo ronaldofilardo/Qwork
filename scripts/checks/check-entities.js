@@ -3,7 +3,7 @@ import { query } from './lib/db.js';
 async function checkEntities() {
   try {
     const result = await query(
-      "SELECT id, nome, tipo FROM contratantes WHERE tipo = 'entidade' LIMIT 5"
+      "SELECT id, nome, tipo FROM tomadors WHERE tipo = 'entidade' LIMIT 5"
     );
     console.log('Entidades encontradas:', result.rows);
   } catch (e) {

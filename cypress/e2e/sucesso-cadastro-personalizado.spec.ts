@@ -1,7 +1,7 @@
 describe('Sucesso Cadastro - fluxos', () => {
   it('mostra mensagem de dados enviados quando tipo=personalizado e API pública falha', () => {
     cy.intercept('GET', '/api/auth/session', { statusCode: 401, body: {} });
-    cy.intercept('GET', '/api/public/contratante?id=50', {
+    cy.intercept('GET', '/api/public/tomador?id=50', {
       statusCode: 500,
       body: { error: 'Erro ao buscar dados' },
     });
@@ -25,7 +25,7 @@ describe('Sucesso Cadastro - fluxos', () => {
     cy.intercept('GET', '/api/auth/session', {
       statusCode: 200,
       body: {
-        contratante: {
+        tomador: {
           id: 1,
           nome: 'Empresa Teste',
           pagamento_confirmado: true,

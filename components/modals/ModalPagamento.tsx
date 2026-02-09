@@ -20,7 +20,7 @@ import {
 interface ModalPagamentoProps {
   isOpen: boolean;
   onClose: () => void;
-  contratanteId: number;
+  tomadorId: number;
   contratoId: number;
   valor: number;
   planoNome: string;
@@ -34,7 +34,7 @@ type MetodoPagamento = 'pix' | 'boleto' | 'cartao';
 export default function ModalPagamento({
   isOpen,
   onClose,
-  contratanteId,
+  tomadorId,
   contratoId,
   valor,
   planoNome,
@@ -76,8 +76,8 @@ export default function ModalPagamento({
       return;
     }
 
-    if (!contratanteId || !contratoId) {
-      setErro('Dados de contratante ou contrato inválidos');
+    if (!tomadorId || !contratoId) {
+      setErro('Dados de tomador ou contrato inválidos');
       return;
     }
 
@@ -91,7 +91,7 @@ export default function ModalPagamento({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           acao: 'iniciar',
-          contratante_id: contratanteId,
+          tomador_id: tomadorId,
           contrato_id: contratoId,
           valor,
           metodo: metodoSelecionado,
@@ -171,7 +171,7 @@ export default function ModalPagamento({
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             acao: 'iniciar',
-            contratante_id: contratanteId,
+            tomador_id: tomadorId,
             contrato_id: contratoId,
             valor,
             metodo: metodoSelecionado,

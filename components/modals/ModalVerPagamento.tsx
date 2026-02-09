@@ -15,7 +15,7 @@ interface ModalVerPagamentoProps {
     criado_em: string;
     data_pagamento?: string;
   } | null;
-  contratante: {
+  tomador: {
     nome: string;
     cnpj: string;
   };
@@ -25,7 +25,7 @@ export default function ModalVerPagamento({
   isOpen,
   onClose,
   pagamento,
-  contratante,
+  tomador,
 }: ModalVerPagamentoProps) {
   if (!isOpen || !pagamento) return null;
 
@@ -92,7 +92,7 @@ export default function ModalVerPagamento({
               Detalhes do Pagamento
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              ID #{pagamento.id} - {contratante.nome}
+              ID #{pagamento.id} - {tomador.nome}
             </p>
           </div>
           <button
@@ -185,15 +185,13 @@ export default function ModalVerPagamento({
             </div>
           </div>
 
-          {/* Informações do Contratante */}
+          {/* Informações do tomador */}
           <div className="border-t pt-4">
-            <div className="text-sm text-gray-600 mb-2">Contratante</div>
+            <div className="text-sm text-gray-600 mb-2">tomador</div>
             <div className="text-base font-medium text-gray-900">
-              {contratante.nome}
+              {tomador.nome}
             </div>
-            <div className="text-sm text-gray-500">
-              CNPJ: {contratante.cnpj}
-            </div>
+            <div className="text-sm text-gray-500">CNPJ: {tomador.cnpj}</div>
           </div>
         </div>
 

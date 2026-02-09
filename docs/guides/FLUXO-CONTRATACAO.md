@@ -42,7 +42,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. CADASTRO INICIAL                                             │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Contratante preenche dados (CNPJ, email, telefone, etc.)     │
+│ • tomador preenche dados (CNPJ, email, telefone, etc.)     │
 │ • Seleciona "Plano Fixo"                                        │
 │ • Informa número estimado de funcionários                       │
 │ • Upload de documentos (Contrato Social, procuração, etc.)     │
@@ -52,15 +52,15 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 │ 2. CONFIRMAÇÃO E ENVIO DOS DADOS                                │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Sistema valida dados (CNPJ, email, documentos)               │
-│ • Salva contratante com status "aguardando_pagamento"          │
-│ • API: POST /api/cadastro/contratante                          │
+│ • Salva tomador com status "aguardando_pagamento"          │
+│ • API: POST /api/cadastro/tomador                          │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
 │ 3. GERAÇÃO AUTOMÁTICA DO CONTRATO                              │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Sistema cria contrato pendente:                               │
-│   - contratante_id                                              │
+│   - tomador_id                                              │
 │   - plano_id                                                    │
 │   - numero_funcionarios                                         │
 │   - valor_total (R$ 20 × funcionários)                         │
@@ -96,7 +96,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 ┌─────────────────────────────────────────────────────────────────┐
 │ 6. SIMULADOR DE PAGAMENTO                                      │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Página: /pagamento/simulador?contratante_id=X&contrato_id=Y │
+│ • Página: /pagamento/simulador?tomador_id=X&contrato_id=Y │
 │ • VALIDAÇÃO BACKEND: Verifica aceito = true                   │
 │ • Exibe opções:                                                 │
 │   - PIX (à vista)                                               │
@@ -121,7 +121,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 │ • API: POST /api/recibo/gerar                                  │
 │ • Recibo contém:                                                │
 │   - Dados do prestador (Qwork)                                  │
-│   - Dados do tomador (Contratante)                              │
+│   - Dados do tomador (tomador)                              │
 │   - Descrição do serviço                                        │
 │   - Valor pago (número e por extenso)                          │
 │   - Data e forma de pagamento                                   │
@@ -134,9 +134,9 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 │ 9. LIBERAÇÃO AUTOMÁTICA DE LOGIN                               │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Sistema atualiza:                                             │
-│   - contratantes.pagamento_confirmado = true                   │
-│   - contratantes.contrato_aceito = true                        │
-│   - contratantes.status = "ativo"                              │
+│   - tomadores.pagamento_confirmado = true                   │
+│   - tomadores.contrato_aceito = true                        │
+│   - tomadores.status = "ativo"                              │
 │ • Cria login do gestor/rh                      │
 │ • Envia email com credenciais                                   │
 │ • Redireciona para tela de sucesso                              │
@@ -151,7 +151,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 ┌─────────────────────────────────────────────────────────────────┐
 │ 6. ABANDONO NO SIMULADOR                                       │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Contratante fecha página sem pagar                            │
+│ • tomador fecha página sem pagar                            │
 │ • Status permanece: "aguardando_pagamento"                     │
 │ • Contrato aceito: true (já registrado)                        │
 └─────────────────────────────────────────────────────────────────┘
@@ -160,7 +160,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 │ 7. ADMIN IDENTIFICA PENDÊNCIA                                  │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Dashboard Admin: Lista "Aguardando Pagamento"                │
-│ • Visualiza dados do contratante                                │
+│ • Visualiza dados do tomador                                │
 │ • Contrato já aceito (não editável)                            │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
@@ -169,12 +169,12 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 ├─────────────────────────────────────────────────────────────────┤
 │ • API: POST /api/admin/gerar-link-retomada                     │
 │ • Sistema gera link único:                                      │
-│   /pagamento/simulador?contratante_id=X&contrato_id=Y&retry=1 │
-│ • Email enviado ao contratante                                  │
+│   /pagamento/simulador?tomador_id=X&contrato_id=Y&retry=1 │
+│ • Email enviado ao tomador                                  │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ 9. CONTRATANTE ABRE LINK                                       │
+│ 9. tomador ABRE LINK                                       │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Link abre direto no simulador (contrato já aceito)           │
 │ • Continua do passo 6 do fluxo principal                        │
@@ -198,7 +198,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. CADASTRO INICIAL                                             │
 ├─────────────────────────────────────────────────────────────────┤
-│ • Contratante preenche dados                                    │
+│ • tomador preenche dados                                    │
 │ • Seleciona "Plano Personalizado"                              │
 │ • Informa necessidades específicas                              │
 │ • Upload de documentos                                          │
@@ -209,7 +209,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 ├─────────────────────────────────────────────────────────────────┤
 │ • Sistema salva com status: "aguardando_aprovacao"             │
 │ • Notificação enviada ao Admin                                  │
-│ • Mensagem ao contratante: "Dados enviados para análise"       │
+│ • Mensagem ao tomador: "Dados enviados para análise"       │
 │ • Prazo estimado: 48 horas                                      │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
@@ -230,15 +230,15 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 │ • API: POST /api/admin/gerar-link-plano-personalizado         │
 │ • Sistema cria contrato pendente com valores definidos         │
 │ • Gera link único com token de acesso                          │
-│ • Email enviado ao contratante                                  │
+│ • Email enviado ao tomador                                  │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│ 5. CONTRATANTE ABRE LINK                                       │
+│ 5. tomador ABRE LINK                                       │
 ├─────────────────────────────────────────────────────────────────┤
 │ • Link redireciona para página de aceite                        │
 │ • Exibe contrato com valores já definidos                       │
-│ • Contratante NÃO pode editar valores                          │
+│ • tomador NÃO pode editar valores                          │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -264,8 +264,8 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 // Validação obrigatória para planos fixos
 if (plano.tipo === 'fixo') {
   const contratoRes = await query(
-    'SELECT id, aceito FROM contratos WHERE contratante_id = $1 AND aceito = true',
-    [contratanteId]
+    'SELECT id, aceito FROM contratos WHERE tomador_id = $1 AND aceito = true',
+    [tomadorId]
   );
 
   if (contratoRes.rows.length === 0) {
@@ -342,7 +342,7 @@ await query(
 - [ ] Emissão de NF-e automática (integração fiscal)
 - [ ] Assinatura eletrônica ICP-Brasil (opcional)
 - [ ] Validação de documentos via IA
-- [ ] Dashboard de acompanhamento para contratantes
+- [ ] Dashboard de acompanhamento para tomadores
 
 ---
 

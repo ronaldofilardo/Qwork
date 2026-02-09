@@ -83,6 +83,6 @@ SELECT
   END as status_conexao
 FROM lotes_avaliacao l
 LEFT JOIN entidades_senhas cs ON cs.cpf = l.liberado_por
-LEFT JOIN contratantes c ON c.id = l.contratante_id
+LEFT JOIN tomadores c ON c.id = l.contratante_id
 WHERE l.contratante_id IS NOT NULL
 ORDER BY status_conexao DESC, l.id;

@@ -90,7 +90,7 @@ CREATE TRIGGER trg_prevenir_placeholder_senha
 \echo '2. Aplicando FORCE ROW LEVEL SECURITY...'
 
 -- Aplicar FORCE RLS em todas as tabelas sensíveis
-ALTER TABLE contratantes FORCE ROW LEVEL SECURITY;
+ALTER TABLE tomadores FORCE ROW LEVEL SECURITY;
 ALTER TABLE entidades_senhas FORCE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios FORCE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes FORCE ROW LEVEL SECURITY;
@@ -145,8 +145,8 @@ CREATE INDEX IF NOT EXISTS idx_funcionarios_cpf_rls
 CREATE INDEX IF NOT EXISTS idx_avaliacoes_funcionario_cpf_rls
     ON avaliacoes(funcionario_cpf);
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_responsavel_cpf_rls
-    ON contratantes(responsavel_cpf);
+CREATE INDEX IF NOT EXISTS idx_tomadores_responsavel_cpf_rls
+    ON tomadores(responsavel_cpf);
 
 \echo '✓ Índices RLS criados para otimização de queries'
 
@@ -371,7 +371,7 @@ BEGIN
     JOIN pg_class pc ON pc.relname = pt.tablename
     WHERE pt.schemaname = 'public'
     AND pt.tablename IN (
-        'contratantes', 'funcionarios', 'avaliacoes', 'laudos',
+        'tomadores', 'funcionarios', 'avaliacoes', 'laudos',
         'lotes_avaliacao', 'recibos', 'contratos', 'pagamentos'
     );
     
@@ -415,7 +415,7 @@ BEGIN
     FROM pg_policies
     WHERE schemaname = 'public'
     AND tablename IN (
-        'contratantes', 'funcionarios', 'avaliacoes', 'laudos'
+        'tomadores', 'funcionarios', 'avaliacoes', 'laudos'
     )
     GROUP BY tablename;
     

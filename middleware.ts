@@ -23,7 +23,7 @@ const FUNCIONARIO_ROUTES = [
 // Rotas específicas para gestores RH (clínica)
 const RH_ROUTES = ['/rh', '/api/rh'];
 
-// Rotas específicas para gestores de entidade (contratante)
+// Rotas específicas para gestores de entidade (tomador)
 const ENTIDADE_ROUTES = ['/entidade', '/api/entidade'];
 
 // Rotas que requerem MFA (admin)
@@ -37,7 +37,7 @@ const PUBLIC_API_ROUTES = [
   '/api/contrato/', // Rotas de visualização de contrato
   '/api/pagamento/iniciar', // Rota de iniciar pagamento (após aceite de contrato)
   '/api/pagamento/gerar-link-plano-fixo', // Gerar link de retry para plano fixo
-  '/api/contratante/verificar-pagamento', // Verificar status de pagamento
+  '/api/tomador/verificar-pagamento', // Verificar status de pagamento
   '/api/cadastro',
   '/api/auth/login',
   '/api/auth/logout',
@@ -45,7 +45,7 @@ const PUBLIC_API_ROUTES = [
 
 // Rotas de contratação com controle granular
 const CONTRATACAO_ROUTES = {
-  // Admin: Gerenciar todas as contratações
+  // Admin: Gerenciar aprovação de contratações e definir valores (administrativo)
   admin: [
     '/api/admin/contratacao',
     '/api/admin/contratacao/definir-valor',

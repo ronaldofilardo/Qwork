@@ -1,7 +1,7 @@
 -- Simulação corrigida do fluxo completo para CNPJ 41877277000184 (4x R$500)
 BEGIN;
 
--- 1) Inserir entidade (antiga tabela: contratantes)
+-- 1) Inserir entidade (antiga tabela: tomadores)
 INSERT INTO entidades (
   tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular, plano_id, numero_funcionarios_estimado, status
 ) VALUES (
@@ -45,7 +45,7 @@ BEGIN
 END;
 $$;
 
--- 5) Marcar pagamento confirmado e ativar entidade (antiga tabela: contratantes)
+-- 5) Marcar pagamento confirmado e ativar entidade (antiga tabela: tomadores)
 UPDATE entidades SET pagamento_confirmado = true, status = 'aprovado', data_liberacao_login = NOW(), ativa = true WHERE cnpj = '41877277000184';
 
 -- 6) Criar senha inicial (se função existir)

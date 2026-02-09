@@ -39,7 +39,7 @@ async function fixDatabaseSchema() {
     );
     console.log('   - Coluna role renomeada para tipo_usuario');
     console.log('   - entidade_id da auditoria permite NULL');
-    console.log('   - View v_contratantes_stats criada');
+    console.log('   - View v_tomadors_stats criada');
   } catch (error) {
     console.error('❌ Erro ao corrigir schema:', error.message);
     process.exit(1);

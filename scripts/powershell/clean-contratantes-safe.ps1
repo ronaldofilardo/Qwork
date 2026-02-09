@@ -33,7 +33,7 @@ function Write-Info {
 # Banner
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor White
-Write-Host "   SCRIPT DE LIMPEZA DE CONTRATANTES - MODO SEGURO" -ForegroundColor White
+Write-Host "   SCRIPT DE LIMPEZA DE tomadores - MODO SEGURO" -ForegroundColor White
 Write-Host "═══════════════════════════════════════════════════════════" -ForegroundColor White
 Write-Host ""
 
@@ -55,7 +55,7 @@ Write-Host ""
 # Verificar se é ambiente de produção
 Write-Critical "VERIFICAÇÃO DE AMBIENTE"
 Write-Host ""
-Write-Warning-Custom "Este script irá DELETAR TODOS os dados de contratantes!"
+Write-Warning-Custom "Este script irá DELETAR TODOS os dados de tomadores!"
 Write-Warning-Custom "Isso inclui: contratos, pagamentos, vínculos, etc."
 Write-Info "Senhas NÃO serão deletadas (proteção implementada)"
 Write-Host ""
@@ -77,7 +77,7 @@ Write-Info "Contando registros antes da limpeza..."
 # Contar registros
 $counts = psql -U postgres -d $database -t -c @"
 SELECT 
-    (SELECT COUNT(*) FROM contratantes) as contratantes,
+    (SELECT COUNT(*) FROM tomadores) as tomadores,
     (SELECT COUNT(*) FROM entidades_senhas) as senhas,
     (SELECT COUNT(*) FROM contratos) as contratos,
     (SELECT COUNT(*) FROM pagamentos) as pagamentos;
@@ -128,7 +128,7 @@ Write-Host ""
 Write-Info "Executando limpeza..."
 
 # Executar script de limpeza
-$result = psql -U postgres -d $database -f "scripts/clean-contratantes.sql" 2>&1
+$result = psql -U postgres -d $database -f "scripts/clean-tomadores.sql" 2>&1
 
 if ($LASTEXITCODE -eq 0) {
     Write-Success "Limpeza concluída com sucesso!"
@@ -144,7 +144,7 @@ Write-Info "Verificando resultado..."
 # Contar registros após limpeza
 $countsAfter = psql -U postgres -d $database -t -c @"
 SELECT 
-    (SELECT COUNT(*) FROM contratantes) as contratantes,
+    (SELECT COUNT(*) FROM tomadores) as tomadores,
     (SELECT COUNT(*) FROM entidades_senhas) as senhas,
     (SELECT COUNT(*) FROM contratos) as contratos,
     (SELECT COUNT(*) FROM pagamentos) as pagamentos;

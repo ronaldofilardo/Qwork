@@ -7,7 +7,7 @@
  * 3. Inicialização de pagamento
  * 4. Confirmação de pagamento
  * 5. Criação automática de conta (funcionário) com senha = últimos 6 dígitos CNPJ
- * 6. Ativação do contratante (status aprovado, ativa=true)
+ * 6. Ativação do tomador (status aprovado, ativa=true)
  * 7. Geração de recibo
  * 8. Criação de notificações para parcelas (se parcelado)
  * 9. Login com credenciais geradas
@@ -17,7 +17,7 @@ import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
 describe('Fluxo Cadastro → Pagamento → Ativação', () => {
-  let contratanteId: number;
+  let tomadorId: number;
   let contratoId: number;
   let pagamentoId: number;
   const cnpjTeste = '12345678000190';
@@ -31,10 +31,10 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
       cpfResponsavel,
     ]);
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [cnpjTeste]);
   });
 
   afterAll(async () => {
@@ -43,12 +43,12 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
     if (contratoId) {
       await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
     }
-    if (contratanteId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    if (tomadorId) {
+      await query('DELETE FROM entidades WHERE id = $1', [tomadorId]);
     }
   });
 
-  test('1. Deve criar contratante com plano fixo e status aguardando_pagamento', async () => {
+  test('1. Deve criar tomador com plano fixo e status aguardando_pagamento', async () => {
     const planoResult = await query(
       'SELECT id FROM planos WHERE tipo = $1 AND ativo = true LIMIT 1',
       ['fixo']
@@ -57,27 +57,27 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
     const planoId = planoResult.rows[0].id;
 
     const result = await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, 
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         endereco, cidade, estado, cep,
-        status, ativa, plano_id, plano_tipo, numero_funcionarios_estimado
+        status, ativa, plano_id, numero_funcionarios_estimado
       ) VALUES (
         'entidade', 'Empresa Teste Integração', $1, 'teste@teste.com', '(11) 98765-4321',
         'Responsável Teste', $2, 'resp@teste.com', '(11) 91234-5678',
         'Rua Teste, 123', 'São Paulo', 'SP', '01234-567',
-        'aguardando_pagamento', false, $3, 'fixo', 20
+        'aguardando_pagamento', false, $3, 20
       ) RETURNING id`,
       [cnpjTeste, cpfResponsavel, planoId]
     );
 
-    contratanteId = result.rows[0].id;
-    expect(contratanteId).toBeGreaterThan(0);
+    tomadorId = result.rows[0].id;
+    expect(tomadorId).toBeGreaterThan(0);
 
     // Verificar status inicial
     const verificacao = await query(
-      'SELECT status, ativa, pagamento_confirmado FROM contratantes WHERE id = $1',
-      [contratanteId]
+      'SELECT status, ativa, pagamento_confirmado FROM entidades WHERE id = $1',
+      [tomadorId]
     );
     expect(verificacao.rows[0].status).toBe('aguardando_pagamento');
     expect(verificacao.rows[0].ativa).toBe(false);
@@ -87,11 +87,11 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
   test('2. Deve criar e aceitar contrato', async () => {
     // Criar contrato
     const contratoResult = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, aceito, hash_contrato, criado_em)
+      `INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
        SELECT $1, plano_id, false, md5(random()::text), CURRENT_TIMESTAMP
-       FROM contratantes WHERE id = $1
+       FROM entidades WHERE id = $1
        RETURNING id`,
-      [contratanteId]
+      [tomadorId]
     );
 
     contratoId = contratoResult.rows[0].id;
@@ -112,10 +112,10 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
 
   test('3. Deve inicializar pagamento', async () => {
     const pagamentoResult = await query(
-      `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
+      `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
        VALUES ($1, $2, 2000.00, 'pendente', 'boleto', 2, CURRENT_TIMESTAMP)
        RETURNING id`,
-      [contratanteId, contratoId]
+      [tomadorId, contratoId]
     );
 
     pagamentoId = pagamentoResult.rows[0].id;
@@ -165,15 +165,15 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
     );
     expect(pagamentoVerif.rows[0].status).toBe('pago');
 
-    // Verificar se contratante foi ativado
-    const contratanteVerif = await query(
-      'SELECT status, ativa, pagamento_confirmado, aprovado_em FROM contratantes WHERE id = $1',
-      [contratanteId]
+    // Verificar se tomador foi ativado
+    const tomadorVerif = await query(
+      'SELECT status, ativa, pagamento_confirmado, aprovado_em FROM entidades WHERE id = $1',
+      [tomadorId]
     );
-    expect(contratanteVerif.rows[0].status).toBe('aprovado');
-    expect(contratanteVerif.rows[0].ativa).toBe(true);
-    expect(contratanteVerif.rows[0].pagamento_confirmado).toBe(true);
-    expect(contratanteVerif.rows[0].aprovado_em).not.toBeNull();
+    expect(tomadorVerif.rows[0].status).toBe('aprovado');
+    expect(tomadorVerif.rows[0].ativa).toBe(true);
+    expect(tomadorVerif.rows[0].pagamento_confirmado).toBe(true);
+    expect(tomadorVerif.rows[0].aprovado_em).not.toBeNull();
 
     // Verificar se conta foi criada
     const funcionarioVerif = await query(
@@ -207,13 +207,13 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
 
     const notif = notificacoesResult.rows[0];
     expect(notif.destinatario_cpf).toBe(cpfResponsavel);
-    expect(notif.destinatario_tipo).toBe('contratante');
-    // contratante_id está embutido em dados_contexto
+    expect(notif.destinatario_tipo).toBe('tomador');
+    // tomador_id está embutido em dados_contexto
     const dadosContexto =
       typeof notif.dados_contexto === 'string'
         ? JSON.parse(notif.dados_contexto)
         : notif.dados_contexto;
-    expect(dadosContexto.contratante_id).toBe(contratanteId);
+    expect(dadosContexto.tomador_id).toBe(tomadorId);
     // Deve existir pelo menos uma notificação com esse contrato (pode haver ruído de outras operações)
     const found = notificacoesResult.rows.some((r) => {
       try {
@@ -221,7 +221,7 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
           typeof r.dados_contexto === 'string'
             ? JSON.parse(r.dados_contexto)
             : r.dados_contexto;
-        return ctx && ctx.contratante_id === contratanteId;
+        return ctx && ctx.tomador_id === tomadorId;
       } catch {
         return false;
       }
@@ -263,7 +263,7 @@ describe('Fluxo Cadastro → Pagamento → Ativação', () => {
 
     expect(reciboResult.rows.length).toBeGreaterThan(0);
     const recibo = reciboResult.rows[0];
-    expect(recibo.contratante_id).toBe(contratanteId);
+    expect(recibo.tomador_id).toBe(tomadorId);
     expect(recibo.numero_recibo).toMatch(/^REC-\d{4}-\d{5}$/); // Formato REC-AAAA-NNNNN (ex: REC-2026-00001)
   });
 

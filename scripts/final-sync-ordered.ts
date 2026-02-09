@@ -44,7 +44,7 @@ const ORDERED_TABLES = [
   'templates_contrato',
   'migration_guidelines',
   'lote_id_allocator',
-  'contratantes_senhas_audit',
+  'tomadors_senhas_audit',
 ];
 
 async function copyTable(

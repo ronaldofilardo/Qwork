@@ -12,7 +12,7 @@ interface ModalVerContratoProps {
     data_aceite?: string;
     ip_aceite?: string;
   };
-  contratante: {
+  tomador: {
     nome: string;
     cnpj: string;
   };
@@ -22,7 +22,7 @@ export default function ModalVerContrato({
   isOpen,
   onClose,
   contrato,
-  contratante,
+  tomador,
 }: ModalVerContratoProps) {
   if (!isOpen) return null;
 
@@ -36,7 +36,7 @@ export default function ModalVerContrato({
               Contrato de Prestação de Serviços
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Nº {contrato.numero_contrato} - {contratante.nome}
+              Nº {contrato.numero_contrato} - {tomador.nome}
             </p>
           </div>
           <button
@@ -80,7 +80,7 @@ export default function ModalVerContrato({
         {/* Footer */}
         <div className="flex items-center justify-between p-6 border-t bg-gray-50">
           <div className="text-xs text-gray-500">
-            CNPJ Contratante: {contratante.cnpj}
+            CNPJ tomador: {tomador.cnpj}
           </div>
           <button
             onClick={onClose}

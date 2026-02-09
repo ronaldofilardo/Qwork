@@ -37,18 +37,17 @@ export const GET = async (
     const loteCheck = await query(
       `
       SELECT la.id, la.status,
-             COALESCE(ec.nome, cont.nome) as empresa_nome, 
-             COALESCE(c.nome, cont.nome) as clinica_nome,
+             COALESCE(e.nome, c.nome) as empresa_nome, 
+             c.nome as clinica_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
-             COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
+             COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
-      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-      LEFT JOIN clinicas c ON ec.clinica_id = c.id
-      LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+      LEFT JOIN entidades e ON la.entidade_id = e.id
+      LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id,  la.status, ec.nome, c.nome, cont.nome
+      GROUP BY la.id, la.status, e.nome, c.nome
     `,
       [loteId]
     );
@@ -362,17 +361,17 @@ export const POST = async (
     // Verificar se o lote existe e está pronto
     const loteCheck = await query(
       `
-      SELECT la.id, la.status, 
-             COALESCE(ec.nome, cont.nome) as empresa_nome,
+      SELECT la.id, la.status, la.status_pagamento, la.pago_em,
+             COALESCE(e.nome, c.nome) as empresa_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
-             COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
+             COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
-      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-      LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+      LEFT JOIN entidades e ON la.entidade_id = e.id
+      LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id,  la.status, ec.nome, cont.nome
+      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, c.nome
     `,
       [loteId]
     );
@@ -402,6 +401,20 @@ export const POST = async (
           detalhes: `${finalizadas}/${totalLiberadas} avaliações finalizadas (${concluidas} concluídas, ${inativadas} inativadas)`,
         },
         { status: 400 }
+      );
+    }
+
+    // VALIDAR PAGAMENTO: Só permite emissão se pagamento confirmado
+    const skipPaymentPhase = process.env.SKIP_PAYMENT_PHASE === 'true';
+
+    if (!skipPaymentPhase && lote.status_pagamento !== 'pago') {
+      return NextResponse.json(
+        {
+          error: 'Pagamento não confirmado',
+          success: false,
+          detalhes: `Status do pagamento: ${lote.status_pagamento || 'não iniciado'}. Aguarde a confirmação do pagamento.`,
+        },
+        { status: 402 } // 402 Payment Required
       );
     }
 

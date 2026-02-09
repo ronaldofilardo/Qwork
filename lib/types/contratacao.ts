@@ -76,8 +76,8 @@ export interface Pagamento {
   atualizado_em: string;
 }
 
-// Interface estendida de Contratante
-export interface ContratanteExtendido {
+// Interface estendida de tomador
+export interface tomadorExtendido {
   id: number;
   tipo: 'clinica' | 'entidade';
   nome: string;
@@ -142,7 +142,7 @@ export interface AprovarEntidadeDTO {
 }
 
 // Alias para compatibilidade temporária
-export type AprovarContratanteDTO = AprovarEntidadeDTO;
+export type AprovartomadorDTO = AprovarEntidadeDTO;
 
 export interface EntidadeExtendida {
   id: number;

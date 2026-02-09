@@ -159,26 +159,28 @@ describe('Endpoint Entidade Lotes - Sem Violação de Imutabilidade', () => {
   // TESTE: Autenticação e autorização
   // ============================================================================
   describe('Segurança: Autenticação entidade', () => {
-    it('deve usar getSession para validar sessão', () => {
+    it('deve usar session para validar identificação da entidade', () => {
       const routeCode = fs.readFileSync(
         path.join(process.cwd(), 'app/api/entidade/lotes/route.ts'),
         'utf-8'
       );
 
-      expect(routeCode).toContain('getSession');
-      expect(routeCode).toContain('contratante_id');
+      expect(routeCode).toContain('requireEntity');
+      expect(routeCode).toContain('entidade_id');
     });
 
-    it('deve listar todos os lotes sem filtro de contratante', () => {
+    it('deve filtrar lotes apenas da entidade autenticada', () => {
       const routeCode = fs.readFileSync(
         path.join(process.cwd(), 'app/api/entidade/lotes/route.ts'),
         'utf-8'
       );
 
-      // Verifica que não há filtro por contratante_id
-      expect(routeCode).not.toContain('la.contratante_id = $1');
-      // Verifica que ainda filtra status != 'cancelado'
-      expect(routeCode).toContain("la.status != 'cancelado'");
+      // Verifica que filtra lotes por contratante_id conforme schema
+      expect(routeCode).toContain('la.contratante_id = $1');
+      // Verifica que passa entidade_id como parâmetro para a query
+      expect(routeCode).toContain('session.entidade_id');
+      // Verifica que a query ainda filtra por status e ordenação esperada
+      expect(routeCode).toContain('ORDER BY la.criado_em DESC');
     });
   });
 

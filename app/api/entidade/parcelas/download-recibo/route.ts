@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     const recibo = reciboResult.rows[0];
 
     // Validar autorização: recibo deve pertencer à entidade da sessão
-    if (recibo.entidade_id !== session.contratante_id) {
+    if (recibo.entidade_id !== session.entidade_id) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
     }
 

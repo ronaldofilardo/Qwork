@@ -31,7 +31,7 @@ async function updateLotesStatus(cpf: string) {
       FROM avaliacoes a
       WHERE a.lote_id = $3
     `,
-      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDO, lote.id]
+      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id]
     );
 
     const { ativas, concluidas } = statsResult.rows[0];
@@ -130,9 +130,10 @@ export async function PUT(request: NextRequest) {
     // Atualizar status das avaliações baseado no status do funcionário
     if (!ativo) {
       // Desligando da empresa: marcar avaliações não concluídas como 'inativada' (concluídas permanecem)
+      // Nota: verifica both 'concluida' e 'concluido' para retrocompatibilidade
       const updateResult = await query(
-        'UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != $3 RETURNING id, status',
-        [StatusAvaliacao.INATIVADA, cpf, StatusAvaliacao.CONCLUIDO]
+        "UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != 'concluida' AND status != 'concluido' RETURNING id, status",
+        [StatusAvaliacao.INATIVADA, cpf]
       );
       console.log(
         `[INFO] Inativadas ${updateResult.rowCount} avaliações do funcionário ${cpf}`

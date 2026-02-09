@@ -107,7 +107,7 @@ case 'gestor': // antes era 'gestor'
 
 ```typescript
 // Função criarContaResponsavel()
-const tipoUsuario = contratanteData.tipo === 'entidade' ? 'gestor' : 'rh';
+const tipoUsuario = tomadorData.tipo === 'entidade' ? 'gestor' : 'rh';
 ```
 
 #### [app/api/auth/login/route.ts](../../app/api/auth/login/route.ts)

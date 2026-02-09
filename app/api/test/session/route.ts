@@ -11,24 +11,16 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    // Determinar clinica_id: usar valor explícito se fornecido, senão tentar mapear via contratante_id quando perfil for 'rh'
+    // Determinar clinica_id para perfil 'rh' ou entidade_id para perfil 'gestor'
     let clinicaId = body.clinica_id;
-    if (!clinicaId && body.perfil === 'rh' && body.contratante_id) {
-      try {
-        const clinicaRes = await query(
-          'SELECT id, ativa FROM clinicas WHERE contratante_id = $1 AND ativa = true LIMIT 1',
-          [body.contratante_id]
-        );
-        if (clinicaRes.rows.length > 0) {
-          clinicaId = clinicaRes.rows[0].id;
-        }
-      } catch (err: any) {
-        // Pode acontecer em esquemas legados onde a coluna `contratante_id` não existe.
-        // Não queremos bloquear a criação de sessão de teste por isso — apenas logar e prosseguir.
-        console.warn(
-          `[DEBUG] /api/test/session - Falha ao mapear clinica via contratante_id: ${err?.message || err}`
-        );
-      }
+    let entidadeId = body.entidade_id;
+
+    if (!clinicaId && body.perfil === 'rh' && body.clinica_id) {
+      clinicaId = body.clinica_id;
+    }
+
+    if (!entidadeId && body.perfil === 'gestor' && body.entidade_id) {
+      entidadeId = body.entidade_id;
     }
 
     const session: Session = {
@@ -36,7 +28,7 @@ export async function POST(request: Request) {
       nome: body.nome || 'Sessão de Teste',
       perfil: (body.perfil as any) || 'funcionario',
       clinica_id: clinicaId,
-      contratante_id: body.contratante_id,
+      entidade_id: entidadeId,
       mfaVerified: true,
     };
 
@@ -44,8 +36,8 @@ export async function POST(request: Request) {
       cpf: session.cpf,
       perfil: session.perfil,
       clinica_id: session.clinica_id,
+      entidade_id: session.entidade_id,
       bodyPerfil: body.perfil,
-      contratante_id: body.contratante_id,
     });
 
     // Em ambiente de teste, garantir que exista um funcionário correspondente
@@ -64,6 +56,22 @@ export async function POST(request: Request) {
             session.nome,
             'rh',
             session.clinica_id || null,
+            KNOWN_HASH,
+          ]
+        );
+      } else if (session.perfil === 'gestor') {
+        // Hash conhecido para senha 123456 (apenas em dev/test)
+        const KNOWN_HASH =
+          '$2a$10$1FmG9Rn0QJ9T78GbvS/Yf.AfR9tp9qTxBznhUWLwBhsP8BChtmSVW';
+        await query(
+          `INSERT INTO funcionarios (cpf, nome, perfil, tomador_id, ativo, senha_hash)
+           VALUES ($1, $2, $3, $4, true, $5)
+           ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome, perfil = EXCLUDED.perfil, tomador_id = EXCLUDED.tomador_id, ativo = true`,
+          [
+            session.cpf,
+            session.nome,
+            'gestor',
+            session.entidade_id || null,
             KNOWN_HASH,
           ]
         );

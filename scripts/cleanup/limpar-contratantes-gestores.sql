@@ -1,9 +1,9 @@
 -- ============================================================================
--- Script: Limpar Contratantes e Gestores Entidade
+-- Script: Limpar tomadores e Gestores Entidade
 -- Data: 31/01/2026
 -- Banco: nr-bps_db
 -- ============================================================================
--- ATENÇÃO: Este script remove TODOS os contratantes tipo 'entidade' e seus gestores
+-- ATENÇÃO: Este script remove TODOS os tomadores tipo 'entidade' e seus gestores
 -- Execute com cuidado e apenas em ambiente de desenvolvimento/testes
 -- ============================================================================
 
@@ -17,14 +17,14 @@ SET LOCAL app.current_user_perfil = 'admin';
 \echo '==================== DADOS QUE SERÃO DELETADOS ===================='
 
 \echo ''
-\echo '1. CONTRATANTES (tipo = entidade):'
+\echo '1. tomadores (tipo = entidade):'
 SELECT 
     id,
     tipo,
     nome,
     cnpj,
     criado_em
-FROM contratantes
+FROM tomadores
 WHERE tipo = 'entidade'
 ORDER BY id;
 
@@ -36,7 +36,7 @@ SELECT
     c.nome,
     cs.criado_em
 FROM entidades_senhas cs
-JOIN contratantes c ON c.id = cs.contratante_id
+JOIN tomadores c ON c.id = cs.contratante_id
 WHERE c.tipo = 'entidade'
 ORDER BY cs.contratante_id;
 
@@ -49,7 +49,7 @@ SELECT
     f.contratante_id,
     c.nome as empresa
 FROM funcionarios f
-JOIN contratantes c ON c.id = f.contratante_id
+JOIN tomadores c ON c.id = f.contratante_id
 WHERE c.tipo = 'entidade'
   AND f.perfil = 'gestor'
 ORDER BY f.contratante_id;
@@ -63,7 +63,7 @@ SELECT
     la.status,
     c.nome as empresa
 FROM lotes_avaliacao la
-JOIN contratantes c ON c.id = la.contratante_id
+JOIN tomadores c ON c.id = la.contratante_id
 WHERE c.tipo = 'entidade'
 ORDER BY la.contratante_id;
 
@@ -75,7 +75,7 @@ SELECT
     c.nome as empresa
 FROM avaliacoes a
 JOIN funcionarios f ON f.cpf = a.funcionario_cpf
-JOIN contratantes c ON c.id = f.contratante_id
+JOIN tomadores c ON c.id = f.contratante_id
 WHERE c.tipo = 'entidade'
 GROUP BY f.contratante_id, c.nome
 ORDER BY f.contratante_id;
@@ -91,21 +91,21 @@ ORDER BY f.contratante_id;
 -- EXCLUSÃO DOS DADOS (em ordem para respeitar foreign keys)
 -- ============================================================================
 
--- Obter IDs dos contratantes que serão deletados
-CREATE TEMP TABLE contratantes_para_deletar AS
-SELECT id FROM contratantes WHERE tipo = 'entidade';
+-- Obter IDs dos tomadores que serão deletados
+CREATE TEMP TABLE tomadores_para_deletar AS
+SELECT id FROM tomadores WHERE tipo = 'entidade';
 
 \echo ''
 \echo '==================== INICIANDO EXCLUSÃO ===================='
 
--- 2. Deletar avaliações de funcionários vinculados aos contratantes
+-- 2. Deletar avaliações de funcionários vinculados aos tomadores
 \echo ''
 \echo 'Deletando avaliações...'
 DELETE FROM avaliacoes
 WHERE funcionario_cpf IN (
     SELECT cpf 
     FROM funcionarios 
-    WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar)
+    WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar)
 );
 
 -- 3. Deletar respostas de avaliações (se houver referências)
@@ -115,7 +115,7 @@ WHERE avaliacao_id IN (
     SELECT a.id
     FROM avaliacoes a
     JOIN funcionarios f ON f.cpf = a.funcionario_cpf
-    WHERE f.contratante_id IN (SELECT id FROM contratantes_para_deletar)
+    WHERE f.contratante_id IN (SELECT id FROM tomadores_para_deletar)
 );
 
 -- 4. Deletar resultados de avaliações (se houver referências)
@@ -125,60 +125,60 @@ WHERE avaliacao_id IN (
     SELECT a.id
     FROM avaliacoes a
     JOIN funcionarios f ON f.cpf = a.funcionario_cpf
-    WHERE f.contratante_id IN (SELECT id FROM contratantes_para_deletar)
+    WHERE f.contratante_id IN (SELECT id FROM tomadores_para_deletar)
 );
 
--- 5. Deletar lotes de avaliação dos contratantes
+-- 5. Deletar lotes de avaliação dos tomadores
 \echo 'Deletando lotes de avaliação...'
 DELETE FROM lotes_avaliacao
-WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
+WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar);
 
--- 6. Deletar funcionários vinculados aos contratantes (incluindo gestores)
+-- 6. Deletar funcionários vinculados aos tomadores (incluindo gestores)
 \echo 'Deletando funcionários vinculados (incluindo gestores)...'
 DELETE FROM funcionarios
-WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
+WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar);
 
 -- 7. Deletar senhas dos gestores (entidades_senhas)
 \echo 'Deletando senhas dos gestores (entidades_senhas)...'
 DELETE FROM entidades_senhas
-WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
+WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar);
 
 -- 8. Deletar pagamentos relacionados
 \echo 'Deletando pagamentos...'
 DELETE FROM pagamentos
-WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
+WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar);
 
 -- 9. Deletar contratos relacionados
 \echo 'Deletando contratos...'
 DELETE FROM contratos
-WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar);
+WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar);
 
 -- 10. Deletar notificações relacionadas (via lote_id)
 \echo 'Deletando notificações...'
 DELETE FROM notificacoes_admin
 WHERE lote_id IN (
     SELECT id FROM lotes_avaliacao 
-    WHERE contratante_id IN (SELECT id FROM contratantes_para_deletar)
+    WHERE contratante_id IN (SELECT id FROM tomadores_para_deletar)
 );
 
--- 11. Por último, deletar os contratantes
-\echo 'Deletando contratantes...'
-DELETE FROM contratantes
-WHERE id IN (SELECT id FROM contratantes_para_deletar);
+-- 11. Por último, deletar os tomadores
+\echo 'Deletando tomadores...'
+DELETE FROM tomadores
+WHERE id IN (SELECT id FROM tomadores_para_deletar);
 
 -- Limpar tabela temporária
-DROP TABLE contratantes_para_deletar;
+DROP TABLE tomadores_para_deletar;
 
 \echo ''
 \echo '==================== EXCLUSÃO CONCLUÍDA ===================='
 \echo ''
 \echo 'Verificando resultado:'
 
--- Verificar se ainda existem contratantes tipo entidade
+-- Verificar se ainda existem tomadores tipo entidade
 SELECT 
-    COUNT(*) as contratantes_restantes,
-    'contratantes tipo entidade' as tabela
-FROM contratantes
+    COUNT(*) as tomadores_restantes,
+    'tomadores tipo entidade' as tabela
+FROM tomadores
 WHERE tipo = 'entidade'
 
 UNION ALL
@@ -187,7 +187,7 @@ SELECT
     COUNT(*) as gestores_restantes,
     'gestores em entidades_senhas' as tabela
 FROM entidades_senhas cs
-LEFT JOIN contratantes c ON c.id = cs.contratante_id
+LEFT JOIN tomadores c ON c.id = cs.contratante_id
 WHERE c.tipo = 'entidade' OR c.id IS NULL;
 
 \echo ''

@@ -20,7 +20,7 @@
   - Visualizar `audit_logs`
 - ❌ **VETADO:**
   - Acessar `clinicas`
-  - Acessar `contratantes` (clínicas e entidades)
+  - Acessar `tomadores` (clínicas e entidades)
   - Acessar `empresas_clientes`
   - Acessar `funcionarios` (tabela de avaliados)
   - Criar/gerenciar clínicas
@@ -122,7 +122,7 @@
 **Propósito:** Migration defensiva adicional para garantir remoção completa de todas as policies incorretas
 **Conteúdo:**
 
-- Remove 40+ variações de policies problemáticas para admin em: `clinicas`, `contratantes`, `empresas_clientes`, `funcionarios`, `avaliacoes`, `lotes_avaliacao`, `respostas`, `resultados`, `laudos`
+- Remove 40+ variações de policies problemáticas para admin em: `clinicas`, `tomadores`, `empresas_clientes`, `funcionarios`, `avaliacoes`, `lotes_avaliacao`, `respostas`, `resultados`, `laudos`
 - Remove policies de emissor em: `avaliacoes`, `lotes_avaliacao`
 - Cria policies corretas de admin para `usuarios` (SELECT, INSERT, UPDATE apenas)
 - Adiciona comentários informativos nas tabelas
@@ -170,18 +170,16 @@ const clinicaResult = await query('SELECT id FROM clinicas WHERE id = $1', [clin
  */
 ```
 
-#### ✅ [app/api/admin/contratantes/route.ts](c:\apps\QWork\app\api\admin\contratantes\route.ts)
+#### ✅ [app/api/admin/tomadores/route.ts](c:\apps\QWork\app\api\admin\tomadores\route.ts)
 
 **Status:** ✅ **CORRIGIDO**  
 **Ação Tomada:** Endpoint GET desativado temporariamente
-**Motivo:** Admin não deve gerenciar contratantes (clínicas e entidades)
+**Motivo:** Admin não deve gerenciar tomadores (clínicas e entidades)
 **Código Anterior (Problemático):**
 
 ```typescript
-// Admin acessava tabela contratantes diretamente
-const result = await query(`SELECT c.* FROM contratantes c WHERE c.id = $1`, [
-  id,
-]);
+// Admin acessava tabela tomadores diretamente
+const result = await query(`SELECT c.* FROM tomadores c WHERE c.id = $1`, [id]);
 ```
 
 **Solução Aplicada:** Endpoint retorna HTTP 403 com sugestão de criar endpoint específico de aprovação limitado
@@ -273,7 +271,7 @@ it('✅ DEVE ver audit_logs (permissão correta)', async () => {
 - ✅ database/migrations/301_remove_admin_emissor_incorrect_permissions.sql (criada)
 - ✅ app/api/admin/gestores-rh/route.ts (endpoints desativados)
 - ✅ app/api/admin/funcionarios/route.ts (documentado para movimentação)
-- ✅ app/api/admin/contratantes/route.ts (endpoint desativado)
+- ✅ app/api/admin/tomadores/route.ts (endpoint desativado)
 - ✅ **tests**/security/rls-rbac.test.ts (4 testes corrigidos)
 
 ### Arquivos que Precisam Ação Manual: 1
@@ -290,13 +288,13 @@ it('✅ DEVE ver audit_logs (permissão correta)', async () => {
 
 - 10+ policies `admin_all_*` em diversas tabelas
 - 3 policies de emissor em avaliacoes/lotes
-- 15+ variações de policies de admin em clinicas, contratantes, empresas, funcionarios
+- 15+ variações de policies de admin em clinicas, tomadores, empresas, funcionarios
 
 ### Endpoints Desativados: 3
 
 - ❌ GET /api/admin/gestores-rh (JOINs com clinicas/empresas)
 - ❌ POST /api/admin/gestores-rh (verificação de clínicas)
-- ❌ GET /api/admin/contratantes (acesso total a contratantes)
+- ❌ GET /api/admin/tomadores (acesso total a tomadores)
 
 ### Testes Corrigidos: 4
 
@@ -311,7 +309,7 @@ it('✅ DEVE ver audit_logs (permissão correta)', async () => {
 
 ### Prioridade ALTA (Bloqueadores de Segurança)
 
-1. ❌ Corrigir `app/api/admin/contratantes/route.ts` - Admin não deve acessar contratantes
+1. ❌ Corrigir `app/api/admin/tomadores/route.ts` - Admin não deve acessar tomadores
 2. ❌ Corrigir `app/api/admin/gestores-rh/route.ts` - Remover JOINs com clinicas/empresas
 3. ❌ Revisar `app/api/admin/funcionarios/route.ts` - Erro de rota/validação
 
@@ -334,7 +332,7 @@ it('✅ DEVE ver audit_logs (permissão correta)', async () => {
 #### Admin
 
 - [ ] Admin NÃO consegue SELECT em `clinicas` ← **Migration 301 remove policy**
-- [ ] Admin NÃO consegue SELECT em `contratantes` ← **Migration 301 remove policy**
+- [ ] Admin NÃO consegue SELECT em `tomadores` ← **Migration 301 remove policy**
 - [ ] Admin NÃO consegue SELECT em `empresas_clientes` ← **Migration 301 remove policy**
 - [ ] Admin NÃO consegue SELECT em `funcionarios` (tabela de avaliados) ← **Migration 301 remove policy**
 - [ ] Admin NÃO consegue SELECT em `avaliacoes` ← **Migration 301 remove policy**

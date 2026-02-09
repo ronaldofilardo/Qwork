@@ -106,7 +106,7 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
         cpf: rhCpf,
         nome: 'Dr. João Silva',
         perfil: 'rh',
-        contratante_id: 1,
+        tomador_id: 1,
         clinica_id: clinicaId,
         entidade_id: null,
       });
@@ -266,7 +266,7 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
 
       expect(response.status).toBe(403);
       expect(data.error).toBe(
-        'Contratante inativo. Entre em contato com o administrador.'
+        'tomador inativo. Entre em contato com o administrador.'
       );
       expect(mockCreateSession).not.toHaveBeenCalled();
     });

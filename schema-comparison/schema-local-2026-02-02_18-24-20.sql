@@ -2889,9 +2889,9 @@ BEGIN
 
         c.ativa
 
-    FROM contratantes c
+    FROM tomadores c
 
-    INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+    INNER JOIN tomadores_funcionarios cf ON cf.contratante_id = c.id
 
     WHERE cf.funcionario_id = p_funcionario_id
 
@@ -3293,11 +3293,11 @@ DECLARE
 
 BEGIN
 
-  -- Buscar nome do contratante (corrigido de clinicas para contratantes)
+  -- Buscar nome do contratante (corrigido de clinicas para tomadores)
 
   SELECT nome INTO v_contratante_nome
 
-  FROM contratantes
+  FROM tomadores
 
   WHERE id = NEW.contratante_id;
 
@@ -3469,11 +3469,11 @@ DECLARE
 
 BEGIN
 
-  -- Buscar dados do contratante (corrigido de clinicas para contratantes)
+  -- Buscar dados do contratante (corrigido de clinicas para tomadores)
 
   SELECT nome, responsavel_cpf INTO v_contratante_nome, v_gestor_cpf
 
-  FROM contratantes
+  FROM tomadores
 
   WHERE id = NEW.contratante_id;
 
@@ -4130,10 +4130,10 @@ $$;
 
 
 --
--- Name: update_contratantes_updated_at(); Type: FUNCTION; Schema: public; Owner: -
+-- Name: update_tomadores_updated_at(); Type: FUNCTION; Schema: public; Owner: -
 --
 
-CREATE FUNCTION public.update_contratantes_updated_at() RETURNS trigger
+CREATE FUNCTION public.update_tomadores_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -4994,7 +4994,7 @@ BEGIN
 
   ELSE
 
-    -- Para contratantes ainda nÃ£o aplicamos detecÃ§Ã£o de anomalias; nÃ£o bloquear por anomalia
+    -- Para tomadores ainda nÃ£o aplicamos detecÃ§Ã£o de anomalias; nÃ£o bloquear por anomalia
 
     v_tem_anomalia_critica := false;
 
@@ -5852,10 +5852,10 @@ ALTER SEQUENCE public.contratacao_personalizada_id_seq OWNED BY public.contratac
 
 
 --
--- Name: contratantes; Type: TABLE; Schema: public; Owner: -
+-- Name: tomadores; Type: TABLE; Schema: public; Owner: -
 --
 
-CREATE TABLE public.contratantes (
+CREATE TABLE public.tomadores (
     id integer NOT NULL,
     tipo public.tipo_contratante_enum NOT NULL,
     nome character varying(200) NOT NULL,
@@ -5888,72 +5888,72 @@ CREATE TABLE public.contratantes (
     plano_id integer,
     data_primeiro_pagamento timestamp without time zone,
     data_liberacao_login timestamp without time zone,
-    CONSTRAINT contratantes_estado_check CHECK ((length((estado)::text) = 2)),
-    CONSTRAINT contratantes_responsavel_cpf_check CHECK ((length((responsavel_cpf)::text) = 11))
+    CONSTRAINT tomadores_estado_check CHECK ((length((estado)::text) = 2)),
+    CONSTRAINT tomadores_responsavel_cpf_check CHECK ((length((responsavel_cpf)::text) = 11))
 );
 
 
 --
--- Name: TABLE contratantes; Type: COMMENT; Schema: public; Owner: -
+-- Name: TABLE tomadores; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.contratantes IS 'Tabela unificada para clÃ­nicas e entidades privadas';
-
-
---
--- Name: COLUMN contratantes.tipo; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.contratantes.tipo IS 'clinica: medicina ocupacional com empresas intermediÃ¡rias | entidade: empresa privada com vÃ­nculo direto';
+COMMENT ON TABLE public.tomadores IS 'Tabela unificada para clÃ­nicas e entidades privadas';
 
 
 --
--- Name: COLUMN contratantes.responsavel_nome; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN tomadores.tipo; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.contratantes.responsavel_nome IS 'Para clÃ­nicas: gestor RH | Para entidades: responsÃ¡vel pelo cadastro';
-
-
---
--- Name: COLUMN contratantes.status; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.contratantes.status IS 'Status de aprovaÃ§Ã£o para novos cadastros';
+COMMENT ON COLUMN public.tomadores.tipo IS 'clinica: medicina ocupacional com empresas intermediÃ¡rias | entidade: empresa privada com vÃ­nculo direto';
 
 
 --
--- Name: COLUMN contratantes.pagamento_confirmado; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN tomadores.responsavel_nome; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.contratantes.pagamento_confirmado IS 'Flag que indica se o pagamento foi confirmado para o contratante';
-
-
---
--- Name: COLUMN contratantes.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.contratantes.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios para o contratante';
+COMMENT ON COLUMN public.tomadores.responsavel_nome IS 'Para clÃ­nicas: gestor RH | Para entidades: responsÃ¡vel pelo cadastro';
 
 
 --
--- Name: COLUMN contratantes.plano_id; Type: COMMENT; Schema: public; Owner: -
+-- Name: COLUMN tomadores.status; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.contratantes.plano_id IS 'ID do plano associado ao contratante';
-
-
---
--- Name: COLUMN contratantes.data_liberacao_login; Type: COMMENT; Schema: public; Owner: -
---
-
-COMMENT ON COLUMN public.contratantes.data_liberacao_login IS 'Data em que o login foi liberado apÃ³s confirmaÃ§Ã£o de pagamento';
+COMMENT ON COLUMN public.tomadores.status IS 'Status de aprovaÃ§Ã£o para novos cadastros';
 
 
 --
--- Name: contratantes_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: COLUMN tomadores.pagamento_confirmado; Type: COMMENT; Schema: public; Owner: -
 --
 
-CREATE SEQUENCE public.contratantes_id_seq
+COMMENT ON COLUMN public.tomadores.pagamento_confirmado IS 'Flag que indica se o pagamento foi confirmado para o contratante';
+
+
+--
+-- Name: COLUMN tomadores.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.tomadores.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios para o contratante';
+
+
+--
+-- Name: COLUMN tomadores.plano_id; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.tomadores.plano_id IS 'ID do plano associado ao contratante';
+
+
+--
+-- Name: COLUMN tomadores.data_liberacao_login; Type: COMMENT; Schema: public; Owner: -
+--
+
+COMMENT ON COLUMN public.tomadores.data_liberacao_login IS 'Data em que o login foi liberado apÃ³s confirmaÃ§Ã£o de pagamento';
+
+
+--
+-- Name: tomadores_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE public.tomadores_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -5963,10 +5963,10 @@ CREATE SEQUENCE public.contratantes_id_seq
 
 
 --
--- Name: contratantes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: tomadores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
 --
 
-ALTER SEQUENCE public.contratantes_id_seq OWNED BY public.contratantes.id;
+ALTER SEQUENCE public.tomadores_id_seq OWNED BY public.tomadores.id;
 
 
 --
@@ -5998,7 +5998,7 @@ COMMENT ON TABLE public.entidades_senhas IS 'Senhas hash para gestores de entida
 -- Name: COLUMN entidades_senhas.cpf; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em tomadores - usado para login';
 
 
 --
@@ -7087,7 +7087,7 @@ CREATE TABLE public.pagamentos (
 -- Name: TABLE pagamentos; Type: COMMENT; Schema: public; Owner: -
 --
 
-COMMENT ON TABLE public.pagamentos IS 'Registro de pagamentos de contratantes';
+COMMENT ON TABLE public.pagamentos IS 'Registro de pagamentos de tomadores';
 
 
 --
@@ -7705,7 +7705,7 @@ CREATE VIEW public.usuarios_resumo AS
     count(*) FILTER (WHERE (ativo = true)) AS ativos,
     count(*) FILTER (WHERE (ativo = false)) AS inativos,
     count(DISTINCT clinica_id) FILTER (WHERE (clinica_id IS NOT NULL)) AS clinicas_vinculadas,
-    count(DISTINCT contratante_id) FILTER (WHERE (contratante_id IS NOT NULL)) AS contratantes_vinculados,
+    count(DISTINCT contratante_id) FILTER (WHERE (contratante_id IS NOT NULL)) AS tomadores_vinculados,
     count(DISTINCT empresa_id) FILTER (WHERE (empresa_id IS NOT NULL)) AS empresas_vinculadas
    FROM public.funcionarios
   WHERE (usuario_tipo IS NOT NULL)
@@ -7952,10 +7952,10 @@ ALTER TABLE ONLY public.contratacao_personalizada ALTER COLUMN id SET DEFAULT ne
 
 
 --
--- Name: contratantes id; Type: DEFAULT; Schema: public; Owner: -
+-- Name: tomadores id; Type: DEFAULT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes ALTER COLUMN id SET DEFAULT nextval('public.contratantes_id_seq'::regclass);
+ALTER TABLE ONLY public.tomadores ALTER COLUMN id SET DEFAULT nextval('public.tomadores_id_seq'::regclass);
 
 
 --
@@ -8229,27 +8229,27 @@ ALTER TABLE ONLY public.contratacao_personalizada
 
 
 --
--- Name: contratantes contratantes_cnpj_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tomadores tomadores_cnpj_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_cnpj_unique UNIQUE (cnpj);
-
-
---
--- Name: contratantes contratantes_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
---
-
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_email_unique UNIQUE (email);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_cnpj_unique UNIQUE (cnpj);
 
 
 --
--- Name: contratantes contratantes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: tomadores tomadores_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_email_unique UNIQUE (email);
+
+
+--
+-- Name: tomadores tomadores_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_pkey PRIMARY KEY (id);
 
 
 --
@@ -8821,24 +8821,24 @@ CREATE INDEX idx_contratacao_personalizada_token ON public.contratacao_personali
 
 
 --
--- Name: idx_contratantes_ativa; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tomadores_ativa; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_contratantes_ativa ON public.contratantes USING btree (ativa);
-
-
---
--- Name: idx_contratantes_cnpj; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_contratantes_cnpj ON public.contratantes USING btree (cnpj);
+CREATE INDEX idx_tomadores_ativa ON public.tomadores USING btree (ativa);
 
 
 --
--- Name: idx_contratantes_data_liberacao; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tomadores_cnpj; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_contratantes_data_liberacao ON public.contratantes USING btree (data_liberacao_login);
+CREATE INDEX idx_tomadores_cnpj ON public.tomadores USING btree (cnpj);
+
+
+--
+-- Name: idx_tomadores_data_liberacao; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tomadores_data_liberacao ON public.tomadores USING btree (data_liberacao_login);
 
 
 --
@@ -8863,24 +8863,24 @@ CREATE INDEX idx_entidades_senhas_cpf ON public.entidades_senhas USING btree (cp
 
 
 --
--- Name: idx_contratantes_status; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tomadores_status; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_contratantes_status ON public.contratantes USING btree (status);
-
-
---
--- Name: idx_contratantes_tipo; Type: INDEX; Schema: public; Owner: -
---
-
-CREATE INDEX idx_contratantes_tipo ON public.contratantes USING btree (tipo);
+CREATE INDEX idx_tomadores_status ON public.tomadores USING btree (status);
 
 
 --
--- Name: idx_contratantes_tipo_ativa; Type: INDEX; Schema: public; Owner: -
+-- Name: idx_tomadores_tipo; Type: INDEX; Schema: public; Owner: -
 --
 
-CREATE INDEX idx_contratantes_tipo_ativa ON public.contratantes USING btree (tipo, ativa);
+CREATE INDEX idx_tomadores_tipo ON public.tomadores USING btree (tipo);
+
+
+--
+-- Name: idx_tomadores_tipo_ativa; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_tomadores_tipo_ativa ON public.tomadores USING btree (tipo, ativa);
 
 
 --
@@ -9675,10 +9675,10 @@ CREATE TRIGGER trg_entidades_senhas_updated_at BEFORE UPDATE ON public.entidades
 
 
 --
--- Name: contratantes trg_contratantes_updated_at; Type: TRIGGER; Schema: public; Owner: -
+-- Name: tomadores trg_tomadores_updated_at; Type: TRIGGER; Schema: public; Owner: -
 --
 
-CREATE TRIGGER trg_contratantes_updated_at BEFORE UPDATE ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.update_contratantes_updated_at();
+CREATE TRIGGER trg_tomadores_updated_at BEFORE UPDATE ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.update_tomadores_updated_at();
 
 
 --
@@ -9860,15 +9860,15 @@ ALTER TABLE ONLY public.clinicas_empresas
 --
 
 ALTER TABLE ONLY public.contratacao_personalizada
-    ADD CONSTRAINT contratacao_personalizada_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT contratacao_personalizada_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
--- Name: contratantes contratantes_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: tomadores tomadores_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
 
 
 --
@@ -9876,7 +9876,7 @@ ALTER TABLE ONLY public.contratantes
 --
 
 ALTER TABLE ONLY public.contratos
-    ADD CONSTRAINT contratos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT contratos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -9900,7 +9900,7 @@ ALTER TABLE ONLY public.contratos_planos
 --
 
 ALTER TABLE ONLY public.contratos_planos
-    ADD CONSTRAINT contratos_planos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id);
+    ADD CONSTRAINT contratos_planos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id);
 
 
 --
@@ -9932,7 +9932,7 @@ ALTER TABLE ONLY public.empresas_clientes
 --
 
 ALTER TABLE ONLY public.empresas_clientes
-    ADD CONSTRAINT empresas_clientes_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT empresas_clientes_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -9956,7 +9956,7 @@ ALTER TABLE ONLY public.avaliacoes
 --
 
 ALTER TABLE ONLY public.entidades_senhas
-    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -9980,7 +9980,7 @@ ALTER TABLE ONLY public.funcionarios
 --
 
 ALTER TABLE ONLY public.funcionarios
-    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE SET NULL;
 
 
 --
@@ -10020,7 +10020,7 @@ ALTER TABLE ONLY public.mfa_codes
 --
 
 ALTER TABLE ONLY public.recibos
-    ADD CONSTRAINT fk_recibos_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_recibos_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -10140,7 +10140,7 @@ ALTER TABLE ONLY public.lotes_avaliacao
 --
 
 ALTER TABLE ONLY public.lotes_avaliacao
-    ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -10348,10 +10348,10 @@ CREATE POLICY clinicas_rh_select ON public.clinicas FOR SELECT USING (((public.c
 
 
 --
--- Name: contratantes contratantes_admin_all; Type: POLICY; Schema: public; Owner: -
+-- Name: tomadores tomadores_admin_all; Type: POLICY; Schema: public; Owner: -
 --
 
-CREATE POLICY contratantes_admin_all ON public.contratantes USING ((public.current_user_perfil() = 'admin'::text)) WITH CHECK ((public.current_user_perfil() = 'admin'::text));
+CREATE POLICY tomadores_admin_all ON public.tomadores USING ((public.current_user_perfil() = 'admin'::text)) WITH CHECK ((public.current_user_perfil() = 'admin'::text));
 
 
 --

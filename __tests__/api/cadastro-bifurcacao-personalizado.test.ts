@@ -36,7 +36,7 @@ jest.mock('next/navigation', () => ({
   useSearchParams: jest.fn(),
 }));
 
-describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
+describe('Cadastro Tomador - Bifurcação Personalizado vs Fixo', () => {
   let planoFixoId: number;
   let planoPersonalizadoId: number;
 
@@ -54,11 +54,19 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
   });
 
   afterAll(async () => {
-    // Cleanup
-    await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IS NOT NULL'
+    // Cleanup (usa view tomadores agnóstica para seleção)
+    const existentes1 = await query(
+      `SELECT id FROM tomadores WHERE cnpj IN ($1, $2)`,
+      ['06990590000123', '07234453000189']
     );
-    await query('DELETE FROM contratantes WHERE cnpj IN ($1, $2)', [
+    for (const row of existentes1.rows) {
+      await query(
+        `DELETE FROM contratacao_personalizada WHERE tomador_id = $1`,
+        [row.id]
+      );
+    }
+    // Limpa da tabela base (entidades)
+    await query('DELETE FROM entidades WHERE cnpj IN ($1, $2)', [
       '06990590000123',
       '07234453000189',
     ]);
@@ -68,7 +76,7 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
     ]);
   });
 
-  it('deve criar contratante com plano FIXO em status aguardando_pagamento', async () => {
+  it('deve criar tomador com plano FIXO em status aguardando_pagamento', async () => {
     const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const payload = {
@@ -98,7 +106,7 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
     });
 
     const req = {
-      url: 'http://localhost:3000/api/cadastro/contratante',
+      url: 'http://localhost:3000/api/cadastro/tomador',
       method: 'POST',
       headers: new Headers({ 'x-forwarded-for': '127.0.0.1' }),
       formData: async () => formData,
@@ -108,17 +116,17 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
     const data = await response.json();
 
     expect(response.status).toBe(201);
-    expect(data.contratante.status).toBe('aguardando_pagamento');
+    expect(data.tomador.status).toBe('aguardando_pagamento');
 
-    // Verificar que NÃO foi criado registro em contratacao_personalizada
+    // Verificar que NÃO foi criado registro em contratacao_personalizada (plano fixo)
     const personalizadoCheck = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [data.contratante.id]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [data.tomador.id]
     );
     expect(personalizadoCheck.rows.length).toBe(0);
   });
 
-  it('deve criar contratante com plano PERSONALIZADO em status pendente', async () => {
+  it('deve criar tomador com plano PERSONALIZADO em status pendente', async () => {
     const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const payload = {
@@ -148,7 +156,7 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
     });
 
     const req = {
-      url: 'http://localhost:3000/api/cadastro/contratante',
+      url: 'http://localhost:3000/api/cadastro/tomador',
       method: 'POST',
       headers: new Headers({ 'x-forwarded-for': '127.0.0.1' }),
       formData: async () => formData,
@@ -158,12 +166,12 @@ describe('Cadastro Contratante - Bifurcação Personalizado vs Fixo', () => {
     const data = await response.json();
 
     expect(response.status).toBe(201);
-    expect(data.contratante.status).toBe('pendente');
+    expect(data.tomador.status).toBe('pendente');
 
-    // Verificar que FOI criado registro em contratacao_personalizada
+    // Verificar que FOI criado registro em contratacao_personalizada (plano personalizado)
     const personalizadoCheck = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [data.contratante.id]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [data.tomador.id]
     );
     expect(personalizadoCheck.rows.length).toBe(1);
     expect(personalizadoCheck.rows[0].status).toBe('pendente');

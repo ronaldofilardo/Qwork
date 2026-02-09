@@ -11,11 +11,11 @@ import { query } from '@/lib/db';
 
 /**
  * @test Suite de integração para fluxo completo de cadastro e pagamento
- * @description Testa desde a criação de contratante até o início do pagamento
+ * @description Testa desde a criação de tomador até o início do pagamento
  */
 describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulador', () => {
   let planoId: number;
-  let contratanteId: number;
+  let tomadorId: number;
   let contratoId: number | null = null;
 
   beforeEach(async () => {
@@ -24,11 +24,9 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
       await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
       contratoId = null;
     }
-    if (contratanteId) {
-      await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
-        contratanteId,
-      ]);
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
+    if (tomadorId) {
+      await query('DELETE FROM pagamentos WHERE tomador_id = $1', [tomadorId]);
+      await query('DELETE FROM entidades WHERE id = $1', [tomadorId]);
     }
   });
 
@@ -49,19 +47,17 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
       await query('DELETE FROM contratos WHERE id = $1', [contratoId]);
       contratoId = null;
     }
-    if (contratanteId) {
-      await query('DELETE FROM pagamentos WHERE contratante_id = $1', [
-        contratanteId,
-      ]);
-      await query('DELETE FROM contratantes WHERE id = $1', [contratanteId]);
-      contratanteId = 0 as any;
+    if (tomadorId) {
+      await query('DELETE FROM pagamentos WHERE tomador_id = $1', [tomadorId]);
+      await query('DELETE FROM entidades WHERE id = $1', [tomadorId]);
+      tomadorId = 0 as any;
     }
   });
 
   /**
    * @test Valida fluxo completo E2E de cadastro até início de pagamento
    * @description Testa:
-   * 1. Criar contratante e contrato não aceito
+   * 1. Criar tomador e contrato não aceito
    * 2. Consultar contrato (deve estar não aceito)
    * 3. Aceitar contrato (retorna URL do simulador)
    * 4. Abrir simulador com contrato aceito
@@ -69,10 +65,10 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
    * 6. Validar pagamento registrado no banco
    */
   test('Cadastro cria contrato, aceitar permite abrir simulador e iniciar pagamento', async () => {
-    // Arrange - Criar contratante diretamente (em vez de POST /api/cadastro/contratante)
+    // Arrange - Criar tomador diretamente (em vez de POST /api/cadastro/tomadores)
     const cnpj = `E2E${Math.floor(Math.random() * 1000000000)}`;
-    const contratanteRes = await query(
-      `INSERT INTO contratantes (
+    const tomadorRes = await query(
+      `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular,
         numero_funcionarios_estimado, plano_id, ativa, pagamento_confirmado
@@ -87,19 +83,19 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
         planoId,
       ]
     );
-    contratanteId = contratanteRes.rows[0].id;
+    tomadorId = tomadorRes.rows[0].id;
 
     // Atualizar status para 'aguardando_pagamento' como no fluxo real
     await query(
-      `UPDATE contratantes SET status = 'aguardando_pagamento' WHERE id = $1`,
-      [contratanteId]
+      `UPDATE entidades SET status = 'aguardando_pagamento' WHERE id = $1`,
+      [tomadorId]
     );
 
     // Criar contrato pendente de aceite
     const contratoInsert = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, aceito, conteudo)
+      `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito, conteudo)
        VALUES ($1, $2, $3, $4, 'aguardando_pagamento', false, $5) RETURNING id`,
-      [contratanteId, planoId, 10, 10 * 20.0, 'Contrato E2E gerado']
+      [tomadorId, planoId, 10, 10 * 20.0, 'Contrato E2E gerado']
     );
 
     contratoId = contratoInsert.rows[0].id;
@@ -178,7 +174,7 @@ describe('Integração: cadastro -> contrato gerado -> aceitar -> abrir simulado
       await import('@/app/api/pagamento/iniciar/route');
     const iniciarReq: any = {
       json: async () => ({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         contrato_id: contratoId,
       }),
     };

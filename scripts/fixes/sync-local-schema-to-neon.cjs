@@ -54,7 +54,7 @@ $$ LANGUAGE plpgsql IMMUTABLE;
   }
 }
 
-async function ensureContratantesSenhasColumns() {
+async function ensuretomadoresSenhasColumns() {
   const cols = await query(
     "SELECT column_name FROM information_schema.columns WHERE table_name = 'entidades_senhas' ORDER BY ordinal_position"
   );
@@ -79,14 +79,14 @@ async function ensureContratantesSenhasColumns() {
   if (needs.length === 0)
     console.log('Nenhuma alteração necessária em entidades_senhas.');
 
-  // Tentar popular contratante_id a partir de contratantes.responsavel_cpf
+  // Tentar popular contratante_id a partir de tomadores.responsavel_cpf
   console.log(
     'Populando contratante_id em entidades_senhas quando possível...'
   );
   await query(`
     UPDATE entidades_senhas cs
     SET contratante_id = c.id
-    FROM contratantes c
+    FROM tomadores c
     WHERE cs.cpf = c.responsavel_cpf
       AND cs.contratante_id IS NULL
   `);
@@ -122,7 +122,7 @@ async function runAll() {
     );
     await ensureIndexOnClinicas();
     await ensureGerarHashOverload();
-    await ensureContratantesSenhasColumns();
+    await ensuretomadoresSenhasColumns();
     console.log('\nSincronização concluída.');
   } catch (err) {
     console.error('Erro durante sincronização:', err.message);

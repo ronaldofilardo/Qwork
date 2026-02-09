@@ -68,7 +68,68 @@ describe('db-security — validateSessionContext (regressions)', () => {
     ]);
   });
 
-  it('❌ rejeita RH não encontrado ou inativo em `funcionarios`', async () => {
+  it('✅ aceita RH que existe em `usuarios` (fallback para arquitetura legada)', async () => {
+    mockGetSession.mockReturnValue({
+      cpf: '55555555055',
+      nome: 'RH Legado em Usuarios',
+      perfil: 'rh',
+      clinica_id: 2,
+    } as any);
+
+    mockQuery.mockImplementation(async (text: string, params?: any[]) => {
+      // Primeira busca: funcionarios retorna vazio (triggera fallback)
+      if (typeof text === 'string' && text.includes('FROM funcionarios')) {
+        return { rows: [], rowCount: 0 } as any;
+      }
+
+      // Fallback: usuarios retorna o usuário
+      if (typeof text === 'string' && text.includes('FROM usuarios')) {
+        return {
+          rows: [
+            {
+              cpf: '55555555055',
+              perfil: 'rh',
+              tipo_usuario: 'rh',
+              ativo: true,
+            },
+          ],
+          rowCount: 1,
+        } as any;
+      }
+
+      if (typeof text === 'string' && text.includes('set_config')) {
+        return { rows: [], rowCount: 0 } as any;
+      }
+
+      // query principal
+      return { rows: [{ ok: 99 }], rowCount: 1 } as any;
+    });
+
+    const res = await queryWithContext('SELECT 99 as ok');
+    expect(res.rows[0].ok).toBe(99);
+
+    // Verificar que ambas as tabelas foram consultadas (fallback ativado)
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'FROM funcionarios WHERE cpf = $1 AND perfil = $2'
+      ),
+      expect.any(Array)
+    );
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'FROM usuarios WHERE cpf = $1 AND tipo_usuario = $2'
+      ),
+      expect.any(Array)
+    );
+
+    // set_config deve ter sido chamado mesmo com fallback
+    expect(mockQuery).toHaveBeenCalledWith('SELECT set_config($1, $2, false)', [
+      'app.current_user_cpf',
+      '55555555055',
+    ]);
+  });
+
+  it('❌ rejeita RH não encontrado ou inativo em `funcionarios` e `usuarios`', async () => {
     mockGetSession.mockReturnValue({
       cpf: '99999999999',
       nome: 'RH Inexistente',
@@ -78,6 +139,10 @@ describe('db-security — validateSessionContext (regressions)', () => {
 
     mockQuery.mockImplementation(async (text: string) => {
       if (typeof text === 'string' && text.includes('FROM funcionarios')) {
+        return { rows: [], rowCount: 0 } as any;
+      }
+
+      if (typeof text === 'string' && text.includes('FROM usuarios')) {
         return { rows: [], rowCount: 0 } as any;
       }
 
@@ -92,9 +157,16 @@ describe('db-security — validateSessionContext (regressions)', () => {
       'SEGURANÇA: Contexto de sessão inválido - usuário não encontrado ou inativo'
     );
 
+    // Verificar que ambas as tabelas foram consultadas
     expect(mockQuery).toHaveBeenCalledWith(
       expect.stringContaining(
         'FROM funcionarios WHERE cpf = $1 AND perfil = $2'
+      ),
+      expect.any(Array)
+    );
+    expect(mockQuery).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'FROM usuarios WHERE cpf = $1 AND tipo_usuario = $2'
       ),
       expect.any(Array)
     );

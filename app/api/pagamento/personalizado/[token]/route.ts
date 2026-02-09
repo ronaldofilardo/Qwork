@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * GET - Validar link de pagamento personalizado
- * Retorna dados do contratante e valores para exibição na página de pagamento
+ * Retorna dados da entidade e valores para exibição na página de pagamento
  */
 export async function GET(
   request: NextRequest,
@@ -22,20 +22,22 @@ export async function GET(
     const res = await query(
       `SELECT 
         cp.id as contratacao_id,
-        cp.contratante_id,
+        cp.entidade_id,
         cp.valor_por_funcionario,
         cp.numero_funcionarios_estimado,
         cp.valor_total_estimado,
         cp.status,
         cp.payment_link_expiracao,
-        e.nome as entidade_nome,
-        e.email as entidade_email,
-        e.cnpj as entidade_cnpj,
+        t.id as tomador_id,
+        t.nome as tomador_nome,
+        t.tipo,
+        t.email as tomador_email,
+        t.cnpj as tomador_cnpj,
         p.nome as plano_nome,
         p.id as plano_id
        FROM contratacao_personalizada cp
-       JOIN entidades e ON e.id = cp.contratante_id
-       JOIN planos p ON p.id = e.plano_id
+       JOIN tomadores t ON t.id = COALESCE(cp.tomador_id, cp.entidade_id)
+       JOIN planos p ON p.id = t.plano_id
        WHERE cp.payment_link_token = $1 
        AND cp.status IN ('valor_definido', 'aguardando_pagamento')`,
       [token]
@@ -64,11 +66,14 @@ export async function GET(
     return NextResponse.json({
       valido: true,
       contratacao_id: data.contratacao_id,
-      contratante_id: data.contratante_id,
-      entidade_id: data.contratante_id,
-      entidade_nome: data.entidade_nome,
-      entidade_email: data.entidade_email,
-      entidade_cnpj: data.entidade_cnpj,
+      entidade_id: data.entidade_id,
+      tomador_id: data.tomador_id,
+      entidade_id_compat: data.entidade_id, // backward compat
+      tomador_nome: data.tomador_nome,
+      tipo: data.tipo,
+      entidade_nome: data.tomador_nome, // backward compat
+      entidade_email: data.tomador_email,
+      entidade_cnpj: data.tomador_cnpj,
       plano_nome: data.plano_nome,
       plano_id: data.plano_id,
       valor_por_funcionario: parseFloat(data.valor_por_funcionario || '0'),
@@ -104,14 +109,15 @@ export async function POST(
     const validacao = await query(
       `SELECT 
         cp.id,
-        cp.contratante_id, 
+        cp.entidade_id, 
         cp.status,
         cp.valor_por_funcionario,
         cp.numero_funcionarios_estimado,
         cp.valor_total_estimado,
-        e.plano_id
+        t.plano_id,
+        t.tipo
        FROM contratacao_personalizada cp
-       JOIN entidades e ON e.id = cp.contratante_id
+       JOIN tomadores t ON t.id = COALESCE(cp.tomador_id, cp.entidade_id)
        WHERE cp.payment_link_token = $1
          AND cp.payment_link_expiracao > NOW()`,
       [token]
@@ -130,7 +136,7 @@ export async function POST(
       // Atualizar status da contratação
       await query(
         `UPDATE contratacao_personalizada 
-         SET status = 'valor_aceito_pelo_contratante',
+         SET status = 'valor_aceito_pelo_tomador',
              atualizado_em = CURRENT_TIMESTAMP
          WHERE id = $1`,
         [proposta.id]
@@ -139,12 +145,12 @@ export async function POST(
       // Criar contrato (reutilizando lógica de plano fixo)
       const contratoRes = await query(
         `INSERT INTO contratos (
-          contratante_id, plano_id, numero_funcionarios, valor_total,
+          entidade_id, plano_id, numero_funcionarios, valor_total,
           status, criado_em
         ) VALUES ($1, $2, $3, $4, 'pendente', CURRENT_TIMESTAMP)
-        RETURNING id, contratante_id, plano_id, numero_funcionarios, valor_total, status`,
+        RETURNING id, entidade_id, plano_id, numero_funcionarios, valor_total, status`,
         [
-          proposta.contratante_id,
+          proposta.entidade_id,
           proposta.plano_id,
           proposta.numero_funcionarios_estimado,
           proposta.valor_total_estimado,
@@ -156,17 +162,17 @@ export async function POST(
       console.info(
         JSON.stringify({
           event: 'proposta_personalizada_aceita',
-          contratante_id: proposta.contratante_id,
+          entidade_id: proposta.entidade_id,
           contrato_id: contratoId,
           valor_total: proposta.valor_total_estimado,
           timestamp: new Date().toISOString(),
         })
       );
 
-      // Buscar dados do contratante/entidade para retornar com o contrato
+      // Buscar dados do tomador para retornar com o contrato
       const entidadeRes = await query(
-        `SELECT nome, cnpj, email FROM entidades WHERE id = $1`,
-        [proposta.contratante_id]
+        `SELECT nome, cnpj, email, tipo FROM tomadores WHERE id = $1`,
+        [proposta.entidade_id]
       );
 
       const entidade = entidadeRes.rows[0];
@@ -176,9 +182,10 @@ export async function POST(
         message: 'Proposta aceita! Revise e aceite o contrato.',
         contrato: {
           id: contratoId,
-          contratante_id: proposta.contratante_id,
-          entidade_id: proposta.contratante_id,
-          entidade_nome: entidade.nome,
+          entidade_id: proposta.entidade_id,
+          tomador_id: proposta.entidade_id,
+          tomador_nome: entidade.nome,
+          tipo: entidade.tipo,
           entidade_cnpj: entidade.cnpj,
           entidade_email: entidade.email,
           plano_id: proposta.plano_id,

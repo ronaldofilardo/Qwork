@@ -12,15 +12,15 @@ async function corrigirLotesClinica() {
   try {
     console.log('\n=== ANÁLISE ANTES DA CORREÇÃO ===\n');
 
-    // 1. Verificar contratantes
-    const contratantesResult = await client.query(`
+    // 1. Verificar tomadores
+    const tomadoresResult = await client.query(`
       SELECT id, nome, tipo, responsavel_cpf 
-      FROM contratantes 
+      FROM tomadores 
       ORDER BY id
     `);
 
-    console.log('Contratantes:');
-    contratantesResult.rows.forEach((c) => {
+    console.log('tomadores:');
+    tomadoresResult.rows.forEach((c) => {
       console.log(`  ID ${c.id} - ${c.tipo}: ${c.nome} (${c.responsavel_cpf})`);
     });
 
@@ -36,7 +36,7 @@ async function corrigirLotesClinica() {
         c.nome as contratante_nome,
         EXISTS(SELECT 1 FROM laudos l WHERE l.lote_id = la.id AND l.emitido_em IS NOT NULL) as tem_laudo_emitido
       FROM lotes_avaliacao la
-      LEFT JOIN contratantes c ON c.id = la.contratante_id
+      LEFT JOIN tomadores c ON c.id = la.contratante_id
       WHERE la.contratante_id = 2
       ORDER BY la.id
     `);
@@ -206,7 +206,7 @@ async function corrigirLotesClinica() {
           COALESCE(c.nome, cl.nome) as contratante_nome,
           ec.nome as empresa_nome
         FROM lotes_avaliacao la
-        LEFT JOIN contratantes c ON c.id = la.contratante_id
+        LEFT JOIN tomadores c ON c.id = la.contratante_id
         LEFT JOIN clinicas cl ON cl.id = la.clinica_id
         LEFT JOIN empresas_clientes ec ON ec.id = la.empresa_id
         ORDER BY la.id

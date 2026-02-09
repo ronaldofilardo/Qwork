@@ -3,9 +3,13 @@
  *
  * Verifica que:
  * 1. Lotes começam em 'ativo'
- * 2. Avaliações começam em 'iniciada' 
+ * 2. Avaliações começam em 'iniciada'
  * 3. Avaliações usam 'concluida' (feminino) - "avaliação concluída"
  * 4. Lotes usam 'concluido' (masculino) - "lote concluído"
+ */
+
+import { query } from '@/lib/db';
+
 describe('Validação Máquina de Estado Atualizada', () => {
   it('deve validar que máquina de estado usa valores corretos', async () => {
     //  Verifica valores enum válidos para lotes

@@ -3,11 +3,11 @@
  *
  * Simula o fluxo real end-to-end conforme especificado:
  *
- * 1. Contratante preenche formulário → Recebe "em análise, aguarde link"
+ * 1. tomador preenche formulário → Recebe "em análise, aguarde link"
  * 2. Admin recebe pré-cadastro → Define funcionários + valor → Gera link
- * 3. Contratante acessa link → Vê proposta → Aceita
+ * 3. tomador acessa link → Vê proposta → Aceita
  * 4. Sistema redireciona para /sucesso-cadastro com contrato
- * 5. Contratante aceita contrato → Abre simulador → Confirma pagamento
+ * 5. tomador aceita contrato → Abre simulador → Confirma pagamento
  * 6. Sistema libera login
  */
 
@@ -36,7 +36,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
   const cpfTeste = '123.456.789-00';
   const emailTeste = 'clinica.e2e@test.com';
   let planoPersonalizadoId: number;
-  let contratanteId: number;
+  let tomadorId: number;
   let contratacaoId: number;
   let tokenProposta: string;
   let contratoId: number;
@@ -56,15 +56,15 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     // Limpar dados anteriores
     await query('BEGIN');
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
-    await query('DELETE FROM contratantes WHERE responsavel_cpf = $1', [
+    await query('DELETE FROM entidades WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM entidades WHERE responsavel_cpf = $1', [
       cpfTeste,
     ]);
     await query('COMMIT');
@@ -77,19 +77,19 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     // Limpar dados do teste
     await query('BEGIN');
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [cnpjTeste]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [cnpjTeste]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [cnpjTeste]);
     await query('COMMIT');
   });
 
-  it('ETAPA 1: Contratante preenche formulário e recebe confirmação "em análise"', async () => {
-    // \n=== ETAPA 1: CADASTRO DO CONTRATANTE ===\n
+  it('ETAPA 1: tomador preenche formulário e recebe confirmação "em análise"', async () => {
+    // \n=== ETAPA 1: CADASTRO DO tomador ===\n
 
     const formData = new FormData();
     formData.append('tipo', 'clinica');
@@ -129,7 +129,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
 
     const { POST } = await import('@/app/api/cadastro/tomadores/route');
     const request = new (await import('next/server')).NextRequest(
-      'http://localhost:3000/api/cadastro/contratante',
+      'http://localhost:3000/api/cadastro/tomador',
       {
         method: 'POST',
         body: formData,
@@ -141,16 +141,16 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
 
     expect(response.status).toBe(201);
     expect(data.success).toBe(true);
-    expect(data.contratante.tipo).toBe('clinica');
-    expect(data.contratante.status).toBe('pendente');
+    expect(data.tomador.tipo).toBe('clinica');
+    expect(data.tomador.status).toBe('pendente');
     expect(data.message).toContain('Aguarde análise do administrador');
 
-    contratanteId = data.id;
+    tomadorId = data.id;
 
     // Verificar contratacao_personalizada
     const contratacaoResult = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(contratacaoResult.rows.length).toBe(1);
@@ -213,8 +213,8 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
 
   });
 
-  it('ETAPA 3: Contratante acessa link e visualiza proposta', async () => {
-    // \n=== ETAPA 3: CONTRATANTE ACESSA PROPOSTA ===\n
+  it('ETAPA 3: tomador acessa link e visualiza proposta', async () => {
+    // \n=== ETAPA 3: tomador ACESSA PROPOSTA ===\n
 
     const { GET } = await import('@/app/api/proposta/[token]/route');
     const request = new (await import('next/server')).NextRequest(
@@ -233,7 +233,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
 
     // ✓ Proposta válida e acessível
 
-    // ✓ Dados exibidos ao contratante:
+    // ✓ Dados exibidos ao tomador:
 
     //   - Funcionários: 3000
 
@@ -243,7 +243,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
 
   });
 
-  it('ETAPA 4: Contratante aceita proposta e é redirecionado para contrato', async () => {
+  it('ETAPA 4: tomador aceita proposta e é redirecionado para contrato', async () => {
     // \n=== ETAPA 4: ACEITE DA PROPOSTA ===\n
 
     const { POST } = await import('@/app/api/proposta/aceitar/route');
@@ -264,7 +264,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
     expect(data.redirect_url).toContain('/sucesso-cadastro');
-    expect(data.redirect_url).toContain(`id=${contratanteId}`);
+    expect(data.redirect_url).toContain(`id=${tomadorId}`);
     expect(data.redirect_url).toContain('contrato_id=');
     expect(data.redirect_url).toContain('origem=personalizado');
 
@@ -303,7 +303,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     const contrato = contratoResult.rows[0];
 
     expect(contrato.status).toBe('aguardando_aceite');
-    expect(contrato.contratante_id).toBe(contratanteId);
+    expect(contrato.tomador_id).toBe(tomadorId);
     expect(contrato.numero_funcionarios).toBe(3000);
     expect(parseFloat(contrato.valor_total)).toBe(46500.0);
 
@@ -314,7 +314,7 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
     //   - Valor: R$ 46.500,00
 
     // Verificar URL que seria exibida
-    const expectedUrl = `/sucesso-cadastro?id=${contratanteId}&contrato_id=${contratoId}&origem=personalizado`;
+    const expectedUrl = `/sucesso-cadastro?id=${tomadorId}&contrato_id=${contratoId}&origem=personalizado`;
     // ✓ Página /sucesso-cadastro irá:
 
     //   1. Exibir modal de contrato padrão
@@ -330,14 +330,14 @@ describe('🎯 Fluxo E2E Completo - Plano Personalizado', () => {
   it('RESUMO: Validar estado final do fluxo', async () => {
     // \n=== 📊 RESUMO DO FLUXO E2E ===\n
 
-    // Contratante
-    const contratanteResult = await query(
-      'SELECT * FROM contratantes WHERE id = $1',
-      [contratanteId]
+    // tomador
+    const tomadorResult = await query(
+      'SELECT * FROM entidades WHERE id = $1',
+      [tomadorId]
     );
-    const contratante = contratanteResult.rows[0];
+    const tomador = tomadorResult.rows[0];
 
-    // 📋 CONTRATANTE:
+    // 📋 tomador:
 
     // Contratação Personalizada
     const contratacaoResult = await query(

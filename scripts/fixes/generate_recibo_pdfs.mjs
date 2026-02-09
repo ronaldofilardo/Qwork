@@ -12,7 +12,7 @@ import { gerarHtmlReciboTemplate } from '../../lib/templates/recibo-template.js'
             ct.endereco as contratante_endereco, ct.cidade as contratante_cidade, ct.estado as contratante_estado, ct.cep as contratante_cep,
             p.metodo as pagamento_metodo, p.plataforma_nome, p.plataforma_id
      FROM recibos r
-     JOIN contratantes ct ON r.contratante_id = ct.id
+     JOIN tomadores ct ON r.contratante_id = ct.id
      LEFT JOIN pagamentos p ON r.pagamento_id = p.id
      WHERE r.pdf IS NULL AND r.ativo = true
      ORDER BY r.id`

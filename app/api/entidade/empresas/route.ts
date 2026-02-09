@@ -29,7 +29,7 @@ export async function GET() {
       FROM empresas_clientes ec
       WHERE ec.clinica_id = $1
       ORDER BY ec.nome`,
-      [session.contratante_id]
+      [session.entidade_id]
     );
 
     return NextResponse.json({

@@ -25,7 +25,7 @@ SELECT
   COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes
 FROM avaliacoes a
 JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-WHERE a.lote_id = 1 AND f.contratante_id = 1 AND a.status != 'inativada';
+WHERE a.lote_id = 1 AND f.tomador_id = 1 AND a.status != 'inativada';
 
 Resultado:
 ✅ total_funcionarios: 1
@@ -208,4 +208,3 @@ A **confusão** surge porque:
 - E porcentagem só conta avaliações **concluídas** (37 respostas)
 
 **Solução:** Melhorar a clareza da UI (opcional), nenhuma correção de bug necessária.
-

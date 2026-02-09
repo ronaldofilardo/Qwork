@@ -27,7 +27,7 @@ async function main() {
              cp.status,
              cp.criado_em
       FROM contratacao_personalizada cp
-      LEFT JOIN contratantes c ON c.id = cp.contratante_id
+      LEFT JOIN tomadores c ON c.id = cp.contratante_id
       WHERE cp.status IN (
         'aguardando_valor_admin', 'aguardando_aceite_contrato', 'pendente',
         'aguardando_valor', 'valor_definido', 'aguardando_pagamento'

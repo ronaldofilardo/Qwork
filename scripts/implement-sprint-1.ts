@@ -73,23 +73,23 @@ COMMENT ON FUNCTION execute_in_transaction IS 'Executa múltiplas queries em tra
 -- ================================================================
 
 -- Remover constraint antiga se existir
-ALTER TABLE lotes_avaliacao DROP CONSTRAINT IF EXISTS check_lote_contratante_exclusivo;
+ALTER TABLE lotes_avaliacao DROP CONSTRAINT IF EXISTS check_lote_tomador_exclusivo;
 
 -- Adicionar CHECK constraint para garantir lógica exclusiva
--- REGRA: Lote deve ter EXATAMENTE UM de (contratante_id, clinica_id, empresa_id)
+-- REGRA: Lote deve ter EXATAMENTE UM de (tomador_id, clinica_id, empresa_id)
 ALTER TABLE lotes_avaliacao 
-  ADD CONSTRAINT check_lote_contratante_exclusivo 
+  ADD CONSTRAINT check_lote_tomador_exclusivo 
   CHECK (
     -- Exatamente um dos três deve estar preenchido
     (
-      (contratante_id IS NOT NULL AND clinica_id IS NULL AND empresa_id IS NULL) OR
-      (contratante_id IS NULL AND clinica_id IS NOT NULL AND empresa_id IS NULL) OR
-      (contratante_id IS NULL AND clinica_id IS NULL AND empresa_id IS NOT NULL)
+      (tomador_id IS NOT NULL AND clinica_id IS NULL AND empresa_id IS NULL) OR
+      (tomador_id IS NULL AND clinica_id IS NOT NULL AND empresa_id IS NULL) OR
+      (tomador_id IS NULL AND clinica_id IS NULL AND empresa_id IS NOT NULL)
     )
   );
 
-COMMENT ON CONSTRAINT check_lote_contratante_exclusivo ON lotes_avaliacao 
-IS 'Garante que lote tenha EXATAMENTE UM contratante (entidade OU clínica OU empresa) - nunca ambíguo (P1)';
+COMMENT ON CONSTRAINT check_lote_tomador_exclusivo ON lotes_avaliacao 
+IS 'Garante que lote tenha EXATAMENTE UM tomador (entidade OU clínica OU empresa) - nunca ambíguo (P1)';
 
 -- ================================================================
 -- P1.6: ATUALIZAR CASCADE DELETE EM FKs CRÍTICAS
@@ -179,7 +179,7 @@ SELECT
   pg_get_constraintdef(oid) as definition
 FROM pg_constraint
 WHERE conrelid = 'lotes_avaliacao'::regclass
-  AND conname = 'check_lote_contratante_exclusivo';
+  AND conname = 'check_lote_tomador_exclusivo';
 
 -- 2. Verificar CASCADE DELETE em FKs
 SELECT
@@ -235,14 +235,14 @@ async function validateSprint1(pool: Pool, env: string) {
     SELECT conname 
     FROM pg_constraint
     WHERE conrelid = 'lotes_avaliacao'::regclass
-      AND conname = 'check_lote_contratante_exclusivo';
+      AND conname = 'check_lote_tomador_exclusivo';
   `);
 
   if (checkConstraint.rows.length === 0) {
     throw new Error(`CHECK constraint não criada em ${env}!`);
   }
   console.log(`\n   P1 - CHECK constraint lotes:`);
-  console.log(`      ✅ check_lote_contratante_exclusivo`);
+  console.log(`      ✅ check_lote_tomador_exclusivo`);
 
   // 3. Verificar CASCADE DELETE
   const cascades = await pool.query(`

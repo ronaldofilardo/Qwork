@@ -1,4 +1,4 @@
--- Migration 015: Adicionar Constraints de Integridade para Contratantes
+-- Migration 015: Adicionar Constraints de Integridade para tomadores
 -- Data: 2026-01-13
 -- Descrição: Adiciona CHECK constraints para garantir integridade do fluxo de contratação
 
@@ -11,10 +11,10 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' AND column_name = 'plano_id'
+        WHERE table_name = 'tomadores' AND column_name = 'plano_id'
     ) THEN
-        ALTER TABLE contratantes ADD COLUMN plano_id INTEGER;
-        ALTER TABLE contratantes ADD CONSTRAINT fk_contratantes_plano 
+        ALTER TABLE tomadores ADD COLUMN plano_id INTEGER;
+        ALTER TABLE tomadores ADD CONSTRAINT fk_tomadores_plano 
             FOREIGN KEY (plano_id) REFERENCES planos(id) ON DELETE SET NULL;
     END IF;
 END $$;
@@ -24,9 +24,9 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' AND column_name = 'pagamento_confirmado'
+        WHERE table_name = 'tomadores' AND column_name = 'pagamento_confirmado'
     ) THEN
-        ALTER TABLE contratantes ADD COLUMN pagamento_confirmado BOOLEAN DEFAULT false NOT NULL;
+        ALTER TABLE tomadores ADD COLUMN pagamento_confirmado BOOLEAN DEFAULT false NOT NULL;
     END IF;
 END $$;
 
@@ -35,9 +35,9 @@ DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'contratantes' AND column_name = 'data_liberacao_login'
+        WHERE table_name = 'tomadores' AND column_name = 'data_liberacao_login'
     ) THEN
-        ALTER TABLE contratantes ADD COLUMN data_liberacao_login TIMESTAMP;
+        ALTER TABLE tomadores ADD COLUMN data_liberacao_login TIMESTAMP;
     END IF;
 END $$;
 
@@ -46,29 +46,29 @@ END $$;
 -- ============================================================================
 
 -- Constraint: Conta só pode estar ativa se pagamento foi confirmado
-ALTER TABLE contratantes DROP CONSTRAINT IF EXISTS chk_contratantes_ativa_pagamento;
-ALTER TABLE contratantes ADD CONSTRAINT chk_contratantes_ativa_pagamento
+ALTER TABLE tomadores DROP CONSTRAINT IF EXISTS chk_tomadores_ativa_pagamento;
+ALTER TABLE tomadores ADD CONSTRAINT chk_tomadores_ativa_pagamento
     CHECK (ativa = false OR (ativa = true AND pagamento_confirmado = true));
 
 -- Constraint: Se aprovado, deve ter data e CPF de aprovação
-ALTER TABLE contratantes DROP CONSTRAINT IF EXISTS chk_contratantes_aprovacao_completa;
-ALTER TABLE contratantes ADD CONSTRAINT chk_contratantes_aprovacao_completa
+ALTER TABLE tomadores DROP CONSTRAINT IF EXISTS chk_tomadores_aprovacao_completa;
+ALTER TABLE tomadores ADD CONSTRAINT chk_tomadores_aprovacao_completa
     CHECK (
         status != 'aprovado' OR 
         (status = 'aprovado' AND aprovado_em IS NOT NULL AND aprovado_por_cpf IS NOT NULL)
     );
 
 -- Constraint: Se ativa, deve ter data de liberação de login
-ALTER TABLE contratantes DROP CONSTRAINT IF EXISTS chk_contratantes_ativa_liberacao;
-ALTER TABLE contratantes ADD CONSTRAINT chk_contratantes_ativa_liberacao
+ALTER TABLE tomadores DROP CONSTRAINT IF EXISTS chk_tomadores_ativa_liberacao;
+ALTER TABLE tomadores ADD CONSTRAINT chk_tomadores_ativa_liberacao
     CHECK (
         ativa = false OR 
         (ativa = true AND data_liberacao_login IS NOT NULL)
     );
 
 -- Constraint: Se pagamento confirmado, deve ter plano_id
-ALTER TABLE contratantes DROP CONSTRAINT IF EXISTS chk_contratantes_pagamento_plano;
-ALTER TABLE contratantes ADD CONSTRAINT chk_contratantes_pagamento_plano
+ALTER TABLE tomadores DROP CONSTRAINT IF EXISTS chk_tomadores_pagamento_plano;
+ALTER TABLE tomadores ADD CONSTRAINT chk_tomadores_pagamento_plano
     CHECK (
         pagamento_confirmado = false OR 
         (pagamento_confirmado = true AND plano_id IS NOT NULL)
@@ -78,26 +78,26 @@ ALTER TABLE contratantes ADD CONSTRAINT chk_contratantes_pagamento_plano
 -- ÍNDICES ADICIONAIS
 -- ============================================================================
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_pagamento_confirmado 
-    ON contratantes (pagamento_confirmado);
+CREATE INDEX IF NOT EXISTS idx_tomadores_pagamento_confirmado 
+    ON tomadores (pagamento_confirmado);
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_plano_id 
-    ON contratantes (plano_id);
+CREATE INDEX IF NOT EXISTS idx_tomadores_plano_id 
+    ON tomadores (plano_id);
 
-CREATE INDEX IF NOT EXISTS idx_contratantes_status_pagamento 
-    ON contratantes (status, pagamento_confirmado);
+CREATE INDEX IF NOT EXISTS idx_tomadores_status_pagamento 
+    ON tomadores (status, pagamento_confirmado);
 
 -- ============================================================================
 -- COMENTÁRIOS
 -- ============================================================================
 
-COMMENT ON COLUMN contratantes.pagamento_confirmado IS 
+COMMENT ON COLUMN tomadores.pagamento_confirmado IS 
     'Indica se o pagamento foi confirmado. Obrigatório true para ativar a conta';
 
-COMMENT ON COLUMN contratantes.plano_id IS 
+COMMENT ON COLUMN tomadores.plano_id IS 
     'Referência ao plano contratado. Obrigatório quando pagamento_confirmado = true';
 
-COMMENT ON COLUMN contratantes.data_liberacao_login IS 
+COMMENT ON COLUMN tomadores.data_liberacao_login IS 
     'Data e hora em que o login foi liberado após conclusão do fluxo de contratação';
 
 -- ============================================================================
@@ -127,9 +127,9 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Criar trigger
-DROP TRIGGER IF EXISTS trg_validate_contratante_state ON contratantes;
+DROP TRIGGER IF EXISTS trg_validate_contratante_state ON tomadores;
 CREATE TRIGGER trg_validate_contratante_state
-    BEFORE UPDATE ON contratantes
+    BEFORE UPDATE ON tomadores
     FOR EACH ROW
     EXECUTE FUNCTION validate_contratante_state_transition();
 
@@ -138,12 +138,12 @@ CREATE TRIGGER trg_validate_contratante_state
 -- ============================================================================
 
 -- Marcar como pagamento não confirmado onde ativa = false
-UPDATE contratantes 
+UPDATE tomadores 
 SET pagamento_confirmado = false 
 WHERE pagamento_confirmado IS NULL AND ativa = false;
 
 -- Para registros já ativos (legado), assumir pagamento confirmado
-UPDATE contratantes 
+UPDATE tomadores 
 SET 
     pagamento_confirmado = true,
     data_liberacao_login = COALESCE(aprovado_em, criado_em)
@@ -153,11 +153,11 @@ WHERE ativa = true AND pagamento_confirmado = false;
 -- COMENTÁRIOS FINAIS
 -- ============================================================================
 
-COMMENT ON CONSTRAINT chk_contratantes_ativa_pagamento ON contratantes IS
+COMMENT ON CONSTRAINT chk_tomadores_ativa_pagamento ON tomadores IS
     'Garante que contas só podem ser ativadas após confirmação de pagamento';
 
-COMMENT ON CONSTRAINT chk_contratantes_aprovacao_completa ON contratantes IS
+COMMENT ON CONSTRAINT chk_tomadores_aprovacao_completa ON tomadores IS
     'Garante que aprovação inclui data e CPF do aprovador';
 
 COMMENT ON FUNCTION validate_contratante_state_transition() IS
-    'Valida transições de estado durante atualizações de contratantes';
+    'Valida transições de estado durante atualizações de tomadores';

@@ -6,7 +6,7 @@ async function migrarClinicasOrfas() {
     console.log('\n🔧 MIGRAÇÃO: Criar clínicas faltantes\n');
     console.log('='.repeat(70));
 
-    // Identificar contratantes órfãos
+    // Identificar tomadores órfãos
     const orfaos = await query(`
       SELECT 
         c.id,
@@ -17,7 +17,7 @@ async function migrarClinicasOrfas() {
         c.endereco,
         c.cnpj,
         c.responsavel_cpf
-      FROM contratantes c
+      FROM tomadores c
       WHERE c.tipo = 'clinica'
         AND c.ativa = true
         AND c.pagamento_confirmado = true
@@ -252,7 +252,7 @@ async function migrarClinicasOrfas() {
 
     const verif1 = await query(`
       SELECT COUNT(*) as total
-      FROM contratantes c
+      FROM tomadores c
       WHERE c.tipo = 'clinica'
         AND c.ativa = true
         AND c.pagamento_confirmado = true
@@ -269,7 +269,7 @@ async function migrarClinicasOrfas() {
     `);
 
     console.log(
-      `   - Contratantes tipo 'clinica' SEM clínica: ${verif1.rows[0].total}`
+      `   - tomadores tipo 'clinica' SEM clínica: ${verif1.rows[0].total}`
     );
     console.log(`   - RHs SEM clinica_id: ${verif2.rows[0].total}`);
 

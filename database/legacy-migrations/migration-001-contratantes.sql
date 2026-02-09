@@ -1,6 +1,6 @@
 -- Migration 001: Reestruturação para suportar Clínicas e Entidades Unificadas
 -- Data: 2025-12-18
--- Descrição: Cria tabela contratantes unificada e relacionamento polimórfico
+-- Descrição: Cria tabela tomadores unificada e relacionamento polimórfico
 
 -- ============================================================================
 -- ENUMS
@@ -9,14 +9,14 @@
 -- Tipo de contratante
 CREATE TYPE tipo_contratante_enum AS ENUM ('clinica', 'entidade');
 
--- Status de aprovação para contratantes
+-- Status de aprovação para tomadores
 CREATE TYPE status_aprovacao_enum AS ENUM ('pendente', 'aprovado', 'rejeitado', 'em_reanalise');
 
 -- ============================================================================
--- TABELA CONTRATANTES (Unificada para Clínicas e Entidades)
+-- TABELA tomadores (Unificada para Clínicas e Entidades)
 -- ============================================================================
 
-CREATE TABLE contratantes (
+CREATE TABLE tomadores (
     id SERIAL PRIMARY KEY,
     tipo tipo_contratante_enum NOT NULL,
 
@@ -56,38 +56,38 @@ aprovado_em TIMESTAMP,
 aprovado_por_cpf VARCHAR(11),
 
 -- Constraints
-CONSTRAINT contratantes_cnpj_unique UNIQUE (cnpj),
-    CONSTRAINT contratantes_email_unique UNIQUE (email),
-    CONSTRAINT contratantes_responsavel_cpf_check CHECK (LENGTH(responsavel_cpf) = 11),
-    CONSTRAINT contratantes_estado_check CHECK (LENGTH(estado) = 2)
+CONSTRAINT tomadores_cnpj_unique UNIQUE (cnpj),
+    CONSTRAINT tomadores_email_unique UNIQUE (email),
+    CONSTRAINT tomadores_responsavel_cpf_check CHECK (LENGTH(responsavel_cpf) = 11),
+    CONSTRAINT tomadores_estado_check CHECK (LENGTH(estado) = 2)
 );
 
 -- Índices para performance
-CREATE INDEX idx_contratantes_tipo ON contratantes (tipo);
+CREATE INDEX idx_tomadores_tipo ON tomadores (tipo);
 
-CREATE INDEX idx_contratantes_status ON contratantes (status);
+CREATE INDEX idx_tomadores_status ON tomadores (status);
 
-CREATE INDEX idx_contratantes_cnpj ON contratantes (cnpj);
+CREATE INDEX idx_tomadores_cnpj ON tomadores (cnpj);
 
-CREATE INDEX idx_contratantes_ativa ON contratantes (ativa);
+CREATE INDEX idx_tomadores_ativa ON tomadores (ativa);
 
-CREATE INDEX idx_contratantes_tipo_ativa ON contratantes (tipo, ativa);
+CREATE INDEX idx_tomadores_tipo_ativa ON tomadores (tipo, ativa);
 
 -- Comentários
 COMMENT ON
-TABLE contratantes IS 'Tabela unificada para clínicas e entidades privadas';
+TABLE tomadores IS 'Tabela unificada para clínicas e entidades privadas';
 
-COMMENT ON COLUMN contratantes.tipo IS 'clinica: medicina ocupacional com empresas intermediárias | entidade: empresa privada com vínculo direto';
+COMMENT ON COLUMN tomadores.tipo IS 'clinica: medicina ocupacional com empresas intermediárias | entidade: empresa privada com vínculo direto';
 
-COMMENT ON COLUMN contratantes.status IS 'Status de aprovação para novos cadastros';
+COMMENT ON COLUMN tomadores.status IS 'Status de aprovação para novos cadastros';
 
-COMMENT ON COLUMN contratantes.responsavel_nome IS 'Para clínicas: gestor RH | Para entidades: responsável pelo cadastro';
+COMMENT ON COLUMN tomadores.responsavel_nome IS 'Para clínicas: gestor RH | Para entidades: responsável pelo cadastro';
 
 -- ============================================================================
--- TABELA CONTRATANTES_FUNCIONARIOS (Relacionamento Polimórfico)
+-- TABELA tomadores_FUNCIONARIOS (Relacionamento Polimórfico)
 -- ============================================================================
 
-CREATE TABLE contratantes_funcionarios (
+CREATE TABLE tomadores_funcionarios (
     id SERIAL PRIMARY KEY,
     funcionario_id INTEGER NOT NULL,
     contratante_id INTEGER NOT NULL,
@@ -103,26 +103,26 @@ criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
 -- Foreign Keys
-CONSTRAINT fk_contratantes_funcionarios_funcionario FOREIGN KEY (funcionario_id) REFERENCES funcionarios (id) ON DELETE CASCADE,
-CONSTRAINT fk_contratantes_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES contratantes (id) ON DELETE CASCADE,
+CONSTRAINT fk_tomadores_funcionarios_funcionario FOREIGN KEY (funcionario_id) REFERENCES funcionarios (id) ON DELETE CASCADE,
+CONSTRAINT fk_tomadores_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES tomadores (id) ON DELETE CASCADE,
 
 -- Constraints
-CONSTRAINT contratantes_funcionarios_unique 
+CONSTRAINT tomadores_funcionarios_unique 
         UNIQUE (funcionario_id, contratante_id),
-    CONSTRAINT contratantes_funcionarios_datas_check 
+    CONSTRAINT tomadores_funcionarios_datas_check 
         CHECK (data_fim IS NULL OR data_fim >= data_inicio)
 );
 
 -- Índices para performance
-CREATE INDEX idx_contratantes_funcionarios_funcionario ON contratantes_funcionarios (funcionario_id);
+CREATE INDEX idx_tomadores_funcionarios_funcionario ON tomadores_funcionarios (funcionario_id);
 
-CREATE INDEX idx_contratantes_funcionarios_contratante ON contratantes_funcionarios (contratante_id);
+CREATE INDEX idx_tomadores_funcionarios_contratante ON tomadores_funcionarios (contratante_id);
 
-CREATE INDEX idx_contratantes_funcionarios_tipo ON contratantes_funcionarios (tipo_contratante);
+CREATE INDEX idx_tomadores_funcionarios_tipo ON tomadores_funcionarios (tipo_contratante);
 
-CREATE INDEX idx_contratantes_funcionarios_ativo ON contratantes_funcionarios (vinculo_ativo);
+CREATE INDEX idx_tomadores_funcionarios_ativo ON tomadores_funcionarios (vinculo_ativo);
 
-CREATE INDEX idx_contratantes_funcionarios_composite ON contratantes_funcionarios (
+CREATE INDEX idx_tomadores_funcionarios_composite ON tomadores_funcionarios (
     contratante_id,
     tipo_contratante,
     vinculo_ativo
@@ -130,15 +130,15 @@ CREATE INDEX idx_contratantes_funcionarios_composite ON contratantes_funcionario
 
 -- Comentários
 COMMENT ON
-TABLE contratantes_funcionarios IS 'Relacionamento polimórfico entre funcionários e contratantes (clínicas/entidades)';
+TABLE tomadores_funcionarios IS 'Relacionamento polimórfico entre funcionários e tomadores (clínicas/entidades)';
 
-COMMENT ON COLUMN contratantes_funcionarios.tipo_contratante IS 'Redundante mas facilita queries sem join adicional';
+COMMENT ON COLUMN tomadores_funcionarios.tipo_contratante IS 'Redundante mas facilita queries sem join adicional';
 
 -- ============================================================================
 -- TRIGGER PARA ATUALIZAR TIMESTAMP
 -- ============================================================================
 
-CREATE OR REPLACE FUNCTION update_contratantes_updated_at()
+CREATE OR REPLACE FUNCTION update_tomadores_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.atualizado_em = CURRENT_TIMESTAMP;
@@ -146,15 +146,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_contratantes_updated_at
-    BEFORE UPDATE ON contratantes
+CREATE TRIGGER trg_tomadores_updated_at
+    BEFORE UPDATE ON tomadores
     FOR EACH ROW
-    EXECUTE FUNCTION update_contratantes_updated_at();
+    EXECUTE FUNCTION update_tomadores_updated_at();
 
-CREATE TRIGGER trg_contratantes_funcionarios_updated_at
-    BEFORE UPDATE ON contratantes_funcionarios
+CREATE TRIGGER trg_tomadores_funcionarios_updated_at
+    BEFORE UPDATE ON tomadores_funcionarios
     FOR EACH ROW
-    EXECUTE FUNCTION update_contratantes_updated_at();
+    EXECUTE FUNCTION update_tomadores_updated_at();
 
 -- ============================================================================
 -- FUNÇÃO AUXILIAR: Obter Contratante de um Funcionário
@@ -174,8 +174,8 @@ BEGIN
         c.nome,
         c.tipo,
         c.ativa
-    FROM contratantes c
-    INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+    FROM tomadores c
+    INNER JOIN tomadores_funcionarios cf ON cf.contratante_id = c.id
     WHERE cf.funcionario_id = p_funcionario_id
       AND cf.vinculo_ativo = true
       AND c.ativa = true
@@ -185,10 +185,10 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================================
--- VIEW: Contratantes com Estatísticas
+-- VIEW: tomadores com Estatísticas
 -- ============================================================================
 
-CREATE OR REPLACE VIEW v_contratantes_stats AS
+CREATE OR REPLACE VIEW v_tomadores_stats AS
 SELECT
     c.id,
     c.tipo,
@@ -207,8 +207,8 @@ SELECT
     c.criado_em,
     c.aprovado_em
 FROM
-    contratantes c
-    LEFT JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+    tomadores c
+    LEFT JOIN tomadores_funcionarios cf ON cf.contratante_id = c.id
 GROUP BY
     c.id,
     c.tipo,
@@ -221,17 +221,17 @@ GROUP BY
     c.criado_em,
     c.aprovado_em;
 
-COMMENT ON VIEW v_contratantes_stats IS 'View com estatísticas agregadas de contratantes';
+COMMENT ON VIEW v_tomadores_stats IS 'View com estatísticas agregadas de tomadores';
 
 -- ============================================================================
 -- MIGRAÇÃO DE DADOS EXISTENTES (se aplicável)
 -- ============================================================================
 
 -- Nota: Como o banco será zerado, esta seção é para referência futura
--- Se houver dados em 'clinicas', migrar para 'contratantes' com tipo='clinica'
+-- Se houver dados em 'clinicas', migrar para 'tomadores' com tipo='clinica'
 
 /*
-INSERT INTO contratantes (
+INSERT INTO tomadores (
 tipo, nome, cnpj, inscricao_estadual, email, telefone, 
 endereco, cidade, estado, cep,
 responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,

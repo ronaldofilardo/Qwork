@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import ModalLinkContratoPersonalizado from '@/components/modals/ModalLinkContratoPersonalizado';
 import AdminConfirmDeleteModal from '@/components/modals/AdminConfirmDeleteModal';
-import ModalCadastroContratante from '@/components/modals/ModalCadastroContratante';
+import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 
 interface Clinica {
   id: number;
@@ -93,19 +93,19 @@ export function ClinicasContent() {
     setLoading(true);
     try {
       // Buscar clínicas aprovadas
-      const resAprovadas = await fetch('/api/admin/contratantes?tipo=clinica');
+      const resAprovadas = await fetch('/api/admin/tomadores?tipo=clinica');
       if (resAprovadas.ok) {
         const dataAprovadas = await resAprovadas.json();
-        setClinicas(dataAprovadas.contratantes || []);
+        setClinicas(dataAprovadas.tomadores || []);
       }
 
       // Buscar clínicas com plano personalizado pendente
       const resPersonalizado = await fetch(
-        '/api/admin/contratantes?tipo=clinica&plano_personalizado_pendente=true'
+        '/api/admin/tomadores?tipo=clinica&plano_personalizado_pendente=true'
       );
       if (resPersonalizado.ok) {
         const dataPersonalizado = await resPersonalizado.json();
-        setClinicasPersonalizado(dataPersonalizado.contratantes || []);
+        setClinicasPersonalizado(dataPersonalizado.tomadores || []);
       }
     } catch (error) {
       console.error('Erro ao buscar clínicas:', error);
@@ -258,7 +258,7 @@ export function ClinicasContent() {
       setErro('');
 
       try {
-        const response = await fetch('/api/admin/contratantes', {
+        const response = await fetch('/api/admin/tomadores', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -278,7 +278,7 @@ export function ClinicasContent() {
         // Abrir modal com link e QR code
         setContratoPersonalizadoData({
           contratoId: data.contrato_id,
-          contratanteNome: clinica.nome,
+          tomadorNome: clinica.nome,
           valorPorFuncionario: parseFloat(valor),
           numeroFuncionarios: parseInt(numeroFuncionarios),
           valorTotal: parseFloat(valor) * parseInt(numeroFuncionarios),
@@ -417,7 +417,7 @@ export function ClinicasContent() {
             setContratoPersonalizadoData(null);
           }}
           contratoId={contratoPersonalizadoData.contratoId}
-          contratanteNome={contratoPersonalizadoData.contratanteNome}
+          tomadorNome={contratoPersonalizadoData.tomadorNome}
           valorPorFuncionario={contratoPersonalizadoData.valorPorFuncionario}
           numeroFuncionarios={contratoPersonalizadoData.numeroFuncionarios}
           valorTotal={contratoPersonalizadoData.valorTotal}
@@ -742,7 +742,7 @@ export function ClinicasContent() {
       />
 
       {/* Modal de cadastro de nova clínica */}
-      <ModalCadastroContratante
+      <ModalCadastrotomador
         isOpen={showCadastroModal}
         onClose={() => setShowCadastroModal(false)}
         tipo="clinica"

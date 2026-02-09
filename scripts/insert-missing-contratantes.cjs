@@ -7,14 +7,14 @@ const { Client } = require('pg');
   try {
     await client.connect();
     const res = await client.query(
-      `SELECT DISTINCT f.contratante_id as id FROM funcionarios f LEFT JOIN contratantes c ON f.contratante_id = c.id WHERE f.contratante_id IS NOT NULL AND c.id IS NULL`
+      `SELECT DISTINCT f.contratante_id as id FROM funcionarios f LEFT JOIN tomadores c ON f.contratante_id = c.id WHERE f.contratante_id IS NOT NULL AND c.id IS NULL`
     );
     const ids = res.rows.map((r) => r.id).filter(Boolean);
     console.log('missing contratante ids:', ids);
     for (const id of ids) {
       try {
         await client.query(
-          `INSERT INTO contratantes (id, tipo, nome, cnpj, email, ativa) VALUES ($1, 'entidade', $2, '00000000000000', 'auto-seed@tests.local', true)`,
+          `INSERT INTO tomadores (id, tipo, nome, cnpj, email, ativa) VALUES ($1, 'entidade', $2, '00000000000000', 'auto-seed@tests.local', true)`,
           [id, `Auto Seed contratante ${id}`]
         );
         console.log('Inserted contratante', id);

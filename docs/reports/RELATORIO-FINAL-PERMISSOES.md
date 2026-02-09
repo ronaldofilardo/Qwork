@@ -13,10 +13,10 @@ Este relatório documenta as permissões **corretas e validadas** para cada tipo
 **Problemas Corrigidos**:
 
 - ❌ 40+ políticas RLS removidas que davam acesso incorreto ao admin
-- ❌ 3 endpoints backend removidos (gestores-rh, contratantes, funcionarios em /admin)
+- ❌ 3 endpoints backend removidos (gestores-rh, tomadores, funcionarios em /admin)
 - ❌ 9 políticas removidas do dump SQL principal
 - ❌ 4 chamadas frontend corrigidas (page.tsx e page-novo.tsx)
-- ❌ Menu admin limpo (seção Contratantes removida)
+- ❌ Menu admin limpo (seção tomadores removida)
 
 ---
 
@@ -41,7 +41,7 @@ Este relatório documenta as permissões **corretas e validadas** para cada tipo
 | **permissions**       | ✅ ALL | ✅ ALL | ✅ ALL | ✅ ALL | Gerenciamento de permissões        |
 | **role_permissions**  | ✅ ALL | ✅ ALL | ✅ ALL | ✅ ALL | Vinculação papéis-permissões       |
 | **audit_logs**        | ✅ ALL | ❌     | ❌     | ❌     | Apenas leitura de logs             |
-| **contratantes**      | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                     |
+| **tomadores**         | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                     |
 | **clinicas**          | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                     |
 | **empresas_clientes** | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                     |
 | **funcionarios**      | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                     |
@@ -69,7 +69,7 @@ audit_logs_admin_select
 - ✅ `/api/admin/novos-cadastros/*` - Aprovação de cadastros
 - ✅ `/api/admin/emissores/*` - Gestão de emissores
 - ❌ `/api/admin/gestores-rh/*` - **REMOVIDO** (04/02/2026)
-- ❌ `/api/admin/contratantes/*` - **REMOVIDO** (04/02/2026)
+- ❌ `/api/admin/tomadores/*` - **REMOVIDO** (04/02/2026)
 - ❌ `/api/admin/funcionarios/*` - **REMOVIDO** (04/02/2026)
 
 ---
@@ -87,7 +87,7 @@ audit_logs_admin_select
 | **funcionarios**      | ❌     | ❌     | ❌        | ❌     | **SEM ACESSO**                    |
 | **empresas_clientes** | ❌     | ❌     | ❌        | ❌     | **SEM ACESSO**                    |
 | **clinicas**          | ❌     | ❌     | ❌        | ❌     | **SEM ACESSO**                    |
-| **contratantes**      | ❌     | ❌     | ❌        | ❌     | **SEM ACESSO**                    |
+| **tomadores**         | ❌     | ❌     | ❌        | ❌     | **SEM ACESSO**                    |
 
 **Políticas RLS Ativas**:
 
@@ -122,7 +122,7 @@ laudos_emissor_insert
 | **lotes**             | 🔒 Clínica   | ✅ Own | ✅ Own | ❌     | Lotes de avaliações                    |
 | **laudos**            | 🔒 Avaliação | ❌     | ❌     | ❌     | Apenas laudos de avaliações da clínica |
 | **clinicas**          | 🔒 Own       | ❌     | ✅ Own | ❌     | Apenas sua clínica (info básica)       |
-| **contratantes**      | ❌           | ❌     | ❌     | ❌     | **SEM ACESSO DIRETO**                  |
+| **tomadores**         | ❌           | ❌     | ❌     | ❌     | **SEM ACESSO DIRETO**                  |
 | **usuarios**          | ❌           | ❌     | ❌     | ❌     | **SEM ACESSO**                         |
 
 **Filtro RLS**: `clinica_id = auth.jwt() ->> 'clinica_id'`
@@ -168,7 +168,7 @@ clinicas_rh_update
 | **lotes**             | 🔒 Entidade  | ✅ Own | ✅ Own | ❌     | Lotes de avaliações                     |
 | **laudos**            | 🔒 Avaliação | ❌     | ❌     | ❌     | Apenas laudos de avaliações da entidade |
 | **empresas_clientes** | 🔒 Entidade  | ❌     | ❌     | ❌     | Apenas empresas da entidade (read-only) |
-| **contratantes**      | 🔒 Own       | ❌     | ✅ Own | ❌     | Apenas sua entidade (info básica)       |
+| **tomadores**         | 🔒 Own       | ❌     | ✅ Own | ❌     | Apenas sua entidade (info básica)       |
 | **clinicas**          | ❌           | ❌     | ❌     | ❌     | **SEM ACESSO**                          |
 | **usuarios**          | ❌           | ❌     | ❌     | ❌     | **SEM ACESSO**                          |
 
@@ -188,8 +188,8 @@ lotes_gestor_insert
 lotes_gestor_update
 laudos_gestor_select
 empresas_clientes_gestor_select
-contratantes_gestor_select
-contratantes_gestor_update
+tomadores_gestor_select
+tomadores_gestor_update
 ```
 
 **Endpoints Disponíveis**:
@@ -214,7 +214,7 @@ contratantes_gestor_update
 | **lotes**             | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                |
 | **empresas_clientes** | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                |
 | **clinicas**          | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                |
-| **contratantes**      | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                |
+| **tomadores**         | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                |
 | **usuarios**          | ❌     | ❌     | ❌     | ❌     | **SEM ACESSO**                |
 
 **Filtro RLS**: `funcionario_id = auth.jwt() ->> 'funcionario_id'`
@@ -239,10 +239,10 @@ funcionarios_funcionario_select
 ### ADMIN - Antes da Auditoria ❌
 
 ```
-ACESSO TOTAL: clinicas, contratantes, empresas, funcionarios, avaliacoes, lotes
+ACESSO TOTAL: clinicas, tomadores, empresas, funcionarios, avaliacoes, lotes
 POLÍTICAS: 40+ admin_all_* políticas
-ENDPOINTS: /api/admin/gestores-rh, /api/admin/contratantes, /api/admin/funcionarios
-MENU: Seção "Contratantes" com Clínicas e Entidades
+ENDPOINTS: /api/admin/gestores-rh, /api/admin/tomadores, /api/admin/funcionarios
+MENU: Seção "tomadores" com Clínicas e Entidades
 ```
 
 ### ADMIN - Depois da Auditoria ✅
@@ -251,7 +251,7 @@ MENU: Seção "Contratantes" com Clínicas e Entidades
 ACESSO RESTRITO: usuarios, roles, permissions, role_permissions, audit_logs
 POLÍTICAS: 8 políticas específicas (usuarios_admin_*, roles_admin_all, etc)
 ENDPOINTS: /api/admin/usuarios, /api/admin/novos-cadastros, /api/admin/emissores
-MENU: Seção "Contratantes" REMOVIDA
+MENU: Seção "tomadores" REMOVIDA
 ```
 
 ### EMISSOR - Antes da Auditoria ❌
@@ -283,7 +283,7 @@ DROP POLICY IF EXISTS admin_all_avaliacoes ON avaliacoes;
 DROP POLICY IF EXISTS admin_all_empresas ON empresas_clientes;
 DROP POLICY IF EXISTS admin_all_lotes ON lotes;
 DROP POLICY IF EXISTS clinicas_admin_all ON clinicas;
-DROP POLICY IF EXISTS contratantes_admin_all ON contratantes;
+DROP POLICY IF EXISTS tomadores_admin_all ON tomadores;
 DROP POLICY IF EXISTS funcionarios_admin_all ON funcionarios;
 DROP POLICY IF EXISTS lotes_emissor_select ON lotes;
 -- ... (mais 33 políticas)
@@ -325,11 +325,11 @@ CREATE POLICY usuarios_admin_delete ON usuarios FOR DELETE TO admin USING (true)
 ✅ app/api/admin/gestores-rh/route.ts
 ✅ app/api/admin/gestores-rh/[cpf]/route.ts
 ✅ app/api/admin/gestores-rh/substituir/route.ts
-✅ app/api/admin/contratantes/route.ts
+✅ app/api/admin/tomadores/route.ts
 ✅ app/api/admin/funcionarios/route.ts
 ```
 
-**Motivo**: Admin não pode acessar tabelas `clinicas`, `contratantes`, `funcionarios` usadas nesses endpoints.
+**Motivo**: Admin não pode acessar tabelas `clinicas`, `tomadores`, `funcionarios` usadas nesses endpoints.
 
 ### 4. Frontend - Correções
 
@@ -338,15 +338,15 @@ CREATE POLICY usuarios_admin_delete ON usuarios FOR DELETE TO admin USING (true)
 **Antes**:
 
 ```typescript
-const clinicasRes = await fetch('/api/admin/contratantes?tipo=clinica');
-const entidadesRes = await fetch('/api/admin/contratantes?tipo=entidade');
+const clinicasRes = await fetch('/api/admin/tomadores?tipo=clinica');
+const entidadesRes = await fetch('/api/admin/tomadores?tipo=entidade');
 ```
 
 **Depois**:
 
 ```typescript
-// ❌ REMOVIDO: Admin não gerencia contratantes (clínicas/entidades)
-// Endpoints /api/admin/contratantes removidos em 04/02/2026
+// ❌ REMOVIDO: Admin não gerencia tomadores (clínicas/entidades)
+// Endpoints /api/admin/tomadores removidos em 04/02/2026
 setClinicasCount(0);
 setEntidadesCount(0);
 ```
@@ -356,7 +356,7 @@ setEntidadesCount(0);
 **Antes**:
 
 ```tsx
-<MenuItem icon={Building2} label="Contratantes" ... />
+<MenuItem icon={Building2} label="tomadores" ... />
   <SubMenuItem label="Clínicas" count={counts.clinicas} ... />
   <SubMenuItem label="Entidades" count={counts.entidades} ... />
 ```
@@ -365,9 +365,9 @@ setEntidadesCount(0);
 
 ```tsx
 {
-  /* ❌ REMOVIDO: Contratantes (Admin não gerencia clínicas/entidades)
+  /* ❌ REMOVIDO: tomadores (Admin não gerencia clínicas/entidades)
     Endpoints removidos em 04/02/2026 por auditoria de segurança
-    Admin não tem acesso a tabela contratantes por RLS policies */
+    Admin não tem acesso a tabela tomadores por RLS policies */
 }
 ```
 
@@ -423,17 +423,17 @@ setEntidadesCount(0);
 ### Backend
 
 - [x] Endpoints /api/admin/gestores-rh removidos
-- [x] Endpoints /api/admin/contratantes removidos
+- [x] Endpoints /api/admin/tomadores removidos
 - [x] Endpoints /api/admin/funcionarios removidos
 - [x] Verificação de outros endpoints admin (limpo)
 
 ### Frontend
 
-- [x] Chamadas a /api/admin/contratantes removidas (page.tsx)
-- [x] Chamadas a /api/admin/contratantes removidas (page-novo.tsx)
-- [x] Menu "Contratantes" removido (AdminSidebar.tsx)
+- [x] Chamadas a /api/admin/tomadores removidas (page.tsx)
+- [x] Chamadas a /api/admin/tomadores removidas (page-novo.tsx)
+- [x] Menu "tomadores" removido (AdminSidebar.tsx)
 - [x] Imports de ClinicasContent/EntidadesContent comentados
-- [x] Renderização de conteúdo de contratantes comentada
+- [x] Renderização de conteúdo de tomadores comentada
 
 ### Testes
 
@@ -477,13 +477,13 @@ psql -d production_db -c "SET ROLE emissor; SELECT COUNT(*) FROM lotes;"
 ```bash
 # Deploy das correções frontend
 git add app/admin/page.tsx app/admin/page-novo.tsx components/admin/AdminSidebar.tsx
-git commit -m "fix: remover acesso admin a contratantes (auditoria segurança)"
+git commit -m "fix: remover acesso admin a tomadores (auditoria segurança)"
 git push origin main
 ```
 
 ### 3. Monitoramento
 
-- Verificar logs de erro 403/404 em `/api/admin/contratantes`
+- Verificar logs de erro 403/404 em `/api/admin/tomadores`
 - Monitorar tentativas de acesso admin a tabelas restritas
 - Validar audit_logs para tentativas de violação de RLS
 

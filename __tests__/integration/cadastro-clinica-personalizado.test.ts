@@ -38,7 +38,7 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
   const testCnpj = '49303528000129'; // CNPJ válido
   const testCpfResp = '12345678909'; // CPF válido
   const testEmail = 'clinica.personalizada@test.com';
-  let contratanteId: number;
+  let tomadorId: number;
 
   beforeAll(async () => {
     // Buscar plano personalizado existente ou criar
@@ -65,15 +65,15 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
   beforeEach(async () => {
     // Limpar dados de testes anteriores
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [testCnpj]);
-    await query('DELETE FROM contratantes WHERE responsavel_cpf = $1', [
+    await query('DELETE FROM entidades WHERE cnpj = $1', [testCnpj]);
+    await query('DELETE FROM entidades WHERE responsavel_cpf = $1', [
       testCpfResp,
     ]);
   });
@@ -81,14 +81,14 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
   afterAll(async () => {
     // Limpar dados do teste
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
     await query(
-      'DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [testCnpj]
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [testCnpj]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [testCnpj]);
   });
 
   it('deve cadastrar clínica com plano personalizado sem erro de trigger', async () => {
@@ -168,15 +168,15 @@ describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
     // Verificações
     expect(cadastroResponse.status).toBe(201);
     expect(cadastroData.success).toBe(true);
-    expect(cadastroData.contratante.status).toBe('pendente');
-    expect(cadastroData.contratante.tipo).toBe('clinica');
+    expect(cadastroData.tomador.status).toBe('pendente');
+    expect(cadastroData.tomador.tipo).toBe('clinica');
 
-    contratanteId = cadastroData.contratante.id;
+    tomadorId = cadastroData.tomador.id;
 
     // Verificar criação em contratacao_personalizada
     const contratacaoRes = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(contratacaoRes.rows.length).toBe(1);

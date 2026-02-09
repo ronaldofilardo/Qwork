@@ -23,30 +23,30 @@ jest.mock('next/server', () => ({
   },
 }));
 
-describe('Integração - Cadastro Plano Personalizado', () => {
+describe('Integração - Cadastro Plano Personalizado para Tomador', () => {
   let planoPersonalizadoId: number;
 
   beforeEach(async () => {
     // Limpar dados específicos do teste que podem ter ficado de execuções anteriores
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       ['06990590000123']
     );
     await query(
       "DELETE FROM notificacoes WHERE dados_contexto->>'contratacao_id' IS NOT NULL"
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', ['06990590000123']);
-    await query('DELETE FROM contratantes WHERE responsavel_cpf = $1', [
+    await query('DELETE FROM entidades WHERE cnpj = $1', ['06990590000123']);
+    await query('DELETE FROM entidades WHERE responsavel_cpf = $1', [
       '52998224725',
     ]);
   });
 
   afterAll(async () => {
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE plano_id = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE plano_id = $1)',
       [planoPersonalizadoId]
     );
-    await query('DELETE FROM contratantes WHERE plano_id = $1', [
+    await query('DELETE FROM entidades WHERE plano_id = $1', [
       planoPersonalizadoId,
     ]);
     await query('DELETE FROM planos WHERE id = $1', [planoPersonalizadoId]);
@@ -56,7 +56,7 @@ describe('Integração - Cadastro Plano Personalizado', () => {
     );
   });
 
-  it('deve criar contratante e registro em contratacao_personalizada e notificar admins', async () => {
+  it('deve criar tomador e registro em contratacao_personalizada e notificar admins', async () => {
     const { POST } = await import('@/app/api/cadastro/tomadores/route');
 
     const payload = {
@@ -148,32 +148,32 @@ describe('Integração - Cadastro Plano Personalizado', () => {
     });
 
     const req = {
-      url: 'http://localhost:3000/api/cadastro/contratante',
+      url: 'http://localhost:3000/api/cadastro/tomadores',
       method: 'POST',
       headers: new Headers({ 'x-forwarded-for': '127.0.0.1' }),
       formData: () => fake,
     };
 
-    // Garantir que não existe um contratante com mesmo CNPJ antes do teste
+    // Garantir que não existe um tomador com mesmo CNPJ antes do teste
     await query(
-      'DELETE FROM contratacao_personalizada WHERE contratante_id IN (SELECT id FROM contratantes WHERE cnpj = $1)',
+      'DELETE FROM contratacao_personalizada WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
       [payload.cnpj]
     );
     await query(
       "DELETE FROM notificacoes WHERE dados_contexto->>'contratacao_id' IS NOT NULL"
     );
-    await query('DELETE FROM contratantes WHERE cnpj = $1', [payload.cnpj]);
+    await query('DELETE FROM entidades WHERE cnpj = $1', [payload.cnpj]);
 
     const response = await POST(req);
     const data = await response.json();
 
     expect(response.status).toBe(201);
-    expect(data.contratante.status).toBe('pendente');
+    expect(data.tomador.status).toBe('pendente');
 
     // Verificar contratacao_personalizada
     const contratacao = await query(
-      'SELECT * FROM contratacao_personalizada WHERE contratante_id = $1',
-      [data.contratante.id]
+      'SELECT * FROM contratacao_personalizada WHERE tomador_id = $1',
+      [data.tomador.id]
     );
     expect(contratacao.rows.length).toBe(1);
     expect(contratacao.rows[0].status).toBe('aguardando_valor_admin');

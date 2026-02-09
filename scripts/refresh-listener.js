@@ -5,7 +5,7 @@
 const { Client } = require('pg');
 
 const CHANNEL = 'refresh_mv_admin';
-const VIEW_NAME = 'mv_admin_contratante_dashboard';
+const VIEW_NAME = 'mv_admin_tomador_dashboard';
 const DEBOUNCE_MS = 5000; // aguarda N ms antes de executar o refresh (agrupa notificações)
 
 // Conexão para LISTEN (não usar a mesma para executar refresh porque LISTEN ocupa a conexão)

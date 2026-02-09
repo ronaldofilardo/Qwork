@@ -8,8 +8,8 @@
  */
 
 describe('Fluxo de Liberação de Lote - Entidade', () => {
-  const contratanteId = 1;
-  const contratanteNome = 'Entidade Teste E2E';
+  const tomadorId = 1;
+  const tomadorNome = 'Entidade Teste E2E';
 
   const mockLotes = [
     {
@@ -41,7 +41,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
         cpf: '12345678901',
         nome: 'Gestor Entidade Teste',
         perfil: 'gestor',
-        clinica_id: contratanteId,
+        clinica_id: tomadorId,
       },
     }).as('getSession');
 
@@ -75,7 +75,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
         cpf: '12345678901',
         nome: 'Gestor Entidade Teste',
         perfil: 'gestor',
-        clinica_id: contratanteId,
+        clinica_id: tomadorId,
         sessionToken: 'test-token',
         lastRotation: Date.now(),
       })
@@ -194,7 +194,7 @@ describe('Fluxo de Liberação de Lote - Entidade', () => {
             estatisticas: {
               avaliacoesCreated: 5,
               totalFuncionarios: 5,
-              contratante: contratanteNome,
+              tomador: tomadorNome,
             },
             resumoInclusao: {
               funcionarios_novos: 3,

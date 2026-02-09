@@ -1,16 +1,16 @@
 -- ====================================================================
--- Migration 420: Renomear contratantes → entidades
+-- Migration 420: Renomear tomadores → entidades
 -- Data: 2026-02-05
 -- Prioridade: CRÍTICA
 -- ====================================================================
 -- OBJETIVO:
 --   Renomear tabelas e colunas para refletir o domínio correto:
---   - contratantes → entidades
+--   - tomadores → entidades
 --   - entidades_senhas → entidades_senhas
 --   - contratante_id → entidade_id (em todas as tabelas relacionadas)
 --
 -- IMPORTANTE:
---   - Banco está sem contratantes (sem backup necessário)
+--   - Banco está sem tomadores (sem backup necessário)
 --   - Esta migration é idempotente (pode ser executada múltiplas vezes)
 --   - Atualiza constraints, índices, sequences e comentários
 -- ====================================================================
@@ -18,36 +18,36 @@
 BEGIN;
 
 \echo '========================================='
-\echo 'MIGRATION 420: RENAME CONTRATANTES → ENTIDADES'
+\echo 'MIGRATION 420: RENAME tomadores → ENTIDADES'
 \echo 'Iniciando em:' :current_timestamp
 \echo '========================================='
 
 -- ====================================================================
--- PARTE 1: RENOMEAR TABELA contratantes → entidades
+-- PARTE 1: RENOMEAR TABELA tomadores → entidades
 -- ====================================================================
 
 \echo ''
-\echo 'PARTE 1: Renomeando tabela contratantes → entidades...'
+\echo 'PARTE 1: Renomeando tabela tomadores → entidades...'
 
 -- Verificar se tabela já foi renomeada
 DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'entidades') THEN
-    RAISE NOTICE '⚠ Tabela "entidades" já existe. Pulando rename de contratantes.';
-  ELSIF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'contratantes') THEN
-    ALTER TABLE contratantes RENAME TO entidades;
-    RAISE NOTICE '✓ Tabela contratantes renomeada para entidades';
+    RAISE NOTICE '⚠ Tabela "entidades" já existe. Pulando rename de tomadores.';
+  ELSIF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'tomadores') THEN
+    ALTER TABLE tomadores RENAME TO entidades;
+    RAISE NOTICE '✓ Tabela tomadores renomeada para entidades';
   ELSE
-    RAISE NOTICE '⚠ Tabela contratantes não existe (será criada posteriormente)';
+    RAISE NOTICE '⚠ Tabela tomadores não existe (será criada posteriormente)';
   END IF;
 END $$;
 
 -- Renomear sequence se existir
 DO $$
 BEGIN
-  IF EXISTS (SELECT 1 FROM pg_sequences WHERE sequencename = 'contratantes_id_seq') THEN
-    ALTER SEQUENCE contratantes_id_seq RENAME TO entidades_id_seq;
-    RAISE NOTICE '✓ Sequence contratantes_id_seq renomeada para entidades_id_seq';
+  IF EXISTS (SELECT 1 FROM pg_sequences WHERE sequencename = 'tomadores_id_seq') THEN
+    ALTER SEQUENCE tomadores_id_seq RENAME TO entidades_id_seq;
+    RAISE NOTICE '✓ Sequence tomadores_id_seq renomeada para entidades_id_seq';
   END IF;
 END $$;
 
@@ -250,7 +250,7 @@ END $$;
 \echo ''
 \echo 'PARTE 5: Verificando views e functions...'
 
--- Listar views que referenciam contratantes (apenas informativo)
+-- Listar views que referenciam tomadores (apenas informativo)
 DO $$
 DECLARE
   v_view_name TEXT;
@@ -282,8 +282,8 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'entidades') THEN
     COMMENT ON TABLE entidades IS 
-    'Entidades contratantes do sistema (empresas que contratam avaliações).
-    Renomeada de "contratantes" em Migration 420 (2026-02-05).';
+    'Entidades tomadores do sistema (empresas que contratam avaliações).
+    Renomeada de "tomadores" em Migration 420 (2026-02-05).';
     RAISE NOTICE '✓ Comentário atualizado: entidades';
   END IF;
 END $$;
@@ -293,7 +293,7 @@ DO $$
 BEGIN
   IF EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'entidades_senhas') THEN
     COMMENT ON TABLE entidades_senhas IS 
-    'Senhas das entidades contratantes.
+    'Senhas das entidades tomadores.
     Renomeada de "entidades_senhas" em Migration 420 (2026-02-05).';
     RAISE NOTICE '✓ Comentário atualizado: entidades_senhas';
   END IF;
@@ -310,7 +310,7 @@ END $$;
 \echo '========================================='
 \echo ''
 \echo 'RESUMO DAS ALTERAÇÕES:'
-\echo '  ✓ contratantes → entidades'
+\echo '  ✓ tomadores → entidades'
 \echo '  ✓ entidades_senhas → entidades_senhas'
 \echo '  ✓ contratante_id → entidade_id (em usuarios, clinicas, entidades_senhas)'
 \echo '  ✓ Constraints e índices atualizados'

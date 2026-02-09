@@ -16,7 +16,7 @@ const main = async () => {
     const createTableSQL = `
       CREATE TABLE IF NOT EXISTS contratos (
         id SERIAL PRIMARY KEY,
-        contratante_id INTEGER,
+        tomador_id INTEGER,
         plano_id INTEGER,
         numero_funcionarios INTEGER,
         numero_funcionarios_estimado INTEGER,
@@ -38,10 +38,10 @@ const main = async () => {
 
       CREATE INDEX IF NOT EXISTS idx_contratos_status ON contratos (status);
       CREATE INDEX IF NOT EXISTS idx_contratos_numero_funcionarios ON contratos (numero_funcionarios);
-      CREATE INDEX IF NOT EXISTS idx_contratos_contratante ON contratos (contratante_id);
+      CREATE INDEX IF NOT EXISTS idx_contratos_tomador ON contratos (tomador_id);
       CREATE UNIQUE INDEX IF NOT EXISTS ux_contratos_payment_link_token ON contratos (payment_link_token) WHERE payment_link_token IS NOT NULL;
 
-      COMMENT ON TABLE contratos IS 'Contratos gerados para contratantes. Fluxo simplificado.';
+      COMMENT ON TABLE contratos IS 'Contratos gerados para tomadors. Fluxo simplificado.';
       COMMENT ON COLUMN contratos.valor_personalizado IS 'Valor negociado por funcionário para contratos personalizados';
     `;
 

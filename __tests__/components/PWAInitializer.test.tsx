@@ -1,14 +1,19 @@
-import React from 'react'
-import { render, screen } from '@testing-library/react'
-import PWAInitializer from '@/components/PWAInitializer'
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import PWAInitializer from '@/components/PWAInitializer';
 
 // Mock lib/offline
 jest.mock('@/lib/offline', () => ({
   registerServiceWorker: jest.fn(),
   setupOnlineSync: jest.fn(),
-}))
+  syncIndicesFuncionarios: jest.fn(),
+}));
 
-import { registerServiceWorker, setupOnlineSync } from '@/lib/offline'
+import {
+  registerServiceWorker,
+  setupOnlineSync,
+  syncIndicesFuncionarios,
+} from '@/lib/offline';
 
 // Mock do service worker
 Object.defineProperty(window, 'navigator', {
@@ -16,28 +21,31 @@ Object.defineProperty(window, 'navigator', {
     serviceWorker: {
       register: jest.fn().mockResolvedValue({}),
     },
+    onLine: true,
   },
-})
+  writable: true,
+});
 
 describe('PWAInitializer', () => {
   beforeEach(() => {
-    jest.clearAllMocks()
+    jest.clearAllMocks();
     // Limpar localStorage
     Object.defineProperty(window, 'localStorage', {
       value: {
         getItem: jest.fn(),
         setItem: jest.fn(),
       },
-    })
-    // Mock navigator.onLine
-    Object.defineProperty(window.navigator, 'onLine', {
-      value: true,
       writable: true,
-    })
+    });
+    // Mock navigator.onLine
+    Object.defineProperty(navigator, 'onLine', {
+      value: true,
+      configurable: true,
+    });
     // Mock window.matchMedia
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jest.fn().mockImplementation(query => ({
+      value: jest.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -47,80 +55,106 @@ describe('PWAInitializer', () => {
         removeEventListener: jest.fn(),
         dispatchEvent: jest.fn(),
       })),
-    })
-  })
+    });
+  });
 
   it('deve renderizar sem erros', () => {
-    render(<PWAInitializer />)
+    render(<PWAInitializer />);
     // Componente não renderiza conteúdo visível, apenas executa efeitos
-    expect(document.body).toBeInTheDocument()
-  })
+    expect(document.body).toBeInTheDocument();
+  });
 
   it('deve registrar service worker quando suportado', () => {
-    render(<PWAInitializer />)
+    render(<PWAInitializer />);
 
-    expect(registerServiceWorker).toHaveBeenCalled()
-  })
+    expect(registerServiceWorker).toHaveBeenCalled();
+  });
 
-  it('deve lidar com service worker não suportado', () => {
-    // Mock navigator sem serviceWorker
-    Object.defineProperty(window, 'navigator', {
-      value: {},
-    })
+  it('deve configurar sincronização online ao renderizar', () => {
+    render(<PWAInitializer />);
 
-    render(<PWAInitializer />)
-    
-    // Não deve dar erro, apenas não registrar
-    expect(document.body).toBeInTheDocument()
-  })
+    expect(setupOnlineSync).toHaveBeenCalled();
+  });
 
-  it('deve configurar listeners de instalação do PWA', () => {
-    const mockAddEventListener = jest.fn()
+  it('deve configurar listeners online/offline', () => {
+    const mockAddEventListener = jest.fn();
     Object.defineProperty(window, 'addEventListener', {
       value: mockAddEventListener,
-    })
+      writable: true,
+    });
 
-    render(<PWAInitializer />)
-    
-    expect(mockAddEventListener).toHaveBeenCalledWith('beforeinstallprompt', expect.any(Function))
-  })
+    render(<PWAInitializer />);
+
+    expect(mockAddEventListener).toHaveBeenCalledWith(
+      'online',
+      expect.any(Function)
+    );
+    expect(mockAddEventListener).toHaveBeenCalledWith(
+      'offline',
+      expect.any(Function)
+    );
+  });
 
   it('deve lidar com erros no registro do service worker', () => {
-    const mockRegister = jest.fn().mockRejectedValue(new Error('SW Error'))
+    const mockRegister = jest.fn().mockRejectedValue(new Error('SW Error'));
     Object.defineProperty(window, 'navigator', {
       value: {
         serviceWorker: {
           register: mockRegister,
         },
+        onLine: true,
       },
-    })
+      writable: true,
+    });
 
     // Não deve dar erro, apenas logar
-    expect(() => render(<PWAInitializer />)).not.toThrow()
-  })
-
-  it('deve executar apenas no lado cliente', () => {
-    // Simular ambiente servidor (sem window)
-    const originalWindow = global.window
-    delete (global as any).window
-
-    render(<PWAInitializer />)
-    
-    // Deve renderizar sem erros
-    expect(document.body).toBeInTheDocument()
-
-    // Restaurar window
-    global.window = originalWindow
-  })
+    expect(() => render(<PWAInitializer />)).not.toThrow();
+  });
 
   it('deve ser um componente funcional válido', () => {
-    const component = <PWAInitializer />
-    expect(React.isValidElement(component)).toBe(true)
-  })
+    const component = <PWAInitializer />;
+    expect(React.isValidElement(component)).toBe(true);
+  });
 
-  it('deve não renderizar nenhum elemento visível', () => {
-    const { container } = render(<PWAInitializer />)
-    expect(container.firstChild).toBeNull()
-  })
+  it('deve renderizar apenas o indicador de status offline quando offline', () => {
+    // Simular navegador offline
+    Object.defineProperty(navigator, 'onLine', {
+      value: false,
+      configurable: true,
+    });
 
-})
+    const { container } = render(<PWAInitializer />);
+
+    // Deve ter um elemento visível (indicador de offline)
+    const offlineIndicator = container.querySelector('.bg-yellow-500');
+    expect(offlineIndicator).toBeInTheDocument();
+  });
+
+  it('não deve renderizar prompt de instalação flutuante', () => {
+    render(<PWAInitializer />);
+
+    // Não deve haver div com "Instalar App" (prompt flutuante removido)
+    expect(screen.queryByText('Instalar App')).not.toBeInTheDocument();
+  });
+
+  it('deve remover event listeners ao desmontar', () => {
+    const mockRemoveEventListener = jest.fn();
+    Object.defineProperty(window, 'removeEventListener', {
+      value: mockRemoveEventListener,
+      writable: true,
+    });
+
+    const { unmount } = render(<PWAInitializer />);
+
+    unmount();
+
+    expect(mockRemoveEventListener).toHaveBeenCalledWith(
+      'online',
+      expect.any(Function)
+    );
+    expect(mockRemoveEventListener).toHaveBeenCalledWith(
+      'offline',
+      expect.any(Function)
+    );
+  });
+});

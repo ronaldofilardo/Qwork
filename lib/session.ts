@@ -34,8 +34,7 @@ export interface Session {
   //           → Opera lotes da própria entidade
   clinica_id?: number; // Apenas para perfil 'rh'
   entidade_id?: number; // Apenas para perfil 'gestor'
-  // Retrocompatibilidade: manter contratante_id temporariamente durante a transição
-  contratante_id?: number; // @deprecated Use entidade_id or clinica_id where appropriate
+  tomador_id?: number; // Identification do tomador (entidade ou clínica)
   sessionLogId?: number;
   sessionToken?: string; // Token único para rotação
   mfaVerified?: boolean; // Indica se MFA foi verificado
@@ -113,9 +112,7 @@ export function getSession(): Session | null {
       // NÃO gravar cookie durante render — marcar necessidade de rotação para que
       // um Route Handler / Server Action possa persistir a rotação de forma segura.
       session.rotationRequired = true;
-      console.log(
-        '[DEBUG] getSession: sessão necessita de rotação; persistir via Route Handler/Server Action.'
-      );
+      // [DEBUG] Silenciado: getSession realiza rotação de sessão via Route Handler/Server Action
     }
 
     return session;
@@ -187,17 +184,17 @@ export async function requireRHWithEmpresaAccess(
 ): Promise<Session> {
   const session = await requireAuth();
 
-  // Apenas RH pode acessar empresas operacionalmente
+  // Apenas RH pode acessar empresas operacionalmente (Admin é apenas administrativo)
   if (session.perfil !== 'rh') {
     console.log(
       `[DEBUG] requireRHWithEmpresaAccess: Perfil ${session.perfil} não autorizado (apenas RH)`
     );
     throw new Error(
-      'Acesso restrito: apenas gestores RH (gestor de clínica) podem acessar empresas'
+      'Apenas gestores RH ou administradores podem acessar empresas'
     );
   }
 
-  // Tentar mapear clinica_id via entidade_id (ou contratante_id legacy) se não estiver na sessão
+  // Tentar mapear clinica_id via entidade_id (ou tomador_id legacy) se não estiver na sessão
   if (!session.clinica_id && session.entidade_id) {
     console.log(
       `[DEBUG] requireRHWithEmpresaAccess: RH ${session.cpf} sem clinica_id - tentando mapear via entidade_id`
@@ -270,9 +267,9 @@ export async function requireRHWithEmpresaAccess(
   return session;
 }
 
-// Verificar se usuário é gestor de entidade e retornar contratante_id
+// Verificar se usuário é gestor de entidade e retornar entidade_id
 export async function requireEntity(): Promise<
-  Session & { contratante_id: number }
+  Session & { entidade_id: number }
 > {
   const session = await requireAuth();
 
@@ -283,20 +280,20 @@ export async function requireEntity(): Promise<
 
   if (!session.entidade_id) {
     console.log(
-      `[DEBUG] requireEntity: Gestor ${session.cpf} sem contratante_id na sessão`
+      `[DEBUG] requireEntity: Gestor ${session.cpf} sem entidade_id na sessão`
     );
-    throw new Error('Contratante não identificado na sessão');
+    throw new Error('Entidade não identificada na sessão');
   }
 
   // Verificar se entidade existe e é ativo
   const entidadeResult = await query(
     "SELECT id, tipo, ativa FROM entidades WHERE id = $1 AND tipo = 'entidade'",
-    [session.entidade_id || session.entidade_id]
+    [session.entidade_id]
   );
 
   if (entidadeResult.rows.length === 0) {
     console.log(
-      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.entidade_id} não encontrada ou não é entidade`
+      `[DEBUG] requireEntity: Entidade ${session.entidade_id} não encontrada ou não é entidade`
     );
     throw new Error('Entidade não encontrada');
   }
@@ -305,12 +302,12 @@ export async function requireEntity(): Promise<
 
   if (!entidade.ativa) {
     console.log(
-      `[DEBUG] requireEntity: Entidade ${session.entidade_id || session.entidade_id} está inativa`
+      `[DEBUG] requireEntity: Entidade ${session.entidade_id} está inativa`
     );
     throw new Error('Entidade inativa. Entre em contato com o suporte.');
   }
 
-  return session as Session & { contratante_id: number };
+  return session as Session & { entidade_id: number };
 }
 
 // Verificar se usuário é RH (gestor de clínica) e retornar clinica_id
@@ -352,12 +349,12 @@ export async function requireClinica(): Promise<
         if (fallback.rows.length > 0) {
           const mapped = fallback.rows[0];
 
-          // Verificar se contratante é realmente do tipo 'clinica'
+          // Verificar se tomador é realmente do tipo 'clinica'
           if (mapped.tipo !== 'clinica') {
             console.log(
-              `[DEBUG] requireClinica: Contratante ${session.entidade_id} tem tipo '${mapped.tipo}', não 'clinica'`
+              `[DEBUG] requireClinica: tomador ${session.entidade_id} tem tipo '${mapped.tipo}', não 'clinica'`
             );
-            throw new Error('Contratante não é do tipo clínica');
+            throw new Error('tomador não é do tipo clínica');
           }
 
           if (!mapped.ativa) {
@@ -377,21 +374,21 @@ export async function requireClinica(): Promise<
           createSession(session);
         } else {
           console.log(
-            `[DEBUG] requireClinica: Nenhuma clínica encontrada para contratante_id ${session.entidade_id}`
+            `[DEBUG] requireClinica: Nenhuma clínica encontrada para tomador_id ${session.entidade_id}`
           );
-          const msg = `Clínica não identificada na sessão para contratante_id ${session.entidade_id}. Verifique se o cadastro da clínica foi concluído.`;
+          const msg = `Clínica não identificada na sessão para tomador_id ${session.entidade_id}. Verifique se o cadastro da clínica foi concluído.`;
           throw new Error(msg);
         }
       } catch (err) {
         console.log(
-          `[DEBUG] requireClinica: Falha ao mapear clínica via contratante_id: ${err?.message || err}`
+          `[DEBUG] requireClinica: Falha ao mapear clínica via tomador_id: ${err?.message || err}`
         );
         // Propagar erro específico para melhor diagnóstico
         throw err instanceof Error
           ? err
           : new Error(
               session.entidade_id
-                ? `Clínica não identificada na sessão para contratante_id ${session.entidade_id}`
+                ? `Clínica não identificada na sessão para tomador_id ${session.entidade_id}`
                 : 'Clínica não identificada na sessão'
             );
       }
@@ -408,10 +405,10 @@ export async function requireClinica(): Promise<
 
   if (clinicaResult.rows.length === 0) {
     console.log(
-      `[DEBUG] requireClinica: Clínica ${session.clinica_id} não encontrada - tentando mapear via contratante`
+      `[DEBUG] requireClinica: Clínica ${session.clinica_id} não encontrada - tentando mapear via tomador`
     );
 
-    // Tentativa de fallback: mapear clínica a partir do contratante_id se presente na sessão
+    // Tentativa de fallback: mapear clínica a partir do tomador_id se presente na sessão
     if (session.entidade_id) {
       try {
         const fallback = await query(
@@ -441,11 +438,11 @@ export async function requireClinica(): Promise<
         }
       } catch (err) {
         console.log(
-          `[DEBUG] requireClinica: Falha ao mapear clínica via contratante_id (fallback): ${err?.message || err}`
+          `[DEBUG] requireClinica: Falha ao mapear clínica via tomador_id (fallback): ${err?.message || err}`
         );
         throw new Error(
           session.entidade_id
-            ? `Clínica não identificada na sessão para contratante_id ${session.entidade_id}`
+            ? `Clínica não identificada na sessão para tomador_id ${session.entidade_id}`
             : 'Clínica não identificada na sessão'
         );
       }

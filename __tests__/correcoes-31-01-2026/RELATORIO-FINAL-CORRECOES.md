@@ -47,7 +47,7 @@ resultados_block_admin        | RESTRICTIVE | ALL
 audit_logs_admin_all          | PERMISSIVE  | SELECT  ✓ Admin gerencia logs
 audit_logs_admin_select       | PERMISSIVE  | SELECT  ✓ Admin gerencia logs
 clinicas_admin_all            | REMOVIDA    | -       ❌ Admin NÃO gerencia clínicas
-contratantes_admin_all        | REMOVIDA    | -       ❌ Admin NÃO gerencia contratantes/entidades
+tomadores_admin_all        | REMOVIDA    | -       ❌ Admin NÃO gerencia tomadores/entidades
 permissions_admin_all         | PERMISSIVE  | ALL     ✓ Admin gerencia RBAC
 permissions_admin_select      | PERMISSIVE  | SELECT  ✓ Admin gerencia RBAC
 role_permissions_admin_all    | PERMISSIVE  | ALL     ✓ Admin gerencia RBAC
@@ -219,7 +219,7 @@ WHERE r.name = 'admin';
 **Resultado Esperado** (10 permissões administrativas):
 
 1. `manage:clinicas` - Gerenciar clínicas
-2. `manage:contratantes` - Gerenciar contratantes
+2. `manage:tomadores` - Gerenciar tomadores
 3. `manage:planos` - Gerenciar planos
 4. `manage:emissores` - Gerenciar emissores
 5. `manage:roles` - Gerenciar papéis
@@ -254,7 +254,7 @@ SELECT COUNT(*) FROM resultados;            -- Esperado: 0
 ```sql
 -- Admin DEVE acessar tabelas administrativas
 SELECT COUNT(*) FROM clinicas;              -- Esperado: > 0
-SELECT COUNT(*) FROM contratantes;          -- Esperado: > 0
+SELECT COUNT(*) FROM tomadores;          -- Esperado: > 0
 SELECT COUNT(*) FROM roles;                 -- Esperado: 5
 SELECT COUNT(*) FROM permissions;           -- Esperado: 36
 SELECT COUNT(*) FROM audit_logs;            -- Esperado: > 0
@@ -267,7 +267,7 @@ SELECT COUNT(*) FROM audit_logs;            -- Esperado: > 0
 SELECT COUNT(*) FROM funcionarios
 WHERE perfil IN ('rh', 'emissor')
 AND empresa_id IS NULL
-AND contratante_id IS NULL;                 -- Esperado: > 0
+AND tomador_id IS NULL;                 -- Esperado: > 0
 
 -- Admin NÃO deve ver funcionários operacionais
 SELECT COUNT(*) FROM funcionarios
@@ -319,7 +319,7 @@ WHERE perfil = 'funcionario';               -- Esperado: 0 (bloqueado)
 
 O perfil `admin` está agora **estritamente limitado** a funções **administrativas**:
 
-- Gerenciar clínicas e contratantes
+- Gerenciar clínicas e tomadores
 - Gerenciar planos e preços
 - Gerenciar usuários da plataforma (RH/emissores)
 - Visualizar logs de auditoria

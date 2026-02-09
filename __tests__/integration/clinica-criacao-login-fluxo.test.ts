@@ -1,20 +1,22 @@
 /**
- * Teste de integração: Fluxo completo de criação de clínica e login RH
- *
- * Objetivo: Validar que após confirmação de pagamento:
- * 1. Clínica é criada automaticamente
- * 2. Conta RH tem clinica_id definido
- * 3. Login RH funciona com clinica_id na sessão
- * 4. RH consegue criar empresas clientes
- *
- * Contexto do bug: (link removido)
- * - RH não conseguia criar empresas porque clinica_id estava undefined
- * - requireClinica() falhava ao mapear via contratante_id
- * - Causa: clínica não era criada no fluxo de pagamento
+ * ⚠️ TESTE DESABILITADO - ESTRUTURA OBSOLETA
+ * 
+ * Este arquivo usa a tabela descontinuada "tomadores"
+ * que foi substituída por "entidades" + "clinicas"
+ * 
+ * Este teste causava contaminação do banco de produção
+ * com dados órfãos (senhas em clinicas_senhas sem clinicas correspondentes)
+ * 
+ * Consulte: clinica-criacao-rh-fluxo-corrigido.test.ts
+ * para o teste redesenhado com a estrutura correta.
+ * 
+ * DESABILITADO: 2026-02-08
+ * RAZÃO: Tabela "tomadores" não existe mais
+ * IMPACTO: Criava dados órfãos em clinicas_senhas
  */
 
 import { query, criarContaResponsavel, closePool } from '@/lib/db';
-import { ativarContratante } from '@/lib/contratante-activation';
+import { ativartomador } from '@/lib/entidade-activation';
 import bcrypt from 'bcryptjs';
 
 // Helper: gera um CNPJ válido a partir de um bloco de 12 dígitos (ou gera aleatório)
@@ -49,17 +51,17 @@ async function removeExisting(cpf: string, cnpj?: string) {
   // apagar funcionarios e senhas
   await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
   await query('DELETE FROM entidades_senhas WHERE cpf = $1', [cpf]);
-  // apagar clinicas vinculadas ao contratante com este cpf de responsável
+  // apagar clinicas vinculadas ao tomador com este cpf de responsável
   await query(
-    `DELETE FROM clinicas WHERE contratante_id IN (SELECT id FROM contratantes WHERE responsavel_cpf = $1)`,
+    `DELETE FROM clinicas WHERE tomador_id IN (SELECT id FROM tomadors WHERE responsavel_cpf = $1)`,
     [cpf]
   );
-  // apagar contratante (por fim)
-  await query('DELETE FROM contratantes WHERE responsavel_cpf = $1', [cpf]);
+  // apagar tomador (por fim)
+  await query('DELETE FROM tomadors WHERE responsavel_cpf = $1', [cpf]);
 }
 
-describe('Integração: Criação de Clínica e Login RH', () => {
-  let contratanteId: number = 0;
+describe.skip('Integração: Criação de Clínica e Login RH [DESABILITADO - ESTRUTURA OBSOLETA]', () => {
+  let tomadorId: number = 0;
   let cpfResponsavel: string;
   const testId = Date.now(); // ID único por execução para evitar conflitos
 
@@ -79,7 +81,7 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       `999${testId}%`,
     ]);
     await query('DELETE FROM clinicas WHERE cnpj LIKE $1', [`999${testId}%`]);
-    await query('DELETE FROM contratantes WHERE cnpj LIKE $1', [
+    await query('DELETE FROM tomadors WHERE cnpj LIKE $1', [
       `999${testId}%`,
     ]);
     await query('SET session_replication_role = DEFAULT');
@@ -93,18 +95,18 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
   test('FLUXO COMPLETO: Pagamento → Clínica criada → Login RH → Criar empresa', async () => {
     // ============================================================================
-    // PASSO 1: Cadastrar contratante tipo 'clinica'
+    // PASSO 1: Cadastrar tomador tipo 'clinica'
     // ============================================================================
     const suffix = Math.random().toString(36).substring(7);
     cpfResponsavel = `999${testId}${suffix}`.substring(0, 11).padEnd(11, '0');
     // Gerar CNPJ válido a partir do teste id + suffix para evitar validação no endpoint
     const cnpjClinica = generateValidCnpj(`${testId}${suffix}`);
 
-    // Garantir que não exista contratante/funcionario/clinica anteriores com mesmo CPF/CNPJ
+    // Garantir que não exista tomador/funcionario/clinica anteriores com mesmo CPF/CNPJ
     await removeExisting(cpfResponsavel, cnpjClinica);
 
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_cargo,
         status, ativa, pagamento_confirmado
@@ -117,8 +119,8 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       [cnpjClinica, cpfResponsavel]
     );
 
-    contratanteId = contratanteResult.rows[0].id as number;
-    expect(contratanteId).toBeDefined();
+    tomadorId = tomadorResult.rows[0].id as number;
+    expect(tomadorId).toBeDefined();
 
     // ============================================================================
     // PASSO 2: Simular confirmação de pagamento e ativação
@@ -126,15 +128,15 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     // Marcar pagamento como confirmado
     await query(
-      `UPDATE contratantes 
+      `UPDATE tomadors 
        SET pagamento_confirmado = true 
        WHERE id = $1`,
-      [contratanteId]
+      [tomadorId]
     );
 
-    // Ativar contratante (DEVE criar a clínica aqui)
-    const activationResult = await ativarContratante({
-      contratante_id: contratanteId,
+    // Ativar tomador (DEVE criar a clínica aqui)
+    const activationResult = await ativartomador({
+      tomador_id: tomadorId,
       motivo: 'Teste de integração - confirmação de pagamento simulada',
     });
 
@@ -144,28 +146,28 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     // VALIDAÇÃO 1: Verificar que a clínica foi criada
     // ============================================================================
     const clinicaCheck = await query(
-      `SELECT id, nome, cnpj, contratante_id, ativa 
+      `SELECT id, nome, cnpj, tomador_id, ativa 
        FROM clinicas 
-       WHERE contratante_id = $1`,
-      [contratanteId]
+       WHERE tomador_id = $1`,
+      [tomadorId]
     );
 
     expect(clinicaCheck.rows.length).toBe(1);
     expect(clinicaCheck.rows[0].ativa).toBe(true);
-    expect(clinicaCheck.rows[0].contratante_id).toBe(contratanteId);
+    expect(clinicaCheck.rows[0].tomador_id).toBe(tomadorId);
 
     const clinicaId = clinicaCheck.rows[0].id;
 
     // ============================================================================
     // PASSO 3: Criar conta do responsável (RH)
     // ============================================================================
-    await criarContaResponsavel(contratanteId);
+    await criarContaResponsavel(tomadorId);
 
     // ============================================================================
     // VALIDAÇÃO 2: Verificar que funcionário RH tem clinica_id definido
     // ============================================================================
     const funcionarioCheck = await query(
-      `SELECT id, cpf, perfil, contratante_id, clinica_id 
+      `SELECT id, cpf, perfil, tomador_id, clinica_id 
        FROM funcionarios 
        WHERE cpf = $1`,
       [cpfResponsavel]
@@ -183,7 +185,7 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     } else {
       const funcionario = funcionarioCheck.rows[0];
       expect(funcionario.perfil).toBe('rh');
-      expect(funcionario.contratante_id).toBe(contratanteId);
+      expect(funcionario.tomador_id).toBe(tomadorId);
       expect(funcionario.clinica_id).toBe(clinicaId);
         `[TESTE] ✅ Funcionário RH criado: clinica_id=${funcionario.clinica_id}`
       );
@@ -209,8 +211,8 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     // Simular busca de clínica no login (como em app/api/auth/login/route.ts)
     const loginClinicaCheck = await query(
-      'SELECT id FROM clinicas WHERE contratante_id = $1 AND ativa = true',
-      [contratanteId]
+      'SELECT id FROM clinicas WHERE tomador_id = $1 AND ativa = true',
+      [tomadorId]
     );
 
     expect(loginClinicaCheck.rows.length).toBe(1);
@@ -224,28 +226,28 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     const session1 = {
       cpf: cpfResponsavel,
       perfil: 'rh' as const,
-      contratante_id: contratanteId,
+      tomador_id: tomadorId,
       clinica_id: clinicaId,
     };
 
     expect(session1.clinica_id).toBeDefined();
     expect(session1.clinica_id).toBe(clinicaId);
 
-    // Cenário 2: Sessão SEM clinica_id (fallback via contratante_id)
+    // Cenário 2: Sessão SEM clinica_id (fallback via tomador_id)
     const session2 = {
       cpf: cpfResponsavel,
       perfil: 'rh' as const,
-      contratante_id: contratanteId,
+      tomador_id: tomadorId,
     };
 
     // Simular fallback de requireClinica()
     const fallbackCheck = await query(
       `SELECT cl.id, cl.ativa, c.tipo 
        FROM clinicas cl
-       INNER JOIN contratantes c ON c.id = cl.contratante_id
-       WHERE cl.contratante_id = $1 
+       INNER JOIN tomadors c ON c.id = cl.tomador_id
+       WHERE cl.tomador_id = $1 
        LIMIT 1`,
-      [session2.contratante_id]
+      [session2.tomador_id]
     );
 
     expect(fallbackCheck.rows.length).toBe(1);
@@ -300,18 +302,18 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
   });
 
-  test('EDGE CASE: Contratante entidade NÃO cria clínica', async () => {
+  test('EDGE CASE: tomador entidade NÃO cria clínica', async () => {
     // ============================================================================
     // Verificar que entidades NÃO criam entrada em clinicas
     // ============================================================================
     cpfResponsavel = '99999777766';
     const cnpjEntidade = generateValidCnpj(`${testId}-entidade`);
 
-    // Garantir que não exista contratante/funcionario/clinica anteriores com mesmo CPF/CNPJ
+    // Garantir que não exista tomador/funcionario/clinica anteriores com mesmo CPF/CNPJ
     await removeExisting(cpfResponsavel, cnpjEntidade);
 
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, responsavel_cpf, responsavel_nome,
         status, ativa, pagamento_confirmado
       ) VALUES (
@@ -322,16 +324,16 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       [cnpjEntidade, cpfResponsavel]
     );
 
-    contratanteId = contratanteResult.rows[0].id as number;
+    tomadorId = tomadorResult.rows[0].id as number;
 
-    // Ativar contratante entidade
+    // Ativar tomador entidade
     await query(
-      'UPDATE contratantes SET pagamento_confirmado = true WHERE id = $1',
-      [contratanteId]
+      'UPDATE tomadors SET pagamento_confirmado = true WHERE id = $1',
+      [tomadorId]
     );
 
-    const activationResult = await ativarContratante({
-      contratante_id: contratanteId,
+    const activationResult = await ativartomador({
+      tomador_id: tomadorId,
       motivo: 'Teste entidade - não deve criar clínica',
     });
 
@@ -339,8 +341,8 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     // Verificar que NENHUMA clínica foi criada
     const clinicaCheck = await query(
-      'SELECT id FROM clinicas WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT id FROM clinicas WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(clinicaCheck.rows.length).toBe(0);
@@ -348,34 +350,34 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     );
 
     // Criar conta responsável
-    await criarContaResponsavel(contratanteId);
+    await criarContaResponsavel(tomadorId);
 
     // Verificar que RESPONSÁVEL foi criado em USUARIOS como gestor (não em funcionarios)
     const usuarioCheck = await query(
-      'SELECT tipo_usuario, contratante_id, clinica_id FROM usuarios WHERE cpf = $1',
+      'SELECT tipo_usuario, tomador_id, clinica_id FROM usuarios WHERE cpf = $1',
       [cpfResponsavel]
     );
 
     expect(usuarioCheck.rows.length).toBe(1);
     expect(usuarioCheck.rows[0].tipo_usuario).toBe('gestor');
-    expect(usuarioCheck.rows[0].contratante_id).toBe(contratanteId);
+    expect(usuarioCheck.rows[0].tomador_id).toBe(tomadorId);
     expect(usuarioCheck.rows[0].clinica_id).toBeNull();
     // [TESTE] ✅ Gestor entidade cadastrado corretamente em usuarios
 
   });
 
-  test('IDEMPOTÊNCIA: Ativar contratante múltiplas vezes não duplica clínica', async () => {
+  test('IDEMPOTÊNCIA: Ativar tomador múltiplas vezes não duplica clínica', async () => {
     // ============================================================================
     // Verificar que ON CONFLICT funciona corretamente
     // ============================================================================
     cpfResponsavel = '99999666655';
     const cnpjClinica = generateValidCnpj(`${testId}-idem`);
 
-    // Garantir que não exista contratante/funcionario/clinica anteriores com mesmo CPF/CNPJ
+    // Garantir que não exista tomador/funcionario/clinica anteriores com mesmo CPF/CNPJ
     await removeExisting(cpfResponsavel, cnpjClinica);
 
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, responsavel_cpf, responsavel_nome,
         status, ativa, pagamento_confirmado
       ) VALUES (
@@ -386,18 +388,18 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       [cnpjClinica, cpfResponsavel]
     );
 
-    contratanteId = contratanteResult.rows[0].id as number;
+    tomadorId = tomadorResult.rows[0].id as number;
 
     // Primeira ativação
-    const result1 = await ativarContratante({
-      contratante_id: contratanteId,
+    const result1 = await ativartomador({
+      tomador_id: tomadorId,
       motivo: 'Primeira ativação',
     });
     expect(result1.success).toBe(true);
 
-    // Segunda ativação (contratante já ativo)
-    const result2 = await ativarContratante({
-      contratante_id: contratanteId,
+    // Segunda ativação (tomador já ativo)
+    const result2 = await ativartomador({
+      tomador_id: tomadorId,
       motivo: 'Segunda ativação (deve falhar)',
     });
     // Ambiente pode diferir na implementação de transações; aceitar que a
@@ -413,8 +415,8 @@ describe('Integração: Criação de Clínica e Login RH', () => {
 
     // Verificar que existe apenas UMA clínica
     const clinicaCheck = await query(
-      'SELECT COUNT(*) as total FROM clinicas WHERE contratante_id = $1',
-      [contratanteId]
+      'SELECT COUNT(*) as total FROM clinicas WHERE tomador_id = $1',
+      [tomadorId]
     );
 
     expect(parseInt(clinicaCheck.rows[0].total)).toBe(1);
@@ -430,11 +432,11 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     cpfResponsavel = '99999555544';
     const cnpjClinica = generateValidCnpj(`${testId}-regressao`);
 
-    // Garantir que não exista contratante/funcionario/clinica anteriores com mesmo CPF/CNPJ
+    // Garantir que não exista tomador/funcionario/clinica anteriores com mesmo CPF/CNPJ
     await removeExisting(cpfResponsavel, cnpjClinica);
 
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, responsavel_cpf, responsavel_nome,
         status, ativa, pagamento_confirmado
       ) VALUES (
@@ -445,15 +447,15 @@ describe('Integração: Criação de Clínica e Login RH', () => {
       [cnpjClinica, cpfResponsavel]
     );
 
-    contratanteId = contratanteResult.rows[0].id;
+    tomadorId = tomadorResult.rows[0].id;
 
     // Criar clínica manualmente
     const clinicaResult = await query(
-      `INSERT INTO clinicas (nome, cnpj, contratante_id, ativa)
+      `INSERT INTO clinicas (nome, cnpj, tomador_id, ativa)
        VALUES ('Clínica Legada', $1, $2, true)
-       ON CONFLICT (cnpj) DO UPDATE SET contratante_id = EXCLUDED.contratante_id, ativa = true
+       ON CONFLICT (cnpj) DO UPDATE SET tomador_id = EXCLUDED.tomador_id, ativa = true
        RETURNING id`,
-      [cnpjClinica, contratanteId]
+      [cnpjClinica, tomadorId]
     );
     const clinicaId = clinicaResult.rows[0].id;
 
@@ -473,7 +475,7 @@ describe('Integração: Criação de Clínica e Login RH', () => {
     expect(initialClinicaId).toBe(clinicaId);
 
     // Chamar criarContaResponsavel novamente para garantir idempotência
-    await criarContaResponsavel(contratanteId);
+    await criarContaResponsavel(tomadorId);
     const checkAfter = await query(
       'SELECT clinica_id FROM funcionarios WHERE cpf = $1',
       [cpfResponsavel]

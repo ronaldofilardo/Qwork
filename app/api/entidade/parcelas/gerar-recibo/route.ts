@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     console.log('[HANDLER entidade] Getting session...');
     const session = await requireEntity();
     console.log('[HANDLER entidade] Session:', session ? 'found' : 'null');
-    const entidadeId = session.contratante_id;
+    const entidadeId = session.entidade_id;
     console.log('[HANDLER entidade] Entidade ID:', entidadeId);
     if (!entidadeId) {
       return NextResponse.json(

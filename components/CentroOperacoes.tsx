@@ -26,9 +26,9 @@ interface Notificacao {
 
 interface CentroOperacoesProps {
   /**
-   * Tipo de usuário (contratante, clinica, funcionario)
+   * Tipo de usuário (tomador, clinica, funcionario)
    */
-  tipoUsuario: 'contratante' | 'clinica' | 'funcionario';
+  tipoUsuario: 'tomador' | 'clinica' | 'funcionario';
 
   /**
    * Callback ao navegar para uma ação
@@ -53,7 +53,7 @@ export default function CentroOperacoes({
 
       // Determinar endpoint baseado no tipo de usuário
       let endpoint = '/api/notificacoes';
-      if (tipoUsuario === 'contratante') {
+      if (tipoUsuario === 'tomador') {
         endpoint = '/api/rh/notificacoes'; // ou /api/entidade/notificacoes
       } else if (tipoUsuario === 'clinica') {
         endpoint = '/api/clinica/notificacoes';

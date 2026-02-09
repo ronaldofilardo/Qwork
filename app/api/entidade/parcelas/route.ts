@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = await requireEntity();
-    const entidadeId = session.contratante_id;
+    const entidadeId = session.entidade_id;
 
     // Buscar contrato e timestamp de contratação
     const contratoQuery = `

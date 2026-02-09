@@ -1,6 +1,6 @@
 -- Script de Testes: Validação de Políticas RLS
 -- Data: 2026-01-09
--- Objetivo: Testar isolamento de dados entre entidades (antiga tabela: contratantes) e validar políticas RLS
+-- Objetivo: Testar isolamento de dados entre entidades (antiga tabela: tomadores) e validar políticas RLS
 
 -- ============================================================
 -- SETUP: Criar dados de teste

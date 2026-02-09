@@ -15,49 +15,49 @@ jest.mock('next/headers', () => ({
 }));
 
 describe('API Dashboard de Cobrança', () => {
-  let contratanteId1: number;
-  let contratanteId2: number;
+  let tomadorId1: number;
+  let tomadorId2: number;
   let contratoId1: number;
   let contratoId2: number;
   let pagamentoId1: number;
   let pagamentoId2: number;
 
   beforeAll(async () => {
-    // Criar contratantes
+    // Criar tomadors
     const cont1 = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
+      `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
                                  responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
        VALUES ('entidade', 'Empresa Dashboard 1', '55555555000105', 'dash1@teste.com', '11999999995',
                'Rua E', 'São Paulo', 'SP', '05000-000', 'aprovado',
                'Responsavel Dash1', '12345678905', 'resp.dash1@teste.com', '11987654325')
        RETURNING id`
     );
-    contratanteId1 = cont1.rows[0].id;
+    tomadorId1 = cont1.rows[0].id;
 
     const cont2 = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
+      `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
                                  responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular)
        VALUES ('entidade', 'Empresa Dashboard 2', '66666666000106', 'dash2@teste.com', '11999999996',
                'Rua F', 'São Paulo', 'SP', '06000-000', 'aprovado',
                'Responsavel Dash2', '12345678906', 'resp.dash2@teste.com', '11987654326')
        RETURNING id`
     );
-    contratanteId2 = cont2.rows[0].id;
+    tomadorId2 = cont2.rows[0].id;
 
     // Criar contratos
     const contr1 = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
+      `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
        VALUES ($1, 1, 10, 200.00, 'aprovado', 'Contrato dashboard 1', 'Contrato dashboard 1')
        RETURNING id`,
-      [contratanteId1]
+      [tomadorId1]
     );
     contratoId1 = contr1.rows[0].id;
 
     const contr2 = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
+      `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, conteudo, conteudo_gerado)
        VALUES ($1, 1, 15, 300.00, 'aprovado', 'Contrato dashboard 2', 'Contrato dashboard 2')
        RETURNING id`,
-      [contratanteId2]
+      [tomadorId2]
     );
     contratoId2 = contr2.rows[0].id;
 
@@ -97,10 +97,10 @@ describe('API Dashboard de Cobrança', () => {
     ];
 
     const pag1 = await query(
-      `INSERT INTO pagamentos (contratante_id, metodo, valor, numero_parcelas, status, data_pagamento)
+      `INSERT INTO pagamentos (tomador_id, metodo, valor, numero_parcelas, status, data_pagamento)
        VALUES ($1, 'cartao', 200.00, 4, 'pago', NOW())
        RETURNING id`,
-      [contratanteId1]
+      [tomadorId1]
     );
     pagamentoId1 = pag1.rows[0].id;
 
@@ -117,10 +117,10 @@ describe('API Dashboard de Cobrança', () => {
     ];
 
     const pag2 = await query(
-      `INSERT INTO pagamentos (contratante_id, metodo, valor, numero_parcelas, status, data_pagamento)
+      `INSERT INTO pagamentos (tomador_id, metodo, valor, numero_parcelas, status, data_pagamento)
        VALUES ($1, 'boleto', 300.00, 3, 'pago', NOW())
        RETURNING id`,
-      [contratanteId2]
+      [tomadorId2]
     );
     pagamentoId2 = pag2.rows[0].id;
   });
@@ -135,9 +135,9 @@ describe('API Dashboard de Cobrança', () => {
       contratoId1,
       contratoId2,
     ]);
-    await query('DELETE FROM contratantes WHERE id IN ($1, $2)', [
-      contratanteId1,
-      contratanteId2,
+    await query('DELETE FROM tomadores WHERE id IN ($1, $2)', [
+      tomadorId1,
+      tomadorId2,
     ]);
   });
 
@@ -213,7 +213,7 @@ describe('API Dashboard de Cobrança', () => {
       if (data.dashboard.parcelas_vencidas.length > 0) {
         const parcela = data.dashboard.parcelas_vencidas[0];
         expect(parcela).toHaveProperty('pagamento_id');
-        expect(parcela).toHaveProperty('contratante_nome');
+        expect(parcela).toHaveProperty('tomador_nome');
         expect(parcela).toHaveProperty('email');
         expect(parcela).toHaveProperty('parcela_numero');
         expect(parcela).toHaveProperty('parcela_valor');
@@ -240,7 +240,7 @@ describe('API Dashboard de Cobrança', () => {
       if (data.dashboard.proximos_vencimentos.length > 0) {
         const parcela = data.dashboard.proximos_vencimentos[0];
         expect(parcela).toHaveProperty('pagamento_id');
-        expect(parcela).toHaveProperty('contratante_nome');
+        expect(parcela).toHaveProperty('tomador_nome');
         expect(parcela).toHaveProperty('parcela_numero');
         expect(parcela).toHaveProperty('parcela_valor');
         expect(parcela).toHaveProperty('data_vencimento');
@@ -317,7 +317,7 @@ describe('API Dashboard de Cobrança', () => {
       expect(metrics.valor_a_receber).toBeGreaterThanOrEqual(0);
     });
 
-    it('deve incluir contratante com parcela vencida na lista de inadimplentes', async () => {
+    it('deve incluir tomador com parcela vencida na lista de inadimplentes', async () => {
       const { GET } = await import('@/app/api/admin/cobranca/dashboard/route');
 
       const mockRequest = {
@@ -327,9 +327,9 @@ describe('API Dashboard de Cobrança', () => {
       const response = await GET(mockRequest);
       const data = await response.json();
 
-      // Verificar se nosso contratante de teste com parcela vencida está na lista
+      // Verificar se nosso tomador de teste com parcela vencida está na lista
       const inadimplente = data.dashboard.inadimplentes.find(
-        (i: any) => i.id === contratanteId1
+        (i: any) => i.id === tomadorId1
       );
 
       if (inadimplente) {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ResponsavelStep from '@/components/modals/ModalCadastroContratante/ResponsavelStep';
+import ResponsavelStep from '@/components/modals/ModalCadastroTomadorSteps/ResponsavelStep';
 
 describe('ResponsavelStep', () => {
   const baseProps = {

@@ -36,7 +36,7 @@ describe('POST /api/jobs/process-pdf', () => {
     mockQuery
       .mockResolvedValueOnce({
         rows: [
-          { id: 8, numero_recibo: 'REC-20251231-0001', contratante_id: 56 },
+          { id: 8, numero_recibo: 'REC-20251231-0001', tomador_id: 56 },
         ],
       } as any)
       // 2) UPDATE recibos (set pdf, hash)
@@ -101,7 +101,7 @@ describe('POST /api/jobs/process-pdf', () => {
     ]);
 
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 9, numero_recibo: 'REC-20251231-0002', contratante_id: 56 }],
+      rows: [{ id: 9, numero_recibo: 'REC-20251231-0002', tomador_id: 56 }],
       rowCount: 1,
     } as any);
 

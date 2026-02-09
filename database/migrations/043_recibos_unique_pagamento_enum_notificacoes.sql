@@ -106,7 +106,7 @@ BEGIN
   -- Buscar CPF do responsável e número do recibo
   SELECT c.responsavel_cpf, r.numero_recibo
   INTO v_responsavel_cpf, v_numero_recibo
-  FROM contratantes c
+  FROM tomadores c
   CROSS JOIN recibos r
   WHERE c.id = p_contratante_id
     AND r.id = p_recibo_id;

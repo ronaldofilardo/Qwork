@@ -13,7 +13,7 @@ import ModalPagamento from '@/components/modals/ModalPagamento';
 import ModalContrato from '@/components/modals/ModalContrato';
 import { formatarValor } from '@/lib/validacoes-contratacao';
 
-interface Contratante {
+interface Tomador {
   id: number;
   nome: string;
   plano_id?: number;
@@ -31,7 +31,7 @@ interface Plano {
 export default function SucessoCadastroPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const contratanteId = searchParams.get('id');
+  const tomadorId = searchParams.get('id');
   const tipoParam = searchParams.get('tipo');
 
   const [dadosEnviadosPersonalizado, setDadosEnviadosPersonalizado] =
@@ -40,7 +40,7 @@ export default function SucessoCadastroPage() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
 
-  const [contratante, setContratante] = useState<Contratante | null>(null);
+  const [tomador, setTomador] = useState<Tomador | null>(null);
   const [plano, setPlano] = useState<Plano | null>(null);
   const [aguardandoEnvioLink, setAguardandoEnvioLink] = useState(false);
   const [pagamentoConcluido, setPagamentoConcluido] = useState(false);
@@ -95,11 +95,11 @@ export default function SucessoCadastroPage() {
       const sessionRes = await fetch('/api/auth/session');
       const sessionData = await sessionRes.json();
 
-      // Se a sessão contém o contratante, utilizamos esses dados preferencialmente
-      if (sessionRes.ok && sessionData?.contratante) {
-        setContratante(sessionData.contratante);
+      // Se a sessão contém o tomador, utilizamos esses dados preferencialmente
+      if (sessionRes.ok && sessionData?.tomador) {
+        setTomador(sessionData.tomador);
 
-        if (sessionData.contratante.status === 'aguardando_pagamento') {
+        if (sessionData.tomador.status === 'aguardando_pagamento') {
           setAguardandoEnvioLink(true);
           setLoading(false);
           return;
@@ -109,20 +109,18 @@ export default function SucessoCadastroPage() {
         // mostrar imediatamente a tela de confirmação mesmo se não houver um
         // contrato aceito explicitamente. Portanto consideramos apenas
         // `pagamento_confirmado` para liberar a tela de pagamento concluído.
-        if (sessionData.contratante.pagamento_confirmado) {
+        if (sessionData.tomador.pagamento_confirmado) {
           setPagamentoConcluido(true);
-          setProximosPassos(
-            getProximosPassosForTipo(sessionData.contratante.tipo)
-          );
+          setProximosPassos(getProximosPassosForTipo(sessionData.tomador.tipo));
           setLoading(false);
           return;
         }
 
-        if (sessionData.contratante.plano_id) {
+        if (sessionData.tomador.plano_id) {
           const planoRes = await fetch(`/api/planos`);
           const planoData = await planoRes.json();
           const planoEncontrado = planoData.planos.find(
-            (p: Plano) => p.id === sessionData.contratante.plano_id
+            (p: Plano) => p.id === sessionData.tomador.plano_id
           );
           setPlano(planoEncontrado || null);
         }
@@ -131,20 +129,18 @@ export default function SucessoCadastroPage() {
         return;
       }
 
-      // Se não há contratante na sessão, tentar buscar pelo parâmetro `id` quando presente
-      if (contratanteId) {
-        const contratanteRes = await fetch(
-          `/api/public/contratante?id=${contratanteId}`
-        );
-        const contratanteData = await contratanteRes.json();
+      // Se não há tomador na sessão, tentar buscar pelo parâmetro `id` quando presente
+      if (tomadorId) {
+        const tomadorRes = await fetch(`/api/public/tomador?id=${tomadorId}`);
+        const tomadorData = await tomadorRes.json();
 
-        if (!contratanteRes.ok) {
-          throw new Error(contratanteData.error || 'Erro ao carregar dados');
+        if (!tomadorRes.ok) {
+          throw new Error(tomadorData.error || 'Erro ao carregar dados');
         }
 
-        setContratante(contratanteData.contratante);
+        setTomador(tomadorData.tomador);
 
-        if (contratanteData.contratante.status === 'aguardando_pagamento') {
+        if (tomadorData.tomador.status === 'aguardando_pagamento') {
           setAguardandoEnvioLink(true);
           setLoading(false);
           return;
@@ -153,20 +149,18 @@ export default function SucessoCadastroPage() {
         // Mesma lógica aplicada aqui: liberar tela de confirmação quando o
         // pagamento estiver confirmado, mesmo que o contrato não esteja
         // explicitamente marcado como aceito (casos de clinica/entidade).
-        if (contratanteData.contratante.pagamento_confirmado) {
+        if (tomadorData.tomador.pagamento_confirmado) {
           setPagamentoConcluido(true);
-          setProximosPassos(
-            getProximosPassosForTipo(contratanteData.contratante.tipo)
-          );
+          setProximosPassos(getProximosPassosForTipo(tomadorData.tomador.tipo));
           setLoading(false);
           return;
         }
 
-        if (contratanteData.contratante.plano_id) {
+        if (tomadorData.tomador.plano_id) {
           const planoRes = await fetch(`/api/planos`);
           const planoData = await planoRes.json();
           const planoEncontrado = planoData.planos.find(
-            (p: Plano) => p.id === contratanteData.contratante.plano_id
+            (p: Plano) => p.id === tomadorData.tomador.plano_id
           );
           setPlano(planoEncontrado || null);
         }
@@ -175,7 +169,7 @@ export default function SucessoCadastroPage() {
         return;
       }
 
-      // Fallback amigável: não há `id` e não há contratante na sessão —
+      // Fallback amigável: não há `id` e não há tomador na sessão —
       // provavelmente fluxo do simulador completou a criação; mostrar sucesso neutro
       setContaCriadaSucesso(true);
     } catch (error) {
@@ -196,7 +190,7 @@ export default function SucessoCadastroPage() {
     } finally {
       setLoading(false);
     }
-  }, [contratanteId, tipoParam, getProximosPassosForTipo]);
+  }, [tomadorId, tipoParam, getProximosPassosForTipo]);
 
   useEffect(() => {
     // Sempre tentar carregar dados — carregador lida com ausência de `id`
@@ -207,7 +201,7 @@ export default function SucessoCadastroPage() {
       setContratoIdFromParam(parseInt(contratoIdParam));
       setMostrarModalContrato(true);
     }
-  }, [contratanteId, carregarDados, contratoIdParam]);
+  }, [tomadorId, carregarDados, contratoIdParam]);
 
   const handlePagamentoConfirmado = (data?: any) => {
     setMostrarModalPagamento(false);
@@ -223,7 +217,7 @@ export default function SucessoCadastroPage() {
           'O comprovante de pagamento está disponível em:\n' +
           'Informações da Conta > Plano > Baixar Comprovante'
       );
-      setProximosPassos(getProximosPassosForTipo(contratante?.tipo));
+      setProximosPassos(getProximosPassosForTipo(tomador?.tipo));
     }
 
     setPagamentoConcluido(true);
@@ -441,11 +435,11 @@ export default function SucessoCadastroPage() {
       </div>
 
       {/* Modal de Pagamento */}
-      {mostrarModalPagamento && plano && contratante && (
+      {mostrarModalPagamento && plano && tomador && (
         <ModalPagamento
           isOpen={mostrarModalPagamento}
           onClose={() => setMostrarModalPagamento(false)}
-          contratanteId={contratante.id}
+          tomadorId={tomador.id}
           contratoId={contratoIdFromParam}
           valor={plano.preco}
           planoNome={plano.nome}

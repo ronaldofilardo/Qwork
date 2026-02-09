@@ -50,7 +50,7 @@ Implementação completa do fluxo de **Plano Personalizado** para Medicina do Tr
 
 4. **`lib/types/enums.ts`** (atualizado)
    - `StatusContratacaoPersonalizada` com 10 estados
-   - `TipoPlano`, `TipoContratante`
+   - `TipoPlano`, `Tipotomador`
    - Validators e labels
 
 5. **`lib/types/contratacao-personalizada.ts`**
@@ -130,7 +130,7 @@ Implementação completa do fluxo de **Plano Personalizado** para Medicina do Tr
 
 ### Frontend Components (2)
 
-21. **`components/modals/ModalCadastroContratante.tsx`** (atualizado)
+21. **`components/modals/ModalCadastrotomador.tsx`** (atualizado)
     - Detecta `planoSelecionado.tipo === 'personalizado'`
     - Pula etapa de contrato (admin gera depois)
     - Submete JSON simplificado para API de pré-cadastro
@@ -412,7 +412,7 @@ import NotificationHub from '@/components/NotificationHub';
 
 ### Tarefas Pendentes (3 itens)
 
-- [x] Item 11: Atualizar ModalCadastroContratante
+- [x] Item 11: Atualizar ModalCadastrotomador
 - [x] Item 12: Testes unitários PlanoPersonalizadoService
 - [x] Item 13: Testes de integração fluxo completo
 

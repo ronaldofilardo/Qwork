@@ -5,8 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import QworkLogo from '@/components/QworkLogo';
 
 interface SimuladorInfo {
-  contratante_id: number;
-  contratante_nome: string;
+  tomador_id: number;
+  tomador_nome: string;
   plano_id: number;
   plano_nome: string;
   plano_tipo: string;
@@ -39,17 +39,17 @@ export default function SimuladorPagamentoPage() {
     const carregarDados = async () => {
       try {
         // Modo simplificado - parâmetros na URL
-        // Aceitar tanto `contratante_id` quanto `entidade_id` por compatibilidade
-        const contratanteId =
-          searchParams.get('contratante_id') || searchParams.get('entidade_id');
+        // Parâmetro tomador_id (compatível com entidade_id e clinica_id)
+        const tomadorId =
+          searchParams.get('tomador_id') || searchParams.get('entidade_id') || searchParams.get('clinica_id');
         const planoId = searchParams.get('plano_id');
         const numeroFuncionarios = searchParams.get('numero_funcionarios');
         const contratoId = searchParams.get('contrato_id');
         const retry = searchParams.get('retry') === 'true';
 
-        if (!contratanteId || !planoId) {
+        if (!tomadorId || !planoId) {
           throw new Error(
-            'Parâmetros obrigatórios: contratante_id/entidade_id e plano_id'
+            'Parâmetros obrigatórios: tomador_id (ou entidade_id/clinica_id) e plano_id'
           );
         }
 
@@ -60,9 +60,9 @@ export default function SimuladorPagamentoPage() {
           setContratoExistente(Number(contratoId));
         }
 
-        // Buscar informações do contratante e plano
+        // Buscar informações do tomador e plano
         const res = await fetch(
-          `/api/pagamento/simulador?entidade_id=${contratanteId}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`
+          `/api/pagamento/simulador?tomador_id=${tomadorId}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`
         );
 
         if (!res.ok) {
@@ -115,7 +115,7 @@ export default function SimuladorPagamentoPage() {
 
       // Iniciar pagamento (fluxo correto: iniciar → confirmar)
       const iniciarPayload: any = {
-        contratante_id: simuladorInfo.contratante_id,
+        tomador_id: simuladorInfo.tomador_id,
         contrato_id: contrato_id, // pode ser null
         plano_id: simuladorInfo.plano_id,
         numero_funcionarios: simuladorInfo.numero_funcionarios,
@@ -252,16 +252,16 @@ export default function SimuladorPagamentoPage() {
         </div>
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          {/* Informações do Contratante e Plano */}
+          {/* Informações do tomador e Plano */}
           <div className="bg-[#FF6B00] text-white px-6 py-4">
             <h2 className="text-xl font-bold">Resumo da Contratação</h2>
           </div>
 
           <div className="p-6 space-y-4">
-            {/* Dados do contratante */}
+            {/* Dados do tomador */}
             <div className="border-b pb-4">
-              <h3 className="font-semibold text-gray-900 mb-2">Contratante</h3>
-              <p className="text-gray-700">{simuladorInfo.contratante_nome}</p>
+              <h3 className="font-semibold text-gray-900 mb-2">tomador</h3>
+              <p className="text-gray-700">{simuladorInfo.tomador_nome}</p>
             </div>
 
             {/* Plano selecionado */}

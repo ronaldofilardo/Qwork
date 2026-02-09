@@ -23,7 +23,7 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockGet.mockImplementation((key: string) => {
-      if (key === 'contratante_id') return '1';
+      if (key === 'tomador_id') return '1';
       if (key === 'plano_id') return '1';
       if (key === 'numero_funcionarios') return '10';
       return null; // Sem token
@@ -37,8 +37,8 @@ describe.skip('SimuladorPagamentoPage - Acesso Liberado', () => {
           ok: true,
           json: () =>
             Promise.resolve({
-              contratante_id: 1,
-              contratante_nome: 'Empresa Teste',
+              tomador_id: 1,
+              tomador_nome: 'Empresa Teste',
               plano_id: 1,
               plano_nome: 'Plano Básico',
               plano_tipo: 'fixo',

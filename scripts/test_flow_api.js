@@ -1,7 +1,7 @@
 (async () => {
   const base = 'http://localhost:3000';
   try {
-    console.log('1) Criando contratante...');
+    console.log('1) Criando tomador...');
     const cadBody = {
       tipo: 'entidade',
       nome: 'RLGR Fluxo API',
@@ -15,7 +15,7 @@
       numeroFuncionarios: 100,
     };
 
-    let res = await fetch(`${base}/api/cadastro/contratante`, {
+    let res = await fetch(`${base}/api/cadastro/tomador`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(cadBody),
@@ -23,20 +23,20 @@
     const cad = await res.json().catch(() => null);
     console.log('→ status', res.status, 'body', JSON.stringify(cad));
 
-    // buscar contratante criado pelo CNPJ
+    // buscar tomador criado pelo CNPJ
     console.log('2) Iniciando pagamento via endpoint /api/pagamento/iniciar');
-    const contratanteId =
-      cad?.contratante_id ||
+    const tomadorId =
+      cad?.tomador_id ||
       cad?.id ||
       (() => {
-        throw new Error('contratante_id not in response');
+        throw new Error('tomador_id not in response');
       })();
 
     res = await fetch(`${base}/api/pagamento/iniciar`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contratante_id: contratanteId,
+        tomador_id: tomadorId,
         valor: 2000,
         numero_parcelas: 4,
       }),

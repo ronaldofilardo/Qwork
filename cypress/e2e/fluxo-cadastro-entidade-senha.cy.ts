@@ -20,7 +20,7 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
   const mockCPF = `${timestamp.toString().slice(-11)}`;
   const mockSenha = 'Teste@123';
 
-  let contratanteId: number;
+  let tomadorId: number;
   let tokenAtivacao: string;
 
   before(() => {
@@ -55,7 +55,7 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
           statusCode: 201,
           body: {
             success: true,
-            contratante: {
+            tomador: {
               id: Math.floor(Math.random() * 10000),
               cnpj: mockCNPJ,
               email: mockEmail,
@@ -87,21 +87,21 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
 
       cy.wait('@cadastroClinica').then((interception) => {
         expect(interception.response?.statusCode).to.eq(201);
-        contratanteId = interception.response?.body.contratante.id;
+        tomadorId = interception.response?.body.tomador.id;
       });
 
       // Verificar mensagem de sucesso
       cy.contains(/cadastro.*sucesso/i).should('be.visible');
     });
 
-    it('deve criar registro em contratantes com status aguardando_pagamento', () => {
-      cy.task('db:getContratante', { cnpj: mockCNPJ }).then((result: any) => {
+    it('deve criar registro em tomadors com status aguardando_pagamento', () => {
+      cy.task('db:gettomador', { cnpj: mockCNPJ }).then((result: any) => {
         expect(result).to.not.be.null;
         expect(result.cnpj).to.eq(mockCNPJ);
         expect(result.status).to.eq('aguardando_pagamento');
         expect(result.ativa).to.be.false;
         expect(result.pagamento_confirmado).to.be.false;
-        contratanteId = result.id;
+        tomadorId = result.id;
       });
     });
   });
@@ -109,21 +109,21 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
   describe('2. Confirmação de Pagamento e Ativação', () => {
     it('deve confirmar pagamento via admin', () => {
       // Simular confirmação de pagamento
-      cy.task('db:confirmarPagamento', { contratanteId }).then(
+      cy.task('db:confirmarPagamento', { tomadorId }).then(
         (result: any) => {
           expect(result.success).to.be.true;
         }
       );
 
       // Verificar atualização
-      cy.task('db:getContratante', { cnpj: mockCNPJ }).then((result: any) => {
+      cy.task('db:gettomador', { cnpj: mockCNPJ }).then((result: any) => {
         expect(result.pagamento_confirmado).to.be.true;
         expect(result.status).to.eq('aprovado');
       });
     });
 
     it('deve gerar token de ativação e criar registro em entidades_senhas', () => {
-      cy.task('db:gerarTokenAtivacao', { contratanteId, cpf: mockCPF }).then(
+      cy.task('db:gerarTokenAtivacao', { tomadorId, cpf: mockCPF }).then(
         (result: any) => {
           expect(result.success).to.be.true;
           tokenAtivacao = result.token;
@@ -181,8 +181,8 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
       cy.contains(/senha.*definida/i).should('be.visible');
     });
 
-    it('deve ativar contratante após definição de senha', () => {
-      cy.task('db:getContratante', { cnpj: mockCNPJ }).then((result: any) => {
+    it('deve ativar tomador após definição de senha', () => {
+      cy.task('db:gettomador', { cnpj: mockCNPJ }).then((result: any) => {
         expect(result.ativa).to.be.true;
         expect(result.status).to.eq('ativo');
       });
@@ -206,8 +206,8 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
             usuario: {
               cpf: mockCPF,
               nome: 'Gestor E2E',
-              perfil: 'gestor_clinica',
-              clinica_id: contratanteId,
+              perfil: 'rh',
+              clinica_id: tomadorId,
             },
           },
         });
@@ -218,8 +218,8 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
         body: {
           cpf: mockCPF,
           nome: 'Gestor E2E',
-          perfil: 'gestor_clinica',
-          clinica_id: contratanteId,
+          perfil: 'rh',
+          clinica_id: tomadorId,
           sessionToken: 'mock-session-token',
         },
       }).as('session');
@@ -267,7 +267,7 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
       const novoCNPJ = `99${Date.now().toString().slice(-10)}00188`;
       const novoCPF = `${Date.now().toString().slice(-11)}`;
 
-      cy.task('db:insertInactiveContratante', {
+      cy.task('db:insertInactivetomador', {
         cnpj: novoCNPJ,
         cpf: novoCPF,
       });

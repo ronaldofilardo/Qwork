@@ -7,11 +7,11 @@ import { query } from '../lib/db.js';
     );
 
     const candidatesRes = await query(
-      'SELECT id FROM contratantes WHERE numero_funcionarios_estimado IS NULL'
+      'SELECT id FROM tomadors WHERE numero_funcionarios_estimado IS NULL'
     );
 
     const ids = candidatesRes.rows.map((r) => r.id);
-    console.log(`[BACKFILL] Encontrados ${ids.length} contratantes candidatos`);
+    console.log(`[BACKFILL] Encontrados ${ids.length} tomadors candidatos`);
 
     let updated = 0;
     const skipped = [];
@@ -19,12 +19,12 @@ import { query } from '../lib/db.js';
     for (const id of ids) {
       // Buscar numero_funcionarios do contrato mais recente
       const contratoRes = await query(
-        `SELECT numero_funcionarios FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC NULLS LAST, id DESC LIMIT 1`,
+        `SELECT numero_funcionarios FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC NULLS LAST, id DESC LIMIT 1`,
         [id]
       );
 
       const cpRes = await query(
-        `SELECT numero_funcionarios_estimado FROM contratos_planos WHERE contratante_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC LIMIT 1`,
+        `SELECT numero_funcionarios_estimado FROM contratos_planos WHERE tomador_id = $1 ORDER BY created_at DESC NULLS LAST, id DESC LIMIT 1`,
         [id]
       );
 
@@ -48,11 +48,11 @@ import { query } from '../lib/db.js';
 
       if (valor != null) {
         await query(
-          `UPDATE contratantes SET numero_funcionarios_estimado = $1 WHERE id = $2`,
+          `UPDATE tomadors SET numero_funcionarios_estimado = $1 WHERE id = $2`,
           [valor, id]
         );
         updated++;
-        console.log(`[BACKFILL] Updated contratante ${id} => ${valor}`);
+        console.log(`[BACKFILL] Updated tomador ${id} => ${valor}`);
       } else {
         skipped.push(id);
       }

@@ -29,18 +29,18 @@ describe('StatusAprovacao type', () => {
   });
 
   describe('Uso em objetos', () => {
-    it('deve permitir uso em interface de contratante', () => {
-      interface ContratanteTest {
+    it('deve permitir uso em interface de tomador', () => {
+      interface tomadorTest {
         id: number;
         status: StatusAprovacao;
       }
 
-      const contratante: ContratanteTest = {
+      const tomador: tomadorTest = {
         id: 1,
         status: 'aguardando_pagamento',
       };
 
-      expect(contratante.status).toBe('aguardando_pagamento');
+      expect(tomador.status).toBe('aguardando_pagamento');
     });
 
     it('deve permitir array de status', () => {
@@ -95,19 +95,19 @@ describe('StatusAprovacao type', () => {
   describe('Integração com funções', () => {
     it('deve funcionar com funções que usam StatusAprovacao', () => {
       const filtrarPorStatus = (
-        contratantes: Array<{ id: number; status: StatusAprovacao }>,
+        tomadors: Array<{ id: number; status: StatusAprovacao }>,
         statusFiltro: StatusAprovacao
       ) => {
-        return contratantes.filter((c) => c.status === statusFiltro);
+        return tomadors.filter((c) => c.status === statusFiltro);
       };
 
-      const contratantes = [
+      const tomadors = [
         { id: 1, status: 'pendente' as StatusAprovacao },
         { id: 2, status: 'aguardando_pagamento' as StatusAprovacao },
         { id: 3, status: 'aprovado' as StatusAprovacao },
       ];
 
-      const aguardando = filtrarPorStatus(contratantes, 'aguardando_pagamento');
+      const aguardando = filtrarPorStatus(tomadors, 'aguardando_pagamento');
 
       expect(aguardando).toHaveLength(1);
       expect(aguardando[0].id).toBe(2);

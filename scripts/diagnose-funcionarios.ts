@@ -30,13 +30,13 @@ async function main() {
         c.id AS clinica_existe,
         f.empresa_id,
         e.id AS empresa_existe,
-        f.contratante_id,
-        ent.id AS contratante_existe,
-        ent.tipo AS contratante_tipo
+        f.tomador_id,
+        ent.id AS tomador_existe,
+        ent.tipo AS tomador_tipo
       FROM funcionarios f
       LEFT JOIN clinicas c ON c.id = f.clinica_id
       LEFT JOIN empresas_clientes e ON e.id = f.empresa_id
-      LEFT JOIN entidades ent ON ent.id = f.contratante_id
+      LEFT JOIN entidades ent ON ent.id = f.tomador_id
       LIMIT 5
     `);
 
@@ -53,9 +53,9 @@ async function main() {
         : row.empresa_id
           ? '❌'
           : '⚠️';
-      const contratanteIcon = row.contratante_existe
+      const tomadorIcon = row.tomador_existe
         ? '✅'
-        : row.contratante_id
+        : row.tomador_id
           ? '❌'
           : '⚠️';
 
@@ -66,7 +66,7 @@ async function main() {
         `      ${empresaIcon} empresa_id: ${row.empresa_id || 'NULL'} ${row.empresa_existe ? 'OK' : row.empresa_id ? 'NÃO EXISTE' : 'NULL'}`
       );
       console.log(
-        `      ${contratanteIcon} contratante_id: ${row.contratante_id || 'NULL'} ${row.contratante_existe ? `OK (${row.contratante_tipo})` : row.contratante_id ? 'NÃO EXISTE' : 'NULL'}\n`
+        `      ${tomadorIcon} tomador_id: ${row.tomador_id || 'NULL'} ${row.tomador_existe ? `OK (${row.tomador_tipo})` : row.tomador_id ? 'NÃO EXISTE' : 'NULL'}\n`
       );
     }
 
@@ -112,7 +112,7 @@ async function main() {
 
         await prodPool.query(
           `
-          INSERT INTO funcionarios (id, cpf, nome, clinica_id, empresa_id, contratante_id)
+          INSERT INTO funcionarios (id, cpf, nome, clinica_id, empresa_id, tomador_id)
           VALUES ($1, $2, $3, $4, $5, $6)
           ON CONFLICT (id) DO NOTHING
         `,
@@ -122,7 +122,7 @@ async function main() {
             func.nome,
             func.clinica_id,
             func.empresa_id,
-            func.contratante_id,
+            func.tomador_id,
           ]
         );
 

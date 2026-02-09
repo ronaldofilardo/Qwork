@@ -2,7 +2,7 @@
  * Máquina de Estados da Avaliação
  *
  * Define os possíveis estados de uma avaliação e suas transições válidas.
- * Padronização: usa 'concluido' (sem acento, forma masculina) para consistência com lotes.
+ * Padronização: usa 'concluida' (feminino) para diferenciar de lotes que usam 'concluido'.
  */
 
 /**
@@ -12,7 +12,7 @@ export enum StatusAvaliacao {
   RASCUNHO = 'rascunho',
   INICIADA = 'iniciada',
   EM_ANDAMENTO = 'em_andamento',
-  CONCLUIDO = 'concluido',
+  CONCLUIDA = 'concluida',
   INATIVADA = 'inativada',
 }
 
@@ -23,17 +23,19 @@ export type StatusAvaliacaoType =
   | 'rascunho'
   | 'iniciada'
   | 'em_andamento'
-  | 'concluido'
+  | 'concluida'
+  | 'concluido' // Legado - manter para compatibilidade
   | 'inativada';
 
 /**
  * Status legado (mapeamento para migração)
  * DEPRECATED: Usar apenas para conversão de dados antigos
+ * Nota: 'concluido' era o valor antigo, agora normalizamos para 'concluida'
  */
 export const STATUS_LEGADO_MAP: Record<string, StatusAvaliacaoType> = {
-  concluida: 'concluido', // Feminino → Masculino
-  concluded: 'concluido',
-  finished: 'concluido',
+  concluido: 'concluida', // Masculino legado → Feminino correto
+  concluded: 'concluida',
+  finished: 'concluida',
 };
 
 /**
@@ -45,9 +47,10 @@ export const TRANSICOES_VALIDAS_AVALIACAO: Record<
   StatusAvaliacaoType[]
 > = {
   rascunho: ['iniciada', 'inativada'],
-  iniciada: ['em_andamento', 'concluido', 'inativada'],
-  em_andamento: ['concluido', 'inativada'],
-  concluido: [], // Estado final (não pode mais alterar)
+  iniciada: ['em_andamento', 'concluida', 'inativada'],
+  em_andamento: ['concluida', 'inativada'],
+  concluida: [], // Estado final (não pode mais alterar)
+  concluido: [], // Legado - também estado final
   inativada: [], // Estado final
 };
 
@@ -59,7 +62,11 @@ export function validarTransicaoStatusAvaliacao(
   novoStatus: StatusAvaliacaoType
 ): { valido: boolean; erro?: string } {
   // Estados finais não podem transitar
-  if (statusAtual === 'concluido' || statusAtual === 'inativada') {
+  if (
+    statusAtual === 'concluida' ||
+    statusAtual === 'concluido' ||
+    statusAtual === 'inativada'
+  ) {
     return {
       valido: false,
       erro: `Avaliação no estado '${statusAtual}' não pode ser alterada`,
@@ -88,7 +95,8 @@ export function getDescricaoStatusAvaliacao(
     rascunho: 'Rascunho',
     iniciada: 'Iniciada',
     em_andamento: 'Em Andamento',
-    concluido: 'Concluído',
+    concluida: 'Concluída',
+    concluido: 'Concluída', // Legado - mesmo que concluida
     inativada: 'Inativada',
   };
 
@@ -112,7 +120,8 @@ export function getCorStatusAvaliacao(status: StatusAvaliacaoType): string {
     rascunho: 'bg-gray-100 text-gray-800 border-gray-300',
     iniciada: 'bg-blue-100 text-blue-800 border-blue-300',
     em_andamento: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-    concluido: 'bg-green-100 text-green-800 border-green-300',
+    concluida: 'bg-green-100 text-green-800 border-green-300',
+    concluido: 'bg-green-100 text-green-800 border-green-300', // Legado - mesmo que concluida
     inativada: 'bg-red-100 text-red-800 border-red-300',
   };
 
@@ -130,7 +139,7 @@ export function avaliacaoEmProgresso(status: StatusAvaliacaoType): boolean {
  * Verificar se avaliação está finalizada (concluída ou inativada)
  */
 export function avaliacaoFinalizada(status: StatusAvaliacaoType): boolean {
-  return status === 'concluido' || status === 'inativada';
+  return status === 'concluida' || status === 'inativada';
 }
 
 /**
@@ -144,7 +153,7 @@ export function podeEditarAvaliacao(status: StatusAvaliacaoType): boolean {
  * Verificar se avaliação pode ser inativada
  */
 export function podeInativarAvaliacao(status: StatusAvaliacaoType): boolean {
-  return status !== 'concluido' && status !== 'inativada';
+  return status !== 'concluida' && status !== 'inativada';
 }
 
 /**

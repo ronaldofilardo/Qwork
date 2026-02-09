@@ -67,7 +67,7 @@ export async function POST(
       // Buscar informações do lote primeiro
       const loteCheck = await query(
         `
-        SELECT la.id, la.contratante_id, la.status
+        SELECT la.id, la.entidade_id, la.status
         FROM lotes_avaliacao la
         WHERE la.id = $1
         FOR UPDATE -- Lock to prevent concurrent operations
@@ -89,7 +89,7 @@ export async function POST(
       const lote = loteCheck.rows[0];
 
       // Verificar se o gestor de entidade tem acesso à entidade do lote
-      if (!user.entidade_id || lote.contratante_id !== user.entidade_id) {
+      if (!user.entidade_id || lote.entidade_id !== user.entidade_id) {
         await query('ROLLBACK');
         return NextResponse.json(
           {

@@ -9,11 +9,11 @@ async function checkColumns() {
     const result = await pool.query(`
       SELECT column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
-      WHERE table_name = 'contratantes'
+      WHERE table_name = 'tomadores'
       ORDER BY ordinal_position
     `);
 
-    console.log('=== Colunas da tabela contratantes ===\n');
+    console.log('=== Colunas da tabela tomadores ===\n');
     result.rows.forEach((col) => {
       console.log(
         `${col.column_name.padEnd(35)} ${col.data_type.padEnd(20)} ${col.is_nullable === 'YES' ? 'NULL' : 'NOT NULL'}`

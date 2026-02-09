@@ -29,6 +29,15 @@ jest.mock('react-hot-toast', () => ({
   success: jest.fn(),
 }));
 
+// Mock do hook usePWAInstall
+jest.mock('@/hooks/usePWAInstall', () => ({
+  usePWAInstall: jest.fn(() => ({
+    canInstall: false,
+    handleInstallClick: jest.fn(),
+    dismissPrompt: jest.fn(),
+  })),
+}));
+
 // Mock do fetch - criar o mock ANTES de usar
 global.fetch = jest.fn();
 
@@ -594,4 +603,68 @@ describe.skip('Emissor Dashboard', () => {
       { timeout: 10000 }
     );
   }, 15000);
+
+  it('deve exibir botão PWA quando canInstall é true', async () => {
+    const mockHandleInstallClick = jest.fn();
+    const { usePWAInstall } = require('@/hooks/usePWAInstall');
+    usePWAInstall.mockReturnValue({
+      canInstall: true,
+      handleInstallClick: mockHandleInstallClick,
+      dismissPrompt: jest.fn(),
+    });
+
+    const mockLotes = [];
+
+    (global.fetch as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) =>
+          resolve({
+            ok: true,
+            json: async () => ({
+              success: true,
+              lotes: mockLotes,
+              total: 0,
+            }),
+          })
+        )
+    );
+
+    renderWithQueryClient(<EmissorDashboard />);
+
+    await waitFor(() => {
+      const installButton = screen.getByText('Instalar App');
+      expect(installButton).toBeInTheDocument();
+    });
+  });
+
+  it('não deve exibir botão PWA quando canInstall é false', async () => {
+    const { usePWAInstall } = require('@/hooks/usePWAInstall');
+    usePWAInstall.mockReturnValue({
+      canInstall: false,
+      handleInstallClick: jest.fn(),
+      dismissPrompt: jest.fn(),
+    });
+
+    const mockLotes = [];
+
+    (global.fetch as jest.Mock).mockImplementationOnce(
+      () =>
+        new Promise((resolve) =>
+          resolve({
+            ok: true,
+            json: async () => ({
+              success: true,
+              lotes: mockLotes,
+              total: 0,
+            }),
+          })
+        )
+    );
+
+    renderWithQueryClient(<EmissorDashboard />);
+
+    await waitFor(() => {
+      expect(screen.queryByText('Instalar App')).not.toBeInTheDocument();
+    });
+  });
 });

@@ -5,11 +5,11 @@
 -- PROBLEMA: O trigger antigo forçava ativa=true para status aguardando_pagamento
 -- SOLUÇÃO: Novo fluxo: ativação só deve ser true APÓS confirmação de pagamento
 
-DROP TRIGGER IF EXISTS tr_contratantes_sync_status_ativa_robust ON contratantes;
-DROP FUNCTION IF EXISTS contratantes_sync_status_ativa_robust();
+DROP TRIGGER IF EXISTS tr_tomadores_sync_status_ativa_robust ON tomadores;
+DROP FUNCTION IF EXISTS tomadores_sync_status_ativa_robust();
 
 -- Nova função corrigida para sincronização de ativa/status
-CREATE OR REPLACE FUNCTION contratantes_sync_status_ativa()
+CREATE OR REPLACE FUNCTION tomadores_sync_status_ativa()
 RETURNS TRIGGER AS $$
 BEGIN
   -- Ativa NUNCA pode ser true sem pagamento confirmado
@@ -37,12 +37,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Criar novo trigger
-CREATE TRIGGER tr_contratantes_sync_status_ativa
-  BEFORE INSERT OR UPDATE ON contratantes
+CREATE TRIGGER tr_tomadores_sync_status_ativa
+  BEFORE INSERT OR UPDATE ON tomadores
   FOR EACH ROW
-  EXECUTE FUNCTION contratantes_sync_status_ativa();
+  EXECUTE FUNCTION tomadores_sync_status_ativa();
 
-COMMENT ON FUNCTION contratantes_sync_status_ativa IS 
+COMMENT ON FUNCTION tomadores_sync_status_ativa IS 
 'Garante que ativa só é true quando pagamento_confirmado é true. Remove lógica antiga que forçava ativa=true para aguardando_pagamento.';
 
 -- Resumo

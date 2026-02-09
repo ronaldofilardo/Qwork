@@ -131,7 +131,7 @@ describe('Integração E2E: Admin com RLS', () => {
     cy.visit('/admin');
 
     // Verificar que pode acessar a seção de clínicas
-    cy.contains('Contratantes').should('be.visible');
+    cy.contains('tomadors').should('be.visible');
   });
 });
 

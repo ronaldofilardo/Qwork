@@ -48,7 +48,7 @@ async function run() {
 
     console.log('2) Verificando dados do usuário antes do login...');
     const func = await query(
-      'SELECT cpf, nome, perfil, senha_hash, ativo, contratante_id, clinica_id FROM funcionarios WHERE cpf = $1',
+      'SELECT cpf, nome, perfil, senha_hash, ativo, tomador_id, clinica_id FROM funcionarios WHERE cpf = $1',
       [cpf]
     );
     console.log('   funcionario rows:', func.rows);
@@ -75,7 +75,7 @@ async function run() {
         cpf,
         nome: func.rows[0].nome,
         perfil: 'rh',
-        contratante_id: func.rows[0].contratante_id || null,
+        tomador_id: func.rows[0].tomador_id || null,
         clinica_id: func.rows[0].clinica_id || null,
         sessionToken: Math.random().toString(36).slice(2),
         lastRotation: Date.now(),

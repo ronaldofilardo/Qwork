@@ -16,7 +16,7 @@ export const createCadastroApi = (fetcher: Fetcher = defaultFetcher) => {
     },
 
     async enviarCadastro(formData: FormData) {
-      const res = await fetcher('/api/cadastro/contratante', {
+      const res = await fetcher('/api/cadastro/tomador', {
         method: 'POST',
         body: formData,
       });

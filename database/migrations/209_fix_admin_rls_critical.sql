@@ -108,9 +108,9 @@ CREATE POLICY "clinicas_admin_all" ON clinicas
   USING (current_user_perfil() = 'admin')
   WITH CHECK (current_user_perfil() = 'admin');
 
--- Admin can manage contratantes metadata
-DROP POLICY IF EXISTS "contratantes_admin_all" ON contratantes;
-CREATE POLICY "contratantes_admin_all" ON contratantes
+-- Admin can manage tomadores metadata
+DROP POLICY IF EXISTS "tomadores_admin_all" ON tomadores;
+CREATE POLICY "tomadores_admin_all" ON tomadores
   FOR ALL TO PUBLIC
   USING (current_user_perfil() = 'admin')
   WITH CHECK (current_user_perfil() = 'admin');
@@ -142,7 +142,7 @@ BEGIN
   FROM pg_policies
   WHERE tablename IN (
     'roles', 'permissions', 'role_permissions', 'audit_logs',
-    'clinicas', 'contratantes'
+    'clinicas', 'tomadores'
   )
   AND policyname LIKE '%admin%';
   

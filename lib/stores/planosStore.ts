@@ -17,8 +17,8 @@ export interface ContratoPlano {
   id: number;
   plano_id: number;
   clinica_id?: number;
-  contratante_id?: number;
-  tipo_contratante: 'clinica' | 'entidade';
+  tomador_id?: number;
+  tipo_tomador: 'clinica' | 'entidade';
   valor_personalizado_por_funcionario?: number;
   data_contratacao: string;
   data_fim_vigencia: string;

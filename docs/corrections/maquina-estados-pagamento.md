@@ -1,18 +1,18 @@
-# Correção: Máquina de Estados de Pagamento e Contratante
+# Correção: Máquina de Estados de Pagamento e tomador
 
 ## Problema Identificado
 
-O sistema não está registrando o pagamento corretamente após o cadastro do contratante. O erro ocorre em:
+O sistema não está registrando o pagamento corretamente após o cadastro do tomador. O erro ocorre em:
 
 ```
-POST /api/cadastro/contratante 201 in 599ms ✅
+POST /api/cadastro/tomador 201 in 599ms ✅
 GET /api/pagamento/simulador 200 in 719ms ✅
 POST /api/pagamento/iniciar 400 in 383ms ⠌
 ```
 
 ### Análise da Máquina de Estados
 
-#### Estados do Contratante (`status_aprovacao_enum`)
+#### Estados do tomador (`status_aprovacao_enum`)
 
 - **pendente**: Cadastro criado, aguardando aprovação/pagamento
 - **aprovado**: Aprovado após pagamento e análise
@@ -27,7 +27,7 @@ POST /api/pagamento/iniciar 400 in 383ms ⠌
 - **cancelado**: Pagamento cancelado
 - **reembolsado**: Pagamento reembolsado
 
-#### Flags do Contratante
+#### Flags do tomador
 
 - **pagamento_confirmado**: `false` → `true` (após confirmação)
 - **ativa**: `true` (padrão - controla se conta está ativa)
@@ -45,11 +45,11 @@ const enumCheck = await query(
 const hasAguardando = enumCheck.rows.length > 0;
 
 const statusOk =
-  String(contratante.status) === 'aguardando_pagamento' ||
-  (!hasAguardando && String(contratante.status) === 'pendente');
+  String(tomador.status) === 'aguardando_pagamento' ||
+  (!hasAguardando && String(tomador.status) === 'pendente');
 
 if (!statusOk) {
-  console.error(`[PAGAMENTO] Status inválido: ${contratante.status}`);
+  console.error(`[PAGAMENTO] Status inválido: ${tomador.status}`);
   return NextResponse.json(
     { error: 'Status inválido para pagamento' },
     { status: 400 }
@@ -66,20 +66,20 @@ if (!statusOk) {
 
 Resultado: `hasAguardando = false` → aceita apenas `status = 'pendente'`
 
-**PORÉM**, no cadastro ([app/api/cadastro/contratante/route.ts](../../app/api/cadastro/contratante/route.ts)), o contratante é criado com `status = 'pendente'`, então **DEVERIA funcionar**.
+**PORÉM**, no cadastro ([app/api/cadastro/tomador/route.ts](../../app/api/cadastro/tomador/route.ts)), o tomador é criado com `status = 'pendente'`, então **DEVERIA funcionar**.
 
 ## Investigação Adicional Necessária
 
 Vou verificar:
 
-1. Se o contratante foi criado corretamente com status 'pendente'
+1. Se o tomador foi criado corretamente com status 'pendente'
 2. Se há outra validação que está falhando antes da verificação de status
 3. Se o contrato_id está sendo passado corretamente
 
 ```sql
--- Verificar contratante recém-criado
+-- Verificar tomador recém-criado
 SELECT id, nome, status, plano_id, pagamento_confirmado
-FROM contratantes WHERE id = 2;
+FROM tomadores WHERE id = 2;
 
 -- Resultado:
 id | nome | status  | plano_id | pagamento_confirmado
@@ -96,7 +96,7 @@ Na linha do código de iniciar pagamento:
 ```typescript
 if (!contrato_id && !token) {
   return NextResponse.json(
-    { error: 'ID do contratante e contrato são obrigatórios' },
+    { error: 'ID do tomador e contrato são obrigatórios' },
     { status: 400 }
   );
 }
@@ -106,26 +106,26 @@ O código **EXIGE** que `contrato_id` seja fornecido, mas o novo fluxo de cadast
 
 ### Fluxo Atual (Problemático)
 
-1. ✅ `POST /api/cadastro/contratante` → Cria contratante sem contrato
+1. ✅ `POST /api/cadastro/tomador` → Cria tomador sem contrato
 2. ⠌ `POST /api/pagamento/iniciar` → Exige contrato_id → **FALHA**
 
 ### Fluxo Correto (Esperado)
 
-1. `POST /api/cadastro/contratante` → Cria contratante com status='pendente'
+1. `POST /api/cadastro/tomador` → Cria tomador com status='pendente'
 2. `POST /api/pagamento/iniciar` → Cria pagamento sem exigir contrato
-3. `POST /api/pagamento/confirmar` → Confirma pagamento + gera contrato + ativa contratante
+3. `POST /api/pagamento/confirmar` → Confirma pagamento + gera contrato + ativa tomador
 
 ## Correções Necessárias
 
 ### 1. Remover exigência de contrato_id em `/api/pagamento/iniciar`
 
-O endpoint deve aceitar apenas `contratante_id` para iniciar pagamento:
+O endpoint deve aceitar apenas `tomador_id` para iniciar pagamento:
 
 ```typescript
 // ANTES (ERRADO)
 if (!contrato_id && !token) {
   return NextResponse.json(
-    { error: 'ID do contratante e contrato são obrigatórios' },
+    { error: 'ID do tomador e contrato são obrigatórios' },
     { status: 400 }
   );
 }
@@ -133,46 +133,46 @@ if (!contrato_id && !token) {
 // DEPOIS (CORRETO)
 // contrato_id é opcional - será criado APÓS pagamento
 if (!token) {
-  // Token é opcional, mas se não fornecido, contratante_id é obrigatório
-  if (!contratante_id) {
+  // Token é opcional, mas se não fornecido, tomador_id é obrigatório
+  if (!tomador_id) {
     return NextResponse.json(
-      { error: 'ID do contratante é obrigatório' },
+      { error: 'ID do tomador é obrigatório' },
       { status: 400 }
     );
   }
 }
 ```
 
-### 2. Ajustar query de busca do contratante
+### 2. Ajustar query de busca do tomador
 
 A query atual LEFT JOIN com contratos funciona, mas precisa lidar com contrato ausente:
 
 ```typescript
 // Já está defensivo com LEFT JOIN - OK!
-LEFT JOIN contratos ctr ON ctr.contratante_id = c.id
+LEFT JOIN contratos ctr ON ctr.tomador_id = c.id
   AND (ctr.id = $2 OR ($2 IS NULL AND ctr.id = (
-    SELECT id FROM contratos WHERE contratante_id = c.id ORDER BY criado_em DESC LIMIT 1
+    SELECT id FROM contratos WHERE tomador_id = c.id ORDER BY criado_em DESC LIMIT 1
   )))
 ```
 
 ### 3. Validação de valores sem contrato
 
-Quando não há contrato, usar dados estimados do contratante:
+Quando não há contrato, usar dados estimados do tomador:
 
 ```typescript
 // SEGUNDA VALIDAÇÃO: verificar valores
 if (
   !token &&
-  (contratante.valor_total == null ||
-    isNaN(parseFloat(String(contratante.valor_total))))
+  (tomador.valor_total == null ||
+    isNaN(parseFloat(String(tomador.valor_total))))
 ) {
   // Se não tem contrato, calcular valor baseado no plano e numero_funcionarios_estimado
-  const valorUnitario = parseFloat(String(contratante.valor_unitario)) || 20.0;
-  const numeroFunc = contratante.numero_funcionarios || 1;
+  const valorUnitario = parseFloat(String(tomador.valor_unitario)) || 20.0;
+  const numeroFunc = tomador.numero_funcionarios || 1;
   const valorCalculado = valorUnitario * numeroFunc;
 
   console.log(`[PAGAMENTO] Calculando valor sem contrato: ${valorCalculado}`);
-  contratante.valor_total = valorCalculado;
+  tomador.valor_total = valorCalculado;
 }
 ```
 
@@ -182,8 +182,8 @@ if (
 
 ```
 ┌─────────────────────────────────────────────────────────┠
-│ 1. CADASTRO (POST /api/cadastro/contratante)          │
-│    - Cria contratante com status='pendente'            │
+│ 1. CADASTRO (POST /api/cadastro/tomador)          │
+│    - Cria tomador com status='pendente'            │
 │    - pagamento_confirmado=false                         │
 │    - SEM criar contrato                                 │
 │    - Retorna simulador_url                             │
@@ -216,7 +216,7 @@ if (
 │ 5. CONFIRMAR PAGAMENTO (POST /api/pagamento/confirmar) │
 │    - Atualiza pagamento: status='pago'                 │
 │    - Gera contrato (1ª vez)                             │
-│    - Atualiza contratante:                              │
+│    - Atualiza tomador:                              │
 │      * pagamento_confirmado=true                        │
 │      * status='aprovado' (se auto-aprovação)           │
 │      * data_liberacao_login=NOW()                       │
@@ -228,12 +228,12 @@ if (
 
 ### Estados Intermediários
 
-| Etapa                    | contratante.status | pagamento.status | pagamento_confirmado | Pode fazer login? |
-| ------------------------ | ------------------ | ---------------- | -------------------- | ----------------- |
-| Cadastro                 | pendente           | -                | false                | ⠌ Não             |
-| Pagamento Iniciado       | pendente           | pendente         | false                | ⠌ Não             |
-| Pagamento Processando    | pendente           | processando      | false                | ⠌ Não             |
-| **Pagamento Confirmado** | aprovado           | pago             | true                 | ✅ **SIM**        |
+| Etapa                    | tomador.status | pagamento.status | pagamento_confirmado | Pode fazer login? |
+| ------------------------ | -------------- | ---------------- | -------------------- | ----------------- |
+| Cadastro                 | pendente       | -                | false                | ⠌ Não             |
+| Pagamento Iniciado       | pendente       | pendente         | false                | ⠌ Não             |
+| Pagamento Processando    | pendente       | processando      | false                | ⠌ Não             |
+| **Pagamento Confirmado** | aprovado       | pago             | true                 | ✅ **SIM**        |
 
 ## Implementação das Correções
 
@@ -249,15 +249,15 @@ Arquivos a modificar:
 Após implementar, o fluxo deve ser:
 
 ```bash
-# 1. Criar contratante
-POST /api/cadastro/contratante → 201 ✅
+# 1. Criar tomador
+POST /api/cadastro/tomador → 201 ✅
 # Retorna: { id: 2, requires_payment: true, simulador_url: "/pagamento/simulador?..." }
 
 # 2. Acessar simulador (opcional)
-GET /pagamento/simulador?contratante_id=2&plano_id=5&numero_funcionarios=100 → 200 ✅
+GET /pagamento/simulador?tomador_id=2&plano_id=5&numero_funcionarios=100 → 200 ✅
 
 # 3. Iniciar pagamento (DEVE FUNCIONAR AGORA)
-POST /api/pagamento/iniciar { contratante_id: 2 } → 200 ✅
+POST /api/pagamento/iniciar { tomador_id: 2 } → 200 ✅
 # Retorna: { pagamento_id: 1, valor: 2000.00, ... }
 
 # 4. Confirmar pagamento
@@ -271,16 +271,16 @@ POST /api/pagamento/confirmar { pagamento_id: 1 } → 200 ✅
 // __tests__/integration/fluxo-pagamento-completo.test.ts
 describe('Fluxo Completo de Cadastro e Pagamento', () => {
   it('deve permitir cadastro → pagamento → ativação sem contrato prévio', async () => {
-    // 1. Cadastrar contratante
-    const cadastro = await POST('/api/cadastro/contratante', { ... });
+    // 1. Cadastrar tomador
+    const cadastro = await POST('/api/cadastro/tomador', { ... });
     expect(cadastro.status).toBe(201);
     expect(cadastro.body.requires_payment).toBe(true);
 
-    const contratanteId = cadastro.body.id;
+    const tomadorId = cadastro.body.id;
 
     // 2. Iniciar pagamento SEM contrato_id
     const iniciar = await POST('/api/pagamento/iniciar', {
-      contratante_id: contratanteId
+      tomador_id: tomadorId
       // SEM contrato_id!
     });
     expect(iniciar.status).toBe(200); // ✅ DEVE PASSAR AGORA
@@ -292,11 +292,11 @@ describe('Fluxo Completo de Cadastro e Pagamento', () => {
     expect(confirmar.status).toBe(200);
 
     // 4. Verificar criação do contrato
-    const contratante = await query('SELECT * FROM contratantes WHERE id = $1', [contratanteId]);
-    expect(contratante.rows[0].pagamento_confirmado).toBe(true);
-    expect(contratante.rows[0].status).toBe('aprovado');
+    const tomador = await query('SELECT * FROM tomadores WHERE id = $1', [tomadorId]);
+    expect(tomador.rows[0].pagamento_confirmado).toBe(true);
+    expect(tomador.rows[0].status).toBe('aprovado');
 
-    const contratos = await query('SELECT * FROM contratos WHERE contratante_id = $1', [contratanteId]);
+    const contratos = await query('SELECT * FROM contratos WHERE tomador_id = $1', [tomadorId]);
     expect(contratos.rows.length).toBe(1); // Contrato criado APÓS pagamento
   });
 });
@@ -304,7 +304,7 @@ describe('Fluxo Completo de Cadastro e Pagamento', () => {
 
 ## Referências
 
-- [app/api/cadastro/contratante/route.ts](../../app/api/cadastro/contratante/route.ts) - Cadastro sem contrato
+- [app/api/cadastro/tomador/route.ts](../../app/api/cadastro/tomador/route.ts) - Cadastro sem contrato
 - [app/api/pagamento/iniciar/route.ts](../../app/api/pagamento/iniciar/route.ts) - Exige contrato (ERRO)
 - [app/api/pagamento/confirmar/route.ts](../../app/api/pagamento/confirmar/route.ts) - Gera contrato após pagamento
 - [database/schema-complete.sql](../../database/schema-complete.sql#L301-L308) - Enum status_pagamento_enum

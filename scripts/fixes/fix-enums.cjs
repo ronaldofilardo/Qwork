@@ -21,7 +21,7 @@ async function fixEnums() {
     // 3. Atualizar dados existentes
     console.log('3. Atualizando dados existentes...');
     const updateResult = await client.query(`
-      UPDATE contratantes
+      UPDATE tomadores
       SET plano_tipo = CASE
         WHEN plano_tipo::text = 'personalizado' THEN 'personalizado'::tipo_plano
         ELSE NULL

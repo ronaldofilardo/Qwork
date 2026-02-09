@@ -4,7 +4,7 @@ import { query } from '../lib/db.js';
   const cnpj = '02494916000170';
   try {
     const sql = `SELECT
-      ct.id as contratante_id,
+      ct.id as tomador_id,
       ct.cnpj,
       ct.numero_funcionarios_estimado,
       co.id as contrato_id,
@@ -15,11 +15,11 @@ import { query } from '../lib/db.js';
       pl.valor_por_funcionario,
       pg.id as pagamento_id,
       pg.valor as pagamento_valor
-    FROM contratantes ct
+    FROM tomadors ct
     LEFT JOIN LATERAL (
       SELECT c.id, c.plano_id, c.numero_funcionarios, c.valor_personalizado
       FROM contratos c
-      WHERE c.contratante_id = ct.id
+      WHERE c.tomador_id = ct.id
       ORDER BY c.criado_em DESC NULLS LAST, c.id DESC
       LIMIT 1
     ) co ON true
@@ -27,7 +27,7 @@ import { query } from '../lib/db.js';
     LEFT JOIN LATERAL (
       SELECT p.id, p.valor
       FROM pagamentos p
-      WHERE p.contratante_id = ct.id
+      WHERE p.tomador_id = ct.id
       ORDER BY p.data_pagamento DESC NULLS LAST, p.criado_em DESC
       LIMIT 1
     ) pg ON true

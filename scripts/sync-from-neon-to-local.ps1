@@ -249,7 +249,7 @@ $numTabelas = & psql -h $LOCAL_HOST -p $LOCAL_PORT -U $LOCAL_USER -d $LOCAL_DB -
 Write-Host "   📊 Tabelas: $($numTabelas.Trim())" -ForegroundColor Cyan
 
 # Contar registros em algumas tabelas principais
-$tabelas = @("contratantes", "clinicas", "empresas", "funcionarios", "lotes_avaliacao", "avaliacoes")
+$tabelas = @("tomadores", "clinicas", "empresas", "funcionarios", "lotes_avaliacao", "avaliacoes")
 
 foreach ($tabela in $tabelas) {
     $countQuery = "SELECT COUNT(*) FROM $tabela;"

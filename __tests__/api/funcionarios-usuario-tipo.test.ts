@@ -118,8 +118,8 @@ describe('Criação de Funcionários - usuario_tipo correto', () => {
       expect(rhFuncionariosContent).toContain('session.clinica_id');
     });
 
-    it('Entidade deve usar session.contratante_id', () => {
-      expect(entidadeFuncionariosContent).toContain('session.contratante_id');
+    it('Entidade deve usar session.tomador_id', () => {
+      expect(entidadeFuncionariosContent).toContain('session.tomador_id');
     });
   });
 

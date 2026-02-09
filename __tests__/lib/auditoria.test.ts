@@ -69,7 +69,7 @@ describe('Sistema de Auditoria', () => {
         resource: 'contratos',
         action: 'INSERT' as const,
         resourceId: 101,
-        newData: { contratante_id: 50, plano_id: 1 },
+        newData: { tomador_id: 50, plano_id: 1 },
         ipAddress: '10.0.0.1',
         userAgent: 'Chrome/120.0',
         details: 'Contrato criado automaticamente',
@@ -109,7 +109,7 @@ describe('Sistema de Auditoria', () => {
         action: 'INSERT' as const,
         resourceId: 200,
         newData: {
-          contratante_id: 50,
+          tomador_id: 50,
           valor: 499.0,
           metodo: 'pix',
           status: 'pendente',
@@ -146,9 +146,9 @@ describe('Sistema de Auditoria', () => {
       expect(callArgs[1][9]).toContain('PAGAMENTO CONFIRMADO');
     });
 
-    it('deve registrar aprovação de contratante', async () => {
+    it('deve registrar aprovação de tomador', async () => {
       const entry = {
-        resource: 'contratantes',
+        resource: 'tomadors',
         action: 'UPDATE' as const,
         resourceId: 50,
         oldData: { status: 'pago' },
@@ -158,20 +158,20 @@ describe('Sistema de Auditoria', () => {
         },
         ipAddress: '10.0.0.1',
         userAgent: 'Chrome/120.0',
-        details: 'CONTRATANTE APROVADO por 123.456.789-00 - Login liberado',
+        details: 'tomador APROVADO por 123.456.789-00 - Login liberado',
       };
 
       await logAudit(entry);
 
       expect(mockQuery).toHaveBeenCalled();
       const callArgs = mockQuery.mock.calls[0];
-      expect(callArgs[1]).toContain('contratantes');
-      expect(callArgs[1][9]).toContain('CONTRATANTE APROVADO');
+      expect(callArgs[1]).toContain('tomadors');
+      expect(callArgs[1][9]).toContain('tomador APROVADO');
     });
 
-    it('deve registrar rejeição de contratante', async () => {
+    it('deve registrar rejeição de tomador', async () => {
       const entry = {
-        resource: 'contratantes',
+        resource: 'tomadors',
         action: 'UPDATE' as const,
         resourceId: 50,
         oldData: { status: 'pendente' },
@@ -182,14 +182,14 @@ describe('Sistema de Auditoria', () => {
         ipAddress: '10.0.0.1',
         userAgent: 'Chrome/120.0',
         details:
-          'Contratante rejeitado por 123.456.789-00 - Motivo: Documentação incompleta',
+          'tomador rejeitado por 123.456.789-00 - Motivo: Documentação incompleta',
       };
 
       await logAudit(entry);
 
       expect(mockQuery).toHaveBeenCalled();
       const callArgs = mockQuery.mock.calls[0];
-      expect(callArgs[1][9]).toContain('Contratante rejeitado');
+      expect(callArgs[1][9]).toContain('tomador rejeitado');
     });
 
     it('não deve falhar se sessão não estiver disponível', async () => {
@@ -275,7 +275,7 @@ describe('Sistema de Auditoria', () => {
       // Este teste verifica a integração conceitual
       // A implementação real está nas APIs
       const contratoData = {
-        contratante_id: 50,
+        tomador_id: 50,
         plano_id: 1,
       };
 

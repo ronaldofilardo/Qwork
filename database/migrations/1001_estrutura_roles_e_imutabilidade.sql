@@ -68,7 +68,7 @@ BEGIN
   ELSE
     -- Obter senha (últimos 6 dígitos do CNPJ)
     SELECT RIGHT(cnpj, 6) INTO v_senha_esperada
-    FROM contratantes WHERE id = v_contratante_id;
+    FROM tomadores WHERE id = v_contratante_id;
     
     RAISE NOTICE 'Inserindo gestor CPF % para contratante % (senha: %)', v_cpf, v_contratante_id, v_senha_esperada;
     
@@ -92,7 +92,7 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- VALIDAÇÃO 1: Todos contratantes têm gestor?
+-- VALIDAÇÃO 1: Todos tomadores têm gestor?
 -- ============================================================================
 
 DO $$
@@ -102,18 +102,18 @@ DECLARE
 BEGIN
   -- Contar clínicas sem RH
   SELECT COUNT(*) INTO v_clinicas_sem_rh
-  FROM contratantes c
+  FROM tomadores c
   LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
   WHERE c.tipo = 'clinica' AND cs.cpf IS NULL AND c.ativa = true;
   
   -- Contar entidades sem gestor
   SELECT COUNT(*) INTO v_entidades_sem_gestor
-  FROM contratantes c
+  FROM tomadores c
   LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
   WHERE c.tipo = 'entidade' AND cs.cpf IS NULL AND c.ativa = true;
   
   IF v_clinicas_sem_rh = 0 AND v_entidades_sem_gestor = 0 THEN
-    RAISE NOTICE '✓ SUCCESS: Todos os contratantes ativos têm gestores!';
+    RAISE NOTICE '✓ SUCCESS: Todos os tomadores ativos têm gestores!';
   ELSE
     IF v_clinicas_sem_rh > 0 THEN
       RAISE WARNING '❌ % clínica(s) sem RH', v_clinicas_sem_rh;
@@ -188,7 +188,7 @@ SELECT
   'ESTRUTURA DE ROLES E IMUTABILIDADE' as titulo,
   '========================================' as linha;
 
--- Contratantes e seus gestores
+-- tomadores e seus gestores
 SELECT 
   c.id,
   c.tipo,
@@ -201,7 +201,7 @@ SELECT
     WHEN c.tipo = 'entidade' THEN '❌ ENTIDADE SEM GESTOR'
     ELSE '⚠️ TIPO DESCONHECIDO'
   END as status
-FROM contratantes c
+FROM tomadores c
 LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id
 WHERE c.ativa = true
 ORDER BY c.tipo, c.id;

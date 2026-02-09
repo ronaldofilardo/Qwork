@@ -236,7 +236,7 @@ SELECT
   COALESCE(ec.nome, cont.nome) as entidade_nome
 FROM lotes_avaliacao la
 LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 WHERE la.status IN ('concluido', 'cancelado')
   OR la.emitido_em IS NOT NULL;
 
@@ -263,7 +263,7 @@ SELECT
   COALESCE(ec.nome, cont.nome) as entidade_nome
 FROM lotes_avaliacao la
 LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 WHERE (
   (la.status = 'concluido' AND la.emitido_em IS NULL)
   OR (la.emitido_em IS NOT NULL AND la.enviado_em IS NULL)

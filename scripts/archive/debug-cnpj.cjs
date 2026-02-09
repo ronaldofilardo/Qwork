@@ -8,7 +8,7 @@ async function run() {
   await client.connect();
   const cnpj = process.argv[2] || '99999999000101';
   const cont = await client.query(
-    "SELECT id, cnpj, status, ativa FROM contratantes WHERE regexp_replace(cnpj, '[^0-9]', '', 'g') = $1",
+    "SELECT id, cnpj, status, ativa FROM tomadores WHERE regexp_replace(cnpj, '[^0-9]', '', 'g') = $1",
     [cnpj]
   );
   console.log('contratante rows:', cont.rows);

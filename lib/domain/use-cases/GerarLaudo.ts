@@ -1,7 +1,7 @@
 /**
  * lib/domain/use-cases/GerarLaudo.ts
  *
- * Use Case: Gerar Laudo Psicossocial Completo
+ * Use Case: Gerar Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO) Completo
  *
  * Orquestra a geração de laudo incluindo:
  * - Coleta de dados do lote

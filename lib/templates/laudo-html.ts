@@ -544,7 +544,7 @@ function gerarRodape(): string {
 }
 
 /**
- * Gera HTML completo do laudo psicossocial para conversão em PDF
+ * Gera HTML completo do Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO) para conversão em PDF
  * @param laudoPadronizado - Dados completos do laudo estruturado
  * @returns String HTML formatada para PDF
  */
@@ -578,7 +578,7 @@ export function gerarHTMLLaudoCompleto(
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Laudo Psicossocial - ${etapa1.empresaAvaliada}</title>
+      <title>Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO) - ${etapa1.empresaAvaliada}</title>
       ${gerarEstilosCSS()}
     </head>
     <body>

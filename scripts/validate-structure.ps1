@@ -81,7 +81,7 @@ if ($viewCount -eq 0) {
 
 Write-Host ""
 Write-Host "[6/8] Verificando integridade referencial..." -ForegroundColor Yellow
-$orphanFuncs = Invoke-DbQuery "SELECT COUNT(*) FROM funcionarios f LEFT JOIN contratantes c ON f.contratante_id = c.id WHERE f.contratante_id IS NOT NULL AND c.id IS NULL;"
+$orphanFuncs = Invoke-DbQuery "SELECT COUNT(*) FROM funcionarios f LEFT JOIN tomadores c ON f.contratante_id = c.id WHERE f.contratante_id IS NOT NULL AND c.id IS NULL;"
 $orphanFuncCount = [int]($orphanFuncs.Trim())
 if ($orphanFuncCount -gt 0) {
     Write-Host "   ⚠️  AVISO: $orphanFuncCount funcionários órfãos" -ForegroundColor Yellow
@@ -102,8 +102,8 @@ if ($notNull.Trim() -eq "NO") {
 
 Write-Host ""
 Write-Host "[8/8] Verificando dados de teste..." -ForegroundColor Yellow
-$entidades = Invoke-DbQuery "SELECT COUNT(*) FROM contratantes WHERE tipo = 'entidade';"
-$clinicas = Invoke-DbQuery "SELECT COUNT(*) FROM contratantes WHERE tipo = 'clinica';"
+$entidades = Invoke-DbQuery "SELECT COUNT(*) FROM tomadores WHERE tipo = 'entidade';"
+$clinicas = Invoke-DbQuery "SELECT COUNT(*) FROM tomadores WHERE tipo = 'clinica';"
 Write-Host "   ℹ️  Entidades: $($entidades.Trim())" -ForegroundColor Cyan
 Write-Host "   ℹ️  Clínicas: $($clinicas.Trim())" -ForegroundColor Cyan
 

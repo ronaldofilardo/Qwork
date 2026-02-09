@@ -1,8 +1,8 @@
 /**
  * Verificação de Integridade - Senhas de Gestores
  *
- * Verifica se todos os contratantes aprovados têm senhas criadas
- * Cria senhas automaticamente para contratantes sem senha
+ * Verifica se todos os tomadores aprovados têm senhas criadas
+ * Cria senhas automaticamente para tomadores sem senha
  *
  * Uso: node scripts/verify-gestores-senhas.cjs
  */
@@ -22,7 +22,7 @@ async function verificarIntegridadeSenhas() {
     console.log('✅ Conectado ao banco de dados');
     console.log('🔍 Verificando integridade de senhas...\n');
 
-    // Buscar contratantes aprovados sem senha
+    // Buscar tomadores aprovados sem senha
     const result = await client.query(`
       SELECT 
         c.id,
@@ -35,7 +35,7 @@ async function verificarIntegridadeSenhas() {
         c.status,
         c.ativa,
         c.criado_em
-      FROM contratantes c
+      FROM tomadores c
       LEFT JOIN entidades_senhas cs ON cs.contratante_id = c.id 
         AND cs.cpf = c.responsavel_cpf
       WHERE c.status = 'aprovado' 
@@ -45,7 +45,7 @@ async function verificarIntegridadeSenhas() {
     `);
 
     if (result.rows.length === 0) {
-      console.log('✅ TUDO OK! Todos os contratantes aprovados têm senhas.');
+      console.log('✅ TUDO OK! Todos os tomadores aprovados têm senhas.');
       return;
     }
 
@@ -53,7 +53,7 @@ async function verificarIntegridadeSenhas() {
       `❌ ALERTA: ${result.rows.length} contratante(s) sem senha encontrado(s)!\n`
     );
 
-    // Exibir tabela de contratantes sem senha
+    // Exibir tabela de tomadores sem senha
     console.table(
       result.rows.map((r) => ({
         ID: r.id,

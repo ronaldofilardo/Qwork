@@ -1,4 +1,4 @@
--- Sincroniza registros de contratantes(tipo='clinica') para tabela `clinicas` usada por partes legadas do sistema
+-- Sincroniza registros de tomadores(tipo='clinica') para tabela `clinicas` usada por partes legadas do sistema
 -- Uso: executar em ambiente controlado (executar backup antes)
 
 BEGIN;
@@ -25,10 +25,10 @@ BEGIN
     END IF;
 END $$;
 
--- Inserir clinicas faltantes a partir de contratantes (mantendo mesmo id)
+-- Inserir clinicas faltantes a partir de tomadores (mantendo mesmo id)
 INSERT INTO clinicas (id, nome, cnpj, email, telefone, endereco, cidade, estado, ativa, criado_em)
 SELECT c.id, c.nome, c.cnpj, c.email, c.telefone, c.endereco, c.cidade, c.estado, c.ativa, c.criado_em
-FROM contratantes c
+FROM tomadores c
 WHERE c.tipo = 'clinica'
   AND NOT EXISTS (SELECT 1 FROM clinicas WHERE clinicas.id = c.id);
 
@@ -43,4 +43,4 @@ END $$;
 COMMIT;
 
 -- Nota: revisar triggers/foreign keys após sincronização. Caso existam referências cruzadas,
--- execute validações e ajuste FK para apontar para a tabela correta (clinicas vs contratantes).
+-- execute validações e ajuste FK para apontar para a tabela correta (clinicas vs tomadores).

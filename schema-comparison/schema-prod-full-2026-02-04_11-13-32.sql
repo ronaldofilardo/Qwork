@@ -1756,7 +1756,7 @@ BEGIN
 
     INTO v_pagamento_confirmado, v_data_liberacao, v_status, v_ativa
 
-    FROM public.contratantes
+    FROM public.tomadores
 
     WHERE id = p_contratante_id;
 
@@ -1787,10 +1787,10 @@ COMMENT ON FUNCTION public.contratante_pode_logar(p_contratante_id integer) IS '
 
 
 --
--- Name: contratantes_sync_status_ativa(); Type: FUNCTION; Schema: public; Owner: neondb_owner
+-- Name: tomadores_sync_status_ativa(); Type: FUNCTION; Schema: public; Owner: neondb_owner
 --
 
-CREATE FUNCTION public.contratantes_sync_status_ativa() RETURNS trigger
+CREATE FUNCTION public.tomadores_sync_status_ativa() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -1843,20 +1843,20 @@ END;
 $$;
 
 
-ALTER FUNCTION public.contratantes_sync_status_ativa() OWNER TO neondb_owner;
+ALTER FUNCTION public.tomadores_sync_status_ativa() OWNER TO neondb_owner;
 
 --
--- Name: FUNCTION contratantes_sync_status_ativa(); Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: FUNCTION tomadores_sync_status_ativa(); Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON FUNCTION public.contratantes_sync_status_ativa() IS 'Garante que ativa só é true quando pagamento_confirmado é true. Remove lógica antiga que forçava ativa=true para aguardando_pagamento.';
+COMMENT ON FUNCTION public.tomadores_sync_status_ativa() IS 'Garante que ativa só é true quando pagamento_confirmado é true. Remove lógica antiga que forçava ativa=true para aguardando_pagamento.';
 
 
 --
--- Name: contratantes_sync_status_ativa_personalizado(); Type: FUNCTION; Schema: public; Owner: neondb_owner
+-- Name: tomadores_sync_status_ativa_personalizado(); Type: FUNCTION; Schema: public; Owner: neondb_owner
 --
 
-CREATE FUNCTION public.contratantes_sync_status_ativa_personalizado() RETURNS trigger
+CREATE FUNCTION public.tomadores_sync_status_ativa_personalizado() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -1882,7 +1882,7 @@ BEGIN
 
     SELECT p.tipo, c2.pagamento_confirmado INTO v_plano_tipo, v_pagamento_confirmado
 
-    FROM contratantes c2
+    FROM tomadores c2
 
     LEFT JOIN planos p ON c2.plano_id = p.id
 
@@ -1963,7 +1963,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.contratantes_sync_status_ativa_personalizado() OWNER TO neondb_owner;
+ALTER FUNCTION public.tomadores_sync_status_ativa_personalizado() OWNER TO neondb_owner;
 
 --
 -- Name: criar_conta_responsavel_personalizado(integer); Type: FUNCTION; Schema: public; Owner: neondb_owner
@@ -1989,7 +1989,7 @@ BEGIN
 
     SELECT * INTO v_contratante 
 
-    FROM contratantes 
+    FROM tomadores 
 
     WHERE id = p_contratante_id;
 
@@ -2157,7 +2157,7 @@ BEGIN
 
   INTO v_responsavel_cpf, v_numero_recibo
 
-  FROM contratantes c
+  FROM tomadores c
 
   CROSS JOIN recibos r
 
@@ -2276,7 +2276,7 @@ BEGIN
 
   SELECT nome INTO v_contratante_nome
 
-  FROM contratantes
+  FROM tomadores
 
   WHERE id = p_contratante_id;
 
@@ -4817,9 +4817,9 @@ BEGIN
 
         c.ativa
 
-    FROM contratantes c
+    FROM tomadores c
 
-    INNER JOIN contratantes_funcionarios cf ON cf.contratante_id = c.id
+    INNER JOIN tomadores_funcionarios cf ON cf.contratante_id = c.id
 
     WHERE cf.funcionario_id = p_funcionario_id
 
@@ -5285,7 +5285,7 @@ BEGIN
 
   SELECT nome INTO v_contratante_nome
 
-  FROM contratantes
+  FROM tomadores
 
   WHERE id = NEW.contratante_id;
 
@@ -5486,7 +5486,7 @@ BEGIN
 
   INTO v_contratante_id, v_contratante_nome, v_gestor_cpf
 
-  FROM contratantes c
+  FROM tomadores c
 
   WHERE c.id = NEW.contratante_id;
 
@@ -5731,7 +5731,7 @@ BEGIN
 
         SELECT 1 FROM entidades_senhas cs
 
-        JOIN contratantes c ON c.id = cs.contratante_id
+        JOIN tomadores c ON c.id = cs.contratante_id
 
         WHERE cs.cpf = NEW.cpf AND c.tipo = 'entidade' AND c.ativa = true
 
@@ -6571,7 +6571,7 @@ BEGIN
 
     IF NEW.status::text = 'valor_definido' AND (OLD.status IS NULL OR OLD.status::text = 'aguardando_valor_admin') THEN
 
-        UPDATE contratantes 
+        UPDATE tomadores 
 
         SET status = 'aguardando_pagamento', atualizado_em = CURRENT_TIMESTAMP 
 
@@ -6589,7 +6589,7 @@ BEGIN
 
     IF NEW.status::text = 'pago' AND OLD.status::text = 'aguardando_pagamento' THEN
 
-        UPDATE contratantes 
+        UPDATE tomadores 
 
         SET status = 'aprovado', -- Usar 'aprovado' em vez de 'ativo' (não existe no enum)
 
@@ -6628,7 +6628,7 @@ ALTER FUNCTION public.sync_personalizado_status() OWNER TO neondb_owner;
 -- Name: FUNCTION sync_personalizado_status(); Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON FUNCTION public.sync_personalizado_status() IS 'Sincroniza status de contratacao_personalizada para contratantes. Cast ::text para evitar erros de comparação de enum.';
+COMMENT ON FUNCTION public.sync_personalizado_status() IS 'Sincroniza status de contratacao_personalizada para tomadores. Cast ::text para evitar erros de comparação de enum.';
 
 
 --
@@ -6748,10 +6748,10 @@ $$;
 ALTER FUNCTION public.update_entidades_senhas_updated_at() OWNER TO neondb_owner;
 
 --
--- Name: update_contratantes_updated_at(); Type: FUNCTION; Schema: public; Owner: neondb_owner
+-- Name: update_tomadores_updated_at(); Type: FUNCTION; Schema: public; Owner: neondb_owner
 --
 
-CREATE FUNCTION public.update_contratantes_updated_at() RETURNS trigger
+CREATE FUNCTION public.update_tomadores_updated_at() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 
@@ -6766,7 +6766,7 @@ END;
 $$;
 
 
-ALTER FUNCTION public.update_contratantes_updated_at() OWNER TO neondb_owner;
+ALTER FUNCTION public.update_tomadores_updated_at() OWNER TO neondb_owner;
 
 --
 -- Name: update_pdf_jobs_timestamp(); Type: FUNCTION; Schema: public; Owner: neondb_owner
@@ -8783,10 +8783,10 @@ ALTER SEQUENCE public.contratacao_personalizada_id_seq OWNED BY public.contratac
 
 
 --
--- Name: contratantes; Type: TABLE; Schema: public; Owner: neondb_owner
+-- Name: tomadores; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
-CREATE TABLE public.contratantes (
+CREATE TABLE public.tomadores (
     id integer NOT NULL,
     tipo public.tipo_contratante_enum NOT NULL,
     nome character varying(200) NOT NULL,
@@ -8820,103 +8820,103 @@ CREATE TABLE public.contratantes (
     data_primeiro_pagamento timestamp without time zone,
     data_liberacao_login timestamp without time zone,
     contrato_aceito boolean DEFAULT false,
-    CONSTRAINT chk_contratantes_tipo_valido CHECK ((tipo = ANY (ARRAY['clinica'::public.tipo_contratante_enum, 'entidade'::public.tipo_contratante_enum]))),
-    CONSTRAINT contratantes_estado_check CHECK ((length((estado)::text) = 2)),
-    CONSTRAINT contratantes_responsavel_cpf_check CHECK ((length((responsavel_cpf)::text) = 11))
+    CONSTRAINT chk_tomadores_tipo_valido CHECK ((tipo = ANY (ARRAY['clinica'::public.tipo_contratante_enum, 'entidade'::public.tipo_contratante_enum]))),
+    CONSTRAINT tomadores_estado_check CHECK ((length((estado)::text) = 2)),
+    CONSTRAINT tomadores_responsavel_cpf_check CHECK ((length((responsavel_cpf)::text) = 11))
 );
 
 
-ALTER TABLE public.contratantes OWNER TO neondb_owner;
+ALTER TABLE public.tomadores OWNER TO neondb_owner;
 
 --
--- Name: TABLE contratantes; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: TABLE tomadores; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON TABLE public.contratantes IS 'Tabela unificada para clÃ­nicas e entidades privadas';
-
-
---
--- Name: COLUMN contratantes.tipo; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes.tipo IS 'clinica: medicina ocupacional com empresas intermediÃ¡rias | entidade: empresa privada com vÃ­nculo direto';
+COMMENT ON TABLE public.tomadores IS 'Tabela unificada para clÃ­nicas e entidades privadas';
 
 
 --
--- Name: COLUMN contratantes.responsavel_nome; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: COLUMN tomadores.tipo; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.contratantes.responsavel_nome IS 'Para clÃ­nicas: gestor RH | Para entidades: responsÃ¡vel pelo cadastro';
-
-
---
--- Name: COLUMN contratantes.status; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes.status IS 'pendente | aguardando_aceite | aguardando_aceite_contrato | aguardando_pagamento | ativo | inativo | cancelado';
+COMMENT ON COLUMN public.tomadores.tipo IS 'clinica: medicina ocupacional com empresas intermediÃ¡rias | entidade: empresa privada com vÃ­nculo direto';
 
 
 --
--- Name: COLUMN contratantes.ativa; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: COLUMN tomadores.responsavel_nome; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.contratantes.ativa IS 'Indica se o contratante está ativo no sistema. DEFAULT false - ativação ocorre APENAS após confirmação de pagamento.';
-
-
---
--- Name: COLUMN contratantes.aprovado_em; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes.aprovado_em IS 'Timestamp em que o contratante foi aprovado por um admin';
+COMMENT ON COLUMN public.tomadores.responsavel_nome IS 'Para clÃ­nicas: gestor RH | Para entidades: responsÃ¡vel pelo cadastro';
 
 
 --
--- Name: COLUMN contratantes.aprovado_por_cpf; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: COLUMN tomadores.status; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.contratantes.aprovado_por_cpf IS 'CPF do admin que aprovou o contratante';
-
-
---
--- Name: COLUMN contratantes.pagamento_confirmado; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes.pagamento_confirmado IS 'Flag que indica se o pagamento foi confirmado para o contratante';
+COMMENT ON COLUMN public.tomadores.status IS 'pendente | aguardando_aceite | aguardando_aceite_contrato | aguardando_pagamento | ativo | inativo | cancelado';
 
 
 --
--- Name: COLUMN contratantes.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: COLUMN tomadores.ativa; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.contratantes.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios para o contratante';
-
-
---
--- Name: COLUMN contratantes.plano_id; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes.plano_id IS 'ID do plano associado ao contratante';
+COMMENT ON COLUMN public.tomadores.ativa IS 'Indica se o contratante está ativo no sistema. DEFAULT false - ativação ocorre APENAS após confirmação de pagamento.';
 
 
 --
--- Name: COLUMN contratantes.data_liberacao_login; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: COLUMN tomadores.aprovado_em; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.contratantes.data_liberacao_login IS 'Data em que o login foi liberado após confirmação de pagamento';
-
-
---
--- Name: COLUMN contratantes.contrato_aceito; Type: COMMENT; Schema: public; Owner: neondb_owner
---
-
-COMMENT ON COLUMN public.contratantes.contrato_aceito IS 'Indica se o contratante aceitou o contrato/política (usado para fluxo de pagamento e notificações)';
+COMMENT ON COLUMN public.tomadores.aprovado_em IS 'Timestamp em que o contratante foi aprovado por um admin';
 
 
 --
--- Name: contratantes_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+-- Name: COLUMN tomadores.aprovado_por_cpf; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-CREATE SEQUENCE public.contratantes_id_seq
+COMMENT ON COLUMN public.tomadores.aprovado_por_cpf IS 'CPF do admin que aprovou o contratante';
+
+
+--
+-- Name: COLUMN tomadores.pagamento_confirmado; Type: COMMENT; Schema: public; Owner: neondb_owner
+--
+
+COMMENT ON COLUMN public.tomadores.pagamento_confirmado IS 'Flag que indica se o pagamento foi confirmado para o contratante';
+
+
+--
+-- Name: COLUMN tomadores.numero_funcionarios_estimado; Type: COMMENT; Schema: public; Owner: neondb_owner
+--
+
+COMMENT ON COLUMN public.tomadores.numero_funcionarios_estimado IS 'NÃºmero estimado de funcionÃ¡rios para o contratante';
+
+
+--
+-- Name: COLUMN tomadores.plano_id; Type: COMMENT; Schema: public; Owner: neondb_owner
+--
+
+COMMENT ON COLUMN public.tomadores.plano_id IS 'ID do plano associado ao contratante';
+
+
+--
+-- Name: COLUMN tomadores.data_liberacao_login; Type: COMMENT; Schema: public; Owner: neondb_owner
+--
+
+COMMENT ON COLUMN public.tomadores.data_liberacao_login IS 'Data em que o login foi liberado após confirmação de pagamento';
+
+
+--
+-- Name: COLUMN tomadores.contrato_aceito; Type: COMMENT; Schema: public; Owner: neondb_owner
+--
+
+COMMENT ON COLUMN public.tomadores.contrato_aceito IS 'Indica se o contratante aceitou o contrato/política (usado para fluxo de pagamento e notificações)';
+
+
+--
+-- Name: tomadores_id_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
+--
+
+CREATE SEQUENCE public.tomadores_id_seq
     AS integer
     START WITH 1
     INCREMENT BY 1
@@ -8925,13 +8925,13 @@ CREATE SEQUENCE public.contratantes_id_seq
     CACHE 1;
 
 
-ALTER SEQUENCE public.contratantes_id_seq OWNER TO neondb_owner;
+ALTER SEQUENCE public.tomadores_id_seq OWNER TO neondb_owner;
 
 --
--- Name: contratantes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
+-- Name: tomadores_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
-ALTER SEQUENCE public.contratantes_id_seq OWNED BY public.contratantes.id;
+ALTER SEQUENCE public.tomadores_id_seq OWNED BY public.tomadores.id;
 
 
 --
@@ -8965,7 +8965,7 @@ COMMENT ON TABLE public.entidades_senhas IS 'Senhas hash para gestores de entida
 -- Name: COLUMN entidades_senhas.cpf; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em contratantes - usado para login';
+COMMENT ON COLUMN public.entidades_senhas.cpf IS 'CPF do responsavel_cpf em tomadores - usado para login';
 
 
 --
@@ -9104,7 +9104,7 @@ ALTER TABLE public.contratos OWNER TO neondb_owner;
 -- Name: TABLE contratos; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON TABLE public.contratos IS 'Contratos gerados para contratantes. Fluxo simplificado.';
+COMMENT ON TABLE public.contratos IS 'Contratos gerados para tomadores. Fluxo simplificado.';
 
 
 --
@@ -11288,7 +11288,7 @@ ALTER TABLE public.tokens_retomada_pagamento OWNER TO neondb_owner;
 -- Name: TABLE tokens_retomada_pagamento; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON TABLE public.tokens_retomada_pagamento IS 'Armazena tokens seguros para permitir que contratantes retomem pagamentos pendentes sem refazer cadastro.';
+COMMENT ON TABLE public.tokens_retomada_pagamento IS 'Armazena tokens seguros para permitir que tomadores retomem pagamentos pendentes sem refazer cadastro.';
 
 
 --
@@ -11553,7 +11553,7 @@ CREATE VIEW public.vw_audit_trail_por_contratante AS
    FROM (((public.audit_logs al
      LEFT JOIN public.funcionarios f ON ((al.user_cpf = f.cpf)))
      LEFT JOIN public.clinicas c ON ((f.clinica_id = c.id)))
-     LEFT JOIN public.contratantes cont ON ((al.contratante_id = cont.id)))
+     LEFT JOIN public.tomadores cont ON ((al.contratante_id = cont.id)))
   WHERE (al.created_at >= (now() - '90 days'::interval))
   ORDER BY al.created_at DESC;
 
@@ -11653,7 +11653,7 @@ CREATE VIEW public.vw_auditoria_senhas AS
             ELSE 'NORMAL'::text
         END AS tipo_operacao
    FROM (public.entidades_senhas_audit a
-     LEFT JOIN public.contratantes c ON ((c.id = a.contratante_id)))
+     LEFT JOIN public.tomadores c ON ((c.id = a.contratante_id)))
   ORDER BY a.executado_em DESC;
 
 
@@ -11768,7 +11768,7 @@ CREATE VIEW public.vw_notificacoes_admin_pendentes AS
     EXTRACT(day FROM (CURRENT_TIMESTAMP - n.criado_em)) AS dias_pendente,
     n.dados_contexto
    FROM ((public.notificacoes_admin n
-     LEFT JOIN public.contratantes c ON ((n.contratante_id = c.id)))
+     LEFT JOIN public.tomadores c ON ((n.contratante_id = c.id)))
      LEFT JOIN public.contratos cont ON ((n.contrato_id = cont.id)))
   WHERE (n.resolvida = false)
   ORDER BY n.criado_em DESC;
@@ -11836,7 +11836,7 @@ CREATE VIEW public.vw_recibos_completos AS
     pg.status AS pagamento_status
    FROM ((((public.recibos r
      JOIN public.contratos c ON ((r.contrato_id = c.id)))
-     JOIN public.contratantes ct ON ((r.contratante_id = ct.id)))
+     JOIN public.tomadores ct ON ((r.contratante_id = ct.id)))
      JOIN public.pagamentos pg ON ((r.pagamento_id = pg.id)))
      JOIN public.planos p ON ((c.plano_id = p.id)))
   WHERE (r.ativo = true)
@@ -11979,10 +11979,10 @@ ALTER TABLE ONLY public.contratacao_personalizada ALTER COLUMN id SET DEFAULT ne
 
 
 --
--- Name: contratantes id; Type: DEFAULT; Schema: public; Owner: neondb_owner
+-- Name: tomadores id; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes ALTER COLUMN id SET DEFAULT nextval('public.contratantes_id_seq'::regclass);
+ALTER TABLE ONLY public.tomadores ALTER COLUMN id SET DEFAULT nextval('public.tomadores_id_seq'::regclass);
 
 
 --
@@ -12336,35 +12336,35 @@ ALTER TABLE ONLY public.contratacao_personalizada
 
 
 --
--- Name: contratantes contratantes_cnpj_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: tomadores tomadores_cnpj_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_cnpj_unique UNIQUE (cnpj);
-
-
---
--- Name: contratantes contratantes_email_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
---
-
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_email_unique UNIQUE (email);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_cnpj_unique UNIQUE (cnpj);
 
 
 --
--- Name: contratantes contratantes_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: tomadores tomadores_email_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_pkey PRIMARY KEY (id);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_email_unique UNIQUE (email);
 
 
 --
--- Name: contratantes contratantes_responsavel_cpf_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: tomadores tomadores_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_responsavel_cpf_unique UNIQUE (responsavel_cpf);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: tomadores tomadores_responsavel_cpf_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_responsavel_cpf_unique UNIQUE (responsavel_cpf);
 
 
 --
@@ -13177,38 +13177,38 @@ CREATE INDEX idx_contratacao_personalizada_token ON public.contratacao_personali
 
 
 --
--- Name: idx_contratantes_aprovado_em; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: idx_tomadores_aprovado_em; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_aprovado_em ON public.contratantes USING btree (aprovado_em) WHERE (aprovado_em IS NOT NULL);
-
-
---
--- Name: idx_contratantes_ativa; Type: INDEX; Schema: public; Owner: neondb_owner
---
-
-CREATE INDEX idx_contratantes_ativa ON public.contratantes USING btree (ativa);
+CREATE INDEX idx_tomadores_aprovado_em ON public.tomadores USING btree (aprovado_em) WHERE (aprovado_em IS NOT NULL);
 
 
 --
--- Name: idx_contratantes_cnpj; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: idx_tomadores_ativa; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_cnpj ON public.contratantes USING btree (cnpj);
-
-
---
--- Name: idx_contratantes_contrato_aceito; Type: INDEX; Schema: public; Owner: neondb_owner
---
-
-CREATE INDEX idx_contratantes_contrato_aceito ON public.contratantes USING btree (contrato_aceito);
+CREATE INDEX idx_tomadores_ativa ON public.tomadores USING btree (ativa);
 
 
 --
--- Name: idx_contratantes_data_liberacao; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: idx_tomadores_cnpj; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_data_liberacao ON public.contratantes USING btree (data_liberacao_login);
+CREATE INDEX idx_tomadores_cnpj ON public.tomadores USING btree (cnpj);
+
+
+--
+-- Name: idx_tomadores_contrato_aceito; Type: INDEX; Schema: public; Owner: neondb_owner
+--
+
+CREATE INDEX idx_tomadores_contrato_aceito ON public.tomadores USING btree (contrato_aceito);
+
+
+--
+-- Name: idx_tomadores_data_liberacao; Type: INDEX; Schema: public; Owner: neondb_owner
+--
+
+CREATE INDEX idx_tomadores_data_liberacao ON public.tomadores USING btree (data_liberacao_login);
 
 
 --
@@ -13233,52 +13233,52 @@ CREATE INDEX idx_entidades_senhas_cpf ON public.entidades_senhas USING btree (cp
 
 
 --
--- Name: idx_contratantes_status; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: idx_tomadores_status; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_status ON public.contratantes USING btree (status);
-
-
---
--- Name: idx_contratantes_status_data_cadastro; Type: INDEX; Schema: public; Owner: neondb_owner
---
-
-CREATE INDEX idx_contratantes_status_data_cadastro ON public.contratantes USING btree (status, criado_em DESC);
+CREATE INDEX idx_tomadores_status ON public.tomadores USING btree (status);
 
 
 --
--- Name: INDEX idx_contratantes_status_data_cadastro; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: idx_tomadores_status_data_cadastro; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON INDEX public.idx_contratantes_status_data_cadastro IS 'Otimiza listagem de contratantes por status e data';
-
-
---
--- Name: idx_contratantes_tipo; Type: INDEX; Schema: public; Owner: neondb_owner
---
-
-CREATE INDEX idx_contratantes_tipo ON public.contratantes USING btree (tipo);
+CREATE INDEX idx_tomadores_status_data_cadastro ON public.tomadores USING btree (status, criado_em DESC);
 
 
 --
--- Name: idx_contratantes_tipo_ativa; Type: INDEX; Schema: public; Owner: neondb_owner
+-- Name: INDEX idx_tomadores_status_data_cadastro; Type: COMMENT; Schema: public; Owner: neondb_owner
 --
 
-CREATE INDEX idx_contratantes_tipo_ativa ON public.contratantes USING btree (tipo, ativa);
-
-
---
--- Name: idx_contratantes_tipo_status_ativa; Type: INDEX; Schema: public; Owner: neondb_owner
---
-
-CREATE INDEX idx_contratantes_tipo_status_ativa ON public.contratantes USING btree (tipo, status, ativa);
+COMMENT ON INDEX public.idx_tomadores_status_data_cadastro IS 'Otimiza listagem de tomadores por status e data';
 
 
 --
--- Name: INDEX idx_contratantes_tipo_status_ativa; Type: COMMENT; Schema: public; Owner: neondb_owner
+-- Name: idx_tomadores_tipo; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
-COMMENT ON INDEX public.idx_contratantes_tipo_status_ativa IS 'Otimiza consultas por tipo, status e atividade';
+CREATE INDEX idx_tomadores_tipo ON public.tomadores USING btree (tipo);
+
+
+--
+-- Name: idx_tomadores_tipo_ativa; Type: INDEX; Schema: public; Owner: neondb_owner
+--
+
+CREATE INDEX idx_tomadores_tipo_ativa ON public.tomadores USING btree (tipo, ativa);
+
+
+--
+-- Name: idx_tomadores_tipo_status_ativa; Type: INDEX; Schema: public; Owner: neondb_owner
+--
+
+CREATE INDEX idx_tomadores_tipo_status_ativa ON public.tomadores USING btree (tipo, status, ativa);
+
+
+--
+-- Name: INDEX idx_tomadores_tipo_status_ativa; Type: COMMENT; Schema: public; Owner: neondb_owner
+--
+
+COMMENT ON INDEX public.idx_tomadores_tipo_status_ativa IS 'Otimiza consultas por tipo, status e atividade';
 
 
 --
@@ -14423,17 +14423,17 @@ CREATE TRIGGER enforce_laudo_immutability BEFORE DELETE OR UPDATE ON public.laud
 
 
 --
--- Name: contratantes tr_contratantes_sync_status_ativa; Type: TRIGGER; Schema: public; Owner: neondb_owner
+-- Name: tomadores tr_tomadores_sync_status_ativa; Type: TRIGGER; Schema: public; Owner: neondb_owner
 --
 
-CREATE TRIGGER tr_contratantes_sync_status_ativa BEFORE INSERT OR UPDATE ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.contratantes_sync_status_ativa();
+CREATE TRIGGER tr_tomadores_sync_status_ativa BEFORE INSERT OR UPDATE ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.tomadores_sync_status_ativa();
 
 
 --
--- Name: contratantes tr_contratantes_sync_status_ativa_personalizado; Type: TRIGGER; Schema: public; Owner: neondb_owner
+-- Name: tomadores tr_tomadores_sync_status_ativa_personalizado; Type: TRIGGER; Schema: public; Owner: neondb_owner
 --
 
-CREATE TRIGGER tr_contratantes_sync_status_ativa_personalizado BEFORE INSERT OR UPDATE ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.contratantes_sync_status_ativa_personalizado();
+CREATE TRIGGER tr_tomadores_sync_status_ativa_personalizado BEFORE INSERT OR UPDATE ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.tomadores_sync_status_ativa_personalizado();
 
 
 --
@@ -14451,10 +14451,10 @@ CREATE TRIGGER trg_entidades_senhas_updated_at BEFORE UPDATE ON public.entidades
 
 
 --
--- Name: contratantes trg_contratantes_updated_at; Type: TRIGGER; Schema: public; Owner: neondb_owner
+-- Name: tomadores trg_tomadores_updated_at; Type: TRIGGER; Schema: public; Owner: neondb_owner
 --
 
-CREATE TRIGGER trg_contratantes_updated_at BEFORE UPDATE ON public.contratantes FOR EACH ROW WHEN ((old.* IS DISTINCT FROM new.*)) EXECUTE FUNCTION public.update_contratantes_updated_at();
+CREATE TRIGGER trg_tomadores_updated_at BEFORE UPDATE ON public.tomadores FOR EACH ROW WHEN ((old.* IS DISTINCT FROM new.*)) EXECUTE FUNCTION public.update_tomadores_updated_at();
 
 
 --
@@ -14607,10 +14607,10 @@ CREATE TRIGGER trg_validar_status_avaliacao BEFORE UPDATE ON public.avaliacoes F
 
 
 --
--- Name: contratantes trg_validar_transicao_status; Type: TRIGGER; Schema: public; Owner: neondb_owner
+-- Name: tomadores trg_validar_transicao_status; Type: TRIGGER; Schema: public; Owner: neondb_owner
 --
 
-CREATE TRIGGER trg_validar_transicao_status BEFORE UPDATE OF status ON public.contratantes FOR EACH ROW EXECUTE FUNCTION public.validar_transicao_status_contratante();
+CREATE TRIGGER trg_validar_transicao_status BEFORE UPDATE OF status ON public.tomadores FOR EACH ROW EXECUTE FUNCTION public.validar_transicao_status_contratante();
 
 
 --
@@ -14676,7 +14676,7 @@ ALTER TABLE ONLY public.audit_logs
 --
 
 ALTER TABLE ONLY public.audit_logs
-    ADD CONSTRAINT audit_logs_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE SET NULL;
+    ADD CONSTRAINT audit_logs_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE SET NULL;
 
 
 --
@@ -14748,15 +14748,15 @@ ALTER TABLE ONLY public.clinicas_empresas
 --
 
 ALTER TABLE ONLY public.contratacao_personalizada
-    ADD CONSTRAINT contratacao_personalizada_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT contratacao_personalizada_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
--- Name: contratantes contratantes_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+-- Name: tomadores tomadores_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
-ALTER TABLE ONLY public.contratantes
-    ADD CONSTRAINT contratantes_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
+ALTER TABLE ONLY public.tomadores
+    ADD CONSTRAINT tomadores_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
 
 
 --
@@ -14764,7 +14764,7 @@ ALTER TABLE ONLY public.contratantes
 --
 
 ALTER TABLE ONLY public.contratos
-    ADD CONSTRAINT contratos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT contratos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -14788,7 +14788,7 @@ ALTER TABLE ONLY public.contratos_planos
 --
 
 ALTER TABLE ONLY public.contratos_planos
-    ADD CONSTRAINT contratos_planos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id);
+    ADD CONSTRAINT contratos_planos_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id);
 
 
 --
@@ -14836,7 +14836,7 @@ ALTER TABLE ONLY public.avaliacoes
 --
 
 ALTER TABLE ONLY public.clinicas
-    ADD CONSTRAINT fk_clinicas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_clinicas_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -14844,7 +14844,7 @@ ALTER TABLE ONLY public.clinicas
 --
 
 ALTER TABLE ONLY public.entidades_senhas
-    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_entidades_senhas_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -14868,7 +14868,7 @@ ALTER TABLE ONLY public.funcionarios
 --
 
 ALTER TABLE ONLY public.funcionarios
-    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_funcionarios_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -14908,7 +14908,7 @@ ALTER TABLE ONLY public.mfa_codes
 --
 
 ALTER TABLE ONLY public.notificacoes_admin
-    ADD CONSTRAINT fk_notificacoes_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_notificacoes_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -14940,7 +14940,7 @@ ALTER TABLE ONLY public.recibos
 --
 
 ALTER TABLE ONLY public.recibos
-    ADD CONSTRAINT fk_recibos_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_recibos_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -14980,7 +14980,7 @@ ALTER TABLE ONLY public.resultados
 --
 
 ALTER TABLE ONLY public.tokens_retomada_pagamento
-    ADD CONSTRAINT fk_tokens_contratante FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT fk_tokens_contratante FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -15076,7 +15076,7 @@ ALTER TABLE ONLY public.lotes_avaliacao
 --
 
 ALTER TABLE ONLY public.lotes_avaliacao
-    ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.contratantes(id) ON DELETE CASCADE;
+    ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey FOREIGN KEY (contratante_id) REFERENCES public.tomadores(id) ON DELETE CASCADE;
 
 
 --
@@ -15347,10 +15347,10 @@ CREATE POLICY clinicas_rh_select ON public.clinicas FOR SELECT USING (((public.c
 
 
 --
--- Name: contratantes contratantes_admin_all; Type: POLICY; Schema: public; Owner: neondb_owner
+-- Name: tomadores tomadores_admin_all; Type: POLICY; Schema: public; Owner: neondb_owner
 --
 
-CREATE POLICY contratantes_admin_all ON public.contratantes USING ((public.current_user_perfil() = 'admin'::text)) WITH CHECK ((public.current_user_perfil() = 'admin'::text));
+CREATE POLICY tomadores_admin_all ON public.tomadores USING ((public.current_user_perfil() = 'admin'::text)) WITH CHECK ((public.current_user_perfil() = 'admin'::text));
 
 
 --
@@ -15734,7 +15734,7 @@ CREATE POLICY notificacoes_contratante_update ON public.notificacoes FOR UPDATE 
 --
 
 CREATE POLICY pagamentos_responsavel_select ON public.pagamentos FOR SELECT USING ((EXISTS ( SELECT 1
-   FROM public.contratantes c
+   FROM public.tomadores c
   WHERE ((c.id = pagamentos.contratante_id) AND ((c.responsavel_cpf)::text = public.current_user_cpf()) AND (c.status = 'aprovado'::public.status_aprovacao_enum)))));
 
 
@@ -16130,17 +16130,17 @@ GRANT USAGE ON SEQUENCE public.contratacao_personalizada_id_seq TO dba_maintenan
 
 
 --
--- Name: TABLE contratantes; Type: ACL; Schema: public; Owner: neondb_owner
+-- Name: TABLE tomadores; Type: ACL; Schema: public; Owner: neondb_owner
 --
 
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contratantes TO dba_maintenance;
+GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.tomadores TO dba_maintenance;
 
 
 --
--- Name: SEQUENCE contratantes_id_seq; Type: ACL; Schema: public; Owner: neondb_owner
+-- Name: SEQUENCE tomadores_id_seq; Type: ACL; Schema: public; Owner: neondb_owner
 --
 
-GRANT USAGE ON SEQUENCE public.contratantes_id_seq TO dba_maintenance;
+GRANT USAGE ON SEQUENCE public.tomadores_id_seq TO dba_maintenance;
 
 
 --

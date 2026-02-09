@@ -92,7 +92,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================================================
--- TRIGGER AUTOMÁTICO PARA AUDITORIA DE CONTRATANTES
+-- TRIGGER AUTOMÁTICO PARA AUDITORIA DE tomadores
 -- ============================================================================
 
 CREATE OR REPLACE FUNCTION audit_contratante_changes()
@@ -179,21 +179,21 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Criar triggers
-DROP TRIGGER IF EXISTS trg_audit_contratante_insert ON contratantes;
+DROP TRIGGER IF EXISTS trg_audit_contratante_insert ON tomadores;
 CREATE TRIGGER trg_audit_contratante_insert
-    AFTER INSERT ON contratantes
+    AFTER INSERT ON tomadores
     FOR EACH ROW
     EXECUTE FUNCTION audit_contratante_changes();
 
-DROP TRIGGER IF EXISTS trg_audit_contratante_update ON contratantes;
+DROP TRIGGER IF EXISTS trg_audit_contratante_update ON tomadores;
 CREATE TRIGGER trg_audit_contratante_update
-    AFTER UPDATE ON contratantes
+    AFTER UPDATE ON tomadores
     FOR EACH ROW
     EXECUTE FUNCTION audit_contratante_changes();
 
-DROP TRIGGER IF EXISTS trg_audit_contratante_delete ON contratantes;
+DROP TRIGGER IF EXISTS trg_audit_contratante_delete ON tomadores;
 CREATE TRIGGER trg_audit_contratante_delete
-    AFTER DELETE ON contratantes
+    AFTER DELETE ON tomadores
     FOR EACH ROW
     EXECUTE FUNCTION audit_contratante_changes();
 
@@ -218,8 +218,8 @@ FROM auditoria a
 WHERE a.criado_em >= CURRENT_DATE - INTERVAL '30 days'
 ORDER BY a.criado_em DESC;
 
--- View de auditoria de contratantes
-CREATE OR REPLACE VIEW v_auditoria_contratantes AS
+-- View de auditoria de tomadores
+CREATE OR REPLACE VIEW v_auditoria_tomadores AS
 SELECT 
     a.id,
     a.entidade_id as contratante_id,
@@ -232,7 +232,7 @@ SELECT
     c.nome,
     c.cnpj
 FROM auditoria a
-LEFT JOIN contratantes c ON c.id = a.entidade_id
+LEFT JOIN tomadores c ON c.id = a.entidade_id
 WHERE a.entidade_tipo = 'contratante'
 ORDER BY a.criado_em DESC;
 
@@ -244,7 +244,7 @@ COMMENT ON FUNCTION gerar_hash_auditoria IS
     'Gera hash SHA-256 para verificar integridade de registros de auditoria';
 
 COMMENT ON FUNCTION audit_contratante_changes IS 
-    'Trigger function para auditar automaticamente mudanças em contratantes';
+    'Trigger function para auditar automaticamente mudanças em tomadores';
 
 COMMENT ON VIEW v_auditoria_recente IS 
     'View otimizada para consultar auditoria dos últimos 30 dias';

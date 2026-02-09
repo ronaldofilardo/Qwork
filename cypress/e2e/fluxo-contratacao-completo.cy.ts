@@ -6,14 +6,14 @@
 describe('Fluxo Completo - Plano Fixo', () => {
   beforeEach(() => {
     // Mock de APIs para simular fluxo completo
-    cy.intercept('POST', '/api/cadastro/contratante', {
+    cy.intercept('POST', '/api/cadastro/tomador', {
       statusCode: 201,
       body: {
         success: true,
-        contratante_id: 1,
+        tomador_id: 1,
         message: 'Cadastro realizado com sucesso',
       },
-    }).as('cadastroContratante');
+    }).as('cadastrotomador');
 
     cy.intercept('POST', '/api/contratos', {
       statusCode: 201,
@@ -103,16 +103,16 @@ describe('Fluxo Completo - Plano Fixo', () => {
   });
 
   it('Deve validar máquina de estados - transições inválidas', () => {
-    cy.intercept('PUT', '/api/admin/contratantes/1/ativar', {
+    cy.intercept('PUT', '/api/admin/tomadors/1/ativar', {
       statusCode: 400,
       body: {
-        error: 'Não é possível ativar contratante sem confirmação de pagamento',
+        error: 'Não é possível ativar tomador sem confirmação de pagamento',
       },
     }).as('ativarSemPagamento');
 
     cy.request({
       method: 'PUT',
-      url: '/api/admin/contratantes/1/ativar',
+      url: '/api/admin/tomadors/1/ativar',
       failOnStatusCode: false,
     }).then((response) => {
       expect(response.status).to.eq(400);
@@ -133,7 +133,7 @@ describe('Fluxo Completo - Plano Fixo', () => {
       method: 'POST',
       url: '/api/recibo/gerar',
       body: {
-        contratante_id: 1,
+        tomador_id: 1,
         pagamento_id: 1,
         // contrato_id ausente - deve falhar
       },

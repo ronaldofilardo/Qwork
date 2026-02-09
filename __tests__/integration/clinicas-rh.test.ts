@@ -5,13 +5,13 @@
  * - Clínicas [rh] geram EMPRESAS (clientes)
  * - Cada EMPRESA tem funcionários, avaliações e lotes
  * - Tabela empresas SEMPRE vinculada à clinica (clinica_id NOT NULL)
- * - Funcionários de empresa têm empresa_id + clinica_id (NÃO contratante_id)
+ * - Funcionários de empresa têm empresa_id + clinica_id (NÃO tomador_id)
  */
 
 import { query } from '@/lib/db';
 
 describe('Clínicas (RH) - Gestão de Empresas', () => {
-  let contratanteClinicaId: number;
+  let tomadorClinicaId: number;
   let clinicaId: number;
   let rhCpf: string;
   let empresaId: number;
@@ -20,13 +20,13 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
   let avaliacaoId: number;
 
   beforeAll(async () => {
-    // 1. Criar contratante tipo 'clinica'
+    // 1. Criar tomador tipo 'clinica'
     const timestamp = Date.now();
     const cnpj = `${String(timestamp).slice(-8)}0002${String(timestamp % 100).padStart(2, '0')}`;
     const email = `clinica${timestamp}@teste.com`;
 
-    const contratanteResult = await query(
-      `INSERT INTO contratantes (
+    const tomadorResult = await query(
+      `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         ativa, pagamento_confirmado
@@ -43,14 +43,14 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       ]
     );
 
-    contratanteClinicaId = contratanteResult.rows[0].id;
+    tomadorClinicaId = tomadorResult.rows[0].id;
 
     // 2. Criar registro na tabela clinicas
     const clinicaResult = await query(
-      `INSERT INTO clinicas (contratante_id, nome, ativa, criado_em)
+      `INSERT INTO clinicas (tomador_id, nome, ativa, criado_em)
        VALUES ($1, $2, true, NOW())
        RETURNING id`,
-      [contratanteClinicaId, `Clínica Teste ${timestamp}`]
+      [tomadorClinicaId, `Clínica Teste ${timestamp}`]
     );
 
     clinicaId = clinicaResult.rows[0].id;
@@ -88,9 +88,9 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
     if (clinicaId) {
       await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
     }
-    if (contratanteClinicaId) {
-      await query('DELETE FROM contratantes WHERE id = $1', [
-        contratanteClinicaId,
+    if (tomadorClinicaId) {
+      await query('DELETE FROM tomadors WHERE id = $1', [
+        tomadorClinicaId,
       ]);
     }
   });
@@ -104,7 +104,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
         `INSERT INTO empresas_clientes (
           nome, cnpj, email, telefone, endereco, clinica_id, ativa
         ) VALUES ($1, $2, $3, '1188888888', 'Rua Empresa', $4, true)
-        RETURNING id, clinica_id, contratante_id`,
+        RETURNING id, clinica_id, tomador_id`,
         [
           `Empresa Cliente ${timestamp}`,
           empresaCnpj,
@@ -120,7 +120,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       // VALIDAÇÕES CRÍTICAS
       expect(empresa.clinica_id).toBe(clinicaId);
       expect(empresa.clinica_id).not.toBeNull(); // NUNCA pode ser NULL
-      expect(empresa.contratante_id).toBeNull(); // Empresa vincula-se à clínica, não à contratante
+      expect(empresa.tomador_id).toBeNull(); // Empresa vincula-se à clínica, não à tomador
     });
 
     it('deve falhar ao tentar criar empresa SEM clinica_id', async () => {
@@ -143,7 +143,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
 
     it('deve listar empresas apenas da clínica do RH', async () => {
       const result = await query(
-        `SELECT id, nome, clinica_id, contratante_id
+        `SELECT id, nome, clinica_id, tomador_id
          FROM empresas_clientes
          WHERE clinica_id = $1`,
         [clinicaId]
@@ -152,7 +152,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((empresa) => {
         expect(empresa.clinica_id).toBe(clinicaId);
-        expect(empresa.contratante_id).toBeNull();
+        expect(empresa.tomador_id).toBeNull();
       });
     });
   });
@@ -169,7 +169,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
         `INSERT INTO funcionarios (
           cpf, nome, email, senha_hash, perfil, empresa_id, clinica_id, ativo, nivel_cargo
         ) VALUES ($1, $2, $3, $4, 'funcionario', $5, $6, true, 'operacional')
-        RETURNING id, cpf, empresa_id, clinica_id, contratante_id`,
+        RETURNING id, cpf, empresa_id, clinica_id, tomador_id`,
         [
           funcionarioCpf,
           'Funcionário Empresa Teste',
@@ -186,7 +186,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       // VALIDAÇÕES CRÍTICAS
       expect(funcionario.empresa_id).toBe(empresaId);
       expect(funcionario.clinica_id).toBe(clinicaId);
-      expect(funcionario.contratante_id).toBeNull(); // Funcionário de empresa NÃO tem contratante_id
+      expect(funcionario.tomador_id).toBeNull(); // Funcionário de empresa NÃO tem tomador_id
     });
 
     it('deve falhar ao criar funcionário de empresa SEM clinica_id', async () => {
@@ -203,14 +203,14 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       ).rejects.toThrow();
     });
 
-    it('deve falhar ao criar funcionário de empresa COM contratante_id', async () => {
+    it('deve falhar ao criar funcionário de empresa COM tomador_id', async () => {
       const timestamp = Date.now();
       const cpfInvalido = `${String(timestamp + 4000).slice(-11)}`;
 
       await expect(
         query(
           `INSERT INTO funcionarios (
-            cpf, nome, email, senha_hash, perfil, empresa_id, clinica_id, contratante_id, ativo, nivel_cargo
+            cpf, nome, email, senha_hash, perfil, empresa_id, clinica_id, tomador_id, ativo, nivel_cargo
           ) VALUES ($1, 'Inválido', 'inv@teste.com', 'hash', 'funcionario', $2, $3, 999, true, 'operacional')`,
           [cpfInvalido, empresaId, clinicaId]
         )
@@ -229,7 +229,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
         `INSERT INTO lotes_avaliacao (
           clinica_id, empresa_id, codigo, titulo, tipo, status, liberado_por, numero_ordem
         ) VALUES ($1, $2, $3, $4, 'completo', 'ativo', $5, 1)
-        RETURNING id, clinica_id, empresa_id, contratante_id`,
+        RETURNING id, clinica_id, empresa_id, tomador_id`,
         [clinicaId, empresaId, codigo, `Lote Teste Clínica ${timestamp}`, rhCpf]
       );
 
@@ -240,12 +240,12 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       // VALIDAÇÕES CRÍTICAS
       expect(lote.clinica_id).toBe(clinicaId);
       expect(lote.empresa_id).toBe(empresaId);
-      expect(lote.contratante_id).toBeNull(); // Lote de clínica NÃO tem contratante_id
+      expect(lote.tomador_id).toBeNull(); // Lote de clínica NÃO tem tomador_id
     });
 
     it('deve listar lotes apenas da clínica do RH', async () => {
       const result = await query(
-        `SELECT id, clinica_id, empresa_id, contratante_id
+        `SELECT id, clinica_id, empresa_id, tomador_id
          FROM lotes_avaliacao
          WHERE clinica_id = $1`,
         [clinicaId]
@@ -254,7 +254,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       expect(result.rows.length).toBeGreaterThan(0);
       result.rows.forEach((lote) => {
         expect(lote.clinica_id).toBe(clinicaId);
-        expect(lote.contratante_id).toBeNull();
+        expect(lote.tomador_id).toBeNull();
       });
     });
   });
@@ -289,7 +289,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
           f.cpf as funcionario_cpf,
           f.empresa_id,
           f.clinica_id as func_clinica_id,
-          f.contratante_id,
+          f.tomador_id,
           e.id as empresa_id,
           e.clinica_id as empresa_clinica_id,
           l.clinica_id as lote_clinica_id
@@ -308,22 +308,22 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       expect(dados.func_clinica_id).toBe(clinicaId);
       expect(dados.empresa_clinica_id).toBe(clinicaId);
       expect(dados.lote_clinica_id).toBe(clinicaId);
-      expect(dados.contratante_id).toBeNull();
+      expect(dados.tomador_id).toBeNull();
     });
   });
 
   describe('5. Validar Estrutura Organizacional', () => {
-    it('deve confirmar que clínica TEM contratante vinculado', async () => {
+    it('deve confirmar que clínica TEM tomador vinculado', async () => {
       const result = await query(
-        `SELECT c.id, c.contratante_id, ct.tipo
+        `SELECT c.id, c.tomador_id, ct.tipo
          FROM clinicas c
-         JOIN contratantes ct ON c.contratante_id = ct.id
+         JOIN tomadors ct ON c.tomador_id = ct.id
          WHERE c.id = $1`,
         [clinicaId]
       );
 
       expect(result.rows.length).toBe(1);
-      expect(result.rows[0].contratante_id).toBe(contratanteClinicaId);
+      expect(result.rows[0].tomador_id).toBe(tomadorClinicaId);
       expect(result.rows[0].tipo).toBe('clinica');
     });
 

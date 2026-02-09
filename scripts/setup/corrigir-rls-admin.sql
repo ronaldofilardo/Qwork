@@ -67,7 +67,7 @@ SELECT
     cmd
 FROM pg_policies
 WHERE policyname ILIKE '%admin%'
-  AND tablename NOT IN ('audit_logs', 'clinicas', 'contratantes', 'permissions', 'roles', 'role_permissions', 'funcionarios', 'fila_emissao')
+  AND tablename NOT IN ('audit_logs', 'clinicas', 'tomadores', 'permissions', 'roles', 'role_permissions', 'funcionarios', 'fila_emissao')
 ORDER BY tablename, policyname;
 
 \echo ''

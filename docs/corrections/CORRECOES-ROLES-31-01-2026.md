@@ -118,7 +118,7 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 ```
 /api/lotes/[loteId]/solicitar-emissao/
   - RH: valida clinica_id + requireRHWithEmpresaAccess
-  - Entidade: valida contratante_id
+  - Entidade: valida tomador_id
 ```
 
 ## Validações Implementadas
@@ -135,20 +135,20 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 
 1. ✅ Middleware bloqueia acesso de não-entidade a `/entidade/*` e `/api/entidade/*`
 2. ✅ `requireGestorEntidade()` aceita APENAS `perfil === 'gestor'`
-3. ✅ Validação de acesso via `contratante_id`
-4. ✅ Gestão de funcionários vinculados a `contratante_id`
+3. ✅ Validação de acesso via `tomador_id`
+4. ✅ Gestão de funcionários vinculados a `tomador_id`
 
 ## Arquivos Verificados e Corretos
 
 ### Rotas já com separação correta:
 
 - ✅ `app/api/rh/funcionarios/route.ts` - valida `requireRHWithEmpresaAccess`
-- ✅ `app/api/entidade/funcionarios/route.ts` - valida `contratante_id`
+- ✅ `app/api/entidade/funcionarios/route.ts` - valida `tomador_id`
 - ✅ `app/api/rh/liberar-lote/route.ts` - valida `user.perfil !== 'rh'`
 - ✅ `app/api/entidade/liberar-lote/route.ts` - usa `requireEntity()`
 - ✅ `app/api/rh/lotes/.../inativar/route.ts` - valida RH + empresa
 - ✅ `app/api/rh/lotes/.../reset/route.ts` - valida RH + empresa
-- ✅ `app/api/entidade/lotes/.../reset/route.ts` - valida entidade + contratante
+- ✅ `app/api/entidade/lotes/.../reset/route.ts` - valida entidade + tomador
 - ✅ `app/api/lotes/[loteId]/solicitar-emissao/route.ts` - valida ambos corretamente
 
 ## Políticas de Banco de Dados (RLS)
@@ -156,15 +156,15 @@ Trocado de `requireRH()` para `requireGestor()` pois são rotas compartilhadas q
 As políticas RLS no banco já estão corretas e fazem a distinção entre:
 
 - `current_user_perfil() = 'rh'` AND `clinica_id = current_user_clinica_id()`
-- `current_user_perfil() = 'gestor'` AND `contratante_id = current_user_contratante_id()`
+- `current_user_perfil() = 'gestor'` AND `tomador_id = current_user_tomador_id()`
 
 ## Fluxos de Trabalho
 
 ### Cadastro e Liberação de Conta
 
 - **Admin** - gestão da plataforma, não cria empresas/funcionários operacionais
-- **RH** - criado via `criarContaResponsavel()` para contratantes tipo ≠ 'entidade'
-- **Gestor Entidade** - criado via `criarContaResponsavel()` para contratantes tipo = 'entidade'
+- **RH** - criado via `criarContaResponsavel()` para tomadores tipo ≠ 'entidade'
+- **Gestor Entidade** - criado via `criarContaResponsavel()` para tomadores tipo = 'entidade'
 
 ### Gestão de Empresas e Funcionários
 
@@ -175,13 +175,13 @@ As políticas RLS no banco já estão corretas e fazem a distinção entre:
   - O RH **cadastra funcionários** dentro de cada **empresa cliente** (vinculados a `empresa_id` + `clinica_id`)
   - Estrutura: `Clínica → Empresas Clientes → Funcionários das Empresas`
 - **Gestor Entidade**:
-  - Gerencia APENAS funcionários vinculados ao seu `contratante_id`
+  - Gerencia APENAS funcionários vinculados ao seu `tomador_id`
   - Não gerencia empresas (a entidade já é a "empresa")
 
 ### Liberação de Lotes
 
 - **RH** - libera lotes para **empresas clientes** da clínica (usando `clinica_id` + `empresa_id`)
-- **Gestor Entidade** - libera lotes para sua entidade (usando `contratante_id`)
+- **Gestor Entidade** - libera lotes para sua entidade (usando `tomador_id`)
 
 ### Inativação e Reset de Avaliações
 
@@ -191,7 +191,7 @@ As políticas RLS no banco já estão corretas e fazem a distinção entre:
 ### Solicitação de Emissão de Laudos
 
 - **RH** - solicita emissão para lotes das **empresas clientes** (valida acesso à empresa via `clinica_id`)
-- **Gestor Entidade** - solicita emissão para lotes da entidade (valida `contratante_id`)
+- **Gestor Entidade** - solicita emissão para lotes da entidade (valida `tomador_id`)
 - **Emissor** - emite laudos (independente, acessa todos os lotes liberados)
 
 ## Impacto

@@ -6,7 +6,7 @@
 -- HABILITAR RLS NAS TABELAS SENSÍVEIS
 -- ============================================================================
 
-ALTER TABLE contratantes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tomadores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE funcionarios ENABLE ROW LEVEL SECURITY;
 ALTER TABLE avaliacoes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE resultados ENABLE ROW LEVEL SECURITY;
@@ -17,12 +17,12 @@ ALTER TABLE contratos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE empresas_clientes ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
--- POLÍTICAS PARA CONTRATANTES
+-- POLÍTICAS PARA tomadores
 -- ============================================================================
 
 -- SELECT: Admin vê tudo, gestores veem apenas seu contratante
-DROP POLICY IF EXISTS contratantes_select_policy ON contratantes;
-CREATE POLICY contratantes_select_policy ON contratantes FOR SELECT USING (
+DROP POLICY IF EXISTS tomadores_select_policy ON tomadores;
+CREATE POLICY tomadores_select_policy ON tomadores FOR SELECT USING (
     -- Admin vê tudo
     (current_setting('app.current_perfil', true) = 'admin')
     OR
@@ -31,16 +31,16 @@ CREATE POLICY contratantes_select_policy ON contratantes FOR SELECT USING (
 );
 
 -- UPDATE: Admin atualiza tudo, gestores atualizam apenas seu contratante
-DROP POLICY IF EXISTS contratantes_update_policy ON contratantes;
-CREATE POLICY contratantes_update_policy ON contratantes FOR UPDATE USING (
+DROP POLICY IF EXISTS tomadores_update_policy ON tomadores;
+CREATE POLICY tomadores_update_policy ON tomadores FOR UPDATE USING (
     (current_setting('app.current_perfil', true) = 'admin')
     OR
     (id::text = current_setting('app.current_contratante_id', true))
 );
 
 -- DELETE: Apenas admin
-DROP POLICY IF EXISTS contratantes_delete_policy ON contratantes;
-CREATE POLICY contratantes_delete_policy ON contratantes FOR DELETE USING (
+DROP POLICY IF EXISTS tomadores_delete_policy ON tomadores;
+CREATE POLICY tomadores_delete_policy ON tomadores FOR DELETE USING (
     current_setting('app.current_perfil', true) = 'admin'
 );
 
@@ -59,7 +59,7 @@ CREATE POLICY funcionarios_select_policy ON funcionarios FOR SELECT USING (
     OR
     -- Gestor de entidade vê funcionários vinculados ao contratante
     EXISTS (
-        SELECT 1 FROM contratantes_funcionarios cf
+        SELECT 1 FROM tomadores_funcionarios cf
         WHERE cf.funcionario_id = funcionarios.id
         AND cf.contratante_id::text = current_setting('app.current_contratante_id', true)
         AND cf.vinculo_ativo = true
@@ -77,7 +77,7 @@ CREATE POLICY funcionarios_update_policy ON funcionarios FOR UPDATE USING (
     (clinica_id::text = current_setting('app.current_clinica_id', true))
     OR
     EXISTS (
-        SELECT 1 FROM contratantes_funcionarios cf
+        SELECT 1 FROM tomadores_funcionarios cf
         WHERE cf.funcionario_id = funcionarios.id
         AND cf.contratante_id::text = current_setting('app.current_contratante_id', true)
         AND cf.vinculo_ativo = true
@@ -100,7 +100,7 @@ CREATE POLICY avaliacoes_select_policy ON avaliacoes FOR SELECT USING (
             f.clinica_id::text = current_setting('app.current_clinica_id', true)
             OR
             EXISTS (
-                SELECT 1 FROM contratantes_funcionarios cf
+                SELECT 1 FROM tomadores_funcionarios cf
                 WHERE cf.funcionario_id = f.id
                 AND cf.contratante_id::text = current_setting('app.current_contratante_id', true)
                 AND cf.vinculo_ativo = true
@@ -128,7 +128,7 @@ CREATE POLICY resultados_select_policy ON resultados FOR SELECT USING (
             f.clinica_id::text = current_setting('app.current_clinica_id', true)
             OR
             EXISTS (
-                SELECT 1 FROM contratantes_funcionarios cf
+                SELECT 1 FROM tomadores_funcionarios cf
                 WHERE cf.funcionario_id = f.id
                 AND cf.contratante_id::text = current_setting('app.current_contratante_id', true)
             )
@@ -265,7 +265,7 @@ $$ LANGUAGE plpgsql;
 -- COMENTÁRIOS
 -- ============================================================================
 
-COMMENT ON POLICY contratantes_select_policy ON contratantes IS
+COMMENT ON POLICY tomadores_select_policy ON tomadores IS
     'RLS: Admin vê tudo, gestores veem apenas seu contratante';
 
 COMMENT ON POLICY funcionarios_select_policy ON funcionarios IS

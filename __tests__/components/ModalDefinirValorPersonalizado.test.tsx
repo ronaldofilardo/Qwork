@@ -8,7 +8,7 @@ describe('ModalDefinirValorPersonalizado', () => {
   const mockOnConfirm = jest.fn();
   const mockOnClose = jest.fn();
 
-  const contratanteMock = {
+  const tomadorMock = {
     id: 1,
     tipo: 'entidade' as const,
     nome: 'Empresa Teste Ltda',
@@ -24,7 +24,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={false}
         onClose={mockOnClose}
-        contratante={null}
+        tomador={null}
         onConfirm={mockOnConfirm}
       />
     );
@@ -39,7 +39,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -56,7 +56,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -77,7 +77,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -94,7 +94,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -114,7 +114,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -134,7 +134,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -156,7 +156,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -172,7 +172,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
         loading={true}
       />
@@ -190,7 +190,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteMock}
+        tomador={tomadorMock}
         onConfirm={mockOnConfirm}
       />
     );
@@ -207,9 +207,9 @@ describe('ModalDefinirValorPersonalizado', () => {
     });
   });
 
-  it('deve lidar com contratante sem numero_funcionarios_estimado (campo obrigatório)', async () => {
-    const contratanteSemEstimativa = {
-      ...contratanteMock,
+  it('deve lidar com tomador sem numero_funcionarios_estimado (campo obrigatório)', async () => {
+    const tomadoresemEstimativa = {
+      ...tomadorMock,
       numero_funcionarios_estimado: undefined,
     };
 
@@ -217,7 +217,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteSemEstimativa}
+        tomador={tomadoresemEstimativa}
         onConfirm={mockOnConfirm}
       />
     );
@@ -249,8 +249,8 @@ describe('ModalDefinirValorPersonalizado', () => {
   });
 
   it('deve aceitar numero de funcionarios informado explicitamente quando estimativa ausente', async () => {
-    const contratanteSemEstimativa = {
-      ...contratanteMock,
+    const tomadoresemEstimativa = {
+      ...tomadorMock,
       numero_funcionarios_estimado: undefined,
     };
 
@@ -258,7 +258,7 @@ describe('ModalDefinirValorPersonalizado', () => {
       <ModalDefinirValorPersonalizado
         isOpen={true}
         onClose={mockOnClose}
-        contratante={contratanteSemEstimativa}
+        tomador={tomadoresemEstimativa}
         onConfirm={mockOnConfirm}
       />
     );

@@ -91,7 +91,7 @@ export async function aceitarContrato(
     },
   });
 
-  // 5. Atualizar status do contratante para aguardando_pagamento
+  // 5. Atualizar status do tomador para aguardando_pagamento
   await query(
     `UPDATE entidades 
      SET status = 'aguardando_pagamento'
@@ -144,18 +144,19 @@ export async function verificarIntegridadeContrato(
 
 /**
  * Obtém detalhes completos de um contrato
+ * Inclui dados da tomadora (nome, CNPJ, tipo) e do plano
  */
 export async function obterContrato(contrato_id: number) {
   const result = await query(
     `SELECT c.*, 
-            ct.nome as contratante_nome,
-            ct.cnpj as contratante_cnpj,
-            ct.tipo as contratante_tipo,
+            t.nome as tomador_nome,
+            t.cnpj as tomador_cnpj,
+            t.tipo as tomador_tipo,
             p.nome as plano_nome,
             p.tipo as plano_tipo,
             p.preco as plano_preco
      FROM contratos c
-     LEFT JOIN entidades ct ON c.entidade_id = ct.id
+     LEFT JOIN tomadores t ON c.tomador_id = t.id
      LEFT JOIN planos p ON c.plano_id = p.id
      WHERE c.id = $1`,
     [contrato_id]

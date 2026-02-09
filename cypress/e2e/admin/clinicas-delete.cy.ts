@@ -13,11 +13,11 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
 
   it('Deve mostrar modal de confirmação e rejeitar senha inválida', () => {
     // Interceptar buscas das clínicas
-    cy.intercept('GET', '/api/admin/contratantes?tipo=clinica', {
+    cy.intercept('GET', '/api/admin/tomadors?tipo=clinica', {
       statusCode: 200,
       body: {
         success: true,
-        contratantes: [
+        tomadors: [
           {
             id: 99,
             nome: 'Clinica E2E',
@@ -41,16 +41,16 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
 
     cy.intercept(
       'GET',
-      '/api/admin/contratantes?tipo=clinica&plano_personalizado_pendente=true',
+      '/api/admin/tomadors?tipo=clinica&plano_personalizado_pendente=true',
       {
         statusCode: 200,
-        body: { success: true, contratantes: [], total: 0 },
+        body: { success: true, tomadors: [], total: 0 },
       }
     ).as('getClinicasPersonalizado');
 
     // Interceptar DELETE e verificar senha no body
     cy.intercept(
-      { method: 'DELETE', url: '/api/admin/contratantes' },
+      { method: 'DELETE', url: '/api/admin/tomadors' },
       (req) => {
         const body = req.body;
         if (
@@ -93,13 +93,13 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
 
   it('Deve deletar com senha válida e recarregar lista', () => {
     // Mesma intercept das buscas, mas após delete a lista retorna vazia
-    cy.intercept('GET', '/api/admin/contratantes?tipo=clinica', (req) => {
+    cy.intercept('GET', '/api/admin/tomadors?tipo=clinica', (req) => {
       // Se for a primeira chamada retorna item, se for chamada após deleção retorna vazio
       req.reply({
         statusCode: 200,
         body: {
           success: true,
-          contratantes: [
+          tomadors: [
             {
               id: 99,
               nome: 'Clinica E2E',
@@ -124,25 +124,25 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
 
     cy.intercept(
       'GET',
-      '/api/admin/contratantes?tipo=clinica&plano_personalizado_pendente=true',
+      '/api/admin/tomadors?tipo=clinica&plano_personalizado_pendente=true',
       {
         statusCode: 200,
-        body: { success: true, contratantes: [], total: 0 },
+        body: { success: true, tomadors: [], total: 0 },
       }
     ).as('getClinicasPersonalizado2');
 
     // Interceptar DELETE e retornar sucesso
     cy.intercept(
-      { method: 'DELETE', url: '/api/admin/contratantes' },
+      { method: 'DELETE', url: '/api/admin/tomadors' },
       (req) => {
         req.reply({ statusCode: 200, body: { success: true } });
       }
     ).as('deleteClinica2');
 
     // Intercept para a chamada subsequente de GET que retornará lista vazia
-    cy.intercept('GET', '/api/admin/contratantes?tipo=clinica', {
+    cy.intercept('GET', '/api/admin/tomadors?tipo=clinica', {
       statusCode: 200,
-      body: { success: true, contratantes: [], total: 0 },
+      body: { success: true, tomadors: [], total: 0 },
     }).as('getClinicasAfterDelete');
 
     // Esperar carregar

@@ -44,7 +44,7 @@ export async function recalcularStatusLotePorId(
       SELECT
         COUNT(a.id) as total_avaliacoes,
         COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
         COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
         COUNT(a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as iniciadas,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
@@ -151,7 +151,7 @@ export async function recalcularStatusLotePorId(
                     COUNT(a.id) as total_avaliacoes
              FROM lotes_avaliacao la
              LEFT JOIN funcionarios f ON f.cpf = la.liberado_por
-             LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluido'
+             LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
              WHERE la.id = $1
              GROUP BY la.liberado_por, f.perfil, la.clinica_id`,
             [loteId]

@@ -25,8 +25,8 @@ describe('GET /api/recibo/gerar', () => {
       descricao_pagamento:
         'Recibo de quitação da 1ª parcela no valor de R$ 100,00 (via cartao)',
       criado_em: '2025-12-31T11:36:34.003Z',
-      contratante_nome: 'RELEGERE',
-      contratante_cnpj: '02494916000170',
+      tomador_nome: 'RELEGERE',
+      tomador_cnpj: '02494916000170',
       pagamento_metodo: 'cartao',
       data_pagamento: '2025-12-27T12:58:11.202Z',
       pagamento_status: 'pago',

@@ -15,9 +15,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams;
-    // Aceitar tanto `entidade_id` quanto `contratante_id` para compatibilidade
-    const entidadeId =
-      searchParams.get('entidade_id') || searchParams.get('contratante_id');
+    const entidadeId = searchParams.get('entidade_id');
     const planoId = searchParams.get('plano_id');
     const numeroFuncionarios = parseInt(
       searchParams.get('numero_funcionarios') || '0'
@@ -26,8 +24,7 @@ export async function GET(request: NextRequest) {
     if (!entidadeId || !planoId) {
       return NextResponse.json(
         {
-          error:
-            'Parâmetros obrigatórios: entidade_id (ou contratante_id) e plano_id',
+          error: 'Parâmetros obrigatórios: entidade_id e plano_id',
         },
         { status: 400 }
       );
@@ -70,7 +67,7 @@ export async function GET(request: NextRequest) {
       const contratoIdParam = searchParams.get('contrato_id');
       if (contratoIdParam) {
         const ctrRes = await query(
-          'SELECT id, aceito FROM contratos WHERE id = $1 AND contratante_id = $2',
+          'SELECT id, aceito FROM contratos WHERE id = $1 AND entidade_id = $2',
           [parseInt(contratoIdParam), entidadeId]
         );
         if (ctrRes.rows.length === 0 || !ctrRes.rows[0].aceito) {
@@ -81,7 +78,7 @@ export async function GET(request: NextRequest) {
         }
       } else {
         const ctrRes = await query(
-          'SELECT id, numero_funcionarios, valor_total, aceito FROM contratos WHERE contratante_id = $1 AND aceito = true LIMIT 1',
+          'SELECT id, numero_funcionarios, valor_total, aceito FROM contratos WHERE entidade_id = $1 AND aceito = true LIMIT 1',
           [entidadeId]
         );
         if (ctrRes.rows.length === 0) {
@@ -108,7 +105,7 @@ export async function GET(request: NextRequest) {
 
       if (contratoIdParam) {
         const contratoRow = await query(
-          'SELECT id, numero_funcionarios, valor_total FROM contratos WHERE id = $1 AND contratante_id = $2',
+          'SELECT id, numero_funcionarios, valor_total FROM contratos WHERE id = $1 AND entidade_id = $2',
           [parseInt(contratoIdParam, 10), entidadeId]
         );
         if (contratoRow.rows.length > 0) {
@@ -135,7 +132,7 @@ export async function GET(request: NextRequest) {
       if (valorPorFuncionario == null) {
         const cpRes = await query(
           `SELECT valor_por_funcionario, numero_funcionarios_estimado, valor_total_estimado
-           FROM contratacao_personalizada WHERE contratante_id = $1 AND status IN ('valor_definido', 'aguardando_pagamento', 'valor_aceito_pelo_contratante') LIMIT 1`,
+           FROM contratacao_personalizada WHERE entidade_id = $1 AND status IN ('valor_definido', 'aguardando_pagamento', 'valor_aceito_pelo_tomador') LIMIT 1`,
           [entidadeId]
         );
         if (cpRes.rows.length > 0) {
@@ -173,9 +170,6 @@ export async function GET(request: NextRequest) {
       entidade_id: entidade.id,
       entidade_nome: entidade.nome,
       entidade_tipo: entidade.tipo,
-      // Compatibilidade: alguns clientes esperam os campos 'contratante_*'
-      contratante_id: entidade.id,
-      contratante_nome: entidade.nome,
       plano_id: plano.id,
       plano_nome: plano.nome,
       plano_tipo: plano.tipo,

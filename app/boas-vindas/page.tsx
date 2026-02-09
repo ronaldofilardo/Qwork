@@ -8,7 +8,7 @@ import QworkLogo from '@/components/QworkLogo';
 export default function BoasVindasPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const tomadorId = searchParams.get('tomador_id');
   const login = searchParams.get('login');
   const senha = searchParams.get('senha');
@@ -35,7 +35,10 @@ export default function BoasVindasPage() {
     }
   }, [tempo]);
 
-  const copiarParaClipboard = async (texto: string, tipo: 'login' | 'senha') => {
+  const copiarParaClipboard = async (
+    texto: string,
+    tipo: 'login' | 'senha'
+  ) => {
     try {
       await navigator.clipboard.writeText(texto);
       setCopiado(tipo);
@@ -169,26 +172,33 @@ export default function BoasVindasPage() {
                 ℹ️ Informação Importante sobre Cobrança
               </h3>
               <p className="text-blue-800 text-sm">
-                Você <strong>não pagará agora</strong>. O pagamento será solicitado apenas quando você ou sua equipe solicitarem a emissão de um laudo. A cobrança será proporcional ao número de avaliações concluídas naquele momento.
+                Você <strong>não pagará agora</strong>. O pagamento será
+                solicitado apenas quando você ou sua equipe solicitarem a
+                emissão de um laudo. A cobrança será proporcional ao número de
+                avaliações concluídas naquele momento.
               </p>
             </div>
 
             {/* Timer e Próximas Ações */}
             <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-              <p className="text-center text-gray-600 mb-4">
-                Próximas ações:
-              </p>
+              <p className="text-center text-gray-600 mb-4">Próximas ações:</p>
               <ol className="space-y-2 text-sm text-gray-700 mb-6">
                 <li className="flex gap-3">
-                  <span className="font-bold text-orange-500 flex-shrink-0">1.</span>
+                  <span className="font-bold text-orange-500 flex-shrink-0">
+                    1.
+                  </span>
                   <span>Guarde suas credenciais com segurança</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="font-bold text-orange-500 flex-shrink-0">2.</span>
+                  <span className="font-bold text-orange-500 flex-shrink-0">
+                    2.
+                  </span>
                   <span>Acesse o sistema quando realizar avaliações</span>
                 </li>
                 <li className="flex gap-3">
-                  <span className="font-bold text-orange-500 flex-shrink-0">3.</span>
+                  <span className="font-bold text-orange-500 flex-shrink-0">
+                    3.
+                  </span>
                   <span>Solicite a emissão de laudos quando necessário</span>
                 </li>
               </ol>
@@ -220,7 +230,10 @@ export default function BoasVindasPage() {
         <div className="text-center mt-8">
           <p className="text-gray-600 text-sm">
             Dúvidas? Entre em contato{' '}
-            <a href="mailto:suporte@qwork.com.br" className="text-orange-500 hover:underline">
+            <a
+              href="mailto:suporte@qwork.com.br"
+              className="text-orange-500 hover:underline"
+            >
               conosco
             </a>
           </p>

@@ -12,7 +12,7 @@ BEGIN
       -- Se CPF existe em entidades_senhas ligado a uma contratante do tipo 'entidade', bloquear
       IF EXISTS(
         SELECT 1 FROM entidades_senhas cs
-        JOIN contratantes c ON c.id = cs.contratante_id
+        JOIN tomadores c ON c.id = cs.contratante_id
         WHERE cs.cpf = NEW.cpf AND c.tipo = 'entidade' AND c.ativa = true
       ) THEN
         RAISE EXCEPTION 'CPF pertence a gestor de entidade; não pode ser emissor';

@@ -5,7 +5,7 @@ describe('Entidade - Inativar Avaliação (E2E confiável)', () => {
       cpf: '22222222222',
       nome: 'Gestor Entidade Teste',
       perfil: 'gestor',
-      contratante_id: 1,
+      tomador_id: 1,
     });
 
     // Flag para controlar resposta do GET do lote (antes/depois da inativação)

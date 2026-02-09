@@ -1,7 +1,7 @@
 /**
  * TESTE DE INTEGRAÇÃO - Autenticação de Gestores
  *
- * Testa o fluxo REAL de aprovação de contratantes e login de gestores
+ * Testa o fluxo REAL de aprovação de tomadores e login de gestores
  * Simula exatamente o que acontece na produção via chamadas HTTP
  */
 
@@ -15,7 +15,7 @@ describe('Integração: Aprovação de Contratante → Login de Gestor', () => {
   // Helper para criar contratante pendente
   const criarContratantePendente = async (nome: string, email: string) => {
     await query(
-      `INSERT INTO contratantes (
+      `INSERT INTO tomadores (
         id, tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
         status, ativa, pagamento_confirmado
@@ -31,7 +31,7 @@ describe('Integração: Aprovação de Contratante → Login de Gestor', () => {
     await query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [
       testContratanteId,
     ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+    await query('DELETE FROM tomadores WHERE id = $1', [testContratanteId]);
   });
 
   afterEach(async () => {
@@ -39,7 +39,7 @@ describe('Integração: Aprovação de Contratante → Login de Gestor', () => {
     await query('DELETE FROM entidades_senhas WHERE contratante_id = $1', [
       testContratanteId,
     ]);
-    await query('DELETE FROM contratantes WHERE id = $1', [testContratanteId]);
+    await query('DELETE FROM tomadores WHERE id = $1', [testContratanteId]);
   });
 
   it('deve permitir login após aprovação via API (fluxo completo)', async () => {
@@ -63,7 +63,7 @@ describe('Integração: Aprovação de Contratante → Login de Gestor', () => {
 
     // Buscar contratante aprovado
     const contratanteResult = await query(
-      'SELECT * FROM contratantes WHERE id = $1',
+      'SELECT * FROM tomadores WHERE id = $1',
       [testContratanteId]
     );
     const contratante = contratanteResult.rows[0];
@@ -110,7 +110,7 @@ describe('Integração: Aprovação de Contratante → Login de Gestor', () => {
     const gestorResult = await query(
       `SELECT cs.cpf, cs.senha_hash, c.ativa
        FROM entidades_senhas cs
-       JOIN contratantes c ON c.id = cs.contratante_id
+       JOIN tomadores c ON c.id = cs.contratante_id
        WHERE cs.cpf = $1`,
       [testCpf]
     );

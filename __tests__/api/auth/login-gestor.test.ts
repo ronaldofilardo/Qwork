@@ -50,7 +50,7 @@ describe('/api/auth/login - gestor entidade', () => {
         {
           cpf: '12345678901',
           senha_hash: hash,
-          contratante_id: 42,
+          tomador_id: 42,
           nome: 'Gestor Entidade',
           tipo: 'entidade',
           ativa: true,

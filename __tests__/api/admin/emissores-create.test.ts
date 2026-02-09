@@ -207,9 +207,9 @@ describe('API /api/admin/emissores/create', () => {
   it('deve retornar 409 se CPF pertence a gestor', async () => {
     (sessionLib.requireRole as jest.Mock).mockResolvedValue(mockAdminSession);
 
-    // Criar contratante do tipo 'entidade' e registrar senha (gestor)
-    const contratante = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
+    // Criar tomador do tipo 'entidade' e registrar senha (gestor)
+    const tomador = await query(
+      `INSERT INTO tomadors (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, status, ativa)
        VALUES ('entidade', $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'aprovado', true) RETURNING id`,
       [
         'Entidade Teste',
@@ -228,8 +228,8 @@ describe('API /api/admin/emissores/create', () => {
     );
 
     await query(
-      'INSERT INTO entidades_senhas (contratante_id, cpf, senha_hash) VALUES ($1, $2, $3)',
-      [contratante.rows[0].id, '88800000888', 'hash']
+      'INSERT INTO entidades_senhas (tomador_id, cpf, senha_hash) VALUES ($1, $2, $3)',
+      [tomador.rows[0].id, '88800000888', 'hash']
     );
 
     const request = new NextRequest(
@@ -252,7 +252,7 @@ describe('API /api/admin/emissores/create', () => {
 
     // Cleanup
     await query('DELETE FROM entidades_senhas WHERE cpf = $1', ['88800000888']);
-    await query('DELETE FROM contratantes WHERE cnpj = $1', ['11111111111111']);
+    await query('DELETE FROM tomadors WHERE cnpj = $1', ['11111111111111']);
   });
 
   it('deve retornar 409 se CPF pertence a gestor RH', async () => {

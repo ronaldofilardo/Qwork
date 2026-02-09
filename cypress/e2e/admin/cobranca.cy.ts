@@ -1,5 +1,5 @@
 describe('Admin - Cobrança', () => {
-  it('exibe lista de contratantes na aba Cobrança', () => {
+  it('exibe lista de tomadors na aba Cobrança', () => {
     // Login como admin (seed do usuário admin existente)
     cy.login('00000000000', '123');
 

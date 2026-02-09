@@ -290,7 +290,7 @@ SELECT
   al.criado_em as solicitado_em
 FROM lotes_avaliacao la
 LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
-LEFT JOIN contratantes cont ON la.contratante_id = cont.id
+LEFT JOIN tomadores cont ON la.contratante_id = cont.id
 LEFT JOIN avaliacoes a ON la.id = a.lote_id
 LEFT JOIN laudos l ON la.id = l.lote_id
 LEFT JOIN LATERAL (

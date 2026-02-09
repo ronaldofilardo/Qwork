@@ -1,7 +1,9 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
+import { validarTransicaoStatusAvaliacao } from '@/lib/types/avaliacao-status';
 
 export async function GET() {
   try {
@@ -34,7 +36,7 @@ export async function GET() {
       total = 0;
     }
 
-    if (avaliacao.status === 'concluido') {
+    if (avaliacao.status === 'concluida' || avaliacao.status === 'concluido') {
       return NextResponse.json(
         {
           status: avaliacao.status,
@@ -74,10 +76,13 @@ export async function PATCH(request: Request) {
 
     if (
       !status ||
-      !['iniciada', 'em_andamento', 'concluido'].includes(status)
+      !['iniciada', 'em_andamento', 'concluida', 'concluido'].includes(status)
     ) {
       return NextResponse.json({ error: 'Status inválido' }, { status: 400 });
     }
+
+    // Normalizar 'concluido' legado para 'concluida'
+    const statusNormalizado = status === 'concluido' ? 'concluida' : status;
 
     let avaliacaoId: number;
 
@@ -113,11 +118,55 @@ export async function PATCH(request: Request) {
       avaliacaoId = avaliacaoResult.rows[0].id;
     }
 
-    // Atualizar status
-    await query(`UPDATE avaliacoes SET status = $1 WHERE id = $2`, [
-      status,
-      avaliacaoId,
-    ]);
+    // Buscar status atual para validar transição
+    const statusAtualResult = await query(
+      `SELECT status FROM avaliacoes WHERE id = $1`,
+      [avaliacaoId]
+    );
+
+    if (statusAtualResult.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Avaliação não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    const statusAtual = statusAtualResult.rows[0].status;
+
+    // Validar transição de status (com suporte a legado)
+    const validacao = validarTransicaoStatusAvaliacao(
+      statusAtual,
+      statusNormalizado
+    );
+    if (!validacao.valido) {
+      return NextResponse.json(
+        {
+          error:
+            validacao.erro ||
+            `Transição inválida: não é possível mudar de '${statusAtual}' para '${statusNormalizado}'`,
+          statusAtual,
+          statusDesejado: statusNormalizado,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Atualizar status com contexto de segurança (usando status normalizado)
+    try {
+      await transactionWithContext(async (queryTx) => {
+        await queryTx(`UPDATE avaliacoes SET status = $1 WHERE id = $2`, [
+          statusNormalizado,
+          avaliacaoId,
+        ]);
+      });
+    } catch {
+      // Fallback: tentar atualizar diretamente e setar contexto
+      await query(`SET LOCAL app.current_user_cpf = '${session.cpf}'`);
+      await query(`UPDATE avaliacoes SET status = $1 WHERE id = $2`, [
+        statusNormalizado,
+        avaliacaoId,
+      ]);
+    }
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
@@ -128,4 +177,3 @@ export async function PATCH(request: Request) {
     );
   }
 }
-

@@ -19,13 +19,13 @@ const bcrypt = require('bcryptjs');
 
     let cnpj = null;
     if (cs.rows[0] && cs.rows[0].contratante_id) {
-      const c = await query('SELECT cnpj FROM contratantes WHERE id = $1', [
+      const c = await query('SELECT cnpj FROM tomadores WHERE id = $1', [
         cs.rows[0].contratante_id,
       ]);
       cnpj = c.rows[0]?.cnpj;
     } else {
       const c = await query(
-        'SELECT cnpj FROM contratantes c JOIN funcionarios f ON f.contratante_id = c.id WHERE f.cpf = $1 LIMIT 1',
+        'SELECT cnpj FROM tomadores c JOIN funcionarios f ON f.contratante_id = c.id WHERE f.cpf = $1 LIMIT 1',
         [cpf]
       );
       cnpj = c.rows[0]?.cnpj;

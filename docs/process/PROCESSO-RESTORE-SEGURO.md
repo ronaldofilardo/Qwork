@@ -24,7 +24,7 @@ O dump `sql-files/013b_create_nivel_cargo_enum_column.sql` continha **8+ policie
 - ❌ `admin_all_respostas` → Admin acessava respostas
 - ❌ `admin_all_resultados` → Admin acessava resultados
 - ❌ `clinicas_admin_all` → Admin acessava clínicas
-- ❌ `contratantes_admin_all` → Admin acessava contratantes
+- ❌ `tomadores_admin_all` → Admin acessava tomadores
 - ❌ `admin_restricted_funcionarios` → Admin acessava funcionários
 - ⚠️ `avaliacoes_own_update` → Incluía admin e emissor incorretamente
 

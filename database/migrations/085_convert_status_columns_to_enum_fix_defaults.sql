@@ -24,19 +24,19 @@ EXCEPTION WHEN OTHERS THEN
   RAISE NOTICE 'Falha ao converter contratos.status: %', SQLERRM;
 END $$;
 
--- Contratantes: similar
+-- tomadores: similar
 DO $$
 BEGIN
-  UPDATE contratantes SET status = 'pendente' WHERE status NOT IN (
+  UPDATE tomadores SET status = 'pendente' WHERE status NOT IN (
     SELECT enumlabel FROM pg_enum e JOIN pg_type t ON e.enumtypid = t.oid WHERE t.typname = 'status_aprovacao_enum'
   );
 
-  ALTER TABLE contratantes ALTER COLUMN status DROP DEFAULT;
-  ALTER TABLE contratantes ALTER COLUMN status TYPE status_aprovacao_enum USING status::status_aprovacao_enum;
-  ALTER TABLE contratantes ALTER COLUMN status SET DEFAULT 'pendente';
-  RAISE NOTICE 'contratantes.status convertido para status_aprovacao_enum com default pendente';
+  ALTER TABLE tomadores ALTER COLUMN status DROP DEFAULT;
+  ALTER TABLE tomadores ALTER COLUMN status TYPE status_aprovacao_enum USING status::status_aprovacao_enum;
+  ALTER TABLE tomadores ALTER COLUMN status SET DEFAULT 'pendente';
+  RAISE NOTICE 'tomadores.status convertido para status_aprovacao_enum com default pendente';
 EXCEPTION WHEN OTHERS THEN
-  RAISE NOTICE 'Falha ao converter contratantes.status: %', SQLERRM;
+  RAISE NOTICE 'Falha ao converter tomadores.status: %', SQLERRM;
 END $$;
 
 COMMIT;

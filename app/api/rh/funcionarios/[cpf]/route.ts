@@ -41,7 +41,7 @@ export async function GET(
       `SELECT a.id, a.status, a.inicio, a.envio, a.data_inativacao, a.motivo_inativacao,
               l.id as lote_id, l.descricao as lote_descricao, l.numero_ordem, l.liberado_em,
               CASE 
-                WHEN a.status = 'concluido' THEN 'concluída'
+                WHEN a.status = 'concluida' THEN 'concluída'
                 WHEN a.status = 'inativada' THEN 'inativada'
                 ELSE 'pendente'
               END as status_display
@@ -55,13 +55,16 @@ export async function GET(
     // Calcular estatísticas
     const totalAvaliacoes = avaliacoesResult.rows.length;
     const concluidas = avaliacoesResult.rows.filter(
-      (a) => a.status === 'concluido'
+      (a) => a.status === 'concluida' || a.status === 'concluido'
     ).length;
     const inativadas = avaliacoesResult.rows.filter(
       (a) => a.status === 'inativada'
     ).length;
     const pendentes = avaliacoesResult.rows.filter(
-      (a) => a.status !== 'concluido' && a.status !== 'inativada'
+      (a) =>
+        a.status !== 'concluida' &&
+        a.status !== 'concluido' &&
+        a.status !== 'inativada'
     ).length;
 
     // Verificar se há pendências

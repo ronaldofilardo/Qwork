@@ -22,7 +22,7 @@ const TABLE_ORDER = [
   'planos',
   'questoes',
 
-  // Entidades (antiga contratantes) - depende de planos
+  // Entidades (antiga tomadors) - depende de planos
   'entidades',
 
   // Tabelas que dependem de entidades

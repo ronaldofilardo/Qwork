@@ -62,13 +62,13 @@ Todas as funcionalidades do "Centro de Operações" foram implementadas com suce
 
 ## 🔍 Decisões Arquiteturais
 
-| Questão                    | Decisão                                                | Justificativa                                                                    |
-| -------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
-| **Status de lote**         | Mantidos `'concluido'` e `'finalizado'`                | Significados distintos: concluído = aguardando laudo, finalizado = laudo emitido |
-| **Destinatários de lotes** | Clínica (empresas_clientes) ou Contratante (entidades) | Notificações distintas por tipo de lote                                          |
-| **Parcelas futuras**       | Criar todas no pagamento inicial                       | Mais simples que cron mensal                                                     |
-| **RLS no cron**            | Acesso administrativo (bypass RLS)                     | Necessário para iterar todos os contratantes                                     |
-| **Resolução**              | Baseada em ação explícita, não visualização            | Persistência até gestor confirmar resolução                                      |
+| Questão                    | Decisão                                            | Justificativa                                                                    |
+| -------------------------- | -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| **Status de lote**         | Mantidos `'concluido'` e `'finalizado'`            | Significados distintos: concluído = aguardando laudo, finalizado = laudo emitido |
+| **Destinatários de lotes** | Clínica (empresas_clientes) ou tomador (entidades) | Notificações distintas por tipo de lote                                          |
+| **Parcelas futuras**       | Criar todas no pagamento inicial                   | Mais simples que cron mensal                                                     |
+| **RLS no cron**            | Acesso administrativo (bypass RLS)                 | Necessário para iterar todos os tomadores                                        |
+| **Resolução**              | Baseada em ação explícita, não visualização        | Persistência até gestor confirmar resolução                                      |
 
 ---
 

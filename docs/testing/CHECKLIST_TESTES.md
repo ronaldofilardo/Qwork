@@ -30,14 +30,14 @@
 
 ---
 
-## Migration 420: Rename contratantes → entidades
+## Migration 420: Rename tomadores → entidades
 
 ### ✅ Testes Obrigatórios
 
 1. **Teste de Rename de Tabelas**: Verificar que `entidades` e `entidades_senhas` existem
 
    ```powershell
-   pnpm test __tests__/database/rename-contratantes.test.ts
+   pnpm test __tests__/database/rename-tomadores.test.ts
    ```
 
 2. **Teste de Foreign Keys**: Verificar que FKs foram atualizadas corretamente
@@ -149,7 +149,7 @@ pnpm test __tests__/api
 ✅ **Migration 420 aprovada se:**
 
 - Tabelas `entidades` e `entidades_senhas` existem
-- Tabelas `contratantes` e `entidades_senhas` não existem
+- Tabelas `tomadores` e `entidades_senhas` não existem
 - Colunas `entidade_id` existem em `usuarios`, `clinicas`, `entidades_senhas`
 - FKs apontam para `entidades(id)`
 - Código e testes atualizados funcionam

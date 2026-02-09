@@ -147,7 +147,7 @@ BEGIN
         ALTER TABLE public.lotes_avaliacao 
         ADD CONSTRAINT lotes_avaliacao_contratante_id_fkey 
         FOREIGN KEY (contratante_id) 
-        REFERENCES public.contratantes(id) 
+        REFERENCES public.tomadores(id) 
         ON DELETE CASCADE;
         
         RAISE NOTICE 'Added foreign key constraint for contratante_id';

@@ -1,15 +1,15 @@
 /**
  * components/forms/ContatanteFormFields.tsx
  *
- * Componente de campos do formulário de contratante (apresentacional)
+ * Componente de campos do formulário de tomador (apresentacional)
  *
- * EXTRAÍDO DE: components/modals/ModalCadastroContratante.tsx
+ * EXTRAÍDO DE: components/modals/ModalCadastrotomador.tsx
  * BENEFÍCIO: Componente puro, facilmente testável, sem lógica de negócio
  */
 
 import React from 'react';
 
-interface ContratanteFormFieldsProps {
+interface tomadorFormFieldsProps {
   formData: {
     tipo?: 'clinica' | 'entidade';
     nome?: string;
@@ -30,19 +30,19 @@ interface ContratanteFormFieldsProps {
   disabled?: boolean;
 }
 
-export function ContratanteFormFields({
+export function tomadorFormFields({
   formData,
   errors,
   planos,
   onChange,
   disabled = false,
-}: ContratanteFormFieldsProps) {
+}: tomadorFormFieldsProps) {
   return (
     <div className="space-y-4">
       {/* Tipo */}
       <div>
         <label className="block text-sm font-medium mb-1">
-          Tipo de Contratante *
+          Tipo de tomador *
         </label>
         <select
           value={formData.tipo || 'clinica'}

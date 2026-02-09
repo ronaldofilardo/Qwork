@@ -31,8 +31,8 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
         cp.id as contratacao_personalizada_id,
         cp.status as contratacao_status,
         cp.numero_funcionarios_estimado
-      FROM contratantes c
-      LEFT JOIN contratacao_personalizada cp ON c.id = cp.contratante_id
+      FROM tomadors c
+      LEFT JOIN contratacao_personalizada cp ON c.id = cp.tomador_id
       WHERE c.status IN ('pendente', 'aguardando_pagamento', 'em_reanalise')
       ORDER BY c.criado_em DESC
       LIMIT 5
@@ -49,10 +49,10 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
 
     // \n📡 RESPOSTA DA API:
 
-    if (data.contratantes && data.contratantes.length > 0) {
-      // \n✅ CONTRATANTES RETORNADOS:
+    if (data.tomadors && data.tomadors.length > 0) {
+      // \n✅ tomadorS RETORNADOS:
 
-      data.contratantes.forEach((c: any) => {
+      data.tomadors.forEach((c: any) => {
         if (c.contratacao_personalizada_id) {
             `    🔥 PERSONALIZADO ID: ${c.contratacao_personalizada_id}`
           );
@@ -63,11 +63,11 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
     // Validações
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(data.contratantes).toBeDefined();
-    expect(Array.isArray(data.contratantes)).toBe(true);
+    expect(data.tomadors).toBeDefined();
+    expect(Array.isArray(data.tomadors)).toBe(true);
 
     // Verificar se há personalizados
-    const personalizados = data.contratantes.filter(
+    const personalizados = data.tomadors.filter(
       (c: any) =>
         c.contratacao_personalizada_id &&
         c.contratacao_status === 'aguardando_valor_admin'

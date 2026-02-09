@@ -2,20 +2,22 @@ import { GET } from '@/app/api/entidade/lotes/route';
 
 // Mocks isolados para este teste
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));
-jest.mock('@/lib/session', () => ({ getSession: jest.fn() }));
+jest.mock('@/lib/session', () => ({ requireEntity: jest.fn() }));
 
 import { query } from '@/lib/db';
-import { getSession } from '@/lib/session';
+import { requireEntity } from '@/lib/session';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
+const mockRequireEntity = requireEntity as jest.MockedFunction<
+  typeof requireEntity
+>;
 
 describe('/api/entidade/lotes - compat v_fila_emissao', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockGetSession.mockReturnValue({
+    mockRequireEntity.mockResolvedValueOnce({
       perfil: 'gestor',
-      contratante_id: 1,
+      entidade_id: 1,
     });
   });
 
@@ -28,6 +30,7 @@ describe('/api/entidade/lotes - compat v_fila_emissao', () => {
         criado_em: '2025-11-29T10:00:00Z',
         liberado_em: '2025-12-01T10:00:00Z',
         liberado_por_nome: 'João Silva',
+        empresa_nome: 'Empresa Teste',
         total_avaliacoes: 5,
         avaliacoes_concluidas: 3,
         avaliacoes_inativadas: 0,

@@ -5,7 +5,7 @@
 BEGIN;
 
 -- Função robusta para sincronizar status com ativa (personalizado)
-CREATE OR REPLACE FUNCTION contratantes_sync_status_ativa_personalizado()
+CREATE OR REPLACE FUNCTION tomadores_sync_status_ativa_personalizado()
 RETURNS trigger AS $$
 DECLARE
     v_status_ativo status_aprovacao_enum[] := ARRAY['aprovado'::status_aprovacao_enum];
@@ -18,7 +18,7 @@ BEGIN
 
     -- Buscar informações do plano e pagamento
     SELECT p.tipo, c2.pagamento_confirmado INTO v_plano_tipo, v_pagamento_confirmado
-    FROM contratantes c2
+    FROM tomadores c2
     LEFT JOIN planos p ON c2.plano_id = p.id
     WHERE c2.id = NEW.id;
 
@@ -60,17 +60,17 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Substituir trigger pela nova versão (regras para planos personalizados)
-DROP TRIGGER IF EXISTS tr_contratantes_sync_status_ativa_robust ON contratantes;
-CREATE TRIGGER tr_contratantes_sync_status_ativa_personalizado
-BEFORE INSERT OR UPDATE ON contratantes
-FOR EACH ROW EXECUTE FUNCTION contratantes_sync_status_ativa_personalizado();
+DROP TRIGGER IF EXISTS tr_tomadores_sync_status_ativa_robust ON tomadores;
+CREATE TRIGGER tr_tomadores_sync_status_ativa_personalizado
+BEFORE INSERT OR UPDATE ON tomadores
+FOR EACH ROW EXECUTE FUNCTION tomadores_sync_status_ativa_personalizado();
 
 -- Corrigir dados existentes: desativar contas de personalizados sem pagamento
-UPDATE contratantes
+UPDATE tomadores
 SET ativa = false
 WHERE id IN (
   SELECT c.id
-  FROM contratantes c
+  FROM tomadores c
   JOIN planos p ON c.plano_id = p.id
   WHERE p.tipo = 'personalizado'
   AND c.pagamento_confirmado = false

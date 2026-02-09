@@ -47,7 +47,7 @@ CREATE TABLE avaliacao_resets (
 
 #### RLS Policies
 
-- **SELECT**: Apenas usuários do mesmo tenant (clinica ou contratante)
+- **SELECT**: Apenas usuários do mesmo tenant (clinica ou tomador)
 - **INSERT**: Bloqueado (apenas servidor pode inserir via transação)
 - **UPDATE**: Bloqueado (auditoria imutável)
 - **DELETE**: Bloqueado (auditoria imutável)
@@ -79,7 +79,7 @@ CREATE TABLE avaliacao_resets (
 
 #### POST /api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset
 
-- **Autenticação**: `gestor` do mesmo contratante
+- **Autenticação**: `gestor` do mesmo tomador
 - Mesma estrutura da API RH
 
 ### UI Implementada
@@ -174,7 +174,7 @@ CREATE TABLE avaliacao_resets (
 ### RBAC
 
 - ✅ Apenas roles autorizadas (`rh`, `gestor`)
-- ✅ Verificação de tenant (clinica/contratante)
+- ✅ Verificação de tenant (clinica/tomador)
 
 ### RLS
 
@@ -233,7 +233,7 @@ pnpm dev
 1. **Perfil correto**: `gestor` (não `responsavel`)
 2. **Constraint única**: Previne duplo reset automaticamente
 3. **Transação atômica**: Garante consistência (audit + delete + update)
-4. **RLS simplificado**: Join direto em `lotes_avaliacao.contratante_id`
+4. **RLS simplificado**: Join direto em `lotes_avaliacao.tomador_id`
 5. **Hard delete**: Conforme requisito (sem backup de respostas)
 
 ---

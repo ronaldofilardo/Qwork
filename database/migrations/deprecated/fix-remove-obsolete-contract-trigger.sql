@@ -1,16 +1,16 @@
 -- ============================================================================
 -- CORREÇÃO: Remover trigger obsoleta fn_sincronizar_contrato_id
 -- Data: 13/01/2026
--- Motivo: Fluxo contract-first não usa coluna contrato_id em contratantes
+-- Motivo: Fluxo contract-first não usa coluna contrato_id em tomadores
 -- ============================================================================
 
 -- Contexto:
 -- A trigger trg_sincronizar_contrato_aceito tentava atualizar a coluna
--- 'contrato_id' na tabela 'contratantes' quando um contrato era aceito.
+-- 'contrato_id' na tabela 'tomadores' quando um contrato era aceito.
 -- Essa coluna não existe mais no novo fluxo contract-first onde:
 -- - Contratos são criados ANTES do pagamento
 -- - Relação é mantida apenas via contratante_id na tabela contratos
--- - Não há necessidade de duplicar essa referência em contratantes
+-- - Não há necessidade de duplicar essa referência em tomadores
 
 -- Remover trigger obsoleta
 DROP TRIGGER IF EXISTS trg_sincronizar_contrato_aceito ON contratos CASCADE;

@@ -20,7 +20,7 @@ SELECT
     c.tipo as contratante_tipo
 FROM funcionarios f
 LEFT JOIN entidades_senhas cs ON f.cpf = cs.cpf
-LEFT JOIN contratantes c ON cs.contratante_id = c.id
+LEFT JOIN tomadores c ON cs.contratante_id = c.id
 WHERE f.perfil = 'gestor';
 
 -- Log dos casos encontrados
@@ -96,16 +96,16 @@ END $$;
 -- Manter liberado_por (pois CPF existe em entidades_senhas, autenticação válida)
 -- Apenas remover da tabela funcionarios
 
--- PARTE 4: REMOVER VÍNCULOS EM contratantes_funcionarios (se existirem)
--- A tabela contratantes_funcionarios referencia funcionarios.id via funcionario_id
-DELETE FROM contratantes_funcionarios cf
+-- PARTE 4: REMOVER VÍNCULOS EM tomadores_funcionarios (se existirem)
+-- A tabela tomadores_funcionarios referencia funcionarios.id via funcionario_id
+DELETE FROM tomadores_funcionarios cf
 USING funcionarios f
 WHERE cf.funcionario_id = f.id
   AND f.cpf IN (SELECT cpf FROM temp_gestores_incorretos);
 
 DO $$
 BEGIN
-  RAISE NOTICE 'Vínculos removidos de contratantes_funcionarios (por funcionario_id)';
+  RAISE NOTICE 'Vínculos removidos de tomadores_funcionarios (por funcionario_id)';
 END $$;
 
 -- PARTE 5: REMOVER AVALIAÇÕES onde funcionario_cpf = gestor
@@ -186,7 +186,7 @@ BEGIN
     -- Verificar que gestores_entidade ainda existem em entidades_senhas
     SELECT COUNT(*) INTO v_senha_count 
     FROM entidades_senhas cs
-    JOIN contratantes c ON c.id = cs.contratante_id
+    JOIN tomadores c ON c.id = cs.contratante_id
     WHERE c.tipo = 'entidade' AND c.ativa = true;
     
     RAISE NOTICE 'VALIDAÇÃO FINAL:';
@@ -210,5 +210,5 @@ COMMIT;
 --    SELECT * FROM funcionarios WHERE perfil = 'gestor';
 -- 3. Verificar que autenticação ainda funciona (via entidades_senhas):
 --    SELECT cs.cpf, c.nome FROM entidades_senhas cs 
---    JOIN contratantes c ON c.id = cs.contratante_id 
+--    JOIN tomadores c ON c.id = cs.contratante_id 
 --    WHERE c.tipo = 'entidade';

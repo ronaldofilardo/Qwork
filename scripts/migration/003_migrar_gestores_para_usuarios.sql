@@ -99,7 +99,7 @@ SET
     ativo = EXCLUDED.ativo,
     atualizado_em = CURRENT_TIMESTAMP;
 
--- 4. Criar usuarios a partir de contratantes sem gestor cadastrado
+-- 4. Criar usuarios a partir de tomadores sem gestor cadastrado
 -- Para entidades sem usuario gestor, usar responsavel_cpf
 INSERT INTO usuarios (
     cpf,
@@ -188,7 +188,7 @@ CREATE TABLE IF NOT EXISTS usuarios_migration_log (
     id SERIAL PRIMARY KEY,
     cpf VARCHAR(11) NOT NULL,
     nome VARCHAR(200),
-    tipo_origem VARCHAR(50), -- 'funcionarios' ou 'contratantes'
+    tipo_origem VARCHAR(50), -- 'funcionarios' ou 'tomadores'
     tipo_usuario_novo usuario_tipo_enum,
     contratante_id INTEGER,
     clinica_id INTEGER,
@@ -214,18 +214,18 @@ WHERE u.tipo_usuario IN ('gestor', 'rh')
         AND f.usuario_tipo IN ('gestor', 'rh')
   );
 
--- Registrar migração de contratantes
+-- Registrar migração de tomadores
 INSERT INTO usuarios_migration_log (cpf, nome, tipo_origem, tipo_usuario_novo, contratante_id, clinica_id, observacoes)
 SELECT 
     u.cpf,
     u.nome,
-    'contratantes' AS tipo_origem,
+    'tomadores' AS tipo_origem,
     u.tipo_usuario,
     u.contratante_id,
     u.clinica_id,
-    'Criado a partir de contratantes.responsavel_cpf'
+    'Criado a partir de tomadores.responsavel_cpf'
 FROM usuarios u
-INNER JOIN contratantes c ON c.responsavel_cpf = u.cpf
+INNER JOIN tomadores c ON c.responsavel_cpf = u.cpf
 WHERE u.tipo_usuario IN ('gestor', 'rh')
   AND NOT EXISTS (
       SELECT 1 FROM funcionarios f 

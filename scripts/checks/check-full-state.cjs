@@ -36,14 +36,14 @@ async function checkFullState() {
     });
 
     // Verificar dados atuais
-    const contratantes = await client.query(`
+    const tomadores = await client.query(`
       SELECT id, plano_tipo::text as plano_tipo
-      FROM contratantes
+      FROM tomadores
       WHERE plano_tipo IS NOT NULL
     `);
 
-    console.log('\nDados em contratantes:');
-    contratantes.rows.forEach((c) => {
+    console.log('\nDados em tomadores:');
+    tomadores.rows.forEach((c) => {
       console.log(`  ID ${c.id}: plano_tipo = ${c.plano_tipo}`);
     });
 

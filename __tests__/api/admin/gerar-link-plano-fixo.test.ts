@@ -1,7 +1,7 @@
 /**
  * Testes para API /api/admin/gerar-link-plano-fixo
  * - Suporte para planos fixos e personalizados
- * - Regeneração de links para contratantes aguardando pagamento
+ * - Regeneração de links para tomadors aguardando pagamento
  */
 
 import { NextRequest } from 'next/server';
@@ -40,13 +40,13 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
 
   describe('POST - Gerar link para plano fixo', () => {
     it('deve gerar link com sucesso para plano fixo', async () => {
-      const contratanteId = 1;
+      const tomadorId = 1;
 
-      // Mock dos dados do contratante
+      // Mock dos dados do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             nome: 'Clínica Teste',
             cnpj: '12345678000123',
             responsavel_nome: 'João Silva',
@@ -83,7 +83,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         rowCount: 1,
       });
 
-      // Mock da atualização do contratante
+      // Mock da atualização do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 1,
@@ -94,7 +94,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: contratanteId }),
+          body: JSON.stringify({ tomador_id: tomadorId }),
         }
       );
 
@@ -104,7 +104,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.data.payment_link).toContain(
-        '/pagamento/simulador?contratante_id='
+        '/pagamento/simulador?tomador_id='
       );
       expect(data.data.payment_link).toContain('plano_id=');
       expect(data.data.payment_link).toContain('numero_funcionarios=10');
@@ -113,13 +113,13 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
       expect(data.data.payment_info.valor_total).toBe(200); // 10 * 20
     });
 
-    it('deve rejeitar contratante já ativo', async () => {
-      const contratanteId = 1;
+    it('deve rejeitar tomador já ativo', async () => {
+      const tomadorId = 1;
 
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             ativa: true,
             pagamento_confirmado: true,
           },
@@ -132,7 +132,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: contratanteId }),
+          body: JSON.stringify({ tomador_id: tomadorId }),
         }
       );
 
@@ -143,13 +143,13 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
       expect(data.error).toContain('já está ativo');
     });
 
-    it('deve rejeitar contratante com pagamento já confirmado', async () => {
-      const contratanteId = 1;
+    it('deve rejeitar tomador com pagamento já confirmado', async () => {
+      const tomadorId = 1;
 
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             ativa: false,
             pagamento_confirmado: true,
           },
@@ -162,7 +162,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: contratanteId }),
+          body: JSON.stringify({ tomador_id: tomadorId }),
         }
       );
 
@@ -176,13 +176,13 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
 
   describe('POST - Gerar link para plano personalizado', () => {
     it('deve gerar link com sucesso para plano personalizado', async () => {
-      const contratanteId = 2;
+      const tomadorId = 2;
 
-      // Mock dos dados do contratante
+      // Mock dos dados do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             nome: 'Empresa Teste',
             cnpj: '12345678000123',
             responsavel_nome: 'Maria Silva',
@@ -227,7 +227,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         rowCount: 1,
       });
 
-      // Mock da atualização do contratante
+      // Mock da atualização do tomador
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 1,
@@ -238,7 +238,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: contratanteId }),
+          body: JSON.stringify({ tomador_id: tomadorId }),
         }
       );
 
@@ -248,7 +248,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.data.payment_link).toContain(
-        '/pagamento/simulador?contratante_id='
+        '/pagamento/simulador?tomador_id='
       );
       expect(data.data.payment_link).toContain('plano_id=');
       expect(data.data.payment_link).toContain('numero_funcionarios=5');
@@ -258,12 +258,12 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
     });
 
     it('deve rejeitar plano personalizado sem contrato', async () => {
-      const contratanteId = 2;
+      const tomadorId = 2;
 
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
-            id: contratanteId,
+            id: tomadorId,
             plano_id: 2,
             plano_tipo: 'personalizado',
             ativa: false,
@@ -287,7 +287,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: contratanteId }),
+          body: JSON.stringify({ tomador_id: tomadorId }),
         }
       );
 
@@ -311,7 +311,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: 1 }),
+          body: JSON.stringify({ tomador_id: 1 }),
         }
       );
 
@@ -319,7 +319,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
       expect(response.status).toBe(403);
     });
 
-    it('deve rejeitar contratante não encontrado', async () => {
+    it('deve rejeitar tomador não encontrado', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 0,
@@ -330,7 +330,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: 999 }),
+          body: JSON.stringify({ tomador_id: 999 }),
         }
       );
 
@@ -338,7 +338,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
       const data = await response.json();
 
       expect(response.status).toBe(404);
-      expect(data.error).toContain('Contratante não encontrado');
+      expect(data.error).toContain('tomador não encontrado');
     });
 
     it('deve validar limite de funcionários para plano fixo', async () => {
@@ -363,7 +363,7 @@ describe('/api/admin/gerar-link-plano-fixo', () => {
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contratante_id: 1 }),
+          body: JSON.stringify({ tomador_id: 1 }),
         }
       );
 

@@ -10,7 +10,7 @@ async function checkRHUser() {
   try {
     // Verificar dados do RH
     const result = await pool.query(
-      'SELECT cpf, usuario_tipo, ativo, clinica_id, contratante_id FROM funcionarios WHERE cpf = $1',
+      'SELECT cpf, usuario_tipo, ativo, clinica_id, tomador_id FROM funcionarios WHERE cpf = $1',
       ['04703084945']
     );
 

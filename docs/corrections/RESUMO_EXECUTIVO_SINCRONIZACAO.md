@@ -62,7 +62,7 @@ Se preferir garantir que TUDO está sincronizado:
 | Item                       | Status | Detalhes                  |
 | -------------------------- | ------ | ------------------------- |
 | **usuarios**               | ✅     | Completo                  |
-| **contratantes**           | ✅     | Completo                  |
+| **tomadores**              | ✅     | Completo                  |
 | **clinicas**               | ✅     | Completo                  |
 | **empresas_clientes**      | ✅     | Completo                  |
 | **funcionarios**           | ✅     | **SEM colunas obsoletas** |

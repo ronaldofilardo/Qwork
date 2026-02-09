@@ -285,7 +285,7 @@ describe('API: Export Funcionários CSV', () => {
             funcao: 'Desenvolvedor',
             matricula: '001',
             funcionario_status: 'ativo',
-            avaliacao_status: 'concluido',
+            avaliacao_status: 'concluida',
             concluida_em: new Date('2025-01-15'),
             status_descricao: 'Concluída',
           },

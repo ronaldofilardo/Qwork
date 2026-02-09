@@ -1,4 +1,4 @@
--- Aplicar correções para pagamentos dos contratantes 55,56,57
+-- Aplicar correções para pagamentos dos tomadores 55,56,57
 -- Idempotente: atualiza registros existentes e insere recibo se ausente
 BEGIN;
 

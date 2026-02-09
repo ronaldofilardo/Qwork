@@ -380,7 +380,7 @@ SELECT
     COUNT(*) FILTER (WHERE ativo = true) as ativos,
     COUNT(*) FILTER (WHERE ativo = false) as inativos,
     COUNT(DISTINCT clinica_id) FILTER (WHERE clinica_id IS NOT NULL) as clinicas_vinculadas,
-    COUNT(DISTINCT contratante_id) FILTER (WHERE contratante_id IS NOT NULL) as contratantes_vinculados
+    COUNT(DISTINCT contratante_id) FILTER (WHERE contratante_id IS NOT NULL) as tomadores_vinculados
 FROM usuarios
 WHERE tipo_usuario IS NOT NULL
 GROUP BY tipo_usuario

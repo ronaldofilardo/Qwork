@@ -176,7 +176,7 @@ const handleGenerateReport = async (e: React.MouseEvent, loteId: number) => {
 
 - Todas as APIs verificam sessão (`getSession()`)
 - Perfil obrigatório: `gestor`
-- Lotes verificados contra `contratante_id` da sessão
+- Lotes verificados contra `tomador_id` da sessão
 - Queries SQL com prepared statements ($1, $2)
 
 ### **Performance**
@@ -237,7 +237,7 @@ const handleGenerateReport = async (e: React.MouseEvent, loteId: number) => {
 
 - Entidades não têm empresas intermediárias
 - Rotas simplificadas: `/entidade/lote/[id]` vs `/rh/empresa/[id]/lote/[id]`
-- Queries filtram por `contratante_id` direto
+- Queries filtram por `tomador_id` direto
 
 ### **Compatibilidade**
 

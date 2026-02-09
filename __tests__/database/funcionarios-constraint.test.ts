@@ -47,7 +47,7 @@ describe('Constraint funcionarios_clinica_id_check', () => {
     const insertQuery = `
       SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, usuario_tipo, contratante_id, senha_hash, ativo
+        cpf, nome, usuario_tipo, tomador_id, senha_hash, ativo
       ) VALUES (
         '${cpf2}',
         'Funcionário Entidade Teste',
@@ -69,7 +69,7 @@ describe('Constraint funcionarios_clinica_id_check', () => {
     });
   });
 
-  test('rejeita funcionário sem clinica_id e contratante_id', async () => {
+  test('rejeita funcionário sem clinica_id e tomador_id', async () => {
     // Testar inserção de funcionário sem vinculação deve falhar
     const insertQuery = `
       SELECT set_config('app.current_user_cpf', '00000000000', true);
@@ -119,7 +119,7 @@ describe('Constraint funcionarios_clinica_id_check', () => {
     const insertQuery = `
       SELECT set_config('app.current_user_cpf', '00000000000', true);
       INSERT INTO funcionarios (
-        cpf, nome, usuario_tipo, contratante_id, senha_hash, ativo
+        cpf, nome, usuario_tipo, tomador_id, senha_hash, ativo
       ) VALUES (
         '${cpf5}',
         'Gestor Entidade Teste',

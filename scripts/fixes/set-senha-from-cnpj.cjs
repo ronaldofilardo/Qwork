@@ -12,14 +12,14 @@ const { query } = require('../../lib/db');
 
     // Buscar contratante pelo responsável
     let contratanteRes = await query(
-      'SELECT id, cnpj, responsavel_nome FROM contratantes WHERE responsavel_cpf = $1 LIMIT 1',
+      'SELECT id, cnpj, responsavel_nome FROM tomadores WHERE responsavel_cpf = $1 LIMIT 1',
       [cpf]
     );
 
     if (contratanteRes.rows.length === 0) {
       // Tentar por vínculo em funcionarios
       const tmp = await query(
-        'SELECT c.id, c.cnpj, c.responsavel_nome FROM contratantes c JOIN funcionarios f ON f.contratante_id = c.id WHERE f.cpf = $1 LIMIT 1',
+        'SELECT c.id, c.cnpj, c.responsavel_nome FROM tomadores c JOIN funcionarios f ON f.contratante_id = c.id WHERE f.cpf = $1 LIMIT 1',
         [cpf]
       );
       contratanteRes = tmp;

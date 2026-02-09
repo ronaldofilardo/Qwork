@@ -89,34 +89,34 @@ describe('Validação de Acesso a Lotes - Rotas Emissor (Item 3)', () => {
       expect(validacao.rows.length).toBe(0);
     });
 
-    it('deve funcionar para lotes sem empresa (contratante direto)', async () => {
-      // Criar lote vinculado a contratante, não empresa
-      const loteContratanteResult = await query(
+    it('deve funcionar para lotes sem empresa (tomador direto)', async () => {
+      // Criar lote vinculado a tomador, não empresa
+      const lotetomadorResult = await query(
         `INSERT INTO lotes_avaliacao (
-          codigo, contratante_id, status, titulo, tipo,
+          codigo, tomador_id, status, titulo, tipo,
           total_avaliacoes, avaliacoes_concluidas
         ) 
          VALUES ($1, 1, 'concluido', $2, 'inicial', 3, 3) 
          RETURNING id`,
-        ['LOTE-CONTRATANTE-001', 'Lote de contratante direto']
+        ['LOTE-tomador-001', 'Lote de tomador direto']
       );
-      const loteContratanteId = loteContratanteResult.rows[0].id;
+      const lotetomadorId = lotetomadorResult.rows[0].id;
 
       const validacao = await query(
-        `SELECT la.id, la.contratante_id, la.status, ec.clinica_id
+        `SELECT la.id, la.tomador_id, la.status, ec.clinica_id
          FROM lotes_avaliacao la
          LEFT JOIN empresas_clientes ec ON ec.id = la.empresa_id
          WHERE la.id = $1`,
-        [loteContratanteId]
+        [lotetomadorId]
       );
 
       expect(validacao.rows.length).toBe(1);
-      expect(validacao.rows[0].contratante_id).toBe(1);
+      expect(validacao.rows[0].tomador_id).toBe(1);
       expect(validacao.rows[0].clinica_id).toBeNull(); // Sem empresa, sem clinica_id
 
       // Cleanup
       await query(`DELETE FROM lotes_avaliacao WHERE id = $1`, [
-        loteContratanteId,
+        lotetomadorId,
       ]);
     });
   });

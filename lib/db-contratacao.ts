@@ -66,7 +66,7 @@ export async function getContratosByEntidade(
   session?: Session
 ): Promise<Contrato[]> {
   const result = await query<Contrato>(
-    'SELECT * FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC',
+    'SELECT * FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC',
     [entidadeId],
     session
   );
@@ -85,7 +85,7 @@ export async function iniciarPagamento(
   session?: Session
 ): Promise<Pagamento> {
   const result = await query<Pagamento>(
-    `INSERT INTO pagamentos (contratante_id, valor, metodo, plataforma_nome, status)
+    `INSERT INTO pagamentos (tomador_id, valor, metodo, plataforma_nome, status)
      VALUES ($1, $2, $3, $4, 'pendente')
      RETURNING *`,
     [
@@ -135,9 +135,9 @@ export async function confirmarPagamento(
 
   const pagamento = result.rows[0];
 
-  // Buscar contratante_id através do contrato
-  const contratoRes = await query<{ contratante_id: number }>(
-    `SELECT contratante_id FROM contratos WHERE id = $1`,
+  // Buscar tomador_id através do contrato
+  const contratoRes = await query<{ tomador_id: number }>(
+    `SELECT tomador_id FROM contratos WHERE id = $1`,
     [pagamento.contrato_id],
     session
   );
@@ -152,7 +152,7 @@ export async function confirmarPagamento(
      SET pagamento_confirmado = true,
          status = 'pago'
      WHERE id = $1`,
-    [contratoRes.rows[0].contratante_id],
+    [contratoRes.rows[0].tomador_id],
     session
   );
 
@@ -182,7 +182,7 @@ export async function getPagamentosByEntidade(
   session?: Session
 ): Promise<Pagamento[]> {
   const result = await query<Pagamento>(
-    'SELECT * FROM pagamentos WHERE contratante_id = $1 ORDER BY criado_em DESC',
+    'SELECT * FROM pagamentos WHERE tomador_id = $1 ORDER BY criado_em DESC',
     [entidadeId],
     session
   );
@@ -282,7 +282,7 @@ export async function getEntidadeCompleta(
             pg.data_pagamento as pagamento_data
      FROM entidades c
      LEFT JOIN planos p ON c.plano_id = p.id
-     LEFT JOIN pagamentos pg ON pg.contratante_id = c.id
+     LEFT JOIN pagamentos pg ON pg.tomador_id = c.id
      WHERE c.id = $1
      ORDER BY pg.criado_em DESC
      LIMIT 1`,
@@ -361,10 +361,12 @@ export async function getEntidadeCompleta(
 
 // === RETROCOMPATIBILIDADE - DEPRECATED ===
 /** @deprecated Use getContratosByEntidade instead */
-export const getContratosByContratante = getContratosByEntidade;
+export function getContratosBytomador(...args: Parameters<typeof getContratosByEntidade>) {
+  return getContratosByEntidade(...args);
+}
 /** @deprecated Use getPagamentosByEntidade instead */
-export const getPagamentosByContratante = getPagamentosByEntidade;
+export const getPagamentosBytomador = getPagamentosByEntidade;
 /** @deprecated Use entidadePodeLogar instead */
-export const contratantePodeLogar = entidadePodeLogar;
+export const tomadorPodeLogar = entidadePodeLogar;
 /** @deprecated Use getEntidadeCompleta instead */
-export const getContratanteCompleto = getEntidadeCompleta;
+export const gettomadorCompleto = getEntidadeCompleta;

@@ -150,7 +150,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Buscar dados completos do contrato, pagamento e contratante
+    // Buscar dados completos do contrato, pagamento e entidade
     // Detectar colunas de preço disponíveis para planos
     let planColsRes;
     try {
@@ -182,20 +182,19 @@ export async function POST(request: NextRequest) {
       dadosResult = await query(
         `SELECT 
           c.id as contrato_id,
-          c.contratante_id,
           c.plano_id,
           c.valor_total as contrato_valor_total,
           c.numero_funcionarios,
-          ct.nome as contratante_nome,
-          ct.cnpj as contratante_cnpj,
-          ct.numero_funcionarios_estimado,
+          e.nome,
+          e.cnpj,
+          e.numero_funcionarios_estimado,
           p.valor as pagamento_valor,
           p.metodo as pagamento_metodo,
           p.data_pagamento,
           p.numero_parcelas,
           ${planSelect.join(',\n          ')}
         FROM contratos c
-        INNER JOIN contratantes ct ON c.contratante_id = ct.id
+        INNER JOIN entidades e ON c.entidade_id = e.id
         INNER JOIN pagamentos p ON p.contrato_id = c.id AND p.id = $2
         INNER JOIN planos pl ON c.plano_id = pl.id
         WHERE c.id = $1`,
@@ -205,19 +204,19 @@ export async function POST(request: NextRequest) {
       // Query sem contrato (fluxo legado)
       dadosResult = await query(
         `SELECT 
-          p.contratante_id,
+          p.entidade_id,
           p.valor as pagamento_valor,
           p.metodo as pagamento_metodo,
           p.data_pagamento,
           p.numero_parcelas,
           p.numero_funcionarios,
           p.valor_por_funcionario,
-          ct.nome as contratante_nome,
-          ct.cnpj as contratante_cnpj,
-        ct.numero_funcionarios_estimado,
-        ct.plano_id as contratante_plano_id
+          e.nome as entidade_nome,
+          e.cnpj as entidade_cnpj,
+          e.numero_funcionarios_estimado,
+          e.plano_id as entidade_plano_id
         FROM pagamentos p
-        INNER JOIN contratantes ct ON p.contratante_id = ct.id
+        INNER JOIN entidades e ON p.entidade_id = e.id
         WHERE p.id = $1`,
         [pagamento_id]
       );
@@ -389,7 +388,7 @@ export async function POST(request: NextRequest) {
     const baseValues: any[] = [
       contrato_id,
       pagamento_id,
-      dados.contratante_id,
+      dados.entidade_id,
       vigenciaInicio.toISOString().split('T')[0],
       vigenciaFim.toISOString().split('T')[0],
       numeroFuncionarios,
@@ -405,19 +404,19 @@ export async function POST(request: NextRequest) {
     const hasTipo = reciboColsAvailable.includes('tipo_recibo');
     const hasEmit = reciboColsAvailable.includes('emitido_por_cpf');
 
-    // Se contrato_id não foi informado, tentar obter contrato existente ACEITO para o contratante
+    // Se contrato_id não foi informado, tentar obter contrato existente ACEITO para a entidade
     let effectiveContratoId = contrato_id;
     if (!effectiveContratoId) {
       const existingContr = await query(
-        `SELECT id, aceito, status FROM contratos WHERE contratante_id = $1 AND aceito = true ORDER BY id DESC LIMIT 1`,
-        [dados.contratante_id]
+        `SELECT id, aceito, status FROM contratos WHERE entidade_id = $1 AND aceito = true ORDER BY id DESC LIMIT 1`,
+        [dados.entidade_id]
       );
       if (existingContr.rows.length > 0) {
         effectiveContratoId = existingContr.rows[0].id;
       } else {
         // POLÍTICA: Recibos só podem ser gerados com contrato pré-existente e aceito
         console.error(
-          `[RECIBO/GERAR] Contrato não encontrado ou não aceito para contratante ${dados.contratante_id}`
+          `[RECIBO/GERAR] Contrato não encontrado ou não aceito para entidade ${dados.entidade_id}`
         );
         return NextResponse.json(
           {
@@ -462,7 +461,7 @@ export async function POST(request: NextRequest) {
       // ambos presentes
       reciboResult = await query(
         `INSERT INTO recibos (
-          contrato_id, pagamento_id, contratante_id, vigencia_inicio, vigencia_fim,
+          contrato_id, pagamento_id, entidade_id, vigencia_inicio, vigencia_fim,
           numero_funcionarios_cobertos, valor_total_anual, valor_por_funcionario, forma_pagamento,
           numero_parcelas, valor_parcela, detalhes_parcelas, descricao_pagamento, tipo_recibo, emitido_por_cpf, ativo
         ) VALUES (
@@ -474,7 +473,7 @@ export async function POST(request: NextRequest) {
       // apenas tipo_recibo
       reciboResult = await query(
         `INSERT INTO recibos (
-          contrato_id, pagamento_id, contratante_id, vigencia_inicio, vigencia_fim,
+          contrato_id, pagamento_id, entidade_id, vigencia_inicio, vigencia_fim,
           numero_funcionarios_cobertos, valor_total_anual, valor_por_funcionario, forma_pagamento,
           numero_parcelas, valor_parcela, detalhes_parcelas, descricao_pagamento, tipo_recibo, ativo
         ) VALUES (
@@ -486,7 +485,7 @@ export async function POST(request: NextRequest) {
       // apenas emitido_por_cpf
       reciboResult = await query(
         `INSERT INTO recibos (
-          contrato_id, pagamento_id, contratante_id, vigencia_inicio, vigencia_fim,
+          contrato_id, pagamento_id, entidade_id, vigencia_inicio, vigencia_fim,
           numero_funcionarios_cobertos, valor_total_anual, valor_por_funcionario, forma_pagamento,
           numero_parcelas, valor_parcela, detalhes_parcelas, descricao_pagamento, emitido_por_cpf, ativo
         ) VALUES (
@@ -498,7 +497,7 @@ export async function POST(request: NextRequest) {
       // nenhum dos dois
       reciboResult = await query(
         `INSERT INTO recibos (
-          contrato_id, pagamento_id, contratante_id, vigencia_inicio, vigencia_fim,
+          contrato_id, pagamento_id, entidade_id, vigencia_inicio, vigencia_fim,
           numero_funcionarios_cobertos, valor_total_anual, valor_por_funcionario, forma_pagamento,
           numero_parcelas, valor_parcela, detalhes_parcelas, descricao_pagamento, ativo
         ) VALUES (

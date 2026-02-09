@@ -11,6 +11,13 @@ jest.mock('next/navigation', () => ({
   usePathname: () => '/rh/empresas',
 }));
 
+// Mock do PWAMenuItem
+jest.mock('@/components/PWAMenuItem', () => ({
+  PWAMenuItem: jest.fn(() => (
+    <div data-testid="pwa-menu-item">PWA Menu Item</div>
+  )),
+}));
+
 // Mock do fetch
 global.fetch = jest.fn();
 
@@ -44,7 +51,6 @@ describe('ClinicaSidebar', () => {
 
     // Verifica seções do menu
     expect(screen.getByText('Empresas Clientes')).toBeInTheDocument();
-    expect(screen.getByText('Laudos')).toBeInTheDocument();
     expect(screen.getByText('Notificações')).toBeInTheDocument();
     expect(screen.getByText('Informações da Conta')).toBeInTheDocument();
   });
@@ -55,7 +61,6 @@ describe('ClinicaSidebar', () => {
     // Verifica badges de contagem
     expect(screen.getByText('5')).toBeInTheDocument(); // empresas
     expect(screen.getByText('3')).toBeInTheDocument(); // notificacoes
-    expect(screen.getByText('2')).toBeInTheDocument(); // laudos
   });
 
   it('highlights active section based on pathname', () => {
@@ -71,10 +76,6 @@ describe('ClinicaSidebar', () => {
 
   it('navigates to correct routes when clicking menu items', () => {
     render(<ClinicaSidebar {...defaultProps} />);
-
-    // Clica na seção Laudos
-    fireEvent.click(screen.getByText('Laudos'));
-    expect(mockPush).toHaveBeenCalledWith('/rh/laudos');
 
     // Clica na seção Notificações
     fireEvent.click(screen.getByText('Notificações'));
@@ -126,5 +127,26 @@ describe('ClinicaSidebar', () => {
     const lastButton = buttons && buttons[buttons.length - 1];
     expect(lastButton).toBeTruthy();
     expect(lastButton?.textContent).toMatch(/Sair/);
+  });
+
+  it('renders PWA Menu Item', () => {
+    render(<ClinicaSidebar {...defaultProps} />);
+
+    expect(screen.getByTestId('pwa-menu-item')).toBeInTheDocument();
+  });
+
+  it('passes isCollapsed prop to PWAMenuItem', () => {
+    const {
+      PWAMenuItem: MockPWAMenuItem,
+    } = require('@/components/PWAMenuItem');
+
+    render(<ClinicaSidebar {...defaultProps} />);
+
+    expect(MockPWAMenuItem).toHaveBeenCalledWith(
+      expect.objectContaining({
+        isCollapsed: expect.any(Boolean),
+      }),
+      expect.anything()
+    );
   });
 });

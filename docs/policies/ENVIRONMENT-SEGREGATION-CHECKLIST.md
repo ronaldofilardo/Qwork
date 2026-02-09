@@ -53,8 +53,8 @@ node -e "require('dotenv').config({ path: '.env.test' }); console.log(process.en
 
 ### Exclusão de Dados de Teste
 
-- [x] Contratantes 282, 283, 284 removidas de `nr-bps_db`
-- [x] Contratantes 282, 283, 284 removidas de `nr-bps_db_test`
+- [x] tomadores 282, 283, 284 removidas de `nr-bps_db`
+- [x] tomadores 282, 283, 284 removidas de `nr-bps_db_test`
 - [x] Registros relacionados (funcionarios, pagamentos, contratos) removidos
 
 ## Próximos Passos

@@ -1508,7 +1508,7 @@ ADD CONSTRAINT resultados_avaliacao_id_fkey FOREIGN KEY (avaliacao_id) REFERENCE
 
 CREATE TABLE public.contratos (
     id SERIAL PRIMARY KEY,
-    contratante_id INTEGER REFERENCES contratantes(id) ON DELETE CASCADE,
+    contratante_id INTEGER REFERENCES tomadores(id) ON DELETE CASCADE,
     plano_id INTEGER REFERENCES planos(id),
     numero_funcionarios INTEGER,
     numero_funcionarios_estimado INTEGER,
@@ -1533,7 +1533,7 @@ CREATE INDEX IF NOT EXISTS idx_contratos_numero_funcionarios ON public.contratos
 CREATE INDEX IF NOT EXISTS idx_contratos_contratante ON public.contratos (contratante_id);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_contratos_payment_link_token ON public.contratos (payment_link_token) WHERE payment_link_token IS NOT NULL;
 
-COMMENT ON TABLE public.contratos IS 'Contratos gerados para contratantes. Fluxo simplificado.';
+COMMENT ON TABLE public.contratos IS 'Contratos gerados para tomadores. Fluxo simplificado.';
 COMMENT ON COLUMN public.contratos.valor_personalizado IS 'Valor negociado por funcionário para contratos personalizados';
 
 --

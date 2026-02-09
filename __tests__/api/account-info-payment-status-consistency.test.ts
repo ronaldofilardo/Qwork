@@ -12,8 +12,8 @@
 import { query } from '@/lib/db';
 
 describe('Consistência Payment Status - Entidade e Clínica', () => {
-  let testContratanteEntidadeId: number;
-  let testContratanteClinicaId: number;
+  let testtomadorEntidadeId: number;
+  let testtomadorClinicaId: number;
   let testContratoId: number;
   let testPagamentoId: number;
   let testPlanoId: number;
@@ -24,15 +24,15 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
   };
 
   beforeAll(async () => {
-    // Criar contratante entidade para teste
+    // Criar tomador entidade para teste
     const cpfEnt = randomCpf();
     const entidadeRes = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, responsavel_cpf, numero_funcionarios_estimado, plano_id, status, ativa, pagamento_confirmado)
+      `INSERT INTO entidades (tipo, nome, cnpj, email, responsavel_cpf, numero_funcionarios_estimado, plano_id, status, ativa, pagamento_confirmado)
        VALUES ('entidade', 'Entidade Teste Status', '12345678000199', 'statustest@entidade.local', $1, 100, NULL, 'aguardando_pagamento', false, false)
        RETURNING id`,
       [cpfEnt]
     );
-    testContratanteEntidadeId = entidadeRes.rows[0].id;
+    testtomadorEntidadeId = entidadeRes.rows[0].id;
 
     // Criar plano de teste
     const planoRes = await query(
@@ -43,22 +43,22 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
 
     // Criar contrato para a entidade (usar plano criado)
     const contratoRes = await query(
-      `INSERT INTO contratos (contratante_id, plano_id, valor_total, aceito, status, conteudo)
+      `INSERT INTO contratos (tomador_id, plano_id, valor_total, aceito, status, conteudo)
        VALUES ($1, $2, 1000, true, 'aguardando_pagamento', 'Contrato Teste Status')
        RETURNING id`,
-      [testContratanteEntidadeId, testPlanoId]
+      [testtomadorEntidadeId, testPlanoId]
     );
     testContratoId = contratoRes.rows[0].id;
 
-    // Criar contratante clínica para teste
+    // Criar tomador clínica para teste
     const cpfClin = randomCpf();
     const clinicaRes = await query(
-      `INSERT INTO contratantes (tipo, nome, cnpj, email, responsavel_cpf, numero_funcionarios_estimado, plano_id, status, ativa, pagamento_confirmado)
+      `INSERT INTO entidades (tipo, nome, cnpj, email, responsavel_cpf, numero_funcionarios_estimado, plano_id, status, ativa, pagamento_confirmado)
        VALUES ('clinica', 'Clínica Teste Status', '98765432000188', 'statustest@clinica.local', $1, 50, NULL, 'aguardando_pagamento', true, false)
        RETURNING id`,
       [cpfClin]
     );
-    testContratanteClinicaId = clinicaRes.rows[0].id;
+    testtomadorClinicaId = clinicaRes.rows[0].id;
   });
 
   afterAll(async () => {
@@ -66,20 +66,20 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
       await query('DELETE FROM pagamentos WHERE id = $1', [testPagamentoId]);
     if (testContratoId)
       await query('DELETE FROM contratos WHERE id = $1', [testContratoId]);
-    if (testContratanteEntidadeId) {
-      await query('DELETE FROM contratos_planos WHERE contratante_id = $1', [
-        testContratanteEntidadeId,
+    if (testtomadorEntidadeId) {
+      await query('DELETE FROM contratos_planos WHERE tomador_id = $1', [
+        testtomadorEntidadeId,
       ]);
-      await query('DELETE FROM contratantes WHERE id = $1', [
-        testContratanteEntidadeId,
+      await query('DELETE FROM tomadores WHERE id = $1', [
+        testtomadorEntidadeId,
       ]);
     }
-    if (testContratanteClinicaId) {
-      await query('DELETE FROM contratos_planos WHERE contratante_id = $1', [
-        testContratanteClinicaId,
+    if (testtomadorClinicaId) {
+      await query('DELETE FROM contratos_planos WHERE tomador_id = $1', [
+        testtomadorClinicaId,
       ]);
-      await query('DELETE FROM contratantes WHERE id = $1', [
-        testContratanteClinicaId,
+      await query('DELETE FROM tomadores WHERE id = $1', [
+        testtomadorClinicaId,
       ]);
     }
   });
@@ -88,10 +88,10 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
     it('deve mostrar status "em_aberto" quando valor pago < valor total', async () => {
       // Criar pagamento parcial (500 de 1000)
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, data_pagamento)
          VALUES ($1, $2, 500, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteEntidadeId, testContratoId]
+        [testtomadorEntidadeId, testContratoId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
@@ -101,14 +101,14 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
         json: async () => ({
           session: {
             perfil: 'gestor',
-            contratante_id: testContratanteEntidadeId,
+            tomador_id: testtomadorEntidadeId,
           },
         }),
       });
 
       const mockGetSession = jest.fn(() => ({
         perfil: 'gestor',
-        contratante_id: testContratanteEntidadeId,
+        tomador_id: testtomadorEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
         getSession: mockGetSession,
@@ -146,16 +146,16 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
     it('deve mostrar status "quitado" quando valor pago >= valor total', async () => {
       // Criar pagamento total (1000 de 1000)
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, data_pagamento)
          VALUES ($1, $2, 1000, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteEntidadeId, testContratoId]
+        [testtomadorEntidadeId, testContratoId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
       const mockGetSession = jest.fn(() => ({
         perfil: 'gestor',
-        contratante_id: testContratanteEntidadeId,
+        tomador_id: testtomadorEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
         getSession: mockGetSession,
@@ -191,16 +191,16 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
     it('deve ajustar contrato.status para "ativo" quando pagamento está quitado', async () => {
       // Criar pagamento total
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, data_pagamento)
          VALUES ($1, $2, 1000, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteEntidadeId, testContratoId]
+        [testtomadorEntidadeId, testContratoId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
       const mockGetSession = jest.fn(() => ({
         perfil: 'gestor',
-        contratante_id: testContratanteEntidadeId,
+        tomador_id: testtomadorEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
         getSession: mockGetSession,
@@ -233,26 +233,26 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
 
   describe('Clínica: Status e valores consistentes', () => {
     it('deve calcular resumo financeiro corretamente a partir dos pagamentos', async () => {
-      // Criar contrato_plano para clínica (usar colunas mínimas + tipo_contratante)
+      // Criar contrato_plano para clínica (usar colunas mínimas + tipo_tomador)
       await query(
-        `INSERT INTO contratos_planos (contratante_id, plano_id, valor_pago, tipo_contratante, created_at)
+        `INSERT INTO contratos_planos (tomador_id, plano_id, valor_pago, tipo_tomador, created_at)
          VALUES ($1, $2, 5000, 'clinica', NOW())`,
-        [testContratanteClinicaId, testPlanoId]
+        [testtomadorClinicaId, testPlanoId]
       );
 
       // Criar pagamento parcial (1000 de 5000)
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, valor, status, metodo, data_pagamento)
          VALUES ($1, 1000, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteClinicaId]
+        [testtomadorClinicaId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
       const mockRequireRole = jest.fn(() =>
         Promise.resolve({
           perfil: 'rh',
-          clinica_id: testContratanteClinicaId,
+          clinica_id: testtomadorClinicaId,
         })
       );
       jest.doMock('@/lib/session', () => ({
@@ -273,33 +273,33 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
 
       // Limpar
       await query('DELETE FROM pagamentos WHERE id = $1', [testPagamentoId]);
-      await query('DELETE FROM contratos_planos WHERE contratante_id = $1', [
-        testContratanteClinicaId,
+      await query('DELETE FROM contratos_planos WHERE tomador_id = $1', [
+        testtomadorClinicaId,
       ]);
       testPagamentoId = 0 as any;
     });
 
     it('deve mostrar "quitado" quando totalPago >= valor_total do plano', async () => {
-      // Criar contrato_plano (usar colunas mínimas + tipo_contratante)
+      // Criar contrato_plano (usar colunas mínimas + tipo_tomador)
       await query(
-        `INSERT INTO contratos_planos (contratante_id, plano_id, valor_pago, tipo_contratante, created_at)
+        `INSERT INTO contratos_planos (tomador_id, plano_id, valor_pago, tipo_tomador, created_at)
          VALUES ($1, $2, 5000, 'clinica', NOW())`,
-        [testContratanteClinicaId, testPlanoId]
+        [testtomadorClinicaId, testPlanoId]
       );
 
       // Criar pagamento total (5000 de 5000)
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, valor, status, metodo, data_pagamento)
          VALUES ($1, 5000, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteClinicaId]
+        [testtomadorClinicaId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
       const mockRequireRole = jest.fn(() =>
         Promise.resolve({
           perfil: 'rh',
-          clinica_id: testContratanteClinicaId,
+          clinica_id: testtomadorClinicaId,
         })
       );
       jest.doMock('@/lib/session', () => ({
@@ -318,8 +318,8 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
 
       // Limpar
       await query('DELETE FROM pagamentos WHERE id = $1', [testPagamentoId]);
-      await query('DELETE FROM contratos_planos WHERE contratante_id = $1', [
-        testContratanteClinicaId,
+      await query('DELETE FROM contratos_planos WHERE tomador_id = $1', [
+        testtomadorClinicaId,
       ]);
       testPagamentoId = 0 as any;
     });
@@ -328,16 +328,16 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
   describe('Validação: Aritmética Total/Pago/Restante', () => {
     it('deve garantir que Total = Pago + Restante (Entidade)', async () => {
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, contrato_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, data_pagamento)
          VALUES ($1, $2, 400, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteEntidadeId, testContratoId]
+        [testtomadorEntidadeId, testContratoId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
       const mockGetSession = jest.fn(() => ({
         perfil: 'gestor',
-        contratante_id: testContratanteEntidadeId,
+        tomador_id: testtomadorEntidadeId,
       }));
       jest.doMock('@/lib/session', () => ({
         getSession: mockGetSession,
@@ -372,23 +372,23 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
 
     it('deve garantir que Total = Pago + Restante (Clínica)', async () => {
       await query(
-        `INSERT INTO contratos_planos (contratante_id, plano_id, valor_pago, tipo_contratante, created_at)
+        `INSERT INTO contratos_planos (tomador_id, plano_id, valor_pago, tipo_tomador, created_at)
          VALUES ($1, $2, 5000, 'clinica', NOW())`,
-        [testContratanteClinicaId, testPlanoId]
+        [testtomadorClinicaId, testPlanoId]
       );
 
       const pagRes = await query(
-        `INSERT INTO pagamentos (contratante_id, valor, status, metodo, data_pagamento)
+        `INSERT INTO pagamentos (tomador_id, valor, status, metodo, data_pagamento)
          VALUES ($1, 1200, 'pago', 'pix', NOW())
          RETURNING id`,
-        [testContratanteClinicaId]
+        [testtomadorClinicaId]
       );
       testPagamentoId = pagRes.rows[0].id;
 
       const mockRequireRole = jest.fn(() =>
         Promise.resolve({
           perfil: 'rh',
-          clinica_id: testContratanteClinicaId,
+          clinica_id: testtomadorClinicaId,
         })
       );
       jest.doMock('@/lib/session', () => ({
@@ -409,8 +409,8 @@ describe('Consistência Payment Status - Entidade e Clínica', () => {
       expect(total).toBe(pago + restante);
 
       await query('DELETE FROM pagamentos WHERE id = $1', [testPagamentoId]);
-      await query('DELETE FROM contratos_planos WHERE contratante_id = $1', [
-        testContratanteClinicaId,
+      await query('DELETE FROM contratos_planos WHERE tomador_id = $1', [
+        testtomadorClinicaId,
       ]);
       testPagamentoId = 0 as any;
     });

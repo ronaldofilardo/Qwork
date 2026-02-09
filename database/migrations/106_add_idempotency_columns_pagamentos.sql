@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS pagamentos (
     CONSTRAINT check_numero_parcelas CHECK (numero_parcelas >= 1 AND numero_parcelas <= 12),
     CONSTRAINT pagamentos_metodo_check CHECK (metodo IN ('avista', 'parcelado', 'boleto', 'pix', 'cartao', 'transferencia')),
     CONSTRAINT pagamentos_status_check CHECK (status IN ('pendente', 'processando', 'pago', 'cancelado', 'estornado')),
-    CONSTRAINT fk_pagamentos_contratante FOREIGN KEY (contratante_id) REFERENCES contratantes(id) ON DELETE CASCADE
+    CONSTRAINT fk_pagamentos_contratante FOREIGN KEY (contratante_id) REFERENCES tomadores(id) ON DELETE CASCADE
 );
 
 -- Se a tabela já existir, adicionar as colunas de idempotency
@@ -73,7 +73,7 @@ CREATE INDEX IF NOT EXISTS idx_pagamentos_external_transaction_id ON pagamentos(
 CREATE INDEX IF NOT EXISTS idx_pagamentos_provider_event_id ON pagamentos(provider_event_id);
 
 -- Comentários
-COMMENT ON TABLE pagamentos IS 'Registro de pagamentos de contratantes';
+COMMENT ON TABLE pagamentos IS 'Registro de pagamentos de tomadores';
 COMMENT ON COLUMN pagamentos.numero_parcelas IS 'Número de parcelas do pagamento (1 = à vista, 2-12 = parcelado)';
 COMMENT ON COLUMN pagamentos.contrato_id IS 'Referência opcional ao contrato associado ao pagamento (pode ser NULL para pagamentos independentes)';
 COMMENT ON COLUMN pagamentos.external_transaction_id IS 'ID da transação no gateway de pagamento (Stripe, Mercado Pago, etc) para rastreamento';

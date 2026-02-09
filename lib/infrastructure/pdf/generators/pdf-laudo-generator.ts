@@ -2,7 +2,7 @@
  * Módulo para download de laudos PDF
  *
  * Como o laudo é gerado pelo emissor e armazenado no banco de forma imutável,
- * os demais usuários (clínica, contratante, empresa, RH) podem apenas
+ * os demais usuários (clínica, tomador, empresa, RH) podem apenas
  * visualizar ou baixar o PDF existente através deste módulo.
  */
 

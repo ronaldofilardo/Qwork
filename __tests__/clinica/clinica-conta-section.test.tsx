@@ -336,23 +336,23 @@ describe('ContaSection', () => {
       screen.getAllByText('Triagem Curitiba').length
     ).toBeGreaterThanOrEqual(1);
 
-    // --- Novo: mesmo comportamento quando sessão possui contratante_id ---
-    const sessionWithContratante = {
+    // --- Verificación adicional: RH com clínica validada na sessão ---
+    const sessionWithClinica = {
       cpf: '04703084945',
       perfil: 'rh',
-      contratante_id: 55,
+      clinica_id: 55,
     };
 
     let handlerResponsePromise2: Promise<any>;
     jest.isolateModules(() => {
       jest.doMock('@/lib/session', () => ({
-        requireRole: jest.fn().mockResolvedValue(sessionWithContratante),
+        requireRole: jest.fn().mockResolvedValue(sessionWithClinica),
       }));
 
       jest.doMock('@/lib/db', () => ({
         query: jest
           .fn()
-          .mockResolvedValueOnce({ rows: [clinicaRow], rowCount: 1 }) // clinicaQuery using contratante_id
+          .mockResolvedValueOnce({ rows: [clinicaRow], rowCount: 1 }) // clinicaQuery filtrando por clinica_id
           .mockResolvedValueOnce({ rows: [gestorRow], rowCount: 1 }) // gestoresQuery
           .mockResolvedValueOnce({ rows: [], rowCount: 0 }) // snapshotQuery
           .mockResolvedValueOnce({ rows: [], rowCount: 0 }), // planoQuery

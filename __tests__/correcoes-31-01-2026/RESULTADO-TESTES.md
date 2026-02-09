@@ -40,7 +40,7 @@ Validar que a emissão de laudos é **completamente manual**, seguindo o fluxo c
 
 - **Confirmado:** Endpoint NÃO emite automaticamente
 - **Ação:** Apenas registra solicitação na `fila_emissao`
-- **Perfis:** Valida acesso de RH (clinica_id) e gestor (contratante_id)
+- **Perfis:** Valida acesso de RH (clinica_id) e gestor (tomador_id)
 
 ### 2. Banco de Dados Corrigido
 

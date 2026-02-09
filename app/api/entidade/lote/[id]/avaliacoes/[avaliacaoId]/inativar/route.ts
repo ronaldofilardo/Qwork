@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/session';
+import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
@@ -10,8 +10,16 @@ export async function POST(
   { params }: { params: { id: string; avaliacaoId: string } }
 ) {
   try {
-    const user = await requireAuth();
-    if (!user || (user.perfil !== 'gestor' && user.perfil !== 'rh')) {
+    const user = getSession();
+
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Não autorizado', success: false },
+        { status: 401 }
+      );
+    }
+
+    if (user.perfil !== 'gestor' && user.perfil !== 'rh') {
       return NextResponse.json(
         { error: 'Acesso negado', success: false },
         { status: 403 }
@@ -35,7 +43,7 @@ export async function POST(
     // Validar acesso do gestor de entidade ao lote
     const loteCheck = await query(
       `
-      SELECT la.id, la.contratante_id, la.clinica_id, la.status, la.emitido_em
+      SELECT la.id, la.entidade_id, la.clinica_id, la.status, la.emitido_em
       FROM lotes_avaliacao la
       WHERE la.id = $1
     `,
@@ -90,7 +98,7 @@ export async function POST(
     // Verificar se o usuário (gestor ou RH) tem acesso à entidade/clínica do lote
     const hasAccess =
       user.perfil === 'gestor'
-        ? user.entidade_id && lote.contratante_id === user.entidade_id
+        ? user.entidade_id && lote.entidade_id === user.entidade_id
         : user.clinica_id && lote.clinica_id === user.clinica_id;
 
     if (!hasAccess) {
@@ -161,7 +169,7 @@ export async function POST(
       SELECT
         COUNT(a.id) as total_avaliacoes,
         COUNT(a.id) FILTER (WHERE a.status != 'inativada') as ativas,
-        COUNT(a.id) FILTER (WHERE a.status = 'concluido') as concluidas,
+        COUNT(a.id) FILTER (WHERE a.status = 'concluida') as concluidas,
         COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas,
         COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as liberadas
       FROM avaliacoes a

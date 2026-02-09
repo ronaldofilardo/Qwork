@@ -14,7 +14,7 @@ WHERE cpf IN ('87545772920', '16543102047')
 UNION ALL
 SELECT 'entidades_senhas' as tabela, cs.cpf, c.nome, cs.perfil::text, true, cs.contratante_id
 FROM entidades_senhas cs
-JOIN contratantes c ON cs.contratante_id = c.id
+JOIN tomadores c ON cs.contratante_id = c.id
 WHERE cs.cpf IN ('87545772920', '16543102047');
 
 -- 2. Verificar lotes criados por esses CPFs
@@ -32,7 +32,7 @@ SELECT
     la.empresa_id,
     COUNT(a.id) as total_avaliacoes
 FROM lotes_avaliacao la
-LEFT JOIN contratantes c ON la.contratante_id = c.id
+LEFT JOIN tomadores c ON la.contratante_id = c.id
 LEFT JOIN avaliacoes a ON a.lote_id = la.id
 WHERE la.liberado_por IN ('87545772920', '16543102047')
 GROUP BY la.id,  la.titulo, la.status, la.liberado_por, la.contratante_id, c.nome, la.clinica_id, la.empresa_id

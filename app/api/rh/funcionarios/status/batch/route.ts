@@ -32,7 +32,7 @@ async function updateLotesStatus(cpf: string) {
       FROM avaliacoes a
       WHERE a.lote_id = $3
     `,
-      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDO, lote.id]
+      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id]
     );
 
     const { ativas, concluidas } = statsResult.rows[0];
@@ -164,7 +164,7 @@ export async function PUT(request: NextRequest) {
         for (const func of funcionariosParaAtualizar) {
           const updateResult = await query(
             'UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != $3 RETURNING id',
-            [StatusAvaliacao.INATIVADA, func.cpf, StatusAvaliacao.CONCLUIDO]
+            [StatusAvaliacao.INATIVADA, func.cpf, StatusAvaliacao.CONCLUIDA]
           );
           console.log(
             `[INFO] Inativadas ${updateResult.rowCount} avaliações do funcionário ${func.cpf}`

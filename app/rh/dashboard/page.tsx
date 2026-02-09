@@ -109,7 +109,7 @@ export default function RhDashboardPage() {
         <ul className="space-y-2 text-gray-600">
           <li>
             • <strong>Empresas Clientes:</strong> Gerencie suas empresas
-            contratantes
+            tomadores
           </li>
           <li>
             • <strong>Laudos:</strong> Acesse e baixe os relatórios gerados

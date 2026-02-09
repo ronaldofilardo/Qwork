@@ -6,36 +6,36 @@
 
 ## Problemas Identificados e Corrigidos
 
-### 1. ❌ Notificações sem `contratante_id`
+### 1. ❌ Notificações sem `tomador_id`
 
-**Erro:** `error: o valor nulo na coluna "contratante_id" da relação "notificacoes" viola a restrição de não-nulo`
+**Erro:** `error: o valor nulo na coluna "tomador_id" da relação "notificacoes" viola a restrição de não-nulo`
 
-**Causa:** Função `criarNotificacao` não estava passando `contratante_id` obrigatório
+**Causa:** Função `criarNotificacao` não estava passando `tomador_id` obrigatório
 
 **Correção:** [lib/notifications/create-notification.ts](lib/notifications/create-notification.ts)
 
 ```typescript
-// ANTES: INSERT sem contratante_id
+// ANTES: INSERT sem tomador_id
 INSERT INTO notificacoes (tipo, destinatario_cpf, ...)
 
-// DEPOIS: Determinar contratante_id baseado no tipo de destinatário
-let contratanteId: number | null = null;
+// DEPOIS: Determinar tomador_id baseado no tipo de destinatário
+let tomadorId: number | null = null;
 
-if (destinatario_tipo === 'contratante') {
-  contratanteId = destinatario_id;
+if (destinatario_tipo === 'tomador') {
+  tomadorId = destinatario_id;
 } else if (destinatario_tipo === 'funcionario') {
   const funcResult = await query(
-    'SELECT contratante_id FROM funcionarios WHERE cpf = $1',
+    'SELECT tomador_id FROM funcionarios WHERE cpf = $1',
     [destinatarioCpf]
   );
-  contratanteId = funcResult.rows[0]?.contratante_id || null;
+  tomadorId = funcResult.rows[0]?.tomador_id || null;
 }
 
-if (!contratanteId) {
-  throw new Error(`Não foi possível determinar contratante_id`);
+if (!tomadorId) {
+  throw new Error(`Não foi possível determinar tomador_id`);
 }
 
-INSERT INTO notificacoes (contratante_id, tipo, destinatario_cpf, ...)
+INSERT INTO notificacoes (tomador_id, tipo, destinatario_cpf, ...)
 ```
 
 ---
@@ -108,12 +108,12 @@ INSERT INTO recibos (
 // ADICIONADO: Ativação pós-pagamento
 try {
   console.log(
-    '[PAGAMENTO_CONFIRMAR] Ativando contratante e criando conta de login'
+    '[PAGAMENTO_CONFIRMAR] Ativando tomador e criando conta de login'
   );
 
-  // 1. Ativar contratante
+  // 1. Ativar tomador
   await query(
-    `UPDATE contratantes 
+    `UPDATE tomadores 
      SET status = 'aprovado',
          ativa = true,
          pagamento_confirmado = true,
@@ -121,7 +121,7 @@ try {
          aprovado_por_cpf = '00000000000',
          atualizado_em = CURRENT_TIMESTAMP
      WHERE id = $1`,
-    [pagamento.contratante_id]
+    [pagamento.tomador_id]
   );
 
   // 2. Criar conta de login com senha = últimos 6 dígitos do CNPJ
@@ -141,7 +141,7 @@ try {
     await query(
       `INSERT INTO funcionarios (
         cpf, nome, email, data_nascimento, senha_hash, perfil, ativo, 
-        contratante_id, criado_em, atualizado_em
+        tomador_id, criado_em, atualizado_em
       ) VALUES (
         $1, $2, $3, '1980-01-01', $4, $5, true, $6, 
         CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
@@ -152,7 +152,7 @@ try {
         pagamento.responsavel_email,
         senhaInicial,
         perfil,
-        pagamento.contratante_id,
+        pagamento.tomador_id,
       ]
     );
 
@@ -202,11 +202,11 @@ Arquivo: [**tests**/integration/fluxo-cadastro-pagamento-ativacao.test.ts](__tes
 
 **Cobertura:**
 
-1. ✅ Criação de contratante com plano fixo
+1. ✅ Criação de tomador com plano fixo
 2. ✅ Geração e aceite de contrato
 3. ✅ Inicialização de pagamento
 4. ✅ Confirmação de pagamento
-5. ✅ Ativação automática do contratante
+5. ✅ Ativação automática do tomador
 6. ✅ Criação automática de conta (funcionário)
 7. ✅ Geração de recibo
 8. ✅ Criação de notificações para parcelas
@@ -225,7 +225,7 @@ pnpm test __tests__/integration/fluxo-cadastro-pagamento-ativacao.test.ts
 
 ✅ **Garantido:** Todos os próximos cadastros funcionarão corretamente, pois as correções foram aplicadas no código-fonte:
 
-1. **Notificações** sempre terão `contratante_id`
+1. **Notificações** sempre terão `tomador_id`
 2. **Recibos** não tentarão usar colunas inexistentes
 3. **Contas** serão criadas automaticamente após pagamento
 4. **Senhas** sempre serão últimos 6 dígitos do CNPJ
@@ -239,7 +239,7 @@ Para testar manualmente um novo cadastro:
 
 ```bash
 # 1. Criar cadastro com plano fixo
-POST /api/cadastro/contratante
+POST /api/cadastro/tomador
 {
   "tipo": "entidade",
   "cnpj": "12345678000199",
@@ -272,7 +272,7 @@ POST /api/auth/login
 
 | Arquivo                                                  | Problema                     | Solução                                                |
 | -------------------------------------------------------- | ---------------------------- | ------------------------------------------------------ |
-| `lib/notifications/create-notification.ts`               | `contratante_id` NULL        | Derivar de `destinatario_id` ou buscar via funcionário |
+| `lib/notifications/create-notification.ts`               | `tomador_id` NULL            | Derivar de `destinatario_id` ou buscar via funcionário |
 | `lib/infrastructure/pdf/generators/receipt-generator.ts` | `p.plano_id` inexistente     | Remover LEFT JOIN com planos                           |
 | `app/api/recibo/gerar/route.ts`                          | `parcela_numero` inexistente | Remover do INSERT                                      |
 | `app/api/pagamento/confirmar/route.ts`                   | Conta não criada             | Adicionar criação automática + senha CNPJ              |
