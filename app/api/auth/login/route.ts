@@ -54,14 +54,16 @@ export async function POST(request: Request) {
       // Normalizar nomes de campos que podem variar após migração
       // IMPORTANTE: usuario_tipo é o campo do banco (funcionario_clinica, funcionario_entidade, rh, gestor, etc)
       // tipo_usuario é a variável JavaScript normalizada para sessão (funcionario, rh, gestor, admin, emissor)
-      const rawPerfil = usuario.usuario_tipo || usuario.tipo_usuario || usuario.perfil;
-      
+      const rawPerfil =
+        usuario.usuario_tipo || usuario.tipo_usuario || usuario.perfil;
+
       // Normalizar perfil: funcionario_clinica e funcionario_entidade viram 'funcionario'
-      usuario.tipo_usuario = 
-        rawPerfil === 'funcionario_clinica' || rawPerfil === 'funcionario_entidade' 
-          ? 'funcionario' 
+      usuario.tipo_usuario =
+        rawPerfil === 'funcionario_clinica' ||
+        rawPerfil === 'funcionario_entidade'
+          ? 'funcionario'
           : rawPerfil;
-      
+
       usuario.tomador_id =
         usuario.entidade_id ||
         usuario.clinica_id ||

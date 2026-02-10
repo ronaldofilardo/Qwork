@@ -70,7 +70,7 @@ Atualizada em migration 1009 (emergência) para remover referência ao campo pro
 async function aplicar() {
   const client = new Client({
     connectionString: DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
   });
 
   try {
@@ -89,9 +89,11 @@ async function aplicar() {
       WHERE proname = 'prevent_mutation_during_emission' 
       AND pronamespace = 'public'::regnamespace;
     `);
-    
+
     if (antes.rows[0]) {
-      const temErro = antes.rows[0].def.includes('SELECT status, emitido_em, processamento_em');
+      const temErro = antes.rows[0].def.includes(
+        'SELECT status, emitido_em, processamento_em'
+      );
       if (temErro) {
         console.log('   ❌ Função referencia processamento_em no SELECT\n');
       } else {
@@ -117,15 +119,21 @@ async function aplicar() {
 
     if (depois.rows[0]) {
       // Buscar especificamente pela parte problemática: SELECT com processamento_em
-      const aindaTemErro = depois.rows[0].def.includes('SELECT status, emitido_em, processamento_em');
+      const aindaTemErro = depois.rows[0].def.includes(
+        'SELECT status, emitido_em, processamento_em'
+      );
       if (aindaTemErro) {
-        console.log('   ❌ ERRO: Função ainda referencia processamento_em no SELECT!');
+        console.log(
+          '   ❌ ERRO: Função ainda referencia processamento_em no SELECT!'
+        );
         console.log('\n   Definição atual:');
         console.log(depois.rows[0].def);
         process.exit(1);
       } else {
         console.log('   ✅ Função corrigida com sucesso!');
-        console.log('   ✅ Query agora usa: SELECT status, emitido_em (SEM processamento_em)\n');
+        console.log(
+          '   ✅ Query agora usa: SELECT status, emitido_em (SEM processamento_em)\n'
+        );
       }
     }
 
@@ -143,10 +151,13 @@ async function aplicar() {
     console.log('=============================================\n');
 
     console.log('Próximos passos:');
-    console.log('  1. Testar /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar');
-    console.log('  2. Testar /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar');
+    console.log(
+      '  1. Testar /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar'
+    );
+    console.log(
+      '  2. Testar /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar'
+    );
     console.log('  3. Monitorar logs de produção\n');
-
   } catch (error) {
     console.error('❌ ERRO:', error.message);
     console.error('\nStack:');

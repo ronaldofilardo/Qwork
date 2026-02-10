@@ -22,7 +22,9 @@ if (!DATABASE_URL) {
 
 if (!DATABASE_URL) {
   console.error('❌ DATABASE_URL não encontrada!');
-  console.error('   Verifique se .env.production.local existe e contém DATABASE_URL');
+  console.error(
+    '   Verifique se .env.production.local existe e contém DATABASE_URL'
+  );
   process.exit(1);
 }
 
@@ -141,12 +143,12 @@ INSERT INTO audit_logs (
 
 async function aplicarCorrecao() {
   console.log('DATABASE_URL:', DATABASE_URL.substring(0, 50) + '...');
-  
+
   const client = new Client({
     connectionString: DATABASE_URL,
     ssl: {
-      rejectUnauthorized: false
-    }
+      rejectUnauthorized: false,
+    },
   });
 
   try {
@@ -167,9 +169,12 @@ async function aplicarCorrecao() {
     `);
 
     if (checkFunction.rows[0]) {
-      const hasProcessamentoEm = checkFunction.rows[0].def.includes('processamento_em');
+      const hasProcessamentoEm =
+        checkFunction.rows[0].def.includes('processamento_em');
       if (hasProcessamentoEm) {
-        console.log('❌ Função AINDA referencia processamento_em (PROBLEMA CONFIRMADO)\n');
+        console.log(
+          '❌ Função AINDA referencia processamento_em (PROBLEMA CONFIRMADO)\n'
+        );
       } else {
         console.log('✅ Função JÁ está corrigida (não precisa aplicar)\n');
         await client.end();
@@ -191,10 +196,14 @@ async function aplicarCorrecao() {
 
     const stillHasError = validate.rows[0].def.includes('processamento_em');
     if (stillHasError) {
-      console.log('❌ ERRO: Função ainda referencia processamento_em após correção!\n');
+      console.log(
+        '❌ ERRO: Função ainda referencia processamento_em após correção!\n'
+      );
       process.exit(1);
     } else {
-      console.log('✅ Validação OK: Função não referencia mais processamento_em\n');
+      console.log(
+        '✅ Validação OK: Função não referencia mais processamento_em\n'
+      );
     }
 
     console.log('=============================================');
@@ -202,10 +211,13 @@ async function aplicarCorrecao() {
     console.log('=============================================\n');
 
     console.log('Próximos passos:');
-    console.log('  1. Testar rota /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar');
-    console.log('  2. Testar rota /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar');
+    console.log(
+      '  1. Testar rota /api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar'
+    );
+    console.log(
+      '  2. Testar rota /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar'
+    );
     console.log('  3. Verificar logs de produção\n');
-
   } catch (error) {
     console.error('❌ ERRO ao aplicar correção:', error.message);
     console.error('\nDetalhes do erro:');

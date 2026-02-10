@@ -56,7 +56,9 @@ export async function POST(request: Request) {
       [avaliacaoId]
     );
 
-    const totalRespostas = parseInt(String(respostasCountResult.rows[0]?.total || '0'));
+    const totalRespostas = parseInt(
+      String(respostasCountResult.rows[0]?.total || '0')
+    );
     const totalPerguntasObrigatorias = grupos.reduce(
       (acc, g) => acc + g.itens.length,
       0

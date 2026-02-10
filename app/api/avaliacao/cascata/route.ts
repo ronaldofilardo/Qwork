@@ -38,7 +38,9 @@ export async function POST(request: Request) {
       questoesCondicionais.set(questao_id as number, condicao);
 
       // Verificar se a questão dependente foi respondida
-      const valorResposta = respostas[`Q${String(questao_dependente)}`] as number | undefined;
+      const valorResposta = respostas[`Q${String(questao_dependente)}`] as
+        | number
+        | undefined;
 
       if (valorResposta !== undefined) {
         let condicaoAtendida = false;

@@ -2,7 +2,10 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { queryWithContext, transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
-import { validarTransicaoStatusAvaliacao, type StatusAvaliacaoType } from '@/lib/types/avaliacao-status';
+import {
+  validarTransicaoStatusAvaliacao,
+  type StatusAvaliacaoType,
+} from '@/lib/types/avaliacao-status';
 
 export async function GET() {
   try {
