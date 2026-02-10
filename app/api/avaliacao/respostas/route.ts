@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { transactionWithContext } from '@/lib/db-security';
+import { queryWithContext, transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
 
     // Se não foi passado avaliacaoId, buscar avaliação atual (não inativada)
     if (!avaliacaoId) {
-      const avaliacaoResult = await query(
+      const avaliacaoResult = await queryWithContext(
         `SELECT id, lote_id FROM avaliacoes
          WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento') AND status != 'inativada'
          ORDER BY inicio DESC LIMIT 1`,
@@ -44,7 +43,7 @@ export async function POST(request: Request) {
 
     // Salvar respostas
     for (const resposta of respostas) {
-      await query(
+      await queryWithContext(
         `INSERT INTO respostas (avaliacao_id, item, valor, grupo)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (avaliacao_id, grupo, item) DO UPDATE SET valor = EXCLUDED.valor, criado_em = NOW()`,
@@ -55,37 +54,20 @@ export async function POST(request: Request) {
     // ✅ ATUALIZAR STATUS PARA 'EM_ANDAMENTO' SE AINDA ESTIVER 'INICIADA'
     // Fazer isso ANTES de verificar auto-conclusão para garantir que o status seja atualizado
     try {
-      const statusRes = await query(
+      const statusRes = await queryWithContext(
         `SELECT status FROM avaliacoes WHERE id = $1`,
         [avaliacaoId]
       );
       const currentStatus = statusRes.rows[0]?.status;
 
       if (currentStatus === 'iniciada') {
-        // Atualizar status diretamente (sem transactionWithContext que pode causar problemas com RLS)
-        try {
-          await query(
-            `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1 AND status = 'iniciada'`,
-            [avaliacaoId]
-          );
-          console.log(
-            `[RESPOSTAS] ✅ Atualizado status da avaliação ${avaliacaoId} para 'em_andamento'`
-          );
-        } catch {
-          // Se falhar, tentar com contexto de segurança
-          console.warn(
-            `[RESPOSTAS] ⚠️ Primeira tentativa falhou, usando transactionWithContext...`
-          );
-          await transactionWithContext(async (queryTx) => {
-            await queryTx(
-              `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1 AND status = 'iniciada'`,
-              [avaliacaoId]
-            );
-          });
-          console.log(
-            `[RESPOSTAS] ✅ Status atualizado com transactionWithContext`
-          );
-        }
+        await queryWithContext(
+          `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1 AND status = 'iniciada'`,
+          [avaliacaoId]
+        );
+        console.log(
+          `[RESPOSTAS] ✅ Atualizado status da avaliação ${avaliacaoId} para 'em_andamento'`
+        );
       }
     } catch (statusErr: any) {
       // Log detalhado do erro para diagnóstico, mas NÃO bloquear o salvamento das respostas
@@ -152,7 +134,7 @@ export async function GET(request: Request) {
     }
 
     // Buscar avaliação atual (não inativada)
-    const avaliacaoResult = await query(
+    const avaliacaoResult = await queryWithContext(
       `SELECT id FROM avaliacoes
        WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento') AND status != 'inativada'
        ORDER BY inicio DESC LIMIT 1`,
@@ -166,7 +148,7 @@ export async function GET(request: Request) {
     const avaliacaoId = avaliacaoResult.rows[0].id;
 
     // Buscar respostas do grupo
-    const respostasResult = await query(
+    const respostasResult = await queryWithContext(
       `SELECT item, valor
        FROM respostas
        WHERE avaliacao_id = $1 AND grupo = $2

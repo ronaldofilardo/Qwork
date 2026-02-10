@@ -30,6 +30,7 @@ export async function verificarEConcluirAvaliacao(
   funcionarioCpf: string
 ): Promise<AutoConclusaoResult> {
   // ✅ VERIFICAR SE COMPLETOU 37 RESPOSTAS
+  // NOTA: Não precisa de contexto RLS aqui - apenas contando respostas
   const countResult = await query(
     `SELECT COUNT(DISTINCT (grupo, item)) as total
      FROM respostas
@@ -53,6 +54,7 @@ export async function verificarEConcluirAvaliacao(
   }
 
   // Verificar status atual da avaliação antes de tentar concluir
+  // NOTA: Não precisa de contexto RLS aqui - apenas leitura de status
   const statusCheckResult = await query(
     `SELECT status FROM avaliacoes WHERE id = $1`,
     [avaliacaoId]
