@@ -1,5 +1,6 @@
 import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
+import { withTransactionAsGestor } from '@/lib/db-transaction';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -141,41 +142,51 @@ export const POST = async (req: Request) => {
       console.log(`[DEBUG] DataFiltro: ${dataFiltro}, Tipo: ${tipo}`);
 
       if (funcionariosElegiveis.length > 0) {
-        // ✅ CORREÇÃO: Lote de entidade usa entidade_id (não tomador_id)
-        // Usa queryAsGestorEntidade() diretamente pois sessão já foi validada em requireEntity()
-        const loteResult = await queryAsGestorEntidade(
-          `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, liberado_por, numero_ordem)
-           VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
-          [
-            entidadeId,
-            descricao ||
-              `Lote ${String(numeroOrdem)} liberado para ${String(entidadeNome)}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis vinculados diretamente à entidade.`,
-            tipo || 'completo',
-            session.cpf,
-            numeroOrdem,
-          ]
-        );
+        // ✅ CORREÇÃO: Usar transação para garantir atomicidade (lote + avaliações)
+        // withTransactionAsGestor mantém contexto de auditoria durante toda a transação
+        const resultado = await withTransactionAsGestor(async (client) => {
+          // Criar lote
+          const loteResult = await client.query(
+            `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, liberado_por, numero_ordem)
+             VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
+            [
+              entidadeId,
+              descricao ||
+                `Lote ${String(numeroOrdem)} liberado para ${String(entidadeNome)}. Inclui ${funcionariosElegiveis.length} funcionário(s) elegíveis vinculados diretamente à entidade.`,
+              tipo || 'completo',
+              session.cpf,
+              numeroOrdem,
+            ]
+          );
 
-        const lote = loteResult.rows[0];
+          const loteData = loteResult.rows[0];
 
-        const agora = new Date().toISOString();
-        let avaliacoesCriadas = 0;
+          const agora = new Date().toISOString();
+          let contadorAvaliacoes = 0;
 
-        for (const func of funcionariosElegiveis) {
-          try {
-            await queryAsGestorEntidade(
-              `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id) VALUES ($1, 'iniciada', $2, $3)`,
-              [func.funcionario_cpf, agora, lote.id]
-            );
-            avaliacoesCriadas++;
-          } catch (error) {
-            console.error(
-              'Erro ao criar avaliação para',
-              func.funcionario_cpf,
-              error
-            );
+          for (const func of funcionariosElegiveis) {
+            try {
+              await client.query(
+                `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id) VALUES ($1, 'iniciada', $2, $3)`,
+                [func.funcionario_cpf, agora, loteData.id]
+              );
+              contadorAvaliacoes++;
+            } catch (error) {
+              console.error(
+                'Erro ao criar avaliação para',
+                func.funcionario_cpf,
+                error
+              );
+            }
           }
-        }
+
+          // Validar que pelo menos uma avaliação foi criada
+          if (contadorAvaliacoes === 0) {
+            throw new Error('Nenhuma avaliação foi criada - rollback do lote');
+          }
+
+          return { lote: loteData, avaliacoesCriadas: contadorAvaliacoes };
+        });
 
         // Registrar auditoria da liberação do lote (tomador)
         try {
@@ -186,16 +197,16 @@ export const POST = async (req: Request) => {
               session.cpf,
               'liberar_lote',
               'lotes_avaliacao',
-              lote.id,
+              resultado.lote.id,
               JSON.stringify({
                 entidade_id: entidadeId,
                 entidade_nome: entidadeNome,
                 tipo: tipo || 'completo',
-                lote_id: lote.id,
+                lote_id: resultado.lote.id,
                 descricao: descricao || null,
                 data_filtro: dataFiltro || null,
-                numero_ordem: lote.numero_ordem,
-                avaliacoes_criadas: avaliacoesCriadas,
+                numero_ordem: resultado.lote.numero_ordem,
+                avaliacoes_criadas: resultado.avaliacoesCriadas,
                 total_funcionarios: funcionariosElegiveis.length,
               }),
               req.headers.get('x-forwarded-for') ||
@@ -214,9 +225,9 @@ export const POST = async (req: Request) => {
           empresaId: null,
           empresaNome: entidadeNome,
           created: true,
-          loteId: lote.id,
-          numero_ordem: lote.numero_ordem,
-          avaliacoesCriadas,
+          loteId: resultado.lote.id,
+          numero_ordem: resultado.lote.numero_ordem,
+          avaliacoesCriadas: resultado.avaliacoesCriadas,
           funcionariosConsiderados: funcionariosElegiveis.length,
         });
       } else {
