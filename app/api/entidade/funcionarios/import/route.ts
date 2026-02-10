@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
+import { withTransactionAsGestor } from '@/lib/db-transaction';
 import {
   parseXlsxBufferToRows,
   parseDateCell,
@@ -191,72 +192,60 @@ export async function POST(request: Request) {
       );
     }
 
-    // Inserir em transação
-    // IMPORTANTE: Configurar variáveis de sessão DENTRO da transação para garantir auditoria
-    await queryAsGestorEntidade('BEGIN');
-    
+    // Inserir em transação usando client dedicado (solução robusta para auditoria)
     try {
-      // Configurar contexto de auditoria (CPF e perfil) para esta transação
-      // DEVE ser feito APÓS o BEGIN para garantir que persiste durante todos os INSERTs
-      await queryAsGestorEntidade(
-        `SELECT set_config('app.current_user_cpf', $1, false)`,
-        [session.cpf]
-      );
-      await queryAsGestorEntidade(
-        `SELECT set_config('app.current_user_perfil', $1, false)`,
-        [session.perfil]
-      );
-      
-      let created = 0;
-      for (const r of toInsert) {
-        const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
+      const result = await withTransactionAsGestor(async (client) => {
+        let created = 0;
+        
+        for (const r of toInsert) {
+          const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
 
-        // ARQUITETURA SEGREGADA: Inserir em 2 etapas
-        // 1. Inserir funcionário (sem FKs diretas)
-        const insertResult = await queryAsGestorEntidade(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
-           RETURNING id`,
-          [
-            r.cpf,
-            r.nome,
-            r.data_nascimento,
-            r.setor,
-            r.funcao,
-            r.email,
-            senhaHash,
-            r.matricula || null,
-            r.nivel_cargo || null,
-            r.turno || null,
-            r.escala || null,
-          ]
-        );
+          // ARQUITETURA SEGREGADA: Inserir em 2 etapas
+          // 1. Inserir funcionário (sem FKs diretas)
+          const insertResult = await client.query(
+            `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
+             RETURNING id`,
+            [
+              r.cpf,
+              r.nome,
+              r.data_nascimento,
+              r.setor,
+              r.funcao,
+              r.email,
+              senhaHash,
+              r.matricula || null,
+              r.nivel_cargo || null,
+              r.turno || null,
+              r.escala || null,
+            ]
+          );
 
-        const funcionarioId = insertResult.rows[0].id;
+          const funcionarioId = insertResult.rows[0].id;
 
-        // 2. Criar relacionamento na tabela funcionarios_entidades
-        await queryAsGestorEntidade(
-          `INSERT INTO funcionarios_entidades (funcionario_id, entidade_id, ativo, data_vinculo)
-           VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
-          [funcionarioId, entidadeId]
-        );
+          // 2. Criar relacionamento na tabela funcionarios_entidades
+          await client.query(
+            `INSERT INTO funcionarios_entidades (funcionario_id, entidade_id, ativo, data_vinculo)
+             VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
+            [funcionarioId, entidadeId]
+          );
 
-        created++;
-      }
+          created++;
+        }
 
-      await queryAsGestorEntidade('COMMIT');
+        return { created };
+      });
 
       const maskedCpf =
         typeof session.cpf === 'string'
           ? `***${String(session.cpf).slice(-4)}`
           : session.cpf;
       console.log(
-        `[AUDIT] Importação em massa: ${created} funcionários importados pela entidade ${entidadeId} por ${maskedCpf}`
+        `[AUDIT] Importação em massa: ${result.created} funcionários importados pela entidade ${entidadeId} por ${maskedCpf}`
       );
 
-      return NextResponse.json({ success: true, created });
+      return NextResponse.json({ success: true, created: result.created });
     } catch (err) {
-      await queryAsGestorEntidade('ROLLBACK');
       console.error(
         'Erro ao inserir funcionários em massa:',
         err && (err as any).message ? (err as any).message : err

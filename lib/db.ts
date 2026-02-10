@@ -663,6 +663,19 @@ export function getDatabaseInfo() {
   };
 }
 
+/**
+ * Retorna o pool de conexões PostgreSQL local (dev/test)
+ * Usado por helpers de transação que precisam de PoolClient dedicado
+ */
+export function getPool(): pg.Pool {
+  if (!localPool) {
+    throw new Error(
+      'Pool de conexões não disponível. getPool() só funciona em ambiente local (dev/test).'
+    );
+  }
+  return localPool;
+}
+
 // Fechar pool local (útil para testes)
 export async function closePool() {
   if (localPool) {
