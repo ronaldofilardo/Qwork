@@ -117,15 +117,41 @@ export const GET = async (
       console.log(
         `[BACKBLAZE] Presigned URL gerada com sucesso para: ${laudo.arquivo_remoto_key}`
       );
-      return NextResponse.redirect(presignedUrl, 302);
+
+      // SOLUÇÃO ROBUSTA: Fazer proxy do arquivo (server-side download)
+      // Isso funciona em qualquer ambiente e evita problemas de CORS/redirect
+      console.log(`[BACKBLAZE] Fazendo download server-side do PDF...`);
+      const pdfResponse = await fetch(presignedUrl);
+      
+      if (!pdfResponse.ok) {
+        console.error(`[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText}`);
+        return NextResponse.json(
+          { error: 'Erro ao acessar arquivo no storage', success: false },
+          { status: 500 }
+        );
+      }
+
+      const pdfBuffer = await pdfResponse.arrayBuffer();
+      console.log(`[BACKBLAZE] PDF baixado com sucesso (${pdfBuffer.byteLength} bytes)`);
+
+      // Retornar PDF diretamente ao cliente
+      return new NextResponse(pdfBuffer, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename="laudo-${laudo.id}.pdf"`,
+          'Content-Length': pdfBuffer.byteLength.toString(),
+          'Cache-Control': 'private, max-age=0',
+        },
+      });
     } catch (backblazeError) {
       console.error(
-        '[BACKBLAZE] Erro ao gerar presigned URL:',
+        '[BACKBLAZE] Erro ao processar arquivo:',
         backblazeError
       );
       return NextResponse.json(
         {
-          error: 'Erro ao gerar acesso ao arquivo do laudo',
+          error: 'Erro ao acessar arquivo do laudo',
           success: false,
           detalhes:
             backblazeError instanceof Error
