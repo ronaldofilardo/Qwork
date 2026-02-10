@@ -62,6 +62,14 @@ export default function PagamentosContent() {
       if (!response.ok) throw new Error('Erro ao carregar solicitações');
 
       const data = await response.json();
+      
+      // Debug temporário
+      console.log('[DEBUG] Solicitações carregadas:', {
+        total: data.total,
+        count: data.solicitacoes?.length || 0,
+        solicitacoes: data.solicitacoes
+      });
+      
       setSolicitacoes(data.solicitacoes || []);
     } catch (error) {
       console.error('Erro ao carregar solicitações:', error);

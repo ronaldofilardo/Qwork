@@ -20,6 +20,13 @@ export async function GET() {
         solicitacao_emissao_em DESC
     `);
 
+    // Debug logs
+    console.log('[API /admin/emissoes] Query executada com sucesso');
+    console.log('[API /admin/emissoes] Total de rows:', result.rows.length);
+    if (result.rows.length > 0) {
+      console.log('[API /admin/emissoes] Primeira row:', result.rows[0]);
+    }
+
     return NextResponse.json({
       solicitacoes: result.rows,
       total: result.rows.length,
