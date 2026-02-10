@@ -267,7 +267,7 @@ export const POST = async (req: Request) => {
     // ✅ CORREÇÃO: Usar transação explícita para garantir contexto de auditoria
     // withTransactionAsGestor mantém app.current_user_cpf durante toda a transação
     // Isso evita erro "SECURITY: app.current_user_cpf not set" após falhas parciais
-    
+
     const resultado = await withTransactionAsGestor(async (client) => {
       // Verificar se o CPF do usuário está presente em `entidades_senhas`.
       // A FK `lotes_avaliacao.liberado_por` referencia `entidades_senhas(cpf)`,
@@ -303,15 +303,18 @@ export const POST = async (req: Request) => {
       // IMPORTANTE: Reservar ID do laudo igual ao ID do lote
       // Isso garante que laudo.id === lote.id sempre
       // O laudo será preenchido quando emissor clicar "Gerar Laudo"
+      // ✅ SAVEPOINT: Isola erro do laudo para não abortar toda a transação
       try {
+        await client.query('SAVEPOINT laudo_reserva');
         await client.query(
           `INSERT INTO laudos (id, lote_id, status, criado_em, atualizado_em)
-           VALUES ($1, $1, 'rascunho', NOW(), NOW())
-           ON CONFLICT (id) DO NOTHING`,
+           VALUES ($1, $1, 'rascunho', NOW(), NOW())`,
           [lote.id]
         );
+        await client.query('RELEASE SAVEPOINT laudo_reserva');
       } catch (laudoReservaErr: any) {
-        // Log mas não aborta - emissor criará laudo na emissão se necessário
+        // Rollback apenas do SAVEPOINT, não da transação inteira
+        await client.query('ROLLBACK TO SAVEPOINT laudo_reserva');
         console.warn(
           `[WARN] Falha ao reservar laudo para lote ${lote.id}: ${laudoReservaErr.message}`
         );
@@ -396,14 +399,18 @@ export const POST = async (req: Request) => {
         );
       }
 
-      return { lote, avaliacoesCriadas, detalhes, errosDetalhados, resumoInclusao };
+      return {
+        lote,
+        avaliacoesCriadas,
+        detalhes,
+        errosDetalhados,
+        resumoInclusao,
+      };
     });
 
     // Validar resultado da transação
     if (resultado.avaliacoesCriadas === 0) {
-      console.error(
-        `[ERRO CRÍTICO] Nenhuma avaliação foi criada.`
-      );
+      console.error(`[ERRO CRÍTICO] Nenhuma avaliação foi criada.`);
       console.error('[ERRO] Detalhes dos erros:', resultado.errosDetalhados);
 
       return NextResponse.json(
