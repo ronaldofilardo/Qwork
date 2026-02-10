@@ -150,12 +150,14 @@ export async function queryAsGestor<T = Record<string, unknown>>(
     );
   }
 
-  // 🔒 SEGURANÇA: Configurar variáveis de contexto para auditoria (mesmo sem RLS)
-  await query('SELECT set_config($1, $2, false)', [
+  // 🔒 SEGURANÇA: Configurar variáveis de contexto para auditoria
+  // Usar 'true' para manter as variáveis durante toda a conexão/sessão
+  // (não apenas a transação atual - importante para BEGIN/COMMIT)
+  await query('SELECT set_config($1, $2, true)', [
     'app.current_user_cpf',
     session.cpf,
   ]);
-  await query('SELECT set_config($1, $2, false)', [
+  await query('SELECT set_config($1, $2, true)', [
     'app.current_user_perfil',
     session.perfil,
   ]);
