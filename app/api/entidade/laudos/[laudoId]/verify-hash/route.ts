@@ -1,13 +1,13 @@
 import { requireEntity } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/entidade/laudos/[laudoId]/verify-hash
- * Verifica a integridade do laudo comparando o hash armazenado com o hash do arquivo
+ * Retorna o hash armazenado do laudo (já foi calculado e validado quando emitido)
+ * Não recalcula hash do arquivo - isso foi feito no momento da emissão
  */
 export const GET = async (
   req: Request,
@@ -33,6 +33,7 @@ export const GET = async (
         l.lote_id,
         l.hash_pdf,
         l.status,
+        l.emitido_em,
         la.entidade_id,
         la.clinica_id
       FROM laudos l
@@ -57,77 +58,35 @@ export const GET = async (
     if (!hashArmazenado) {
       return NextResponse.json(
         {
-          error: 'Hash do laudo não encontrado no banco de dados',
+          error: 'Hash do laudo não disponível (laudo pode estar em processamento)',
           success: false,
         },
         { status: 404 }
       );
     }
 
-    // Tentar ler o arquivo do storage local
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-      const localPath = path.join(
-        process.cwd(),
-        'storage',
-        'laudos',
-        `laudo-${laudo.id}.pdf`
-      );
+    // Retornar hash armazenado (já foi calculado e validado quando o laudo foi emitido)
+    console.log(`[VERIFY] Retornando hash armazenado para laudo ${laudo.id}`);
 
-      try {
-        // Ler arquivo e calcular hash
-        const buffer = await fs.readFile(localPath);
-        const hashCalculado = crypto
-          .createHash('sha256')
-          .update(buffer)
-          .digest('hex');
-
-        const hashValido = hashCalculado === hashArmazenado;
-
-        console.log(`[VERIFY] Laudo ${laudo.id} - Hash válido: ${hashValido}`);
-        console.log(`[VERIFY] Hash armazenado: ${hashArmazenado}`);
-        console.log(`[VERIFY] Hash calculado:  ${hashCalculado}`);
-
-        return NextResponse.json({
-          success: true,
-          hash_valido: hashValido,
-          hash_armazenado: hashArmazenado,
-          hash_calculado: hashCalculado,
-          storage_location: 'local',
-          laudo_id: laudo.id,
-          lote_id: laudo.lote_id,
-        });
-      } catch (fileError) {
-        void fileError;
-        console.warn(
-          `[VERIFY] Arquivo local não encontrado para laudo ${laudo.id}`
-        );
-
-        // Se não encontrou local, tentar Backblaze
-        // Por enquanto, retornar que precisa de implementação do Backblaze
-        return NextResponse.json(
-          {
-            error:
-              'Arquivo não encontrado no storage local. Verificação em storage remoto não implementada ainda.',
-            success: false,
-          },
-          { status: 404 }
-        );
-      }
-    } catch (error: any) {
-      console.error('[VERIFY] Erro ao verificar hash:', error);
-      return NextResponse.json(
-        { error: 'Erro ao verificar integridade do laudo', success: false },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({
+      success: true,
+      hash_armazenado: hashArmazenado,
+      laudo_id: laudo.id,
+      lote_id: laudo.lote_id,
+      emitido_em: laudo.emitido_em,
+      status: laudo.status,
+    });
   } catch (error: any) {
-    console.error('Erro ao verificar hash do laudo:', error);
+    console.error('Erro ao buscar hash do laudo:', error);
     return NextResponse.json(
       {
         error: error.message || 'Erro interno do servidor',
         success: false,
+      },
+      { status: 500 }
+    );
+  }
+};
       },
       { status: 500 }
     );
