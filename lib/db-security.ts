@@ -374,118 +374,107 @@ export async function queryWithEmpresaFilter<T = unknown>(
 
 /**
  * Executa múltiplas queries em uma transação com contexto de segurança
+ * CRÍTICO: Usa cliente dedicado do pool para garantir mesma conexão
  * Útil para operações que precisam de atomicidade e RLS
  */
 export async function transactionWithContext<T = void>(
   callback: (query: typeof queryWithContext) => Promise<T>
 ): Promise<T> {
-  try {
-    const session = getSession();
+  const session = getSession();
 
-    // Iniciar transação
-    await query('BEGIN');
+  if (!session) {
+    throw new Error('SEGURANÇA: Sessão não encontrada para transação');
+  }
 
-    // Configurar contexto se há sessão
-    if (session) {
-      // Validar e sanitizar valores
-      const cpf = session.cpf.replace(/[^0-9]/g, '');
-      const perfil = session.perfil.toLowerCase().replace(/[^a-z_]/g, '');
+  // Validar e sanitizar valores
+  const cpf = session.cpf.replace(/[^0-9]/g, '');
+  const perfil = session.perfil.toLowerCase().replace(/[^a-z_]/g, '');
 
-      // Validações de segurança
-      if (!cpf || cpf.length !== 11) {
-        throw new Error('CPF inválido na sessão');
-      }
+  // Validações de segurança
+  if (!cpf || cpf.length !== 11) {
+    throw new Error('CPF inválido na sessão');
+  }
 
-      if (!isValidCPF(cpf)) {
-        throw new Error('Formato de CPF inválido');
-      }
+  if (!isValidCPF(cpf)) {
+    throw new Error('Formato de CPF inválido');
+  }
 
-      if (!perfil || !isValidPerfil(perfil)) {
-        throw new Error('Perfil inválido na sessão');
-      }
+  if (!perfil || !isValidPerfil(perfil)) {
+    throw new Error('Perfil inválido na sessão');
+  }
 
-      // 🔒 NOTA: Não revalidamos CPF aqui porque:
-      // - A sessão foi validada por requireAuth() ou requireRHWithEmpresaAccess() antes
-      // - Revalidar aqui pode causar conflito com RLS (bloqueio antes de set_config)
-      // - Entidade também não revalida, apenas confia na validação antes
-      // - Se CPF for inválido, RLS vai bloquear queries anyway
+  console.log(`[transactionWithContext] 🔄 TRANSAÇÃO DEDICADA: CPF=${cpf}, Perfil=${perfil}`);
 
-      // Definir variáveis de contexto usando parametrização segura
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_user_cpf',
-        cpf,
-      ]);
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_user_perfil',
-        perfil,
-      ]);
+  // ✅ USAR transaction() de lib/db.ts que garante cliente dedicado (mesma conexão)
+  return await transaction(async (txClient) => {
+    // FASE 1: Buscar IDs de contexto (dentro da transação, mesma conexão)
+    let clinicaId: string | null = null;
+    let entidadeId: string | null = null;
 
-      // 🔒 Configurar clinica_id apenas se a sessão já tiver
-      // IMPORTANTE: O clinica_id já foi validado ANTES por requireRHWithEmpresaAccess()
-      // ou requireEntity(), então confiamos no valor da sessão (sem refazer buscas no banco)
-      if (session.clinica_id) {
-        const clinicaId = session.clinica_id.toString();
-
-        // Validação de segurança: garantir que é um número
-        if (!/^\d+$/.test(clinicaId)) {
-          throw new Error('ID de clínica inválido na sessão');
-        }
-
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_clinica_id',
-          clinicaId,
-        ]);
-      } else if (perfil === 'rh') {
-        // Para RH, clinica_id é obrigatória
-        // Se não tiver aqui, significa que a autenticação falhou antes (bug em outra camada)
-        throw new Error(
-          'Contexto RLS: RH sem clinica_id na sessão. Erro na camada de autenticação.'
+    if (perfil === 'rh') {
+      try {
+        const clinicaResult = await txClient.query(
+          `SELECT DISTINCT ec.clinica_id
+           FROM funcionarios f
+           JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
+           JOIN empresas_clientes ec ON ec.id = fc.empresa_id
+           WHERE f.cpf = $1 AND fc.ativo = true
+           LIMIT 1`,
+          [cpf]
         );
+        if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
+          clinicaId = clinicaResult.rows[0].clinica_id.toString();
+        }
+      } catch (err) {
+        console.warn('[transactionWithContext] Erro ao buscar clinica_id:', err);
       }
-      // Para funcionários normais, clinica_id é opcional (não necessário para avaliações)
     }
 
-    // Executar callback com queries e capturar resultado
+    if (perfil === 'gestor') {
+      try {
+        const entidadeResult = await txClient.query(
+          `SELECT DISTINCT fe.entidade_id
+           FROM funcionarios f
+           JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
+           WHERE f.cpf = $1 AND fe.ativo = true
+           LIMIT 1`,
+          [cpf]
+        );
+        if (entidadeResult.rows.length > 0 && entidadeResult.rows[0].entidade_id) {
+          entidadeId = entidadeResult.rows[0].entidade_id.toString();
+        }
+      } catch (err) {
+        console.warn('[transactionWithContext] Erro ao buscar entidade_id:', err);
+      }
+    }
+
+    // FASE 2: Configurar variáveis RLS (SET LOCAL - só para esta transação)
+    await txClient.query('SELECT set_config($1, $2, true)', ['app.current_user_cpf', cpf]);
+    await txClient.query('SELECT set_config($1, $2, true)', ['app.current_perfil', perfil]);
+    await txClient.query('SELECT set_config($1, $2, true)', ['app.current_user_perfil', perfil]);
+    await txClient.query('SELECT set_config($1, $2, true)', ['app.current_user_tipo', perfil]);
+
+    if (clinicaId) {
+      await txClient.query('SELECT set_config($1, $2, true)', ['app.current_clinica_id', clinicaId]);
+    }
+
+    if (entidadeId) {
+      await txClient.query('SELECT set_config($1, $2, true)', ['app.current_entidade_id', entidadeId]);
+      await txClient.query('SELECT set_config($1, $2, true)', ['app.current_contratante_id', entidadeId]);
+    }
+
+    console.log('[transactionWithContext] ✅ RLS configurado (transação dedicada)');
+
+    // FASE 3: Executar callback (mesma conexão/transação/cliente)
+    // callback recebe uma função que usa txClient.query
     const result = await callback(async (text, params) => {
-      return await query(text, params);
+      return await txClient.query(text, params);
     });
 
-    // Commit
-    await query('COMMIT');
+    console.log('[transactionWithContext] ✅ Transação concluída');
+
     return result;
-  } catch (error) {
-    // Rollback em caso de erro
-    try {
-      await query('ROLLBACK');
-    } catch (rollbackError) {
-      console.error(
-        '[transactionWithContext] Erro ao fazer rollback:',
-        rollbackError
-      );
-    }
-
-    console.error('[transactionWithContext] Erro na transação:', error);
-
-    // Logar tentativa de acesso negado se for erro de segurança
-    if (error instanceof Error && error.message.includes('inválido')) {
-      try {
-        await query(`SELECT log_access_denied($1, $2, $3, $4)`, [
-          'TRANSACTION',
-          'database',
-          null,
-          error.message,
-        ]);
-      } catch (logError) {
-        // Ignorar erro de log
-        console.error(
-          '[transactionWithContext] Erro ao logar acesso negado:',
-          logError
-        );
-      }
-    }
-
-    throw error;
-  }
+  }, session);
 }
 
 /**
