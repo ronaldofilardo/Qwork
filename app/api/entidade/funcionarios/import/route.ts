@@ -192,8 +192,21 @@ export async function POST(request: Request) {
     }
 
     // Inserir em transação
+    // IMPORTANTE: Configurar variáveis de sessão DENTRO da transação para garantir auditoria
     await queryAsGestorEntidade('BEGIN');
+    
     try {
+      // Configurar contexto de auditoria (CPF e perfil) para esta transação
+      // DEVE ser feito APÓS o BEGIN para garantir que persiste durante todos os INSERTs
+      await queryAsGestorEntidade(
+        `SELECT set_config('app.current_user_cpf', $1, false)`,
+        [session.cpf]
+      );
+      await queryAsGestorEntidade(
+        `SELECT set_config('app.current_user_perfil', $1, false)`,
+        [session.perfil]
+      );
+      
       let created = 0;
       for (const r of toInsert) {
         const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
