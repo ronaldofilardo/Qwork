@@ -9,6 +9,7 @@
 ## 🚨 Problema Identificado
 
 ### Erro em Produção
+
 ```
 NeonDbError: Laudo with id 1003 already exists
     at /var/task/node_modules/@neondatabase/serverless/index.js:3023:19
@@ -21,26 +22,31 @@ Error: SECURITY: app.current_user_cpf not set. Cannot determine user for audit.
 ```
 
 ### Fluxo do Erro
+
 1. **Lote criado com sucesso** → `lote_id: 1003`
 2. **Reserva do laudo falha** → `INSERT INTO laudos (id=1003)` → Trigger detecta duplicata → RAISE exception
 3. **Contexto de auditoria perdido** → `app.current_user_cpf` não está mais definido
 4. **INSERT avaliacoes falha** → `audit_trigger_func` tenta chamar `current_user_cpf()` → Erro de segurança
 
 ### Causa Raiz
+
 O código tinha este comentário:
+
 ```typescript
 // ✅ CORREÇÃO: Remover transação explícita para evitar rollback completo
 // em caso de erro na reserva do laudo
-// Cada query roda em autocommit (como no fluxo Entidade), 
+// Cada query roda em autocommit (como no fluxo Entidade),
 // tornando o sistema mais resiliente
 ```
 
 **Análise:** Esta "correção" anterior estava ERRADA. Remover a transação causou:
+
 - ❌ Perda do contexto `app.current_user_cpf` após erros
 - ❌ Queries rodando em sessões separadas sem estado compartilhado
 - ❌ Violação dos requisitos de auditoria
 
 **Comparação com Entidade:**
+
 - ✅ Route entidade usa `queryAsGestorEntidade` consistentemente
 - ✅ Mantém contexto de sessão mesmo sem transação explícita
 - ✅ Não tem comentário sobre "remover transação"
@@ -52,15 +58,18 @@ O código tinha este comentário:
 ### Contexto de Auditoria no PostgreSQL
 
 #### Session-level Config (ERRADO para recuperação de erros)
+
 ```sql
 -- lib/db-gestor.ts usa isso (terceiro parâmetro = true)
 SELECT set_config('app.current_user_cpf', '12345678900', true);
 ```
+
 - ✅ Persiste durante toda a sessão
 - ❌ **Pode ser perdido após erros/exceções** dependendo do driver
 - ❌ Não é isolado entre transações concorrentes
 
 #### Transaction-level Config (CORRETO)
+
 ```sql
 -- lib/db-transaction.ts usa isso (SET LOCAL)
 BEGIN;
@@ -69,6 +78,7 @@ SET LOCAL app.current_user_perfil = 'rh';
 -- ... queries ...
 COMMIT;
 ```
+
 - ✅ **Persiste durante toda a transação, mesmo após erros**
 - ✅ Isolamento garantido (cada transação tem seu próprio estado)
 - ✅ Rollback automático se qualquer query falhar
@@ -80,12 +90,15 @@ COMMIT;
 ### Mudanças no Código
 
 #### 1. Import Adicionado
+
 ```typescript
 import { withTransactionAsGestor } from '@/lib/db-transaction';
 ```
 
 #### 2. Envolver Lógica em Transação
+
 **ANTES:**
+
 ```typescript
 // Queries individuais sem transação
 const loteResult = await queryAsGestorRH(`INSERT INTO lotes_avaliacao ...`);
@@ -101,6 +114,7 @@ for (const func of funcionarios) {
 ```
 
 **DEPOIS:**
+
 ```typescript
 const resultado = await withTransactionAsGestor(async (client) => {
   // 1. Verificar liberado_por
@@ -162,6 +176,7 @@ const resultado = await withTransactionAsGestor(async (client) => {
 ```
 
 #### 3. Retornar Resultado
+
 ```typescript
 return NextResponse.json({
   success: true,
@@ -180,20 +195,24 @@ return NextResponse.json({
 ## 🎯 Benefícios da Correção
 
 ### 1. Contexto de Auditoria Mantido
+
 - ✅ `SET LOCAL app.current_user_cpf` persiste durante toda a transação
 - ✅ Mesmo se laudo falhar, avaliacoes são criadas com contexto correto
 - ✅ Triggers de auditoria funcionam corretamente
 
 ### 2. Atomicidade
+
 - ✅ Se qualquer avaliação falhar criticamente, **ROLLBACK automático**
 - ✅ Lote só é criado se pelo menos uma avaliação for bem-sucedida
 - ✅ Não ficam lotes órfãos sem avaliações
 
 ### 3. Isolamento
+
 - ✅ Cada requisição tem sua própria transação com estado isolado
 - ✅ Concorrência segura entre múltiplos RHs/gestores
 
 ### 4. Recuperação de Erros
+
 - ✅ `ON CONFLICT DO NOTHING` no laudo evita exception
 - ✅ `try-catch` interno ao withTransactionAsGestor permite log sem abortar
 - ✅ Se `avaliacoesCriadas === 0`, throw Error → ROLLBACK de tudo
@@ -202,26 +221,27 @@ return NextResponse.json({
 
 ## 📊 Comparação: Antes vs Depois
 
-| Aspecto | ANTES (sem transação) | DEPOIS (com withTransactionAsGestor) |
-|---------|------------------------|--------------------------------------|
-| **Contexto de auditoria após erro** | ❌ Perdido | ✅ Mantido |
-| **Isolamento** | ❌ Session-level (compartilhado) | ✅ Transaction-level (isolado) |
-| **Atomicidade** | ❌ Lote criado mesmo se avaliacoes falharem | ✅ Rollback se nenhuma avaliação criada |
-| **Recuperação de erro no laudo** | ❌ Perde contexto, próximas queries falham | ✅ Contexto preservado, avaliacoes criadas normalmente |
-| **Lotes órfãos** | ❌ Possível (lote sem avaliacoes) | ✅ Impossível (rollback automático) |
+| Aspecto                             | ANTES (sem transação)                       | DEPOIS (com withTransactionAsGestor)                   |
+| ----------------------------------- | ------------------------------------------- | ------------------------------------------------------ |
+| **Contexto de auditoria após erro** | ❌ Perdido                                  | ✅ Mantido                                             |
+| **Isolamento**                      | ❌ Session-level (compartilhado)            | ✅ Transaction-level (isolado)                         |
+| **Atomicidade**                     | ❌ Lote criado mesmo se avaliacoes falharem | ✅ Rollback se nenhuma avaliação criada                |
+| **Recuperação de erro no laudo**    | ❌ Perde contexto, próximas queries falham  | ✅ Contexto preservado, avaliacoes criadas normalmente |
+| **Lotes órfãos**                    | ❌ Possível (lote sem avaliacoes)           | ✅ Impossível (rollback automático)                    |
 
 ---
 
 ## 🧪 Testes Recomendados
 
 ### 1. Teste de Laudo Duplicado
+
 ```bash
 # Criar lote manualmente com id=2000
-INSERT INTO lotes_avaliacao (id, clinica_id, empresa_id, ...) 
+INSERT INTO lotes_avaliacao (id, clinica_id, empresa_id, ...)
 VALUES (2000, 1, 10, ...);
 
 # Criar laudo manualmente com id=2000
-INSERT INTO laudos (id, lote_id, status) 
+INSERT INTO laudos (id, lote_id, status)
 VALUES (2000, 2000, 'emitido');
 
 # Tentar criar novo lote (deve alocar id=2001, não 2000)
@@ -236,6 +256,7 @@ POST /api/rh/liberar-lote
 ```
 
 ### 2. Teste de Falha Total
+
 ```bash
 # Desativar empresa temporariamente
 UPDATE empresas SET ativa = false WHERE id = 10;
@@ -249,6 +270,7 @@ POST /api/rh/liberar-lote
 ```
 
 ### 3. Teste de Falha Parcial
+
 ```bash
 # Inserir funcionário inválido (CPF não existe)
 POST /api/rh/liberar-lote
@@ -260,7 +282,7 @@ POST /api/rh/liberar-lote
   ]
 }
 
-# ✅ Esperado: 
+# ✅ Esperado:
 # - Lote criado
 # - Avaliacao para 11111111111 criada
 # - Avaliacao para 99999999999 falha (registrado em errosDetalhados)
@@ -272,11 +294,13 @@ POST /api/rh/liberar-lote
 ## 📝 Lições Aprendidas
 
 ### ❌ Anti-padrões Identificados
+
 1. **"Remover transação para resiliência"** → Na verdade causa perda de contexto
 2. **Confiar em session-level config** → Não sobrevive a erros
 3. **Assumir que ON CONFLICT não lança exception** → Triggers podem lançar antes do CONFLICT
 
 ### ✅ Boas Práticas Validadas
+
 1. **Use transações para operações multi-step** → Garante atomicidade e contexto
 2. **SET LOCAL dentro de BEGIN/COMMIT** → Contexto isolado e persistente
 3. **withTransactionAsGestor para gestores** → Valida perfil + mantém contexto
@@ -307,6 +331,7 @@ POST /api/rh/liberar-lote
 ## 🚀 Próximos Passos
 
 1. **Deploy em DEV**
+
    ```bash
    git add app/api/rh/liberar-lote/route.ts
    git commit -m "fix: restaurar transação em RH liberar-lote para manter contexto de auditoria"
@@ -323,15 +348,16 @@ POST /api/rh/liberar-lote
    - Monitorar logs de produção
 
 4. **Limpar laudo 1003 duplicado (se necessário)**
+
    ```sql
    -- Verificar laudos duplicados
-   SELECT id, lote_id, status, criado_em 
-   FROM laudos 
+   SELECT id, lote_id, status, criado_em
+   FROM laudos
    WHERE id = 1003;
-   
+
    -- Remover apenas se status = 'rascunho'
-   DELETE FROM laudos 
-   WHERE id = 1003 
+   DELETE FROM laudos
+   WHERE id = 1003
      AND status = 'rascunho';
    ```
 

@@ -1,6 +1,6 @@
 /**
  * Teste de Integração: SAVEPOINT para Laudos Duplicados
- * 
+ *
  * Valida que erro de laudo duplicado é isolado via SAVEPOINT
  * e não aborta a transação inteira
  */
@@ -33,27 +33,43 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
       throw new Error('TEST_DATABASE_URL deve apontar para banco _test');
     }
 
-    await query('SELECT set_config($1, $2, false)', ['app.current_user_cpf', testCpf]);
-    await query('SELECT set_config($1, $2, false)', ['app.current_user_perfil', 'rh']);
+    await query('SELECT set_config($1, $2, false)', [
+      'app.current_user_cpf',
+      testCpf,
+    ]);
+    await query('SELECT set_config($1, $2, false)', [
+      'app.current_user_perfil',
+      'rh',
+    ]);
 
     // Setup clínica, empresa, funcionário (similar ao outro teste)
-    const clinicaRes = await query('SELECT id FROM clinicas WHERE ativa = true LIMIT 1');
-    clinicaId = clinicaRes.rows[0]?.id || (await query(
-      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    const clinicaRes = await query(
+      'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+    );
+    clinicaId =
+      clinicaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ('Clinica SAVEPOINT Test', '33333333000100', 'savepoint@test.com', '11900000002', 'Rua', 'São Paulo', 'SP', '01000-002', 'Resp', 'resp@savepoint.com', true)
        RETURNING id`
-    )).rows[0].id;
+        )
+      ).rows[0].id;
 
     const empresaRes = await query(
       'SELECT id FROM empresas_clientes WHERE clinica_id = $1 AND ativa = true LIMIT 1',
       [clinicaId]
     );
-    empresaId = empresaRes.rows[0]?.id || (await query(
-      `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    empresaId =
+      empresaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ($1, 'Empresa SAVEPOINT Test', '44444444000100', 'emp@savepoint.com', '11900000003', 'Rua', 'São Paulo', 'SP', '01000-003', 'Resp', 'resp@emp.com', true)
        RETURNING id`,
-      [clinicaId]
-    )).rows[0].id;
+          [clinicaId]
+        )
+      ).rows[0].id;
 
     funcionarioCpf = '88877766655';
     await query(
@@ -63,27 +79,41 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
       [funcionarioCpf]
     );
 
-    const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
+    const funcIdResult = await query(
+      'SELECT id FROM funcionarios WHERE cpf = $1',
+      [funcionarioCpf]
+    );
     const funcId = funcIdResult.rows[0].id;
     await query(
+      `DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1 AND clinica_id = $2`,
+      [funcId, clinicaId]
+    );
+    await query(
       `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-       VALUES ($1, $2, true)
-       ON CONFLICT (funcionario_id, clinica_id) DO UPDATE SET ativo = true`,
+       VALUES ($1, $2, true)`,
       [funcId, clinicaId]
     );
   });
 
   afterAll(async () => {
     try {
-      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [funcionarioCpf]);
+      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [
+        funcionarioCpf,
+      ]);
       await query(
         `DELETE FROM lotes_avaliacao 
          WHERE descricao LIKE '%SAVEPOINT%' 
          AND liberado_em > NOW() - INTERVAL '1 hour'`
       );
-      const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
+      const funcIdResult = await query(
+        'SELECT id FROM funcionarios WHERE cpf = $1',
+        [funcionarioCpf]
+      );
       if (funcIdResult.rowCount > 0) {
-        await query('DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1', [funcIdResult.rows[0].id]);
+        await query(
+          'DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1',
+          [funcIdResult.rows[0].id]
+        );
       }
       await query('DELETE FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
     } catch (err) {
@@ -133,11 +163,17 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
       expect(loteId).toBeDefined();
 
       // Verificar lote foi criado
-      const loteCheck = await query('SELECT id FROM lotes_avaliacao WHERE id = $1', [loteId]);
+      const loteCheck = await query(
+        'SELECT id FROM lotes_avaliacao WHERE id = $1',
+        [loteId]
+      );
       expect(loteCheck.rowCount).toBe(1);
 
       // ✅ CRÍTICO - Avaliação foi criada MESMO com erro de laudo
-      const avaliacaoCheck = await query('SELECT id FROM avaliacoes WHERE lote_id = $1', [loteId]);
+      const avaliacaoCheck = await query(
+        'SELECT id FROM avaliacoes WHERE lote_id = $1',
+        [loteId]
+      );
       expect(avaliacaoCheck.rowCount).toBe(1);
     } finally {
       if (loteId) {
@@ -164,7 +200,10 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
           [cpf, `Func ${cpf}`, `${cpf}@test.com`]
         );
 
-        const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [cpf]);
+        const funcIdResult = await query(
+          'SELECT id FROM funcionarios WHERE cpf = $1',
+          [cpf]
+        );
         await query(
           `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
            VALUES ($1, $2, true)
@@ -216,9 +255,15 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
       // Limpar
       for (const cpf of cpfs) {
         await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [cpf]);
-        const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [cpf]);
+        const funcIdResult = await query(
+          'SELECT id FROM funcionarios WHERE cpf = $1',
+          [cpf]
+        );
         if (funcIdResult.rowCount > 0) {
-          await query('DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1', [funcIdResult.rows[0].id]);
+          await query(
+            'DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1',
+            [funcIdResult.rows[0].id]
+          );
         }
         await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
       }
@@ -276,13 +321,21 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
 
     // ✅ CRÍTICO - Lote NÃO deve existir (rollback completo)
     if (loteId) {
-      const loteCheck = await query('SELECT id FROM lotes_avaliacao WHERE id = $1', [loteId]);
+      const loteCheck = await query(
+        'SELECT id FROM lotes_avaliacao WHERE id = $1',
+        [loteId]
+      );
       expect(loteCheck.rowCount).toBe(0);
 
-      const avaliacaoCheck = await query('SELECT id FROM avaliacoes WHERE lote_id = $1', [loteId]);
+      const avaliacaoCheck = await query(
+        'SELECT id FROM avaliacoes WHERE lote_id = $1',
+        [loteId]
+      );
       expect(avaliacaoCheck.rowCount).toBe(0);
 
-      const laudoCheck = await query('SELECT id FROM laudos WHERE id = $1', [loteId]);
+      const laudoCheck = await query('SELECT id FROM laudos WHERE id = $1', [
+        loteId,
+      ]);
       expect(laudoCheck.rowCount).toBe(0);
     }
   });

@@ -1,6 +1,6 @@
 /**
  * Teste de Monitoramento: Scripts de Detecção
- * 
+ *
  * Valida que scripts de monitoramento funcionam corretamente
  */
 
@@ -23,23 +23,33 @@ describe('Monitoring: Scripts de Detecção', () => {
     monitorModule = require('@/scripts/monitor-integridade.cjs');
 
     // Setup básico
-    const clinicaRes = await query('SELECT id FROM clinicas WHERE ativa = true LIMIT 1');
-    clinicaId = clinicaRes.rows[0]?.id || (await query(
-      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    const clinicaRes = await query(
+      'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+    );
+    clinicaId =
+      clinicaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ('Clinica Monitor Test', '13313313300100', 'monitor@test.com', '11900000012', 'Rua', 'SP', 'SP', '01000-012', 'Resp', 'resp@monitor.com', true)
        RETURNING id`
-    )).rows[0].id;
+        )
+      ).rows[0].id;
 
     const empresaRes = await query(
       'SELECT id FROM empresas_clientes WHERE clinica_id = $1 AND ativa = true LIMIT 1',
       [clinicaId]
     );
-    empresaId = empresaRes.rows[0]?.id || (await query(
-      `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    empresaId =
+      empresaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ($1, 'Empresa Monitor Test', '78978978900100', 'emp@monitor.com', '11900000013', 'Rua', 'SP', 'SP', '01000-013', 'Resp', 'resp@emp.com', true)
        RETURNING id`,
-      [clinicaId]
-    )).rows[0].id;
+          [clinicaId]
+        )
+      ).rows[0].id;
   });
 
   afterAll(async () => {
@@ -88,7 +98,7 @@ describe('Monitoring: Scripts de Detecção', () => {
 
   it('deve retornar OK quando não há lotes órfãos', async () => {
     let loteId: number | null = null;
-    let funcionarioCpf = '55544433322';
+    const funcionarioCpf = '55544433322';
 
     try {
       // Criar funcionário
@@ -99,12 +109,19 @@ describe('Monitoring: Scripts de Detecção', () => {
         [funcionarioCpf]
       );
 
-      const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
+      const funcIdResult = await query(
+        'SELECT id FROM funcionarios WHERE cpf = $1',
+        [funcionarioCpf]
+      );
+      const funcId = funcIdResult.rows[0].id;
+      await query(
+        `DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1 AND clinica_id = $2`,
+        [funcId, clinicaId]
+      );
       await query(
         `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-         VALUES ($1, $2, true)
-         ON CONFLICT (funcionario_id, clinica_id) DO UPDATE SET ativo = true`,
-        [funcIdResult.rows[0].id, clinicaId]
+         VALUES ($1, $2, true)`,
+        [funcId, clinicaId]
       );
 
       // Criar lote COM avaliação
@@ -132,9 +149,14 @@ describe('Monitoring: Scripts de Detecção', () => {
       }
 
       // Limpar
-      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [funcionarioCpf]);
+      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [
+        funcionarioCpf,
+      ]);
       const funcId = funcIdResult.rows[0].id;
-      await query('DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1', [funcId]);
+      await query(
+        'DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1',
+        [funcId]
+      );
       await query('DELETE FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
     } finally {
       if (loteId) {

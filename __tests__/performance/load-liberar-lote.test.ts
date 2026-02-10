@@ -1,6 +1,6 @@
 /**
  * Teste de Performance: Carga de Liberação de Lotes
- * 
+ *
  * Valida que múltiplos lotes podem ser liberados simultaneamente
  * sem criar lotes órfãos ou corromper dados
  */
@@ -31,23 +31,33 @@ describe('Performance: Carga - Liberação de Lotes', () => {
     }
 
     // Setup
-    const clinicaRes = await query('SELECT id FROM clinicas WHERE ativa = true LIMIT 1');
-    clinicaId = clinicaRes.rows[0]?.id || (await query(
-      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    const clinicaRes = await query(
+      'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+    );
+    clinicaId =
+      clinicaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ('Clinica Perf Test', '99999999000100', 'perf@test.com', '11900000008', 'Rua', 'SP', 'SP', '01000-008', 'Resp', 'resp@perf.com', true)
        RETURNING id`
-    )).rows[0].id;
+        )
+      ).rows[0].id;
 
     const empresaRes = await query(
       'SELECT id FROM empresas_clientes WHERE clinica_id = $1 AND ativa = true LIMIT 1',
       [clinicaId]
     );
-    empresaId = empresaRes.rows[0]?.id || (await query(
-      `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    empresaId =
+      empresaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ($1, 'Empresa Perf Test', '00000000000100', 'emp@perf.com', '11900000009', 'Rua', 'SP', 'SP', '01000-009', 'Resp', 'resp@emp.com', true)
        RETURNING id`,
-      [clinicaId]
-    )).rows[0].id;
+          [clinicaId]
+        )
+      ).rows[0].id;
 
     // Criar 10 funcionários de teste
     for (let i = 1; i <= 10; i++) {
@@ -59,12 +69,19 @@ describe('Performance: Carga - Liberação de Lotes', () => {
         [cpf, `Func Perf ${i}`, `perf${i}@test.com`]
       );
 
-      const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [cpf]);
+      const funcIdResult = await query(
+        'SELECT id FROM funcionarios WHERE cpf = $1',
+        [cpf]
+      );
+      const funcId = funcIdResult.rows[0].id;
+      await query(
+        `DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1 AND clinica_id = $2`,
+        [funcId, clinicaId]
+      );
       await query(
         `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-         VALUES ($1, $2, true)
-         ON CONFLICT (funcionario_id, clinica_id) DO UPDATE SET ativo = true`,
-        [funcIdResult.rows[0].id, clinicaId]
+         VALUES ($1, $2, true)`,
+        [funcId, clinicaId]
       );
     }
   });
@@ -82,9 +99,15 @@ describe('Performance: Carga - Liberação de Lotes', () => {
       for (let i = 1; i <= 10; i++) {
         const cpf = `1111111111${i}`.substring(0, 11);
         await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [cpf]);
-        const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [cpf]);
+        const funcIdResult = await query(
+          'SELECT id FROM funcionarios WHERE cpf = $1',
+          [cpf]
+        );
         if (funcIdResult.rowCount > 0) {
-          await query('DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1', [funcIdResult.rows[0].id]);
+          await query(
+            'DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1',
+            [funcIdResult.rows[0].id]
+          );
         }
         await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
       }

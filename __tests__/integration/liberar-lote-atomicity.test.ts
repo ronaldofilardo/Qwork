@@ -1,6 +1,6 @@
 /**
  * Teste de Integração: Atomicidade de Lote + Avaliações
- * 
+ *
  * Valida que lotes e avaliações são criados em mesma transação
  * e que rollback acontece se avaliações falharem
  */
@@ -36,60 +36,53 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
     }
 
     // Configurar contexto de sessão
-    await query('SELECT set_config($1, $2, false)', ['app.current_user_cpf', testCpf]);
-    await query('SELECT set_config($1, $2, false)', ['app.current_user_perfil', 'rh']);
+    await query('SELECT set_config($1, $2, false)', [
+      'app.current_user_cpf',
+      testCpf,
+    ]);
+    await query('SELECT set_config($1, $2, false)', [
+      'app.current_user_perfil',
+      'rh',
+    ]);
 
-    // Buscar ou criar clínica de teste
-    const clinicaRes = await query(
-      'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+    // Criar clínica de teste
+    const cnpj = `111${Date.now().toString().slice(-8)}`;
+    const newClinica = await query(
+      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+       VALUES ('Clinica Test Atomicity', $1, 'test@atomicity.com', '11900000000', 'Rua Test', 'São Paulo', 'SP', '01000-000', 'Resp Test', 'resp@test.com', true)
+       RETURNING id`,
+      [cnpj]
     );
-    if (clinicaRes.rowCount > 0) {
-      clinicaId = clinicaRes.rows[0].id;
-    } else {
-      const newClinica = await query(
-        `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-         VALUES ('Clinica Test Atomicity', '11111111000100', 'test@atomicity.com', '11900000000', 'Rua Test', 'São Paulo', 'SP', '01000-000', 'Resp Test', 'resp@test.com', true)
-         RETURNING id`
-      );
-      clinicaId = newClinica.rows[0].id;
-    }
+    clinicaId = newClinica.rows[0].id;
 
-    // Buscar ou criar empresa de teste
-    const empresaRes = await query(
-      'SELECT id FROM empresas_clientes WHERE clinica_id = $1 AND ativa = true LIMIT 1',
-      [clinicaId]
+    // Criar empresa de teste
+    const cnpjEmp = `222${Date.now().toString().slice(-8)}`;
+    const newEmpresa = await query(
+      `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+       VALUES ($1, 'Empresa Test Atomicity', $2, 'emp@test.com', '11900000001', 'Rua Emp', 'São Paulo', 'SP', '01000-001', 'Resp Emp', 'resp@emp.com', true)
+       RETURNING id`,
+      [clinicaId, cnpjEmp]
     );
-    if (empresaRes.rowCount > 0) {
-      empresaId = empresaRes.rows[0].id;
-    } else {
-      const newEmpresa = await query(
-        `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-         VALUES ($1, 'Empresa Test Atomicity', '22222222000100', 'emp@test.com', '11900000001', 'Rua Emp', 'São Paulo', 'SP', '01000-001', 'Resp Emp', 'resp@emp.com', true)
-         RETURNING id`,
-        [clinicaId]
-      );
-      empresaId = newEmpresa.rows[0].id;
-    }
+    empresaId = newEmpresa.rows[0].id;
 
-    // Criar funcionário de teste via tabela intermediária
-    funcionarioCpf = '99988877766';
-    
-    // Criar funcionário
+    // Criar funcionário de teste
+    funcionarioCpf = `999${Date.now().toString().slice(-8)}`;
     await query(
       `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, indice_avaliacao)
-       VALUES ($1, 'Func Test Atomicity', 'func@test.com', '$2a$10$dummyhash', 'funcionario', true, 0)
-       ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome, ativo = EXCLUDED.ativo`,
+       VALUES ($1, 'Func Test Atomicity', 'func@test.com', '$2a$10$dummyhash', 'funcionario', true, 0)`,
       [funcionarioCpf]
     );
 
-    // Criar relacionamento com clínica via funcionarios_clinicas
-    const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
+    // Criar relacionamento com clínica
+    const funcIdResult = await query(
+      'SELECT id FROM funcionarios WHERE cpf = $1',
+      [funcionarioCpf]
+    );
     const funcId = funcIdResult.rows[0].id;
 
     await query(
       `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-       VALUES ($1, $2, true)
-       ON CONFLICT (funcionario_id, clinica_id) DO UPDATE SET ativo = EXCLUDED.ativo`,
+       VALUES ($1, $2, true)`,
       [funcId, clinicaId]
     );
   });
@@ -97,18 +90,26 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
   afterAll(async () => {
     // Limpar dados de teste
     try {
-      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [funcionarioCpf]);
-      
+      await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [
+        funcionarioCpf,
+      ]);
+
       await query(
         `DELETE FROM lotes_avaliacao 
          WHERE descricao LIKE '%Test Atomicity%' 
          AND liberado_em > NOW() - INTERVAL '1 hour'`
       );
 
-      const funcIdResult = await query('SELECT id FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
+      const funcIdResult = await query(
+        'SELECT id FROM funcionarios WHERE cpf = $1',
+        [funcionarioCpf]
+      );
       if (funcIdResult.rowCount > 0) {
         const funcId = funcIdResult.rows[0].id;
-        await query('DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1', [funcId]);
+        await query(
+          'DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1',
+          [funcId]
+        );
       }
 
       await query('DELETE FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);

@@ -8,8 +8,10 @@
 ## 📚 Documentos Criados
 
 ### 1. RESUMO_EXECUTIVO_DEV_PROD.md
+
 **Propósito:** Visão geral executiva da análise  
 **Conteúdo:**
+
 - Estado atual de DEV (validado)
 - Checklist de verificação para PROD
 - Plano de ação passo a passo
@@ -20,8 +22,10 @@
 ---
 
 ### 2. ANALISE_DEV_PROD_DIFERENCAS.md
+
 **Propósito:** Análise técnica detalhada  
 **Conteúdo:**
+
 - Estado completo do ambiente DEV
 - Verificações necessárias em PROD
 - Checklist de verificação manual
@@ -33,8 +37,10 @@
 ---
 
 ### 3. GUIA_VERIFICACAO_LOGS.md
+
 **Propósito:** Como analisar logs de aplicação e banco  
 **Conteúdo:**
+
 - Verificação de logs Vercel
 - Verificação de logs Neon
 - Análise de erros específicos
@@ -45,8 +51,10 @@
 ---
 
 ### 4. APLICAR_MIGRATION_1004_PRODUCAO.sql
+
 **Propósito:** Instruções para aplicar Migration 1004 em PROD  
 **Conteúdo:**
+
 - SQL completo da migration
 - Instruções passo a passo para Neon Console
 - Query de verificação
@@ -59,14 +67,17 @@
 ## 🛠️ Scripts Criados
 
 ### 1. scripts/check-prod-status.cjs
+
 **Propósito:** Verificação rápida e focada de PROD  
 **O que verifica:**
+
 - Se Migration 1004 foi aplicada
 - DEFAULT da coluna laudos.status
 - Constraints ativas
 - Laudos recentes e inconsistentes
 
 **Uso:**
+
 ```bash
 node scripts/check-prod-status.cjs "postgresql://[PROD_URL]"
 ```
@@ -77,8 +88,10 @@ node scripts/check-prod-status.cjs "postgresql://[PROD_URL]"
 ---
 
 ### 2. scripts/analyze-dev-prod-diff.cjs
+
 **Propósito:** Comparação completa de estrutura DEV vs PROD  
 **O que compara:**
+
 - Triggers (quantidade e definições)
 - Funções custom
 - Defaults de colunas
@@ -87,6 +100,7 @@ node scripts/check-prod-status.cjs "postgresql://[PROD_URL]"
 - Jobs e processos externos
 
 **Uso:**
+
 ```bash
 $env:DATABASE_URL = "postgresql://[PROD_URL]"
 node scripts/analyze-dev-prod-diff.cjs
@@ -98,8 +112,10 @@ node scripts/analyze-dev-prod-diff.cjs
 ---
 
 ### 3. scripts/check-audit-logs.cjs
+
 **Propósito:** Análise de eventos de auditoria  
 **O que verifica:**
+
 - Tabelas de auditoria existentes
 - Solicitações de emissão
 - Jobs de PDF
@@ -108,6 +124,7 @@ node scripts/analyze-dev-prod-diff.cjs
 - Mudanças recentes em lotes e laudos
 
 **Uso:**
+
 ```bash
 node scripts/check-audit-logs.cjs "postgresql://[DATABASE_URL]"
 ```
@@ -120,6 +137,7 @@ node scripts/check-audit-logs.cjs "postgresql://[DATABASE_URL]"
 ## 🎯 Fluxo de Trabalho Recomendado
 
 ### Fase 1: Diagnóstico (5-10 min)
+
 ```
 1. Ler RESUMO_EXECUTIVO_DEV_PROD.md
    ↓
@@ -131,6 +149,7 @@ node scripts/check-audit-logs.cjs "postgresql://[DATABASE_URL]"
 ```
 
 ### Fase 2: Investigação Detalhada (se necessário)
+
 ```
 1. Executar analyze-dev-prod-diff.cjs
    ↓
@@ -144,6 +163,7 @@ node scripts/check-audit-logs.cjs "postgresql://[DATABASE_URL]"
 ```
 
 ### Fase 3: Correção (caso Migration 1004 não aplicada)
+
 ```
 1. Abrir APLICAR_MIGRATION_1004_PRODUCAO.sql
    ↓
@@ -157,6 +177,7 @@ node scripts/check-audit-logs.cjs "postgresql://[DATABASE_URL]"
 ```
 
 ### Fase 4: Validação
+
 ```
 1. Executar check-prod-status.cjs novamente
    ↓
@@ -171,26 +192,27 @@ node scripts/check-audit-logs.cjs "postgresql://[DATABASE_URL]"
 
 ## 🔍 Comparativo: O Que Cada Script Verifica
 
-| Aspecto | check-prod-status.cjs | analyze-dev-prod-diff.cjs | check-audit-logs.cjs |
-|---------|----------------------|---------------------------|---------------------|
-| **Migration 1004** | ✅ Sim | ✅ Sim (função) | ❌ Não |
-| **Triggers** | ❌ Não | ✅ Sim (lista completa) | ❌ Não |
-| **Funções** | ✅ Sim (1 função crítica) | ✅ Sim (todas) | ❌ Não |
-| **Defaults** | ✅ Sim (laudos.status) | ✅ Sim (todas colunas) | ❌ Não |
-| **Constraints** | ✅ Sim (laudos) | ✅ Sim (todas tabelas) | ❌ Não |
-| **Laudos Recentes** | ✅ Sim | ✅ Sim | ❌ Não |
-| **Laudos Inconsistentes** | ✅ Sim | ❌ Não | ❌ Não |
-| **Audit Logs** | ❌ Não | ❌ Não | ✅ Sim |
-| **Jobs/Filas** | ❌ Não | ✅ Sim (básico) | ✅ Sim (detalhado) |
-| **Comparação DEV/PROD** | ❌ Não | ✅ Sim | ❌ Não |
-| **Tempo** | ~1 min | ~2 min | ~1 min |
-| **Uso Principal** | Verificação inicial | Análise completa | Investigação de eventos |
+| Aspecto                   | check-prod-status.cjs     | analyze-dev-prod-diff.cjs | check-audit-logs.cjs    |
+| ------------------------- | ------------------------- | ------------------------- | ----------------------- |
+| **Migration 1004**        | ✅ Sim                    | ✅ Sim (função)           | ❌ Não                  |
+| **Triggers**              | ❌ Não                    | ✅ Sim (lista completa)   | ❌ Não                  |
+| **Funções**               | ✅ Sim (1 função crítica) | ✅ Sim (todas)            | ❌ Não                  |
+| **Defaults**              | ✅ Sim (laudos.status)    | ✅ Sim (todas colunas)    | ❌ Não                  |
+| **Constraints**           | ✅ Sim (laudos)           | ✅ Sim (todas tabelas)    | ❌ Não                  |
+| **Laudos Recentes**       | ✅ Sim                    | ✅ Sim                    | ❌ Não                  |
+| **Laudos Inconsistentes** | ✅ Sim                    | ❌ Não                    | ❌ Não                  |
+| **Audit Logs**            | ❌ Não                    | ❌ Não                    | ✅ Sim                  |
+| **Jobs/Filas**            | ❌ Não                    | ✅ Sim (básico)           | ✅ Sim (detalhado)      |
+| **Comparação DEV/PROD**   | ❌ Não                    | ✅ Sim                    | ❌ Não                  |
+| **Tempo**                 | ~1 min                    | ~2 min                    | ~1 min                  |
+| **Uso Principal**         | Verificação inicial       | Análise completa          | Investigação de eventos |
 
 ---
 
 ## ⚡ Comandos de Emergência
 
 ### Se PROD estiver com erro ativo:
+
 ```powershell
 # 1. Verificação imediata
 $prodUrl = "postgresql://[copiar do .env.production.local]"
@@ -209,9 +231,10 @@ node scripts\check-prod-status.cjs $prodUrl
 ```
 
 ### Se houver laudos inconsistentes:
+
 ```sql
 -- Executar no Neon Console
-UPDATE laudos 
+UPDATE laudos
 SET status = 'rascunho'
 WHERE status = 'emitido'
   AND hash_pdf IS NULL;
@@ -222,6 +245,7 @@ WHERE status = 'emitido'
 ## 📊 Métricas de Estado Saudável
 
 ### Ambiente DEV (Atual)
+
 - ✅ Triggers: 54
 - ✅ Funções custom: 12
 - ✅ Migration 1004: Aplicada
@@ -230,6 +254,7 @@ WHERE status = 'emitido'
 - ✅ Lotes recentes: Funcionando normalmente
 
 ### Ambiente PROD (Esperado)
+
 - ⏳ Triggers: Deve ter ~54 (verificar)
 - ⏳ Funções custom: Deve ter ~12 (verificar)
 - ⏳ Migration 1004: Verificar se aplicada
@@ -242,17 +267,20 @@ WHERE status = 'emitido'
 ## 🚨 Alertas e Sinais de Problema
 
 ### Sinais de que PROD precisa Migration 1004:
+
 - ❌ Erro: "Laudo não pode ser marcado como emitido sem hash_pdf"
 - ❌ Função não contém `status='rascunho'`
 - ❌ Laudos com status='emitido' e hash_pdf=NULL
 
 ### Sinais de que PROD está divergente de DEV:
+
 - ⚠️ Diferença no número de triggers
 - ⚠️ Funções com definições diferentes
 - ⚠️ Constraints ausentes ou diferentes
 - ⚠️ Defaults de colunas diferentes
 
 ### Sinais de outros problemas:
+
 - 🔴 "SECURITY: app.current_user_cpf not set" → Problema de transação
 - 🔴 Connection timeout → Problema de pool/conexão
 - 🔴 Jobs empilhados → Problema de processamento assíncrono
@@ -285,6 +313,7 @@ c:\apps\QWork\
 ### Migration 1004: O Problema e a Solução
 
 **Problema Original:**
+
 ```sql
 -- Trigger antigo (Migration 1003)
 INSERT INTO laudos (id, lote_id)
@@ -294,6 +323,7 @@ VALUES (NEW.id, NEW.id);
 ```
 
 **Solução (Migration 1004):**
+
 ```sql
 -- Trigger corrigido
 INSERT INTO laudos (id, lote_id, status)
@@ -337,6 +367,7 @@ VALUES (NEW.id, NEW.id, 'rascunho');
 Antes de considerar DEV e PROD sincronizados:
 
 ### Estrutura do Banco
+
 - [ ] Mesma quantidade de triggers
 - [ ] Mesma quantidade de funções
 - [ ] Funções com definições idênticas
@@ -344,22 +375,26 @@ Antes de considerar DEV e PROD sincronizados:
 - [ ] Defaults de colunas críticas idênticos
 
 ### Migration 1004
+
 - [ ] Aplicada em DEV ✅
 - [ ] Aplicada em PROD ⏳
 - [ ] Função contém `status='rascunho'` em ambos
 
 ### Estado dos Dados
+
 - [ ] Nenhum laudo inconsistente em DEV ✅
 - [ ] Nenhum laudo inconsistente em PROD ⏳
 - [ ] Lotes criando laudos corretamente
 
 ### Monitoramento
+
 - [ ] Logs Vercel configurados
 - [ ] Logs Neon monitorados
 - [ ] Audit logs funcionando
 - [ ] Alertas configurados
 
 ### Testes
+
 - [ ] Criar lote em DEV funciona ✅
 - [ ] Criar lote em PROD funciona ⏳
 - [ ] Laudos transitam de rascunho → emitido corretamente
@@ -369,11 +404,13 @@ Antes de considerar DEV e PROD sincronizados:
 ## 📞 Suporte e Referências
 
 ### Documentação Relacionada
+
 - `BUILD_APPROVAL_RH_FIX.md` - Fix de aprovação RH
 - `CORRECAO_LIBERAR_LOTE.md` - Correções de liberação
 - `RELATORIO_SINCRONIZACAO_BANCOS_2026-02-09.md` - Sincronização anterior
 
 ### Recursos Externos
+
 - Neon Console: https://console.neon.tech
 - Vercel Dashboard: https://vercel.com/dashboard
 - PostgreSQL Docs: https://www.postgresql.org/docs/

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Detectar Lotes Órfãos em PROD
- * 
+ *
  * Lotes órfãos = Lotes criados mas sem avaliações associadas
  * Isso indica falha no fluxo de criação de avaliações
  */
@@ -11,7 +11,7 @@ require('dotenv').config({ path: '.env.production' });
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function detectarLotesOrfaos() {
@@ -54,19 +54,29 @@ async function detectarLotesOrfaos() {
     }
 
     console.log('❌ LOTES ÓRFÃOS DETECTADOS:\n');
-    console.log('═════════════════════════════════════════════════════════════════════════\n');
+    console.log(
+      '═════════════════════════════════════════════════════════════════════════\n'
+    );
 
     // Agrupar por tipo (RH vs Entidade)
-    const lotesRH = lotesOrfaos.rows.filter(l => l.clinica_id && l.empresa_id);
-    const lotesEntidade = lotesOrfaos.rows.filter(l => l.entidade_id);
-    const lotesIndefinidos = lotesOrfaos.rows.filter(l => !l.clinica_id && !l.empresa_id && !l.entidade_id);
+    const lotesRH = lotesOrfaos.rows.filter(
+      (l) => l.clinica_id && l.empresa_id
+    );
+    const lotesEntidade = lotesOrfaos.rows.filter((l) => l.entidade_id);
+    const lotesIndefinidos = lotesOrfaos.rows.filter(
+      (l) => !l.clinica_id && !l.empresa_id && !l.entidade_id
+    );
 
     if (lotesRH.length > 0) {
       console.log(`🏢 LOTES RH/CLÍNICA (${lotesRH.length} órfãos):\n`);
-      lotesRH.forEach(lote => {
+      lotesRH.forEach((lote) => {
         console.log(`  📋 Lote #${lote.numero_ordem} (ID: ${lote.id})`);
-        console.log(`     Empresa: ${lote.empresa_nome} (ID: ${lote.empresa_id})`);
-        console.log(`     Clínica: ${lote.clinica_nome} (ID: ${lote.clinica_id})`);
+        console.log(
+          `     Empresa: ${lote.empresa_nome} (ID: ${lote.empresa_id})`
+        );
+        console.log(
+          `     Clínica: ${lote.clinica_nome} (ID: ${lote.clinica_id})`
+        );
         console.log(`     Status: ${lote.status}`);
         console.log(`     Liberado em: ${lote.liberado_em}`);
         console.log(`     Avaliações: ${lote.total_avaliacoes} ❌\n`);
@@ -75,9 +85,11 @@ async function detectarLotesOrfaos() {
 
     if (lotesEntidade.length > 0) {
       console.log(`\n🏛️  LOTES ENTIDADE (${lotesEntidade.length} órfãos):\n`);
-      lotesEntidade.forEach(lote => {
+      lotesEntidade.forEach((lote) => {
         console.log(`  📋 Lote #${lote.numero_ordem} (ID: ${lote.id})`);
-        console.log(`     Entidade: ${lote.entidade_nome} (ID: ${lote.entidade_id})`);
+        console.log(
+          `     Entidade: ${lote.entidade_nome} (ID: ${lote.entidade_id})`
+        );
         console.log(`     Status: ${lote.status}`);
         console.log(`     Liberado em: ${lote.liberado_em}`);
         console.log(`     Avaliações: ${lote.total_avaliacoes} ❌\n`);
@@ -85,8 +97,10 @@ async function detectarLotesOrfaos() {
     }
 
     if (lotesIndefinidos.length > 0) {
-      console.log(`\n⚠️  LOTES INDEFINIDOS (${lotesIndefinidos.length} órfãos):\n`);
-      lotesIndefinidos.forEach(lote => {
+      console.log(
+        `\n⚠️  LOTES INDEFINIDOS (${lotesIndefinidos.length} órfãos):\n`
+      );
+      lotesIndefinidos.forEach((lote) => {
         console.log(`  📋 Lote #${lote.numero_ordem} (ID: ${lote.id})`);
         console.log(`     SEM CLÍNICA/EMPRESA/ENTIDADE ASSOCIADA!`);
         console.log(`     Status: ${lote.status}`);
@@ -95,17 +109,22 @@ async function detectarLotesOrfaos() {
       });
     }
 
-    console.log('═════════════════════════════════════════════════════════════════════════\n');
+    console.log(
+      '═════════════════════════════════════════════════════════════════════════\n'
+    );
 
     // Diagnosticar causa mais provável
     console.log('\n🔍 ANÁLISE DE CAUSAS PROVÁVEIS:\n');
 
     // 1. Verificar se há funcionários para as empresas/entidades dos lotes órfãos
     for (const lote of lotesRH.slice(0, 3)) {
-      console.log(`\n📌 Lote RH #${lote.numero_ordem} (Empresa ID: ${lote.empresa_id})`);
-      
+      console.log(
+        `\n📌 Lote RH #${lote.numero_ordem} (Empresa ID: ${lote.empresa_id})`
+      );
+
       // Buscar funcionários via relacionamento
-      const funcionarios = await pool.query(`
+      const funcionarios = await pool.query(
+        `
         SELECT COUNT(DISTINCT f.cpf) as total
         FROM funcionarios f
         INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
@@ -114,30 +133,46 @@ async function detectarLotesOrfaos() {
           AND fc.ativo = true
           AND f.ativo = true
           AND f.perfil = 'funcionario'
-      `, [lote.empresa_id]);
+      `,
+        [lote.empresa_id]
+      );
 
-      console.log(`   Funcionários ativos via funcionarios_clinicas: ${funcionarios.rows[0].total}`);
+      console.log(
+        `   Funcionários ativos via funcionarios_clinicas: ${funcionarios.rows[0].total}`
+      );
 
       // Testar elegibilidade
-      const elegiveis = await pool.query(`
+      const elegiveis = await pool.query(
+        `
         SELECT COUNT(*) as total
         FROM calcular_elegibilidade_lote($1, $2)
-      `, [lote.empresa_id, lote.numero_ordem]);
+      `,
+        [lote.empresa_id, lote.numero_ordem]
+      );
 
-      console.log(`   Elegíveis via calcular_elegibilidade_lote: ${elegiveis.rows[0].total}`);
+      console.log(
+        `   Elegíveis via calcular_elegibilidade_lote: ${elegiveis.rows[0].total}`
+      );
 
       if (elegiveis.rows[0].total === 0) {
-        console.log(`   ❌ CAUSA: Nenhum funcionário elegível no momento da criação do lote`);
+        console.log(
+          `   ❌ CAUSA: Nenhum funcionário elegível no momento da criação do lote`
+        );
       } else {
-        console.log(`   ⚠️  CAUSA: Erro na criação das avaliações (funcionários elegíveis existem!)`);
+        console.log(
+          `   ⚠️  CAUSA: Erro na criação das avaliações (funcionários elegíveis existem!)`
+        );
       }
     }
 
     for (const lote of lotesEntidade.slice(0, 3)) {
-      console.log(`\n📌 Lote Entidade #${lote.numero_ordem} (Entidade ID: ${lote.entidade_id})`);
-      
+      console.log(
+        `\n📌 Lote Entidade #${lote.numero_ordem} (Entidade ID: ${lote.entidade_id})`
+      );
+
       // Buscar funcionários via relacionamento
-      const funcionarios = await pool.query(`
+      const funcionarios = await pool.query(
+        `
         SELECT COUNT(DISTINCT f.cpf) as total
         FROM funcionarios f
         INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
@@ -145,33 +180,57 @@ async function detectarLotesOrfaos() {
           AND fe.ativo = true
           AND f.ativo = true
           AND f.perfil = 'funcionario'
-      `, [lote.entidade_id]);
+      `,
+        [lote.entidade_id]
+      );
 
-      console.log(`   Funcionários ativos via funcionarios_entidades: ${funcionarios.rows[0].total}`);
+      console.log(
+        `   Funcionários ativos via funcionarios_entidades: ${funcionarios.rows[0].total}`
+      );
 
       // Testar elegibilidade
-      const elegiveis = await pool.query(`
+      const elegiveis = await pool.query(
+        `
         SELECT COUNT(*) as total
         FROM calcular_elegibilidade_lote_tomador($1, $2)
-      `, [lote.entidade_id, lote.numero_ordem]);
+      `,
+        [lote.entidade_id, lote.numero_ordem]
+      );
 
-      console.log(`   Elegíveis via calcular_elegibilidade_lote_tomador: ${elegiveis.rows[0].total}`);
+      console.log(
+        `   Elegíveis via calcular_elegibilidade_lote_tomador: ${elegiveis.rows[0].total}`
+      );
 
       if (elegiveis.rows[0].total === 0) {
-        console.log(`   ❌ CAUSA: Nenhum funcionário elegível no momento da criação do lote`);
+        console.log(
+          `   ❌ CAUSA: Nenhum funcionário elegível no momento da criação do lote`
+        );
       } else {
-        console.log(`   ⚠️  CAUSA: Erro na criação das avaliações (funcionários elegíveis existem!)`);
+        console.log(
+          `   ⚠️  CAUSA: Erro na criação das avaliações (funcionários elegíveis existem!)`
+        );
       }
     }
 
     console.log('\n\n💡 RECOMENDAÇÕES:\n');
-    console.log('═════════════════════════════════════════════════════════════════════════');
-    console.log('1. Se elegíveis = 0: Validar ANTES de criar lote (retornar erro 400)');
-    console.log('2. Se elegíveis > 0: Investigar erros no INSERT avaliacoes (verificar logs)');
-    console.log('3. Considerar usar transações para garantir atomicidade (lote + avaliacoes)');
-    console.log('4. Limpar lotes órfãos: DELETE FROM lotes_avaliacao WHERE id IN (...)');
-    console.log('═════════════════════════════════════════════════════════════════════════\n');
-
+    console.log(
+      '═════════════════════════════════════════════════════════════════════════'
+    );
+    console.log(
+      '1. Se elegíveis = 0: Validar ANTES de criar lote (retornar erro 400)'
+    );
+    console.log(
+      '2. Se elegíveis > 0: Investigar erros no INSERT avaliacoes (verificar logs)'
+    );
+    console.log(
+      '3. Considerar usar transações para garantir atomicidade (lote + avaliacoes)'
+    );
+    console.log(
+      '4. Limpar lotes órfãos: DELETE FROM lotes_avaliacao WHERE id IN (...)'
+    );
+    console.log(
+      '═════════════════════════════════════════════════════════════════════════\n'
+    );
   } catch (error) {
     console.error('❌ Erro ao detectar lotes órfãos:', error.message);
     console.error(error.stack);

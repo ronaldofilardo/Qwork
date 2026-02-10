@@ -1,6 +1,6 @@
 /**
  * Teste de Unidade: lib/db-transaction.ts
- * 
+ *
  * Valida withTransactionAsGestor e withTransaction
  */
 
@@ -103,7 +103,9 @@ describe('Unit: lib/db-transaction', () => {
       try {
         await withTransactionAsGestor(async (client) => {
           // Criar lote de teste
-          const clinicaRes = await query('SELECT id FROM clinicas WHERE ativa = true LIMIT 1');
+          const clinicaRes = await query(
+            'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+          );
           const empresaRes = await query(
             'SELECT id FROM empresas_clientes WHERE ativa = true LIMIT 1'
           );
@@ -129,7 +131,10 @@ describe('Unit: lib/db-transaction', () => {
 
       // Verificar que lote NÃO foi criado (rollback)
       if (loteId) {
-        const check = await query('SELECT id FROM lotes_avaliacao WHERE id = $1', [loteId]);
+        const check = await query(
+          'SELECT id FROM lotes_avaliacao WHERE id = $1',
+          [loteId]
+        );
         expect(check.rowCount).toBe(0); // ✅ Rollback funcionou
       }
     });
@@ -156,7 +161,9 @@ describe('Unit: lib/db-transaction', () => {
       try {
         await withTransaction(async (client) => {
           // Criar lote de teste
-          const clinicaRes = await query('SELECT id FROM clinicas WHERE ativa = true LIMIT 1');
+          const clinicaRes = await query(
+            'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+          );
           const empresaRes = await query(
             'SELECT id FROM empresas_clientes WHERE ativa = true LIMIT 1'
           );
@@ -174,7 +181,10 @@ describe('Unit: lib/db-transaction', () => {
 
         // Verificar que lote FOI criado (commit)
         if (loteId) {
-          const check = await query('SELECT id FROM lotes_avaliacao WHERE id = $1', [loteId]);
+          const check = await query(
+            'SELECT id FROM lotes_avaliacao WHERE id = $1',
+            [loteId]
+          );
           expect(check.rowCount).toBe(1); // ✅ Commit funcionou
         }
       } finally {
