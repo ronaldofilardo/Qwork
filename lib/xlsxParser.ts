@@ -179,18 +179,45 @@ export function validarLinhaFuncionario(
   }
 
   // Validar nivel_cargo se fornecido
+  // Para perfil='funcionario', a constraint do banco aceita apenas: 'operacional' ou 'gestao'
   if (row.nivel_cargo) {
-    const niveisPermitidos = [
-      'operacional',
-      'gestao',
-      'gerencial',
-      'diretoria',
-    ];
-    const nivelNormalizado = String(row.nivel_cargo).toLowerCase().trim();
-    if (!niveisPermitidos.includes(nivelNormalizado)) {
+    const nivelOriginal = String(row.nivel_cargo).trim();
+    const nivelNormalizado = nivelOriginal.toLowerCase();
+    
+    // Mapeamento de cargos comuns para níveis permitidos pelo banco
+    const mapeamentoCargos: Record<string, string> = {
+      // Nível Operacional
+      'operacional': 'operacional',
+      'operador': 'operacional',
+      'assistente': 'operacional',
+      'auxiliar': 'operacional',
+      'técnico': 'operacional',
+      'tecnico': 'operacional',
+      'analista': 'operacional',
+      'especialista': 'operacional',
+      
+      // Nível Gestão
+      'gestao': 'gestao',
+      'coordenador': 'gestao',
+      'coordenadora': 'gestao',
+      'supervisor': 'gestao',
+      'supervisora': 'gestao',
+      'gerente': 'gestao',
+      'gestor': 'gestao',
+      'gestora': 'gestao',
+      'líder': 'gestao',
+      'lider': 'gestao',
+    };
+
+    const nivelMapeado = mapeamentoCargos[nivelNormalizado];
+    
+    if (!nivelMapeado) {
       erros.push(
-        `Nível de cargo inválido. Permitidos: ${niveisPermitidos.join(', ')}`
+        `Nível de cargo '${nivelOriginal}' não reconhecido. Use: operacional, gestao, analista, coordenador, gerente, etc.`
       );
+    } else {
+      // Substituir pelo valor normalizado e mapeado
+      row.nivel_cargo = nivelMapeado;
     }
   }
 
