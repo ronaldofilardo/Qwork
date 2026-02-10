@@ -35,6 +35,13 @@ export async function POST(
 
     const lote = loteResult.rows[0];
 
+    console.log(`[ADMIN] Gerar link - Lote ${loteId}:`, {
+      status: lote.status,
+      status_pagamento: lote.status_pagamento,
+      valor_por_funcionario: lote.valor_por_funcionario,
+      num_avaliacoes: lote.num_avaliacoes,
+    });
+
     if (lote.status !== 'concluido') {
       return NextResponse.json(
         { error: 'Lote deve estar concluído' },
@@ -47,6 +54,29 @@ export async function POST(
         { error: 'Defina o valor primeiro' },
         { status: 400 }
       );
+    }
+
+    // Verificar se laudo já foi emitido
+    const laudoCheck = await query(
+      `SELECT id, status, hash_pdf, emitido_em FROM laudos WHERE lote_id = $1`,
+      [loteId]
+    );
+
+    if (laudoCheck.rows.length > 0) {
+      const laudo = laudoCheck.rows[0];
+      console.log(`[ADMIN] Laudo existente encontrado:`, {
+        laudo_id: laudo.id,
+        status: laudo.status,
+        tem_hash: !!laudo.hash_pdf,
+        emitido_em: laudo.emitido_em,
+      });
+
+      if (laudo.status === 'emitido' || laudo.status === 'enviado') {
+        return NextResponse.json(
+          { error: 'Laudo já foi emitido para este lote' },
+          { status: 400 }
+        );
+      }
     }
 
     // Permitir gerar novo link mesmo se já existe (uso único: após pago, pode gerar novamente)

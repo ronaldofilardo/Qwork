@@ -62,7 +62,10 @@ describe('Autenticação Funcionário + RLS', () => {
 
   afterAll(async () => {
     try {
-      await query('DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1', [testFuncionarioId]);
+      await query(
+        'DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1',
+        [testFuncionarioId]
+      );
       await query('DELETE FROM funcionarios WHERE cpf = $1', [TEST_CPF]);
       await query('DELETE FROM clinicas WHERE id = $1', [testClinicaId]);
     } catch (err) {
@@ -164,7 +167,10 @@ describe('Autenticação Funcionário + RLS', () => {
 
       try {
         // Buscar lotes com RLS (deve retornar apenas da clínica associada)
-        const result = await queryWithContext<{ id: number; clinica_id: number }>(
+        const result = await queryWithContext<{
+          id: number;
+          clinica_id: number;
+        }>(
           'SELECT id, clinica_id FROM lotes_avaliacao WHERE id = $1',
           [loteId],
           mockSession
@@ -214,16 +220,13 @@ describe('Autenticação Funcionário + RLS', () => {
 
   describe('4. RLS com transactionWithContext', () => {
     it('deve executar transação com RLS vars configuradas', async () => {
-      const result = await transactionWithContext<number>(
-        async (client) => {
-          const countResult = await client.query(
-            'SELECT COUNT(*) as total FROM funcionarios WHERE cpf = $1',
-            [TEST_CPF]
-          );
-          return parseInt(countResult.rows[0].total);
-        },
-        mockSession
-      );
+      const result = await transactionWithContext<number>(async (client) => {
+        const countResult = await client.query(
+          'SELECT COUNT(*) as total FROM funcionarios WHERE cpf = $1',
+          [TEST_CPF]
+        );
+        return parseInt(countResult.rows[0].total);
+      }, mockSession);
 
       expect(result).toBe(1);
     });
@@ -232,30 +235,27 @@ describe('Autenticação Funcionário + RLS', () => {
       const result = await transactionWithContext<{
         funcionario: string;
         clinica: number;
-      }>(
-        async (client) => {
-          // Query 1: Buscar funcionário
-          const funcResult = await client.query(
-            'SELECT nome FROM funcionarios WHERE cpf = $1',
-            [TEST_CPF]
-          );
-          const funcionarioNome = funcResult.rows[0].nome;
+      }>(async (client) => {
+        // Query 1: Buscar funcionário
+        const funcResult = await client.query(
+          'SELECT nome FROM funcionarios WHERE cpf = $1',
+          [TEST_CPF]
+        );
+        const funcionarioNome = funcResult.rows[0].nome;
 
-          // Query 2: Buscar clínica associada
-          const clinicaResult = await client.query(
-            `SELECT c.id 
+        // Query 2: Buscar clínica associada
+        const clinicaResult = await client.query(
+          `SELECT c.id 
              FROM clinicas c
              JOIN funcionarios_clinicas fc ON fc.clinica_id = c.id
              JOIN funcionarios f ON f.id = fc.funcionario_id
              WHERE f.cpf = $1`,
-            [TEST_CPF]
-          );
-          const clinicaId = clinicaResult.rows[0].id;
+          [TEST_CPF]
+        );
+        const clinicaId = clinicaResult.rows[0].id;
 
-          return { funcionario: funcionarioNome, clinica: clinicaId };
-        },
-        mockSession
-      );
+        return { funcionario: funcionarioNome, clinica: clinicaId };
+      }, mockSession);
 
       expect(result.funcionario).toBe(mockSession.nome);
       expect(result.clinica).toBe(testClinicaId);
@@ -266,7 +266,7 @@ describe('Autenticação Funcionário + RLS', () => {
     it('fluxo completo deve funcionar com RLS', async () => {
       // Simular fluxo:
       // 1. Login (validar senha) ✅ já testado acima
-      
+
       // 2. Dashboard: buscar lotes disponíveis
       const lotesDisponiveis = await queryWithContext<{ id: number }>(
         `SELECT id FROM lotes_avaliacao 
@@ -276,7 +276,7 @@ describe('Autenticação Funcionário + RLS', () => {
         [testClinicaId],
         mockSession
       );
-      
+
       expect(lotesDisponiveis.rows).toBeDefined();
       expect(Array.isArray(lotesDisponiveis.rows)).toBe(true);
 
@@ -288,30 +288,27 @@ describe('Autenticação Funcionário + RLS', () => {
         const result = await transactionWithContext<{
           loteId: number;
           avaliacaoId: number;
-        }>(
-          async (client) => {
-            // Criar lote
-            const loteResult = await client.query(
-              `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
+        }>(async (client) => {
+          // Criar lote
+          const loteResult = await client.query(
+            `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
                VALUES ($1, 1, 'Lote Fluxo RLS', 'completo', 'ativo', '00000000000', 1)
                RETURNING id`,
-              [testClinicaId]
-            );
-            const lote_id = loteResult.rows[0].id;
+            [testClinicaId]
+          );
+          const lote_id = loteResult.rows[0].id;
 
-            // Criar avaliação
-            const avaliacaoResult = await client.query(
-              `INSERT INTO avaliacoes (funcionario_cpf, lote_id, status, inicio)
+          // Criar avaliação
+          const avaliacaoResult = await client.query(
+            `INSERT INTO avaliacoes (funcionario_cpf, lote_id, status, inicio)
                VALUES ($1, $2, 'iniciada', NOW())
                RETURNING id`,
-              [TEST_CPF, lote_id]
-            );
-            const avaliacao_id = avaliacaoResult.rows[0].id;
+            [TEST_CPF, lote_id]
+          );
+          const avaliacao_id = avaliacaoResult.rows[0].id;
 
-            return { loteId: lote_id, avaliacaoId: avaliacao_id };
-          },
-          mockSession
-        );
+          return { loteId: lote_id, avaliacaoId: avaliacao_id };
+        }, mockSession);
 
         loteId = result.loteId;
         avaliacaoId = result.avaliacaoId;

@@ -52,9 +52,9 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
       const clinicaRes = await query(
         'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
       );
-      
+
       clinicaId = clinicaRes.rows[0]?.id;
-      
+
       if (!clinicaId) {
         console.log('[Setup] Criando nova clínica...');
         const cnpj = `111${Date.now().toString().slice(-8)}`;
@@ -74,9 +74,9 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
         'SELECT id FROM empresas_clientes WHERE clinica_id = $1 AND ativa = true LIMIT 1',
         [clinicaId]
       );
-      
+
       empresaId = empresaRes.rows[0]?.id;
-      
+
       if (!empresaId) {
         console.log('[Setup] Criando nova empresa...');
         const cnpjEmp = `222${Date.now().toString().slice(-8)}`;
@@ -90,18 +90,23 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
       }
 
       console.log(`[Setup] empresaId = ${empresaId}`);
-      
+
       // 🔍 VERIFICAR se empresa existe no banco
-      const empresaCheck = await query('SELECT id, clinica_id, nome FROM empresas_clientes WHERE id = $1', [empresaId]);
+      const empresaCheck = await query(
+        'SELECT id, clinica_id, nome FROM empresas_clientes WHERE id = $1',
+        [empresaId]
+      );
       if (empresaCheck.rowCount === 0) {
-        throw new Error(`[Setup] ❌ Empresa ${empresaId} não encontrada no banco após criação!`);
+        throw new Error(
+          `[Setup] ❌ Empresa ${empresaId} não encontrada no banco após criação!`
+        );
       }
       console.log(`[Setup] ✅ Empresa encontrada:`, empresaCheck.rows[0]);
 
       // Criar funcionário
       funcionarioCpf = `999${Date.now().toString().slice(-8)}`;
       console.log(`[Setup] Criando funcionário ${funcionarioCpf}...`);
-      
+
       const funcResult = await query(
         `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, indice_avaliacao)
          VALUES ($1, 'Func Test Atomicity', 'func@test.com', '$2a$10$dummyhash', 'funcionario', true, 0)
@@ -118,9 +123,10 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
          VALUES ($1, $2, $3, true)`,
         [funcionarioId, clinicaId, empresaId]
       );
-      
-      console.log(`[Setup] ✅ Setup completo: clinicaId=${clinicaId}, empresaId=${empresaId}, funcionarioCpf=${funcionarioCpf}`);
-      
+
+      console.log(
+        `[Setup] ✅ Setup completo: clinicaId=${clinicaId}, empresaId=${empresaId}, funcionarioCpf=${funcionarioCpf}`
+      );
     } catch (error) {
       console.error('[Setup] ❌ Erro durante setup:', error);
       throw error;
@@ -131,7 +137,7 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
     // Limpar dados de teste
     try {
       console.log('[Cleanup] Iniciando limpeza...');
-      
+
       await query('DELETE FROM avaliacoes WHERE funcionario_cpf = $1', [
         funcionarioCpf,
       ]);
@@ -150,9 +156,11 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
       }
 
       if (funcionarioCpf) {
-        await query('DELETE FROM funcionarios WHERE cpf = $1', [funcionarioCpf]);
+        await query('DELETE FROM funcionarios WHERE cpf = $1', [
+          funcionarioCpf,
+        ]);
       }
-      
+
       console.log('[Cleanup] ✅ Limpeza concluída');
     } catch (err) {
       console.warn('[Cleanup] ⚠️ Erro durante cleanup (ignorado):', err);
@@ -160,20 +168,31 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
   });
 
   it('deve criar lote E avaliações em mesma transação', async () => {
-    console.log(`[Test 1] ANTES DA TRANSAÇÃO: clinicaId=${clinicaId}, empresaId=${empresaId}, funcionarioCpf=${funcionarioCpf}`);
-    
+    console.log(
+      `[Test 1] ANTES DA TRANSAÇÃO: clinicaId=${clinicaId}, empresaId=${empresaId}, funcionarioCpf=${funcionarioCpf}`
+    );
+
     expect(clinicaId).toBeDefined();
     expect(empresaId).toBeDefined();
     expect(funcionarioCpf).toBeDefined();
-    
+
     let loteId: number | null = null;
 
     try {
-      await withTransactionAsGestor(async (client) => {        // 🔍 VERIFICAR se empresa é visível dentro da transação
-        const empresaVisivel = await client.query('SELECT id, clinica_id, nome FROM empresas_clientes WHERE id = $1', [empresaId]);
-        console.log(`[Test 1] DENTRO DA TRANSAÇÃO: empresaId=${empresaId}, empresa visível:`, empresaVisivel.rows[0] || 'NÃO ENCONTRADA');
-                // Criar lote
-        console.log(`[Test humanizar 1] DENTRO DA TRANSAÇÃO: clinicaId=${clinicaId}, empresaId=${empresaId}, funcionarioCpf=${funcionarioCpf}`);
+      await withTransactionAsGestor(async (client) => {
+        // 🔍 VERIFICAR se empresa é visível dentro da transação
+        const empresaVisivel = await client.query(
+          'SELECT id, clinica_id, nome FROM empresas_clientes WHERE id = $1',
+          [empresaId]
+        );
+        console.log(
+          `[Test 1] DENTRO DA TRANSAÇÃO: empresaId=${empresaId}, empresa visível:`,
+          empresaVisivel.rows[0] || 'NÃO ENCONTRADA'
+        );
+        // Criar lote
+        console.log(
+          `[Test humanizar 1] DENTRO DA TRANSAÇÃO: clinicaId=${clinicaId}, empresaId=${empresaId}, funcionarioCpf=${funcionarioCpf}`
+        );
         const loteResult = await client.query(
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote Test Atomicity 1', 'completo', 'ativo', $3, 1)
@@ -215,7 +234,7 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
   it('deve fazer ROLLBACK de lote se criação de avaliação falhar', async () => {
     expect(clinicaId).toBeDefined();
     expect(empresaId).toBeDefined();
-    
+
     let loteId: number | null = null;
 
     try {
@@ -272,7 +291,7 @@ describe('Integration: Atomicidade Lote + Avaliações', () => {
   it('deve validar que rollback não deixa dados inconsistentes', async () => {
     expect(clinicaId).toBeDefined();
     expect(empresaId).toBeDefined();
-    
+
     let loteId: number | null = null;
 
     try {
