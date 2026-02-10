@@ -196,56 +196,8 @@ export async function gerarLaudoCompletoEmitirPDF(
     fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2));
     console.log(`[EMISSÃO] Metadata salvo em ${metaFilePath}`);
 
-    // ETAPA 9: Upload para Backblaze (assíncrono, não bloqueia)
-    console.log(`[EMISSÃO] Iniciando upload para Backblaze...`);
-    try {
-      const { uploadLaudoToBackblaze } = await import('./storage/laudo-storage');
-      await uploadLaudoToBackblaze(laudoId, loteId, Buffer.from(pdfBuffer));
-      console.log(`[EMISSÃO] ✅ Upload para Backblaze concluído`);
-
-      // Ler metadados atualizados e persistir no banco
-      try {
-        const metaContent = fs.readFileSync(metaFilePath, 'utf-8');
-        const meta = JSON.parse(metaContent);
-
-        if (meta.arquivo_remoto) {
-          await query(
-            `UPDATE laudos 
-             SET arquivo_remoto_provider = $1,
-                 arquivo_remoto_bucket = $2,
-                 arquivo_remoto_key = $3,
-                 arquivo_remoto_url = $4,
-                 arquivo_remoto_uploaded_at = NOW(),
-                 arquivo_remoto_size = $5,
-                 atualizado_em = NOW()
-             WHERE id = $6`,
-            [
-              meta.arquivo_remoto.provider || 'backblaze',
-              meta.arquivo_remoto.bucket || 'laudos-qwork',
-              meta.arquivo_remoto.key,
-              meta.arquivo_remoto.url,
-              pdfBuffer.byteLength,
-              laudoId,
-            ]
-          );
-          console.log(`[EMISSÃO] ✅ Metadados do Backblaze persistidos no banco`);
-        }
-      } catch (dbError) {
-        console.warn(
-          `[EMISSÃO] ⚠️ Não foi possível persistir metadados do Backblaze no banco:`,
-          dbError instanceof Error ? dbError.message : dbError
-        );
-      }
-    } catch (uploadError) {
-      // Upload para Backblaze é opcional - não bloqueia emissão do laudo
-      console.warn(
-        `[EMISSÃO] ⚠️ Falha ao fazer upload para Backblaze (laudo emitido localmente):`,
-        uploadError instanceof Error ? uploadError.message : uploadError
-      );
-    }
-
     console.log(
-      `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso - PDF físico + hash + status='emitido'`
+      `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso - PDF salvo localmente em "${fileName}". Aguardando upload manual ao Backblaze.`
     );
     return laudoId;
   } catch (error) {
