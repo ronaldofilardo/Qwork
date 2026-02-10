@@ -26,8 +26,7 @@ END;
 $$ LANGUAGE plpgsql;
 
 COMMENT ON FUNCTION fn_reservar_id_laudo_on_lote_insert() IS 
-  'Reserva ID do laudo (igual ao lote) em status rascunho ao criar lote. ' ||
-  'Status rascunho permite criar sem hash_pdf, evitando erro de validação.';
+  'Reserva ID do laudo (igual ao lote) em status rascunho ao criar lote. Status rascunho permite criar sem hash_pdf, evitando erro de validação.';
 
 COMMIT;
 
