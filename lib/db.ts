@@ -744,18 +744,28 @@ export async function transaction<T>(
     console.log('[db][transaction] PRODUÇÃO: coletando queries para transação SQL única');
     
     const queries: Array<{ text: string; params?: unknown[] }> = [];
+    let mockIdCounter = 1; // Para retornar IDs mockados durante coleta
     
     // Criar TransactionClient que armazena queries ao invés de executar
     const txClient: TransactionClient = {
       query: async <R = any>(text: string, params?: unknown[]) => {
         queries.push({ text, params });
-        // Retornar mock (será executado depois)
+        
+        // Se é INSERT RETURNING id, retornar mock com ID
+        if (text.includes('RETURNING id') || text.includes('RETURNING')) {
+          return { 
+            rows: [{ id: mockIdCounter++ }] as R[], 
+            rowCount: 1 
+          };
+        }
+        
+        // Outras queries: retornar mock vazio
         return { rows: [] as R[], rowCount: 0 };
       },
     };
     
     // Coletar todas as queries
-    await callback(txClient);
+    const callbackResult = await callback(txClient);
     
     // Executar tudo em uma única transação SQL
     const sql = await getNeonSql();
@@ -811,8 +821,8 @@ export async function transaction<T>(
       
       console.log('[db][transaction] Transação Neon comitada com sucesso');
       
-      // Retornar resultado do callback (que foi mocado)
-      return await callback(txClient as any);
+      // Retornar resultado do callback
+      return callbackResult;
     } catch (error) {
       console.error('[db][transaction] Erro na transação Neon:', error);
       throw error;
