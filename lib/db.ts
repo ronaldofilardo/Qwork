@@ -493,49 +493,44 @@ export async function query<T = any>(
       if (!sql) {
         throw new Error('Conexão Neon não disponível');
       }
-      // Garantir search_path em produção
-      if (!text.trim().toLowerCase().startsWith('set search_path')) {
-        await sql('SET search_path TO public;');
-      }
 
-      // Para Neon: não podemos enviar múltiplos comandos em uma prepared statement.
-      // Se houver sessão, execute os set_config separadamente e depois a query principal.
+      // Para Neon: se houver sessão, envolver em transação para usar SET LOCAL
       if (session) {
         const escapeString = (str: string) => String(str).replace(/'/g, "''");
 
-        const setCpf = `SELECT set_config('app.current_user_cpf', '${escapeString(
-          session.cpf
-        )}', true)`;
-        const setPerfil = `SELECT set_config('app.current_user_perfil', '${escapeString(
-          session.perfil
-        )}', true)`;
-        const setClinica = `SELECT set_config('app.current_user_clinica_id', '${escapeString(
-          String(session.clinica_id || '')
-        )}', true)`;
-        const setEntidade = `SELECT set_config('app.current_user_entidade_id', '${escapeString(
-          String(session.entidade_id || '')
-        )}', true)`;
+        // Construir bloco de transação com SET LOCAL + query
+        // SET LOCAL só funciona dentro de BEGIN...COMMIT
+        const transactionBlock = `
+BEGIN;
+SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}';
+SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}';
+SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}';
+SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}';
+${text};
+COMMIT;
+        `.trim();
 
         try {
-          await sql(setCpf);
-          await sql(setPerfil);
-          await sql(setClinica);
-          await sql(setEntidade);
+          // Executar tudo em um único bloco de transação
+          const rows = await sql(transactionBlock, params || []);
+          const duration = Date.now() - start;
+          if (DEBUG_DB) {
+            console.log(
+              `[db][query] neon+session (${duration}ms): ${text.substring(0, 200)}...`
+            );
+          }
+          return {
+            rows: rows as T[],
+            rowCount: Array.isArray(rows) ? rows.length : 0,
+          };
         } catch (err) {
-          console.warn('[db][neon] falha ao aplicar set_config:', err);
-        }
-
-        const rows = await sql(text, params || []);
-        const duration = Date.now() - start;
-        if (DEBUG_DB) {
-          console.log(
-            `[db][query] neon (${duration}ms): ${text.substring(0, 200)}...`
+          const duration = Date.now() - start;
+          console.error(
+            `Erro na query do banco (production, ${duration}ms):`,
+            err
           );
+          throw err;
         }
-        return {
-          rows: rows as T[],
-          rowCount: Array.isArray(rows) ? rows.length : 0,
-        };
       }
 
       // Sem sessão, executar diretamente
