@@ -246,7 +246,7 @@ describe('Remoção de Emissão Automática', () => {
 
       // Buscar por processamento_em no código (não em comentários)
       const lines = functionDef.split('\n');
-      const codeLines = lines.filter(line => {
+      const codeLines = lines.filter((line) => {
         const trimmed = line.trim();
         // Ignorar linhas de comentário
         return !trimmed.startsWith('--') && trimmed.length > 0;
@@ -255,8 +255,10 @@ describe('Remoção de Emissão Automática', () => {
       const codeWithoutComments = codeLines.join('\n');
 
       // Verificar que processamento_em NÃO aparece no código executável
-      const hasProcessamentoEmInCode = codeWithoutComments.toLowerCase().includes('processamento_em');
-      
+      const hasProcessamentoEmInCode = codeWithoutComments
+        .toLowerCase()
+        .includes('processamento_em');
+
       expect(hasProcessamentoEmInCode).toBe(false);
     });
 
@@ -276,9 +278,11 @@ describe('Remoção de Emissão Automática', () => {
 
       // NÃO deve auditar campos removidos (em código executável)
       const lines = functionDef.split('\n');
-      const executableLines = lines.filter(line => {
+      const executableLines = lines.filter((line) => {
         const trimmed = line.trim();
-        return !trimmed.startsWith('--') && trimmed.includes('processamento_em');
+        return (
+          !trimmed.startsWith('--') && trimmed.includes('processamento_em')
+        );
       });
 
       // Apenas comentários podem mencionar processamento_em
@@ -294,9 +298,9 @@ describe('Remoção de Emissão Automática', () => {
       `);
 
       expect(triggerCheck.rows.length).toBeGreaterThan(0);
-      
+
       // tgenabled = 'O' significa ENABLED
-      const enabled = triggerCheck.rows.every(t => t.tgenabled === 'O');
+      const enabled = triggerCheck.rows.every((t) => t.tgenabled === 'O');
       expect(enabled).toBe(true);
     });
   });

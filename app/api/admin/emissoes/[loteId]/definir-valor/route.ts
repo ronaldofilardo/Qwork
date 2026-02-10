@@ -38,6 +38,11 @@ export async function POST(
 
     const lote = loteCheck.rows[0];
 
+    console.log(`[ADMIN] Definir valor - Lote ${loteId}:`, {
+      status: lote.status,
+      status_pagamento: lote.status_pagamento,
+    });
+
     if (lote.status !== 'concluido') {
       return NextResponse.json(
         { error: 'Lote deve estar concluído' },
@@ -50,6 +55,36 @@ export async function POST(
         { error: 'Valor já foi definido' },
         { status: 400 }
       );
+    }
+
+    // Verificar se laudo já foi emitido (não deveria acontecer, mas verificar mesmo assim)
+    const laudoCheck = await query(
+      `SELECT id, status, hash_pdf, emitido_em FROM laudos WHERE lote_id = $1`,
+      [loteId]
+    );
+
+    if (laudoCheck.rows.length > 0) {
+      const laudo = laudoCheck.rows[0];
+      console.log(`[ADMIN] Laudo existente encontrado:`, {
+        laudo_id: laudo.id,
+        status: laudo.status,
+        tem_hash: !!laudo.hash_pdf,
+        emitido_em: laudo.emitido_em,
+      });
+
+      if (laudo.status === 'emitido' || laudo.status === 'enviado') {
+        return NextResponse.json(
+          { error: 'Laudo já foi emitido para este lote' },
+          { status: 400 }
+        );
+      }
+
+      // Se tem laudo em rascunho mas sem emissor/hash, avisar mas permitir
+      if (laudo.status === 'rascunho' && !laudo.hash_pdf) {
+        console.warn(
+          `[WARN] Lote ${loteId} tem laudo rascunho órfão (será recriado quando emissor gerar)`
+        );
+      }
     }
 
     const updateResult = await query(

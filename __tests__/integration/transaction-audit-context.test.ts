@@ -81,7 +81,7 @@ describe('Integration: Contexto de Auditoria em Transações', () => {
       [funcionarioCpf]
     );
     funcionarioId = funcResult.rows[0].id;
-    
+
     await query(
       `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo)
        VALUES ($1, $2, $3, true)
