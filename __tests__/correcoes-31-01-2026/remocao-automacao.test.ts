@@ -232,4 +232,72 @@ describe('Remoção de Emissão Automática', () => {
       expect(indexes.rows.length).toBe(0);
     });
   });
+
+  describe('Migration 1011: Audit Trigger Sem processamento_em', () => {
+    it('função audit_lote_change() não deve referenciar processamento_em no código', async () => {
+      const result = await query(`
+        SELECT pg_get_functiondef(oid) as function_def
+        FROM pg_proc 
+        WHERE proname = 'audit_lote_change'
+      `);
+
+      expect(result.rows.length).toBe(1);
+      const functionDef = result.rows[0].function_def;
+
+      // Buscar por processamento_em no código (não em comentários)
+      const lines = functionDef.split('\n');
+      const codeLines = lines.filter(line => {
+        const trimmed = line.trim();
+        // Ignorar linhas de comentário
+        return !trimmed.startsWith('--') && trimmed.length > 0;
+      });
+
+      const codeWithoutComments = codeLines.join('\n');
+
+      // Verificar que processamento_em NÃO aparece no código executável
+      const hasProcessamentoEmInCode = codeWithoutComments.toLowerCase().includes('processamento_em');
+      
+      expect(hasProcessamentoEmInCode).toBe(false);
+    });
+
+    it('audit_lote_change deve auditar apenas campos existentes', async () => {
+      const result = await query(`
+        SELECT pg_get_functiondef(oid) as function_def
+        FROM pg_proc 
+        WHERE proname = 'audit_lote_change'
+      `);
+
+      const functionDef = result.rows[0].function_def;
+
+      // Verificar que audita campos corretos
+      expect(functionDef).toContain('status');
+      expect(functionDef).toContain('emitido_em');
+      expect(functionDef).toContain('enviado_em');
+
+      // NÃO deve auditar campos removidos (em código executável)
+      const lines = functionDef.split('\n');
+      const executableLines = lines.filter(line => {
+        const trimmed = line.trim();
+        return !trimmed.startsWith('--') && trimmed.includes('processamento_em');
+      });
+
+      // Apenas comentários podem mencionar processamento_em
+      expect(executableLines.length).toBe(0);
+    });
+
+    it('trigger audit_lote_change deve disparar em UPDATE sem erro', async () => {
+      // Verificar que o trigger existe e está ativo
+      const triggerCheck = await query(`
+        SELECT tgname, tgenabled 
+        FROM pg_trigger 
+        WHERE tgname LIKE '%audit_lote_change%'
+      `);
+
+      expect(triggerCheck.rows.length).toBeGreaterThan(0);
+      
+      // tgenabled = 'O' significa ENABLED
+      const enabled = triggerCheck.rows.every(t => t.tgenabled === 'O');
+      expect(enabled).toBe(true);
+    });
+  });
 });

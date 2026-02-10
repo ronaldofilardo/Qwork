@@ -26,16 +26,17 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
   let clinicaId: number;
   let empresaId: number;
   let funcionarioCpf: string;
-  const testCpf = '12345678909';
+  let funcionarioId: number;
 
   beforeAll(async () => {
     if (!process.env.TEST_DATABASE_URL?.includes('_test')) {
       throw new Error('TEST_DATABASE_URL deve apontar para banco _test');
     }
 
+    const userCpf = '12345678909';
     await query('SELECT set_config($1, $2, false)', [
       'app.current_user_cpf',
-      testCpf,
+      userCpf,
     ]);
     await query('SELECT set_config($1, $2, false)', [
       'app.current_user_perfil',
@@ -50,8 +51,8 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
       clinicaRes.rows[0]?.id ||
       (
         await query(
-          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-       VALUES ('Clinica SAVEPOINT Test', '33333333000100', 'savepoint@test.com', '11900000002', 'Rua', 'São Paulo', 'SP', '01000-002', 'Resp', 'resp@savepoint.com', true)
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, ativa)
+       VALUES ('Clinica SAVEPOINT Test', '33333333000100', 'savepoint@test.com', '11900000002', 'Rua', 'São Paulo', 'SP', '01000-002', 'Resp', '23456789012', 'resp@savepoint.com', true)
        RETURNING id`
         )
       ).rows[0].id;
@@ -64,34 +65,26 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
       empresaRes.rows[0]?.id ||
       (
         await query(
-          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-       VALUES ($1, 'Empresa SAVEPOINT Test', '44444444000100', 'emp@savepoint.com', '11900000003', 'Rua', 'São Paulo', 'SP', '01000-003', 'Resp', 'resp@emp.com', true)
+          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, ativa)
+       VALUES ($1, 'Empresa SAVEPOINT Test', '44444444000100', 'emp@savepoint.com', true)
        RETURNING id`,
           [clinicaId]
         )
       ).rows[0].id;
 
     funcionarioCpf = '88877766655';
-    await query(
+    const funcResult = await query(
       `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, indice_avaliacao)
        VALUES ($1, 'Func SAVEPOINT Test', 'savepoint@func.com', '$2a$10$hash', 'funcionario', true, 0)
-       ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome`,
+       RETURNING id`,
       [funcionarioCpf]
     );
-
-    const funcIdResult = await query(
-      'SELECT id FROM funcionarios WHERE cpf = $1',
-      [funcionarioCpf]
-    );
-    const funcId = funcIdResult.rows[0].id;
+    funcionarioId = funcResult.rows[0].id;
+    
     await query(
-      `DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1 AND clinica_id = $2`,
-      [funcId, clinicaId]
-    );
-    await query(
-      `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-       VALUES ($1, $2, true)`,
-      [funcId, clinicaId]
+      `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo)
+       VALUES ($1, $2, $3, true)`,
+      [funcionarioId, clinicaId, empresaId]
     );
   });
 
@@ -131,7 +124,7 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote SAVEPOINT Test', 'completo', 'ativo', $3, 1)
            RETURNING id`,
-          [clinicaId, empresaId, testCpf]
+          [clinicaId, empresaId, funcionarioCpf]
         );
         loteId = loteResult.rows[0].id;
 
@@ -205,10 +198,9 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
           [cpf]
         );
         await query(
-          `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-           VALUES ($1, $2, true)
-           ON CONFLICT (funcionario_id, clinica_id) DO UPDATE SET ativo = true`,
-          [funcIdResult.rows[0].id, clinicaId]
+          `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo)
+           VALUES ($1, $2, $3, true)`,
+          [funcIdResult.rows[0].id, clinicaId, empresaId]
         );
       }
 
@@ -218,7 +210,7 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote SAVEPOINT Multi', 'completo', 'ativo', $3, 1)
            RETURNING id`,
-          [clinicaId, empresaId, testCpf]
+          [clinicaId, empresaId, funcionarioCpf]
         );
         loteId = loteResult.rows[0].id;
 
@@ -286,7 +278,7 @@ describe('Integration: SAVEPOINT - Laudo Duplicado', () => {
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote SAVEPOINT Rollback Test', 'completo', 'ativo', $3, 1)
            RETURNING id`,
-          [clinicaId, empresaId, testCpf]
+          [clinicaId, empresaId, funcionarioCpf]
         );
         loteId = loteResult.rows[0].id;
 

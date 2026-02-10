@@ -50,9 +50,15 @@ async function aplicar() {
   });
 
   try {
-    console.log('================================================================');
-    console.log('  MIGRATION 1011: Remover processamento_em de audit_lote_change');
-    console.log('================================================================\n');
+    console.log(
+      '================================================================'
+    );
+    console.log(
+      '  MIGRATION 1011: Remover processamento_em de audit_lote_change'
+    );
+    console.log(
+      '================================================================\n'
+    );
 
     await client.connect();
     console.log('✅ Conectado ao banco de PROD\n');
@@ -76,9 +82,13 @@ async function aplicar() {
     const hasProcessamentoEm = currentDef.includes('processamento_em');
 
     if (hasProcessamentoEm) {
-      console.log('   ❌ audit_lote_change() REFERENCIA processamento_em (PRECISA CORREÇÃO)');
+      console.log(
+        '   ❌ audit_lote_change() REFERENCIA processamento_em (PRECISA CORREÇÃO)'
+      );
     } else {
-      console.log('   ✅ audit_lote_change() NÃO referencia processamento_em (JÁ CORRIGIDA)');
+      console.log(
+        '   ✅ audit_lote_change() NÃO referencia processamento_em (JÁ CORRIGIDA)'
+      );
       console.log('\n⚠️  Migration já foi aplicada. Encerrando.\n');
       return;
     }
@@ -116,11 +126,15 @@ async function aplicar() {
     const stillHasProcessamentoEm = newDef.includes('processamento_em');
 
     if (stillHasProcessamentoEm) {
-      console.error('   ❌ FALHA: audit_lote_change() AINDA referencia processamento_em');
+      console.error(
+        '   ❌ FALHA: audit_lote_change() AINDA referencia processamento_em'
+      );
       console.error('   Por favor, verifique a migration manualmente.\n');
       process.exit(1);
     } else {
-      console.log('   ✅ audit_lote_change() não referencia mais processamento_em');
+      console.log(
+        '   ✅ audit_lote_change() não referencia mais processamento_em'
+      );
     }
 
     // Verificar registros na audit_logs
@@ -135,17 +149,26 @@ async function aplicar() {
 
     if (auditCheck.rows.length > 0) {
       const log = auditCheck.rows[0];
-      console.log(`   ✅ Registro de auditoria criado: ID ${log.id} em ${log.created_at}`);
+      console.log(
+        `   ✅ Registro de auditoria criado: ID ${log.id} em ${log.created_at}`
+      );
     }
 
-    console.log('\n================================================================');
-    console.log('                    ✅ MIGRAÇÃO CONCLUÍDA                       ');
-    console.log('================================================================\n');
+    console.log(
+      '\n================================================================'
+    );
+    console.log(
+      '                    ✅ MIGRAÇÃO CONCLUÍDA                       '
+    );
+    console.log(
+      '================================================================\n'
+    );
     console.log('🎯 Teste agora:');
     console.log('   1. Login como funcionário');
     console.log('   2. Responder todas as perguntas');
-    console.log('   3. Auto-conclusão deve salvar sem erro "processamento_em"\n');
-
+    console.log(
+      '   3. Auto-conclusão deve salvar sem erro "processamento_em"\n'
+    );
   } catch (erro) {
     console.error('\n❌ ERRO ao aplicar Migration 1011:\n');
     console.error(erro);
