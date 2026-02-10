@@ -14,10 +14,10 @@
 ```
 NeonDbError: column "processamento_em" does not exist
   at PL/pgSQL function prevent_mutation_during_emission() line 8 at SQL statement
-  
-internalQuery: 
-  SELECT status, emitido_em, processamento_em 
-  FROM lotes_avaliacao 
+
+internalQuery:
+  SELECT status, emitido_em, processamento_em
+  FROM lotes_avaliacao
   WHERE id = NEW.lote_id
 ```
 
@@ -26,17 +26,16 @@ internalQuery:
 - **Rotas Afetadas:**
   - `/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar`
   - `/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar`
-  
 - **Impacto:** Impossível inativar avaliações em produção (funcionalidade crítica bloqueada)
 
-- **Causa Raiz:** 
+- **Causa Raiz:**
   - Coluna `processamento_em` foi removida na **Migration 130** (remoção de automação)
   - Função `prevent_mutation_during_emission()` não foi atualizada em PROD
   - **Migration 099** (que corrige a função) nunca foi aplicada em produção
 
 ---
 
-##  Análise Técnica
+## Análise Técnica
 
 ### Histórico de Migrações
 
@@ -51,6 +50,7 @@ Migration 130: Remove definitivamente coluna processamento_em (aplicada)
 ### Função Problemática
 
 **Versão INCORRETA em PROD:**
+
 ```sql
 CREATE FUNCTION prevent_mutation_during_emission() RETURNS TRIGGER AS $$
 DECLARE
@@ -61,7 +61,7 @@ BEGIN
     -- ❌ ERRO: Tenta acessar processamento_em que não existe
     SELECT status, emitido_em, processamento_em
     INTO lote_status, lote_emitido_em, processamento_em
-    FROM lotes_avaliacao 
+    FROM lotes_avaliacao
     WHERE id = NEW.lote_id;
     -- ...
   END IF;
@@ -71,6 +71,7 @@ $$ LANGUAGE plpgsql;
 ```
 
 **Versão CORRETA (Migration 099):**
+
 ```sql
 CREATE OR REPLACE FUNCTION prevent_mutation_during_emission() RETURNS TRIGGER AS $$
 DECLARE
@@ -81,9 +82,9 @@ BEGIN
     -- ✅ CORRETO: Não acessa processamento_em
     SELECT status, emitido_em
     INTO lote_status, lote_emitido_em
-    FROM lotes_avaliacao 
+    FROM lotes_avaliacao
     WHERE id = NEW.lote_id;
-    
+
     IF lote_emitido_em IS NOT NULL THEN
       -- Previne mudanças críticas
       IF OLD.status IS DISTINCT FROM NEW.status
@@ -105,6 +106,7 @@ $$ LANGUAGE plpgsql;
 ### Migração Criada: `1009_fix_prevent_mutation_function_prod.sql`
 
 **Ações:**
+
 1. ✅ Verificação prévia: Checa se coluna `processamento_em` existe
 2. ✅ Substitui função com versão correta (sem referência a `processamento_em`)
 3. ✅ Atualiza comentário da função
@@ -112,6 +114,7 @@ $$ LANGUAGE plpgsql;
 5. ✅ Auditoria: Registra correção em `audit_logs`
 
 **Características:**
+
 - **Idempotente:** Pode ser executada múltiplas vezes sem erro
 - **Segura:** Validações antes e depois
 - **Auditada:** Registra ação no log do sistema
@@ -143,6 +146,7 @@ cd c:\apps\QWork
 ```
 
 **O script fará:**
+
 1. Carrega DATABASE_URL do `.env.production.local`
 2. Exibe resumo do problema
 3. Solicita confirmação (digite "SIM")
@@ -185,6 +189,7 @@ SELECT pg_get_functiondef('prevent_mutation_during_emission'::regproc);
 ### 2. Testar Inativação de Avaliação
 
 **ENTIDADE:**
+
 ```bash
 curl -X PATCH https://seu-dominio.vercel.app/api/entidade/lote/10004/avaliacoes/10004/inativar \
   -H "Cookie: session_token=..." \
@@ -192,6 +197,7 @@ curl -X PATCH https://seu-dominio.vercel.app/api/entidade/lote/10004/avaliacoes/
 ```
 
 **RH:**
+
 ```bash
 curl -X PATCH https://seu-dominio.vercel.app/api/rh/lotes/1005/avaliacoes/10006/inativar \
   -H "Cookie: session_token=..." \
@@ -207,6 +213,7 @@ vercel logs --prod --follow
 ```
 
 **Buscar por:**
+
 - ✅ `[entidade] /avaliacoes/{id}/inativar status=200`
 - ✅ `[rh] /avaliacoes/{id}/inativar status=200`
 - ❌ Não deve aparecer: `column "processamento_em" does not exist`
@@ -217,17 +224,17 @@ vercel logs --prod --follow
 
 ### Estado Atual
 
-| Ambiente | Função Corrigida? | Coluna Existe? | Status |
-|----------|-------------------|----------------|--------|
-| **DEV (nr-bps_db)** | ✅ Sim (via migration 099) | ❌ Não (removida em 130) | ✅ OK |
-| **PROD (Neon)** | ❌ Não | ❌ Não (removida em 130) | 🔴 **ERRO** |
+| Ambiente            | Função Corrigida?          | Coluna Existe?           | Status      |
+| ------------------- | -------------------------- | ------------------------ | ----------- |
+| **DEV (nr-bps_db)** | ✅ Sim (via migration 099) | ❌ Não (removida em 130) | ✅ OK       |
+| **PROD (Neon)**     | ❌ Não                     | ❌ Não (removida em 130) | 🔴 **ERRO** |
 
 ### Após Aplicar Migration 1009
 
-| Ambiente | Função Corrigida? | Coluna Existe? | Status |
-|----------|-------------------|----------------|--------|
-| **DEV** | ✅ Sim | ❌ Não | ✅ OK |
-| **PROD** | ✅ Sim (via migration 1009) | ❌ Não | ✅ **OK** |
+| Ambiente | Função Corrigida?           | Coluna Existe? | Status    |
+| -------- | --------------------------- | -------------- | --------- |
+| **DEV**  | ✅ Sim                      | ❌ Não         | ✅ OK     |
+| **PROD** | ✅ Sim (via migration 1009) | ❌ Não         | ✅ **OK** |
 
 ---
 
@@ -252,7 +259,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      
+
       - name: Run Migrations on Production
         env:
           DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
@@ -266,6 +273,7 @@ jobs:
 ### 2. Ordem de Execução
 
 **Sempre seguir:**
+
 1. Criar função/trigger na migration N
 2. Remover coluna na migration N+1 (nunca na mesma)
 3. Aplicar migrations em ordem (nunca pular)

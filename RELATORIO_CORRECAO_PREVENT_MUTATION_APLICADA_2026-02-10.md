@@ -9,6 +9,7 @@
 ## 📊 Resumo Executivo
 
 ### Problema
+
 - **Erro:** `column "processamento_em" does not exist`
 - **Local:** Função `prevent_mutation_during_emission()`
 - **Impacto:** Impossível inativar avaliações em PROD
@@ -17,9 +18,11 @@
   - `/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar`
 
 ### Causa Raiz
+
 Migration 099 (que corrige a função) nunca foi aplicada em PROD, mas a Migration 130 (que remove a coluna `processamento_em`) foi aplicada, causando incompatibilidade.
 
 ### Solução Aplicada
+
 ✅ Migration 1009 criada e aplicada via script Node.js  
 ✅ Função atualizada para não referenciar `processamento_em`  
 ✅ Trigger continua funcionando corretamente
@@ -29,21 +32,25 @@ Migration 099 (que corrige a função) nunca foi aplicada em PROD, mas a Migrati
 ## 🔧 Mudanças Implementadas
 
 ### ANTES (ERRO)
+
 ```sql
 SELECT status, emitido_em, processamento_em
 INTO lote_status, lote_emitido_em, processamento_em
-FROM lotes_avaliacao 
+FROM lotes_avaliacao
 WHERE id = NEW.lote_id;
 ```
+
 ❌ Erro: coluna `processamento_em` não existe
 
 ### DEPOIS (CORRETO)
+
 ```sql
 SELECT status, emitido_em
 INTO lote_status, lote_emitido_em
-FROM lotes_avaliacao 
+FROM lotes_avaliacao
 WHERE id = NEW.lote_id;
 ```
+
 ✅ Funciona: usa apenas `emitido_em` para validação
 
 ---
@@ -76,6 +83,7 @@ WHERE id = NEW.lote_id;
 ## ✅ Validações Realizadas
 
 ### 1. Conexão ao Banco
+
 ```
 ✓ Conectado ao banco de dados de PRODUÇÃO (Neon)
 ✓ DATABASE_URL carregada de .env.production.local
@@ -83,17 +91,20 @@ WHERE id = NEW.lote_id;
 ```
 
 ### 2. Verificação Pré-Correção
+
 ```
 ❌ Função referenciava: SELECT status, emitido_em, processamento_em
 ```
 
 ### 3. Aplicação da Correção
+
 ```
 ✓ CREATE OR REPLACE FUNCTION executado com sucesso
 ✓ Função substituída sem erros
 ```
 
 ### 4. Validação Pós-Correção
+
 ```
 ✅ Função agora usa: SELECT status, emitido_em (SEM processamento_em)
 ✅ Trigger trigger_prevent_avaliacao_mutation_during_emission ativo
@@ -104,26 +115,33 @@ WHERE id = NEW.lote_id;
 ## 🧪 Testes Recomendados
 
 ### ENTIDADE - Inativar Avaliação
+
 ```bash
 curl -X PATCH https://qwork.vercel.app/api/entidade/lote/10004/avaliacoes/10004/inativar \
   -H "Cookie: session_token=SEU_TOKEN" \
   -H "Content-Type: application/json"
 ```
+
 **Resultado Esperado:** HTTP 200 `{ "success": true }`
 
 ### RH - Inativar Avaliação
+
 ```bash
 curl -X PATCH https://qwork.vercel.app/api/rh/lotes/1005/avaliacoes/10006/inativar \
   -H "Cookie: session_token=SEU_TOKEN" \
   -H "Content-Type: application/json"
 ```
+
 **Resultado Esperado:** HTTP 200 `{ "success": true }`
 
 ### Verificar Logs
+
 ```bash
 vercel logs --prod --follow
 ```
+
 **Buscar por:**
+
 - ✅ `status=200` nas rotas /inativar
 - ❌ Não deve aparecer: `column "processamento_em" does not exist`
 
@@ -132,31 +150,40 @@ vercel logs --prod --follow
 ## 📊 Comandos de Verificação Manual
 
 ### 1. Verificar Definição da Função
+
 ```sql
 SELECT pg_get_functiondef('prevent_mutation_during_emission'::regproc);
 ```
+
 **Deve retornar:**
+
 - ✅ `SELECT status, emitido_em` (SEM processamento_em)
 - ✅ Comentário atualizado com "migration 1009"
 
 ### 2. Verificar Trigger
+
 ```sql
 SELECT tgname, tgenabled, pg_get_triggerdef(oid)
 FROM pg_trigger
 WHERE tgname = 'trigger_prevent_avaliacao_mutation_during_emission';
 ```
+
 **Deve retornar:**
+
 - ✅ `tgenabled = 'O'` (trigger ativo)
 - ✅ Trigger BEFORE UPDATE em avaliacoes
 
 ### 3. Verificar Coluna Foi Removida
+
 ```sql
 SELECT column_name
 FROM information_schema.columns
 WHERE table_name = 'lotes_avaliacao'
 AND column_name = 'processamento_em';
 ```
+
 **Deve retornar:**
+
 - ✅ 0 rows (coluna não existe)
 
 ---
@@ -164,6 +191,7 @@ AND column_name = 'processamento_em';
 ## 🔒 Auditoria
 
 ### Registro em audit_logs
+
 ```sql
 SELECT user_cpf, action, resource, details, criado_em
 FROM audit_logs
@@ -174,6 +202,7 @@ LIMIT 1;
 ```
 
 **Deve conter:**
+
 - `user_cpf`: migration_1009
 - `user_perfil`: system
 - `details`: Correção urgente: Removida referência a processamento_em...
@@ -183,11 +212,13 @@ LIMIT 1;
 ## 📈 Impacto e Métricas
 
 ### Antes da Correção
+
 - ❌ Inativação de avaliações: **100% falha**
 - ❌ Erro em prod: **NeonDbError column "processamento_em" does not exist**
 - ❌ Impacto em usuários: **Clínicas e Entidades bloqueadas**
 
 ### Depois da Correção
+
 - ✅ Inativação de avaliações: **Funcional**
 - ✅ Erro eliminado: **Nenhum erro reportado**
 - ✅ Impacto em usuários: **Zero downtime, correção transparente**
@@ -197,22 +228,28 @@ LIMIT 1;
 ## 🚨 Lições Aprendidas
 
 ### 1. Processo de Deployment
+
 **Problema:** Migrations aplicadas parcialmente ou fora de ordem  
-**Solução:** 
+**Solução:**
+
 - Implementar CI/CD para migrations (GitHub Actions)
 - Script de sincronização automática dev → staging → prod
 - Checklist obrigatório antes de deploy
 
 ### 2. Ordem de Migrations
+
 **Problema:** Migration 130 removeu coluna antes de 099 corrigir função  
 **Solução:**
+
 - Sempre corrigir dependências ANTES de remover colunas
 - Usar migrações sequenciais (N remove referência, N+1 remove coluna)
 - Validar ordem em script de deploy
 
 ### 3. Validação em Prod
+
 **Problema:** Erro não detectado até produção  
 **Solução:**
+
 - Adicionar smoke tests pós-deploy
 - Validar funções críticas em staging
 - Monitoramento ativo de erros (Sentry/LogRocket)
@@ -249,18 +286,21 @@ LIMIT 1;
 ## 🎯 Próximas Ações
 
 ### Imediatas (Hoje)
+
 1. ✅ Aplicar correção (CONCLUÍDO)
 2. ⏳ Testar ambas as rotas de inativação
 3. ⏳ Verificar logs de erro desapareceram
 
 ### Curto Prazo (Esta Semana)
+
 4. Fazer commit e push das migrations criadas
 5. Criar PR com documentação
 6. Adicionar testes automatizados para estas rotas
 
 ### Longo Prazo (Próximo Sprint)
+
 7. Implementar CI/CD para migrations
-8. Criar dashboard de monitoramento de migrations  
+8. Criar dashboard de monitoramento de migrations
 9. Documentar processo de deployment de banco
 
 ---
