@@ -1157,20 +1157,33 @@ export default function DetalhesLotePage() {
                     </div>
                   </div>
 
-                  {/* Bot\u00e3o Download Laudo */}
+                  {/* Botão Download Laudo */}
                   {lote.laudo_id && (
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         try {
-                          // Abrir a rota de download diretamente em nova aba.
-                          // Isso permite que o browser siga o redirect 302 para
-                          // o presigned URL do Backblaze sem sofrer CORS/opaque.
-                          const downloadUrl = `/api/rh/laudos/${lote.laudo_id}/download`;
-                          window.open(downloadUrl, '_blank');
-                          toast.loading('Abrindo laudo para download...');
+                          toast.loading('Baixando laudo...', { id: 'laudo-download' });
+                          const response = await fetch(
+                            `/api/rh/laudos/${lote.laudo_id}/download`
+                          );
+                          
+                          if (!response.ok) {
+                            throw new Error('Erro ao baixar laudo');
+                          }
+
+                          const blob = await response.blob();
+                          const url = window.URL.createObjectURL(blob);
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `Laudo_${lote.id}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          window.URL.revokeObjectURL(url);
+                          document.body.removeChild(a);
+                          toast.success('Laudo baixado com sucesso!', { id: 'laudo-download' });
                         } catch (err) {
-                          console.error('Erro ao abrir download:', err);
-                          toast.error('Erro ao iniciar download do laudo');
+                          console.error('Erro ao baixar laudo:', err);
+                          toast.error('Erro ao baixar laudo', { id: 'laudo-download' });
                         }
                       }}
                       className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
