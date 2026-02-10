@@ -1801,10 +1801,14 @@ export async function criarContaResponsavel(
         );
       }
     } else {
-      // Inserir novo usuário
+      // Inserir novo usuário (com ON CONFLICT para evitar erro de sequência desatualizada)
       await query(
         `INSERT INTO usuarios (cpf, nome, email, tipo_usuario, clinica_id, entidade_id, ativo, criado_em, atualizado_em)
-         VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
+         VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+         ON CONFLICT (cpf) DO UPDATE 
+         SET nome = EXCLUDED.nome, email = EXCLUDED.email, tipo_usuario = EXCLUDED.tipo_usuario,
+             clinica_id = EXCLUDED.clinica_id, entidade_id = EXCLUDED.entidade_id, ativo = true,
+             atualizado_em = CURRENT_TIMESTAMP`,
         [
           cpfParaUsar,
           tomadorData.responsavel_nome || 'Gestor',
@@ -1817,7 +1821,7 @@ export async function criarContaResponsavel(
       );
       if (DEBUG_DB) {
         console.debug(
-          `[CRIAR_CONTA] Usuário criado: CPF=${cpfParaUsar}, tipo=${tipoUsuario}`
+          `[CRIAR_CONTA] Usuário criado/atualizado: CPF=${cpfParaUsar}, tipo=${tipoUsuario}`
         );
       }
     }
