@@ -44,7 +44,7 @@ export async function gerarLaudoCompletoEmitirPDF(
     [loteId]
   );
 
-  let laudoId = loteId; // Por design, laudos.id = lote_id
+  const laudoId = loteId; // Por design, laudos.id = lote_id
 
   if (laudoExistente.rows.length > 0) {
     const status = laudoExistente.rows[0].status;
