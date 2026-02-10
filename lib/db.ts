@@ -313,6 +313,7 @@ export type QueryResult<T = any> = {
 // Conexão Neon (Produção) - Será importada dinamicamente quando necessário
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let neonSql: any = null;
+let neonPool: any = null;
 let neonImported = false;
 
 async function getNeonSql() {
@@ -327,6 +328,24 @@ async function getNeonSql() {
     }
   }
   return neonSql;
+}
+
+/**
+ * Obtém Neon Pool para transações com contexto persistente
+ * Pool mantém conexão WebSocket que permite SET LOCAL
+ */
+export async function getNeonPool() {
+  if (!neonPool && isProduction && process.env.DATABASE_URL) {
+    try {
+      const { Pool: NeonPool } = await import('@neondatabase/serverless');
+      neonPool = new NeonPool({ connectionString: process.env.DATABASE_URL });
+      console.log('[db] Neon Pool criado para transações');
+    } catch (_err) {
+      console.error('Erro ao criar Neon Pool:', _err);
+      throw _err;
+    }
+  }
+  return neonPool;
 }
 
 // Conexão PostgreSQL Local (Desenvolvimento e Testes)
@@ -744,19 +763,65 @@ export async function transaction<T>(
       client.release();
     }
   } else if (isProduction) {
-    // Para Neon, não temos suporte a transações no mesmo nível
-    // Por enquanto, executamos as queries sequencialmente
-    console.warn(
-      '[db][transaction] Transações nativas não suportadas em Neon - executando queries sequencialmente'
-    );
+    // Para Neon em produção: usar Pool com transação real
+    const pool = await getNeonPool();
+    if (!pool) {
+      throw new Error('Neon Pool não disponível');
+    }
 
-    const txClient: TransactionClient = {
-      query: async <R = any>(text: string, params?: unknown[]) => {
-        return await query<R>(text, params, session);
-      },
-    };
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
 
-    return await callback(txClient);
+      // Configurar contexto de auditoria dentro da transação
+      if (session) {
+        const escapeString = (str: string) => str.replace(/'/g, "''");
+        await client.query(
+          `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
+        );
+
+        if (DEBUG_DB) {
+          console.log(
+            `[db][transaction] Neon: Variáveis de auditoria configuradas para ${session.perfil}`
+          );
+        }
+      }
+
+      // Criar TransactionClient usando a mesma conexão
+      const txClient: TransactionClient = {
+        query: async <R = any>(text: string, params?: unknown[]) => {
+          const result = await client.query(text, params);
+          return {
+            rows: result.rows as R[],
+            rowCount: result.rowCount || 0,
+          };
+        },
+      };
+
+      const result = await callback(txClient);
+      await client.query('COMMIT');
+
+      if (DEBUG_DB) {
+        console.log('[db][transaction] Neon: Transação comitada');
+      }
+
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      console.error('[db][transaction] Neon: Transação revertida:', error);
+      throw error;
+    } finally {
+      client.release();
+    }
   } else {
     throw new Error(
       `Nenhuma conexão configurada para ambiente: ${environment}`
