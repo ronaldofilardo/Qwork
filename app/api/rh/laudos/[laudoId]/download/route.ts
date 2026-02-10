@@ -29,7 +29,7 @@ export const GET = async (
     }
 
     // Buscar laudo e validar que está enviado ou emitido
-    // Coluna arquivo_pdf foi removida em migration 070 — apenas usar storage de arquivos
+    // Incluir metadados do arquivo remoto (Backblaze)
     const laudoQuery = await query(
       `
       SELECT
@@ -37,6 +37,10 @@ export const GET = async (
         l.lote_id,
         l.status,
         l.hash_pdf,
+        l.arquivo_remoto_provider,
+        l.arquivo_remoto_bucket,
+        l.arquivo_remoto_key,
+        l.arquivo_remoto_url,
         la.clinica_id,
         la.empresa_id
       FROM laudos l
@@ -99,7 +103,26 @@ export const GET = async (
       Array.from(candidateNames)
     );
 
-    // 1) Procurar em storage/local
+    // PRIORIDADE 1: Usar arquivo_remoto_key do banco (se existir)
+    if (laudo.arquivo_remoto_key) {
+      console.log(
+        `[BACKBLAZE] Arquivo remoto encontrado no banco: ${laudo.arquivo_remoto_key}`
+      );
+      try {
+        const { getPresignedUrl } = await import('@/lib/storage/backblaze-client');
+        const presignedUrl = await getPresignedUrl(laudo.arquivo_remoto_key, 300); // 5 min
+        console.log(`[BACKBLAZE] Redirecionando para presigned URL`);
+        return NextResponse.redirect(presignedUrl, 302);
+      } catch (backblazeError) {
+        console.error(
+          '[BACKBLAZE] Erro ao gerar presigned URL:',
+          backblazeError
+        );
+        // Continuar tentando outras opções
+      }
+    }
+
+    // PRIORIDADE 2: Procurar em storage/local (apenas desenvolvimento)
     const storageDir = path.join(process.cwd(), 'storage', 'laudos');
     console.log(`[DEBUG] Storage dir: ${storageDir}`);
     console.log(`[DEBUG] Storage exists: ${fs.existsSync(storageDir)}`);

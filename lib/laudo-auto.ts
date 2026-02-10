@@ -38,27 +38,45 @@ export async function gerarLaudoCompletoEmitirPDF(
     `[EMISSÃO] Iniciando emissão de laudo para lote ${loteId} por emissor ${emissorCpf}`
   );
 
-  // ETAPA 1: Criar/atualizar registro do laudo como 'rascunho'
-  // Usar lote_id como id para satisfazer constraint laudos_id_equals_lote_id
-  const laudoRascunho = await query(
-    `INSERT INTO laudos (id, lote_id, status, criado_em, emissor_cpf)
-     VALUES ($1, $1, 'rascunho', NOW(), $2)
-     ON CONFLICT (id) DO UPDATE 
-     SET emissor_cpf = $2,
-         atualizado_em = NOW()
-     WHERE laudos.status = 'rascunho'
-     RETURNING id`,
-    [loteId, emissorCpf]
+  // ETAPA 1: Verificar se laudo já existe
+  const laudoExistente = await query(
+    `SELECT id, status FROM laudos WHERE lote_id = $1`,
+    [loteId]
   );
 
-  if (!laudoRascunho || laudoRascunho.rowCount === 0) {
-    throw new Error(
-      'Falha ao criar laudo em rascunho. Laudo pode já estar emitido.'
+  let laudoId = loteId; // Por design, laudos.id = lote_id
+
+  if (laudoExistente.rows.length > 0) {
+    const status = laudoExistente.rows[0].status;
+    
+    // Se laudo já está emitido ou enviado, não permitir regeração (imutabilidade)
+    if (status === 'emitido' || status === 'enviado') {
+      throw new Error(
+        `Laudo ${laudoId} já foi emitido e não pode ser regenerado (princípio da imutabilidade)`
+      );
+    }
+
+    // Se está em rascunho, podemos atualizar
+    if (status === 'rascunho') {
+      console.log(`[EMISSÃO] Laudo ${laudoId} já existe em rascunho, atualizando emissor...`);
+      await query(
+        `UPDATE laudos 
+         SET emissor_cpf = $1, atualizado_em = NOW()
+         WHERE id = $2`,
+        [emissorCpf, laudoId]
+      );
+    }
+  } else {
+    // Laudo não existe, criar novo em rascunho
+    console.log(`[EMISSÃO] Criando novo laudo ${laudoId} em rascunho...`);
+    await query(
+      `INSERT INTO laudos (id, lote_id, status, criado_em, emissor_cpf)
+       VALUES ($1, $1, 'rascunho', NOW(), $2)`,
+      [loteId, emissorCpf]
     );
   }
 
-  const laudoId = laudoRascunho.rows[0].id;
-  console.log(`[EMISSÃO] Laudo ${laudoId} criado/atualizado como rascunho`);
+  console.log(`[EMISSÃO] Laudo ${laudoId} preparado como rascunho`);
 
   try {
     // ETAPA 2: Gerar dados completos do laudo
@@ -177,6 +195,54 @@ export async function gerarLaudoCompletoEmitirPDF(
     };
     fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2));
     console.log(`[EMISSÃO] Metadata salvo em ${metaFilePath}`);
+
+    // ETAPA 9: Upload para Backblaze (assíncrono, não bloqueia)
+    console.log(`[EMISSÃO] Iniciando upload para Backblaze...`);
+    try {
+      const { uploadLaudoToBackblaze } = await import('./storage/laudo-storage');
+      await uploadLaudoToBackblaze(laudoId, loteId, Buffer.from(pdfBuffer));
+      console.log(`[EMISSÃO] ✅ Upload para Backblaze concluído`);
+
+      // Ler metadados atualizados e persistir no banco
+      try {
+        const metaContent = fs.readFileSync(metaFilePath, 'utf-8');
+        const meta = JSON.parse(metaContent);
+
+        if (meta.arquivo_remoto) {
+          await query(
+            `UPDATE laudos 
+             SET arquivo_remoto_provider = $1,
+                 arquivo_remoto_bucket = $2,
+                 arquivo_remoto_key = $3,
+                 arquivo_remoto_url = $4,
+                 arquivo_remoto_uploaded_at = NOW(),
+                 arquivo_remoto_size = $5,
+                 atualizado_em = NOW()
+             WHERE id = $6`,
+            [
+              meta.arquivo_remoto.provider || 'backblaze',
+              meta.arquivo_remoto.bucket || 'laudos-qwork',
+              meta.arquivo_remoto.key,
+              meta.arquivo_remoto.url,
+              pdfBuffer.byteLength,
+              laudoId,
+            ]
+          );
+          console.log(`[EMISSÃO] ✅ Metadados do Backblaze persistidos no banco`);
+        }
+      } catch (dbError) {
+        console.warn(
+          `[EMISSÃO] ⚠️ Não foi possível persistir metadados do Backblaze no banco:`,
+          dbError instanceof Error ? dbError.message : dbError
+        );
+      }
+    } catch (uploadError) {
+      // Upload para Backblaze é opcional - não bloqueia emissão do laudo
+      console.warn(
+        `[EMISSÃO] ⚠️ Falha ao fazer upload para Backblaze (laudo emitido localmente):`,
+        uploadError instanceof Error ? uploadError.message : uploadError
+      );
+    }
 
     console.log(
       `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso - PDF físico + hash + status='emitido'`
