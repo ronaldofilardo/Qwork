@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 import { grupos } from '@/lib/questoes';
 
@@ -15,7 +15,8 @@ export async function GET(request: Request) {
 
     if (avaliacaoIdParam) {
       // Verificar se a avaliação pertence ao usuário e não está inativada
-      const checkResult = await query(
+      const checkResult = await queryWithContext(
+        session,
         "SELECT id FROM avaliacoes WHERE id = $1 AND funcionario_cpf = $2 AND status != 'inativada'",
         [parseInt(avaliacaoIdParam), session.cpf]
       );
@@ -28,7 +29,8 @@ export async function GET(request: Request) {
       avaliacaoId = parseInt(avaliacaoIdParam);
     } else {
       // Buscar avaliação mais recente (em andamento ou concluída, não inativada)
-      const avaliacaoResult = await query(
+      const avaliacaoResult = await queryWithContext(
+        session,
         `SELECT id FROM avaliacoes
          WHERE funcionario_cpf = $1 AND status IN ('em_andamento', 'concluida') AND status != 'inativada'
          ORDER BY atualizado_em DESC, envio DESC LIMIT 1`,
@@ -46,7 +48,8 @@ export async function GET(request: Request) {
     }
 
     // Buscar todas as respostas da avaliação (deduplicando por grupo+item, mantendo a mais recente)
-    const respostasResult = await query(
+    const respostasResult = await queryWithContext(
+      session,
       `SELECT DISTINCT ON (r.grupo, r.item) r.grupo, r.item, r.valor
        FROM respostas r
        WHERE r.avaliacao_id = $1

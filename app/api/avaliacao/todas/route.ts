@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 
 export async function GET() {

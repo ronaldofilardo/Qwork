@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
@@ -16,12 +16,13 @@ export async function POST(request: Request) {
     }
 
     // Buscar todas as condições de cascata
-    const condicoesResult = await query(`
-      SELECT questao_id, questao_dependente, operador, valor_condicao, categoria
-      FROM questao_condicoes 
-      WHERE ativo = true
-      ORDER BY questao_id
-    `);
+    const condicoesResult = await queryWithContext(
+      session,
+      `SELECT questao_id, questao_dependente, operador, valor_condicao, categoria
+       FROM questao_condicoes 
+       WHERE ativo = true
+       ORDER BY questao_id`
+    );
 
     const questoesVisiveis = new Set<number>();
     const questoesCondicionais = new Map<number, any>();
