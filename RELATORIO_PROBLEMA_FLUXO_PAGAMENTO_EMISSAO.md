@@ -19,6 +19,7 @@ O sistema está criando registros de laudos prematuramente (em status 'rascunho'
 **Localização**: Trigger `fn_reservar_id_laudo_on_lote_insert()`
 
 **Comportamento Atual**:
+
 ```sql
 -- Trigger dispara APÓS criar lote
 CREATE TRIGGER trg_reservar_id_laudo_on_lote_insert
@@ -32,7 +33,8 @@ VALUES (NEW.id, NEW.id, 'rascunho')
 ON CONFLICT (id) DO NOTHING;
 ```
 
-**Problema**: 
+**Problema**:
+
 - Laudo é criado IMEDIATAMENTE quando lote é criado
 - Isso acontece ANTES de:
   - Solicitação de emissão
@@ -41,6 +43,7 @@ ON CONFLICT (id) DO NOTHING;
   - Emissor revisar o lote
 
 **Impacto**:
+
 - Sistema tenta gerar hash para laudo que não tem PDF
 - Constraint `chk_laudos_hash_when_emitido` pode falhar
 - Emissor pode ver laudos que não deveriam existir ainda
@@ -52,6 +55,7 @@ ON CONFLICT (id) DO NOTHING;
 **Localização**: `/api/emissor/lotes/route.ts` (linha 34)
 
 **Código Atual**:
+
 ```typescript
 WHERE la.status != 'cancelado'
   AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
@@ -59,19 +63,22 @@ WHERE la.status != 'cancelado'
 ```
 
 **Problema**:
+
 - Emissor SÓ vê lotes:
   - Pagos (`status_pagamento = 'pago'`)
   - OU antigos sem fluxo de pagamento (`status_pagamento IS NULL`)
 - Lotes com `status_pagamento = 'aguardando_cobranca'` ou `aguardando_pagamento` são **INVISÍVEIS**
 
 **Fluxo Correto Esperado**:
+
 1. RH/Entidade solicita → `status_pagamento = 'aguardando_cobranca'` ✅
 2. Admin define valor → status permanece `aguardando_cobranca` ✅
 3. Admin gera link → `status_pagamento = 'aguardando_pagamento'` ✅
 4. Solicitante confirma pagamento → `status_pagamento = 'pago'` ✅
 5. **SOMENTE AGORA** emissor vê o lote ✅
 
-**Resultado**: 
+**Resultado**:
+
 - ✅ Filtro está CORRETO e funcionando como esperado
 - ❌ O problema NÃO é o filtro, é a criação prematura do laudo
 
@@ -82,6 +89,7 @@ WHERE la.status != 'cancelado'
 **Localização**: Constraint na tabela `laudos`
 
 **Constraint**:
+
 ```sql
 CONSTRAINT chk_laudos_hash_when_emitido CHECK (
   status != 'emitido' OR hash_pdf IS NOT NULL
@@ -89,11 +97,13 @@ CONSTRAINT chk_laudos_hash_when_emitido CHECK (
 ```
 
 **Problema**:
+
 - Constraint exige que laudos 'emitido' tenham hash
 - Mas o laudo em 'rascunho' é criado ANTES do PDF existir
 - Se algum código tentar marcar como 'emitido' sem gerar PDF primeiro, a constraint falha
 
 **Erro Típico**:
+
 ```
 ERROR: Laudo não pode ser marcado como emitido sem hash_pdf
 ```
@@ -105,9 +115,10 @@ ERROR: Laudo não pode ser marcado como emitido sem hash_pdf
 **Localização**: `/database/migrations/800_add_payment_flow_to_lotes.sql`
 
 **View Atual**:
+
 ```sql
 CREATE OR REPLACE VIEW v_solicitacoes_emissao AS
-SELECT 
+SELECT
   la.id AS lote_id,
   la.status_pagamento,
   la.solicitacao_emissao_em,
@@ -117,6 +128,7 @@ WHERE la.status_pagamento IS NOT NULL
 ```
 
 **Problema Potencial**:
+
 - View NÃO verifica se laudo já existe
 - Admin pode ver lotes com laudos já criados em 'rascunho'
 - Pode causar confusão ao definir valor/gerar link
@@ -153,6 +165,7 @@ WHERE la.status_pagamento IS NOT NULL
 > "desde ha analise que o laudo ainda nao deve estar com o emissor pq nao foi confirmado pq nao houve pagamento, logo se nao esta com o emissor nao existe geração de hash"
 
 **✅ CORRETO!** O usuário está certo:
+
 - Laudo NÃO deveria estar com emissor (e não está - filtro correto)
 - Pagamento NÃO foi confirmado
 - Hash NÃO deveria existir (e não existe)
@@ -160,6 +173,7 @@ WHERE la.status_pagamento IS NOT NULL
 > "acho que o sistema ao reservar um id para o laudo esta colocando com status que o sistema entende que é para gerar um hash mesmo antes do arquivo em pdf existir"
 
 **✅ CORRETO!** O problema é:
+
 - Trigger cria laudo em 'rascunho' ANTES do fluxo de pagamento
 - Algum código pode estar tentando marcar como 'emitido' sem gerar PDF
 - Constraint bloqueia porque hash_pdf é NULL
@@ -167,6 +181,7 @@ WHERE la.status_pagamento IS NOT NULL
 > "um hash somente pode ser gerado depois que o emissor gera um laudo em pdf"
 
 **✅ ABSOLUTAMENTE CORRETO!** Fluxo correto:
+
 1. Pagamento confirmado
 2. Emissor acessa lote
 3. Emissor clica "Gerar Laudo"
@@ -181,17 +196,19 @@ WHERE la.status_pagamento IS NOT NULL
 ### Solução 1: Remover/Modificar Trigger de Criação de Laudo (RECOMENDADA)
 
 **Opção A: Remover Trigger Completamente**
+
 ```sql
 -- Migration: 1100_remove_premature_laudo_creation.sql
 DROP TRIGGER IF EXISTS trg_reservar_id_laudo_on_lote_insert ON lotes_avaliacao;
 DROP FUNCTION IF EXISTS fn_reservar_id_laudo_on_lote_insert();
 
 -- Laudo será criado APENAS quando emissor clicar "Gerar Laudo"
-COMMENT ON TABLE laudos IS 
+COMMENT ON TABLE laudos IS
 'Laudos são criados APENAS pelo emissor após pagamento confirmado e ao clicar em "Gerar Laudo"';
 ```
 
 **Opção B: Modificar Trigger para Criar Apenas Após Pagamento**
+
 ```sql
 -- Trigger dispara apenas quando pagamento é confirmado
 CREATE OR REPLACE FUNCTION fn_criar_laudo_apos_pagamento()
@@ -221,7 +238,7 @@ CREATE TRIGGER trg_criar_laudo_apos_pagamento
 ```sql
 -- Adicionar informação sobre laudo existente
 CREATE OR REPLACE VIEW v_solicitacoes_emissao AS
-SELECT 
+SELECT
   la.id AS lote_id,
   la.status_pagamento,
   la.solicitacao_emissao_em,
@@ -231,7 +248,7 @@ SELECT
   l.id AS laudo_id,
   l.status AS laudo_status,
   l.hash_pdf AS laudo_hash,
-  CASE 
+  CASE
     WHEN l.id IS NOT NULL AND l.hash_pdf IS NOT NULL THEN true
     ELSE false
   END AS laudo_ja_emitido
@@ -288,10 +305,11 @@ console.log(`[ADMIN] Laudo existente:`, laudoDebug.rows[0] || 'NENHUM');
 ## 🎯 Plano de Ação Imediato
 
 ### Fase 1: Diagnóstico (AGORA)
+
 1. ✅ Identificar problema (CONCLUÍDO)
 2. ⏳ Verificar lote 1005 em PROD:
    ```sql
-   SELECT 
+   SELECT
      la.id,
      la.status AS lote_status,
      la.status_pagamento,
@@ -306,11 +324,13 @@ console.log(`[ADMIN] Laudo existente:`, laudoDebug.rows[0] || 'NENHUM');
    ```
 
 ### Fase 2: Correção Imediata (HOJE)
+
 1. Aplicar Solução 3 (validação no admin)
 2. Aplicar Solução 4 (logs de debug)
 3. Testar com lote 1005
 
 ### Fase 3: Correção Estrutural (PRÓXIMOS DIAS)
+
 1. Aplicar Solução 1 (remover/modificar trigger)
 2. Aplicar Solução 2 (ajustar view)
 3. Testar fluxo completo em dev
@@ -321,11 +341,13 @@ console.log(`[ADMIN] Laudo existente:`, laudoDebug.rows[0] || 'NENHUM');
 ## 📊 Impacto Estimado
 
 ### Lotes Afetados
+
 - Todos os lotes criados após migration 999/1004
 - Lotes com `status_pagamento IS NOT NULL`
 - Lotes que têm laudo em 'rascunho' mas sem PDF
 
 ### Risco
+
 - **MÉDIO**: Sistema não quebra completamente
 - **ALTO**: Admin pode receber erros ao tentar processar solicitações
 - **BAIXO**: Emissor não é afetado (filtro funciona corretamente)
@@ -345,17 +367,20 @@ console.log(`[ADMIN] Laudo existente:`, laudoDebug.rows[0] || 'NENHUM');
 ## 🔗 Arquivos Relacionados
 
 ### Triggers/Functions
+
 - `database/migrations/083_sync_lote_laudo_sequences.sql`
 - `database/migrations/999_reserva_id_laudo_on_lote_insert.sql`
 - `database/migrations/1004_fix_fn_reservar_laudo_status_rascunho.sql`
 
 ### APIs Afetadas
+
 - `app/api/lotes/[loteId]/solicitar-emissao/route.ts`
 - `app/api/admin/emissoes/[loteId]/definir-valor/route.ts`
 - `app/api/admin/emissoes/[loteId]/gerar-link/route.ts`
 - `app/api/emissor/lotes/route.ts`
 
 ### Migration Fluxo Pagamento
+
 - `database/migrations/800_add_payment_flow_to_lotes.sql`
 
 ---

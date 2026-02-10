@@ -200,17 +200,27 @@ export async function createTestPagamento(
   // Determine which ID to use (entidade_id or clinica_id)
   let query_text: string;
   let params: any[];
-  
+
   if (options.entidade_id) {
     query_text = `INSERT INTO pagamentos (entidade_id, valor, status, metodo)
      VALUES ($1, $2, $3, $4)
      RETURNING id`;
-    params = [options.entidade_id, defaults.valor, defaults.status, defaults.metodo];
+    params = [
+      options.entidade_id,
+      defaults.valor,
+      defaults.status,
+      defaults.metodo,
+    ];
   } else if (options.clinica_id) {
     query_text = `INSERT INTO pagamentos (clinica_id, valor, status, metodo)
      VALUES ($1, $2, $3, $4)
      RETURNING id`;
-    params = [options.clinica_id, defaults.valor, defaults.status, defaults.metodo];
+    params = [
+      options.clinica_id,
+      defaults.valor,
+      defaults.status,
+      defaults.metodo,
+    ];
   } else {
     throw new Error('Either entidade_id or clinica_id must be provided');
   }

@@ -16,6 +16,7 @@
 ## ⏱️ IMPORTANTE: Aguardar Deploy
 
 O Vercel levará **2-3 minutos** para:
+
 1. Detectar o novo commit
 2. Fazer build da aplicação
 3. Publicar a nova versão
@@ -29,12 +30,14 @@ O Vercel levará **2-3 minutos** para:
 ### 1️⃣ Aguarde o Deploy (2-3 minutos)
 
 Você pode verificar o status do deploy em:
+
 - Dashboard Vercel: https://vercel.com/qwork
 - Ou aguarde a notificação de deploy
 
 ### 2️⃣ Abra o Site em Modo Anônimo
 
 Para evitar cache:
+
 - **Chrome/Edge**: Ctrl + Shift + N
 - **Firefox**: Ctrl + Shift + P
 
@@ -67,6 +70,7 @@ Observe os logs que aparecerão no Console:
 #### ❌ LOGS DE PROBLEMA:
 
 Se você ver:
+
 ```
 [DEBUG] Solicitações carregadas: { total: 0, count: 0, solicitacoes: [] }
 ```
@@ -85,6 +89,7 @@ Então a API está retornando vazio (problema no banco ou view).
 6. Veja a **Response** (direita)
 
 **Response esperada:**
+
 ```json
 {
   "solicitacoes": [
@@ -104,11 +109,14 @@ Então a API está retornando vazio (problema no banco ou view).
 ## 🎯 Possíveis Cenários
 
 ### Cenário A: Contador mostra "1" e lote aparece ✅
+
 **Solução**: Era cache! Tudo resolvido.
 
 ### Cenário B: Console mostra `total: 0` ❌
+
 **Problema**: API retornando vazio
-**Causa possível**: 
+**Causa possível**:
+
 - View `v_solicitacoes_emissao` com problema
 - Database connection diferente
 - RLS bloqueando
@@ -116,10 +124,12 @@ Então a API está retornando vazio (problema no banco ou view).
 **Ação**: Tire print do Console e envie para análise
 
 ### Cenário C: Erro 403 ou 401 ❌
+
 **Problema**: Autenticação
 **Ação**: Faça logout e login novamente como admin
 
 ### Cenário D: Erro 500 ❌
+
 **Problema**: Erro no servidor
 **Ação**: Abra os logs do Vercel (Runtime Logs)
 
@@ -128,6 +138,7 @@ Então a API está retornando vazio (problema no banco ou view).
 ## 📞 Se Ainda Não Funcionar
 
 Me envie:
+
 1. **Print do Console** (aba Console com os logs)
 2. **Print do Network** (clique na requisição `/api/admin/emissoes` e mostre Response)
 3. **Print da tela** (mostrando contador "0")

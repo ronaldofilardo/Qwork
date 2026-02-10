@@ -13,6 +13,7 @@ Sua análise está 100% correta:
 > "ao reservar um id para o laudo esta colocando com status que o sistema entende que é para gerar um hash mesmo antes do arquivo em pdf existir"
 
 ✅ **CORRETO**: Existe uma trigger (`fn_reservar_id_laudo_on_lote_insert()`) que cria laudo em 'rascunho' IMEDIATAMENTE quando o lote é criado, ANTES de:
+
 - Solicitação de emissão
 - Definição de valor
 - Pagamento
@@ -34,6 +35,7 @@ Sua análise está 100% correta:
 ```
 
 Isso mostrará:
+
 - Estado atual do lote 1005
 - Se há laudo criado prematuramente
 - Status do fluxo de pagamento
@@ -47,6 +49,7 @@ Isso mostrará:
 ```
 
 Isso irá:
+
 1. ✅ Remover trigger de criação prematura
 2. ✅ Limpar laudos rascunho órfãos
 3. ✅ Atualizar view v_solicitacoes_emissao
@@ -57,11 +60,13 @@ Isso irá:
 ## 📝 O Que Foi Corrigido
 
 ### 1. APIs do Admin (Imediato)
+
 - ✅ Adicionada validação em `definir-valor` para detectar laudos já emitidos
 - ✅ Adicionada validação em `gerar-link` para prevenir conflitos
 - ✅ Adicionados logs de debug para facilitar troubleshooting
 
 ### 2. Migration 1100 (Estrutural)
+
 - ✅ Remove trigger `trg_reservar_id_laudo_on_lote_insert`
 - ✅ Limpa laudos rascunho órfãos (criados antes do pagamento)
 - ✅ Atualiza view `v_solicitacoes_emissao` para incluir info do laudo
@@ -72,6 +77,7 @@ Isso irá:
 ## 🔄 Fluxo Correto Após Correção
 
 ### Antes (❌ Errado)
+
 ```
 1. Criar lote
 2. ❌ Trigger cria laudo em 'rascunho' automaticamente
@@ -81,6 +87,7 @@ Isso irá:
 ```
 
 ### Depois (✅ Correto)
+
 ```
 1. Criar lote
 2. ✅ Nenhum laudo é criado
@@ -100,9 +107,10 @@ Isso irá:
 ## 🧪 Testes Pós-Correção
 
 ### 1. Testar Lote 1005 (Existente)
+
 ```sql
 -- Verificar estado após correção
-SELECT 
+SELECT
   la.id, la.status_pagamento,
   l.id AS laudo_id, l.status AS laudo_status, l.hash_pdf
 FROM lotes_avaliacao la
@@ -111,10 +119,12 @@ WHERE la.id = 1005;
 ```
 
 Resultado esperado:
+
 - Se lote não estava pago: laudo deve ter sido removido
 - Se estava com laudo rascunho órfão: deve ter sido limpo
 
 ### 2. Testar Novo Lote
+
 1. ✅ Criar novo lote (RH)
 2. ✅ Verificar que NÃO há laudo:
    ```sql
@@ -134,18 +144,20 @@ Resultado esperado:
 ## 🐛 Debug: Se Admin Ainda Ver Erro no Lote 1005
 
 ### Verificar estado atual
+
 ```sql
 -- Ver tudo sobre o lote 1005
 SELECT * FROM v_solicitacoes_emissao WHERE lote_id = 1005;
 ```
 
 ### Limpar manualmente se necessário
+
 ```sql
 -- SOMENTE se o lote está travado
 BEGIN;
 
 -- Verificar estado
-SELECT 
+SELECT
   la.status_pagamento,
   l.id AS laudo_id, l.status AS laudo_status
 FROM lotes_avaliacao la
@@ -153,9 +165,9 @@ LEFT JOIN laudos l ON l.lote_id = la.id
 WHERE la.id = 1005;
 
 -- Se tem laudo rascunho órfão, remover
-DELETE FROM laudos 
-WHERE lote_id = 1005 
-  AND status = 'rascunho' 
+DELETE FROM laudos
+WHERE lote_id = 1005
+  AND status = 'rascunho'
   AND hash_pdf IS NULL
   AND emitido_em IS NULL;
 
@@ -174,6 +186,7 @@ COMMIT;
 ## 📊 Monitoramento
 
 ### Logs a Observar
+
 ```typescript
 // Admin define valor
 [ADMIN] Definir valor - Lote 1005: { status: 'concluido', status_pagamento: 'aguardando_cobranca' }
@@ -185,9 +198,10 @@ COMMIT;
 ```
 
 ### Verificar Trigger Foi Removido
+
 ```sql
-SELECT tgname, tgenabled 
-FROM pg_trigger 
+SELECT tgname, tgenabled
+FROM pg_trigger
 WHERE tgname = 'trg_reservar_id_laudo_on_lote_insert';
 -- Deve retornar 0 registros após migration
 ```
@@ -199,11 +213,13 @@ WHERE tgname = 'trg_reservar_id_laudo_on_lote_insert';
 Se encontrar problemas:
 
 1. Execute diagnóstico completo:
+
    ```powershell
    .\diagnostico_completo.ps1 -Lote 1005
    ```
 
 2. Verifique logs do servidor:
+
    ```powershell
    # Ver logs recentes
    Get-Content -Path "logs\server.log" -Tail 100
@@ -232,6 +248,7 @@ Se encontrar problemas:
 
 **Data**: 10/02/2026  
 **Documentos Relacionados**:
+
 - [RELATORIO_PROBLEMA_FLUXO_PAGAMENTO_EMISSAO.md](./RELATORIO_PROBLEMA_FLUXO_PAGAMENTO_EMISSAO.md)
 - [diagnostico_lote_1005.sql](./diagnostico_lote_1005.sql)
 - [database/migrations/1100_fix_premature_laudo_creation.sql](./database/migrations/1100_fix_premature_laudo_creation.sql)
