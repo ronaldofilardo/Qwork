@@ -647,7 +647,7 @@ export async function POST(request: NextRequest) {
         //     : `Contrato de Serviços - ${planoNome}`;
 
         const contratoIns = await txClient.query<{ id: number }>(
-          `INSERT INTO contratos (contratante_id, plano_id, numero_funcionarios, valor_total, status, aceito, tipo_tomador)
+          `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito, tipo_tomador)
            VALUES ($1, $2, $3, $4, $5, false, $6) RETURNING id`,
           [
             entidade.id,
