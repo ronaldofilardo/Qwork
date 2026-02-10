@@ -399,6 +399,9 @@ export async function getPresignedUrl(
   const { S3Client, GetObjectCommand } = await import('@aws-sdk/client-s3');
   const { getSignedUrl } = await import('@aws-sdk/s3-request-presigner');
 
+  console.log(`[BACKBLAZE:getPresignedUrl] Gerando URL presigned para: ${key}`);
+  console.log(`[BACKBLAZE:getPresignedUrl] Config: endpoint=${config.endpoint}, bucket=${config.bucket}, region=${config.region}`);
+
   const client = new S3Client({
     endpoint: config.endpoint,
     region: config.region,
@@ -417,6 +420,8 @@ export async function getPresignedUrl(
   const url = await getSignedUrl(client, command, {
     expiresIn: expiresInSeconds,
   });
+  
+  console.log(`[BACKBLAZE:getPresignedUrl] URL gerada: ${url.substring(0, 120)}...`);
   return url;
 }
 
