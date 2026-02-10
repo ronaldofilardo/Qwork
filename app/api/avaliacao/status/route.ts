@@ -1,14 +1,13 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
-import { transactionWithContext } from '@/lib/db-security';
+import { queryWithContext, transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 import { validarTransicaoStatusAvaliacao } from '@/lib/types/avaliacao-status';
 
 export async function GET() {
   try {
     const session = await requireAuth();
-    const avaliacaoResult = await query(
+    const avaliacaoResult = await queryWithContext(
       `SELECT id, status, inicio, envio, grupo_atual FROM avaliacoes
        WHERE funcionario_cpf = $1 AND status != 'inativada'
        ORDER BY inicio DESC LIMIT 1`,
@@ -23,7 +22,7 @@ export async function GET() {
     let respostas = [];
     let total = 0;
     try {
-      const respostasResult = await query(
+      const respostasResult = await queryWithContext(
         'SELECT item, valor FROM respostas WHERE avaliacao_id = $1',
         [avaliacao.id]
       );
@@ -89,7 +88,7 @@ export async function PATCH(request: Request) {
     if (bodyAvaliacaoId) {
       avaliacaoId = bodyAvaliacaoId;
       // Verificar se pertence ao usuário e não está inativada
-      const checkResult = await query(
+      const checkResult = await queryWithContext(
         `SELECT id FROM avaliacoes WHERE id = $1 AND funcionario_cpf = $2 AND status != 'inativada'`,
         [avaliacaoId, session.cpf]
       );
@@ -101,7 +100,7 @@ export async function PATCH(request: Request) {
       }
     } else {
       // Buscar avaliação mais recente do usuário (não inativada)
-      const avaliacaoResult = await query(
+      const avaliacaoResult = await queryWithContext(
         `SELECT id FROM avaliacoes
          WHERE funcionario_cpf = $1 AND status != 'inativada'
          ORDER BY inicio DESC LIMIT 1`,
@@ -119,7 +118,7 @@ export async function PATCH(request: Request) {
     }
 
     // Buscar status atual para validar transição
-    const statusAtualResult = await query(
+    const statusAtualResult = await queryWithContext(
       `SELECT status FROM avaliacoes WHERE id = $1`,
       [avaliacaoId]
     );
@@ -152,21 +151,12 @@ export async function PATCH(request: Request) {
     }
 
     // Atualizar status com contexto de segurança (usando status normalizado)
-    try {
-      await transactionWithContext(async (queryTx) => {
-        await queryTx(`UPDATE avaliacoes SET status = $1 WHERE id = $2`, [
-          statusNormalizado,
-          avaliacaoId,
-        ]);
-      });
-    } catch {
-      // Fallback: tentar atualizar diretamente e setar contexto
-      await query(`SET LOCAL app.current_user_cpf = '${session.cpf}'`);
-      await query(`UPDATE avaliacoes SET status = $1 WHERE id = $2`, [
+    await transactionWithContext(async (queryTx) => {
+      await queryTx(`UPDATE avaliacoes SET status = $1 WHERE id = $2`, [
         statusNormalizado,
         avaliacaoId,
       ]);
-    }
+    });
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
