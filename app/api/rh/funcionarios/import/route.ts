@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireClinica } from '@/lib/session';
-import { query, withTransaction } from '@/lib/db';
+import { query } from '@/lib/db';
+import { withTransaction } from '@/lib/db-transaction';
 import {
   parseXlsxBufferToRows,
   parseDateCell,
