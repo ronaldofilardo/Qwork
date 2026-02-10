@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireClinica } from '@/lib/session';
-import { query } from '@/lib/db';
+import { query, withTransaction } from '@/lib/db';
 import {
   parseXlsxBufferToRows,
   parseDateCell,
@@ -230,61 +230,60 @@ export async function POST(request: Request) {
       );
     }
 
-    // Inserir em transação com isolamento por empresa
-    await query('BEGIN');
+    // Inserir em transação com isolamento por empresa e auditoria Neon
     try {
-      let created = 0;
-      for (const r of toInsert) {
-        const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
+      const result = await withTransaction(async (client) => {
+        let created = 0;
 
-        // ARQUITETURA SEGREGADA: Inserir em 2 etapas
-        // 1. Inserir funcionário (sem FKs diretas)
-        const insertResult = await query(
-          `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
-           RETURNING id`,
-          [
-            r.cpf,
-            r.nome,
-            r.data_nascimento,
-            r.setor,
-            r.funcao,
-            r.email,
-            senhaHash,
-            r.matricula || null,
-            null, // nivel_cargo must be NULL for perfil funcionario_clinica to satisfy DB check
-            r.turno || null,
-            r.escala || null,
-          ],
-          session
-        );
+        for (const r of toInsert) {
+          const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
 
-        const funcionarioId = insertResult.rows[0].id;
+          // ARQUITETURA SEGREGADA: Inserir em 2 etapas
+          // 1. Inserir funcionário (sem FKs diretas)
+          const insertResult = await client.query(
+            `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
+             RETURNING id`,
+            [
+              r.cpf,
+              r.nome,
+              r.data_nascimento,
+              r.setor,
+              r.funcao,
+              r.email,
+              senhaHash,
+              r.matricula || null,
+              r.nivel_cargo || null,
+              r.turno || null,
+              r.escala || null,
+            ]
+          );
 
-        // 2. Criar relacionamento na tabela funcionarios_clinicas
-        await query(
-          `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo, data_vinculo)
-           VALUES ($1, $2, $3, true, CURRENT_TIMESTAMP)`,
-          [funcionarioId, session.clinica_id, empresaId],
-          session
-        );
+          const funcionarioId = insertResult.rows[0].id;
 
-        created++;
-      }
+          // 2. Criar relacionamento na tabela funcionarios_clinicas
+          await client.query(
+            `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo, data_vinculo)
+             VALUES ($1, $2, $3, true, CURRENT_TIMESTAMP)`,
+            [funcionarioId, session.clinica_id, empresaId]
+          );
 
-      await query('COMMIT');
+          created++;
+        }
+
+        return { created };
+      });
 
       const maskedCpf =
         typeof session.cpf === 'string'
           ? `***${String(session.cpf).slice(-4)}`
           : session.cpf;
       console.log(
-        `[AUDIT] Importação em massa: ${created} funcionários importados para empresa ${empresaId} da clínica ${session.clinica_id} por ${maskedCpf}`
+        `[AUDIT] Importação em massa: ${result.created} funcionários importados para empresa ${empresaId} da clínica ${session.clinica_id} por ${maskedCpf}`
       );
 
-      return NextResponse.json({ success: true, created });
+      return NextResponse.json({ success: true, created: result.created });
     } catch (err) {
-      await query('ROLLBACK');
       console.error(
         'Erro ao inserir funcionários em massa:',
         err && (err as any).message ? (err as any).message : err
