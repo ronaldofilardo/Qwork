@@ -497,22 +497,42 @@ export async function query<T = any>(
       // Para Neon: se houver sessão, envolver em transação para usar SET LOCAL
       if (session) {
         const escapeString = (str: string) => String(str).replace(/'/g, "''");
+        
+        // Helper para escapar valores SQL
+        const escapeSqlValue = (value: unknown): string => {
+          if (value === null || value === undefined) return 'NULL';
+          if (typeof value === 'number') return String(value);
+          if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+          if (value instanceof Date) return `'${value.toISOString()}'`;
+          // String: escapar aspas simples
+          return `'${String(value).replace(/'/g, "''")}'`;
+        };
 
-        // Construir bloco de transação com SET LOCAL + query
-        // SET LOCAL só funciona dentro de BEGIN...COMMIT
+        // Se houver parâmetros, interpolá-los no SQL (Neon não aceita múltiplos comandos com prepared statements)
+        let finalQuery = text;
+        if (params && params.length > 0) {
+          // Substituir $1, $2, etc pelos valores escapados
+          params.forEach((param, index) => {
+            const placeholder = `$${index + 1}`;
+            const escapedValue = escapeSqlValue(param);
+            finalQuery = finalQuery.replace(new RegExp(`\\${placeholder}\\b`, 'g'), escapedValue);
+          });
+        }
+
+        // Construir bloco de transação com SET LOCAL + query interpolada
         const transactionBlock = `
 BEGIN;
 SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}';
 SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}';
 SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}';
 SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}';
-${text};
+${finalQuery};
 COMMIT;
         `.trim();
 
         try {
-          // Executar tudo em um único bloco de transação
-          const rows = await sql(transactionBlock, params || []);
+          // Executar sem parâmetros (já interpolados no SQL)
+          const rows = await sql(transactionBlock);
           const duration = Date.now() - start;
           if (DEBUG_DB) {
             console.log(
