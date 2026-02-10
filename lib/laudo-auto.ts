@@ -196,9 +196,13 @@ export async function gerarLaudoCompletoEmitirPDF(
     fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2));
     console.log(`[EMISSÃO] Metadata salvo em ${metaFilePath}`);
 
+    // ⚠️ IMPORTANTE: Upload para Backblaze NÃO é automático
+    // O emissor deve fazer upload manualmente via API específica
+    // (Fluxo: Emissor gera PDF → Emissor envia ao bucket → Solicitante vê laudo)
     console.log(
-      `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso - PDF salvo localmente em "${fileName}". Aguardando upload manual ao Backblaze.`
+      `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso - PDF físico + hash + status='emitido'`
     );
+    console.log(`[EMISSÃO] ⚠️ Emissor deve fazer upload manualmente ao bucket para que o solicitante visualize`);
     return laudoId;
   } catch (error) {
     // Se falhou, reverter para rascunho
