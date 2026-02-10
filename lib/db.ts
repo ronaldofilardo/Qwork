@@ -739,19 +739,84 @@ export async function transaction<T>(
       client.release();
     }
   } else if (isProduction) {
-    // Para Neon, não temos suporte a transações no mesmo nível
-    // Por enquanto, executamos as queries sequencialmente
-    console.warn(
-      '[db][transaction] Transações nativas não suportadas em Neon - executando queries sequencialmente'
-    );
-
+    // PRODUÇÃO (Neon): Executar transação SQL real como string única
+    // Neon aceita BEGIN...COMMIT se for texto puro (não prepared statement)
+    console.log('[db][transaction] PRODUÇÃO: coletando queries para transação SQL única');
+    
+    const queries: Array<{ text: string; params?: unknown[] }> = [];
+    
+    // Criar TransactionClient que armazena queries ao invés de executar
     const txClient: TransactionClient = {
       query: async <R = any>(text: string, params?: unknown[]) => {
-        return await query<R>(text, params, session);
+        queries.push({ text, params });
+        // Retornar mock (será executado depois)
+        return { rows: [] as R[], rowCount: 0 };
       },
     };
-
-    return await callback(txClient);
+    
+    // Coletar todas as queries
+    await callback(txClient);
+    
+    // Executar tudo em uma única transação SQL
+    const sql = await getNeonSql();
+    if (!sql) {
+      throw new Error('Conexão Neon não disponível');
+    }
+    
+    const escapeString = (str: string) => String(str).replace(/'/g, "''");
+    const escapeSqlValue = (value: unknown): string => {
+      if (value === null || value === undefined) return 'NULL';
+      if (typeof value === 'number') return String(value);
+      if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
+      if (value instanceof Date) return `'${value.toISOString()}'`;
+      return `'${String(value).replace(/'/g, "''")}'`;
+    };
+    
+    // Construir bloco SQL único
+    let sqlBlock = 'BEGIN;\n';
+    
+    // Configurar variáveis de auditoria se houver sessão
+    if (session) {
+      sqlBlock += `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}';\n`;
+      sqlBlock += `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}';\n`;
+      sqlBlock += `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}';\n`;
+      sqlBlock += `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}';\n`;
+    }
+    
+    // Interpolar parâmetros em cada query
+    for (const q of queries) {
+      let interpolatedQuery = q.text;
+      if (q.params && q.params.length > 0) {
+        q.params.forEach((param, index) => {
+          const placeholder = `$${index + 1}`;
+          const escapedValue = escapeSqlValue(param);
+          interpolatedQuery = interpolatedQuery.replace(
+            new RegExp(`\\${placeholder}\\b`, 'g'),
+            escapedValue
+          );
+        });
+      }
+      sqlBlock += interpolatedQuery + ';\n';
+    }
+    
+    sqlBlock += 'COMMIT;';
+    
+    if (DEBUG_DB) {
+      console.log('[db][transaction] Executando bloco SQL:', sqlBlock.substring(0, 500));
+    }
+    
+    try {
+      // Executar tudo de uma vez (Neon aceita múltiplos comandos se não for prepared statement)
+      await sql(sqlBlock);
+      
+      console.log('[db][transaction] Transação Neon comitada com sucesso');
+      
+      // Retornar resultado do callback (que foi mocado)
+      return await callback(txClient as any);
+    } catch (error) {
+      console.error('[db][transaction] Erro na transação Neon:', error);
+      throw error;
+    }
   } else {
     throw new Error(
       `Nenhuma conexão configurada para ambiente: ${environment}`
