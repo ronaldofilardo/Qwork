@@ -91,183 +91,48 @@ export const GET = async (req: Request) => {
       [limit, offset]
     );
 
-    // Para detectar laudo emitido também pelo arquivo local, precisamos checar storage
-    const fs = await import('fs/promises');
-    const path = await import('path');
+    const lotes = (lotesQuery.rows || []).map((lote) => {
+      // Informações de laudo vêm do banco de dados
+      const temLaudo = Boolean(lote.laudo_id);
 
-    const lotes = await Promise.all(
-      (lotesQuery.rows || []).map(async (lote) => {
-        // Incluir informações de laudo apenas quando realmente existe
-        let temLaudo = Boolean(lote.laudo_id);
+      const laudoEmitido = temLaudo &&
+        (lote.status_laudo === 'emitido' ||
+          lote.status_laudo === 'enviado' ||
+          lote.hash_pdf ||
+          lote.emitido_em);
 
-        let laudoFileExists = false;
-        let laudoHashFromFile: string | null = null;
-
-        try {
-          const maybeId = temLaudo ? lote.laudo_id : lote.id;
-          const finalPath = path.join(
-            process.cwd(),
-            'storage',
-            'laudos',
-            `laudo-${maybeId}.pdf`
-          );
-          console.log(
-            `[DEBUG] Checando existência de arquivo local: ${finalPath}`
-          );
-          await fs.access(finalPath);
-          laudoFileExists = true;
-          console.log(`[DEBUG] Arquivo local existe para lote ${lote.id}`);
-
-          // Attempt to calculate hash if file exists
-          try {
-            const buf = await fs.readFile(finalPath);
-            laudoHashFromFile = crypto
-              .createHash('sha256')
-              .update(buf)
-              .digest('hex');
-            console.log(
-              `[DEBUG] Hash calculado a partir do arquivo local: ${laudoHashFromFile?.substring(0, 8)}...`
-            );
-          } catch (hashErr) {
-            console.warn(
-              '[WARN] Falha ao calcular hash do arquivo local do laudo:',
-              hashErr
-            );
-            laudoHashFromFile = null;
+      const laudoObj = temLaudo
+        ? {
+            id: lote.laudo_id,
+            observacoes: lote.observacoes,
+            status: lote.status_laudo || null,
+            emitido_em: lote.emitido_em,
+            enviado_em: lote.enviado_em,
+            hash_pdf: lote.hash_pdf || null,
+            emissor_nome: lote.emissor_nome || null,
+            emissor_cpf: lote.emissor_cpf || null,
+            arquivo_remoto_key: lote.arquivo_remoto_key || null,
+            arquivo_remoto_url: lote.arquivo_remoto_url || null,
+            arquivo_remoto_uploaded_at: lote.arquivo_remoto_uploaded_at || null,
+            _emitido: laudoEmitido,
           }
-        } catch (err) {
-          console.log(
-            `[DEBUG] Arquivo local não encontrado para lote ${lote.id}: ${err?.message || err}`
-          );
-          laudoFileExists = false;
-        }
+        : null;
 
-        // If there is a local file but no laudo record, try to persist a DB record
-        if (!temLaudo && laudoFileExists) {
-          try {
-            // Usar transaction() para garantir que set_config e INSERT rodem na mesma conexão
-            await transaction(
-              async (tx) => {
-                // Setar contexto de usuário antes de INSERT para satisfazer triggers de auditoria
-                await tx.query(
-                  `SELECT set_config('app.current_user_cpf', $1, true)`,
-                  [user.cpf]
-                );
-                await tx.query(
-                  `SELECT set_config('app.current_user_perfil', $1, true)`,
-                  [user.perfil]
-                );
-
-                // Inserir registro do laudo (id = lote id) se ainda não existir
-                await tx.query(
-                  `INSERT INTO laudos (id, lote_id, emissor_cpf, status, emitido_em, hash_pdf, criado_em, atualizado_em)
-               VALUES ($1, $1, $2, 'emitido', NOW(), $3, NOW(), NOW())
-               ON CONFLICT (id) DO NOTHING`,
-                  [lote.id, user.cpf, laudoHashFromFile]
-                );
-
-                // Garantir que colunas antigas existam (compatibilidade com triggers antigas)
-                await tx.query(
-                  `ALTER TABLE lotes_avaliacao ADD COLUMN IF NOT EXISTS processamento_em TIMESTAMP`
-                );
-                await tx.query(
-                  `ALTER TABLE lotes_avaliacao ADD COLUMN IF NOT EXISTS setor_id INTEGER`
-                );
-
-                // Atualizar lote para marcar como emitido
-                await tx.query(
-                  `UPDATE lotes_avaliacao SET emitido_em = NOW(), atualizado_em = NOW() WHERE id = $1 AND emitido_em IS NULL`,
-                  [lote.id]
-                );
-              },
-              {
-                cpf: user.cpf,
-                nome: user.nome || 'Emissor',
-                perfil: user.perfil,
-                clinica_id: null,
-              }
-            );
-
-            console.log(
-              `[INFO] ✓ Laudo local persistido no banco para lote ${lote.id}`
-            );
-
-            // After attempt, mark temLaudo true so the response includes laudo meta
-            temLaudo = true;
-            // If the DB had no laudo_id previously, set it to lote.id for response
-            lote.laudo_id = lote.laudo_id || lote.id;
-          } catch (insertErr) {
-            console.warn(
-              '[WARN] Falha ao persistir laudo local no banco (ignorado):',
-              insertErr
-            );
-            // Mesmo com falha no INSERT, se o arquivo existe, marcar temLaudo como true
-            temLaudo = true;
-            lote.laudo_id = lote.id;
-          }
-        }
-
-        // Marcar como emitido se:
-        // 1. Existe registro no DB com status adequado OU
-        // 2. Existe arquivo local (mesmo sem DB)
-        const laudoEmitido =
-          laudoFileExists ||
-          (temLaudo &&
-            (lote.status_laudo === 'emitido' ||
-              lote.status_laudo === 'enviado' ||
-              lote.hash_pdf ||
-              lote.emitido_em));
-
-        const laudoObj = temLaudo
-          ? {
-              id: lote.laudo_id,
-              observacoes: lote.observacoes,
-              status: lote.status_laudo || (laudoFileExists ? 'emitido' : null),
-              emitido_em: lote.emitido_em,
-              enviado_em: lote.enviado_em,
-              hash_pdf: lote.hash_pdf || laudoHashFromFile || null,
-              emissor_nome: lote.emissor_nome || null,
-              emissor_cpf: lote.emissor_cpf || null,
-              arquivo_remoto_key: lote.arquivo_remoto_key || null,
-              arquivo_remoto_url: lote.arquivo_remoto_url || null,
-              arquivo_remoto_uploaded_at:
-                lote.arquivo_remoto_uploaded_at || null,
-              _emitido: laudoEmitido, // Flag auxiliar para facilitar filtros no frontend
-            }
-          : laudoFileExists
-            ? {
-                id: lote.laudo_id || lote.id,
-                observacoes: lote.observacoes || null,
-                status: 'emitido',
-                emitido_em: lote.emitido_em || new Date().toISOString(),
-                enviado_em: lote.enviado_em || null,
-                hash_pdf: lote.hash_pdf || laudoHashFromFile || null,
-                emissor_nome: lote.emissor_nome || null,
-                emissor_cpf: lote.emissor_cpf || null,
-                arquivo_remoto_key: lote.arquivo_remoto_key || null,
-                arquivo_remoto_url: lote.arquivo_remoto_url || null,
-                arquivo_remoto_uploaded_at:
-                  lote.arquivo_remoto_uploaded_at || null,
-                _emitido: true,
-              }
-            : null;
-
-        return {
-          id: lote.id,
-          descricao: lote.descricao || `Lote #${lote.id}`,
-          tipo: lote.tipo,
-          status: lote.lote_status,
-          empresa_nome: lote.empresa_nome,
-          clinica_nome: lote.clinica_nome,
-          liberado_em: lote.liberado_em,
-          total_avaliacoes: lote.total_avaliacoes,
-          solicitado_por: lote.solicitado_por || null,
-          solicitado_em: lote.solicitado_em || null,
-          tipo_solicitante: lote.tipo_solicitante || null,
-          laudo: laudoObj,
-        };
-      })
-    );
+      return {
+        id: lote.id,
+        descricao: lote.descricao || `Lote #${lote.id}`,
+        tipo: lote.tipo,
+        status: lote.lote_status,
+        empresa_nome: lote.empresa_nome,
+        clinica_nome: lote.clinica_nome,
+        liberado_em: lote.liberado_em,
+        total_avaliacoes: lote.total_avaliacoes,
+        solicitado_por: lote.solicitado_por || null,
+        solicitado_em: lote.solicitado_em || null,
+        tipo_solicitante: lote.tipo_solicitante || null,
+        laudo: laudoObj,
+      };
+    });
 
     // REMOVIDO: Cálculo de hash na listagem
     // O hash deve ser calculado APENAS na emissão do laudo (endpoint /pdf)
