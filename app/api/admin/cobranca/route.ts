@@ -31,7 +31,9 @@ export async function GET(request: Request) {
         ct.nome as nome_tomador,
         pl.tipo as plano_tipo,
         ct.numero_funcionarios_estimado as numero_funcionarios_estimado,
-        (SELECT COUNT(*) FROM funcionarios f WHERE (f.entidade_id = ct.id OR f.clinica_id = ct.id) AND f.ativo = true) as numero_funcionarios_atual,
+        (SELECT COUNT(DISTINCT f.id) FROM funcionarios f 
+         INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true 
+         WHERE fe.entidade_id = ct.id) as numero_funcionarios_atual,
         pg.id as pagamento_id,
         pg.valor as pagamento_valor,
         pg.status as pagamento_status,
