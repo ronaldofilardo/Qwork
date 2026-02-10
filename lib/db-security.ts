@@ -115,6 +115,9 @@ export async function queryWithContext<T = Record<string, unknown>>(
       const cpf = session.cpf.replace(/[^0-9]/g, '');
       const perfil = session.perfil.toLowerCase().replace(/[^a-z_]/g, '');
 
+      // Log para debug
+      console.log(`[queryWithContext] Configurando RLS: CPF=${cpf}, Perfil=${perfil}`);
+
       // Validações de segurança OBRIGATÓRIAS
       if (!cpf || cpf.length !== 11) {
         throw new Error('SEGURANÇA: CPF inválido na sessão');
@@ -125,107 +128,107 @@ export async function queryWithContext<T = Record<string, unknown>>(
       }
 
       if (!perfil || !isValidPerfil(perfil)) {
-        throw new Error('SEGURANÇA: Perfil inválido na sessão');
+        console.error(`[queryWithContext] Perfil inválido: ${perfil}, Session:`, session);
+        throw new Error(`SEGURANÇA: Perfil inválido na sessão: ${perfil}`);
       }
 
-      // 🔒 SEGURANÇA: Configurar variáveis de contexto para RLS
-      // NOTA: Precisamos configurar DUAS variáveis de perfil:
-      // 1. app.current_perfil → para validar_sessao_rls() (Migration 1007)
-      // 2. app.current_user_perfil → para current_user_perfil() dos triggers de auditoria (Migration 210)
+      // 🔒 SEGURANÇA: Configurar TODAS as variáveis de contexto para RLS em uma única transação
+      // IMPORTANTE: Fazer TODAS as configurações ANTES de qualquer query que possa disparar RLS
       
-      // Configurar CPF (usado por ambos)
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_user_cpf',
-        cpf,
-      ]);
-      
-      // Configurar perfil para validar_sessao_rls
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_perfil',
-        perfil,
-      ]);
-      
-      // Configurar perfil para triggers de auditoria
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_user_perfil',
-        perfil,
-      ]);
-
-      // FASE 3: Obter identificadores de contexto baseado no perfil da sessão
-      // Usar perfil diretamente ao invés de usuario_tipo (que pode não existir no banco)
+      // Obter identificadores de contexto baseado no perfil ANTES de configurar variáveis
       let clinicaId: string | null = null;
       let entidadeId: string | null = null;
 
       // Buscar clinica_id via funcionarios_clinicas (para RH)
       if (perfil === 'rh') {
-        const clinicaResult = await query(
-          `SELECT DISTINCT ec.clinica_id
-           FROM funcionarios f
-           JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
-           JOIN empresas_clientes ec ON ec.id = fc.empresa_id
-           WHERE f.cpf = $1 AND fc.ativo = true
-           LIMIT 1`,
-          [cpf]
-        );
-        if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
-          clinicaId = clinicaResult.rows[0].clinica_id.toString();
+        try {
+          const clinicaResult = await query(
+            `SELECT DISTINCT ec.clinica_id
+             FROM funcionarios f
+             JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
+             JOIN empresas_clientes ec ON ec.id = fc.empresa_id
+             WHERE f.cpf = $1 AND fc.ativo = true
+             LIMIT 1`,
+            [cpf]
+          );
+          if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
+            clinicaId = clinicaResult.rows[0].clinica_id.toString();
+          }
+        } catch (err) {
+          console.warn('[queryWithContext] Erro ao buscar clinica_id:', err);
         }
       }
 
       // Buscar entidade_id via funcionarios_entidades (para gestores)
       if (perfil === 'gestor') {
-        const entidadeResult = await query(
-          `SELECT DISTINCT fe.entidade_id
-           FROM funcionarios f
-           JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
-           WHERE f.cpf = $1 AND fe.ativo = true
-           LIMIT 1`,
-          [cpf]
-        );
-        if (
-          entidadeResult.rows.length > 0 &&
-          entidadeResult.rows[0].entidade_id
-        ) {
-          entidadeId = entidadeResult.rows[0].entidade_id.toString();
+        try {
+          const entidadeResult = await query(
+            `SELECT DISTINCT fe.entidade_id
+             FROM funcionarios f
+             JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
+             WHERE f.cpf = $1 AND fe.ativo = true
+             LIMIT 1`,
+            [cpf]
+          );
+          if (
+            entidadeResult.rows.length > 0 &&
+            entidadeResult.rows[0].entidade_id
+          ) {
+            entidadeId = entidadeResult.rows[0].entidade_id.toString();
+          }
+        } catch (err) {
+          console.warn('[queryWithContext] Erro ao buscar entidade_id:', err);
         }
       }
 
-      // FASE 3: Definir variáveis de contexto para RLS
-      // Definir perfil como tipo de usuário para compatibilidade com RLS
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_user_tipo',
-        perfil,
-      ]);
+      // AGORA configurar TODAS as variáveis em sequência usando set_config com is_local=false
+      // (false = variável persiste para toda a sessão do PostgreSQL)
+      try {
+        // FASE 1: Configurar variáveis obrigatórias de usuário
+        await query('SELECT set_config($1, $2, false)', [
+          'app.current_user_cpf',
+          cpf,
+        ]);
 
-      if (clinicaId) {
-        // Validar que clinica_id é um número válido
-        if (!/^\d+$/.test(clinicaId)) {
-          throw new Error('ID de clínica inválido');
+        await query('SELECT set_config($1, $2, false)', [
+          'app.current_perfil',
+          perfil,
+        ]);
+
+        await query('SELECT set_config($1, $2, false)', [
+          'app.current_user_perfil',
+          perfil,
+        ]);
+
+        await query('SELECT set_config($1, $2, false)', [
+          'app.current_user_tipo',
+          perfil,
+        ]);
+
+        // FASE 2: Configurar variáveis de contexto (clinica/entidade)
+        if (clinicaId) {
+          await query('SELECT set_config($1, $2, false)', [
+            'app.current_clinica_id',
+            clinicaId,
+          ]);
         }
 
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_clinica_id',
-          clinicaId,
-        ]);
-      }
+        if (entidadeId) {
+          await query('SELECT set_config($1, $2, false)', [
+            'app.current_entidade_id',
+            entidadeId,
+          ]);
 
-      if (entidadeId) {
-        if (!/^\d+$/.test(entidadeId)) {
-          throw new Error('ID de entidade inválido');
+          await query('SELECT set_config($1, $2, false)', [
+            'app.current_contratante_id',
+            entidadeId,
+          ]);
         }
 
-        // Configurar entidade_id (nome atual)
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_entidade_id',
-          entidadeId,
-        ]);
-        
-        // Configurar contratante_id (nome legado esperado por validar_sessao_rls)
-        // NOTA: Migration 1007 espera app.current_contratante_id
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_contratante_id',
-          entidadeId,
-        ]);
+        console.log('[queryWithContext] Variáveis RLS configuradas com sucesso');
+      } catch (configError) {
+        console.error('[queryWithContext] Erro ao configurar variáveis RLS:', configError);
+        throw new Error(`SEGURANÇA: Falha ao configurar contexto RLS: ${configError}`);
       }
 
       // 🔒 SEGURANÇA: Validar RLS APÓS configurar todas as variáveis
