@@ -111,7 +111,8 @@ export const GET = async (
       try {
         const { getPresignedUrl } = await import('@/lib/storage/backblaze-client');
         const presignedUrl = await getPresignedUrl(laudo.arquivo_remoto_key, 300); // 5 min
-        console.log(`[BACKBLAZE] Redirecionando para presigned URL`);
+        console.log(`[BACKBLAZE] Presigned URL: ${presignedUrl}`);
+        console.log(`[BACKBLAZE] Redirecionando (302) para: ${presignedUrl.substring(0, 100)}...`);
         return NextResponse.redirect(presignedUrl, 302);
       } catch (backblazeError) {
         console.error(
