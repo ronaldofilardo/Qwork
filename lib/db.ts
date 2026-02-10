@@ -691,7 +691,9 @@ export function getPool(): pg.Pool {
     throw new Error('getPool() não deve ser usado em produção (usa Neon)');
   }
   if (!localPool) {
-    throw new Error('Pool local não inicializado. Verifique se está em desenvolvimento/teste.');
+    throw new Error(
+      'Pool local não inicializado. Verifique se está em desenvolvimento/teste.'
+    );
   }
   return localPool;
 }

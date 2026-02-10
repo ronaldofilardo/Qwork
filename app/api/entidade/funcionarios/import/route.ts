@@ -196,7 +196,7 @@ export async function POST(request: Request) {
     try {
       const result = await withTransactionAsGestor(async (client) => {
         let created = 0;
-        
+
         for (const r of toInsert) {
           const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
 

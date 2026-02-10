@@ -183,34 +183,34 @@ export function validarLinhaFuncionario(
   if (row.nivel_cargo) {
     const nivelOriginal = String(row.nivel_cargo).trim();
     const nivelNormalizado = nivelOriginal.toLowerCase();
-    
+
     // Mapeamento de cargos comuns para níveis permitidos pelo banco
     const mapeamentoCargos: Record<string, string> = {
       // Nível Operacional
-      'operacional': 'operacional',
-      'operador': 'operacional',
-      'assistente': 'operacional',
-      'auxiliar': 'operacional',
-      'técnico': 'operacional',
-      'tecnico': 'operacional',
-      'analista': 'operacional',
-      'especialista': 'operacional',
-      
+      operacional: 'operacional',
+      operador: 'operacional',
+      assistente: 'operacional',
+      auxiliar: 'operacional',
+      técnico: 'operacional',
+      tecnico: 'operacional',
+      analista: 'operacional',
+      especialista: 'operacional',
+
       // Nível Gestão
-      'gestao': 'gestao',
-      'coordenador': 'gestao',
-      'coordenadora': 'gestao',
-      'supervisor': 'gestao',
-      'supervisora': 'gestao',
-      'gerente': 'gestao',
-      'gestor': 'gestao',
-      'gestora': 'gestao',
-      'líder': 'gestao',
-      'lider': 'gestao',
+      gestao: 'gestao',
+      coordenador: 'gestao',
+      coordenadora: 'gestao',
+      supervisor: 'gestao',
+      supervisora: 'gestao',
+      gerente: 'gestao',
+      gestor: 'gestao',
+      gestora: 'gestao',
+      líder: 'gestao',
+      lider: 'gestao',
     };
 
     const nivelMapeado = mapeamentoCargos[nivelNormalizado];
-    
+
     if (!nivelMapeado) {
       erros.push(
         `Nível de cargo '${nivelOriginal}' não reconhecido. Use: operacional, gestao, analista, coordenador, gerente, etc.`
