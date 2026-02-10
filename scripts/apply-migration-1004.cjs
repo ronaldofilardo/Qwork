@@ -4,28 +4,22 @@
  * Aplica Migration 1004 - Corrige fn_reservar_id_laudo_on_lote_insert
  * 
  * Uso:
- *   DATABASE_URL="postgresql://..." node scripts/apply-migration-1004.cjs
- *   OU
- *   node scripts/apply-migration-1004.cjs "postgresql://..."
+ *   node scripts/apply-migration-1004.js
  * 
  * Ambiente:
- *   Usa DATABASE_URL da variável de ambiente ou primeiro argumento
+ *   Usa DATABASE_URL do .env.production.local (Neon production)
  */
 
+require('dotenv').config({ path: '.env.production.local' });
 const { Client } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
 async function applyMigration() {
-  const DATABASE_URL = process.argv[2] || process.env.DATABASE_URL;
+  const DATABASE_URL = process.env.DATABASE_URL;
   
   if (!DATABASE_URL) {
-    console.error('❌ DATABASE_URL não fornecido');
-    console.error('');
-    console.error('Uso:');
-    console.error('  DATABASE_URL="postgresql://..." node scripts/apply-migration-1004.cjs');
-    console.error('  OU');
-    console.error('  node scripts/apply-migration-1004.cjs "postgresql://..."');
+    console.error('❌ DATABASE_URL não encontrado no .env.production.local');
     process.exit(1);
   }
 

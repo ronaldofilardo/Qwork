@@ -160,9 +160,7 @@ export async function POST(request: NextRequest) {
           console.error(
             `[CONTRATOS] Tomador ${updated.tomador_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
           );
-          throw new Error(
-            `Tomador não encontrado na tabela ${tabelaTomador}`
-          );
+          throw new Error(`Tomador não encontrado na tabela ${tabelaTomador}`);
         }
 
         const tomadorData = tomadorRes.rows[0];

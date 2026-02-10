@@ -361,7 +361,9 @@ export async function getEntidadeCompleta(
 
 // === RETROCOMPATIBILIDADE - DEPRECATED ===
 /** @deprecated Use getContratosByEntidade instead */
-export function getContratosBytomador(...args: Parameters<typeof getContratosByEntidade>) {
+export function getContratosBytomador(
+  ...args: Parameters<typeof getContratosByEntidade>
+) {
   return getContratosByEntidade(...args);
 }
 /** @deprecated Use getPagamentosByEntidade instead */

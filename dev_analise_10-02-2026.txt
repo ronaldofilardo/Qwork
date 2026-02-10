@@ -1,0 +1,407 @@
+                    trigger_name                    |       table_name       |                  function_name                   | level | timing | event  | enabled 
+----------------------------------------------------+------------------------+--------------------------------------------------+-------+--------+--------+---------
+ audit_avaliacoes                                   | avaliacoes             | audit_trigger_func                               | ROW   | AFTER  | INSERT | O
+ prevent_avaliacao_delete_after_emission            | avaliacoes             | prevent_modification_after_emission              | ROW   | BEFORE | DELETE | O
+ prevent_avaliacao_update_after_emission            | avaliacoes             | prevent_modification_after_emission              | ROW   | BEFORE | UPDATE | O
+ trg_protect_avaliacao_after_emit                   | avaliacoes             | prevent_modification_avaliacao_when_lote_emitted | ROW   | BEFORE | DELETE | O
+ trg_recalc_lote_on_avaliacao_update                | avaliacoes             | fn_recalcular_status_lote_on_avaliacao_update    | ROW   | AFTER  | UPDATE | O
+ trg_validar_status_avaliacao                       | avaliacoes             | validar_status_avaliacao                         | ROW   | BEFORE | UPDATE | O
+ trigger_prevent_avaliacao_mutation_during_emission | avaliacoes             | prevent_mutation_during_emission                 | ROW   | BEFORE | UPDATE | O
+ trigger_atualizar_timestamp_configuracoes          | clinica_configuracoes  | atualizar_timestamp_configuracoes                | ROW   | BEFORE | UPDATE | O
+ trg_clinicas_criar_usuario_apos_aprovacao          | clinicas               | criar_usuario_responsavel_apos_aprovacao         | ROW   | AFTER  | UPDATE | O
+ trg_clinicas_senhas_updated_at                     | clinicas_senhas        | update_clinicas_senhas_updated_at                | ROW   | BEFORE | UPDATE | D
+ trg_protect_senhas                                 | clinicas_senhas        | fn_audit_clinicas_senhas                         | ROW   | BEFORE | INSERT | D
+ trg_validar_parcelas                               | contratos_planos       | validar_parcelas_json                            | ROW   | BEFORE | INSERT | O
+ audit_empresas_clientes                            | empresas_clientes      | audit_trigger_func                               | ROW   | AFTER  | INSERT | O
+ trg_criar_usuario_apos_aprovacao                   | entidades              | criar_usuario_responsavel_apos_aprovacao         | ROW   | AFTER  | UPDATE | O
+ audit_funcionarios                                 | funcionarios           | audit_trigger_func                               | ROW   | AFTER  | INSERT | O
+ trg_prevent_gestor_emissor                         | funcionarios           | prevent_gestor_being_emissor                     | ROW   | BEFORE | INSERT | O
+ trg_reject_prohibited_roles                        | funcionarios           | trg_reject_prohibited_roles_func                 | ROW   | BEFORE | INSERT | O
+ trigger_registrar_inativacao                       | funcionarios           | registrar_inativacao_funcionario                 | ROW   | BEFORE | UPDATE | O
+ trg_validate_funcionario_clinica_empresa           | funcionarios_clinicas  | validate_funcionario_clinica_empresa             | ROW   | BEFORE | INSERT | O
+ trg_validate_funcionario_clinica_tipo              | funcionarios_clinicas  | validate_funcionario_clinica_tipo                | ROW   | BEFORE | INSERT | O
+ trigger_update_funcionarios_clinicas_timestamp     | funcionarios_clinicas  | update_funcionarios_clinicas_timestamp           | ROW   | BEFORE | UPDATE | O
+ trg_validate_funcionario_entidade_tipo             | funcionarios_entidades | validate_funcionario_entidade_tipo               | ROW   | BEFORE | INSERT | O
+ trigger_update_funcionarios_entidades_timestamp    | funcionarios_entidades | update_funcionarios_entidades_timestamp          | ROW   | BEFORE | UPDATE | O
+ trg_laudo_jobs_updated_at                          | laudo_generation_jobs  | set_updated_at_column                            | ROW   | BEFORE | UPDATE | O
+ audit_laudos                                       | laudos                 | audit_trigger_func                               | ROW   | AFTER  | INSERT | D
+ enforce_laudo_immutability                         | laudos                 | check_laudo_immutability                         | ROW   | BEFORE | DELETE | D
+ trg_audit_laudo_creation                           | laudos                 | audit_laudo_creation                             | ROW   | AFTER  | INSERT | D
+ trg_enforce_laudo_id_equals_lote                   | laudos                 | trg_enforce_laudo_id_equals_lote                 | ROW   | BEFORE | INSERT | D
+ trg_immutable_laudo                                | laudos                 | prevent_update_laudo_enviado                     | ROW   | BEFORE | DELETE | D
+ trg_prevent_laudo_lote_id_change                   | laudos                 | prevent_laudo_lote_id_change                     | ROW   | BEFORE | UPDATE | D
+ trg_validar_laudo_emitido                          | laudos                 | fn_validar_laudo_emitido                         | ROW   | BEFORE | INSERT | O
+ audit_lotes_avaliacao                              | lotes_avaliacao        | audit_lote_change                                | ROW   | AFTER  | INSERT | O
+ prevent_lote_update_after_emission                 | lotes_avaliacao        | prevent_lote_status_change_after_emission        | ROW   | BEFORE | UPDATE | O
+ trg_audit_lote_status                              | lotes_avaliacao        | audit_lote_status_change                         | ROW   | AFTER  | UPDATE | O
+ trg_immutable_lote                                 | lotes_avaliacao        | prevent_update_finalized_lote                    | ROW   | BEFORE | UPDATE | O
+ trg_protect_lote_after_emit                        | lotes_avaliacao        | prevent_modification_lote_when_laudo_emitted     | ROW   | BEFORE | DELETE | O
+ trg_registrar_solicitacao_emissao                  | lotes_avaliacao        | fn_registrar_solicitacao_emissao                 | ROW   | AFTER  | UPDATE | O
+ trg_reservar_id_laudo_on_lote_insert               | lotes_avaliacao        | fn_reservar_id_laudo_on_lote_insert              | ROW   | AFTER  | INSERT | O
+ trg_sync_entidade_contratante                      | lotes_avaliacao        | sync_entidade_contratante_id                     | ROW   | BEFORE | INSERT | O
+ trg_validar_transicao_status_lote                  | lotes_avaliacao        | fn_validar_transicao_status_lote                 | ROW   | BEFORE | UPDATE | O
+ trigger_prevent_lote_mutation_during_emission      | lotes_avaliacao        | prevent_lote_mutation_during_emission            | ROW   | BEFORE | UPDATE | O
+ trg_notificacoes_admin_updated                     | notificacoes_admin     | atualizar_notificacao_admin_timestamp            | ROW   | BEFORE | UPDATE | O
+ trg_pdf_jobs_update_timestamp                      | pdf_jobs               | update_pdf_jobs_timestamp                        | ROW   | BEFORE | UPDATE | O
+ trg_gerar_numero_recibo                            | recibos                | trigger_gerar_numero_recibo                      | ROW   | BEFORE | INSERT | O
+ trg_recibos_atualizar_data                         | recibos                | atualizar_data_modificacao                       | ROW   | BEFORE | UPDATE | O
+ trg_recibos_criar_pdf_job                          | recibos                | trigger_criar_pdf_job                            | ROW   | AFTER  | INSERT | O
+ trg_respostas_set_questao                          | respostas              | set_questao_from_item                            | ROW   | BEFORE | INSERT | O
+ trigger_resposta_immutability                      | respostas              | check_resposta_immutability                      | ROW   | BEFORE | DELETE | O
+ trigger_resultado_immutability                     | resultados             | check_resultado_immutability                     | ROW   | BEFORE | INSERT | O
+ trigger_garantir_template_padrao_unico             | templates_contrato     | garantir_template_padrao_unico                   | ROW   | BEFORE | INSERT | O
+ trg_usuarios_updated_at                            | usuarios               | update_usuarios_updated_at                       | ROW   | BEFORE | UPDATE | O
+(51 linhas)
+
+          tgname          |    table_name     | tgenabled 
+--------------------------+-------------------+-----------
+ audit_avaliacoes         | avaliacoes        | O
+ audit_empresas_clientes  | empresas_clientes | O
+ audit_funcionarios       | funcionarios      | O
+ audit_laudos             | laudos            | D
+ trg_audit_laudo_creation | laudos            | D
+ audit_lotes_avaliacao    | lotes_avaliacao   | O
+ trg_audit_lote_status    | lotes_avaliacao   | O
+(7 linhas)
+
+                       tgname                       |   table_name    | tgenabled 
+----------------------------------------------------+-----------------+-----------
+ trigger_prevent_avaliacao_mutation_during_emission | avaliacoes      | O
+ prevent_avaliacao_update_after_emission            | avaliacoes      | O
+ prevent_avaliacao_delete_after_emission            | avaliacoes      | O
+ trg_protect_avaliacao_after_emit                   | avaliacoes      | O
+ trg_protect_senhas                                 | clinicas_senhas | D
+ trg_prevent_gestor_emissor                         | funcionarios    | O
+ enforce_laudo_immutability                         | laudos          | D
+ trg_prevent_laudo_lote_id_change                   | laudos          | D
+ trg_immutable_laudo                                | laudos          | D
+ trg_immutable_lote                                 | lotes_avaliacao | O
+ trg_protect_lote_after_emit                        | lotes_avaliacao | O
+ trigger_prevent_lote_mutation_during_emission      | lotes_avaliacao | O
+ prevent_lote_update_after_emission                 | lotes_avaliacao | O
+ trigger_resposta_immutability                      | respostas       | O
+ trigger_resultado_immutability                     | resultados      | O
+(15 linhas)
+
+ status 
+--------
+(0 linha)
+
+ total_audit_logs |        primeiro_log        |         ultimo_log         
+------------------+----------------------------+----------------------------
+              118 | 2026-02-07 13:15:29.139092 | 2026-02-09 15:56:26.402093
+(1 linha)
+
+       action       |     resource      | quantidade 
+--------------------+-------------------+------------
+ UPDATE             | avaliacoes        |         30
+ INSERT             | funcionarios      |         20
+ INSERT             | avaliacoes        |         18
+ lote_criado        | lotes_avaliacao   |         10
+ UPDATE             | funcionarios      |          9
+ lote_status_change | lotes_avaliacao   |          8
+ lote_atualizado    | lotes_avaliacao   |          8
+ liberar_lote       | lotes_avaliacao   |          6
+ DELETE             | entidade          |          4
+ INSERT             | empresas_clientes |          4
+ lote_deletado      | lotes_avaliacao   |          1
+(11 linhas)
+
+ lote_id | status_anterior | status_novo |         created_at         | user_cpf | ip_address 
+---------+-----------------+-------------+----------------------------+----------+------------
+ 15      | ativo           | concluido   | 2026-02-09 15:56:26.402093 |          | 
+ 14      | ativo           | concluido   | 2026-02-09 15:48:49.815406 |          | 
+ 10      | ativo           | concluido   | 2026-02-09 09:47:47.714914 |          | 
+ 9       | ativo           | concluido   | 2026-02-08 23:37:58.05525  |          | 
+ 8       | ativo           | concluido   | 2026-02-08 23:05:21.673464 |          | 
+ 7       | concluido       | cancelado   | 2026-02-08 22:52:53.165607 |          | 
+ 7       | ativo           | concluido   | 2026-02-08 22:27:42.631099 |          | 
+ 6       | ativo           | concluido   | 2026-02-08 22:22:05.371678 |          | 
+(8 linhas)
+
+  status   | quantidade |        mais_antigo         |        mais_recente        
+-----------+------------+----------------------------+----------------------------
+ concluido |          6 | 2026-02-08 18:22:29.248739 | 2026-02-09 15:55:05.534397
+ ativo     |          2 | 2026-02-09 13:05:02.280263 | 2026-02-09 13:06:33.424427
+ cancelado |          1 | 2026-02-08 18:40:10.130234 | 2026-02-08 18:40:10.130234
+(3 linhas)
+
+ lote_id | lote_status | criado_em | laudo_id | laudo_status 
+---------+-------------+-----------+----------+--------------
+(0 linha)
+
+ schemaname |       tablename        | rls_enabled 
+------------+------------------------+-------------
+ public     | audit_logs             | t
+ public     | avaliacao_resets       | t
+ public     | avaliacoes             | t
+ public     | clinicas               | t
+ public     | empresas_clientes      | t
+ public     | entidades              | t
+ public     | fila_emissao           | t
+ public     | funcionarios           | t
+ public     | funcionarios_clinicas  | t
+ public     | funcionarios_entidades | t
+ public     | lotes_avaliacao        | t
+ public     | notificacoes           | t
+ public     | permissions            | t
+ public     | respostas              | t
+ public     | resultados             | t
+ public     | role_permissions       | t
+ public     | roles                  | t
+(17 linhas)
+
+ schemaname |       tablename        |                  policyname                   | permissive  |  roles   |  cmd   |                                                                                                               qual                                                                                                               
+------------+------------------------+-----------------------------------------------+-------------+----------+--------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ public     | audit_logs             | audit_logs_admin_all                          | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+ public     | audit_logs             | audit_logs_admin_select                       | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+ public     | audit_logs             | audit_logs_own_select                         | PERMISSIVE  | {public} | SELECT | ((user_cpf)::text = current_user_cpf())
+ public     | audit_logs             | audit_logs_system_insert                      | PERMISSIVE  | {public} | INSERT | 
+ public     | avaliacao_resets       | avaliacao_resets_delete_policy                | PERMISSIVE  | {public} | DELETE | false
+ public     | avaliacao_resets       | avaliacao_resets_insert_policy                | PERMISSIVE  | {public} | INSERT | 
+ public     | avaliacao_resets       | avaliacao_resets_update_policy                | PERMISSIVE  | {public} | UPDATE | false
+ public     | avaliacoes             | avaliacoes_block_admin                        | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | avaliacoes             | avaliacoes_own_select                         | PERMISSIVE  | {public} | SELECT | (((funcionario_cpf)::text = current_user_cpf()) AND (NOT current_user_is_gestor()))
+ public     | clinicas               | clinicas_admin_all                            | PERMISSIVE  | {public} | ALL    | (current_user_perfil() = 'admin'::text)
+ public     | empresas_clientes      | empresas_admin_delete                         | PERMISSIVE  | {public} | DELETE | (current_user_perfil() = 'admin'::text)
+ public     | empresas_clientes      | empresas_admin_insert                         | PERMISSIVE  | {public} | INSERT | 
+ public     | empresas_clientes      | empresas_admin_select                         | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+ public     | empresas_clientes      | empresas_admin_update                         | PERMISSIVE  | {public} | UPDATE | (current_user_perfil() = 'admin'::text)
+ public     | empresas_clientes      | empresas_block_admin                          | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | empresas_clientes      | empresas_rh_select                            | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'rh'::text) AND (clinica_id = current_user_clinica_id()))
+ public     | empresas_clientes      | rh_empresas_proprias                          | PERMISSIVE  | {public} | ALL    | ((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND ((clinica_id)::text = current_setting('app.current_user_clinica_id'::text, true)))
+ public     | fila_emissao           | fila_emissao_admin_view                       | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+ public     | fila_emissao           | fila_emissao_emissor_update                   | PERMISSIVE  | {public} | UPDATE | (current_user_perfil() = 'emissor'::text)
+ public     | fila_emissao           | fila_emissao_emissor_view                     | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'emissor'::text)
+ public     | fila_emissao           | fila_emissao_system_bypass                    | PERMISSIVE  | {public} | ALL    | (COALESCE(current_setting('app.system_bypass'::text, true), 'false'::text) = 'true'::text)
+ public     | funcionarios           | funcionarios_admin_delete                     | PERMISSIVE  | {public} | DELETE | ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text) AND ((perfil)::text = ANY ((ARRAY['rh'::character varying, 'emissor'::character varying, 'admin'::character varying])::text[])) AND (ativo = false))
+ public     | funcionarios           | funcionarios_admin_update                     | PERMISSIVE  | {public} | UPDATE | ((current_setting('app.current_user_perfil'::text, true) = 'admin'::text) AND ((perfil)::text = ANY ((ARRAY['rh'::character varying, 'emissor'::character varying, 'admin'::character varying])::text[])))
+ public     | funcionarios           | funcionarios_block_admin                      | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | funcionarios           | funcionarios_delete_simple                    | PERMISSIVE  | {public} | DELETE | (current_user_perfil() = 'admin'::text)
+ public     | funcionarios           | funcionarios_emissor_select                   | PERMISSIVE  | {public} | SELECT | ((current_setting('app.current_user_perfil'::text, true) = 'emissor'::text) AND ((perfil)::text = ANY ((ARRAY['rh'::character varying, 'emissor'::character varying])::text[])))
+ public     | funcionarios           | funcionarios_gestor_delete_via_relacionamento | PERMISSIVE  | {public} | DELETE | ((current_user_perfil() = 'gestor'::text) AND (EXISTS ( SELECT 1                                                                                                                                                                +
+            |                        |                                               |             |          |        |    FROM funcionarios_entidades fe                                                                                                                                                                                               +
+            |                        |                                               |             |          |        |   WHERE ((fe.funcionario_id = funcionarios.id) AND (fe.entidade_id = current_user_entidade_id()) AND (fe.ativo = true)))))
+ public     | funcionarios           | funcionarios_gestor_insert_base               | PERMISSIVE  | {public} | INSERT | 
+ public     | funcionarios           | funcionarios_gestor_select_via_relacionamento | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'gestor'::text) AND (EXISTS ( SELECT 1                                                                                                                                                                +
+            |                        |                                               |             |          |        |    FROM funcionarios_entidades fe                                                                                                                                                                                               +
+            |                        |                                               |             |          |        |   WHERE ((fe.funcionario_id = funcionarios.id) AND (fe.entidade_id = current_user_entidade_id()) AND (fe.ativo = true)))))
+ public     | funcionarios           | funcionarios_gestor_update_via_relacionamento | PERMISSIVE  | {public} | UPDATE | ((current_user_perfil() = 'gestor'::text) AND (EXISTS ( SELECT 1                                                                                                                                                                +
+            |                        |                                               |             |          |        |    FROM funcionarios_entidades fe                                                                                                                                                                                               +
+            |                        |                                               |             |          |        |   WHERE ((fe.funcionario_id = funcionarios.id) AND (fe.entidade_id = current_user_entidade_id()) AND (fe.ativo = true)))))
+ public     | funcionarios           | funcionarios_insert_simple                    | PERMISSIVE  | {public} | INSERT | 
+ public     | funcionarios           | funcionarios_own_select                       | PERMISSIVE  | {public} | SELECT | (((perfil)::text = 'funcionario'::text) AND ((cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text)))
+ public     | funcionarios           | funcionarios_own_update                       | PERMISSIVE  | {public} | UPDATE | (((perfil)::text = 'funcionario'::text) AND ((cpf)::text = NULLIF(current_setting('app.current_user_cpf'::text, true), ''::text)))
+ public     | funcionarios           | funcionarios_rh_delete_via_relacionamento     | PERMISSIVE  | {public} | DELETE | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (EXISTS ( SELECT 1                                                                                                                                          +
+            |                        |                                               |             |          |        |    FROM funcionarios_clinicas fc                                                                                                                                                                                                +
+            |                        |                                               |             |          |        |   WHERE ((fc.funcionario_id = funcionarios.id) AND (fc.clinica_id = current_user_clinica_id_optional()) AND (fc.ativo = true)))))
+ public     | funcionarios           | funcionarios_rh_insert_base                   | PERMISSIVE  | {public} | INSERT | 
+ public     | funcionarios           | funcionarios_rh_select_via_relacionamento     | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (EXISTS ( SELECT 1                                                                                                                                          +
+            |                        |                                               |             |          |        |    FROM funcionarios_clinicas fc                                                                                                                                                                                                +
+            |                        |                                               |             |          |        |   WHERE ((fc.funcionario_id = funcionarios.id) AND (fc.clinica_id = current_user_clinica_id_optional()) AND (fc.ativo = true)))))
+ public     | funcionarios           | funcionarios_rh_update_via_relacionamento     | PERMISSIVE  | {public} | UPDATE | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (EXISTS ( SELECT 1                                                                                                                                          +
+            |                        |                                               |             |          |        |    FROM funcionarios_clinicas fc                                                                                                                                                                                                +
+            |                        |                                               |             |          |        |   WHERE ((fc.funcionario_id = funcionarios.id) AND (fc.clinica_id = current_user_clinica_id_optional()) AND (fc.ativo = true)))))
+ public     | funcionarios           | funcionarios_select_simple                    | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'admin'::text) OR ((current_user_perfil() = 'funcionario'::text) AND ((cpf)::text = current_user_cpf())) OR (current_user_perfil() = 'rh'::text) OR (current_user_perfil() = 'gestor_entidade'::text))
+ public     | funcionarios           | funcionarios_update_simple                    | PERMISSIVE  | {public} | UPDATE | ((current_user_perfil() = 'admin'::text) OR (current_user_perfil() = 'rh'::text) OR (current_user_perfil() = 'gestor_entidade'::text))
+ public     | funcionarios_clinicas  | funcionarios_clinicas_block_admin             | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | funcionarios_clinicas  | funcionarios_clinicas_rh_delete               | PERMISSIVE  | {public} | DELETE | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (clinica_id = current_user_clinica_id_optional()))
+ public     | funcionarios_clinicas  | funcionarios_clinicas_rh_insert               | PERMISSIVE  | {public} | INSERT | 
+ public     | funcionarios_clinicas  | funcionarios_clinicas_rh_select               | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (clinica_id = current_user_clinica_id_optional()))
+ public     | funcionarios_clinicas  | funcionarios_clinicas_rh_update               | PERMISSIVE  | {public} | UPDATE | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (clinica_id = current_user_clinica_id_optional()))
+ public     | funcionarios_entidades | funcionarios_entidades_block_admin            | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | funcionarios_entidades | funcionarios_entidades_gestor_delete          | PERMISSIVE  | {public} | DELETE | ((current_user_perfil() = 'gestor'::text) AND (entidade_id = current_user_entidade_id()))
+ public     | funcionarios_entidades | funcionarios_entidades_gestor_insert          | PERMISSIVE  | {public} | INSERT | 
+ public     | funcionarios_entidades | funcionarios_entidades_gestor_select          | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'gestor'::text) AND (entidade_id = current_user_entidade_id()))
+ public     | funcionarios_entidades | funcionarios_entidades_gestor_update          | PERMISSIVE  | {public} | UPDATE | ((current_user_perfil() = 'gestor'::text) AND (entidade_id = current_user_entidade_id()))
+ public     | laudos                 | laudos_block_admin                            | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | laudos                 | policy_laudos_admin                           | PERMISSIVE  | {public} | SELECT | (current_setting('app.current_role'::text, true) = 'admin'::text)
+ public     | laudos                 | policy_laudos_emissor                         | PERMISSIVE  | {public} | SELECT | (current_setting('app.current_role'::text, true) = 'emissor'::text)
+ public     | lotes_avaliacao        | lotes_block_admin                             | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | lotes_avaliacao        | lotes_funcionario_select                      | PERMISSIVE  | {public} | SELECT | ((NOT current_user_is_gestor()) AND (EXISTS ( SELECT 1                                                                                                                                                                          +
+            |                        |                                               |             |          |        |    FROM avaliacoes a                                                                                                                                                                                                            +
+            |                        |                                               |             |          |        |   WHERE ((a.lote_id = lotes_avaliacao.id) AND ((a.funcionario_cpf)::text = current_user_cpf())))))
+ public     | lotes_avaliacao        | lotes_rh_delete                               | PERMISSIVE  | {public} | DELETE | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (clinica_id = current_user_clinica_id_optional()) AND (NOT (EXISTS ( SELECT 1                                                                               +
+            |                        |                                               |             |          |        |    FROM avaliacoes a                                                                                                                                                                                                            +
+            |                        |                                               |             |          |        |   WHERE (a.lote_id = lotes_avaliacao.id)))))
+ public     | lotes_avaliacao        | lotes_rh_select                               | PERMISSIVE  | {public} | SELECT | ((current_user_perfil() = 'rh'::text) AND validate_rh_clinica() AND (clinica_id = current_user_clinica_id_optional()))
+ public     | lotes_avaliacao        | policy_lotes_admin                            | PERMISSIVE  | {public} | SELECT | (current_setting('app.current_role'::text, true) = 'admin'::text)
+ public     | lotes_avaliacao        | policy_lotes_emissor                          | PERMISSIVE  | {public} | SELECT | ((current_setting('app.current_role'::text, true) = 'emissor'::text) AND ((status)::text = ANY ((ARRAY['pendente'::character varying, 'em_processamento'::character varying, 'concluido'::character varying])::text[])))
+ public     | lotes_avaliacao        | rh_lotes_empresas                             | PERMISSIVE  | {public} | ALL    | ((current_setting('app.current_user_perfil'::text, true) = 'rh'::text) AND (((clinica_id)::text = current_setting('app.current_user_clinica_id'::text, true)) OR (entidade_id IS NOT NULL)))
+ public     | notificacoes           | notificacoes_clinica_own                      | PERMISSIVE  | {public} | SELECT | ((destinatario_tipo = 'clinica'::text) AND (destinatario_cpf = current_setting('app.user_cpf'::text, true)))
+ public     | permissions            | permissions_admin_all                         | PERMISSIVE  | {public} | ALL    | (current_user_perfil() = 'admin'::text)
+ public     | permissions            | permissions_admin_select                      | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+ public     | respostas              | respostas_block_admin                         | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | respostas              | respostas_own_select                          | PERMISSIVE  | {public} | SELECT | ((NOT current_user_is_gestor()) AND (EXISTS ( SELECT 1                                                                                                                                                                          +
+            |                        |                                               |             |          |        |    FROM avaliacoes a                                                                                                                                                                                                            +
+            |                        |                                               |             |          |        |   WHERE ((a.id = respostas.avaliacao_id) AND ((a.funcionario_cpf)::text = current_user_cpf())))))
+ public     | resultados             | resultados_block_admin                        | RESTRICTIVE | {public} | ALL    | (current_user_perfil() <> 'admin'::text)
+ public     | resultados             | resultados_own_select                         | PERMISSIVE  | {public} | SELECT | ((NOT current_user_is_gestor()) AND (EXISTS ( SELECT 1                                                                                                                                                                          +
+            |                        |                                               |             |          |        |    FROM avaliacoes a                                                                                                                                                                                                            +
+            |                        |                                               |             |          |        |   WHERE ((a.id = resultados.avaliacao_id) AND ((a.funcionario_cpf)::text = current_user_cpf())))))
+ public     | resultados             | resultados_system_insert                      | PERMISSIVE  | {public} | INSERT | 
+ public     | role_permissions       | role_permissions_admin_all                    | PERMISSIVE  | {public} | ALL    | (current_user_perfil() = 'admin'::text)
+ public     | role_permissions       | role_permissions_admin_select                 | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+ public     | roles                  | roles_admin_all                               | PERMISSIVE  | {public} | ALL    | (current_user_perfil() = 'admin'::text)
+ public     | roles                  | roles_admin_select                            | PERMISSIVE  | {public} | SELECT | (current_user_perfil() = 'admin'::text)
+(71 linhas)
+
+      table_name       
+-----------------------
+ fila_emissao
+ laudo_generation_jobs
+(2 linhas)
+
+    enum_name     |  enum_value  | sort_order 
+------------------+--------------+------------
+ status_avaliacao | pendente     |          1
+ status_avaliacao | em_andamento |          2
+ status_avaliacao | concluido    |          3
+ status_avaliacao | liberada     |          4
+ status_avaliacao | iniciada     |          5
+ status_laudo     | rascunho     |          1
+ status_laudo     | emitido      |          2
+ status_laudo     | enviado      |          3
+ status_lote      | ativo        |          1
+ status_lote      | cancelado    |          2
+ status_lote      | finalizado   |          3
+ status_lote      | concluido    |          4
+ status_lote      | rascunho     |          5
+(13 linhas)
+
+   table_name    |         constraint_name          | constraint_type |     column_name     | foreign_table_name | foreign_column_name 
+-----------------+----------------------------------+-----------------+---------------------+--------------------+---------------------
+ avaliacoes      | avaliacoes_funcionario_cpf_fkey  | FOREIGN KEY     | funcionario_cpf     | funcionarios       | cpf
+ avaliacoes      | avaliacoes_lote_id_fkey          | FOREIGN KEY     | lote_id             | lotes_avaliacao    | id
+ avaliacoes      | fk_avaliacoes_funcionario        | FOREIGN KEY     | funcionario_cpf     | funcionarios       | cpf
+ funcionarios    | fk_funcionarios_ultima_avaliacao | FOREIGN KEY     | ultima_avaliacao_id | avaliacoes         | id
+ laudos          | fk_laudos_emissor_cpf            | FOREIGN KEY     | emissor_cpf         | funcionarios       | cpf
+ laudos          | fk_laudos_lote                   | FOREIGN KEY     | lote_id             | lotes_avaliacao    | id
+ laudos          | fk_laudos_lote_id                | FOREIGN KEY     | lote_id             | lotes_avaliacao    | id
+ laudos          | laudos_emissor_cpf_fkey          | FOREIGN KEY     | emissor_cpf         | funcionarios       | cpf
+ laudos          | laudos_emissor_cpf_fkey1         | FOREIGN KEY     | emissor_cpf         | funcionarios       | cpf
+ laudos          | laudos_lote_id_fkey              | FOREIGN KEY     | lote_id             | lotes_avaliacao    | id
+ lotes_avaliacao | lotes_avaliacao_empresa_id_fkey  | FOREIGN KEY     | empresa_id          | empresas_clientes  | id
+ lotes_avaliacao | lotes_avaliacao_entidade_id_fkey | FOREIGN KEY     | entidade_id         | entidades          | id
+(12 linhas)
+
+   table_name    |                  constraint_name                  |                                                                                                                                                         check_clause                                                                                                                                                         
+-----------------+---------------------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ avaliacoes      | 2200_420031_1_not_null                            | id IS NOT NULL
+ avaliacoes      | 2200_420031_2_not_null                            | funcionario_cpf IS NOT NULL
+ avaliacoes      | avaliacoes_status_check                           | ((status)::text = ANY (ARRAY[('rascunho'::character varying)::text, ('iniciada'::character varying)::text, ('em_andamento'::character varying)::text, ('concluido'::character varying)::text, ('concluida'::character varying)::text, ('inativada'::character varying)::text]))
+ funcionarios    | 2200_420145_1_not_null                            | id IS NOT NULL
+ funcionarios    | 2200_420145_26_not_null                           | indice_avaliacao IS NOT NULL
+ funcionarios    | 2200_420145_2_not_null                            | cpf IS NOT NULL
+ funcionarios    | 2200_420145_3_not_null                            | nome IS NOT NULL
+ funcionarios    | 2200_420145_7_not_null                            | senha_hash IS NOT NULL
+ funcionarios    | funcionarios_nivel_cargo_check                    | ((((perfil)::text = 'funcionario'::text) AND ((nivel_cargo)::text = ANY ((ARRAY['operacional'::character varying, 'gestao'::character varying])::text[]))) OR (((perfil)::text <> 'funcionario'::text) AND (nivel_cargo IS NULL)))
+ funcionarios    | funcionarios_perfil_check                         | ((perfil)::text = ANY ((ARRAY['funcionario'::character varying, 'admin'::character varying, 'emissor'::character varying, 'cadastro'::character varying])::text[]))
+ funcionarios    | no_gestor_entidade_in_funcionarios                | ((perfil)::text <> ALL ((ARRAY['gestor_entidade'::character varying, 'rh'::character varying])::text[]))
+ laudos          | 2200_420184_1_not_null                            | id IS NOT NULL
+ laudos          | 2200_420184_2_not_null                            | lote_id IS NOT NULL
+ laudos          | chk_laudos_emissor_when_emitido                   | ((((status)::text = 'emitido'::text) AND (emissor_cpf IS NOT NULL) AND (emissor_cpf <> ''::bpchar)) OR ((status)::text <> 'emitido'::text))
+ laudos          | chk_laudos_emitido_antes_enviado                  | ((enviado_em IS NULL) OR (emitido_em IS NULL) OR (emitido_em <= enviado_em))
+ laudos          | chk_laudos_emitido_em_emissor_cpf                 | ((emitido_em IS NULL) OR (emissor_cpf IS NOT NULL))
+ laudos          | chk_laudos_emitido_em_when_emitido                | ((((status)::text = 'emitido'::text) AND (emitido_em IS NOT NULL)) OR ((status)::text <> 'emitido'::text))
+ laudos          | chk_laudos_hash_pdf_valid                         | ((hash_pdf IS NULL) OR ((hash_pdf)::text ~ '^[a-f0-9]{64}$'::text))
+ laudos          | chk_laudos_hash_when_emitido                      | ((((status)::text = 'emitido'::text) AND (hash_pdf IS NOT NULL) AND ((hash_pdf)::text <> ''::text)) OR ((status)::text <> 'emitido'::text))
+ laudos          | chk_laudos_status_valid                           | ((status)::text = ANY ((ARRAY['emitido'::character varying, 'enviado'::character varying, 'rascunho'::character varying])::text[]))
+ laudos          | laudos_id_equals_lote_id                          | (id = lote_id)
+ lotes_avaliacao | 2200_420199_15_not_null                           | numero_ordem IS NOT NULL
+ lotes_avaliacao | 2200_420199_1_not_null                            | id IS NOT NULL
+ lotes_avaliacao | expiracao_requer_token_check                      | (((link_pagamento_expira_em IS NOT NULL) AND (link_pagamento_token IS NOT NULL)) OR (link_pagamento_expira_em IS NULL))
+ lotes_avaliacao | lotes_avaliacao_entidade_or_clinica_empresa_check | (((entidade_id IS NOT NULL) AND (clinica_id IS NULL) AND (empresa_id IS NULL)) OR ((entidade_id IS NULL) AND (clinica_id IS NOT NULL) AND (empresa_id IS NOT NULL)))
+ lotes_avaliacao | lotes_avaliacao_owner_segregation_check           | (((clinica_id IS NOT NULL) AND (empresa_id IS NOT NULL) AND (entidade_id IS NULL)) OR ((entidade_id IS NOT NULL) AND (clinica_id IS NULL) AND (empresa_id IS NULL)))
+ lotes_avaliacao | lotes_avaliacao_status_check                      | ((status)::text = ANY ((ARRAY['rascunho'::character varying, 'ativo'::character varying, 'concluido'::character varying, 'emissao_solicitada'::character varying, 'emissao_em_andamento'::character varying, 'laudo_emitido'::character varying, 'cancelado'::character varying, 'finalizado'::character varying])::text[]))
+ lotes_avaliacao | lotes_avaliacao_tipo_check                        | ((tipo)::text = ANY (ARRAY[('completo'::character varying)::text, ('operacional'::character varying)::text, ('gestao'::character varying)::text]))
+ lotes_avaliacao | pagamento_completo_check                          | (((status_pagamento = 'pago'::status_pagamento) AND (pagamento_metodo IS NOT NULL) AND (pagamento_parcelas IS NOT NULL) AND (pago_em IS NOT NULL)) OR ((status_pagamento <> 'pago'::status_pagamento) OR (status_pagamento IS NULL)))
+ lotes_avaliacao | pagamento_parcelas_range_check                    | (((pagamento_parcelas >= 1) AND (pagamento_parcelas <= 12)) OR (pagamento_parcelas IS NULL))
+ lotes_avaliacao | valor_funcionario_positivo_check                  | ((valor_por_funcionario > (0)::numeric) OR (valor_por_funcionario IS NULL))
+(31 linhas)
+
+ schemaname |    tablename    |                  indexname                  |                                                                                                                        indexdef                                                                                                                         
+------------+-----------------+---------------------------------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ public     | audit_logs      | audit_logs_pkey                             | CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)
+ public     | audit_logs      | idx_audit_logs_action                       | CREATE INDEX idx_audit_logs_action ON public.audit_logs USING btree (action)
+ public     | audit_logs      | idx_audit_logs_clinica_id                   | CREATE INDEX idx_audit_logs_clinica_id ON public.audit_logs USING btree (clinica_id)
+ public     | audit_logs      | idx_audit_logs_created_at                   | CREATE INDEX idx_audit_logs_created_at ON public.audit_logs USING btree (created_at DESC)
+ public     | audit_logs      | idx_audit_logs_entidade_id                  | CREATE INDEX idx_audit_logs_entidade_id ON public.audit_logs USING btree (entidade_id)
+ public     | audit_logs      | idx_audit_logs_resource                     | CREATE INDEX idx_audit_logs_resource ON public.audit_logs USING btree (resource)
+ public     | audit_logs      | idx_audit_logs_system_actions               | CREATE INDEX idx_audit_logs_system_actions ON public.audit_logs USING btree (created_at DESC) WHERE (user_cpf IS NULL)
+ public     | audit_logs      | idx_audit_logs_user_cpf                     | CREATE INDEX idx_audit_logs_user_cpf ON public.audit_logs USING btree (user_cpf)
+ public     | avaliacoes      | avaliacoes_pkey                             | CREATE UNIQUE INDEX avaliacoes_pkey ON public.avaliacoes USING btree (id)
+ public     | avaliacoes      | idx_avaliacoes_funcionario                  | CREATE INDEX idx_avaliacoes_funcionario ON public.avaliacoes USING btree (funcionario_cpf)
+ public     | avaliacoes      | idx_avaliacoes_funcionario_cpf              | CREATE INDEX idx_avaliacoes_funcionario_cpf ON public.avaliacoes USING btree (funcionario_cpf)
+ public     | avaliacoes      | idx_avaliacoes_funcionario_status           | CREATE INDEX idx_avaliacoes_funcionario_status ON public.avaliacoes USING btree (funcionario_cpf, status)
+ public     | avaliacoes      | idx_avaliacoes_inativada_em                 | CREATE INDEX idx_avaliacoes_inativada_em ON public.avaliacoes USING btree (inativada_em) WHERE (inativada_em IS NOT NULL)
+ public     | avaliacoes      | idx_avaliacoes_lote                         | CREATE INDEX idx_avaliacoes_lote ON public.avaliacoes USING btree (lote_id)
+ public     | avaliacoes      | idx_avaliacoes_lote_id                      | CREATE INDEX idx_avaliacoes_lote_id ON public.avaliacoes USING btree (lote_id)
+ public     | avaliacoes      | idx_avaliacoes_lote_status                  | CREATE INDEX idx_avaliacoes_lote_status ON public.avaliacoes USING btree (lote_id, status) WHERE ((status)::text <> 'inativada'::text)
+ public     | avaliacoes      | idx_avaliacoes_status                       | CREATE INDEX idx_avaliacoes_status ON public.avaliacoes USING btree (status)
+ public     | funcionarios    | funcionarios_cpf_key                        | CREATE UNIQUE INDEX funcionarios_cpf_key ON public.funcionarios USING btree (cpf)
+ public     | funcionarios    | funcionarios_matricula_key                  | CREATE UNIQUE INDEX funcionarios_matricula_key ON public.funcionarios USING btree (matricula)
+ public     | funcionarios    | funcionarios_pkey                           | CREATE UNIQUE INDEX funcionarios_pkey ON public.funcionarios USING btree (id)
+ public     | funcionarios    | idx_funcionarios_cpf_perfil_ativo           | CREATE INDEX idx_funcionarios_cpf_perfil_ativo ON public.funcionarios USING btree (cpf, perfil, ativo)
+ public     | funcionarios    | idx_funcionarios_data_ultimo_lote           | CREATE INDEX idx_funcionarios_data_ultimo_lote ON public.funcionarios USING btree (data_ultimo_lote) WHERE (data_ultimo_lote IS NOT NULL)
+ public     | funcionarios    | idx_funcionarios_indice_avaliacao           | CREATE INDEX idx_funcionarios_indice_avaliacao ON public.funcionarios USING btree (indice_avaliacao)
+ public     | funcionarios    | idx_funcionarios_matricula                  | CREATE INDEX idx_funcionarios_matricula ON public.funcionarios USING btree (matricula)
+ public     | funcionarios    | idx_funcionarios_nivel_cargo                | CREATE INDEX idx_funcionarios_nivel_cargo ON public.funcionarios USING btree (nivel_cargo)
+ public     | funcionarios    | idx_funcionarios_nome                       | CREATE INDEX idx_funcionarios_nome ON public.funcionarios USING btree (nome)
+ public     | funcionarios    | idx_funcionarios_perfil                     | CREATE INDEX idx_funcionarios_perfil ON public.funcionarios USING btree (perfil)
+ public     | funcionarios    | idx_funcionarios_ultima_avaliacao           | CREATE INDEX idx_funcionarios_ultima_avaliacao ON public.funcionarios USING btree (ultima_avaliacao_id) WHERE (ultima_avaliacao_id IS NOT NULL)
+ public     | funcionarios    | idx_funcionarios_ultima_avaliacao_status    | CREATE INDEX idx_funcionarios_ultima_avaliacao_status ON public.funcionarios USING btree (ultima_avaliacao_status) WHERE (ultima_avaliacao_status IS NOT NULL)
+ public     | laudos          | idx_laudos_arquivo_remoto_key               | CREATE INDEX idx_laudos_arquivo_remoto_key ON public.laudos USING btree (arquivo_remoto_key)
+ public     | laudos          | idx_laudos_arquivo_remoto_sync              | CREATE INDEX idx_laudos_arquivo_remoto_sync ON public.laudos USING btree (arquivo_remoto_key, arquivo_remoto_uploaded_at) WHERE (arquivo_remoto_key IS NOT NULL)
+ public     | laudos          | idx_laudos_criado_em                        | CREATE INDEX idx_laudos_criado_em ON public.laudos USING btree (criado_em DESC)
+ public     | laudos          | idx_laudos_emissor                          | CREATE INDEX idx_laudos_emissor ON public.laudos USING btree (emissor_cpf)
+ public     | laudos          | idx_laudos_emissor_cpf                      | CREATE INDEX idx_laudos_emissor_cpf ON public.laudos USING btree (emissor_cpf)
+ public     | laudos          | idx_laudos_emissor_cpf_emitido              | CREATE INDEX idx_laudos_emissor_cpf_emitido ON public.laudos USING btree (emissor_cpf, emitido_em DESC)
+ public     | laudos          | idx_laudos_emitido                          | CREATE INDEX idx_laudos_emitido ON public.laudos USING btree (emitido_em, status) WHERE (emitido_em IS NOT NULL)
+ public     | laudos          | idx_laudos_enviado_em                       | CREATE INDEX idx_laudos_enviado_em ON public.laudos USING btree (enviado_em DESC)
+ public     | laudos          | idx_laudos_hash                             | CREATE INDEX idx_laudos_hash ON public.laudos USING btree (hash_pdf)
+ public     | laudos          | idx_laudos_hash_pdf                         | CREATE INDEX idx_laudos_hash_pdf ON public.laudos USING btree (hash_pdf) WHERE (hash_pdf IS NOT NULL)
+ public     | laudos          | idx_laudos_id_lote_id                       | CREATE INDEX idx_laudos_id_lote_id ON public.laudos USING btree (id, lote_id)
+ public     | laudos          | idx_laudos_job_id                           | CREATE INDEX idx_laudos_job_id ON public.laudos USING btree (job_id)
+ public     | laudos          | idx_laudos_lote                             | CREATE INDEX idx_laudos_lote ON public.laudos USING btree (lote_id)
+ public     | laudos          | idx_laudos_lote_id                          | CREATE INDEX idx_laudos_lote_id ON public.laudos USING btree (lote_id)
+ public     | laudos          | idx_laudos_lote_status                      | CREATE INDEX idx_laudos_lote_status ON public.laudos USING btree (lote_id, status)
+ public     | laudos          | idx_laudos_relatorio_individual             | CREATE INDEX idx_laudos_relatorio_individual ON public.laudos USING btree (relatorio_individual) WHERE (relatorio_individual IS NOT NULL)
+ public     | laudos          | idx_laudos_relatorio_lote                   | CREATE INDEX idx_laudos_relatorio_lote ON public.laudos USING btree (relatorio_lote) WHERE (relatorio_lote IS NOT NULL)
+ public     | laudos          | idx_laudos_relatorio_setor                  | CREATE INDEX idx_laudos_relatorio_setor ON public.laudos USING btree (relatorio_setor) WHERE (relatorio_setor IS NOT NULL)
+ public     | laudos          | idx_laudos_status                           | CREATE INDEX idx_laudos_status ON public.laudos USING btree (status)
+ public     | laudos          | laudos_lote_emissor_unique                  | CREATE UNIQUE INDEX laudos_lote_emissor_unique ON public.laudos USING btree (lote_id, emissor_cpf)
+ public     | laudos          | laudos_lote_id_unique                       | CREATE UNIQUE INDEX laudos_lote_id_unique ON public.laudos USING btree (lote_id)
+ public     | laudos          | laudos_pkey                                 | CREATE UNIQUE INDEX laudos_pkey ON public.laudos USING btree (id)
+ public     | lotes_avaliacao | idx_lotes_atualizado_em                     | CREATE INDEX idx_lotes_atualizado_em ON public.lotes_avaliacao USING btree (atualizado_em) WHERE ((status)::text = ANY (ARRAY[('ativo'::character varying)::text, ('concluido'::character varying)::text, ('finalizado'::character varying)::text]))
+ public     | lotes_avaliacao | idx_lotes_avaliacao_clinica_id              | CREATE INDEX idx_lotes_avaliacao_clinica_id ON public.lotes_avaliacao USING btree (clinica_id)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_emitido_em              | CREATE INDEX idx_lotes_avaliacao_emitido_em ON public.lotes_avaliacao USING btree (id) WHERE (emitido_em IS NOT NULL)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_empresa_id              | CREATE INDEX idx_lotes_avaliacao_empresa_id ON public.lotes_avaliacao USING btree (empresa_id)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_entidade_id             | CREATE INDEX idx_lotes_avaliacao_entidade_id ON public.lotes_avaliacao USING btree (entidade_id)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_enviado_em              | CREATE INDEX idx_lotes_avaliacao_enviado_em ON public.lotes_avaliacao USING btree (id) WHERE (enviado_em IS NOT NULL)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_expiracao_pagamento     | CREATE INDEX idx_lotes_avaliacao_expiracao_pagamento ON public.lotes_avaliacao USING btree (link_pagamento_expira_em) WHERE (status_pagamento = 'aguardando_pagamento'::status_pagamento)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_liberado_por            | CREATE INDEX idx_lotes_avaliacao_liberado_por ON public.lotes_avaliacao USING btree (liberado_por)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_solicitacao_emissao     | CREATE INDEX idx_lotes_avaliacao_solicitacao_emissao ON public.lotes_avaliacao USING btree (solicitacao_emissao_em) WHERE (status_pagamento IS NOT NULL)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_status_emitido          | CREATE INDEX idx_lotes_avaliacao_status_emitido ON public.lotes_avaliacao USING btree (status, emitido_em) WHERE (((status)::text = 'concluido'::text) AND (emitido_em IS NULL))
+ public     | lotes_avaliacao | idx_lotes_avaliacao_status_pagamento        | CREATE INDEX idx_lotes_avaliacao_status_pagamento ON public.lotes_avaliacao USING btree (status_pagamento)
+ public     | lotes_avaliacao | idx_lotes_avaliacao_token_pagamento         | CREATE INDEX idx_lotes_avaliacao_token_pagamento ON public.lotes_avaliacao USING btree (link_pagamento_token) WHERE (link_pagamento_token IS NOT NULL)
+ public     | lotes_avaliacao | idx_lotes_clinica                           | CREATE INDEX idx_lotes_clinica ON public.lotes_avaliacao USING btree (clinica_id)
+ public     | lotes_avaliacao | idx_lotes_clinica_status                    | CREATE INDEX idx_lotes_clinica_status ON public.lotes_avaliacao USING btree (clinica_id, status)
+ public     | lotes_avaliacao | idx_lotes_emissao_em_andamento              | CREATE INDEX idx_lotes_emissao_em_andamento ON public.lotes_avaliacao USING btree (status) WHERE ((status)::text = 'emissao_em_andamento'::text)
+ public     | lotes_avaliacao | idx_lotes_emissao_solicitada                | CREATE INDEX idx_lotes_emissao_solicitada ON public.lotes_avaliacao USING btree (status) WHERE ((status)::text = 'emissao_solicitada'::text)
+ public     | lotes_avaliacao | idx_lotes_emissao_solicitada_liberado       | CREATE INDEX idx_lotes_emissao_solicitada_liberado ON public.lotes_avaliacao USING btree (liberado_em DESC) WHERE ((status)::text = 'emissao_solicitada'::text)
+ public     | lotes_avaliacao | idx_lotes_empresa                           | CREATE INDEX idx_lotes_empresa ON public.lotes_avaliacao USING btree (empresa_id)
+ public     | lotes_avaliacao | idx_lotes_empresa_status_liberado           | CREATE INDEX idx_lotes_empresa_status_liberado ON public.lotes_avaliacao USING btree (empresa_id, status, liberado_em DESC)
+ public     | lotes_avaliacao | idx_lotes_entidade_id                       | CREATE INDEX idx_lotes_entidade_id ON public.lotes_avaliacao USING btree (entidade_id) WHERE (entidade_id IS NOT NULL)
+ public     | lotes_avaliacao | idx_lotes_finalizado_em                     | CREATE INDEX idx_lotes_finalizado_em ON public.lotes_avaliacao USING btree (finalizado_em DESC)
+ public     | lotes_avaliacao | idx_lotes_laudo_enviado                     | CREATE INDEX idx_lotes_laudo_enviado ON public.lotes_avaliacao USING btree (laudo_enviado_em) WHERE (laudo_enviado_em IS NOT NULL)
+ public     | lotes_avaliacao | idx_lotes_liberado_em                       | CREATE INDEX idx_lotes_liberado_em ON public.lotes_avaliacao USING btree (liberado_em DESC)
+ public     | lotes_avaliacao | idx_lotes_numero_ordem                      | CREATE INDEX idx_lotes_numero_ordem ON public.lotes_avaliacao USING btree (empresa_id, numero_ordem DESC)
+ public     | lotes_avaliacao | idx_lotes_pronto_emissao                    | CREATE INDEX idx_lotes_pronto_emissao ON public.lotes_avaliacao USING btree (status, emitido_em) WHERE (((status)::text = 'concluido'::text) AND (emitido_em IS NULL))
+ public     | lotes_avaliacao | idx_lotes_status                            | CREATE INDEX idx_lotes_status ON public.lotes_avaliacao USING btree (status)
+ public     | lotes_avaliacao | idx_lotes_status_criado                     | CREATE INDEX idx_lotes_status_criado ON public.lotes_avaliacao USING btree (status, criado_em DESC) WHERE ((status)::text = ANY ((ARRAY['ativo'::character varying, 'concluido'::character varying, 'emissao_solicitada'::character varying])::text[]))
+ public     | lotes_avaliacao | link_pagamento_token_unique                 | CREATE UNIQUE INDEX link_pagamento_token_unique ON public.lotes_avaliacao USING btree (link_pagamento_token)
+ public     | lotes_avaliacao | lotes_avaliacao_empresa_numero_ordem_unique | CREATE UNIQUE INDEX lotes_avaliacao_empresa_numero_ordem_unique ON public.lotes_avaliacao USING btree (empresa_id, numero_ordem)
+ public     | lotes_avaliacao | lotes_avaliacao_pkey                        | CREATE UNIQUE INDEX lotes_avaliacao_pkey ON public.lotes_avaliacao USING btree (id)
+(81 linhas)
+

@@ -21,6 +21,7 @@ Adicione esta variável de ambiente no dashboard do Vercel:
 ## Efeito
 
 Com esta configuração, o sistema irá:
+
 - ✅ Criar conta do gestor imediatamente após aceite do contrato
 - ✅ Liberar acesso ao sistema sem exigir pagamento
 - ✅ Redirecionar para página de boas-vindas com credenciais

@@ -1,4 +1,5 @@
 # Fix: Sequência usuarios_id_seq Desatualizada
+
 **Data:** 10 de fevereiro de 2026  
 **Status:** ✅ RESOLVIDO
 
@@ -14,6 +15,7 @@ Key (id)=(4) already exists.
 ```
 
 ### Log Completo
+
 ```json
 {
   "event": "contrato_aceito_criando_conta",
@@ -32,6 +34,7 @@ Key (id)=(4) already exists.
 ## 🔍 Causa Raiz
 
 ### Sequência Desatualizada
+
 A sequência `usuarios_id_seq` estava gerando IDs que já existiam na tabela:
 
 ```sql
@@ -62,17 +65,18 @@ Adicionado no `INSERT` de usuários em [lib/db.ts](lib/db.ts#L1803):
 ```typescript
 INSERT INTO usuarios (cpf, nome, email, tipo_usuario, clinica_id, entidade_id, ativo, criado_em, atualizado_em)
 VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-ON CONFLICT (cpf) DO UPDATE 
-SET nome = EXCLUDED.nome, 
-    email = EXCLUDED.email, 
+ON CONFLICT (cpf) DO UPDATE
+SET nome = EXCLUDED.nome,
+    email = EXCLUDED.email,
     tipo_usuario = EXCLUDED.tipo_usuario,
-    clinica_id = EXCLUDED.clinica_id, 
-    entidade_id = EXCLUDED.entidade_id, 
+    clinica_id = EXCLUDED.clinica_id,
+    entidade_id = EXCLUDED.entidade_id,
     ativo = true,
     atualizado_em = CURRENT_TIMESTAMP
 ```
 
 **Benefícios:**
+
 - ✅ Evita erro de chave duplicada (PK: id)
 - ✅ Evita erro de CPF duplicado (UNIQUE: cpf)
 - ✅ Atualiza dados se usuário já existe (idempotência)
@@ -109,11 +113,13 @@ SELECT setval('usuarios_id_seq', (SELECT MAX(id) FROM usuarios) + 1, false);
 ## 📊 Estado Atual
 
 ### Código (Deployed)
+
 - ✅ ON CONFLICT implementado (proteção ativa)
 - ✅ Aceite de contrato funcionando
 - ✅ Criação de gestores/RH funcionando
 
 ### Banco de Dados (Pendente)
+
 - ⏳ Sequência ainda pode estar desatualizada
 - ✅ Mas ON CONFLICT previne erros
 - 📝 Recomendado: Executar script de reset
@@ -171,7 +177,7 @@ psql "postgresql://user:pass@host/db?sslmode=require" \
 
 ```sql
 -- Estado atual da sequência
-SELECT 
+SELECT
     last_value AS proximo_id,
     (SELECT MAX(id) FROM usuarios) AS max_id_tabela,
     (SELECT COUNT(*) FROM usuarios) AS total_usuarios
@@ -207,7 +213,7 @@ BEGIN
   INSERT INTO usuarios (cpf, nome, tipo_usuario, ativo)
   VALUES ('12345678901', 'Admin', 'admin', true)
   ON CONFLICT (cpf) DO NOTHING;
-  
+
   -- Resetar sequência ao final
   PERFORM setval('usuarios_id_seq', (SELECT MAX(id) FROM usuarios) + 1, false);
 END $$;
@@ -217,23 +223,25 @@ END $$;
 
 ## 📋 Commits Relacionados
 
-| Commit | Descrição |
-|--------|-----------|
+| Commit    | Descrição                                        |
+| --------- | ------------------------------------------------ |
 | `19aa5b3` | fix(usuarios): ON CONFLICT + migration sequência |
-| `47dab59` | feat: script Node.js para reset em produção |
-| `2f68cdd` | fix(contratos): tomador_id (problema anterior) |
-| `cf373ea` | docs: análise cascata de erros |
+| `47dab59` | feat: script Node.js para reset em produção      |
+| `2f68cdd` | fix(contratos): tomador_id (problema anterior)   |
+| `cf373ea` | docs: análise cascata de erros                   |
 
 ---
 
 ## 📚 Referências
 
 ### PostgreSQL
+
 - [SERIAL Type](https://www.postgresql.org/docs/current/datatype-numeric.html#DATATYPE-SERIAL)
 - [Sequence Functions](https://www.postgresql.org/docs/current/functions-sequence.html)
 - [ON CONFLICT](https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT)
 
 ### Tabela Afetada
+
 - **Tabela:** `usuarios`
 - **PK:** `id SERIAL` (sequência: `usuarios_id_seq`)
 - **Unique:** `cpf VARCHAR(11) NOT NULL UNIQUE`
