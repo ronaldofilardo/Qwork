@@ -23,18 +23,16 @@ jest.mock('@/lib/session', () => ({
 describe('GET /api/admin/cobranca - fallback to pagamento.valor', () => {
   let tomadorId: number;
   let pagamentoId: number;
-  const cnpj = '99999999000101';
-
-  beforeEach(async () => {
-    // Limpar dados de testes anteriores
-    await query(
-      'DELETE FROM pagamentos WHERE tomador_id IN (SELECT id FROM tomadores WHERE cnpj = $1)',
-      [cnpj]
-    );
-    await query('DELETE FROM tomadores WHERE cnpj = $1', [cnpj]);
-  });
+  const cnpj = `${Date.now().toString().slice(-11)}`;
 
   beforeAll(async () => {
+    // Limpar dados de testes anteriores com este CNPJ
+    await query(
+      'DELETE FROM pagamentos WHERE clinica_id IN (SELECT id FROM clinicas WHERE cnpj = $1)',
+      [cnpj]
+    );
+    await query('DELETE FROM clinicas WHERE cnpj = $1', [cnpj]);
+
     tomadorId = await createTesttomador({
       tipo: 'clinica',
       cnpj,
@@ -57,7 +55,7 @@ describe('GET /api/admin/cobranca - fallback to pagamento.valor', () => {
     ];
 
     pagamentoId = await query(
-      `INSERT INTO pagamentos (tomador_id, valor, numero_parcelas, detalhes_parcelas, status, data_pagamento)
+      `INSERT INTO pagamentos (clinica_id, valor, numero_parcelas, detalhes_parcelas, status, data_pagamento)
        VALUES ($1, $2, $3, $4, 'pago', NOW())
        RETURNING id`,
       [tomadorId, '1800.00', 5, JSON.stringify(detalhes)]
@@ -67,7 +65,7 @@ describe('GET /api/admin/cobranca - fallback to pagamento.valor', () => {
   afterAll(async () => {
     // Cleanup - remover dados de teste
     await query('DELETE FROM pagamentos WHERE id = $1', [pagamentoId]);
-    await query('DELETE FROM tomadores WHERE id = $1', [tomadorId]);
+    await query('DELETE FROM clinicas WHERE id = $1', [tomadorId]);
   });
 
   /**

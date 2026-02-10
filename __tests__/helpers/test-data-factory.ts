@@ -50,7 +50,8 @@ export interface CreateContratoOptions {
 }
 
 export interface CreatePagamentoOptions {
-  tomador_id: number;
+  entidade_id?: number;
+  clinica_id?: number;
   contrato_id?: number | null;
   valor?: number;
   status?: 'pendente' | 'pago' | 'cancelado' | 'expirado';
@@ -196,12 +197,25 @@ export async function createTestPagamento(
     external_id: options.external_id || `external-${Date.now()}`,
   };
 
-  const result = await query(
-    `INSERT INTO pagamentos (tomador_id, valor, status, metodo)
+  // Determine which ID to use (entidade_id or clinica_id)
+  let query_text: string;
+  let params: any[];
+  
+  if (options.entidade_id) {
+    query_text = `INSERT INTO pagamentos (entidade_id, valor, status, metodo)
      VALUES ($1, $2, $3, $4)
-     RETURNING id`,
-    [options.tomador_id, defaults.valor, defaults.status, defaults.metodo]
-  );
+     RETURNING id`;
+    params = [options.entidade_id, defaults.valor, defaults.status, defaults.metodo];
+  } else if (options.clinica_id) {
+    query_text = `INSERT INTO pagamentos (clinica_id, valor, status, metodo)
+     VALUES ($1, $2, $3, $4)
+     RETURNING id`;
+    params = [options.clinica_id, defaults.valor, defaults.status, defaults.metodo];
+  } else {
+    throw new Error('Either entidade_id or clinica_id must be provided');
+  }
+
+  const result = await query(query_text, params);
 
   return result.rows[0].id;
 }
@@ -258,6 +272,11 @@ export async function cleanupTestData(): Promise<void> {
 
 // Testes para as funções de factory de dados de teste
 describe('Test Data Factory', () => {
+  afterEach(async () => {
+    // Limpar dados criados pelos testes do factory
+    await cleanupTestData();
+  });
+
   describe('createTesttomador', () => {
     it('deve criar um tomador com valores padrão', async () => {
       const id = await createTesttomador();
@@ -304,7 +323,7 @@ describe('Test Data Factory', () => {
     it('deve criar um pagamento para um tomador existente', async () => {
       const tomadorId = await createTesttomador();
       const pagamentoId = await createTestPagamento({
-        tomador_id: tomadorId,
+        entidade_id: tomadorId,
       });
 
       expect(typeof pagamentoId).toBe('number');
@@ -314,7 +333,7 @@ describe('Test Data Factory', () => {
     it('deve criar um pagamento com opções customizadas', async () => {
       const tomadorId = await createTesttomador();
       const options = {
-        tomador_id: tomadorId,
+        entidade_id: tomadorId,
         valor: 500,
         status: 'pago' as const,
         metodo: 'pix' as const,

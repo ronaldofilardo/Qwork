@@ -48,7 +48,7 @@ describe('API Verificar Pagamento', () => {
       [tomadorComPagamento]
     );
     await createTestPagamento({
-      tomador_id: tomadorComPagamento,
+      entidade_id: tomadorComPagamento,
       contrato_id: contratoComPagamento,
       status: 'pago',
     });
