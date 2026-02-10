@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request) {
   try {
-    const session = await requireRole('admin');
+    const session = await requireRole('admin', false);
 
     // Suporte a filtro por CNPJ (opcional) via query string
     const url = new URL(request.url);
