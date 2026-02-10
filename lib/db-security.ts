@@ -1,4 +1,4 @@
-import { query } from './db';
+import { query, transaction } from './db';
 import { getSession, Session } from './session';
 import { TypeValidators } from './types/enums';
 import { queryAsGestor, isGestor } from './db-gestor';
@@ -109,14 +109,13 @@ export async function queryWithContext<T = Record<string, unknown>>(
       }
     }
 
-    // Se há sessão, configurar contexto para RLS
+    // Se há sessão, usar TRANSAÇÃO para garantir mesma conexão (Neon connection pooling)
     if (session) {
       // 🔒 SEGURANÇA: Validar e sanitizar valores com rigor
       const cpf = session.cpf.replace(/[^0-9]/g, '');
       const perfil = session.perfil.toLowerCase().replace(/[^a-z_]/g, '');
 
-      // Log para debug
-      console.log(`[queryWithContext] Configurando RLS: CPF=${cpf}, Perfil=${perfil}`);
+      console.log(`[queryWithContext] 🔄 TRANSAÇÃO: CPF=${cpf}, Perfil=${perfil}`);
 
       // Validações de segurança OBRIGATÓRIAS
       if (!cpf || cpf.length !== 11) {
@@ -128,134 +127,81 @@ export async function queryWithContext<T = Record<string, unknown>>(
       }
 
       if (!perfil || !isValidPerfil(perfil)) {
-        console.error(`[queryWithContext] Perfil inválido: ${perfil}, Session:`, session);
+        console.error(`[queryWithContext] Perfil inválido: ${perfil}`, session);
         throw new Error(`SEGURANÇA: Perfil inválido na sessão: ${perfil}`);
       }
 
-      // 🔒 SEGURANÇA: Configurar TODAS as variáveis de contexto para RLS em uma única transação
-      // IMPORTANTE: Fazer TODAS as configurações ANTES de qualquer query que possa disparar RLS
-      
-      // Obter identificadores de contexto baseado no perfil ANTES de configurar variáveis
-      let clinicaId: string | null = null;
-      let entidadeId: string | null = null;
+      // ✅ USAR transaction() de lib/db.ts que garante cliente dedicado (mesma conexão)
+      return await transaction(async (txClient) => {
+        // FASE 1: Buscar IDs de contexto (dentro da transação, mesma conexão)
+        let clinicaId: string | null = null;
+        let entidadeId: string | null = null;
 
-      // Buscar clinica_id via funcionarios_clinicas (para RH)
-      if (perfil === 'rh') {
-        try {
-          const clinicaResult = await query(
-            `SELECT DISTINCT ec.clinica_id
-             FROM funcionarios f
-             JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
-             JOIN empresas_clientes ec ON ec.id = fc.empresa_id
-             WHERE f.cpf = $1 AND fc.ativo = true
-             LIMIT 1`,
-            [cpf]
-          );
-          if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
-            clinicaId = clinicaResult.rows[0].clinica_id.toString();
+        if (perfil === 'rh') {
+          try {
+            const clinicaResult = await txClient.query(
+              `SELECT DISTINCT ec.clinica_id
+               FROM funcionarios f
+               JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
+               JOIN empresas_clientes ec ON ec.id = fc.empresa_id
+               WHERE f.cpf = $1 AND fc.ativo = true
+               LIMIT 1`,
+              [cpf]
+            );
+            if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
+              clinicaId = clinicaResult.rows[0].clinica_id.toString();
+            }
+          } catch (err) {
+            console.warn('[queryWithContext] Erro ao buscar clinica_id:', err);
           }
-        } catch (err) {
-          console.warn('[queryWithContext] Erro ao buscar clinica_id:', err);
         }
-      }
 
-      // Buscar entidade_id via funcionarios_entidades (para gestores)
-      if (perfil === 'gestor') {
-        try {
-          const entidadeResult = await query(
-            `SELECT DISTINCT fe.entidade_id
-             FROM funcionarios f
-             JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
-             WHERE f.cpf = $1 AND fe.ativo = true
-             LIMIT 1`,
-            [cpf]
-          );
-          if (
-            entidadeResult.rows.length > 0 &&
-            entidadeResult.rows[0].entidade_id
-          ) {
-            entidadeId = entidadeResult.rows[0].entidade_id.toString();
+        if (perfil === 'gestor') {
+          try {
+            const entidadeResult = await txClient.query(
+              `SELECT DISTINCT fe.entidade_id
+               FROM funcionarios f
+               JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
+               WHERE f.cpf = $1 AND fe.ativo = true
+               LIMIT 1`,
+              [cpf]
+            );
+            if (entidadeResult.rows.length > 0 && entidadeResult.rows[0].entidade_id) {
+              entidadeId = entidadeResult.rows[0].entidade_id.toString();
+            }
+          } catch (err) {
+            console.warn('[queryWithContext] Erro ao buscar entidade_id:', err);
           }
-        } catch (err) {
-          console.warn('[queryWithContext] Erro ao buscar entidade_id:', err);
         }
-      }
 
-      // AGORA configurar TODAS as variáveis em sequência usando set_config com is_local=false
-      // (false = variável persiste para toda a sessão do PostgreSQL)
-      try {
-        // FASE 1: Configurar variáveis obrigatórias de usuário
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_cpf',
-          cpf,
-        ]);
+        // FASE 2: Configurar variáveis RLS (SET LOCAL - só para esta transação)
+        await txClient.query('SELECT set_config($1, $2, true)', ['app.current_user_cpf', cpf]);
+        await txClient.query('SELECT set_config($1, $2, true)', ['app.current_perfil', perfil]);
+        await txClient.query('SELECT set_config($1, $2, true)', ['app.current_user_perfil', perfil]);
+        await txClient.query('SELECT set_config($1, $2, true)', ['app.current_user_tipo', perfil]);
 
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_perfil',
-          perfil,
-        ]);
-
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_perfil',
-          perfil,
-        ]);
-
-        await query('SELECT set_config($1, $2, false)', [
-          'app.current_user_tipo',
-          perfil,
-        ]);
-
-        // FASE 2: Configurar variáveis de contexto (clinica/entidade)
         if (clinicaId) {
-          await query('SELECT set_config($1, $2, false)', [
-            'app.current_clinica_id',
-            clinicaId,
-          ]);
+          await txClient.query('SELECT set_config($1, $2, true)', ['app.current_clinica_id', clinicaId]);
         }
 
         if (entidadeId) {
-          await query('SELECT set_config($1, $2, false)', [
-            'app.current_entidade_id',
-            entidadeId,
-          ]);
-
-          await query('SELECT set_config($1, $2, false)', [
-            'app.current_contratante_id',
-            entidadeId,
-          ]);
+          await txClient.query('SELECT set_config($1, $2, true)', ['app.current_entidade_id', entidadeId]);
+          await txClient.query('SELECT set_config($1, $2, true)', ['app.current_contratante_id', entidadeId]);
         }
 
-        console.log('[queryWithContext] Variáveis RLS configuradas com sucesso');
-      } catch (configError) {
-        console.error('[queryWithContext] Erro ao configurar variáveis RLS:', configError);
-        throw new Error(`SEGURANÇA: Falha ao configurar contexto RLS: ${configError}`);
-      }
+        console.log('[queryWithContext] ✅ RLS configurado (cliente dedicado)');
 
-      // 🔒 SEGURANÇA: Validar RLS APÓS configurar todas as variáveis
-      try {
-        await query('SELECT validar_sessao_rls()');
-      } catch (validationError: any) {
-        console.error('[SEGURANÇA] Validação RLS falhou:', validationError);
-        throw new Error(
-          `SEGURANÇA: ${validationError.message || 'Sessão RLS inválida'}`
-        );
-      }
+        // FASE 3: Executar query principal (mesma conexão/transação/cliente)
+        const result = await txClient.query<T>(text, params);
+        
+        console.log(`[queryWithContext] ✅ Query OK: ${result.rows.length} rows`);
+        
+        return result;
+      }, session);
     }
 
-    // Executar query principal
-    console.log(
-      '[queryWithContext] executing SQL:',
-      typeof text === 'string' ? text.slice(0, 200) : text
-    );
+    // Sem sessão - executar query diretamente
     const result = await query<T>(text, params);
-    console.log(
-      '[queryWithContext] result:',
-      result && typeof result === 'object'
-        ? Array.isArray((result as any).rows)
-          ? `rows:${(result as any).rows.length}`
-          : `rowCount:${(result as any).rowCount}`
-        : String(result)
-    );
     return result;
   } catch (error) {
     console.error(
