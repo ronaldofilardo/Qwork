@@ -37,48 +37,13 @@ export async function withTransaction<T>(
     throw new Error('SEGURANÇA: withTransaction requer sessão autenticada');
   }
 
-  // PRODUÇÃO: Usar função transaction() existente que suporta Neon
+  // PRODUÇÃO: Usar função transaction() do db.ts que agora suporta Neon Pool
   if (isProduction) {
     console.log(
-      '[withTransaction] Modo PRODUÇÃO: usando dbTransaction() para Neon'
+      '[withTransaction] Modo PRODUÇÃO: usando transaction() com Neon Pool'
     );
 
-    // Para Neon, precisamos configurar as variáveis de auditoria uma vez no início
-    // e garantir que todas as queries subsequentes usem a mesma sessão
-    const { getNeonSql } = await import('./infrastructure/database/connection');
-    const sql = await getNeonSql();
-    if (!sql) {
-      throw new Error('Conexão Neon não disponível');
-    }
-
-    // Configurar variáveis de auditoria uma única vez para toda a transação
-    const escapeString = (str: string) => String(str).replace(/'/g, "''");
-    const setCpf = `SELECT set_config('app.current_user_cpf', '${escapeString(
-      session.cpf
-    )}', true)`;
-    const setPerfil = `SELECT set_config('app.current_user_perfil', '${escapeString(
-      session.perfil
-    )}', true)`;
-    const setClinica = `SELECT set_config('app.current_user_clinica_id', '${escapeString(
-      String(session.clinica_id || '')
-    )}', true)`;
-    const setEntidade = `SELECT set_config('app.current_user_entidade_id', '${escapeString(
-      String(session.entidade_id || '')
-    )}', true)`;
-
-    try {
-      await sql(setCpf);
-      await sql(setPerfil);
-      await sql(setClinica);
-      await sql(setEntidade);
-      console.log(
-        `[withTransaction] Variáveis de auditoria configuradas para ${session.perfil} (CPF: ***${session.cpf.slice(-4)})`
-      );
-    } catch (err) {
-      console.warn('[withTransaction] Falha ao configurar variáveis de auditoria:', err);
-    }
-
-    // Agora executar o callback usando dbTransaction que manterá o contexto
+    // transaction() agora usa Neon Pool com transações reais e SET LOCAL
     return await dbTransaction(async (txClient) => {
       // Criar adapter que imita PoolClient mas usa TransactionClient
       const clientAdapter = {
