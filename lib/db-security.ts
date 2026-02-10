@@ -128,26 +128,24 @@ export async function queryWithContext<T = Record<string, unknown>>(
         throw new Error('SEGURANÇA: Perfil inválido na sessão');
       }
 
-      // 🔒 SEGURANÇA: Configurar variáveis de contexto primeiro
+      // 🔒 SEGURANÇA: Configurar variáveis de contexto para RLS
+      // NOTA: Precisamos configurar DUAS variáveis de perfil:
+      // 1. app.current_perfil → para validar_sessao_rls() (Migration 1007)
+      // 2. app.current_user_perfil → para current_user_perfil() dos triggers de auditoria (Migration 210)
+      
+      // Configurar CPF (usado por ambos)
       await query('SELECT set_config($1, $2, false)', [
         'app.current_user_cpf',
         cpf,
       ]);
+      
+      // Configurar perfil para validar_sessao_rls
       await query('SELECT set_config($1, $2, false)', [
         'app.current_perfil',
         perfil,
       ]);
-
-      // 🔒 NOTA: Não revalidamos CPF aqui porque:
-      // - A sessão foi validada por requireAuth() antes desta função
-      // - Revalidar aqui pode causar conflito com RLS (bloqueio antes de set_config)
-      // - Se CPF for inválido, RLS vai bloquear queries anyway
-
-      // Definir variáveis de contexto usando parametrização segura
-      await query('SELECT set_config($1, $2, false)', [
-        'app.current_user_cpf',
-        cpf,
-      ]);
+      
+      // Configurar perfil para triggers de auditoria
       await query('SELECT set_config($1, $2, false)', [
         'app.current_user_perfil',
         perfil,
@@ -216,8 +214,16 @@ export async function queryWithContext<T = Record<string, unknown>>(
           throw new Error('ID de entidade inválido');
         }
 
+        // Configurar entidade_id (nome atual)
         await query('SELECT set_config($1, $2, false)', [
           'app.current_entidade_id',
+          entidadeId,
+        ]);
+        
+        // Configurar contratante_id (nome legado esperado por validar_sessao_rls)
+        // NOTA: Migration 1007 espera app.current_contratante_id
+        await query('SELECT set_config($1, $2, false)', [
+          'app.current_contratante_id',
           entidadeId,
         ]);
       }
