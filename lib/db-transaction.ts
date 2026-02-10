@@ -3,10 +3,13 @@
  * 
  * Helper para executar transações com variáveis de auditoria persistentes
  * Usa uma ÚNICA conexão do pool para toda a transação
+ * 
+ * PRODUÇÃO (Neon): Usa transaction() existente de lib/db.ts
+ * DEV/TEST: Usa PoolClient dedicado para garantir mesma conexão
  */
 
 import { getSession } from './session';
-import { getPool } from './db';
+import { getPool, isProduction, transaction as dbTransaction } from './db';
 import { PoolClient } from 'pg';
 
 /**
@@ -34,6 +37,25 @@ export async function withTransaction<T>(
     throw new Error('SEGURANÇA: withTransaction requer sessão autenticada');
   }
 
+  // PRODUÇÃO: Usar função transaction() existente que suporta Neon
+  if (isProduction) {
+    console.log('[withTransaction] Modo PRODUÇÃO: usando dbTransaction() para Neon');
+    
+    // Adapter: converte TransactionClient para PoolClient compatível
+    return await dbTransaction(async (txClient) => {
+      // Criar adapter que imita PoolClient mas usa TransactionClient
+      const clientAdapter = {
+        query: async (text: string, params?: unknown[]) => {
+          const result = await txClient.query(text, params);
+          return result;
+        },
+      } as PoolClient;
+      
+      return await callback(clientAdapter);
+    }, session);
+  }
+
+  // DEV/TEST: Usar PoolClient dedicado
   const pool = getPool();
   const client = await pool.connect();
   

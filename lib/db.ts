@@ -173,6 +173,10 @@ if (environment === 'development' && hasTestDatabaseUrl && !isRunningTests) {
 const isDevelopment = environment === 'development';
 const isTest = environment === 'test';
 const isProduction = environment === 'production';
+
+// Exportar constantes de ambiente para uso em outros módulos
+export { isDevelopment, isTest, isProduction };
+
 const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
 
 // Selecionar URL do banco baseado no ambiente
