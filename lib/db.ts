@@ -744,9 +744,9 @@ export async function transaction<T>(
     console.log('[db][transaction] PRODUÇÃO: usando Neon Pool para transação real');
     
     try {
-      // Importar Pool do Neon
-      const { Pool } = await import('@neondatabase/serverless');
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      // Importar Pool do Neon (renomear para evitar conflito com pg.Pool)
+      const { Pool: NeonPool } = await import('@neondatabase/serverless');
+      const pool = new NeonPool({ connectionString: process.env.DATABASE_URL });
       const client = await pool.connect();
       
       try {
