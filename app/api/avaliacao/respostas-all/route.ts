@@ -1,5 +1,5 @@
 import { requireAuth } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,8 @@ export const GET = async (request: Request) => {
     if (avaliacaoIdParam) {
       avaliacaoId = parseInt(avaliacaoIdParam);
       // Verificar se a avaliação pertence ao usuário e não está inativada
-      const checkRes = await query(
+      const checkRes = await queryWithContext(
+        user,
         `SELECT id FROM avaliacoes WHERE id = $1 AND funcionario_cpf = $2 AND status != 'inativada'`,
         [avaliacaoId, user.cpf]
       );
@@ -27,7 +28,8 @@ export const GET = async (request: Request) => {
       }
     } else {
       // Busca a avaliação atual (iniciada ou em andamento, não inativada)
-      const avaliacaoRes = await query(
+      const avaliacaoRes = await queryWithContext(
+        user,
         `SELECT id FROM avaliacoes
          WHERE funcionario_cpf = $1
          AND status IN ('iniciada', 'em_andamento')
@@ -45,7 +47,8 @@ export const GET = async (request: Request) => {
     }
 
     // 2. Busca TODAS as respostas dessa avaliação
-    const respostasRes = await query(
+    const respostasRes = await queryWithContext(
+      user,
       `SELECT item, valor 
        FROM respostas 
        WHERE avaliacao_id = $1 

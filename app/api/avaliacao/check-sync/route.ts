@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 import { getSession } from '@/lib/session';
 import { StructuredLogger } from '@/lib/structured-logger';
 
@@ -24,14 +24,13 @@ export async function POST(request: Request) {
     }
 
     // Verificar se já existe avaliação para este funcionário neste grupo com timestamp próximo
-    const result = await query(
-      `
-      SELECT id, inicio
-      FROM avaliacoes
-      WHERE funcionario_cpf = $1 AND grupo = $2
-      ORDER BY inicio DESC
-      LIMIT 1
-    `,
+    const result = await queryWithContext(
+      session,
+      `SELECT id, inicio
+       FROM avaliacoes
+       WHERE funcionario_cpf = $1 AND grupo = $2
+       ORDER BY inicio DESC
+       LIMIT 1`,
       [session.cpf, grupo]
     );
 

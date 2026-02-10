@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { query } from '@/lib/db';
 import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
@@ -18,7 +17,8 @@ export async function POST(request: Request) {
 
     // Buscar avaliação em andamento ou criar nova se não existir
     let avaliacaoId: number;
-    const avaliacaoResult = await query(
+    const avaliacaoResult = await queryWithContext(
+      session,
       `SELECT id, lote_id FROM avaliacoes
        WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
        ORDER BY inicio DESC LIMIT 1`,
@@ -27,7 +27,8 @@ export async function POST(request: Request) {
 
     if (avaliacaoResult.rows.length === 0) {
       // Criar nova avaliação
-      const newAvaliacao = await query(
+      const newAvaliacao = await queryWithContext(
+        session,
         `INSERT INTO avaliacoes (funcionario_cpf, status)
          VALUES ($1, 'em_andamento')
          RETURNING id, lote_id`,
@@ -40,7 +41,8 @@ export async function POST(request: Request) {
 
     // Salvar respostas (upsert)
     for (const resposta of respostas) {
-      await query(
+      await queryWithContext(
+        session,
         `INSERT INTO respostas (avaliacao_id, grupo, item, valor)
          VALUES ($1, $2, $3, $4)
          ON CONFLICT (avaliacao_id, grupo, item) 
@@ -50,7 +52,8 @@ export async function POST(request: Request) {
     }
 
     // Contar total de respostas únicas (grupo, item)
-    const respostasCountResult = await query(
+    const respostasCountResult = await queryWithContext(
+      session,
       `SELECT COUNT(DISTINCT (grupo, item)) as total 
        FROM respostas 
        WHERE avaliacao_id = $1`,
@@ -94,6 +97,7 @@ export async function POST(request: Request) {
     }
 
     await queryWithContext(
+      session,
       'UPDATE avaliacoes SET grupo_atual = $1, status = $2, atualizado_em = NOW() WHERE id = $3',
       [grupoAtualParaSalvar, 'em_andamento', avaliacaoId]
     );

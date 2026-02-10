@@ -1,5 +1,5 @@
 import { requireAuth } from '@/lib/session';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,8 @@ export const POST = async (_req: Request) => {
     );
   }
 
-  const funcs = await query(
+  const funcs = await queryWithContext(
+    user,
     `SELECT cpf FROM funcionarios WHERE perfil = 'funcionario' AND ativo = true`,
     []
   );
@@ -36,7 +37,8 @@ export const POST = async (_req: Request) => {
 
   for (const func of funcs.rows) {
     // SEMPRE CRIA NOVA — IGNORA TUDO QUE JÁ EXISTE
-    await query(
+    await queryWithContext(
+      user,
       `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, liberado_por, liberado_em)
        VALUES ($1, 'iniciada', $2, $3, $2)`,
       [func.cpf, agora, user.cpf]
