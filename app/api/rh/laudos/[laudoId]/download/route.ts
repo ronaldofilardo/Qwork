@@ -1,8 +1,6 @@
 import { getSession, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,150 +90,51 @@ export const GET = async (
       );
     }
 
-    // Tentar múltiplas chaves locais e externas (id, codigo, lote)
-    const candidateNames = new Set<string>();
-    candidateNames.add(`laudo-${laudo.id}.pdf`);
-    if (laudo.codigo) candidateNames.add(`laudo-${laudo.id}.pdf`);
-    if (laudo.lote_id) candidateNames.add(`laudo-${laudo.lote_id}.pdf`);
+    // ÚNICA PRIORIDADE: Usar arquivo_remoto_key do banco (armazenamento no Backblaze)
+    // Em produção, os PDFs estão SEMPRE no Backblaze, nunca no filesystem
+    if (!laudo.arquivo_remoto_key) {
+      console.warn(
+        `[WARN] Laudo ${laudoId} está com status='emitido' mas SEM arquivo_remoto_key no banco`
+      );
+      return NextResponse.json(
+        {
+          error:
+            'Arquivo do laudo não foi enviado ao bucket ainda. Aguarde o emissor fazer upload.',
+          success: false,
+          status: 'awaiting_upload',
+        },
+        { status: 404 }
+      );
+    }
 
     console.log(
-      `[DEBUG] Buscando arquivos para laudo ${laudo.id}:`,
-      Array.from(candidateNames)
+      `[BACKBLAZE] Arquivo remoto encontrado no banco: ${laudo.arquivo_remoto_key}`
     );
 
-    // PRIORIDADE 1: Usar arquivo_remoto_key do banco (se existir)
-    if (laudo.arquivo_remoto_key) {
-      console.log(
-        `[BACKBLAZE] Arquivo remoto encontrado no banco: ${laudo.arquivo_remoto_key}`
-      );
-      try {
-        const { getPresignedUrl } = await import('@/lib/storage/backblaze-client');
-        const presignedUrl = await getPresignedUrl(laudo.arquivo_remoto_key, 300); // 5 min
-        console.log(`[BACKBLAZE] Presigned URL: ${presignedUrl}`);
-        console.log(`[BACKBLAZE] Redirecionando (302) para: ${presignedUrl.substring(0, 100)}...`);
-        return NextResponse.redirect(presignedUrl, 302);
-      } catch (backblazeError) {
-        console.error(
-          '[BACKBLAZE] Erro ao gerar presigned URL:',
-          backblazeError
-        );
-        // Continuar tentando outras opções
-      }
-    }
-
-    // PRIORIDADE 2: Procurar em storage/local (apenas desenvolvimento)
-    const storageDir = path.join(process.cwd(), 'storage', 'laudos');
-    console.log(`[DEBUG] Storage dir: ${storageDir}`);
-    console.log(`[DEBUG] Storage exists: ${fs.existsSync(storageDir)}`);
-
-    if (fs.existsSync(storageDir)) {
-      const files = fs.readdirSync(storageDir);
-      console.log(`[DEBUG] Arquivos em storage:`, files);
-    }
-
-    for (const name of candidateNames) {
-      const p = path.join(process.cwd(), 'storage', 'laudos', name);
-      console.log(`[DEBUG] Tentando: ${p}, existe: ${fs.existsSync(p)}`);
-      if (fs.existsSync(p)) {
-        const buf = fs.readFileSync(p);
-        const fileName = `laudo-${laudo.id}.pdf`;
-        console.log(`[SUCCESS] Arquivo encontrado: ${p} (${buf.length} bytes)`);
-        return new NextResponse(buf, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${fileName}"`,
-          },
-        });
-      }
-    }
-
-    // Using local and public storage only.
-
-    // 3) Fallback para public (tentar mesmos nomes e o antigo por lote)
-    for (const name of candidateNames) {
-      const p = path.join(process.cwd(), 'public', 'laudos', name);
-      if (fs.existsSync(p)) {
-        const buf = fs.readFileSync(p);
-        const fileName = `laudo-${laudo.id}.pdf`;
-        return new NextResponse(buf, {
-          headers: {
-            'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${fileName}"`,
-          },
-        });
-      }
-    }
-
-    // antigo fallback por lote_id
-    const fallbackPath = path.join(
-      process.cwd(),
-      'public',
-      'laudos',
-      `laudo-${laudo.lote_id}.pdf`
-    );
-    if (fs.existsSync(fallbackPath)) {
-      const fallbackBuf = fs.readFileSync(fallbackPath);
-      const fileName = `laudo-${laudo.codigo ?? laudo.id}.pdf`;
-      return new NextResponse(fallbackBuf, {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="${fileName}"`,
-        },
-      });
-    }
-
-    // Attempt to serve from Backblaze if object exists in remote bucket
     try {
-      const metaPath = path.join(
-        process.cwd(),
-        'storage',
-        'laudos',
-        `laudo-${laudo.id}.json`
+      const { getPresignedUrl } = await import('@/lib/storage/backblaze-client');
+      const presignedUrl = await getPresignedUrl(laudo.arquivo_remoto_key, 300); // 5 min
+      console.log(
+        `[BACKBLAZE] Presigned URL gerada com sucesso para: ${laudo.arquivo_remoto_key}`
       );
-      try {
-        const metaRaw = fs.readFileSync(metaPath, 'utf-8');
-        const meta = JSON.parse(metaRaw);
-        if (meta.arquivo_remoto?.key) {
-          // If a public URL is available, redirect to it; otherwise generate presigned URL
-          if (meta.arquivo_remoto.url) {
-            return NextResponse.redirect(meta.arquivo_remoto.url);
-          }
-          const { getPresignedUrl } =
-            await import('@/lib/storage/backblaze-client');
-          const signed = await getPresignedUrl(meta.arquivo_remoto.key, 300);
-          return NextResponse.redirect(signed);
-        }
-      } catch {
-        // No metadata — attempt to discover the latest file for the lote
-        const { findLatestLaudoForLote, getPresignedUrl } =
-          await import('@/lib/storage/backblaze-client');
-        const foundKey = await findLatestLaudoForLote(laudo.lote_id);
-        if (foundKey) {
-          const signed = await getPresignedUrl(foundKey, 300);
-          return NextResponse.redirect(signed);
-        }
-      }
-    } catch (err) {
-      console.error('[WARN] Falha ao tentar servir laudo via Backblaze:', err);
+      return NextResponse.redirect(presignedUrl, 302);
+    } catch (backblazeError) {
+      console.error(
+        '[BACKBLAZE] Erro ao gerar presigned URL:',
+        backblazeError
+      );
+      return NextResponse.json(
+        {
+          error: 'Erro ao gerar acesso ao arquivo do laudo',
+          success: false,
+          detalhes:
+            backblazeError instanceof Error
+              ? backblazeError.message
+              : 'Erro desconhecido ao processar Backblaze',
+        },
+        { status: 500 }
+      );
     }
-
-    console.warn(
-      `[WARN] Arquivo do laudo ${laudoId} não encontrado em storage`
-    );
-
-    // REGRA DE NEGÓCIO CRÍTICA:
-    // Apenas o EMISSOR pode gerar laudos. O RH/clínica apenas baixa laudos já emitidos.
-    // Se o arquivo não existe, o emissor ainda não emitiu o laudo.
-
-    return NextResponse.json(
-      {
-        error:
-          'Arquivo do laudo não encontrado. O laudo deve ser emitido pelo emissor antes de poder ser baixado.',
-        success: false,
-        hint: 'Aguarde o emissor gerar e emitir o laudo.',
-      },
-      { status: 404 }
-    );
   } catch (error) {
     console.error('Erro ao fazer download do laudo:', error);
     return NextResponse.json(
