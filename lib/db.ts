@@ -173,10 +173,6 @@ if (environment === 'development' && hasTestDatabaseUrl && !isRunningTests) {
 const isDevelopment = environment === 'development';
 const isTest = environment === 'test';
 const isProduction = environment === 'production';
-
-// Exportar constantes de ambiente para uso em outros módulos
-export { isDevelopment, isTest, isProduction };
-
 const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
 
 // Selecionar URL do banco baseado no ambiente
@@ -493,41 +489,49 @@ export async function query<T = any>(
       if (!sql) {
         throw new Error('Conexão Neon não disponível');
       }
+      // Garantir search_path em produção
+      if (!text.trim().toLowerCase().startsWith('set search_path')) {
+        await sql('SET search_path TO public;');
+      }
 
-      // Para Neon: usar set_config com escopo de SESSION (não transação individual)
-      // Neon serverless mantém a conexão por curto período, suficiente para queries sequenciais
+      // Para Neon: não podemos enviar múltiplos comandos em uma prepared statement.
+      // Se houver sessão, execute os set_config separadamente e depois a query principal.
       if (session) {
         const escapeString = (str: string) => String(str).replace(/'/g, "''");
-        
+
+        const setCpf = `SELECT set_config('app.current_user_cpf', '${escapeString(
+          session.cpf
+        )}', true)`;
+        const setPerfil = `SELECT set_config('app.current_user_perfil', '${escapeString(
+          session.perfil
+        )}', true)`;
+        const setClinica = `SELECT set_config('app.current_user_clinica_id', '${escapeString(
+          String(session.clinica_id || '')
+        )}', true)`;
+        const setEntidade = `SELECT set_config('app.current_user_entidade_id', '${escapeString(
+          String(session.entidade_id || '')
+        )}', true)`;
+
         try {
-          // Configurar variáveis de sessão (TRUE = escopo de sessão, não transação)
-          await sql(`SELECT set_config('app.current_user_cpf', '${escapeString(session.cpf)}', true)`);
-          await sql(`SELECT set_config('app.current_user_perfil', '${escapeString(session.perfil)}', true)`);
-          await sql(`SELECT set_config('app.current_user_clinica_id', '${escapeString(String(session.clinica_id || ''))}', true)`);
-          await sql(`SELECT set_config('app.current_user_entidade_id', '${escapeString(String(session.entidade_id || ''))}', true)`);
-          
-          // Executar query principal com parâmetros
-          const rows = await sql(text, params || []);
-          const duration = Date.now() - start;
-          
-          if (DEBUG_DB) {
-            console.log(
-              `[db][query] neon+session (${duration}ms): ${text.substring(0, 200)}...`
-            );
-          }
-          
-          return {
-            rows: rows as T[],
-            rowCount: Array.isArray(rows) ? rows.length : 0,
-          };
+          await sql(setCpf);
+          await sql(setPerfil);
+          await sql(setClinica);
+          await sql(setEntidade);
         } catch (err) {
-          const duration = Date.now() - start;
-          console.error(
-            `Erro na query do banco (production, ${duration}ms):`,
-            err
-          );
-          throw err;
+          console.warn('[db][neon] falha ao aplicar set_config:', err);
         }
+
+        const rows = await sql(text, params || []);
+        const duration = Date.now() - start;
+        if (DEBUG_DB) {
+          console.log(
+            `[db][query] neon (${duration}ms): ${text.substring(0, 200)}...`
+          );
+        }
+        return {
+          rows: rows as T[],
+          rowCount: Array.isArray(rows) ? rows.length : 0,
+        };
       }
 
       // Sem sessão, executar diretamente
@@ -659,15 +663,16 @@ export function getDatabaseInfo() {
   };
 }
 
-/**
- * Retorna o pool de conexões PostgreSQL local (dev/test)
- * Usado por helpers de transação que precisam de PoolClient dedicado
- */
+// Exportar constantes necessárias para db-transaction.ts
+export { isProduction };
+
+// Função para obter o pool apropriado (usada por db-transaction.ts)
 export function getPool(): pg.Pool {
+  if (isProduction) {
+    throw new Error('getPool() não deve ser usado em produção (usa Neon)');
+  }
   if (!localPool) {
-    throw new Error(
-      'Pool de conexões não disponível. getPool() só funciona em ambiente local (dev/test).'
-    );
+    throw new Error('Pool local não inicializado. Verifique se está em desenvolvimento/teste.');
   }
   return localPool;
 }
@@ -739,69 +744,19 @@ export async function transaction<T>(
       client.release();
     }
   } else if (isProduction) {
-    // PRODUÇÃO (Neon): Usar Pool.connect() para transação real
-    // neon() não suporta transações, mas Pool sim
-    console.log('[db][transaction] PRODUÇÃO: usando Neon Pool para transação real');
-    
-    try {
-      // Importar Pool do Neon (renomear para evitar conflito com pg.Pool)
-      const { Pool: NeonPool } = await import('@neondatabase/serverless');
-      const pool = new NeonPool({ connectionString: process.env.DATABASE_URL });
-      const client = await pool.connect();
-      
-      try {
-        // Iniciar transação
-        await client.query('BEGIN');
-        
-        // Configurar variáveis de auditoria se houver sessão
-        if (session) {
-          const escapeString = (str: string) => str.replace(/'/g, "''");
-          await client.query(
-            `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
-          );
-        }
-        
-        // Criar TransactionClient que usa o client conectado
-        const txClient: TransactionClient = {
-          query: async <R = any>(text: string, params?: unknown[]) => {
-            const result = await client.query(text, params || []);
-            return {
-              rows: result.rows as R[],
-              rowCount: result.rowCount || 0,
-            };
-          },
-        };
-        
-        // Executar callback
-        const result = await callback(txClient);
-        
-        // Commit
-        await client.query('COMMIT');
-        
-        console.log('[db][transaction] Transação Neon Pool comitada com sucesso');
-        
-        return result;
-      } catch (error) {
-        // Rollback em caso de erro
-        await client.query('ROLLBACK');
-        console.error('[db][transaction] Erro na transação Neon, rollback executado:', error);
-        throw error;
-      } finally {
-        client.release();
-      }
-    } catch (error) {
-      console.error('[db][transaction] Erro ao conectar Neon Pool:', error);
-      throw error;
-    }
+    // Para Neon, não temos suporte a transações no mesmo nível
+    // Por enquanto, executamos as queries sequencialmente
+    console.warn(
+      '[db][transaction] Transações nativas não suportadas em Neon - executando queries sequencialmente'
+    );
+
+    const txClient: TransactionClient = {
+      query: async <R = any>(text: string, params?: unknown[]) => {
+        return await query<R>(text, params, session);
+      },
+    };
+
+    return await callback(txClient);
   } else {
     throw new Error(
       `Nenhuma conexão configurada para ambiente: ${environment}`
@@ -1690,7 +1645,7 @@ export async function criarContaResponsavel(
   }
 
   // 2. referenceId é sempre tomadorData.id (já é o clinica_id ou entidade_id correto)
-  const referenceId: number = tomadorData.id;
+  const referenceId = tomadorData.id;
 
   if (DEBUG_DB) {
     console.debug(
@@ -1801,14 +1756,10 @@ export async function criarContaResponsavel(
         );
       }
     } else {
-      // Inserir novo usuário (com ON CONFLICT para evitar erro de sequência desatualizada)
+      // Inserir novo usuário
       await query(
         `INSERT INTO usuarios (cpf, nome, email, tipo_usuario, clinica_id, entidade_id, ativo, criado_em, atualizado_em)
-         VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-         ON CONFLICT (cpf) DO UPDATE 
-         SET nome = EXCLUDED.nome, email = EXCLUDED.email, tipo_usuario = EXCLUDED.tipo_usuario,
-             clinica_id = EXCLUDED.clinica_id, entidade_id = EXCLUDED.entidade_id, ativo = true,
-             atualizado_em = CURRENT_TIMESTAMP`,
+         VALUES ($1, $2, $3, $4, $5, $6, true, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)`,
         [
           cpfParaUsar,
           tomadorData.responsavel_nome || 'Gestor',
@@ -1821,7 +1772,7 @@ export async function criarContaResponsavel(
       );
       if (DEBUG_DB) {
         console.debug(
-          `[CRIAR_CONTA] Usuário criado/atualizado: CPF=${cpfParaUsar}, tipo=${tipoUsuario}`
+          `[CRIAR_CONTA] Usuário criado: CPF=${cpfParaUsar}, tipo=${tipoUsuario}`
         );
       }
     }
