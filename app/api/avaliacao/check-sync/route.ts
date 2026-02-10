@@ -25,7 +25,6 @@ export async function POST(request: Request) {
 
     // Verificar se já existe avaliação para este funcionário neste grupo com timestamp próximo
     const result = await queryWithContext(
-      session,
       `SELECT id, inicio
        FROM avaliacoes
        WHERE funcionario_cpf = $1 AND grupo = $2

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { queryWithContext, transactionWithContext } from '@/lib/db-security';
+import { queryWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
 import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 

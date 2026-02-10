@@ -19,9 +19,7 @@ export const POST = async (_req: Request) => {
   }
 
   const funcs = await queryWithContext(
-    user,
-    `SELECT cpf FROM funcionarios WHERE perfil = 'funcionario' AND ativo = true`,
-    []
+    `SELECT cpf FROM funcionarios WHERE perfil = 'funcionario' AND ativo = true`
   );
 
   if (funcs.rowCount === 0) {
@@ -38,7 +36,6 @@ export const POST = async (_req: Request) => {
   for (const func of funcs.rows) {
     // SEMPRE CRIA NOVA — IGNORA TUDO QUE JÁ EXISTE
     await queryWithContext(
-      user,
       `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, liberado_por, liberado_em)
        VALUES ($1, 'iniciada', $2, $3, $2)`,
       [func.cpf, agora, user.cpf]

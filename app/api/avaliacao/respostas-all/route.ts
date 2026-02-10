@@ -19,7 +19,6 @@ export const GET = async (request: Request) => {
       avaliacaoId = parseInt(avaliacaoIdParam);
       // Verificar se a avaliação pertence ao usuário e não está inativada
       const checkRes = await queryWithContext(
-        user,
         `SELECT id FROM avaliacoes WHERE id = $1 AND funcionario_cpf = $2 AND status != 'inativada'`,
         [avaliacaoId, user.cpf]
       );
@@ -29,7 +28,6 @@ export const GET = async (request: Request) => {
     } else {
       // Busca a avaliação atual (iniciada ou em andamento, não inativada)
       const avaliacaoRes = await queryWithContext(
-        user,
         `SELECT id FROM avaliacoes
          WHERE funcionario_cpf = $1
          AND status IN ('iniciada', 'em_andamento')
@@ -43,12 +41,11 @@ export const GET = async (request: Request) => {
         return NextResponse.json({ respostas: [], total: 0 }, { status: 200 });
       }
 
-      avaliacaoId = avaliacaoRes.rows[0].id;
+      avaliacaoId = (avaliacaoRes.rows[0] as { id: number }).id;
     }
 
     // 2. Busca TODAS as respostas dessa avaliação
     const respostasRes = await queryWithContext(
-      user,
       `SELECT item, valor 
        FROM respostas 
        WHERE avaliacao_id = $1 
