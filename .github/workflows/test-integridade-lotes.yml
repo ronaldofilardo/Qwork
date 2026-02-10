@@ -1,0 +1,200 @@
+name: Testes Automatizados - Integridade de Lotes
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'app/api/rh/liberar-lote/**'
+      - 'app/api/entidade/liberar-lote/**'
+      - 'lib/db-transaction.ts'
+      - '__tests__/integration/**'
+      - '__tests__/database/**'
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Executar monitoramento a cada 6 horas
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+
+jobs:
+  test-integration:
+    name: Testes de Integração
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: qwork_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Executar migrações de teste
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+        run: |
+          pnpm prisma migrate deploy --schema=./prisma/schema.prisma
+
+      - name: Executar testes de atomicidade
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+          NODE_ENV: test
+        run: |
+          pnpm test __tests__/integration/liberar-lote-atomicity.test.ts --coverage
+
+      - name: Executar testes de SAVEPOINT
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+          NODE_ENV: test
+        run: |
+          pnpm test __tests__/integration/savepoint-laudo-duplicate.test.ts --coverage
+
+      - name: Executar testes de contexto de auditoria
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+          NODE_ENV: test
+        run: |
+          pnpm test __tests__/integration/transaction-audit-context.test.ts --coverage
+
+      - name: Upload relatório de cobertura
+        uses: codecov/codecov-action@v3
+        if: always()
+        with:
+          files: ./coverage/coverage-final.json
+          flags: integration-tests
+
+  test-database:
+    name: Testes de Banco de Dados
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_DB: qwork_test
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Instalar pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Executar migrações
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+        run: pnpm prisma migrate deploy
+
+      - name: Testar triggers de laudo
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+          NODE_ENV: test
+        run: |
+          pnpm test __tests__/database/triggers/reservar-laudo-on-lote.test.ts
+
+      - name: Testar transações
+        env:
+          TEST_DATABASE_URL: postgresql://test_user:test_password@localhost:5432/qwork_test
+          NODE_ENV: test
+        run: |
+          pnpm test __tests__/lib/db-transaction.test.ts
+
+  monitor-production:
+    name: Monitorar Integridade (Produção)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.ref == 'refs/heads/main' && github.event_name == 'schedule'
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+
+      - name: Executar monitoramento
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node scripts/monitor-integridade.cjs
+
+      - name: Notificar se houver problemas
+        if: failure()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: '❌ Lotes órfãos ou inconsistências detectadas em produção!'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  smoke-test-post-deploy:
+    name: Smoke Tests Pós-Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [test-integration, test-database]
+
+    steps:
+      - name: Aguardar deploy no Vercel
+        run: sleep 60
+
+      - name: Verificar API de saúde
+        run: |
+          curl -f https://qwork.vercel.app/api/health || exit 1
+
+      - name: Executar smoke test de lotes órfãos
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          node scripts/monitor-integridade.cjs
