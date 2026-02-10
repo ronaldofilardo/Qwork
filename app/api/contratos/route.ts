@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
 
       // Buscar contrato com tipo_tomador para saber onde buscar
       const contratoRes = await query(
-        `SELECT id, contratante_id, plano_id, numero_funcionarios, valor_total, aceito, tipo_tomador FROM contratos WHERE id = $1`,
+        `SELECT id, tomador_id, plano_id, numero_funcionarios, valor_total, aceito, tipo_tomador FROM contratos WHERE id = $1`,
         [contrato_id]
       );
 
@@ -153,12 +153,12 @@ export async function POST(request: NextRequest) {
 
         const tomadorRes = await query(
           `SELECT * FROM ${tabelaTomador} WHERE id = $1`,
-          [updated.contratante_id]
+          [updated.tomador_id]
         );
 
         if (tomadorRes.rows.length === 0) {
           console.error(
-            `[CONTRATOS] Tomador ${updated.contratante_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
+            `[CONTRATOS] Tomador ${updated.tomador_id} não encontrado na tabela ${tabelaTomador} (tipo_tomador=${updated.tipo_tomador})`
           );
           throw new Error(
             `Tomador não encontrado na tabela ${tabelaTomador}`
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
         console.info(
           JSON.stringify({
             event: 'contrato_aceito_criando_conta',
-            tomador_id: updated.contratante_id,
+            tomador_id: updated.tomador_id,
             tabela: tabelaTomador,
             tipo: tomadorData.tipo,
             tipo_tomador_contrato: updated.tipo_tomador,
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
 
         // Atualizar tomador para marcar como ativo
         const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
-        await query(updateTableQuery, [updated.contratante_id]);
+        await query(updateTableQuery, [updated.tomador_id]);
 
         // Calcular credenciais
         let cnpj = tomadorData.cnpj;
@@ -213,7 +213,7 @@ export async function POST(request: NextRequest) {
           };
 
           // Criar URL para boas-vindas
-          boasVindasUrl = `/boas-vindas?tomador_id=${updated.contratante_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
+          boasVindasUrl = `/boas-vindas?tomador_id=${updated.tomador_id}&login=${encodeURIComponent(loginCredencial)}&senha=${encodeURIComponent(senhaCredencial)}`;
         }
 
         // Log de auditoria
@@ -221,7 +221,7 @@ export async function POST(request: NextRequest) {
           JSON.stringify({
             event: 'contrato_aceito_conta_criada',
             contrato_id: updated.id,
-            tomador_id: updated.contratante_id,
+            tomador_id: updated.tomador_id,
             ip_aceite: clientIp,
             timestamp: new Date().toISOString(),
           })

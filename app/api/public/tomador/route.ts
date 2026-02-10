@@ -34,8 +34,8 @@ export async function GET(request: NextRequest) {
         COALESCE(e.numero_funcionarios_estimado, cl.numero_funcionarios_estimado) as numero_funcionarios_estimado,
         cp.id AS contratacao_personalizada_id,
         (cp.payment_link_token IS NOT NULL AND cp.payment_link_expiracao > NOW()) AS payment_link_generated,
-        (SELECT id FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
-        (SELECT aceito FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
+        (SELECT id FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
+        (SELECT aceito FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
       FROM (SELECT $1::bigint AS tomador_id) source
       LEFT JOIN entidades e ON e.id = source.tomador_id
       LEFT JOIN clinicas cl ON cl.id = source.tomador_id
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
         COALESCE(e.numero_funcionarios_estimado, cl.numero_funcionarios_estimado) as numero_funcionarios_estimado,
         NULL::integer AS contratacao_personalizada_id,
         false AS payment_link_generated,
-        (SELECT id FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
-        (SELECT aceito FROM contratos WHERE contratante_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
+        (SELECT id FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_id,
+        (SELECT aceito FROM contratos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1) AS contrato_aceito
       FROM (SELECT $1::bigint AS tomador_id) source
       LEFT JOIN entidades e ON e.id = source.tomador_id
       LEFT JOIN clinicas cl ON cl.id = source.tomador_id
