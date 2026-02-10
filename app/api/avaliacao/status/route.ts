@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { queryWithContext, transactionWithContext } from '@/lib/db-security';
 import { requireAuth } from '@/lib/session';
-import { validarTransicaoStatusAvaliacao } from '@/lib/types/avaliacao-status';
+import { validarTransicaoStatusAvaliacao, type StatusAvaliacaoType } from '@/lib/types/avaliacao-status';
 
 export async function GET() {
   try {
@@ -114,7 +114,7 @@ export async function PATCH(request: Request) {
         );
       }
 
-      avaliacaoId = avaliacaoResult.rows[0].id;
+      avaliacaoId = (avaliacaoResult.rows[0] as { id: number }).id;
     }
 
     // Buscar status atual para validar transição
@@ -130,19 +130,19 @@ export async function PATCH(request: Request) {
       );
     }
 
-    const statusAtual = statusAtualResult.rows[0].status;
+    const statusAtual = statusAtualResult.rows[0].status as StatusAvaliacaoType;
 
     // Validar transição de status (com suporte a legado)
     const validacao = validarTransicaoStatusAvaliacao(
       statusAtual,
-      statusNormalizado
+      statusNormalizado as StatusAvaliacaoType
     );
     if (!validacao.valido) {
       return NextResponse.json(
         {
           error:
             validacao.erro ||
-            `Transição inválida: não é possível mudar de '${statusAtual}' para '${statusNormalizado}'`,
+            `Transição inválida: não é possível mudar de '${String(statusAtual)}' para '${String(statusNormalizado)}'`,
           statusAtual,
           statusDesejado: statusNormalizado,
         },

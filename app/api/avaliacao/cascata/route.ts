@@ -17,7 +17,6 @@ export async function POST(request: Request) {
 
     // Buscar todas as condições de cascata
     const condicoesResult = await queryWithContext(
-      session,
       `SELECT questao_id, questao_dependente, operador, valor_condicao, categoria
        FROM questao_condicoes 
        WHERE ativo = true
@@ -36,37 +35,37 @@ export async function POST(request: Request) {
     for (const condicao of condicoesResult.rows) {
       const { questao_id, questao_dependente, operador, valor_condicao } =
         condicao;
-      questoesCondicionais.set(questao_id, condicao);
+      questoesCondicionais.set(questao_id as number, condicao);
 
       // Verificar se a questão dependente foi respondida
-      const valorResposta = respostas[`Q${questao_dependente}`];
+      const valorResposta = respostas[`Q${String(questao_dependente)}`] as number | undefined;
 
       if (valorResposta !== undefined) {
         let condicaoAtendida = false;
 
         switch (operador) {
           case 'gt':
-            condicaoAtendida = valorResposta > valor_condicao;
+            condicaoAtendida = valorResposta > (valor_condicao as number);
             break;
           case 'gte':
-            condicaoAtendida = valorResposta >= valor_condicao;
+            condicaoAtendida = valorResposta >= (valor_condicao as number);
             break;
           case 'lt':
-            condicaoAtendida = valorResposta < valor_condicao;
+            condicaoAtendida = valorResposta < (valor_condicao as number);
             break;
           case 'lte':
-            condicaoAtendida = valorResposta <= valor_condicao;
+            condicaoAtendida = valorResposta <= (valor_condicao as number);
             break;
           case 'eq':
-            condicaoAtendida = valorResposta === valor_condicao;
+            condicaoAtendida = valorResposta === (valor_condicao as number);
             break;
           case 'ne':
-            condicaoAtendida = valorResposta !== valor_condicao;
+            condicaoAtendida = valorResposta !== (valor_condicao as number);
             break;
         }
 
         if (condicaoAtendida) {
-          questoesVisiveis.add(questao_id);
+          questoesVisiveis.add(questao_id as number);
         }
       }
     }

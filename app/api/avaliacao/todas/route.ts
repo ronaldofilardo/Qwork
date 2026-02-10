@@ -8,7 +8,7 @@ export async function GET() {
     const session = await requireAuth();
 
     // Buscar todas as avaliações do usuário (excluindo inativadas) com contagem de respostas
-    const avaliacoesResult = await query(
+    const avaliacoesResult = await queryWithContext(
       `SELECT 
         a.id, 
         a.status, 
