@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { withTransaction } from '@/lib/db-transaction';
 import { requireClinica } from '@/lib/session';
 import { normalizeCNPJ, validarCNPJ } from '@/lib/validators';
 
@@ -188,28 +189,29 @@ export async function POST(request: Request) {
     }
 
     // RLS garante que INSERT só pode ocorrer na clínica do RH
-    // Passar session para que app.current_user_cpf seja definido para auditoria
-    const result = await query(
-      `INSERT INTO empresas_clientes 
-       (nome, cnpj, email, telefone, endereco, cidade, estado, cep, clinica_id, representante_nome, representante_fone, representante_email, ativa)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
-       RETURNING id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, representante_nome, representante_fone, representante_email, ativa, criado_em`,
-      [
-        nome.trim(),
-        cnpjNormalizado,
-        email?.trim() || null,
-        telefone?.trim() || null,
-        endereco?.trim() || null,
-        cidade?.trim() || null,
-        estado?.trim() || null,
-        cep?.trim() || null,
-        session.clinica_id,
-        representante_nome.trim(),
-        representante_fone.replace(/\D/g, ''),
-        representante_email?.trim() || null,
-      ],
-      session
-    );
+    // Usar transação para garantir SET LOCAL de auditoria em produção
+    const result = await withTransaction(async (client) => {
+      return await client.query(
+        `INSERT INTO empresas_clientes 
+         (nome, cnpj, email, telefone, endereco, cidade, estado, cep, clinica_id, representante_nome, representante_fone, representante_email, ativa)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
+         RETURNING id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, representante_nome, representante_fone, representante_email, ativa, criado_em`,
+        [
+          nome.trim(),
+          cnpjNormalizado,
+          email?.trim() || null,
+          telefone?.trim() || null,
+          endereco?.trim() || null,
+          cidade?.trim() || null,
+          estado?.trim() || null,
+          cep?.trim() || null,
+          session.clinica_id,
+          representante_nome.trim(),
+          representante_fone.replace(/\D/g, ''),
+          representante_email?.trim() || null,
+        ]
+      );
+    });
 
     return NextResponse.json(result.rows[0], { status: 201 });
   } catch (error: any) {
