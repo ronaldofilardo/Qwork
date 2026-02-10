@@ -739,92 +739,67 @@ export async function transaction<T>(
       client.release();
     }
   } else if (isProduction) {
-    // PRODUÇÃO (Neon): Executar transação SQL real como string única
-    // Neon aceita BEGIN...COMMIT se for texto puro (não prepared statement)
-    console.log('[db][transaction] PRODUÇÃO: coletando queries para transação SQL única');
-    
-    const queries: Array<{ text: string; params?: unknown[] }> = [];
-    let mockIdCounter = 1; // Para retornar IDs mockados durante coleta
-    
-    // Criar TransactionClient que armazena queries ao invés de executar
-    const txClient: TransactionClient = {
-      query: async <R = any>(text: string, params?: unknown[]) => {
-        queries.push({ text, params });
-        
-        // Se é INSERT RETURNING id, retornar mock com ID
-        if (text.includes('RETURNING id') || text.includes('RETURNING')) {
-          return { 
-            rows: [{ id: mockIdCounter++ }] as R[], 
-            rowCount: 1 
-          };
-        }
-        
-        // Outras queries: retornar mock vazio
-        return { rows: [] as R[], rowCount: 0 };
-      },
-    };
-    
-    // Coletar todas as queries
-    const callbackResult = await callback(txClient);
-    
-    // Executar tudo em uma única transação SQL
-    const sql = await getNeonSql();
-    if (!sql) {
-      throw new Error('Conexão Neon não disponível');
-    }
-    
-    const escapeString = (str: string) => String(str).replace(/'/g, "''");
-    const escapeSqlValue = (value: unknown): string => {
-      if (value === null || value === undefined) return 'NULL';
-      if (typeof value === 'number') return String(value);
-      if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
-      if (value instanceof Date) return `'${value.toISOString()}'`;
-      return `'${String(value).replace(/'/g, "''")}'`;
-    };
-    
-    // Construir bloco SQL único
-    let sqlBlock = 'BEGIN;\n';
-    
-    // Configurar variáveis de auditoria se houver sessão
-    if (session) {
-      sqlBlock += `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}';\n`;
-      sqlBlock += `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}';\n`;
-      sqlBlock += `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}';\n`;
-      sqlBlock += `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}';\n`;
-    }
-    
-    // Interpolar parâmetros em cada query
-    for (const q of queries) {
-      let interpolatedQuery = q.text;
-      if (q.params && q.params.length > 0) {
-        q.params.forEach((param, index) => {
-          const placeholder = `$${index + 1}`;
-          const escapedValue = escapeSqlValue(param);
-          interpolatedQuery = interpolatedQuery.replace(
-            new RegExp(`\\${placeholder}\\b`, 'g'),
-            escapedValue
-          );
-        });
-      }
-      sqlBlock += interpolatedQuery + ';\n';
-    }
-    
-    sqlBlock += 'COMMIT;';
-    
-    if (DEBUG_DB) {
-      console.log('[db][transaction] Executando bloco SQL:', sqlBlock.substring(0, 500));
-    }
+    // PRODUÇÃO (Neon): Usar Pool.connect() para transação real
+    // neon() não suporta transações, mas Pool sim
+    console.log('[db][transaction] PRODUÇÃO: usando Neon Pool para transação real');
     
     try {
-      // Executar tudo de uma vez (Neon aceita múltiplos comandos se não for prepared statement)
-      await sql(sqlBlock);
+      // Importar Pool do Neon
+      const { Pool } = await import('@neondatabase/serverless');
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      const client = await pool.connect();
       
-      console.log('[db][transaction] Transação Neon comitada com sucesso');
-      
-      // Retornar resultado do callback
-      return callbackResult;
+      try {
+        // Iniciar transação
+        await client.query('BEGIN');
+        
+        // Configurar variáveis de auditoria se houver sessão
+        if (session) {
+          const escapeString = (str: string) => str.replace(/'/g, "''");
+          await client.query(
+            `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
+          );
+        }
+        
+        // Criar TransactionClient que usa o client conectado
+        const txClient: TransactionClient = {
+          query: async <R = any>(text: string, params?: unknown[]) => {
+            const result = await client.query(text, params || []);
+            return {
+              rows: result.rows as R[],
+              rowCount: result.rowCount || 0,
+            };
+          },
+        };
+        
+        // Executar callback
+        const result = await callback(txClient);
+        
+        // Commit
+        await client.query('COMMIT');
+        
+        console.log('[db][transaction] Transação Neon Pool comitada com sucesso');
+        
+        return result;
+      } catch (error) {
+        // Rollback em caso de erro
+        await client.query('ROLLBACK');
+        console.error('[db][transaction] Erro na transação Neon, rollback executado:', error);
+        throw error;
+      } finally {
+        client.release();
+      }
     } catch (error) {
-      console.error('[db][transaction] Erro na transação Neon:', error);
+      console.error('[db][transaction] Erro ao conectar Neon Pool:', error);
       throw error;
     }
   } else {
