@@ -24,7 +24,7 @@ const mockRequireRHWithEmpresaAccess =
     typeof requireRHWithEmpresaAccess
   >;
 
-describe.skip('Integration: Liberar lote RH - resistência à corrida (resilience)', () => {
+describe('Integration: Liberar lote RH - resistência à corrida (resilience)', () => {
   let clinicaId: number;
   let empresaId: number;
   const funcionarioCpf = '77777777777';
