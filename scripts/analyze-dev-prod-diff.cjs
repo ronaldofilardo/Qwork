@@ -2,14 +2,14 @@
 
 /**
  * Análise de Diferenças DEV vs PROD
- * 
+ *
  * Compara:
  * - Triggers
  * - Funções
  * - Constraints
  * - Defaults de colunas
  * - Índices
- * 
+ *
  * Uso:
  *   DATABASE_URL="postgresql://..." node scripts/analyze-dev-prod-diff.cjs
  */
@@ -38,9 +38,9 @@ async function analyzeDatabase(connectionString, envName) {
         AND c.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = 'public')
       ORDER BY c.relname, t.tgname
     `);
-    
+
     console.log(`   Total: ${triggers.rows.length} triggers`);
-    triggers.rows.forEach(row => {
+    triggers.rows.forEach((row) => {
       console.log(`   - ${row.table_name}.${row.trigger_name}`);
     });
 
@@ -56,9 +56,9 @@ async function analyzeDatabase(connectionString, envName) {
         AND p.proname LIKE 'fn_%'
       ORDER BY p.proname
     `);
-    
+
     console.log(`   Total: ${functions.rows.length} funções`);
-    functions.rows.forEach(row => {
+    functions.rows.forEach((row) => {
       console.log(`   - ${row.function_name}`);
     });
 
@@ -74,15 +74,17 @@ async function analyzeDatabase(connectionString, envName) {
         AND table_name = 'laudos'
         AND column_name = 'status'
     `);
-    
+
     if (laudosDefault.rows.length > 0) {
       const def = laudosDefault.rows[0];
       console.log(`   Column: ${def.column_name}`);
       console.log(`   Type: ${def.data_type}`);
       console.log(`   Default: ${def.column_default || 'NULL'}`);
-      
+
       if (def.column_default && def.column_default.includes('emitido')) {
-        console.log('   ⚠️  ATENÇÃO: DEFAULT usa "emitido" - pode causar problemas!');
+        console.log(
+          '   ⚠️  ATENÇÃO: DEFAULT usa "emitido" - pode causar problemas!'
+        );
       }
     }
 
@@ -97,9 +99,9 @@ async function analyzeDatabase(connectionString, envName) {
         AND contype = 'c'
       ORDER BY conname
     `);
-    
+
     console.log(`   Total: ${laudosConstraints.rows.length} check constraints`);
-    laudosConstraints.rows.forEach(row => {
+    laudosConstraints.rows.forEach((row) => {
       console.log(`   - ${row.constraint_name}`);
       if (row.constraint_name.includes('status')) {
         console.log(`     ${row.definition.substring(0, 100)}...`);
@@ -115,13 +117,19 @@ async function analyzeDatabase(connectionString, envName) {
         WHERE schemaname = 'public' 
           AND tablename LIKE '%migration%'
       `);
-      
+
       if (migrations.rows.length > 0) {
         for (const table of migrations.rows) {
-          const records = await client.query(`SELECT * FROM ${table.tablename} ORDER BY id DESC LIMIT 5`);
-          console.log(`   Tabela: ${table.tablename} (${records.rows.length} registros recentes)`);
-          records.rows.forEach(r => {
-            console.log(`     - ID: ${r.id}, Nome: ${r.name || r.migration || 'N/A'}`);
+          const records = await client.query(
+            `SELECT * FROM ${table.tablename} ORDER BY id DESC LIMIT 5`
+          );
+          console.log(
+            `   Tabela: ${table.tablename} (${records.rows.length} registros recentes)`
+          );
+          records.rows.forEach((r) => {
+            console.log(
+              `     - ID: ${r.id}, Nome: ${r.name || r.migration || 'N/A'}`
+            );
           });
         }
       } else {
@@ -145,10 +153,12 @@ async function analyzeDatabase(connectionString, envName) {
       ORDER BY id DESC
       LIMIT 10
     `);
-    
+
     console.log(`   Total: ${lotes.rows.length} lotes`);
-    lotes.rows.forEach(row => {
-      console.log(`   - Lote ${row.id}: status=${row.status}, tipo=${row.tipo}, criado=${row.criado_em?.toISOString().split('T')[0]}`);
+    lotes.rows.forEach((row) => {
+      console.log(
+        `   - Lote ${row.id}: status=${row.status}, tipo=${row.tipo}, criado=${row.criado_em?.toISOString().split('T')[0]}`
+      );
     });
 
     // 7. LAUDOS RECENTES E SEUS STATUS
@@ -166,11 +176,13 @@ async function analyzeDatabase(connectionString, envName) {
       ORDER BY id DESC
       LIMIT 10
     `);
-    
+
     console.log(`   Total: ${laudos.rows.length} laudos`);
-    laudos.rows.forEach(row => {
+    laudos.rows.forEach((row) => {
       const hasHash = row.hash_pdf ? '✓' : '✗';
-      console.log(`   - Laudo ${row.id} (lote ${row.lote_id}): status=${row.status}, hash=${hasHash}, emissor=${row.emissor_cpf || 'NULL'}`);
+      console.log(
+        `   - Laudo ${row.id} (lote ${row.lote_id}): status=${row.status}, hash=${hasHash}, emissor=${row.emissor_cpf || 'NULL'}`
+      );
     });
 
     // 8. JOBS/PROCESSOS EXTERNOS (se houver tabela)
@@ -182,11 +194,15 @@ async function analyzeDatabase(connectionString, envName) {
         WHERE schemaname = 'public' 
           AND (tablename LIKE '%job%' OR tablename LIKE '%queue%')
       `);
-      
+
       if (jobTables.rows.length > 0) {
         for (const table of jobTables.rows) {
-          const count = await client.query(`SELECT COUNT(*) as total FROM ${table.tablename}`);
-          console.log(`   - Tabela: ${table.tablename} (${count.rows[0].total} registros)`);
+          const count = await client.query(
+            `SELECT COUNT(*) as total FROM ${table.tablename}`
+          );
+          console.log(
+            `   - Tabela: ${table.tablename} (${count.rows[0].total} registros)`
+          );
         }
       } else {
         console.log('   ℹ️  Nenhuma tabela de jobs encontrada');
@@ -194,7 +210,6 @@ async function analyzeDatabase(connectionString, envName) {
     } catch (err) {
       console.log('   ℹ️  Não foi possível verificar jobs');
     }
-
   } finally {
     await client.end();
   }
@@ -202,17 +217,25 @@ async function analyzeDatabase(connectionString, envName) {
 
 async function compareEnvironments() {
   console.log('🔍 ANÁLISE DE DIFERENÇAS DEV vs PROD');
-  console.log('Objetivo: Identificar diferenças que podem causar comportamento inconsistente\n');
+  console.log(
+    'Objetivo: Identificar diferenças que podem causar comportamento inconsistente\n'
+  );
 
   const prodUrl = process.argv[2] || process.env.DATABASE_URL;
-  const devUrl = process.env.LOCAL_DATABASE_URL || 'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+  const devUrl =
+    process.env.LOCAL_DATABASE_URL ||
+    'postgresql://postgres:123456@localhost:5432/nr-bps_db';
 
   if (!prodUrl) {
     console.error('❌ DATABASE_URL de produção não fornecido');
     console.error('\nUso:');
-    console.error('  DATABASE_URL="postgresql://..." node scripts/analyze-dev-prod-diff.cjs');
+    console.error(
+      '  DATABASE_URL="postgresql://..." node scripts/analyze-dev-prod-diff.cjs'
+    );
     console.error('  OU');
-    console.error('  node scripts/analyze-dev-prod-diff.cjs "postgresql://..."');
+    console.error(
+      '  node scripts/analyze-dev-prod-diff.cjs "postgresql://..."'
+    );
     process.exit(1);
   }
 
@@ -234,14 +257,21 @@ async function compareEnvironments() {
     console.log('📝 RECOMENDAÇÕES PARA SINCRONIZAÇÃO');
     console.log('='.repeat(80));
     console.log('1. Compare os triggers listados acima');
-    console.log('2. Verifique se o DEFAULT de laudos.status é igual nos dois ambientes');
-    console.log('3. Confirme que fn_reservar_id_laudo_on_lote_insert está idêntica');
+    console.log(
+      '2. Verifique se o DEFAULT de laudos.status é igual nos dois ambientes'
+    );
+    console.log(
+      '3. Confirme que fn_reservar_id_laudo_on_lote_insert está idêntica'
+    );
     console.log('4. Execute migrations pendentes em ambos os ambientes');
-    console.log('5. Se PROD tem DEFAULT status=\'emitido\', considere alterar para \'rascunho\'');
+    console.log(
+      "5. Se PROD tem DEFAULT status='emitido', considere alterar para 'rascunho'"
+    );
     console.log('\n💡 Para sincronizar PROD com DEV:');
     console.log('   - Aplique Migration 1004 em PROD (se ainda não aplicada)');
-    console.log('   - Considere: ALTER TABLE laudos ALTER COLUMN status SET DEFAULT \'rascunho\';');
-
+    console.log(
+      "   - Considere: ALTER TABLE laudos ALTER COLUMN status SET DEFAULT 'rascunho';"
+    );
   } catch (error) {
     console.error('\n❌ Erro na análise:', error.message);
     process.exit(1);

@@ -2,14 +2,14 @@
 
 /**
  * Verificação de Audit Logs e Eventos
- * 
+ *
  * Analisa:
  * - Logs de auditoria do banco (tabelas audit_*)
  * - Histórico de mudanças em lotes
  * - Histórico de mudanças em laudos
  * - Tentativas de emissão
  * - Solicitações de emissão
- * 
+ *
  * Uso:
  *   node scripts/check-audit-logs.cjs [DATABASE_URL]
  */
@@ -17,8 +17,10 @@
 const { Client } = require('pg');
 
 async function checkAuditLogs() {
-  const dbUrl = process.argv[2] || process.env.DATABASE_URL || 
-                'postgresql://postgres:123456@localhost:5432/nr-bps_db';
+  const dbUrl =
+    process.argv[2] ||
+    process.env.DATABASE_URL ||
+    'postgresql://postgres:123456@localhost:5432/nr-bps_db';
 
   const client = new Client({ connectionString: dbUrl });
   await client.connect();
@@ -31,7 +33,7 @@ async function checkAuditLogs() {
     // 1. Verificar tabelas de auditoria existentes
     console.log('\n📋 TABELAS DE AUDITORIA:');
     console.log('-'.repeat(80));
-    
+
     const auditTables = await client.query(`
       SELECT tablename
       FROM pg_tables
@@ -48,10 +50,12 @@ async function checkAuditLogs() {
       console.log('   ℹ️  Nenhuma tabela de auditoria encontrada');
     } else {
       console.log(`   ${auditTables.rows.length} tabelas encontradas:\n`);
-      
+
       for (const table of auditTables.rows) {
-        const count = await client.query(`SELECT COUNT(*) as total FROM ${table.tablename}`);
-        
+        const count = await client.query(
+          `SELECT COUNT(*) as total FROM ${table.tablename}`
+        );
+
         // Verificar quais colunas existem
         const columns = await client.query(`
           SELECT column_name 
@@ -59,33 +63,37 @@ async function checkAuditLogs() {
           WHERE table_name = '${table.tablename}' 
             AND table_schema = 'public'
         `);
-        
-        const hasCreatedAt = columns.rows.some(c => 
-          c.column_name === 'criado_em' || 
-          c.column_name === 'data_hora' ||
-          c.column_name === 'created_at'
+
+        const hasCreatedAt = columns.rows.some(
+          (c) =>
+            c.column_name === 'criado_em' ||
+            c.column_name === 'data_hora' ||
+            c.column_name === 'created_at'
         );
-        
-        const orderBy = hasCreatedAt ? 
-          columns.rows.find(c => c.column_name === 'criado_em')?.column_name ||
-          columns.rows.find(c => c.column_name === 'data_hora')?.column_name ||
-          columns.rows.find(c => c.column_name === 'created_at')?.column_name :
-          columns.rows[0]?.column_name || 'id';
-        
+
+        const orderBy = hasCreatedAt
+          ? columns.rows.find((c) => c.column_name === 'criado_em')
+              ?.column_name ||
+            columns.rows.find((c) => c.column_name === 'data_hora')
+              ?.column_name ||
+            columns.rows.find((c) => c.column_name === 'created_at')
+              ?.column_name
+          : columns.rows[0]?.column_name || 'id';
+
         const recent = await client.query(`
           SELECT * FROM ${table.tablename} 
           ORDER BY ${orderBy} DESC
           LIMIT 3
         `);
-        
+
         console.log(`   ${table.tablename}:`);
         console.log(`      Total: ${count.rows[0].total} registros`);
-        
+
         if (recent.rows.length > 0) {
           console.log(`      Registros recentes:`);
           recent.rows.forEach((row, idx) => {
             const keys = Object.keys(row).slice(0, 5); // primeiras 5 colunas
-            const preview = keys.map(k => `${k}=${row[k]}`).join(', ');
+            const preview = keys.map((k) => `${k}=${row[k]}`).join(', ');
             console.log(`         ${idx + 1}. ${preview}`);
           });
         }
@@ -96,7 +104,7 @@ async function checkAuditLogs() {
     // 2. Solicitações de Emissão
     console.log('\n📬 SOLICITAÇÕES DE EMISSÃO (últimas 10):');
     console.log('-'.repeat(80));
-    
+
     try {
       const emissoesQuery = await client.query(`
         SELECT 
@@ -119,7 +127,7 @@ async function checkAuditLogs() {
         console.log('   ℹ️  Nenhuma solicitação de emissão encontrada');
       } else {
         console.log(`   ${emissoesQuery.rows.length} solicitações:\n`);
-        emissoesQuery.rows.forEach(row => {
+        emissoesQuery.rows.forEach((row) => {
           const hashIcon = row.laudo_tem_hash ? '✓' : '✗';
           console.log(`   Emissão ${row.id} (Lote ${row.lote_id})`);
           console.log(`      Solicitante: ${row.solicitante_cpf}`);
@@ -132,13 +140,15 @@ async function checkAuditLogs() {
         });
       }
     } catch (err) {
-      console.log('   ℹ️  Tabela lotes_emissao não existe ou erro ao consultar');
+      console.log(
+        '   ℹ️  Tabela lotes_emissao não existe ou erro ao consultar'
+      );
     }
 
     // 3. Jobs de PDF
     console.log('\n🖨️  JOBS DE GERAÇÃO DE PDF:');
     console.log('-'.repeat(80));
-    
+
     try {
       const pdfJobs = await client.query(`
         SELECT 
@@ -159,10 +169,15 @@ async function checkAuditLogs() {
         console.log('   ✅ Nenhum job de PDF pendente ou processado');
       } else {
         console.log(`   ${pdfJobs.rows.length} jobs:\n`);
-        pdfJobs.rows.forEach(row => {
-          const statusIcon = row.status === 'sucesso' ? '✅' : 
-                            row.status === 'erro' ? '❌' : 
-                            row.status === 'processando' ? '⏳' : '•';
+        pdfJobs.rows.forEach((row) => {
+          const statusIcon =
+            row.status === 'sucesso'
+              ? '✅'
+              : row.status === 'erro'
+                ? '❌'
+                : row.status === 'processando'
+                  ? '⏳'
+                  : '•';
           console.log(`   ${statusIcon} Job ${row.id} (${row.tipo})`);
           console.log(`      Referência: ${row.referencia_id}`);
           console.log(`      Status: ${row.status}`);
@@ -181,7 +196,7 @@ async function checkAuditLogs() {
     // 4. Jobs de Geração de Laudo
     console.log('\n📄 JOBS DE GERAÇÃO DE LAUDO:');
     console.log('-'.repeat(80));
-    
+
     try {
       const laudoJobs = await client.query(`
         SELECT 
@@ -202,10 +217,15 @@ async function checkAuditLogs() {
         console.log('   ✅ Nenhum job de geração de laudo pendente');
       } else {
         console.log(`   ${laudoJobs.rows.length} jobs:\n`);
-        laudoJobs.rows.forEach(row => {
-          const statusIcon = row.status === 'completed' ? '✅' : 
-                            row.status === 'failed' ? '❌' : 
-                            row.status === 'processing' ? '⏳' : '•';
+        laudoJobs.rows.forEach((row) => {
+          const statusIcon =
+            row.status === 'completed'
+              ? '✅'
+              : row.status === 'failed'
+                ? '❌'
+                : row.status === 'processing'
+                  ? '⏳'
+                  : '•';
           console.log(`   ${statusIcon} Job ${row.id} (Lote ${row.lote_id})`);
           console.log(`      Status: ${row.status}`);
           console.log(`      Tentativas: ${row.tentativas}`);
@@ -220,13 +240,15 @@ async function checkAuditLogs() {
         });
       }
     } catch (err) {
-      console.log('   ℹ️  Tabela laudo_generation_jobs não existe ou erro ao consultar');
+      console.log(
+        '   ℹ️  Tabela laudo_generation_jobs não existe ou erro ao consultar'
+      );
     }
 
     // 5. Fila de Emissão
     console.log('\n🔄 FILA DE EMISSÃO:');
     console.log('-'.repeat(80));
-    
+
     try {
       const queue = await client.query(`
         SELECT 
@@ -255,10 +277,15 @@ async function checkAuditLogs() {
         console.log('   ✅ Fila de emissão vazia');
       } else {
         console.log(`   ${queue.rows.length} itens na fila:\n`);
-        queue.rows.forEach(row => {
-          const statusIcon = row.status === 'concluido' ? '✅' : 
-                            row.status === 'erro' ? '❌' : 
-                            row.status === 'processando' ? '⏳' : '•';
+        queue.rows.forEach((row) => {
+          const statusIcon =
+            row.status === 'concluido'
+              ? '✅'
+              : row.status === 'erro'
+                ? '❌'
+                : row.status === 'processando'
+                  ? '⏳'
+                  : '•';
           console.log(`   ${statusIcon} Item ${row.id} (Lote ${row.lote_id})`);
           console.log(`      Status: ${row.status}`);
           console.log(`      Prioridade: ${row.prioridade}`);
@@ -270,13 +297,15 @@ async function checkAuditLogs() {
         });
       }
     } catch (err) {
-      console.log('   ℹ️  Tabela emissao_queue não existe ou erro ao consultar');
+      console.log(
+        '   ℹ️  Tabela emissao_queue não existe ou erro ao consultar'
+      );
     }
 
     // 6. Eventos Recentes de Lotes
     console.log('\n📊 MUDANÇAS RECENTES EM LOTES:');
     console.log('-'.repeat(80));
-    
+
     try {
       const lotesAudit = await client.query(`
         SELECT 
@@ -296,16 +325,23 @@ async function checkAuditLogs() {
         console.log('   ℹ️  Nenhum evento de auditoria de lotes');
       } else {
         console.log(`   ${lotesAudit.rows.length} eventos:\n`);
-        lotesAudit.rows.forEach(row => {
-          const opIcon = row.operacao === 'UPDATE' ? '📝' : 
-                        row.operacao === 'INSERT' ? '➕' : 
-                        row.operacao === 'DELETE' ? '🗑️' : '•';
+        lotesAudit.rows.forEach((row) => {
+          const opIcon =
+            row.operacao === 'UPDATE'
+              ? '📝'
+              : row.operacao === 'INSERT'
+                ? '➕'
+                : row.operacao === 'DELETE'
+                  ? '🗑️'
+                  : '•';
           console.log(`   ${opIcon} ${row.operacao} no Lote ${row.lote_id}`);
           console.log(`      Usuário: ${row.usuario_cpf}`);
           console.log(`      Data: ${row.data_hora?.toISOString()}`);
           if (row.campo_alterado) {
             console.log(`      Campo: ${row.campo_alterado}`);
-            console.log(`      Valor: ${row.valor_anterior} → ${row.valor_novo}`);
+            console.log(
+              `      Valor: ${row.valor_anterior} → ${row.valor_novo}`
+            );
           }
           console.log('');
         });
@@ -317,7 +353,7 @@ async function checkAuditLogs() {
     // 7. Eventos Recentes de Laudos
     console.log('\n📋 MUDANÇAS RECENTES EM LAUDOS:');
     console.log('-'.repeat(80));
-    
+
     try {
       const laudosAudit = await client.query(`
         SELECT 
@@ -337,16 +373,23 @@ async function checkAuditLogs() {
         console.log('   ℹ️  Nenhum evento de auditoria de laudos');
       } else {
         console.log(`   ${laudosAudit.rows.length} eventos:\n`);
-        laudosAudit.rows.forEach(row => {
-          const opIcon = row.operacao === 'UPDATE' ? '📝' : 
-                        row.operacao === 'INSERT' ? '➕' : 
-                        row.operacao === 'DELETE' ? '🗑️' : '•';
+        laudosAudit.rows.forEach((row) => {
+          const opIcon =
+            row.operacao === 'UPDATE'
+              ? '📝'
+              : row.operacao === 'INSERT'
+                ? '➕'
+                : row.operacao === 'DELETE'
+                  ? '🗑️'
+                  : '•';
           console.log(`   ${opIcon} ${row.operacao} no Laudo ${row.laudo_id}`);
           console.log(`      Usuário: ${row.usuario_cpf}`);
           console.log(`      Data: ${row.data_hora?.toISOString()}`);
           if (row.campo_alterado) {
             console.log(`      Campo: ${row.campo_alterado}`);
-            console.log(`      Valor: ${row.valor_anterior} → ${row.valor_novo}`);
+            console.log(
+              `      Valor: ${row.valor_anterior} → ${row.valor_novo}`
+            );
           }
           console.log('');
         });
@@ -358,7 +401,7 @@ async function checkAuditLogs() {
     // 8. Erros Recentes (se houver tabela de logs)
     console.log('\n❌ ERROS RECENTES:');
     console.log('-'.repeat(80));
-    
+
     try {
       const errors = await client.query(`
         SELECT tablename 
@@ -366,7 +409,7 @@ async function checkAuditLogs() {
         WHERE schemaname = 'public' 
           AND tablename LIKE '%error%' OR tablename LIKE '%log%'
       `);
-      
+
       if (errors.rows.length === 0) {
         console.log('   ℹ️  Nenhuma tabela de erros/logs encontrada');
       } else {
@@ -376,11 +419,13 @@ async function checkAuditLogs() {
             ORDER BY id DESC 
             LIMIT 5
           `);
-          
+
           if (recentErrors.rows.length > 0) {
             console.log(`\n   Tabela: ${table.tablename}`);
             recentErrors.rows.forEach((row, idx) => {
-              console.log(`      ${idx + 1}. ${JSON.stringify(row).substring(0, 150)}`);
+              console.log(
+                `      ${idx + 1}. ${JSON.stringify(row).substring(0, 150)}`
+              );
             });
           }
         }
@@ -392,7 +437,6 @@ async function checkAuditLogs() {
     console.log('\n' + '='.repeat(80));
     console.log('✅ ANÁLISE DE AUDIT LOGS CONCLUÍDA');
     console.log('='.repeat(80));
-
   } catch (error) {
     console.error('\n❌ Erro na análise:', error.message);
     throw error;
@@ -401,7 +445,7 @@ async function checkAuditLogs() {
   }
 }
 
-checkAuditLogs().catch(err => {
+checkAuditLogs().catch((err) => {
   console.error('\n💥 Erro fatal:', err);
   process.exit(1);
 });

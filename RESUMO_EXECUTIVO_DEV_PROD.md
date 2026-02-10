@@ -9,17 +9,20 @@
 ## 🎯 Problema Identificado
 
 Durante o desenvolvimento foram detectados erros ao liberar lotes:
+
 ```
 Laudo não pode ser marcado como emitido sem hash_pdf
 ```
 
-**Causa Raiz:** 
+**Causa Raiz:**
+
 - Trigger `fn_reservar_id_laudo_on_lote_insert` criava laudos sem especificar `status`
 - Sistema usava DEFAULT `status='emitido'`
 - Constraint `chk_laudos_hash_when_emitido` exige `hash_pdf NOT NULL` quando status='emitido'
 - Resultado: INSERT em laudos falhava
 
 **Solução Implementada:**
+
 - Migration 1004: Função especifica explicitamente `status='rascunho'` na INSERT
 - Laudos criados como rascunho não precisam de hash_pdf
 - Transição para 'emitido' ocorre depois, quando hash_pdf é gerado
@@ -29,6 +32,7 @@ Laudo não pode ser marcado como emitido sem hash_pdf
 ## ✅ Estado Atual do DEV (Validado)
 
 ### Função do Trigger
+
 ```sql
 -- Após Migration 1004
 INSERT INTO laudos (id, lote_id, status)
@@ -36,6 +40,7 @@ VALUES (NEW.id, NEW.id, 'rascunho')  -- ✅ Status explícito
 ```
 
 ### DEFAULT da Coluna (⚠️ Atenção)
+
 ```
 Column: status
 Type: character varying
@@ -45,16 +50,20 @@ Default: 'emitido'::status_laudo_enum  -- ⚠️ Ainda 'emitido'
 **Observação:** Em DEV, apesar do DEFAULT ser 'emitido', a função especifica explicitamente 'rascunho', então o DEFAULT não é usado. Sistema funcionando corretamente.
 
 ### Evidências em DEV
+
 **Laudos criados recentemente (após Migration 1004):**
+
 - Laudo 12: `status=rascunho, hash_pdf=NULL` ✅
 - Laudo 11: `status=rascunho, hash_pdf=NULL` ✅
 - Laudo 7: `status=rascunho, hash_pdf=NULL` ✅
 
 **Laudos emitidos (após processo completo):**
+
 - Laudo 15: `status=emitido, hash_pdf=✓` ✅
 - Laudo 14: `status=emitido, hash_pdf=✓` ✅
 
 ### Estrutura do Banco
+
 - **Triggers:** 54 ativos
 - **Funções Custom:** 12 funções
 - **Audit Logs:** 6 tabelas de auditoria ativas
@@ -67,18 +76,23 @@ Default: 'emitido'::status_laudo_enum  -- ⚠️ Ainda 'emitido'
 ## ⚠️ Pontos Críticos para PROD
 
 ### 1. Verificação Obrigatória
+
 **Confirmar se Migration 1004 foi aplicada em PROD:**
+
 ```bash
 # Usar script de verificação
 node scripts\check-prod-status.cjs "postgresql://[PROD_URL]"
 ```
 
 **O que verificar:**
+
 - ✅ Função contém: `VALUES (NEW.id, NEW.id, 'rascunho')`
 - ❌ Função NÃO deve ter apenas: `INSERT INTO laudos (id, lote_id)` sem status
 
 ### 2. Comparação de Triggers
+
 **DEV tem 54 triggers - PROD deve ter o mesmo conjunto:**
+
 ```bash
 # Comparar listagem completa
 $env:DATABASE_URL = "postgresql://[PROD_URL]"
@@ -86,11 +100,13 @@ node scripts\analyze-dev-prod-diff.cjs
 ```
 
 ### 3. Verificar Laudos Inconsistentes em PROD
+
 **Query para executar no Neon Console:**
+
 ```sql
 -- Buscar laudos problemáticos
-SELECT 
-  id, lote_id, status, hash_pdf, 
+SELECT
+  id, lote_id, status, hash_pdf,
   emissor_cpf, criado_em
 FROM laudos
 WHERE status = 'emitido'
@@ -105,6 +121,7 @@ ORDER BY criado_em DESC;
 ## 🚀 Plano de Ação
 
 ### Etapa 1: Diagnóstico de PROD (URGENTE)
+
 ```powershell
 # 1. Clonar variável DATABASE_URL do .env.production.local
 $prodUrl = "postgresql://..." # copiar do arquivo
@@ -120,6 +137,7 @@ node scripts\analyze-dev-prod-diff.cjs
 **Tempo estimado:** 2-3 minutos
 
 ### Etapa 2: Aplicar Migration (se necessário)
+
 **SE a verificação mostrar que Migration 1004 NÃO foi aplicada:**
 
 1. Abrir `APLICAR_MIGRATION_1004_PRODUCAO.sql`
@@ -131,11 +149,12 @@ node scripts\analyze-dev-prod-diff.cjs
 **Tempo estimado:** 3-5 minutos
 
 ### Etapa 3: Correção de Dados (se houver)
+
 **SE houver laudos com status='emitido' mas hash_pdf=NULL:**
 
 ```sql
 -- Opção 1: Reverter para rascunho (RECOMENDADO)
-UPDATE laudos 
+UPDATE laudos
 SET status = 'rascunho'
 WHERE status = 'emitido'
   AND hash_pdf IS NULL;
@@ -151,10 +170,12 @@ WHERE status = 'emitido'
 **Tempo estimado:** 1-2 minutos
 
 ### Etapa 4: Validação Final
+
 **Teste de criação de lote em PROD:**
 
 1. Criar novo lote (via UI ou API)
 2. Verificar laudo criado automaticamente:
+
 ```sql
 SELECT id, lote_id, status, hash_pdf, criado_em
 FROM laudos
@@ -163,6 +184,7 @@ LIMIT 1;
 ```
 
 **Esperado:**
+
 - `status = 'rascunho'`
 - `hash_pdf IS NULL`
 
@@ -173,6 +195,7 @@ LIMIT 1;
 ## 📊 Checklist de Sincronização
 
 ### Ambiente DEV ✅
+
 - [x] Migration 1004 aplicada
 - [x] Função usa `status='rascunho'`
 - [x] Triggers ativos (54)
@@ -180,6 +203,7 @@ LIMIT 1;
 - [x] Sistema funcionando
 
 ### Ambiente PROD ⏳
+
 - [ ] Verificar se Migration 1004 aplicada
 - [ ] Verificar função do trigger
 - [ ] Comparar quantidade de triggers
@@ -191,7 +215,9 @@ LIMIT 1;
 ## 🔍 Áreas Verificadas
 
 ### 1. Triggers no Banco
+
 ✅ **DEV:** 54 triggers ativos, incluindo:
+
 - `trg_reservar_id_laudo_on_lote_insert` (crítico)
 - `trg_validar_laudo_emitido` (validação)
 - `trg_immutable_laudo` (proteção)
@@ -199,14 +225,18 @@ LIMIT 1;
 ⏳ **PROD:** Pendente verificação
 
 ### 2. Migrações Aplicadas
-✅ **DEV:** 
+
+✅ **DEV:**
+
 - Migration 1004 aplicada e funcionando
 - Evidências: laudos recentes com status='rascunho'
 
 ⏳ **PROD:** Pendente verificação
 
 ### 3. Audit Logs / Auditoria
+
 ✅ **DEV:** Sistema de auditoria ativo
+
 - audit_logs: 118 eventos registrados
 - auditoria: 130 eventos (logins, ações)
 - auditoria_laudos: 5 eventos de emissão
@@ -214,21 +244,27 @@ LIMIT 1;
 ⏳ **PROD:** Pendente verificação
 
 ### 4. Processos/Jobs Externos
+
 ✅ **DEV:** Estrutura verificada
+
 - Tabelas existentes mas sem jobs ativos no momento
 - emissao_queue, pdf_jobs, laudo_generation_jobs
 
 ⏳ **PROD:** Pendente verificação
 
 ### 5. Estado dos Lotes
+
 ✅ **DEV:** 9 lotes recentes analisados
+
 - Status variados: concluido, ativo, cancelado
 - Relação correta com laudos
 
 ⏳ **PROD:** Pendente verificação
 
 ### 6. Logs de Aplicação
+
 ⏳ **Vercel Logs:** Pendente análise
+
 - Acessar dashboard.vercel.com
 - Verificar logs de runtime
 - Buscar erros relacionados a "laudo", "hash_pdf", "emitido"
@@ -260,24 +296,26 @@ LIMIT 1;
 ## 💡 Recomendações
 
 ### Prioridade ALTA ⚠️
+
 1. **Executar verificação em PROD imediatamente**
    - Validar se Migration 1004 foi aplicada
    - Identificar laudos inconsistentes
    - Comparar estrutura de triggers
 
 ### Prioridade MÉDIA 📊
+
 2. **Monitoramento de Logs Vercel**
    - Verificar se há erros recentes em PROD
    - Buscar padrões relacionados ao problema
-   
 3. **Alterar DEFAULT da coluna (opcional)**
    ```sql
    -- Camada extra de segurança
-   ALTER TABLE laudos 
+   ALTER TABLE laudos
    ALTER COLUMN status SET DEFAULT 'rascunho';
    ```
 
 ### Prioridade BAIXA 📝
+
 4. **Documentação adicional**
    - Documentar processo de emissão de laudos
    - Criar guia de troubleshooting
@@ -288,6 +326,7 @@ LIMIT 1;
 ## 📞 Comandos Rápidos
 
 ### PowerShell (Windows)
+
 ```powershell
 # Definir URL de PROD (usar do .env.production.local)
 $prodUrl = "postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"
@@ -304,6 +343,7 @@ node scripts\check-audit-logs.cjs $prodUrl
 ```
 
 ### Bash (Linux/Mac)
+
 ```bash
 # Definir URL de PROD
 PROD_URL="postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/neondb?sslmode=require"

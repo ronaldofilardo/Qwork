@@ -2,9 +2,9 @@
 
 /**
  * Aplica Migration 1004 em PRODUÇÃO
- * 
+ *
  * Atualiza fn_reservar_id_laudo_on_lote_insert para usar status='rascunho'
- * 
+ *
  * Uso:
  *   node scripts/apply-migration-1004-prod.cjs "postgresql://..."
  */
@@ -17,7 +17,9 @@ async function applyMigration1004() {
   if (!dbUrl) {
     console.error('❌ DATABASE_URL não fornecido\n');
     console.error('Uso:');
-    console.error('  node scripts/apply-migration-1004-prod.cjs "postgresql://..."');
+    console.error(
+      '  node scripts/apply-migration-1004-prod.cjs "postgresql://..."'
+    );
     process.exit(1);
   }
 
@@ -26,10 +28,12 @@ async function applyMigration1004() {
   console.log('\n' + '='.repeat(80));
   console.log('🚀 APLICANDO MIGRATION 1004 EM PRODUÇÃO');
   console.log('='.repeat(80));
-  console.log('\n⚠️  ATENÇÃO: Esta operação irá alterar a função do trigger em produção!');
+  console.log(
+    '\n⚠️  ATENÇÃO: Esta operação irá alterar a função do trigger em produção!'
+  );
   console.log('Aguarde 3 segundos antes de prosseguir...\n');
 
-  await new Promise(resolve => setTimeout(resolve, 3000));
+  await new Promise((resolve) => setTimeout(resolve, 3000));
 
   try {
     await client.connect();
@@ -40,8 +44,10 @@ async function applyMigration1004() {
     console.log('✓ Transação iniciada\n');
 
     // Aplicar migration
-    console.log('📝 Criando/Atualizando função fn_reservar_id_laudo_on_lote_insert...');
-    
+    console.log(
+      '📝 Criando/Atualizando função fn_reservar_id_laudo_on_lote_insert...'
+    );
+
     const migrationSQL = `
       CREATE OR REPLACE FUNCTION fn_reservar_id_laudo_on_lote_insert()
       RETURNS TRIGGER AS $$
@@ -77,7 +83,7 @@ async function applyMigration1004() {
 
     // Verificar se foi aplicada corretamente
     console.log('🔍 Verificando função atualizada...\n');
-    
+
     const verification = await client.query(`
       SELECT pg_get_functiondef(oid) as definition
       FROM pg_proc
@@ -87,22 +93,28 @@ async function applyMigration1004() {
     if (verification.rows.length > 0) {
       const def = verification.rows[0].definition;
       const hasRascunho = def.includes("'rascunho'");
-      
+
       if (hasRascunho) {
-        console.log('✅ SUCESSO: Função contém status=\'rascunho\'');
+        console.log("✅ SUCESSO: Função contém status='rascunho'");
         console.log('✅ Migration 1004 aplicada com sucesso!\n');
-        
+
         // Mostrar trecho relevante
         const lines = def.split('\n');
-        const insertLine = lines.findIndex(l => l.toLowerCase().includes('insert into laudos'));
+        const insertLine = lines.findIndex((l) =>
+          l.toLowerCase().includes('insert into laudos')
+        );
         if (insertLine !== -1) {
           console.log('📄 Trecho da INSERT:');
-          for (let i = insertLine; i < Math.min(insertLine + 5, lines.length); i++) {
+          for (
+            let i = insertLine;
+            i < Math.min(insertLine + 5, lines.length);
+            i++
+          ) {
             console.log(`   ${lines[i]}`);
           }
         }
       } else {
-        console.log('⚠️  ATENÇÃO: Função NÃO contém status=\'rascunho\'');
+        console.log("⚠️  ATENÇÃO: Função NÃO contém status='rascunho'");
         console.log('Verifique se a migration foi aplicada corretamente.');
       }
     }
@@ -112,9 +124,8 @@ async function applyMigration1004() {
     console.log('='.repeat(80));
     console.log('\n📊 PRÓXIMOS PASSOS:');
     console.log('1. Testar criação de lote em PROD');
-    console.log('2. Verificar que laudo é criado com status=\'rascunho\'');
+    console.log("2. Verificar que laudo é criado com status='rascunho'");
     console.log('3. Monitorar logs por 24h para garantir estabilidade\n');
-
   } catch (error) {
     // Rollback em caso de erro
     try {
@@ -132,7 +143,7 @@ async function applyMigration1004() {
   }
 }
 
-applyMigration1004().catch(err => {
+applyMigration1004().catch((err) => {
   console.error('\n💥 Erro fatal:', err);
   process.exit(1);
 });

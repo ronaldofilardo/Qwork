@@ -7,6 +7,7 @@
 ## 🔍 Logs do Vercel (Produção)
 
 ### Acessar Dashboard
+
 1. Ir para: https://vercel.com/dashboard
 2. Selecionar projeto QWork
 3. Clicar em "Logs" ou "Runtime Logs"
@@ -14,6 +15,7 @@
 ### Buscar Padrões de Erro
 
 #### Padrões Relacionados ao Problema
+
 Buscar por estas strings nos logs:
 
 ```
@@ -26,6 +28,7 @@ Buscar por estas strings nos logs:
 ```
 
 #### Endpoints Críticos
+
 Monitorar logs destes endpoints:
 
 ```
@@ -39,15 +42,18 @@ POST /api/entidade/avaliacoes/[loteId]/liberar
 ### Filtros Recomendados
 
 **Por Severidade:**
+
 - ❌ Error
 - ⚠️ Warning
 
 **Por Período:**
+
 - Últimas 24 horas - se problema for recente
 - Últimos 7 dias - para histórico completo
 - Data específica - se souber quando começou
 
 **Por Função:**
+
 - Filtrar por função específica se deployment tem múltiplas functions
 - Ex: `api/lotes/...`, `api/rh/...`
 
@@ -56,16 +62,19 @@ POST /api/entidade/avaliacoes/[loteId]/liberar
 ## 📊 Vercel CLI (Análise Local)
 
 ### Instalar Vercel CLI (se não tiver)
+
 ```bash
 npm i -g vercel
 ```
 
 ### Login na Vercel
+
 ```bash
 vercel login
 ```
 
 ### Listar Deployments
+
 ```bash
 # Ver últimos deployments
 vercel ls
@@ -75,6 +84,7 @@ vercel logs [deployment-url]
 ```
 
 ### Buscar Erros Específicos
+
 ```bash
 # Logs recentes com filtro
 vercel logs --follow | grep -i "laudo"
@@ -87,6 +97,7 @@ vercel logs --follow | grep -i "constraint"
 ## 🗄️ Logs do Banco (Neon)
 
 ### Acessar Neon Console
+
 1. Ir para: https://console.neon.tech
 2. Selecionar projeto
 3. Clicar em "Monitoring" ou "Logs"
@@ -94,6 +105,7 @@ vercel logs --follow | grep -i "constraint"
 ### Queries para Análise
 
 #### Queries Lentas ou com Erro
+
 ```sql
 -- No Neon Monitoring, buscar por:
 - Queries com erro relacionado a "laudos"
@@ -102,6 +114,7 @@ vercel logs --follow | grep -i "constraint"
 ```
 
 #### Análise de Performance
+
 ```sql
 -- Queries mais executadas
 -- Queries mais lentas
@@ -113,6 +126,7 @@ vercel logs --follow | grep -i "constraint"
 ## 📝 Logs Locais (DEV)
 
 ### Logs do Next.js
+
 ```bash
 # Servidor de desenvolvimento
 pnpm dev
@@ -124,6 +138,7 @@ pnpm dev
 ```
 
 ### Logs do PostgreSQL Local
+
 ```powershell
 # Windows - Ver logs do PostgreSQL
 Get-Content "C:\Program Files\PostgreSQL\[versão]\data\log\*.log" -Tail 50
@@ -140,6 +155,7 @@ Get-Content "C:\Program Files\PostgreSQL\[versão]\data\log\*.log" -Tail 50
 **O que buscar nos logs:**
 
 1. **Stack trace completo**
+
 ```
 at fn_validar_laudo_emitido()
 at INSERT INTO laudos
@@ -147,6 +163,7 @@ at trg_reservar_id_laudo_on_lote_insert
 ```
 
 2. **Payload da requisição**
+
 ```json
 {
   "lote_id": 123,
@@ -156,6 +173,7 @@ at trg_reservar_id_laudo_on_lote_insert
 ```
 
 3. **Estado do laudo no momento do erro**
+
 ```sql
 -- Query que estava sendo executada
 INSERT INTO laudos (id, lote_id) VALUES (...)
@@ -205,21 +223,25 @@ await client.query(`INSERT INTO laudos ...`); // Contexto mantido
 ## 🛠️ Ferramentas Úteis
 
 ### 1. Vercel Dashboard
+
 - **URL:** https://vercel.com/dashboard
 - **Uso:** Runtime logs, deployment history
 - **Vantagens:** Interface visual, filtros avançados
 
 ### 2. Vercel CLI
+
 - **Instalação:** `npm i -g vercel`
 - **Uso:** `vercel logs --follow`
 - **Vantagens:** Acesso local, grep/filter no terminal
 
 ### 3. Neon Console
+
 - **URL:** https://console.neon.tech
 - **Uso:** Query logs, monitoring
 - **Vantagens:** Logs específicos de DB
 
 ### 4. PostgreSQL Log Analysis
+
 - **Ferramenta:** pgBadger
 - **URL:** https://github.com/darold/pgbadger
 - **Uso:** Análise detalhada de logs PostgreSQL
@@ -231,11 +253,13 @@ await client.query(`INSERT INTO laudos ...`); // Contexto mantido
 ### Cenário: Usuário reporta erro ao liberar lote
 
 #### Passo 1: Verificar Logs Vercel
+
 ```bash
 vercel logs --follow | grep -i "laudo"
 ```
 
 **Output esperado:**
+
 ```
 [Error] POST /api/lotes/123/liberar
 Error: Laudo não pode ser marcado como emitido sem hash_pdf
@@ -244,9 +268,10 @@ Error: Laudo não pode ser marcado como emitido sem hash_pdf
 ```
 
 #### Passo 2: Verificar Estado do Lote
+
 ```sql
 -- No Neon SQL Editor
-SELECT 
+SELECT
   l.id, l.status, l.tipo,
   ld.id as laudo_id, ld.status as laudo_status, ld.hash_pdf
 FROM lotes_avaliacao l
@@ -255,17 +280,20 @@ WHERE l.id = 123;
 ```
 
 #### Passo 3: Verificar Função do Trigger
+
 ```sql
-SELECT pg_get_functiondef(oid) 
-FROM pg_proc 
+SELECT pg_get_functiondef(oid)
+FROM pg_proc
 WHERE proname = 'fn_reservar_id_laudo_on_lote_insert';
 ```
 
 **Buscar:**
+
 - ✅ Contém: `status='rascunho'` → Migration 1004 aplicada
 - ❌ Não contém status → Migration 1004 NÃO aplicada
 
 #### Passo 4: Verificar Audit Logs
+
 ```sql
 SELECT * FROM audit_logs
 WHERE resource = 'lotes_avaliacao'
@@ -306,6 +334,7 @@ Ao investigar erro relacionado a laudos:
 ## 📞 Comandos Rápidos
 
 ### Vercel Logs
+
 ```bash
 # Logs em tempo real
 vercel logs --follow
@@ -318,12 +347,14 @@ vercel logs --follow | grep -E "laudo|emitido|constraint"
 ```
 
 ### Neon Logs (via CLI se disponível)
+
 ```bash
 # Consultar via psql
 psql $DATABASE_URL -c "SELECT * FROM pg_stat_statements WHERE query LIKE '%laudos%' LIMIT 10"
 ```
 
 ### Logs Locais
+
 ```powershell
 # PowerShell - Monitorar logs
 Get-Content "logs\*.log" -Wait -Tail 50

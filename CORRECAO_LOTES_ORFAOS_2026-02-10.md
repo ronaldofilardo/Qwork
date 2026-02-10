@@ -9,11 +9,14 @@
 ## 🚨 Problema Detectado
 
 ### Sintoma
+
 Lotes sendo criados **COM SUCESSO**, mas **SEM NENHUMA AVALIAÇÃO** associada, tanto para:
+
 - ❌ Clínicas/RH (lotes_avaliacao.empresa_id)
 - ❌ Entidades (lotes_avaliacao.entidade_id)
 
 ### Evidências em PROD
+
 ```
 📊 Lotes órfãos detectados: 2
 
@@ -31,17 +34,21 @@ Lotes sendo criados **COM SUCESSO**, mas **SEM NENHUMA AVALIAÇÃO** associada, 
 ```
 
 ### Diagnóstico
+
 - ✅ Funções de elegibilidade funcionando corretamente
 - ✅ Funcionários elegíveis existem (2 para cada lote)
 - ❌ **Avaliações não são criadas** (INSERT falha silenciosamente)
 - ❌ **Lote permanece no banco** (sem rollback)
 
 ### Causa Raiz
+
 **Falta de transação explícita** nos routes de criação de lote:
+
 - `app/api/rh/liberar-lote/route.ts` → Cada query roda em autocommit
 - `app/api/entidade/liberar-lote/route.ts` → Cada query roda em autocommit
 
 #### Fluxo Problemático
+
 ```typescript
 // ANTES (SEM TRANSAÇÃO)
 const loteResult = await queryAsGestorRH(`INSERT INTO lotes_avaliacao ...`);
@@ -59,6 +66,7 @@ for (const func of funcionarios) {
 ```
 
 #### Por Que Falha?
+
 1. **Lote é criado** e commitado imediatamente (autocommit)
 2. **INSERT avaliacoes falha** (possível razão: contexto de auditoria perdido)
 3. **Erro é capturado** no try-catch mas não propaga
@@ -69,15 +77,19 @@ for (const func of funcionarios) {
 ## ✅ Solução Implementada
 
 ### 1. Route RH (Clínica/Empresa)
+
 **Arquivo:** `app/api/rh/liberar-lote/route.ts`
 
 #### Mudanças
+
 1. **Adicionar import**
+
 ```typescript
 import { withTransactionAsGestor } from '@/lib/db-transaction';
 ```
 
 2. **Envolver lógica em transação**
+
 ```typescript
 const resultado = await withTransactionAsGestor(async (client) => {
   // 1. Verificar liberado_por
@@ -136,49 +148,59 @@ const resultado = await withTransactionAsGestor(async (client) => {
 ```
 
 ### 2. Route Entidade (Tomador)
+
 **Arquivo:** `app/api/entidade/liberar-lote/route.ts`
 
 #### Mudanças (Idênticas ao RH)
+
 1. **Adicionar import**
+
 ```typescript
 import { withTransactionAsGestor } from '@/lib/db-transaction';
 ```
 
 2. **Envolver lógica em transação**
+
 ```typescript
-const { lote, avaliacoesCriadas } = await withTransactionAsGestor(async (client) => {
-  // 1. Criar lote
-  const loteResult = await client.query(
-    `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, liberado_por, numero_ordem)
+const { lote, avaliacoesCriadas } = await withTransactionAsGestor(
+  async (client) => {
+    // 1. Criar lote
+    const loteResult = await client.query(
+      `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, liberado_por, numero_ordem)
      VALUES ($1, $2, $3, 'ativo', $4, $5) RETURNING id, liberado_em, numero_ordem`,
-    [entidadeId, descricao, tipo || 'completo', session.cpf, numeroOrdem]
-  );
-  const lote = loteResult.rows[0];
+      [entidadeId, descricao, tipo || 'completo', session.cpf, numeroOrdem]
+    );
+    const lote = loteResult.rows[0];
 
-  // 2. Criar avaliações
-  const agora = new Date().toISOString();
-  let avaliacoesCriadas = 0;
+    // 2. Criar avaliações
+    const agora = new Date().toISOString();
+    let avaliacoesCriadas = 0;
 
-  for (const func of funcionariosElegiveis) {
-    try {
-      await client.query(
-        `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id)
+    for (const func of funcionariosElegiveis) {
+      try {
+        await client.query(
+          `INSERT INTO avaliacoes (funcionario_cpf, status, inicio, lote_id)
          VALUES ($1, 'iniciada', $2, $3)`,
-        [func.funcionario_cpf, agora, lote.id]
-      );
-      avaliacoesCriadas++;
-    } catch (error) {
-      console.error('Erro ao criar avaliação para', func.funcionario_cpf, error);
+          [func.funcionario_cpf, agora, lote.id]
+        );
+        avaliacoesCriadas++;
+      } catch (error) {
+        console.error(
+          'Erro ao criar avaliação para',
+          func.funcionario_cpf,
+          error
+        );
+      }
     }
-  }
 
-  // 3. Validar sucesso - ROLLBACK se nenhuma avaliação criada
-  if (avaliacoesCriadas === 0) {
-    throw new Error('Nenhuma avaliação foi criada - rollback do lote');
-  }
+    // 3. Validar sucesso - ROLLBACK se nenhuma avaliação criada
+    if (avaliacoesCriadas === 0) {
+      throw new Error('Nenhuma avaliação foi criada - rollback do lote');
+    }
 
-  return { lote, avaliacoesCriadas };
-});
+    return { lote, avaliacoesCriadas };
+  }
+);
 ```
 
 ---
@@ -186,20 +208,24 @@ const { lote, avaliacoesCriadas } = await withTransactionAsGestor(async (client)
 ## 🎯 Benefícios da Correção
 
 ### 1. Atomicidade Garantida
+
 - ✅ **Lote + Avaliações = 1 transação**
 - ✅ Se avaliações falharem → **ROLLBACK do lote inteiro**
 - ✅ **Impossível criar lote órfão**
 
 ### 2. Contexto de Auditoria Mantido
+
 - ✅ `SET LOCAL app.current_user_cpf` persiste durante toda a transação
 - ✅ Mesmo se laudo falhar, avaliacoes são criadas com contexto correto
 - ✅ Triggers de auditoria funcionam corretamente
 
 ### 3. Isolamento
+
 - ✅ Cada requisição tem sua própria transação com estado isolado
 - ✅ Concorrência segura entre múltiplos gestores/RHs
 
 ### 4. Recuperação de Erros
+
 - ✅ Se `avaliacoesCriadas === 0` → throw Error → ROLLBACK automático
 - ✅ Nenhum dado inconsistente persiste no banco
 
@@ -207,22 +233,24 @@ const { lote, avaliacoesCriadas } = await withTransactionAsGestor(async (client)
 
 ## 📊 Comparação: Antes vs Depois
 
-| Aspecto | ANTES (sem transação) | DEPOIS (com withTransactionAsGestor) |
-|---------|------------------------|--------------------------------------|
-| **Lotes órfãos** | ❌ Possível (lote sem avaliacoes) | ✅ Impossível (rollback automático) |
-| **Atomicidade** | ❌ Lote criado mesmo se avaliacoes falharem | ✅ Rollback se nenhuma avaliação criada |
-| **Contexto de auditoria** | ❌ Pode ser perdido após erro | ✅ Mantido durante toda transação |
-| **Isolamento** | ❌ Session-level (compartilhado) | ✅ Transaction-level (isolado) |
-| **Consistência** | ❌ Lote sem avaliacoes = inconsistente | ✅ Sempre consistente ou ROLLBACK |
+| Aspecto                   | ANTES (sem transação)                       | DEPOIS (com withTransactionAsGestor)    |
+| ------------------------- | ------------------------------------------- | --------------------------------------- |
+| **Lotes órfãos**          | ❌ Possível (lote sem avaliacoes)           | ✅ Impossível (rollback automático)     |
+| **Atomicidade**           | ❌ Lote criado mesmo se avaliacoes falharem | ✅ Rollback se nenhuma avaliação criada |
+| **Contexto de auditoria** | ❌ Pode ser perdido após erro               | ✅ Mantido durante toda transação       |
+| **Isolamento**            | ❌ Session-level (compartilhado)            | ✅ Transaction-level (isolado)          |
+| **Consistência**          | ❌ Lote sem avaliacoes = inconsistente      | ✅ Sempre consistente ou ROLLBACK       |
 
 ---
 
 ## 🧪 Validação
 
 ### Script de Detecção
+
 **Executar:** `node scripts/check-lotes-orfaos-prod.cjs`
 
 **Antes da Correção:**
+
 ```
 📊 Total de lotes órfãos: 2
 
@@ -231,16 +259,18 @@ const { lote, avaliacoesCriadas } = await withTransactionAsGestor(async (client)
 ```
 
 **Após Deploy da Correção:**
+
 ```
 📊 Total de lotes órfãos: 0 ✅
 ```
 
 ### Teste Manual
+
 1. **Criar lote via RH** (POST /api/rh/liberar-lote)
 2. **Criar lote via Entidade** (POST /api/entidade/liberar-lote)
 3. **Verificar avaliacoes:**
    ```sql
-   SELECT 
+   SELECT
      la.id as lote_id,
      la.numero_ordem,
      COUNT(a.id) as total_avaliacoes
@@ -256,8 +286,9 @@ const { lote, avaliacoesCriadas } = await withTransactionAsGestor(async (client)
 ## 🚨 Limpeza de Lotes Órfãos Existentes
 
 ### Identificar Órfãos
+
 ```sql
-SELECT 
+SELECT
   la.id,
   la.numero_ordem,
   la.liberado_em,
@@ -274,14 +305,15 @@ ORDER BY la.liberado_em DESC;
 ```
 
 ### Deletar Órfãos (com cuidado!)
+
 ```sql
 -- Verificar antes de deletar
-SELECT id, numero_ordem, liberado_em 
-FROM lotes_avaliacao 
+SELECT id, numero_ordem, liberado_em
+FROM lotes_avaliacao
 WHERE id IN (1002, 1003);
 
 -- Deletar apenas se confirmado
-DELETE FROM lotes_avaliacao 
+DELETE FROM lotes_avaliacao
 WHERE id IN (1002, 1003)
   AND NOT EXISTS (SELECT 1 FROM avaliacoes WHERE lote_id = lotes_avaliacao.id);
 ```
@@ -322,6 +354,7 @@ WHERE id IN (1002, 1003)
 ## 🚀 Próximos Passos
 
 1. **Commit e Push**
+
    ```bash
    git add app/api/rh/liberar-lote/route.ts app/api/entidade/liberar-lote/route.ts
    git add scripts/check-elegibilidade-prod.cjs scripts/check-lotes-orfaos-prod.cjs
@@ -337,10 +370,11 @@ WHERE id IN (1002, 1003)
    - Deploy em PROD
 
 3. **Limpeza Pós-Deploy**
+
    ```bash
    # Verificar lotes órfãos
    node scripts/check-lotes-orfaos-prod.cjs
-   
+
    # Limpar IDs 1002 e 1003 via SQL (se ainda órfãos)
    DELETE FROM lotes_avaliacao WHERE id IN (1002, 1003);
    ```

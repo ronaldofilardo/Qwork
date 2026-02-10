@@ -1,6 +1,6 @@
 /**
  * Teste de Banco: Trigger Reservar Laudo (Migração 1004)
- * 
+ *
  * Valida que trigger cria laudos com status='rascunho' automaticamente
  * quando lote é criado
  */
@@ -18,23 +18,33 @@ describe('Database: Trigger reservar_laudo_on_lote', () => {
     }
 
     // Setup básico
-    const clinicaRes = await query('SELECT id FROM clinicas WHERE ativa = true LIMIT 1');
-    clinicaId = clinicaRes.rows[0]?.id || (await query(
-      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    const clinicaRes = await query(
+      'SELECT id FROM clinicas WHERE ativa = true LIMIT 1'
+    );
+    clinicaId =
+      clinicaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ('Clinica Trigger Test', '77777777000100', 'trigger@test.com', '11900000006', 'Rua', 'SP', 'SP', '01000-006', 'Resp', 'resp@trigger.com', true)
        RETURNING id`
-    )).rows[0].id;
+        )
+      ).rows[0].id;
 
     const empresaRes = await query(
       'SELECT id FROM empresas_clientes WHERE clinica_id = $1 AND ativa = true LIMIT 1',
       [clinicaId]
     );
-    empresaId = empresaRes.rows[0]?.id || (await query(
-      `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
+    empresaId =
+      empresaRes.rows[0]?.id ||
+      (
+        await query(
+          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
        VALUES ($1, 'Empresa Trigger Test', '88888888000100', 'emp@trigger.com', '11900000007', 'Rua', 'SP', 'SP', '01000-007', 'Resp', 'resp@emp.com', true)
        RETURNING id`,
-      [clinicaId]
-    )).rows[0].id;
+          [clinicaId]
+        )
+      ).rows[0].id;
   });
 
   afterAll(async () => {
@@ -93,7 +103,10 @@ describe('Database: Trigger reservar_laudo_on_lote', () => {
       loteId = loteResult.rows[0].id;
 
       // Verificar laudo criado
-      const firstCheck = await query('SELECT COUNT(*) as total FROM laudos WHERE id = $1', [loteId]);
+      const firstCheck = await query(
+        'SELECT COUNT(*) as total FROM laudos WHERE id = $1',
+        [loteId]
+      );
       expect(parseInt(firstCheck.rows[0].total)).toBe(1);
 
       // Tentar criar laudo duplicado manualmente (deve ser ignorado via ON CONFLICT)
@@ -105,7 +118,10 @@ describe('Database: Trigger reservar_laudo_on_lote', () => {
       );
 
       // ✅ CRÍTICO - Ainda deve haver apenas 1 laudo
-      const secondCheck = await query('SELECT COUNT(*) as total FROM laudos WHERE id = $1', [loteId]);
+      const secondCheck = await query(
+        'SELECT COUNT(*) as total FROM laudos WHERE id = $1',
+        [loteId]
+      );
       expect(parseInt(secondCheck.rows[0].total)).toBe(1);
     } finally {
       if (loteId) {
@@ -129,15 +145,19 @@ describe('Database: Trigger reservar_laudo_on_lote', () => {
       loteId = loteResult.rows[0].id;
 
       // Verificar se laudo foi criado
-      const laudoCheck = await query('SELECT id FROM laudos WHERE id = $1', [loteId]);
+      const laudoCheck = await query('SELECT id FROM laudos WHERE id = $1', [
+        loteId,
+      ]);
 
       // Dependendo da implementação do trigger:
       // Se trigger tem condição WHERE status='ativo' → laudoCheck.rowCount = 0
       // Se trigger cria para todos os lotes → laudoCheck.rowCount = 1
-      
+
       // Documentar comportamento atual
-      console.log(`[INFO] Trigger criou laudo para lote status='rascunho'? ${laudoCheck.rowCount > 0}`);
-      
+      console.log(
+        `[INFO] Trigger criou laudo para lote status='rascunho'? ${laudoCheck.rowCount > 0}`
+      );
+
       // Se implementação do trigger deve criar apenas para 'ativo', descomentar:
       // expect(laudoCheck.rowCount).toBe(0);
     } finally {
