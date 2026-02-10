@@ -22,15 +22,26 @@ jest.mock('@/lib/session', () => ({
 }));
 
 describe('Integration: Contexto de Auditoria em Transações', () => {
-  const testCpf = '12345678909';
+  const testCpf = '12345678909'; // CPF do mock de session
   let clinicaId: number;
   let empresaId: number;
   let funcionarioCpf: string;
+  let funcionarioId: number;
 
   beforeAll(async () => {
     if (!process.env.TEST_DATABASE_URL?.includes('_test')) {
       throw new Error('TEST_DATABASE_URL deve apontar para banco _test');
     }
+
+    // Configurar contexto de sessão para permitir queries
+    await query('SELECT set_config($1, $2, false)', [
+      'app.current_user_cpf',
+      testCpf,
+    ]);
+    await query('SELECT set_config($1, $2, false)', [
+      'app.current_user_perfil',
+      'rh',
+    ]);
 
     // Setup básico
     const clinicaRes = await query(
@@ -40,8 +51,8 @@ describe('Integration: Contexto de Auditoria em Transações', () => {
       clinicaRes.rows[0]?.id ||
       (
         await query(
-          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-       VALUES ('Clinica Audit Test', '55555555000100', 'audit@test.com', '11900000004', 'Rua', 'SP', 'SP', '01000-004', 'Resp', 'resp@audit.com', true)
+          `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, ativa)
+       VALUES ('Clinica TX Audit Test', '55555555000100', 'txaudit@test.com', '11900000003', 'Rua', 'São Paulo', 'SP', '01000-003', 'Resp', '34567890123', 'resp@txaudit.com', true)
        RETURNING id`
         )
       ).rows[0].id;
@@ -54,34 +65,28 @@ describe('Integration: Contexto de Auditoria em Transações', () => {
       empresaRes.rows[0]?.id ||
       (
         await query(
-          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-       VALUES ($1, 'Empresa Audit Test', '66666666000100', 'emp@audit.com', '11900000005', 'Rua', 'SP', 'SP', '01000-005', 'Resp', 'resp@emp.com', true)
+          `INSERT INTO empresas_clientes (clinica_id, nome, cnpj, email, ativa)
+       VALUES ($1, 'Empresa TX Audit Test', '66666666000100', 'emp@txaudit.com', true)
        RETURNING id`,
           [clinicaId]
         )
       ).rows[0].id;
 
     funcionarioCpf = '77766655544';
-    await query(
+    const funcResult = await query(
       `INSERT INTO funcionarios (cpf, nome, email, senha_hash, perfil, ativo, indice_avaliacao)
        VALUES ($1, 'Func Audit Test', 'audit@func.com', '$2a$10$hash', 'funcionario', true, 0)
-       ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome`,
+       ON CONFLICT (cpf) DO UPDATE SET nome = EXCLUDED.nome
+       RETURNING id`,
       [funcionarioCpf]
     );
-
-    const funcIdResult = await query(
-      'SELECT id FROM funcionarios WHERE cpf = $1',
-      [funcionarioCpf]
-    );
-    const funcId = funcIdResult.rows[0].id;
+    funcionarioId = funcResult.rows[0].id;
+    
     await query(
-      `DELETE FROM funcionarios_clinicas WHERE funcionario_id = $1 AND clinica_id = $2`,
-      [funcId, clinicaId]
-    );
-    await query(
-      `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, ativo)
-       VALUES ($1, $2, true)`,
-      [funcId, clinicaId]
+      `INSERT INTO funcionarios_clinicas (funcionario_id, clinica_id, empresa_id, ativo)
+       VALUES ($1, $2, $3, true)
+       ON CONFLICT ON CONSTRAINT funcionarios_clinicas_pkey DO UPDATE SET ativo = true`,
+      [funcionarioId, clinicaId, empresaId]
     );
   });
 
@@ -130,7 +135,7 @@ describe('Integration: Contexto de Auditoria em Transações', () => {
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote Audit Context Test', 'completo', 'ativo', $3, 1)
            RETURNING id`,
-          [clinicaId, empresaId, testCpf]
+          [clinicaId, empresaId, funcionarioCpf]
         );
         loteId = loteResult.rows[0].id;
 
@@ -181,7 +186,7 @@ describe('Integration: Contexto de Auditoria em Transações', () => {
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote Audit SAVEPOINT Test', 'completo', 'ativo', $3, 1)
            RETURNING id`,
-          [clinicaId, empresaId, testCpf]
+          [clinicaId, empresaId, funcionarioCpf]
         );
         loteId = loteResult.rows[0].id;
 
@@ -247,7 +252,7 @@ describe('Integration: Contexto de Auditoria em Transações', () => {
           `INSERT INTO lotes_avaliacao (clinica_id, empresa_id, descricao, tipo, status, liberado_por, numero_ordem)
            VALUES ($1, $2, 'Lote Audit Perfil Test', 'completo', 'ativo', $3, 1)
            RETURNING id`,
-          [clinicaId, empresaId, testCpf]
+          [clinicaId, empresaId, funcionarioCpf]
         );
         loteId = loteResult.rows[0].id;
 
