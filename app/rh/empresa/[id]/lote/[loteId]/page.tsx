@@ -1162,11 +1162,13 @@ export default function DetalhesLotePage() {
                     <button
                       onClick={async () => {
                         try {
-                          toast.loading('Baixando laudo...', { id: 'laudo-download' });
+                          toast.loading('Baixando laudo...', {
+                            id: 'laudo-download',
+                          });
                           const response = await fetch(
                             `/api/rh/laudos/${lote.laudo_id}/download`
                           );
-                          
+
                           if (!response.ok) {
                             throw new Error('Erro ao baixar laudo');
                           }
@@ -1180,10 +1182,14 @@ export default function DetalhesLotePage() {
                           a.click();
                           window.URL.revokeObjectURL(url);
                           document.body.removeChild(a);
-                          toast.success('Laudo baixado com sucesso!', { id: 'laudo-download' });
+                          toast.success('Laudo baixado com sucesso!', {
+                            id: 'laudo-download',
+                          });
                         } catch (err) {
                           console.error('Erro ao baixar laudo:', err);
-                          toast.error('Erro ao baixar laudo', { id: 'laudo-download' });
+                          toast.error('Erro ao baixar laudo', {
+                            id: 'laudo-download',
+                          });
                         }
                       }}
                       className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"

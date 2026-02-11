@@ -268,15 +268,36 @@ export const GET = async (
       `[PERSISTIDO] PDF salvo: ${filePath} (${pdfBuffer.byteLength} bytes, hash: ${hash})`
     );
 
-    // [IMUTABILIDADE]
-    // Não atualizar o registro do laudo diretamente neste endpoint para evitar violar a política
-    // de imutabilidade do laudo.
-    console.log(
-      '[IMUTABILIDADE] Não modificando registro do laudo (hash) neste endpoint.'
-    );
+    // [ATUALIZAÇÃO DO HASH]
+    // Atualizar hash_pdf no banco SOMENTE se o laudo ainda não foi emitido
+    // Isso garante a integridade sem violar a imutabilidade de laudos já emitidos
+    try {
+      const updateHash = await query(
+        `UPDATE laudos 
+         SET hash_pdf = $1
+         WHERE id = $2 
+           AND (hash_pdf IS NULL OR hash_pdf = '')
+           AND status IN ('rascunho', 'aprovado')
+         RETURNING id, hash_pdf`,
+        [hash, laudo.id]
+      );
 
-    // Nota: Não atualizamos atualizado_em pois laudos emitidos são imutáveis
-    // O PDF é gerado on-demand sem modificar o registro do laudo
+      if (updateHash.rowCount > 0) {
+        console.log(
+          `[HASH] Hash SHA-256 atualizado no banco para laudo ${laudo.id}: ${hash}`
+        );
+      } else {
+        console.log(
+          `[HASH] Laudo ${laudo.id} já possui hash ou já foi emitido - mantendo hash existente (imutabilidade)`
+        );
+      }
+    } catch (hashError) {
+      console.error(
+        `[HASH] Erro ao atualizar hash para laudo ${laudo.id}:`,
+        hashError
+      );
+      // Não bloquear o fluxo se falhar ao atualizar o hash
+    }
 
     console.log(`PDF gerado e persistido: ${fileName}`);
 

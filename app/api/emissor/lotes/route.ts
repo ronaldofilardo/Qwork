@@ -95,7 +95,8 @@ export const GET = async (req: Request) => {
       // Informações de laudo vêm do banco de dados
       const temLaudo = Boolean(lote.laudo_id);
 
-      const laudoEmitido = temLaudo &&
+      const laudoEmitido =
+        temLaudo &&
         (lote.status_laudo === 'emitido' ||
           lote.status_laudo === 'enviado' ||
           lote.hash_pdf ||
