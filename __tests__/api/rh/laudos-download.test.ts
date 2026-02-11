@@ -1,11 +1,15 @@
+/**
+ * Teste atualizado em 10/02/2026 para refletir comportamento de proxy server-side do Backblaze
+ * Remove mocks de filesystem (fs) e adiciona mock de global.fetch
+ */
+
 import { GET } from '@/app/api/rh/laudos/[laudoId]/download/route';
 import { getSession, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
-import fs from 'fs';
 
 jest.mock('@/lib/session');
 jest.mock('@/lib/db');
-jest.mock('fs');
+jest.mock('@/lib/storage/backblaze-client');
 
 const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
 const mockRequireRHWithEmpresaAccess =
@@ -13,10 +17,9 @@ const mockRequireRHWithEmpresaAccess =
     typeof requireRHWithEmpresaAccess
   >;
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockFs = fs as unknown as {
-  existsSync: jest.Mock;
-  readFileSync: jest.Mock;
-};
+
+// Mock global fetch para simular download do Backblaze
+global.fetch = jest.fn();
 
 describe('/api/rh/laudos/[laudoId]/download', () => {
   beforeEach(() => {
@@ -83,6 +86,7 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
           lote_id: 15,
           status: 'emitido',
           hash_pdf: 'abc123',
+          arquivo_remoto_key: 'laudos/lote-15/laudo.pdf',
           clinica_id: 5,
           empresa_id: 10,
         },
@@ -93,8 +97,11 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
     // requireRHWithEmpresaAccess sucede
     mockRequireRHWithEmpresaAccess.mockResolvedValueOnce({} as any);
 
-    mockFs.existsSync = jest.fn().mockReturnValue(true);
-    mockFs.readFileSync = jest.fn().mockReturnValue(Buffer.from('pdf-content'));
+    // Mock do fetch do Backblaze retornando PDF
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: jest.fn().mockResolvedValue(Buffer.from('pdf-content')),
+    });
 
     const response = await GET(
       {} as Request,
@@ -140,6 +147,7 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
           lote_id: 18,
           status: 'emitido',
           hash_pdf: 'hash123',
+          arquivo_remoto_key: 'laudos/lote-18/laudo.pdf',
           clinica_id: 5,
           empresa_id: 20,
         },
@@ -148,8 +156,12 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
     } as any);
 
     mockRequireRHWithEmpresaAccess.mockResolvedValueOnce({} as any);
-    mockFs.existsSync = jest.fn().mockReturnValue(true);
-    mockFs.readFileSync = jest.fn().mockReturnValue(Buffer.from('pdf'));
+
+    // Mock do fetch do Backblaze retornando PDF
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: jest.fn().mockResolvedValue(Buffer.from('pdf')),
+    });
 
     const response = await GET(
       {} as Request,
@@ -178,6 +190,7 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
           lote_id: 20,
           status: 'emitido',
           hash_pdf: 'hash456',
+          arquivo_remoto_key: 'laudos/lote-20/laudo.pdf',
           clinica_id: 5,
           empresa_id: 30,
         },
@@ -185,8 +198,11 @@ describe('/api/rh/laudos/[laudoId]/download', () => {
       rowCount: 1,
     } as any);
 
-    mockFs.existsSync = jest.fn().mockReturnValue(true);
-    mockFs.readFileSync = jest.fn().mockReturnValue(Buffer.from('pdf'));
+    // Mock do fetch do Backblaze retornando PDF
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      arrayBuffer: jest.fn().mockResolvedValue(Buffer.from('pdf')),
+    });
 
     const response = await GET(
       {} as Request,

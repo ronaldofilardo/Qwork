@@ -48,7 +48,7 @@ export async function gerarLaudoCompletoEmitirPDF(
 
   if (laudoExistente.rows.length > 0) {
     const status = laudoExistente.rows[0].status;
-    
+
     // Se laudo já está emitido ou enviado, não permitir regeração (imutabilidade)
     if (status === 'emitido' || status === 'enviado') {
       throw new Error(
@@ -58,7 +58,9 @@ export async function gerarLaudoCompletoEmitirPDF(
 
     // Se está em rascunho, podemos atualizar
     if (status === 'rascunho') {
-      console.log(`[EMISSÃO] Laudo ${laudoId} já existe em rascunho, atualizando emissor...`);
+      console.log(
+        `[EMISSÃO] Laudo ${laudoId} já existe em rascunho, atualizando emissor...`
+      );
       await query(
         `UPDATE laudos 
          SET emissor_cpf = $1, atualizado_em = NOW()

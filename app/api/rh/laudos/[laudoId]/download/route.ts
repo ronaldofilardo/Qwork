@@ -112,7 +112,8 @@ export const GET = async (
     );
 
     try {
-      const { getPresignedUrl } = await import('@/lib/storage/backblaze-client');
+      const { getPresignedUrl } =
+        await import('@/lib/storage/backblaze-client');
       const presignedUrl = await getPresignedUrl(laudo.arquivo_remoto_key, 300); // 5 min
       console.log(
         `[BACKBLAZE] Presigned URL gerada com sucesso para: ${laudo.arquivo_remoto_key}`
@@ -122,9 +123,11 @@ export const GET = async (
       // Isso funciona em qualquer ambiente e evita problemas de CORS/redirect
       console.log(`[BACKBLAZE] Fazendo download server-side do PDF...`);
       const pdfResponse = await fetch(presignedUrl);
-      
+
       if (!pdfResponse.ok) {
-        console.error(`[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText}`);
+        console.error(
+          `[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText}`
+        );
         return NextResponse.json(
           { error: 'Erro ao acessar arquivo no storage', success: false },
           { status: 500 }
@@ -132,7 +135,9 @@ export const GET = async (
       }
 
       const pdfBuffer = await pdfResponse.arrayBuffer();
-      console.log(`[BACKBLAZE] PDF baixado com sucesso (${pdfBuffer.byteLength} bytes)`);
+      console.log(
+        `[BACKBLAZE] PDF baixado com sucesso (${pdfBuffer.byteLength} bytes)`
+      );
 
       // Retornar PDF diretamente ao cliente
       return new NextResponse(pdfBuffer, {
@@ -145,10 +150,7 @@ export const GET = async (
         },
       });
     } catch (backblazeError) {
-      console.error(
-        '[BACKBLAZE] Erro ao processar arquivo:',
-        backblazeError
-      );
+      console.error('[BACKBLAZE] Erro ao processar arquivo:', backblazeError);
       return NextResponse.json(
         {
           error: 'Erro ao acessar arquivo do laudo',

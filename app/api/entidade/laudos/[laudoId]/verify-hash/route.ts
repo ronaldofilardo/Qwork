@@ -1,13 +1,14 @@
 import { requireEntity } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { lerLaudo, calcularHash } from '@/lib/storage/laudo-storage';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/entidade/laudos/[laudoId]/verify-hash
- * Retorna o hash armazenado do laudo (já foi calculado e validado quando emitido)
- * Não recalcula hash do arquivo - isso foi feito no momento da emissão
+ * Recalcula o hash do arquivo PDF e compara com o hash armazenado
+ * para verificar a integridade do laudo
  */
 export const GET = async (
   req: Request,
@@ -58,26 +59,59 @@ export const GET = async (
     if (!hashArmazenado) {
       return NextResponse.json(
         {
-          error: 'Hash do laudo não disponível (laudo pode estar em processamento)',
+          error:
+            'Hash do laudo não disponível (laudo pode estar em processamento)',
           success: false,
         },
         { status: 404 }
       );
     }
 
-    // Retornar hash armazenado (já foi calculado e validado quando o laudo foi emitido)
-    console.log(`[VERIFY] Retornando hash armazenado para laudo ${laudo.id}`);
+    // Ler o arquivo PDF do storage
+    console.log(`[VERIFY] Lendo arquivo PDF do laudo ${laudo.id}...`);
+    let pdfBuffer: Buffer;
+    
+    try {
+      pdfBuffer = await lerLaudo(laudo.id);
+    } catch (error: any) {
+      console.error(`[VERIFY] Erro ao ler arquivo PDF do laudo ${laudo.id}:`, error);
+      return NextResponse.json(
+        {
+          error: 'Arquivo do laudo não encontrado no armazenamento',
+          success: false,
+        },
+        { status: 404 }
+      );
+    }
+
+    // Recalcular hash do arquivo
+    const hashCalculado = calcularHash(pdfBuffer);
+    console.log(`[VERIFY] Hash armazenado: ${hashArmazenado}`);
+    console.log(`[VERIFY] Hash calculado:  ${hashCalculado}`);
+
+    // Comparar hashes (case-insensitive)
+    const hashValido = hashArmazenado.toLowerCase() === hashCalculado.toLowerCase();
+
+    if (!hashValido) {
+      console.error(`[VERIFY] ⚠️ HASH INVÁLIDO para laudo ${laudo.id}!`);
+      console.error(`[VERIFY]   Esperado: ${hashArmazenado}`);
+      console.error(`[VERIFY]   Calculado: ${hashCalculado}`);
+    } else {
+      console.log(`[VERIFY] ✅ Hash válido para laudo ${laudo.id}`);
+    }
 
     return NextResponse.json({
       success: true,
+      hash_valido: hashValido,
       hash_armazenado: hashArmazenado,
+      hash_calculado: hashCalculado,
       laudo_id: laudo.id,
       lote_id: laudo.lote_id,
       emitido_em: laudo.emitido_em,
       status: laudo.status,
     });
   } catch (error: any) {
-    console.error('Erro ao buscar hash do laudo:', error);
+    console.error('[VERIFY] Erro ao verificar hash do laudo:', error);
     return NextResponse.json(
       {
         error: error.message || 'Erro interno do servidor',
