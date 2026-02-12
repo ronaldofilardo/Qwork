@@ -56,14 +56,9 @@ export async function POST(
       );
     }
 
-    // Start transaction
-    await query('BEGIN');
-
+    // Start transaction - passing user session to ensure context is set correctly
+    // This prevents "app.current_user_cpf not set" errors in production with connection pooling
     try {
-      // Configurar contexto de segurança para auditoria
-      await query(`SET LOCAL app.current_user_cpf = '${user.cpf}'`);
-      await query(`SET LOCAL app.current_user_perfil = '${user.perfil}'`);
-
       // Buscar informações do lote primeiro
       const loteCheck = await query(
         `
@@ -72,11 +67,11 @@ export async function POST(
         WHERE la.id = $1
         FOR UPDATE -- Lock to prevent concurrent operations
       `,
-        [loteId]
+        [loteId],
+        user
       );
 
       if (loteCheck.rowCount === 0) {
-        await query('ROLLBACK');
         return NextResponse.json(
           {
             error: 'Lote não encontrado',
@@ -92,7 +87,6 @@ export async function POST(
       try {
         await requireRHWithEmpresaAccess(lote.empresa_id);
       } catch {
-        await query('ROLLBACK').catch(() => {});
         return NextResponse.json(
           {
             error: 'Você não tem permissão para resetar avaliações neste lote',
@@ -110,7 +104,8 @@ export async function POST(
       // Verificar se a emissão do laudo foi solicitada
       const emissaoSolicitadaResult = await query(
         `SELECT COUNT(*) as count FROM v_fila_emissao WHERE lote_id = $1`,
-        [loteId]
+        [loteId],
+        user
       );
 
       const emissaoSolicitada =
@@ -119,14 +114,14 @@ export async function POST(
       // Verificar se o lote já foi emitido
       const loteEmitidoResult = await query(
         `SELECT emitido_em FROM lotes_avaliacao WHERE id = $1`,
-        [loteId]
+        [loteId],
+        user
       );
 
       const loteEmitido = !!loteEmitidoResult.rows[0].emitido_em;
 
       // Bloquear apenas se emissão foi solicitada OU lote foi emitido (princípio da imutabilidade)
       if (emissaoSolicitada || loteEmitido) {
-        await query('ROLLBACK');
         return NextResponse.json(
           {
             error:
@@ -149,11 +144,11 @@ export async function POST(
         WHERE a.id = $1 AND a.lote_id = $2
         FOR UPDATE
       `,
-        [avaliacaoId, loteId]
+        [avaliacaoId, loteId],
+        user
       );
 
       if (avaliacaoCheck.rowCount === 0) {
-        await query('ROLLBACK');
         return NextResponse.json(
           {
             error: 'Avaliação não encontrada neste lote',
@@ -169,11 +164,11 @@ export async function POST(
         SELECT id FROM avaliacao_resets
         WHERE avaliacao_id = $1 AND lote_id = $2
       `,
-        [avaliacaoId, loteId]
+        [avaliacaoId, loteId],
+        user
       );
 
       if (resetCheck.rowCount > 0) {
-        await query('ROLLBACK');
         return NextResponse.json(
           {
             error: 'Esta avaliação já foi resetada anteriormente neste lote',
@@ -190,13 +185,11 @@ export async function POST(
         SELECT COUNT(*) as count FROM respostas
         WHERE avaliacao_id = $1
       `,
-        [avaliacaoId]
+        [avaliacaoId],
+        user
       );
 
       const respostasCount = parseInt(countResult.rows[0].count);
-
-      // Autorizar reset (flag para trigger de imutabilidade)
-      await query(`SET LOCAL app.allow_reset = true`);
 
       // Delete all responses (hard delete as per requirement)
       await query(
@@ -204,7 +197,8 @@ export async function POST(
         DELETE FROM respostas
         WHERE avaliacao_id = $1
       `,
-        [avaliacaoId]
+        [avaliacaoId],
+        user
       );
 
       // Update evaluation status to iniciada (available for employee)
@@ -215,7 +209,8 @@ export async function POST(
             atualizado_em = NOW()
         WHERE id = $1
       `,
-        [avaliacaoId]
+        [avaliacaoId],
+        user
       );
 
       // Insert immutable audit record
@@ -242,13 +237,11 @@ export async function POST(
         LEFT JOIN funcionarios f ON f.cpf = u.cpf
         RETURNING id, created_at
       `,
-        [avaliacaoId, loteId, reason.trim(), respostasCount, user.cpf]
+        [avaliacaoId, loteId, reason.trim(), respostasCount, user.cpf],
+        user
       );
 
       const resetRecord = auditResult.rows[0];
-
-      // Commit transaction
-      await query('COMMIT');
 
       // Log success
       console.log(
@@ -266,7 +259,6 @@ export async function POST(
         respostasDeleted: respostasCount,
       });
     } catch (innerError: any) {
-      await query('ROLLBACK');
       throw innerError;
     }
   } catch (error: any) {
