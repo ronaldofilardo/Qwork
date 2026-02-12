@@ -62,10 +62,11 @@ async function updateLotesStatus(cpf: string, session: any) {
 
     if (novoStatus !== lote.status) {
       // Atualizar status do lote
-      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
-        novoStatus,
-        lote.id,
-      ], session);
+      await query(
+        'UPDATE lotes_avaliacao SET status = $1 WHERE id = $2',
+        [novoStatus, lote.id],
+        session
+      );
       console.log(
         `[INFO] Lote ${lote.id} alterado de '${lote.status}' para '${novoStatus}'`
       );
@@ -143,10 +144,11 @@ async function handleStatusUpdate(request: NextRequest) {
     }
 
     // Atualizar status do funcionário (com session para auditoria)
-    await query('UPDATE funcionarios SET ativo = $1 WHERE cpf = $2', [
-      ativo,
-      cpf,
-    ], session);
+    await query(
+      'UPDATE funcionarios SET ativo = $1 WHERE cpf = $2',
+      [ativo, cpf],
+      session
+    );
 
     // Atualizar status das avaliações baseado no status do funcionário
     if (!ativo) {
