@@ -19,6 +19,12 @@ jest.mock('@/lib/db', () => ({
   query: jest.fn(() => ({ rows: [] })),
 }));
 
+// Mock withTransaction para simplesmente executar a função passada
+// mas usar o query original mockado
+jest.mock('@/lib/db-transaction', () => ({
+  withTransaction: jest.fn(async (fn) => await fn(require('@/lib/db'))),
+}));
+
 jest.mock('bcryptjs', () => ({
   hash: jest.fn(() => Promise.resolve('$2a$10$mockedhashvalue')),
 }));
@@ -129,7 +135,7 @@ describe('import route - clínica', () => {
   });
 
   it('inserts funcionarios with correct empresa_id and clinica_id', async () => {
-    // Setup: empresa válida
+    // Setup: empresa válida (primeira query da API)
     query.mockResolvedValueOnce({
       rows: [{ id: 1, clinica_id: 1 }],
     });
@@ -141,7 +147,7 @@ describe('import route - clínica', () => {
         {
           cpf: '12345678901',
           nome: 'João Silva',
-          data_nascimento: '1990-01-15',
+          data_nascimento: '1974-10-24',
           setor: 'TI',
           funcao: 'Dev',
           email: 'joao@empresa.com',
@@ -182,6 +188,11 @@ describe('import route - clínica', () => {
 
     const res = await POST(req);
     const json = await res.json();
+
+    if (res.status !== 200) {
+      console.error('[TEST ERROR] Status:', res.status);
+      console.error('[TEST ERROR] Response:', JSON.stringify(json, null, 2));
+    }
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);

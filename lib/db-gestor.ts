@@ -150,24 +150,14 @@ export async function queryAsGestor<T = Record<string, unknown>>(
     );
   }
 
-  // 🔒 SEGURANÇA: Configurar variáveis de contexto para auditoria
-  // Usar 'true' para manter as variáveis durante toda a conexão/sessão
-  // (não apenas a transação atual - importante para BEGIN/COMMIT)
-  await query('SELECT set_config($1, $2, true)', [
-    'app.current_user_cpf',
-    session.cpf,
-  ]);
-  await query('SELECT set_config($1, $2, true)', [
-    'app.current_user_perfil',
-    session.perfil,
-  ]);
-
-  // Executar query direta (sem RLS)
+  // 🔒 SEGURANÇA: Executar query com contexto de sessão
+  // A função query() irá configurar automaticamente app.current_user_cpf e app.current_user_perfil
+  // dentro de uma transação única, garantindo que as variáveis estejam disponíveis para auditoria
   console.log(
     `[queryAsGestor] Executando query para ${session.perfil} (CPF: ***${session.cpf.slice(-4)})`
   );
 
-  return query(text, params);
+  return query(text, params, session);
 }
 
 /**

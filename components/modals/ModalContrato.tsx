@@ -9,6 +9,7 @@ interface ModalContratoProps {
   isOpen: boolean;
   onClose: () => void;
   contratoId: number | string;
+  onAceiteSuccess?: () => void;
 }
 
 interface Contrato {
@@ -32,6 +33,7 @@ export default function ModalContrato({
   isOpen,
   onClose,
   contratoId,
+  onAceiteSuccess,
 }: ModalContratoProps) {
   const router = useRouter();
   const [contrato, setContrato] = useState<Contrato | null>(null);
@@ -147,14 +149,18 @@ export default function ModalContrato({
               {/* Dados da Tomadora */}
               {contrato.tomador_nome && (
                 <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="text-sm font-semibold text-blue-900 mb-2">Dados da Contratante</h3>
+                  <h3 className="text-sm font-semibold text-blue-900 mb-2">
+                    Dados da Contratante
+                  </h3>
                   <div className="space-y-1">
                     <p className="text-sm text-blue-800">
-                      <span className="font-medium">Razão Social:</span> {contrato.tomador_nome}
+                      <span className="font-medium">Razão Social:</span>{' '}
+                      {contrato.tomador_nome}
                     </p>
                     {contrato.tomador_cnpj && (
                       <p className="text-sm text-blue-800">
-                        <span className="font-medium">CNPJ:</span> {contrato.tomador_cnpj}
+                        <span className="font-medium">CNPJ:</span>{' '}
+                        {contrato.tomador_cnpj}
                       </p>
                     )}
                   </div>
@@ -197,25 +203,39 @@ export default function ModalContrato({
         {/* Footer */}
         <div className="flex flex-col p-6 border-t gap-4">
           {/* Alerta sobre cobrança de manutenção */}
-          {contrato && contrato.tomador_tipo === 'clinica' && !contrato.aceito && (
-            <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <svg className="h-5 w-5 text-amber-600" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <div className="ml-3">
-                  <h3 className="text-sm font-semibold text-amber-800">Atenção:</h3>
-                  <p className="mt-1 text-sm text-amber-700">
-                    Cada empresa cliente que você cadastrar na QWork gerará um ambiente contratual independente. 
-                    Após 90 dias sem emissão de laudo para determinada empresa, será cobrada taxa de R$ 200,00 
-                    referente à manutenção do ambiente ativo desta empresa específica.
-                  </p>
+          {contrato &&
+            contrato.tomador_tipo === 'clinica' &&
+            !contrato.aceito && (
+              <div className="p-4 bg-amber-50 border-l-4 border-amber-500 rounded-r-lg">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg
+                      className="h-5 w-5 text-amber-600"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-semibold text-amber-800">
+                      Atenção:
+                    </h3>
+                    <p className="mt-1 text-sm text-amber-700">
+                      Cada empresa cliente que você cadastrar na QWork gerará um
+                      ambiente contratual independente. Após 90 dias sem emissão
+                      de laudo para determinada empresa, será cobrada taxa de R$
+                      200,00 referente à manutenção do ambiente ativo desta
+                      empresa específica.
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
           {/* Checkbox de aceite */}
           <div className="flex items-center gap-3">
@@ -314,9 +334,9 @@ export default function ModalContrato({
                       return;
                     }
 
-                    // Caso contrário, apenas fechar e recarregar página para atualizar estado
+                    // Caso contrário, fechar modal e chamar callback de sucesso
                     onClose();
-                    window.location.reload();
+                    onAceiteSuccess?.();
                   } catch (err) {
                     console.error('[CONTRATO] Erro ao aceitar:', err);
                     setErro(

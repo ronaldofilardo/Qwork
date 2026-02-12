@@ -124,9 +124,6 @@ export default function ModalAdicionarFuncionarioEntidade({
     ) {
       return 'Data de nascimento é obrigatória e deve estar no formato yyyy-mm-dd';
     }
-    if (!formData.senha.trim() || formData.senha.length < 6) {
-      return 'Senha deve ter no mínimo 6 caracteres';
-    }
     return null;
   };
 
@@ -318,23 +315,15 @@ export default function ModalAdicionarFuncionarioEntidade({
               />
             </div>
 
-            {/* Senha */}
-            <div>
-              <label
-                htmlFor="senha"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Senha <span className="text-red-600">*</span>
-              </label>
-              <input
-                id="senha"
-                type="password"
-                value={formData.senha}
-                onChange={(e) => handleInputChange('senha', e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                disabled={loading}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary disabled:opacity-50"
-              />
+            {/* Senha - Gerada automaticamente a partir da data de nascimento */}
+            <div className="col-span-2">
+              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                <p className="text-sm text-blue-700">
+                  ℹ️ <strong>Senha automática:</strong> A senha será gerada
+                  automaticamente a partir da data de nascimento (formato:
+                  DDMMYYYY)
+                </p>
+              </div>
             </div>
 
             {/* Matrícula */}

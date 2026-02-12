@@ -1,0 +1,124 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║   🚀 QUICK START - Migração Produção                              ║
+║   Sincronização: confirmacao_identidade                           ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+┌───────────────────────────────────────────────────────────────────┐
+│ ⚡ EXECUÇÃO RÁPIDA (PowerShell - Recomendado)                     │
+└───────────────────────────────────────────────────────────────────┘
+
+  1️⃣  Abrir PowerShell como Administrador
+  
+  2️⃣  Navegar até o projeto:
+      cd c:\apps\QWork
+  
+  3️⃣  Executar migração:
+      .\database\migrations\PRODUCAO_executar_migracao.ps1
+  
+  ✅  Pronto! A migração foi aplicada.
+
+┌───────────────────────────────────────────────────────────────────┐
+│ 🔧 EXECUÇÃO MANUAL (Linux/Mac/PowerShell)                         │
+└───────────────────────────────────────────────────────────────────┘
+
+  1️⃣  Conectar ao banco:
+      
+      psql 'postgresql://neondb_owner:REDACTED@ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require'
+  
+  2️⃣  Verificar estado atual:
+      
+      \i database/migrations/PRODUCAO_verificacao.sql
+  
+  3️⃣  Executar migração:
+      
+      \i database/migrations/PRODUCAO_sync_confirmacao_identidade.sql
+  
+  4️⃣  Verificar resultado:
+      
+      \i database/migrations/PRODUCAO_verificacao.sql
+  
+  ✅  Pronto! Migração concluída.
+
+┌───────────────────────────────────────────────────────────────────┐
+│ ✅ VALIDAÇÃO RÁPIDA                                               │
+└───────────────────────────────────────────────────────────────────┘
+
+  Conecte ao banco e execute:
+
+  SELECT 
+    'confirmacao_identidade' as tabela,
+    COUNT(*) as registros,
+    (SELECT COUNT(*) FROM pg_policies 
+     WHERE tablename = 'confirmacao_identidade') as politicas_rls,
+    (SELECT COUNT(*) FROM pg_indexes 
+     WHERE tablename = 'confirmacao_identidade') as indices
+  FROM confirmacao_identidade;
+
+  Resultado esperado:
+  ✓ tabela: confirmacao_identidade
+  ✓ registros: 0 (tabela vazia, normal)
+  ✓ politicas_rls: 5
+  ✓ indices: 4
+
+┌───────────────────────────────────────────────────────────────────┐
+│ 🔙 ROLLBACK (Se Necessário)                                       │
+└───────────────────────────────────────────────────────────────────┘
+
+  SE algo der errado:
+
+  psql 'postgresql://...'
+  \i database/migrations/PRODUCAO_rollback_emergencia.sql
+
+┌───────────────────────────────────────────────────────────────────┐
+│ 📚 DOCUMENTAÇÃO COMPLETA                                          │
+└───────────────────────────────────────────────────────────────────┘
+
+  📘 PRODUCAO_README.md              - Documentação completa
+  📘 PRODUCAO_GUIA_EXECUCAO.md       - Passo a passo detalhado
+  📘 PRODUCAO_MANIFEST.md            - Índice de arquivos
+  📘 PRODUCAO_RESUMO_EXECUTIVO.md    - Para gestores
+
+  🔧 PRODUCAO_sync_confirmacao_identidade.sql  - Script principal
+  🔧 PRODUCAO_verificacao.sql                  - Verificação
+  🔧 PRODUCAO_rollback_emergencia.sql          - Rollback
+  🔧 PRODUCAO_teste_funcional.sql              - Testes
+  
+  🤖 PRODUCAO_executar_migracao.ps1            - Automação
+
+┌───────────────────────────────────────────────────────────────────┐
+│ ⚙️  INFORMAÇÕES TÉCNICAS                                          │
+└───────────────────────────────────────────────────────────────────┘
+
+  Banco:      neondb (Produção - Neon.tech São Paulo)
+  Tabela:     confirmacao_identidade
+  Migrações:  1012, 1013, 1014 (consolidadas)
+  Duração:    ~30 segundos
+  Downtime:   Não necessário
+  Risco:      Baixo (transacional)
+  Reversível: Sim
+
+┌───────────────────────────────────────────────────────────────────┐
+│ 🆘 SUPORTE                                                         │
+└───────────────────────────────────────────────────────────────────┘
+
+  Problema: Tabela já existe
+  Solução:  Migração já foi aplicada, não precisa fazer nada
+
+  Problema: Erro de conexão
+  Solução:  Verificar credenciais e conectividade
+
+  Problema: Erro na migração
+  Solução:  Transação será revertida automaticamente
+            Verifique os logs e tente novamente
+
+  Problema: Preciso reverter
+  Solução:  Execute PRODUCAO_rollback_emergencia.sql
+
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║   ✅ Boa sorte com a migração!                                    ║
+║   📅 Data: 12/02/2026                                             ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝

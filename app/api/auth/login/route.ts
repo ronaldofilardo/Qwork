@@ -26,12 +26,20 @@ export async function POST(request: Request) {
 
   try {
     console.log('Database info:', getDatabaseInfo());
-    const { cpf, senha } = await request.json();
+    const { cpf, senha, data_nascimento } = await request.json();
 
     // Validar entrada
-    if (!cpf || !senha) {
+    if (!cpf) {
       return NextResponse.json(
-        { error: 'CPF e senha são obrigatórios' },
+        { error: 'CPF é obrigatório' },
+        { status: 400 }
+      );
+    }
+
+    // Validar que pelo menos senha ou data_nascimento foi fornecida
+    if (!senha && !data_nascimento) {
+      return NextResponse.json(
+        { error: 'Senha ou data de nascimento é obrigatória' },
         { status: 400 }
       );
     }
@@ -283,30 +291,49 @@ export async function POST(request: Request) {
       );
     }
 
-    // PASSO 3: Validar senha
-    console.log('[LOGIN] Comparando senha contra hash...');
-    const senhaValida = await bcrypt.compare(senha, senhaHash);
-    console.log(`[LOGIN] Senha válida: ${senhaValida}`);
+    // PASSO 3: Validar senha ou permitir login de funcionário com data de nascimento
+    // Para funcionários: se data_nascimento foi enviada, pular validação de senha
+    // A validação real da data acontecerá no modal de confirmação de identidade
+    const isFuncionarioComDataNasc =
+      usuario.tipo_usuario === 'funcionario' && data_nascimento;
 
-    if (!senhaValida) {
-      try {
-        await registrarAuditoria({
-          entidade_tipo: 'login',
-          entidade_id: tomadorId,
-          acao: 'login_falha',
-          usuario_cpf: cpf,
-          metadados: { motivo: 'senha_invalida' },
-          ...contextoRequisicao,
-        });
-      } catch (err) {
-        console.warn(
-          '[LOGIN] Falha ao registrar auditoria (senha_invalida):',
-          err
+    if (isFuncionarioComDataNasc) {
+      console.log(
+        '[LOGIN] Funcionário com data de nascimento - pulando validação de senha'
+      );
+      // Não validar senha aqui - será validado no modal de confirmação
+    } else if (senha && senhaHash) {
+      // Validar senha para demais usuários
+      console.log('[LOGIN] Comparando senha contra hash...');
+      const senhaValida = await bcrypt.compare(senha, senhaHash);
+      console.log(`[LOGIN] Senha válida: ${senhaValida}`);
+
+      if (!senhaValida) {
+        try {
+          await registrarAuditoria({
+            entidade_tipo: 'login',
+            entidade_id: tomadorId,
+            acao: 'login_falha',
+            usuario_cpf: cpf,
+            metadados: { motivo: 'senha_invalida' },
+            ...contextoRequisicao,
+          });
+        } catch (err) {
+          console.warn(
+            '[LOGIN] Falha ao registrar auditoria (senha_invalida):',
+            err
+          );
+        }
+
+        return NextResponse.json(
+          { error: 'CPF ou senha inválidos' },
+          { status: 401 }
         );
       }
-
+    } else {
+      // Nenhuma validação possível
       return NextResponse.json(
-        { error: 'CPF ou senha inválidos' },
+        { error: 'Credenciais inválidas' },
         { status: 401 }
       );
     }
@@ -351,11 +378,49 @@ export async function POST(request: Request) {
 
     console.log(`[LOGIN] Sessão criada para ${perfil}`);
 
+    // VERIFICAR ACEITE DE TERMOS (apenas para rh e gestor)
+    let termosPendentes = {
+      termos_uso: false,
+      politica_privacidade: false,
+    };
+
+    if (perfil === 'rh' || perfil === 'gestor') {
+      try {
+        const aceitesResult = await query(
+          `SELECT termo_tipo FROM aceites_termos_usuario 
+           WHERE usuario_cpf = $1 AND usuario_tipo = $2`,
+          [cpf, perfil]
+        );
+
+        const aceites = aceitesResult.rows;
+        const temTermosUso = aceites.some(
+          (a) => a.termo_tipo === 'termos_uso'
+        );
+        const temPolitica = aceites.some(
+          (a) => a.termo_tipo === 'politica_privacidade'
+        );
+
+        termosPendentes = {
+          termos_uso: !temTermosUso,
+          politica_privacidade: !temPolitica,
+        };
+      } catch (err) {
+        console.error('[LOGIN] Erro ao verificar termos:', err);
+        // Em caso de erro, assumir pendente (seguro)
+        termosPendentes = {
+          termos_uso: true,
+          politica_privacidade: true,
+        };
+      }
+    }
+
     return NextResponse.json({
       success: true,
       cpf: usuario.cpf,
       nome: usuario.nome,
       perfil: perfil,
+      data_nascimento: usuario.data_nascimento || null,
+      termosPendentes,
       redirectTo:
         perfil === 'admin'
           ? '/admin'

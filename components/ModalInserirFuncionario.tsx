@@ -360,26 +360,15 @@ export default function ModalInserirFuncionario({
                 />
               </div>
 
-              {/* Senha */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Senha
-                </label>
-                <input
-                  type="password"
-                  value={formData.senha}
-                  onChange={(e) =>
-                    handleInputChange(
-                      'senha',
-                      (e.target as HTMLInputElement).value
-                    )
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Padrão: 123456"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Se não informada, será usada a senha padrão
-                </p>
+              {/* Senha - Gerada automaticamente a partir da data de nascimento */}
+              <div className="col-span-2">
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-xs text-blue-700">
+                    ℹ️ <strong>Senha automática:</strong> A senha será gerada
+                    automaticamente a partir da data de nascimento (formato:
+                    DDMMYYYY)
+                  </p>
+                </div>
               </div>
 
               {/* Matrícula */}

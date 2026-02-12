@@ -217,10 +217,20 @@ export default function FuncionariosSection({
           ? '/api/entidade/funcionarios/status'
           : '/api/rh/funcionarios/status';
 
+      const body: { cpf: string; ativo: boolean; empresa_id?: number } = {
+        cpf,
+        ativo: !currentStatus,
+      };
+
+      // Para clínica, incluir empresa_id no body
+      if (contexto === 'clinica' && empresaId) {
+        body.empresa_id = empresaId;
+      }
+
       const res = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf, ativo: !currentStatus }),
+        body: JSON.stringify(body),
       });
 
       if (res.ok) {

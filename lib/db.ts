@@ -2,7 +2,8 @@ import dotenv from 'dotenv';
 
 // Load local env early to ensure LOCAL_DATABASE_URL, ALLOW_PROD_DB_LOCAL, and other overrides are available
 // This helps when scripts import lib/db.ts directly and .env.local wasn't loaded yet by the caller.
-dotenv.config({ path: '.env.local', override: false });
+// CRÍTICO: override: true garante que .env.local SEMPRE sobrescreve outras configurações
+dotenv.config({ path: '.env.local', override: true });
 
 import pg from 'pg';
 import bcrypt from 'bcryptjs';

@@ -307,15 +307,27 @@ describe('Inserção Individual de Funcionários', () => {
     });
 
     it('deve criar funcionário com sucesso', async () => {
+      // Reconfigurar mock da sessão (caso tenha sido modificado)
+      mockRequireRHWithEmpresaAccess.mockResolvedValue({
+        cpf: '11111111111',
+        nome: 'RH Teste',
+        perfil: 'rh',
+        clinica_id: 1,
+      });
+
       mockQuery
         .mockResolvedValueOnce({
           rows: [],
           rowCount: 0,
-        }) // Verificar duplicata
+        }) // Query 1: Verificar duplicata
+        .mockResolvedValueOnce({
+          rowCount: 1,
+          rows: [{ id: 1 }],
+        }) // Query 2: INSERT funcionários (RETURNING id)
         .mockResolvedValueOnce({
           rowCount: 1,
           rows: [],
-        }); // INSERT
+        }); // Query 3: INSERT funcionarios_clinicas
 
       const { POST } = await import('@/app/api/rh/funcionarios/route');
 
@@ -326,12 +338,11 @@ describe('Inserção Individual de Funcionários', () => {
           body: JSON.stringify({
             cpf: '12345678909',
             nome: 'João Silva',
-            data_nascimento: '1985-04-15',
+            data_nascimento: '1974-10-24',
             setor: 'TI',
             funcao: 'Desenvolvedor',
             email: 'joao@teste.com',
             empresa_id: 1,
-            senha: 'senha123',
             matricula: 'MAT001',
             nivel_cargo: 'operacional',
             turno: 'Manhã',
@@ -346,10 +357,10 @@ describe('Inserção Individual de Funcionários', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.funcionario.cpf).toBe('12345678909');
-      expect(mockBcryptHash).toHaveBeenCalledWith('senha123', 10);
+      expect(mockBcryptHash).toHaveBeenCalledWith('24101974', 10);
     });
 
-    it('deve usar senha padrão se não fornecida', async () => {
+    it('deve gerar senha automaticamente a partir da data de nascimento', async () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })
         .mockResolvedValueOnce({ rowCount: 1, rows: [] });
@@ -363,7 +374,7 @@ describe('Inserção Individual de Funcionários', () => {
           body: JSON.stringify({
             cpf: '12345678909',
             nome: 'João Silva',
-            data_nascimento: '1985-04-15',
+            data_nascimento: '1974-10-24',
             setor: 'TI',
             funcao: 'Dev',
             email: 'joao@teste.com',
@@ -375,7 +386,7 @@ describe('Inserção Individual de Funcionários', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(mockBcryptHash).toHaveBeenCalledWith('123456', 10);
+      expect(mockBcryptHash).toHaveBeenCalledWith('24101974', 10);
     });
 
     it('deve prevenir duplicata de CPF', async () => {

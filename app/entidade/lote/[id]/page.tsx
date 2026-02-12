@@ -670,7 +670,7 @@ export default function DetalhesLotePage() {
     toast.loading('Gerando relatório...', { id: 'rel-individual' });
     try {
       const response = await fetch(
-        `/api/entidade/lote/${loteId}/relatorio-individual?cpf=${cpf}`
+        `/api/entidade/relatorio-individual-pdf?lote_id=${loteId}&cpf=${cpf}`
       );
 
       if (!response.ok) {
@@ -709,12 +709,13 @@ export default function DetalhesLotePage() {
   const handleDownloadReport = async () => {
     toast.loading('Gerando relatório...', { id: 'report' });
     try {
-      const response = await fetch(`/api/entidade/lote/${loteId}/relatorio`, {
-        method: 'POST',
-      });
+      const response = await fetch(
+        `/api/entidade/relatorio-lote-pdf?lote_id=${loteId}`
+      );
 
       if (!response.ok) {
-        throw new Error('Erro ao gerar relatório');
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao gerar relatório');
       }
 
       const blob = await response.blob();

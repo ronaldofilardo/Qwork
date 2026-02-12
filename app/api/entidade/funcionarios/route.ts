@@ -4,6 +4,7 @@ import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { requireEntity } from '@/lib/session';
 import { validarCPF, limparCPF } from '@/lib/cpf-utils';
 import bcrypt from 'bcryptjs';
+import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 
 /**
  * GET /api/entidade/funcionarios
@@ -111,7 +112,7 @@ export async function POST(request: Request) {
       setor,
       funcao,
       email,
-      senha,
+      _senha, // Ignorado: a senha é gerada automaticamente da data de nascimento
       perfil = 'funcionario',
       matricula,
       nivel_cargo,
@@ -154,8 +155,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Hash da senha
-    const senhaHash = await bcrypt.hash(senha || '123456', 10);
+    // Hash da senha baseada na data de nascimento
+    const senhaPlaintext = gerarSenhaDeNascimento(data_nascimento);
+    const senhaHash = await bcrypt.hash(senhaPlaintext, 10);
 
     // ARQUITETURA SEGREGADA: Inserir em 2 etapas
     // 1. Inserir funcionário (sem FKs diretas)

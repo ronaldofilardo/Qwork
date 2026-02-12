@@ -41,6 +41,11 @@ for (const file of files) {
     continue;
   }
 
+  // Skip jest.setup.js as it's a protection module that intentionally references nr-bps_db in error messages
+  if (file.includes('jest.setup.js')) {
+    continue;
+  }
+
   const content = fs.readFileSync(file, 'utf8');
   // Use regex to match nr-bps_db but NOT nr-bps_db_test
   if (
