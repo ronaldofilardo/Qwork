@@ -30,10 +30,7 @@ export async function POST(request: Request) {
 
     // Validar entrada
     if (!cpf) {
-      return NextResponse.json(
-        { error: 'CPF é obrigatório' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'CPF é obrigatório' }, { status: 400 });
     }
 
     // Validar que pelo menos senha ou data_nascimento foi fornecida
@@ -393,9 +390,7 @@ export async function POST(request: Request) {
         );
 
         const aceites = aceitesResult.rows;
-        const temTermosUso = aceites.some(
-          (a) => a.termo_tipo === 'termos_uso'
-        );
+        const temTermosUso = aceites.some((a) => a.termo_tipo === 'termos_uso');
         const temPolitica = aceites.some(
           (a) => a.termo_tipo === 'politica_privacidade'
         );
@@ -405,13 +400,15 @@ export async function POST(request: Request) {
           politica_privacidade: !temPolitica,
         };
       } catch (err: any) {
-        // HOTFIX: Se tabela não existe (42P01), assumir termos não pendentes
-        // para não quebrar produção antes das migrations serem executadas
+        // HOTFIX: Se tabela não existe (42P01), assumir termos PENDENTES (lado seguro)
+        // Assim o modal será mostrado, e quando tentar registrar, receberá erro 503 amigável
         if (err?.code === '42P01') {
-          console.log('[LOGIN] Tabela de termos ainda não existe - assumindo termos não requeridos');
+          console.log(
+            '[LOGIN] Tabela de termos ainda não existe - assumindo termos como pendentes'
+          );
           termosPendentes = {
-            termos_uso: false,
-            politica_privacidade: false,
+            termos_uso: true,
+            politica_privacidade: true,
           };
         } else {
           console.error('[LOGIN] Erro ao verificar termos:', err);
