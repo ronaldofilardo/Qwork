@@ -8,7 +8,7 @@
 Em produção (Neon/Vercel), as rotas de reset de avaliação estavam falhando com o erro:
 
 ```
-NeonDbError: SECURITY: app.current_user_cpf not set. 
+NeonDbError: SECURITY: app.current_user_cpf not set.
 Call SET LOCAL app.current_user_cpf before query.
 ```
 
@@ -51,6 +51,7 @@ await query('SELECT ...');
 ### Passar Sessão para Todas as Queries
 
 A função `query()` em `lib/db.ts` aceita um terceiro parâmetro `session` que garante:
+
 - Criação de transação automática
 - Configuração do contexto `app.current_user_cpf` e `app.current_user_perfil`
 - **Mesma conexão** para todas as operações dentro da transação
@@ -60,6 +61,7 @@ A função `query()` em `lib/db.ts` aceita um terceiro parâmetro `session` que 
 #### 1. Remoção de Transação Manual
 
 **Antes:**
+
 ```typescript
 await query('BEGIN');
 
@@ -76,6 +78,7 @@ try {
 ```
 
 **Depois:**
+
 ```typescript
 try {
   const loteCheck = await query('SELECT ...', [loteId], user);
@@ -135,16 +138,18 @@ export async function query<T = any>(
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
-      
+
       // Configurar contexto dentro da MESMA conexão
       await client.query(`SET LOCAL app.current_user_cpf = '${session.cpf}'`);
-      await client.query(`SET LOCAL app.current_user_perfil = '${session.perfil}'`);
+      await client.query(
+        `SET LOCAL app.current_user_perfil = '${session.perfil}'`
+      );
       await client.query(`SET LOCAL app.current_user_clinica_id = ...`);
       await client.query(`SET LOCAL app.current_user_entidade_id = ...`);
-      
+
       // Executar query na MESMA conexão
       const result = await client.query(text, params);
-      
+
       await client.query('COMMIT');
       return result;
     } catch (error) {
@@ -159,6 +164,7 @@ export async function query<T = any>(
 ```
 
 **Vantagens:**
+
 - ✅ Garante mesma conexão para toda a transação
 - ✅ Contexto de segurança sempre configurado
 - ✅ Tratamento automático de commit/rollback
@@ -169,11 +175,13 @@ export async function query<T = any>(
 Para verificar que a correção está funcionando em produção:
 
 1. Logs devem mostrar sucesso ao invés de erro:
+
    ```
    [RESET-AVALIACAO] Reset successful - resetId: X, avaliacaoId: Y...
    ```
 
 2. Não deve mais aparecer o erro:
+
    ```
    SECURITY: app.current_user_cpf not set
    ```
