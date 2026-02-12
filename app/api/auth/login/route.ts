@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { query, getDatabaseInfo } from '@/lib/db';
 import { createSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
+import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 import {
   registrarAuditoria,
   extrairContextoRequisicao,
@@ -289,18 +290,94 @@ export async function POST(request: Request) {
     }
 
     // PASSO 3: Validar senha ou permitir login de funcionário com data de nascimento
-    // Para funcionários: se data_nascimento foi enviada, pular validação de senha
-    // A validação real da data acontecerá no modal de confirmação de identidade
+    // Para funcionários: validar que data_nascimento fornecida gera hash igual ao armazenado
     const isFuncionarioComDataNasc =
       usuario.tipo_usuario === 'funcionario' && data_nascimento;
 
     if (isFuncionarioComDataNasc) {
       console.log(
-        '[LOGIN] Funcionário com data de nascimento - pulando validação de senha'
+        '[LOGIN] Funcionário com data de nascimento - validando contra hash armazenado'
       );
-      // Não validar senha aqui - será validado no modal de confirmação
+
+      // Verificar se senhaHash existe
+      if (!senhaHash) {
+        console.error(
+          `[LOGIN] senhaHash não encontrado para funcionário CPF ${cpf}`
+        );
+        return NextResponse.json(
+          { error: 'Configuração de senha inválida. Contate o administrador.' },
+          { status: 500 }
+        );
+      }
+
+      // Gerar a senha esperada a partir da data de nascimento
+      try {
+        const senhaEsperada = gerarSenhaDeNascimento(data_nascimento);
+        console.log(
+          '[LOGIN] Senha gerada a partir de data_nascimento, comparando hash...'
+        );
+        console.log(`[LOGIN] DEBUG - senhaEsperada: ${senhaEsperada}`);
+        console.log(
+          `[LOGIN] DEBUG - senhaHash existe: ${!!senhaHash}, primeiros 10 chars: ${senhaHash?.substring(0, 10)}`
+        );
+
+        // Validar o hash da senha gerada contra o hash armazenado
+        const senhaValida = await bcrypt.compare(senhaEsperada, senhaHash);
+        console.log(`[LOGIN] Senha válida: ${senhaValida}`);
+
+        if (!senhaValida) {
+          try {
+            await registrarAuditoria({
+              entidade_tipo: 'login',
+              entidade_id: tomadorId,
+              acao: 'login_falha',
+              usuario_cpf: cpf,
+              metadados: {
+                motivo: 'data_nascimento_invalida',
+                tipo_usuario: usuario.tipo_usuario,
+              },
+              ...contextoRequisicao,
+            });
+          } catch (err) {
+            console.warn(
+              '[LOGIN] Falha ao registrar auditoria (data_nascimento_invalida):',
+              err
+            );
+          }
+
+          return NextResponse.json(
+            { error: 'Data de nascimento inválida' },
+            { status: 401 }
+          );
+        }
+      } catch (error) {
+        console.error(
+          '[LOGIN] Erro ao gerar/validar senha de data_nascimento:',
+          error
+        );
+        try {
+          await registrarAuditoria({
+            entidade_tipo: 'login',
+            entidade_id: tomadorId,
+            acao: 'login_falha',
+            usuario_cpf: cpf,
+            metadados: {
+              motivo: 'data_nascimento_formato_invalido',
+              tipo_usuario: usuario.tipo_usuario,
+            },
+            ...contextoRequisicao,
+          });
+        } catch (err) {
+          console.warn('[LOGIN] Falha ao registrar auditoria:', err);
+        }
+
+        return NextResponse.json(
+          { error: 'Data de nascimento em formato inválido' },
+          { status: 401 }
+        );
+      }
     } else if (senha && senhaHash) {
-      // Validar senha para demais usuários
+      // Validar senha para demais usuários (RH, Gestor)
       console.log('[LOGIN] Comparando senha contra hash...');
       const senhaValida = await bcrypt.compare(senha, senhaHash);
       console.log(`[LOGIN] Senha válida: ${senhaValida}`);
