@@ -40,7 +40,8 @@ export async function POST(
       FROM lotes_avaliacao la
       WHERE la.id = $1
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (loteCheck.rowCount === 0) {
@@ -58,7 +59,8 @@ export async function POST(
     // Verificar se emissão foi solicitada (princípio da imutabilidade)
     const emissaoSolicitadaResult = await query(
       `SELECT COUNT(*) as count FROM v_fila_emissao WHERE lote_id = $1`,
-      [loteId]
+      [loteId],
+      user
     );
     const emissaoSolicitada =
       parseInt(emissaoSolicitadaResult.rows[0].count) > 0;
@@ -104,7 +106,8 @@ export async function POST(
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       WHERE a.id = $1 AND a.lote_id = $2
     `,
-      [avaliacaoId, loteId]
+      [avaliacaoId, loteId],
+      user
     );
 
     if (avaliacaoCheck.rowCount === 0) {
@@ -158,7 +161,8 @@ export async function POST(
       FROM avaliacoes a
       WHERE a.lote_id = $1
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     const { ativas, concluidas, inativadas, liberadas } = statsResult.rows[0];
@@ -188,7 +192,8 @@ export async function POST(
     // Atualizar status do lote se mudou
     const statusAtualResult = await query(
       'SELECT status FROM lotes_avaliacao WHERE id = $1',
-      [loteId]
+      [loteId],
+      user
     );
     const statusAtual = statusAtualResult.rows[0]?.status;
 
@@ -196,7 +201,7 @@ export async function POST(
       await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
         novoStatus,
         loteId,
-      ]);
+      ], user);
     }
 
     // Log da ação

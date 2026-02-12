@@ -63,7 +63,8 @@ export const GET = async (req: Request) => {
       FROM empresas_clientes ec
       WHERE ec.id = $1 AND ec.ativa = true
     `,
-      [empresaId]
+      [empresaId],
+      user
     );
 
     if (empresaCheck.rowCount === 0) {
@@ -133,7 +134,8 @@ export const GET = async (req: Request) => {
         ORDER BY la.liberado_em DESC
         LIMIT $3
       `,
-        [empresaId, clinicaId, limit]
+        [empresaId, clinicaId, limit],
+        user
       );
       console.log(
         `[DEBUG /api/rh/lotes] query returned rows=${lotesQuery.rowCount}`
@@ -176,7 +178,8 @@ export const GET = async (req: Request) => {
       try {
         const validacao = await query(
           `SELECT * FROM validar_lote_pre_laudo($1)`,
-          [lote.id]
+          [lote.id],
+          user
         );
 
         const resultado = validacao.rows[0] || {

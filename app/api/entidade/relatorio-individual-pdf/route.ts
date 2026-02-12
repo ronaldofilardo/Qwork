@@ -50,7 +50,8 @@ export async function GET(req: NextRequest) {
         AND fe.ativo = true
         AND la.entidade_id = $3
     `,
-      [loteId, cpf, session.entidade_id]
+      [loteId, cpf, session.entidade_id],
+      session
     );
 
     if (avaliacaoResult.rows.length === 0) {
@@ -76,7 +77,8 @@ export async function GET(req: NextRequest) {
       GROUP BY grupo
       ORDER BY grupo
     `,
-      [avaliacao.id]
+      [avaliacao.id],
+      session
     );
 
     // Gerar PDF usando helper compartilhado
