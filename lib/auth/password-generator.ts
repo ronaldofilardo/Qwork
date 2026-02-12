@@ -22,13 +22,16 @@ export function gerarSenhaDeNascimento(dataNascimento: string): string {
   let mes: string;
   let ano: string;
 
+  // Normalizar entrada: remover espaços
+  const entrada = dataNascimento.trim();
+
   // Detectar formato e extrair componentes
-  if (dataNascimento.includes('/')) {
+  if (entrada.includes('/')) {
     // Formato BR: DD/MM/YYYY ou DD/MM/YY
-    const partes = dataNascimento.split('/');
+    const partes = entrada.split('/');
     if (partes.length !== 3) {
       throw new Error(
-        'Data de nascimento inválida. Use DD/MM/YYYY ou YYYY-MM-DD'
+        'Data de nascimento inválida. Use DD/MM/YYYY, YYYY-MM-DD ou DDMMYYYY'
       );
     }
     dia = partes[0].padStart(2, '0');
@@ -40,20 +43,46 @@ export function gerarSenhaDeNascimento(dataNascimento: string): string {
       const anoNum = parseInt(ano, 10);
       ano = anoNum >= 0 && anoNum <= 30 ? `20${ano}` : `19${ano}`;
     }
-  } else if (dataNascimento.includes('-')) {
+  } else if (entrada.includes('-')) {
     // Formato ISO: YYYY-MM-DD
-    const partes = dataNascimento.split('-');
+    const partes = entrada.split('-');
     if (partes.length !== 3) {
       throw new Error(
-        'Data de nascimento inválida. Use DD/MM/YYYY ou YYYY-MM-DD'
+        'Data de nascimento inválida. Use DD/MM/YYYY, YYYY-MM-DD ou DDMMYYYY'
       );
     }
     ano = partes[0];
     mes = partes[1].padStart(2, '0');
     dia = partes[2].padStart(2, '0');
+  } else if (/^\d{8}$/.test(entrada)) {
+    // Formato sem separador com 8 dígitos: pode ser DDMMYYYY ou YYYYMMDD
+    // Heurística: se primeiros 4 dígitos >= 1900 e <= ano atual, é YYYYMMDD
+    // Caso contrário é DDMMYYYY
+    const primeirosPrimeiros4 = parseInt(entrada.substring(0, 4), 10);
+    const anoAtual = new Date().getFullYear();
+
+    if (primeirosPrimeiros4 >= 1900 && primeirosPrimeiros4 <= anoAtual) {
+      // Formato YYYYMMDD
+      ano = entrada.substring(0, 4);
+      mes = entrada.substring(4, 6).padStart(2, '0');
+      dia = entrada.substring(6, 8).padStart(2, '0');
+    } else {
+      // Formato DDMMYYYY
+      dia = entrada.substring(0, 2).padStart(2, '0');
+      mes = entrada.substring(2, 4).padStart(2, '0');
+      ano = entrada.substring(4, 8);
+    }
+  } else if (/^\d{6}$/.test(entrada)) {
+    // Formato com 6 dígitos: DDMMYY ou YYMMDD
+    // Assumir DDMMYY (data brasileira com ano curto)
+    dia = entrada.substring(0, 2).padStart(2, '0');
+    mes = entrada.substring(2, 4).padStart(2, '0');
+    const anoAbreviado = entrada.substring(4, 6);
+    const anoNum = parseInt(anoAbreviado, 10);
+    ano = anoNum >= 0 && anoNum <= 30 ? `20${anoAbreviado}` : `19${anoAbreviado}`;
   } else {
     throw new Error(
-      'Data de nascimento inválida. Use DD/MM/YYYY ou YYYY-MM-DD'
+      'Data de nascimento inválida. Use DD/MM/YYYY, YYYY-MM-DD ou DDMMYYYY'
     );
   }
 
