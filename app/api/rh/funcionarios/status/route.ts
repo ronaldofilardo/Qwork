@@ -5,7 +5,7 @@ import { StatusAvaliacao } from '@/lib/types/avaliacao-status';
 import { StatusLote } from '@/lib/types/lote-status';
 
 export const dynamic = 'force-dynamic';
-async function updateLotesStatus(cpf: string) {
+async function updateLotesStatus(cpf: string, session: any) {
   // Buscar lotes que têm avaliações deste funcionário
   const lotesResult = await query(
     `
@@ -14,7 +14,8 @@ async function updateLotesStatus(cpf: string) {
     JOIN avaliacoes a ON la.id = a.lote_id
     WHERE a.funcionario_cpf = $1
   `,
-    [cpf]
+    [cpf],
+    session
   );
 
   console.log(
@@ -31,7 +32,8 @@ async function updateLotesStatus(cpf: string) {
       FROM avaliacoes a
       WHERE a.lote_id = $3
     `,
-      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id]
+      [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id],
+      session
     );
 
     const { ativas, concluidas } = statsResult.rows[0];
@@ -63,7 +65,7 @@ async function updateLotesStatus(cpf: string) {
       await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
         novoStatus,
         lote.id,
-      ]);
+      ], session);
       console.log(
         `[INFO] Lote ${lote.id} alterado de '${lote.status}' para '${novoStatus}'`
       );
@@ -108,7 +110,8 @@ async function handleStatusUpdate(request: NextRequest) {
          FROM funcionarios f
          INNER JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
          WHERE f.cpf = $1 AND fc.empresa_id = $2 AND fc.clinica_id = $3 AND fc.ativo = true`,
-        [cpf, empresaId, clinicaId]
+        [cpf, empresaId, clinicaId],
+        session
       );
     } else {
       // Buscar funcionário pela clínica apenas (qualquer empresa da clínica)
@@ -117,7 +120,8 @@ async function handleStatusUpdate(request: NextRequest) {
          FROM funcionarios f
          INNER JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
          WHERE f.cpf = $1 AND fc.clinica_id = $2 AND fc.ativo = true`,
-        [cpf, clinicaId]
+        [cpf, clinicaId],
+        session
       );
     }
 
@@ -138,54 +142,39 @@ async function handleStatusUpdate(request: NextRequest) {
       });
     }
 
-    // Iniciar transação e configurar contexto de segurança
-    await query('BEGIN');
+    // Atualizar status do funcionário (com session para auditoria)
+    await query('UPDATE funcionarios SET ativo = $1 WHERE cpf = $2', [
+      ativo,
+      cpf,
+    ], session);
 
-    try {
-      // Configurar contexto de segurança para auditoria
-      await query(`SET LOCAL app.current_user_cpf = '${session.cpf}'`);
-      await query(`SET LOCAL app.current_user_perfil = '${session.perfil}'`);
-
-      // Atualizar status do funcionário
-      await query('UPDATE funcionarios SET ativo = $1 WHERE cpf = $2', [
-        ativo,
-        cpf,
-      ]);
-
-      // Atualizar status das avaliações baseado no status do funcionário
-      if (!ativo) {
-        // Desligando da empresa: marcar avaliações não concluídas como 'inativada' (concluídas permanecem)
-        // Nota: verifica both 'concluida' e 'concluido' para retrocompatibilidade
-        const updateResult = await query(
-          "UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != 'concluida' AND status != 'concluido' RETURNING id, status",
-          [StatusAvaliacao.INATIVADA, cpf]
-        );
-        console.log(
-          `[INFO] Inativadas ${updateResult.rowCount} avaliações do funcionário ${cpf}`
-        );
-        if (updateResult.rowCount > 0) {
-          console.log('[DEBUG] Avaliações inativadas:', updateResult.rows);
-        }
+    // Atualizar status das avaliações baseado no status do funcionário
+    if (!ativo) {
+      // Desligando da empresa: marcar avaliações não concluídas como 'inativada' (concluídas permanecem)
+      // Nota: verifica both 'concluida' e 'concluido' para retrocompatibilidade
+      const updateResult = await query(
+        "UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != 'concluida' AND status != 'concluido' RETURNING id, status",
+        [StatusAvaliacao.INATIVADA, cpf],
+        session
+      );
+      console.log(
+        `[INFO] Inativadas ${updateResult.rowCount} avaliações do funcionário ${cpf}`
+      );
+      if (updateResult.rowCount > 0) {
+        console.log('[DEBUG] Avaliações inativadas:', updateResult.rows);
       }
-      // Reativando: não há necessidade de alterar, pois concluídas já estão corretas e outras permanecem inativadas
-
-      // Atualizar status dos lotes afetados
-      await updateLotesStatus(cpf);
-
-      // Commit da transação
-      await query('COMMIT');
-
-      return NextResponse.json({
-        success: true,
-        message: ativo
-          ? 'Funcionário reativado com sucesso. Ele voltará a receber novos lotes de avaliação.'
-          : 'Funcionário desligado da empresa. Avaliações não concluídas foram marcadas como inativadas, mas seus dados e histórico foram preservados.',
-      });
-    } catch (txError) {
-      // Rollback em caso de erro
-      await query('ROLLBACK').catch(() => {});
-      throw txError;
     }
+    // Reativando: não há necessidade de alterar, pois concluídas já estão corretas e outras permanecem inativadas
+
+    // Atualizar status dos lotes afetados
+    await updateLotesStatus(cpf, session);
+
+    return NextResponse.json({
+      success: true,
+      message: ativo
+        ? 'Funcionário reativado com sucesso. Ele voltará a receber novos lotes de avaliação.'
+        : 'Funcionário desligado da empresa. Avaliações não concluídas foram marcadas como inativadas, mas seus dados e histórico foram preservados.',
+    });
   } catch (error) {
     console.error('Erro ao atualizar status do funcionário:', error);
     return NextResponse.json(
