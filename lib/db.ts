@@ -550,7 +550,10 @@ export async function query<T = any>(
           try {
             await client.query('ROLLBACK');
           } catch (rollbackErr) {
-            console.error('[db][query] Erro durante ROLLBACK em Neon:', rollbackErr);
+            console.error(
+              '[db][query] Erro durante ROLLBACK em Neon:',
+              rollbackErr
+            );
           }
           throw err;
         } finally {

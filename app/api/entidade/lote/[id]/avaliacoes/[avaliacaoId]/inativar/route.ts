@@ -215,10 +215,11 @@ export async function POST(
     const statusAtual = statusAtualResult.rows[0]?.status;
 
     if (novoStatus !== statusAtual) {
-      await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [
-        novoStatus,
-        loteId,
-      ], user);
+      await query(
+        'UPDATE lotes_avaliacao SET status = $1 WHERE id = $2',
+        [novoStatus, loteId],
+        user
+      );
     }
 
     // Log da ação
