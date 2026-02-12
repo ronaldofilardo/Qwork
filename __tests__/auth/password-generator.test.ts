@@ -54,6 +54,48 @@ describe('gerarSenhaDeNascimento', () => {
     });
   });
 
+  describe('Formato sem separadores (DDMMYYYY ou YYYYMMDD)', () => {
+    it('deve aceitar formato DDMMYYYY (8 dígitos)', () => {
+      const resultado = gerarSenhaDeNascimento('24101974');
+      expect(resultado).toBe('24101974');
+    });
+
+    it('deve aceitar formato DDMMYYYY com data de exemplo do usuário', () => {
+      const resultado = gerarSenhaDeNascimento('01012011');
+      expect(resultado).toBe('01012011');
+    });
+
+    it('deve aceitar formato YYYYMMDD (8 dígitos)', () => {
+      const resultado = gerarSenhaDeNascimento('19741024');
+      expect(resultado).toBe('24101974');
+    });
+
+    it('deve aceitar formato DDMMYY (6 dígitos) e converter para DDMMYYYY', () => {
+      const resultado = gerarSenhaDeNascimento('241074');
+      expect(resultado).toBe('24101974');
+    });
+
+    it('deve aceitar formato DDMMYY para ano 20XX', () => {
+      const resultado = gerarSenhaDeNascimento('150100');
+      expect(resultado).toBe('15012000');
+    });
+
+    it('deve adicionar zeros à esquerda se necessário em formato sem separadores', () => {
+      const resultado = gerarSenhaDeNascimento('05041985');
+      expect(resultado).toBe('05041985');
+    });
+
+    it('deve gerar sempre 8 dígitos para formatos sem separadores', () => {
+      const datas = ['24101974', '19741024', '05041985', '19850405'];
+
+      datas.forEach((data) => {
+        const senha = gerarSenhaDeNascimento(data);
+        expect(senha).toHaveLength(8);
+        expect(/^\d{8}$/.test(senha)).toBe(true);
+      });
+    });
+  });
+
   describe('Validações', () => {
     it('deve rejeitar data vazia', () => {
       expect(() => gerarSenhaDeNascimento('')).toThrow(
