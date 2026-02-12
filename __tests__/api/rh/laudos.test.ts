@@ -143,7 +143,8 @@ describe.skip('/api/rh/laudos', () => {
     expect(data.laudos[0].empresa_nome).toBe('Empresa Filtrada');
 
     // Verificar que a query foi chamada com empresa_id (params começam com clinicaId e empresaId)
-    const lastCall = mockQuery.mock.calls[mockQuery.mock.calls.length - 1] || [];
+    const lastCall =
+      mockQuery.mock.calls[mockQuery.mock.calls.length - 1] || [];
     const calledParams = lastCall[1];
     expect(calledParams[0]).toBe(1);
     expect(calledParams[1]).toBe(2);

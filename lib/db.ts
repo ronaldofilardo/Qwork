@@ -505,6 +505,60 @@ export async function query<T = any>(
       }
     } else if (isProduction) {
       // Neon Database (Produção)
+      // Se houver sessão, usar Pool com transação para garantir contexto de segurança
+      if (session) {
+        const pool = await getNeonPool();
+        if (!pool) {
+          throw new Error('Neon Pool não disponível');
+        }
+
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+
+          // Configurar contexto de auditoria dentro da transação
+          const escapeString = (str: string) => str.replace(/'/g, "''");
+          await client.query(
+            `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || '')))'`
+          );
+
+          // Executar a query principal
+          const result = await client.query(text, params);
+          await client.query('COMMIT');
+
+          const duration = Date.now() - start;
+          if (DEBUG_DB) {
+            console.log(
+              `[db][query] neon (${duration}ms): ${text.substring(0, 200)}...`
+            );
+          }
+
+          return {
+            rows: result.rows as T[],
+            rowCount: result.rowCount || 0,
+          };
+        } catch (err) {
+          try {
+            await client.query('ROLLBACK');
+          } catch (rollbackErr) {
+            console.error('[db][query] Erro durante ROLLBACK em Neon:', rollbackErr);
+          }
+          throw err;
+        } finally {
+          client.release();
+        }
+      }
+
+      // Sem sessão, usar sql() normal
       const sql = await getNeonSql();
       if (!sql) {
         throw new Error('Conexão Neon não disponível');
@@ -514,47 +568,6 @@ export async function query<T = any>(
         await sql('SET search_path TO public;');
       }
 
-      // Para Neon: não podemos enviar múltiplos comandos em uma prepared statement.
-      // Se houver sessão, execute os set_config separadamente e depois a query principal.
-      if (session) {
-        const escapeString = (str: string) => String(str).replace(/'/g, "''");
-
-        const setCpf = `SELECT set_config('app.current_user_cpf', '${escapeString(
-          session.cpf
-        )}', true)`;
-        const setPerfil = `SELECT set_config('app.current_user_perfil', '${escapeString(
-          session.perfil
-        )}', true)`;
-        const setClinica = `SELECT set_config('app.current_user_clinica_id', '${escapeString(
-          String(session.clinica_id || '')
-        )}', true)`;
-        const setEntidade = `SELECT set_config('app.current_user_entidade_id', '${escapeString(
-          String(session.entidade_id || '')
-        )}', true)`;
-
-        try {
-          await sql(setCpf);
-          await sql(setPerfil);
-          await sql(setClinica);
-          await sql(setEntidade);
-        } catch (err) {
-          console.warn('[db][neon] falha ao aplicar set_config:', err);
-        }
-
-        const rows = await sql(text, params || []);
-        const duration = Date.now() - start;
-        if (DEBUG_DB) {
-          console.log(
-            `[db][query] neon (${duration}ms): ${text.substring(0, 200)}...`
-          );
-        }
-        return {
-          rows: rows as T[],
-          rowCount: Array.isArray(rows) ? rows.length : 0,
-        };
-      }
-
-      // Sem sessão, executar diretamente
       const rows = await sql(text, params || []);
       const duration = Date.now() - start;
       if (DEBUG_DB) {

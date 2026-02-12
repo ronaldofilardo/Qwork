@@ -34,7 +34,9 @@ describe('registrarAceite - Hotfix TABLES_NOT_MIGRATED', () => {
   describe('Verificação de Tabelas', () => {
     it('deve lançar erro TABLES_NOT_MIGRATED quando tabela não existe (código 42P01)', async () => {
       // Simular erro de tabela não encontrada
-      const sqlError: any = new Error('relation "aceites_termos_usuario" does not exist');
+      const sqlError: any = new Error(
+        'relation "aceites_termos_usuario" does not exist'
+      );
       sqlError.code = '42P01';
 
       mockQuery.mockRejectedValueOnce(sqlError);

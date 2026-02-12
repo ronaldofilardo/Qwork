@@ -57,11 +57,14 @@ describe('/api/termos/registrar - Hotfix TABLES_NOT_MIGRATED', () => {
         )
       );
 
-      const request = new Request('http://localhost:3000/api/termos/registrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ termo_tipo: 'termos_uso' }),
-      });
+      const request = new Request(
+        'http://localhost:3000/api/termos/registrar',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ termo_tipo: 'termos_uso' }),
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -89,11 +92,14 @@ describe('/api/termos/registrar - Hotfix TABLES_NOT_MIGRATED', () => {
         new Error('Erro de conexão desconhecido')
       );
 
-      const request = new Request('http://localhost:3000/api/termos/registrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ termo_tipo: 'politica_privacidade' }),
-      });
+      const request = new Request(
+        'http://localhost:3000/api/termos/registrar',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ termo_tipo: 'politica_privacidade' }),
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();
@@ -124,11 +130,14 @@ describe('/api/termos/registrar - Hotfix TABLES_NOT_MIGRATED', () => {
         aceito_em: new Date().toISOString(),
       });
 
-      const request = new Request('http://localhost:3000/api/termos/registrar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ termo_tipo: 'termos_uso' }),
-      });
+      const request = new Request(
+        'http://localhost:3000/api/termos/registrar',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ termo_tipo: 'termos_uso' }),
+        }
+      );
 
       const response = await POST(request);
       const data = await response.json();

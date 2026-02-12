@@ -1,6 +1,7 @@
 # 🚀 Guia de Execução - Ativar Sistema de Aceites em Produção
 
 ## Status Atual
+
 - ✅ Código está pronto em produção (commit `892da65`)
 - ⏳ Tabelas de aceites ainda não existem no banco de produção
 - ⚠️ Modal de termos aparece, mas retorna erro 503 ao tentar registrar
@@ -53,6 +54,7 @@ psql postgresql://user:pass@host/neondb -f PRODUCAO_criar_tabelas_aceites.sql
 ## O Que a Migration Faz
 
 ✅ **Cria 2 tabelas**:
+
 - `aceites_termos_usuario` - Registra aceite individual por CPF
 - `aceites_termos_entidade` - Registra aceite por CNPJ (redundância legal)
 
@@ -68,16 +70,17 @@ Após executar a migration:
 
 ```sql
 -- Verificar tabelas
-SELECT tablename FROM pg_tables 
-WHERE schemaname = 'public' 
+SELECT tablename FROM pg_tables
+WHERE schemaname = 'public'
 AND tablename LIKE 'aceites%';
 
 -- Verificar índices
-SELECT indexname FROM pg_indexes 
+SELECT indexname FROM pg_indexes
 WHERE tablename LIKE 'aceites%';
 ```
 
 **Esperado**:
+
 ```
   tablename
 ─────────────────────────────
@@ -93,6 +96,7 @@ WHERE tablename LIKE 'aceites%';
 Após a migration:
 
 ### 1️⃣ Fazer Login
+
 ```bash
 POST /api/auth/login
 Body: {
@@ -102,6 +106,7 @@ Body: {
 ```
 
 ### 2️⃣ Resposta Deve Ter
+
 ```json
 {
   "success": true,
@@ -114,11 +119,13 @@ Body: {
 ```
 
 ### 3️⃣ Modal Deve Aparecer
+
 - ✅ Modal de termos aparece
 - ✅ Botão "Aceitar" funciona
 - ✅ Dados são salvos no banco
 
 ### 4️⃣ Próximo Login
+
 - ✅ Termos já aceitos (não aparece modal)
 - ✅ Redireciona direto para dashboard
 
@@ -139,6 +146,7 @@ Body: {
 **Causa**: Tabela não foi criada
 
 **Solução**:
+
 1. Verifique se a migration executou sem erros
 2. Valide as tabelas com query acima
 3. Se continuar: execute novamente
@@ -153,6 +161,7 @@ psql $DATABASE_URL -f PRODUCAO_rollback_aceites.sql
 ```
 
 **O que acontece**:
+
 - ✓ Dados moved para tabelas de backup (`*_backup_*`)
 - ✓ Tabelas originais são removidas
 - ✓ Sistema volta a funcionar sem sistema de termos
@@ -162,16 +171,19 @@ psql $DATABASE_URL -f PRODUCAO_rollback_aceites.sql
 ## Próximas Ações
 
 ### Imediatamente (Hoje)
+
 - [ ] Executar a migration
 - [ ] Validar que as tabelas foram criadas
 - [ ] Fazer teste de login em PROD
 
 ### Hoje à Noite / Amanhã
+
 - [ ] Confirmar que usuários RH/Gestor conseguem aceitar termos
 - [ ] Monitorar logs da aplicação
 - [ ] Confirmar que dados estão sendo salvos no banco
 
 ### Futuro
+
 - [ ] Implementar versionamento de termos (se necessário)
 - [ ] Dashboard de auditoria de aceites
 
@@ -188,6 +200,7 @@ psql $DATABASE_URL -f PRODUCAO_rollback_aceites.sql
 ## Contato / Dúvidas
 
 Se houver problemas:
+
 1. Verifique os logs da aplicação
 2. Execute a query de validação acima
 3. Consulte a seção "Em Caso de Problemas"
