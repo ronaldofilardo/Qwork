@@ -528,7 +528,7 @@ export async function query<T = any>(
             `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
           );
           await client.query(
-            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || '')))'`
+            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
           );
 
           // Executar a query principal
