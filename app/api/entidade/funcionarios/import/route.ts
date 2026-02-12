@@ -11,6 +11,7 @@ import {
   type FuncionarioImportRow,
 } from '@/lib/xlsxParser';
 import bcrypt from 'bcryptjs';
+import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 
 export const dynamic = 'force-dynamic';
 
@@ -198,7 +199,8 @@ export async function POST(request: Request) {
         let created = 0;
 
         for (const r of toInsert) {
-          const senhaHash = await bcrypt.hash(r.senha || '123456', 10);
+          const senhaPlaintext = gerarSenhaDeNascimento(r.data_nascimento);
+          const senhaHash = await bcrypt.hash(senhaPlaintext, 10);
 
           // ARQUITETURA SEGREGADA: Inserir em 2 etapas
           // 1. Inserir funcionário (sem FKs diretas)

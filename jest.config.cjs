@@ -7,10 +7,11 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  setupFiles: ['<rootDir>/jest.setup.js'],
-  setupFilesAfterEnv: ['<rootDir>/jest.react-setup.js'],
-  globalSetup: '<rootDir>/jest.global-setup.cjs',
-  globalTeardown: '<rootDir>/jest.global-teardown.cjs',
+  rootDir: './',
+  setupFiles: ['<rootDir>/__tests__/config/jest.setup.js'],
+  setupFilesAfterEnv: ['<rootDir>/__tests__/config/jest.react-setup.js'],
+  globalSetup: '<rootDir>/__tests__/config/jest.global-setup.cjs',
+  globalTeardown: '<rootDir>/__tests__/config/jest.global-teardown.cjs',
   moduleNameMapper: {
     // Handle module aliases (this will be automatically configured for you based on your tsconfig.json paths)
     '^@/(.*)$': '<rootDir>/$1',

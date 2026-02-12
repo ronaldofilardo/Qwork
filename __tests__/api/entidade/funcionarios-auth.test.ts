@@ -68,14 +68,32 @@ describe('/api/entidade/funcionarios - acesso por perfil', () => {
 
   it('POST deve criar funcionário quando autorizado e dados válidos', async () => {
     mockRequireEntity.mockResolvedValue({
-      tomador_id: 71,
+      entidade_id: 5,
       cpf: '66840536033',
+      perfil: 'gestor',
     });
 
-    // Primeiro select retorna 0 resultados (cpf não existe), segundo é resultado do insert
+    // Mock de validateGestorContext e set_config que são chamados internamente
+    // Primeiro select retorna 0 resultados (cpf não existe)
+    // Segundo select é da validateGestorContext
+    // Terceiro é resultado do insert de funcionário
+    // Quarto é do insert de funcionarios_entidades
     mockQuery
-      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] }) // Check if funcionário exists
       .mockResolvedValueOnce({
+        // validateGestorContext
+        rows: [{ cpf: '66840536033', entidade_id: 5, ativa: true }],
+      })
+      .mockResolvedValueOnce({
+        // set_config app.current_user_cpf
+        rows: [],
+      })
+      .mockResolvedValueOnce({
+        // set_config app.current_user_perfil
+        rows: [],
+      })
+      .mockResolvedValueOnce({
+        // INSERT funcionario
         rows: [
           {
             id: 123,
@@ -85,9 +103,12 @@ describe('/api/entidade/funcionarios - acesso por perfil', () => {
             setor: 'RH',
             funcao: 'Assistente',
             data_nascimento: '1990-01-01',
-            tomador_id: 71,
           },
         ],
+      })
+      .mockResolvedValueOnce({
+        // INSERT funcionarios_entidades
+        rows: [],
       });
 
     const request = new NextRequest(
@@ -111,11 +132,10 @@ describe('/api/entidade/funcionarios - acesso por perfil', () => {
 
     expect(response.status).toBe(200);
     expect(data.success).toBe(true);
-    expect(mockQuery).toHaveBeenCalledTimes(2);
 
-    const insertCallArgs = mockQuery.mock.calls[1];
+    // Verify the INSERT funcionarios call (índice 4)
+    const insertCallArgs = mockQuery.mock.calls[4];
     expect(insertCallArgs[0]).toMatch(/INSERT INTO funcionarios/);
     expect(insertCallArgs[1][0]).toBe('71188557076');
-    expect(insertCallArgs[1][8]).toBe(71); // tomador_id param
   });
 });

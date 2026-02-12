@@ -31,7 +31,9 @@ export type AcaoTipo =
   | 'bloquear_login'
   | 'login_sucesso'
   | 'login_falha'
-  | 'logout';
+  | 'logout'
+  | 'identidade_confirmada'
+  | 'aceitar_termos_privacidade';
 
 export interface AuditoriaInput {
   entidade_tipo: EntidadeTipo;

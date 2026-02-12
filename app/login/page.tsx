@@ -4,19 +4,97 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import QworkLogo from '@/components/QworkLogo';
 import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
+import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
+import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
 
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
+  const [dataNascimento, setDataNascimento] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isConfirmingIdentity, setIsConfirmingIdentity] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
+  const [showConfirmacaoModal, setShowConfirmacaoModal] = useState(false);
+  const [showTermosModal, setShowTermosModal] = useState(false);
+  const [dadosConfirmacao, setDadosConfirmacao] = useState<{
+    nome: string;
+    cpf: string;
+    dataNascimento: string;
+  } | null>(null);
+  const [redirectTo, setRedirectTo] = useState('');
   const _router = useRouter();
 
   const formatarCPF = (valor: string) => {
     const apenasNumeros = valor.replace(/\D/g, '');
     return apenasNumeros.slice(0, 11);
+  };
+
+  const formatarDataNascimento = (valor: string) => {
+    const apenasNumeros = valor.replace(/\D/g, '');
+    return apenasNumeros.slice(0, 8); // ddmmaaaa
+  };
+
+  const handleConfirmarIdentidade = async () => {
+    if (!dadosConfirmacao) return;
+
+    setIsConfirmingIdentity(true);
+
+    try {
+      // Garantir que dataNascimento esteja em YYYY-MM-DD
+      let dataFormatada = dadosConfirmacao.dataNascimento;
+      if (dataFormatada.includes('/')) {
+        // Converter DD/MM/YYYY para YYYY-MM-DD
+        const partes = dataFormatada.split('/');
+        if (partes.length === 3) {
+          dataFormatada = `${partes[2]}-${partes[1]}-${partes[0]}`;
+        }
+      } else if (dataFormatada.includes('T')) {
+        // Se for ISO string, extrair apenas a parte de data
+        dataFormatada = dataFormatada.split('T')[0];
+      }
+
+      const response = await fetch('/api/avaliacao/confirmar-identidade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          avaliacaoId: null, // Não há avaliação no contexto de login
+          nome: dadosConfirmacao.nome,
+          cpf: dadosConfirmacao.cpf,
+          dataNascimento: dataFormatada,
+        }),
+        credentials: 'same-origin',
+      });
+
+      if (response.ok) {
+        console.log('[LOGIN] Identidade confirmada - redirecionando');
+        // NÃO fechar o modal - deixar UI congelada com loading até o redirecionamento
+        // O setTimeout garante que o redirecionamento aconteça após a UI estar pronta
+        setTimeout(() => {
+          window.location.href = redirectTo;
+        }, 500);
+      } else {
+        const errorData = await response.json();
+        setIsConfirmingIdentity(false);
+        setError(
+          errorData.error || 'Erro ao confirmar identidade. Tente novamente.'
+        );
+      }
+    } catch (err) {
+      console.error('[LOGIN] Erro ao confirmar identidade:', err);
+      setIsConfirmingIdentity(false);
+      setError('Erro de conexão ao confirmar identidade. Tente novamente.');
+    }
+  };
+
+  const handleCancelarConfirmacao = () => {
+    setShowConfirmacaoModal(false);
+    setDadosConfirmacao(null);
+    setRedirectTo('');
+    setCpf('');
+    setSenha('');
+    setDataNascimento('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,10 +103,19 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // Enviar senha ou data de nascimento
+      const body: any = { cpf };
+      if (senha) {
+        body.senha = senha;
+      }
+      if (dataNascimento) {
+        body.data_nascimento = dataNascimento;
+      }
+
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ cpf, senha }),
+        body: JSON.stringify(body),
         credentials: 'same-origin',
       });
 
@@ -56,15 +143,86 @@ export default function LoginPage() {
         await new Promise((r) => setTimeout(r, 150));
       }
 
-      // Redirecionar baseado no redirectTo da API usando window.location para forçar navegação completa
-      const targetUrl = data.redirectTo || '/dashboard';
-      console.log(
-        '[LOGIN] Redirecionando para:',
-        targetUrl,
-        'Perfil:',
-        data.perfil
-      );
-      window.location.href = targetUrl;
+      // Se é funcionário, mostrar modal de confirmação de identidade
+      if (data.perfil === 'funcionario') {
+        console.log(
+          '[LOGIN] Funcionário detectado - mostrar modal de confirmação'
+        );
+
+        // Buscar dados completos do funcionário incluindo data de nascimento
+        try {
+          const funcRes = await fetch(
+            `/api/funcionarios/${cpf.replace(/\D/g, '')}`,
+            {
+              credentials: 'same-origin',
+            }
+          );
+
+          if (funcRes.ok) {
+            const funcData = await funcRes.json();
+            setDadosConfirmacao({
+              nome: funcData.nome || data.nome || 'Funcionário',
+              cpf: cpf.replace(/\D/g, ''),
+              dataNascimento: funcData.data_nascimento || '',
+            });
+          } else {
+            // Se falhar, usar dados do login
+            setDadosConfirmacao({
+              nome: data.nome || 'Funcionário',
+              cpf: cpf.replace(/\D/g, ''),
+              dataNascimento: data.data_nascimento || '',
+            });
+          }
+        } catch (err) {
+          console.warn('[LOGIN] Erro ao buscar dados do funcionário:', err);
+          setDadosConfirmacao({
+            nome: data.nome || 'Funcionário',
+            cpf: cpf.replace(/\D/g, ''),
+            dataNascimento: data.data_nascimento || '',
+          });
+        }
+
+        // Guardar URL de redirecionamento e mostrar modal
+        setRedirectTo(data.redirectTo || '/dashboard');
+        setShowConfirmacaoModal(true);
+      } else if (
+        (data.perfil === 'rh' || data.perfil === 'gestor') &&
+        data.termosPendentes
+      ) {
+        // Verificar se precisa aceitar termos (apenas rh e gestor)
+        const { termos_uso, politica_privacidade } = data.termosPendentes;
+
+        if (termos_uso || politica_privacidade) {
+          // Tem termos pendentes - mostrar modal
+          console.log(
+            '[LOGIN] Termos pendentes detectados - mostrar modal de aceite'
+          );
+          setRedirectTo(data.redirectTo || '/dashboard');
+          setShowTermosModal(true);
+          setLoading(false);
+          return;
+        }
+
+        // Se não há termos pendentes, redirecionar normal
+        const targetUrl = data.redirectTo || '/dashboard';
+        console.log(
+          '[LOGIN] Redirecionando para:',
+          targetUrl,
+          'Perfil:',
+          data.perfil
+        );
+        window.location.href = targetUrl;
+      } else {
+        // Para outros perfis, redirecionar normalmente
+        const targetUrl = data.redirectTo || '/dashboard';
+        console.log(
+          '[LOGIN] Redirecionando para:',
+          targetUrl,
+          'Perfil:',
+          data.perfil
+        );
+        window.location.href = targetUrl;
+      }
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message);
@@ -78,6 +236,30 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-2 sm:p-4">
+      {/* Modal de Confirmação de Identidade */}
+      {showConfirmacaoModal && dadosConfirmacao && (
+        <ModalConfirmacaoIdentidade
+          isOpen={true}
+          isLoading={isConfirmingIdentity}
+          onConfirm={handleConfirmarIdentidade}
+          onCancel={handleCancelarConfirmacao}
+          nome={dadosConfirmacao.nome}
+          cpf={dadosConfirmacao.cpf}
+          dataNascimento={dadosConfirmacao.dataNascimento}
+        />
+      )}
+
+      {/* Modal de Aceite de Termos */}
+      {showTermosModal && (
+        <ModalTermosAceite
+          redirectTo={redirectTo}
+          onConcluir={() => {
+            setShowTermosModal(false);
+            window.location.href = redirectTo;
+          }}
+        />
+      )}
+
       <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
           <QworkLogo size="xl" showSlogan={false} className="mb-4" />
@@ -106,13 +288,14 @@ export default function LoginPage() {
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
               required
               maxLength={11}
+              disabled={showConfirmacaoModal}
             />
           </div>
 
           <div>
             <label
               htmlFor="senha"
-              className="block text-sm font-medium text-gray-700 required"
+              className="block text-sm font-medium text-gray-700"
             >
               Senha
             </label>
@@ -124,8 +307,33 @@ export default function LoginPage() {
               onChange={(e) => setSenha((e.target as HTMLInputElement).value)}
               placeholder="••••••••"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
-              required
+              disabled={showConfirmacaoModal}
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="dataNascimento"
+              className="block text-sm font-medium text-gray-700"
+            >
+              Data de nascimento
+            </label>
+            <input
+              id="dataNascimento"
+              name="dataNascimento"
+              type="text"
+              value={dataNascimento}
+              onChange={(e) =>
+                setDataNascimento(formatarDataNascimento((e.target as HTMLInputElement).value))
+              }
+              placeholder="ddmmaaaa"
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+              maxLength={8}
+              disabled={showConfirmacaoModal}
+            />
+            <p className="mt-2 text-xs text-gray-500">
+              <span className="font-medium">Funcionário?</span> Preencha apenas a data de nascimento (ddmmaaaa). <span className="font-medium">Demais usuários:</span> utilize a senha.
+            </p>
           </div>
 
           {error && (
@@ -136,7 +344,7 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || showConfirmacaoModal}
             className="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base font-medium"
           >
             {loading ? 'Entrando...' : 'Entrar'}
@@ -159,7 +367,8 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() => setModalAberto(true)}
-              className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+              disabled={showConfirmacaoModal}
+              className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Building2 className="w-5 h-5" />
               <span>Cadastrar Empresa</span>

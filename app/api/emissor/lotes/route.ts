@@ -1,7 +1,6 @@
 import { requireRole } from '@/lib/session';
-import { query, transaction } from '@/lib/db';
+import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
 
 export const dynamic = 'force-dynamic';
 

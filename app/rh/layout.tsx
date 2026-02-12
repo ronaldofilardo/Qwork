@@ -66,6 +66,32 @@ export default function RhLayout({ children }: { children: React.ReactNode }) {
         }
 
         setSession(sessionData);
+
+        // Verificar termos aceitos (apenas para rh)
+        if (sessionData.perfil === 'rh') {
+          try {
+            const termosRes = await fetch('/api/termos/verificar', {
+              credentials: 'same-origin',
+            });
+            if (termosRes.ok) {
+              const termos = await termosRes.json();
+              if (
+                !termos.termos_uso_aceito ||
+                !termos.politica_privacidade_aceito
+              ) {
+                // Redirecionar para login para aceitar termos
+                console.log(
+                  '[RH LAYOUT] Termos não aceitos - redirecionando para login'
+                );
+                router.push('/login?motivo=termos_pendentes');
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('[RH LAYOUT] Erro ao verificar termos:', err);
+          }
+        }
+
         await loadCounts();
       } catch (err: unknown) {
         console.error('Erro ao verificar autenticação:', err);

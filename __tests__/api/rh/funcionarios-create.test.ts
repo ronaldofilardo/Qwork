@@ -35,11 +35,10 @@ describe('/api/rh/funcionarios - POST (Criar Funcionário)', () => {
     const body = {
       cpf: '52998224725',
       nome: 'Funcionario Teste',
-      data_nascimento: '1990-01-01',
+      data_nascimento: '1974-10-24',
       setor: 'TI',
       funcao: 'Dev',
       email: 'teste@empresa.com',
-      senha: '123456',
       empresa_id: 1,
     };
 

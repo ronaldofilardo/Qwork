@@ -304,7 +304,7 @@ describe('import route', () => {
         {
           cpf: '12345678901',
           nome: 'João Silva',
-          data_nascimento: '1990-01-15',
+          data_nascimento: '1974-10-24',
           setor: 'TI',
           funcao: 'Dev',
           email: 'joao@empresa.com',

@@ -70,11 +70,14 @@ export const GET = async (
     // Ler o arquivo PDF do storage
     console.log(`[VERIFY] Lendo arquivo PDF do laudo ${laudo.id}...`);
     let pdfBuffer: Buffer;
-    
+
     try {
       pdfBuffer = await lerLaudo(laudo.id);
     } catch (error: any) {
-      console.error(`[VERIFY] Erro ao ler arquivo PDF do laudo ${laudo.id}:`, error);
+      console.error(
+        `[VERIFY] Erro ao ler arquivo PDF do laudo ${laudo.id}:`,
+        error
+      );
       return NextResponse.json(
         {
           error: 'Arquivo do laudo não encontrado no armazenamento',
@@ -90,7 +93,8 @@ export const GET = async (
     console.log(`[VERIFY] Hash calculado:  ${hashCalculado}`);
 
     // Comparar hashes (case-insensitive)
-    const hashValido = hashArmazenado.toLowerCase() === hashCalculado.toLowerCase();
+    const hashValido =
+      hashArmazenado.toLowerCase() === hashCalculado.toLowerCase();
 
     if (!hashValido) {
       console.error(`[VERIFY] ⚠️ HASH INVÁLIDO para laudo ${laudo.id}!`);

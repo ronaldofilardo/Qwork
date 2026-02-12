@@ -512,6 +512,10 @@ export default function SucessoCadastroPage() {
           isOpen={mostrarModalContrato}
           onClose={() => setMostrarModalContrato(false)}
           contratoId={contratoIdFromParam}
+          onAceiteSuccess={() => {
+            setContratoIdFromParam(null);
+            carregarDados();
+          }}
         />
       )}
     </div>

@@ -17,7 +17,6 @@ export function GET() {
       'setor',
       'funcao',
       'email',
-      'senha',
       'matricula',
       'nivel_cargo',
       'turno',
@@ -33,7 +32,6 @@ export function GET() {
         setor: 'Administrativo',
         funcao: 'Analista',
         email: 'joao.silva@empresa.com.br',
-        senha: '123456',
         matricula: 'MAT001',
         nivel_cargo: 'operacional',
         turno: 'Diurno',
@@ -46,7 +44,6 @@ export function GET() {
         setor: 'Operacional',
         funcao: 'Coordenadora',
         email: 'maria.santos@empresa.com.br',
-        senha: '123456',
         matricula: 'MAT002',
         nivel_cargo: 'gestao',
         turno: 'Integral',
@@ -65,28 +62,12 @@ export function GET() {
       { wch: 20 }, // setor
       { wch: 20 }, // funcao
       { wch: 30 }, // email
-      { wch: 12 }, // senha
       { wch: 15 }, // matricula
       { wch: 15 }, // nivel_cargo
       { wch: 12 }, // turno
       { wch: 12 }, // escala
     ];
     worksheet['!cols'] = colWidths;
-
-    // Adicionar fórmula na coluna G (senha) para as linhas de exemplo
-    // Coluna G é índice 6 (0-indexed)
-    // Fórmula: =SUBSTITUTE(C2;"/";""") remove as barras da data dd/mm/aaaa
-    if (!worksheet['G2']) {
-      worksheet['G2'] = {};
-    }
-    worksheet['G2'].f = 'SUBSTITUTE(C2;"/";"")';
-    worksheet['G2'].v = '15041985'; // Valor calculated para o exemplo
-
-    if (!worksheet['G3']) {
-      worksheet['G3'] = {};
-    }
-    worksheet['G3'].f = 'SUBSTITUTE(C3;"/";"")';
-    worksheet['G3'].v = '02021990'; // Valor calculated para o exemplo
 
     // Adicionar notas/validações na primeira linha após os exemplos
     const notasRow = exemplos.length + 2;
@@ -106,32 +87,16 @@ export function GET() {
         [
           '5. Campos obrigatórios: CPF, Nome, Data de Nascimento, Setor, Função e Email',
         ],
-        ['6. Senha padrão será 123456 se não informada'],
+        [
+          '6. Senha será gerada automaticamente a partir da data de nascimento (formato: DDMMYYYY)',
+        ],
         [
           '7. Valores permitidos para nivel_cargo: operacional, gestao, gerencial, diretoria',
         ],
-        [
-          '8. A coluna G (senha) será preenchida automaticamente com SUBSTITUTE(C;"/";"")',
-        ],
-        ['9. Delete estas linhas de instrução e os exemplos antes de importar'],
+        ['8. Delete estas linhas de instrução e os exemplos antes de importar'],
       ],
       { origin: `A${notasRow}` }
     );
-
-    // Adicionar 15 linhas vazias com fórmula de senha na coluna G
-    // Essas linhas começam após as instruções
-    const primeiraLinhaVazia = notasRow + 10; // After the instructions
-    for (let i = 0; i < 15; i++) {
-      const rowNum = primeiraLinhaVazia + i;
-      const cellG = `G${rowNum}`;
-      const cellC = `C${rowNum}`;
-
-      if (!worksheet[cellG]) {
-        worksheet[cellG] = {};
-      }
-      worksheet[cellG].f = `SUBSTITUTE(${cellC};"/";"")`; // Fórmula que remove as barras
-      worksheet[cellG].v = ''; // Valor vazio até que o usuário preencha C
-    }
 
     // Criar workbook
     const workbook = XLSX.utils.book_new();

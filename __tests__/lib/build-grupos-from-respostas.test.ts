@@ -1,4 +1,4 @@
-import { buildGruposFromRespostas } from '@/app/api/entidade/lote/[id]/relatorio-individual/route';
+import { buildGruposFromRespostas } from '@/lib/pdf/relatorio-individual';
 
 describe('buildGruposFromRespostas', () => {
   it('deve filtrar respostas inválidas e criar grupos corretamente', () => {
