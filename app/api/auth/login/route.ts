@@ -404,13 +404,23 @@ export async function POST(request: Request) {
           termos_uso: !temTermosUso,
           politica_privacidade: !temPolitica,
         };
-      } catch (err) {
-        console.error('[LOGIN] Erro ao verificar termos:', err);
-        // Em caso de erro, assumir pendente (seguro)
-        termosPendentes = {
-          termos_uso: true,
-          politica_privacidade: true,
-        };
+      } catch (err: any) {
+        // HOTFIX: Se tabela não existe (42P01), assumir termos não pendentes
+        // para não quebrar produção antes das migrations serem executadas
+        if (err?.code === '42P01') {
+          console.log('[LOGIN] Tabela de termos ainda não existe - assumindo termos não requeridos');
+          termosPendentes = {
+            termos_uso: false,
+            politica_privacidade: false,
+          };
+        } else {
+          console.error('[LOGIN] Erro ao verificar termos:', err);
+          // Em caso de outro erro, assumir pendente (seguro)
+          termosPendentes = {
+            termos_uso: true,
+            politica_privacidade: true,
+          };
+        }
       }
     }
 
