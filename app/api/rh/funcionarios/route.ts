@@ -54,7 +54,8 @@ export async function GET(request: Request) {
        INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
        WHERE fc.empresa_id = $1 AND fc.clinica_id = $2 AND fc.ativo = true
        ORDER BY f.nome`,
-      [empresaId, clinicaId]
+      [empresaId, clinicaId],
+      session
     );
 
     // Buscar avaliações de todos os funcionários da empresa/lote
@@ -72,7 +73,8 @@ export async function GET(request: Request) {
         `SELECT id, funcionario_cpf, inicio, envio, status, lote_id
          FROM avaliacoes
          WHERE funcionario_cpf = ANY($1)`,
-        [funcionariosCpfs]
+        [funcionariosCpfs],
+        session
       );
       // Agrupar avaliações por cpf (convertendo para string)
       avaliacoesResult.rows.forEach((av) => {
@@ -167,7 +169,8 @@ export async function POST(request: Request) {
     // Verificar se funcionário já existe
     const existingFunc = await query(
       'SELECT cpf FROM funcionarios WHERE cpf = $1',
-      [cpf]
+      [cpf],
+      session
     );
 
     if (existingFunc.rows.length > 0) {
@@ -288,10 +291,6 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
-    // Registrar usuário atual no contexto da transação para triggers/auditoria
-    await query(`SET LOCAL app.current_user_cpf = '${session.cpf}'`);
-    await query(`SET LOCAL app.current_user_perfil = '${session.perfil}'`);
-
     // Verificar se o RH tem clinica_id na sessão
     const clinicaId = session.clinica_id;
     if (!clinicaId) {
@@ -312,7 +311,8 @@ export async function PUT(request: Request) {
     // Verificar se funcionário existe
     const funcResult = await query(
       'SELECT cpf FROM funcionarios WHERE cpf = $1',
-      [cpf]
+      [cpf],
+      session
     );
     if (funcResult.rows.length === 0) {
       return NextResponse.json(
@@ -335,7 +335,8 @@ export async function PUT(request: Request) {
         turno || null,
         escala || null,
         cpf,
-      ]
+      ],
+      session
     );
 
     return NextResponse.json({

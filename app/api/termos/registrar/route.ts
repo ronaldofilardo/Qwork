@@ -101,19 +101,23 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('[TERMOS] Erro ao registrar aceite:', error);
-    
+
     // HOTFIX: Retornar mensagem específica se migrations não foram executadas
-    if (error?.message?.includes('TABLES_NOT_MIGRATED') || error?.code === '42P01') {
+    if (
+      error?.message?.includes('TABLES_NOT_MIGRATED') ||
+      error?.code === '42P01'
+    ) {
       return NextResponse.json(
-        { 
+        {
           error: 'Recurso temporariamente indisponível',
-          message: 'O sistema de aceite de termos está sendo preparado. Por favor, tente novamente em alguns instantes.',
-          code: 'FEATURE_NOT_READY'
+          message:
+            'O sistema de aceite de termos está sendo preparado. Por favor, tente novamente em alguns instantes.',
+          code: 'FEATURE_NOT_READY',
         },
         { status: 503 }
       );
     }
-    
+
     return NextResponse.json(
       { error: 'Erro ao registrar aceite' },
       { status: 500 }

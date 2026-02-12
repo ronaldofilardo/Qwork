@@ -43,7 +43,9 @@ export async function registrarAceite(params: RegistrarAceiteParams) {
     await query(`SELECT 1 FROM aceites_termos_usuario LIMIT 0`);
   } catch (err: any) {
     if (err?.code === '42P01') {
-      throw new Error('TABLES_NOT_MIGRATED: As tabelas de aceite de termos ainda não foram criadas. Execute as migrations primeiro.');
+      throw new Error(
+        'TABLES_NOT_MIGRATED: As tabelas de aceite de termos ainda não foram criadas. Execute as migrations primeiro.'
+      );
     }
     throw err;
   }
