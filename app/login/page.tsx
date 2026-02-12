@@ -262,10 +262,31 @@ export default function LoginPage() {
 
       <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 w-full max-w-md">
         <div className="text-center mb-6 sm:mb-8">
-          <QworkLogo size="xl" showSlogan={false} className="mb-4" />
+          <QworkLogo size="2xl" showSlogan={false} className="mb-4" />
           <p className="text-sm sm:text-base text-gray-600 mt-2">
             Avaliação Psicossocial baseada no COPSOQ III
           </p>
+        </div>
+
+        {/* Box Explicativo de Formas de Login */}
+        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-sm font-semibold text-blue-900 mb-2">
+            Como Fazer Login?
+          </h3>
+          <ul className="space-y-2 text-sm text-blue-800">
+            <li className="flex items-start gap-2">
+              <span className="font-bold text-blue-600 mt-0.5">1</span>
+              <span>
+                <strong>Com Senha</strong> - Todos os usuários (RH, Gestor, Emissor, etc.): insira seu CPF e Senha
+              </span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="font-bold text-blue-600 mt-0.5">2</span>
+              <span>
+                <strong>Com Data de Nascimento</strong> - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+              </span>
+            </li>
+          </ul>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
@@ -297,7 +318,7 @@ export default function LoginPage() {
               htmlFor="senha"
               className="block text-sm font-medium text-gray-700"
             >
-              Senha
+              Senha <span className="text-gray-500 font-normal">(opcional se for funcionário)</span>
             </label>
             <input
               id="senha"
@@ -316,7 +337,7 @@ export default function LoginPage() {
               htmlFor="dataNascimento"
               className="block text-sm font-medium text-gray-700"
             >
-              Data de nascimento
+              Data de nascimento <span className="text-gray-500 font-normal">(opcional se tiver senha)</span>
             </label>
             <input
               id="dataNascimento"
@@ -332,7 +353,7 @@ export default function LoginPage() {
               disabled={showConfirmacaoModal}
             />
             <p className="mt-2 text-xs text-gray-500">
-              <span className="font-medium">Funcionário?</span> Preencha apenas a data de nascimento (ddmmaaaa). <span className="font-medium">Demais usuários:</span> utilize a senha.
+              Use este formato: dia/mês/ano (ex: 15031990)
             </p>
           </div>
 

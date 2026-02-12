@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { QWORK_BRANDING } from '@/lib/config/branding';
 
 interface QworkLogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'huge';
   showSlogan?: boolean;
   className?: string;
 }
@@ -23,6 +23,7 @@ export default function QworkLogo({
     md: 'w-12 h-12',
     lg: 'w-16 h-16',
     xl: 'w-24 h-24',
+    '2xl': 'w-32 h-32',
     huge: 'w-48 h-48',
   };
 
@@ -31,6 +32,7 @@ export default function QworkLogo({
     md: 'text-xs',
     lg: 'text-sm',
     xl: 'text-base',
+    '2xl': 'text-lg',
     huge: 'text-lg',
   };
 
