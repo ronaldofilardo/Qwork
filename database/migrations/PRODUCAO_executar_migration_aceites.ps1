@@ -35,17 +35,46 @@ Write-Info @"
 # 1. Carregar variáveis de ambiente
 Write-Info "`n[1/5] Carregando configuração..."
 if ([string]::IsNullOrEmpty($DatabaseUrl)) {
+    # Tentar carregar de variáveis de ambiente
     $DatabaseUrl = $env:DATABASE_URL
 }
 
 if ([string]::IsNullOrEmpty($DatabaseUrl)) {
+    # Tentar carregar de .env files
+    $envFile = Join-Path (Split-Path (Split-Path $PSCommandPath)) ".env.production"
+    if (Test-Path $envFile) {
+        $envContent = @(Get-Content $envFile | ForEach-Object {
+            if ($_ -match '^DATABASE_URL=(.+)$') {
+                $matches[1]
+            }
+        })
+        if ($envContent) {
+            $DatabaseUrl = $envContent[0]
+        }
+    }
+}
+
+if ([string]::IsNullOrEmpty($DatabaseUrl)) {
     Write-Error_ "❌ ERRO: DATABASE_URL não encontrada"
-    Write-Warning "Configure a variável de ambiente DATABASE_URL ou passe como parâmetro:"
-    Write-Warning "  .\PRODUCAO_executar_migration_aceites.ps1 -DatabaseUrl 'postgresql://...'"
+    Write-Warning "`nOpções para fornecer a DATABASE_URL:"
+    Write-Warning ""
+    Write-Warning "  1. RECOMENDADO - Passar como parâmetro:"
+    Write-Warning "     .\PRODUCAO_executar_migration_aceites.ps1 -DatabaseUrl 'postgresql://neondb_owner:...@...'"
+    Write-Warning ""
+    Write-Warning "  2. Configurar variável de ambiente:"
+    Write-Warning "     `$env:DATABASE_URL = 'postgresql://neondb_owner:...@...'"
+    Write-Warning "     .\PRODUCAO_executar_migration_aceites.ps1"
+    Write-Warning ""
+    Write-Warning "  3. Criar arquivo .env.production na raiz do projeto"
+    Write-Warning ""
+    Write-Warning "Encontre a DATABASE_URL em:"
+    Write-Warning "  - Vercel Dashboard → Settings → Environment Variables"
+    Write-Warning "  - Neon Console → Database → Connection String"
+    Write-Warning "  - Seu arquivo .env em produção"
     exit 1
 }
 
-Write-Success "✓ DATABASE_URL carregada"
+Write-Success "✓ DATABASE_URL carregada (primeiros 50 caracteres: $($DatabaseUrl.Substring(0, [Math]::Min(50, $DatabaseUrl.Length)))...)"
 
 # 2. Verificar disponibilidade de psql
 Write-Info "`n[2/5] Verificando psql..."
