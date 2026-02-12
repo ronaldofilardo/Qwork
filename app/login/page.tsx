@@ -277,13 +277,15 @@ export default function LoginPage() {
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600 mt-0.5">1</span>
               <span>
-                <strong>Com Senha</strong> - Todos os usuários (RH, Gestor, Emissor, etc.): insira seu CPF e Senha
+                <strong>Com Senha</strong> - Todos os usuários (RH, Gestor,
+                Emissor, etc.): insira seu CPF e Senha
               </span>
             </li>
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600 mt-0.5">2</span>
               <span>
-                <strong>Com Data de Nascimento</strong> - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+                <strong>Com Data de Nascimento</strong> - Funcionários: insira
+                seu CPF e Data de Nascimento (deixar o campo Senha em branco)
               </span>
             </li>
           </ul>
@@ -318,7 +320,10 @@ export default function LoginPage() {
               htmlFor="senha"
               className="block text-sm font-medium text-gray-700"
             >
-              Senha <span className="text-gray-500 font-normal">(opcional se for funcionário)</span>
+              Senha{' '}
+              <span className="text-gray-500 font-normal">
+                (opcional se for funcionário)
+              </span>
             </label>
             <input
               id="senha"
@@ -337,7 +342,10 @@ export default function LoginPage() {
               htmlFor="dataNascimento"
               className="block text-sm font-medium text-gray-700"
             >
-              Data de nascimento <span className="text-gray-500 font-normal">(opcional se tiver senha)</span>
+              Data de nascimento{' '}
+              <span className="text-gray-500 font-normal">
+                (opcional se tiver senha)
+              </span>
             </label>
             <input
               id="dataNascimento"
@@ -345,7 +353,9 @@ export default function LoginPage() {
               type="text"
               value={dataNascimento}
               onChange={(e) =>
-                setDataNascimento(formatarDataNascimento((e.target as HTMLInputElement).value))
+                setDataNascimento(
+                  formatarDataNascimento((e.target as HTMLInputElement).value)
+                )
               }
               placeholder="ddmmaaaa"
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
