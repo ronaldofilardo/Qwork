@@ -48,7 +48,8 @@ export async function GET(req: NextRequest) {
         AND fc.clinica_id = $3
         AND fc.ativo = true
     `,
-      [loteId, cpf, session.clinica_id]
+      [loteId, cpf, session.clinica_id],
+      session
     );
 
     if (avaliacaoResult.rows.length === 0) {
@@ -71,7 +72,8 @@ export async function GET(req: NextRequest) {
       GROUP BY grupo
       ORDER BY grupo
     `,
-      [avaliacao.id]
+      [avaliacao.id],
+      session
     );
 
     // Gerar PDF usando helper compartilhado
