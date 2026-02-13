@@ -52,7 +52,8 @@ export async function GET(req: NextRequest) {
         [loteId, session.entidade_id],
         session
       );
-      debug.diagnosticos['avaliacoes_via_funcionarios_entidades'] = viaFE.rows[0];
+      debug.diagnosticos['avaliacoes_via_funcionarios_entidades'] =
+        viaFE.rows[0];
 
       // 4. Verificar via contratante_id (legado)
       const viaContratante = await query(
@@ -63,7 +64,8 @@ export async function GET(req: NextRequest) {
         [loteId, session.entidade_id],
         session
       );
-      debug.diagnosticos['avaliacoes_via_contratante_id'] = viaContratante.rows[0];
+      debug.diagnosticos['avaliacoes_via_contratante_id'] =
+        viaContratante.rows[0];
 
       // 5. Total de avaliacoes no lote
       const totalAval = await query(
@@ -85,7 +87,8 @@ export async function GET(req: NextRequest) {
           [loteId, cpf],
           session
         );
-        debug.diagnosticos['avaliacao_cpf'] = avaliacaoEspecifica.rows[0] || null;
+        debug.diagnosticos['avaliacao_cpf'] =
+          avaliacaoEspecifica.rows[0] || null;
 
         // 7. Verificar funcionário
         const funcionarioCheck = await query(
@@ -103,7 +106,8 @@ export async function GET(req: NextRequest) {
             [funcionarioCheck.rows[0].id, session.entidade_id],
             session
           );
-          debug.diagnosticos['vinculo_funcionarios_entidades'] = vinculoFE.rows[0] || null;
+          debug.diagnosticos['vinculo_funcionarios_entidades'] =
+            vinculoFE.rows[0] || null;
         }
       }
     }
@@ -112,9 +116,9 @@ export async function GET(req: NextRequest) {
   } catch (error: any) {
     console.error('[entidade/debug-status] Erro:', error);
     return NextResponse.json(
-      { 
+      {
         error: error.message || 'Erro ao gerar debug',
-        stack: error.stack
+        stack: error.stack,
       },
       { status: 500 }
     );
