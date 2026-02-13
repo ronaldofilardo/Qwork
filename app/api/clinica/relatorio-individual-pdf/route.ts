@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireEntity } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { gerarRelatorioIndividualPDF } from '@/lib/pdf/relatorio-individual';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/entidade/relatorio-individual-pdf?lote_id={loteId}&cpf={cpf}
- * Gera relatório individual em PDF para usuário Entidade
+ * GET /api/clinica/relatorio-individual-pdf?lote_id={loteId}&cpf={cpf}
+ * Gera relatório individual em PDF para usuário Clínica (RH)
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireEntity();
+    const session = await requireRole('rh');
     const { searchParams } = new URL(req.url);
     const loteId = searchParams.get('lote_id');
     const cpf = searchParams.get('cpf');
@@ -23,8 +23,7 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Buscar dados da avaliação - entidade só acessa lotes da sua entidade
-    // Usa COALESCE para compatibilidade com DEV e PROD
+    // Buscar dados da avaliação - RH acessa lotes via clinica_id e empresa_id
     const avaliacaoResult = await query(
       `
       SELECT 
@@ -37,18 +36,22 @@ export async function GET(req: NextRequest) {
         f.funcao,
         f.nivel_cargo,
         f.setor,
-        t.nome as empresa_nome
+        ec.nome as empresa_nome
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       JOIN lotes_avaliacao la ON a.lote_id = la.id
-      JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.contratante_id)
+      JOIN empresas_clientes ec ON la.empresa_id = ec.id
+      JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
       WHERE a.lote_id = $1 
         AND f.cpf = $2
         AND a.status = 'concluida'
         AND f.ativo = true
-        AND COALESCE(la.entidade_id, la.contratante_id) = $3
+        AND la.clinica_id = $3
+        AND la.empresa_id = fc.empresa_id
+        AND fc.clinica_id = $3
+        AND fc.ativo = true
     `,
-      [loteId, cpf, session.entidade_id],
+      [loteId, cpf, session.clinica_id],
       session
     );
 
@@ -96,7 +99,7 @@ export async function GET(req: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('[entidade/relatorio-individual-pdf] Erro:', error);
+    console.error('[clinica/relatorio-individual-pdf] Erro:', error);
     return NextResponse.json(
       { error: error.message || 'Erro ao gerar relatório' },
       { status: 500 }

@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireEntity } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { gerarRelatorioLotePDF } from '@/lib/pdf/relatorio-lote';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET /api/entidade/relatorio-lote-pdf?lote_id={loteId}
- * Gera relatório do lote com listagem de funcionários e conclusões para Entidade
+ * GET /api/clinica/relatorio-lote-pdf?lote_id={loteId}
+ * Gera relatório do lote com listagem de funcionários e conclusões para Clínica
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await requireEntity();
+    const session = await requireRole('rh');
     const { searchParams } = new URL(req.url);
     const loteId = searchParams.get('lote_id');
 
@@ -23,8 +23,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Buscar dados do lote com hash do laudo e data de emissão
-    // Validar acesso via COALESCE(entidade_id, contratante_id)
-    // Funciona tanto em DEV (entidade_id preenchido) quanto em PROD (contratante_id preenchido)
+    // Verificar se o lote pertence à clínica através dos funcionários
     const loteResult = await query(
       `
       SELECT 
@@ -36,15 +35,25 @@ export async function GET(req: NextRequest) {
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON la.id = l.lote_id
       WHERE la.id = $1
-        AND COALESCE(la.entidade_id, la.contratante_id) = $2
+        AND la.clinica_id = $2
+        AND EXISTS (
+          SELECT 1
+          FROM avaliacoes a
+          JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+          JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
+          WHERE a.lote_id = la.id
+            AND fc.clinica_id = $2
+            AND fc.empresa_id = la.empresa_id
+            AND fc.ativo = true
+        )
     `,
-      [loteId, session.entidade_id],
+      [loteId, session.clinica_id],
       session
     );
 
     if (loteResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Lote não encontrado ou não pertence à sua entidade' },
+        { error: 'Lote não encontrado ou não pertence à sua clínica' },
         { status: 404 }
       );
     }
@@ -52,7 +61,6 @@ export async function GET(req: NextRequest) {
     const lote = loteResult.rows[0];
 
     // Buscar funcionários do lote com suas avaliações
-    // Usa COALESCE para compatibilidade com DEV e PROD
     const funcionariosResult = await query(
       `
       SELECT DISTINCT
@@ -62,14 +70,16 @@ export async function GET(req: NextRequest) {
         a.status
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      JOIN lotes_avaliacao la ON a.lote_id = la.id
+      JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
       WHERE a.lote_id = $1 
         AND a.status = 'concluida'
         AND f.ativo = true
-        AND COALESCE(la.entidade_id, la.contratante_id) = $2
+        AND fc.clinica_id = $2
+        AND fc.empresa_id IN (SELECT empresa_id FROM lotes_avaliacao WHERE id = $1)
+        AND fc.ativo = true
       ORDER BY f.nome
     `,
-      [loteId, session.entidade_id]
+      [loteId, session.clinica_id]
     );
 
     // Gerar PDF
@@ -93,10 +103,10 @@ export async function GET(req: NextRequest) {
         'Content-Disposition': `attachment; filename="relatorio-lote-${loteId}.pdf"`,
       },
     });
-  } catch (error) {
-    console.error('[entidade/relatorio-lote-pdf] Erro:', error);
+  } catch (error: any) {
+    console.error('[clinica/relatorio-lote-pdf] Erro:', error);
     return NextResponse.json(
-      { error: 'Erro ao gerar relatório do lote' },
+      { error: error.message || 'Erro ao gerar relatório do lote' },
       { status: 500 }
     );
   }
