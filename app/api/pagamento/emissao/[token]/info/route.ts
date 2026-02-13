@@ -14,18 +14,19 @@ export async function GET(
 
     const result = await query(
       `SELECT 
-        la.id AS lote_id, la.status, la.status_pagamento, la.valor_por_funcionario,
+        la.id AS lote_id, 
+        la.clinica_id,
+        la.valor_por_funcionario,
         la.link_pagamento_enviado_em,
         COUNT(a.id) AS num_avaliacoes,
         (la.valor_por_funcionario * COUNT(a.id)) AS valor_total,
-        COALESCE(c.nome, e.nome) AS nome_tomador,
-        COALESCE(c.cnpj, e.cnpj) AS cnpj_tomador
+        c.nome AS clinica_nome,
+        c.cnpj AS clinica_cnpj
        FROM lotes_avaliacao la
        LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
        LEFT JOIN clinicas c ON c.id = la.clinica_id
-       LEFT JOIN entidades e ON e.id = la.entidade_id
        WHERE la.link_pagamento_token = $1
-       GROUP BY la.id, c.nome, c.cnpj, e.nome, e.cnpj`,
+       GROUP BY la.id, la.clinica_id, c.id, c.nome, c.cnpj`,
       [token]
     );
 
@@ -35,28 +36,13 @@ export async function GET(
 
     const dados = result.rows[0];
 
-    // Token de uso único: verificar se já foi usado
-    if (dados.status_pagamento === 'pago') {
-      return NextResponse.json(
-        { error: 'Link já foi utilizado', already_paid: true },
-        { status: 400 }
-      );
-    }
-
-    if (dados.status_pagamento !== 'aguardando_pagamento') {
-      return NextResponse.json(
-        { error: 'Link inválido ou não disponível' },
-        { status: 400 }
-      );
-    }
-
     return NextResponse.json({
       lote_id: dados.lote_id,
       num_avaliacoes: parseInt(dados.num_avaliacoes),
       valor_por_funcionario: parseFloat(dados.valor_por_funcionario),
       valor_total: parseFloat(dados.valor_total),
-      nome_tomador: dados.nome_tomador,
-      cnpj_tomador: dados.cnpj_tomador,
+      nome_tomador: dados.clinica_nome,
+      cnpj_tomador: dados.clinica_cnpj,
       enviado_em: dados.link_pagamento_enviado_em,
     });
   } catch (error: any) {

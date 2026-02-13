@@ -41,14 +41,12 @@ export async function GET(req: NextRequest) {
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
       JOIN entidades e ON fe.entidade_id = e.id
-      JOIN lotes_avaliacao la ON a.lote_id = la.id
       WHERE a.lote_id = $1 
         AND f.cpf = $2
         AND a.status = 'concluida'
         AND f.ativo = true
         AND fe.entidade_id = $3
         AND fe.ativo = true
-        AND la.entidade_id = $3
     `,
       [loteId, cpf, session.entidade_id],
       session

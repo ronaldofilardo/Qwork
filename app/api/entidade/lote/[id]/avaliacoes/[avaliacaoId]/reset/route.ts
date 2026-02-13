@@ -62,7 +62,7 @@ export async function POST(
       // Buscar informações do lote primeiro
       const loteCheck = await query(
         `
-        SELECT la.id, la.entidade_id, la.status
+        SELECT la.id, COALESCE(la.entidade_id, la.contratante_id) as entidade_id, la.status
         FROM lotes_avaliacao la
         WHERE la.id = $1
         FOR UPDATE -- Lock to prevent concurrent operations

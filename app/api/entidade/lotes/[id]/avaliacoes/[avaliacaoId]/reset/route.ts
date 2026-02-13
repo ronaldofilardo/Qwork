@@ -65,13 +65,14 @@ export async function POST(
       await query(`SET LOCAL app.current_user_perfil = '${user.perfil}'`);
 
       // Check batch belongs to user's entidade and get status
-      // Verificar posse do lote: para gestor a autoridade vem do lote.entidade_id (coluna BD)
+      // Verificar posse do lote: para entidade compatibilidade com entidade_id ou contratante_id (migração 1008)
       const loteCheck = await query(
         `
-        SELECT la.id, la.empresa_id, la.status, la.entidade_id
+        SELECT la.id, la.empresa_id, la.status, 
+               COALESCE(la.entidade_id, la.contratante_id) as entidade_id
         FROM lotes_avaliacao la
         WHERE la.id = $1
-          AND la.entidade_id = $2
+          AND COALESCE(la.entidade_id, la.contratante_id) = $2
         FOR UPDATE -- Lock para evitar condições de corrida
       `,
         [loteId, user.entidade_id]

@@ -27,6 +27,7 @@ export const GET = async (
     }
 
     // Buscar laudo e verificar se pertence à entidade
+    // Validação: lote deve ter avaliações de funcionários da entidade
     const laudoQuery = await query(
       `
       SELECT
@@ -34,14 +35,17 @@ export const GET = async (
         l.lote_id,
         l.hash_pdf,
         l.status,
-        l.emitido_em,
-        la.entidade_id,
-        la.clinica_id
+        l.emitido_em
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
+      INNER JOIN avaliacoes a ON a.lote_id = la.id
+      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+      INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
       WHERE l.id = $1 
         AND l.status IN ('enviado', 'emitido')
-        AND la.entidade_id = $2
+        AND fe.entidade_id = $2
+        AND fe.ativo = true
+      LIMIT 1
     `,
       [laudoId, entidadeId]
     );

@@ -33,9 +33,8 @@ export async function GET() {
 
     let lotesResult;
     try {
-      // Query alinhada com arquitetura de Clínica: filtro direto por entidade_id
-      // Schema define constraint: lote tem clinica_id OU entidade_id (nunca ambos)
-      // Para entidades: WHERE la.entidade_id = entidade_id
+      // Query alinhada com arquitetura: valida lote via funcionarios da entidade
+      // Schema: lotes recebem entidade_id via migration 1008, mas usamos join para compatibilidade
       lotesResult = await query(
         `
         SELECT DISTINCT
@@ -61,13 +60,15 @@ export async function GET() {
           fe.solicitado_em,
           fe.tipo_solicitante
         FROM lotes_avaliacao la
-        LEFT JOIN entidades e ON la.entidade_id = e.id
-        LEFT JOIN avaliacoes a ON a.lote_id = la.id
+        INNER JOIN avaliacoes a ON a.lote_id = la.id
+        INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+        INNER JOIN funcionarios_entidades fe_join ON fe_join.funcionario_id = f.id
+        LEFT JOIN entidades e ON fe_join.entidade_id = e.id
         LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
         LEFT JOIN laudos l ON l.lote_id = la.id
         LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
         LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
-        WHERE la.entidade_id = $1
+        WHERE fe_join.entidade_id = $1 AND fe_join.ativo = true
         GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome, e.nome,
                  l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
                  fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante

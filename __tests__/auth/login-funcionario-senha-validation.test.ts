@@ -97,12 +97,7 @@ describe('Login Funcionário - Validação de SenhaHash', () => {
     });
 
     it('deve detectar se função gerarSenhaDeNascimento tem comportamento consistente', () => {
-      const inputs = [
-        '01/01/2011',
-        '01/02/2011',
-        '01/03/2011',
-        '02/01/2011',
-      ];
+      const inputs = ['01/01/2011', '01/02/2011', '01/03/2011', '02/01/2011'];
 
       const outputs = inputs.map(gerarSenhaDeNascimento);
 

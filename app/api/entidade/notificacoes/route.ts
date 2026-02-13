@@ -23,7 +23,7 @@ export async function GET() {
         MAX(a.envio) as data_conclusao
       FROM lotes_avaliacao la
       JOIN avaliacoes a ON a.lote_id = la.id
-      WHERE la.entidade_id = $1
+      WHERE COALESCE(la.entidade_id, la.contratante_id) = $1
         AND la.status = 'ativo'
         AND a.envio >= NOW() - INTERVAL '7 days'
       GROUP BY la.id
@@ -46,7 +46,7 @@ export async function GET() {
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
       LEFT JOIN usuarios e ON e.cpf = l.emissor_cpf
-      WHERE la.entidade_id = $1
+      WHERE COALESCE(la.entidade_id, la.contratante_id) = $1
         AND l.enviado_em >= NOW() - INTERVAL '7 days'
       GROUP BY l.id, l.enviado_em, e.nome
       ORDER BY l.enviado_em DESC

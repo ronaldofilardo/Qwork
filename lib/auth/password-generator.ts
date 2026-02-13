@@ -79,7 +79,8 @@ export function gerarSenhaDeNascimento(dataNascimento: string): string {
     mes = entrada.substring(2, 4).padStart(2, '0');
     const anoAbreviado = entrada.substring(4, 6);
     const anoNum = parseInt(anoAbreviado, 10);
-    ano = anoNum >= 0 && anoNum <= 30 ? `20${anoAbreviado}` : `19${anoAbreviado}`;
+    ano =
+      anoNum >= 0 && anoNum <= 30 ? `20${anoAbreviado}` : `19${anoAbreviado}`;
   } else {
     throw new Error(
       'Data de nascimento inválida. Use DD/MM/YYYY, YYYY-MM-DD ou DDMMYYYY'

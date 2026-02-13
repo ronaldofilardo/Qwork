@@ -41,13 +41,18 @@ export async function POST(
     }
 
     // Validar acesso do gestor de entidade ao lote
+    // Verificar se o usuário tem acesso validando por funcionarios_entidades
     const loteCheck = await query(
       `
-      SELECT la.id, la.entidade_id, la.clinica_id, la.status, la.emitido_em
+      SELECT la.id, la.status, la.emitido_em
       FROM lotes_avaliacao la
-      WHERE la.id = $1
+      INNER JOIN avaliacoes a ON a.lote_id = la.id
+      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+      INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
+      WHERE la.id = $1 AND fe.entidade_id = $2 AND fe.ativo = true
+      LIMIT 1
     `,
-      [loteId],
+      [loteId, user.entidade_id],
       user
     );
 
@@ -94,24 +99,6 @@ export async function POST(
           emissaoSolicitada: true,
         },
         { status: 400 }
-      );
-    }
-
-    // Verificar se o usuário (gestor ou RH) tem acesso à entidade/clínica do lote
-    const hasAccess =
-      user.perfil === 'gestor'
-        ? user.entidade_id && lote.entidade_id === user.entidade_id
-        : user.clinica_id && lote.clinica_id === user.clinica_id;
-
-    if (!hasAccess) {
-      return NextResponse.json(
-        {
-          error: 'Você não tem permissão para inativar avaliações neste lote',
-          success: false,
-          error_code: 'permission_entidade_mismatch',
-          hint: 'Verifique se o lote pertence à sua entidade/clínica. Caso necessário, contate o administrador.',
-        },
-        { status: 403 }
       );
     }
 
