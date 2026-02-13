@@ -7,14 +7,14 @@
 
 ### 📊 Estado Final do Banco de Dados
 
-| Métrica | Valor |
-|---------|-------|
-| **Lotes de Clínica** (clinica_id + empresa_id) | 4 |
-| **Lotes de Entidade** (entidade_id) | 8 |
-| **Lotes Inválidos** (violação de segregação) | ✅ 0 |
-| **Total de Lotes** | 12 |
-| **Funcionários com Entidade** | 15 |
-| **Entidades com Funcionários** | 4 |
+| Métrica                                        | Valor |
+| ---------------------------------------------- | ----- |
+| **Lotes de Clínica** (clinica_id + empresa_id) | 4     |
+| **Lotes de Entidade** (entidade_id)            | 8     |
+| **Lotes Inválidos** (violação de segregação)   | ✅ 0  |
+| **Total de Lotes**                             | 12    |
+| **Funcionários com Entidade**                  | 15    |
+| **Entidades com Funcionários**                 | 4     |
 
 ---
 
@@ -45,10 +45,10 @@
 
 ### 🔄 Migrações Executadas
 
-| Migração | Status | Resultado |
-|----------|--------|-----------|
-| 1008_add_entidade_id_to_lotes_avaliacao.sql | ✅ OK | Coluna/FK/Índice/Trigger criados |
-| 1008b_fix_entidade_segregation.sql | ✅ OK | Constraint aplicada, 0 violações |
+| Migração                                    | Status | Resultado                        |
+| ------------------------------------------- | ------ | -------------------------------- |
+| 1008_add_entidade_id_to_lotes_avaliacao.sql | ✅ OK  | Coluna/FK/Índice/Trigger criados |
+| 1008b_fix_entidade_segregation.sql          | ✅ OK  | Constraint aplicada, 0 violações |
 
 ---
 
@@ -80,23 +80,25 @@ Agora as seguintes APIs funcionarão corretamente em PROD (sem erros de NULL):
 **PRÓXIMOS PASSOS:**
 
 1. **Executar migrations em PROD:**
+
    ```bash
    # Via seu deployment/CI
    pnpm db:sync:force
-   
+
    # Ou manualmente
    psql -U postgres -h prod.host -d neondb -f database/migrations/1008_add_entidade_id_to_lotes_avaliacao.sql
    psql -U postgres -h prod.host -d neondb -f database/migrations/1008b_fix_entidade_segregation.sql
    ```
 
 2. **Validar em PROD:**
+
    ```sql
    SELECT COUNT(*) FROM lotes_avaliacao WHERE entidade_id IS NOT NULL;
    -- Esperado: 8+ lotes
    ```
 
 3. **Testar APIs:**
-   - `GET /api/entidade/relatorio-individual-pdf?lote_id=1007&cpf=...` 
+   - `GET /api/entidade/relatorio-individual-pdf?lote_id=1007&cpf=...`
    - `GET /api/entidade/relatorio-lote-pdf?lote_id=1007`
    - Devem retornar 200 OK (não 404)
 
@@ -111,6 +113,7 @@ Agora as seguintes APIs funcionarão corretamente em PROD (sem erros de NULL):
 ### 🧹 Limpeza de Arquivos Temporários
 
 Arquivos criados para validação (podem ser removidos):
+
 - `verify-migration-1008.sql`
 - `debug-violacoes.sql`
 - `detailed-validation.sql`
@@ -123,11 +126,13 @@ Arquivos criados para validação (podem ser removidos):
 **Por que DEV funciona e PROD não?**
 
 ⚠️ Em PROD, a migration 1008 pode não ter sido executada, deixando:
+
 - Coluna `entidade_id` como NULL
 - Lotes mapeados apenas por `contratante_id` (coluna legada)
 - APIs consultando `la.entidade_id` diretamente falhando
 
 ✅ **Solução implementada:**
+
 - APIs agora usam `COALESCE(la.entidade_id, la.contratante_id)`
 - Validações através de `funcionarios_entidades` (mais seguro)
 - Backward compatible com ambas as arquiteturas

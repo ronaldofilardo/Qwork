@@ -3,21 +3,23 @@
 ## ✅ O que foi feito em DEV
 
 ### 1. Código TypeScript Corrigido
+
 5 arquivos de API foram corrigidos para funcionar em PROD:
 
-| Arquivo | Problema | Solução | Status |
-|---------|----------|---------|--------|
-| `app/api/entidade/relatorio-individual-pdf/route.ts` | JOIN desnecessário | Removido, usa `funcionarios_entidades` | ✅ Testado |
-| `app/api/entidade/relatorio-lote-pdf/route.ts` | Sem validação de acesso | Adicionado EXISTS | ✅ Testado |
-| `app/api/entidade/notificacoes/route.ts` | `WHERE la.entidade_id = $1` | `COALESCE(la.entidade_id, la.contratante_id)` | ✅ Testado |
-| `app/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset/route.ts` | `la.entidade_id = $2` | COALESCE | ✅ Testado |
-| `app/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/reset/route.ts` | `la.entidade_id = $2` | COALESCE | ✅ Testado |
+| Arquivo                                                               | Problema                    | Solução                                       | Status     |
+| --------------------------------------------------------------------- | --------------------------- | --------------------------------------------- | ---------- |
+| `app/api/entidade/relatorio-individual-pdf/route.ts`                  | JOIN desnecessário          | Removido, usa `funcionarios_entidades`        | ✅ Testado |
+| `app/api/entidade/relatorio-lote-pdf/route.ts`                        | Sem validação de acesso     | Adicionado EXISTS                             | ✅ Testado |
+| `app/api/entidade/notificacoes/route.ts`                              | `WHERE la.entidade_id = $1` | `COALESCE(la.entidade_id, la.contratante_id)` | ✅ Testado |
+| `app/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset/route.ts` | `la.entidade_id = $2`       | COALESCE                                      | ✅ Testado |
+| `app/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/reset/route.ts`  | `la.entidade_id = $2`       | COALESCE                                      | ✅ Testado |
 
 ### 2. Migration 1008 Executada em DEV
+
 ```
 ✅ Coluna entidade_id: criada
 ✅ Foreign Key: aplicada
-✅ Índices: criados  
+✅ Índices: criados
 ✅ Trigger: ativo
 ✅ Constraint de segregação: 12/12 lotes válidos
 ✅ 0 violações
@@ -42,6 +44,7 @@ cd C:\apps\QWork
 ```
 
 **O que o script faz:**
+
 1. Valida os arquivos de migração
 2. Conecta a PROD (Neon)
 3. Executa migration 1008
@@ -54,6 +57,7 @@ cd C:\apps\QWork
 ### Opção 2: Manual (se script falhar)
 
 **Parse a connection string:**
+
 ```powershell
 $env:PGPASSWORD = 'npg_J2QYqn5oxCzp'
 psql -U neondb_owner `
@@ -63,6 +67,7 @@ psql -U neondb_owner `
 ```
 
 Depois:
+
 ```powershell
 psql -U neondb_owner `
   -h ep-divine-sky-acuderi7-pooler.sa-east-1.aws.neon.tech `
@@ -103,13 +108,15 @@ psql -U neondb_owner `
 Depois que a migração for aplicada em PROD, testar:
 
 ### 1. ✅ Relatório Individual PDF
+
 ```bash
 GET /api/entidade/relatorio-individual-pdf?lote_id=1007&cpf=49651696036
 # Esperado: 200 OK + PDF binary
 # Antes: 404 "Avaliação não encontrada"
 ```
 
-### 2. ✅ Relatório Lote PDF  
+### 2. ✅ Relatório Lote PDF
+
 ```bash
 GET /api/entidade/relatorio-lote-pdf?lote_id=1007
 # Esperado: 200 OK + PDF binary
@@ -117,6 +124,7 @@ GET /api/entidade/relatorio-lote-pdf?lote_id=1007
 ```
 
 ### 3. ✅ Notificações
+
 ```bash
 GET /api/entidade/notificacoes
 # Esperado: 200 OK + array de notificações
@@ -140,6 +148,7 @@ GET /api/entidade/notificacoes
 ## ⚠️ Rollback (se necessário)
 
 Se algo der errado, contatar suporte Neon para restore:
+
 1. Neon mantém backups automáticos (24h)
 2. Pode fazer restore via console.neon.tech
 3. A migration é idempotente (pode reexecutar com segurança)
@@ -149,6 +158,7 @@ Se algo der errado, contatar suporte Neon para restore:
 ## 📞 Suporte
 
 **Em caso de erro:**
+
 1. Revisar output do script
 2. Executar validação queries manualmente
 3. Verificar logs: `$env:PGPASSWORD='...'; psql -U neondb_owner -h ... -d neondb -c "SELECT datname, usename FROM pg_stat_activity;"`
