@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Construir WHERE clause para busca
-    let whereClause = 'WHERE la.entidade_id = $1';
+    // Usar join com funcionarios_entidades para validar que lote pertence à entidade
+    let whereClause = 'WHERE fe_join.entidade_id = $1 AND fe_join.ativo = true';
     const params: any[] = [entidadeId];
 
     if (busca) {
@@ -45,7 +46,10 @@ export async function GET(request: NextRequest) {
         l.status
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
-      LEFT JOIN entidades e ON e.id = la.entidade_id
+      INNER JOIN avaliacoes a ON a.lote_id = la.id
+      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+      INNER JOIN funcionarios_entidades fe_join ON fe_join.funcionario_id = f.id
+      LEFT JOIN entidades e ON e.id = fe_join.entidade_id
       LEFT JOIN usuarios em ON em.cpf = l.emissor_cpf
       ${whereClause}
       ORDER BY l.enviado_em DESC
@@ -60,6 +64,9 @@ export async function GET(request: NextRequest) {
       SELECT COUNT(DISTINCT l.id) as total
       FROM laudos l
       JOIN lotes_avaliacao la ON la.id = l.lote_id
+      INNER JOIN avaliacoes a ON a.lote_id = la.id
+      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+      INNER JOIN funcionarios_entidades fe_join ON fe_join.funcionario_id = f.id
       ${whereClause}
     `,
       params

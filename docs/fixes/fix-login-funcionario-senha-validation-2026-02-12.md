@@ -7,6 +7,7 @@
 ## ❓ Problema
 
 O usuário reportou comportamento inconsistente entre ambientes:
+
 - **DEV:** ✅ Validação funciona - só aceita data de nascimento correta
 - **PROD:** ❌ Aceita qualquer data de nascimento fornecida
 
@@ -33,6 +34,7 @@ const senhaValida = await bcrypt.compare(senhaEsperada, senhaHash);
 ```
 
 **Comportamento do bcrypt.compare com valores inválidos:**
+
 - `senhaHash = null` → ❌ Lança erro "Illegal arguments"
 - `senhaHash = undefined` → ❌ Lança erro "Illegal arguments"
 - `senhaHash = ""` → ✅ Retorna false (válido)
@@ -54,9 +56,7 @@ Se em produção a tabela `funcionarios` tiver registros com `senha_hash = NULL`
 ```typescript
 // ✅ DEPOIS - Seguro
 if (!senhaHash) {
-  console.error(
-    `[LOGIN] senhaHash não encontrado para funcionário CPF ${cpf}`
-  );
+  console.error(`[LOGIN] senhaHash não encontrado para funcionário CPF ${cpf}`);
   return NextResponse.json(
     { error: 'Configuração de senha inválida. Contate o administrador.' },
     { status: 500 }
@@ -74,6 +74,7 @@ console.log(
 ```
 
 **Estes logs permitirão identificar em PROD:**
+
 - Se `senhaHash` está null/undefined
 - Se `senhaEsperada` está sendo gerada corretamente
 - Se há alguma inconsistência entre DEV e PROD
@@ -83,6 +84,7 @@ console.log(
 Arquivo: `__tests__/auth/login-funcionario-senha-validation.test.ts`
 
 **14 testes abrangendo:**
+
 - ✅ Comportamento do bcrypt.compare com null/undefined/vazio
 - ✅ Validação com data correta e incorreta
 - ✅ Validação com múltiplos formatos de data
@@ -112,26 +114,32 @@ Arquivo: `__tests__/auth/login-funcionario-senha-validation.test.ts`
 ### Análise dos Logs:
 
 **Cenário 1: senhaHash é NULL**
+
 ```
 [LOGIN] DEBUG - senhaHash existe: false
 [LOGIN] senhaHash não encontrado para funcionário CPF 12345678900
 ```
+
 → **Ação:** Verificar por que funcionários não têm senha_hash no banco PROD
 
 **Cenário 2: senhaHash existe mas aceita qualquer data**
+
 ```
 [LOGIN] DEBUG - senhaEsperada: 01012011
 [LOGIN] DEBUG - senhaHash existe: true, primeiros 10 chars: $2a$10$dmC
 [LOGIN] Senha válida: true
 ```
+
 → **Ação:** Verificar se o hash armazenado está correto no banco PROD
 
 **Cenário 3: Comparação funcionando corretamente**
+
 ```
 [LOGIN] DEBUG - senhaEsperada: 01012011
 [LOGIN] DEBUG - senhaHash existe: true, primeiros 10 chars: $2a$10$dmC
 [LOGIN] Senha válida: false
 ```
+
 → **Sucesso:** Validação funcionando corretamente
 
 ## 📊 Dados Complementares
@@ -156,9 +164,9 @@ Result: true
 
 ```sql
 -- Verificar se há funcionários sem senha_hash
-SELECT 
-  cpf, 
-  nome, 
+SELECT
+  cpf,
+  nome,
   senha_hash IS NULL as sem_senha,
   LENGTH(senha_hash) as tamanho_hash
 FROM funcionarios
@@ -166,9 +174,9 @@ WHERE ativo = true
 LIMIT 10;
 
 -- Ver um exemplo específico
-SELECT 
-  cpf, 
-  nome, 
+SELECT
+  cpf,
+  nome,
   senha_hash,
   entidade_id,
   ativo
@@ -179,6 +187,7 @@ WHERE cpf = 'CPF_DO_TESTE';
 ## 🔒 Segurança
 
 A correção **melhora a segurança** ao:
+
 1. Prevenir login quando `senhaHash` é null (antes poderia ter comportamento indefinido)
 2. Fornecer erro específico 500 ao invés de erro genérico
 3. Adicionar logs para auditoria e investigação

@@ -60,7 +60,10 @@ export async function GET(
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
-      WHERE la.id = $1 AND la.entidade_id = $2
+      INNER JOIN avaliacoes a ON a.lote_id = la.id
+      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+      INNER JOIN funcionarios_entidades fe2 ON fe2.funcionario_id = f.id
+      WHERE la.id = $1 AND fe2.entidade_id = $2 AND fe2.ativo = true
       LIMIT 1
     `,
       [loteId, session.entidade_id]

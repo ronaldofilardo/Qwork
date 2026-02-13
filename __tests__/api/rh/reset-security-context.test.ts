@@ -1,7 +1,7 @@
 /**
  * Testes para validar contexto de segurança no reset de avaliação (RH)
  * Verifica que app.current_user_cpf é configurado corretamente
- * 
+ *
  * @see Fix: https://github.com/ronaldofilardo/Qwork/commit/731e136
  * @date 2026-02-12
  */
@@ -111,15 +111,15 @@ describe('/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset - Security Context',
 
       // Verificar que query foi chamada com user como terceiro parâmetro
       const queryCalls = mockQuery.mock.calls;
-      
+
       // Todas as queries (exceto a primeira que é loteCheck) devem passar user
       expect(queryCalls.length).toBeGreaterThan(0);
-      
+
       // Verificar que pelo menos algumas queries recebem o parâmetro user
       const callsWithUser = queryCalls.filter(
         (call) => call.length === 3 && call[2] === mockUser
       );
-      
+
       // Esperamos que TODAS as queries (exceto a primeira) recebam user
       expect(callsWithUser.length).toBeGreaterThan(0);
     });

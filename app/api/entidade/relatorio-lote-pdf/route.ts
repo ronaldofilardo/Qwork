@@ -23,6 +23,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Buscar dados do lote com hash do laudo e data de emissão
+    // Verificar se o lote pertence à entidade através dos funcionários
     const loteResult = await query(
       `
       SELECT 
@@ -34,13 +35,23 @@ export async function GET(req: NextRequest) {
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON la.id = l.lote_id
       WHERE la.id = $1
+        AND EXISTS (
+          SELECT 1
+          FROM avaliacoes a
+          JOIN funcionarios f ON a.funcionario_cpf = f.cpf
+          JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
+          WHERE a.lote_id = la.id
+            AND fe.entidade_id = $2
+            AND fe.ativo = true
+        )
     `,
-      [loteId]
+      [loteId, session.entidade_id],
+      session
     );
 
     if (loteResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Lote não encontrado' },
+        { error: 'Lote não encontrado ou não pertence à sua entidade' },
         { status: 404 }
       );
     }

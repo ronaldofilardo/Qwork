@@ -44,7 +44,15 @@ export async function POST(
       FROM lotes_avaliacao la
       LEFT JOIN avaliacoes a ON a.lote_id = la.id
       LEFT JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      WHERE la.id = $1 AND la.entidade_id = $2
+      INNER JOIN (
+        SELECT DISTINCT la2.id
+        FROM lotes_avaliacao la2
+        INNER JOIN avaliacoes a2 ON a2.lote_id = la2.id
+        INNER JOIN funcionarios f2 ON a2.funcionario_cpf = f2.cpf
+        INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f2.id
+        WHERE fe.entidade_id = $2 AND fe.ativo = true
+      ) fe_lote ON fe_lote.id = la.id
+      WHERE la.id = $1
       GROUP BY la.id, la.tipo, la.status, la.criado_em
       LIMIT 1
     `,

@@ -1,7 +1,7 @@
 /**
  * Testes para validar contexto de segurança no reset de avaliação (Entidade/Gestor)
  * Verifica que app.current_user_cpf é configurado corretamente
- * 
+ *
  * @see Fix: https://github.com/ronaldofilardo/Qwork/commit/731e136
  * @date 2026-02-12
  */
