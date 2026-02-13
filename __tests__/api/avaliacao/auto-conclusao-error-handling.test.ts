@@ -71,10 +71,14 @@ describe('Auto-conclusão com Error Handling', () => {
 
   describe('Uso correto da tabela respostas', () => {
     it('deve usar tabela "respostas" (não respostas_avaliacao) em todas as queries', async () => {
-      mockQuery
+      mockQueryWithContext
         // Buscar avaliação atual
         .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
         // INSERT INTO respostas
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         // COUNT FROM respostas (total < 37)
         .mockResolvedValueOnce({ rows: [{ total: '10' }], rowCount: 1 });
@@ -91,7 +95,7 @@ describe('Auto-conclusão com Error Handling', () => {
       await POST(request);
 
       // Verificar que todas as queries usam "respostas"
-      const allCalls = mockQuery.mock.calls.map((call) => call[0]);
+      const allCalls = mockQueryWithContext.mock.calls.map((call) => call[0]);
 
       // INSERT deve usar "respostas"
       const insertCall = allCalls.find((sql) =>
@@ -101,7 +105,7 @@ describe('Auto-conclusão com Error Handling', () => {
       expect(insertCall).not.toContain('respostas_avaliacao');
 
       // COUNT deve usar "respostas"
-      const countCall = allCalls.find((sql) => sql.includes('FROM respostas'));
+      const countCall = allCalls.find((sql) => sql.includes('COUNT') && sql.includes('FROM respostas'));
       expect(countCall).toBeDefined();
       expect(countCall).toContain('FROM respostas');
       expect(countCall).not.toContain('FROM respostas_avaliacao');
@@ -114,16 +118,20 @@ describe('Auto-conclusão com Error Handling', () => {
         { grupo: 1, dominio: 'Demanda', score: 75, categoria: 'medio' },
       ]);
 
-      mockQuery
-        // Buscar avaliação atual (deve retornar avaliacaoId para funcionar)
-        .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
-        // INSERT INTO respostas
+      mockQueryWithContext
+        // INSERT INTO respostas (como avaliacaoId é passado, não busca avaliação)
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
-        // COUNT FROM respostas (37 respostas)
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // COUNT FROM respostas (37 respostas) - para verificarEConcluirAvaliacao
         .mockResolvedValueOnce({ rows: [{ total: '37' }], rowCount: 1 })
-        // SELECT lote_id (fora da transação para recalcularStatusLote)
+        // SELECT status novamente (para verificarEConcluirAvaliacao)
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // SELECT lote_id com JOIN (após transação para recalcularStatusLote)
         .mockResolvedValueOnce({
-          rows: [{ lote_id: 1, numero_ordem: 1 }],
+          rows: [{ lote_id: 1 }],
           rowCount: 1,
         });
 
@@ -154,10 +162,12 @@ describe('Auto-conclusão com Error Handling', () => {
     });
 
     it('NÃO deve concluir se tiver menos de 37 respostas', async () => {
-      mockQuery
-        // Buscar avaliação atual
-        .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
-        // INSERT INTO respostas
+      mockQueryWithContext
+        // INSERT INTO respostas (como avaliacaoId é passado)
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         // COUNT FROM respostas (apenas 36)
         .mockResolvedValueOnce({ rows: [{ total: '36' }], rowCount: 1 });
@@ -178,11 +188,11 @@ describe('Auto-conclusão com Error Handling', () => {
       expect(response.status).toBe(200);
       expect(data.completed).toBe(false);
 
-      // Não deve ter UPDATE de status
-      const updateStatusCall = mockQuery.mock.calls.find((call) =>
-        call[0].includes('UPDATE avaliacoes SET status')
+      // Não deve ter UPDATE de status de conclusão
+      const updateConclusaoCall = mockQueryWithContext.mock.calls.find((call) =>
+        call[0].includes('UPDATE avaliacoes') && call[0].includes('concluida')
       );
-      expect(updateStatusCall).toBeUndefined();
+      expect(updateConclusaoCall).toBeUndefined();
 
       // Não deve chamar recalcularStatusLote
       expect(mockRecalcularStatusLote).not.toHaveBeenCalled();
@@ -196,16 +206,22 @@ describe('Auto-conclusão com Error Handling', () => {
         throw new Error('Erro no cálculo de resultados');
       });
 
-      mockQuery
+      mockQueryWithContext
         // Buscar avaliação atual
         .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
         // INSERT INTO respostas
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         // COUNT FROM respostas (37 respostas)
         .mockResolvedValueOnce({ rows: [{ total: '37' }], rowCount: 1 })
-        // SELECT lote_id (fora da transação para recalcularStatusLote)
+        // SELECT status novamente
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // SELECT lote_id (após transação para recalcularStatusLote)
         .mockResolvedValueOnce({
-          rows: [{ lote_id: 1, numero_ordem: 1 }],
+          rows: [{ lote_id: 1 }],
           rowCount: 1,
         });
 
@@ -234,7 +250,7 @@ describe('Auto-conclusão com Error Handling', () => {
       expect(mockRecalcularStatusLote).toHaveBeenCalledWith(1);
 
       // Verificar que INSERT INTO resultados NÃO foi executado (erro no cálculo)
-      const insertResultadosCall = mockQuery.mock.calls.find((call) =>
+      const insertResultadosCall = mockQueryWithContext.mock.calls.find((call) =>
         call[0].includes('INSERT INTO resultados')
       );
       expect(insertResultadosCall).toBeUndefined();
@@ -245,31 +261,50 @@ describe('Auto-conclusão com Error Handling', () => {
         { grupo: 1, score: 75, categoria: 'medio' },
       ]);
 
-      mockQuery
+      mockQueryWithContext
         // Buscar avaliação atual
         .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
         // INSERT INTO respostas
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
         // COUNT FROM respostas (37 respostas)
         .mockResolvedValueOnce({ rows: [{ total: '37' }], rowCount: 1 })
-        // SELECT respostas para cálculo
+        // SELECT status novamente (para verificarEConcluirAvaliacao)
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // SELECT lote_id (após transação para recalcularStatusLote)
         .mockResolvedValueOnce({
+          rows: [{ lote_id: 1 }],
+          rowCount: 1,
+        });
+
+      // Mock transactionWithContext para executar callback com queryTx que falha em INSERT resultados
+      mockTransactionWithContext.mockImplementation(async (callback: any) => {
+        const queryTx = jest.fn();
+        // SELECT respostas para cálculo
+        queryTx.mockResolvedValueOnce({
           rows: Array(37)
             .fill(null)
             .map((_, i) => ({ grupo: 1, item: `Q${i}`, valor: 75 })),
           rowCount: 37,
-        })
+        });
         // INSERT INTO resultados (FALHA)
-        .mockRejectedValueOnce(new Error('Erro ao inserir resultados'))
+        queryTx.mockRejectedValueOnce(
+          new Error('Erro ao inserir resultados')
+        );
         // UPDATE avaliacoes SET status = concluida (DEVE EXECUTAR)
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
-        // SELECT lote_id
-        .mockResolvedValueOnce({
+        queryTx.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+        // SELECT lote_id (dentro da transação)
+        queryTx.mockResolvedValueOnce({
           rows: [{ lote_id: 1, numero_ordem: 1 }],
           rowCount: 1,
-        })
+        });
         // UPDATE funcionarios
-        .mockResolvedValueOnce({ rows: [], rowCount: 1 });
+        queryTx.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+        return await callback(queryTx);
+      });
 
       mockRecalcularStatusLote.mockResolvedValue(undefined);
 
@@ -308,14 +343,46 @@ describe('Auto-conclusão com Error Handling', () => {
         throw new Error('ERRO_TESTE_CALCULO');
       });
 
-      mockQuery
+      mockQueryWithContext
+        // Buscar avaliação atual
         .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
+        // INSERT INTO respostas
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // COUNT FROM respostas (37 respostas)
         .mockResolvedValueOnce({ rows: [{ total: '37' }], rowCount: 1 })
+        // SELECT status novamente (em verificarEConcluirAvaliacao)
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // SELECT lote_id (após transação para recalcularStatusLote)
         .mockResolvedValueOnce({
+          rows: [{ lote_id: 1 }],
+          rowCount: 1,
+        });
+
+      // Mock transactionWithContext para executar callback que falha
+      mockTransactionWithContext.mockImplementation(async (callback: any) => {
+        const queryTx = jest.fn();
+        // SELECT respostas para cálculo
+        queryTx.mockResolvedValueOnce({
+          rows: Array(37)
+            .fill(null)
+            .map((_, i) => ({ grupo: 1, item: `Q${i}`, valor: 75 })),
+          rowCount: 37,
+        });
+        // UPDATE avaliacoes SET status = concluida (vai ser executado mesmo com erro no cálculo)
+        queryTx.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+        // SELECT lote_id (dentro da transação)
+        queryTx.mockResolvedValueOnce({
           rows: [{ lote_id: 1, numero_ordem: 1 }],
           rowCount: 1,
         });
+        // UPDATE funcionarios
+        queryTx.mockResolvedValueOnce({ rows: [], rowCount: 1 });
+        return await callback(queryTx);
+      });
 
       mockRecalcularStatusLote.mockResolvedValue(undefined);
 
@@ -332,14 +399,14 @@ describe('Auto-conclusão com Error Handling', () => {
 
       // Verificar logs
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.stringContaining('COMPLETA! Marcando como concluída')
+        expect.stringContaining('COMPLETA (37/37 respostas)')
       );
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         expect.stringContaining('Erro ao calcular resultados'),
         expect.any(Error)
       );
       expect(consoleLogSpy).toHaveBeenCalledWith(
-        expect.stringContaining('marcada como concluída')
+        expect.stringContaining('concluída automaticamente')
       );
 
       consoleErrorSpy.mockRestore();
@@ -375,12 +442,22 @@ describe('Auto-conclusão com Error Handling', () => {
         return await callback(queryTx);
       });
 
-      mockQuery
+      mockQueryWithContext
+        // Buscar avaliação atual
         .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
+        // INSERT INTO respostas
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // COUNT FROM respostas (37 respostas)
         .mockResolvedValueOnce({ rows: [{ total: '37' }], rowCount: 1 })
+        // SELECT status novamente (em verificarEConcluirAvaliacao)
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // SELECT lote_id com JOIN (após transação para recalcularStatusLote)
         .mockResolvedValueOnce({
-          rows: [{ lote_id: 1, numero_ordem: 1 }],
+          rows: [{ lote_id: 1 }],
           rowCount: 1,
         });
 
@@ -436,12 +513,22 @@ describe('Auto-conclusão com Error Handling', () => {
         return await callback(queryTx);
       });
 
-      mockQuery
+      mockQueryWithContext
+        // Buscar avaliação atual
         .mockResolvedValueOnce({ rows: [{ id: 1, lote_id: 1 }], rowCount: 1 })
+        // INSERT INTO respostas
         .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // SELECT status
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // UPDATE status para em_andamento
+        .mockResolvedValueOnce({ rows: [], rowCount: 1 })
+        // COUNT FROM respostas (37 respostas)
         .mockResolvedValueOnce({ rows: [{ total: '37' }], rowCount: 1 })
+        // SELECT status novamente (em verificarEConcluirAvaliacao)
+        .mockResolvedValueOnce({ rows: [{ status: 'iniciada' }], rowCount: 1 })
+        // SELECT lote_id com JOIN (após transação para recalcularStatusLote)
         .mockResolvedValueOnce({
-          rows: [{ lote_id: 1, numero_ordem: 1 }],
+          rows: [{ lote_id: 1 }],
           rowCount: 1,
         });
 

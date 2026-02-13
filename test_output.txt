@@ -1,0 +1,171 @@
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+  console.log
+    [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+  console.log
+    ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+  console.log
+    ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+RBAC seed applied to test database
+FAIL __tests__/api/avaliacao/auto-conclusao-error-handling.test.ts
+  Auto-conclus├úo com Error Handling
+    Uso correto da tabela respostas
+      ├ù deve usar tabela "respostas" (n├úo respostas_avaliacao) em todas as queries (6 ms)
+    Auto-conclus├úo ao atingir 37 respostas
+      ├ù deve concluir automaticamente quando atingir 37 respostas (10 ms)
+      ├ù N├âO deve concluir se tiver menos de 37 respostas (3 ms)
+    Error handling - conclus├úo n├úo bloqueada
+      ├ù deve concluir avalia├º├úo MESMO SE calcularResultados falhar (2 ms)
+      ├ù deve concluir avalia├º├úo MESMO SE INSERT resultados falhar (2 ms)
+      ├ù deve logar erro mas continuar execu├º├úo quando c├ílculo falha (3 ms)
+    Queries SQL corretas
+      ├ù deve usar SELECT DISTINCT ON para evitar duplicatas (1 ms)
+      ├ù deve usar JOIN correto para buscar lote_id (1 ms)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Uso correto da tabela respostas ÔÇ║ deve usar tabela "respostas" (n├úo respostas_avaliacao) em todas as queries
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+       98 |         sql.includes('INSERT INTO respostas')
+       99 |       );
+    > 100 |       expect(insertCall).toBeDefined();
+          |                          ^
+      101 |       expect(insertCall).not.toContain('respostas_avaliacao');
+      102 |
+      103 |       // COUNT deve usar "respostas"
+
+      at Object.toBeDefined (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:100:26)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Auto-conclus├úo ao atingir 37 respostas ÔÇ║ deve concluir automaticamente quando atingir 37 respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      143 |       const data = await response.json();
+      144 |
+    > 145 |       expect(response.status).toBe(200);
+          |                               ^
+      146 |       expect(data.completed).toBe(true);
+      147 |       expect(data.message).toContain('conclu├¡da');
+      148 |
+
+      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:145:31)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Auto-conclus├úo ao atingir 37 respostas ÔÇ║ N├âO deve concluir se tiver menos de 37 respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      176 |       const data = await response.json();
+      177 |
+    > 178 |       expect(response.status).toBe(200);
+          |                               ^
+      179 |       expect(data.completed).toBe(false);
+      180 |
+      181 |       // N├úo deve ter UPDATE de status
+
+      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:178:31)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Error handling - conclus├úo n├úo bloqueada ÔÇ║ deve concluir avalia├º├úo MESMO SE calcularResultados falhar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      225 |
+      226 |       // Deve retornar sucesso
+    > 227 |       expect(response.status).toBe(200);
+          |                               ^
+      228 |       expect(data.completed).toBe(true);
+      229 |
+      230 |       // Verificar que transactionWithContext foi usado para conclus├úo
+
+      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:227:31)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Error handling - conclus├úo n├úo bloqueada ÔÇ║ deve concluir avalia├º├úo MESMO SE INSERT resultados falhar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      287 |
+      288 |       // Deve retornar sucesso
+    > 289 |       expect(response.status).toBe(200);
+          |                               ^
+      290 |       expect(data.completed).toBe(true);
+      291 |
+      292 |       // Verificar que transactionWithContext foi usado para conclus├úo
+
+      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:289:31)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Error handling - conclus├úo n├úo bloqueada ÔÇ║ deve logar erro mas continuar execu├º├úo quando c├ílculo falha
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "COMPLETA! Marcando como conclu├¡da"
+
+    Number of calls: 0
+
+      332 |
+      333 |       // Verificar logs
+    > 334 |       expect(consoleLogSpy).toHaveBeenCalledWith(
+          |                             ^
+      335 |         expect.stringContaining('COMPLETA! Marcando como conclu├¡da')
+      336 |       );
+      337 |       expect(consoleErrorSpy).toHaveBeenCalledWith(
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:334:29)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Queries SQL corretas ÔÇ║ deve usar SELECT DISTINCT ON para evitar duplicatas
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      404 |           call[0].includes('FROM respostas')
+      405 |       );
+    > 406 |       expect(selectRespostasCall).toBeDefined();
+          |                                   ^
+      407 |       expect(selectRespostasCall[0]).toContain(
+      408 |         'SELECT DISTINCT ON (r.grupo, r.item)'
+      409 |       );
+
+      at Object.toBeDefined (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:406:35)
+
+  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Queries SQL corretas ÔÇ║ deve usar JOIN correto para buscar lote_id
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+      465 |           call[0].includes('JOIN lotes_avaliacao la')
+      466 |       );
+    > 467 |       expect(joinCall).toBeDefined();
+          |                        ^
+      468 |       expect(joinCall[0]).toContain('FROM avaliacoes a');
+      469 |       expect(joinCall[0]).toContain(
+      470 |         'JOIN lotes_avaliacao la ON a.lote_id = la.id'
+
+      at Object.toBeDefined (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:467:24)
+
+Test Suites: 1 failed, 1 total
+Tests:       8 failed, 8 total
+Snapshots:   0 total
+Time:        3.341 s
+Ran all test suites matching __tests__/api/avaliacao/auto-conclusao-error-handling.test.ts.
