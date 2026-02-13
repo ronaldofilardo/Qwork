@@ -3,7 +3,7 @@
  * Consolida lógica de auto-conclusão ao atingir 37 respostas
  */
 
-import { query, transactionWithContext } from './db-security';
+import { query, queryWithContext, transactionWithContext } from './db-security';
 import { calcularResultados } from './calculate';
 import { recalcularStatusLote } from './lotes';
 import { grupos } from './questoes';
@@ -30,8 +30,9 @@ export async function verificarEConcluirAvaliacao(
   funcionarioCpf: string
 ): Promise<AutoConclusaoResult> {
   // ✅ VERIFICAR SE COMPLETOU 37 RESPOSTAS
-  // NOTA: Não precisa de contexto RLS aqui - apenas contando respostas
-  const countResult = await query(
+  // Usar queryWithContext para garantir que o contexto RLS seja respeitado
+  // e que a contagem seja feita com o acesso correto ao usuário
+  const countResult = await queryWithContext(
     `SELECT COUNT(DISTINCT (grupo, item)) as total
      FROM respostas
      WHERE avaliacao_id = $1`,
@@ -54,8 +55,8 @@ export async function verificarEConcluirAvaliacao(
   }
 
   // Verificar status atual da avaliação antes de tentar concluir
-  // NOTA: Não precisa de contexto RLS aqui - apenas leitura de status
-  const statusCheckResult = await query(
+  // Usar queryWithContext para garantir contexto RLS correto
+  const statusCheckResult = await queryWithContext(
     `SELECT status FROM avaliacoes WHERE id = $1`,
     [avaliacaoId]
   );
@@ -192,7 +193,8 @@ export async function verificarEConcluirAvaliacao(
   });
 
   // Chamar recalcularStatusLote APÓS a transação de conclusão
-  const loteResult = await query(
+  // Usar queryWithContext para manter contexto RLS consistente
+  const loteResult = await queryWithContext(
     `SELECT la.id as lote_id
      FROM avaliacoes a
      JOIN lotes_avaliacao la ON a.lote_id = la.id
