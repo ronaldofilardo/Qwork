@@ -3,7 +3,7 @@
  * Consolida lógica de auto-conclusão ao atingir 37 respostas
  */
 
-import { query, queryWithContext, transactionWithContext } from './db-security';
+import { queryWithContext, transactionWithContext } from './db-security';
 import { calcularResultados } from './calculate';
 import { recalcularStatusLote } from './lotes';
 import { grupos } from './questoes';
@@ -39,7 +39,7 @@ export async function verificarEConcluirAvaliacao(
     [avaliacaoId]
   );
 
-  const totalRespostas = parseInt(countResult.rows[0]?.total || '0');
+  const totalRespostas = parseInt((countResult.rows[0]?.total as string) || '0');
   console.log(
     `[AUTO-CONCLUSÃO] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
   );
@@ -60,7 +60,7 @@ export async function verificarEConcluirAvaliacao(
     `SELECT status FROM avaliacoes WHERE id = $1`,
     [avaliacaoId]
   );
-  const statusAtual = statusCheckResult.rows[0]?.status;
+  const statusAtual = (statusCheckResult.rows[0]?.status as string | undefined) || '';
 
   // Se já está concluída ou inativada, não fazer nada (IDEMPOTÊNCIA)
   if (statusAtual === 'concluida') {
@@ -89,7 +89,7 @@ export async function verificarEConcluirAvaliacao(
 
   // ✅ INICIAR PROCESSO DE CONCLUSÃO
   console.log(
-    `[AUTO-CONCLUSAO] Avaliacao ${avaliacaoId} COMPLETA (${totalRespostas}/37 respostas)! Status: ${statusAtual} -> concluida`
+    `[AUTO-CONCLUSAO] Avaliacao ${avaliacaoId} COMPLETA (${totalRespostas}/37 respostas)! Status: ${statusAtual || 'iniciada'} -> concluida`
   );
 
   // ✅ Envolver TODA a lógica de conclusão em transactionWithContext
@@ -204,7 +204,7 @@ export async function verificarEConcluirAvaliacao(
 
   let loteId: number | undefined;
   if (loteResult.rows.length > 0) {
-    loteId = loteResult.rows[0].lote_id;
+    loteId = loteResult.rows[0].lote_id as number;
     await recalcularStatusLote(avaliacaoId);
     console.log(`[AUTO-CONCLUSÃO] ✅ Lote ${loteId} recalculado`);
   }

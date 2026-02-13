@@ -78,7 +78,7 @@ export async function POST(
       );
     }
 
-    const lote = loteCheck.rows[0];
+    const _lote = loteCheck.rows[0];
 
     // Verificar se a emissão do laudo foi solicitada (princípio da imutabilidade)
     const emissaoSolicitadaResult = await query(

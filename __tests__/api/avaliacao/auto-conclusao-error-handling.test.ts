@@ -105,7 +105,9 @@ describe('Auto-conclusão com Error Handling', () => {
       expect(insertCall).not.toContain('respostas_avaliacao');
 
       // COUNT deve usar "respostas"
-      const countCall = allCalls.find((sql) => sql.includes('COUNT') && sql.includes('FROM respostas'));
+      const countCall = allCalls.find(
+        (sql) => sql.includes('COUNT') && sql.includes('FROM respostas')
+      );
       expect(countCall).toBeDefined();
       expect(countCall).toContain('FROM respostas');
       expect(countCall).not.toContain('FROM respostas_avaliacao');
@@ -189,8 +191,9 @@ describe('Auto-conclusão com Error Handling', () => {
       expect(data.completed).toBe(false);
 
       // Não deve ter UPDATE de status de conclusão
-      const updateConclusaoCall = mockQueryWithContext.mock.calls.find((call) =>
-        call[0].includes('UPDATE avaliacoes') && call[0].includes('concluida')
+      const updateConclusaoCall = mockQueryWithContext.mock.calls.find(
+        (call) =>
+          call[0].includes('UPDATE avaliacoes') && call[0].includes('concluida')
       );
       expect(updateConclusaoCall).toBeUndefined();
 
@@ -250,8 +253,8 @@ describe('Auto-conclusão com Error Handling', () => {
       expect(mockRecalcularStatusLote).toHaveBeenCalledWith(1);
 
       // Verificar que INSERT INTO resultados NÃO foi executado (erro no cálculo)
-      const insertResultadosCall = mockQueryWithContext.mock.calls.find((call) =>
-        call[0].includes('INSERT INTO resultados')
+      const insertResultadosCall = mockQueryWithContext.mock.calls.find(
+        (call) => call[0].includes('INSERT INTO resultados')
       );
       expect(insertResultadosCall).toBeUndefined();
     });
@@ -291,9 +294,7 @@ describe('Auto-conclusão com Error Handling', () => {
           rowCount: 37,
         });
         // INSERT INTO resultados (FALHA)
-        queryTx.mockRejectedValueOnce(
-          new Error('Erro ao inserir resultados')
-        );
+        queryTx.mockRejectedValueOnce(new Error('Erro ao inserir resultados'));
         // UPDATE avaliacoes SET status = concluida (DEVE EXECUTAR)
         queryTx.mockResolvedValueOnce({ rows: [], rowCount: 1 });
         // SELECT lote_id (dentro da transação)
