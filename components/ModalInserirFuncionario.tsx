@@ -393,7 +393,7 @@ export default function ModalInserirFuncionario({
               {/* Nível Cargo */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nível Cargo
+                  Nível Cargo *
                 </label>
                 <select
                   value={formData.nivel_cargo}

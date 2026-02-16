@@ -9,7 +9,6 @@ import {
   useEmpresa,
   useFuncionarios,
   useLotesAvaliacao,
-  useAnomalias,
   useLaudos,
   useDashboardData,
 } from '@/lib/hooks';
@@ -56,7 +55,6 @@ type TabType =
   | 'lotes'
   | 'laudos'
   | 'funcionarios'
-  | 'pendencias'
   | 'desligamentos';
 
 interface Funcionario {
@@ -96,11 +94,6 @@ export default function EmpresaDashboardPage() {
     fetchLotes,
     errorHint: lotesErrorHint,
   } = useLotesAvaliacao(empresaId);
-  const {
-    anomalias,
-    fetchAnomalias,
-    loading: loadingAnomalias,
-  } = useAnomalias(empresaId);
   const { laudos, downloadingLaudo, handleDownloadLaudo, fetchLaudos } =
     useLaudos(empresaId);
   const { fetchDashboardData } = useDashboardData(empresaId);
@@ -185,9 +178,6 @@ export default function EmpresaDashboardPage() {
       case 'funcionarios':
         fetchFuncionarios();
         break;
-      case 'pendencias':
-        fetchAnomalias();
-        break;
       case 'desligamentos':
         fetchFuncionarios();
         break;
@@ -257,14 +247,7 @@ export default function EmpresaDashboardPage() {
           activeTab={activeTab}
           onTabChange={(tab) => {
             setActiveTab(tab);
-            if (tab === 'pendencias' && anomalias.length === 0) {
-              fetchAnomalias();
-            }
           }}
-          anomaliasCount={
-            anomalias.filter((a) => a.prioridade === 'CRÍTICA').length ||
-            anomalias.length
-          }
         />
 
         {/* Conteúdo das abas */}
@@ -305,138 +288,6 @@ export default function EmpresaDashboardPage() {
         {activeTab === 'laudos' && (
           <div className="space-y-6">
             <LaudosSection empresaId={parseInt(empresaId, 10)} />
-          </div>
-        )}
-
-        {activeTab === 'pendencias' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow-sm p-6">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    ⚠️ Pendências de Avaliação
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Funcionários que precisam ser incluídos no próximo lote
-                  </p>
-                </div>
-                <button
-                  onClick={fetchAnomalias}
-                  disabled={loadingAnomalias}
-                  className="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-hover transition-colors text-sm font-medium disabled:bg-gray-400"
-                >
-                  {loadingAnomalias ? '🔄 Carregando...' : '🔄 Atualizar'}
-                </button>
-              </div>
-
-              {loadingAnomalias ? (
-                <div className="text-center py-12">
-                  <div className="text-4xl mb-4">⏳</div>
-                  <p className="text-gray-600">Carregando pendências...</p>
-                </div>
-              ) : anomalias.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="text-6xl mb-4">✅</div>
-                  <h4 className="text-xl font-semibold text-gray-600 mb-2">
-                    Nenhuma pendência encontrada
-                  </h4>
-                  <p className="text-gray-500">
-                    Todos os funcionários estão com suas avaliações em dia!
-                  </p>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full divide-y divide-gray-200">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Funcionário
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Setor
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Índice
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Última Avaliação
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Prioridade
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                          Motivo
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {anomalias.map((anomalia) => (
-                        <tr key={anomalia.cpf} className="hover:bg-gray-50">
-                          <td className="px-4 py-3">
-                            <div className="text-sm font-medium text-gray-900">
-                              {anomalia.nome}
-                            </div>
-                            <div className="text-xs text-gray-500 font-mono">
-                              {anomalia.cpf}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {anomalia.setor}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                anomalia.indice_avaliacao === 0
-                                  ? 'bg-gray-100 text-gray-800'
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}
-                            >
-                              {anomalia.indice_avaliacao === 0
-                                ? 'Nunca'
-                                : `Índice ${anomalia.indice_avaliacao}`}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900">
-                            {anomalia.data_ultimo_lote
-                              ? new Date(
-                                  anomalia.data_ultimo_lote
-                                ).toLocaleDateString('pt-BR')
-                              : '-'}
-                            {anomalia.dias_desde_ultima_avaliacao && (
-                              <div className="text-xs text-gray-500">
-                                {anomalia.dias_desde_ultima_avaliacao} dias
-                                atrás
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`px-2 py-1 text-xs rounded-full font-medium ${
-                                anomalia.prioridade === 'CRÍTICA'
-                                  ? 'bg-red-100 text-red-800'
-                                  : anomalia.prioridade === 'ALTA'
-                                    ? 'bg-orange-100 text-orange-800'
-                                    : 'bg-yellow-100 text-yellow-800'
-                              }`}
-                            >
-                              {anomalia.prioridade === 'CRÍTICA'
-                                ? '🔴'
-                                : anomalia.prioridade === 'ALTA'
-                                  ? '🟠'
-                                  : '🟡'}{' '}
-                              {anomalia.prioridade}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-700">
-                            {anomalia.mensagem}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
           </div>
         )}
 

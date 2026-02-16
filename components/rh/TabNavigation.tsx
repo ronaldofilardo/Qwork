@@ -5,7 +5,6 @@ type TabType =
   | 'lotes'
   | 'laudos'
   | 'funcionarios'
-  | 'pendencias'
   | 'desligamentos';
 
 interface TabNavigationProps {
@@ -17,11 +16,7 @@ interface TabNavigationProps {
 /**
  * Componente de navegação por abas
  */
-export function TabNavigation({
-  activeTab,
-  onTabChange,
-  anomaliasCount = 0,
-}: TabNavigationProps) {
+export function TabNavigation({ activeTab, onTabChange }: TabNavigationProps) {
   const tabs = [
     {
       id: 'lotes' as TabType,
@@ -33,12 +28,6 @@ export function TabNavigation({
       id: 'funcionarios' as TabType,
       label: '👥 Funcionários Ativos',
       badge: null,
-    },
-    {
-      id: 'pendencias' as TabType,
-      label: '⚠️ Pendências',
-      badge: anomaliasCount > 0 ? anomaliasCount : null,
-      title: 'Anomalias e pendências (alertas informativos, não bloqueantes)',
     },
     { id: 'desligamentos' as TabType, label: '🚪 Desligamentos', badge: null },
   ];
@@ -59,10 +48,7 @@ export function TabNavigation({
             >
               {tab.label}
               {tab.badge !== null && (
-                <span
-                  className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"
-                  title={tab.title || undefined}
-                >
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
                   {tab.badge}
                 </span>
               )}

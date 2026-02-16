@@ -1,9 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { User, Building2, FileText, DollarSign, Users } from 'lucide-react';
-import PaymentSummaryCard from '@/components/payments/PaymentSummaryCard';
-import ParcelasTable from '@/components/payments/ParcelasTable';
+import { User, Building2 } from 'lucide-react';
 
 // Helper simples para comparar snapshot vs atual
 function isSnapshotDifferent(
@@ -204,7 +202,7 @@ interface AccountInfo {
   }>;
 }
 
-type TabType = 'info' | 'plano';
+type TabType = 'info';
 
 interface Parcela {
   numero: number;
@@ -238,7 +236,7 @@ export default function ContaSection() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [parcelasData, setParcelasData] = useState<ParcelasData | null>(null);
-  const [loadingParcelas, setLoadingParcelas] = useState(false);
+  const [_loadingParcelas, setLoadingParcelas] = useState(false);
 
   const loadAccountInfo = useCallback(async () => {
     try {
@@ -388,7 +386,8 @@ export default function ContaSection() {
     [accountInfo]
   );
 
-  const handleGerarRecibo = async (parcelaNumero: number) => {
+  // Função auxiliar para gerar recibo (não usada atualmente)
+  const _handleGerarRecibo = async (parcelaNumero: number) => {
     if (!parcelasData) return;
 
     try {
@@ -426,7 +425,8 @@ export default function ContaSection() {
     }
   }, [accountInfo, loadParcelas]);
 
-  const formatCurrency = (value: number | null | undefined) => {
+  // Função auxiliar para formatar moeda (não usada atualmente)
+  const _formatCurrency = (value: number | null | undefined) => {
     if (value == null) return 'Não informado';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -434,7 +434,8 @@ export default function ContaSection() {
     }).format(Number(value));
   };
 
-  const formatDate = (dateString: string | null | undefined) => {
+  // Função auxiliar para formatar data (não usada atualmente)
+  const _formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return '—';
     // Use UTC to avoid timezone shifts when parsing ISO dates (tests and backend use UTC dates)
     return new Date(dateString).toLocaleDateString('pt-BR', {
@@ -485,17 +486,6 @@ export default function ContaSection() {
         >
           <Building2 className="inline mr-2" size={16} />
           Informações Cadastrais
-        </button>
-        <button
-          onClick={() => setActiveTab('plano')}
-          className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'plano'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <FileText className="inline mr-2" size={16} />
-          Plano
         </button>
       </div>
 
@@ -748,350 +738,6 @@ export default function ContaSection() {
                 <p className="text-sm text-gray-500">
                   Nenhum gestor RH cadastrado
                 </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {activeTab === 'plano' && (
-          <>
-            {/* Informações do Plano */}
-            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <FileText className="text-green-600" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Contrato Atual
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Informações do plano contratado
-                  </p>
-                </div>
-              </div>
-
-              {accountInfo?.clinica?.plano ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Número do Contrato
-                      </label>
-                      <p className="text-sm text-gray-900 font-medium">
-                        {accountInfo.clinica.plano.contrato_numero ||
-                          'Não informado'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Plano
-                      </label>
-                      <p className="text-sm text-gray-900 font-medium">
-                        {accountInfo.clinica.plano.plano_nome ||
-                          'Plano Contratado'}{' '}
-                        {accountInfo.clinica.plano.plano_tipo && (
-                          <span className="ml-2 text-xs text-gray-500">
-                            · {accountInfo.clinica.plano.plano_tipo}
-                          </span>
-                        )}
-                      </p>
-
-                      {/* Descrição do plano */}
-                      {accountInfo.clinica.plano.plano_descricao && (
-                        <p className="text-sm text-gray-600 mt-2">
-                          {accountInfo.clinica.plano.plano_descricao}
-                        </p>
-                      )}
-                    </div>
-
-                    {accountInfo.clinica.plano.status &&
-                      accountInfo.clinica.plano.status !==
-                        'aguardando_pagamento' && (
-                        <div>
-                          <label className="text-xs text-gray-500 uppercase tracking-wide">
-                            Status
-                          </label>
-                          <p>
-                            <span
-                              className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                                accountInfo.clinica.plano.status === 'ativo'
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}
-                            >
-                              {accountInfo.clinica.plano.status || 'ativo'}
-                            </span>
-                          </p>
-                        </div>
-                      )}
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Status de Pagamento
-                      </label>
-                      <p className="mt-1">
-                        {(() => {
-                          // Detectar caso de parcelamento parcial (ex.: 1/4 parcelas pagas)
-                          const pagamentosList = accountInfo.pagamentos || [];
-                          const pagamentoComParcelas = pagamentosList.find(
-                            (p) => p.resumo && p.resumo.totalParcelas > 1
-                          );
-
-                          if (
-                            pagamentoComParcelas &&
-                            pagamentoComParcelas.resumo.parcelasPagas > 0 &&
-                            pagamentoComParcelas.resumo.parcelasPendentes > 0
-                          ) {
-                            const r = pagamentoComParcelas.resumo;
-                            return (
-                              <>
-                                <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                                  Parcela(s) pendente(s)
-                                </span>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {`${r.parcelasPagas}/${r.totalParcelas} parcelas pagas — restante: ${formatCurrency(
-                                    r.valorPendente
-                                  )}`}
-                                </div>
-                              </>
-                            );
-                          }
-
-                          // Fallback behaviour: usar pagamento_status (fonte da verdade)
-                          if (
-                            accountInfo.clinica.plano.pagamento_status ===
-                            'em_aberto'
-                          ) {
-                            return (
-                              <>
-                                <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                                  Pendente
-                                </span>
-                                {(accountInfo.clinica.plano as any)
-                                  .pagamento_resumo?.restante != null ? (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Valor em aberto:{' '}
-                                    {formatarValor(
-                                      (accountInfo.clinica.plano as any)
-                                        .pagamento_resumo.restante
-                                    )}
-                                  </div>
-                                ) : accountInfo.clinica.plano.valor_pendente ? (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Valor em aberto:{' '}
-                                    {formatarValor(
-                                      accountInfo.clinica.plano.valor_pendente
-                                    )}
-                                  </div>
-                                ) : null}
-                              </>
-                            );
-                          }
-
-                          return (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                              Quitado
-                            </span>
-                          );
-                        })()}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Funcionários Contratados
-                      </label>
-                      <p className="text-sm text-gray-900 flex items-center gap-1">
-                        <Users size={14} />
-                        {accountInfo.clinica.plano
-                          .numero_funcionarios_estimado ||
-                          accountInfo.clinica.plano.numero_funcionarios_atual ||
-                          '—'}
-                      </p>
-                    </div>
-
-                    {accountInfo.clinica.plano.valor_por_funcionario && (
-                      <div>
-                        <label className="text-xs text-gray-500 uppercase tracking-wide">
-                          Valor por Funcionário
-                        </label>
-                        <p className="text-sm text-gray-900 font-medium">
-                          {formatarValor(
-                            accountInfo.clinica.plano.valor_por_funcionario
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Vigência
-                      </label>
-                      <p className="text-sm text-gray-900">
-                        {(() => {
-                          // Prioridade de data de início: plano.data_contratacao -> pagamento.data_pagamento|criado_em -> clinica.criado_em
-                          const plano = accountInfo.clinica.plano as any;
-                          let start: string | null = null;
-                          if (plano?.data_contratacao)
-                            start = plano.data_contratacao;
-                          else if (
-                            accountInfo.pagamentos &&
-                            accountInfo.pagamentos.length > 0
-                          ) {
-                            const p = accountInfo.pagamentos[0];
-                            start = p.data_pagamento || p.criado_em || null;
-                          } else if (accountInfo.clinica?.criado_em) {
-                            start = accountInfo.clinica.criado_em || null;
-                          }
-
-                          if (!start) return '—';
-
-                          const d = new Date(start);
-                          // Use UTC arithmetic to avoid timezone shifts
-                          d.setUTCDate(d.getUTCDate() + 364);
-                          const end = d.toISOString();
-                          return `${formatDate(start)} — ${formatDate(end)}`;
-                        })()}
-                      </p>
-                    </div>
-
-                    {accountInfo.clinica.plano.tipo_pagamento && (
-                      <div>
-                        <label className="text-xs text-gray-500 uppercase tracking-wide">
-                          Tipo de Pagamento
-                        </label>
-                        <p className="text-sm text-gray-900">
-                          {accountInfo.clinica.plano.tipo_pagamento}
-                          {accountInfo.clinica.plano.numero_parcelas &&
-                          accountInfo.clinica.plano.numero_parcelas > 1
-                            ? ` · ${accountInfo.clinica.plano.numero_parcelas} parcelas`
-                            : ' · À vista'}
-                        </p>
-                      </div>
-                    )}
-
-                    {accountInfo.clinica.plano.contrato_numero && (
-                      <div>
-                        <label className="text-xs text-gray-500 uppercase tracking-wide">
-                          Número do Contrato
-                        </label>
-                        <p className="text-sm text-gray-900 font-mono">
-                          #{accountInfo.clinica.plano.contrato_numero}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <a
-                      href="/termos/contrato"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border rounded hover:bg-gray-100 transition-colors text-sm"
-                    >
-                      <FileText size={14} />
-                      Ver Contrato
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto text-gray-400 mb-2" size={24} />
-                  <p className="text-sm text-gray-500">
-                    Nenhum plano contratado
-                  </p>
-                </div>
-              )}
-
-              {/* Resumo Financeiro para contratos */}
-              {accountInfo?.clinica?.plano &&
-                accountInfo.pagamentos &&
-                accountInfo.pagamentos.length > 0 &&
-                (() => {
-                  const planoObj = accountInfo.clinica.plano as any;
-                  // FONTE DA VERDADE: usar pagamento_resumo que agrega valores reais dos pagamentos
-                  // Se não houver `pagamento_resumo` no plano, reconstruir a partir de `accountInfo.pagamentos`
-                  const pagamentoResumo =
-                    planoObj.pagamento_resumo ||
-                    (accountInfo.pagamentos && accountInfo.pagamentos.length > 0
-                      ? (() => {
-                          const p = accountInfo.pagamentos[0];
-                          const r: any = p.resumo || {};
-                          return {
-                            totalPago:
-                              r.valorPago ?? r.valorPago ?? r.totalPago ?? 0,
-                            restante:
-                              r.valorPendente ??
-                              r.valorPendente ??
-                              r.restante ??
-                              0,
-                            total:
-                              r.valorTotal ??
-                              r.valorTotal ??
-                              r.total ??
-                              planoObj.valor_total ??
-                              planoObj.valor_pago ??
-                              0,
-                          };
-                        })()
-                      : {});
-
-                  const planoTotal =
-                    planoObj.valor_total ??
-                    planoObj.valor_pago ??
-                    pagamentoResumo.total ??
-                    0;
-                  const planoPago = pagamentoResumo.totalPago ?? 0;
-                  const planoRestante =
-                    pagamentoResumo.restante ??
-                    Math.max(planoTotal - planoPago, 0);
-
-                  return (
-                    <div className="mt-4">
-                      <PaymentSummaryCard
-                        total={planoTotal}
-                        pago={planoPago}
-                        restante={planoRestante}
-                      />
-                    </div>
-                  );
-                })()}
-            </div>
-
-            {/* Tabela de Parcelas */}
-            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <DollarSign className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Pagamentos
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Histórico de pagamentos
-                  </p>
-                </div>
-              </div>
-
-              {loadingParcelas ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : parcelasData ? (
-                <ParcelasTable
-                  parcelas={parcelasData.parcelas}
-                  pagamentoId={parcelasData.pagamento_id}
-                  contratacaoAt={parcelasData.contratacao_at}
-                  onGerarRecibo={handleGerarRecibo}
-                  apiPrefix="rh"
-                />
-              ) : (
-                <div className="text-center py-6 text-gray-500 text-sm">
-                  Nenhuma parcela encontrada
-                </div>
               )}
             </div>
           </>

@@ -256,7 +256,8 @@ export default function FuncionariosSection({
   };
 
   // Abrir modal de desligamento
-  const handleDesligar = (funcionario: Funcionario) => {
+  // Handler para desligar funcionário (não usado atualmente - botão removido da UI)
+  const _handleDesligar = (funcionario: Funcionario) => {
     setFuncionarioSelecionado(funcionario);
     setShowDesligarModal(true);
   };
@@ -695,15 +696,6 @@ export default function FuncionariosSection({
                         >
                           <Edit size={16} />
                         </button>
-                        {funcionario.ativo && (
-                          <button
-                            onClick={() => handleDesligar(funcionario)}
-                            className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Desligar funcionário"
-                          >
-                            <UserX size={16} />
-                          </button>
-                        )}
                       </div>
                     </td>
                   </tr>
