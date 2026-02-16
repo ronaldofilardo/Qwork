@@ -45,23 +45,18 @@ describe('📊 API /api/entidade/account-info', () => {
     endereco: 'Rua Teste, 123',
     cidade: 'São Paulo',
     estado: 'SP',
+    responsavel_nome: 'João Silva',
     criado_em: '2025-12-22T20:51:18.804Z',
   };
 
   describe('GET /api/entidade/account-info', () => {
-    test('✅ Deve retornar dados da entidade', async () => {
+    test('✅ Deve retornar dados da entidade (campos mínimos cadastrais)', async () => {
       const mockRequireEntity = require('@/lib/session').requireEntity;
       const mockQueryAsGestorEntidade =
         require('@/lib/db-gestor').queryAsGestorEntidade;
 
       mockRequireEntity.mockReturnValue(mockSession);
-
-      mockQueryAsGestorEntidade
-        .mockResolvedValueOnce({ rows: [mocktomador] })
-        .mockResolvedValueOnce({ rows: [{ column_name: 'preco' }] })
-        .mockResolvedValueOnce({ rows: [] })
-        .mockResolvedValueOnce({ rows: [{ column_name: 'criado_em' }] })
-        .mockResolvedValue({ rows: [] });
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [mocktomador] });
 
       const { GET } = require('@/app/api/entidade/account-info/route');
 
@@ -75,34 +70,53 @@ describe('📊 API /api/entidade/account-info', () => {
       expect(data.nome).toBe('RELEGERE');
       expect(data.cnpj).toBe('12345678000123');
       expect(data.email).toBe('contato@relegere.com');
-      expect(data).toHaveProperty('contrato');
-      expect(data).toHaveProperty('pagamentos');
+      expect(data.telefone).toBe('11999999999');
+      expect(data.endereco).toBe('Rua Teste, 123');
+      expect(data.cidade).toBe('São Paulo');
+      expect(data.estado).toBe('SP');
+      expect(data.responsavel_nome).toBe('João Silva');
+      expect(data.criado_em).toBe('2025-12-22T20:51:18.804Z');
     });
 
-    test('✅ Deve filtrar apenas entidades (tipo = entidade)', async () => {
+    test('✅ NÃO deve retornar status ou gestores da entidade', async () => {
       const mockRequireEntity = require('@/lib/session').requireEntity;
       const mockQueryAsGestorEntidade =
         require('@/lib/db-gestor').queryAsGestorEntidade;
 
       mockRequireEntity.mockReturnValue(mockSession);
-
-      mockQueryAsGestorEntidade
-        .mockResolvedValueOnce({ rows: [mocktomador] })
-        .mockResolvedValue({ rows: [] });
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [mocktomador] });
 
       const { GET } = require('@/app/api/entidade/account-info/route');
 
       const request = new NextRequest(
         'http://localhost:3000/api/entidade/account-info'
       );
-      await GET(request);
+      const response = await GET(request);
+      const data = await response.json();
 
-      // Verificar que a query da entidade tem filtro tipo = 'entidade'
-      expect(mockQueryAsGestorEntidade).toHaveBeenNthCalledWith(
-        1,
-        expect.stringContaining("e.tipo = 'entidade'"),
-        [18]
+      expect(response.status).toBe(200);
+      expect(data).not.toHaveProperty('status');
+      expect(data).not.toHaveProperty('gestores');
+      expect(data).not.toHaveProperty('contrato');
+      expect(data).not.toHaveProperty('pagamentos');
+    });
+
+    test('✅ Deve retornar erro 404 se entidade não encontrada', async () => {
+      const mockRequireEntity = require('@/lib/session').requireEntity;
+      const mockQueryAsGestorEntidade =
+        require('@/lib/db-gestor').queryAsGestorEntidade;
+
+      mockRequireEntity.mockReturnValue(mockSession);
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+      const { GET } = require('@/app/api/entidade/account-info/route');
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/entidade/account-info'
       );
+      const response = await GET(request);
+
+      expect(response.status).toBe(404);
     });
   });
 });
