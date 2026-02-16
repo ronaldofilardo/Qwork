@@ -18,6 +18,7 @@
 DO $$
 DECLARE
   v_invalidas_count INT := 0;
+  v_record RECORD;
 BEGIN
   -- Contar datas inválidas (aquelas que o JavaScript Date rejeitaria)
   SELECT COUNT(*)
