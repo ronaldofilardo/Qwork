@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+dist
+coverage
+*.log
+.env
+.env.local
+.env.*.local
+scripts/*.mjs
+scripts/*.cjs

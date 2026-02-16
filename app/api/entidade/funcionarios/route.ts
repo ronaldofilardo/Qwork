@@ -156,8 +156,22 @@ export async function POST(request: Request) {
     }
 
     // Hash da senha baseada na data de nascimento
-    const senhaPlaintext = gerarSenhaDeNascimento(data_nascimento);
-    const senhaHash = await bcrypt.hash(senhaPlaintext, 10);
+    // ✅ VALIDAR data de nascimento antes de gerar senha
+    let senhaPlaintext: string;
+    let senhaHash: string;
+    try {
+      senhaPlaintext = gerarSenhaDeNascimento(data_nascimento);
+      senhaHash = await bcrypt.hash(senhaPlaintext, 10);
+    } catch (error) {
+      console.error('[FUNCIONÁRIO] Erro ao validar data de nascimento:', error);
+      return NextResponse.json(
+        {
+          error: 'Data de nascimento inválida. Verifique dia e mês.',
+          details: error instanceof Error ? error.message : 'Data impossível',
+        },
+        { status: 400 }
+      );
+    }
 
     // ARQUITETURA SEGREGADA: Inserir em 2 etapas
     // 1. Inserir funcionário (sem FKs diretas)

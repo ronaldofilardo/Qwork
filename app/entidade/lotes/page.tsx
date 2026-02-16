@@ -26,6 +26,7 @@ interface LoteAvaliacao {
   laudo_emitido_em?: string;
   laudo_enviado_em?: string;
   laudo_hash?: string;
+  laudo_arquivo_remoto_url?: string;
   emissor_nome?: string;
   // Informações de solicitação de emissão
   solicitado_por?: string;
@@ -69,8 +70,12 @@ export default function LotesPage() {
         setLotes(lotesData.lotes || []);
 
         // Converter lotes para formato de laudos para compatibilidade com LotesGrid
+        // ✅ APENAS incluir laudos que foram enviados ao bucket (arquivo_remoto_url preenchido)
         const laudosFromLotes: Laudo[] = (lotesData.lotes || [])
-          .filter((lote: LoteAvaliacao) => lote.laudo_id)
+          .filter(
+            (lote: LoteAvaliacao) =>
+              lote.laudo_id && lote.laudo_arquivo_remoto_url // ✅ Exige arquivo no bucket
+          )
           .map((lote: LoteAvaliacao) => ({
             id: lote.laudo_id!,
             lote_id: lote.id,

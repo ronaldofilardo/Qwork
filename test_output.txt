@@ -1,171 +1,300 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "__tests__/api/entidade/laudos-download-backblaze-proxy.test.ts" "--passWithNoTests"
+
 [jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
-  console.log
-    [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+RBAC seed applied to test database
+FAIL __tests__/api/entidade/laudos-download-backblaze-proxy.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
 
       at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
 
-  console.log
-    ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
 
       at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
 
-  console.log
-    ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
 
       at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
 
-RBAC seed applied to test database
-FAIL __tests__/api/avaliacao/auto-conclusao-error-handling.test.ts
-  Auto-conclus├úo com Error Handling
-    Uso correto da tabela respostas
-      ├ù deve usar tabela "respostas" (n├úo respostas_avaliacao) em todas as queries (6 ms)
-    Auto-conclus├úo ao atingir 37 respostas
-      ├ù deve concluir automaticamente quando atingir 37 respostas (10 ms)
-      ├ù N├âO deve concluir se tiver menos de 37 respostas (3 ms)
-    Error handling - conclus├úo n├úo bloqueada
-      ├ù deve concluir avalia├º├úo MESMO SE calcularResultados falhar (2 ms)
-      ├ù deve concluir avalia├º├úo MESMO SE INSERT resultados falhar (2 ms)
-      ├ù deve logar erro mas continuar execu├º├úo quando c├ílculo falha (3 ms)
-    Queries SQL corretas
-      ├ù deve usar SELECT DISTINCT ON para evitar duplicatas (1 ms)
-      ├ù deve usar JOIN correto para buscar lote_id (1 ms)
+    console.log
+      [dotenv@17.2.3] injecting env (12) from .env.local -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
 
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Uso correto da tabela respostas ÔÇ║ deve usar tabela "respostas" (n├úo respostas_avaliacao) em todas as queries
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
 
-    expect(received).toBeDefined()
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
 
-    Received: undefined
+      at Object.log (lib/db.ts:664:15)
 
-       98 |         sql.includes('INSERT INTO respostas')
-       99 |       );
-    > 100 |       expect(insertCall).toBeDefined();
-          |                          ^
-      101 |       expect(insertCall).not.toContain('respostas_avaliacao');
-      102 |
-      103 |       // COUNT deve usar "respostas"
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-1008/laudo-123.pdf
 
-      at Object.toBeDefined (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:100:26)
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:82:13)
 
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Auto-conclus├úo ao atingir 37 respostas ÔÇ║ deve concluir automaticamente quando atingir 37 respostas
+    console.log
+      [BACKBLAZE] Provider: b2, endpoint: https://s3.us-east-005.backblazeb2.com, bucket: laudos-qwork, region: us-east-005
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=0052a814..., AppKey source: BACKBLAZE_APPLICATION_KEY=K005FuY8...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Gerando URL presigned para: laudos/lote-1008/laudo-123.pdf
+
+      at log (lib/storage/backblaze-client.ts:402:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Config: endpoint=https://s3.us-east-005.backblazeb2.com, bucket=laudos-qwork, region=us-east-005
+
+      at log (lib/storage/backblaze-client.ts:403:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] URL gerada: https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1008/laudo-123.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Am...
+
+      at log (lib/storage/backblaze-client.ts:426:11)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-1008/laudo-123.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:90:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:96:15)
+
+    console.log
+      [BACKBLAZE] PDF baixado com sucesso (16 bytes)
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:110:15)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-1008/laudo-456.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:82:13)
+
+    console.log
+      [BACKBLAZE] Provider: b2, endpoint: https://s3.us-east-005.backblazeb2.com, bucket: laudos-qwork, region: us-east-005
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=0052a814..., AppKey source: BACKBLAZE_APPLICATION_KEY=K005FuY8...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Gerando URL presigned para: laudos/lote-1008/laudo-456.pdf
+
+      at log (lib/storage/backblaze-client.ts:402:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Config: endpoint=https://s3.us-east-005.backblazeb2.com, bucket=laudos-qwork, region=us-east-005
+
+      at log (lib/storage/backblaze-client.ts:403:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] URL gerada: https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1008/laudo-456.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Am...
+
+      at log (lib/storage/backblaze-client.ts:426:11)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-1008/laudo-456.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:90:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:96:15)
+
+    console.log
+      [BACKBLAZE] PDF baixado com sucesso (13 bytes)
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:110:15)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-1008/laudo-789.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:82:13)
+
+    console.log
+      [BACKBLAZE] Provider: b2, endpoint: https://s3.us-east-005.backblazeb2.com, bucket: laudos-qwork, region: us-east-005
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=0052a814..., AppKey source: BACKBLAZE_APPLICATION_KEY=K005FuY8...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Gerando URL presigned para: laudos/lote-1008/laudo-789.pdf
+
+      at log (lib/storage/backblaze-client.ts:402:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Config: endpoint=https://s3.us-east-005.backblazeb2.com, bucket=laudos-qwork, region=us-east-005
+
+      at log (lib/storage/backblaze-client.ts:403:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] URL gerada: https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1008/laudo-789.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Am...
+
+      at log (lib/storage/backblaze-client.ts:426:11)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-1008/laudo-789.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:90:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:96:15)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-1008/laudo-error.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:82:13)
+
+    console.log
+      [BACKBLAZE] Provider: b2, endpoint: https://s3.us-east-005.backblazeb2.com, bucket: laudos-qwork, region: us-east-005
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=0052a814..., AppKey source: BACKBLAZE_APPLICATION_KEY=K005FuY8...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Gerando URL presigned para: laudos/lote-1008/laudo-error.pdf
+
+      at log (lib/storage/backblaze-client.ts:402:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Config: endpoint=https://s3.us-east-005.backblazeb2.com, bucket=laudos-qwork, region=us-east-005
+
+      at log (lib/storage/backblaze-client.ts:403:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] URL gerada: https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1008/laudo-error.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-...
+
+      at log (lib/storage/backblaze-client.ts:426:11)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-1008/laudo-error.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:90:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:96:15)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-1008/remoto.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:82:13)
+
+    console.log
+      [BACKBLAZE] Provider: b2, endpoint: https://s3.us-east-005.backblazeb2.com, bucket: laudos-qwork, region: us-east-005
+
+      at log (lib/storage/backblaze-client.ts:147:11)
+
+    console.log
+      [BACKBLAZE] Key source: BACKBLAZE_KEY_ID=0052a814..., AppKey source: BACKBLAZE_APPLICATION_KEY=K005FuY8...
+
+      at log (lib/storage/backblaze-client.ts:150:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Gerando URL presigned para: laudos/lote-1008/remoto.pdf
+
+      at log (lib/storage/backblaze-client.ts:402:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] Config: endpoint=https://s3.us-east-005.backblazeb2.com, bucket=laudos-qwork, region=us-east-005
+
+      at log (lib/storage/backblaze-client.ts:403:11)
+
+    console.log
+      [BACKBLAZE:getPresignedUrl] URL gerada: https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1008/remoto.pdf?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-C...
+
+      at log (lib/storage/backblaze-client.ts:426:11)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-1008/remoto.pdf
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:90:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:96:15)
+
+    console.log
+      [BACKBLAZE] PDF baixado com sucesso (3 bytes)
+
+      at log (app/api/entidade/laudos/[laudoId]/download/route.ts:110:15)
+
+  ÔùÅ GET /api/entidade/laudos/[laudoId]/download - Backblaze Proxy ÔÇ║ Valida├º├úo de Acesso ÔÇ║ deve retornar 403 quando usu├írio n├úo tem sess├úo de entidade
 
     expect(received).toBe(expected) // Object.is equality
 
-    Expected: 200
+    Expected: 403
     Received: 500
 
-      143 |       const data = await response.json();
-      144 |
-    > 145 |       expect(response.status).toBe(200);
-          |                               ^
-      146 |       expect(data.completed).toBe(true);
-      147 |       expect(data.message).toContain('conclu├¡da');
-      148 |
+      40 |       );
+      41 |
+    > 42 |       expect(response.status).toBe(403);
+         |                               ^
+      43 |     });
+      44 |
+      45 |     it('deve retornar 400 quando laudoId ├® inv├ílido', async () => {
 
-      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:145:31)
-
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Auto-conclus├úo ao atingir 37 respostas ÔÇ║ N├âO deve concluir se tiver menos de 37 respostas
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: 200
-    Received: 500
-
-      176 |       const data = await response.json();
-      177 |
-    > 178 |       expect(response.status).toBe(200);
-          |                               ^
-      179 |       expect(data.completed).toBe(false);
-      180 |
-      181 |       // N├úo deve ter UPDATE de status
-
-      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:178:31)
-
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Error handling - conclus├úo n├úo bloqueada ÔÇ║ deve concluir avalia├º├úo MESMO SE calcularResultados falhar
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: 200
-    Received: 500
-
-      225 |
-      226 |       // Deve retornar sucesso
-    > 227 |       expect(response.status).toBe(200);
-          |                               ^
-      228 |       expect(data.completed).toBe(true);
-      229 |
-      230 |       // Verificar que transactionWithContext foi usado para conclus├úo
-
-      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:227:31)
-
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Error handling - conclus├úo n├úo bloqueada ÔÇ║ deve concluir avalia├º├úo MESMO SE INSERT resultados falhar
-
-    expect(received).toBe(expected) // Object.is equality
-
-    Expected: 200
-    Received: 500
-
-      287 |
-      288 |       // Deve retornar sucesso
-    > 289 |       expect(response.status).toBe(200);
-          |                               ^
-      290 |       expect(data.completed).toBe(true);
-      291 |
-      292 |       // Verificar que transactionWithContext foi usado para conclus├úo
-
-      at Object.toBe (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:289:31)
-
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Error handling - conclus├úo n├úo bloqueada ÔÇ║ deve logar erro mas continuar execu├º├úo quando c├ílculo falha
-
-    expect(jest.fn()).toHaveBeenCalledWith(...expected)
-
-    Expected: StringContaining "COMPLETA! Marcando como conclu├¡da"
-
-    Number of calls: 0
-
-      332 |
-      333 |       // Verificar logs
-    > 334 |       expect(consoleLogSpy).toHaveBeenCalledWith(
-          |                             ^
-      335 |         expect.stringContaining('COMPLETA! Marcando como conclu├¡da')
-      336 |       );
-      337 |       expect(consoleErrorSpy).toHaveBeenCalledWith(
-
-      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:334:29)
-
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Queries SQL corretas ÔÇ║ deve usar SELECT DISTINCT ON para evitar duplicatas
-
-    expect(received).toBeDefined()
-
-    Received: undefined
-
-      404 |           call[0].includes('FROM respostas')
-      405 |       );
-    > 406 |       expect(selectRespostasCall).toBeDefined();
-          |                                   ^
-      407 |       expect(selectRespostasCall[0]).toContain(
-      408 |         'SELECT DISTINCT ON (r.grupo, r.item)'
-      409 |       );
-
-      at Object.toBeDefined (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:406:35)
-
-  ÔùÅ Auto-conclus├úo com Error Handling ÔÇ║ Queries SQL corretas ÔÇ║ deve usar JOIN correto para buscar lote_id
-
-    expect(received).toBeDefined()
-
-    Received: undefined
-
-      465 |           call[0].includes('JOIN lotes_avaliacao la')
-      466 |       );
-    > 467 |       expect(joinCall).toBeDefined();
-          |                        ^
-      468 |       expect(joinCall[0]).toContain('FROM avaliacoes a');
-      469 |       expect(joinCall[0]).toContain(
-      470 |         'JOIN lotes_avaliacao la ON a.lote_id = la.id'
-
-      at Object.toBeDefined (__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts:467:24)
+      at Object.toBe (__tests__/api/entidade/laudos-download-backblaze-proxy.test.ts:42:31)
 
 Test Suites: 1 failed, 1 total
-Tests:       8 failed, 8 total
+Tests:       1 failed, 8 passed, 9 total
 Snapshots:   0 total
-Time:        3.341 s
-Ran all test suites matching __tests__/api/avaliacao/auto-conclusao-error-handling.test.ts.
+Time:        3.792 s
+Ran all test suites matching __tests__/api/entidade/laudos-download-backblaze-proxy.test.ts.
+ÔÇëELIFECYCLEÔÇë Test failed. See above for more details.

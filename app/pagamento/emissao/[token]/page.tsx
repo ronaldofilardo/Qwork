@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { AlertCircle, Clock, Building2, FileText } from 'lucide-react';
 import PaymentSimulator from '@/components/PaymentSimulator';
+import CheckoutAsaas from '@/components/CheckoutAsaas';
 import { DadosPagamentoEmissao } from '@/lib/types/emissao-pagamento';
 
 interface PageProps {
@@ -18,6 +19,7 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
   const [erro, setErro] = useState<string | null>(null);
   const [pago, setPago] = useState(false);
   const [processando, setProcessando] = useState(false);
+  const [usarAsaas, setUsarAsaas] = useState(true); // Toggle: Asaas ou Simulador
   const router = useRouter();
 
   const carregarDados = useCallback(async () => {
@@ -80,6 +82,15 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
     } finally {
       setProcessando(false);
     }
+  };
+
+  const handleAsaasSuccess = () => {
+    // Sucesso no pagamento Asaas - redirecionar
+    router.push('/pagamento/emissao/sucesso');
+  };
+
+  const handleAsaasError = (errorMsg: string) => {
+    setErro(errorMsg);
   };
 
   if (loading) {
@@ -205,10 +216,38 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
           </div>
         </div>
 
-        {/* Simulador de Pagamento */}
+        {/* Simulador de Pagamento ou Asaas */}
         <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
           <div className="border-b border-gray-200 dark:border-gray-700 p-4">
-            <h2 className="font-bold text-lg">Escolha a Forma de Pagamento</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold text-lg">
+                Escolha a Forma de Pagamento
+              </h2>
+
+              {/* Toggle Simulador / Asaas */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setUsarAsaas(false)}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    !usarAsaas
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300'
+                  }`}
+                >
+                  Simulador
+                </button>
+                <button
+                  onClick={() => setUsarAsaas(true)}
+                  className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    usarAsaas
+                      ? 'bg-green-600 text-white'
+                      : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300'
+                  }`}
+                >
+                  Asaas (Real)
+                </button>
+              </div>
+            </div>
           </div>
           <div className="p-4">
             {processando ? (
@@ -218,7 +257,31 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
                   Processando pagamento...
                 </p>
               </div>
+            ) : usarAsaas ? (
+              // Checkout Asaas Real
+              dados.tomador_id ? (
+                <CheckoutAsaas
+                  tomadorId={dados.tomador_id}
+                  planoId={1} // Não usado em emissão, mas obrigatório
+                  numeroFuncionarios={dados.num_avaliacoes}
+                  valor={dados.valor_total}
+                  contratoId={null}
+                  onSuccess={handleAsaasSuccess}
+                  onError={handleAsaasError}
+                />
+              ) : (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-700">
+                    ⚠️ Erro: tomador_id não encontrado.
+                    <br />
+                    <span className="text-xs">
+                      Debug: {JSON.stringify(dados)}
+                    </span>
+                  </p>
+                </div>
+              )
             ) : (
+              // Simulador Antigo
               <PaymentSimulator
                 valorTotal={dados.valor_total}
                 onConfirm={confirmarPagamento}
@@ -229,10 +292,24 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
 
         {/* Footer */}
         <div className="text-center mt-6 text-sm text-gray-600 dark:text-gray-400">
-          <p>⚠️ Este é um simulador de pagamento para fins de demonstração.</p>
-          <p className="mt-1">
-            Após a confirmação, o laudo será emitido pelo sistema.
-          </p>
+          {usarAsaas ? (
+            <>
+              <p>✅ Usando Asaas Sandbox (pagamentos reais de teste)</p>
+              <p className="mt-1">
+                Após a confirmação, o laudo será emitido automaticamente via
+                webhook.
+              </p>
+            </>
+          ) : (
+            <>
+              <p>
+                ⚠️ Este é um simulador de pagamento para fins de demonstração.
+              </p>
+              <p className="mt-1">
+                Após a confirmação, o laudo será emitido pelo sistema.
+              </p>
+            </>
+          )}
         </div>
       </div>
     </div>

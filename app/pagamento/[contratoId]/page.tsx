@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import QworkLogo from '@/components/QworkLogo';
+import CheckoutAsaas from '@/components/CheckoutAsaas';
 
 interface PagamentoInfo {
   pagamento_id: number;
@@ -12,6 +13,9 @@ interface PagamentoInfo {
   plano_nome: string;
   tomador_nome: string;
   status: string;
+  tomador_id?: number;
+  plano_id?: number;
+  contrato_id?: number;
 }
 
 type MetodoPagamento = 'pix' | 'cartao' | 'boleto';
@@ -30,6 +34,7 @@ export default function PagamentoPage() {
   const [numeroParcelas, setNumeroParcelas] = useState<number>(1);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [mostrarCheckout, setMostrarCheckout] = useState(false);
 
   useEffect(() => {
     const iniciarPagamento = async () => {
@@ -239,6 +244,9 @@ export default function PagamentoPage() {
             '',
           status:
             data.status ?? pagamentoInfo?.status ?? 'aguardando_pagamento',
+          tomador_id: tomadorId,
+          plano_id: planoId,
+          contrato_id: contratoIdNumeric,
         };
 
         setPagamentoInfo(mapped);
@@ -277,6 +285,22 @@ export default function PagamentoPage() {
   };
 
   const confirmarPagamento = async () => {
+    // Mostrar o checkout Asaas
+    setMostrarCheckout(true);
+  };
+
+  const handleCheckoutSuccess = () => {
+    // Redirecionar após sucesso
+    alert('Pagamento confirmado! Você será redirecionado para o login.');
+    router.push('/login');
+  };
+
+  const handleCheckoutError = (errorMsg: string) => {
+    setErro(errorMsg);
+    setMostrarCheckout(false);
+  };
+
+  const confirmarPagamentoSimulador = async () => {
     if (!pagamentoInfo) return;
 
     setProcessando(true);
@@ -323,11 +347,8 @@ export default function PagamentoPage() {
       return;
     }
 
-    // Simular processamento de pagamento (2 segundos)
-    setProcessando(true);
-    setTimeout(() => {
-      confirmarPagamento();
-    }, 2000);
+    // Iniciar checkout Asaas
+    confirmarPagamento();
   };
 
   if (loading) {
@@ -376,203 +397,227 @@ export default function PagamentoPage() {
             </p>
           </div>
 
-          {/* Informações do Plano */}
-          {pagamentoInfo && (
-            <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                Resumo da Contratação
-              </h2>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Tomador:</span>
-                  <span className="font-semibold">
-                    {pagamentoInfo.tomador_nome || pagamentoInfo.tomador_nome}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Plano:</span>
-                  <span className="font-semibold">
-                    {pagamentoInfo.plano_nome}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Valor do Plano:</span>
-                  <span className="font-semibold">
-                    R$ {formatCurrency(pagamentoInfo.valor_plano)}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Número de Funcionários:</span>
-                  <span className="font-semibold">
-                    {pagamentoInfo.numero_funcionarios}
-                  </span>
-                </div>
-                <div className="border-t pt-3 mt-3">
-                  <div className="flex justify-between text-lg">
-                    <span className="text-gray-800 font-semibold">Total:</span>
-                    <span className="text-orange-600 font-bold">
-                      R$ {formatCurrency(pagamentoInfo.valor)}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-600 mt-1">
-                    (R$ {formatCurrency(pagamentoInfo.valor_plano)} ×{' '}
-                    {pagamentoInfo.numero_funcionarios} funcionários)
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Métodos de Pagamento */}
-          <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
-              Método de Pagamento
-            </h2>
-            <div className="space-y-3">
-              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
-                <input
-                  type="radio"
-                  name="metodo"
-                  value="pix"
-                  checked={metodoSelecionado === 'pix'}
-                  onChange={(e) =>
-                    setMetodoSelecionado(e.target.value as MetodoPagamento)
-                  }
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-semibold">PIX</div>
-                  <div className="text-sm text-gray-600">
-                    Pagamento instantâneo
+          {/* Mostrar CheckoutAsaas quando solicitado */}
+          {mostrarCheckout &&
+          pagamentoInfo &&
+          pagamentoInfo.tomador_id &&
+          pagamentoInfo.plano_id ? (
+            <CheckoutAsaas
+              tomadorId={pagamentoInfo.tomador_id}
+              planoId={pagamentoInfo.plano_id}
+              numeroFuncionarios={pagamentoInfo.numero_funcionarios}
+              valor={pagamentoInfo.valor}
+              contratoId={pagamentoInfo.contrato_id || null}
+              onSuccess={handleCheckoutSuccess}
+              onError={handleCheckoutError}
+            />
+          ) : (
+            <>
+              {/* Informações do Plano */}
+              {pagamentoInfo && (
+                <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                    Resumo da Contratação
+                  </h2>
+                  <div className="space-y-3">
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Tomador:</span>
+                      <span className="font-semibold">
+                        {pagamentoInfo.tomador_nome ||
+                          pagamentoInfo.tomador_nome}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Plano:</span>
+                      <span className="font-semibold">
+                        {pagamentoInfo.plano_nome}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Valor do Plano:</span>
+                      <span className="font-semibold">
+                        R$ {formatCurrency(pagamentoInfo.valor_plano)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">
+                        Número de Funcionários:
+                      </span>
+                      <span className="font-semibold">
+                        {pagamentoInfo.numero_funcionarios}
+                      </span>
+                    </div>
+                    <div className="border-t pt-3 mt-3">
+                      <div className="flex justify-between text-lg">
+                        <span className="text-gray-800 font-semibold">
+                          Total:
+                        </span>
+                        <span className="text-orange-600 font-bold">
+                          R$ {formatCurrency(pagamentoInfo.valor)}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        (R$ {formatCurrency(pagamentoInfo.valor_plano)} ×{' '}
+                        {pagamentoInfo.numero_funcionarios} funcionários)
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="text-2xl">📱</div>
-              </label>
-
-              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
-                <input
-                  type="radio"
-                  name="metodo"
-                  value="cartao"
-                  checked={metodoSelecionado === 'cartao'}
-                  onChange={(e) =>
-                    setMetodoSelecionado(e.target.value as MetodoPagamento)
-                  }
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-semibold">Cartão de Crédito</div>
-                  <div className="text-sm text-gray-600">
-                    À vista ou parcelado
-                  </div>
-                </div>
-                <div className="text-2xl">💳</div>
-              </label>
-
-              <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
-                <input
-                  type="radio"
-                  name="metodo"
-                  value="boleto"
-                  checked={metodoSelecionado === 'boleto'}
-                  onChange={(e) =>
-                    setMetodoSelecionado(e.target.value as MetodoPagamento)
-                  }
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-semibold">Boleto Bancário</div>
-                  <div className="text-sm text-gray-600">
-                    Vencimento em 3 dias úteis
-                  </div>
-                </div>
-                <div className="text-2xl">🏦</div>
-              </label>
-            </div>
-
-            {/* Seleção de Parcelas para Cartão e Boleto */}
-            {(metodoSelecionado === 'cartao' ||
-              metodoSelecionado === 'boleto') && (
-              <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Número de Parcelas
-                </label>
-                <select
-                  value={numeroParcelas}
-                  onChange={(e) => setNumeroParcelas(parseInt(e.target.value))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                >
-                  <option value={1}>
-                    À vista - R$ {formatCurrency(pagamentoInfo?.valor)}
-                  </option>
-                  {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((parcela) => {
-                    const valorParcela = pagamentoInfo?.valor
-                      ? pagamentoInfo.valor / parcela
-                      : 0;
-                    return (
-                      <option key={parcela} value={parcela}>
-                        {parcela}x de R$ {formatCurrency(valorParcela)}
-                      </option>
-                    );
-                  })}
-                </select>
-                <p className="text-xs text-gray-500 mt-2">
-                  {metodoSelecionado === 'cartao'
-                    ? 'Parcelamento em até 12x sem juros'
-                    : 'Boletos com vencimento mensal (dia 10 de cada mês)'}
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Aviso de Simulação */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="flex items-start">
-              <div className="text-blue-500 text-xl mr-3">ℹ️</div>
-              <div>
-                <div className="font-semibold text-blue-800">
-                  Modo de Simulação
-                </div>
-                <div className="text-sm text-blue-700 mt-1">
-                  Este é um ambiente de demonstração. Ao clicar em
-                  &quot;Confirmar Pagamento&quot;, o pagamento será simulado e
-                  sua conta será ativada automaticamente.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Erro */}
-          {erro && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <div className="text-red-700">{erro}</div>
-            </div>
-          )}
-
-          {/* Botões */}
-          <div className="flex gap-4">
-            <button
-              onClick={() => router.push('/login')}
-              disabled={processando}
-              className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
-            >
-              Cancelar
-            </button>
-            <button
-              onClick={simularPagamento}
-              disabled={processando}
-              className="flex-1 bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center justify-center"
-            >
-              {processando ? (
-                <>
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Processando...
-                </>
-              ) : (
-                'Confirmar Pagamento'
               )}
-            </button>
-          </div>
+
+              {/* Métodos de Pagamento */}
+              <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                  Método de Pagamento
+                </h2>
+                <div className="space-y-3">
+                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
+                    <input
+                      type="radio"
+                      name="metodo"
+                      value="pix"
+                      checked={metodoSelecionado === 'pix'}
+                      onChange={(e) =>
+                        setMetodoSelecionado(e.target.value as MetodoPagamento)
+                      }
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold">PIX</div>
+                      <div className="text-sm text-gray-600">
+                        Pagamento instantâneo
+                      </div>
+                    </div>
+                    <div className="text-2xl">📱</div>
+                  </label>
+
+                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
+                    <input
+                      type="radio"
+                      name="metodo"
+                      value="cartao"
+                      checked={metodoSelecionado === 'cartao'}
+                      onChange={(e) =>
+                        setMetodoSelecionado(e.target.value as MetodoPagamento)
+                      }
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold">Cartão de Crédito</div>
+                      <div className="text-sm text-gray-600">
+                        À vista ou parcelado
+                      </div>
+                    </div>
+                    <div className="text-2xl">💳</div>
+                  </label>
+
+                  <label className="flex items-center p-4 border-2 rounded-lg cursor-pointer hover:border-orange-500 transition-colors">
+                    <input
+                      type="radio"
+                      name="metodo"
+                      value="boleto"
+                      checked={metodoSelecionado === 'boleto'}
+                      onChange={(e) =>
+                        setMetodoSelecionado(e.target.value as MetodoPagamento)
+                      }
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-semibold">Boleto Bancário</div>
+                      <div className="text-sm text-gray-600">
+                        Vencimento em 3 dias úteis
+                      </div>
+                    </div>
+                    <div className="text-2xl">🏦</div>
+                  </label>
+                </div>
+
+                {/* Seleção de Parcelas para Cartão e Boleto */}
+                {(metodoSelecionado === 'cartao' ||
+                  metodoSelecionado === 'boleto') && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
+                      Número de Parcelas
+                    </label>
+                    <select
+                      value={numeroParcelas}
+                      onChange={(e) =>
+                        setNumeroParcelas(parseInt(e.target.value))
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                    >
+                      <option value={1}>
+                        À vista - R$ {formatCurrency(pagamentoInfo?.valor)}
+                      </option>
+                      {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((parcela) => {
+                        const valorParcela = pagamentoInfo?.valor
+                          ? pagamentoInfo.valor / parcela
+                          : 0;
+                        return (
+                          <option key={parcela} value={parcela}>
+                            {parcela}x de R$ {formatCurrency(valorParcela)}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-2">
+                      {metodoSelecionado === 'cartao'
+                        ? 'Parcelamento em até 12x sem juros'
+                        : 'Boletos com vencimento mensal (dia 10 de cada mês)'}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {/* Aviso de Asaas */}
+              <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="flex items-start">
+                  <div className="text-green-500 text-xl mr-3">✅</div>
+                  <div>
+                    <div className="font-semibold text-green-800">
+                      Pagamento com Asaas Sandbox
+                    </div>
+                    <div className="text-sm text-green-700 mt-1">
+                      Escolha um método de pagamento (PIX, Boleto ou Cartão)
+                      para proceder. Este é um ambiente de teste (sandbox).
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Erro */}
+              {erro && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="text-red-700">{erro}</div>
+                </div>
+              )}
+
+              {/* Botões */}
+              <div className="flex gap-4">
+                <button
+                  onClick={() => router.push('/login')}
+                  disabled={processando}
+                  className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={simularPagamento}
+                  disabled={processando}
+                  className="flex-1 bg-orange-600 text-white py-3 rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 flex items-center justify-center"
+                >
+                  {processando ? (
+                    <>
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Processando...
+                    </>
+                  ) : (
+                    'Confirmar Pagamento'
+                  )}
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

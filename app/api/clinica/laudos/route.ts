@@ -26,6 +26,7 @@ export const GET = async (_req: Request) => {
         l.status,
         l.enviado_em,
         l.hash_pdf,
+        l.arquivo_remoto_url,
         ec.nome as empresa_nome,
         u.nome as emissor_nome
       FROM laudos l
@@ -33,7 +34,8 @@ export const GET = async (_req: Request) => {
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN users u ON l.emissor_cpf = u.cpf
       WHERE la.clinica_id = $1
-        AND l.status IN ('enviado', 'emitido')
+        AND l.status = 'emitido'
+        AND l.arquivo_remoto_url IS NOT NULL
       ORDER BY l.enviado_em DESC
       LIMIT $2
     `,

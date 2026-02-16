@@ -7,6 +7,8 @@
  * Exemplo: 24/10/1974 → 24101974
  */
 
+import { isDataValida } from './date-validator';
+
 /**
  * Gera senha a partir da data de nascimento
  * @param dataNascimento - Data em formato ISO (YYYY-MM-DD) ou BR (DD/MM/YYYY)
@@ -102,6 +104,13 @@ export function gerarSenhaDeNascimento(dataNascimento: string): string {
 
   if (isNaN(anoNum) || anoNum < 1900 || anoNum > new Date().getFullYear()) {
     throw new Error('Ano inválido na data de nascimento');
+  }
+
+  // ✅ CRÍTICO: Validação de data real (rejeita 31/02/1990, etc)
+  if (!isDataValida(diaNum, mesNum, anoNum)) {
+    throw new Error(
+      `Data de nascimento impossível: ${dia}/${mes}/${ano}. Verifique dia e mês.`
+    );
   }
 
   // Garantir 4 dígitos no ano

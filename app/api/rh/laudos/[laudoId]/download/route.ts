@@ -26,7 +26,8 @@ export const GET = async (
       );
     }
 
-    // Buscar laudo e validar que está enviado ou emitido
+    // Buscar laudo e validar que está emitido
+    // ✅ NOVO: Apenas permite download se status='emitido' E arquivo está no bucket
     // Incluir metadados do arquivo remoto (Backblaze)
     const laudoQuery = await query(
       `
@@ -43,7 +44,9 @@ export const GET = async (
         la.empresa_id
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
-      WHERE l.id = $1 AND l.status IN ('enviado', 'emitido')
+      WHERE l.id = $1 
+        AND l.status = 'emitido' 
+        AND l.arquivo_remoto_url IS NOT NULL
     `,
       [laudoId]
     );

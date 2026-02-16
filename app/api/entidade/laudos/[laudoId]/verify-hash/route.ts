@@ -42,7 +42,8 @@ export const GET = async (
       INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
       WHERE l.id = $1 
-        AND l.status IN ('enviado', 'emitido')
+        AND l.status = 'emitido'
+        AND l.arquivo_remoto_url IS NOT NULL
         AND fe.entidade_id = $2
         AND fe.ativo = true
       LIMIT 1
@@ -120,6 +121,23 @@ export const GET = async (
     });
   } catch (error: any) {
     console.error('[VERIFY] Erro ao verificar hash do laudo:', error);
+
+    // Tratar erros de autenticação/autorização como 403
+    if (
+      error instanceof Error &&
+      (error.message.includes('Não autorizado') ||
+        error.message.includes('Acesso negado') ||
+        error.message.includes('Unauthorized'))
+    ) {
+      return NextResponse.json(
+        {
+          error: 'Acesso negado',
+          success: false,
+        },
+        { status: 403 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: error.message || 'Erro interno do servidor',

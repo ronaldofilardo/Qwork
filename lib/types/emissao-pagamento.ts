@@ -47,6 +47,7 @@ export interface DadosPagamentoEmissao {
   nome_empresa: string | null;
   cnpj_tomador: string;
   enviado_em: string;
+  tomador_id?: number; // Para integração Asaas
 }
 
 export interface ConfirmacaoPagamento {
