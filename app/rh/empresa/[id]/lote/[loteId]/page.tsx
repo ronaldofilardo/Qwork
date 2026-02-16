@@ -51,6 +51,7 @@ interface LoteInfo {
   tem_laudo?: boolean;
   emissor_nome?: string;
   hash_pdf?: string;
+  arquivo_remoto_url?: string | null;
 }
 
 interface Estatisticas {
@@ -1157,8 +1158,8 @@ export default function DetalhesLotePage() {
                     </div>
                   </div>
 
-                  {/* Botão Download Laudo */}
-                  {lote.laudo_id && (
+                  {/* Botão Download Laudo - apenas se arquivo está no bucket */}
+                  {lote.laudo_id && lote.arquivo_remoto_url && (
                     <button
                       onClick={async () => {
                         try {
@@ -1198,8 +1199,8 @@ export default function DetalhesLotePage() {
                     </button>
                   )}
 
-                  {/* Hash de Integridade */}
-                  {lote.hash_pdf && (
+                  {/* Hash de Integridade - apenas se arquivo está no bucket */}
+                  {lote.hash_pdf && lote.arquivo_remoto_url && (
                     <div className="bg-white p-3 rounded-lg border border-purple-200">
                       <div className="flex items-center justify-between mb-2">
                         <span className="text-xs font-semibold text-purple-800 uppercase">

@@ -75,28 +75,44 @@ describe('POST /api/emissor/laudos/[loteId]/upload', () => {
   });
 
   describe('Imutabilidade', () => {
-    it('deve rejeitar upload se laudo não está emitido', async () => {
+    it('deve permitir upload se laudo em emitido com hash_pdf preenchido', async () => {
       const laudo = {
         id: 1,
-        status: 'rascunho',
-        hash_pdf: 'abc123',
+        status: 'emitido',
+        hash_pdf:
+          'abc123def456789000111222333444555666777888999aaabbbcccdddeeefffg',
         arquivo_remoto_key: null,
       };
 
-      const canUpload =
-        laudo.status === 'emitido' || laudo.status === 'enviado';
+      // ✅ CORREÇÃO 16/02/2026: Após gerar PDF, status='emitido' (não 'rascunho')
+      // Upload é permitido enquanto tiver hash_pdf e não tiver arquivo_remoto_key
+      const canUpload = Boolean(laudo.hash_pdf) && !laudo.arquivo_remoto_key;
+      expect(canUpload).toBe(true);
+    });
+
+    it('deve rejeitar upload se laudo não tem hash_pdf gerado', async () => {
+      const laudo = {
+        id: 1,
+        status: 'rascunho', // Este permanece rascunho pois não tem PDF
+        hash_pdf: null,
+        arquivo_remoto_key: null,
+      };
+
+      // ❌ Sem hash_pdf, não pode fazer upload
+      const canUpload = Boolean(laudo.hash_pdf) && !laudo.arquivo_remoto_key;
       expect(canUpload).toBe(false);
     });
 
     it('deve rejeitar upload se já existe arquivo_remoto_key', async () => {
       const laudo = {
         id: 1,
-        status: 'emitido',
-        hash_pdf: 'abc123',
+        status: 'enviado', // Status após upload bem-sucedido
+        hash_pdf:
+          'abc123def456789000111222333444555666777888999aaabbbcccdddeeefffg',
         arquivo_remoto_key: 'laudos/lote-1/laudo-123.pdf',
       };
 
-      const canUpload = !laudo.arquivo_remoto_key;
+      const canUpload = Boolean(laudo.hash_pdf) && !laudo.arquivo_remoto_key;
       expect(canUpload).toBe(false);
     });
 
@@ -141,18 +157,27 @@ describe('POST /api/emissor/laudos/[loteId]/upload', () => {
       );
     });
 
-    it('deve persistir metadados no banco após upload', async () => {
+    it('deve marcar como enviado e preencher arquivo_remoto_url após upload', async () => {
       const { query } = await import('@/lib/db');
 
+      // ✅ CORREÇÃO 16/02/2026: Upload muda status de 'emitido' para 'enviado'
+      // emitido_em já existe (definido na geração), então usa COALESCE
       const mockUpdate = jest.fn().mockResolvedValue({ rowCount: 1 });
       (query as jest.Mock).mockImplementation(mockUpdate);
 
-      await query(`UPDATE laudos SET arquivo_remoto_key = $1 WHERE id = $2`, [
-        'laudos/lote-1/laudo-123.pdf',
-        1,
-      ]);
+      await query(
+        `UPDATE laudos SET status = 'enviado', emitido_em = COALESCE(emitido_em, NOW()), arquivo_remoto_url = $1, arquivo_remoto_uploaded_at = NOW() WHERE id = $2`,
+        ['https://bucket.backblaze.com/laudos/lote-1/laudo-123.pdf', 1]
+      );
 
-      expect(mockUpdate).toHaveBeenCalled();
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.stringContaining("status = 'enviado'"),
+        expect.any(Array)
+      );
+      expect(mockUpdate).toHaveBeenCalledWith(
+        expect.stringContaining('arquivo_remoto_url'),
+        expect.any(Array)
+      );
     });
 
     it('deve criar auditoria de sucesso', async () => {

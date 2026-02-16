@@ -54,6 +54,7 @@ export async function GET() {
           l.emitido_em as laudo_emitido_em,
           l.enviado_em as laudo_enviado_em,
           l.hash_pdf as laudo_hash,
+          l.arquivo_remoto_url as laudo_arquivo_remoto_url,
           f3.nome as emissor_nome,
           -- Informações de solicitação de emissão
           fe.solicitado_por,

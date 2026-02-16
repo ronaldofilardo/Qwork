@@ -25,16 +25,19 @@ export const GET = async (
     }
 
     // Buscar laudo e verificar se pertence à clínica
+    // ✅ NOVO: Apenas permite download se status='emitido' E arquivo está no bucket
     const laudoQuery = await query(
       `
       SELECT
         l.id,
         l.lote_id,
+        l.arquivo_remoto_key,
         la.clinica_id
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.id = $1 
-        AND l.status IN ('enviado', 'emitido')
+        AND l.status = 'emitido'
+        AND l.arquivo_remoto_url IS NOT NULL
         AND la.clinica_id = $2
     `,
       [laudoId, clinicaId]

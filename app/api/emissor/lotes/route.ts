@@ -94,12 +94,13 @@ export const GET = async (req: Request) => {
       // Informações de laudo vêm do banco de dados
       const temLaudo = Boolean(lote.laudo_id);
 
+      // ⚠️ IMPORTANTE: Para o EMISSOR, laudo é considerado 'emitido' quando:
+      // - Tem status='emitido' OU 'enviado'
+      // Emissor precisa ver laudos emitidos ANTES de enviá-los ao bucket (para revisar e enviar)
+      // A validação de bucket é apenas para RH/Entidade (solicitantes)
       const laudoEmitido =
         temLaudo &&
-        (lote.status_laudo === 'emitido' ||
-          lote.status_laudo === 'enviado' ||
-          lote.hash_pdf ||
-          lote.emitido_em);
+        (lote.status_laudo === 'emitido' || lote.status_laudo === 'enviado');
 
       const laudoObj = temLaudo
         ? {

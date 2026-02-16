@@ -25,13 +25,17 @@ describe('GET /api/entidade/laudos/[laudoId]/verify-hash', () => {
   });
 
   describe('Validação de Sessão', () => {
-    it('deve retornar erro quando não há sessão de entidade', async () => {
+    it('deve retornar 403 quando não há sessão de entidade', async () => {
       mockRequireEntity.mockRejectedValueOnce(new Error('Não autorizado'));
 
-      await expect(
-        GET({} as Request, { params: { laudoId: '1005' } } as any)
-      ).rejects.toThrow('Não autorizado');
+      const response = await GET(
+        {} as Request,
+        { params: { laudoId: '1005' } } as any
+      );
 
+      expect(response.status).toBe(403);
+      const json = await response.json();
+      expect(json.error).toContain('Acesso negado');
       expect(mockQuery).not.toHaveBeenCalled();
     });
 

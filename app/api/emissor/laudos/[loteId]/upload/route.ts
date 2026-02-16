@@ -76,11 +76,14 @@ export async function POST(
     const laudo = laudoResult.rows[0];
     const laudoId = laudo.id;
 
-    // 3. Verificar se laudo foi emitido
-    if (laudo.status !== 'emitido' && laudo.status !== 'enviado') {
+    // 3. Verificar se laudo foi gerado (tem PDF local)
+    // ⚠️ IMPORTANTE: Após mudança na emissão, o laudo permanece com status='rascunho'
+    // e é marcado como 'emitido' APÓS o upload ao bucket.
+    // Portanto, verificar se tem hash_pdf (indica PDF foi gerado localmente)
+    if (!laudo.hash_pdf) {
       return NextResponse.json(
         {
-          error: `Laudo ${laudoId} do lote ${loteId} não está em estado emitido. Status atual: ${laudo.status}`,
+          error: `Laudo ${laudoId} do lote ${loteId} não foi gerado ainda. Gere o laudo antes de fazer upload.`,
           success: false,
         },
         { status: 400 }
@@ -253,7 +256,11 @@ export async function POST(
       };
     }
 
-    // 15. Persistir metadados no banco de dados
+    // 15. Persistir metadados no banco de dados E MARCAR COMO EMITIDO
+    // ⚠️ IMPORTANTE: Este é o momento em que o laudo é efetivamente marcado como 'emitido'
+    // O status 'emitido' significava que o laudo está disponível ao usuário (no bucket)
+    // CORREÇÃO: Não verificar status='rascunho' pois o laudo pode já estar com status='emitido'
+    // A validação de imutabilidade já foi feita no passo 4 (verificando arquivo_remoto_key)
     await query(
       `UPDATE laudos 
        SET arquivo_remoto_provider = $1,
@@ -263,6 +270,8 @@ export async function POST(
            arquivo_remoto_uploaded_at = NOW(),
            arquivo_remoto_etag = $5,
            arquivo_remoto_size = $6,
+           status = 'emitido',
+           emitido_em = COALESCE(emitido_em, NOW()),
            atualizado_em = NOW()
        WHERE id = $7`,
       [

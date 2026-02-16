@@ -269,7 +269,7 @@ export const GET = async (
     );
 
     // [ATUALIZAÇÃO DO HASH]
-    // Atualizar hash_pdf no banco SOMENTE se o laudo ainda não foi emitido
+    // Atualizar hash_pdf no banco SOMENTE se o laudo ainda não tem hash
     // Isso garante a integridade sem violar a imutabilidade de laudos já emitidos
     try {
       const updateHash = await query(
@@ -277,7 +277,7 @@ export const GET = async (
          SET hash_pdf = $1
          WHERE id = $2 
            AND (hash_pdf IS NULL OR hash_pdf = '')
-           AND status IN ('rascunho', 'aprovado')
+           AND status IN ('rascunho', 'aprovado', 'emitido')
          RETURNING id, hash_pdf`,
         [hash, laudo.id]
       );
@@ -288,7 +288,7 @@ export const GET = async (
         );
       } else {
         console.log(
-          `[HASH] Laudo ${laudo.id} já possui hash ou já foi emitido - mantendo hash existente (imutabilidade)`
+          `[HASH] Laudo ${laudo.id} já possui hash ou já foi enviado - mantendo hash existente (imutabilidade)`
         );
       }
     } catch (hashError) {

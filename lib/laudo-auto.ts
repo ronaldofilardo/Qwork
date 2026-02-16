@@ -164,12 +164,14 @@ export async function gerarLaudoCompletoEmitirPDF(
       .digest('hex');
     console.log(`[EMISSÃO] Hash SHA-256 calculado: ${hashReal}`);
 
-    // ETAPA 7: SOMENTE AGORA marcar como 'emitido' com hash
-    console.log(`[EMISSÃO] Marcando laudo ${laudoId} como emitido...`);
+    // ETAPA 7: Salvar hash E marcar como 'emitido'
+    // ✅ CORREÇÃO: O laudo é considerado 'emitido' quando o PDF é gerado localmente
+    // O status mudará para 'enviado' quando for feito upload ao bucket
+    console.log(`[EMISSÃO] Salvando hash do PDF e marcando como emitido...`);
     const updateResult = await query(
       `UPDATE laudos 
-       SET status = 'emitido',
-           hash_pdf = $1,
+       SET hash_pdf = $1,
+           status = 'emitido',
            emitido_em = NOW(),
            atualizado_em = NOW()
        WHERE id = $2 AND status = 'rascunho'
@@ -179,7 +181,7 @@ export async function gerarLaudoCompletoEmitirPDF(
 
     if (!updateResult || updateResult.rowCount === 0) {
       throw new Error(
-        'Falha ao marcar laudo como emitido. Laudo pode já ter sido emitido.'
+        'Falha ao salvar hash do laudo. Laudo pode já ter sido emitido.'
       );
     }
 
@@ -199,7 +201,7 @@ export async function gerarLaudoCompletoEmitirPDF(
     console.log(`[EMISSÃO] Metadata salvo em ${metaFilePath}`);
 
     console.log(
-      `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso - PDF gerado localmente. Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.`
+      `[EMISSÃO] ✅ Laudo ${laudoId} emitido com sucesso! PDF gerado localmente e marcado como 'emitido'. Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.`
     );
     return laudoId;
   } catch (error) {

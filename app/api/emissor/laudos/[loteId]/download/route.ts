@@ -26,14 +26,19 @@ export const GET = async (
     }
 
     // Verificar se o laudo existe e pertence ao emissor
+    // ✅ EMISSOR: Permite download de laudos com status='emitido' (antes de enviar ao bucket)
+    // A validação de bucket é apenas para RH/Entidade, não para emissor
     const laudoQuery = await query(
       `
       SELECT
         l.id,
-        l.lote_id
+        l.lote_id,
+        l.arquivo_remoto_key
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
-      WHERE l.lote_id = $1 AND l.emissor_cpf = $2 AND l.status IN ('enviado','emitido')
+      WHERE l.lote_id = $1 
+        AND l.emissor_cpf = $2 
+        AND l.status = 'emitido'
     `,
       [loteId, user.cpf]
     );

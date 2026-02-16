@@ -12,6 +12,8 @@ import {
   getPagamentoById,
   getPagamentosByEntidade,
   atualizarStatusPagamento,
+  updatePagamentoAsaasData,
+  getAsaasCustomerIdByTomador,
 } from '@/lib/db-contratacao';
 import { logAudit, extractRequestInfo } from '@/lib/audit';
 import { ativarEntidade } from '@/lib/entidade-activation';
@@ -19,6 +21,16 @@ import {
   criarContaResponsavel,
   criarSenhaInicialEntidade,
 } from '@/lib/infrastructure/database';
+// Integração Asaas
+import { asaasClient } from '@/lib/asaas/client';
+import {
+  mapMetodoPagamentoToAsaasBillingType,
+  formatCpfCnpj,
+  formatPhone,
+  calculateDueDate,
+  truncateDescription,
+} from '@/lib/asaas/mappers';
+import type { AsaasCustomer, AsaasPayment } from '@/lib/asaas/types';
 // Recebíveis (recibos) são gerados sob demanda. Importação de gerador removida
 import type { RequestContext } from '@/lib/application/handlers/api-handler';
 import { requireSession } from '@/lib/application/handlers/api-handler';
@@ -83,43 +95,200 @@ export async function handleIniciarPagamento(
 ) {
   const { request } = context;
 
+  // 1. Buscar dados do tomador/entidade (necessário para criar cliente no Asaas)
+  const tomadorResult = await query(
+    `SELECT 
+      id, nome, cnpj, email, telefone,
+      responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
+     FROM tomadores 
+     WHERE id = $1`,
+    [input.entidade_id]
+  );
+
+  if (tomadorResult.rows.length === 0) {
+    throw new Error('Entidade/Tomador não encontrado');
+  }
+
+  const tomador = tomadorResult.rows[0] as {
+    id: number;
+    nome: string;
+    cnpj: string;
+    email: string;
+    telefone: string;
+    responsavel_nome?: string;
+    responsavel_cpf?: string;
+    responsavel_email?: string;
+    responsavel_celular?: string;
+  };
+
+  // 2. Criar pagamento inicial no banco (status pendente)
   const pagamento = await iniciarPagamento(
     {
       entidade_id: input.entidade_id,
       contrato_id: input.contrato_id,
       valor: input.valor,
       metodo: input.metodo as any,
-      plataforma_nome: input.plataforma_nome,
+      plataforma_nome: 'Asaas', // Sempre usar Asaas agora
     },
     undefined // Sem sessão no fluxo de contratação
   );
 
-  // Registrar auditoria (opcional, sem sessão)
-  const requestInfo = extractRequestInfo(request);
-  await logAudit(
-    {
-      resource: 'pagamentos',
-      action: 'INSERT',
-      resourceId: pagamento.id,
-      newData: {
-        entidade_id: input.entidade_id,
-        contrato_id: input.contrato_id,
-        valor: input.valor,
-        metodo: input.metodo,
-        status: 'pendente',
-      },
-      ipAddress: requestInfo.ipAddress,
-      userAgent: requestInfo.userAgent,
-      details: `Pagamento iniciado - Método: ${input.metodo}, Valor: R$ ${input.valor}`,
-    },
-    undefined
-  );
+  try {
+    // 3. Verificar se já existe cliente no Asaas
+    let asaasCustomerId = await getAsaasCustomerIdByTomador(input.entidade_id);
 
-  return {
-    success: true,
-    message: 'Pagamento iniciado com sucesso',
-    pagamento,
-  };
+    if (!asaasCustomerId) {
+      // Criar novo cliente no Asaas
+      const customerData: AsaasCustomer = {
+        name: tomador.responsavel_nome || tomador.nome,
+        email: tomador.responsavel_email || tomador.email,
+        cpfCnpj: formatCpfCnpj(tomador.responsavel_cpf || tomador.cnpj),
+        phone: formatPhone(tomador.telefone || ''),
+        mobilePhone: formatPhone(
+          tomador.responsavel_celular || tomador.telefone || ''
+        ),
+        externalReference: `tomador_${input.entidade_id}`,
+      };
+
+      console.log('[Pagamento] Criando cliente no Asaas:', customerData.name);
+
+      const customerResponse = await asaasClient.createCustomer(customerData);
+      asaasCustomerId = customerResponse.id;
+
+      console.log('[Pagamento] Cliente Asaas criado:', asaasCustomerId);
+    } else {
+      console.log('[Pagamento] Cliente Asaas já existe:', asaasCustomerId);
+    }
+
+    // 4. Criar cobrança no Asaas
+    const billingType = mapMetodoPagamentoToAsaasBillingType(input.metodo);
+    const dueDate = calculateDueDate(3); // Vencimento em 3 dias
+
+    const paymentData: AsaasPayment = {
+      customer: asaasCustomerId,
+      billingType,
+      value: input.valor,
+      dueDate,
+      description: truncateDescription(
+        `QWork - Assinatura Plano ${input.plano_tipo || 'Personalizado'}`
+      ),
+      externalReference: `pag_${pagamento.id}_${Date.now()}`,
+      // Configurações de juros e multa
+      fine: {
+        value: 2,
+        type: 'PERCENTAGE', // 2% de multa
+      },
+      interest: {
+        value: 1,
+        type: 'PERCENTAGE', // 1% de juros ao mês
+      },
+    };
+
+    console.log('[Pagamento] Criando cobrança no Asaas:', {
+      customer: asaasCustomerId,
+      value: input.valor,
+      billingType,
+    });
+
+    const paymentResponse = await asaasClient.createPayment(paymentData);
+
+    console.log('[Pagamento] Cobrança Asaas criada:', paymentResponse.id);
+
+    // 5. Se for PIX, buscar QR Code
+    let pixQrCode = null;
+    if (billingType === 'PIX') {
+      try {
+        console.log('[Pagamento] Buscando QR Code PIX...');
+        pixQrCode = await asaasClient.getPixQrCode(paymentResponse.id);
+        console.log('[Pagamento] QR Code PIX gerado com sucesso');
+      } catch (error) {
+        console.error('[Pagamento] Erro ao buscar QR Code PIX:', error);
+        // Não falha o processo, apenas loga o erro
+      }
+    }
+
+    // 6. Atualizar pagamento no banco com dados do Asaas
+    await updatePagamentoAsaasData(pagamento.id, {
+      customerId: asaasCustomerId,
+      paymentId: paymentResponse.id,
+      paymentUrl: paymentResponse.invoiceUrl, // URL genérica da fatura
+      boletoUrl: paymentResponse.bankSlipUrl,
+      invoiceUrl: paymentResponse.invoiceUrl,
+      pixQrCode: pixQrCode?.payload,
+      pixQrCodeImage: pixQrCode?.encodedImage,
+      netValue: paymentResponse.netValue,
+      dueDate: paymentResponse.dueDate,
+      status: 'processando', // Asaas criou, aguardando pagamento
+    });
+
+    // 7. Registrar auditoria
+    const requestInfo = extractRequestInfo(request);
+    await logAudit(
+      {
+        resource: 'pagamentos',
+        action: 'INSERT',
+        resourceId: pagamento.id,
+        newData: {
+          entidade_id: input.entidade_id,
+          contrato_id: input.contrato_id,
+          valor: input.valor,
+          metodo: input.metodo,
+          status: 'processando',
+          asaas_payment_id: paymentResponse.id,
+          asaas_customer_id: asaasCustomerId,
+        },
+        ipAddress: requestInfo.ipAddress,
+        userAgent: requestInfo.userAgent,
+        details: `Pagamento criado no Asaas - Método: ${billingType}, Valor: R$ ${input.valor}`,
+      },
+      undefined
+    );
+
+    // 8. Retornar resposta com dados de pagamento
+    return {
+      success: true,
+      message: 'Pagamento iniciado com sucesso no Asaas',
+      pagamento: {
+        ...pagamento,
+        asaas_payment_id: paymentResponse.id,
+        asaas_customer_id: asaasCustomerId,
+        asaas_payment_url: paymentResponse.invoiceUrl,
+        asaas_boleto_url: paymentResponse.bankSlipUrl,
+        asaas_invoice_url: paymentResponse.invoiceUrl,
+        asaas_pix_qrcode: pixQrCode?.payload,
+        asaas_pix_qrcode_image: pixQrCode?.encodedImage,
+        asaas_due_date: paymentResponse.dueDate,
+        status: 'processando',
+      },
+      // Dados adicionais para o frontend
+      paymentUrl: paymentResponse.invoiceUrl,
+      bankSlipUrl: paymentResponse.bankSlipUrl,
+      pixQrCode: pixQrCode
+        ? {
+            payload: pixQrCode.payload,
+            encodedImage: pixQrCode.encodedImage,
+          }
+        : null,
+      dueDate: paymentResponse.dueDate,
+      billingType,
+    };
+  } catch (error: any) {
+    // Se houver erro na integração com Asaas, atualizar status do pagamento
+    console.error('[Pagamento] Erro na integração Asaas:', error);
+
+    await query(
+      `UPDATE pagamentos 
+       SET status = 'cancelado',
+           observacoes = $2,
+           atualizado_em = NOW()
+       WHERE id = $1`,
+      [pagamento.id, `Erro Asaas: ${error.message}`]
+    );
+
+    throw new Error(
+      `Falha ao processar pagamento no Asaas: ${error.message || 'Erro desconhecido'}`
+    );
+  }
 }
 
 export async function handleConfirmarPagamento(

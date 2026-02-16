@@ -188,7 +188,9 @@ export async function POST(request: NextRequest) {
     // Verificar se já existe pagamento pendente/recente para este tomador
     try {
       const pagamentoExistente = await query(
-        `SELECT id, status FROM pagamentos WHERE tomador_id = $1 ORDER BY criado_em DESC LIMIT 1`,
+        `SELECT id, status FROM pagamentos 
+         WHERE (entidade_id = $1 OR clinica_id = $1) 
+         ORDER BY criado_em DESC LIMIT 1`,
         [finalTomadorId]
       );
 
@@ -281,9 +283,12 @@ export async function POST(request: NextRequest) {
     });
 
     // Criar registro de pagamento (associado ao contrato aceito)
+    // Usar entidade_id ou clinica_id conforme o tipo do tomador
+    const columnName =
+      tomador.tipo === 'entidade' ? 'entidade_id' : 'clinica_id';
     const pagamentoResult = await query(
       `INSERT INTO pagamentos (
-        tomador_id, contrato_id, valor, status, metodo
+        ${columnName}, contrato_id, valor, status, metodo
       ) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
       [finalTomadorId, contratoIdValido, finalValorTotal, 'pendente', 'avista']
     );

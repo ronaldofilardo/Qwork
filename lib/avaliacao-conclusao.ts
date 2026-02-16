@@ -39,7 +39,9 @@ export async function verificarEConcluirAvaliacao(
     [avaliacaoId]
   );
 
-  const totalRespostas = parseInt((countResult.rows[0]?.total as string) || '0');
+  const totalRespostas = parseInt(
+    (countResult.rows[0]?.total as string) || '0'
+  );
   console.log(
     `[AUTO-CONCLUSÃO] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
   );
@@ -60,7 +62,8 @@ export async function verificarEConcluirAvaliacao(
     `SELECT status FROM avaliacoes WHERE id = $1`,
     [avaliacaoId]
   );
-  const statusAtual = (statusCheckResult.rows[0]?.status as string | undefined) || '';
+  const statusAtual =
+    (statusCheckResult.rows[0]?.status as string | undefined) || '';
 
   // Se já está concluída ou inativada, não fazer nada (IDEMPOTÊNCIA)
   if (statusAtual === 'concluida') {

@@ -49,14 +49,15 @@ export async function GET(
         CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
         fe.solicitado_em as emissao_solicitado_em,
         CASE 
-          WHEN l.id IS NOT NULL AND (l.status = 'enviado' OR l.hash_pdf IS NOT NULL) 
+          WHEN l.id IS NOT NULL AND l.status = 'emitido' AND l.arquivo_remoto_url IS NOT NULL
           THEN true 
           ELSE false 
         END as tem_laudo,
         l.id as laudo_id,
         l.status as laudo_status,
         l.emissor_cpf,
-        l.hash_pdf
+        l.hash_pdf,
+        l.arquivo_remoto_url
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id

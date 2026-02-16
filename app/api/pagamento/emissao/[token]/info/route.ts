@@ -15,18 +15,21 @@ export async function GET(
     const result = await query(
       `SELECT 
         la.id AS lote_id, 
+        la.entidade_id,
         la.clinica_id,
         la.valor_por_funcionario,
         la.link_pagamento_enviado_em,
         COUNT(a.id) AS num_avaliacoes,
         (la.valor_por_funcionario * COUNT(a.id)) AS valor_total,
-        c.nome AS clinica_nome,
-        c.cnpj AS clinica_cnpj
+        COALESCE(c.nome, e.nome) AS tomador_nome,
+        COALESCE(c.cnpj, e.cnpj) AS tomador_cnpj,
+        e.nome AS empresa_nome
        FROM lotes_avaliacao la
        LEFT JOIN avaliacoes a ON a.lote_id = la.id AND a.status = 'concluida'
        LEFT JOIN clinicas c ON c.id = la.clinica_id
+       LEFT JOIN entidades e ON e.id = la.entidade_id
        WHERE la.link_pagamento_token = $1
-       GROUP BY la.id, la.clinica_id, c.id, c.nome, c.cnpj`,
+       GROUP BY la.id, la.entidade_id, la.clinica_id, c.id, c.nome, c.cnpj, e.id, e.nome, e.cnpj`,
       [token]
     );
 
@@ -38,11 +41,13 @@ export async function GET(
 
     return NextResponse.json({
       lote_id: dados.lote_id,
+      tomador_id: dados.entidade_id || dados.clinica_id, // Prioriza entidade_id
       num_avaliacoes: parseInt(dados.num_avaliacoes),
       valor_por_funcionario: parseFloat(dados.valor_por_funcionario),
       valor_total: parseFloat(dados.valor_total),
-      nome_tomador: dados.clinica_nome,
-      cnpj_tomador: dados.clinica_cnpj,
+      nome_tomador: dados.tomador_nome,
+      nome_empresa: dados.empresa_nome || null,
+      cnpj_tomador: dados.tomador_cnpj,
       enviado_em: dados.link_pagamento_enviado_em,
     });
   } catch (error: any) {

@@ -7,6 +7,7 @@ import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
+import { isDataValida } from '@/lib/auth/date-validator';
 
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
@@ -34,6 +35,30 @@ export default function LoginPage() {
   const formatarDataNascimento = (valor: string) => {
     const apenasNumeros = valor.replace(/\D/g, '');
     return apenasNumeros.slice(0, 8); // ddmmaaaa
+  };
+
+  const validarDataNascimento = (ddmmaaaa: string): string | null => {
+    if (!ddmmaaaa || ddmmaaaa.length !== 8) {
+      return 'Data deve ter 8 dígitos (formato: ddmmaaaa)';
+    }
+
+    const dia = parseInt(ddmmaaaa.substring(0, 2), 10);
+    const mes = parseInt(ddmmaaaa.substring(2, 4), 10);
+    const ano = parseInt(ddmmaaaa.substring(4, 8), 10);
+
+    if (isNaN(dia) || isNaN(mes) || isNaN(ano)) {
+      return 'Data inválida';
+    }
+
+    if (!isDataValida(dia, mes, ano)) {
+      return 'Data impossível (ex: 31/02 não existe). Verifique dia e mês.';
+    }
+
+    if (ano < 1900 || ano > new Date().getFullYear()) {
+      return `Ano deve estar entre 1900 e ${new Date().getFullYear()}`;
+    }
+
+    return null; // Válido
   };
 
   const handleConfirmarIdentidade = async () => {
@@ -103,6 +128,16 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
+      // ✅ VALIDAR data de nascimento se fornecida
+      if (dataNascimento) {
+        const erroData = validarDataNascimento(dataNascimento);
+        if (erroData) {
+          setError(erroData);
+          setLoading(false);
+          return;
+        }
+      }
+
       // Enviar senha ou data de nascimento
       const body: any = { cpf };
       if (senha) {

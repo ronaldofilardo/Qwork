@@ -52,6 +52,7 @@ interface LoteInfo {
   laudo_id?: number | null;
   hash_pdf?: string | null;
   emissor_cpf?: string | null;
+  arquivo_remoto_url?: string | null;
 }
 
 interface Estatisticas {
@@ -1025,16 +1026,18 @@ export default function DetalhesLotePage() {
                   </div>
                 </div>
 
-                {/* Bot\u00e3o Download Laudo */}
-                <button
-                  onClick={handleDownloadLaudo}
-                  className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
-                >
-                  📄 Ver Laudo / Baixar PDF
-                </button>
+                {/* Botão Download Laudo - apenas se arquivo está no bucket */}
+                {lote.arquivo_remoto_url && (
+                  <button
+                    onClick={handleDownloadLaudo}
+                    className="w-full bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors mb-3 font-medium"
+                  >
+                    📄 Ver Laudo / Baixar PDF
+                  </button>
+                )}
 
-                {/* Hash de Integridade */}
-                {lote.hash_pdf && (
+                {/* Hash de Integridade - apenas se arquivo está no bucket */}
+                {lote.hash_pdf && lote.arquivo_remoto_url && (
                   <div className="bg-white p-3 rounded-lg border border-purple-200">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-xs font-semibold text-purple-800 uppercase">

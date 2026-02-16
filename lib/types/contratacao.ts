@@ -62,6 +62,8 @@ export interface Pagamento {
   entidade_id?: number;
   clinica_id?: number;
   contrato_id?: number;
+  contratante_id?: number; // Alias para entidade_id/clinica_id (unificado)
+  tomador_id?: number; // Alias legado
   valor: number;
   metodo?: MetodoPagamento;
   status: StatusPagamento;
@@ -72,6 +74,19 @@ export interface Pagamento {
   data_confirmacao?: string;
   comprovante_path?: string;
   observacoes?: string;
+  numero_parcelas?: number;
+  detalhes_parcelas?: any;
+
+  // Campos específicos do Asaas Payment Gateway
+  asaas_customer_id?: string; // ID do cliente no Asaas (cus_xxx)
+  asaas_payment_url?: string; // URL de checkout para cartão
+  asaas_boleto_url?: string; // URL do boleto bancário
+  asaas_invoice_url?: string; // URL da fatura/invoice
+  asaas_pix_qrcode?: string; // Código PIX Copia e Cola
+  asaas_pix_qrcode_image?: string; // Imagem QR Code em base64
+  asaas_net_value?: number; // Valor líquido após taxas Asaas
+  asaas_due_date?: string; // Data de vencimento (YYYY-MM-DD)
+
   criado_em: string;
   atualizado_em: string;
 }

@@ -85,14 +85,15 @@ export async function iniciarPagamento(
   session?: Session
 ): Promise<Pagamento> {
   const result = await query<Pagamento>(
-    `INSERT INTO pagamentos (tomador_id, valor, metodo, plataforma_nome, status)
-     VALUES ($1, $2, $3, $4, 'pendente')
+    `INSERT INTO pagamentos (entidade_id, contrato_id, valor, metodo, plataforma_nome, status)
+     VALUES ($1, $2, $3, $4, $5, 'pendente')
      RETURNING *`,
     [
       data.entidade_id,
+      data.contrato_id || null,
       data.valor,
       data.metodo,
-      data.plataforma_nome || 'Simulado',
+      data.plataforma_nome || 'Asaas',
     ],
     session
   );
@@ -357,6 +358,188 @@ export async function getEntidadeCompleta(
   }
 
   return entidade;
+}
+
+// ==========================================
+// FUNÇÕES PARA INTEGRAÇÃO COM ASAAS
+// ==========================================
+
+/**
+ * Atualizar dados do Asaas no pagamento
+ * Salva URLs de pagamento, QR codes PIX, IDs, etc.
+ */
+export async function updatePagamentoAsaasData(
+  pagamentoId: number,
+  asaasData: {
+    customerId?: string;
+    paymentId?: string;
+    paymentUrl?: string;
+    boletoUrl?: string;
+    invoiceUrl?: string;
+    pixQrCode?: string;
+    pixQrCodeImage?: string;
+    netValue?: number;
+    dueDate?: string;
+    status?: StatusPagamento;
+  },
+  session?: Session
+): Promise<Pagamento> {
+  const updates: string[] = [];
+  const values: any[] = [pagamentoId];
+  let paramIndex = 2;
+
+  // Construir query dinâmica baseada nos campos fornecidos
+  if (asaasData.customerId !== undefined) {
+    updates.push(`asaas_customer_id = $${paramIndex++}`);
+    values.push(asaasData.customerId);
+  }
+
+  if (asaasData.paymentId !== undefined) {
+    updates.push(`plataforma_id = $${paramIndex++}`);
+    values.push(asaasData.paymentId);
+  }
+
+  if (asaasData.paymentUrl !== undefined) {
+    updates.push(`asaas_payment_url = $${paramIndex++}`);
+    values.push(asaasData.paymentUrl);
+  }
+
+  if (asaasData.boletoUrl !== undefined) {
+    updates.push(`asaas_boleto_url = $${paramIndex++}`);
+    values.push(asaasData.boletoUrl);
+  }
+
+  if (asaasData.invoiceUrl !== undefined) {
+    updates.push(`asaas_invoice_url = $${paramIndex++}`);
+    values.push(asaasData.invoiceUrl);
+  }
+
+  if (asaasData.pixQrCode !== undefined) {
+    updates.push(`asaas_pix_qrcode = $${paramIndex++}`);
+    values.push(asaasData.pixQrCode);
+  }
+
+  if (asaasData.pixQrCodeImage !== undefined) {
+    updates.push(`asaas_pix_qrcode_image = $${paramIndex++}`);
+    values.push(asaasData.pixQrCodeImage);
+  }
+
+  if (asaasData.netValue !== undefined) {
+    updates.push(`asaas_net_value = $${paramIndex++}`);
+    values.push(asaasData.netValue);
+  }
+
+  if (asaasData.dueDate !== undefined) {
+    updates.push(`asaas_due_date = $${paramIndex++}`);
+    values.push(asaasData.dueDate);
+  }
+
+  if (asaasData.status !== undefined) {
+    updates.push(`status = $${paramIndex++}`);
+    values.push(asaasData.status);
+  }
+
+  // Sempre atualizar timestamp
+  updates.push('atualizado_em = NOW()');
+
+  if (updates.length === 0) {
+    throw new Error('Nenhum dado para atualizar');
+  }
+
+  const sql = `UPDATE pagamentos 
+               SET ${updates.join(', ')}
+               WHERE id = $1
+               RETURNING *`;
+
+  const result = await query<Pagamento>(sql, values, session);
+
+  if (result.rows.length === 0) {
+    throw new Error('Pagamento não encontrado');
+  }
+
+  return result.rows[0];
+}
+
+/**
+ * Buscar pagamento pelo ID do Asaas (plataforma_id)
+ * Usado principalmente pelo webhook handler
+ */
+export async function getPagamentoByAsaasId(
+  asaasPaymentId: string,
+  session?: Session
+): Promise<Pagamento | null> {
+  const result = await query<Pagamento>(
+    'SELECT * FROM pagamentos WHERE plataforma_id = $1',
+    [asaasPaymentId],
+    session
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * Buscar ou criar referência de cliente Asaas para um tomador
+ * Retorna o asaas_customer_id se já existir, null caso contrário
+ */
+export async function getAsaasCustomerIdByTomador(
+  tomadorId: number,
+  session?: Session
+): Promise<string | null> {
+  const result = await query<{ asaas_customer_id: string }>(
+    `SELECT asaas_customer_id 
+     FROM pagamentos 
+     WHERE tomador_id = $1 
+       AND asaas_customer_id IS NOT NULL 
+     ORDER BY criado_em DESC 
+     LIMIT 1`,
+    [tomadorId],
+    session
+  );
+
+  return result.rows[0]?.asaas_customer_id || null;
+}
+
+/**
+ * Atualizar pagamento com dados da confirmação
+ * Versão simplificada específica para confirmação de pagamento
+ */
+export async function confirmarPagamentoAsaas(
+  pagamentoId: number,
+  dadosConfirmacao: {
+    plataformaId: string;
+    netValue?: number;
+    paymentDate?: string;
+    dadosAdicionais?: Record<string, any>;
+  },
+  session?: Session
+): Promise<Pagamento> {
+  const result = await query<Pagamento>(
+    `UPDATE pagamentos 
+     SET status = 'pago',
+         data_pagamento = COALESCE($2::timestamp, NOW()),
+         data_confirmacao = NOW(),
+         plataforma_id = $3,
+         asaas_net_value = COALESCE($4, asaas_net_value),
+         dados_adicionais = COALESCE($5::jsonb, dados_adicionais),
+         atualizado_em = NOW()
+     WHERE id = $1
+     RETURNING *`,
+    [
+      pagamentoId,
+      dadosConfirmacao.paymentDate || null,
+      dadosConfirmacao.plataformaId,
+      dadosConfirmacao.netValue || null,
+      dadosConfirmacao.dadosAdicionais
+        ? JSON.stringify(dadosConfirmacao.dadosAdicionais)
+        : null,
+    ],
+    session
+  );
+
+  if (result.rows.length === 0) {
+    throw new Error('Pagamento não encontrado');
+  }
+
+  return result.rows[0];
 }
 
 // === RETROCOMPATIBILIDADE - DEPRECATED ===

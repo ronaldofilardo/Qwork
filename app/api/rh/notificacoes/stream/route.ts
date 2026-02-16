@@ -65,13 +65,14 @@ export const GET = async (req: Request) => {
               l.id as id_referencia,
               l.lote_id,
               ec.nome as empresa_nome,
-              l.enviado_em as data_evento
+              l.emitido_em as data_evento
             FROM laudos l
             JOIN lotes_avaliacao la ON l.lote_id = la.id
             JOIN empresas_clientes ec ON la.empresa_id = ec.id
             WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
-              AND l.status = 'enviado'
-              AND l.enviado_em >= NOW() - INTERVAL '7 days'
+              AND l.status = 'emitido'
+              AND l.arquivo_remoto_url IS NOT NULL
+              AND l.emitido_em >= NOW() - INTERVAL '7 days'
 
             ORDER BY data_evento DESC
             LIMIT 50
