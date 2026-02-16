@@ -355,26 +355,72 @@ export async function POST(request: Request) {
           '[LOGIN] Erro ao gerar/validar senha de data_nascimento:',
           error
         );
-        try {
-          await registrarAuditoria({
-            entidade_tipo: 'login',
-            entidade_id: tomadorId,
-            acao: 'login_falha',
-            usuario_cpf: cpf,
-            metadados: {
-              motivo: 'data_nascimento_formato_invalido',
-              tipo_usuario: usuario.tipo_usuario,
-            },
-            ...contextoRequisicao,
-          });
-        } catch (err) {
-          console.warn('[LOGIN] Falha ao registrar auditoria:', err);
-        }
-
-        return NextResponse.json(
-          { error: 'Data de nascimento em formato inválido' },
-          { status: 401 }
+        console.warn(
+          '[LOGIN] ⚠️ Data de nascimento inválida ou em formato inválido no banco. Tentando login com senha normal se disponível...'
         );
+        
+        // FALLBACK: Se houver erro ao validar data (ex: data impossível como 31/02 no banco),
+        // tentar login com senha normal se foi fornecida
+        if (senha && senhaHash) {
+          console.log('[LOGIN] Tentando validação com senha normal após falha em data_nascimento...');
+          try {
+            const senhaValida = await bcrypt.compare(senha, senhaHash);
+            if (senhaValida) {
+              console.log('[LOGIN] Login bem-sucedido com senha normal (fallback após erro em data_nascimento)');
+              // Continuar com o login normal abaixo
+              // Não fazer return aqui, deixar a lógica de criação de sessão executar
+            } else {
+              return NextResponse.json(
+                { error: 'Senha inválida' },
+                { status: 401 }
+              );
+            }
+          } catch (fallbackError) {
+            console.error('[LOGIN] Erro no fallback com senha normal:', fallbackError);
+            try {
+              await registrarAuditoria({
+                entidade_tipo: 'login',
+                entidade_id: tomadorId,
+                acao: 'login_falha',
+                usuario_cpf: cpf,
+                metadados: {
+                  motivo: 'data_nascimento_formato_invalido_e_sem_senha',
+                  tipo_usuario: usuario.tipo_usuario,
+                },
+                ...contextoRequisicao,
+              });
+            } catch (err) {
+              console.warn('[LOGIN] Falha ao registrar auditoria:', err);
+            }
+
+            return NextResponse.json(
+              { error: 'Data de nascimento em formato inválido ou senha não fornecida' },
+              { status: 401 }
+            );
+          }
+        } else {
+          // Sem senha e data inválida
+          try {
+            await registrarAuditoria({
+              entidade_tipo: 'login',
+              entidade_id: tomadorId,
+              acao: 'login_falha',
+              usuario_cpf: cpf,
+              metadados: {
+                motivo: 'data_nascimento_formato_invalido',
+                tipo_usuario: usuario.tipo_usuario,
+              },
+              ...contextoRequisicao,
+            });
+          } catch (err) {
+            console.warn('[LOGIN] Falha ao registrar auditoria:', err);
+          }
+
+          return NextResponse.json(
+            { error: 'Data de nascimento em formato inválido' },
+            { status: 401 }
+          );
+        }
       }
     } else if (senha && senhaHash) {
       // Validar senha para demais usuários (RH, Gestor)
