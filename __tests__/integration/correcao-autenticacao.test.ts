@@ -34,7 +34,6 @@ describe('Correção de Autenticação', () => {
       expect(senhaCorreta).toBe(true);
 
       // [TEST] Hash da senha admin verificado com sucesso
-
     });
 
     it('deve rejeitar senha incorreta', async () => {
@@ -51,7 +50,6 @@ describe('Correção de Autenticação', () => {
       expect(senhaIncorreta).toBe(false);
 
       // [TEST] Senha incorreta rejeitada corretamente
-
     });
   });
 
@@ -74,7 +72,6 @@ describe('Correção de Autenticação', () => {
       expect(senhaInvalida).toBe(false);
 
       // [TEST] Validação de senha bcrypt funcionando corretamente
-
     });
 
     it('deve funcionar com diferentes formatos de entrada', async () => {
@@ -92,9 +89,6 @@ describe('Correção de Autenticação', () => {
         senhaHash
       );
       expect(senhaTrimValida).toBe(true);
-
-        '[TEST] Validação de senha com trim funcionando corretamente'
-      );
     });
   });
 
@@ -117,7 +111,6 @@ describe('Correção de Autenticação', () => {
       expect(admin.atualizado_em).toBeTruthy();
 
       // [TEST] Integridade do usuário admin verificada
-
     });
 
     it('deve ser o único usuário com perfil admin', async () => {
@@ -129,7 +122,6 @@ describe('Correção de Autenticação', () => {
       expect(parseInt(result.rows[0].total_admins)).toBe(1);
 
       // [TEST] Verificado que há apenas um usuário admin
-
     });
   });
 });

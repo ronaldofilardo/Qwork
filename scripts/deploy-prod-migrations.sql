@@ -98,7 +98,36 @@ WHERE status = 'emitido'
 COMMIT;
 
 -- =====================================================
--- MIGRAÇÃO 3: Criar Tabela Asaas Pagamentos
+-- MIGRAÇÃO 3: Adicionar coluna concluida_em (206)
+-- =====================================================
+
+BEGIN;
+
+-- Adicionar coluna concluida_em se não existir
+ALTER TABLE avaliacoes
+  ADD COLUMN IF NOT EXISTS concluida_em TIMESTAMP;
+
+-- Atualizar avaliações que já estão concluídas mas não têm concluida_em
+UPDATE avaliacoes
+SET concluida_em = COALESCE(concluida_em, envio, atualizado_em)
+WHERE status = 'concluida' AND concluida_em IS NULL;
+
+-- Criar índice para melhor performance em buscas de data de conclusão
+CREATE INDEX IF NOT EXISTS idx_avaliacoes_concluida_em 
+ON avaliacoes(concluida_em) 
+WHERE concluida_em IS NOT NULL;
+
+-- Validação
+SELECT 
+  COUNT(*) as avaliacoes_com_data,
+  'Avaliações com data de conclusão registrada' as status
+FROM avaliacoes
+WHERE concluida_em IS NOT NULL;
+
+COMMIT;
+
+-- =====================================================
+-- MIGRAÇÃO 4: Criar Tabela Asaas Pagamentos
 -- =====================================================
 
 BEGIN;
@@ -204,6 +233,15 @@ SELECT
   CASE WHEN COUNT(*) >= 0 THEN '✅ OK' ELSE '❌ FALHOU' END as status
 FROM laudos 
 WHERE status = 'emitido'
+
+UNION ALL
+
+-- Verificar coluna concluida_em
+SELECT 
+  '✅ Migração 206 (concluida_em)' as migracao,
+  CASE WHEN COUNT(*) = 1 THEN '✅ OK' ELSE '❌ FALHOU' END as status
+FROM information_schema.columns
+WHERE table_name = 'avaliacoes' AND column_name = 'concluida_em'
 
 UNION ALL
 
