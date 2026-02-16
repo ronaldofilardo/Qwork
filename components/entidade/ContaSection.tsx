@@ -1,15 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import {
-  Building2,
-  FileText,
-  DollarSign,
-  Users,
-  CreditCard,
-} from 'lucide-react';
-import PaymentSummaryCard from '@/components/payments/PaymentSummaryCard';
-import ParcelasTable from '@/components/payments/ParcelasTable';
+import { Building2 } from 'lucide-react';
 
 interface AccountInfo {
   // Informações cadastradas
@@ -75,7 +67,7 @@ interface AccountInfo {
   }>;
 }
 
-type TabType = 'info' | 'plano';
+type TabType = 'info';
 
 interface Parcela {
   numero: number;
@@ -109,7 +101,7 @@ export default function EntidadeContaSection() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>('info');
   const [parcelasData, setParcelasData] = useState<ParcelasData | null>(null);
-  const [loadingParcelas, setLoadingParcelas] = useState(false);
+  const [_loadingParcelas, setLoadingParcelas] = useState(false);
 
   const loadAccountInfo = useCallback(async () => {
     try {
@@ -263,7 +255,8 @@ export default function EntidadeContaSection() {
     [accountInfo]
   );
 
-  const handleGerarRecibo = async (parcelaNumero: number) => {
+  // Função auxiliar para gerar recibo (não usada atualmente)
+  const _handleGerarRecibo = async (parcelaNumero: number) => {
     if (!parcelasData) return;
 
     try {
@@ -301,7 +294,8 @@ export default function EntidadeContaSection() {
     }
   }, [accountInfo, loadParcelas]);
 
-  const formatCurrency = (value: number | null | undefined) => {
+  // Função auxiliar para formatar moeda (não usada atualmente)
+  const _formatCurrency = (value: number | null | undefined) => {
     if (value == null) return 'Não informado';
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -363,7 +357,8 @@ export default function EntidadeContaSection() {
     );
   }
 
-  const resumoFinanceiro = calcularResumoFinanceiro();
+  // Função auxiliar de resumo financeiro (não usada atualmente)
+  const _resumoFinanceiro = calcularResumoFinanceiro();
 
   return (
     <>
@@ -389,17 +384,6 @@ export default function EntidadeContaSection() {
         >
           <Building2 className="inline mr-2" size={16} />
           Cadastradas
-        </button>
-        <button
-          onClick={() => setActiveTab('plano')}
-          className={`flex-1 px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'plano'
-              ? 'border-primary text-primary'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          <CreditCard className="inline mr-2" size={16} />
-          Plano
         </button>
       </div>
 
@@ -499,245 +483,6 @@ export default function EntidadeContaSection() {
                 <p className="text-sm text-gray-500">
                   Informações não disponíveis
                 </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {activeTab === 'plano' && (
-          <>
-            {/* Informações do Plano */}
-            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <FileText className="text-green-600" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Contrato Atual
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Informações do plano contratado
-                  </p>
-                </div>
-              </div>
-
-              {accountInfo?.contrato ? (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Número do Contrato
-                      </label>
-                      <p className="text-sm text-gray-900 font-medium">
-                        {accountInfo.contrato.numero_contrato ||
-                          accountInfo.contrato.id}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Plano
-                      </label>
-                      <p className="text-sm text-gray-900">
-                        {accountInfo.contrato.plano_nome}{' '}
-                        {accountInfo.contrato.plano_tipo
-                          ? `· ${accountInfo.contrato.plano_type || accountInfo.contrato.plano_tipo}`
-                          : ''}
-                      </p>
-                    </div>
-
-                    {accountInfo.contrato.plano_preco_unitario && (
-                      <div>
-                        <label className="text-xs text-gray-500 uppercase tracking-wide">
-                          Valor por Funcionário
-                        </label>
-                        <p className="text-sm text-gray-900 font-medium">
-                          {formatCurrency(
-                            accountInfo.contrato.plano_preco_unitario
-                          )}
-                        </p>
-                      </div>
-                    )}
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Valor Total
-                      </label>
-                      <p className="text-sm text-gray-900 font-medium">
-                        {formatCurrency(accountInfo.contrato.valor_total)}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Funcionários Contratados
-                      </label>
-                      <p className="text-sm text-gray-900 flex items-center gap-1">
-                        <Users size={14} />
-                        {accountInfo.contrato.numero_funcionarios ||
-                          accountInfo.contrato.qtd_funcionarios_contratada}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Vigência
-                      </label>
-                      <p className="text-sm text-gray-900">
-                        {accountInfo.contrato.vigencia_inicio
-                          ? `${formatDate(accountInfo.contrato.vigencia_inicio)} - ${formatDate(accountInfo.contrato.vigencia_fim)}`
-                          : accountInfo.contrato.criado_em
-                            ? formatDate(accountInfo.contrato.criado_em)
-                            : '—'}
-                      </p>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Status
-                      </label>
-                      <span
-                        className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                          accountInfo.contrato.status === 'ativo'
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}
-                      >
-                        {accountInfo.contrato.status}
-                      </span>
-                    </div>
-
-                    <div>
-                      <label className="text-xs text-gray-500 uppercase tracking-wide">
-                        Status de Pagamento
-                      </label>
-                      <div className="mt-1">
-                        {(() => {
-                          const pagamentosList = accountInfo.pagamentos || [];
-                          const pagamentoComParcelas = pagamentosList.find(
-                            (p) => p.resumo && p.resumo.totalParcelas > 1
-                          );
-
-                          if (
-                            pagamentoComParcelas &&
-                            pagamentoComParcelas.resumo.parcelasPagas > 0 &&
-                            pagamentoComParcelas.resumo.parcelasPendentes > 0
-                          ) {
-                            const r = pagamentoComParcelas.resumo;
-                            return (
-                              <>
-                                <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                                  Parcela(s) pendente(s)
-                                </span>
-                                <div className="text-xs text-gray-500 mt-1">
-                                  {`${r.parcelasPagas}/${r.totalParcelas} parcelas pagas — restante: ${formatCurrency(
-                                    r.valorPendente
-                                  )}`}
-                                </div>
-                              </>
-                            );
-                          }
-
-                          // Fallback: usar pagamento_status (fonte da verdade) ao invés de contrato.status
-                          if (
-                            (accountInfo.contrato as any).pagamento_status ===
-                              'em_aberto' ||
-                            ((accountInfo.contrato as any).pagamento_resumo
-                              ?.restante ?? 0) > 0
-                          ) {
-                            return (
-                              <>
-                                <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                                  Pendente
-                                </span>
-                                {(accountInfo.contrato as any).pagamento_resumo
-                                  ?.restante != null && (
-                                  <div className="text-xs text-gray-500 mt-1">
-                                    Valor em aberto:{' '}
-                                    {formatCurrency(
-                                      (accountInfo.contrato as any)
-                                        .pagamento_resumo.restante
-                                    )}
-                                  </div>
-                                )}
-                              </>
-                            );
-                          }
-
-                          return (
-                            <span className="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                              Quitado
-                            </span>
-                          );
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <a
-                      href="/termos/contrato"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center gap-2 px-4 py-2 bg-gray-50 border rounded hover:bg-gray-100 transition-colors text-sm"
-                    >
-                      <FileText size={14} />
-                      Ver Contrato
-                    </a>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <FileText className="mx-auto text-gray-400 mb-2" size={24} />
-                  <p className="text-sm text-gray-500">
-                    Nenhum plano contratado
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Resumo Financeiro */}
-            {accountInfo?.pagamentos && accountInfo.pagamentos.length > 0 && (
-              <PaymentSummaryCard
-                total={resumoFinanceiro.total}
-                pago={resumoFinanceiro.pago}
-                restante={resumoFinanceiro.restante}
-              />
-            )}
-
-            {/* Tabela de Parcelas */}
-            <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-blue-100 rounded-lg">
-                  <DollarSign className="text-blue-600" size={24} />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    Pagamentos
-                  </h2>
-                  <p className="text-sm text-gray-600">
-                    Histórico de pagamentos
-                  </p>
-                </div>
-              </div>
-
-              {loadingParcelas ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                </div>
-              ) : parcelasData ? (
-                <ParcelasTable
-                  parcelas={parcelasData.parcelas}
-                  pagamentoId={parcelasData.pagamento_id}
-                  contratacaoAt={parcelasData.contratacao_at}
-                  onGerarRecibo={handleGerarRecibo}
-                  apiPrefix="entidade"
-                />
-              ) : (
-                <div className="text-center py-6 text-gray-500 text-sm">
-                  Nenhuma parcela encontrada
-                </div>
               )}
             </div>
           </>

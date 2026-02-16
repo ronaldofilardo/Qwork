@@ -32,5 +32,5 @@
     "types": ["@testing-library/jest-dom", "jest", "node"]
   },
   "include": ["next-env.d.ts", "jest.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "cypress", "__tests__/e2e", ".next", "dist", "build"]
+  "exclude": ["node_modules", "cypress", "__tests__", ".next", "dist", "build"]
 }

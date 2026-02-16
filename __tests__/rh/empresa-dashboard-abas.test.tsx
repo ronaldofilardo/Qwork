@@ -42,11 +42,6 @@ jest.mock('@/lib/hooks', () => ({
     lotes: [],
     fetchLotes: jest.fn(),
   }),
-  useAnomalias: () => ({
-    anomalias: [],
-    fetchAnomalias: jest.fn(),
-    loading: false,
-  }),
   useLaudos: () => ({
     laudos: [],
     downloadingLaudo: false,
@@ -67,7 +62,7 @@ jest.mock('@/components/rh', () => ({
       <button onClick={onSair}>Sair</button>
     </div>
   ),
-  TabNavigation: ({ activeTab, onTabChange, anomaliasCount }: any) => (
+  TabNavigation: ({ activeTab, onTabChange }: any) => (
     <div data-testid="tab-navigation">
       <button
         onClick={() => onTabChange('lotes')}
@@ -80,12 +75,6 @@ jest.mock('@/components/rh', () => ({
         data-active={activeTab === 'funcionarios'}
       >
         👥 Funcionários Ativos
-      </button>
-      <button
-        onClick={() => onTabChange('pendencias')}
-        data-active={activeTab === 'pendencias'}
-      >
-        ⚠️ Pendências
       </button>
       <button
         onClick={() => onTabChange('desligamentos')}
@@ -141,7 +130,6 @@ describe('Empresa Dashboard - Abas Funcionais', () => {
       expect(screen.getByTestId('tab-navigation')).toBeInTheDocument();
       expect(screen.getByText('📋 Ciclos de Coletas Avaliativas')).toBeInTheDocument();
       expect(screen.getByText('👥 Funcionários Ativos')).toBeInTheDocument();
-      expect(screen.getByText('⚠️ Pendências')).toBeInTheDocument();
       expect(screen.getByText('🚪 Desligamentos')).toBeInTheDocument();
     });
 
@@ -375,4 +363,4 @@ describe('Empresa Dashboard - Abas Funcionais', () => {
     });
   });
 });
-
+

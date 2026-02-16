@@ -344,7 +344,7 @@ export default function ModalAdicionarFuncionarioEntidade({
             {/* Nível de Cargo */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nível de Cargo
+                Nível de Cargo *
               </label>
               <select
                 value={formData.nivel_cargo}
