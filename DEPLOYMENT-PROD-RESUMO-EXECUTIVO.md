@@ -1,4 +1,5 @@
 # ✅ DEPLOYMENT PRODUÇÃO - RESUMO EXECUTIVO
+
 ## Todas as alterações das últimas 72h preparadas para PROD
 
 **Data:** 16 de fevereiro de 2026  
@@ -14,11 +15,13 @@
 Todos os arquivos necessários estão presentes e com as correções aplicadas:
 
 #### Arquivos MODIFICADOS (3):
+
 - ✅ `lib/laudo-auto.ts` → Marca `status='emitido'` após gerar PDF (linhas 173-175)
 - ✅ `app/api/emissor/laudos/[loteId]/upload/route.ts` → COALESCE em `emitido_em` (linha 275)
 - ✅ `app/api/emissor/laudos/[loteId]/pdf/route.ts` → Permite UPDATE com status 'emitido'
 
 #### Arquivos NOVOS (10):
+
 - ✅ `lib/asaas/client.ts` → Cliente HTTP Asaas
 - ✅ `lib/asaas/types.ts` → TypeScript interfaces
 - ✅ `lib/asaas/mappers.ts` → Conversão de dados
@@ -208,15 +211,15 @@ PÓS-DEPLOYMENT:
 
 ## 📁 ARQUIVOS CRIADOS PARA DEPLOYMENT
 
-| Arquivo | Localização | Propósito |
-|---------|-------------|-----------|
-| deploy-prod-migrations.sql | scripts/ | Todas as migrações SQL |
-| validacao-pos-deploy.sql | scripts/ | Validações automáticas |
-| restart-servidor-prod.md | scripts/ | Instruções de restart |
-| DEPLOYMENT-PRODUCAO-72H.md | raiz | Guia completo (6 fases) |
-| GUIA-TECNICO-ALTERACOES-PROD.md | raiz | Diffs linha por linha |
-| DEPLOYMENT-QUICK-REFERENCE.md | raiz | Checklist de 1 página |
-| RESUMO-ALTERACOES-ULTIMAS-72H.md | raiz | Resumo de todas alterações |
+| Arquivo                          | Localização | Propósito                  |
+| -------------------------------- | ----------- | -------------------------- |
+| deploy-prod-migrations.sql       | scripts/    | Todas as migrações SQL     |
+| validacao-pos-deploy.sql         | scripts/    | Validações automáticas     |
+| restart-servidor-prod.md         | scripts/    | Instruções de restart      |
+| DEPLOYMENT-PRODUCAO-72H.md       | raiz        | Guia completo (6 fases)    |
+| GUIA-TECNICO-ALTERACOES-PROD.md  | raiz        | Diffs linha por linha      |
+| DEPLOYMENT-QUICK-REFERENCE.md    | raiz        | Checklist de 1 página      |
+| RESUMO-ALTERACOES-ULTIMAS-72H.md | raiz        | Resumo de todas alterações |
 
 ---
 
@@ -296,7 +299,7 @@ ls -la /opt/qwork/.env.local
 ```sql
 -- Se Q37 falha:
 -- Verificar se Migração 165 foi aplicada
-SELECT COUNT(*) FROM information_schema.triggers 
+SELECT COUNT(*) FROM information_schema.triggers
 WHERE trigger_name = 'trigger_atualizar_ultima_avaliacao';
 -- Deve retornar 1
 
@@ -317,6 +320,7 @@ curl -I https://bucket-endpoint/
 ## 💡 DICAS IMPORTANTES
 
 ### ✅ FAZER:
+
 - Executar backup ANTES de qualquer alteração
 - Ler logs após cada etapa
 - Testar Q37, Laudo, Upload e Asaas manualmente
@@ -324,6 +328,7 @@ curl -I https://bucket-endpoint/
 - Documentar qualquer issue encontrado
 
 ### ❌ NÃO FAZER:
+
 - Pular etapa de backup
 - Executar migrações sem validar resultado
 - Fazer deployment em horário de pico

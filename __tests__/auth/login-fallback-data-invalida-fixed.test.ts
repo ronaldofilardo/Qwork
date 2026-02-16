@@ -51,11 +51,7 @@ describe('LOGIN FALLBACK - Data de Nascimento Inválida', () => {
 
   describe('✅ Validação de Datas Impossíveis', () => {
     it('deve rejeitar 31/02 em qualquer ano (Fevereiro não tem 31 dias)', () => {
-      const datasInvalidas = [
-        '31/02/1990',
-        '31/02/2000',
-        '31/02/1900',
-      ];
+      const datasInvalidas = ['31/02/1990', '31/02/2000', '31/02/1900'];
 
       datasInvalidas.forEach((data) => {
         const partes = data.split('/');

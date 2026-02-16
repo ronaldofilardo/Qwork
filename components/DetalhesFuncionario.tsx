@@ -251,30 +251,38 @@ export default function DetalhesFuncionario({
             </div>
 
             {/* Estatísticas */}
-            <div className="grid grid-cols-4 gap-3 mb-6">
-              <div className="bg-gray-50 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-gray-700">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3 mb-6">
+              <div className="bg-gray-50 rounded-lg p-2 md:p-3 text-center border border-gray-200 hover:shadow-md transition-shadow">
+                <div className="text-lg md:text-2xl font-bold text-gray-700 leading-tight">
                   {data.estatisticas.totalAvaliacoes}
                 </div>
-                <div className="text-xs text-gray-600">Total</div>
+                <div className="text-[11px] md:text-xs text-gray-600 mt-1 leading-tight">
+                  Total
+                </div>
               </div>
-              <div className="bg-green-50 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-green-700">
+              <div className="bg-green-50 rounded-lg p-2 md:p-3 text-center border border-green-200 hover:shadow-md transition-shadow">
+                <div className="text-lg md:text-2xl font-bold text-green-700 leading-tight">
                   {data.estatisticas.concluidas}
                 </div>
-                <div className="text-xs text-green-600">Concluídas</div>
+                <div className="text-[11px] md:text-xs text-green-600 mt-1 leading-tight">
+                  Concluídas
+                </div>
               </div>
-              <div className="bg-red-50 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-red-700">
+              <div className="bg-red-50 rounded-lg p-2 md:p-3 text-center border border-red-200 hover:shadow-md transition-shadow">
+                <div className="text-lg md:text-2xl font-bold text-red-700 leading-tight">
                   {data.estatisticas.inativadas}
                 </div>
-                <div className="text-xs text-red-600">Inativadas</div>
+                <div className="text-[11px] md:text-xs text-red-600 mt-1 leading-tight">
+                  Inativadas
+                </div>
               </div>
-              <div className="bg-yellow-50 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-yellow-700">
+              <div className="bg-yellow-50 rounded-lg p-2 md:p-3 text-center border border-yellow-200 hover:shadow-md transition-shadow">
+                <div className="text-lg md:text-2xl font-bold text-yellow-700 leading-tight">
                   {data.estatisticas.pendentes}
                 </div>
-                <div className="text-xs text-yellow-600">Pendentes</div>
+                <div className="text-[11px] md:text-xs text-yellow-600 mt-1 leading-tight">
+                  Pendentes
+                </div>
               </div>
             </div>
 

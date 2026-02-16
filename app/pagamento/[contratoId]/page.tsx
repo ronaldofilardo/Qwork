@@ -284,7 +284,7 @@ export default function PagamentoPage() {
     });
   };
 
-  const confirmarPagamento = async () => {
+  const confirmarPagamento = () => {
     // Mostrar o checkout Asaas
     setMostrarCheckout(true);
   };

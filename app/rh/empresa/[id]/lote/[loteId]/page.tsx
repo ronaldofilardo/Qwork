@@ -978,7 +978,9 @@ export default function DetalhesLotePage() {
                       className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                       aria-label="Gerar Relatório PDF do Lote"
                     >
-                      {isPronto ? '📊 Gerar Relatório PDF' : '⏳ Aguardando conclusão'}
+                      {isPronto
+                        ? '📊 Gerar Relatório PDF'
+                        : '⏳ Aguardando conclusão'}
                     </button>
 
                     {estatisticas.avaliacoes_inativadas > 0 && (
@@ -986,12 +988,23 @@ export default function DetalhesLotePage() {
                         <div className="flex items-start gap-2">
                           <span className="text-amber-600 text-sm">⚠️</span>
                           <div>
-                            <p className="font-medium mb-1">Avaliações inativadas</p>
+                            <p className="font-medium mb-1">
+                              Avaliações inativadas
+                            </p>
                             <p className="text-xs">
                               {estatisticas.avaliacoes_inativadas} avaliação
-                              {estatisticas.avaliacoes_inativadas !== 1 ? 'ões' : ''}{' '}
-                              inativada{estatisticas.avaliacoes_inativadas !== 1 ? 's' : ''}{' '}
-                              não {estatisticas.avaliacoes_inativadas !== 1 ? 'contam' : 'conta'} para a prontidão do lote.
+                              {estatisticas.avaliacoes_inativadas !== 1
+                                ? 'ões'
+                                : ''}{' '}
+                              inativada
+                              {estatisticas.avaliacoes_inativadas !== 1
+                                ? 's'
+                                : ''}{' '}
+                              não{' '}
+                              {estatisticas.avaliacoes_inativadas !== 1
+                                ? 'contam'
+                                : 'conta'}{' '}
+                              para a prontidão do lote.
                             </p>
                           </div>
                         </div>

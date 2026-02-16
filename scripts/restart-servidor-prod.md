@@ -1,4 +1,5 @@
 # 🚀 INSTRUÇÕES DE RESTART SERVIDOR PRODUÇÃO
+
 ## Após aplicar migrações SQL e fazer deploy do código
 
 **Data:** 16 de fevereiro de 2026  
@@ -137,12 +138,12 @@ docker logs qwork-prod --tail 50 | grep -i error
 psql -U postgres -d qwork_prod
 
 # Verificar trigger Q37
-SELECT COUNT(*) FROM information_schema.triggers 
+SELECT COUNT(*) FROM information_schema.triggers
 WHERE trigger_name = 'trigger_atualizar_ultima_avaliacao';
 -- Esperado: 1
 
 # Verificar tabela Asaas
-SELECT COUNT(*) FROM information_schema.tables 
+SELECT COUNT(*) FROM information_schema.tables
 WHERE table_name = 'asaas_pagamentos';
 -- Esperado: 1
 
@@ -170,6 +171,7 @@ curl -X POST http://localhost:3000/api/avaliacao/save \
 ```
 
 **OU testar via UI:**
+
 1. Login como avaliador
 2. Abrir lote de avaliação
 3. Preencher questão 37
@@ -193,6 +195,7 @@ curl http://localhost:3000/api/emissor/lotes \
 ```
 
 **OU testar via UI:**
+
 1. Login como emissor
 2. Ir para "Laudos"
 3. Gerar um laudo
@@ -211,6 +214,7 @@ curl -X POST http://localhost:3000/api/emissor/laudos/1/upload \
 ```
 
 **OU testar via UI:**
+
 1. Clicar "Enviar ao Bucket"
 2. ✅ Botão muda para "Sincronizado"
 3. ✅ Solicitante vê laudo disponível
@@ -228,7 +232,7 @@ curl -X POST http://localhost:3000/api/pagamento/asaas/criar \
     "tipo": "PIX"
   }'
 
-# Esperado: 
+# Esperado:
 # {
 #   "success": true,
 #   "pix": {
@@ -307,10 +311,10 @@ psql -U postgres -d qwork_prod -c "SELECT count(*) FROM pg_stat_activity;"
 
 # Se > 100, matar conexões antigas
 psql -U postgres -d qwork_prod -c "
-  SELECT pg_terminate_backend(pid) 
-  FROM pg_stat_activity 
-  WHERE datname = 'qwork_prod' 
-  AND state = 'idle' 
+  SELECT pg_terminate_backend(pid)
+  FROM pg_stat_activity
+  WHERE datname = 'qwork_prod'
+  AND state = 'idle'
   AND state_change < now() - interval '5 minutes';
 "
 ```

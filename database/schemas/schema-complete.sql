@@ -523,6 +523,7 @@ CREATE TABLE public.avaliacoes (
     criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
     lote_id integer,
+    concluida_em timestamp without time zone,
     CONSTRAINT avaliacoes_status_check CHECK (((status)::text = ANY ((ARRAY['iniciada'::character varying, 'em_andamento'::character varying, 'concluido'::character varying, 'inativada'::character varying])::text[])))
 );
 
