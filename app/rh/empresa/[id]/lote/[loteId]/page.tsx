@@ -967,80 +967,38 @@ export default function DetalhesLotePage() {
                 )}
               </div>
 
-              <div className="lg:w-64">
-                <div className="grid grid-cols-4 gap-2 mb-4">
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-3 text-center border border-blue-200">
-                    <div className="text-3xl font-bold text-blue-700">
-                      {estatisticas.total_avaliacoes}
-                    </div>
-                    <div className="text-xs font-medium text-blue-600 mt-1">
-                      Total
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-3 text-center border border-green-200">
-                    <div className="text-3xl font-bold text-green-700">
-                      {estatisticas.avaliacoes_concluidas}
-                    </div>
-                    <div className="text-xs font-medium text-green-600 mt-1">
-                      Concluídas
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-lg p-3 text-center border border-yellow-200">
-                    <div className="text-3xl font-bold text-yellow-700">
-                      {estatisticas.avaliacoes_pendentes}
-                    </div>
-                    <div className="text-xs font-medium text-yellow-600 mt-1">
-                      Pendentes
-                    </div>
-                  </div>
-                  <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg p-3 text-center border border-red-200">
-                    <div className="text-3xl font-bold text-red-700">
-                      {estatisticas.avaliacoes_inativadas}
-                    </div>
-                    <div className="text-xs font-medium text-red-600 mt-1">
-                      Inativadas
-                    </div>
+              <div className="w-full md:w-auto lg:w-72">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                  {/* Estatísticas removidas conforme solicitado */}
+
+                  <div className="w-full sm:w-44 md:w-48 flex-shrink-0 flex flex-col gap-2">
+                    <button
+                      onClick={gerarRelatorioLote}
+                      disabled={!isPronto}
+                      className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                      aria-label="Gerar Relatório PDF do Lote"
+                    >
+                      {isPronto ? '📊 Gerar Relatório PDF' : '⏳ Aguardando conclusão'}
+                    </button>
+
+                    {estatisticas.avaliacoes_inativadas > 0 && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                        <div className="flex items-start gap-2">
+                          <span className="text-amber-600 text-sm">⚠️</span>
+                          <div>
+                            <p className="font-medium mb-1">Avaliações inativadas</p>
+                            <p className="text-xs">
+                              {estatisticas.avaliacoes_inativadas} avaliação
+                              {estatisticas.avaliacoes_inativadas !== 1 ? 'ões' : ''}{' '}
+                              inativada{estatisticas.avaliacoes_inativadas !== 1 ? 's' : ''}{' '}
+                              não {estatisticas.avaliacoes_inativadas !== 1 ? 'contam' : 'conta'} para a prontidão do lote.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <button
-                  onClick={gerarRelatorioLote}
-                  disabled={!isPronto}
-                  className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
-                >
-                  {isPronto
-                    ? '📊 Gerar Relatório PDF'
-                    : '⏳ Aguardando conclusão'}
-                </button>
-
-                {estatisticas.avaliacoes_inativadas > 0 && (
-                  <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                    <div className="flex items-start gap-2">
-                      <span className="text-amber-600 text-sm">⚠️</span>
-                      <div className="text-sm text-amber-800">
-                        <p className="font-medium mb-1">
-                          Avaliações inativadas
-                        </p>
-                        <p className="text-xs">
-                          {estatisticas.avaliacoes_inativadas} avaliação
-                          {estatisticas.avaliacoes_inativadas !== 1
-                            ? 'ões'
-                            : ''}{' '}
-                          inativada
-                          {estatisticas.avaliacoes_inativadas !== 1
-                            ? 's'
-                            : ''}{' '}
-                          não{' '}
-                          {estatisticas.avaliacoes_inativadas !== 1
-                            ? 'contam'
-                            : 'conta'}{' '}
-                          para a prontidão do lote. O relatório será gerado
-                          quando todas as avaliações ativas forem concluídas.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 

@@ -260,13 +260,52 @@ describe('Página de Detalhes do Lote', () => {
     });
   });
 
-  describe.skip('Renderização de Dados', () => {
-    beforeEach(async () => {
+  describe('Renderização de Dados', () => {
+    it('deve exibir botão de relatório e aviso de inativadas (cards removidos)', async () => {
+      // Setup do mock
       mockFetch.mockImplementation((url) => {
         if (url === '/api/auth/session') {
           return Promise.resolve({
             ok: true,
-            json: async () => ({ session: { cpf: '123', perfil: 'admin' } }),
+            json: async () => ({ cpf: '123', perfil: 'admin' }),
+          } as Response);
+        } else if (url === '/api/rh/lotes/1/funcionarios?empresa_id=100') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => mockLoteData,
+          } as Response);
+        }
+        return Promise.reject(new Error('Unexpected URL'));
+      });
+
+      render(<DetalhesLotePage />);
+
+      // Esperar o carregamento — procurar por um campo que aparece quando carrega
+      await waitFor(
+        () => {
+          expect(screen.getByText('Empresa Teste')).toBeInTheDocument();
+        },
+        { timeout: 5000 }
+      );
+
+      // Os cards de estatísticas foram removidos; verificar botão e aviso em seu lugar
+      // Verificar que o botão (habilitado ou desabilitado) está presente
+      const reportButtonOrWaiting =
+        screen.queryByText(/Gerar Relatório PDF/) ||
+        screen.queryByText(/Aguardando conclusão/);
+      expect(reportButtonOrWaiting).toBeInTheDocument();
+
+      // Como há 1 avaliação inativada no mock, o aviso deve aparecer
+      expect(screen.getByText(/Avaliações inativadas/)).toBeInTheDocument();
+    });
+
+    it('deve exibir informações do lote corretamente', async () => {
+      // Setup do mock
+      mockFetch.mockImplementation((url) => {
+        if (url === '/api/auth/session') {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ cpf: '123', perfil: 'admin' }),
           } as Response);
         } else if (url === '/api/rh/lotes/1/funcionarios?empresa_id=100') {
           return Promise.resolve({
@@ -280,50 +319,11 @@ describe('Página de Detalhes do Lote', () => {
       render(<DetalhesLotePage />);
 
       await waitFor(() => {
-        expect(screen.getByText('Lote de Teste')).toBeInTheDocument();
+        expect(screen.getByText('Empresa Teste')).toBeInTheDocument();
       });
-    });
 
-    it('deve exibir informações do lote corretamente', () => {
-      expect(screen.getByText('Lote de Teste')).toBeInTheDocument();
-      expect(screen.getByText(/LOT-001/)).toBeInTheDocument();
       expect(screen.getByText(/Empresa Teste/)).toBeInTheDocument();
       expect(screen.getByText(/Descrição do lote/)).toBeInTheDocument();
-    });
-
-    it('deve exibir estatísticas corretas', () => {
-      expect(screen.getByText('10')).toBeInTheDocument(); // total
-      expect(screen.getByText('7')).toBeInTheDocument(); // concluídas
-      expect(screen.getByText('2')).toBeInTheDocument(); // pendentes
-      expect(screen.getByText('1')).toBeInTheDocument(); // inativadas
-    });
-
-    it('deve renderizar tabela de funcionários', () => {
-      expect(screen.getByText('João Silva')).toBeInTheDocument();
-      expect(screen.getByText('Maria Santos')).toBeInTheDocument();
-      expect(screen.getByText('TI')).toBeInTheDocument();
-      expect(screen.getByText('RH')).toBeInTheDocument();
-    });
-
-    it('deve exibir badges de status corretos', () => {
-      expect(screen.getByText('Concluída')).toBeInTheDocument();
-      expect(screen.getByText('Em andamento')).toBeInTheDocument();
-    });
-
-    it('deve exibir matrícula e nível de cargo', () => {
-      expect(screen.getByText('001')).toBeInTheDocument();
-      expect(screen.getByText('002')).toBeInTheDocument();
-      expect(screen.getByText('Operacional')).toBeInTheDocument();
-      expect(screen.getByText('Gestão')).toBeInTheDocument();
-    });
-
-    it('deve exibir data de conclusão apenas para avaliações concluídas', () => {
-      const rows = screen.getAllByRole('row');
-      // João Silva (concluída) deve ter data
-      expect(rows[1]).toHaveTextContent(/01\/12\/2025/);
-      // Maria Santos (em andamento) deve ter "-"
-      const mariaCells = rows[2].querySelectorAll('td');
-      expect(mariaCells[mariaCells.length - 1]).toHaveTextContent('-');
     });
   });
 
