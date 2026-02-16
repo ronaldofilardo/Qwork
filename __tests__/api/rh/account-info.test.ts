@@ -33,7 +33,7 @@ describe('🩺 API RH Account-Info', () => {
         pagamentosQuery = 'WHERE p.entidade_id = $1';
       }
     `;
-    
+
     expect(testCode).toContain('entidade_id');
     expect(testCode).toContain('clinica_id');
     expect(testCode).not.toContain('p.clinica_id'); // ✅ Garante que não usa clinica_id diretamente em pagamentos
@@ -43,10 +43,10 @@ describe('🩺 API RH Account-Info', () => {
     // Validando que a rota requer role 'rh'
     const routePath = require('@/app/api/rh/account-info/route');
     expect(routePath).toBeDefined();
-    
+
     // Validar estrutura esperada de resposta
     const expectedFields = ['clinica', 'gestores', 'pagamentos'];
-    expectedFields.forEach(field => {
+    expectedFields.forEach((field) => {
       expect(typeof field).toBe('string');
     });
   });

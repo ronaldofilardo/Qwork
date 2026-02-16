@@ -84,11 +84,11 @@ describe('/api/entidade/relatorio-individual-pdf', () => {
     const response = await GET(req);
     expect(response.status).toBe(200);
 
-    // Validar que a query usou JOIN entidades (não contratante)
+    // Validar que a query usou COALESCE para entidade_id/contratante_id
     const calls = (query as jest.Mock).mock.calls;
     const sqlQuery = calls[0][0];
-    expect(sqlQuery).toContain('JOIN entidades e');
-    expect(sqlQuery).not.toContain('JOIN contratante');
+    expect(sqlQuery).toContain('a.envio as concluida_em');
+    expect(sqlQuery).toContain('COALESCE(la.entidade_id, la.contratante_id)');
   });
 
   it('valida acesso por entidade_id', async () => {
@@ -104,12 +104,14 @@ describe('/api/entidade/relatorio-individual-pdf', () => {
     const response = await GET(req);
     expect(response.status).toBe(404);
 
-    // Validar que a query foi chamada com entidade_id correto
+    // Validar que a query foi chamada com COALESCE de entidade/contratante
     const calls = (query as jest.Mock).mock.calls;
     const queryCall: unknown = calls[0];
     const sqlQuery = (queryCall as unknown[])[0] as string;
-    expect(sqlQuery).toContain('AND fe.entidade_id = $3');
-    expect(sqlQuery).toContain('AND la.entidade_id = $3');
+    expect(sqlQuery).toContain(
+      'COALESCE(la.entidade_id, la.contratante_id) = $3'
+    );
+    expect(sqlQuery).toContain('a.envio as concluida_em');
   });
 
   it('retorna PDF com sucesso quando avaliação existe', async () => {

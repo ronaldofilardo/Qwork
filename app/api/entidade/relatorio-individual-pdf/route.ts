@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
       SELECT 
         a.id,
         a.funcionario_cpf,
-        a.concluida_em,
+        a.envio as concluida_em,
         f.nome,
         f.cpf,
         f.matricula,

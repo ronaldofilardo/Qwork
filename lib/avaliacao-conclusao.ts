@@ -154,11 +154,16 @@ export async function verificarEConcluirAvaliacao(
     }
 
     // Marcar como concluído (SEMPRE executar, mesmo se houver erro nos resultados)
+    // Usar CURRENT_TIMESTAMP do servidor para garantir sincronização exata
+    const agora = new Date();
     await queryTx(
       `UPDATE avaliacoes 
-       SET status = 'concluida', concluida_em = NOW(), atualizado_em = NOW() 
+       SET status = 'concluida', 
+           envio = $2,
+           concluida_em = $2,
+           atualizado_em = $2
        WHERE id = $1`,
-      [avaliacaoId]
+      [avaliacaoId, agora]
     );
 
     console.log(
