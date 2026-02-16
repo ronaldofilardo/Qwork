@@ -111,7 +111,7 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
     return new Date();
   })();
 
-  const dataFormatada = dataConclusion.toLocaleString('pt-BR', {
+  const timestampConclusao = dataConclusion.toLocaleString('pt-BR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -120,40 +120,31 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
     second: '2-digit',
   });
 
-  // Formatar data e hora separadamente
-  const dataConclusao = dataConclusion.toLocaleDateString('pt-BR', {
+  // Timestamp atual de geração do relatório
+  const timestampGeracao = new Date().toLocaleString('pt-BR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
-
-  const horaConclusao = dataConclusion.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
   });
 
+  // Desenhar box com dados (sem cabeçalhos)
   autoTable(doc, {
     startY: yPos,
     margin: { left: 15, right: 15 },
-    head: [['Campo', 'Valor']],
     body: [
       ['Nome', dados.avaliacao.nome],
       ['CPF', dados.avaliacao.cpf],
-      ['Data de Conclusão', dataConclusao],
-      ['Hora de Conclusão', horaConclusao],
-      ['Timestamp da Conclusão', dataFormatada],
+      ['Concluída em', timestampConclusao],
+      ['Relatório gerado em', timestampGeracao],
     ],
     theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 2 },
-    headStyles: {
-      fillColor: [66, 139, 202],
-      textColor: 255,
-      fontStyle: 'bold',
-    },
+    styles: { fontSize: 9, cellPadding: 3 },
     columnStyles: {
-      0: { fontStyle: 'bold' },
-      1: {},
+      0: { fontStyle: 'bold', fillColor: [240, 240, 240], textColor: 0 },
+      1: { textColor: 0 },
     },
   });
 
@@ -212,12 +203,13 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
     },
   });
 
-  // Rodapé
+  // Rodapé com data de geração do relatório
   yPos = (doc as any).lastAutoTable.finalY + 5;
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
+  doc.setTextColor(100, 100, 100);
   doc.text(
-    `Gerado em ${new Date().toLocaleString('pt-BR')}`,
+    `Documento gerado em ${new Date().toLocaleString('pt-BR')}`,
     pageWidth / 2,
     doc.internal.pageSize.getHeight() - 10,
     { align: 'center', maxWidth: 180 }

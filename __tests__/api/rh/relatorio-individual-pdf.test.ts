@@ -140,11 +140,11 @@ describe('GET /api/rh/relatorio-individual-pdf', () => {
 
     await GET(request);
 
-    // Verificar que query foi chamada com clinica_id correto
-    expect(mockQuery).toHaveBeenCalledWith(
-      expect.any(String),
-      expect.arrayContaining([expect.any(String), expect.any(String), 200])
-    );
+    // Verificar que query foi chamada com a nova assinatura de envio
+    const calls = mockQuery.mock.calls;
+    const firstCall = calls[0];
+    expect(firstCall[0]).toContain('a.envio as concluida_em');
+    expect(firstCall[1]).toEqual(['1005', '12345678901', 200]);
   });
 
   it('deve retornar 500 quando ocorre erro interno', async () => {

@@ -298,7 +298,7 @@ export const GET = async () => {
     // Buscar pagamentos da clínica ou entidade
     let pagamentosQuery;
     let pagamentosParamId = organizacaoId;
-    
+
     if (clinicaId) {
       // Buscar entidade_id da clínica para ignorar pagamentos
       // (tabela pagamentos usa entidade_id, não clinica_id)
@@ -307,10 +307,11 @@ export const GET = async () => {
         `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
         [clinicaId]
       );
-      const clinicaEntidadeId = clinicaEntidadeRes.rows.length > 0 
-        ? clinicaEntidadeRes.rows[0].entidade_id 
-        : null;
-      
+      const clinicaEntidadeId =
+        clinicaEntidadeRes.rows.length > 0
+          ? clinicaEntidadeRes.rows[0].entidade_id
+          : null;
+
       if (clinicaEntidadeId) {
         pagamentosParamId = clinicaEntidadeId;
         pagamentosQuery = `
