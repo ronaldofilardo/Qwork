@@ -6,13 +6,13 @@ Este diretório contém todos os scripts necessários para fazer deployment das 
 
 ## 📋 ARQUIVOS DE DEPLOYMENT
 
-| Arquivo | Tipo | Propósito |
-|---------|------|-----------|
-| `deploy-prod-migrations.sql` | SQL | **PRINCIPAL** - Todas as migrações para PROD |
-| `validacao-pos-deploy.sql` | SQL | Validações automáticas pós-deployment |
-| `restart-servidor-prod.md` | Doc | Instruções de restart (5 métodos) |
-| `deploy-prod.ps1` | PowerShell | Script automatizado (Windows) |
-| `deploy-prod.sh` | Bash | Script automatizado (Linux/Mac) |
+| Arquivo                      | Tipo       | Propósito                                    |
+| ---------------------------- | ---------- | -------------------------------------------- |
+| `deploy-prod-migrations.sql` | SQL        | **PRINCIPAL** - Todas as migrações para PROD |
+| `validacao-pos-deploy.sql`   | SQL        | Validações automáticas pós-deployment        |
+| `restart-servidor-prod.md`   | Doc        | Instruções de restart (5 métodos)            |
+| `deploy-prod.ps1`            | PowerShell | Script automatizado (Windows)                |
+| `deploy-prod.sh`             | Bash       | Script automatizado (Linux/Mac)              |
 
 ---
 

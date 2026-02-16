@@ -128,7 +128,9 @@ describe('Empresa Dashboard - Abas Funcionais', () => {
       });
 
       expect(screen.getByTestId('tab-navigation')).toBeInTheDocument();
-      expect(screen.getByText('📋 Ciclos de Coletas Avaliativas')).toBeInTheDocument();
+      expect(
+        screen.getByText('📋 Ciclos de Coletas Avaliativas')
+      ).toBeInTheDocument();
       expect(screen.getByText('👥 Funcionários Ativos')).toBeInTheDocument();
       expect(screen.getByText('🚪 Desligamentos')).toBeInTheDocument();
     });
@@ -363,4 +365,3 @@ describe('Empresa Dashboard - Abas Funcionais', () => {
     });
   });
 });
-

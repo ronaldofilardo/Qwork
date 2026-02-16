@@ -9,100 +9,167 @@ export const GET = async () => {
   try {
     const session = await requireRole(['rh']);
 
-    // Determinar clinica_id: preferir sessão, senão buscar pelo CPF
+    // Determinar clinica_id ou entidade_id: preferir sessão, senão buscar pelo CPF
     let clinicaId = session.clinica_id;
+    let entidadeId = session.entidade_id;
 
-    if (!clinicaId) {
-      const res = await query(
-        'SELECT clinica_id, entidade_id FROM funcionarios WHERE cpf = $1 AND ativo = true LIMIT 1',
+    if (!clinicaId && !entidadeId) {
+      // Buscar vínculo nas tabelas de relacionamento
+      const vinculoClinicaRes = await query(
+        `SELECT fc.clinica_id 
+         FROM funcionarios f
+         INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
+         WHERE f.cpf = $1 AND f.ativo = true AND fc.ativo = true
+         LIMIT 1`,
         [session.cpf]
       );
 
-      if (res.rows.length > 0) {
-        // Prefer clinica_id se existir
-        clinicaId = res.rows[0].clinica_id || null;
+      if (vinculoClinicaRes.rows.length > 0) {
+        clinicaId = vinculoClinicaRes.rows[0].clinica_id;
+      } else {
+        // Tentar buscar vínculo com entidade
+        const vinculoEntidadeRes = await query(
+          `SELECT fe.entidade_id 
+           FROM funcionarios f
+           INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
+           WHERE f.cpf = $1 AND f.ativo = true AND fe.ativo = true
+           LIMIT 1`,
+          [session.cpf]
+        );
+
+        if (vinculoEntidadeRes.rows.length > 0) {
+          entidadeId = vinculoEntidadeRes.rows[0].entidade_id;
+        }
       }
     }
 
-    // Fallback: se a sessão possuir clinica_id direto
-    if (!clinicaId && (session as any).clinica_id) {
+    // Fallback: se a sessão possuir clinica_id ou entidade_id direto
+    if (!clinicaId && !entidadeId && (session as any).clinica_id) {
       clinicaId = (session as any).clinica_id;
     }
+    if (!clinicaId && !entidadeId && (session as any).entidade_id) {
+      entidadeId = (session as any).entidade_id;
+    }
 
-    if (!clinicaId) {
+    if (!clinicaId && !entidadeId) {
       return NextResponse.json(
-        { error: 'Você não está vinculado a uma clínica' },
+        { error: 'Você não está vinculado a uma clínica ou entidade' },
         { status: 403 }
       );
     }
 
-    // Buscar informações da clínica
-    // Na arquitetura segregada, clínicas estão na tabela 'clinicas'
-    const clinicaQuery = (await query(
-      `
-      SELECT
-        id,
-        nome,
-        cnpj,
-        email,
-        telefone,
-        endereco,
-        ativa,
-        criado_em
-      FROM clinicas
-      WHERE id = $1
-      `,
-      [clinicaId]
-    )) || { rows: [] };
+    // Usar clinicaId se disponível, senão usar entidadeId
+    const organizacaoId = clinicaId || entidadeId;
 
+    // Buscar informações da clínica ou entidade
     let clinica;
-    if (clinicaQuery.rows.length === 0) {
-      // Se não encontrou em clinicas, tentar buscar como entidade
-      const entidadeQuery = (await query(
-        `SELECT id, nome, cnpj, email, telefone, endereco, cidade, estado, responsavel_nome, criado_em, status, aprovado_em
-         FROM entidades WHERE id = $1`,
+
+    if (clinicaId) {
+      // Buscar na tabela clinicas
+      const clinicaQuery = (await query(
+        `SELECT
+          id,
+          nome,
+          cnpj,
+          email,
+          telefone,
+          endereco,
+          ativa,
+          criado_em
+        FROM clinicas
+        WHERE id = $1`,
         [clinicaId]
+      )) || { rows: [] };
+
+      if (clinicaQuery.rows.length > 0) {
+        clinica = clinicaQuery.rows[0];
+      }
+    }
+
+    if (!clinica && entidadeId) {
+      // Buscar na tabela entidades
+      const entidadeQuery = (await query(
+        `SELECT 
+          id, 
+          nome, 
+          cnpj, 
+          email, 
+          telefone, 
+          endereco, 
+          cidade, 
+          estado, 
+          responsavel_nome, 
+          criado_em, 
+          status, 
+          aprovado_em
+        FROM entidades 
+        WHERE id = $1`,
+        [entidadeId]
       )) || { rows: [] };
 
       if (entidadeQuery.rows.length > 0) {
         clinica = entidadeQuery.rows[0];
       }
-
-      // Se ainda não encontrou, retornar fallback genérico
-      if (!clinica) {
-        clinica = {
-          id: clinicaId,
-          nome: `Clínica não cadastrada (ID ${clinicaId})`,
-          cnpj: null,
-          email: null,
-          telefone: null,
-          endereco: null,
-        };
-      }
-    } else {
-      clinica = clinicaQuery.rows[0];
     }
 
-    // Buscar gestores RH da clínica — garantir que o usuário logado seja listado
-    const gestoresQuery = (await query(
-      `
-      SELECT 
-        id,
-        cpf,
-        nome,
-        email,
-        perfil
-      FROM funcionarios
-      WHERE (
-        clinica_id = $1 AND ativo = true AND perfil = 'rh'
-      )
-      OR (
-        cpf = $2 AND ativo = true
-      )
-      ORDER BY nome
-      `,
-      [clinica.id, session.cpf]
-    )) || { rows: [] };
+    // Se ainda não encontrou, retornar fallback genérico
+    if (!clinica) {
+      clinica = {
+        id: organizacaoId,
+        nome: `Organização não cadastrada (ID ${organizacaoId})`,
+        cnpj: null,
+        email: null,
+        telefone: null,
+        endereco: null,
+      };
+    }
+
+    // Buscar gestores RH da clínica/entidade — garantir que o usuário logado seja listado
+    let gestoresQuery;
+
+    if (clinicaId) {
+      // Buscar gestores RH da clínica
+      gestoresQuery = (await query(
+        `SELECT DISTINCT
+          f.id,
+          f.cpf,
+          f.nome,
+          f.email,
+          f.perfil
+        FROM funcionarios f
+        LEFT JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
+        WHERE f.ativo = true 
+          AND f.perfil = 'rh'
+          AND (
+            (fc.clinica_id = $1 AND fc.ativo = true)
+            OR f.cpf = $2
+          )
+        ORDER BY f.nome`,
+        [clinicaId, session.cpf]
+      )) || { rows: [] };
+    } else if (entidadeId) {
+      // Buscar gestores RH da entidade
+      gestoresQuery = (await query(
+        `SELECT DISTINCT
+          f.id,
+          f.cpf,
+          f.nome,
+          f.email,
+          f.perfil
+        FROM funcionarios f
+        LEFT JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
+        WHERE f.ativo = true 
+          AND f.perfil = 'rh'
+          AND (
+            (fe.entidade_id = $1 AND fe.ativo = true)
+            OR f.cpf = $2
+          )
+        ORDER BY f.nome`,
+        [entidadeId, session.cpf]
+      )) || { rows: [] };
+    } else {
+      gestoresQuery = { rows: [] };
+    }
 
     // Buscar plano ativo da clínica (se existir)
     let plano = null;
@@ -137,6 +204,24 @@ export const GET = async () => {
 
       // Columns for plan info are stable (p.nome, p.tipo, p.descricao)
       const hasStatus = cpCols.includes('status');
+
+      // Verificar se existe coluna entidade_id em contratos_planos
+      const cpEntidadeColRes = await query(
+        `SELECT column_name FROM information_schema.columns WHERE table_name = 'contratos_planos' AND column_name = 'entidade_id'`
+      );
+      const hasEntidadeId = cpEntidadeColRes.rows.length > 0;
+
+      // Montar condição WHERE baseada nas colunas disponíveis
+      let whereCondition = '';
+      if (clinicaId) {
+        whereCondition = 'cp.clinica_id = $1';
+      } else if (entidadeId && hasEntidadeId) {
+        whereCondition = 'cp.entidade_id = $1';
+      } else if (entidadeId) {
+        // Fallback: tentar clinica_id mesmo para entidade
+        whereCondition = 'cp.clinica_id = $1';
+      }
+
       const planoQuery = `
         SELECT
           ${cpSelect.length > 0 ? cpSelect.join(',\n          ') + ',' : ''}
@@ -146,13 +231,15 @@ export const GET = async () => {
           c.id as contrato_numero
         FROM contratos_planos cp
         LEFT JOIN planos p ON cp.plano_id = p.id
-        LEFT JOIN contratos c ON c.entidade_id = cp.clinica_id
+        LEFT JOIN contratos c ON c.entidade_id = COALESCE(cp.${hasEntidadeId ? 'entidade_id' : 'clinica_id'}, cp.clinica_id)
         WHERE ${hasStatus ? "cp.status::text IN ('ativo','aprovado','aguardando_pagamento') AND" : ''}
-          $1 = cp.clinica_id
+          ${whereCondition}
         ORDER BY cp.created_at DESC
         LIMIT 1`;
 
-      const planoRes = (await query(planoQuery, [clinica.id])) || { rows: [] };
+      const planoRes = (await query(planoQuery, [organizacaoId])) || {
+        rows: [],
+      };
       plano = planoRes.rows.length > 0 ? planoRes.rows[0] : null;
     } catch (err) {
       console.error('Erro ao buscar plano (contratos_planos):', err);
@@ -160,7 +247,7 @@ export const GET = async () => {
     }
 
     // Fallback: buscar em contratos (quando o plano foi registrado na tabela de contratos)
-    if (!plano) {
+    if (!plano && entidadeId) {
       try {
         const contratoQuery = `
           SELECT
@@ -178,7 +265,7 @@ export const GET = async () => {
           ORDER BY c.criado_em DESC
           LIMIT 1`;
 
-        const contratoRes = (await query(contratoQuery, [clinica.id])) || {
+        const contratoRes = (await query(contratoQuery, [entidadeId])) || {
           rows: [],
         };
         if (contratoRes.rows.length > 0) {
@@ -208,27 +295,65 @@ export const GET = async () => {
       }
     }
 
-    // Buscar pagamentos da clínica
-    const pagamentosQuery = `
-      SELECT
-        p.id,
-        p.valor,
-        p.status,
-        p.numero_parcelas,
-        p.metodo,
-        p.data_pagamento,
-        p.plataforma_nome,
-        p.detalhes_parcelas,
-        p.criado_em
-      FROM pagamentos p
-      WHERE p.entidade_id = $1
-      ORDER BY p.criado_em DESC
-      LIMIT 5
-    `;
+    // Buscar pagamentos da clínica ou entidade
+    let pagamentosQuery;
+    let pagamentosParamId = organizacaoId;
+    
+    if (clinicaId) {
+      // Buscar entidade_id da clínica para ignorar pagamentos
+      // (tabela pagamentos usa entidade_id, não clinica_id)
+      // Para clínicas, não retornar pagamentos de entidades
+      const clinicaEntidadeRes = await query(
+        `SELECT entidade_id FROM clinicas WHERE id = $1 LIMIT 1`,
+        [clinicaId]
+      );
+      const clinicaEntidadeId = clinicaEntidadeRes.rows.length > 0 
+        ? clinicaEntidadeRes.rows[0].entidade_id 
+        : null;
+      
+      if (clinicaEntidadeId) {
+        pagamentosParamId = clinicaEntidadeId;
+        pagamentosQuery = `
+          SELECT
+            p.id,
+            p.valor,
+            p.status,
+            p.numero_parcelas,
+            p.metodo,
+            p.data_pagamento,
+            p.plataforma_nome,
+            p.detalhes_parcelas,
+            p.criado_em
+          FROM pagamentos p
+          WHERE p.entidade_id = $1
+          ORDER BY p.criado_em DESC
+          LIMIT 5
+        `;
+      } else {
+        pagamentosQuery = null;
+      }
+    } else if (entidadeId) {
+      pagamentosQuery = `
+        SELECT
+          p.id,
+          p.valor,
+          p.status,
+          p.numero_parcelas,
+          p.metodo,
+          p.data_pagamento,
+          p.plataforma_nome,
+          p.detalhes_parcelas,
+          p.criado_em
+        FROM pagamentos p
+        WHERE p.entidade_id = $1
+        ORDER BY p.criado_em DESC
+        LIMIT 5
+      `;
+    }
 
-    const pagamentosResult = (await query(pagamentosQuery, [clinica.id])) || {
-      rows: [],
-    };
+    const pagamentosResult = pagamentosQuery
+      ? (await query(pagamentosQuery, [pagamentosParamId])) || { rows: [] }
+      : { rows: [] };
     const pagamentosRaw = pagamentosResult.rows || [];
 
     // Enriquecer pagamentos com recibos, parcelas e resumo

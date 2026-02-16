@@ -156,7 +156,7 @@ export async function verificarEConcluirAvaliacao(
     // Marcar como concluído (SEMPRE executar, mesmo se houver erro nos resultados)
     await queryTx(
       `UPDATE avaliacoes 
-       SET status = 'concluida', envio = NOW(), atualizado_em = NOW() 
+       SET status = 'concluida', concluida_em = NOW(), atualizado_em = NOW() 
        WHERE id = $1`,
       [avaliacaoId]
     );

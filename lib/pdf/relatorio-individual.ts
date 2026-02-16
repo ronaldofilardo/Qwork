@@ -25,7 +25,7 @@ interface DadosRelatorio {
     nivel_cargo: string | null;
     setor: string | null;
     empresa_nome: string;
-    concluida_em: Date;
+    concluida_em: Date | string;
   };
   respostas: RespostaAvaliacao[];
 }
@@ -98,17 +98,41 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
   // Dados do funcionário (simplificado)
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  const dataFormatada = new Date(dados.avaliacao.concluida_em).toLocaleString(
-    'pt-BR',
-    {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+
+  // Converter concluida_em para Date corretamente
+  const dataConclusion = (() => {
+    const valor = dados.avaliacao.concluida_em;
+    if (valor instanceof Date) {
+      return valor;
     }
-  );
+    if (typeof valor === 'string') {
+      return new Date(valor);
+    }
+    return new Date();
+  })();
+
+  const dataFormatada = dataConclusion.toLocaleString('pt-BR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
+  // Formatar data e hora separadamente
+  const dataConclusao = dataConclusion.toLocaleDateString('pt-BR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+
+  const horaConclusao = dataConclusion.toLocaleTimeString('pt-BR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+
   autoTable(doc, {
     startY: yPos,
     margin: { left: 15, right: 15 },
@@ -116,7 +140,9 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
     body: [
       ['Nome', dados.avaliacao.nome],
       ['CPF', dados.avaliacao.cpf],
-      ['Data de Conclusão', dataFormatada],
+      ['Data de Conclusão', dataConclusao],
+      ['Hora de Conclusão', horaConclusao],
+      ['Timestamp da Conclusão', dataFormatada],
     ],
     theme: 'grid',
     styles: { fontSize: 9, cellPadding: 2 },
