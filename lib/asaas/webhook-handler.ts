@@ -152,20 +152,42 @@ async function updatePaymentStatus(
 }
 
 /**
+ * Extrair lote_id do externalReference se disponível
+ * Formato esperado: lote_22_pagamento_31
+ */
+function extractLoteIdFromExternalReference(
+  externalReference?: string
+): number | null {
+  if (!externalReference) return null;
+
+  const match = externalReference.match(/^lote_(\d+)_pagamento_\d+$/);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+/**
  * Ativar assinatura do cliente (liberar acesso ao sistema)
  */
 async function activateSubscription(
   asaasPaymentId: string,
-  paymentData: AsaasWebhookPayload['payment']
+  paymentData: AsaasWebhookPayload['payment'],
+  event: AsaasWebhookEvent
 ): Promise<void> {
+  console.log('[Asaas Webhook] 🚀 INICIANDO activateSubscription:', {
+    asaasPaymentId,
+    event,
+    externalReference: paymentData.externalReference,
+    status: paymentData.status,
+  });
+
   const client = await pool.connect();
 
   try {
     await client.query('BEGIN');
+    console.log('[Asaas Webhook] ✅ Transação iniciada (BEGIN)');
 
     // 1. Buscar o pagamento usando asaas_payment_id
     const paymentResult = await client.query(
-      `SELECT id, entidade_id, clinica_id, valor, contrato_id
+      `SELECT id, entidade_id, clinica_id, valor
        FROM pagamentos
        WHERE asaas_payment_id = $1`,
       [asaasPaymentId]
@@ -178,14 +200,7 @@ async function activateSubscription(
     }
 
     const pagamento = paymentResult.rows[0];
-    const {
-      id: pagamentoId,
-      entidade_id,
-      clinica_id,
-      valor,
-      contrato_id,
-    } = pagamento;
-    const tomadorId = entidade_id || clinica_id;
+    const { id: pagamentoId, entidade_id, clinica_id, valor } = pagamento;
 
     // 2. Atualizar status do pagamento para 'pago'
     await client.query(
@@ -206,75 +221,136 @@ async function activateSubscription(
       ]
     );
 
-    // 3. Buscar lotes_avaliacao associados e atualizar
-    console.log(
-      `[Asaas Webhook] Buscando lotes para entidade_id=${entidade_id}, clinica_id=${clinica_id}`
+    // 3. Tentar extrair lote_id do externalReference
+    const loteId = extractLoteIdFromExternalReference(
+      paymentData.externalReference
     );
 
-    const lotesResult = await client.query(
-      `SELECT id FROM lotes_avaliacao
-       WHERE status_pagamento = 'aguardando_pagamento'
-       AND (
-         ($1::int IS NOT NULL AND entidade_id = $1)
-         OR
-         ($2::int IS NOT NULL AND clinica_id = $2)
-       )`,
-      [entidade_id || null, clinica_id || null]
-    );
+    let lotesResult;
+
+    if (loteId) {
+      // 3a. Se lote_id foi extraído, atualizar diretamente o lote específico
+      console.log(
+        `[Asaas Webhook] 🎯 Lote identificado via externalReference: ${loteId}`
+      );
+
+      console.log(
+        '[Asaas Webhook] 🔍 Executando query:',
+        `SELECT id FROM lotes_avaliacao WHERE id = ${loteId} AND status_pagamento = 'aguardando_pagamento'`
+      );
+
+      lotesResult = await client.query(
+        `SELECT id FROM lotes_avaliacao
+         WHERE id = $1 AND status_pagamento = 'aguardando_pagamento'`,
+        [loteId]
+      );
+
+      console.log(
+        `[Asaas Webhook] 📊 Resultado da query: ${lotesResult.rowCount} linha(s) encontrada(s)`
+      );
+      if (lotesResult.rowCount > 0) {
+        console.log(
+          `[Asaas Webhook] ✅ Lote encontrado: ${lotesResult.rows[0].id}`
+        );
+      }
+
+      if (lotesResult.rowCount === 0) {
+        console.warn(
+          `[Asaas Webhook] ⚠️  Lote ${loteId} não encontrado ou não está aguardando pagamento`
+        );
+
+        // Debug: Verificar estado atual do lote
+        const debugResult = await client.query(
+          `SELECT id, status_pagamento FROM lotes_avaliacao WHERE id = $1`,
+          [loteId]
+        );
+        if (debugResult.rowCount > 0) {
+          console.warn(
+            `[Asaas Webhook] 🔍 Status atual do lote ${loteId}:`,
+            debugResult.rows[0]
+          );
+        } else {
+          console.error(
+            `[Asaas Webhook] ❌ Lote ${loteId} não existe no banco!`
+          );
+        }
+      }
+    } else {
+      // 3b. Fallback: Buscar lotes por entidade_id/clinica_id (comportamento antigo)
+      console.log(
+        `[Asaas Webhook] Buscando lotes para entidade_id=${entidade_id}, clinica_id=${clinica_id}`
+      );
+
+      lotesResult = await client.query(
+        `SELECT id FROM lotes_avaliacao
+         WHERE status_pagamento = 'aguardando_pagamento'
+         AND (
+           ($1::int IS NOT NULL AND entidade_id = $1)
+           OR
+           ($2::int IS NOT NULL AND clinica_id = $2)
+         )`,
+        [entidade_id || null, clinica_id || null]
+      );
+    }
 
     console.log(
       `[Asaas Webhook] 🔍 Encontrados ${lotesResult.rowCount} lotes para atualizar:`,
       lotesResult.rows.map((r: any) => r.id)
     );
 
+    if (lotesResult.rowCount === 0) {
+      console.warn(
+        `[Asaas Webhook] ⚠️ ATENÇÃO: Nenhum lote encontrado para atualizar!`,
+        {
+          loteIdExtraido: loteId,
+          entidade_id,
+          clinica_id,
+          externalReference: paymentData.externalReference,
+        }
+      );
+    }
+
     for (const lote of lotesResult.rows) {
-      console.log(`[Asaas Webhook] Atualizando lote ${lote.id}...`);
-      await client.query(
+      console.log(`[Asaas Webhook] 🔄 Atualizando lote ${lote.id}...`);
+      console.log(
+        `[Asaas Webhook] 📝 Executando UPDATE lotes_avaliacao SET status_pagamento='pago', pago_em=NOW() WHERE id=${lote.id}`
+      );
+
+      const updateResult = await client.query(
         `UPDATE lotes_avaliacao
          SET status_pagamento = 'pago',
              pago_em = NOW(),
              pagamento_metodo = $1,
              pagamento_parcelas = 1
-         WHERE id = $2`,
+         WHERE id = $2
+         RETURNING id, status_pagamento, pago_em, pagamento_metodo`,
         [paymentData.billingType?.toLowerCase() || 'pix', lote.id]
       );
+
+      if (updateResult.rowCount > 0) {
+        const loteAtualizado = updateResult.rows[0];
+        console.log('[Asaas Webhook] ✅ Lote atualizado com sucesso:', {
+          lote_id: loteAtualizado.id,
+          novo_status_pagamento: loteAtualizado.status_pagamento,
+          pago_em: loteAtualizado.pago_em,
+          pagamento_metodo: loteAtualizado.pagamento_metodo,
+        });
+      } else {
+        console.error(
+          `[Asaas Webhook] ❌ Falha ao atualizar lote ${lote.id}: nenhuma linha afetada`
+        );
+      }
     }
 
-    // 4. Ativar o tomador
-    if (tomadorId) {
-      await client.query(
-        `UPDATE tomadores
-         SET pagamento_confirmado = TRUE,
-             data_liberacao_login = COALESCE(data_liberacao_login, NOW()),
-             data_primeiro_pagamento = COALESCE(data_primeiro_pagamento, NOW()),
-             ativa = TRUE,
-             status = 'pago'
-         WHERE id = $1`,
-        [tomadorId]
-      );
-    }
-
-    // 5. Se houver contrato, atualizar status
-    if (contrato_id) {
-      await client.query(
-        `UPDATE contratos
-         SET status = 'paid',
-             data_aceite = COALESCE(data_aceite, NOW())
-         WHERE id = $1`,
-        [contrato_id]
-      );
-    }
-
-    // 6. Registrar webhook processado
-    await logWebhookProcessed(asaasPaymentId, 'PAYMENT_RECEIVED', paymentData);
+    // 4. Registrar webhook processado
+    await logWebhookProcessed(asaasPaymentId, event, paymentData);
 
     await client.query('COMMIT');
 
     console.log(`[Asaas Webhook] ✅ PAGAMENTO CONFIRMADO:`, {
       pagamentoId,
       asaasPaymentId,
-      tomadorId,
-      lotes: lotesResult.rowCount,
+      lotesAtualizados: lotesResult.rowCount,
       valor,
       netValue: paymentData.netValue,
       formaPagamento: paymentData.billingType,
@@ -307,6 +383,24 @@ export async function handlePaymentWebhook(
     }
   );
 
+  // Extrair informações do externalReference
+  const loteId = extractLoteIdFromExternalReference(payment.externalReference);
+  console.log('[Asaas Webhook] 🔍 Análise do externalReference:', {
+    externalReference: payment.externalReference,
+    loteIdExtraido: loteId,
+    detectadoComoEmissao: !!loteId,
+  });
+
+  if (loteId) {
+    console.log(
+      `[Asaas Webhook] 🎯 Detectado pagamento de emissão para Lote #${loteId}`
+    );
+  } else {
+    console.log(
+      `[Asaas Webhook] ⚠️  Não foi possível extrair lote_id do externalReference`
+    );
+  }
+
   // Verificar se já processamos este webhook (idempotência)
   const alreadyProcessed = await isWebhookProcessed(payment.id, event);
   if (alreadyProcessed) {
@@ -334,11 +428,24 @@ export async function handlePaymentWebhook(
         // Pagamento confirmado (cartão aprovado, boleto pago, PIX pago)
         // Para cartão de crédito e PIX, já libera o acesso imediatamente
         console.log(
-          '[Asaas Webhook] 🔄 Executando: PAYMENT_CONFIRMED - ativando subscription'
+          '[Asaas Webhook] 🔵 ========== PROCESSANDO PAYMENT_CONFIRMED =========='
         );
-        await activateSubscription(payment.id, payment);
+        console.log('[Asaas Webhook] 💳 Payment ID:', payment.id);
+        console.log('[Asaas Webhook] 💰 Valor:', payment.value);
+        console.log(
+          '[Asaas Webhook] 🏷️  External Ref:',
+          payment.externalReference
+        );
+        console.log('[Asaas Webhook] 📊 Status Asaas:', payment.status);
+        console.log('[Asaas Webhook] 🔄 Executando: activateSubscription...');
+
+        await activateSubscription(payment.id, payment, event);
+
         console.log(
           '[Asaas Webhook] ✅ PAYMENT_CONFIRMED processado com sucesso'
+        );
+        console.log(
+          '[Asaas Webhook] ==================================================='
         );
         break;
 
@@ -348,7 +455,7 @@ export async function handlePaymentWebhook(
         console.log(
           '[Asaas Webhook] 💰 Executando: PAYMENT_RECEIVED - ativando subscription'
         );
-        await activateSubscription(payment.id, payment);
+        await activateSubscription(payment.id, payment, event);
         console.log(
           '[Asaas Webhook] ✅ PAYMENT_RECEIVED processado com sucesso'
         );

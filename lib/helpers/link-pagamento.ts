@@ -63,8 +63,14 @@ export function gerarTokenPagamento(): string {
  * Gera URL completa de pagamento
  */
 export function gerarUrlPagamento(token: string): string {
-  const baseUrl = process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
-  return `${baseUrl}/pagamento/emissao/${token}`;
+  // Usar a função getBaseUrl() para consistência
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    process.env.NEXT_PUBLIC_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : 'http://localhost:3000');
+  return `${baseUrl.replace(/\/$/, '')}/pagamento/emissao/${token}`;
 }
 
 /**

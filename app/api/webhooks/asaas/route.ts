@@ -82,18 +82,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log(`[Asaas Webhook] Recebido de ${ip}:`, {
-      event: payload.event,
-      paymentId: payload.payment.id,
-      status: payload.payment.status,
-      billingType: payload.payment.billingType,
-      value: payload.payment.value,
-    });
-
-    // Debug: Log do payload completo para diagnosticar
+    console.log('[Asaas Webhook] 📨 ========== WEBHOOK RECEBIDO ==========');
+    console.log('[Asaas Webhook] 🕒 Timestamp:', new Date().toISOString());
+    console.log('[Asaas Webhook] 📍 IP:', ip);
+    console.log('[Asaas Webhook] 🔑 Event:', payload.event);
+    console.log('[Asaas Webhook] 💳 Payment ID:', payload.payment?.id);
+    console.log('[Asaas Webhook] 📊 Status:', payload.payment?.status);
     console.log(
-      '[Asaas Webhook] Payload completo:',
+      '[Asaas Webhook] 🏷️  External Ref:',
+      payload.payment?.externalReference
+    );
+    console.log('[Asaas Webhook] 💰 Valor:', payload.payment?.value);
+    console.log(
+      '[Asaas Webhook] 📦 Payload completo:',
       JSON.stringify(payload, null, 2)
+    );
+    console.log(
+      '[Asaas Webhook] ================================================'
     );
 
     // 6. Processar o webhook de forma assíncrona
