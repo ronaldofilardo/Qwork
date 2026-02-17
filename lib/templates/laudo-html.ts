@@ -8,7 +8,11 @@ import {
   ObservacoesConclusao,
 } from '../laudo-tipos';
 import { getLogoSignatureTemplate } from '../pdf/puppeteer-templates';
-import { formatarDataCorrigida, formatarDataApenasData, formatarHora } from '../pdf/timezone-helper';
+import {
+  formatarDataCorrigida,
+  formatarDataApenasData,
+  formatarHora,
+} from '../pdf/timezone-helper';
 
 export interface LaudoDadosCompletos {
   loteId: number; // ID do lote (alinhado com laudo.id)
@@ -556,7 +560,7 @@ export function gerarHTMLLaudoCompleto(
   const dateCorrigida = formatarDataCorrigida(date);
   const dateApenasData = formatarDataApenasData(date);
   const hora = formatarHora(date);
-  
+
   const formattedHeaderDate =
     new Date(dateCorrigida).getDate() +
     ' de ' +

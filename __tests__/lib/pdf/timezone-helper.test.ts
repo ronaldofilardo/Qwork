@@ -11,7 +11,7 @@ describe('Timezone Helper - Correção de +3 Horas em PROD', () => {
    * - Relatório Individual: 16:31:16 ao invés de 13:31:16 (+3 horas)
    * - Conclusão da Avaliação: 16:23:23 ao invés de 13:23:23 (+3 horas)
    * - Relatório de Lote: 16:30:20 ao invés de 13:30:20 (+3 horas)
-   * 
+   *
    * SOLUÇÃO: Subtrair 3 horas de todos os timestamps antes de formatar
    */
 
@@ -134,25 +134,25 @@ describe('Timezone Helper - Correção de +3 Horas em PROD', () => {
       // Validar que sempre subtrai 3 horas
       const data1 = new Date('2026-02-17 10:00:00');
       const data2 = new Date('2026-02-17 14:00:00');
-      
+
       const corrigida1 = corrigirTimezone(data1);
       const corrigida2 = corrigirTimezone(data2);
 
       // Diferença deve ser sempre 3 horas
       const diff = (data1.getTime() - corrigida1.getTime()) / (1000 * 60 * 60);
       expect(diff).toBe(3);
-      
+
       const diff2 = (data2.getTime() - corrigida2.getTime()) / (1000 * 60 * 60);
       expect(diff2).toBe(3);
     });
 
     it('deve funcionar em horários variados', () => {
       const horarios = ['08:30:00', '12:00:00', '18:45:00', '23:59:59'];
-      
+
       for (const horario of horarios) {
         const data = new Date(`2026-02-17 ${horario}`);
         const corrigida = corrigirTimezone(data);
-        
+
         const diff = (data.getTime() - corrigida.getTime()) / (1000 * 60 * 60);
         expect(diff).toBe(3);
       }

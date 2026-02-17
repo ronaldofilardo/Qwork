@@ -88,7 +88,7 @@ export default function AvaliacaoConcluidaPage() {
       <div className="max-w-2xl mx-auto px-2 sm:px-0">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
           <div className="mb-4">
-            <QworkLogo size="lg" showSlogan={true} />
+            <QworkLogo size="2xl" showSlogan={true} />
           </div>
 
           <div className="mb-4 sm:mb-6">
