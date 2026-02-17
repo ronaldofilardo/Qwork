@@ -1,0 +1,96 @@
+════════════════════════════════════════════════════════════════════
+  ⚠️  CORREÇÃO: TOKEN DE WEBHOOK ASAAS
+════════════════════════════════════════════════════════════════════
+
+❌ PROBLEMA IDENTIFICADO:
+   O Asaas NÃO aceita a API Key como token de webhook.
+   Você tentou usar: $aact_hmlg_000Mzk... (API Key)
+   Mas precisa de um token diferente!
+
+✅ SOLUÇÃO:
+   Criei um novo token específico para webhook.
+
+════════════════════════════════════════════════════════════════════
+  NOVO TOKEN PARA WEBHOOK (copie exatamente)
+════════════════════════════════════════════════════════════════════
+
+qwork_webhook_secret_prod_2026_a7b9c3d5e8f1g2h4i6j8k0l2m4n6p8q0
+
+════════════════════════════════════════════════════════════════════
+
+📋 AÇÕES NECESSÁRIAS (3 passos - 5 minutos):
+
+1️⃣  ATUALIZAR NO VERCEL:
+   
+   URL: https://vercel.com/ronaldofilardos-projects/qwork/settings/environment-variables
+   
+   Ação:
+   - Encontre a variável: ASAAS_WEBHOOK_SECRET
+   - Clique em "Edit"
+   - Cole o novo valor: qwork_webhook_secret_prod_2026_a7b9c3d5e8f1g2h4i6j8k0l2m4n6p8q0
+   - Clique em "Save"
+
+2️⃣  CONFIGURAR NO ASAAS:
+   
+   URL: https://sandbox.asaas.com
+   Vá em: Configurações → Integrações → Webhooks
+   
+   No formulário do webhook:
+   - Nome: SandProd (ou qualquer nome)
+   - URL: https://qwork-psi.vercel.app/api/webhooks/asaas
+   - Token de autenticação: qwork_webhook_secret_prod_2026_a7b9c3d5e8f1g2h4i6j8k0l2m4n6p8q0
+   - Marque todos os eventos de PAYMENT_*
+   - Clique em "Sim" para ativar
+   - Salve
+
+3️⃣  FAZER REDEPLOY NO VERCEL:
+   
+   Após atualizar a variável, OBRIGATORIAMENTE fazer redeploy:
+   
+   Opção A - Via Dashboard:
+   https://vercel.com/ronaldofilardos-projects/qwork
+   → Deployments → Último deployment → Redeploy
+   
+   Opção B - Via Git:
+   git commit --allow-empty -m "redeploy para webhook token"
+   git push origin main
+
+════════════════════════════════════════════════════════════════════
+
+🧪 VERIFICAR APÓS CONFIGURAÇÃO:
+
+Execute no terminal:
+.\scripts\testar-webhook-producao.ps1
+
+Deve mostrar:
+✅ Webhook Secret: True
+
+════════════════════════════════════════════════════════════════════
+
+📝 IMPORTANTE - DIFERENÇA ENTRE OS TOKENS:
+
+ASAAS_API_KEY (mantém como está)
+└─> Para fazer chamadas à API do Asaas
+└─> Exemplo: Criar pagamento, buscar cliente, etc.
+└─> Valor: $aact_hmlg_000Mzk...
+
+ASAAS_WEBHOOK_SECRET (novo valor)
+└─> Para validar webhooks recebidos do Asaas
+└─> Exemplo: Confirmar que o webhook veio realmente do Asaas
+└─> Valor: qwork_webhook_secret_prod_2026_a7b9c3d5e8f1g2h4i6j8k0l2m4n6p8q0
+
+SÃO VALORES DIFERENTES E SERVEM PARA FINS DIFERENTES!
+
+════════════════════════════════════════════════════════════════════
+
+✅ ARQUIVOS JÁ ATUALIZADOS:
+   - .env.production (com novo token)
+   - .env.local (com token de dev)
+
+Agora só falta você:
+1. Atualizar no Vercel
+2. Configurar no Asaas
+3. Fazer redeploy
+
+════════════════════════════════════════════════════════════════════
+Data: 17/02/2026
