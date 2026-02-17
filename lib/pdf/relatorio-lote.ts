@@ -1,5 +1,6 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { formatarDataCorrigida } from './timezone-helper';
 
 interface Funcionario {
   nome: string;
@@ -41,34 +42,10 @@ export function gerarRelatorioLotePDF(dados: DadosLote): Buffer {
   // Informações do lote
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  const dataGeracaoFormatada = new Date().toLocaleString('pt-BR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
-  const dataCriacaoFormatada = new Date(dados.lote.criado_em).toLocaleString(
-    'pt-BR',
-    {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    }
-  );
+  const dataGeracaoFormatada = formatarDataCorrigida(new Date());
+  const dataCriacaoFormatada = formatarDataCorrigida(dados.lote.criado_em);
   const statusFormatado = dados.lote.emitido_em
-    ? `Concluído em ${new Date(dados.lote.emitido_em).toLocaleString('pt-BR', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })}`
+    ? `Concluído em ${formatarDataCorrigida(dados.lote.emitido_em)}`
     : 'Pendente';
 
   autoTable(doc, {
@@ -103,17 +80,7 @@ export function gerarRelatorioLotePDF(dados: DadosLote): Buffer {
   yPos += 8;
 
   const tableData = dados.funcionarios.map((f) => {
-    const dataConclusaoFormatada = new Date(f.concluida_em).toLocaleString(
-      'pt-BR',
-      {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      }
-    );
+    const dataConclusaoFormatada = formatarDataCorrigida(f.concluida_em);
     return [f.nome, f.cpf, dataConclusaoFormatada];
   });
 
@@ -137,7 +104,7 @@ export function gerarRelatorioLotePDF(dados: DadosLote): Buffer {
   doc.setFont('helvetica', 'normal');
   doc.text(`Total de funcionários: ${dados.funcionarios.length}`, 15, yPos);
   doc.text(
-    `Gerado em ${new Date().toLocaleString('pt-BR')}`,
+    `Gerado em ${formatarDataCorrigida(new Date())}`,
     pageWidth / 2,
     doc.internal.pageSize.getHeight() - 10,
     { align: 'center' }

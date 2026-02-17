@@ -266,6 +266,7 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
                   numeroFuncionarios={dados.num_avaliacoes}
                   valor={dados.valor_total}
                   contratoId={null}
+                  loteId={dados.lote_id} // Vincular ao lote de emissão
                   onSuccess={handleAsaasSuccess}
                   onError={handleAsaasError}
                 />

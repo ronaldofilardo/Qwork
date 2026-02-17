@@ -1,5 +1,6 @@
 // Import necessário para queries
 import { query } from './db';
+import { formatarDataApenasData } from './pdf/timezone-helper';
 import {
   DadosGeraisEmpresa,
   ScoreGrupo,
@@ -229,11 +230,11 @@ export async function gerarDadosGeraisEmpresa(
     endereco: `${lote.endereco}, ${lote.cidade} - ${lote.estado}, CEP: ${lote.cep}`,
     periodoAvaliacoes: {
       dataLiberacao: lote.primeira_avaliacao
-        ? new Date(lote.primeira_avaliacao).toLocaleDateString('pt-BR')
-        : new Date(lote.liberado_em).toLocaleDateString('pt-BR'),
+        ? formatarDataApenasData(lote.primeira_avaliacao)
+        : formatarDataApenasData(lote.liberado_em),
       dataUltimaConclusao: lote.ultima_conclusao
-        ? new Date(lote.ultima_conclusao).toLocaleDateString('pt-BR')
-        : new Date(lote.liberado_em).toLocaleDateString('pt-BR'),
+        ? formatarDataApenasData(lote.ultima_conclusao)
+        : formatarDataApenasData(lote.liberado_em),
     },
     totalFuncionariosAvaliados: parseInt(lote.avaliacoes_concluidas),
     percentualConclusao,
@@ -357,20 +358,12 @@ Um diagnóstico clínico de cada avaliado somente pode ser feito pelo seu psicó
 Declaro que os dados são estritamente agregados e anônimos, em conformidade com a LGPD e o Código de Ética Profissional do Psicólogo.`;
 
   const dataEmissao = new Date();
-  const dataEmissaoFormatada = dataEmissao.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  const dataEmissaoFormatada = formatarDataApenasData(dataEmissao);
 
   // Calcular data de validade: data de emissão + 364 dias
   const dataValidade = new Date(dataEmissao);
   dataValidade.setDate(dataValidade.getDate() + 364);
-  const dataValidadeFormatada = dataValidade.toLocaleDateString('pt-BR', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const dataValidadeFormatada = formatarDataApenasData(dataValidade);
 
   const observacoesLaudo = `O PCMSO é um programa contínuo previsto na NR 7, voltado à prevenção e ao controle de danos à saúde relacionados ao trabalho, devendo ser elaborado com base nos riscos identificados no PGR. A norma não fixa um "vencimento" pontual do programa, mas exige planejamento e acompanhamento ao longo de cada ano, com integração aos riscos ocupacionais atualizados. Para fins de PGR e fiscalização (inclusive no MT), recomenda se considerar que: 1. O PCMSO deve estar sempre vigente e coerente com o PGR atual. 2. Na prática, é renovado/analisado ao menos uma vez por ano, com relatório analítico anual. 3. Qualquer alteração de riscos ou atualização do PGR exige revisão imediata do PCMSO, ainda que antes de 1 ano. Portanto, <strong>o presente laudo tem uma validade sugerida de doze meses ou até <span style="font-size: 14pt; font-weight: bold;">${dataValidadeFormatada}</span></strong>.`;
 

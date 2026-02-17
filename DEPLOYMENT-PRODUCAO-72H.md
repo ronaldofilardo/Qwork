@@ -1,4 +1,5 @@
 # 🚀 PLANO DE DEPLOYMENT PARA PRODUÇÃO
+
 ## Todas as Alterações das Últimas 72 Horas
 
 **Data:** 16 de fevereiro de 2026  
@@ -25,7 +26,7 @@
 
 ```
 Itens Essenciais:
-☐ Banco de dados PostgreSQL/Neon acessível (acesso root/admin)  
+☐ Banco de dados PostgreSQL/Neon acessível (acesso root/admin)
 ☐ Credenciais Asaas obtidas (API Key + Webhook Secret)
 ☐ Servidor de produção com acesso SSH/RDP
 ☐ Git branch 'main' atualizado com todas as correções
@@ -60,6 +61,7 @@ CRÍTICO - Estas informações são essenciais:
 ```
 
 ## 0.3 Backup Banco de Dados (MUITO IMPORTAN
+
 TE)
 
 ```bash
@@ -82,6 +84,7 @@ pg_dump -U postgres -d qwork_prod > backup-prod-2026-02-16.sql
 # 🗄️ FASE 1: MIGRAÇÕES DE BANCO DE DADOS
 
 ## ORDEM CRÍTICA DE EXECUÇÃO:
+
 **1️⃣ SEMPRE executar Migração 165 ANTES das outras**
 
 ### 1.1 Migração 165 - Corrigir Trigger Q37
@@ -98,42 +101,53 @@ pg_dump -U postgres -d qwork_prod > backup-prod-2026-02-16.sql
 -- =====================================================
 
 -- Step 1: Verificar estado atual da trigger
-SELECT routine_name, routine_definition 
-FROM information_schema.routines 
+SELECT routine_name, routine_definition
+FROM information_schema.routines
 WHERE routine_name = 'atualizar_ultima_avaliacao_funcionario'
 AND routine_type = 'FUNCTION';
 
--- Step 2: Drop da trigger existente (evita conflito de recriação)
-DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao 
-ON lotes_avaliacao CASCADE;
+-- Step 2: Drop da trigger existente (tabela correta: avaliacoes)
+DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao
+ON avaliacoes CASCADE;
 
 -- Step 3: Drop da função antiga
 DROP FUNCTION IF EXISTS atualizar_ultima_avaliacao_funcionario() CASCADE;
 
--- Step 4: Recriar função CORRIGIDA (sem referencias a colunas inexistentes)
+-- Step 4: Recriar função CORRIGIDA (conforme migração 165)
 CREATE OR REPLACE FUNCTION atualizar_ultima_avaliacao_funcionario()
 RETURNS TRIGGER AS $$
 BEGIN
   UPDATE funcionarios
-  SET 
+  SET
     ultima_avaliacao_id = NEW.id,
-    ultima_avaliacao_data = NEW.criado_em,
-    ultima_avaliacao_score = NEW.score,
+    ultima_avaliacao_data_conclusao = COALESCE(NEW.envio, NEW.inativada_em),
+    ultima_avaliacao_status = NEW.status,
     atualizado_em = NOW()
-  WHERE id = NEW.funcionario_id;
-  
+  WHERE cpf = NEW.funcionario_cpf
+    AND (
+      ultima_avaliacao_data_conclusao IS NULL
+      OR COALESCE(NEW.envio, NEW.inativada_em) > ultima_avaliacao_data_conclusao
+      OR (COALESCE(NEW.envio, NEW.inativada_em) = ultima_avaliacao_data_conclusao AND NEW.id > ultima_avaliacao_id)
+    );
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Step 5: Recriar trigger com a função corrigida
+-- Step 5: Recriar trigger (tabela correta: avaliacoes)
 CREATE TRIGGER trigger_atualizar_ultima_avaliacao
-AFTER INSERT OR UPDATE ON lotes_avaliacao
+AFTER UPDATE OF status, envio, inativada_em
+ON avaliacoes
 FOR EACH ROW
+WHEN (
+  (NEW.status IN ('concluida', 'inativada') AND OLD.status <> NEW.status)
+  OR (NEW.envio IS NOT NULL AND OLD.envio IS NULL)
+  OR (NEW.inativada_em IS NOT NULL AND OLD.inativada_em IS NULL)
+)
 EXECUTE FUNCTION atualizar_ultima_avaliacao_funcionario();
 
 -- Step 6: Validação
-SELECT COUNT(*) as trigger_count FROM information_schema.triggers 
+SELECT COUNT(*) as trigger_count FROM information_schema.triggers
 WHERE trigger_name = 'trigger_atualizar_ultima_avaliacao';
 -- Esperado: 1 row
 
@@ -168,7 +182,7 @@ WHERE id = 1;
 -- =====================================================
 
 -- Verificação 1: Laudos com PDF gerado mas status errado
-SELECT 
+SELECT
   id,
   lote_id,
   status,
@@ -177,12 +191,12 @@ SELECT
   emitido_em,
   atualizado_em
 FROM laudos
-WHERE hash_pdf IS NOT NULL 
+WHERE hash_pdf IS NOT NULL
   AND status = 'rascunho'  -- ← PROBLEMA: PDF existe mas está rascunho
 ORDER BY atualizado_em DESC;
 
 -- Verificação 2: Laudos no bucket mas sem metadados
-SELECT 
+SELECT
   id,
   lote_id,
   status,
@@ -195,7 +209,7 @@ WHERE arquivo_remoto_url IS NOT NULL
 ORDER BY atualizado_em DESC;
 
 -- Verificação 3: Contar problemas
-SELECT 
+SELECT
   COUNT(CASE WHEN hash_pdf IS NOT NULL AND status = 'rascunho' THEN 1 END) as laudos_pdf_mas_rascunho,
   COUNT(CASE WHEN arquivo_remoto_url IS NOT NULL AND status != 'enviado' THEN 1 END) as laudos_bucket_status_errado
 FROM laudos;
@@ -210,17 +224,17 @@ FROM laudos;
 
 -- Caso 1: PDF gerado localmente mas status='rascunho'
 UPDATE laudos
-SET 
+SET
   status = 'emitido',
   emitido_em = COALESCE(emitido_em, NOW()),
   atualizado_em = NOW()
-WHERE 
-  hash_pdf IS NOT NULL 
+WHERE
+  hash_pdf IS NOT NULL
   AND status = 'rascunho'
   AND arquivo_remoto_url IS NULL;  -- Segurança: só se ainda não foi enviado
 
 -- Verificar quantos foram corrigidos
-SELECT COUNT(*) FROM laudos 
+SELECT COUNT(*) FROM laudos
 WHERE hash_pdf IS NOT NULL AND status = 'emitido';
 ```
 
@@ -238,49 +252,49 @@ WHERE hash_pdf IS NOT NULL AND status = 'emitido';
 
 -- Verificar se table já existe
 SELECT EXISTS (
-  SELECT 1 FROM information_schema.tables 
+  SELECT 1 FROM information_schema.tables
   WHERE table_name = 'asaas_pagamentos'
 ) as tabela_existe;
 
 -- Se não existe, criar:
 CREATE TABLE IF NOT EXISTS asaas_pagamentos (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  
+
   -- Referência ao sistema
   pagamento_id UUID NOT NULL,
-  CONSTRAINT fk_pagamento FOREIGN KEY (pagamento_id) 
+  CONSTRAINT fk_pagamento FOREIGN KEY (pagamento_id)
     REFERENCES pagamentos(id) ON DELETE CASCADE,
-  
+
   -- IDs Asaas
   asaas_subscription_id VARCHAR(255) UNIQUE,  -- Para PIX recorrente
   asaas_customer_id VARCHAR(255),              -- Cliente na Asaas
   asaas_invoice_id VARCHAR(255) UNIQUE,        -- Fatura/boleto
-  
+
   -- Status
   asaas_status VARCHAR(50),  -- PENDING, CONFIRMED, RECEIVED, OVERDUE, CANCELLED
-  
+
   -- Valores
   valor_original DECIMAL(10,2),
   taxa_asaas DECIMAL(10,2),
   valor_liquido DECIMAL(10,2),
-  
+
   -- Informações PIX
   pix_qr_code TEXT,
   pix_copy_paste TEXT,
   pix_expiration TIMESTAMP,
-  
+
   -- Informações Boleto
   boleto_numero VARCHAR(47),
   boleto_link_pdf VARCHAR(500),
   boleto_vencimento DATE,
-  
+
   -- Metadados
   metadados JSONB,  -- Guardar respostas Asaas completas
-  
+
   -- Auditoria
   criado_em TIMESTAMP DEFAULT NOW(),
   atualizado_em TIMESTAMP DEFAULT NOW(),
-  
+
   INDEX idx_pagamento_id (pagamento_id),
   INDEX idx_asaas_customer_id (asaas_customer_id),
   INDEX idx_asaas_invoice_id (asaas_invoice_id),
@@ -288,11 +302,11 @@ CREATE TABLE IF NOT EXISTS asaas_pagamentos (
 );
 
 -- Criar índice para backup/busca rápida
-CREATE INDEX idx_asaas_pagamentos_created 
+CREATE INDEX idx_asaas_pagamentos_created
 ON asaas_pagamentos(criado_em DESC);
 
 -- Adicionar coluna na tabela pagamentos se precisar rastrear origem
-ALTER TABLE pagamentos 
+ALTER TABLE pagamentos
 ADD COLUMN IF NOT EXISTS origem_pagamento VARCHAR(50) DEFAULT 'asaas'
   CONSTRAINT ck_origem CHECK (origem_pagamento IN ('asaas', 'manual', 'webhook'));
 
@@ -307,9 +321,9 @@ COMMIT;
 
 -- Testar inserção de dummy
 INSERT INTO asaas_pagamentos (
-  pagamento_id, 
-  asaas_status, 
-  valor_original, 
+  pagamento_id,
+  asaas_status,
+  valor_original,
   criado_em
 ) VALUES (
   (SELECT id FROM pagamentos LIMIT 1),
@@ -388,7 +402,7 @@ ASAAS_LOG_LEVEL=info
 1. lib/laudo-auto.ts
    - Linhas 167-189: Adicionar UPDATE com status='emitido' + emitido_em
 
-2. app/api/emissor/laudos/[loteId]/pdf/route.ts  
+2. app/api/emissor/laudos/[loteId]/pdf/route.ts
    - Linhas 273-284: Adicionar 'emitido' ao WHERE IN clause
 
 3. app/api/emissor/laudos/[loteId]/upload/route.ts
@@ -486,7 +500,7 @@ pm2 restart qwork-prod
 -- =====================================================
 
 -- Total de laudos
-SELECT 
+SELECT
   COUNT(*) as total_laudos,
   COUNT(CASE WHEN status = 'rascunho' THEN 1 END) as rascunho,
   COUNT(CASE WHEN status = 'emitido' THEN 1 END) as emitido,
@@ -498,7 +512,7 @@ FROM laudos;
 -- Laudos "órfãos" - PDF local mas sem status emitido
 SELECT id, lote_id, status, hash_pdf, arquivo_remoto_url
 FROM laudos
-WHERE hash_pdf IS NOT NULL 
+WHERE hash_pdf IS NOT NULL
   AND status = 'rascunho'
   AND arquivo_remoto_url IS NULL
 LIMIT 100;
@@ -506,16 +520,17 @@ LIMIT 100;
 -- Se houver muitos (>0), corrigir:
 UPDATE laudos
 SET status = 'emitido', emitido_em = NOW(), atualizado_em = NOW()
-WHERE hash_pdf IS NOT NULL 
+WHERE hash_pdf IS NOT NULL
   AND status = 'rascunho'
   AND arquivo_remoto_url IS NULL;
 
 -- Log de quantos foram corrigidos
-SELECT COUNT(*) FROM laudos 
+SELECT COUNT(*) FROM laudos
 WHERE status = 'emitido' AND arquivo_remoto_url IS NULL;
 ```
 
 ## 4.2 Sincronizar Senhas Comprom
+
 etidas
 
 **Se há senhas com datas inválidas:**
@@ -526,14 +541,14 @@ etidas
 -- =====================================================
 
 -- Buscar senhas que pareçam inválidas (31/02, 31/04, etc)
-SELECT 
+SELECT
   id,
   login,
   data_nascimento,
   TO_DATE(data_nascimento, 'DD/MM/YYYY') as data_parsed,
-  CASE 
+  CASE
     WHEN data_nascimento ~ '^(31)/(02|04|06|09|11)' THEN 'DATA_INVALIDA'
-    WHEN data_nascimento ~ '^(29)/02/(1900|1904|1908|1912|1916|1920|1924|1928|1932|1936|1940|1944|1948|1952|1956|1960|1964|1968|1972|1976|1980|1984|1988|1992|1996|2004|2008|2012|2016|2020|2024)' 
+    WHEN data_nascimento ~ '^(29)/02/(1900|1904|1908|1912|1916|1920|1924|1928|1932|1936|1940|1944|1948|1952|1956|1960|1964|1968|1972|1976|1980|1984|1988|1992|1996|2004|2008|2012|2016|2020|2024)'
       THEN 'DATA_VALIDA_BISSEXTO'
     ELSE 'DATA_APARENTEMENTE_VALIDA'
   END as validacao
@@ -544,7 +559,7 @@ ORDER BY data_nascimento DESC;
 -- Se encontrar inválidas, requerer alteração:
 -- Gerar nova senha válida e avisar ao funcionário
 UPDATE funcionarios
-SET 
+SET
   senha_temporaria = NULL,  -- Força reset de senha
   atualizado_em = NOW()
 WHERE id IN (...)  -- IDs com datas inválidas
@@ -682,7 +697,7 @@ curl -X POST http://prod.qwork.com/api/auth/gerar-senha \
    → Card deve ir para aba "Laudo Emitido"
    → Botão "Enviar ao Bucket" deve aparecer
 
-3. Upload ao Bucket  
+3. Upload ao Bucket
    ☐ Clicar "Enviar ao Bucket"
    → Card muda para "Sincronizado"
    → Solicitante vê "Laudo Disponível"
@@ -780,7 +795,7 @@ BEGIN
   UPDATE funcionarios
   SET ultima_avaliacao_id = NEW.id
   WHERE id = NEW.funcionario_id;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
