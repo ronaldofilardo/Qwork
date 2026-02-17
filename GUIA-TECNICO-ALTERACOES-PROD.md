@@ -612,21 +612,38 @@ Resumo:
 -- Executar ANTES de qualquer outro script
 -- Arquivo: database/migrations/165_fix_atualizar_ultima_avaliacao_trigger.sql
 
-DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao ON lotes_avaliacao;
+DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao ON avaliacoes;
 DROP FUNCTION IF EXISTS atualizar_ultima_avaliacao_funcionario();
 
-CREATE FUNCTION atualizar_ultima_avaliacao_funcionario() RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION atualizar_ultima_avaliacao_funcionario()
+RETURNS TRIGGER AS $$
 BEGIN
   UPDATE funcionarios
-  SET ultima_avaliacao_id = NEW.id
-  WHERE id = NEW.funcionario_id;
+  SET
+    ultima_avaliacao_id = NEW.id,
+    ultima_avaliacao_data_conclusao = COALESCE(NEW.envio, NEW.inativada_em),
+    ultima_avaliacao_status = NEW.status,
+    atualizado_em = NOW()
+  WHERE cpf = NEW.funcionario_cpf
+    AND (
+      ultima_avaliacao_data_conclusao IS NULL
+      OR COALESCE(NEW.envio, NEW.inativada_em) > ultima_avaliacao_data_conclusao
+      OR (COALESCE(NEW.envio, NEW.inativada_em) = ultima_avaliacao_data_conclusao AND NEW.id > ultima_avaliacao_id)
+    );
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
 CREATE TRIGGER trigger_atualizar_ultima_avaliacao
-AFTER INSERT ON lotes_avaliacao
-FOR EACH ROW EXECUTE FUNCTION atualizar_ultima_avaliacao_funcionario();
+AFTER UPDATE OF status, envio, inativada_em
+ON avaliacoes
+FOR EACH ROW
+WHEN (
+  (NEW.status IN ('concluida', 'inativada') AND OLD.status <> NEW.status)
+  OR (NEW.envio IS NOT NULL AND OLD.envio IS NULL)
+  OR (NEW.inativada_em IS NOT NULL AND OLD.inativada_em IS NULL)
+)
+EXECUTE FUNCTION atualizar_ultima_avaliacao_funcionario();
 ```
 
 ---

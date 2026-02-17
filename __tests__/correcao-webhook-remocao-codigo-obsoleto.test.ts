@@ -1,12 +1,12 @@
 /**
  * Teste: Validação da Remoção de Código Obsoleto do Webhook Handler
- * 
+ *
  * Data: 16/02/2026
- * Issue: Sistema tentava atualizar tabelas obsoletas (tomadores/contratos) 
+ * Issue: Sistema tentava atualizar tabelas obsoletas (tomadores/contratos)
  *        causando erro de enum constraint e ROLLBACK da transação
- * 
+ *
  * Solução: Removido código obsoleto, mantendo apenas atualização de lotes_avaliacao
- * 
+ *
  * @see lib/asaas/webhook-handler.ts
  * @see ANALISE-MAQUINA-ESTADOS-EMISSAO-LAUDO.md
  */
@@ -111,7 +111,7 @@ describe('Correção Webhook - Remoção de Código Obsoleto', () => {
   test('✅ Webhook NÃO deve tentar atualizar tabela contratos (obsoleta)', async () => {
     // Se existisse código tentando atualizar contratos com status='aprovado',
     // causaria erro: "valor inválido para status_aprovacao_enum"
-    
+
     // Resetar lote para testar novamente
     await query(
       `UPDATE lotes_avaliacao 
@@ -121,10 +121,9 @@ describe('Correção Webhook - Remoção de Código Obsoleto', () => {
       [testLoteId]
     );
 
-    await query(
-      `UPDATE pagamentos SET status = 'pendente' WHERE id = $1`,
-      [testPagamentoId]
-    );
+    await query(`UPDATE pagamentos SET status = 'pendente' WHERE id = $1`, [
+      testPagamentoId,
+    ]);
 
     await query(`DELETE FROM webhook_logs WHERE asaas_payment_id = $1`, [
       testAsaasPaymentId,
@@ -163,20 +162,24 @@ describe('Correção Webhook - Remoção de Código Obsoleto', () => {
   test('✅ Webhook deve processar usando apenas enum status_pagamento válido', async () => {
     // Verificar que o sistema usa apenas os enums corretos:
     // status_pagamento ENUM = 'aguardando_cobranca' | 'aguardando_pagamento' | 'pago'
-    
-    const validStatusPagamento = ['aguardando_cobranca', 'aguardando_pagamento', 'pago'];
-    
+
+    const validStatusPagamento = [
+      'aguardando_cobranca',
+      'aguardando_pagamento',
+      'pago',
+    ];
+
     // Consultar o tipo enum do banco
     const enumResult = await query(`
       SELECT unnest(enum_range(NULL::status_pagamento))::text as valor
     `);
-    
-    const enumValues = enumResult.rows.map(r => r.valor);
-    
+
+    const enumValues = enumResult.rows.map((r) => r.valor);
+
     expect(enumValues).toEqual(expect.arrayContaining(validStatusPagamento));
     expect(enumValues.length).toBe(3);
-    
-    // Confirmar que 'aprovado', 'pendente', 'rejeitado', 'em_reanalise' 
+
+    // Confirmar que 'aprovado', 'pendente', 'rejeitado', 'em_reanalise'
     // NÃO estão no enum (esses são do sistema antigo)
     expect(enumValues).not.toContain('aprovado');
     expect(enumValues).not.toContain('pendente');
@@ -265,12 +268,12 @@ describe('Correção Webhook - Remoção de Código Obsoleto', () => {
 
   test('✅ ExternalReference extrai corretamente o lote_id', async () => {
     const externalRef = `lote_${testLoteId}_pagamento_${testPagamentoId}`;
-    
+
     // O formato deve ser: lote_{ID}_pagamento_{ID}
     const match = externalRef.match(/lote_(\d+)_pagamento_(\d+)/);
-    
+
     expect(match).not.toBeNull();
-    expect(match![1]).toBe(testLoteId.toString());
-    expect(match![2]).toBe(testPagamentoId.toString());
+    expect(match[1]).toBe(testLoteId.toString());
+    expect(match[2]).toBe(testPagamentoId.toString());
   });
 });

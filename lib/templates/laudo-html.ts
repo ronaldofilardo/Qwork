@@ -8,6 +8,7 @@ import {
   ObservacoesConclusao,
 } from '../laudo-tipos';
 import { getLogoSignatureTemplate } from '../pdf/puppeteer-templates';
+import { formatarDataCorrigida, formatarDataApenasData, formatarHora } from '../pdf/timezone-helper';
 
 export interface LaudoDadosCompletos {
   loteId: number; // ID do lote (alinhado com laudo.id)
@@ -535,19 +536,16 @@ function gerarSecaoEtapa4(
 }
 
 function gerarRodape(): string {
+  const dataAtual = formatarDataApenasData(new Date());
+  const horaAtual = formatarHora(new Date());
   return `
     <div class="footer">
       <p>Documento gerado automaticamente pelo Sistema Qwork</p>
-      <p style="margin-top: 4px;">Data de geração: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR')}</p>
+      <p style="margin-top: 4px;">Data de geração: ${dataAtual} às ${horaAtual}</p>
     </div>
   `;
 }
 
-/**
- * Gera HTML completo do Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO) para conversão em PDF
- * @param laudoPadronizado - Dados completos do laudo estruturado
- * @returns String HTML formatada para PDF
- */
 export function gerarHTMLLaudoCompleto(
   laudoPadronizado: LaudoDadosCompletos
 ): string {
@@ -555,22 +553,18 @@ export function gerarHTMLLaudoCompleto(
     laudoPadronizado;
 
   const date = emitidoEm ? new Date(emitidoEm) : new Date();
+  const dateCorrigida = formatarDataCorrigida(date);
+  const dateApenasData = formatarDataApenasData(date);
+  const hora = formatarHora(date);
+  
   const formattedHeaderDate =
-    date.getDate() +
+    new Date(dateCorrigida).getDate() +
     ' de ' +
-    date.toLocaleDateString('pt-BR', { month: 'long' }) +
+    new Date(dateCorrigida).toLocaleDateString('pt-BR', { month: 'long' }) +
     ' de ' +
-    date.getFullYear();
-  const formattedDataAssinatura =
-    date.getDate().toString().padStart(2, '0') +
-    '/' +
-    (date.getMonth() + 1).toString().padStart(2, '0') +
-    '/' +
-    date.getFullYear() +
-    ' ' +
-    date.toLocaleTimeString('pt-BR') +
-    ' -0300';
-  const formattedDataEmissao = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()} ${date.toLocaleTimeString('pt-BR')}`;
+    new Date(dateCorrigida).getFullYear();
+  const formattedDataAssinatura = `${dateApenasData} ${hora} -0300`;
+  const formattedDataEmissao = `${dateApenasData} ${hora}`;
 
   let html = `
     <!DOCTYPE html>

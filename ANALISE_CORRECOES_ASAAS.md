@@ -49,6 +49,7 @@
 **Ação:** Copie TODAS as variáveis do arquivo `.env.production` para o Vercel
 
 **Variáveis CRÍTICAS:**
+
 ```env
 ASAAS_API_KEY=... (copie do .env.production)
 ASAAS_API_URL=https://api-sandbox.asaas.com/v3
@@ -59,6 +60,7 @@ NEXT_PUBLIC_URL=https://qwork-psi.vercel.app
 ```
 
 **Importante:**
+
 - Marque o ambiente: **Production** (obrigatório)
 - Preview e Development (opcional)
 
@@ -69,12 +71,14 @@ NEXT_PUBLIC_URL=https://qwork-psi.vercel.app
 Após adicionar as variáveis, OBRIGATORIAMENTE fazer redeploy:
 
 **Opção A - Via Dashboard Vercel:**
+
 1. Acesse: https://vercel.com/ronaldofilardos-projects/qwork
 2. Vá em "Deployments"
 3. Clique no último deployment
 4. Clique em "Redeploy"
 
 **Opção B - Via Git:**
+
 ```bash
 git commit --allow-empty -m "chore: redeploy for env vars"
 git push origin main
@@ -91,11 +95,13 @@ git push origin main
 **Configure:**
 
 1. **URL do Webhook:**
+
    ```
    https://qwork-psi.vercel.app/api/webhooks/asaas
    ```
 
 2. **Token de Autenticação:**
+
    ```
    [Cole o mesmo valor de ASAAS_WEBHOOK_SECRET do .env.production]
    ```
@@ -120,6 +126,7 @@ Após completar os 3 passos, execute:
 ```
 
 **Resultado esperado:**
+
 ```
 ✅ Endpoint acessível
 ✅ Webhook Secret: True  ← DEVE SER TRUE!
@@ -133,6 +140,7 @@ Se ainda mostrar "Webhook Secret: False", o redeploy pode não ter concluído. A
 ## 📊 RESULTADO DOS TESTES
 
 ### Teste 1: Health Check
+
 ```
 ✅ Status: online
 ✅ Environment: production
@@ -140,6 +148,7 @@ Se ainda mostrar "Webhook Secret: False", o redeploy pode não ter concluído. A
 ```
 
 ### Teste 2: POST Webhook
+
 ```
 ⚠️ Status Code: 401 (Unauthorized)
 ℹ️ Esperado sem o ASAAS_WEBHOOK_SECRET configurado
@@ -150,6 +159,7 @@ Se ainda mostrar "Webhook Secret: False", o redeploy pode não ter concluído. A
 ## 🎯 RESUMO EXECUTIVO
 
 **O que foi feito:**
+
 - ✅ Análise completa do sistema
 - ✅ Endpoint validado e funcionando
 - ✅ Código revisado e correto
@@ -158,6 +168,7 @@ Se ainda mostrar "Webhook Secret: False", o redeploy pode não ter concluído. A
 - ✅ Documentação completa gerada
 
 **O que VOCÊ precisa fazer:**
+
 - ⚠️ Configurar variáveis de ambiente no Vercel (5 minutos)
 - ⚠️ Fazer redeploy no Vercel (automático, 2-3 minutos)
 - ⚠️ Atualizar webhook no Asaas Sandbox (2 minutos)

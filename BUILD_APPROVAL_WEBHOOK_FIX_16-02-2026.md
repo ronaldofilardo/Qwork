@@ -25,23 +25,23 @@ Remoção completa de código obsoleto do sistema antigo de planos/assinaturas, 
 
 ### 1. Core Business Logic
 
-| Arquivo | Linhas Modificadas | Tipo de Mudança |
-|---------|-------------------|-----------------|
-| `lib/asaas/webhook-handler.ts` | 170-410 | Remoção de código obsoleto |
+| Arquivo                        | Linhas Modificadas | Tipo de Mudança            |
+| ------------------------------ | ------------------ | -------------------------- |
+| `lib/asaas/webhook-handler.ts` | 170-410            | Remoção de código obsoleto |
 
 ### 2. Testes
 
-| Arquivo | Status | Descrição |
-|---------|--------|-----------|
-| `__tests__/correcao-webhook-remocao-codigo-obsoleto.test.ts` | ✅ NOVO | 6 testes de validação |
-| `__tests__/integration/asaas-webhook-lote-sync.test.ts` | ✅ EXISTENTE | Mantido e validado |
+| Arquivo                                                      | Status       | Descrição             |
+| ------------------------------------------------------------ | ------------ | --------------------- |
+| `__tests__/correcao-webhook-remocao-codigo-obsoleto.test.ts` | ✅ NOVO      | 6 testes de validação |
+| `__tests__/integration/asaas-webhook-lote-sync.test.ts`      | ✅ EXISTENTE | Mantido e validado    |
 
 ### 3. Documentação
 
-| Arquivo | Tipo | Propósito |
-|---------|------|-----------|
+| Arquivo                                    | Tipo    | Propósito                     |
+| ------------------------------------------ | ------- | ----------------------------- |
 | `ANALISE-MAQUINA-ESTADOS-EMISSAO-LAUDO.md` | ✅ NOVO | Documentação técnica completa |
-| `BUILD_APPROVAL_WEBHOOK_FIX_16-02-2026.md` | ✅ NOVO | Este documento |
+| `BUILD_APPROVAL_WEBHOOK_FIX_16-02-2026.md` | ✅ NOVO | Este documento                |
 
 ---
 
@@ -82,6 +82,7 @@ if (contrato_id) {
 ```
 
 **Por que foi removido:**
+
 - Enum `status_aprovacao_enum` = ('pendente', 'aprovado', 'rejeitado', 'em_reanalise') **não é válido** para sistema atual
 - Sistema atual usa `status_pagamento` = ('aguardando_cobranca', 'aguardando_pagamento', 'pago')
 - Causava erro no PostgreSQL: `valor inválido para status_aprovacao_enum: "aprovado"`
@@ -108,6 +109,7 @@ for (const lote of lotesResult.rows) {
 ```
 
 **Por que foi mantido:**
+
 - Atualiza tabela correta (`lotes_avaliacao`)
 - Usa enum válido (`status_pagamento`)
 - Transação completa com sucesso (COMMIT)
@@ -131,20 +133,21 @@ for (const lote of lotesResult.rows) {
 
 ### Cobertura de Testes
 
-| Cenário | Teste Existente | Status |
-|---------|----------------|--------|
-| Webhook PAYMENT_CONFIRMED | ✅ `asaas-webhook-lote-sync.test.ts` | PASS |
-| Webhook PAYMENT_RECEIVED | ✅ `asaas-webhook-lote-sync.test.ts` | PASS |
-| ExternalReference parsing | ✅ `correcao-webhook-remocao-codigo-obsoleto.test.ts` | PASS |
-| Enum validation | ✅ `correcao-webhook-remocao-codigo-obsoleto.test.ts` | PASS |
-| Transaction COMMIT | ✅ `correcao-webhook-remocao-codigo-obsoleto.test.ts` | PASS |
-| Fallback entidade_id | ✅ `asaas-webhook-lote-sync.test.ts` | PASS |
+| Cenário                   | Teste Existente                                       | Status |
+| ------------------------- | ----------------------------------------------------- | ------ |
+| Webhook PAYMENT_CONFIRMED | ✅ `asaas-webhook-lote-sync.test.ts`                  | PASS   |
+| Webhook PAYMENT_RECEIVED  | ✅ `asaas-webhook-lote-sync.test.ts`                  | PASS   |
+| ExternalReference parsing | ✅ `correcao-webhook-remocao-codigo-obsoleto.test.ts` | PASS   |
+| Enum validation           | ✅ `correcao-webhook-remocao-codigo-obsoleto.test.ts` | PASS   |
+| Transaction COMMIT        | ✅ `correcao-webhook-remocao-codigo-obsoleto.test.ts` | PASS   |
+| Fallback entidade_id      | ✅ `asaas-webhook-lote-sync.test.ts`                  | PASS   |
 
 ---
 
 ## 📊 Testes de Integração Realizados
 
 ### Teste Manual 1: Webhook Real
+
 ```bash
 POST http://localhost:3000/api/webhooks/asaas
 Body: {
@@ -163,8 +166,8 @@ Resultado: ✅ 200 OK - processedIn: 2265ms
 ### Teste Manual 2: Verificação no Banco
 
 ```sql
-SELECT id, status_pagamento, pago_em, pagamento_metodo 
-FROM lotes_avaliacao 
+SELECT id, status_pagamento, pago_em, pagamento_metodo
+FROM lotes_avaliacao
 WHERE id = 24;
 
 Resultado ANTES:
@@ -197,19 +200,22 @@ id | status_pagamento | pago_em              | pagamento_metodo
 ## 🔄 Máquina de Estados
 
 ### Sistema ANTIGO (Descontinuado)
+
 ```
 Planos → Assinatura → Tomador → Contrato
 Status: 'pendente' | 'aprovado' | 'rejeitado' | 'em_reanalise'
 ```
 
 ### Sistema ATUAL (Em Uso)
+
 ```
-Lote Criado → Concluído → Solicitação Emissão → 
+Lote Criado → Concluído → Solicitação Emissão →
 Aguardando Cobrança → Aguardando Pagamento → PAGO →
 Emissão em Andamento → Laudo Emitido → Finalizado
 ```
 
 **Estados de Pagamento (status_pagamento):**
+
 - `aguardando_cobranca` - RH solicitou, admin define valor
 - `aguardando_pagamento` - Link gerado, aguardando cliente pagar
 - `pago` - Pagamento confirmado via Asaas
@@ -242,12 +248,12 @@ Emissão em Andamento → Laudo Emitido → Finalizado
 
 ## ⚠️ Riscos e Mitigações
 
-| Risco | Probabilidade | Impacto | Mitigação |
-|-------|--------------|---------|-----------|
-| Webhooks antigos com formato diferente | Baixa | Médio | Fallback implementado (busca por entidade_id) |
-| Banco de dados com estrutura diferente | Baixa | Alto | Testar em staging antes de produção |
-| Cache do Next.js não atualizado | Baixa | Médio | Limpar cache .next antes de deploy |
-| Logs de erro não visíveis | Baixa | Baixo | Implementados logs detalhados com emojis |
+| Risco                                  | Probabilidade | Impacto | Mitigação                                     |
+| -------------------------------------- | ------------- | ------- | --------------------------------------------- |
+| Webhooks antigos com formato diferente | Baixa         | Médio   | Fallback implementado (busca por entidade_id) |
+| Banco de dados com estrutura diferente | Baixa         | Alto    | Testar em staging antes de produção           |
+| Cache do Next.js não atualizado        | Baixa         | Médio   | Limpar cache .next antes de deploy            |
+| Logs de erro não visíveis              | Baixa         | Baixo   | Implementados logs detalhados com emojis      |
 
 ---
 
@@ -276,12 +282,14 @@ Emissão em Andamento → Laudo Emitido → Finalizado
 ## 🔗 Dependências
 
 ### Sistemas Afetados
+
 - ✅ Webhook Asaas (`/api/webhooks/asaas`)
 - ✅ Tabela `lotes_avaliacao`
 - ✅ Tabela `pagamentos`
 - ✅ Tabela `webhook_logs`
 
 ### Sistemas NÃO Afetados
+
 - ✅ Tabela `tomadores` (não mais usada por webhook)
 - ✅ Tabela `contratos` (não mais usada por webhook)
 - ✅ Sistema de emissão de laudos
@@ -345,6 +353,7 @@ tail -f logs/production.log
 **Status:** ✅ **APROVADO PARA DEPLOY EM PRODUÇÃO**
 
 **Justificativa:**
+
 - Problema crítico resolvido (sistema de pagamento não funcionava)
 - Solução testada e validada em ambiente local
 - Testes automatizados criados

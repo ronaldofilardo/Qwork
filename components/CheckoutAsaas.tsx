@@ -10,6 +10,7 @@ interface CheckoutAsaasProps {
   numeroFuncionarios?: number;
   valor: number;
   contratoId?: number | null;
+  loteId?: number | null; // ID do lote de emissão (opcional)
   onSuccess?: () => void;
   onError?: (error: string) => void;
 }
@@ -44,6 +45,7 @@ export default function CheckoutAsaas({
   numeroFuncionarios = 0,
   valor,
   contratoId = null,
+  loteId = null,
   onSuccess,
   onError,
 }: CheckoutAsaasProps) {
@@ -111,6 +113,7 @@ export default function CheckoutAsaas({
           numero_funcionarios: numeroFuncionarios,
           valor_total: valor,
           metodo: formaPagamento,
+          lote_id: loteId, // Incluir lote_id para emissões
         }),
       });
 

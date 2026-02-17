@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { dadosRelatorio } from '@/lib/relatorio-dados';
+import { formatarDataCorrigida } from './timezone-helper';
 
 interface RespostaAvaliacao {
   grupo: number;
@@ -111,24 +112,10 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
     return new Date();
   })();
 
-  const timestampConclusao = dataConclusion.toLocaleString('pt-BR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  const timestampConclusao = formatarDataCorrigida(dataConclusion);
 
   // Timestamp atual de geração do relatório
-  const timestampGeracao = new Date().toLocaleString('pt-BR', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-  });
+  const timestampGeracao = formatarDataCorrigida(new Date());
 
   // Desenhar box com dados (sem cabeçalhos)
   autoTable(doc, {
@@ -209,7 +196,7 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100, 100, 100);
   doc.text(
-    `Documento gerado em ${new Date().toLocaleString('pt-BR')}`,
+    `Documento gerado em ${formatarDataCorrigida(new Date())}`,
     pageWidth / 2,
     doc.internal.pageSize.getHeight() - 10,
     { align: 'center', maxWidth: 180 }
