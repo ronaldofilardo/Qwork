@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getQuestoesPorNivel } from '@/lib/questoes';
 import QworkLogo from '@/components/QworkLogo';
 import RadioScale from '@/components/RadioScale';
+import CompletionModal from '@/components/avaliacao/CompletionModal';
 
 interface Questao {
   grupoId: number;
@@ -27,6 +28,8 @@ export default function NovaAvaliacaoPage() {
   const [hasStarted, setHasStarted] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [todasQuestoes, setTodasQuestoes] = useState<Questao[]>([]);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
+  const [completionStatus, setCompletionStatus] = useState<'processing' | 'success'>('processing');
 
   useEffect(() => {
     async function carregar() {
@@ -223,6 +226,16 @@ export default function NovaAvaliacaoPage() {
 
     setIsSaving(true);
 
+    // Detectar se é a última questão (Q37)
+    const proximoIndex = currentIndex + 1;
+    const isUltimaQuestao = proximoIndex >= todasQuestoes.length;
+    
+    // Se é a última questão, mostrar modal IMEDIATAMENTE
+    if (isUltimaQuestao) {
+      setShowCompletionModal(true);
+      setCompletionStatus('processing');
+    }
+
     // Se é a primeira resposta, atualizar status para em_andamento
     if (!hasStarted) {
       await fetch('/api/avaliacao/status', {
@@ -252,19 +265,22 @@ export default function NovaAvaliacaoPage() {
         // Verificar se a avaliação foi concluída automaticamente (37 respostas)
         if (data.completed) {
           console.log('✅ Avaliação concluída automaticamente!');
-          // Redirecionar imediatamente para a página de comprovante (em vez de apenas marcar isFinished)
-          window.location.href = `/avaliacao/concluida?avaliacao_id=${avaliacaoId}`;
+          // Mudar estado do modal para sucesso
+          setCompletionStatus('success');
+          // Aguardar 1.5s mostrando sucesso antes de redirecionar
+          setTimeout(() => {
+            window.location.href = `/avaliacao/concluida?avaliacao_id=${avaliacaoId}`;
+          }, 1500);
           return;
         }
 
         setRespostas((prev) => ({ ...prev, [questaoAtual.itemId]: valor }));
-        const proximoIndex = currentIndex + 1;
 
-        if (proximoIndex >= todasQuestoes.length) {
+        if (!isUltimaQuestao) {
+          setCurrentIndex(proximoIndex);
+        } else {
           // Última questão respondida - avaliação será concluída automaticamente
           setIsFinished(true);
-        } else {
-          setCurrentIndex(proximoIndex);
         }
       } else {
         console.error('Erro ao salvar resposta:', await saveResponse.text());
@@ -380,6 +396,12 @@ export default function NovaAvaliacaoPage() {
           </p>
         </div>
       </div>
+
+      {/* Modal de conclusão */}
+      <CompletionModal 
+        isOpen={showCompletionModal} 
+        status={completionStatus}
+      />
     </div>
   );
 }
