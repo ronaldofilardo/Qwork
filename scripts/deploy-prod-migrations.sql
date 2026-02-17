@@ -21,33 +21,45 @@ FROM information_schema.routines
 WHERE routine_name = 'atualizar_ultima_avaliacao_funcionario'
 AND routine_type = 'FUNCTION';
 
--- Step 2: Drop da trigger existente
+-- Step 2: Drop da trigger existente (na tabela correta: avaliacoes)
 DROP TRIGGER IF EXISTS trigger_atualizar_ultima_avaliacao 
-ON lotes_avaliacao CASCADE;
+ON avaliacoes CASCADE;
 
 -- Step 3: Drop da função antiga
 DROP FUNCTION IF EXISTS atualizar_ultima_avaliacao_funcionario() CASCADE;
 
--- Step 4: Recriar função CORRIGIDA (sem referências a colunas inexistentes)
+-- Step 4: Recriar função CORRIGIDA (conforme migração 165)
 CREATE OR REPLACE FUNCTION atualizar_ultima_avaliacao_funcionario()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- Atualizar campos de denormalização que ainda existem
   UPDATE funcionarios
   SET 
     ultima_avaliacao_id = NEW.id,
-    ultima_avaliacao_data = NEW.criado_em,
-    ultima_avaliacao_score = NEW.score,
+    ultima_avaliacao_data_conclusao = COALESCE(NEW.envio, NEW.inativada_em),
+    ultima_avaliacao_status = NEW.status,
     atualizado_em = NOW()
-  WHERE id = NEW.funcionario_id;
+  WHERE cpf = NEW.funcionario_cpf
+    AND (
+      ultima_avaliacao_data_conclusao IS NULL 
+      OR COALESCE(NEW.envio, NEW.inativada_em) > ultima_avaliacao_data_conclusao
+      OR (COALESCE(NEW.envio, NEW.inativada_em) = ultima_avaliacao_data_conclusao AND NEW.id > ultima_avaliacao_id)
+    );
   
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
--- Step 5: Recriar trigger
+-- Step 5: Recriar trigger (na tabela correta: avaliacoes)
 CREATE TRIGGER trigger_atualizar_ultima_avaliacao
-AFTER INSERT OR UPDATE ON lotes_avaliacao
+AFTER UPDATE OF status, envio, inativada_em
+ON avaliacoes
 FOR EACH ROW
+WHEN (
+  (NEW.status IN ('concluida', 'inativada') AND OLD.status <> NEW.status)
+  OR (NEW.envio IS NOT NULL AND OLD.envio IS NULL)
+  OR (NEW.inativada_em IS NOT NULL AND OLD.inativada_em IS NULL)
+)
 EXECUTE FUNCTION atualizar_ultima_avaliacao_funcionario();
 
 -- Step 6: Validação
