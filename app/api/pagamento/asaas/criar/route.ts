@@ -14,6 +14,7 @@ export async function POST(request: NextRequest) {
       _numero_funcionarios,
       valor_total,
       metodo = 'PIX', // PIX, BOLETO, CREDIT_CARD
+      lote_id, // ID do lote de emissão (opcional)
     } = body;
 
     const finalTomadorId = tomador_id || entidade_id;
@@ -109,6 +110,20 @@ export async function POST(request: NextRequest) {
 
     // Criar cobrança no Asaas
     try {
+      // Criar externalReference com lote_id se disponível para vincular no webhook
+      const externalReference = lote_id
+        ? `lote_${lote_id}_pagamento_${pagamentoId}`
+        : `pagamento_${pagamentoId}`;
+
+      console.log('[Asaas] 🔵 Criando pagamento:', {
+        lote_id,
+        tomador_id: finalTomadorId,
+        valor_total,
+        metodo: asaasBillingType,
+        externalReference,
+        pagamento_id: pagamentoId,
+      });
+
       const payment = await asaas.createPayment({
         customer: asaasCustomerId,
         billingType: asaasBillingType,
@@ -116,9 +131,31 @@ export async function POST(request: NextRequest) {
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 dias
           .toISOString()
           .split('T')[0],
-        description: `Pagamento de Avaliação - Lote`,
-        externalReference: `pagamento_${pagamentoId}`,
+        description: lote_id
+          ? `Emissão de Laudo - Lote #${lote_id}`
+          : `Pagamento de Avaliação - Lote`,
+        externalReference,
       });
+
+      console.log('[Asaas] ✅ Pagamento criado no Asaas:', {
+        asaas_payment_id: payment.id,
+        asaas_status: payment.status,
+        invoice_url: payment.invoiceUrl,
+        lote_id,
+        pagamento_id: pagamentoId,
+      });
+
+      const webhookUrl =
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        process.env.NEXT_PUBLIC_URL ||
+        'http://localhost:3000';
+      console.log(
+        '[Asaas] ⚠️  IMPORTANTE: Webhook deve ser enviado para:',
+        `${webhookUrl}/api/webhooks/asaas`
+      );
+      console.log(
+        '[Asaas] 🔗 Verifique se esta URL está configurada no painel Asaas Sandbox!'
+      );
 
       // Atualizar pagamento com dados do Asaas
       await query(
