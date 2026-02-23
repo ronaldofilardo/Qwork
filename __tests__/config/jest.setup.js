@@ -35,15 +35,19 @@ if (process.env.NODE_ENV === 'test') {
   // ⚠️ CRÍTICO: Remover DATABASE_URL para evitar uso do banco de produção (Neon)
   // Durante testes, dotenv pode carregar .env.local que contém DATABASE_URL do Neon
   // Isso DEVE ser removido para forçar uso de TEST_DATABASE_URL
-  if (
-    process.env.DATABASE_URL &&
-    process.env.DATABASE_URL.includes('neon.tech')
-  ) {
+  if (process.env.DATABASE_URL) {
+    // Remover independente de hostname — em testes, db.ts usa TEST_DATABASE_URL
     console.log(
-      '🛡️ [jest.setup] Removendo DATABASE_URL de produção do ambiente de testes'
+      '🛡️ [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor não importa)'
     );
     delete process.env.DATABASE_URL;
   }
+
+  // Remover variáveis que poderiam fazer lib/db.ts ou scripts auxiliares
+  // usarem um banco fora do ambiente de testes
+  delete process.env.LOCAL_DATABASE_URL;
+  delete process.env.ALLOW_PROD_DB_LOCAL;
+  delete process.env.ALLOW_JEST_ON_NON_TEST_DB;
 
   // Validar que TEST_DATABASE_URL está definido e aponta para banco de testes
   if (!process.env.TEST_DATABASE_URL) {
@@ -66,6 +70,18 @@ if (process.env.NODE_ENV === 'test') {
     );
   }
 
+  // ⚠️ SEGURANÇA: bloquear uso de qualquer URL apontando para neon.tech —
+  // independente do nome do banco. Uma URL como .../nr-bps_db_test no neon.tech
+  // NÃO é banco de testes local — é PRODUÇÃO.
+  if (testDbUrl.includes('neon.tech')) {
+    throw new Error(
+      `🚨 ERRO CRÍTICO DE SEGURANÇA: TEST_DATABASE_URL aponta para neon.tech (PRODUÇÃO)!\n` +
+        `URL: ${testDbUrl.replace(/:\/\/[^@]+@/, '://<credenciais-ocultas>@')}\n` +
+        `Os testes DEVEM usar um banco PostgreSQL LOCAL.\n` +
+        `Configure TEST_DATABASE_URL como: postgres://localhost/nr-bps_db_test`
+    );
+  }
+
   console.log(
     `🛡️ [jest.setup] Proteção do banco de testes ativada - usando: ${dbName}`
   );
@@ -74,6 +90,14 @@ if (process.env.NODE_ENV === 'test') {
 // Hook global para validar antes de cada teste (apenas em ambiente Jest)
 if (typeof beforeEach === 'function') {
   beforeEach(() => {
+    // Garantia em runtime: DATABASE_URL não deve estar presente em testes
+    if (process.env.DATABASE_URL) {
+      console.warn(
+        '⚠️ [jest.setup/beforeEach] DATABASE_URL foi restaurada — removendo novamente.'
+      );
+      delete process.env.DATABASE_URL;
+    }
+
     // Validar que ainda estamos usando o banco de testes
     if (process.env.JEST_WORKER_ID) {
       const testDbUrl = process.env.TEST_DATABASE_URL;
@@ -87,8 +111,14 @@ if (typeof beforeEach === 'function') {
                 `Todos os testes DEVEM usar nr-bps_db_test.`
             );
           }
-        } catch {
-          // Se a URL for inválida, já vai falhar na conexão
+          if (testDbUrl.includes('neon.tech')) {
+            throw new Error(
+              `🚨 BLOQUEADO: TEST_DATABASE_URL aponta para neon.tech — abortando teste para proteger banco de produção.`
+            );
+          }
+        } catch (urlErr) {
+          // Se a URL for inválida, já vai falhar na conexão — relançar apenas erros nossos
+          if (urlErr.message.startsWith('🚨')) throw urlErr;
         }
       }
     }

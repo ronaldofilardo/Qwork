@@ -13,6 +13,10 @@ import {
 import toast from 'react-hot-toast';
 import ModalInativarAvaliacao from '@/components/ModalInativarAvaliacao';
 import ModalResetarAvaliacao from '@/components/ModalResetarAvaliacao';
+import {
+  ModalConfirmacaoSolicitar,
+  foiExibidaParaLote,
+} from '@/components/ModalConfirmacaoSolicitar';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -42,6 +46,7 @@ interface LoteInfo {
   titulo: string;
   tipo: string;
   status: string;
+  status_pagamento?: string | null;
   criado_em: string;
   liberado_em: string | null;
   emitido_em?: string | null;
@@ -53,6 +58,7 @@ interface LoteInfo {
   hash_pdf?: string | null;
   emissor_cpf?: string | null;
   arquivo_remoto_url?: string | null;
+  boleto_asaas_id_pendente?: string | null;
 }
 
 interface Estatisticas {
@@ -99,6 +105,10 @@ export default function DetalhesLotePage() {
   const [lote, setLote] = useState<LoteInfo | null>(null);
   const [estatisticas, setEstatisticas] = useState<Estatisticas | null>(null);
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
+  // Reconciliação de pagamento boleto: executada automaticamente quando
+  // o lote está em "aguardando_pagamento" ao carregar a página.
+  const [pagamentoSincronizando, setPagamentoSincronizando] = useState(false);
+  const [pagamentoSincronizado, setPagamentoSincronizado] = useState(false);
   const [filtroStatus, setFiltroStatus] = useState<
     'todos' | 'concluido' | 'pendente'
   >('todos');
@@ -118,6 +128,13 @@ export default function DetalhesLotePage() {
     avaliacaoId: number;
     funcionarioNome: string;
     funcionarioCpf: string;
+  } | null>(null);
+
+  // Modal de confirmação pós-solicitação de emissão
+  const [modalEmissao, setModalEmissao] = useState<{
+    loteId: number;
+    gestorEmail: string | null;
+    gestorCelular: string | null;
   } | null>(null);
 
   // Filtros por coluna
@@ -295,6 +312,44 @@ export default function DetalhesLotePage() {
       clearInterval(intervalId);
     };
   }, [loadLoteData]);
+
+  // Auto-reconciliação de pagamento: quando o lote está aguardando pagamento,
+  // consulta o Asaas diretamente para verificar se o boleto foi pago fora da
+  // janela de polling do CheckoutAsaas (cenário: usuário pagou horas/dias depois).
+  useEffect(() => {
+    if (!lote || !loteId) return;
+    if (lote.status_pagamento !== 'aguardando_pagamento') return;
+    if (pagamentoSincronizando || pagamentoSincronizado) return;
+
+    const reconciliar = async () => {
+      setPagamentoSincronizando(true);
+      try {
+        console.log(
+          `[LotePage] Iniciando reconciliação automática para Lote #${loteId}`
+        );
+        const res = await fetch('/api/pagamento/asaas/sincronizar-lote', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ lote_id: parseInt(loteId, 10) }),
+        });
+        const data = await res.json();
+
+        if (data.synced) {
+          setPagamentoSincronizado(true);
+          toast.success('✅ Pagamento confirmado! Atualizando dados...');
+          // Recarregar dados do lote para refletir o novo status
+          setTimeout(() => loadLoteData(), 1500);
+        }
+      } catch (err) {
+        console.error('[LotePage] Erro na reconciliação automática:', err);
+      } finally {
+        setPagamentoSincronizando(false);
+      }
+    };
+
+    reconciliar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lote?.status_pagamento, loteId]);
 
   // Debounce para busca (300ms)
   useEffect(() => {
@@ -801,6 +856,80 @@ export default function DetalhesLotePage() {
               <p className="text-sm text-gray-500 mt-1">
                 Tipo: {lote.tipo} | Criado em: {formatDate(lote.criado_em)}
               </p>
+              {/* Banner de pagamento pendente com verificação automática */}
+              {lote.status_pagamento === 'aguardando_pagamento' && (
+                <div className="mt-3 flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                  {pagamentoSincronizando ? (
+                    <>
+                      <svg
+                        className="w-4 h-4 animate-spin flex-shrink-0"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
+                      </svg>
+                      <span>Verificando pagamento...</span>
+                    </>
+                  ) : pagamentoSincronizado ? (
+                    <>
+                      <span className="text-green-600 font-semibold">
+                        ✅ Pagamento confirmado!
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      <span>💳 Aguardando confirmação de pagamento</span>
+                      <button
+                        onClick={async () => {
+                          setPagamentoSincronizando(true);
+                          try {
+                            const res = await fetch(
+                              '/api/pagamento/asaas/sincronizar-lote',
+                              {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                  lote_id: parseInt(loteId, 10),
+                                }),
+                              }
+                            );
+                            const data = await res.json();
+                            if (data.synced) {
+                              setPagamentoSincronizado(true);
+                              toast.success('✅ Pagamento confirmado!');
+                              setTimeout(() => loadLoteData(), 1500);
+                            } else {
+                              toast(
+                                'Pagamento ainda não confirmado no gateway.',
+                                { icon: 'ℹ️' }
+                              );
+                            }
+                          } catch {
+                            toast.error('Erro ao verificar pagamento');
+                          } finally {
+                            setPagamentoSincronizando(false);
+                          }
+                        }}
+                        className="ml-2 underline text-amber-700 hover:text-amber-900 text-xs font-medium"
+                      >
+                        Verificar agora
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -959,7 +1088,20 @@ export default function DetalhesLotePage() {
                             data.error || 'Erro ao solicitar emissão'
                           );
                         toast.success('Emissão solicitada com sucesso!');
-                        setTimeout(() => window.location.reload(), 1500);
+
+                        // Exibir modal de confirmação (apenas uma vez por lote por sessão)
+                        if (!foiExibidaParaLote(lote.id)) {
+                          const contato = data.gestor_contato as
+                            | { email: string | null; celular: string | null }
+                            | undefined;
+                          setModalEmissao({
+                            loteId: lote.id,
+                            gestorEmail: contato?.email ?? null,
+                            gestorCelular: contato?.celular ?? null,
+                          });
+                        } else {
+                          setTimeout(() => window.location.reload(), 1500);
+                        }
                       } catch (error: any) {
                         toast.error(
                           error.message || 'Erro ao solicitar emissão'
@@ -1445,6 +1587,20 @@ export default function DetalhesLotePage() {
           basePath="/api/entidade"
           onClose={() => setModalResetar(null)}
           onSuccess={loadLoteData}
+        />
+      )}
+
+      {/* Modal de Confirmação de Solicitação de Emissão */}
+      {modalEmissao && (
+        <ModalConfirmacaoSolicitar
+          isOpen={true}
+          onClose={() => {
+            setModalEmissao(null);
+            window.location.reload();
+          }}
+          loteId={modalEmissao.loteId}
+          gestorEmail={modalEmissao.gestorEmail}
+          gestorCelular={modalEmissao.gestorCelular}
         />
       )}
     </div>

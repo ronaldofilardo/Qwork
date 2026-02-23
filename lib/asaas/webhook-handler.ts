@@ -77,9 +77,21 @@ async function isWebhookProcessed(
 }
 
 /**
- * Registrar webhook processado
+ * Verificar se um webhook já foi processado (idempotência)
+ * Exportado para uso pelo /api/pagamento/asaas/sincronizar
  */
-async function logWebhookProcessed(
+export async function isWebhookAlreadyProcessed(
+  paymentId: string,
+  event: AsaasWebhookEvent
+): Promise<boolean> {
+  return isWebhookProcessed(paymentId, event);
+}
+
+/**
+ * Registrar webhook processado
+ * Exportado para uso pelo /api/pagamento/asaas/sincronizar
+ */
+export async function logWebhookProcessed(
   paymentId: string,
   event: AsaasWebhookEvent,
   payload: any
@@ -108,11 +120,14 @@ async function updatePaymentStatus(
   try {
     const localStatus = mapAsaasStatusToLocal(paymentData.status);
 
+    // Usar operador || (merge) ao invés de substituição direta do JSONB.
+    // Isso preserva campos que possam ter sido gravados anteriormente,
+    // como 'lote_id' inserido pelo /api/pagamento/asaas/criar.
     const result = await pool.query(
       `UPDATE pagamentos 
        SET status = $1,
            asaas_payment_id = $2,
-           dados_adicionais = $3,
+           dados_adicionais = COALESCE(dados_adicionais, '{}'::jsonb) || $3::jsonb,
            atualizado_em = NOW()
        WHERE asaas_payment_id = $2
        RETURNING id, entidade_id, clinica_id`,
@@ -166,8 +181,9 @@ function extractLoteIdFromExternalReference(
 
 /**
  * Ativar assinatura do cliente (liberar acesso ao sistema)
+ * Exportado para uso direto pelo /api/pagamento/asaas/sincronizar (sem camada de idempotência)
  */
-async function activateSubscription(
+export async function activateSubscription(
   asaasPaymentId: string,
   paymentData: AsaasWebhookPayload['payment'],
   event: AsaasWebhookEvent
@@ -342,9 +358,9 @@ async function activateSubscription(
       }
     }
 
-    // 4. Registrar webhook processado
-    await logWebhookProcessed(asaasPaymentId, event, paymentData);
-
+    // 4. Commit: pagamentos + lotes atualizados atomicamente.
+    // O logWebhookProcessed é feito DEPOIS do COMMIT pelo chamador (handlePaymentWebhook).
+    // Isso garante que a entrada webhook_logs só existe SE e QUANDO o commit foi bem-sucedido.
     await client.query('COMMIT');
 
     console.log(`[Asaas Webhook] ✅ PAGAMENTO CONFIRMADO:`, {

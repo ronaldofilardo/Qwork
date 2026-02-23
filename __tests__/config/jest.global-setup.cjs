@@ -81,6 +81,16 @@ module.exports = async function globalSetup() {
   try {
     // Segurança: garantir que estamos aplicando apenas no banco de testes
     // Permitir ignorar essa proteção localmente definindo ALLOW_JEST_ON_NON_TEST_DB=1
+
+    // ⚠️ BLOQUEIO ABSOLUTO: neon.tech é SEMPRE produção — sem exceção, sem override
+    if (dbUrl.includes('neon.tech')) {
+      throw new Error(
+        '🚨 BLOQUEADO [globalSetup]: TEST_DATABASE_URL aponta para neon.tech (produção)!\n' +
+          '   globalSetup NUNCA aplica migrations em banco de produção.\n' +
+          '   Configure TEST_DATABASE_URL para um banco PostgreSQL LOCAL.'
+      );
+    }
+
     if (
       !process.env.ALLOW_JEST_ON_NON_TEST_DB ||
       process.env.ALLOW_JEST_ON_NON_TEST_DB !== '1'

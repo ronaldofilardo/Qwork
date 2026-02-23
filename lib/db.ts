@@ -3,7 +3,16 @@ import dotenv from 'dotenv';
 // Load local env early to ensure LOCAL_DATABASE_URL, ALLOW_PROD_DB_LOCAL, and other overrides are available
 // This helps when scripts import lib/db.ts directly and .env.local wasn't loaded yet by the caller.
 // CRÍTICO: override: true garante que .env.local SEMPRE sobrescreve outras configurações
-dotenv.config({ path: '.env.local', override: true });
+//
+// ⚠️ SEGURANÇA DE ISOLAMENTO DE TESTES: NÃO chamar dotenv.config em ambiente Jest.
+// Motivo: jest.setup.js (setupFiles) REMOVE process.env.DATABASE_URL (neon.tech) intencionalmente
+// para forçar o uso de TEST_DATABASE_URL (banco local). Se dotenv.config rodar aqui com
+// override:true, ele RESTAURA DATABASE_URL do .env.local para o processo do worker — violando
+// o isolamento e causando conexões acidentais ao banco de produção.
+// JEST_WORKER_ID é injetado pelo Jest em todos os processos worker.
+if (!process.env.JEST_WORKER_ID && process.env.NODE_ENV !== 'test') {
+  dotenv.config({ path: '.env.local', override: true });
+}
 
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
