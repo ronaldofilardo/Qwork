@@ -3,8 +3,6 @@ import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/db-transaction';
 import { requireClinica } from '@/lib/session';
 import { normalizeCNPJ, validarCNPJ } from '@/lib/validators';
-import { writeFile, mkdir } from 'fs/promises';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -107,33 +105,22 @@ export async function GET() {
 }
 
 /**
- * Salvar arquivo de documento de empresa em public/uploads/empresas/<cnpj>/
- * Em produção (Vercel) usa tmpdir; em dev usa public/uploads.
+ * Salvar arquivo de documento de empresa
+ * Usa função compartilhada que detecta DEV/PROD automaticamente
  */
 async function salvarArquivoEmpresa(
   file: File,
-  tipo: string,
+  tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
   cnpj: string
 ): Promise<string> {
-  const extension = file.name.split('.').pop()?.toLowerCase() ?? 'bin';
-  const cnpjClean = cnpj.replace(/\D/g, '');
-  const isServerless =
-    process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-  const uploadDir = isServerless
-    ? path.join(
-        require('os').tmpdir(),
-        'qwork',
-        'uploads',
-        'empresas',
-        cnpjClean
-      )
-    : path.join(process.cwd(), 'public', 'uploads', 'empresas', cnpjClean);
-  await mkdir(uploadDir, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
-  const filename = `${tipo}_${Date.now()}.${extension}`;
-  const filepath = path.join(uploadDir, filename);
-  await writeFile(filepath, buffer);
-  return `/uploads/empresas/${cnpjClean}/${filename}`;
+  const cnpjClean = cnpj.replace(/\D/g, '');
+
+  // Usar função compartilhada de storage que detecta DEV/PROD
+  const { uploadArquivoCadastro } = await import('@/lib/storage/cadastro-storage');
+  const result = await uploadArquivoCadastro(buffer, tipo, cnpjClean);
+
+  return result.path;
 }
 
 /**
