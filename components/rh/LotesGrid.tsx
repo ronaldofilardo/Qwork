@@ -62,6 +62,10 @@ export function LotesGrid({
           (lote.status === 'concluido' || lote.status === 'finalizado')
         );
         const isPronto = lote.pode_emitir_laudo || temLaudo;
+        const isCancelado =
+          lote.total_avaliacoes > 0 &&
+          lote.avaliacoes_inativadas === lote.total_avaliacoes &&
+          lote.avaliacoes_concluidas === 0;
 
         // Verificar se há solicitação de emissão pendente
         const emissaoSolicitada = !!(lote.solicitado_em && !temLaudo);
@@ -170,12 +174,14 @@ export function LotesGrid({
                 <span>Status relatório:</span>
                 <span
                   className={`px-2 py-1 text-xs rounded-full font-medium ${
-                    isPronto
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                    isCancelado
+                      ? 'bg-red-100 text-red-800'
+                      : isPronto
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-yellow-100 text-yellow-800'
                   }`}
                 >
-                  {isPronto ? 'Pronto' : 'Pendente'}
+                  {isCancelado ? 'Cancelado' : isPronto ? 'Pronto' : 'Pendente'}
                 </span>
               </div>
 

@@ -3,332 +3,593 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   AlertCircle,
+  Building2,
   CheckCircle,
+  Clock,
   FileText,
-  DollarSign,
-  ExternalLink,
-  X,
-  Check,
+  FolderOpen,
+  Layers,
+  Send,
 } from 'lucide-react';
 
-interface Notificacao {
+// ─── Tipos ───────────────────────────────────────────────────────────────────
+
+interface LoteMonitor {
   id: number;
+  descricao: string;
   tipo: string;
-  prioridade: string;
-  titulo: string;
-  mensagem: string;
-  dados_contexto: any;
-  link_acao?: string;
-  botao_texto?: string;
-  lida: boolean;
+  status: string;
+  liberado_em: string | null;
+  empresa_id: number;
+  empresa_nome: string;
+  total_avaliacoes: number;
+  avaliacoes_concluidas: number;
+  avaliacoes_inativadas: number;
+  avaliacoes_pendentes: number;
+  laudo_id: number | null;
+  laudo_status: string | null;
+  emitido_em: string | null;
+  enviado_em: string | null;
+  emissao_solicitada: boolean;
+  emissao_solicitado_em: string | null;
+  solicitado_por: string | null;
+}
+
+interface LaudoMonitor {
+  id: number;
+  lote_id: number;
+  lote_descricao: string;
+  lote_tipo: string;
+  lote_status: string;
+  laudo_status: string;
+  empresa_id: number;
+  empresa_nome: string;
+  emissor_nome: string | null;
+  liberado_em: string | null;
   criado_em: string;
+  emitido_em: string | null;
+  enviado_em: string | null;
+  hash_pdf: string | null;
+  arquivo_remoto_url: string | null;
+  arquivo_remoto_uploaded_at: string | null;
+  total_avaliacoes: number;
+  avaliacoes_concluidas: number;
 }
 
 interface CentroOperacoesProps {
-  /**
-   * Tipo de usuário (tomador, clinica, funcionario)
-   */
+  /** Tipo de usuário (mantido para compatibilidade) */
   tipoUsuario: 'tomador' | 'clinica' | 'funcionario';
-
-  /**
-   * Callback ao navegar para uma ação
-   */
   onNavigate?: (url: string) => void;
 }
 
-type TabDominio = 'lotes' | 'laudos';
+type TabAtiva = 'lotes' | 'laudos';
 
-export default function CentroOperacoes({
-  tipoUsuario,
-  onNavigate,
-}: CentroOperacoesProps) {
-  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [tabAtiva, setTabAtiva] = useState<TabDominio>('lotes');
-  const [expandidas, setExpandidas] = useState<Set<number>>(new Set());
+// ─── Helpers de UI ───────────────────────────────────────────────────────────
 
-  const carregarNotificacoes = useCallback(async () => {
-    try {
-      setLoading(true);
+function formatarData(data: string | null | undefined): string {
+  if (!data) return '—';
+  return new Date(data).toLocaleDateString('pt-BR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  });
+}
 
-      // Determinar endpoint baseado no tipo de usuário
-      let endpoint = '/api/notificacoes';
-      if (tipoUsuario === 'tomador') {
-        endpoint = '/api/rh/notificacoes'; // ou /api/entidade/notificacoes
-      } else if (tipoUsuario === 'clinica') {
-        endpoint = '/api/clinica/notificacoes';
-      }
-
-      const res = await fetch(endpoint);
-      if (res.ok) {
-        const data = await res.json();
-        setNotificacoes(data.notificacoes || []);
-      }
-    } catch (error) {
-      console.error('Erro ao carregar notificações:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [tipoUsuario]);
-
-  useEffect(() => {
-    carregarNotificacoes();
-  }, [carregarNotificacoes]);
-
-  const resolverNotificacao = async (notificacaoId: number) => {
-    try {
-      const res = await fetch('/api/notificacoes/resolver', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ notificacao_id: notificacaoId }),
-      });
-
-      if (res.ok) {
-        // Remover notificação da lista
-        setNotificacoes((prev) => prev.filter((n) => n.id !== notificacaoId));
-      }
-    } catch (error) {
-      console.error('Erro ao resolver notificação:', error);
-    }
+function BadgeLoteStatus({ status }: { status: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    ativo: { label: 'Em andamento', cls: 'bg-blue-100 text-blue-700' },
+    concluido: { label: 'Concluído', cls: 'bg-green-100 text-green-700' },
+    cancelado: { label: 'Cancelado', cls: 'bg-red-100 text-red-700' },
+    liberado: { label: 'Liberado', cls: 'bg-purple-100 text-purple-700' },
+    emissao_solicitada: {
+      label: 'Emissão Solicitada',
+      cls: 'bg-amber-100 text-amber-700',
+    },
+    emissao_em_andamento: {
+      label: 'Emissão em Andamento',
+      cls: 'bg-orange-100 text-orange-700',
+    },
+    emitido: { label: 'Emitido', cls: 'bg-teal-100 text-teal-700' },
   };
-
-  const toggleExpansao = (notificacaoId: number) => {
-    setExpandidas((prev) => {
-      const novas = new Set(prev);
-      if (novas.has(notificacaoId)) {
-        novas.delete(notificacaoId);
-      } else {
-        novas.add(notificacaoId);
-      }
-      return novas;
-    });
+  const { label, cls } = map[status] ?? {
+    label: status,
+    cls: 'bg-gray-100 text-gray-600',
   };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}
+    >
+      {label}
+    </span>
+  );
+}
 
-  const filtrarPorDominio = (notifs: Notificacao[]) => {
-    if (tabAtiva === 'lotes') {
-      return notifs.filter((n) =>
-        ['lote_concluido_aguardando_laudo'].includes(n.tipo)
-      );
-    }
-
-    if (tabAtiva === 'laudos') {
-      return notifs.filter((n) => ['laudo_enviado'].includes(n.tipo));
-    }
-
-    return notifs;
-  };
-
-  const getIconePorTipo = (tipo: string) => {
-    if (tipo.includes('parcela') || tipo.includes('quitacao')) {
-      return <DollarSign size={20} />;
-    }
-    if (tipo.includes('lote')) {
-      return <CheckCircle size={20} />;
-    }
-    if (tipo.includes('laudo')) {
-      return <FileText size={20} />;
-    }
-    return <AlertCircle size={20} />;
-  };
-
-  const getCorPorPrioridade = (prioridade: string, tipo: string) => {
-    // Cores baseadas no estado e prioridade
-    if (tipo.includes('parcela'))
-      return 'bg-orange-100 text-orange-600 border-orange-300';
-    if (tipo.includes('laudo_enviado'))
-      return 'bg-green-100 text-green-600 border-green-300';
-    if (tipo.includes('lote_concluido'))
-      return 'bg-blue-100 text-blue-600 border-blue-300';
-
-    // Fallback por prioridade
-    if (prioridade === 'critica')
-      return 'bg-red-100 text-red-600 border-red-300';
-    if (prioridade === 'alta')
-      return 'bg-orange-100 text-orange-600 border-orange-300';
-    return 'bg-gray-100 text-gray-600 border-gray-300';
-  };
-
-  const formatarData = (data: string) => {
-    return new Date(data).toLocaleDateString('pt-BR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
-  const notificacoesFiltradas = filtrarPorDominio(notificacoes);
-  const contadores = {
-    lotes: notificacoes.filter((n) =>
-      ['lote_concluido_aguardando_laudo'].includes(n.tipo)
-    ).length,
-    laudos: notificacoes.filter((n) => ['laudo_enviado'].includes(n.tipo))
-      .length,
-  };
-
-  if (loading) {
+function BadgeLaudoStatus({ status }: { status: string | null }) {
+  if (!status) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
+      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+        Sem laudo
+      </span>
     );
   }
+  const map: Record<string, { label: string; cls: string }> = {
+    rascunho: { label: 'Em Elaboração', cls: 'bg-yellow-100 text-yellow-700' },
+    emitido: { label: 'Emitido', cls: 'bg-blue-100 text-blue-700' },
+    enviado: { label: 'Enviado', cls: 'bg-green-100 text-green-700' },
+    cancelado: { label: 'Cancelado', cls: 'bg-red-100 text-red-700' },
+  };
+  const { label, cls } = map[status] ?? {
+    label: status,
+    cls: 'bg-gray-100 text-gray-600',
+  };
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${cls}`}
+    >
+      {label}
+    </span>
+  );
+}
+
+// ─── Componente principal ─────────────────────────────────────────────────────
+
+export default function CentroOperacoes({ onNavigate }: CentroOperacoesProps) {
+  const [tabAtiva, setTabAtiva] = useState<TabAtiva>('lotes');
+
+  const [lotes, setLotes] = useState<LoteMonitor[]>([]);
+  const [laudos, setLaudos] = useState<LaudoMonitor[]>([]);
+  const [loadingLotes, setLoadingLotes] = useState(true);
+  const [loadingLaudos, setLoadingLaudos] = useState(true);
+  const [erroLotes, setErroLotes] = useState<string | null>(null);
+  const [erroLaudos, setErroLaudos] = useState<string | null>(null);
+
+  const carregarLotes = useCallback(async () => {
+    try {
+      setLoadingLotes(true);
+      setErroLotes(null);
+      const res = await fetch('/api/rh/monitor/lotes');
+      if (res.ok) {
+        const data = await res.json();
+        setLotes(data.lotes ?? []);
+      } else {
+        setErroLotes('Erro ao carregar lotes.');
+      }
+    } catch {
+      setErroLotes('Erro de rede ao carregar lotes.');
+    } finally {
+      setLoadingLotes(false);
+    }
+  }, []);
+
+  const carregarLaudos = useCallback(async () => {
+    try {
+      setLoadingLaudos(true);
+      setErroLaudos(null);
+      const res = await fetch('/api/rh/monitor/laudos');
+      if (res.ok) {
+        const data = await res.json();
+        setLaudos(data.laudos ?? []);
+      } else {
+        setErroLaudos('Erro ao carregar laudos.');
+      }
+    } catch {
+      setErroLaudos('Erro de rede ao carregar laudos.');
+    } finally {
+      setLoadingLaudos(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    carregarLotes();
+    carregarLaudos();
+  }, [carregarLotes, carregarLaudos]);
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Cabeçalho */}
       <div>
         <h1 className="text-2xl font-bold text-gray-800">
-          Centro de Operações
+          Monitor de Lotes e Laudos
         </h1>
-        <p className="text-gray-600">Notificações persistentes até resolução</p>
+        <p className="text-gray-600 text-sm mt-1">
+          Acompanhe todos os lotes e laudos das suas empresas clientes
+        </p>
       </div>
 
-      {/* Tabs por Domínio */}
+      {/* Tabs */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-4">
+        <nav className="flex gap-1">
           <button
             onClick={() => setTabAtiva('lotes')}
-            className={`px-4 py-2 border-b-2 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 text-sm font-medium transition-colors ${
               tabAtiva === 'lotes'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-800'
+                : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
             }`}
           >
-            Lotes ({contadores.lotes})
+            <Layers size={16} />
+            Lotes
+            <span
+              className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                tabAtiva === 'lotes'
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {lotes.length}
+            </span>
           </button>
           <button
             onClick={() => setTabAtiva('laudos')}
-            className={`px-4 py-2 border-b-2 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2.5 border-b-2 text-sm font-medium transition-colors ${
               tabAtiva === 'laudos'
                 ? 'border-primary text-primary'
-                : 'border-transparent text-gray-600 hover:text-gray-800'
+                : 'border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300'
             }`}
           >
-            Laudos ({contadores.laudos})
+            <FileText size={16} />
+            Laudos
+            <span
+              className={`ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold ${
+                tabAtiva === 'laudos'
+                  ? 'bg-primary text-white'
+                  : 'bg-gray-200 text-gray-600'
+              }`}
+            >
+              {laudos.length}
+            </span>
           </button>
         </nav>
       </div>
 
-      {/* Lista de Notificações */}
-      {notificacoesFiltradas.length === 0 ? (
-        <div className="bg-white rounded-lg shadow-sm p-12 border border-gray-200 text-center">
-          <CheckCircle className="mx-auto text-green-500 mb-4" size={48} />
-          <p className="text-gray-600 text-lg font-medium">
-            Nenhuma notificação pendente
-          </p>
-          <p className="text-gray-500 text-sm mt-2">
-            Todas as ações foram resolvidas
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {notificacoesFiltradas.map((notif) => (
-            <div
-              key={notif.id}
-              className={`bg-white rounded-lg shadow-sm border-2 p-4 transition-all hover:shadow-md ${getCorPorPrioridade(
-                notif.prioridade,
-                notif.tipo
-              )}`}
-            >
-              <div className="flex items-start gap-3">
-                {/* Ícone */}
-                <div className="p-2 rounded-lg flex-shrink-0">
-                  {getIconePorTipo(notif.tipo)}
-                </div>
+      {/* ─── Aba Lotes ─────────────────────────────────────────────────────── */}
+      {tabAtiva === 'lotes' && (
+        <div>
+          {loadingLotes ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+            </div>
+          ) : erroLotes ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-center gap-3">
+              <AlertCircle className="text-red-500 flex-shrink-0" size={24} />
+              <p className="text-red-700 text-sm">{erroLotes}</p>
+            </div>
+          ) : lotes.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <FolderOpen className="mx-auto text-gray-300 mb-4" size={48} />
+              <p className="text-gray-500 font-medium">
+                Nenhum lote encontrado
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Os lotes das suas empresas clientes aparecerão aqui
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Empresa
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Lote
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Status Lote
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Avaliações
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Laudo
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Liberado em
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Emitido em
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {lotes.map((lote) => {
+                    const pct =
+                      lote.total_avaliacoes > 0
+                        ? Math.round(
+                            (lote.avaliacoes_concluidas /
+                              lote.total_avaliacoes) *
+                              100
+                          )
+                        : 0;
+                    return (
+                      <tr
+                        key={lote.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
+                        {/* Empresa */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <Building2
+                              size={14}
+                              className="text-gray-400 flex-shrink-0"
+                            />
+                            <span className="font-medium text-gray-800">
+                              {lote.empresa_nome}
+                            </span>
+                          </div>
+                        </td>
 
-                {/* Conteúdo */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1">
-                      <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                        {notif.titulo}
-                      </h3>
-                      <p className="text-xs text-gray-700 mb-2">
-                        {notif.mensagem}
-                      </p>
-
-                      {/* Preview de contexto (ex: nomes em relatórios) */}
-                      {expandidas.has(notif.id) &&
-                        notif.dados_contexto?.funcionarios && (
-                          <div className="mt-2 p-2 bg-white bg-opacity-50 rounded text-xs">
-                            <p className="font-medium mb-1">
-                              Funcionários pendentes:
+                        {/* Lote */}
+                        <td className="px-4 py-3">
+                          <button
+                            onClick={() =>
+                              onNavigate?.(`/rh/empresa/${lote.empresa_id}`)
+                            }
+                            className="text-primary hover:underline font-medium"
+                          >
+                            #{lote.id}
+                          </button>
+                          {lote.descricao && (
+                            <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                              {lote.descricao}
                             </p>
-                            <ul className="list-disc list-inside space-y-1">
-                              {notif.dados_contexto.funcionarios
-                                .slice(0, 5)
-                                .map((f: any, idx: number) => (
-                                  <li key={idx}>
-                                    {f.nome} ({f.setor})
-                                  </li>
-                                ))}
-                              {notif.dados_contexto.funcionarios.length > 5 && (
-                                <li className="text-gray-600">
-                                  +
-                                  {notif.dados_contexto.funcionarios.length - 5}{' '}
-                                  mais...
-                                </li>
+                          )}
+                        </td>
+
+                        {/* Status Lote */}
+                        <td className="px-4 py-3">
+                          <BadgeLoteStatus
+                            status={
+                              lote.total_avaliacoes > 0 &&
+                              lote.avaliacoes_inativadas ===
+                                lote.total_avaliacoes &&
+                              lote.avaliacoes_concluidas === 0
+                                ? 'cancelado'
+                                : lote.emissao_solicitada &&
+                                    lote.status === 'concluido'
+                                  ? 'emissao_solicitada'
+                                  : lote.status
+                            }
+                          />
+                          {lote.total_avaliacoes > 0 &&
+                            lote.avaliacoes_inativadas ===
+                              lote.total_avaliacoes &&
+                            lote.avaliacoes_concluidas === 0 && (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                Todas inativadas
+                              </p>
+                            )}
+                        </td>
+
+                        {/* Avaliações */}
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-700">
+                              <span className="font-semibold text-gray-900">
+                                {lote.avaliacoes_concluidas}
+                              </span>
+                              /{lote.total_avaliacoes}
+                            </span>
+                            {lote.total_avaliacoes > 0 && (
+                              <div className="w-16 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-green-500 rounded-full"
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            )}
+                            <span className="text-xs text-gray-500">
+                              {pct}%
+                            </span>
+                          </div>
+                        </td>
+
+                        {/* Laudo */}
+                        <td className="px-4 py-3">
+                          {lote.total_avaliacoes > 0 &&
+                          lote.avaliacoes_inativadas ===
+                            lote.total_avaliacoes &&
+                          lote.avaliacoes_concluidas === 0 ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                              N/A
+                            </span>
+                          ) : lote.emissao_solicitada &&
+                            lote.laudo_status === 'rascunho' ? (
+                            <div>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-700">
+                                Aguardando Emissor
+                              </span>
+                              {lote.emissao_solicitado_em && (
+                                <p className="text-xs text-gray-400 mt-0.5">
+                                  desde{' '}
+                                  {formatarData(lote.emissao_solicitado_em)}
+                                </p>
                               )}
-                            </ul>
+                            </div>
+                          ) : (
+                            <BadgeLaudoStatus status={lote.laudo_status} />
+                          )}
+                        </td>
+
+                        {/* Liberado em */}
+                        <td className="px-4 py-3 text-xs text-gray-500">
+                          {formatarData(lote.liberado_em)}
+                        </td>
+
+                        {/* Emitido em */}
+                        <td className="px-4 py-3 text-xs text-gray-500">
+                          {formatarData(lote.emitido_em)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ─── Aba Laudos ────────────────────────────────────────────────────── */}
+      {tabAtiva === 'laudos' && (
+        <div>
+          {loadingLaudos ? (
+            <div className="flex items-center justify-center py-16">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+            </div>
+          ) : erroLaudos ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-6 flex items-center gap-3">
+              <AlertCircle className="text-red-500 flex-shrink-0" size={24} />
+              <p className="text-red-700 text-sm">{erroLaudos}</p>
+            </div>
+          ) : laudos.length === 0 ? (
+            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
+              <FileText className="mx-auto text-gray-300 mb-4" size={48} />
+              <p className="text-gray-500 font-medium">
+                Nenhum laudo encontrado
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Os laudos das suas empresas clientes aparecerão aqui
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              <table className="min-w-full divide-y divide-gray-200 text-sm">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Empresa
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Lote
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Status Laudo
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Avaliações
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Emissor
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Emitido em
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Enviado em
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {laudos.map((laudo) => (
+                    <tr
+                      key={laudo.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+                      {/* Empresa */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Building2
+                            size={14}
+                            className="text-gray-400 flex-shrink-0"
+                          />
+                          <span className="font-medium text-gray-800">
+                            {laudo.empresa_nome}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Lote */}
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() =>
+                            onNavigate?.(`/rh/empresa/${laudo.empresa_id}`)
+                          }
+                          className="text-primary hover:underline font-medium"
+                        >
+                          #{laudo.lote_id}
+                        </button>
+                        {laudo.lote_descricao && (
+                          <p className="text-xs text-gray-500 truncate max-w-[180px]">
+                            {laudo.lote_descricao}
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Status Laudo */}
+                      <td className="px-4 py-3">
+                        <BadgeLaudoStatus status={laudo.laudo_status} />
+                        {laudo.hash_pdf && (
+                          <p
+                            className="text-xs text-gray-400 mt-0.5 font-mono truncate max-w-[160px]"
+                            title={laudo.hash_pdf}
+                          >
+                            {laudo.hash_pdf.slice(0, 12)}…
+                          </p>
+                        )}
+                      </td>
+
+                      {/* Avaliações */}
+                      <td className="px-4 py-3 text-xs text-gray-700">
+                        <span className="font-semibold text-gray-900">
+                          {laudo.avaliacoes_concluidas}
+                        </span>
+                        /{laudo.total_avaliacoes} concluídas
+                      </td>
+
+                      {/* Emissor */}
+                      <td className="px-4 py-3 text-xs text-gray-500">
+                        {laudo.emissor_nome ?? '—'}
+                      </td>
+
+                      {/* Emitido em */}
+                      <td className="px-4 py-3">
+                        {laudo.emitido_em ? (
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <CheckCircle size={12} className="text-green-500" />
+                            {formatarData(laudo.emitido_em)}
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-xs text-gray-400">
+                            <Clock size={12} />
+                            Pendente
                           </div>
                         )}
-                    </div>
+                      </td>
 
-                    {/* Botão de fechar */}
-                    <button
-                      onClick={() => resolverNotificacao(notif.id)}
-                      className="p-1 rounded-full hover:bg-gray-200 transition-colors"
-                      title="Marcar como resolvida"
-                    >
-                      <X size={16} />
-                    </button>
-                  </div>
-
-                  {/* Rodapé com ações */}
-                  <div className="flex items-center gap-3 mt-3">
-                    <span className="text-xs text-gray-500">
-                      {formatarData(notif.criado_em)}
-                    </span>
-
-                    {notif.link_acao && (
-                      <button
-                        onClick={() => {
-                          if (onNavigate) {
-                            onNavigate(notif.link_acao!);
-                          } else {
-                            window.location.href = notif.link_acao!;
-                          }
-                        }}
-                        className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                      >
-                        {notif.botao_texto || 'Ver detalhes'}
-                        <ExternalLink size={12} />
-                      </button>
-                    )}
-
-                    {notif.dados_contexto?.funcionarios && (
-                      <button
-                        onClick={() => toggleExpansao(notif.id)}
-                        className="text-xs font-medium text-gray-600 hover:text-gray-800"
-                      >
-                        {expandidas.has(notif.id) ? 'Ocultar' : 'Ver lista'}
-                      </button>
-                    )}
-
-                    <button
-                      onClick={() => resolverNotificacao(notif.id)}
-                      className="ml-auto text-xs font-medium text-green-600 hover:text-green-800 flex items-center gap-1"
-                    >
-                      <Check size={14} />
-                      Resolver
-                    </button>
-                  </div>
-                </div>
-              </div>
+                      {/* Enviado em */}
+                      <td className="px-4 py-3">
+                        {laudo.enviado_em ? (
+                          <div className="flex items-center gap-1 text-xs text-gray-600">
+                            <Send size={12} className="text-blue-500" />
+                            {formatarData(laudo.enviado_em)}
+                          </div>
+                        ) : laudo.arquivo_remoto_url ? (
+                          <div>
+                            <div className="flex items-center gap-1 text-xs text-teal-600">
+                              <CheckCircle
+                                size={12}
+                                className="text-teal-500"
+                              />
+                              No bucket
+                            </div>
+                            {laudo.arquivo_remoto_uploaded_at && (
+                              <p className="text-xs text-gray-400 mt-0.5">
+                                {formatarData(laudo.arquivo_remoto_uploaded_at)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="text-xs text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          ))}
+          )}
         </div>
       )}
     </div>
