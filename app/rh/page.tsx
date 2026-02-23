@@ -10,6 +10,7 @@ import {
   Plus,
   ArrowRight,
 } from 'lucide-react';
+import FlowStepsExplainer from '@/components/FlowStepsExplainer';
 import EmpresaFormModal from '@/components/clinica/EmpresaFormModal';
 
 interface Empresa {
@@ -121,6 +122,8 @@ export default function RhPage() {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <FlowStepsExplainer isClinica={true} />
+
         {/* Cards de Estatísticas Globais */}
         {stats && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
