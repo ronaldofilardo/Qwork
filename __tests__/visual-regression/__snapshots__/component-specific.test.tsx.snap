@@ -32,12 +32,16 @@ exports[`Regressão Visual - Botões Especiais BotaoSolicitarEmissao deve manter
       <p
         class="text-xs text-gray-600 mt-2"
       >
-        O laudo será gerado automaticamente após a solicitação e enviado ao emissor responsável.
+        Avaliações: 
+        /
+        NaN
+         concluídas
       </p>
     </div>
   </div>
   <button
     class="   w-full px-6 py-4    bg-gradient-to-r from-green-600 to-emerald-600    text-white rounded-lg    hover:from-green-700 hover:to-emerald-700   active:from-green-800 active:to-emerald-800   transition-all duration-200   font-bold text-lg   disabled:from-gray-400 disabled:to-gray-500   disabled:cursor-not-allowed   disabled:opacity-60   flex items-center justify-center gap-3   shadow-md hover:shadow-lg   transform hover:scale-[1.02] active:scale-[0.98]   "
+    title=""
   >
     <span
       class="text-2xl"
@@ -100,11 +104,109 @@ exports[`Regressão Visual - Botões Especiais LiberarAvaliacoes deve manter est
 
 exports[`Regressão Visual - Componentes Admin CentroOperacoes deve manter estrutura visual consistente 1`] = `
 <div
-  class="flex items-center justify-center min-h-[400px]"
+  class="space-y-6"
 >
+  <div>
+    <h1
+      class="text-2xl font-bold text-gray-800"
+    >
+      Monitor de Lotes e Laudos
+    </h1>
+    <p
+      class="text-gray-600 text-sm mt-1"
+    >
+      Acompanhe todos os lotes e laudos das suas empresas clientes
+    </p>
+  </div>
   <div
-    class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
-  />
+    class="border-b border-gray-200"
+  >
+    <nav
+      class="flex gap-1"
+    >
+      <button
+        class="flex items-center gap-2 px-4 py-2.5 border-b-2 text-sm font-medium transition-colors border-primary text-primary"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-layers"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"
+          />
+          <path
+            d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"
+          />
+          <path
+            d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"
+          />
+        </svg>
+        Lotes
+        <span
+          class="ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-primary text-white"
+        >
+          0
+        </span>
+      </button>
+      <button
+        class="flex items-center gap-2 px-4 py-2.5 border-b-2 text-sm font-medium transition-colors border-transparent text-gray-600 hover:text-gray-800 hover:border-gray-300"
+      >
+        <svg
+          aria-hidden="true"
+          class="lucide lucide-file-text"
+          fill="none"
+          height="16"
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          viewBox="0 0 24 24"
+          width="16"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+          />
+          <path
+            d="M14 2v5a1 1 0 0 0 1 1h5"
+          />
+          <path
+            d="M10 9H8"
+          />
+          <path
+            d="M16 13H8"
+          />
+          <path
+            d="M16 17H8"
+          />
+        </svg>
+        Laudos
+        <span
+          class="ml-1 px-1.5 py-0.5 rounded-full text-xs font-semibold bg-gray-200 text-gray-600"
+        >
+          0
+        </span>
+      </button>
+    </nav>
+  </div>
+  <div>
+    <div
+      class="flex items-center justify-center py-16"
+    >
+      <div
+        class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"
+      />
+    </div>
+  </div>
 </div>
 `;
 
@@ -282,6 +384,9 @@ exports[`Regressão Visual - Componentes Clínica Clínica Sidebar deve manter e
         </span>
       </div>
     </button>
+    <div
+      class="my-4 border-t border-gray-200"
+    />
     <div
       class="mt-2 px-4"
     >

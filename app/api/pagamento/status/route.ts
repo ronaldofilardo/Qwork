@@ -7,19 +7,29 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const pagamentoId = searchParams.get('id');
+
+    // Aceita tanto 'id' quanto 'pagamento_id' para retrocompatibilidade
+    // CheckoutAsaas.tsx usava 'pagamento_id', outros lugares usavam 'id'
+    const pagamentoId =
+      searchParams.get('id') || searchParams.get('pagamento_id');
 
     if (!pagamentoId) {
       return NextResponse.json(
-        { error: 'ID do pagamento é obrigatório' },
+        { error: 'ID do pagamento é obrigatório (use id= ou pagamento_id=)' },
         { status: 400 }
       );
     }
 
+    // JOIN com LEFT para suportar tanto entidades (entidade_id) quanto clínicas (clinica_id)
+    // A query anterior fazia JOIN INNER em entidades, quebrando pagamentos de clínicas
     const pagamentoResult = await query(
-      `SELECT p.*, e.nome as entidade_nome, e.pagamento_confirmado
+      `SELECT
+         p.*,
+         COALESCE(e.nome, c.nome) AS entidade_nome,
+         COALESCE(e.pagamento_confirmado, false) AS pagamento_confirmado
        FROM pagamentos p
-       JOIN entidades e ON p.entidade_id = e.id
+       LEFT JOIN entidades e ON p.entidade_id = e.id
+       LEFT JOIN clinicas  c ON p.clinica_id  = c.id
        WHERE p.id = $1`,
       [pagamentoId]
     );
@@ -31,9 +41,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const pagamento = pagamentoResult.rows[0];
+
     return NextResponse.json({
       success: true,
-      pagamento: pagamentoResult.rows[0],
+      status: pagamento.status, // campo direto para o polling verificar
+      pagamento,
     });
   } catch (error) {
     console.error('Erro ao consultar pagamento:', error);

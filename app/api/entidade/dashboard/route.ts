@@ -25,7 +25,7 @@ export async function GET() {
         COUNT(DISTINCT CASE WHEN f.ativo = true THEN f.id END) as funcionarios_ativos
       FROM funcionarios f
       LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
-      WHERE f.tomador_id = $1
+      WHERE f.entidade_id = $1
     `,
       [entidadeId]
     );
@@ -44,7 +44,7 @@ export async function GET() {
       FROM resultados r
       JOIN avaliacoes a ON a.id = r.avaliacao_id
       JOIN funcionarios f ON f.cpf = a.funcionario_cpf
-      WHERE f.tomador_id = $1 AND (a.status = 'concluida' OR a.status = 'concluido')
+      WHERE f.entidade_id = $1 AND (a.status = 'concluida' OR a.status = 'concluido')
       GROUP BY r.grupo, r.dominio
       ORDER BY r.grupo
     `,
@@ -60,7 +60,7 @@ export async function GET() {
       FROM resultados r
       JOIN avaliacoes a ON a.id = r.avaliacao_id
       JOIN funcionarios f ON f.cpf = a.funcionario_cpf
-      WHERE f.tomador_id = $1 AND (a.status = 'concluida' OR a.status = 'concluido')
+      WHERE f.entidade_id = $1 AND (a.status = 'concluida' OR a.status = 'concluido')
       GROUP BY r.categoria
       ORDER BY 
         CASE r.categoria

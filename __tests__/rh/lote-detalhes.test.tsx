@@ -214,9 +214,10 @@ describe('Página de Detalhes do Lote', () => {
 
       render(<DetalhesLotePage />);
 
-      // Esperar que o carregamento termine e o título apareça
+      // O componente exibe o ID do lote como título (campo titulo foi removido)
+      // loteId = 1 conforme mock
       await waitFor(() => {
-        expect(screen.getByText('Lote Emitido')).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: '1' })).toBeInTheDocument();
       });
 
       // Verificar que o botão 'Inativar' não aparece

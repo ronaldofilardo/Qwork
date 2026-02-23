@@ -31,31 +31,7 @@ export default function ResponsavelStep({
   onChange,
   onFileChange,
 }: Props) {
-  // FEATURE FLAG: when true, uploads/anexos are temporarily disabled
-  const envAnexosDesabilitados =
-    process.env.NEXT_PUBLIC_DISABLE_ANEXOS === 'true';
-  const [runtimeDisable, setRuntimeDisable] = React.useState<boolean | null>(
-    null
-  );
-
-  React.useEffect(() => {
-    let mounted = true;
-    fetch('/api/public-config')
-      .then((r) => r.json())
-      .then((json) => {
-        if (!mounted) return;
-        if (typeof json?.disableAnexos === 'boolean')
-          setRuntimeDisable(json.disableAnexos);
-      })
-      .catch(() => {
-        // ignore
-      });
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const anexosDesabilitados = envAnexosDesabilitados || runtimeDisable === true;
+  // Uploads de documentos sempre habilitados.
 
   return (
     <div className="space-y-4">
@@ -164,14 +140,8 @@ export default function ResponsavelStep({
             onChange={(e) => onFileChange(e, 'doc_identificacao')}
             accept=".pdf,.jpg,.jpeg,.png"
             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
-            required={!anexosDesabilitados}
-            disabled={anexosDesabilitados}
+            required
           />
-          {anexosDesabilitados && (
-            <p className="mt-2 text-sm text-yellow-700">
-              Uploads temporariamente desabilitados
-            </p>
-          )}
           {arquivos.doc_identificacao && (
             <Check size={20} className="text-green-500" />
           )}

@@ -3,12 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent';
 import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
-import { CobrancaContent } from '@/components/admin/CobrancaContent';
 import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
 import { PlanosContent } from '@/components/admin/PlanosContent';
+import { VolumeContent } from '@/components/admin/VolumeContent';
+import { ContagemContent } from '@/components/admin/ContagemContent';
 
 interface Session {
   cpf: string;
@@ -16,23 +16,21 @@ interface Session {
   perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
 }
 
-type MainSection = 'novos-cadastros' | 'tomadores' | 'financeiro' | 'geral';
-type _tomadoresSubSection = 'clinicas' | 'entidades';
-type _FinanceiroSubSection = 'cobranca' | 'pagamentos' | 'planos';
+type MainSection = 'tomadores' | 'financeiro' | 'geral' | 'volume';
+type _TomadoresSubSection = 'clinicas' | 'entidades';
+type _FinanceiroSubSection = 'contagem' | 'pagamentos' | 'planos';
 type _GeralSubSection = 'emissores';
+type _VolumeSubSection = 'entidade' | 'rh';
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] =
-    useState<MainSection>('novos-cadastros');
-  const [activeSubSection, setActiveSubSection] = useState<string>('');
+  const [activeSection, setActiveSection] = useState<MainSection>('tomadores');
+  const [activeSubSection, setActiveSubSection] = useState<string>('clinicas');
 
   // Contadores para badges do sidebar
-  const [pendingCount, setPendingCount] = useState(0);
   const [clinicasCount, setClinicasCount] = useState(0);
   const [entidadesCount, setEntidadesCount] = useState(0);
-  const [cobrancaPendente, setCobrancaPendente] = useState(0);
   const [pagamentosPendentes, setPagamentosPendentes] = useState(0);
   const [planosAtivos, setPlanosAtivos] = useState(0);
   const [emissoresAtivos, setEmissoresAtivos] = useState(0);
@@ -41,16 +39,6 @@ export default function AdminPage() {
 
   const fetchCounts = useCallback(async () => {
     try {
-      // Buscar contadores de pendências
-      const pendingRes = await fetch(
-        '/api/admin/novos-cadastros?status=pendente'
-      );
-      if (pendingRes.ok) {
-        const data = await pendingRes.json();
-        setPendingCount(data.total || 0);
-      }
-
-      // Buscar contadores de clínicas e entidades
       const clinicasRes = await fetch('/api/admin/entidades?tipo=clinica');
       if (clinicasRes.ok) {
         const data = await clinicasRes.json();
@@ -63,11 +51,8 @@ export default function AdminPage() {
         setEntidadesCount(data.total || 0);
       }
 
-      // Buscar contadores financeiros (placeholder - implementar depois)
-      setCobrancaPendente(0);
       setPagamentosPendentes(0);
 
-      // Buscar planos ativos
       const planosRes = await fetch('/api/admin/planos');
       if (planosRes.ok) {
         const data = await planosRes.json();
@@ -78,7 +63,6 @@ export default function AdminPage() {
         }
       }
 
-      // Buscar emissores ativos
       const emissoresRes = await fetch('/api/admin/emissores');
       if (emissoresRes.ok) {
         const data = await emissoresRes.json();
@@ -128,20 +112,20 @@ export default function AdminPage() {
   };
 
   const renderContent = () => {
-    if (activeSection === 'novos-cadastros') {
-      return <NovoscadastrosContent _onApproved={fetchCounts} />;
-    }
-
     if (activeSection === 'tomadores') {
       return <TomadoresContent activeSubSection={activeSubSection} />;
     }
 
+    if (activeSection === 'volume') {
+      return <VolumeContent activeSubSection={activeSubSection} />;
+    }
+
     if (activeSection === 'financeiro') {
+      if (activeSubSection === 'contagem') {
+        return <ContagemContent />;
+      }
       if (activeSubSection === 'planos') {
         return <PlanosContent />;
-      }
-      if (activeSubSection === 'cobranca') {
-        return <CobrancaContent />;
       }
       if (activeSubSection === 'pagamentos') {
         return <PagamentosContent />;
@@ -185,10 +169,8 @@ export default function AdminPage() {
           activeSubSection={activeSubSection}
           onSectionChange={handleSectionChange}
           counts={{
-            novosCadastros: pendingCount,
             clinicas: clinicasCount,
             entidades: entidadesCount,
-            cobranca: cobrancaPendente,
             pagamentos: pagamentosPendentes,
             planos: planosAtivos,
             emissores: emissoresAtivos,

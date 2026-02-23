@@ -123,101 +123,29 @@ describe('ModalCadastrotomador - integração leve', () => {
     });
   }, 20000);
 
-  test('fluxo permite prosseguir sem anexos quando NEXT_PUBLIC_DISABLE_ANEXOS=true', async () => {
-    jest.useFakeTimers();
-    const prev = process.env.NEXT_PUBLIC_DISABLE_ANEXOS;
-    process.env.NEXT_PUBLIC_DISABLE_ANEXOS = 'true';
+  test('inputs de arquivo estão habilitados e são obrigatórios na etapa de dados', async () => {
+    const onClose = jest.fn();
+    render(
+      <ModalCadastrotomador isOpen={true} onClose={onClose} tipo="entidade" />
+    );
 
-    try {
-      const onClose = jest.fn();
-      render(
-        <ModalCadastrotomador isOpen={true} onClose={onClose} tipo="entidade" />
-      );
+    // Aguarda chegar na etapa de dados (tipo="entidade" pula seleção de tipo)
+    await waitFor(() => {
+      expect(screen.getByLabelText('Razão Social')).toBeInTheDocument();
+    });
 
-      // Aguarda planos carregarem
-      await waitFor(() => {
-        expect(screen.getAllByTestId('plano-card').length).toBeGreaterThan(0);
-      });
+    const cartao = screen.getByLabelText<HTMLInputElement>('Cartão CNPJ');
+    const contrato = screen.getByLabelText<HTMLInputElement>('Contrato Social');
 
-      const planos = screen.getAllByTestId('plano-card');
-      fireEvent.click(planos[0]);
+    // Uploads sempre habilitados e obrigatórios
+    expect(cartao.disabled).toBe(false);
+    expect(contrato.disabled).toBe(false);
+    expect(cartao.hasAttribute('required')).toBe(true);
+    expect(contrato.hasAttribute('required')).toBe(true);
 
-      // Avançar para dados
-      const proximo = screen.getByText('Próximo');
-      fireEvent.click(proximo);
-
-      // Preencher dados obrigatórios (sem anexos)
-      fireEvent.change(screen.getByLabelText('Razão Social'), {
-        target: { value: 'ACME' },
-      });
-      fireEvent.change(screen.getByLabelText('CNPJ'), {
-        target: { value: '11.444.777/0001-61' },
-      });
-      fireEvent.change(screen.getByLabelText('Email'), {
-        target: { value: 'a@a.com' },
-      });
-      fireEvent.change(screen.getByLabelText('Telefone'), {
-        target: { value: '(11) 99999-9999' },
-      });
-      fireEvent.change(screen.getByLabelText('Endereço'), {
-        target: { value: 'Rua X' },
-      });
-      fireEvent.change(screen.getByLabelText('Cidade'), {
-        target: { value: 'São Paulo' },
-      });
-      fireEvent.change(screen.getByLabelText('Estado (UF)'), {
-        target: { value: 'SP' },
-      });
-      fireEvent.change(screen.getByLabelText('CEP'), {
-        target: { value: '01234-567' },
-      });
-
-      // Aviso aparece e inputs de arquivo estão desabilitados
-      expect(
-        screen.getByText(/Uploads estão temporariamente desabilitados/i)
-      ).toBeInTheDocument();
-      expect(
-        (screen.getByLabelText('Cartão CNPJ') as HTMLInputElement).disabled
-      ).toBe(true);
-      expect(
-        (screen.getByLabelText('Contrato Social') as HTMLInputElement).disabled
-      ).toBe(true);
-
-      // Avançar para responsável (sem anexos enviados)
-      fireEvent.click(screen.getByText('Próximo'));
-
-      // Preencher responsável (sem doc)
-      fireEvent.change(screen.getByLabelText('Nome Completo'), {
-        target: { value: 'João' },
-      });
-      fireEvent.change(screen.getByLabelText('CPF'), {
-        target: { value: '123.456.789-09' },
-      });
-      fireEvent.change(screen.getByLabelText('Email'), {
-        target: { value: 'j@j.com' },
-      });
-      fireEvent.change(screen.getByLabelText('Celular'), {
-        target: { value: '(11) 99999-9999' },
-      });
-
-      // Avançar (gera contrato para plano fixo)
-      fireEvent.click(screen.getByText('Próximo'));
-
-      // Confirmar e enviar
-      const confirmCheckbox = screen.getByRole('checkbox', {
-        name: /Confirmo que revisei todos os dados/i,
-      });
-      fireEvent.click(confirmCheckbox);
-
-      fireEvent.click(screen.getByText('Confirmar e Enviar'));
-
-      jest.runAllTimers();
-
-      await waitFor(() => {
-        expect(enviarSpy).toHaveBeenCalled();
-      });
-    } finally {
-      process.env.NEXT_PUBLIC_DISABLE_ANEXOS = prev;
-    }
+    // Nenhum aviso de "desabilitado" deve estar visível
+    expect(
+      screen.queryByText(/temporariamente desabilitados/i)
+    ).not.toBeInTheDocument();
   }, 20000);
 });

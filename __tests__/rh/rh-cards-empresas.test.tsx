@@ -63,6 +63,8 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
       total_funcionarios: 25,
       total_avaliacoes: 30,
       avaliacoes_concluidas: 20,
+      representante_nome: 'João Silva',
+      representante_email: 'joao@alpha.com',
     },
     {
       id: 2,
@@ -72,6 +74,8 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
       total_funcionarios: 15,
       total_avaliacoes: 10,
       avaliacoes_concluidas: 8,
+      representante_nome: 'Maria Santos',
+      representante_email: 'maria@beta.com',
     },
     {
       id: 3,
@@ -81,6 +85,8 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
       total_funcionarios: 50,
       total_avaliacoes: 60,
       avaliacoes_concluidas: 45,
+      representante_nome: 'Carlos Oliveira',
+      representante_email: 'carlos@gamma.com',
     },
   ];
 

@@ -250,8 +250,8 @@ describe('/api/emissor/notificacoes', () => {
       // Verificar estrutura da primeira notificação
       const notif = data.notificacoes[0];
       expect(notif).toHaveProperty('id');
-      // codigo removido
-      expect(notif).toHaveProperty('titulo');
+      // titulo removido — notificações usam campo 'mensagem'
+      expect(notif).toHaveProperty('mensagem');
       expect(notif).toHaveProperty('empresa_nome');
       expect(notif).toHaveProperty('clinica_nome');
       expect(notif).toHaveProperty('liberado_em');

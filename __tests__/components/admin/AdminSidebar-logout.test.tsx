@@ -17,7 +17,7 @@ describe('AdminSidebar logout', () => {
   it('places logout after navigation and calls API then navigates', async () => {
     const { container } = render(
       <AdminSidebar
-        activeSection={'novos-cadastros'}
+        activeSection={'tomadores'}
         onSectionChange={() => {}}
         counts={{}}
       />

@@ -178,115 +178,55 @@ describe('/api/emissor/lotes', () => {
       expect(data.lotes[0].laudo).toBeNull();
     });
 
-    it('deve considerar laudo emitido se arquivo local existe mesmo sem hash/emitido_em', async () => {
-      const fs = await import('fs/promises');
-      const spyAccess = jest
-        .spyOn(fs, 'access')
-        .mockResolvedValue(undefined as any);
-      const realRead = jest
-        .spyOn(fs, 'readFile')
-        .mockResolvedValue(Buffer.from('PDF'));
-
+    it('deve considerar laudo com _emitido=true quando status_laudo é emitido ou enviado', async () => {
       mockQuery.mockResolvedValueOnce({
         rows: [{ total: 1 }],
         rowCount: 1,
       } as QueryResult<unknown>);
-
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
             id: 3,
-            titulo: 'Lote Arquivo Local',
+            descricao: 'Lote Emitido',
             tipo: 'completo',
+            lote_status: 'concluido',
             liberado_em: '2025-11-29T12:00:00Z',
             empresa_nome: 'Empresa C',
             clinica_nome: 'Clínica C',
             total_avaliacoes: '2',
-            avaliacoes_concluidas: '2',
             observacoes: null,
-            status_laudo: null,
-            laudo_id: null,
-            emitido_em: null,
-            enviado_em: null,
-            hash_pdf: null,
+            status_laudo: 'enviado',
+            laudo_id: 3,
+            emitido_em: '2025-11-30T10:00:00Z',
+            enviado_em: '2025-11-30T11:00:00Z',
+            hash_pdf: 'abc123',
+            emissor_nome: null,
+            emissor_cpf: null,
+            arquivo_remoto_key: null,
+            arquivo_remoto_url: null,
+            arquivo_remoto_uploaded_at: null,
           },
         ],
         rowCount: 1,
       } as QueryResult<unknown>);
-
-      // Expect that an INSERT will be attempted - mock query to accept it
-      mockQuery.mockResolvedValueOnce({
-        rows: [],
-        rowCount: 0,
-      } as QueryResult<unknown>);
-
-      const response = await GET(mockRequest as NextRequest);
-      const data = await response.json();
-
-      expect(data.lotes[0].laudo).toBeDefined();
-      expect(data.lotes[0].laudo._emitido).toBeTruthy();
-
-      spyAccess.mockRestore();
-      realRead.mockRestore();
-    });
-
-    it('deve criar registro de laudo no banco se arquivo local existe e não há registro', async () => {
-      const fs = require('fs/promises');
-      // ensure our mocked fs functions resolve like a real file present
-      (fs.access as jest.MockedFunction<any>).mockResolvedValue(undefined);
-      (fs.readFile as jest.MockedFunction<any>).mockResolvedValue(
-        Buffer.from('PDF')
-      );
-
-      // Provide a smart mock implementation to handle the intermediate queries and the INSERT
-      mockQuery.mockImplementation(async (sql: string) => {
-        if (
-          typeof sql === 'string' &&
-          sql.includes('SELECT COUNT(*) as total')
-        ) {
-          return { rows: [{ total: 1 }], rowCount: 1 } as any;
-        }
-        if (
-          typeof sql === 'string' &&
-          sql.includes('FROM lotes_avaliacao la')
-        ) {
-          return {
-            rows: [
-              {
-                id: 4,
-                titulo: 'Lote sem DB mas com arquivo',
-                tipo: 'completo',
-                liberado_em: '2025-11-29T13:00:00Z',
-                empresa_nome: 'Empresa D',
-                clinica_nome: 'Clínica D',
-                total_avaliacoes: '1',
-                avaliacoes_concluidas: '1',
-                observacoes: null,
-                status_laudo: null,
-                laudo_id: null,
-                emitido_em: null,
-                enviado_em: null,
-                hash_pdf: null,
-              },
-            ],
-            rowCount: 1,
-          } as any;
-        }
-        if (typeof sql === 'string' && sql.includes('INSERT INTO laudos')) {
-          return { rows: [], rowCount: 1 } as any;
-        }
-        // Default fallback
-        return { rows: [], rowCount: 0 } as any;
-      });
+      // mock validar_lote_pre_laudo
+      mockQuery.mockResolvedValue({
+        rows: [
+          {
+            valido: true,
+            alertas: [],
+            funcionarios_pendentes: 0,
+            detalhes: {},
+          },
+        ],
+        rowCount: 1,
+      } as any);
 
       const response = await GET(mockRequest as NextRequest);
       const data = await response.json();
 
       expect(data.lotes[0].laudo).toBeDefined();
-      expect(data.lotes[0].laudo._emitido).toBeTruthy();
-
-      (fs.access as jest.MockedFunction<any>).mockRestore();
-      (fs.readFile as jest.MockedFunction<any>).mockRestore();
+      expect(data.lotes[0].laudo._emitido).toBe(true);
     });
 
     it('deve retornar lista vazia quando não há lotes prontos', async () => {
@@ -463,8 +403,7 @@ describe('/api/emissor/lotes', () => {
       // Verificar estrutura do primeiro lote
       const lote = data.lotes[0];
       expect(lote).toHaveProperty('id');
-      // codigo removido
-      expect(lote).toHaveProperty('titulo');
+      expect(lote).toHaveProperty('descricao');
       expect(lote).toHaveProperty('tipo');
       expect(lote).toHaveProperty('empresa_nome');
       expect(lote).toHaveProperty('clinica_nome');

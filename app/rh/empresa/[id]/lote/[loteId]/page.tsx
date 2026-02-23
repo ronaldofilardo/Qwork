@@ -11,6 +11,10 @@ import { useRouter, useParams } from 'next/navigation';
 import ModalInativarAvaliacao from '@/components/ModalInativarAvaliacao';
 import ModalResetarAvaliacao from '@/components/ModalResetarAvaliacao';
 import toast from 'react-hot-toast';
+import {
+  ModalConfirmacaoSolicitar,
+  foiExibidaParaLote,
+} from '@/components/ModalConfirmacaoSolicitar';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -125,6 +129,13 @@ export default function DetalhesLotePage() {
     avaliacaoId: number;
     funcionarioNome: string;
     funcionarioCpf: string;
+  } | null>(null);
+
+  // Modal de confirmação pós-solicitação de emissão
+  const [modalEmissao, setModalEmissao] = useState<{
+    loteId: number;
+    gestorEmail: string | null;
+    gestorCelular: string | null;
   } | null>(null);
 
   // Filtros por coluna
@@ -1062,7 +1073,20 @@ export default function DetalhesLotePage() {
                               data.error || 'Erro ao solicitar emissão'
                             );
                           toast.success('Emissão solicitada com sucesso!');
-                          setTimeout(() => loadLoteData(), 1500);
+
+                          // Exibir modal de confirmação (apenas uma vez por lote por sessão)
+                          if (!foiExibidaParaLote(lote.id)) {
+                            const contato = data.gestor_contato as
+                              | { email: string | null; celular: string | null }
+                              | undefined;
+                            setModalEmissao({
+                              loteId: lote.id,
+                              gestorEmail: contato?.email ?? null,
+                              gestorCelular: contato?.celular ?? null,
+                            });
+                          } else {
+                            setTimeout(() => loadLoteData(), 1500);
+                          }
                         } catch (error: any) {
                           toast.error(
                             error.message || 'Erro ao solicitar emissão'
@@ -1570,6 +1594,20 @@ export default function DetalhesLotePage() {
           basePath="/api/rh"
           onClose={() => setModalResetar(null)}
           onSuccess={loadLoteData}
+        />
+      )}
+
+      {/* Modal de Confirmação de Solicitação de Emissão */}
+      {modalEmissao && (
+        <ModalConfirmacaoSolicitar
+          isOpen={true}
+          onClose={() => {
+            setModalEmissao(null);
+            void loadLoteData();
+          }}
+          loteId={modalEmissao.loteId}
+          gestorEmail={modalEmissao.gestorEmail}
+          gestorCelular={modalEmissao.gestorCelular}
         />
       )}
     </div>

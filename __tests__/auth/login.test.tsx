@@ -58,7 +58,7 @@ describe('LoginPage', () => {
 
     expect(screen.getByAltText('QWork')).toBeInTheDocument();
     expect(screen.getByLabelText(/cpf/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/senha/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^Senha/i)).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /entrar/i })).toBeInTheDocument();
   });
 
@@ -93,7 +93,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-    await user.type(screen.getByLabelText(/senha/i), '123');
+    await user.type(screen.getByLabelText(/^Senha/i), '123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(
@@ -150,7 +150,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '11111111111');
-    await user.type(screen.getByLabelText(/senha/i), 'rh123');
+    await user.type(screen.getByLabelText(/^Senha/i), 'rh123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(mockFetch).toHaveBeenCalledWith(
@@ -192,7 +192,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '22222222222');
-    await user.type(screen.getByLabelText(/senha/i), 'func123');
+    await user.type(screen.getByLabelText(/^Senha/i), 'func123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     expect(mockFetch).toHaveBeenCalledWith(
@@ -237,7 +237,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '99999999999');
-    await user.type(screen.getByLabelText(/senha/i), 'senhaerrada');
+    await user.type(screen.getByLabelText(/^Senha/i), 'senhaerrada');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(
@@ -260,10 +260,12 @@ describe('LoginPage', () => {
 
     // Deve exibir validação do HTML5 ou erro customizado
     const cpfInput = screen.getByLabelText(/cpf/i);
-    const senhaInput = screen.getByLabelText(/senha/i);
+    const senhaInput = screen.getByLabelText(/^Senha/i);
 
     expect(cpfInput).toBeRequired();
-    expect(senhaInput).toBeRequired();
+    // Senha agora é opcional (funcionário pode usar data de nascimento)
+    // O campo não tem atributo required
+    expect(senhaInput).toBeInTheDocument();
   });
 
   it('deve exibir estado de loading durante login', async () => {
@@ -309,7 +311,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-    await user.type(screen.getByLabelText(/senha/i), 'admin123');
+    await user.type(screen.getByLabelText(/^Senha/i), 'admin123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     // Deve mostrar loading no botão E estar desabilitado
@@ -352,7 +354,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-    await user.type(screen.getByLabelText(/senha/i), 'admin123');
+    await user.type(screen.getByLabelText(/^Senha/i), 'admin123');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(
@@ -394,7 +396,7 @@ describe('LoginPage', () => {
 
     // Fazer login inválido primeiro
     await user.type(screen.getByLabelText(/cpf/i), '99999999999');
-    await user.type(screen.getByLabelText(/senha/i), 'senhaerrada');
+    await user.type(screen.getByLabelText(/^Senha/i), 'senhaerrada');
     await user.click(screen.getByRole('button', { name: /entrar/i }));
 
     await waitFor(
@@ -443,7 +445,7 @@ describe('LoginPage', () => {
     render(<LoginPage />);
 
     await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-    await user.type(screen.getByLabelText(/senha/i), 'admin123');
+    await user.type(screen.getByLabelText(/^Senha/i), 'admin123');
 
     // Pressionar Enter no campo senha
     await user.keyboard('{Enter}');
@@ -502,7 +504,7 @@ describe('LoginPage', () => {
       render(<LoginPage />);
 
       await user.type(screen.getByLabelText(/cpf/i), cpf);
-      await user.type(screen.getByLabelText(/senha/i), 'test123');
+      await user.type(screen.getByLabelText(/^Senha/i), 'test123');
       const buttons = screen.getAllByRole('button');
       const submitButton =
         buttons.find((button) => !(button as HTMLButtonElement).disabled) ||
@@ -558,7 +560,7 @@ describe('LoginPage', () => {
       // Este teste específico garante que o problema anterior não regreda:
       // NODE_ENV=test causando Next.js a carregar .env.test em desenvolvimento
       await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-      await user.type(screen.getByLabelText(/senha/i), '123');
+      await user.type(screen.getByLabelText(/^Senha/i), '123');
 
       await user.click(screen.getByRole('button', { name: /entrar/i }));
 
@@ -609,7 +611,7 @@ describe('LoginPage', () => {
       render(<LoginPage />);
 
       await user.type(screen.getByLabelText(/cpf/i), '00000000000');
-      await user.type(screen.getByLabelText(/senha/i), 'senha_errada');
+      await user.type(screen.getByLabelText(/^Senha/i), 'senha_errada');
 
       await user.click(screen.getByRole('button', { name: /entrar/i }));
 

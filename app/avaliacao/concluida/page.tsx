@@ -1,77 +1,85 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import QworkLogo from '@/components/QworkLogo'
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import QworkLogo from '@/components/QworkLogo';
 
 interface AvaliacaoInfo {
-  id: string
-  dataConclusao: string
-  horaConclusao: string
+  id: string;
+  dataConclusao: string;
+  horaConclusao: string;
 }
 
 export default function AvaliacaoConcluidaPage() {
-  const router = useRouter()
-  const [avaliacaoInfo, setAvaliacaoInfo] = useState<AvaliacaoInfo | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const router = useRouter();
+  const [avaliacaoInfo, setAvaliacaoInfo] = useState<AvaliacaoInfo | null>(
+    null
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAvaliacaoInfo = async () => {
       try {
-        const urlParams = new URLSearchParams(window.location.search)
-        const idAvaliacao = urlParams.get('avaliacao_id')
+        const urlParams = new URLSearchParams(window.location.search);
+        const idAvaliacao = urlParams.get('avaliacao_id');
 
         if (!idAvaliacao) {
-          throw new Error('ID da avaliação não encontrado')
+          throw new Error('ID da avaliação não encontrado');
         }
 
         // Buscar informações básicas da avaliação
-        const response = await fetch(`/api/avaliacao/status?avaliacao_id=${idAvaliacao}`)
+        const response = await fetch(
+          `/api/avaliacao/status?avaliacao_id=${idAvaliacao}`
+        );
         if (!response.ok) {
-          throw new Error('Erro ao buscar informações da avaliação')
+          throw new Error('Erro ao buscar informações da avaliação');
         }
-        await response.json()
+        await response.json();
 
         // Simular data/hora de conclusão (pode ser ajustado conforme a API)
-        const agora = new Date()
-        const dataConclusao = agora.toLocaleDateString('pt-BR')
+        const agora = new Date();
+        const dataConclusao = agora.toLocaleDateString('pt-BR');
         const horaConclusao = agora.toLocaleTimeString('pt-BR', {
           hour: '2-digit',
           minute: '2-digit',
-          second: '2-digit'
-        })
+          second: '2-digit',
+        });
 
         setAvaliacaoInfo({
           id: idAvaliacao,
           dataConclusao,
-          horaConclusao
-        })
+          horaConclusao,
+        });
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Erro desconhecido')
+        setError(err instanceof Error ? err.message : 'Erro desconhecido');
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    fetchAvaliacaoInfo()
-  }, [])
+    };
+    fetchAvaliacaoInfo();
+  }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-2 sm:p-4">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 max-w-2xl w-full text-center">
           <div className="animate-spin mx-auto w-10 h-10 sm:w-12 sm:h-12 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
-          <p className="text-sm sm:text-base text-gray-600">Carregando recibo...</p>
+          <p className="text-sm sm:text-base text-gray-600">
+            Carregando recibo...
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 to-red-100 flex items-center justify-center p-2 sm:p-4">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 max-w-2xl w-full text-center">
-          <p className="text-sm sm:text-base text-red-600 mb-4">Erro ao carregar recibo: {error}</p>
+          <p className="text-sm sm:text-base text-red-600 mb-4">
+            Erro ao carregar recibo: {error}
+          </p>
           <button
             onClick={() => router.push('/dashboard')}
             className="w-full bg-primary text-white py-3 px-4 sm:px-6 rounded-lg hover:bg-primary-hover transition-colors text-sm sm:text-base"
@@ -80,7 +88,7 @@ export default function AvaliacaoConcluidaPage() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -93,8 +101,18 @@ export default function AvaliacaoConcluidaPage() {
 
           <div className="mb-4 sm:mb-6">
             <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-success rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 sm:w-12 sm:h-12 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              <svg
+                className="w-8 h-8 sm:w-12 sm:h-12 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={3}
+                  d="M5 13l4 4L19 7"
+                />
               </svg>
             </div>
           </div>
@@ -120,13 +138,21 @@ export default function AvaliacaoConcluidaPage() {
               </div>
 
               <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                <span className="font-medium text-gray-700">Data de Conclusão:</span>
-                <span className="text-gray-900">{avaliacaoInfo?.dataConclusao}</span>
+                <span className="font-medium text-gray-700">
+                  Data de Conclusão:
+                </span>
+                <span className="text-gray-900">
+                  {avaliacaoInfo?.dataConclusao}
+                </span>
               </div>
 
               <div className="flex justify-between items-center py-2">
-                <span className="font-medium text-gray-700">Hora de Conclusão:</span>
-                <span className="text-gray-900">{avaliacaoInfo?.horaConclusao}</span>
+                <span className="font-medium text-gray-700">
+                  Hora de Conclusão:
+                </span>
+                <span className="text-gray-900">
+                  {avaliacaoInfo?.horaConclusao}
+                </span>
               </div>
             </div>
           </div>
@@ -154,5 +180,5 @@ export default function AvaliacaoConcluidaPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

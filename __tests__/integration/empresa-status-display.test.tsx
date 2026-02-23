@@ -145,8 +145,8 @@ describe('Integração - Exibição de Status das Empresas', () => {
       ).toBeGreaterThan(0);
     });
 
-    // Verificar que todas as empresas são exibidas (somente os headings das empresas)
-    expect(screen.getAllByRole('heading', { level: 4 })).toHaveLength(3);
+    // Verificar que todas as empresas são exibidas (somente os headings h3 das empresas)
+    expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(3);
   });
 
   it('deve aplicar visual correto para empresas ativas', async () => {
@@ -175,10 +175,9 @@ describe('Integração - Exibição de Status das Empresas', () => {
 
     // Empresa inativa deve ter:
     // - Status "Inativa" com fundo vermelho (específico do card)
-    const cardInativa = screen
-      .getAllByText('Empresa Inativa S.A.')[0]
-      .closest('div') as HTMLElement;
-    const statusInativa = within(cardInativa).getByText('Inativa');
+    // A badge está em <span> irmão do <div class="flex-1"> que contém o nome;
+    // por isso buscamos diretamente pelo texto sem escopo restrito
+    const statusInativa = screen.getByText('Inativa');
     expect(statusInativa).toHaveClass('bg-red-100', 'text-red-800');
   });
 
@@ -210,7 +209,7 @@ describe('Integração - Exibição de Status das Empresas', () => {
     });
   });
 
-  it('deve mostrar botões de toggle de status apropriados', async () => {
+  it('deve mostrar botões de navegação para cada empresa', async () => {
     render(<ClinicaOverviewPage />);
 
     await waitFor(() => {
@@ -219,13 +218,14 @@ describe('Integração - Exibição de Status das Empresas', () => {
       );
     });
 
-    // Deve haver 2 botões de desativar (🔒) para empresas ativas
-    const botoesDesativar = screen.getAllByTitle('Desativar empresa');
-    expect(botoesDesativar).toHaveLength(2); // Empresas 1 e 3 são ativas
+    // Deve haver 3 botões "Ver Dashboard" (um por empresa)
+    const botoesDashboard = screen.getAllByText('Ver Dashboard');
+    expect(botoesDashboard).toHaveLength(3);
 
-    // Deve haver 1 botão de ativar (✓) para empresa inativa
-    const botoesAtivar = screen.getAllByTitle('Ativar empresa');
-    expect(botoesAtivar).toHaveLength(1); // Empresa 2 é inativa
+    // Todos os botões devem estar habilitados (sem disabled)
+    botoesDashboard.forEach((botao) => {
+      expect(botao.closest('button')).not.toBeDisabled();
+    });
   });
 
   it('deve manter funcionalidade mesmo com empresas de status misto', async () => {
@@ -235,8 +235,8 @@ describe('Integração - Exibição de Status das Empresas', () => {
       expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
     });
 
-    // Verificar que grid contém todas as empresas (apenas headings das empresas)
-    const empresas = screen.getAllByRole('heading', { level: 4 });
+    // Verificar que grid contém todas as empresas (apenas headings h3 das empresas)
+    const empresas = screen.getAllByRole('heading', { level: 3 });
     expect(empresas).toHaveLength(3);
 
     // Verificar que cada empresa tem seu CNPJ
@@ -244,11 +244,8 @@ describe('Integração - Exibição de Status das Empresas', () => {
     expect(screen.getByText('CNPJ: 98765432000199')).toBeInTheDocument();
     expect(screen.getByText('CNPJ: 55555555000155')).toBeInTheDocument();
 
-    // Verificar que há botões de ação para todas
-    const botoesAcao = screen.getAllByRole('button', { hidden: true });
-    const botoesComIcones = botoesAcao.filter(
-      (btn) => btn.textContent?.includes('🔒') || btn.textContent?.includes('✓')
-    );
-    expect(botoesComIcones).toHaveLength(3); // Um para cada empresa
+    // Verificar que há botões "Ver Dashboard" para cada empresa
+    const botoesDashboard = screen.getAllByText('Ver Dashboard');
+    expect(botoesDashboard).toHaveLength(3); // Um para cada empresa
   });
 });

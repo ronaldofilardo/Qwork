@@ -29,7 +29,9 @@ export default function NovaAvaliacaoPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [todasQuestoes, setTodasQuestoes] = useState<Questao[]>([]);
   const [showCompletionModal, setShowCompletionModal] = useState(false);
-  const [completionStatus, setCompletionStatus] = useState<'processing' | 'success'>('processing');
+  const [completionStatus, setCompletionStatus] = useState<
+    'processing' | 'success'
+  >('processing');
 
   useEffect(() => {
     async function carregar() {
@@ -229,7 +231,7 @@ export default function NovaAvaliacaoPage() {
     // Detectar se é a última questão (Q37)
     const proximoIndex = currentIndex + 1;
     const isUltimaQuestao = proximoIndex >= todasQuestoes.length;
-    
+
     // Se é a última questão, mostrar modal IMEDIATAMENTE
     if (isUltimaQuestao) {
       setShowCompletionModal(true);
@@ -398,10 +400,7 @@ export default function NovaAvaliacaoPage() {
       </div>
 
       {/* Modal de conclusão */}
-      <CompletionModal 
-        isOpen={showCompletionModal} 
-        status={completionStatus}
-      />
+      <CompletionModal isOpen={showCompletionModal} status={completionStatus} />
     </div>
   );
 }

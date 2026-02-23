@@ -20,6 +20,10 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useValidacaoEmissao } from '@/lib/hooks/useValidacaoEmissao';
+import {
+  ModalConfirmacaoSolicitar,
+  foiExibidaParaLote,
+} from '@/components/ModalConfirmacaoSolicitar';
 
 interface BotaoSolicitarEmissaoProps {
   loteId: number;
@@ -49,6 +53,10 @@ export function BotaoSolicitarEmissao({
   onSuccess,
 }: BotaoSolicitarEmissaoProps) {
   const [loading, setLoading] = useState(false);
+  const [modalConfirmacao, setModalConfirmacao] = useState<{
+    gestorEmail: string | null;
+    gestorCelular: string | null;
+  } | null>(null);
 
   // Validação client-side
   const validacao = useValidacaoEmissao({
@@ -127,6 +135,17 @@ export function BotaoSolicitarEmissao({
 
       toast.success('Emissão solicitada com sucesso!', { id: toastId });
 
+      // Exibir modal de confirmação (apenas uma vez por lote por sessão)
+      if (!foiExibidaParaLote(loteId)) {
+        const contato = data.gestor_contato as
+          | { email: string | null; celular: string | null }
+          | undefined;
+        setModalConfirmacao({
+          gestorEmail: contato?.email ?? null,
+          gestorCelular: contato?.celular ?? null,
+        });
+      }
+
       // Chamar callback de sucesso
       if (onSuccess) {
         setTimeout(() => {
@@ -148,35 +167,46 @@ export function BotaoSolicitarEmissao({
   // Card quando emissão já foi solicitada
   if (emissaoSolicitada && !temLaudo) {
     return (
-      <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-sm">
-        <div className="flex items-start gap-4">
-          <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-            <span className="text-3xl">📋</span>
-          </div>
-          <div className="flex-1">
-            <h3 className="text-xl font-bold text-gray-900 mb-1">
-              Emissão Solicitada
-            </h3>
-            <p className="text-sm text-gray-700">
-              A emissão do laudo foi solicitada
-              {emissaoSolicitadoEm && (
-                <span>
-                  {' '}
-                  em{' '}
-                  {new Date(emissaoSolicitadoEm).toLocaleDateString('pt-BR', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              )}
-              . O laudo está sendo processado pelo emissor.
-            </p>
+      <>
+        <div className="mt-6 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-xl shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+              <span className="text-3xl">📋</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-gray-900 mb-1">
+                Emissão Solicitada
+              </h3>
+              <p className="text-sm text-gray-700">
+                A emissão do laudo foi solicitada
+                {emissaoSolicitadoEm && (
+                  <span>
+                    {' '}
+                    em{' '}
+                    {new Date(emissaoSolicitadoEm).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                )}
+                . O laudo está sendo processado pelo emissor.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+        {modalConfirmacao && (
+          <ModalConfirmacaoSolicitar
+            isOpen={true}
+            onClose={() => setModalConfirmacao(null)}
+            loteId={loteId}
+            gestorEmail={modalConfirmacao.gestorEmail}
+            gestorCelular={modalConfirmacao.gestorCelular}
+          />
+        )}
+      </>
     );
   }
 
@@ -209,60 +239,61 @@ export function BotaoSolicitarEmissao({
 
   // Card com botão de solicitar emissão
   return (
-    <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-sm">
-      <div className="flex items-start gap-4 mb-4">
-        <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-          <span className="text-3xl">✅</span>
+    <>
+      <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-sm">
+        <div className="flex items-start gap-4 mb-4">
+          <div className="flex-shrink-0 w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+            <span className="text-3xl">✅</span>
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-bold text-gray-900 mb-1">
+              Lote Concluído
+            </h3>
+            <p className="text-sm text-gray-700 leading-relaxed">
+              Todas as avaliações foram finalizadas. Você pode solicitar a
+              emissão do laudo agora.
+            </p>
+            <p className="text-xs text-gray-600 mt-2">
+              Avaliações: {avaliacoesConcluidas}/
+              {totalAvaliacoes - avaliacoesInativadas} concluídas
+              {avaliacoesInativadas > 0 &&
+                ` (${avaliacoesInativadas} inativadas)`}
+            </p>
+          </div>
         </div>
-        <div className="flex-1">
-          <h3 className="text-xl font-bold text-gray-900 mb-1">
-            Lote Concluído
-          </h3>
-          <p className="text-sm text-gray-700 leading-relaxed">
-            Todas as avaliações foram finalizadas. Você pode solicitar a emissão
-            do laudo agora.
-          </p>
-          <p className="text-xs text-gray-600 mt-2">
-            Avaliações: {avaliacoesConcluidas}/
-            {totalAvaliacoes - avaliacoesInativadas} concluídas
-            {avaliacoesInativadas > 0 &&
-              ` (${avaliacoesInativadas} inativadas)`}
-          </p>
-        </div>
-      </div>
 
-      {/* Exibir avisos se houver */}
-      {validacao.avisos.length > 0 && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <p className="text-sm font-semibold text-yellow-800 mb-1">
-            ⚠️ Atenção:
-          </p>
-          <ul className="text-xs text-yellow-700 space-y-1">
-            {validacao.avisos.map((aviso, idx) => (
-              <li key={idx}>• {aviso}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {/* Exibir avisos se houver */}
+        {validacao.avisos.length > 0 && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm font-semibold text-yellow-800 mb-1">
+              ⚠️ Atenção:
+            </p>
+            <ul className="text-xs text-yellow-700 space-y-1">
+              {validacao.avisos.map((aviso, idx) => (
+                <li key={idx}>• {aviso}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      {/* Exibir erros se houver */}
-      {validacao.erros.length > 0 && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm font-semibold text-red-800 mb-1">
-            ❌ Não é possível emitir:
-          </p>
-          <ul className="text-xs text-red-700 space-y-1">
-            {validacao.erros.map((erro, idx) => (
-              <li key={idx}>• {erro}</li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {/* Exibir erros se houver */}
+        {validacao.erros.length > 0 && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm font-semibold text-red-800 mb-1">
+              ❌ Não é possível emitir:
+            </p>
+            <ul className="text-xs text-red-700 space-y-1">
+              {validacao.erros.map((erro, idx) => (
+                <li key={idx}>• {erro}</li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-      <button
-        onClick={handleSolicitar}
-        disabled={loading || !validacao.podeEmitir}
-        className="
+        <button
+          onClick={handleSolicitar}
+          disabled={loading || !validacao.podeEmitir}
+          className="
           w-full px-6 py-4 
           bg-gradient-to-r from-green-600 to-emerald-600 
           text-white rounded-lg 
@@ -277,48 +308,59 @@ export function BotaoSolicitarEmissao({
           shadow-md hover:shadow-lg
           transform hover:scale-[1.02] active:scale-[0.98]
         "
-        title={
-          !validacao.podeEmitir
-            ? 'Corrija os problemas antes de solicitar emissão'
-            : ''
-        }
-      >
-        {loading ? (
-          <>
-            <svg
-              className="animate-spin h-6 w-6"
-              viewBox="0 0 24 24"
-              fill="none"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-              />
-            </svg>
-            <span>Solicitando emissão...</span>
-          </>
-        ) : (
-          <>
-            <span className="text-2xl">🚀</span>
-            <span>Solicitar Emissão do Laudo</span>
-          </>
-        )}
-      </button>
+          title={
+            !validacao.podeEmitir
+              ? 'Corrija os problemas antes de solicitar emissão'
+              : ''
+          }
+        >
+          {loading ? (
+            <>
+              <svg
+                className="animate-spin h-6 w-6"
+                viewBox="0 0 24 24"
+                fill="none"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                />
+              </svg>
+              <span>Solicitando emissão...</span>
+            </>
+          ) : (
+            <>
+              <span className="text-2xl">🚀</span>
+              <span>Solicitar Emissão do Laudo</span>
+            </>
+          )}
+        </button>
 
-      {loading && (
-        <p className="text-xs text-center text-gray-600 mt-3 animate-pulse">
-          Aguarde, processando solicitação...
-        </p>
+        {loading && (
+          <p className="text-xs text-center text-gray-600 mt-3 animate-pulse">
+            Aguarde, processando solicitação...
+          </p>
+        )}
+      </div>
+
+      {modalConfirmacao && (
+        <ModalConfirmacaoSolicitar
+          isOpen={true}
+          onClose={() => setModalConfirmacao(null)}
+          loteId={loteId}
+          gestorEmail={modalConfirmacao.gestorEmail}
+          gestorCelular={modalConfirmacao.gestorCelular}
+        />
       )}
-    </div>
+    </>
   );
 }

@@ -25,29 +25,17 @@ describe('DadosStep', () => {
     const handleChange = jest.fn();
     const handleFile = jest.fn();
 
-    // Mock runtime config fetch used by component
-    const prevFetch = (global as unknown as { fetch?: unknown }).fetch;
-    (global as unknown as { fetch?: jest.Mock }).fetch = jest
-      .fn()
-      .mockResolvedValue({
-        json: () => Promise.resolve({ disableAnexos: false }),
-      });
+    render(
+      <DadosStep
+        dadostomador={baseDados}
+        arquivos={arquivos}
+        cnpjError={''}
+        onChange={handleChange}
+        onFileChange={handleFile}
+      />
+    );
 
-    try {
-      render(
-        <DadosStep
-          dadostomador={baseDados}
-          arquivos={arquivos}
-          cnpjError={''}
-          onChange={handleChange}
-          onFileChange={handleFile}
-        />
-      );
-    } finally {
-      (global as unknown as { fetch?: unknown }).fetch = prevFetch;
-    }
-
-    // Verificar campos
+    // Verificar campos de texto
     expect(screen.getByLabelText('Razão Social')).toBeInTheDocument();
     expect(screen.getByLabelText('CNPJ')).toBeInTheDocument();
 
@@ -65,57 +53,26 @@ describe('DadosStep', () => {
     expect(handleFile).toHaveBeenCalled();
   });
 
-  test('quando NEXT_PUBLIC_DISABLE_ANEXOS=true inputs de arquivo ficam desabilitados e aviso aparece', () => {
-    const prev = process.env.NEXT_PUBLIC_DISABLE_ANEXOS;
-    process.env.NEXT_PUBLIC_DISABLE_ANEXOS = 'true';
+  test('inputs de arquivo estão habilitados e são obrigatórios', () => {
+    const handleChange = jest.fn();
+    const handleFile = jest.fn();
 
-    try {
-      const handleChange = jest.fn();
-      const handleFile = jest.fn();
+    render(
+      <DadosStep
+        dadostomador={baseDados}
+        arquivos={arquivos}
+        cnpjError={''}
+        onChange={handleChange}
+        onFileChange={handleFile}
+      />
+    );
 
-      const prevFetch = (global as unknown as { fetch?: unknown }).fetch;
-      (global as unknown as { fetch?: jest.Mock }).fetch = jest
-        .fn()
-        .mockResolvedValue({
-          json: () => Promise.resolve({ disableAnexos: false }),
-        });
+    const cartao = screen.getByLabelText<HTMLInputElement>('Cartão CNPJ');
+    const contrato = screen.getByLabelText<HTMLInputElement>('Contrato Social');
 
-      try {
-        render(
-          <DadosStep
-            dadostomador={baseDados}
-            arquivos={arquivos}
-            cnpjError={''}
-            onChange={handleChange}
-            onFileChange={handleFile}
-          />
-        );
-
-        // Aviso visível
-        expect(
-          screen.getByText(/Uploads estão temporariamente desabilitados/i)
-        ).toBeInTheDocument();
-
-        const cartao = screen.getByLabelText<HTMLInputElement>('Cartão CNPJ');
-        const contrato =
-          screen.getByLabelText<HTMLInputElement>('Contrato Social');
-
-        expect(cartao.disabled).toBe(true);
-        expect(contrato.disabled).toBe(true);
-
-        // required não deve estar presente
-        expect(cartao.hasAttribute('required')).toBe(false);
-        expect(contrato.hasAttribute('required')).toBe(false);
-
-        // A entrada deve estar desabilitada (comportamento visual / de acesso)
-        // (Não testamos que onFileChange não seja chamado por eventos simulados do DOM)
-        expect(cartao.disabled).toBe(true);
-        expect(contrato.disabled).toBe(true);
-      } finally {
-        (global as unknown as { fetch?: unknown }).fetch = prevFetch;
-      }
-    } finally {
-      process.env.NEXT_PUBLIC_DISABLE_ANEXOS = prev;
-    }
+    expect(cartao.disabled).toBe(false);
+    expect(contrato.disabled).toBe(false);
+    expect(cartao.hasAttribute('required')).toBe(true);
+    expect(contrato.hasAttribute('required')).toBe(true);
   });
 });

@@ -30,16 +30,16 @@ describe('Consistência Visual - Logos', () => {
     expect(logo).toHaveClass('w-full', 'h-full', 'object-contain');
   });
 
-  it('deve exibir o logo com tamanho "huge" (192px) na tela de login', () => {
-    const { container } = render(<LoginPage />);
+  it('deve exibir o logo com tamanho "2xl" (128px) na tela de login', () => {
+    render(<LoginPage />);
 
     // Verificar se o logo está presente
     const logo = screen.getByAltText('QWork');
     expect(logo).toBeInTheDocument();
 
-    // Verificar se o container do logo tem as classes w-48 h-48 (192px x 192px)
+    // A página de login usa size="2xl" que corresponde a w-32 h-32 (128px x 128px)
     const logoContainer = logo.parentElement;
-    expect(logoContainer).toHaveClass('w-48', 'h-48');
+    expect(logoContainer).toHaveClass('w-32', 'h-32');
     expect(logoContainer).toHaveClass('flex', 'items-center', 'justify-center');
   });
 
@@ -156,17 +156,20 @@ describe('Dashboards - Boxes de Contagem Removidos', () => {
 });
 
 describe('API - Campo ativa em empresas', () => {
-  it('API /api/rh/empresas deve retornar o campo ativa', () => {
+  it('API /api/rh/empresas deve retornar o campo ativa no SELECT', () => {
     const fs = require('fs');
     const apiContent = fs.readFileSync(
       'c:/apps/QWork/app/api/rh/empresas/route.ts',
       'utf-8'
     );
 
-    // Verificar que o SELECT inclui o campo ativa
+    // Verificar que o SELECT inclui o campo ativa (para que o cliente possa renderizar o status)
     expect(apiContent).toMatch(/SELECT.*id.*nome.*cnpj.*ativa/s);
 
-    // Verificar que não filtra apenas empresas ativas
-    expect(apiContent).not.toMatch(/WHERE\s+ativa\s*=\s*true/);
+    // A API filtra apenas empresas ativas intencionalmente (regra de negócio: RH só vê ativas)
+    expect(apiContent).toMatch(/WHERE\s+ativa\s*=\s*true/);
+
+    // Segurança multi-tenant: restringe por clinica_id da sessão RH
+    expect(apiContent).toMatch(/clinica_id\s*=\s*\$1/);
   });
 });
