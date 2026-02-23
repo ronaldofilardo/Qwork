@@ -117,7 +117,8 @@ async function salvarArquivoEmpresa(
   const cnpjClean = cnpj.replace(/\D/g, '');
 
   // Usar função compartilhada de storage que detecta DEV/PROD
-  const { uploadArquivoCadastro } = await import('@/lib/storage/cadastro-storage');
+  const { uploadArquivoCadastro } =
+    await import('@/lib/storage/cadastro-storage');
   const result = await uploadArquivoCadastro(buffer, tipo, cnpjClean);
 
   return result.path;
@@ -140,7 +141,7 @@ export async function POST(request: Request) {
     const isMultipart = contentType.includes('multipart/form-data');
 
     let body: Record<string, string>;
-    let arquivos: Record<string, File | null> = {};
+    const arquivos: Record<string, File | null> = {};
 
     if (isMultipart) {
       const formData = await request.formData();

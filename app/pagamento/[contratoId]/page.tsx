@@ -32,7 +32,7 @@ export default function PagamentoPage() {
   const [metodoSelecionado, setMetodoSelecionado] =
     useState<MetodoPagamento>('pix');
   const [numeroParcelas, setNumeroParcelas] = useState<number>(1);
-  const [processando, setProcessando] = useState(false);
+  const [processando, _setProcessando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [mostrarCheckout, setMostrarCheckout] = useState(false);
 
