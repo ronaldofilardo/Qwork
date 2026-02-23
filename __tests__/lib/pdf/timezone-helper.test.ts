@@ -5,35 +5,34 @@ import {
   formatarHora,
 } from '@/lib/pdf/timezone-helper';
 
-describe('Timezone Helper - Correção de +3 Horas em PROD', () => {
+describe('Timezone Helper - Sempre exibir horário de São Paulo (America/Sao_Paulo)', () => {
   /**
-   * PROBLEMA ORIGINAL (reportado em 17/02/2026):
-   * - Relatório Individual: 16:31:16 ao invés de 13:31:16 (+3 horas)
-   * - Conclusão da Avaliação: 16:23:23 ao invés de 13:23:23 (+3 horas)
-   * - Relatório de Lote: 16:30:20 ao invés de 13:30:20 (+3 horas)
+   * SOLUÇÃO DEFINITIVA (corrigida em 23/02/2026):
+   * Usar timeZone: 'America/Sao_Paulo' em todas as funções de formatação.
+   * Isso garante exibição correta independentemente de onde o código executa:
+   *   - Vercel (UTC): new Date() = 22:13 UTC → exibe 19:13 São Paulo ✓
+   *   - Máquina local Brasil (UTC-3): new Date() = 22:13 UTC → exibe 19:13 São Paulo ✓
    *
-   * SOLUÇÃO: Subtrair 3 horas de todos os timestamps antes de formatar
+   * PROBLEMA ANTERIOR:
+   *   A abordagem de subtrair 3h manualmente + toLocaleString sem timezone
+   *   causava dupla subtração quando executado em máquina local no Brasil.
    */
 
   describe('corrigirTimezone', () => {
-    it('deve subtrair 3 horas de uma data Date', () => {
+    it('deve parsear uma data Date e retorná-la sem modificação', () => {
       const dataOriginal = new Date('2026-02-17T16:31:16Z');
-      const dataCorrigida = corrigirTimezone(dataOriginal);
+      const dataRetornada = corrigirTimezone(dataOriginal);
 
-      // Depois de subtrair 3 horas, o tempo deve estar 3h menor
-      const diffMs = dataOriginal.getTime() - dataCorrigida.getTime();
-      const diffHoras = diffMs / (1000 * 60 * 60);
-      expect(diffHoras).toBe(3);
+      // Não altera o timestamp
+      expect(dataRetornada.getTime()).toBe(dataOriginal.getTime());
     });
 
-    it('deve subtrair 3 horas de uma string ISO', () => {
-      const dataOriginal = new Date('2026-02-17T16:23:23Z');
-      const dataCorrigida = corrigirTimezone(dataOriginal);
+    it('deve parsear uma string ISO e retornar o Date equivalente', () => {
+      const str = '2026-02-17T16:31:16Z';
+      const dataRetornada = corrigirTimezone(str);
 
-      // Depois de subtrair 3 horas, o tempo deve estar 3h menor
-      const diffMs = dataOriginal.getTime() - dataCorrigida.getTime();
-      const diffHoras = diffMs / (1000 * 60 * 60);
-      expect(diffHoras).toBe(3);
+      expect(dataRetornada).toBeInstanceOf(Date);
+      expect(dataRetornada.getTime()).toBe(new Date(str).getTime());
     });
 
     it('deve retornar data atual se null/undefined', () => {
@@ -43,118 +42,122 @@ describe('Timezone Helper - Correção de +3 Horas em PROD', () => {
   });
 
   describe('formatarDataCorrigida', () => {
-    it('deve formatar data com timezone corrigido (problema original)', () => {
-      // Dados SEM timezone do banco: "2026-02-17 16:31:16"
-      // JavaScript interpreta como local: 16:31
-      // Exibição atual: 16:31 (ERRADO, deveria ser 13:31)
-      const dataProblematica = new Date('2026-02-17 16:31:16');
-      const resultado = formatarDataCorrigida(dataProblematica);
+    it('deve formatar timestamp UTC como horário de São Paulo (UTC-3)', () => {
+      // 16:31 UTC = 13:31 São Paulo (UTC-3)
+      const dataUTC = new Date('2026-02-17T16:31:16Z');
+      const resultado = formatarDataCorrigida(dataUTC);
 
-      // Deve exibir 13:31:16, não 16:31:16
       expect(resultado).toContain('13:31:16');
-      expect(resultado).not.toContain('16:31:16');
+      expect(resultado).toContain('17/02/2026');
     });
 
-    it('deve formatar corretamente o exemplo do relatório individual', () => {
-      // Dados do banco: "2026-02-17 16:23:23"
-      const data = new Date('2026-02-17 16:23:23');
+    it('deve formatar corretamente o caso do relatório individual (UTC)', () => {
+      // 16:23 UTC = 13:23 São Paulo
+      const data = new Date('2026-02-17T16:23:23Z');
       const resultado = formatarDataCorrigida(data);
 
-      // Esperado: 17/02/2026, 13:23:23
       expect(resultado).toMatch(/17\/02\/2026.*13:23:23/);
     });
 
-    it('deve formatar corretamente o exemplo do relatório lote', () => {
-      // Dados do banco: "2026-02-17 16:30:20"
-      const data = new Date('2026-02-17 16:30:20');
+    it('deve formatar corretamente o caso do relatório de lote (UTC)', () => {
+      // 16:30 UTC = 13:30 São Paulo
+      const data = new Date('2026-02-17T16:30:20Z');
       const resultado = formatarDataCorrigida(data);
 
-      // Esperado: 17/02/2026, 13:30:20
       expect(resultado).toMatch(/17\/02\/2026.*13:30:20/);
     });
   });
 
   describe('formatarDataApenasData', () => {
-    it('deve formatar apenas data sem hora', () => {
+    it('deve formatar apenas data sem hora no fuso de São Paulo', () => {
       const data = new Date('2026-02-17T16:31:16Z');
       const resultado = formatarDataApenasData(data);
 
-      // Deve exibir apenas data: 17/02/2026
       expect(resultado).toMatch(/\d{2}\/\d{2}\/\d{4}/);
       expect(resultado).not.toContain(':');
+      expect(resultado).toBe('17/02/2026');
     });
   });
 
   describe('formatarHora', () => {
-    it('deve formatar apenas a hora com timezone corrigido', () => {
-      // Dados do banco: "2026-02-17 16:31:16"
-      const data = new Date('2026-02-17 16:31:16');
+    it('deve formatar hora UTC corretamente no fuso de São Paulo', () => {
+      // 16:31 UTC = 13:31 São Paulo
+      const data = new Date('2026-02-17T16:31:16Z');
       const resultado = formatarHora(data);
 
-      // Deve exibir 13:31:16 (não 16:31:16)
       expect(resultado).toMatch(/13:31:16/);
-      expect(resultado).not.toContain('16:31:16');
+    });
+
+    it('deve exibir 19:13 para laudo gerado às 19:13 São Paulo (22:13 UTC)', () => {
+      // Caso real: emissor local no Brasil emite às 19:13 São Paulo = 22:13 UTC
+      const data = new Date('2026-02-23T22:13:24Z');
+      const resultado = formatarHora(data);
+
+      expect(resultado).toMatch(/19:13:24/);
     });
   });
 
   describe('Casos reais reportados', () => {
-    it('Caso 1: Geração do relatório individual - concluída_em', () => {
-      // Problema: "17/02/2026, 16:31:16" mas o correto é "17/02/2026, 13:31:16"
-      // Dados do banco: "2026-02-17 16:31:16"
-      const dataFromDB = '2026-02-17 16:31:16';
+    it('Caso 1: Relatório individual - timestamp UTC da Vercel', () => {
+      // Vercel (UTC) registrou 16:31 UTC = 13:31 São Paulo
+      const dataFromDB = new Date('2026-02-17T16:31:16Z');
       const resultado = formatarDataCorrigida(dataFromDB);
 
       expect(resultado).toContain('13:31:16');
-      expect(resultado).not.toContain('16:31:16');
     });
 
-    it('Caso 2: Conclusão da avaliação dentro do relatório', () => {
-      // Problema: "17/02/2026, 16:23:23" mas o correto é "17/02/2026, 13:23:23"
-      // Dados do banco: "2026-02-17 16:23:23"
-      const dataFromDB = '2026-02-17 16:23:23';
+    it('Caso 2: Conclusão da avaliação - timestamp UTC da Vercel', () => {
+      // Vercel (UTC) registrou 16:23 UTC = 13:23 São Paulo
+      const dataFromDB = new Date('2026-02-17T16:23:23Z');
       const resultado = formatarDataCorrigida(dataFromDB);
 
       expect(resultado).toContain('13:23:23');
-      expect(resultado).not.toContain('16:23:23');
     });
 
-    it('Caso 3: Relatório de lote - emitido_em', () => {
-      // Problema: "Concluído em 17/02/2026, 16:30:20" mas correto é "Concluído em 17/02/2026, 13:30:20"
-      // Dados do banco: "2026-02-17 16:30:20"
-      const dataFromDB = '2026-02-17 16:30:20';
+    it('Caso 3: Relatório de lote - emitido_em UTC', () => {
+      // Vercel (UTC) registrou 16:30 UTC = 13:30 São Paulo
+      const dataFromDB = new Date('2026-02-17T16:30:20Z');
       const resultado = formatarDataCorrigida(dataFromDB);
 
       expect(resultado).toContain('13:30:20');
-      expect(resultado).not.toContain('16:30:20');
+    });
+
+    it('Caso 4: Laudo gerado localmente no Brasil às 19:13 (novo bug corrigido)', () => {
+      // Emissor local: 19:13 São Paulo = 22:13 UTC
+      const dataFromDB = new Date('2026-02-23T22:13:24Z');
+      const resultado = formatarDataCorrigida(dataFromDB);
+
+      expect(resultado).toContain('19:13:24');
     });
   });
 
   describe('Tratamento de datas limítrofes', () => {
-    it('deve manter diferença de 3 horas para qualquer hora do dia', () => {
-      // Validar que sempre subtrai 3 horas
-      const data1 = new Date('2026-02-17 10:00:00');
-      const data2 = new Date('2026-02-17 14:00:00');
+    it('deve exibir hora correta de São Paulo para qualquer hora do dia', () => {
+      // 10:00 UTC = 07:00 São Paulo
+      const data1 = new Date('2026-02-17T10:00:00Z');
+      // 17:00 UTC = 14:00 São Paulo
+      const data2 = new Date('2026-02-17T17:00:00Z');
 
-      const corrigida1 = corrigirTimezone(data1);
-      const corrigida2 = corrigirTimezone(data2);
+      const hora1 = formatarHora(data1);
+      const hora2 = formatarHora(data2);
 
-      // Diferença deve ser sempre 3 horas
-      const diff = (data1.getTime() - corrigida1.getTime()) / (1000 * 60 * 60);
-      expect(diff).toBe(3);
-
-      const diff2 = (data2.getTime() - corrigida2.getTime()) / (1000 * 60 * 60);
-      expect(diff2).toBe(3);
+      expect(hora1).toMatch(/07:00:00/);
+      expect(hora2).toMatch(/14:00:00/);
     });
 
-    it('deve funcionar em horários variados', () => {
-      const horarios = ['08:30:00', '12:00:00', '18:45:00', '23:59:59'];
+    it('deve funcionar em horários variados sempre no fuso de São Paulo', () => {
+      // Horários UTC → esperado em São Paulo (UTC-3)
+      const casos = [
+        { utc: '2026-02-17T11:30:00Z', spHora: '08:30:00' },
+        { utc: '2026-02-17T15:00:00Z', spHora: '12:00:00' },
+        { utc: '2026-02-17T21:45:00Z', spHora: '18:45:00' },
+        { utc: '2026-02-18T02:59:59Z', spHora: '23:59:59' },
+      ];
 
-      for (const horario of horarios) {
-        const data = new Date(`2026-02-17 ${horario}`);
-        const corrigida = corrigirTimezone(data);
-
-        const diff = (data.getTime() - corrigida.getTime()) / (1000 * 60 * 60);
-        expect(diff).toBe(3);
+      for (const { utc, spHora } of casos) {
+        const data = new Date(utc);
+        const resultado = formatarHora(data);
+        expect(resultado).toMatch(new RegExp(spHora));
       }
     });
   });

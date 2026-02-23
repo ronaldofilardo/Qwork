@@ -9,7 +9,6 @@ import {
 } from '../laudo-tipos';
 import { getLogoSignatureTemplate } from '../pdf/puppeteer-templates';
 import {
-  formatarDataCorrigida,
   formatarDataApenasData,
   formatarHora,
 } from '../pdf/timezone-helper';
@@ -557,16 +556,16 @@ export function gerarHTMLLaudoCompleto(
     laudoPadronizado;
 
   const date = emitidoEm ? new Date(emitidoEm) : new Date();
-  const dateCorrigida = formatarDataCorrigida(date);
   const dateApenasData = formatarDataApenasData(date);
   const hora = formatarHora(date);
 
-  const formattedHeaderDate =
-    new Date(dateCorrigida).getDate() +
-    ' de ' +
-    new Date(dateCorrigida).toLocaleDateString('pt-BR', { month: 'long' }) +
-    ' de ' +
-    new Date(dateCorrigida).getFullYear();
+  // Formata como "23 de fevereiro de 2026" sempre no fuso de São Paulo
+  const formattedHeaderDate = date.toLocaleDateString('pt-BR', {
+    timeZone: 'America/Sao_Paulo',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
   const formattedDataAssinatura = `${dateApenasData} ${hora} -0300`;
   const formattedDataEmissao = `${dateApenasData} ${hora}`;
 

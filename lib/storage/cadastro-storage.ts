@@ -31,7 +31,13 @@ async function uploadArquivoCadastroLocal(
   const fs = await import('fs/promises');
   const path = await import('path');
 
-  const uploadDir = path.join(process.cwd(), 'public', 'uploads', 'cadastros', cnpj);
+  const uploadDir = path.join(
+    process.cwd(),
+    'public',
+    'uploads',
+    'cadastros',
+    cnpj
+  );
   await fs.mkdir(uploadDir, { recursive: true });
 
   const ext = 'pdf'; // ou extrair de metadata se necessário
@@ -51,7 +57,7 @@ async function uploadArquivoCadastroLocal(
  * Upload para Backblaze (PROD)
  *
  * Faz upload direto para o bucket configurado em PROD com caminho:
- * /laudos/cad-qwork/{cnpj}/{tipo}_{timestamp}.{ext}
+ * cad-qwork/{cnpj}/{tipo}_{timestamp}.{ext}
  */
 async function uploadArquivoCadastroToBackblaze(
   buffer: Buffer,
@@ -62,10 +68,10 @@ async function uploadArquivoCadastroToBackblaze(
     // Detectar extensão pelo tipo MIME ou usar extensão padrão
     const ext = 'pdf'; // Em produção, esperamos sempre PDF
 
-    // Caminho no bucket: /laudos/cad-qwork/{cnpj}/{tipo}_{timestamp}.{ext}
+    // Caminho no bucket: cad-qwork/{cnpj}/{tipo}_{timestamp}.{ext}
     const timestamp = Date.now();
     const random = Math.random().toString(36).slice(2, 8);
-    const key = `laudos/cad-qwork/${cnpj}/${tipo}-${timestamp}-${random}.${ext}`;
+    const key = `cad-qwork/${cnpj}/${tipo}-${timestamp}-${random}.${ext}`;
 
     const result = await uploadToBackblaze(buffer, key, 'application/pdf');
 
@@ -83,7 +89,10 @@ async function uploadArquivoCadastroToBackblaze(
       },
     };
   } catch (error) {
-    console.error('[STORAGE] Erro ao upload arquivo de cadastro para Backblaze:', error);
+    console.error(
+      '[STORAGE] Erro ao upload arquivo de cadastro para Backblaze:',
+      error
+    );
     throw new Error(
       `Falha ao salvar arquivo de cadastro: ${error instanceof Error ? error.message : String(error)}`
     );
@@ -94,7 +103,7 @@ async function uploadArquivoCadastroToBackblaze(
  * Fazer upload de arquivo de cadastro (entidade/clínica/empresa)
  *
  * Em DEV: salva em public/uploads/
- * Em PROD: upload para Backblaze (ao bucket `d2eaa89114748cc094c10211` no caminho `/laudos/cad-qwork/{cnpj}/`)
+ * Em PROD: upload para Backblaze (ao bucket `d2eaa89114748cc094c10211` no caminho `/cad-qwork/{cnpj}/`)
  *
  * @param buffer - Buffer do arquivo
  * @param tipo - Tipo de arquivo (cartao_cnpj, contrato_social, doc_identificacao)
@@ -106,7 +115,8 @@ export async function uploadArquivoCadastro(
   tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
   cnpj: string
 ): Promise<CadastroArquivoResult> {
-  const isServerless = process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  const isServerless =
+    process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
 
   if (isServerless) {
     // PROD: Upload para Backblaze
