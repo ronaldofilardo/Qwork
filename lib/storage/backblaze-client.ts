@@ -166,15 +166,18 @@ function getBackblazeConfig(): BackblazeConfig {
  * @param buffer - Buffer do arquivo
  * @param key - Chave (caminho) do arquivo no bucket
  * @param contentType - Tipo MIME do arquivo
+ * @param bucketOverride - Sobrescreve o bucket padrão (BACKBLAZE_BUCKET) para este upload
  * @returns Informações do arquivo armazenado
  */
 export async function uploadToBackblaze(
   buffer: Buffer,
   key: string,
-  contentType: string = 'application/pdf'
+  contentType: string = 'application/pdf',
+  bucketOverride?: string
 ): Promise<UploadResult> {
   try {
     const config = getBackblazeConfig();
+    const bucket = bucketOverride ?? config.bucket;
 
     // Usar SDK da AWS (compatível com S3) para Backblaze
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
@@ -193,7 +196,7 @@ export async function uploadToBackblaze(
     const md5Hash = crypto.createHash('md5').update(buffer).digest('base64');
 
     const command = new PutObjectCommand({
-      Bucket: config.bucket,
+      Bucket: bucket,
       Key: key,
       Body: buffer,
       ContentType: contentType,
@@ -208,14 +211,14 @@ export async function uploadToBackblaze(
     const response = await client.send(command);
 
     console.log(
-      `[BACKBLAZE] Upload bem-sucedido: ${key} (${buffer.length} bytes)`
+      `[BACKBLAZE] Upload bem-sucedido: ${key} (${buffer.length} bytes) → bucket: ${bucket}`
     );
 
     return {
       provider: 'backblaze',
-      bucket: config.bucket,
+      bucket,
       key,
-      url: `${config.endpoint}/${config.bucket}/${key}`,
+      url: `${config.endpoint}/${bucket}/${key}`,
       etag: response.ETag,
     };
   } catch (error: any) {
