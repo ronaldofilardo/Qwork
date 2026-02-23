@@ -44,9 +44,7 @@ describe('FlowStepsExplainer', () => {
     it('não exibe tooltip antes do hover', () => {
       render(<FlowStepsExplainer />);
       expect(
-        screen.queryByText(
-          /Cadastre os funcionários que serão avaliados/
-        )
+        screen.queryByText(/Cadastre os funcionários que serão avaliados/)
       ).not.toBeInTheDocument();
     });
 
@@ -113,9 +111,7 @@ describe('FlowStepsExplainer', () => {
       render(<FlowStepsExplainer />);
       const btn = screen.getByText('Emissão e Recebimento do Laudo');
       fireEvent.mouseEnter(btn);
-      expect(
-        screen.getByText(/incluído no PGR/)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/incluído no PGR/)).toBeInTheDocument();
     });
   });
 

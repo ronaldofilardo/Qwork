@@ -87,9 +87,9 @@ describe('DetalhesLotePage - Filtros por Coluna', () => {
   it('deve renderizar a página de detalhes do lote com filtros por coluna', async () => {
     render(<DetalhesLotePage />);
 
-    // Aguardar carregamento
+    // Aguardar carregamento — o componente exibe o ID do lote como título (titulo foi removido)
     await waitFor(() => {
-      expect(screen.getByText('Lote de Teste')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { name: '1' })).toBeInTheDocument();
     });
 
     // Verificar se os botões de filtro estão presentes no cabeçalho da tabela
@@ -109,7 +109,6 @@ describe('DetalhesLotePage - Filtros por Coluna', () => {
     render(<DetalhesLotePage />);
 
     // Este teste verifica apenas se a tabela é renderizada corretamente
-    // Os dados específicos são verificados no teste principal
     await waitFor(() => {
       expect(
         screen.getByText('Mostrando 1 de 1 funcionário(s)')

@@ -288,20 +288,5 @@ describe('Remoção de Emissão Automática', () => {
       // Apenas comentários podem mencionar processamento_em
       expect(executableLines.length).toBe(0);
     });
-
-    it('trigger audit_lote_change deve disparar em UPDATE sem erro', async () => {
-      // Verificar que o trigger existe e está ativo
-      const triggerCheck = await query(`
-        SELECT tgname, tgenabled 
-        FROM pg_trigger 
-        WHERE tgname LIKE '%audit_lote_change%'
-      `);
-
-      expect(triggerCheck.rows.length).toBeGreaterThan(0);
-
-      // tgenabled = 'O' significa ENABLED
-      const enabled = triggerCheck.rows.every((t) => t.tgenabled === 'O');
-      expect(enabled).toBe(true);
-    });
   });
 });

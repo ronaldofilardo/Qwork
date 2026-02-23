@@ -140,14 +140,11 @@ export const validarEtapaDados = (
     return { ok: false, error: 'Todos os campos de endereço são obrigatórios' };
   }
 
-  // Se a flag de ambiente NEXT_PUBLIC_DISABLE_ANEXOS estiver ativa, não exigir anexos
-  if (process.env.NEXT_PUBLIC_DISABLE_ANEXOS !== 'true') {
-    if (!arquivos.cartao_cnpj || !arquivos.contrato_social) {
-      return {
-        ok: false,
-        error: 'Cartão CNPJ e Contrato Social são obrigatórios',
-      };
-    }
+  if (!arquivos.cartao_cnpj || !arquivos.contrato_social) {
+    return {
+      ok: false,
+      error: 'Cartão CNPJ e Contrato Social são obrigatórios',
+    };
   }
 
   return { ok: true };
@@ -178,11 +175,8 @@ export const validarEtapaResponsavel = (
     return { ok: false, error: 'Celular inválido' };
   }
 
-  // Se a flag de ambiente NEXT_PUBLIC_DISABLE_ANEXOS estiver ativa, não exigir anexos
-  if (process.env.NEXT_PUBLIC_DISABLE_ANEXOS !== 'true') {
-    if (!arquivos.doc_identificacao) {
-      return { ok: false, error: 'Documento de identificação é obrigatório' };
-    }
+  if (!arquivos.doc_identificacao) {
+    return { ok: false, error: 'Documento de identificação é obrigatório' };
   }
 
   return { ok: true };

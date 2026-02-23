@@ -155,14 +155,19 @@ describe('Validação de Constraints e Integridade do Banco', () => {
       // Criar clínica
       const tomador = await query(
         `INSERT INTO clinicas (
-          nome, cnpj, email, ativa
+          nome, cnpj, email, ativa,
+          telefone, endereco, cidade, estado, cep,
+          responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
         ) VALUES (
-          $1, $2, $3, true
+          $1, $2, $3, true,
+          '11987654321', 'Rua Const 123', 'São Paulo', 'SP', '01314-000',
+          'Responsável Const', $4, $3, '11987654321'
         ) RETURNING id`,
         [
           `Clínica Func ${timestamp}`,
           `${String(timestamp).slice(-8)}0003${String(timestamp % 100).padStart(2, '0')}`,
           `cli_func${timestamp}@teste.com`,
+          String(timestamp + 300).slice(-11),
         ]
       );
 

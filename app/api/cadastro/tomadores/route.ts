@@ -274,36 +274,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Validar arquivos obrigatórios (exceto se flag NEXT_PUBLIC_DISABLE_ANEXOS estiver ativa)
-  const anexosDesabilitados = process.env.NEXT_PUBLIC_DISABLE_ANEXOS === 'true';
-
-  if (!anexosDesabilitados) {
-    if (!cartaoCnpjFile || !contratoSocialFile || !docIdentificacaoFile) {
-      console.info(
-        JSON.stringify({
-          event: 'cadastro_validation_failed',
-          reason: 'anexos_faltando',
-        })
-      );
-      return NextResponse.json(
-        {
-          error:
-            'Todos os anexos são obrigatórios (Cartão CNPJ, Contrato Social, Doc Identificação)',
-        },
-        { status: 400 }
-      );
-    }
-  } else {
+  // Validar arquivos obrigatórios
+  if (!cartaoCnpjFile || !contratoSocialFile || !docIdentificacaoFile) {
     console.info(
       JSON.stringify({
-        event: 'cadastro_anexos_desabilitados',
-        flag: 'NEXT_PUBLIC_DISABLE_ANEXOS=true',
+        event: 'cadastro_validation_failed',
+        reason: 'anexos_faltando',
       })
+    );
+    return NextResponse.json(
+      {
+        error:
+          'Todos os anexos são obrigatórios (Cartão CNPJ, Contrato Social, Doc Identificação)',
+      },
+      { status: 400 }
     );
   }
 
-  // Validar tipos de arquivo (PDF ou imagem) - apenas se anexos não estiverem desabilitados
-  if (!anexosDesabilitados) {
+  // Validar tipos de arquivo (PDF ou imagem)
+  {
     const allowedTypes = [
       'application/pdf',
       'image/jpeg',
@@ -335,41 +324,39 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // Salvar arquivos (com tratamento e logs) - apenas se anexos não estiverem desabilitados
+  // Salvar arquivos
   const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
   let cartaoCnpjPath: string | null = null;
   let contratoSocialPath: string | null = null;
   let docIdentificacaoPath: string | null = null;
 
-  if (!anexosDesabilitados) {
-    try {
-      cartaoCnpjPath = await salvarArquivo(
-        cartaoCnpjFile as File,
-        'cartao_cnpj',
-        cnpjLimpo
-      );
-      contratoSocialPath = await salvarArquivo(
-        contratoSocialFile as File,
-        'contrato_social',
-        cnpjLimpo
-      );
-      docIdentificacaoPath = await salvarArquivo(
-        docIdentificacaoFile as File,
-        'doc_identificacao',
-        cnpjLimpo
-      );
-    } catch (fileError) {
-      console.error(
-        JSON.stringify({
-          event: 'cadastro_file_save_error',
-          error: String(fileError),
-        })
-      );
-      return NextResponse.json(
-        { error: 'Erro ao salvar os anexos', details: String(fileError) },
-        { status: 500 }
-      );
-    }
+  try {
+    cartaoCnpjPath = await salvarArquivo(
+      cartaoCnpjFile as File,
+      'cartao_cnpj',
+      cnpjLimpo
+    );
+    contratoSocialPath = await salvarArquivo(
+      contratoSocialFile as File,
+      'contrato_social',
+      cnpjLimpo
+    );
+    docIdentificacaoPath = await salvarArquivo(
+      docIdentificacaoFile as File,
+      'doc_identificacao',
+      cnpjLimpo
+    );
+  } catch (fileError) {
+    console.error(
+      JSON.stringify({
+        event: 'cadastro_file_save_error',
+        error: String(fileError),
+      })
+    );
+    return NextResponse.json(
+      { error: 'Erro ao salvar os anexos', details: String(fileError) },
+      { status: 500 }
+    );
   }
 
   // Executar dentro de uma transação atômica

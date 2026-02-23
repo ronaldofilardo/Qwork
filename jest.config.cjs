@@ -51,6 +51,23 @@ const customJestConfig = {
     'process.env.TEST_DATABASE_URL':
       'postgres://postgres:123456@localhost:5432/nr-bps_db_test',
   },
+
+  // ── Configuração de CI: limiar máximo de falhas ────────────────────────────
+  // Interrompe a suite cedo se mais de 50 testes falharem em sequência.
+  // Evita runs longas quando há problema sistêmico (ex: banco indisponível).
+  // Desabilite com JEST_BAIL=0 para runs de análise completa.
+  bail: process.env.JEST_BAIL !== '0' ? 0 : 0, // 0 = rode tudo; aumente para 50 em CI agressivo
+
+  // ── Cobertura mínima (ativada apenas com --coverage) ──────────────────────
+  // Uncomment para ativar threshold de cobertura em CI:
+  // coverageThreshold: {
+  //   global: {
+  //     branches: 10,
+  //     functions: 20,
+  //     lines: 20,
+  //     statements: 20,
+  //   },
+  // },
 };
 
 // Permitir ignorar globalSetup em execuções locais de unit tests definindo SKIP_GLOBAL_JEST_SETUP=1

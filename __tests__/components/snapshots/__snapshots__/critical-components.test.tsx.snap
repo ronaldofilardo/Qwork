@@ -1,0 +1,894 @@
+// Jest Snapshot v1, https://jestjs.io/docs/snapshot-testing
+
+exports[`LotesGrid — snapshots estado de download em andamento 1`] = `
+<div
+  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+>
+  <div
+    aria-label="Ver detalhes do lote 2"
+    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="flex items-center justify-between mb-1"
+      >
+        <h5
+          class="font-semibold text-gray-800 text-base"
+        >
+          Lote ID: 
+          2
+        </h5>
+      </div>
+      <p
+        class="text-sm text-gray-600"
+      >
+        Empresa: 
+        Empresa Snapshot Teste
+      </p>
+      <p
+        class="text-xs text-gray-500"
+      >
+        Liberado em
+         
+        15/01/2026
+         às
+         
+        07:00
+      </p>
+    </div>
+    <div
+      class="space-y-2 mb-4"
+    >
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Avaliações liberadas:
+        </span>
+        <span
+          class="font-medium"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Concluídas:
+        </span>
+        <span
+          class="font-medium text-green-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Ativas consideradas:
+        </span>
+        <span
+          class="font-medium text-blue-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Status relatório:
+        </span>
+        <span
+          class="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-800"
+        >
+          Pronto
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Taxa de conclusão:
+        </span>
+        <span
+          class="font-medium text-gray-700"
+        >
+          100.00
+          %
+           
+          <span
+            class="text-xs text-gray-500"
+          >
+            (informativa)
+          </span>
+        </span>
+      </div>
+    </div>
+    <div
+      class="p-3 bg-blue-50 rounded border border-blue-200"
+    >
+      <div
+        class="flex items-center justify-between mb-2"
+      >
+        <span
+          class="text-sm font-medium text-blue-800"
+        >
+          📄 Laudo disponível
+        </span>
+        <span
+          class="text-xs text-blue-600"
+        >
+          20/01/2026 às 11:30
+        </span>
+      </div>
+      <p
+        class="text-xs text-blue-700 mb-2"
+      >
+        Emissor: 
+        Dr. João Silva
+      </p>
+      <button
+        class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-3"
+        disabled=""
+      >
+        Baixando...
+      </button>
+      <div
+        class="bg-white p-2 rounded border border-blue-100"
+      >
+        <div
+          class="flex items-center justify-between mb-1"
+        >
+          <span
+            class="text-xs font-semibold text-blue-800"
+          >
+            🔒 Hash SHA-256
+          </span>
+          <button
+            aria-label="Copiar hash do laudo ID 10"
+            class="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:outline-none"
+            title="Copiar hash completo"
+          >
+            📋 Copiar
+          </button>
+        </div>
+        <code
+          class="text-[10px] font-mono text-gray-700 break-all block"
+        >
+          abc123def456
+        </code>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LotesGrid — snapshots estado vazio (sem lotes) 1`] = `
+<div
+  class="text-center py-12"
+>
+  <div
+    class="text-6xl mb-4"
+  >
+    📋
+  </div>
+  <h4
+    class="text-xl font-semibold text-gray-600 mb-2"
+  >
+    Nenhum ciclo encontrado
+  </h4>
+  <p
+    class="text-gray-500"
+  >
+    Libere um novo lote de avaliações para começar.
+  </p>
+</div>
+`;
+
+exports[`LotesGrid — snapshots lote ativo sem laudo 1`] = `
+<div
+  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+>
+  <div
+    aria-label="Ver detalhes do lote 1"
+    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="flex items-center justify-between mb-1"
+      >
+        <h5
+          class="font-semibold text-gray-800 text-base"
+        >
+          Lote ID: 
+          1
+        </h5>
+      </div>
+      <p
+        class="text-sm text-gray-600"
+      >
+        Empresa: 
+        Empresa Snapshot Teste
+      </p>
+      <p
+        class="text-xs text-gray-500"
+      >
+        Liberado em
+         
+        15/01/2026
+         às
+         
+        07:00
+      </p>
+    </div>
+    <div
+      class="space-y-2 mb-4"
+    >
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Avaliações liberadas:
+        </span>
+        <span
+          class="font-medium"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Concluídas:
+        </span>
+        <span
+          class="font-medium text-green-600"
+        >
+          5
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Ativas consideradas:
+        </span>
+        <span
+          class="font-medium text-blue-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Status relatório:
+        </span>
+        <span
+          class="px-2 py-1 text-xs rounded-full font-medium bg-yellow-100 text-yellow-800"
+        >
+          Pendente
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Taxa de conclusão:
+        </span>
+        <span
+          class="font-medium text-gray-700"
+        >
+          50.00
+          %
+           
+          <span
+            class="text-xs text-gray-500"
+          >
+            (informativa)
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LotesGrid — snapshots lote concluído com laudo emitido 1`] = `
+<div
+  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+>
+  <div
+    aria-label="Ver detalhes do lote 2"
+    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="flex items-center justify-between mb-1"
+      >
+        <h5
+          class="font-semibold text-gray-800 text-base"
+        >
+          Lote ID: 
+          2
+        </h5>
+      </div>
+      <p
+        class="text-sm text-gray-600"
+      >
+        Empresa: 
+        Empresa Snapshot Teste
+      </p>
+      <p
+        class="text-xs text-gray-500"
+      >
+        Liberado em
+         
+        15/01/2026
+         às
+         
+        07:00
+      </p>
+    </div>
+    <div
+      class="space-y-2 mb-4"
+    >
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Avaliações liberadas:
+        </span>
+        <span
+          class="font-medium"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Concluídas:
+        </span>
+        <span
+          class="font-medium text-green-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Ativas consideradas:
+        </span>
+        <span
+          class="font-medium text-blue-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Status relatório:
+        </span>
+        <span
+          class="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-800"
+        >
+          Pronto
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Taxa de conclusão:
+        </span>
+        <span
+          class="font-medium text-gray-700"
+        >
+          100.00
+          %
+           
+          <span
+            class="text-xs text-gray-500"
+          >
+            (informativa)
+          </span>
+        </span>
+      </div>
+    </div>
+    <div
+      class="p-3 bg-blue-50 rounded border border-blue-200"
+    >
+      <div
+        class="flex items-center justify-between mb-2"
+      >
+        <span
+          class="text-sm font-medium text-blue-800"
+        >
+          📄 Laudo disponível
+        </span>
+        <span
+          class="text-xs text-blue-600"
+        >
+          20/01/2026 às 11:30
+        </span>
+      </div>
+      <p
+        class="text-xs text-blue-700 mb-2"
+      >
+        Emissor: 
+        Dr. João Silva
+      </p>
+      <button
+        class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-3"
+      >
+        Ver Laudo/Baixar PDF
+      </button>
+      <div
+        class="bg-white p-2 rounded border border-blue-100"
+      >
+        <div
+          class="flex items-center justify-between mb-1"
+        >
+          <span
+            class="text-xs font-semibold text-blue-800"
+          >
+            🔒 Hash SHA-256
+          </span>
+          <button
+            aria-label="Copiar hash do laudo ID 10"
+            class="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:outline-none"
+            title="Copiar hash completo"
+          >
+            📋 Copiar
+          </button>
+        </div>
+        <code
+          class="text-[10px] font-mono text-gray-700 break-all block"
+        >
+          abc123def456
+        </code>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`LotesGrid — snapshots múltiplos lotes mistos 1`] = `
+<div
+  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+>
+  <div
+    aria-label="Ver detalhes do lote 1"
+    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="flex items-center justify-between mb-1"
+      >
+        <h5
+          class="font-semibold text-gray-800 text-base"
+        >
+          Lote ID: 
+          1
+        </h5>
+      </div>
+      <p
+        class="text-sm text-gray-600"
+      >
+        Empresa: 
+        Empresa Snapshot Teste
+      </p>
+      <p
+        class="text-xs text-gray-500"
+      >
+        Liberado em
+         
+        15/01/2026
+         às
+         
+        07:00
+      </p>
+    </div>
+    <div
+      class="space-y-2 mb-4"
+    >
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Avaliações liberadas:
+        </span>
+        <span
+          class="font-medium"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Concluídas:
+        </span>
+        <span
+          class="font-medium text-green-600"
+        >
+          5
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Ativas consideradas:
+        </span>
+        <span
+          class="font-medium text-blue-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Status relatório:
+        </span>
+        <span
+          class="px-2 py-1 text-xs rounded-full font-medium bg-yellow-100 text-yellow-800"
+        >
+          Pendente
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Taxa de conclusão:
+        </span>
+        <span
+          class="font-medium text-gray-700"
+        >
+          50.00
+          %
+           
+          <span
+            class="text-xs text-gray-500"
+          >
+            (informativa)
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+  <div
+    aria-label="Ver detalhes do lote 2"
+    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="flex items-center justify-between mb-1"
+      >
+        <h5
+          class="font-semibold text-gray-800 text-base"
+        >
+          Lote ID: 
+          2
+        </h5>
+      </div>
+      <p
+        class="text-sm text-gray-600"
+      >
+        Empresa: 
+        Empresa Snapshot Teste
+      </p>
+      <p
+        class="text-xs text-gray-500"
+      >
+        Liberado em
+         
+        15/01/2026
+         às
+         
+        07:00
+      </p>
+    </div>
+    <div
+      class="space-y-2 mb-4"
+    >
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Avaliações liberadas:
+        </span>
+        <span
+          class="font-medium"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Concluídas:
+        </span>
+        <span
+          class="font-medium text-green-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Ativas consideradas:
+        </span>
+        <span
+          class="font-medium text-blue-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Status relatório:
+        </span>
+        <span
+          class="px-2 py-1 text-xs rounded-full font-medium bg-green-100 text-green-800"
+        >
+          Pronto
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Taxa de conclusão:
+        </span>
+        <span
+          class="font-medium text-gray-700"
+        >
+          100.00
+          %
+           
+          <span
+            class="text-xs text-gray-500"
+          >
+            (informativa)
+          </span>
+        </span>
+      </div>
+    </div>
+    <div
+      class="p-3 bg-blue-50 rounded border border-blue-200"
+    >
+      <div
+        class="flex items-center justify-between mb-2"
+      >
+        <span
+          class="text-sm font-medium text-blue-800"
+        >
+          📄 Laudo disponível
+        </span>
+        <span
+          class="text-xs text-blue-600"
+        >
+          20/01/2026 às 11:30
+        </span>
+      </div>
+      <p
+        class="text-xs text-blue-700 mb-2"
+      >
+        Emissor: 
+        Dr. João Silva
+      </p>
+      <button
+        class="w-full bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed mb-3"
+      >
+        Ver Laudo/Baixar PDF
+      </button>
+      <div
+        class="bg-white p-2 rounded border border-blue-100"
+      >
+        <div
+          class="flex items-center justify-between mb-1"
+        >
+          <span
+            class="text-xs font-semibold text-blue-800"
+          >
+            🔒 Hash SHA-256
+          </span>
+          <button
+            aria-label="Copiar hash do laudo ID 10"
+            class="inline-flex items-center gap-1 bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700 focus:outline-none"
+            title="Copiar hash completo"
+          >
+            📋 Copiar
+          </button>
+        </div>
+        <code
+          class="text-[10px] font-mono text-gray-700 break-all block"
+        >
+          abc123def456
+        </code>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
+exports[`TabNavigation — snapshots aba desligamentos ativa 1`] = `
+<div
+  class="mb-6"
+>
+  <div
+    class="border-b border-gray-200"
+  >
+    <nav
+      class="-mb-px flex space-x-8"
+    >
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        📋 Ciclos de Coletas Avaliativas
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        📄 Laudos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        👥 Funcionários Ativos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+      >
+        🚪 Desligamentos
+      </button>
+    </nav>
+  </div>
+</div>
+`;
+
+exports[`TabNavigation — snapshots aba funcionários ativa 1`] = `
+<div
+  class="mb-6"
+>
+  <div
+    class="border-b border-gray-200"
+  >
+    <nav
+      class="-mb-px flex space-x-8"
+    >
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        📋 Ciclos de Coletas Avaliativas
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        📄 Laudos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+      >
+        👥 Funcionários Ativos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        🚪 Desligamentos
+      </button>
+    </nav>
+  </div>
+</div>
+`;
+
+exports[`TabNavigation — snapshots aba laudos ativa 1`] = `
+<div
+  class="mb-6"
+>
+  <div
+    class="border-b border-gray-200"
+  >
+    <nav
+      class="-mb-px flex space-x-8"
+    >
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        📋 Ciclos de Coletas Avaliativas
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+      >
+        📄 Laudos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        👥 Funcionários Ativos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        🚪 Desligamentos
+      </button>
+    </nav>
+  </div>
+</div>
+`;
+
+exports[`TabNavigation — snapshots aba padrão (lotes) 1`] = `
+<div
+  class="mb-6"
+>
+  <div
+    class="border-b border-gray-200"
+  >
+    <nav
+      class="-mb-px flex space-x-8"
+    >
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+      >
+        📋 Ciclos de Coletas Avaliativas
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        📄 Laudos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        👥 Funcionários Ativos
+      </button>
+      <button
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+      >
+        🚪 Desligamentos
+      </button>
+    </nav>
+  </div>
+</div>
+`;

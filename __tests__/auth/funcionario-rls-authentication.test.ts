@@ -36,8 +36,8 @@ describe('Autenticação Funcionário + RLS', () => {
 
     // Criar clínica para teste
     const clinicaResult = await query(
-      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_email, ativa)
-       VALUES ('Clinica RLS Test', '99988877700100', 'rls@test.com', '11900000030', 'Rua', 'SP', 'SP', '01000-030', 'Resp', 'resp@rls.com', true)
+      `INSERT INTO clinicas (nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa)
+       VALUES ('Clinica RLS Test', '99988877700100', 'rls@test.com', '11900000030', 'Rua RLS Teste', 'São Paulo', 'SP', '01000030', 'Resp RLS', '09888877701', 'resp@rls.com', '11988887777', true)
        RETURNING id`
     );
     testClinicaId = clinicaResult.rows[0].id;

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Building2, User, Loader2 } from 'lucide-react';
+import { X, Building2, User, Loader2, Check, Paperclip } from 'lucide-react';
 import { normalizeCNPJ, validarCNPJ } from '@/lib/validators';
 
 interface EmpresaFormData {
@@ -17,6 +17,12 @@ interface EmpresaFormData {
   representante_nome: string;
   representante_fone: string;
   representante_email: string;
+}
+
+interface ArquivosEmpresa {
+  cartao_cnpj: File | null;
+  contrato_social: File | null;
+  doc_identificacao: File | null;
 }
 
 interface Empresa {
@@ -59,8 +65,21 @@ export default function EmpresaFormModal({
   const [formData, setFormData] = useState<EmpresaFormData>(initialFormState);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [arquivos, setArquivos] = useState<ArquivosEmpresa>({
+    cartao_cnpj: null,
+    contrato_social: null,
+    doc_identificacao: null,
+  });
 
   if (!isOpen) return null;
+
+  const handleFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    tipo: keyof ArquivosEmpresa
+  ) => {
+    const file = e.target.files?.[0] ?? null;
+    setArquivos((prev) => ({ ...prev, [tipo]: file }));
+  };
 
   const handleChange = (field: keyof EmpresaFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -154,6 +173,18 @@ export default function EmpresaFormModal({
         'Email do representante é obrigatório e deve ser válido';
     }
 
+    // Validações de documentos obrigatórios
+    if (!arquivos.cartao_cnpj) {
+      newErrors.cartao_cnpj = 'Cartão CNPJ é obrigatório';
+    }
+    if (!arquivos.contrato_social) {
+      newErrors.contrato_social = 'Contrato Social é obrigatório';
+    }
+    if (!arquivos.doc_identificacao) {
+      newErrors.doc_identificacao =
+        'Documento de identificação do representante é obrigatório';
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -168,17 +199,42 @@ export default function EmpresaFormModal({
     setLoading(true);
 
     try {
-      const response = await fetch('/api/rh/empresas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+      const temArquivos = Object.values(arquivos).some((f) => f !== null);
+
+      let response: Response;
+
+      if (temArquivos) {
+        // Em DEV com arquivos: enviar como multipart/form-data
+        const fd = new FormData();
+        Object.entries(formData).forEach(([k, v]) => {
+          if (v) fd.append(k, v);
+        });
+        Object.entries(arquivos).forEach(([k, file]) => {
+          if (file) fd.append(k, file);
+        });
+        response = await fetch('/api/rh/empresas', {
+          method: 'POST',
+          body: fd,
+        });
+      } else {
+        // Fluxo padrão: JSON
+        response = await fetch('/api/rh/empresas', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData),
+        });
+      }
 
       if (response.ok) {
         const novaEmpresa = await response.json();
         onSuccess(novaEmpresa);
         setFormData(initialFormState);
         setErrors({});
+        setArquivos({
+          cartao_cnpj: null,
+          contrato_social: null,
+          doc_identificacao: null,
+        });
         onClose();
       } else {
         const errorData = await response.json();
@@ -205,6 +261,11 @@ export default function EmpresaFormModal({
     if (!loading) {
       setFormData(initialFormState);
       setErrors({});
+      setArquivos({
+        cartao_cnpj: null,
+        contrato_social: null,
+        doc_identificacao: null,
+      });
       onClose();
     }
   };
@@ -468,6 +529,92 @@ export default function EmpresaFormModal({
                     disabled={loading}
                   />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Seção: Documentos */}
+          <div className="border-t border-gray-200 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center gap-2">
+              <Paperclip size={18} className="text-gray-600" />
+              Documentos
+            </h3>
+            <p className="text-xs text-gray-500 mb-4">
+              Anexe os documentos da empresa (PDF, JPG ou PNG, máx. 5 MB cada).
+            </p>
+
+            <div className="space-y-3">
+              {/* Cartão CNPJ */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 required mb-1">
+                  Cartão CNPJ <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange(e, 'cartao_cnpj')}
+                    disabled={loading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 disabled:opacity-50"
+                  />
+                  {arquivos.cartao_cnpj && (
+                    <Check size={18} className="text-green-500 shrink-0" />
+                  )}
+                </div>
+                {errors.cartao_cnpj && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.cartao_cnpj}
+                  </p>
+                )}
+              </div>
+
+              {/* Contrato Social */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 required mb-1">
+                  Contrato Social <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange(e, 'contrato_social')}
+                    disabled={loading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 disabled:opacity-50"
+                  />
+                  {arquivos.contrato_social && (
+                    <Check size={18} className="text-green-500 shrink-0" />
+                  )}
+                </div>
+                {errors.contrato_social && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.contrato_social}
+                  </p>
+                )}
+              </div>
+
+              {/* Documento de Identificação do Representante */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 required mb-1">
+                  Doc. de Identificação do Representante{' '}
+                  <span className="text-red-500">*</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => handleFileChange(e, 'doc_identificacao')}
+                    disabled={loading}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 disabled:opacity-50"
+                  />
+                  {arquivos.doc_identificacao && (
+                    <Check size={18} className="text-green-500 shrink-0" />
+                  )}
+                </div>
+                {errors.doc_identificacao && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {errors.doc_identificacao}
+                  </p>
+                )}
               </div>
             </div>
           </div>

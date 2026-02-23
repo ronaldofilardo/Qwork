@@ -5,34 +5,29 @@ import {
   Building2,
   DollarSign,
   Settings,
-  UserCheck,
   ChevronDown,
   ChevronRight,
   FileCheck,
   Shield,
   Users,
+  BarChart2,
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type AdminSection =
-  | 'tomadores'
-  | 'financeiro'
-  | 'geral'
-  | 'novos-cadastros';
+export type AdminSection = 'tomadores' | 'financeiro' | 'geral' | 'volume';
 export type TomadoresSubSection = 'clinicas' | 'entidades';
 export type ClinicasTab = 'dados' | 'auditorias' | 'financeiro';
 export type EntidadesTab = 'dados' | 'auditorias';
-export type FinanceiroSubSection = 'cobranca' | 'pagamentos' | 'planos';
+export type FinanceiroSubSection = 'contagem' | 'pagamentos' | 'planos';
+export type VolumeSubSection = 'entidade' | 'rh';
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
   activeSubSection?: string;
   onSectionChange: (section: AdminSection, subSection?: string) => void;
   counts?: {
-    novosCadastros?: number;
     clinicas?: number;
     entidades?: number;
-    cobranca?: number;
     pagamentos?: number;
     planos?: number;
     emissores?: number;
@@ -159,23 +154,14 @@ export default function AdminSidebar({
       onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
       footer={legend}
     >
-      {/* Novos Cadastros */}
-      <MenuItem
-        icon={UserCheck}
-        label="Novos Cadastros"
-        count={counts.novosCadastros}
-        isActive={activeSection === 'novos-cadastros'}
-        onClick={() => onSectionChange('novos-cadastros')}
-      />
-
-      {/* Tomadores - Admin visualiza tomadores (clientes do QWork: entidades e clínicas) */}
+      {/* Tomadores */}
       <MenuItem
         icon={Building2}
         label="Tomadores"
         isActive={activeSection === 'tomadores'}
         onClick={() => {
           toggleSection('tomadores');
-          onSectionChange('tomadores', 'lista');
+          onSectionChange('tomadores', 'clinicas');
         }}
         hasSubMenu
         isExpanded={isExpanded('tomadores')}
@@ -202,6 +188,36 @@ export default function AdminSidebar({
         </div>
       )}
 
+      {/* Volume */}
+      <MenuItem
+        icon={BarChart2}
+        label="Volume"
+        isActive={activeSection === 'volume'}
+        onClick={() => {
+          toggleSection('volume');
+          onSectionChange('volume', 'entidade');
+        }}
+        hasSubMenu
+        isExpanded={isExpanded('volume')}
+      />
+
+      {isExpanded('volume') && (
+        <div className="border-l-2 border-gray-200 ml-4">
+          <SubMenuItem
+            label="Entidade"
+            isActive={
+              activeSection === 'volume' && activeSubSection === 'entidade'
+            }
+            onClick={() => onSectionChange('volume', 'entidade')}
+          />
+          <SubMenuItem
+            label="RH"
+            isActive={activeSection === 'volume' && activeSubSection === 'rh'}
+            onClick={() => onSectionChange('volume', 'rh')}
+          />
+        </div>
+      )}
+
       {/* Financeiro */}
       <MenuItem
         icon={DollarSign}
@@ -209,7 +225,7 @@ export default function AdminSidebar({
         isActive={activeSection === 'financeiro'}
         onClick={() => {
           toggleSection('financeiro');
-          onSectionChange('financeiro', 'cobranca');
+          onSectionChange('financeiro', 'contagem');
         }}
         hasSubMenu
         isExpanded={isExpanded('financeiro')}
@@ -218,20 +234,19 @@ export default function AdminSidebar({
       {isExpanded('financeiro') && (
         <div className="border-l-2 border-gray-200 ml-4">
           <SubMenuItem
+            label="Contagem"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'contagem'
+            }
+            onClick={() => onSectionChange('financeiro', 'contagem')}
+          />
+          <SubMenuItem
             label="Planos"
             count={counts.planos}
             isActive={
               activeSection === 'financeiro' && activeSubSection === 'planos'
             }
             onClick={() => onSectionChange('financeiro', 'planos')}
-          />
-          <SubMenuItem
-            label="Cobrança"
-            count={counts.cobranca}
-            isActive={
-              activeSection === 'financeiro' && activeSubSection === 'cobranca'
-            }
-            onClick={() => onSectionChange('financeiro', 'cobranca')}
           />
           <SubMenuItem
             label="Pagamentos"

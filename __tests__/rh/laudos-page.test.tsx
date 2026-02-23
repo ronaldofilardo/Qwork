@@ -85,23 +85,43 @@ describe('RhLaudosPage', () => {
     expect(screen.getByText('Laudos em Elaboração')).toBeInTheDocument();
 
     // Verifica dados dos laudos na tabela
-    expect(screen.getByText('LOTE-001')).toBeInTheDocument();
-    expect(screen.getByText('Avaliação Dezembro 2024')).toBeInTheDocument();
+    // O componente exibe 'Lote #<lote_id>' (não LOTE-001 / titulo)
+    expect(screen.getByText('Lote #101')).toBeInTheDocument();
     expect(screen.getByText('Empresa Teste 1')).toBeInTheDocument();
-    expect(screen.getByText('emitido')).toBeInTheDocument();
+    expect(screen.getByText('enviado')).toBeInTheDocument();
   });
 
   it('handles download action', async () => {
+    // Sobrescrever mock para usar status 'emitido' COM arquivo para testar o link de download
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          laudos: [
+            {
+              id: 1,
+              lote_id: 101,
+              empresa_nome: 'Empresa Teste 1',
+              status: 'emitido',
+              data_emissao: '2024-12-15',
+              arquivos: {
+                relatorio_lote: '/api/download/laudo-1.pdf',
+              },
+            },
+          ],
+        }),
+    });
+
     render(<RhLaudosPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('LOTE-001')).toBeInTheDocument();
+      expect(screen.getByText('Lote #101')).toBeInTheDocument();
     });
 
-    // Verifica que o link de download está presente
-    const downloadLink = screen.getByText('Baixar');
-    expect(downloadLink).toBeInTheDocument();
-    expect(downloadLink.closest('a')).toHaveAttribute(
+    // Verifica que o link de download está presente para laudo com status 'emitido'
+    const downloadLinks = screen.getAllByText('Baixar');
+    expect(downloadLinks.length).toBeGreaterThanOrEqual(1);
+    expect(downloadLinks[0].closest('a')).toHaveAttribute(
       'href',
       '/api/download/laudo-1.pdf'
     );

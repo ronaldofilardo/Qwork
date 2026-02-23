@@ -3,6 +3,8 @@ import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/db-transaction';
 import { requireClinica } from '@/lib/session';
 import { normalizeCNPJ, validarCNPJ } from '@/lib/validators';
+import { writeFile, mkdir } from 'fs/promises';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -105,6 +107,36 @@ export async function GET() {
 }
 
 /**
+ * Salvar arquivo de documento de empresa em public/uploads/empresas/<cnpj>/
+ * Em produção (Vercel) usa tmpdir; em dev usa public/uploads.
+ */
+async function salvarArquivoEmpresa(
+  file: File,
+  tipo: string,
+  cnpj: string
+): Promise<string> {
+  const extension = file.name.split('.').pop()?.toLowerCase() ?? 'bin';
+  const cnpjClean = cnpj.replace(/\D/g, '');
+  const isServerless =
+    process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+  const uploadDir = isServerless
+    ? path.join(
+        require('os').tmpdir(),
+        'qwork',
+        'uploads',
+        'empresas',
+        cnpjClean
+      )
+    : path.join(process.cwd(), 'public', 'uploads', 'empresas', cnpjClean);
+  await mkdir(uploadDir, { recursive: true });
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = `${tipo}_${Date.now()}.${extension}`;
+  const filepath = path.join(uploadDir, filename);
+  await writeFile(filepath, buffer);
+  return `/uploads/empresas/${cnpjClean}/${filename}`;
+}
+
+/**
  * POST /api/rh/empresas
  * Cria nova empresa vinculada à clínica do RH logado
  * RLS garante que INSERT só ocorre na clínica do RH
@@ -116,7 +148,74 @@ export async function POST(request: Request) {
 
     // requireClinica já garante que session.clinica_id existe e que a clínica é válida
 
-    const body = await request.json();
+    // Suporte a multipart/form-data (com upload de documentos) e application/json
+    const contentType = request.headers.get('content-type') ?? '';
+    const isMultipart = contentType.includes('multipart/form-data');
+
+    let body: Record<string, string>;
+    let arquivos: Record<string, File | null> = {};
+
+    if (isMultipart) {
+      const formData = await request.formData();
+      body = Object.fromEntries(
+        [...formData.entries()]
+          .filter(([, v]) => typeof v === 'string')
+          .map(([k, v]) => [k, v as string])
+      );
+      const fileKeys = [
+        'cartao_cnpj',
+        'contrato_social',
+        'doc_identificacao',
+      ] as const;
+      for (const key of fileKeys) {
+        const f = formData.get(key);
+        if (f && f instanceof File && f.size > 0) {
+          arquivos[key] = f;
+        }
+      }
+
+      // Validar arquivos obrigatórios
+      const missingFiles = fileKeys.filter((k) => !arquivos[k]);
+      if (missingFiles.length > 0) {
+        return NextResponse.json(
+          {
+            error: `Documentos obrigatórios faltando: ${missingFiles.join(', ').replace(/_/g, ' ')}`,
+          },
+          { status: 400 }
+        );
+      }
+
+      // Validar tipo e tamanho dos arquivos
+      const allowedTypes = [
+        'application/pdf',
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+      ];
+      const maxSize = 5 * 1024 * 1024; // 5 MB
+      for (const key of fileKeys) {
+        const f = arquivos[key]!;
+        if (!allowedTypes.includes(f.type)) {
+          return NextResponse.json(
+            {
+              error: `Arquivo "${key.replace(/_/g, ' ')}" deve ser PDF, JPG ou PNG`,
+            },
+            { status: 400 }
+          );
+        }
+        if (f.size > maxSize) {
+          return NextResponse.json(
+            {
+              error: `Arquivo "${key.replace(/_/g, ' ')}" não pode exceder 5 MB`,
+            },
+            { status: 400 }
+          );
+        }
+      }
+    } else {
+      body = await request.json();
+    }
+
     const { nome, cnpj, email, telefone, endereco, cidade, estado, cep } = body;
     const { representante_nome, representante_fone, representante_email } =
       body;
@@ -213,7 +312,36 @@ export async function POST(request: Request) {
       );
     });
 
-    return NextResponse.json(result.rows[0], { status: 201 });
+    const empresa = result.rows[0];
+
+    // Em DEV: salvar documentos localmente e retornar paths
+    const documentosSalvos: Record<string, string> = {};
+    if (Object.keys(arquivos).length > 0) {
+      for (const [tipo, file] of Object.entries(arquivos)) {
+        if (file) {
+          try {
+            const urlPath = await salvarArquivoEmpresa(
+              file,
+              tipo,
+              cnpjNormalizado
+            );
+            documentosSalvos[tipo] = urlPath;
+          } catch (err) {
+            console.warn(`[DEV] Falha ao salvar arquivo ${tipo}:`, err);
+          }
+        }
+      }
+    }
+
+    return NextResponse.json(
+      {
+        ...empresa,
+        ...(Object.keys(documentosSalvos).length > 0
+          ? { documentos: documentosSalvos }
+          : {}),
+      },
+      { status: 201 }
+    );
   } catch (error: any) {
     // Se requireClinica lançou erro (clínica não encontrada/inativa/identificada), mapear para 403
     if (

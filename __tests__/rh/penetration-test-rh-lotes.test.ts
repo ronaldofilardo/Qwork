@@ -6,24 +6,28 @@ import { GET } from '@/app/api/rh/lotes/route';
 jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
   getSession: jest.fn(),
+  requireRHWithEmpresaAccess: jest.fn(),
 }));
 
-jest.mock('@/lib/db-security', () => ({
-  queryWithContext: jest.fn(),
+jest.mock('@/lib/db', () => ({
+  query: jest.fn(),
 }));
 
 // Usar import dinâmico para obter as funções mockadas
 let mockRequireAuth: any;
 let mockGetSession: any;
-let mockQueryWithContext: any;
+let mockRequireRHWithEmpresaAccess: any;
+let mockQuery: any;
 
 beforeAll(async () => {
   const sessionModule = await import('@/lib/session');
-  const dbSecurityModule = await import('@/lib/db-security');
+  const dbModule = await import('@/lib/db');
 
   mockRequireAuth = sessionModule.requireAuth;
   mockGetSession = sessionModule.getSession;
-  mockQueryWithContext = dbSecurityModule.queryWithContext;
+  mockRequireRHWithEmpresaAccess = (sessionModule as any)
+    .requireRHWithEmpresaAccess;
+  mockQuery = dbModule.query;
 });
 
 describe('Penetration Test: Acesso não autorizado a /api/rh/lotes', () => {
@@ -66,10 +70,19 @@ describe('Penetration Test: Acesso não autorizado a /api/rh/lotes', () => {
       clinica_id: 1,
     });
 
-    mockQueryWithContext.mockResolvedValue({
-      rows: [{ id: 1, clinica_id: 1, status: 'ativo' }],
-      rowCount: 1,
-    });
+    mockRequireRHWithEmpresaAccess.mockResolvedValue(undefined);
+
+    // Primeira query: empresaCheck
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: 1, clinica_id: 1 }],
+        rowCount: 1,
+      })
+      // Segunda query: lotesQuery
+      .mockResolvedValueOnce({
+        rows: [],
+        rowCount: 0,
+      });
 
     const request = new NextRequest(
       'http://localhost:3000/api/rh/lotes?empresa_id=1'
@@ -79,8 +92,9 @@ describe('Penetration Test: Acesso não autorizado a /api/rh/lotes', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(data.success).toBe(true);
-    expect(mockQueryWithContext).toHaveBeenCalled();
+    // A rota retorna { lotes: [...] } (sem campo success no 200)
+    expect(data.lotes).toBeDefined();
+    expect(mockQuery).toHaveBeenCalled();
   });
 
   test('Admin deve ter acesso restrito', async () => {

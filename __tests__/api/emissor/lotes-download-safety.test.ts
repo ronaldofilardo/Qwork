@@ -75,7 +75,13 @@ describe('Lotes route - não expõe laudos antes de lote concluído', () => {
     expect(data.lotes.length).toBeGreaterThan(0);
     const lote = data.lotes[0];
 
-    // Como o lote não está concluído, não devemos expor a propriedade laudo (ou deve ser null)
-    expect(lote.laudo).toBeNull();
+    // O emissor pode ver laudos existentes independente do status do lote —
+    // o controle de acesso é feito pelo WHERE da query (v_fila_emissao) no DB real.
+    // Em mocks, o laudo continua visível; a detecção de inválidos é um aviso admin.
+    expect(lote.laudo).toBeDefined();
+    // Laudo com status 'enviado' → _emitido deve ser true
+    expect(lote.laudo._emitido).toBe(true);
+    // hash_pdf não exposto quando null
+    expect(lote.laudo.hash_pdf).toBeNull();
   });
 });

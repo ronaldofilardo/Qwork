@@ -209,11 +209,10 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
       expect(
         screen.getByText('Iniciar Ciclo de Coletas Avaliativas')
       ).toBeInTheDocument();
-      // Texto descritivo atual
+      // O modal atual usa sistema de elgibilidade automática, sem texto descritivo estático obrigatório
+      // apenas verificamos que o botão de submit está presente
       expect(
-        screen.getByText(
-          /Libere um novo lote de avaliações para começar\.|Crie um novo ciclo de coletas avaliativas para/
-        )
+        screen.getByRole('button', { name: /Iniciar Ciclo/ })
       ).toBeInTheDocument();
     });
 
@@ -265,15 +264,14 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
 
       await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
 
-      const tituloInput = screen.getByPlaceholderText(/Ex: Avaliação/);
+      // O campo de título foi removido do modal (sistema automático de elegibilidade)
+      // Apenas o campo de descrição (opcional) e tipo de lote existem
       const descricaoTextarea = screen.getByPlaceholderText(
         /Adicione informações adicionais/
       );
 
-      await user.type(tituloInput, 'Teste de Ciclo');
       await user.type(descricaoTextarea, 'Descrição de teste');
 
-      expect(tituloInput).toHaveValue('Teste de Ciclo');
       expect(descricaoTextarea).toHaveValue('Descrição de teste');
     });
   });
@@ -289,9 +287,8 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
 
       await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
 
-      const tituloInput = screen.getByPlaceholderText(/Ex: Avaliação/);
-      await user.type(tituloInput, 'Novo Ciclo Criado');
-
+      // O campo de título foi removido; o modal usa elegibilidade automática
+      // Apenas clicamos em Iniciar Ciclo diretamente
       await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
 
       await waitFor(() => {
@@ -302,7 +299,6 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
             headers: expect.objectContaining({
               'Content-Type': 'application/json',
             }),
-            body: expect.stringContaining('Novo Ciclo Criado'),
           })
         );
       });
@@ -318,10 +314,7 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
 
       await user.click(screen.getByText('🚀 Iniciar Novo Ciclo'));
 
-      const tituloInput = screen.getByPlaceholderText(/Ex: Avaliação/);
-      await user.type(tituloInput, 'Novo Ciclo Criado');
-
-      // Não há seleção de empresa (estamos em contexto de empresa específica)
+      // O campo de título foi removido; submeter o formulário diretamente
       await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
 
       // Verifica que a API foi chamada
@@ -333,13 +326,11 @@ describe('RH Empresa Dashboard - Sistema de Lotes', () => {
             headers: expect.objectContaining({
               'Content-Type': 'application/json',
             }),
-            body: expect.stringContaining('Novo Ciclo Criado'),
           })
         );
       });
 
-      // Verifica que não houve erro (o alert de erro não foi chamado)
-      // Nota: O mock da API retorna sucesso, então não deve haver erro
+      // Verifica que não houve erro
     });
 
     it('fecha modal e navega para detalhes do lote após sucesso (fluxo RH)', async () => {

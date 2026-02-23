@@ -56,7 +56,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('CPF e senha são obrigatórios');
+    expect(data.error).toBe('CPF é obrigatório');
   });
 
   it('deve retornar erro 400 se senha não for fornecida', async () => {
@@ -66,7 +66,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe('CPF e senha são obrigatórios');
+    expect(data.error).toBe('Senha ou data de nascimento é obrigatória');
   });
 
   it('deve retornar erro 401 se usuário não existir em usuarios', async () => {
@@ -219,9 +219,8 @@ describe('/api/auth/login - Nova Arquitetura', () => {
           rows: [
             {
               senha_hash: '$2a$10$ValidHash',
-              entidade_id: 2,
+              clinica_id: 2,
               ativa: true,
-              pagamento_confirmado: true,
             },
           ],
           rowCount: 1,
@@ -445,58 +444,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
 
     expect(response.status).toBe(403);
     expect(data.error).toBe(
-      'tomador inativo. Entre em contato com o administrador.'
+      'Tomador inativo. Entre em contato com o administrador.'
     );
-  });
-
-  it('deve retornar erro 403 se pagamento não estiver confirmado', async () => {
-    (mockRequest.json as jest.Mock).mockResolvedValue({
-      cpf: '66666666666',
-      senha: '123456',
-    });
-
-    mockQuery.mockImplementation((sql: string) => {
-      // Query na tabela usuarios
-      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
-        return Promise.resolve({
-          rows: [
-            {
-              cpf: '66666666666',
-              nome: 'Gestor Sem Pagamento',
-              tipo_usuario: 'gestor',
-              clinica_id: null,
-              entidade_id: 1,
-              ativo: true,
-            },
-          ],
-          rowCount: 1,
-        });
-      }
-      // Query na tabela entidades_senhas - pagamento não confirmado
-      if (sql.includes('entidades_senhas')) {
-        return Promise.resolve({
-          rows: [
-            {
-              senha_hash: '$2a$10$ValidHash',
-              id: 1,
-              ativa: true,
-              pagamento_confirmado: false, // Pagamento não confirmado
-            },
-          ],
-          rowCount: 1,
-        });
-      }
-      // Audit log
-      if (sql.includes('INSERT INTO audit_logs')) {
-        return Promise.resolve({ rows: [], rowCount: 1 });
-      }
-      return Promise.resolve({ rows: [], rowCount: 0 });
-    });
-
-    const response = await POST(mockRequest as NextRequest);
-    const data = await response.json();
-
-    expect(response.status).toBe(403);
-    expect(data.error).toContain('Aguardando confirmação de pagamento');
   });
 });

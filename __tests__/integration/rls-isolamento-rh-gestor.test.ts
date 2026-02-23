@@ -63,6 +63,9 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
   let funcClinicaCpf2: string;
   let funcEntidadeCpf1: string;
   let funcEntidadeCpf2: string;
+  const ts = Date.now();
+  const respCpf1 = String(ts).slice(-8) + '111';
+  const respCpf2 = String(ts).slice(-8) + '222';
 
   beforeAll(async () => {
     // Limpar dados residuais primeiro
@@ -72,6 +75,11 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
     );
     await query(
       `DELETE FROM clinicas WHERE cnpj IN ('11111111000111', '22222222000222')`
+    );
+    // Limpar por responsavel_cpf caso tenham ficado registros de execuções anteriores
+    await query(
+      `DELETE FROM clinicas WHERE responsavel_cpf = $1 OR responsavel_cpf = $2`,
+      [respCpf1, respCpf2]
     );
 
     // Garantir roles de teste para validação RLS (usadas com SET ROLE em sessões dedicadas)
@@ -98,14 +106,26 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
 
     // Criar 2 clínicas
     const clinica1 = await query(
-      `INSERT INTO clinicas (nome, cnpj, ativa) VALUES ($1, $2, $3) RETURNING id`,
-      ['Clínica Teste 1', '11111111000111', true]
+      `INSERT INTO clinicas (
+         nome, cnpj, ativa, email, telefone, endereco, cidade, estado, cep,
+         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
+       ) VALUES (
+         $1, $2, $3, 'clinica1@teste.com', '11999990001', 'Rua Teste 1', 'São Paulo', 'SP', '01310-100',
+         'Responsável 1', $4, 'res1@teste.com', '11999990001'
+       ) RETURNING id`,
+      ['Clínica Teste 1', '11111111000111', true, respCpf1]
     );
     clinicaId1 = clinica1.rows[0].id;
 
     const clinica2 = await query(
-      `INSERT INTO clinicas (nome, cnpj, ativa) VALUES ($1, $2, $3) RETURNING id`,
-      ['Clínica Teste 2', '22222222000222', true]
+      `INSERT INTO clinicas (
+         nome, cnpj, ativa, email, telefone, endereco, cidade, estado, cep,
+         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
+       ) VALUES (
+         $1, $2, $3, 'clinica2@teste.com', '11999990002', 'Rua Teste 2', 'São Paulo', 'SP', '01310-200',
+         'Responsável 2', $4, 'res2@teste.com', '11999990002'
+       ) RETURNING id`,
+      ['Clínica Teste 2', '22222222000222', true, respCpf2]
     );
     clinicaId2 = clinica2.rows[0].id;
 

@@ -36,7 +36,7 @@ describe('Página de Conclusão de Avaliação', () => {
     jest.clearAllMocks();
     // Mock window.location.search
     delete (window as any).location;
-    window.location = { 
+    window.location = {
       search: '?avaliacao_id=10061',
     } as any;
     // Mock window.print
@@ -191,12 +191,16 @@ function AvaliacaoConcluidaPageTest() {
               </div>
 
               <div className="flex justify-between items-center py-2 border-b border-gray-200">
-                <span className="font-medium text-gray-700">Data de Conclusão:</span>
+                <span className="font-medium text-gray-700">
+                  Data de Conclusão:
+                </span>
                 <span className="text-gray-900">17/02/2026</span>
               </div>
 
               <div className="flex justify-between items-center py-2">
-                <span className="font-medium text-gray-700">Hora de Conclusão:</span>
+                <span className="font-medium text-gray-700">
+                  Hora de Conclusão:
+                </span>
                 <span className="text-gray-900">16:35:25</span>
               </div>
             </div>

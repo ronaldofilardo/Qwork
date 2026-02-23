@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { Building2 } from 'lucide-react';
+import PagamentosFinanceiros from '@/components/shared/PagamentosFinanceiros';
+
+interface ContaSectionState {
+  nome: string;
+  cnpj?: string;
+}
 
 interface AccountInfo {
   nome: string;
@@ -17,6 +23,7 @@ interface AccountInfo {
 
 export default function EntidadeContaSection() {
   const [accountInfo, setAccountInfo] = useState<AccountInfo | null>(null);
+  const [orgInfo, setOrgInfo] = useState<ContaSectionState | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -26,6 +33,7 @@ export default function EntidadeContaSection() {
       if (res.ok) {
         const data = await res.json();
         setAccountInfo(data);
+        setOrgInfo({ nome: data.nome, cnpj: data.cnpj });
         setErrorMessage(null);
       } else {
         try {
@@ -193,6 +201,15 @@ export default function EntidadeContaSection() {
             </p>
           )}
         </div>
+
+        {/* Dados Financeiros de Laudos */}
+        {orgInfo && (
+          <PagamentosFinanceiros
+            apiUrl="/api/entidade/pagamentos-laudos"
+            organizacaoNome={orgInfo.nome}
+            organizacaoCnpj={orgInfo.cnpj}
+          />
+        )}
       </div>
     </>
   );

@@ -25,11 +25,21 @@ describe('Testes Básicos de Estado', () => {
 
     // Criar clínica
     const clinicaResult = await query(
-      `INSERT INTO clinicas (nome, cnpj, email, ativa) VALUES ($1, $2, $3, true) RETURNING id`,
+      `INSERT INTO clinicas (
+         nome, cnpj, email, telefone, ativa,
+         endereco, cidade, estado, cep,
+         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular
+       ) VALUES (
+         $1, $2, $3, $4, true,
+         'Rua Teste 123', 'São Paulo', 'SP', '01310-100',
+         'Responsável Teste', $5, $3, '11987654321'
+       ) RETURNING id`,
       [
         `Clínica Test ${timestamp}`,
         `${timestamp.toString().slice(-14)}`,
         `test${timestamp}@test.com`,
+        '11987654321',
+        responsavelCpf,
       ]
     );
     clinicaId = clinicaResult.rows[0].id;

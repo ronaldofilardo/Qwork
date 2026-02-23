@@ -313,6 +313,40 @@ export async function POST(
         `[INFO] ✓ Solicitação de emissão registrada com sucesso para lote ${loteId}`
       );
 
+      // Buscar dados de contato do gestor para exibir na modal de confirmação (pós-commit)
+      let gestorContato: { email: string | null; celular: string | null } = {
+        email: null,
+        celular: null,
+      };
+      try {
+        if (user.perfil === 'gestor') {
+          const contatoResult = await query(
+            `SELECT responsavel_email AS email, responsavel_celular AS celular
+             FROM tomadores WHERE responsavel_cpf = $1 LIMIT 1`,
+            [user.cpf]
+          );
+          if (contatoResult.rows.length > 0) {
+            gestorContato = {
+              email: contatoResult.rows[0].email || null,
+              celular: contatoResult.rows[0].celular || null,
+            };
+          }
+        } else if (user.perfil === 'rh') {
+          const contatoResult = await query(
+            `SELECT email, celular FROM funcionarios WHERE cpf = $1 LIMIT 1`,
+            [user.cpf]
+          );
+          if (contatoResult.rows.length > 0) {
+            gestorContato = {
+              email: contatoResult.rows[0].email || null,
+              celular: contatoResult.rows[0].celular || null,
+            };
+          }
+        }
+      } catch {
+        // Falha ao buscar dados de contato não impede a resposta
+      }
+
       return NextResponse.json({
         success: true,
         message:
@@ -321,6 +355,7 @@ export async function POST(
           id: lote.id,
           status_pagamento: 'aguardando_cobranca',
         },
+        gestor_contato: gestorContato,
       });
     } catch (emissaoError) {
       await query('ROLLBACK');

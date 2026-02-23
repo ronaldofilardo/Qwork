@@ -4,8 +4,8 @@
  * Item 8: API retorna criadas >= 1 após liberações
  */
 
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
+jest.mock('@/lib/db-security', () => ({
+  queryWithContext: jest.fn(),
 }));
 
 jest.mock('@/lib/session', () => ({
@@ -13,9 +13,11 @@ jest.mock('@/lib/session', () => ({
 }));
 
 import { NextRequest } from 'next/server';
-import { query } from '@/lib/db';
+import { queryWithContext } from '@/lib/db-security';
 
-const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQuery = queryWithContext as jest.MockedFunction<
+  typeof queryWithContext
+>;
 const mockRequireAuth = require('@/lib/session').requireAuth;
 
 describe('RH - Liberar Avaliações em Massa', () => {

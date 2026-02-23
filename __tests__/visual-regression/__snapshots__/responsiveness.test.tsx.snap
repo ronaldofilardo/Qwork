@@ -278,7 +278,7 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         class="flex flex-col items-center justify-center mb-4"
       >
         <div
-          class="w-24 h-24 flex items-center justify-center"
+          class="w-32 h-32 flex items-center justify-center"
         >
           <img
             alt="QWork"
@@ -297,6 +297,49 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
       >
         Avaliação Psicossocial baseada no COPSOQ III
       </p>
+    </div>
+    <div
+      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+    >
+      <h3
+        class="text-sm font-semibold text-blue-900 mb-2"
+      >
+        Como Fazer Login?
+      </h3>
+      <ul
+        class="space-y-2 text-sm text-blue-800"
+      >
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="font-bold text-blue-600 mt-0.5"
+          >
+            1
+          </span>
+          <span>
+            <strong>
+              Com Senha
+            </strong>
+             - Todos os usuários (RH, Gestor, Emissor, etc.): insira seu CPF e Senha
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="font-bold text-blue-600 mt-0.5"
+          >
+            2
+          </span>
+          <span>
+            <strong>
+              Com Data de Nascimento
+            </strong>
+             - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+          </span>
+        </li>
+      </ul>
     </div>
     <form
       class="space-y-4 sm:space-y-6"
@@ -321,20 +364,53 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
       </div>
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 required"
+          class="block text-sm font-medium text-gray-700"
           for="senha"
         >
           Senha
+           
+          <span
+            class="text-gray-500 font-normal"
+          >
+            (opcional se for funcionário)
+          </span>
         </label>
         <input
           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="senha"
           name="senha"
           placeholder="••••••••"
-          required=""
           type="password"
           value=""
         />
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700"
+          for="dataNascimento"
+        >
+          Data de nascimento
+           
+          <span
+            class="text-gray-500 font-normal"
+          >
+            (opcional se tiver senha)
+          </span>
+        </label>
+        <input
+          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          id="dataNascimento"
+          maxlength="8"
+          name="dataNascimento"
+          placeholder="ddmmaaaa"
+          type="text"
+          value=""
+        />
+        <p
+          class="mt-2 text-xs text-gray-500"
+        >
+          Use este formato: dia/mês/ano (ex: 15031990)
+        </p>
       </div>
       <button
         class="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base font-medium"
@@ -370,7 +446,7 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         class="mt-6"
       >
         <button
-          class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+          class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
         >
           <svg
@@ -426,7 +502,7 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         class="flex flex-col items-center justify-center mb-4"
       >
         <div
-          class="w-24 h-24 flex items-center justify-center"
+          class="w-32 h-32 flex items-center justify-center"
         >
           <img
             alt="QWork"
@@ -445,6 +521,49 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
       >
         Avaliação Psicossocial baseada no COPSOQ III
       </p>
+    </div>
+    <div
+      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+    >
+      <h3
+        class="text-sm font-semibold text-blue-900 mb-2"
+      >
+        Como Fazer Login?
+      </h3>
+      <ul
+        class="space-y-2 text-sm text-blue-800"
+      >
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="font-bold text-blue-600 mt-0.5"
+          >
+            1
+          </span>
+          <span>
+            <strong>
+              Com Senha
+            </strong>
+             - Todos os usuários (RH, Gestor, Emissor, etc.): insira seu CPF e Senha
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="font-bold text-blue-600 mt-0.5"
+          >
+            2
+          </span>
+          <span>
+            <strong>
+              Com Data de Nascimento
+            </strong>
+             - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+          </span>
+        </li>
+      </ul>
     </div>
     <form
       class="space-y-4 sm:space-y-6"
@@ -469,20 +588,53 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
       </div>
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 required"
+          class="block text-sm font-medium text-gray-700"
           for="senha"
         >
           Senha
+           
+          <span
+            class="text-gray-500 font-normal"
+          >
+            (opcional se for funcionário)
+          </span>
         </label>
         <input
           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="senha"
           name="senha"
           placeholder="••••••••"
-          required=""
           type="password"
           value=""
         />
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700"
+          for="dataNascimento"
+        >
+          Data de nascimento
+           
+          <span
+            class="text-gray-500 font-normal"
+          >
+            (opcional se tiver senha)
+          </span>
+        </label>
+        <input
+          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          id="dataNascimento"
+          maxlength="8"
+          name="dataNascimento"
+          placeholder="ddmmaaaa"
+          type="text"
+          value=""
+        />
+        <p
+          class="mt-2 text-xs text-gray-500"
+        >
+          Use este formato: dia/mês/ano (ex: 15031990)
+        </p>
       </div>
       <button
         class="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base font-medium"
@@ -518,7 +670,7 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         class="mt-6"
       >
         <button
-          class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+          class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
         >
           <svg
@@ -574,7 +726,7 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         class="flex flex-col items-center justify-center mb-4"
       >
         <div
-          class="w-24 h-24 flex items-center justify-center"
+          class="w-32 h-32 flex items-center justify-center"
         >
           <img
             alt="QWork"
@@ -593,6 +745,49 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
       >
         Avaliação Psicossocial baseada no COPSOQ III
       </p>
+    </div>
+    <div
+      class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg"
+    >
+      <h3
+        class="text-sm font-semibold text-blue-900 mb-2"
+      >
+        Como Fazer Login?
+      </h3>
+      <ul
+        class="space-y-2 text-sm text-blue-800"
+      >
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="font-bold text-blue-600 mt-0.5"
+          >
+            1
+          </span>
+          <span>
+            <strong>
+              Com Senha
+            </strong>
+             - Todos os usuários (RH, Gestor, Emissor, etc.): insira seu CPF e Senha
+          </span>
+        </li>
+        <li
+          class="flex items-start gap-2"
+        >
+          <span
+            class="font-bold text-blue-600 mt-0.5"
+          >
+            2
+          </span>
+          <span>
+            <strong>
+              Com Data de Nascimento
+            </strong>
+             - Funcionários: insira seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+          </span>
+        </li>
+      </ul>
     </div>
     <form
       class="space-y-4 sm:space-y-6"
@@ -617,20 +812,53 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
       </div>
       <div>
         <label
-          class="block text-sm font-medium text-gray-700 required"
+          class="block text-sm font-medium text-gray-700"
           for="senha"
         >
           Senha
+           
+          <span
+            class="text-gray-500 font-normal"
+          >
+            (opcional se for funcionário)
+          </span>
         </label>
         <input
           class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
           id="senha"
           name="senha"
           placeholder="••••••••"
-          required=""
           type="password"
           value=""
         />
+      </div>
+      <div>
+        <label
+          class="block text-sm font-medium text-gray-700"
+          for="dataNascimento"
+        >
+          Data de nascimento
+           
+          <span
+            class="text-gray-500 font-normal"
+          >
+            (opcional se tiver senha)
+          </span>
+        </label>
+        <input
+          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+          id="dataNascimento"
+          maxlength="8"
+          name="dataNascimento"
+          placeholder="ddmmaaaa"
+          type="text"
+          value=""
+        />
+        <p
+          class="mt-2 text-xs text-gray-500"
+        >
+          Use este formato: dia/mês/ano (ex: 15031990)
+        </p>
       </div>
       <button
         class="w-full bg-primary text-white py-3 px-4 rounded-md hover:bg-primary-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-base font-medium"
@@ -666,7 +894,7 @@ exports[`Regressão Visual - Responsividade Login Page - Responsividade deve ren
         class="mt-6"
       >
         <button
-          class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors"
+          class="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           type="button"
         >
           <svg

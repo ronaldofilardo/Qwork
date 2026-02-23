@@ -205,7 +205,9 @@ describe('RH Empresa Dashboard', () => {
       await waitFor(() => {
         // O UI atual mostra o título de lotes e um CTA; garante que o header principal exista
         expect(
-          screen.getByRole('heading', { name: /Ciclos de Coletas Avaliativas/i })
+          screen.getByRole('heading', {
+            name: /Ciclos de Coletas Avaliativas/i,
+          })
         ).toBeInTheDocument();
         expect(screen.getByText('🚀 Iniciar Novo Ciclo')).toBeInTheDocument();
       });
@@ -244,7 +246,9 @@ describe('RH Empresa Dashboard', () => {
       await waitFor(() => {
         // O dashboard atual foca em lotes; garantimos que o título de lotes esteja presente
         expect(
-          screen.getByRole('heading', { name: /Ciclos de Coletas Avaliativas/i })
+          screen.getByRole('heading', {
+            name: /Ciclos de Coletas Avaliativas/i,
+          })
         ).toBeInTheDocument();
       });
 
@@ -263,15 +267,16 @@ describe('RH Empresa Dashboard', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByRole('heading', { name: /Ciclos de Coletas Avaliativas/i })
+          screen.getByRole('heading', {
+            name: /Ciclos de Coletas Avaliativas/i,
+          })
         ).toBeInTheDocument();
       });
 
       // Verifica se a classe helper foi aplicada ao container e ao grid
-      const lotesContainer = document.querySelector('.lotes-container');
       const lotesGrid = document.querySelector('.lotes-grid');
 
-      expect(lotesContainer).toBeInTheDocument();
+      // A classe .lotes-container foi removida; apenas .lotes-grid existe no componente atual
       expect(lotesGrid).toBeInTheDocument();
 
       // Assegura que o botão para Iniciar Novo Ciclo continua disponível
@@ -481,15 +486,16 @@ describe('RH Empresa Dashboard', () => {
 
       await waitFor(
         () => {
+          // A aba de funcionários agora exibe 'Importar Múltiplos (XLSX)' como ação principal
           expect(
-            screen.getByText(/Gerenciar Funcionários/i)
+            screen.getByText('Importar Múltiplos (XLSX)')
           ).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
 
-      // Verifica seções da sidebar
-      expect(screen.getByText(/Gerenciar Funcionários/i)).toBeInTheDocument();
+      // Verifica seções da aba funcionários
+      expect(screen.getByText('Importar Múltiplos (XLSX)')).toBeInTheDocument();
     });
 
     it('deve ter seção de upload compacta na sidebar', async () => {
@@ -661,4 +667,3 @@ describe('RH Empresa Dashboard', () => {
     // O layout atual não exibe esses textos, nem domínios explicitamente. Testes removidos para refletir o código fonte real.
   });
 });
-

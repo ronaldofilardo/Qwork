@@ -1,0 +1,183 @@
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+PASS __tests__/visual-regression/responsiveness.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/visual-regression/css-layout.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/visual-regression/page-snapshots.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at Object.log (lib/db.ts:673:15)
+
+RBAC seed applied to test database
+PASS __tests__/integration/empresa-status-display.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/visual-regression/visual-consistency.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/visual-regression/component-specific.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/visual-regression/component-snapshots.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/visual-regression/mobile-responsividade.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+RBAC seed applied to test database
+PASS __tests__/entidade/account-info-plano.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+
+Test Suites: 9 passed, 9 total
+Tests:       114 passed, 114 total
+Snapshots:   48 passed, 48 total
+Time:        11.486 s, estimated 13 s
+Ran all test suites matching __tests__/visual-regression|__tests__/integration/empresa-status-display.test.tsx|__tests__/entidade/account-info-plano.test.ts.

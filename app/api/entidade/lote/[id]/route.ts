@@ -43,6 +43,7 @@ export async function GET(
         la.id,
         la.tipo,
         la.status,
+        la.status_pagamento,
         la.criado_em,
         la.liberado_em,
         l.emitido_em as laudo_emitido_em,
@@ -57,7 +58,17 @@ export async function GET(
         l.status as laudo_status,
         l.emissor_cpf,
         l.hash_pdf,
-        l.arquivo_remoto_url
+        l.arquivo_remoto_url,
+        -- Informação de boleto pendente para auto-reconciliação no frontend
+        (
+          SELECT p.asaas_payment_id
+          FROM pagamentos p
+          WHERE (p.entidade_id = la.entidade_id OR p.clinica_id = la.clinica_id)
+            AND p.status = 'pendente'
+            AND p.asaas_payment_id IS NOT NULL
+          ORDER BY p.criado_em DESC
+          LIMIT 1
+        ) as boleto_asaas_id_pendente
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id

@@ -50,8 +50,8 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
 
     // Criar clínica de teste
     const clinica = await query(
-      `INSERT INTO clinicas (nome, cnpj, email, endereco, telefone) 
-       VALUES ($1, $2, $3, $4, $5) 
+      `INSERT INTO clinicas (nome, cnpj, email, endereco, telefone, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
        RETURNING id`,
       [
         'Clínica Test Gestor RH',
@@ -59,6 +59,13 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
         'gestorrh@test.com',
         'Endereço Teste',
         '11999999999',
+        'São Paulo',
+        'SP',
+        '01310100',
+        'Responsável Teste',
+        '09999999901',
+        'responsavel@test.com',
+        '11988887777',
       ]
     );
     clinicaId = clinica.rows[0].id;
@@ -148,11 +155,15 @@ describe('Gestores RH - Validação de usuario_tipo', () => {
     }
   });
 
-  it('deve contar gestores RH usando usuarios_resumo', async () => {
+  it('deve contar gestores RH usando query direta em usuarios', async () => {
     const result = await query(
-      `SELECT tipo_usuario as usuario_tipo, total, ativos, clinicas_vinculadas
-       FROM usuarios_resumo
-       WHERE usuario_tipo = 'rh'`
+      `SELECT tipo_usuario as usuario_tipo,
+              COUNT(*) as total,
+              COUNT(*) FILTER (WHERE ativo = true) as ativos,
+              COUNT(DISTINCT clinica_id) as clinicas_vinculadas
+       FROM usuarios
+       WHERE tipo_usuario = 'rh'
+       GROUP BY tipo_usuario`
     );
 
     if (result.rows.length > 0) {
