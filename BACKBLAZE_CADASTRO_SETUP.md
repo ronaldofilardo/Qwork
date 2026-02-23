@@ -3,13 +3,15 @@
 ## Resumo da Implementação
 
 **DEV (local):**
+
 - ✅ Upload local em `public/uploads/cadastros/{cnpj}/`
 - ✅ Persistência garantida durante sessão
 - ✅ Sem dependência de Backblaze
 
 **PROD (Vercel):**
+
 - ✅ Upload direto para Backblaze (bucket: `d2eaa89114748cc094c10211`)
-- ✅ Caminho: `/laudos/cad-qwork/{cnpj}/{tipo}_{timestamp}.pdf`
+- ✅ Caminho: `/cad-qwork/{cnpj}/{tipo}_{timestamp}.pdf`
 - ✅ Sem arquivo em `/tmp` (serverless efêmero)
 - ✅ URL remota persistente no banco
 
@@ -30,6 +32,7 @@ NEXT_PUBLIC_DISABLE_ANEXOS=true
 ```
 
 **Onde buscar:**
+
 1. Dashboard Backblaze → Application Keys → Criar ou selecionar chave S3
 2. Copiar `applicationKeyId` (ID)
 3. Copiar `applicationKey` (Secret)
@@ -42,17 +45,17 @@ NEXT_PUBLIC_DISABLE_ANEXOS=true
 ```
 laudos-qwork/
 ├── laudos/                       # Arquivos de emissão (Laudos)
-│   ├── lote-{loteId}/
-│   │   └── laudo-{timestamp}-{random}.pdf
-│   └── cad-qwork/               # Arquivos de cadastro (NOVO)
-│       ├── 12345678000100/       # CNPJ (sem formatação)
-│       │   ├── cartao_cnpj-1708...pdf
-│       │   ├── contrato_social-1708...pdf
-│       │   └── doc_identificacao-1708...pdf
-│       └── 98765432000187/
-│           ├── cartao_cnpj-1708...pdf
-│           ├── contrato_social-1708...pdf
-│           └── doc_identificacao-1708...pdf
+│   └── lote-{loteId}/
+│       └── laudo-{timestamp}-{random}.pdf
+└── cad-qwork/                   # Arquivos de cadastro
+    ├── 12345678000100/           # CNPJ (sem formatação)
+    │   ├── cartao_cnpj-1708...pdf
+    │   ├── contrato_social-1708...pdf
+    │   └── doc_identificacao-1708...pdf
+    └── 98765432000187/
+        ├── cartao_cnpj-1708...pdf
+        ├── contrato_social-1708...pdf
+        └── doc_identificacao-1708...pdf
 ```
 
 ---
@@ -80,15 +83,17 @@ export async function uploadArquivoCadastro(
   buffer: Buffer,
   tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
   cnpj: string
-): Promise<CadastroArquivoResult>
+): Promise<CadastroArquivoResult>;
 ```
 
 **Comportamento:**
+
 - Detecta `process.env.VERCEL === '1'` ou `NODE_ENV === 'production'`
 - **DEV:** Salva em `/public/uploads/cadastros/{cnpj}/{tipo}_{timestamp}.pdf`
 - **PROD:** Upload para B2, retorna URL remota
 
 **Retorna:**
+
 ```typescript
 {
   path: string,  // '/uploads/cadastros/...' (DEV) ou URL (PROD)
@@ -103,10 +108,10 @@ export async function uploadArquivoCadastro(
 
 ### Rotas Modificadas
 
-| Rota | Mudança |
-|---|---|
+| Rota                           | Mudança                       |
+| ------------------------------ | ----------------------------- |
 | `POST /api/cadastro/tomadores` | Usa `uploadArquivoCadastro()` |
-| `POST /api/rh/empresas` | Usa `uploadArquivoCadastro()` |
+| `POST /api/rh/empresas`        | Usa `uploadArquivoCadastro()` |
 
 Ambas salvam os arquivos **antes** do INSERT no banco e incluem as informações remotas (PROD).
 
@@ -115,11 +120,13 @@ Ambas salvam os arquivos **antes** do INSERT no banco e incluem as informações
 ## Fluxo de Ativação
 
 **Atualmente (23/02/2026):**
+
 - ✅ `NEXT_PUBLIC_DISABLE_ANEXOS=true` em PROD (desabilita upload)
 - ✅ DEV funciona normalmente com `public/uploads/`
 - ✅ B2 está pronto mas não está em uso
 
 **Para ativar em PROD:**
+
 1. Remover `NEXT_PUBLIC_DISABLE_ANEXOS=true` (ou deixar `false`) no Vercel
 2. Garantir que `BACKBLAZE_*` vars estão setadas
 3. Deploy
@@ -130,19 +137,22 @@ Ambas salvam os arquivos **antes** do INSERT no banco e incluem as informações
 ## Verificação Rápida
 
 ### Confirmar upload em DEV
+
 ```bash
 ls -la public/uploads/cadastros/
 ```
 
 ### Confirmar upload em PROD (Vercel logs)
+
 ```
-[STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100) 
+[STORAGE] Arquivo de cadastro cartao_cnpj (CNPJ: 12345678000100)
           enviado para Backblaze: laudos/cad-qwork/12345678000100/cartao_cnpj-1708...pdf
 ```
 
 ### Verificar no banco
+
 ```sql
-SELECT 
+SELECT
   id, cnpj,
   cartao_cnpj_path,
   cartao_cnpj_arquivo_remoto_provider,

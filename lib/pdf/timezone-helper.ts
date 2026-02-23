@@ -1,15 +1,17 @@
 /**
- * Helper para correção de timezone em PDFs
- * Problema: Em PROD, o sistema estava adicionando 3 horas aos horários
+ * Helper para formatação de datas/horas sempre no fuso horário de São Paulo (UTC-3)
  *
- * Solução: Subtrair 3 horas das datas/timestamps antes de formatar
- * Isso garante que a hora exibida seja a correta (Brasil -3h UTC)
+ * Solução: Usar timeZone: 'America/Sao_Paulo' em todas as funções de formatação.
+ * Isso garante o horário correto de São Paulo independentemente de onde o código
+ * executa (Vercel UTC, máquina local Brasil, CI, etc.).
  */
 
+const BRAZIL_TIMEZONE = 'America/Sao_Paulo';
+
 /**
- * Corrige timestamp subtraindo 3 horas (ajuste de timezone PROD)
- * @param date Data ou string ISO para converter
- * @returns Data com 3 horas subtraídas
+ * Parseia o valor para um objeto Date sem modificar o horário.
+ * @param value Data ou string ISO para converter
+ * @returns Objeto Date correspondente
  */
 export function corrigirTimezone(
   value: Date | string | null | undefined
@@ -17,26 +19,21 @@ export function corrigirTimezone(
   if (!value) {
     return new Date();
   }
-
-  const data = value instanceof Date ? value : new Date(value);
-
-  // Subtrair 3 horas (3 * 60 * 60 * 1000 ms)
-  const dataCorrigida = new Date(data.getTime() - 3 * 60 * 60 * 1000);
-
-  return dataCorrigida;
+  return value instanceof Date ? value : new Date(value);
 }
 
 /**
- * Formata data corrigida para exibição em relatórios
+ * Formata data para exibição em relatórios sempre no fuso de São Paulo
  * @param value Data ou string ISO
  * @returns String formatada "DD/MM/YYYY, HH:mm:ss"
  */
 export function formatarDataCorrigida(
   value: Date | string | null | undefined
 ): string {
-  const dataCorrigida = corrigirTimezone(value);
+  const data = value instanceof Date ? value : value ? new Date(value) : new Date();
 
-  return dataCorrigida.toLocaleString('pt-BR', {
+  return data.toLocaleString('pt-BR', {
+    timeZone: BRAZIL_TIMEZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -47,16 +44,17 @@ export function formatarDataCorrigida(
 }
 
 /**
- * Formata apenas a data (sem hora)
+ * Formata apenas a data (sem hora) no fuso de São Paulo
  * @param value Data ou string ISO
  * @returns String formatada "DD/MM/YYYY"
  */
 export function formatarDataApenasData(
   value: Date | string | null | undefined
 ): string {
-  const dataCorrigida = corrigirTimezone(value);
+  const data = value instanceof Date ? value : value ? new Date(value) : new Date();
 
-  return dataCorrigida.toLocaleDateString('pt-BR', {
+  return data.toLocaleDateString('pt-BR', {
+    timeZone: BRAZIL_TIMEZONE,
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -64,14 +62,15 @@ export function formatarDataApenasData(
 }
 
 /**
- * Formata apenas a hora
+ * Formata apenas a hora no fuso de São Paulo
  * @param value Data ou string ISO
  * @returns String formatada "HH:mm:ss"
  */
 export function formatarHora(value: Date | string | null | undefined): string {
-  const dataCorrigida = corrigirTimezone(value);
+  const data = value instanceof Date ? value : value ? new Date(value) : new Date();
 
-  return dataCorrigida.toLocaleTimeString('pt-BR', {
+  return data.toLocaleTimeString('pt-BR', {
+    timeZone: BRAZIL_TIMEZONE,
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
