@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StatusAprovacao } from '@/lib/db';
-import { writeFile } from 'fs/promises';
-import path from 'path';
-import { existsSync, mkdirSync } from 'fs';
-import os from 'os';
 
 // Validar CNPJ
 function validarCNPJ(cnpj: string): boolean {
@@ -63,7 +59,7 @@ function validarEmail(email: string): boolean {
 // Salvar arquivo: salvar localmente em `public/uploads/entidades` (sempre local)
 async function salvarArquivo(
   file: File,
-  tipo: string,
+  tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
   cnpj: string
 ): Promise<string> {
   try {
@@ -80,31 +76,13 @@ async function salvarArquivo(
 
     const bytes = await (file as any).arrayBuffer();
     const buffer = Buffer.from(bytes);
+    const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
 
-    // Save file locally (always use local storage)
+    // Usar função compartilhada de storage que detecta DEV/PROD
+    const { uploadArquivoCadastro } = await import('@/lib/storage/cadastro-storage');
+    const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo);
 
-    // Fallback: salvar localmente
-    // Em ambientes serverless (Vercel) não podemos escrever em /var/task/public.
-    // Use o diretório temporário do sistema em produção/serverless, e apenas
-    // use public/uploads em desenvolvimento local.
-    const isServerlessProd =
-      process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
-    const uploadDir = isServerlessProd
-      ? path.join(os.tmpdir(), 'qwork', 'uploads', 'entidades', cnpj)
-      : path.join(process.cwd(), 'public', 'uploads', 'entidades', cnpj);
-
-    // Criar diretório se não existir
-    if (!existsSync(uploadDir)) {
-      mkdirSync(uploadDir, { recursive: true });
-    }
-
-    const extension = ((file as any).name || '').split('.').pop() || 'bin';
-    const filename = `${tipo}_${Date.now()}.${extension}`;
-    const filepath = path.join(uploadDir, filename);
-
-    await writeFile(filepath, buffer);
-
-    return `/uploads/entidades/${cnpj}/${filename}`;
+    return result.path;
   } catch (error) {
     console.error('Erro ao salvar arquivo:', error);
     throw new Error('Erro ao salvar arquivo');
