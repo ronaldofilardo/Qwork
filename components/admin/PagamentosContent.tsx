@@ -10,6 +10,7 @@ import {
   ExternalLink,
   Link2,
   Users,
+  RefreshCw,
 } from 'lucide-react';
 import ModalLinkPagamentoEmissao from '../modals/ModalLinkPagamentoEmissao';
 
@@ -167,6 +168,65 @@ export default function PagamentosContent() {
       });
     }
   };
+
+  const handleVerificarPagamento = async (loteId: number) => {
+    try {
+      setProcessando(loteId);
+      const response = await fetch('/api/pagamento/asaas/sincronizar-lote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lote_id: loteId }),
+      });
+
+      if (!response.ok) throw new Error('Erro ao verificar pagamento');
+
+      const data = await response.json();
+      if (data.synced) {
+        await carregarSolicitacoes();
+        alert('✅ Pagamento confirmado pelo gateway! Status atualizado.');
+      } else {
+        alert(
+          `ℹ️ ${data.message || 'Pagamento ainda não confirmado pelo gateway. Tente novamente em instantes.'}`
+        );
+      }
+    } catch (error) {
+      console.error('Erro ao verificar pagamento:', error);
+      alert('Erro ao verificar pagamento. Tente novamente.');
+    } finally {
+      setProcessando(null);
+    }
+  };
+
+  // Auto-reconcilia silenciosamente ao entrar na aba de pagamentos pendentes
+  useEffect(() => {
+    if (filterTab !== 'aguardando_pagamento' || loading) return;
+    const pendentes = solicitacoes.filter(
+      (s) => s.status_pagamento === 'aguardando_pagamento'
+    );
+    if (pendentes.length === 0) return;
+
+    const reconciliar = async () => {
+      let houveAtualizacao = false;
+      await Promise.all(
+        pendentes.map(async (s) => {
+          try {
+            const res = await fetch('/api/pagamento/asaas/sincronizar-lote', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lote_id: s.lote_id }),
+            });
+            const data = await res.json();
+            if (data.synced) houveAtualizacao = true;
+          } catch {
+            // falha silenciosa — não interrompe a navegação
+          }
+        })
+      );
+      if (houveAtualizacao) await carregarSolicitacoes();
+    };
+
+    reconciliar();
+  }, [filterTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatCurrency = (value: number | null) => {
     if (value === null) return 'R$ 0,00';
@@ -464,13 +524,33 @@ export default function PagamentosContent() {
                 )}
 
                 {solicitacao.status_pagamento === 'aguardando_pagamento' && (
-                  <button
-                    onClick={() => handleVerLink(solicitacao)}
-                    className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Ver Link / QR Code
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleVerLink(solicitacao)}
+                      className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Ver Link / QR Code
+                    </button>
+                    <button
+                      onClick={() =>
+                        handleVerificarPagamento(solicitacao.lote_id)
+                      }
+                      disabled={processando === solicitacao.lote_id}
+                      className="px-6 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    >
+                      <RefreshCw
+                        className={`w-4 h-4 ${
+                          processando === solicitacao.lote_id
+                            ? 'animate-spin'
+                            : ''
+                        }`}
+                      />
+                      {processando === solicitacao.lote_id
+                        ? 'Verificando...'
+                        : 'Verificar Pagamento'}
+                    </button>
+                  </>
                 )}
 
                 {solicitacao.status_pagamento === 'pago' && (

@@ -83,9 +83,10 @@ export async function createTesttomador(
     cep: options.cep || '01000-000',
     status: options.status || 'aprovado',
     responsavel_nome: options.responsavel_nome || 'João Responsável',
+    // CPF: 11 dígitos aleatórios — evita colisão em Promise.all com múltiplas clínicas
     responsavel_cpf:
       options.responsavel_cpf ||
-      `${timestamp.toString().slice(-9)}${String(Math.floor(Math.random() * 90) + 10)}`,
+      String(Math.floor(10000000000 + Math.random() * 89999999999)),
     responsavel_email:
       options.responsavel_email ||
       `responsavel-${timestamp}-${rand}@empresa.com`,
@@ -265,6 +266,13 @@ export async function createTestRecibo(
  */
 export async function cleanupTestData(): Promise<void> {
   // Ordem importa devido às foreign keys
+  await query(`DELETE FROM avaliacoes WHERE funcionario_cpf LIKE '99999%'`);
+  await query(
+    `DELETE FROM lotes_avaliacao WHERE tipo = 'completo' AND liberado_por LIKE '99999%'`
+  );
+  await query(
+    `DELETE FROM funcionarios WHERE email LIKE 'func-test-%@empresa.com'`
+  );
   await query(
     `DELETE FROM pagamentos WHERE valor = 200.0 AND status IN ('pago', 'pendente')`
   );
@@ -276,8 +284,185 @@ export async function cleanupTestData(): Promise<void> {
     `DELETE FROM entidades WHERE email LIKE 'teste-%@empresa.com' OR email LIKE 'responsavel-%@empresa.com'`
   );
   await query(
-    `DELETE FROM clinicas WHERE email LIKE 'teste-%@empresa.com' OR email LIKE 'responsavel-%@empresa.com'`
+    `DELETE FROM clinicas WHERE email LIKE 'teste-%@empresa.com' OR email LIKE 'responsavel-%@empresa.com' OR email LIKE 'clinica-test-%@test.com'`
   );
+}
+
+// ─────────────────────────────────────────────────────────────
+// Factories adicionais: Clínica, Lote, Funcionário, Avaliação
+// ─────────────────────────────────────────────────────────────
+
+export interface CreateClinicaOptions {
+  nome?: string;
+  cnpj?: string;
+  email?: string;
+  /** OBRIGATÓRIO pela constraint NOT NULL — padrão: '11987654321' */
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+  responsavel_nome?: string;
+  responsavel_cpf?: string;
+  responsavel_email?: string;
+  responsavel_celular?: string;
+}
+
+/**
+ * Cria uma clínica de teste garantindo todos os campos NOT NULL obrigatórios.
+ * Resolve o problema histórico de INSERTs manuais que omitiam `telefone`.
+ */
+export async function createTestClinica(
+  options: CreateClinicaOptions = {}
+): Promise<number> {
+  const timestamp = Date.now();
+  const rand = Math.random().toString(36).slice(2, 8);
+
+  const defaults = {
+    nome: options.nome ?? `Clinica Test ${timestamp}-${rand}`,
+    // CNPJ: 14 dígitos aleatórios (evita colisão em chamadas paralelas no mesmo ms)
+    cnpj:
+      options.cnpj ??
+      String(Math.floor(10000000000000 + Math.random() * 89999999999999)),
+    email: options.email ?? `clinica-test-${timestamp}-${rand}@test.com`,
+    telefone: options.telefone ?? '11987654321', // campo NOT NULL — sempre incluído
+    endereco: options.endereco ?? 'Av. Paulista, 1000',
+    cidade: options.cidade ?? 'São Paulo',
+    estado: options.estado ?? 'SP',
+    cep: options.cep ?? '01310-100',
+    responsavel_nome: options.responsavel_nome ?? 'Responsável Test',
+    // CPF: 11 dígitos aleatórios — evita clinicas_responsavel_cpf_key em Promise.all
+    responsavel_cpf:
+      options.responsavel_cpf ??
+      String(Math.floor(10000000000 + Math.random() * 89999999999)),
+    responsavel_email:
+      options.responsavel_email ?? `resp-clinica-${timestamp}-${rand}@test.com`,
+    responsavel_celular: options.responsavel_celular ?? '11988887777',
+  };
+
+  const result = await query(
+    `INSERT INTO clinicas (
+       nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+       responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa
+     )
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
+     RETURNING id`,
+    [
+      defaults.nome,
+      defaults.cnpj,
+      defaults.email,
+      defaults.telefone,
+      defaults.endereco,
+      defaults.cidade,
+      defaults.estado,
+      defaults.cep,
+      defaults.responsavel_nome,
+      defaults.responsavel_cpf,
+      defaults.responsavel_email,
+      defaults.responsavel_celular,
+    ]
+  );
+
+  return result.rows[0].id;
+}
+
+export interface CreateLoteOptions {
+  empresa_id: number;
+  clinica_id: number;
+  liberado_por: string;
+  tipo?: 'completo' | 'parcial';
+  status?: 'ativo' | 'concluido' | 'cancelado';
+  numero_ordem?: number;
+}
+
+/**
+ * Cria um lote de avaliação de teste com valores padrão válidos.
+ */
+export async function createTestLote(
+  options: CreateLoteOptions
+): Promise<number> {
+  const maxOrdem = await query(
+    'SELECT COALESCE(MAX(numero_ordem), 0) AS max FROM lotes_avaliacao WHERE empresa_id = $1',
+    [options.empresa_id]
+  );
+  const numeroOrdem = options.numero_ordem ?? maxOrdem.rows[0].max + 1;
+
+  const result = await query(
+    `INSERT INTO lotes_avaliacao (empresa_id, clinica_id, tipo, status, numero_ordem, liberado_por)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     RETURNING id`,
+    [
+      options.empresa_id,
+      options.clinica_id,
+      options.tipo ?? 'completo',
+      options.status ?? 'ativo',
+      numeroOrdem,
+      options.liberado_por,
+    ]
+  );
+
+  return result.rows[0].id;
+}
+
+export interface CreateFuncionarioOptions {
+  tomador_id: number;
+  cpf?: string;
+  nome?: string;
+  email?: string;
+  /** Senha padrão hash = 'test123' */
+  senha_hash?: string;
+}
+
+/**
+ * Cria um funcionário de teste com valores padrão válidos.
+ */
+export async function createTestFuncionario(
+  options: CreateFuncionarioOptions
+): Promise<string> {
+  const timestamp = Date.now();
+  const rand = Math.random().toString(36).slice(2, 8);
+  const cpf =
+    options.cpf ??
+    String(Math.floor(Math.random() * 99999999999))
+      .padStart(11, '9')
+      .slice(0, 11);
+
+  await query(
+    `INSERT INTO funcionarios (cpf, nome, tomador_id, usuario_tipo, email, senha_hash)
+     VALUES ($1, $2, $3, 'funcionario_entidade', $4, $5)`,
+    [
+      cpf,
+      options.nome ?? `Funcionário Test ${timestamp}`,
+      options.tomador_id,
+      options.email ?? `func-test-${timestamp}-${rand}@empresa.com`,
+      options.senha_hash ??
+        '$2a$10$NNUkJ.nfWUrrDcAcwWNjH.RfMEbMfIVW5j7pVz4vTPfEfIqCzUMme',
+    ]
+  );
+
+  return cpf;
+}
+
+export interface CreateAvaliacaoOptions {
+  lote_id: number;
+  funcionario_cpf: string;
+  status?: 'iniciada' | 'em_andamento' | 'concluida' | 'cancelada';
+}
+
+/**
+ * Cria uma avaliação de teste com status inicial.
+ */
+export async function createTestAvaliacao(
+  options: CreateAvaliacaoOptions
+): Promise<number> {
+  const result = await query(
+    `INSERT INTO avaliacoes (lote_id, funcionario_cpf, status, inicio)
+     VALUES ($1, $2, $3, NOW())
+     RETURNING id`,
+    [options.lote_id, options.funcionario_cpf, options.status ?? 'iniciada']
+  );
+
+  return result.rows[0].id;
 }
 
 // Testes para as funções de factory de dados de teste
