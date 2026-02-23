@@ -1,45 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { Users, CheckCircle, FileText, FolderOpen } from 'lucide-react';
-
-interface DashboardStats {
-  total_avaliacoes: number;
-  concluidas: number;
-  total_funcionarios: number;
-  funcionarios_ativos: number;
-}
+import FlowStepsExplainer from '@/components/FlowStepsExplainer';
 
 export default function EntidadeDashboardPage() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadStats = async () => {
-      try {
-        const res = await fetch('/api/entidade/dashboard');
-        if (res.ok) {
-          const data = await res.json();
-          setStats(data.stats);
-        }
-      } catch (error) {
-        console.error('Erro ao carregar estatísticas:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadStats();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <div className="mb-6">
@@ -51,55 +14,7 @@ export default function EntidadeDashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Funcionários</p>
-              <p className="text-3xl font-bold text-gray-800">
-                {stats?.total_funcionarios || 0}
-              </p>
-            </div>
-            <Users className="text-blue-500" size={32} />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Ativos</p>
-              <p className="text-3xl font-bold text-gray-800">
-                {stats?.funcionarios_ativos || 0}
-              </p>
-            </div>
-            <CheckCircle className="text-green-500" size={32} />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Avaliações</p>
-              <p className="text-3xl font-bold text-gray-800">
-                {stats?.total_avaliacoes || 0}
-              </p>
-            </div>
-            <FileText className="text-yellow-500" size={32} />
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Concluídas</p>
-              <p className="text-3xl font-bold text-gray-800">
-                {stats?.concluidas || 0}
-              </p>
-            </div>
-            <FolderOpen className="text-primary-500" size={32} />
-          </div>
-        </div>
-      </div>
+      <FlowStepsExplainer isClinica={false} />
 
       <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">
@@ -115,13 +30,6 @@ export default function EntidadeDashboardPage() {
           </li>
           <li>
             • <strong>Funcionários:</strong> Cadastre e gerencie funcionários
-          </li>
-          <li>
-            • <strong>Laudos:</strong> Acesse e baixe os relatórios gerados
-          </li>
-          <li>
-            • <strong>Notificações:</strong> Acompanhe as atualizações do
-            sistema
           </li>
           <li>
             • <strong>Informações da Conta:</strong> Gerencie seus dados
