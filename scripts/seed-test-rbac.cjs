@@ -3,6 +3,33 @@ const { Client } = require('pg');
 const connectionString =
   process.env.TEST_DATABASE_URL ||
   'postgres://postgres:123456@localhost:5432/nr-bps_db_test';
+
+// ⚠️ SEGURANÇA: Bloqueio absoluto contra seed em banco de produção
+// Este script escreve dados (roles/permissions). Nunca deve rodar em neon.tech.
+if (connectionString.includes('neon.tech')) {
+  console.error(
+    '🚨 BLOQUEADO [seed-test-rbac]: TEST_DATABASE_URL aponta para neon.tech (produção/staging)!\n' +
+      '   Este script NUNCA deve escrever dados em banco de produção.\n' +
+      '   Configure TEST_DATABASE_URL para um banco PostgreSQL LOCAL (ex: postgres://localhost/nr-bps_db_test).'
+  );
+  process.exit(1);
+}
+
+// Validar que o banco alvo parece ser de teste (nome deve conter "test")
+try {
+  const parsed = new URL(connectionString);
+  const dbName = parsed.pathname.replace(/^\//, '');
+  if (!dbName.includes('test') && !dbName.includes('TEST')) {
+    console.error(
+      `🚨 BLOQUEADO [seed-test-rbac]: Nome do banco "${dbName}" não contém "test".\n` +
+        '   Para segurança, o banco de teste deve ter "test" no nome (ex: nr-bps_db_test).'
+    );
+    process.exit(1);
+  }
+} catch {
+  // URL inválida — deixar a conexão falhar naturalmente
+}
+
 const client = new Client({ connectionString });
 
 async function seed() {

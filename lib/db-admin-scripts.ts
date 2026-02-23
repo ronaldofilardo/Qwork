@@ -5,7 +5,6 @@
  * APENAS para scripts internos - nunca use em endpoints da API
  */
 
-import { Pool } from 'pg';
 import { getNeonPool, getPool } from './db';
 
 export interface AdminScriptContext {

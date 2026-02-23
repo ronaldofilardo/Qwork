@@ -300,47 +300,6 @@ export default function PagamentoPage() {
     setMostrarCheckout(false);
   };
 
-  const confirmarPagamentoSimulador = async () => {
-    if (!pagamentoInfo) return;
-
-    setProcessando(true);
-    setErro(null);
-
-    try {
-      const res = await fetch('/api/pagamento/confirmar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          pagamento_id: pagamentoInfo.pagamento_id,
-          metodo_pagamento: metodoSelecionado,
-          plataforma_nome: 'Simulação',
-          plataforma_id: `SIM-${Date.now()}`,
-          numero_parcelas: metodoSelecionado !== 'pix' ? numeroParcelas : 1,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Erro ao confirmar pagamento');
-      }
-
-      const data = await res.json();
-
-      // Redirecionar para login após confirmação
-      alert(
-        `${data.message}\n\nSeu login foi liberado! Você será redirecionado para a tela de login.`
-      );
-      router.push('/login');
-    } catch (error) {
-      console.error('Erro ao confirmar pagamento:', error);
-      setErro(
-        error instanceof Error ? error.message : 'Erro ao processar pagamento'
-      );
-    } finally {
-      setProcessando(false);
-    }
-  };
-
   const simularPagamento = () => {
     if (!pagamentoInfo) {
       setErro('Informações de pagamento faltando');
