@@ -2,8 +2,9 @@
  * Testes unitários: uploadArquivoCadastro
  *
  * Cobre:
- * - Caminho correto no Backblaze: cad-qwork/{cnpj}/{tipo}-{ts}-{rand}.pdf
- * - PROD → chama uploadToBackblaze (sem prefixo "laudos/")
+ * - Bucket correto: 'cad-qwork' (separado do bucket de laudos)
+ * - Caminho correto no bucket: {cnpj}/{tipo}-{ts}-{rand}.pdf
+ * - PROD → chama uploadToBackblaze com bucketOverride='cad-qwork'
  * - DEV  → salva localmente em public/uploads/cadastros/{cnpj}/
  * - Retorno de arquivo_remoto em PROD
  * - Erro é propagado corretamente
@@ -54,34 +55,37 @@ describe('uploadArquivoCadastro', () => {
       process.env.VERCEL = '1';
       mockUploadToBackblaze.mockResolvedValue({
         provider: 'backblaze',
-        bucket: 'laudos-qwork',
-        key: `cad-qwork/${CNPJ}/cartao_cnpj-1708000000000-abc123.pdf`,
-        url: `https://s3.test/laudos-qwork/cad-qwork/${CNPJ}/cartao_cnpj-1708000000000-abc123.pdf`,
+        bucket: 'cad-qwork',
+        key: `${CNPJ}/cartao_cnpj-1708000000000-abc123.pdf`,
+        url: `https://s3.test/cad-qwork/${CNPJ}/cartao_cnpj-1708000000000-abc123.pdf`,
       });
     });
 
-    it('deve chamar uploadToBackblaze com key iniciando em cad-qwork/', async () => {
+    it('deve chamar uploadToBackblaze com bucketOverride="cad-qwork" e key iniciando no cnpj', async () => {
       await uploadArquivoCadastro(BUFFER, 'cartao_cnpj', CNPJ);
 
       expect(mockUploadToBackblaze).toHaveBeenCalledTimes(1);
-      const [, keyArg] = mockUploadToBackblaze.mock.calls[0];
-      expect(keyArg).toMatch(/^cad-qwork\//);
+      const [, keyArg, , bucketArg] = mockUploadToBackblaze.mock.calls[0];
+      // Key deve começar diretamente com o CNPJ (sem prefixo de pasta)
+      expect(keyArg).toMatch(new RegExp(`^${CNPJ}/`));
+      // Bucket override deve ser 'cad-qwork'
+      expect(bucketArg).toBe('cad-qwork');
     });
 
-    it('key NÃO deve conter o prefixo "laudos/"', async () => {
+    it('key NÃO deve conter o prefixo "laudos/" nem "cad-qwork/"', async () => {
       await uploadArquivoCadastro(BUFFER, 'cartao_cnpj', CNPJ);
 
       const [, keyArg] = mockUploadToBackblaze.mock.calls[0];
       expect(keyArg).not.toMatch(/^laudos\//);
-      expect(keyArg).not.toContain('laudos/cad-qwork');
+      expect(keyArg).not.toMatch(/^cad-qwork\//);
     });
 
-    it('key deve seguir o padrão cad-qwork/{cnpj}/{tipo}-{ts}-{rand}.pdf', async () => {
+    it('key deve seguir o padrão {cnpj}/{tipo}-{ts}-{rand}.pdf', async () => {
       await uploadArquivoCadastro(BUFFER, 'contrato_social', CNPJ);
 
       const [, keyArg] = mockUploadToBackblaze.mock.calls[0];
       expect(keyArg).toMatch(
-        new RegExp(`^cad-qwork/${CNPJ}/contrato_social-\\d+-[a-z0-9]+\\.pdf$`)
+        new RegExp(`^${CNPJ}/contrato_social-\\d+-[a-z0-9]+\\.pdf$`)
       );
     });
 
@@ -97,8 +101,8 @@ describe('uploadArquivoCadastro', () => {
 
       expect(result.arquivo_remoto).toBeDefined();
       expect(result.arquivo_remoto!.provider).toBe('backblaze');
-      expect(result.arquivo_remoto!.bucket).toBe('laudos-qwork');
-      expect(result.arquivo_remoto!.key).toContain('cad-qwork/');
+      expect(result.arquivo_remoto!.bucket).toBe('cad-qwork');
+      expect(result.arquivo_remoto!.key).toMatch(new RegExp(`^${CNPJ}/`));
       expect(result.arquivo_remoto!.url).toContain('cad-qwork/');
       expect(result.path).toBeTruthy();
     });
@@ -113,17 +117,18 @@ describe('uploadArquivoCadastro', () => {
       for (const tipo of tipos) {
         mockUploadToBackblaze.mockResolvedValueOnce({
           provider: 'backblaze',
-          bucket: 'laudos-qwork',
-          key: `cad-qwork/${CNPJ}/${tipo}-123-abc.pdf`,
-          url: `https://s3.test/laudos-qwork/cad-qwork/${CNPJ}/${tipo}-123-abc.pdf`,
+          bucket: 'cad-qwork',
+          key: `${CNPJ}/${tipo}-123-abc.pdf`,
+          url: `https://s3.test/cad-qwork/${CNPJ}/${tipo}-123-abc.pdf`,
         });
 
         const result = await uploadArquivoCadastro(BUFFER, tipo, CNPJ);
-        const [, keyArg] = mockUploadToBackblaze.mock.calls[
+        const [, keyArg, , bucketArg] = mockUploadToBackblaze.mock.calls[
           mockUploadToBackblaze.mock.calls.length - 1
         ];
 
-        expect(keyArg).toMatch(new RegExp(`^cad-qwork/${CNPJ}/${tipo}-`));
+        expect(keyArg).toMatch(new RegExp(`^${CNPJ}/${tipo}-`));
+        expect(bucketArg).toBe('cad-qwork');
         expect(result.arquivo_remoto).toBeDefined();
       }
     });

@@ -53,11 +53,14 @@ async function uploadArquivoCadastroLocal(
   };
 }
 
+// Bucket dedicado para arquivos de cadastro (separado do bucket de laudos)
+const CADASTRO_BUCKET = 'cad-qwork';
+
 /**
  * Upload para Backblaze (PROD)
  *
- * Faz upload direto para o bucket configurado em PROD com caminho:
- * cad-qwork/{cnpj}/{tipo}_{timestamp}.{ext}
+ * Faz upload para o bucket 'cad-qwork' com caminho:
+ * {cnpj}/{tipo}-{timestamp}-{random}.{ext}
  */
 async function uploadArquivoCadastroToBackblaze(
   buffer: Buffer,
@@ -68,15 +71,15 @@ async function uploadArquivoCadastroToBackblaze(
     // Detectar extensão pelo tipo MIME ou usar extensão padrão
     const ext = 'pdf'; // Em produção, esperamos sempre PDF
 
-    // Caminho no bucket: cad-qwork/{cnpj}/{tipo}_{timestamp}.{ext}
+    // Caminho no bucket cad-qwork: {cnpj}/{tipo}-{timestamp}-{random}.{ext}
     const timestamp = Date.now();
     const random = Math.random().toString(36).slice(2, 8);
-    const key = `cad-qwork/${cnpj}/${tipo}-${timestamp}-${random}.${ext}`;
+    const key = `${cnpj}/${tipo}-${timestamp}-${random}.${ext}`;
 
-    const result = await uploadToBackblaze(buffer, key, 'application/pdf');
+    const result = await uploadToBackblaze(buffer, key, 'application/pdf', CADASTRO_BUCKET);
 
     console.log(
-      `[STORAGE] Arquivo de cadastro ${tipo} (CNPJ: ${cnpj}) enviado para Backblaze: ${key}`
+      `[STORAGE] Arquivo de cadastro ${tipo} (CNPJ: ${cnpj}) enviado para Backblaze: ${CADASTRO_BUCKET}/${key}`
     );
 
     return {
@@ -103,7 +106,7 @@ async function uploadArquivoCadastroToBackblaze(
  * Fazer upload de arquivo de cadastro (entidade/clínica/empresa)
  *
  * Em DEV: salva em public/uploads/
- * Em PROD: upload para Backblaze (ao bucket `d2eaa89114748cc094c10211` no caminho `/cad-qwork/{cnpj}/`)
+ * Em PROD: upload para Backblaze (bucket `cad-qwork`, caminho `{cnpj}/{tipo}-{timestamp}.pdf`)
  *
  * @param buffer - Buffer do arquivo
  * @param tipo - Tipo de arquivo (cartao_cnpj, contrato_social, doc_identificacao)
