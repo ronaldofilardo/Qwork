@@ -55,23 +55,28 @@ export default function CheckoutAsaas({
   const [error, setError] = useState('');
   const [pollingPayment, setPollingPayment] = useState(false);
 
-  // Poll para verificar status do pagamento (principalmente PIX)
+  // Poll para verificar status do pagamento — consulta o Asaas diretamente via /sincronizar
+  // Funciona para PIX e CREDIT_CARD, independente de webhook
   useEffect(() => {
     if (!paymentData || !pollingPayment) return;
 
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutos (5s * 60)
+    const maxAttempts = 72; // 6 minutos (5s × 72)
 
     const interval = setInterval(async () => {
       attempts++;
 
       try {
-        const response = await fetch(
-          `/api/pagamento/status?pagamento_id=${paymentData.pagamento.id}`
-        );
+        // POST /api/pagamento/asaas/sincronizar: consulta o Asaas em tempo real
+        // e aciona a máquina de estados local se o pagamento foi confirmado no Asaas
+        const response = await fetch('/api/pagamento/asaas/sincronizar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pagamento_id: paymentData.pagamento.id }),
+        });
         const data = await response.json();
 
-        if (data.status === 'pago' || data.status === 'RECEIVED') {
+        if (data.status === 'pago') {
           clearInterval(interval);
           setPollingPayment(false);
           toast.success('🎉 Pagamento confirmado! Redirecionando...');
@@ -88,10 +93,12 @@ export default function CheckoutAsaas({
         if (attempts >= maxAttempts) {
           clearInterval(interval);
           setPollingPayment(false);
-          console.log('Timeout na verificação de pagamento');
+          console.warn(
+            '[Checkout] Timeout na verificação de pagamento após 6 minutos'
+          );
         }
       } catch (pollError) {
-        console.error('Erro ao verificar status:', pollError);
+        console.error('[Checkout] Erro ao verificar status:', pollError);
       }
     }, 5000); // Verifica a cada 5 segundos
 
@@ -131,17 +138,24 @@ export default function CheckoutAsaas({
         toast.success('QR Code PIX gerado! Escaneie para pagar.');
       }
 
-      // Se for cartão, redirecionar para checkout Asaas
+      // Se for cartão: abre o checkout Asaas em nova aba (mantém esta página)
+      // e inicia polling para detectar confirmação automaticamente
       if (formaPagamento === 'CREDIT_CARD' && data.paymentUrl) {
-        toast.loading('Redirecionando para checkout...', { duration: 2000 });
-        setTimeout(() => {
-          window.location.href = data.paymentUrl;
-        }, 2000);
+        window.open(data.paymentUrl, '_blank', 'noopener,noreferrer');
+        setPollingPayment(true);
+        toast.success(
+          '💳 Checkout aberto em nova aba. Conclua o pagamento lá — esta página detectará automaticamente a confirmação.',
+          { duration: 6000 }
+        );
       }
 
-      // Se for boleto, apenas mostrar mensagem
+      // Se for boleto, iniciar polling para detectar confirmação automaticamente
       if (formaPagamento === 'BOLETO') {
-        toast.success('Boleto gerado! Clique para visualizar.');
+        setPollingPayment(true);
+        toast.success(
+          '🧾 Boleto gerado! Esta página detectará automaticamente a confirmação após o pagamento.',
+          { duration: 8000 }
+        );
       }
     } catch (err: any) {
       const errorMessage = err.message || 'Erro ao iniciar pagamento';
@@ -176,6 +190,41 @@ export default function CheckoutAsaas({
       return date.toLocaleDateString('pt-BR');
     } catch {
       return dateString;
+    }
+  };
+
+  // Verificação manual do pagamento do boleto (chamada pelo usuário após pagar)
+  const verificarPagamentoBoleto = async () => {
+    if (!paymentData) return;
+    setLoading(true);
+    try {
+      const response = await fetch('/api/pagamento/asaas/sincronizar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pagamento_id: paymentData.pagamento.id }),
+      });
+      const data = await response.json();
+
+      if (data.status === 'pago') {
+        setPollingPayment(false);
+        toast.success('🎉 Pagamento confirmado! Redirecionando...');
+        setTimeout(() => {
+          if (onSuccess) onSuccess();
+          else window.location.href = '/dashboard';
+        }, 2000);
+      } else {
+        toast(
+          '⏳ Pagamento ainda não confirmado pelo banco. Tente novamente em instantes.',
+          {
+            icon: 'ℹ️',
+            duration: 5000,
+          }
+        );
+      }
+    } catch {
+      toast.error('Erro ao verificar pagamento. Tente novamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -400,6 +449,40 @@ export default function CheckoutAsaas({
           </p>
         )}
 
+        {/* Indicador de monitoramento automático */}
+        {pollingPayment && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-center gap-2 text-blue-700">
+              <svg
+                className="animate-spin h-4 w-4"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              <span className="text-sm font-medium">
+                Monitorando pagamento automaticamente...
+              </span>
+            </div>
+            <p className="text-xs text-blue-600 mt-1">
+              Esta página atualizará quando o pagamento for confirmado.
+            </p>
+          </div>
+        )}
+
         <div className="bg-yellow-50 p-4 rounded-lg mb-4 text-left">
           <p className="text-sm text-gray-700">
             <strong>ℹ️ Instruções:</strong>
@@ -409,6 +492,92 @@ export default function CheckoutAsaas({
             <li>O pagamento pode levar até 2 dias úteis para confirmar</li>
             <li>Você receberá um email quando o pagamento for confirmado</li>
           </ul>
+        </div>
+
+        {/* Botão de verificação manual — útil após efetuar o pagamento */}
+        <button
+          onClick={verificarPagamentoBoleto}
+          disabled={loading}
+          className="w-full mb-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? 'Verificando...' : '🔍 Já paguei — Verificar Confirmação'}
+        </button>
+
+        <button
+          onClick={() => setPaymentData(null)}
+          className="text-blue-600 hover:underline text-sm"
+        >
+          ← Voltar e escolher outro método
+        </button>
+      </div>
+    );
+  }
+
+  // Tela de Cartão de Crédito — checkout aberto em nova aba, polling ativo nesta tela
+  if (formaPagamento === 'CREDIT_CARD') {
+    return (
+      <div className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">
+        <h2 className="text-2xl font-bold mb-4 text-gray-800">
+          💳 Pagamento com Cartão
+        </h2>
+
+        {pollingPayment ? (
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <svg
+                className="animate-spin h-5 w-5 text-blue-600"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                />
+              </svg>
+              <span className="font-semibold text-blue-700">
+                Aguardando confirmação...
+              </span>
+            </div>
+            <p className="text-sm text-blue-600">
+              Complete o pagamento na aba do Asaas. Esta página atualizará
+              automaticamente após a confirmação.
+            </p>
+          </div>
+        ) : (
+          <p className="mb-4 text-gray-600">
+            Clique no botão abaixo para abrir o checkout seguro do Asaas.
+          </p>
+        )}
+
+        {paymentData.paymentUrl && (
+          <a
+            href={paymentData.paymentUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => !pollingPayment && setPollingPayment(true)}
+            className="inline-block px-8 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 mb-4"
+          >
+            🔒 Abrir Checkout Asaas
+          </a>
+        )}
+
+        <div className="bg-gray-50 p-4 rounded-lg mb-4 text-left text-sm text-gray-600">
+          <p className="font-semibold mb-1">ℹ️ Como funciona:</p>
+          <ol className="list-decimal list-inside space-y-1">
+            <li>Clique em &quot;Abrir Checkout Asaas&quot; (nova aba)</li>
+            <li>Preencha seus dados de cartão no site seguro da Asaas</li>
+            <li>Esta página detectará a confirmação automaticamente</li>
+          </ol>
         </div>
 
         <button
@@ -421,12 +590,12 @@ export default function CheckoutAsaas({
     );
   }
 
-  // Fallback / Cartão (redirecionamento externo)
+  // Fallback genérico (não deve ser alcançado em condições normais)
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded-lg shadow-lg text-center">
       <h2 className="text-2xl font-bold mb-4">Processando...</h2>
       <p className="text-gray-600">
-        Você será redirecionado para finalizar o pagamento.
+        Aguarde enquanto processamos seu pagamento.
       </p>
     </div>
   );

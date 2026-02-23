@@ -72,9 +72,16 @@ export async function POST(request: NextRequest) {
       tomador.tipo === 'entidade' ? 'entidade_id' : 'clinica_id';
     const pagamentoResult = await query(
       `INSERT INTO pagamentos (
-        ${columnName}, contrato_id, valor, status, metodo, plataforma_nome
-      ) VALUES ($1, $2, $3, 'pendente', $4, 'Asaas') RETURNING id`,
-      [finalTomadorId, contrato_id || null, valor_total, metodo.toLowerCase()]
+        ${columnName}, contrato_id, valor, status, metodo, plataforma_nome, dados_adicionais
+      ) VALUES ($1, $2, $3, 'pendente', $4, 'Asaas', $5) RETURNING id`,
+      [
+        finalTomadorId,
+        contrato_id || null,
+        valor_total,
+        metodo.toLowerCase(),
+        // Gravar lote_id no JSONB para facilitar reconciliação sem N+1 API calls
+        JSON.stringify({ lote_id: lote_id ?? null }),
+      ]
     );
 
     const pagamentoId = pagamentoResult.rows[0].id;
