@@ -71,8 +71,8 @@ export default function ClinicaSidebar({
         icon={Building2}
         label="Empresas Clientes"
         count={counts.empresas}
-        isActive={pathname?.startsWith('/rh/empresas') || false}
-        onClick={() => router.push('/rh/empresas')}
+        isActive={pathname === '/rh' || false}
+        onClick={() => router.push('/rh')}
       />
 
       {/* Seção Notificações */}
