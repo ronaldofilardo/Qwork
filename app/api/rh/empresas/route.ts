@@ -287,14 +287,54 @@ export async function POST(request: Request) {
       );
     }
 
-    // RLS garante que INSERT só pode ocorrer na clínica do RH
-    // Usar transação para garantir SET LOCAL de auditoria em produção
+    // Salvar arquivos ANTES do INSERT para incluir os caminhos na transação
+    let cartaoCnpjPath: string | null = null;
+    let contratoSocialPath: string | null = null;
+    let docIdentificacaoPath: string | null = null;
+
+    if (isMultipart && Object.keys(arquivos).length > 0) {
+      try {
+        if (arquivos.cartao_cnpj)
+          cartaoCnpjPath = await salvarArquivoEmpresa(
+            arquivos.cartao_cnpj,
+            'cartao_cnpj',
+            cnpjNormalizado
+          );
+        if (arquivos.contrato_social)
+          contratoSocialPath = await salvarArquivoEmpresa(
+            arquivos.contrato_social,
+            'contrato_social',
+            cnpjNormalizado
+          );
+        if (arquivos.doc_identificacao)
+          docIdentificacaoPath = await salvarArquivoEmpresa(
+            arquivos.doc_identificacao,
+            'doc_identificacao',
+            cnpjNormalizado
+          );
+      } catch (err) {
+        console.error(
+          '[POST /api/rh/empresas] Falha ao salvar documentos:',
+          err
+        );
+        return NextResponse.json(
+          { error: 'Falha ao salvar documentos. Tente novamente.' },
+          { status: 500 }
+        );
+      }
+    }
+
+    // INSERT incluindo caminhos dos documentos
     const result = await withTransaction(async (client) => {
       return await client.query(
-        `INSERT INTO empresas_clientes 
-         (nome, cnpj, email, telefone, endereco, cidade, estado, cep, clinica_id, representante_nome, representante_fone, representante_email, ativa)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
-         RETURNING id, nome, cnpj, email, telefone, endereco, cidade, estado, cep, representante_nome, representante_fone, representante_email, ativa, criado_em`,
+        `INSERT INTO empresas_clientes
+         (nome, cnpj, email, telefone, endereco, cidade, estado, cep, clinica_id,
+          representante_nome, representante_fone, representante_email, ativa,
+          cartao_cnpj_path, contrato_social_path, doc_identificacao_path)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13, $14, $15)
+         RETURNING id, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
+                   representante_nome, representante_fone, representante_email, ativa, criado_em,
+                   cartao_cnpj_path, contrato_social_path, doc_identificacao_path`,
         [
           nome.trim(),
           cnpjNormalizado,
@@ -308,40 +348,16 @@ export async function POST(request: Request) {
           representante_nome.trim(),
           representante_fone.replace(/\D/g, ''),
           representante_email?.trim() || null,
+          cartaoCnpjPath,
+          contratoSocialPath,
+          docIdentificacaoPath,
         ]
       );
     });
 
     const empresa = result.rows[0];
 
-    // Em DEV: salvar documentos localmente e retornar paths
-    const documentosSalvos: Record<string, string> = {};
-    if (Object.keys(arquivos).length > 0) {
-      for (const [tipo, file] of Object.entries(arquivos)) {
-        if (file) {
-          try {
-            const urlPath = await salvarArquivoEmpresa(
-              file,
-              tipo,
-              cnpjNormalizado
-            );
-            documentosSalvos[tipo] = urlPath;
-          } catch (err) {
-            console.warn(`[DEV] Falha ao salvar arquivo ${tipo}:`, err);
-          }
-        }
-      }
-    }
-
-    return NextResponse.json(
-      {
-        ...empresa,
-        ...(Object.keys(documentosSalvos).length > 0
-          ? { documentos: documentosSalvos }
-          : {}),
-      },
-      { status: 201 }
-    );
+    return NextResponse.json(empresa, { status: 201 });
   } catch (error: any) {
     // Se requireClinica lançou erro (clínica não encontrada/inativa/identificada), mapear para 403
     if (
