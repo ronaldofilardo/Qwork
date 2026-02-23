@@ -9,7 +9,7 @@ import '@testing-library/jest-dom';
 import FlowStepsExplainer from '@/components/FlowStepsExplainer';
 
 describe('FlowStepsExplainer', () => {
-  describe('Renderização base', () => {
+  describe('Renderização base (entidade — isClinica=false)', () => {
     it('renderiza o título do bloco de fluxo', () => {
       render(<FlowStepsExplainer />);
       expect(
@@ -17,7 +17,7 @@ describe('FlowStepsExplainer', () => {
       ).toBeInTheDocument();
     });
 
-    it('renderiza todas as 6 etapas do fluxo', () => {
+    it('renderiza todas as 6 etapas do fluxo de entidade', () => {
       render(<FlowStepsExplainer />);
       expect(screen.getByText('Inserção de Funcionário')).toBeInTheDocument();
       expect(screen.getByText('Liberação de Lotes')).toBeInTheDocument();
@@ -33,14 +33,73 @@ describe('FlowStepsExplainer', () => {
       ).toBeInTheDocument();
     });
 
-    it('renderiza as setas separadoras entre etapas', () => {
+    it('NÃO exibe "Inserção de Nova Empresa" no fluxo de entidade', () => {
+      render(<FlowStepsExplainer />);
+      expect(
+        screen.queryByText('Inserção de Nova Empresa')
+      ).not.toBeInTheDocument();
+    });
+
+    it('renderiza 5 setas separadoras entre as 6 etapas de entidade', () => {
       render(<FlowStepsExplainer />);
       const arrows = screen.getAllByText('→');
       expect(arrows).toHaveLength(5); // 6 etapas = 5 setas
     });
   });
 
-  describe('Tooltips interativos', () => {
+  describe('Renderização de clínica (isClinica=true)', () => {
+    it('renderiza todas as 7 etapas do fluxo de clínica', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      expect(
+        screen.getByText('Inserção de Nova Empresa')
+      ).toBeInTheDocument();
+      expect(screen.getByText('Inserção de Funcionário')).toBeInTheDocument();
+      expect(screen.getByText('Liberação de Lotes')).toBeInTheDocument();
+      expect(screen.getByText('Avaliações')).toBeInTheDocument();
+      expect(
+        screen.getByText('Solicitação de Emissão de Laudo')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Recebimento do Link para Pagamento')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('Emissão e Recebimento do Laudo')
+      ).toBeInTheDocument();
+    });
+
+    it('"Inserção de Nova Empresa" é a primeira etapa no fluxo de clínica', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const buttons = screen.getAllByRole('button');
+      expect(buttons[0]).toHaveTextContent('Inserção de Nova Empresa');
+    });
+
+    it('renderiza 6 setas separadoras entre as 7 etapas de clínica', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const arrows = screen.getAllByText('→');
+      expect(arrows).toHaveLength(6); // 7 etapas = 6 setas
+    });
+
+    it('exibe tooltip de Inserção de Nova Empresa ao passar o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText('Inserção de Nova Empresa');
+      fireEvent.mouseEnter(btn);
+      expect(
+        screen.getByText(/Cadastre as empresas clientes que terão funcionários avaliados pela clínica/)
+      ).toBeInTheDocument();
+    });
+
+    it('oculta tooltip de Nova Empresa ao remover o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText('Inserção de Nova Empresa');
+      fireEvent.mouseEnter(btn);
+      fireEvent.mouseLeave(btn);
+      expect(
+        screen.queryByText(/Cadastre as empresas clientes que terão funcionários avaliados pela clínica/)
+      ).not.toBeInTheDocument();
+    });
+  });
+
+  describe('Tooltips interativos (entidade)', () => {
     it('não exibe tooltip antes do hover', () => {
       render(<FlowStepsExplainer />);
       expect(
@@ -112,6 +171,16 @@ describe('FlowStepsExplainer', () => {
       const btn = screen.getByText('Emissão e Recebimento do Laudo');
       fireEvent.mouseEnter(btn);
       expect(screen.getByText(/incluído no PGR/)).toBeInTheDocument();
+    });
+
+    it('tooltip do último passo abre para baixo (evita corte no flex-wrap)', () => {
+      render(<FlowStepsExplainer />);
+      const btn = screen.getByText('Emissão e Recebimento do Laudo');
+      fireEvent.mouseEnter(btn);
+      // O container do tooltip do último passo deve usar top-full (abre para baixo)
+      const tooltipWrapper = screen.getByText(/incluído no PGR/).closest('div')?.parentElement;
+      expect(tooltipWrapper).toHaveClass('top-full');
+      expect(tooltipWrapper).not.toHaveClass('bottom-full');
     });
   });
 
