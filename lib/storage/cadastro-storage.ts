@@ -76,7 +76,12 @@ async function uploadArquivoCadastroToBackblaze(
     const random = Math.random().toString(36).slice(2, 8);
     const key = `${cnpj}/${tipo}-${timestamp}-${random}.${ext}`;
 
-    const result = await uploadToBackblaze(buffer, key, 'application/pdf', CADASTRO_BUCKET);
+    const result = await uploadToBackblaze(
+      buffer,
+      key,
+      'application/pdf',
+      CADASTRO_BUCKET
+    );
 
     console.log(
       `[STORAGE] Arquivo de cadastro ${tipo} (CNPJ: ${cnpj}) enviado para Backblaze: ${CADASTRO_BUCKET}/${key}`

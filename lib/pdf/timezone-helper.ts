@@ -30,7 +30,8 @@ export function corrigirTimezone(
 export function formatarDataCorrigida(
   value: Date | string | null | undefined
 ): string {
-  const data = value instanceof Date ? value : value ? new Date(value) : new Date();
+  const data =
+    value instanceof Date ? value : value ? new Date(value) : new Date();
 
   return data.toLocaleString('pt-BR', {
     timeZone: BRAZIL_TIMEZONE,
@@ -51,7 +52,8 @@ export function formatarDataCorrigida(
 export function formatarDataApenasData(
   value: Date | string | null | undefined
 ): string {
-  const data = value instanceof Date ? value : value ? new Date(value) : new Date();
+  const data =
+    value instanceof Date ? value : value ? new Date(value) : new Date();
 
   return data.toLocaleDateString('pt-BR', {
     timeZone: BRAZIL_TIMEZONE,
@@ -67,7 +69,8 @@ export function formatarDataApenasData(
  * @returns String formatada "HH:mm:ss"
  */
 export function formatarHora(value: Date | string | null | undefined): string {
-  const data = value instanceof Date ? value : value ? new Date(value) : new Date();
+  const data =
+    value instanceof Date ? value : value ? new Date(value) : new Date();
 
   return data.toLocaleTimeString('pt-BR', {
     timeZone: BRAZIL_TIMEZONE,

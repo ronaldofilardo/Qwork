@@ -34,14 +34,14 @@ export default function RadioScale({
       {/* Escala de opções responsiva */}
       {/* Mobile: container horizontal com snap e touch targets maiores */}
       {/* Mobile: grid compacto com todas as 5 opções visíveis ao mesmo tempo */}
-      <div className="sm:hidden mb-4 -mx-2 px-2">
-        <div className="grid grid-cols-5 gap-2">
+      <div className="sm:hidden mb-4 -mx-1 px-1">
+        <div className="grid grid-cols-5 gap-1.5">
           {opcoes.map(([label, val]) => (
             <button
               key={val}
               type="button"
               onClick={() => onChange(val)}
-              className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-all touch-target min-h-[72px] ${
+              className={`flex flex-col items-center justify-center p-1.5 rounded-lg border-2 transition-all touch-target min-h-[76px] ${
                 value === val
                   ? 'border-primary bg-primary text-white'
                   : 'border-gray-300 bg-white hover:border-primary hover:bg-gray-50'
@@ -50,17 +50,17 @@ export default function RadioScale({
               aria-pressed={value === val}
             >
               <div
-                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mb-2 ${
+                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mb-1.5 flex-shrink-0 ${
                   value === val
                     ? 'border-white bg-white/30'
                     : 'border-gray-400 bg-white'
                 }`}
               >
                 {value === val && (
-                  <div className="w-3 h-3 rounded-full bg-white"></div>
+                  <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
                 )}
               </div>
-              <span className={`text-[10px] sm:text-sm text-center ${
+              <span className={`text-[12px] leading-tight text-center hyphens-auto ${
                 value === val ? 'text-white' : 'text-gray-600'
               }`}>
                 {label}

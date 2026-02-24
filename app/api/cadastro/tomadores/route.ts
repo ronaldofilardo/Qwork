@@ -79,7 +79,8 @@ async function salvarArquivo(
     const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
 
     // Usar função compartilhada de storage que detecta DEV/PROD
-    const { uploadArquivoCadastro } = await import('@/lib/storage/cadastro-storage');
+    const { uploadArquivoCadastro } =
+      await import('@/lib/storage/cadastro-storage');
     const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo);
 
     return result.path;

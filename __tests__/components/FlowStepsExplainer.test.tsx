@@ -50,9 +50,7 @@ describe('FlowStepsExplainer', () => {
   describe('Renderização de clínica (isClinica=true)', () => {
     it('renderiza todas as 7 etapas do fluxo de clínica', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      expect(
-        screen.getByText('Inserção de Nova Empresa')
-      ).toBeInTheDocument();
+      expect(screen.getByText('Inserção de Nova Empresa')).toBeInTheDocument();
       expect(screen.getByText('Inserção de Funcionário')).toBeInTheDocument();
       expect(screen.getByText('Liberação de Lotes')).toBeInTheDocument();
       expect(screen.getByText('Avaliações')).toBeInTheDocument();
@@ -84,7 +82,9 @@ describe('FlowStepsExplainer', () => {
       const btn = screen.getByText('Inserção de Nova Empresa');
       fireEvent.mouseEnter(btn);
       expect(
-        screen.getByText(/Cadastre as empresas clientes que terão funcionários avaliados pela clínica/)
+        screen.getByText(
+          /Cadastre as empresas clientes que terão funcionários avaliados pela clínica/
+        )
       ).toBeInTheDocument();
     });
 
@@ -94,7 +94,9 @@ describe('FlowStepsExplainer', () => {
       fireEvent.mouseEnter(btn);
       fireEvent.mouseLeave(btn);
       expect(
-        screen.queryByText(/Cadastre as empresas clientes que terão funcionários avaliados pela clínica/)
+        screen.queryByText(
+          /Cadastre as empresas clientes que terão funcionários avaliados pela clínica/
+        )
       ).not.toBeInTheDocument();
     });
   });
@@ -178,7 +180,9 @@ describe('FlowStepsExplainer', () => {
       const btn = screen.getByText('Emissão e Recebimento do Laudo');
       fireEvent.mouseEnter(btn);
       // O container do tooltip do último passo deve usar top-full (abre para baixo)
-      const tooltipWrapper = screen.getByText(/incluído no PGR/).closest('div')?.parentElement;
+      const tooltipWrapper = screen
+        .getByText(/incluído no PGR/)
+        .closest('div')?.parentElement;
       expect(tooltipWrapper).toHaveClass('top-full');
       expect(tooltipWrapper).not.toHaveClass('bottom-full');
     });

@@ -27,8 +27,12 @@ import * as fsPromises from 'fs/promises';
 const mockUploadToBackblaze = uploadToBackblaze as jest.MockedFunction<
   typeof uploadToBackblaze
 >;
-const mockMkdir = fsPromises.mkdir as jest.MockedFunction<typeof fsPromises.mkdir>;
-const mockWriteFile = fsPromises.writeFile as jest.MockedFunction<typeof fsPromises.writeFile>;
+const mockMkdir = fsPromises.mkdir as jest.MockedFunction<
+  typeof fsPromises.mkdir
+>;
+const mockWriteFile = fsPromises.writeFile as jest.MockedFunction<
+  typeof fsPromises.writeFile
+>;
 
 const CNPJ = '12345678000100';
 const BUFFER = Buffer.from('%PDF-1.4 test content');
@@ -100,10 +104,10 @@ describe('uploadArquivoCadastro', () => {
       const result = await uploadArquivoCadastro(BUFFER, 'cartao_cnpj', CNPJ);
 
       expect(result.arquivo_remoto).toBeDefined();
-      expect(result.arquivo_remoto!.provider).toBe('backblaze');
-      expect(result.arquivo_remoto!.bucket).toBe('cad-qwork');
-      expect(result.arquivo_remoto!.key).toMatch(new RegExp(`^${CNPJ}/`));
-      expect(result.arquivo_remoto!.url).toContain('cad-qwork/');
+      expect(result.arquivo_remoto.provider).toBe('backblaze');
+      expect(result.arquivo_remoto.bucket).toBe('cad-qwork');
+      expect(result.arquivo_remoto.key).toMatch(new RegExp(`^${CNPJ}/`));
+      expect(result.arquivo_remoto.url).toContain('cad-qwork/');
       expect(result.path).toBeTruthy();
     });
 
@@ -123,9 +127,10 @@ describe('uploadArquivoCadastro', () => {
         });
 
         const result = await uploadArquivoCadastro(BUFFER, tipo, CNPJ);
-        const [, keyArg, , bucketArg] = mockUploadToBackblaze.mock.calls[
-          mockUploadToBackblaze.mock.calls.length - 1
-        ];
+        const [, keyArg, , bucketArg] =
+          mockUploadToBackblaze.mock.calls[
+            mockUploadToBackblaze.mock.calls.length - 1
+          ];
 
         expect(keyArg).toMatch(new RegExp(`^${CNPJ}/${tipo}-`));
         expect(bucketArg).toBe('cad-qwork');
