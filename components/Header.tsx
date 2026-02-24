@@ -97,60 +97,23 @@ export default function Header({
   }
 
   return (
-    <header
-      style={{
-        background: '#000000',
-        color: 'white',
-        borderBottom: '4px solid #9ACD32',
-        padding: '0 32px',
-        position: 'sticky',
-        top: 0,
-        zIndex: 1000,
-        width: '100%',
-        minHeight: 70,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        boxSizing: 'border-box',
-      }}
-    >
+    <header className="bg-black text-white border-b-4 border-accent sticky top-0 z-[1000] w-full min-h-[56px] sm:min-h-[70px] flex items-center justify-between px-3 sm:px-6 lg:px-8 box-border" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       {/* Logo + Título */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            background: 'white',
-            borderRadius: '8px',
-            padding: '4px',
-          }}
-        >
+      <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+        <div className="w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center bg-white rounded-lg p-1">
           <Image
             src={QWORK_LOGO_BASE64}
             alt="QWork Logo"
             width={40}
             height={40}
-            style={{
-              objectFit: 'contain',
-              borderRadius: '4px',
-            }}
+            className="w-full h-full object-contain rounded"
           />
         </div>
-        <div>
-          <div style={{ fontWeight: 'bold', fontSize: 20, letterSpacing: 0.5 }}>
+        <div className="min-w-0">
+          <div className="font-bold text-base sm:text-xl leading-tight truncate">
             {getRoleTitle(perfil)}
           </div>
-          <div
-            style={{
-              fontSize: 10,
-              color: '#9ACD32',
-              letterSpacing: 1,
-              marginTop: 2,
-            }}
-          >
+          <div className="text-[9px] sm:text-[11px] text-accent tracking-[0.08em] mt-0.5 hidden xs:block">
             AVALIE. PREVINA. PROTEJA.
           </div>
         </div>
@@ -158,16 +121,7 @@ export default function Header({
 
       {/* Nome do usuário */}
       {nome && (
-        <span
-          style={{
-            fontWeight: 'bold',
-            fontSize: 16,
-            color: '#9ACD32',
-            padding: '8px 16px',
-            background: 'rgba(154, 205, 50, 0.1)',
-            borderRadius: '8px',
-          }}
-        >
+        <span className="font-bold text-xs sm:text-base text-accent px-2 py-1 sm:px-4 sm:py-2 bg-accent/10 rounded-lg ml-2 truncate max-w-[120px] sm:max-w-xs text-right">
           {nome}
         </span>
       )}

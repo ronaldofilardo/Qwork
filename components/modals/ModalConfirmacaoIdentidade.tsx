@@ -57,77 +57,77 @@ export default function ModalConfirmacaoIdentidade({
   const dataFormatada = formatarData(dataNascimento);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="relative w-full max-w-2xl rounded-lg bg-white shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-3 sm:p-4" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+      <div className="relative w-full max-w-lg sm:max-w-2xl rounded-lg bg-white shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-gray-200 p-6">
-          <div className="flex items-center gap-3">
-            <div className="rounded-full bg-green-100 p-2">
-              <ShieldCheck className="h-6 w-6 text-green-600" />
+        <div className="flex items-center justify-between border-b border-gray-200 p-4 sm:p-6 flex-shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="rounded-full bg-green-100 p-1.5 sm:p-2 flex-shrink-0">
+              <ShieldCheck className="h-5 w-5 sm:h-6 sm:w-6 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-gray-900">
+            <h2 className="text-lg sm:text-2xl font-bold text-gray-900 leading-tight">
               Confirmação de Identidade
             </h2>
           </div>
           <button
             onClick={onCancel}
-            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+            className="rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 flex-shrink-0 touch-target"
             aria-label="Fechar"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="p-6">
-          <div className="space-y-6">
+        {/* Body - scrollável */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1">
+          <div className="space-y-4 sm:space-y-6">
             {/* Texto principal */}
-            <div className="rounded-lg bg-orange-50 p-4">
-              <p className="text-sm leading-relaxed text-gray-700">
+            <div className="rounded-lg bg-orange-50 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-700">
                 Você está prestes a acessar o sistema de avaliação de risco
                 psicossocial.
               </p>
             </div>
 
-            <p className="text-sm font-medium text-gray-700">
+            <p className="text-xs sm:text-sm font-medium text-gray-700">
               Por favor, confirme se os dados abaixo correspondem à sua
               identidade:
             </p>
 
             {/* Dados do funcionário */}
-            <div className="space-y-4 rounded-lg border border-gray-200 bg-gray-50 p-5">
+            <div className="space-y-3 rounded-lg border border-gray-200 bg-gray-50 p-4 sm:p-5">
               <div className="flex items-start gap-2">
-                <span className="mt-0.5 text-orange-600">•</span>
-                <div className="flex-1">
-                  <span className="font-semibold text-gray-700">Nome: </span>
-                  <span className="text-gray-900">{nome}</span>
+                <span className="mt-0.5 text-orange-600 flex-shrink-0">•</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-gray-700 text-sm">Nome: </span>
+                  <span className="text-gray-900 text-sm break-words">{nome}</span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
-                <span className="mt-0.5 text-orange-600">•</span>
-                <div className="flex-1">
-                  <span className="font-semibold text-gray-700">CPF: </span>
-                  <span className="font-mono text-gray-900">
+                <span className="mt-0.5 text-orange-600 flex-shrink-0">•</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-gray-700 text-sm">CPF: </span>
+                  <span className="text-gray-900 text-sm tracking-wide">
                     {cpfFormatado}
                   </span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
-                <span className="mt-0.5 text-orange-600">•</span>
-                <div className="flex-1">
-                  <span className="font-semibold text-gray-700">
+                <span className="mt-0.5 text-orange-600 flex-shrink-0">•</span>
+                <div className="flex-1 min-w-0">
+                  <span className="font-semibold text-gray-700 text-sm">
                     Data de Nascimento:{' '}
                   </span>
-                  <span className="text-gray-900">{dataFormatada}</span>
+                  <span className="text-gray-900 text-sm">{dataFormatada}</span>
                 </div>
               </div>
             </div>
 
             {/* Declaração */}
-            <div className="rounded-lg border-l-4 border-green-500 bg-green-50 p-4">
-              <p className="text-sm leading-relaxed text-gray-700">
+            <div className="rounded-lg border-l-4 border-green-500 bg-green-50 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm leading-relaxed text-gray-700">
                 Confirmo que sou <strong>{nome}</strong>, CPF{' '}
                 <strong>{cpfFormatado}</strong>, e estou respondendo esta
                 avaliação de forma <strong>voluntária e consciente</strong>.
@@ -135,7 +135,7 @@ export default function ModalConfirmacaoIdentidade({
             </div>
 
             {/* Observação legal */}
-            <p className="text-xs text-gray-500">
+            <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed">
               Esta confirmação é obrigatória para garantir a autenticidade das
               respostas e a validade jurídica do processo avaliativo. A
               autenticidade é garantida por mecanismos de autenticação e
@@ -145,18 +145,18 @@ export default function ModalConfirmacaoIdentidade({
         </div>
 
         {/* Footer com botões */}
-        <div className="flex flex-col-reverse gap-3 border-t border-gray-200 p-6 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-gray-200 p-4 sm:p-6 sm:flex-row sm:justify-end flex-shrink-0" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
           <button
             onClick={onCancel}
             disabled={isLoading}
-            className="rounded-md border border-gray-300 bg-white px-6 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="rounded-md border border-gray-300 bg-white px-5 py-3 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
           >
             Cancelar
           </button>
           <button
             onClick={onConfirm}
             disabled={isLoading}
-            className="inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-green-600 px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed touch-target"
           >
             {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
             {isLoading ? 'Confirmando...' : 'Confirmar Identidade'}

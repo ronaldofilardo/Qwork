@@ -299,10 +299,10 @@ export default function NovaAvaliacaoPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-5 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-4 border-primary mx-auto"></div>
-          <p className="mt-4 text-lg text-gray-6">
+          <p className="mt-4 text-lg text-gray-600">
             Carregando sua avaliação...
           </p>
         </div>
@@ -312,15 +312,15 @@ export default function NovaAvaliacaoPage() {
 
   if (isFinished || !questaoAtual) {
     return (
-      <div className="min-h-screen bg-gray-5 flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl shadow-xl p-1 text-center max-w-md">
-          <h2 className="text-3xl font-bold text-green-6 mb-4">Parabéns!</h2>
-          <p className="text-lg text-gray-7 mb-8">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl shadow-xl p-8 text-center max-w-md w-full">
+          <h2 className="text-3xl font-bold text-green-600 mb-4">Parabéns!</h2>
+          <p className="text-lg text-gray-700 mb-8">
             Você completou todas as questões.
           </p>
           <a
             href="/dashboard"
-            className="bg-primary text-white px-8 py-4 rounded-xl text-lg font-semibold hover:opacity-9 transition"
+            className="bg-primary text-white px-8 py-4 rounded-xl text-lg font-semibold hover:opacity-90 transition"
           >
             Voltar ao início
           </a>
@@ -331,30 +331,31 @@ export default function NovaAvaliacaoPage() {
 
   return (
     <div className="fixed inset-0 bg-white flex flex-col">
-      {/* Header com progresso */}
-      <div className="bg-primary text-white p-5 shadow-xl">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center gap-3">
-            <div className="bg-white rounded-lg p-2">
+      {/* Header com progresso - safe area para notch */}
+      <div className="bg-primary text-white px-4 py-3 sm:p-5 shadow-xl flex-shrink-0" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
+        <div className="flex justify-between items-center mb-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="bg-white rounded-lg p-1.5">
               <QworkLogo size="sm" showSlogan={false} />
             </div>
-            <div>
-              <h1 className="text-xl font-bold">Avaliação Psicossocial</h1>
-              <p className="text-sm opacity-9">{questaoAtual.grupoTitulo}</p>
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-xl font-bold leading-tight">Avaliação Psicossocial</h1>
+              <p className="text-xs sm:text-sm opacity-90 truncate">{questaoAtual.grupoTitulo}</p>
             </div>
           </div>
           <button
             onClick={() => (window.location.href = '/dashboard')}
-            className="p-2 hover:bg-white/2 rounded-full transition"
+            className="p-2 hover:bg-white/20 rounded-full transition flex-shrink-0 touch-target"
+            aria-label="Fechar avaliação"
           >
             <svg
-              xmlns="http://www.w3.org/2/svg"
-              width="3"
-              height="3"
-              viewBox="  24 24"
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="3"
+              strokeWidth="2.5"
               strokeLinecap="round"
               strokeLinejoin="round"
             >
@@ -363,21 +364,21 @@ export default function NovaAvaliacaoPage() {
           </button>
         </div>
 
-        <div className="bg-white/3 rounded-full h-3 overflow-hidden">
+        <div className="bg-white/30 rounded-full h-2.5 overflow-hidden">
           <div
-            className="bg-white h-full transition-all duration-5"
+            className="bg-white h-full transition-all duration-500"
             style={{
               width: `${((currentIndex + 1) / todasQuestoes.length) * 100}%`,
             }}
           />
         </div>
-        <p className="text-right text-sm mt-2">
+        <p className="text-right text-xs sm:text-sm mt-1.5 opacity-90">
           {currentIndex + 1} de {todasQuestoes.length}
         </p>
       </div>
 
       {/* Questão */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-8 overflow-y-auto">
+      <div className="flex-1 flex flex-col justify-center items-center px-3 py-4 sm:px-6 sm:py-8 overflow-y-auto">
         <div className="max-w-4xl w-full">
           <RadioScale
             questionId={questaoAtual.itemId}
@@ -388,12 +389,12 @@ export default function NovaAvaliacaoPage() {
           />
 
           {isSaving && (
-            <div className="text-center mt-6 text-gray-600 text-sm">
+            <div className="text-center mt-4 text-gray-600 text-sm">
               Salvando resposta...
             </div>
           )}
 
-          <p className="text-center text-gray-500 mt-12 text-sm">
+          <p className="text-center text-gray-500 mt-8 sm:mt-12 text-xs sm:text-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
             Você pode sair a qualquer momento e continuar depois.
           </p>
         </div>

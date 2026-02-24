@@ -8,10 +8,7 @@ import {
   ObservacoesConclusao,
 } from '../laudo-tipos';
 import { getLogoSignatureTemplate } from '../pdf/puppeteer-templates';
-import {
-  formatarDataApenasData,
-  formatarHora,
-} from '../pdf/timezone-helper';
+import { formatarDataApenasData, formatarHora } from '../pdf/timezone-helper';
 
 export interface LaudoDadosCompletos {
   loteId: number; // ID do lote (alinhado com laudo.id)

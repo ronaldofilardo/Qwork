@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { QWORK_BRANDING } from '@/lib/config/branding';
 
 interface QworkLogoProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | 'huge';
+  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | 'huge';
   showSlogan?: boolean;
   className?: string;
 }
@@ -24,7 +24,8 @@ export default function QworkLogo({
     lg: 'w-16 h-16',
     xl: 'w-24 h-24',
     '2xl': 'w-32 h-32',
-    huge: 'w-48 h-48',
+    '3xl': 'w-48 h-48',
+    huge: 'w-64 h-64',
   };
 
   const sloganSize = {
@@ -33,7 +34,8 @@ export default function QworkLogo({
     lg: 'text-sm',
     xl: 'text-base',
     '2xl': 'text-lg',
-    huge: 'text-lg',
+    '3xl': 'text-xl',
+    huge: 'text-2xl',
   };
 
   return (

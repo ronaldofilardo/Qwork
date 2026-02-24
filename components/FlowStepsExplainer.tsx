@@ -111,8 +111,8 @@ export default function FlowStepsExplainer({
               </button>
 
               {/* Tooltip — abre para baixo no último passo para evitar corte */}
-              {hoveredIndex === index && (
-                isLast ? (
+              {hoveredIndex === index &&
+                (isLast ? (
                   <div className="absolute top-full left-0 mt-2 z-50 pointer-events-none">
                     <div className="bg-gray-900 text-white text-sm rounded-md p-4 w-64 shadow-lg leading-relaxed">
                       {/* Seta de tooltip (apontando para cima) */}
@@ -128,8 +128,7 @@ export default function FlowStepsExplainer({
                       <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                     </div>
                   </div>
-                )
-              )}
+                ))}
 
               {/* Arrow separator */}
               {index < flowSteps.length - 1 && (

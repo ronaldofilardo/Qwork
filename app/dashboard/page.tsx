@@ -85,7 +85,14 @@ export default function Dashboard() {
     load();
   }, []);
 
-  if (loading) return <div className="p-10 text-center">Carregando...</div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-4 border-primary mx-auto mb-3"></div>
+        <p className="text-sm text-gray-600">Carregando...</p>
+      </div>
+    </div>
+  );
 
   // Filtra avaliações disponíveis (não concluídas e não inativadas)
   const avaliacoesDisponiveis = avaliacoes.filter(
@@ -98,14 +105,16 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
       <div className="max-w-4xl mx-auto">
-        <div className="flex justify-between items-start mb-8">
-          <div>
-            <h1 className="text-3xl font-bold mb-2">Bem-vindo, {nome}!</h1>
-            <p className="text-gray-600">
+        {/* Cabeçalho */}
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-xl sm:text-3xl font-bold mb-1 leading-tight">Bem-vindo, {nome}!</h1>
+            <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
               Sistema de avaliação psicossocial Qwork (COPSOQ III).
-              <br />A avaliação leva cerca de 15-20 minutos.
+              <br className="hidden sm:block" />
+              <span className="sm:hidden"> </span>A avaliação leva cerca de 15–20 minutos.
             </p>
           </div>
           <button
@@ -113,35 +122,35 @@ export default function Dashboard() {
               await fetch('/api/auth/logout', { method: 'POST' });
               window.location.href = '/login';
             }}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+            className="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
           >
             Sair
           </button>
         </div>
 
         {avaliacoesDisponiveis.length > 0 && (
-          <div className="bg-white rounded-2xl shadow-xl p-8 mb-8 border-4 border-blue-400">
-            <h2 className="text-2xl font-bold text-blue-600 mb-6">
+          <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 mb-6 sm:mb-8 border-4 border-blue-400">
+            <h2 className="text-lg sm:text-2xl font-bold text-blue-600 mb-4 sm:mb-6">
               Avaliações Disponíveis
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {avaliacoesDisponiveis.map((a) => (
                 <div
                   key={a.id}
-                  className="flex justify-between items-center p-4 bg-gray-50 rounded-xl"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-xl"
                 >
                   <div>
-                    <p className="font-bold">Avaliação #{a.id}</p>
+                    <p className="font-bold text-sm sm:text-base">Avaliação #{a.id}</p>
                     {a.lote_id && (
                       <p className="text-xs text-gray-500">Lote #{a.lote_id}</p>
                     )}
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       Liberada em {a.inicio}
                     </p>
                   </div>
                   <Link
                     href={`/avaliacao?id=${a.id}`}
-                    className="inline-block bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold"
+                    className="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
                   >
                     {(a.total_respostas || 0) > 0 ? 'Continuar' : 'Iniciar'}{' '}
                     Avaliação
@@ -152,13 +161,13 @@ export default function Dashboard() {
           </div>
         )}
 
-        <h2 className="text-2xl font-bold mt-12 mb-6">Histórico</h2>
+        <h2 className="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6">Histórico</h2>
         {avaliacoes.filter(
           (a) => a.status === 'concluida' || a.status === 'concluido'
         ).length === 0 ? (
           <p className="text-gray-500">Nenhuma avaliação concluída.</p>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {avaliacoes
               .filter(
                 (a) => a.status === 'concluida' || a.status === 'concluido'
@@ -166,22 +175,22 @@ export default function Dashboard() {
               .map((a) => (
                 <div
                   key={a.id}
-                  className="bg-white rounded-xl shadow p-6 flex justify-between items-center"
+                  className="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
                 >
                   <div>
-                    <p className="font-bold text-green-600">
+                    <p className="font-bold text-sm sm:text-base text-green-600">
                       ✓ Avaliação #{a.id} Concluída
                     </p>
                     {a.lote_id && (
                       <p className="text-xs text-gray-500">Lote #{a.lote_id}</p>
                     )}
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs sm:text-sm text-gray-600">
                       Finalizada em {a.fim || 'processando...'}
                     </p>
                   </div>
                   <Link
                     href={`/avaliacao/concluida?avaliacao_id=${a.id}`}
-                    className="inline-block bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                    className="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
                   >
                     Ver Comprovante
                   </Link>

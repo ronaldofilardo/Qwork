@@ -270,7 +270,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-2 sm:p-4">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
       {/* Modal de Confirmação de Identidade */}
       {showConfirmacaoModal && dadosConfirmacao && (
         <ModalConfirmacaoIdentidade
@@ -295,20 +295,20 @@ export default function LoginPage() {
         />
       )}
 
-      <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 w-full max-w-md">
-        <div className="text-center mb-6 sm:mb-8">
-          <QworkLogo size="2xl" showSlogan={false} className="mb-4" />
-          <p className="text-sm sm:text-base text-gray-600 mt-2">
+      <div className="bg-white rounded-lg shadow-xl p-5 sm:p-8 w-full max-w-md">
+        <div className="text-center mb-5 sm:mb-8">
+          <QworkLogo size="3xl" showSlogan={false} className="mb-3 sm:mb-4" />
+          <p className="text-xs sm:text-sm text-gray-600 mt-2">
             Avaliação Psicossocial baseada no COPSOQ III
           </p>
         </div>
 
         {/* Box Explicativo de Formas de Login */}
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h3 className="text-sm font-semibold text-blue-900 mb-2">
+        <div className="mb-5 p-3 sm:p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h3 className="text-xs sm:text-sm font-semibold text-blue-900 mb-2">
             Como Fazer Login?
           </h3>
-          <ul className="space-y-2 text-sm text-blue-800">
+          <ul className="space-y-1.5 text-xs sm:text-sm text-blue-800">
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600 mt-0.5">1</span>
               <span>
@@ -326,7 +326,7 @@ export default function LoginPage() {
           </ul>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-5">
           <div>
             <label
               htmlFor="cpf"
@@ -338,12 +338,13 @@ export default function LoginPage() {
               id="cpf"
               name="cpf"
               type="text"
+              inputMode="numeric"
               value={cpf}
               onChange={(e) =>
                 setCpf(formatarCPF((e.target as HTMLInputElement).value))
               }
               placeholder="00000000000"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+              className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
               required
               maxLength={11}
               disabled={showConfirmacaoModal}
@@ -367,7 +368,7 @@ export default function LoginPage() {
               value={senha}
               onChange={(e) => setSenha((e.target as HTMLInputElement).value)}
               placeholder="••••••••"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+              className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
               disabled={showConfirmacaoModal}
             />
           </div>
@@ -386,6 +387,7 @@ export default function LoginPage() {
               id="dataNascimento"
               name="dataNascimento"
               type="text"
+              inputMode="numeric"
               value={dataNascimento}
               onChange={(e) =>
                 setDataNascimento(
@@ -393,12 +395,12 @@ export default function LoginPage() {
                 )
               }
               placeholder="ddmmaaaa"
-              className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
+              className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
               maxLength={8}
               disabled={showConfirmacaoModal}
             />
-            <p className="mt-2 text-xs text-gray-500">
-              Use este formato: dia/mês/ano (ex: 15031990)
+            <p className="mt-1.5 text-xs text-gray-500">
+              Formato: dia mês ano sem espaços (ex: 15031990)
             </p>
           </div>
 
