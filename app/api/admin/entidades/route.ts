@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireRole } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +14,8 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
+    const session = await requireRole('admin');
+
     const searchParams = request.nextUrl.searchParams;
     const filtroTipo = searchParams.get('tipo'); // 'clinica' ou 'entidade' ou null (todos)
 
@@ -113,7 +116,7 @@ export async function GET(request: NextRequest) {
       `;
     }
 
-    const result = await query(sql, params);
+    const result = await query(sql, params, session);
 
     // Transformar dados para estrutura esperada pelo frontend
     const entidades = result.rows.map((row) => {
@@ -159,6 +162,11 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     console.error('Erro ao buscar entidades:', error);
+
+    if (error instanceof Error && error.message === 'Sem permissão') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
+    }
+
     return NextResponse.json(
       {
         success: false,
