@@ -76,11 +76,31 @@ async function uploadArquivoCadastroToBackblaze(
     const random = Math.random().toString(36).slice(2, 8);
     const key = `${cnpj}/${tipo}-${timestamp}-${random}.${ext}`;
 
+    // Usar credenciais dedicadas ao bucket cad-qwork quando disponíveis
+    const cadKeyId = process.env.BACKBLAZE_CAD_KEY_ID?.trim();
+    const cadAppKey = process.env.BACKBLAZE_CAD_APPLICATION_KEY?.trim();
+    const credentialsOverride =
+      cadKeyId && cadAppKey
+        ? { keyId: cadKeyId, applicationKey: cadAppKey }
+        : undefined;
+
+    if (credentialsOverride) {
+      console.log(
+        `[STORAGE] Usando credenciais dedicadas para bucket ${CADASTRO_BUCKET} (BACKBLAZE_CAD_KEY_ID)`
+      );
+    } else {
+      console.warn(
+        `[STORAGE] BACKBLAZE_CAD_KEY_ID/BACKBLAZE_CAD_APPLICATION_KEY não definidos – usando credenciais padrão para bucket ${CADASTRO_BUCKET}.` +
+          ' Garanta que a chave padrão tenha acesso a este bucket.'
+      );
+    }
+
     const result = await uploadToBackblaze(
       buffer,
       key,
       'application/pdf',
-      CADASTRO_BUCKET
+      CADASTRO_BUCKET,
+      credentialsOverride
     );
 
     console.log(
