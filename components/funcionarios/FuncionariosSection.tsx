@@ -727,6 +727,11 @@ export default function FuncionariosSection({
       {showEditModal && funcionarioSelecionado && (
         <EditEmployeeModal
           funcionario={funcionarioSelecionado}
+          apiEndpoint={
+            contexto === 'entidade'
+              ? '/api/entidade/funcionarios'
+              : '/api/rh/funcionarios'
+          }
           onClose={() => {
             setShowEditModal(false);
             setFuncionarioSelecionado(null);

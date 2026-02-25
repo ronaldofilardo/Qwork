@@ -120,6 +120,7 @@ describe('EditEmployeeModal - Component', () => {
         funcionario={{
           cpf: '10101010101',
           nome: 'Teste',
+          data_nascimento: '1990-01-01',
           setor: 'TI',
           funcao: 'Dev',
           email: 'invalido',
@@ -138,7 +139,7 @@ describe('EditEmployeeModal - Component', () => {
     })
   })
 
-  it('deve chamar onUpdate ao salvar com sucesso', async () => {
+  it('deve chamar onUpdate ao salvar com sucesso (endpoint padrão RH)', async () => {
     const mockOnUpdate = jest.fn()
     const mockOnClose = jest.fn()
     const user = userEvent.setup()
@@ -155,6 +156,7 @@ describe('EditEmployeeModal - Component', () => {
         funcionario={{
           cpf: '10101010101',
           nome: 'André Silva',
+          data_nascimento: '1990-01-01',
           setor: 'TI',
           funcao: 'Desenvolvedor',
           email: 'andre@empresa.com',
@@ -175,6 +177,7 @@ describe('EditEmployeeModal - Component', () => {
         body: JSON.stringify({
           cpf: '10101010101',
           nome: 'André Silva',
+          data_nascimento: '1990-01-01',
           setor: 'TI',
           funcao: 'Desenvolvedor',
           email: 'andre@empresa.com',
@@ -187,6 +190,41 @@ describe('EditEmployeeModal - Component', () => {
       expect(mockToast.success).toHaveBeenCalledWith('Funcionário atualizado com sucesso!')
       expect(mockOnUpdate).toHaveBeenCalled()
       expect(mockOnClose).toHaveBeenCalled()
+    })
+  })
+
+  it('deve usar endpoint de entidade quando apiEndpoint for /api/entidade/funcionarios', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ success: true })
+    } as Response)
+
+    const user = userEvent.setup()
+
+    render(
+      <EditEmployeeModal
+        onClose={() => {}}
+        onSuccess={() => {}}
+        apiEndpoint="/api/entidade/funcionarios"
+        funcionario={{
+          cpf: '10101010101',
+          nome: 'André Silva',
+          data_nascimento: '1990-01-01',
+          setor: 'TI',
+          funcao: 'Desenvolvedor',
+          email: 'andre@empresa.com',
+          matricula: '12345',
+          nivel_cargo: 'operacional',
+          turno: 'Manhã',
+          escala: '5x2'
+        }}
+      />
+    )
+
+    await user.click(screen.getByText('Atualizar Funcionário'))
+
+    await waitFor(() => {
+      expect(mockFetch).toHaveBeenCalledWith('/api/entidade/funcionarios', expect.any(Object))
     })
   })
 
@@ -204,6 +242,7 @@ describe('EditEmployeeModal - Component', () => {
         funcionario={{
           cpf: '10101010101',
           nome: 'André Silva',
+          data_nascimento: '1990-01-01',
           setor: 'TI',
           funcao: 'Desenvolvedor',
           email: 'andre@empresa.com',
