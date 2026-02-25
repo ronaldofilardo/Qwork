@@ -39,16 +39,13 @@ export default function AdminPage() {
 
   const fetchCounts = useCallback(async () => {
     try {
-      const clinicasRes = await fetch('/api/admin/entidades?tipo=clinica');
-      if (clinicasRes.ok) {
-        const data = await clinicasRes.json();
-        setClinicasCount(data.total || 0);
-      }
-
-      const entidadesRes = await fetch('/api/admin/entidades?tipo=entidade');
-      if (entidadesRes.ok) {
-        const data = await entidadesRes.json();
-        setEntidadesCount(data.total || 0);
+      // Usar a mesma fonte do TomadoresContent (UNION ALL) para os badges ficarem consistentes
+      const tomadoresRes = await fetch('/api/admin/entidades');
+      if (tomadoresRes.ok) {
+        const data = await tomadoresRes.json();
+        const lista: { tipo: string }[] = data.entidades || [];
+        setClinicasCount(lista.filter((t) => t.tipo === 'clinica').length);
+        setEntidadesCount(lista.filter((t) => t.tipo === 'entidade').length);
       }
 
       setPagamentosPendentes(0);
