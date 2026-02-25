@@ -326,7 +326,7 @@ export async function PUT(request: Request) {
 
     // Recalcular senha se a data de nascimento mudou
     // (a senha padrão é gerada a partir da data de nascimento: DDMMYYYY)
-    const dataNascimentoAtual = funcResult.rows[0].data_nascimento_atual;
+    const dataNascimentoAtual = funcResult.rows[0].data_nascimento_atual as string | null;
     const dataNascimentoNova = data_nascimento;
     const dataMudou =
       dataNascimentoAtual &&
