@@ -167,17 +167,21 @@ function getBackblazeConfig(): BackblazeConfig {
  * @param key - Chave (caminho) do arquivo no bucket
  * @param contentType - Tipo MIME do arquivo
  * @param bucketOverride - Sobrescreve o bucket padrão (BACKBLAZE_BUCKET) para este upload
+ * @param credentialsOverride - Credenciais alternativas para buckets com acesso restrito
  * @returns Informações do arquivo armazenado
  */
 export async function uploadToBackblaze(
   buffer: Buffer,
   key: string,
   contentType: string = 'application/pdf',
-  bucketOverride?: string
+  bucketOverride?: string,
+  credentialsOverride?: { keyId: string; applicationKey: string }
 ): Promise<UploadResult> {
   try {
     const config = getBackblazeConfig();
     const bucket = bucketOverride ?? config.bucket;
+    const keyId = credentialsOverride?.keyId ?? config.keyId;
+    const applicationKey = credentialsOverride?.applicationKey ?? config.applicationKey;
 
     // Usar SDK da AWS (compatível com S3) para Backblaze
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
@@ -186,8 +190,8 @@ export async function uploadToBackblaze(
       endpoint: config.endpoint,
       region: config.region,
       credentials: {
-        accessKeyId: config.keyId,
-        secretAccessKey: config.applicationKey,
+        accessKeyId: keyId,
+        secretAccessKey: applicationKey,
       },
       forcePathStyle: true, // Necessário para Backblaze
     });
