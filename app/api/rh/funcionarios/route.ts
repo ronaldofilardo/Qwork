@@ -308,15 +308,17 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Verificar se funcionário existe
+    // Verificar se funcionário existe E pertence à clínica do RH (isolamento por clínica)
     const funcResult = await query(
-      'SELECT cpf FROM funcionarios WHERE cpf = $1',
-      [cpf],
+      `SELECT f.cpf FROM funcionarios f
+       INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
+       WHERE f.cpf = $1 AND fc.clinica_id = $2 AND fc.ativo = true`,
+      [cpfLimpo, clinicaId],
       session
     );
     if (funcResult.rows.length === 0) {
       return NextResponse.json(
-        { error: 'Funcionário não encontrado' },
+        { error: 'Funcionário não encontrado ou sem permissão de acesso' },
         { status: 404 }
       );
     }
@@ -334,15 +336,19 @@ export async function PUT(request: Request) {
         nivel_cargo || null,
         turno || null,
         escala || null,
-        cpf,
+        cpfLimpo,
       ],
       session
+    );
+
+    console.log(
+      `[AUDIT] Funcionário ${cpfLimpo} (${nome}) atualizado pela clínica ${clinicaId} por ${session.cpf}`
     );
 
     return NextResponse.json({
       success: true,
       message: 'Funcionário atualizado com sucesso',
-      funcionario: { cpf, nome },
+      funcionario: { cpf: cpfLimpo, nome },
     });
   } catch (error) {
     console.error('Erro ao atualizar funcionário:', error);

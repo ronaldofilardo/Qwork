@@ -230,3 +230,106 @@ export async function POST(request: Request) {
     );
   }
 }
+
+/**
+ * PUT /api/entidade/funcionarios
+ * Atualiza dados de um funcionário da entidade
+ */
+export async function PUT(request: Request) {
+  try {
+    const session = await requireEntity();
+    const entidadeId = session.entidade_id;
+
+    const {
+      cpf,
+      nome,
+      data_nascimento,
+      setor,
+      funcao,
+      email,
+      matricula,
+      nivel_cargo,
+      turno,
+      escala,
+    } = await request.json();
+
+    // Validações básicas
+    if (!cpf || !nome || !data_nascimento || !setor || !funcao || !email) {
+      return NextResponse.json(
+        {
+          error:
+            'CPF, nome, data de nascimento, setor, função e email são obrigatórios',
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validar CPF
+    const cpfLimpo = limparCPF(cpf);
+    if (!validarCPF(cpfLimpo)) {
+      return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
+    }
+
+    // Validar email
+    if (!email.includes('@')) {
+      return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
+    }
+
+    // Verificar se funcionário existe E pertence à entidade (isolamento por entidade)
+    const funcCheck = await queryAsGestorEntidade(
+      `SELECT f.cpf FROM funcionarios f
+       INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
+       WHERE f.cpf = $1 AND fe.entidade_id = $2 AND fe.ativo = true`,
+      [cpfLimpo, entidadeId]
+    );
+
+    if (funcCheck.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Funcionário não encontrado ou sem permissão de acesso' },
+        { status: 404 }
+      );
+    }
+
+    // Atualizar funcionário
+    await queryAsGestorEntidade(
+      `UPDATE funcionarios
+       SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5,
+           matricula=$6, nivel_cargo=$7, turno=$8, escala=$9,
+           atualizado_em=NOW()
+       WHERE cpf=$10`,
+      [
+        nome,
+        data_nascimento,
+        setor,
+        funcao,
+        email,
+        matricula || null,
+        nivel_cargo || null,
+        turno || null,
+        escala || null,
+        cpfLimpo,
+      ]
+    );
+
+    console.log(
+      `[AUDIT] Funcionário ${cpfLimpo} (${nome}) atualizado pela entidade ${entidadeId} por ${session.cpf}`
+    );
+
+    return NextResponse.json({
+      success: true,
+      message: 'Funcionário atualizado com sucesso',
+      funcionario: { cpf: cpfLimpo, nome },
+    });
+  } catch (error) {
+    console.error('Erro ao atualizar funcionário da entidade:', error);
+
+    if (error instanceof Error && error.message.includes('Acesso restrito')) {
+      return NextResponse.json({ error: error.message }, { status: 403 });
+    }
+
+    return NextResponse.json(
+      { error: 'Erro ao atualizar funcionário' },
+      { status: 500 }
+    );
+  }
+}
