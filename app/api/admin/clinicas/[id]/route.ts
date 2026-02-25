@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { query } from '@/lib/db'
+import { requireRole } from '@/lib/session'
+
+export const dynamic = 'force-dynamic';
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    await requireRole('admin');
+
     const { ativa } = await request.json()
     const clinicaId = parseInt(params.id)
 
@@ -32,6 +37,9 @@ export async function PATCH(
     return NextResponse.json(result.rows[0])
   } catch (error) {
     console.error('Erro ao atualizar clínica:', error)
+    if (error instanceof Error && error.message === 'Sem permissão') {
+      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 })
+    }
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 })
   }
 }

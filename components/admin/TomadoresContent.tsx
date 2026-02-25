@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, MapPin, Phone, Mail, User, Filter } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, User, Filter, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 
 type TipoTomador = 'clinica' | 'entidade';
 
@@ -42,6 +42,7 @@ export function TomadoresContent({
   const [tomadorSelecionado, setTomadorSelecionado] = useState<Tomador | null>(
     null
   );
+  const [ativando, setAtivando] = useState(false);
 
   const fetchTomadores = async () => {
     try {
@@ -63,6 +64,39 @@ export function TomadoresContent({
   useEffect(() => {
     fetchTomadores();
   }, []);
+
+  const toggleAtivo = async (tomador: Tomador) => {
+    setAtivando(true);
+    try {
+      const endpoint =
+        tomador.tipo === 'clinica'
+          ? `/api/admin/clinicas/${tomador.id}`
+          : `/api/admin/entidades/${tomador.id}`;
+      const res = await fetch(endpoint, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ativa: !tomador.ativo }),
+      });
+      if (res.ok) {
+        setTomadores((prev) =>
+          prev.map((t) =>
+            t.id === tomador.id ? { ...t, ativo: !tomador.ativo } : t
+          )
+        );
+        if (tomadorSelecionado?.id === tomador.id) {
+          setTomadorSelecionado((prev) =>
+            prev ? { ...prev, ativo: !tomador.ativo } : null
+          );
+        }
+      } else {
+        alert('Erro ao atualizar status da clínica/entidade');
+      }
+    } catch {
+      alert('Erro ao atualizar status');
+    } finally {
+      setAtivando(false);
+    }
+  };
 
   useEffect(() => {
     setFiltro(
@@ -99,6 +133,13 @@ export function TomadoresContent({
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={fetchTomadores}
+              title="Atualizar lista"
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+            >
+              <RefreshCw className="h-5 w-5" />
+            </button>
             <Filter className="h-5 w-5 text-gray-400" />
             <select
               value={filtro}
@@ -385,6 +426,25 @@ export function TomadoresContent({
                   {new Date(tomadorSelecionado.created_at).toLocaleDateString(
                     'pt-BR'
                   )}
+                </div>
+
+                {/* Ação: Ativar / Desativar */}
+                <div className="pt-4 border-t border-gray-200">
+                  <button
+                    onClick={() => toggleAtivo(tomadorSelecionado)}
+                    disabled={ativando}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                      tomadorSelecionado.ativo
+                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
+                        : 'bg-green-100 text-green-700 hover:bg-green-200'
+                    } disabled:opacity-50`}
+                  >
+                    {tomadorSelecionado.ativo ? (
+                      <><XCircle className="h-5 w-5" /> Desativar</>
+                    ) : (
+                      <><CheckCircle className="h-5 w-5" /> Ativar</>  
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
