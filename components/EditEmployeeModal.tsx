@@ -21,6 +21,8 @@ interface EditEmployeeModalProps {
   funcionario: Funcionario;
   onClose: () => void;
   onSuccess: () => void;
+  /** Endpoint da API para o PUT. Padrão: '/api/rh/funcionarios' */
+  apiEndpoint?: string;
 }
 
 interface FormData {
@@ -39,6 +41,7 @@ export default function EditEmployeeModal({
   funcionario,
   onClose,
   onSuccess,
+  apiEndpoint = '/api/rh/funcionarios',
 }: EditEmployeeModalProps) {
   const [mounted, setMounted] = useState(false);
   const [formData, setFormData] = useState<FormData>({
@@ -121,7 +124,7 @@ export default function EditEmployeeModal({
     setError('');
 
     try {
-      const response = await fetch('/api/rh/funcionarios', {
+      const response = await fetch(apiEndpoint, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
