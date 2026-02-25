@@ -276,8 +276,9 @@ export async function PUT(request: Request) {
     }
 
     // Verificar se funcionário existe E pertence à entidade (isolamento por entidade)
+    // Buscar também a data_nascimento atual para comparação
     const funcCheck = await queryAsGestorEntidade(
-      `SELECT f.cpf FROM funcionarios f
+      `SELECT f.cpf, f.data_nascimento as data_nascimento_atual FROM funcionarios f
        INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
        WHERE f.cpf = $1 AND fe.entidade_id = $2 AND fe.ativo = true`,
       [cpfLimpo, entidadeId]
@@ -290,26 +291,67 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Atualizar funcionário
-    await queryAsGestorEntidade(
-      `UPDATE funcionarios
-       SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5,
-           matricula=$6, nivel_cargo=$7, turno=$8, escala=$9,
-           atualizado_em=NOW()
-       WHERE cpf=$10`,
-      [
-        nome,
-        data_nascimento,
-        setor,
-        funcao,
-        email,
-        matricula || null,
-        nivel_cargo || null,
-        turno || null,
-        escala || null,
-        cpfLimpo,
-      ]
-    );
+    // Recalcular senha se a data de nascimento mudou
+    // (a senha padrão é gerada a partir da data de nascimento: DDMMYYYY)
+    const dataNascimentoAtual = funcCheck.rows[0].data_nascimento_atual;
+    const dataNascimentoNova = data_nascimento;
+    const dataMudou =
+      dataNascimentoAtual &&
+      new Date(dataNascimentoAtual).toISOString().split('T')[0] !==
+        new Date(dataNascimentoNova).toISOString().split('T')[0];
+
+    let novaSenhaHash: string | null = null;
+    if (dataMudou) {
+      const novaSenha = gerarSenhaDeNascimento(dataNascimentoNova);
+      novaSenhaHash = await bcrypt.hash(novaSenha, 10);
+      console.log(
+        `[AUDIT] Senha de ${cpfLimpo} recalculada devido à alteração de data de nascimento pela entidade ${entidadeId}`
+      );
+    }
+
+    // Atualizar funcionário (incluindo senha_hash se data mudou)
+    if (novaSenhaHash) {
+      await queryAsGestorEntidade(
+        `UPDATE funcionarios
+         SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5,
+             matricula=$6, nivel_cargo=$7, turno=$8, escala=$9,
+             senha_hash=$11, atualizado_em=NOW()
+         WHERE cpf=$10`,
+        [
+          nome,
+          data_nascimento,
+          setor,
+          funcao,
+          email,
+          matricula || null,
+          nivel_cargo || null,
+          turno || null,
+          escala || null,
+          cpfLimpo,
+          novaSenhaHash,
+        ]
+      );
+    } else {
+      await queryAsGestorEntidade(
+        `UPDATE funcionarios
+         SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5,
+             matricula=$6, nivel_cargo=$7, turno=$8, escala=$9,
+             atualizado_em=NOW()
+         WHERE cpf=$10`,
+        [
+          nome,
+          data_nascimento,
+          setor,
+          funcao,
+          email,
+          matricula || null,
+          nivel_cargo || null,
+          turno || null,
+          escala || null,
+          cpfLimpo,
+        ]
+      );
+    }
 
     console.log(
       `[AUDIT] Funcionário ${cpfLimpo} (${nome}) atualizado pela entidade ${entidadeId} por ${session.cpf}`
@@ -319,6 +361,7 @@ export async function PUT(request: Request) {
       success: true,
       message: 'Funcionário atualizado com sucesso',
       funcionario: { cpf: cpfLimpo, nome },
+      senha_atualizada: !!novaSenhaHash,
     });
   } catch (error) {
     console.error('Erro ao atualizar funcionário da entidade:', error);

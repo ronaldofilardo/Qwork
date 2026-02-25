@@ -239,4 +239,121 @@ describe('Permissões de Edição de Funcionários', () => {
       expect(code).toContain('funcionarios_clinicas');
     });
   });
+
+  describe('🔑 Recálculo de senha ao alterar data de nascimento', () => {
+    const entidadeRouteFile: string = join(
+      process.cwd(),
+      'app',
+      'api',
+      'entidade',
+      'funcionarios',
+      'route.ts'
+    );
+
+    const rhRouteFile: string = join(
+      process.cwd(),
+      'app',
+      'api',
+      'rh',
+      'funcionarios',
+      'route.ts'
+    );
+
+    test('[RH] Busca data_nascimento_atual do banco antes de atualizar', () => {
+      const code = readFileSync(rhRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('data_nascimento_atual');
+    });
+
+    test('[RH] Compara a data nova com a data atual para detectar mudança', () => {
+      const code = readFileSync(rhRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('dataMudou');
+    });
+
+    test('[RH] Chama gerarSenhaDeNascimento quando a data muda', () => {
+      const code = readFileSync(rhRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('gerarSenhaDeNascimento');
+      expect(putSection).toContain('novaSenhaHash');
+    });
+
+    test('[RH] Inclui senha_hash no UPDATE quando data mudou', () => {
+      const code = readFileSync(rhRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('senha_hash=$11');
+    });
+
+    test('[RH] Retorna senha_atualizada no response', () => {
+      const code = readFileSync(rhRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('senha_atualizada');
+    });
+
+    test('[RH] Registra log de auditoria ao recalcular senha', () => {
+      const code = readFileSync(rhRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('recalculada devido');
+    });
+
+    test('[Entidade] Busca data_nascimento_atual do banco antes de atualizar', () => {
+      const code = readFileSync(entidadeRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('data_nascimento_atual');
+    });
+
+    test('[Entidade] Compara a data nova com a data atual para detectar mudança', () => {
+      const code = readFileSync(entidadeRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('dataMudou');
+    });
+
+    test('[Entidade] Chama gerarSenhaDeNascimento quando a data muda', () => {
+      const code = readFileSync(entidadeRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('gerarSenhaDeNascimento');
+      expect(putSection).toContain('novaSenhaHash');
+    });
+
+    test('[Entidade] Inclui senha_hash no UPDATE quando data mudou', () => {
+      const code = readFileSync(entidadeRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('senha_hash=$11');
+    });
+
+    test('[Entidade] Retorna senha_atualizada no response', () => {
+      const code = readFileSync(entidadeRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('senha_atualizada');
+    });
+
+    test('[Entidade] Registra log de auditoria ao recalcular senha', () => {
+      const code = readFileSync(entidadeRouteFile, 'utf-8');
+      const putSection = code.slice(code.indexOf('export async function PUT'));
+      expect(putSection).toContain('recalculada devido');
+    });
+
+    test('Lógica de comparação de datas é robusta (usa ISO split para normalizar)', () => {
+      // Ambas as rotas devem usar a mesma lógica de comparação de datas
+      const rhCode = readFileSync(rhRouteFile, 'utf-8');
+      const entCode = readFileSync(entidadeRouteFile, 'utf-8');
+
+      const rhPut = rhCode.slice(rhCode.indexOf('export async function PUT'));
+      const entPut = entCode.slice(entCode.indexOf('export async function PUT'));
+
+      // Verificar que ambas usam toISOString().split('T')[0] para comparar datas
+      expect(rhPut).toContain("toISOString().split('T')[0]");
+      expect(entPut).toContain("toISOString().split('T')[0]");
+    });
+
+    test('Não recalcula senha quando data de nascimento não muda', () => {
+      // Verificar que o código tem lógica condicional (novaSenhaHash só é setado se dataMudou)
+      const rhCode = readFileSync(rhRouteFile, 'utf-8');
+      const rhPut = rhCode.slice(rhCode.indexOf('export async function PUT'));
+
+      // Deve ter dois ramos de UPDATE: um com senha_hash e outro sem
+      expect(rhPut).toContain('if (novaSenhaHash)');
+      expect(rhPut).toContain('} else {');
+    });
+  });
 });
