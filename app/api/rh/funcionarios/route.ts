@@ -309,8 +309,9 @@ export async function PUT(request: Request) {
     }
 
     // Verificar se funcionário existe E pertence à clínica do RH (isolamento por clínica)
+    // Buscar também a data_nascimento atual para comparação
     const funcResult = await query(
-      `SELECT f.cpf FROM funcionarios f
+      `SELECT f.cpf, f.data_nascimento as data_nascimento_atual FROM funcionarios f
        INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
        WHERE f.cpf = $1 AND fc.clinica_id = $2 AND fc.ativo = true`,
       [cpfLimpo, clinicaId],
@@ -323,23 +324,61 @@ export async function PUT(request: Request) {
       );
     }
 
-    // Atualizar funcionário
-    await query(
-      `UPDATE funcionarios SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5, matricula=$6, nivel_cargo=$7, turno=$8, escala=$9 WHERE cpf=$10`,
-      [
-        nome,
-        data_nascimento,
-        setor,
-        funcao,
-        email,
-        matricula || null,
-        nivel_cargo || null,
-        turno || null,
-        escala || null,
-        cpfLimpo,
-      ],
-      session
-    );
+    // Recalcular senha se a data de nascimento mudou
+    // (a senha padrão é gerada a partir da data de nascimento: DDMMYYYY)
+    const dataNascimentoAtual = funcResult.rows[0].data_nascimento_atual;
+    const dataNascimentoNova = data_nascimento;
+    const dataMudou =
+      dataNascimentoAtual &&
+      new Date(dataNascimentoAtual).toISOString().split('T')[0] !==
+        new Date(dataNascimentoNova).toISOString().split('T')[0];
+
+    let novaSenhaHash: string | null = null;
+    if (dataMudou) {
+      const novaSenha = gerarSenhaDeNascimento(dataNascimentoNova);
+      novaSenhaHash = await bcrypt.hash(novaSenha, 10);
+      console.log(
+        `[AUDIT] Senha de ${cpfLimpo} recalculada devido à alteração de data de nascimento pela clínica ${clinicaId}`
+      );
+    }
+
+    // Atualizar funcionário (incluindo senha_hash se data mudou)
+    if (novaSenhaHash) {
+      await query(
+        `UPDATE funcionarios SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5, matricula=$6, nivel_cargo=$7, turno=$8, escala=$9, senha_hash=$11 WHERE cpf=$10`,
+        [
+          nome,
+          data_nascimento,
+          setor,
+          funcao,
+          email,
+          matricula || null,
+          nivel_cargo || null,
+          turno || null,
+          escala || null,
+          cpfLimpo,
+          novaSenhaHash,
+        ],
+        session
+      );
+    } else {
+      await query(
+        `UPDATE funcionarios SET nome=$1, data_nascimento=$2, setor=$3, funcao=$4, email=$5, matricula=$6, nivel_cargo=$7, turno=$8, escala=$9 WHERE cpf=$10`,
+        [
+          nome,
+          data_nascimento,
+          setor,
+          funcao,
+          email,
+          matricula || null,
+          nivel_cargo || null,
+          turno || null,
+          escala || null,
+          cpfLimpo,
+        ],
+        session
+      );
+    }
 
     console.log(
       `[AUDIT] Funcionário ${cpfLimpo} (${nome}) atualizado pela clínica ${clinicaId} por ${session.cpf}`
@@ -349,6 +388,7 @@ export async function PUT(request: Request) {
       success: true,
       message: 'Funcionário atualizado com sucesso',
       funcionario: { cpf: cpfLimpo, nome },
+      senha_atualizada: !!novaSenhaHash,
     });
   } catch (error) {
     console.error('Erro ao atualizar funcionário:', error);
