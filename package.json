@@ -8,7 +8,9 @@
   },
   "pnpm": {
     "overrides": {
-      "puppeteer": "$puppeteer"
+      "puppeteer": "$puppeteer",
+      "tar-fs": ">=2.1.4",
+      "glob": ">=10.5.0"
     }
   },
   "scripts": {
