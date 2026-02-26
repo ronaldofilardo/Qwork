@@ -1,4 +1,5 @@
 /** @type {import('next').NextConfig} */
+// build-cache-bust: 2026-02-25
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
