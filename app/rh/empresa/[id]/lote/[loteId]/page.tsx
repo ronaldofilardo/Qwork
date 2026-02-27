@@ -830,7 +830,7 @@ export default function DetalhesLotePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex items-center justify-center py-20 bg-gray-50">
         <div className="text-center">
           <div
             role="status"
@@ -844,7 +844,7 @@ export default function DetalhesLotePage() {
 
   if (permissionErrorHint) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="bg-gray-50">
         <main className="container mx-auto px-4 py-6">
           <div className="max-w-3xl mx-auto mt-6 p-4">
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -873,7 +873,7 @@ export default function DetalhesLotePage() {
 
   if (!lote || !estatisticas) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex items-center justify-center py-20 bg-gray-50">
         <div className="text-center bg-white rounded-lg shadow-sm p-8">
           <div className="text-6xl mb-4">📋</div>
           <h2 className="text-xl font-semibold text-gray-800 mb-2">
@@ -895,7 +895,7 @@ export default function DetalhesLotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       <main className="container mx-auto px-4 py-6">
         {/* Mensagem de permissão (vinda do servidor) */}
         {permissionErrorHint && (

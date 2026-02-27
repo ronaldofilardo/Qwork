@@ -232,23 +232,35 @@ export default function NovaAvaliacaoPage() {
     const proximoIndex = currentIndex + 1;
     const isUltimaQuestao = proximoIndex >= todasQuestoes.length;
 
-    // Se é a última questão, mostrar modal IMEDIATAMENTE
-    if (isUltimaQuestao) {
+    // Registrar resposta no estado local imediatamente (optimistic)
+    setRespostas((prev) => ({ ...prev, [questaoAtual.itemId]: valor }));
+
+    // Para perguntas intermediárias: aguardar 220ms para que o React renderize
+    // a opção selecionada antes de avançar para a próxima questão.
+    // setCurrentIndex e setRespostas no mesmo ciclo seriam batched e o usuário
+    // nunca veria o botão preenchido.
+    if (!isUltimaQuestao) {
+      setTimeout(() => {
+        setCurrentIndex(proximoIndex);
+        setIsSaving(false);
+      }, 220);
+    } else {
+      // Se é a última questão, mostrar modal IMEDIATAMENTE
       setShowCompletionModal(true);
       setCompletionStatus('processing');
     }
 
-    // Se é a primeira resposta, atualizar status para em_andamento
+    // Atualizar status para em_andamento (background, sem bloquear)
     if (!hasStarted) {
-      await fetch('/api/avaliacao/status', {
+      setHasStarted(true);
+      fetch('/api/avaliacao/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'em_andamento', avaliacaoId }),
       }).catch((err) => console.warn('Erro ao atualizar status:', err));
-      setHasStarted(true);
     }
 
-    // Salvar resposta
+    // Salvar resposta em background
     try {
       const saveResponse = await fetch('/api/avaliacao/respostas', {
         method: 'POST',
@@ -276,22 +288,31 @@ export default function NovaAvaliacaoPage() {
           return;
         }
 
-        setRespostas((prev) => ({ ...prev, [questaoAtual.itemId]: valor }));
-
-        if (!isUltimaQuestao) {
-          setCurrentIndex(proximoIndex);
-        } else {
-          // Última questão respondida - avaliação será concluída automaticamente
+        if (isUltimaQuestao) {
           setIsFinished(true);
         }
       } else {
+        // Erro ao salvar — reverter optimistic update
         console.error('Erro ao salvar resposta:', await saveResponse.text());
-        // Não avançar se não salvou
+        setRespostas((prev) => {
+          const next = { ...prev };
+          delete next[questaoAtual.itemId];
+          return next;
+        });
+        if (!isUltimaQuestao) {
+          setCurrentIndex(currentIndex);
+        } else {
+          setShowCompletionModal(false);
+        }
         alert('Erro ao salvar resposta. Tente novamente.');
       }
     } catch (err) {
       console.warn('Erro de rede ao salvar resposta:', err);
-      alert('Erro de conexão. Tente novamente.');
+      // Não reverter para perguntas intermediárias (tolerância a falhas de rede)
+      if (isUltimaQuestao) {
+        setShowCompletionModal(false);
+        alert('Erro de conexão. Tente novamente.');
+      }
     } finally {
       setIsSaving(false);
     }
@@ -332,15 +353,22 @@ export default function NovaAvaliacaoPage() {
   return (
     <div className="fixed inset-0 bg-white flex flex-col">
       {/* Header com progresso - safe area para notch */}
-      <div className="bg-primary text-white px-4 py-3 sm:p-5 shadow-xl flex-shrink-0" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
+      <div
+        className="bg-primary text-white px-4 py-3 sm:p-5 shadow-xl flex-shrink-0"
+        style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}
+      >
         <div className="flex justify-between items-center mb-3">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="bg-white rounded-lg p-1.5">
               <QworkLogo size="sm" showSlogan={false} />
             </div>
             <div className="min-w-0">
-              <h1 className="text-base sm:text-xl font-bold leading-tight">Avaliação Psicossocial</h1>
-              <p className="text-xs sm:text-sm opacity-90 truncate">{questaoAtual.grupoTitulo}</p>
+              <h1 className="text-base sm:text-xl font-bold leading-tight">
+                Avaliação Psicossocial
+              </h1>
+              <p className="text-xs sm:text-sm opacity-90 truncate">
+                {questaoAtual.grupoTitulo}
+              </p>
             </div>
           </div>
           <button
@@ -394,7 +422,10 @@ export default function NovaAvaliacaoPage() {
             </div>
           )}
 
-          <p className="text-center text-gray-500 mt-8 sm:mt-12 text-xs sm:text-sm" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <p
+            className="text-center text-gray-500 mt-8 sm:mt-12 text-xs sm:text-sm"
+            style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+          >
             Você pode sair a qualquer momento e continuar depois.
           </p>
         </div>

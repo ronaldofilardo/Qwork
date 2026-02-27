@@ -44,6 +44,15 @@ export async function GET(request: Request) {
               (
                 SELECT l.id FROM avaliacoes a2 JOIN lotes_avaliacao l ON a2.lote_id = l.id WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL ORDER BY a2.inativada_em DESC LIMIT 1
               ) as ultima_inativacao_lote,
+              -- Número do último lote em que o funcionário concluiu ou foi inativado (para coluna "Últimas Avaliações")
+              (
+                SELECT l.numero_ordem FROM avaliacoes a3
+                JOIN lotes_avaliacao l ON a3.lote_id = l.id
+                WHERE a3.funcionario_cpf = f.cpf
+                  AND a3.status IN ('concluida', 'inativada')
+                ORDER BY COALESCE(a3.envio, a3.inativada_em, a3.criado_em) DESC NULLS LAST
+                LIMIT 1
+              ) as ultimo_lote_numero,
               -- Verificar se tem avaliação concluída há menos de 12 meses (mesmo critério da função de elegibilidade)
               CASE 
                 WHEN COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) IS NOT NULL AND COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) >= NOW() - INTERVAL '1 year' 
@@ -326,7 +335,9 @@ export async function PUT(request: Request) {
 
     // Recalcular senha se a data de nascimento mudou
     // (a senha padrão é gerada a partir da data de nascimento: DDMMYYYY)
-    const dataNascimentoAtual = funcResult.rows[0].data_nascimento_atual as string | null;
+    const dataNascimentoAtual = funcResult.rows[0].data_nascimento_atual as
+      | string
+      | null;
     const dataNascimentoNova = data_nascimento;
     const dataMudou =
       dataNascimentoAtual &&

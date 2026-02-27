@@ -21,9 +21,9 @@ describe('TabNavigation', () => {
     expect(
       screen.getByText('📋 Ciclos de Coletas Avaliativas')
     ).toBeInTheDocument();
-    expect(screen.getByText('👥 Funcionários Ativos')).toBeInTheDocument();
+    expect(screen.getByText('👥 Funcionários')).toBeInTheDocument();
     expect(screen.getByText('⚠️ Pendências')).toBeInTheDocument();
-    expect(screen.getByText('🚪 Desligamentos')).toBeInTheDocument();
+    expect(screen.queryByText('🚪 Desligamentos')).not.toBeInTheDocument();
   });
 
   it('deve destacar a aba ativa', () => {
@@ -50,7 +50,7 @@ describe('TabNavigation', () => {
       />
     );
 
-    const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
+    const abaFuncionarios = screen.getByText('👥 Funcionários');
     fireEvent.click(abaFuncionarios);
 
     expect(mockOnTabChange).toHaveBeenCalledWith('funcionarios');
@@ -93,9 +93,8 @@ describe('TabNavigation', () => {
     );
 
     const abas = [
-      { texto: '👥 Funcionários Ativos', id: 'funcionarios' },
+      { texto: '👥 Funcionários', id: 'funcionarios' },
       { texto: '⚠️ Pendências', id: 'pendencias' },
-      { texto: '🚪 Desligamentos', id: 'desligamentos' },
     ];
 
     abas.forEach(({ texto, id }) => {
@@ -113,4 +112,4 @@ describe('TabNavigation', () => {
     });
   });
 });
-
+

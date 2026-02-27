@@ -473,7 +473,7 @@ export default function EditarLaudo() {
                       <div className="flex items-center mb-3">
                         <span className="text-2xl mr-2">🟢</span>
                         <h4 className="font-bold text-green-800 text-base">
-                          1. Risco Psicossocial Baixo (menor que 33%)
+                          Risco Psicossocial Baixo (menor que 33%)
                         </h4>
                       </div>
                       <p className="text-xs text-green-700 font-medium mb-2">
@@ -557,7 +557,7 @@ export default function EditarLaudo() {
                       <div className="flex items-center mb-3">
                         <span className="text-2xl mr-2">🟡</span>
                         <h4 className="font-bold text-yellow-800 text-base">
-                          2. Risco Psicossocial Moderado (entre 33% e 66%)
+                          Risco Psicossocial Moderado (entre 33% e 66%)
                         </h4>
                       </div>
                       <p className="text-xs text-yellow-700 font-medium mb-2">
@@ -638,7 +638,7 @@ export default function EditarLaudo() {
                       <div className="flex items-center mb-3">
                         <span className="text-2xl mr-2">🔴</span>
                         <h4 className="font-bold text-red-800 text-base">
-                          3. Risco Psicossocial Elevado (maior que 66%)
+                          Risco Psicossocial Elevado (maior que 66%)
                         </h4>
                       </div>
                       <p className="text-xs text-red-700 font-medium mb-2">

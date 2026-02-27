@@ -1,6 +1,6 @@
 /**
  * Testes para a página Entidade - Funcionários
- * - Lista de funcionários ativos
+ * - Lista de Funcionários
  * - Autenticação e autorização
  */
 
@@ -48,14 +48,14 @@ describe('EntidadeFuncionariosPage', () => {
     render(<EntidadeFuncionariosPage />);
 
     // Durante loading, não mostra o título ainda
-    expect(screen.queryByText('Funcionários Ativos')).not.toBeInTheDocument();
+    expect(screen.queryByText('Funcionários')).not.toBeInTheDocument();
   });
 
   it('loads session and renders funcionarios section', async () => {
     render(<EntidadeFuncionariosPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Funcionários Ativos')).toBeInTheDocument();
+      expect(screen.getByText('Funcionários')).toBeInTheDocument();
     });
 
     // Verifica que não está mais carregando
@@ -71,7 +71,7 @@ describe('EntidadeFuncionariosPage', () => {
 
     await waitFor(() => {
       // O componente não mostra erro visível, apenas log no console
-      expect(screen.getByText('Funcionários Ativos')).toBeInTheDocument();
+      expect(screen.getByText('Funcionários')).toBeInTheDocument();
     });
   });
 
@@ -79,11 +79,11 @@ describe('EntidadeFuncionariosPage', () => {
     render(<EntidadeFuncionariosPage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Funcionários Ativos')).toBeInTheDocument();
+      expect(screen.getByText('Funcionários')).toBeInTheDocument();
     });
 
     // Verifica que o componente FuncionariosSection é renderizado
     // (não podemos testar props diretamente, mas verificamos que carrega)
-    expect(screen.getByText('Funcionários Ativos')).toBeInTheDocument();
+    expect(screen.getByText('Funcionários')).toBeInTheDocument();
   });
 });

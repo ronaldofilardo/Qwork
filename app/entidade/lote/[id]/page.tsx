@@ -796,7 +796,7 @@ export default function DetalhesLotePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20 bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
           <p className="text-gray-600">Carregando detalhes do lote...</p>
@@ -807,7 +807,7 @@ export default function DetalhesLotePage() {
 
   if (!lote || !estatisticas) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="flex items-center justify-center py-20 bg-gray-50">
         <div className="text-center">
           <p className="text-gray-600">Lote não encontrado</p>
           <button
@@ -822,7 +822,7 @@ export default function DetalhesLotePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-screen-2xl mx-auto px-4 py-6">

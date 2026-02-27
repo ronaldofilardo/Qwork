@@ -11,9 +11,11 @@ interface RespostaAvaliacao {
 interface GrupoRelatorio {
   grupoId: number;
   grupoNome: string;
+  dominio: string;
+  descricao: string;
+  tipo: 'positiva' | 'negativa';
   media: number;
-  classificacao: 'verde' | 'amarelo' | 'vermelho';
-  polaridade: 'positiva' | 'negativa';
+  categoriaRisco: 'baixo' | 'medio' | 'alto';
 }
 
 interface DadosRelatorio {
@@ -31,22 +33,96 @@ interface DadosRelatorio {
   respostas: RespostaAvaliacao[];
 }
 
-function calcularClassificacao(
+// Metadados estáticos dos 10 grupos COPSOQ III
+const GRUPOS_META: Record<
+  number,
+  { dominio: string; descricao: string; tipo: 'positiva' | 'negativa' }
+> = {
+  1: {
+    dominio: 'Demandas no Trabalho',
+    descricao: 'Avaliação das exigências quantitativas e ritmo de trabalho',
+    tipo: 'negativa',
+  },
+  2: {
+    dominio: 'Organização e Conteúdo do Trabalho',
+    descricao:
+      'Influência, desenvolvimento de habilidades e significado do trabalho',
+    tipo: 'positiva',
+  },
+  3: {
+    dominio: 'Relações Sociais e Liderança',
+    descricao: 'Apoio social, feedback e reconhecimento no trabalho',
+    tipo: 'positiva',
+  },
+  4: {
+    dominio: 'Interface Trabalho-Indivíduo',
+    descricao: 'Insegurança no trabalho e conflito trabalho-família',
+    tipo: 'negativa',
+  },
+  5: {
+    dominio: 'Valores Organizacionais',
+    descricao: 'Confiança, justiça e respeito mútuo na organização',
+    tipo: 'positiva',
+  },
+  6: {
+    dominio: 'Traços de Personalidade',
+    descricao: 'Autoeficácia e autoconfiança',
+    tipo: 'positiva',
+  },
+  7: {
+    dominio: 'Saúde e Bem-Estar',
+    descricao: 'Avaliação de estresse, burnout e sintomas somáticos',
+    tipo: 'negativa',
+  },
+  8: {
+    dominio: 'Comportamentos Ofensivos',
+    descricao: 'Exposição a assédio e violência no trabalho',
+    tipo: 'negativa',
+  },
+  9: {
+    dominio: 'Comportamento de Jogo',
+    descricao: 'Avaliação de comportamentos relacionados a Jogos de Apostas',
+    tipo: 'negativa',
+  },
+  10: {
+    dominio: 'Endividamento Financeiro',
+    descricao: 'Avaliação do nível de endividamento e estresse financeiro',
+    tipo: 'negativa',
+  },
+};
+
+// Determina categoria de risco por tercis fixos (escala 0-100)
+function determinarCategoriaRisco(
   media: number,
-  polaridade: 'positiva' | 'negativa'
-): 'verde' | 'amarelo' | 'vermelho' {
-  // Para polaridade positiva: quanto maior, melhor
-  // Para polaridade negativa: quanto menor, melhor
-  if (polaridade === 'positiva') {
-    if (media > 6.6) return 'verde';
-    if (media >= 3.3) return 'amarelo';
-    return 'vermelho';
+  tipo: 'positiva' | 'negativa'
+): 'baixo' | 'medio' | 'alto' {
+  if (tipo === 'positiva') {
+    if (media > 66) return 'baixo';
+    if (media >= 33) return 'medio';
+    return 'alto';
   } else {
-    if (media < 3.3) return 'verde';
-    if (media <= 6.6) return 'amarelo';
-    return 'vermelho';
+    if (media < 33) return 'baixo';
+    if (media <= 66) return 'medio';
+    return 'alto';
   }
 }
+
+// Mapeia categoria de risco para rótulo textual
+const ROTULO_CATEGORIA: Record<'baixo' | 'medio' | 'alto', string> = {
+  baixo: 'Excelente',
+  medio: 'Monitorar',
+  alto: 'Atenção Necessária',
+};
+
+// Mapeia categoria para cor RGB [r,g,b]
+const COR_CATEGORIA: Record<
+  'baixo' | 'medio' | 'alto',
+  [number, number, number]
+> = {
+  baixo: [76, 175, 80], // verde
+  medio: [180, 83, 9], // âmbar escuro (legível sobre fundo branco)
+  alto: [220, 38, 38], // vermelho
+};
 
 function buildGruposFromRespostas(
   respostas: RespostaAvaliacao[]
@@ -61,22 +137,26 @@ function buildGruposFromRespostas(
     grupos.get(resposta.grupo)!.push(resposta.valor);
   }
 
-  // Calcular médias e montar resultado
+  // Calcular médias e montar resultado com metadados COPSOQ
   const resultado: GrupoRelatorio[] = [];
   for (const [grupoId, valores] of grupos.entries()) {
     const media = valores.reduce((a, b) => a + b, 0) / valores.length;
     const dadosGrupo = dadosRelatorio.find((g) => g.id === grupoId);
-    const polaridade = (dadosGrupo?.polaridade || 'positiva') as
-      | 'positiva'
-      | 'negativa';
-    const classificacao = calcularClassificacao(media, polaridade);
+    const meta = GRUPOS_META[grupoId] ?? {
+      dominio: dadosGrupo?.nome ?? `Grupo ${grupoId}`,
+      descricao: '',
+      tipo: (dadosGrupo?.polaridade ?? 'positiva') as 'positiva' | 'negativa',
+    };
+    const mediaArredondada = Math.round(media * 10) / 10;
 
     resultado.push({
       grupoId,
-      grupoNome: dadosGrupo?.nome || `Grupo ${grupoId}`,
-      media: Math.round(media * 100) / 100,
-      classificacao,
-      polaridade,
+      grupoNome: meta.dominio,
+      dominio: meta.dominio,
+      descricao: meta.descricao,
+      tipo: meta.tipo,
+      media: mediaArredondada,
+      categoriaRisco: determinarCategoriaRisco(mediaArredondada, meta.tipo),
     });
   }
 
@@ -144,48 +224,56 @@ export function gerarRelatorioIndividualPDF(dados: DadosRelatorio): Buffer {
   yPos += 8;
 
   const grupos = buildGruposFromRespostas(dados.respostas);
-  const tableData = grupos.map((g) => {
-    const classificacaoLabel = {
-      verde: 'Baixo',
-      amarelo: 'Médio',
-      vermelho: 'Alto',
-    }[g.classificacao];
-    return [g.grupoNome, g.media.toFixed(2), classificacaoLabel];
-  });
+  const tableData = grupos.map((g) => [
+    String(g.grupoId),
+    g.dominio,
+    g.descricao,
+    g.tipo === 'positiva' ? 'Positiva' : 'Negativa',
+    g.media.toFixed(1),
+    ROTULO_CATEGORIA[g.categoriaRisco],
+  ]);
 
   autoTable(doc, {
     startY: yPos,
-    margin: { left: 15, right: 15 },
-    head: [['Grupo', 'Média', 'Classificação']],
+    margin: { left: 10, right: 10 },
+    head: [
+      [
+        'Grupo',
+        'Domínio',
+        'Descrição',
+        'Tipo',
+        'Média Geral',
+        'Categoria de Risco',
+      ],
+    ],
     body: tableData,
     theme: 'grid',
-    styles: { fontSize: 9, cellPadding: 3 },
+    styles: { fontSize: 7.5, cellPadding: 2.5, overflow: 'linebreak' },
     headStyles: {
-      fillColor: [76, 175, 80],
+      fillColor: [30, 41, 59],
       textColor: 255,
       fontStyle: 'bold',
+      fontSize: 7.5,
     },
     columnStyles: {
-      1: { halign: 'center' },
-      2: { halign: 'center' },
+      0: { halign: 'center', cellWidth: 13 },
+      1: { cellWidth: 38 },
+      2: { cellWidth: 58 },
+      3: { halign: 'center', cellWidth: 17 },
+      4: { halign: 'center', cellWidth: 20 },
+      5: { halign: 'center', cellWidth: 28 },
     },
-    didDrawCell: (data) => {
-      if (data.section === 'body' && data.column.index === 2) {
+    didParseCell: (data) => {
+      if (data.section === 'body' && data.column.index === 5) {
         const grupo = grupos[data.row.index];
-        let cor: [number, number, number];
-
-        if (grupo.classificacao === 'verde') {
-          cor = [76, 175, 80]; // Verde - Baixo
-        } else if (grupo.classificacao === 'amarelo') {
-          cor = [255, 193, 7]; // Amarelo - Médio
-        } else {
-          cor = [244, 67, 54]; // Vermelho - Alto
-        }
-
-        // Aplicar cor de fundo
-        data.cell.styles.fillColor = cor;
+        // Texto colorido, fundo branco (sem cor de fundo)
+        data.cell.styles.textColor = COR_CATEGORIA[grupo.categoriaRisco];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      if (data.section === 'body' && data.column.index === 3) {
+        const grupo = grupos[data.row.index];
         data.cell.styles.textColor =
-          grupo.classificacao === 'amarelo' ? 0 : 255;
+          grupo.tipo === 'positiva' ? [2, 132, 199] : [220, 38, 38];
       }
     },
   });

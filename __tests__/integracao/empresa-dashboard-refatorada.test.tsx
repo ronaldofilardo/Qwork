@@ -200,13 +200,15 @@ describe('Integração: EmpresaDashboardPage refatorada', () => {
 
     // Verificar se as abas estão presentes
     await waitFor(() => {
-      expect(screen.getByText('📋 Ciclos de Coletas Avaliativas')).toBeInTheDocument();
-      expect(screen.getByText('👥 Funcionários Ativos')).toBeInTheDocument();
+      expect(
+        screen.getByText('📋 Ciclos de Coletas Avaliativas')
+      ).toBeInTheDocument();
+      expect(screen.getByText('👥 Funcionários')).toBeInTheDocument();
       expect(screen.getByText('⚠️ Pendências')).toBeInTheDocument();
     });
 
     // Clicar na aba de funcionários
-    const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
+    const abaFuncionarios = screen.getByText('👥 Funcionários');
     fireEvent.click(abaFuncionarios);
 
     // Verificar se mudou de aba
@@ -272,4 +274,3 @@ describe('Integração: EmpresaDashboardPage refatorada', () => {
     });
   });
 });
-

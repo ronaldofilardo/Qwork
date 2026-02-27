@@ -7,12 +7,10 @@ import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
-import { isDataValida } from '@/lib/auth/date-validator';
 
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
-  const [dataNascimento, setDataNascimento] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [isConfirmingIdentity, setIsConfirmingIdentity] = useState(false);
@@ -30,35 +28,6 @@ export default function LoginPage() {
   const formatarCPF = (valor: string) => {
     const apenasNumeros = valor.replace(/\D/g, '');
     return apenasNumeros.slice(0, 11);
-  };
-
-  const formatarDataNascimento = (valor: string) => {
-    const apenasNumeros = valor.replace(/\D/g, '');
-    return apenasNumeros.slice(0, 8); // ddmmaaaa
-  };
-
-  const validarDataNascimento = (ddmmaaaa: string): string | null => {
-    if (!ddmmaaaa || ddmmaaaa.length !== 8) {
-      return 'Data deve ter 8 dígitos (formato: ddmmaaaa)';
-    }
-
-    const dia = parseInt(ddmmaaaa.substring(0, 2), 10);
-    const mes = parseInt(ddmmaaaa.substring(2, 4), 10);
-    const ano = parseInt(ddmmaaaa.substring(4, 8), 10);
-
-    if (isNaN(dia) || isNaN(mes) || isNaN(ano)) {
-      return 'Data inválida';
-    }
-
-    if (!isDataValida(dia, mes, ano)) {
-      return 'Data impossível (ex: 31/02 não existe). Verifique dia e mês.';
-    }
-
-    if (ano < 1900 || ano > new Date().getFullYear()) {
-      return `Ano deve estar entre 1900 e ${new Date().getFullYear()}`;
-    }
-
-    return null; // Válido
   };
 
   const handleConfirmarIdentidade = async () => {
@@ -119,7 +88,6 @@ export default function LoginPage() {
     setRedirectTo('');
     setCpf('');
     setSenha('');
-    setDataNascimento('');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -128,23 +96,10 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      // ✅ VALIDAR data de nascimento se fornecida
-      if (dataNascimento) {
-        const erroData = validarDataNascimento(dataNascimento);
-        if (erroData) {
-          setError(erroData);
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Enviar senha ou data de nascimento
+      // Enviar CPF + senha (funcionários digitam data de nascimento no campo senha)
       const body: any = { cpf };
       if (senha) {
         body.senha = senha;
-      }
-      if (dataNascimento) {
-        body.data_nascimento = dataNascimento;
       }
 
       const response = await fetch('/api/auth/login', {
@@ -270,7 +225,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+      style={{
+        paddingTop: 'max(12px, env(safe-area-inset-top))',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+      }}
+    >
       {/* Modal de Confirmação de Identidade */}
       {showConfirmacaoModal && dadosConfirmacao && (
         <ModalConfirmacaoIdentidade
@@ -319,8 +280,9 @@ export default function LoginPage() {
             <li className="flex items-start gap-2">
               <span className="font-bold text-blue-600 mt-0.5">2</span>
               <span>
-                <strong>Com Data de Nascimento</strong> - Funcionários: insira
-                seu CPF e Data de Nascimento (deixar o campo Senha em branco)
+                <strong>Com Data de Nascimento</strong> - Funcionários sem
+                senha: insira seu CPF e digite a Data de Nascimento no campo
+                Senha
               </span>
             </li>
           </ul>
@@ -371,36 +333,10 @@ export default function LoginPage() {
               className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
               disabled={showConfirmacaoModal}
             />
-          </div>
-
-          <div>
-            <label
-              htmlFor="dataNascimento"
-              className="block text-sm font-medium text-gray-700"
-            >
-              Data de nascimento{' '}
-              <span className="text-gray-500 font-normal">
-                (opcional se tiver senha)
-              </span>
-            </label>
-            <input
-              id="dataNascimento"
-              name="dataNascimento"
-              type="text"
-              inputMode="numeric"
-              value={dataNascimento}
-              onChange={(e) =>
-                setDataNascimento(
-                  formatarDataNascimento((e.target as HTMLInputElement).value)
-                )
-              }
-              placeholder="ddmmaaaa"
-              className="mt-1 block w-full px-3 py-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-base"
-              maxLength={8}
-              disabled={showConfirmacaoModal}
-            />
             <p className="mt-1.5 text-xs text-gray-500">
-              Formato: dia mês ano sem espaços (ex: 15031990)
+              Funcionários sem senha: use sua data de nascimento no formato{' '}
+              <span className="font-mono font-semibold">ddmmaaaa</span> (ex:
+              15031990)
             </p>
           </div>
 

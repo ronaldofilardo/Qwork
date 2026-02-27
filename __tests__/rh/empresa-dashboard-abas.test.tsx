@@ -1,6 +1,6 @@
 /**
  * Testes para o dashboard de empresa com abas funcionais
- * Validação das abas "Funcionários Ativos" e "Desligamentos"
+ * Validação das abas "Funcionários" e "Pendências"
  */
 
 import React from 'react';
@@ -64,30 +64,20 @@ jest.mock('@/components/rh', () => ({
   ),
   TabNavigation: ({ activeTab, onTabChange }: any) => (
     <div data-testid="tab-navigation">
-      <button
-        onClick={() => onTabChange('lotes')}
-        data-active={activeTab === 'lotes'}
-      >
+      <button onClick={() => onTabChange('lotes')} data-active={activeTab === 'lotes'}>
         📋 Ciclos de Coletas Avaliativas
       </button>
-      <button
-        onClick={() => onTabChange('funcionarios')}
-        data-active={activeTab === 'funcionarios'}
-      >
-        👥 Funcionários Ativos
+      <button onClick={() => onTabChange('funcionarios')} data-active={activeTab === 'funcionarios'}>
+        👥 Funcionários
       </button>
-      <button
-        onClick={() => onTabChange('desligamentos')}
-        data-active={activeTab === 'desligamentos'}
-      >
-        🚪 Desligamentos
+      <button onClick={() => onTabChange('pendencias')} data-active={activeTab === 'pendencias'}>
+        ⚠️ Pendências
       </button>
     </div>
   ),
   LotesGrid: () => <div data-testid="lotes-grid">Lotes Grid</div>,
 }));
 
-// Mock do FuncionariosSection
 jest.mock('@/components/funcionarios/FuncionariosSection', () => {
   return function MockFuncionariosSection({ defaultStatusFilter }: any) {
     return (
@@ -98,17 +88,22 @@ jest.mock('@/components/funcionarios/FuncionariosSection', () => {
   };
 });
 
-// Mock do session
+jest.mock('@/components/pendencias/PendenciasSection', () => {
+  return function MockPendenciasSection({ empresaId }: any) {
+    return (
+      <div data-testid="pendencias-section">
+        PendenciasSection - empresa {empresaId}
+      </div>
+    );
+  };
+});
+
 global.fetch = jest.fn((url) => {
   if (url === '/api/auth/session') {
     return Promise.resolve({
       ok: true,
       json: () =>
-        Promise.resolve({
-          cpf: '12345678901',
-          nome: 'Gestor RH',
-          perfil: 'rh',
-        }),
+        Promise.resolve({ cpf: '12345678901', nome: 'Gestor RH', perfil: 'rh' }),
     });
   }
   return Promise.reject(new Error('URL não mockada'));
@@ -122,22 +117,25 @@ describe('Empresa Dashboard - Abas Funcionais', () => {
   describe('Renderização das abas', () => {
     it('deve renderizar o dashboard com abas funcionais', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
-
       expect(screen.getByTestId('tab-navigation')).toBeInTheDocument();
-      expect(
-        screen.getByText('📋 Ciclos de Coletas Avaliativas')
-      ).toBeInTheDocument();
-      expect(screen.getByText('👥 Funcionários Ativos')).toBeInTheDocument();
-      expect(screen.getByText('🚪 Desligamentos')).toBeInTheDocument();
+      expect(screen.getByText('📋 Ciclos de Coletas Avaliativas')).toBeInTheDocument();
+      expect(screen.getByText('👥 Funcionários')).toBeInTheDocument();
+      expect(screen.getByText('⚠️ Pendências')).toBeInTheDocument();
+    });
+
+    it('NÃO deve renderizar aba Desligamentos', async () => {
+      render(<EmpresaDashboardPage />);
+      await waitFor(() => {
+        expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
+      });
+      expect(screen.queryByText('🚪 Desligamentos')).not.toBeInTheDocument();
     });
 
     it('deve iniciar na aba "lotes" por padrão', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('lotes-grid')).toBeInTheDocument();
       });
@@ -145,222 +143,106 @@ describe('Empresa Dashboard - Abas Funcionais', () => {
   });
 
   describe('Navegação entre abas', () => {
-    it('deve mostrar FuncionariosSection com filtro "ativos" na aba "Funcionários Ativos"', async () => {
+    it('deve mostrar FuncionariosSection com filtro "todos" na aba "Funcionários"', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
-
-      // Clica na aba de funcionários
-      const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
-      fireEvent.click(abaFuncionarios);
-
-      // Verifica que o componente foi renderizado com filtro correto
+      fireEvent.click(screen.getByText('👥 Funcionários'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-ativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('funcionarios-section-todos')).toBeInTheDocument();
       });
-
-      expect(
-        screen.getByText('FuncionariosSection - ativos')
-      ).toBeInTheDocument();
+      expect(screen.getByText('FuncionariosSection - todos')).toBeInTheDocument();
     });
 
-    it('deve mostrar FuncionariosSection com filtro "inativos" na aba "Desligamentos"', async () => {
+    it('deve mostrar PendenciasSection na aba "Pendências"', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
-
-      // Clica na aba de desligamentos
-      const abaDesligamentos = screen.getByText('🚪 Desligamentos');
-      fireEvent.click(abaDesligamentos);
-
-      // Verifica que o componente foi renderizado com filtro correto
+      fireEvent.click(screen.getByText('⚠️ Pendências'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-inativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('pendencias-section')).toBeInTheDocument();
       });
-
-      expect(
-        screen.getByText('FuncionariosSection - inativos')
-      ).toBeInTheDocument();
+      expect(screen.getByText('PendenciasSection - empresa 1')).toBeInTheDocument();
     });
 
     it('deve permitir alternar entre abas funcionais', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
 
-      // Inicia na aba lotes
       expect(screen.getByTestId('lotes-grid')).toBeInTheDocument();
 
-      // Vai para funcionários ativos
-      const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
-      fireEvent.click(abaFuncionarios);
-
+      fireEvent.click(screen.getByText('👥 Funcionários'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-ativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('funcionarios-section-todos')).toBeInTheDocument();
       });
 
-      // Volta para lotes
-      const abaLotes = screen.getByText('📋 Ciclos de Coletas Avaliativas');
-      fireEvent.click(abaLotes);
-
+      fireEvent.click(screen.getByText('📋 Ciclos de Coletas Avaliativas'));
       await waitFor(() => {
         expect(screen.getByTestId('lotes-grid')).toBeInTheDocument();
       });
 
-      // Vai para desligamentos
-      const abaDesligamentos = screen.getByText('🚪 Desligamentos');
-      fireEvent.click(abaDesligamentos);
-
+      fireEvent.click(screen.getByText('⚠️ Pendências'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-inativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('pendencias-section')).toBeInTheDocument();
       });
     });
   });
 
-  describe('Props corretas do FuncionariosSection', () => {
-    it('deve passar props corretas para FuncionariosSection na aba funcionários', async () => {
+  describe('Props corretas dos componentes', () => {
+    it('deve passar filtro "todos" para FuncionariosSection', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
-
-      const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
-      fireEvent.click(abaFuncionarios);
-
+      fireEvent.click(screen.getByText('👥 Funcionários'));
       await waitFor(() => {
-        const funcionariosSection = screen.getByTestId(
-          'funcionarios-section-ativos'
-        );
-        expect(funcionariosSection).toBeInTheDocument();
-      });
-
-      // O mock mostra que o componente recebeu o filtro correto
-      expect(
-        screen.getByText('FuncionariosSection - ativos')
-      ).toBeInTheDocument();
-    });
-
-    it('deve passar props corretas para FuncionariosSection na aba desligamentos', async () => {
-      render(<EmpresaDashboardPage />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
-      });
-
-      const abaDesligamentos = screen.getByText('🚪 Desligamentos');
-      fireEvent.click(abaDesligamentos);
-
-      await waitFor(() => {
-        const funcionariosSection = screen.getByTestId(
-          'funcionarios-section-inativos'
-        );
-        expect(funcionariosSection).toBeInTheDocument();
-      });
-
-      // O mock mostra que o componente recebeu o filtro correto
-      expect(
-        screen.getByText('FuncionariosSection - inativos')
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe('Contexto de empresa', () => {
-    it('deve passar empresaId correto para FuncionariosSection', async () => {
-      // O mock do componente mostra que recebe o contexto correto
-      // Na implementação real, o empresaId=1 é passado via parseInt(empresaId)
-      render(<EmpresaDashboardPage />);
-
-      await waitFor(() => {
-        expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
-      });
-
-      const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
-      fireEvent.click(abaFuncionarios);
-
-      await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-ativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('funcionarios-section-todos')).toBeInTheDocument();
       });
     });
 
-    it('deve passar empresaNome correto para FuncionariosSection', async () => {
-      // O mock do componente mostra que recebe o contexto correto
-      // Na implementação real, empresa.nome="Empresa Teste" é passado
+    it('deve passar empresaId correto para PendenciasSection', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
-
-      const abaDesligamentos = screen.getByText('🚪 Desligamentos');
-      fireEvent.click(abaDesligamentos);
-
+      fireEvent.click(screen.getByText('⚠️ Pendências'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-inativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('pendencias-section')).toBeInTheDocument();
       });
+      expect(screen.getByText('PendenciasSection - empresa 1')).toBeInTheDocument();
     });
   });
 
   describe('Ausência de placeholders', () => {
     it('NÃO deve mostrar mensagem de "em desenvolvimento"', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
-
-      // Verifica que não há mensagens de desenvolvimento
       expect(screen.queryByText(/em desenvolvimento/i)).not.toBeInTheDocument();
       expect(screen.queryByText(/🚧/)).not.toBeInTheDocument();
-      expect(
-        screen.queryByText(/Componente em desenvolvimento/)
-      ).not.toBeInTheDocument();
     });
 
     it('deve mostrar conteúdo funcional em todas as abas', async () => {
       render(<EmpresaDashboardPage />);
-
       await waitFor(() => {
         expect(screen.getByTestId('empresa-header')).toBeInTheDocument();
       });
 
-      // Verifica aba lotes
       expect(screen.getByTestId('lotes-grid')).toBeInTheDocument();
 
-      // Verifica aba funcionários
-      const abaFuncionarios = screen.getByText('👥 Funcionários Ativos');
-      fireEvent.click(abaFuncionarios);
+      fireEvent.click(screen.getByText('👥 Funcionários'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-ativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('funcionarios-section-todos')).toBeInTheDocument();
       });
 
-      // Verifica aba desligamentos
-      const abaDesligamentos = screen.getByText('🚪 Desligamentos');
-      fireEvent.click(abaDesligamentos);
+      fireEvent.click(screen.getByText('⚠️ Pendências'));
       await waitFor(() => {
-        expect(
-          screen.getByTestId('funcionarios-section-inativos')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('pendencias-section')).toBeInTheDocument();
       });
     });
   });

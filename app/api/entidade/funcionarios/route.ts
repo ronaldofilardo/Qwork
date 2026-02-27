@@ -59,7 +59,16 @@ export async function GET() {
           WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL
           ORDER BY a2.inativada_em DESC
           LIMIT 1
-        ) as ultima_inativacao_lote
+        ) as ultima_inativacao_lote,
+        -- Número de ordem do lote da última avaliação concluída ou inativada
+        (
+          SELECT l.numero_ordem FROM avaliacoes a3
+          JOIN lotes_avaliacao l ON a3.lote_id = l.id
+          WHERE a3.funcionario_cpf = f.cpf
+            AND a3.status IN ('concluida', 'inativada')
+          ORDER BY COALESCE(a3.envio, a3.inativada_em, a3.criado_em) DESC NULLS LAST
+          LIMIT 1
+        ) as ultimo_lote_numero
       FROM funcionarios f
       INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
       LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
@@ -293,7 +302,9 @@ export async function PUT(request: Request) {
 
     // Recalcular senha se a data de nascimento mudou
     // (a senha padrão é gerada a partir da data de nascimento: DDMMYYYY)
-    const dataNascimentoAtual = funcCheck.rows[0].data_nascimento_atual as string | null;
+    const dataNascimentoAtual = funcCheck.rows[0].data_nascimento_atual as
+      | string
+      | null;
     const dataNascimentoNova = data_nascimento;
     const dataMudou =
       dataNascimentoAtual &&

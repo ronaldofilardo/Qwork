@@ -107,7 +107,7 @@ export default function EntidadeLayout({
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50">
       <EntidadeSidebar
         counts={{
           funcionarios: funcionariosCount,
@@ -115,7 +115,7 @@ export default function EntidadeLayout({
         }}
         userName={session?.nome}
       />
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-4 md:p-6">{children}</div>
       </div>
     </div>

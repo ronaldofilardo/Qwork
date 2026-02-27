@@ -293,7 +293,7 @@ describe('RH Empresa Dashboard', () => {
 
       // Clicar na aba Funcionários (escolher tab quando houver duplicidade)
       const funcionariosButtons = screen.getAllByRole('button', {
-        name: /Funcionários Ativos/i,
+        name: /Funcionários/i,
       });
       const funcionariosTab =
         funcionariosButtons.length > 1
@@ -322,7 +322,7 @@ describe('RH Empresa Dashboard', () => {
 
       // Clicar na aba Funcionários (escolher tab quando houver duplicidade)
       const funcionariosButtons = screen.getAllByRole('button', {
-        name: /Funcionários Ativos/i,
+        name: /Funcionários/i,
       });
       const funcionariosTab =
         funcionariosButtons.length > 1

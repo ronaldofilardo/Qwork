@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect } from 'react';
 
 interface Question {
   grupoId: number;
@@ -25,17 +25,27 @@ interface QuestionModalProps {
 }
 
 const opcoes = [
-  { valor: 0, label: "Nunca", cor: "bg-green-500" },
-  { valor: 25, label: "Raramente", cor: "bg-lime-500" },
-  { valor: 50, label: "Às vezes", cor: "bg-yellow-500" },
-  { valor: 75, label: "Frequentemente", cor: "bg-orange-500" },
-  { valor: 100, label: "Sempre", cor: "bg-red-600" },
+  { valor: 0, label: 'Nunca', cor: 'bg-green-500' },
+  { valor: 25, label: 'Raramente', cor: 'bg-lime-500' },
+  { valor: 50, label: 'Às vezes', cor: 'bg-yellow-500' },
+  { valor: 75, label: 'Frequentemente', cor: 'bg-orange-500' },
+  { valor: 100, label: 'Sempre', cor: 'bg-red-600' },
 ];
 
 // Ícone X feito à mão (sem lucide-react)
 const CloseIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M18 6L6 18M6 6l12 12"/>
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="28"
+    height="28"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 6L6 18M6 6l12 12" />
   </svg>
 );
 
@@ -55,7 +65,10 @@ export default function QuestionModal({
 
   useEffect(() => {
     if (respostasAnteriores[question.itemId] !== undefined) {
-      const timer = setTimeout(() => onNext(respostasAnteriores[question.itemId]), 800);
+      const timer = setTimeout(
+        () => onNext(respostasAnteriores[question.itemId]),
+        800
+      );
       return () => clearTimeout(timer);
     }
   }, [question.itemId, respostasAnteriores, onNext]);
@@ -72,25 +85,24 @@ export default function QuestionModal({
     setEnviando(true);
     setSelecionado(valor);
 
-    try {
-      await fetch("/api/avaliacao/respostas", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          avaliacaoId,
-          grupo: question.grupoId,
-          item: question.itemId,
-          valor,
-        }),
-      });
-    } catch (err: unknown) {
-      console.warn("Falha ao salvar – será sincronizado depois", err);
-    }
+    // Fire-and-forget: salva em background sem bloquear avanço da questão
+    fetch('/api/avaliacao/respostas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        avaliacaoId,
+        grupo: question.grupoId,
+        item: question.itemId,
+        valor,
+      }),
+    }).catch((err: unknown) => {
+      console.warn('Falha ao salvar – será sincronizado depois', err);
+    });
 
     setTimeout(() => {
       onNext(valor);
       setEnviando(false);
-    }, 400);
+    }, 100);
   }
 
   return (
@@ -135,25 +147,26 @@ export default function QuestionModal({
                 onClick={() => handleResposta(op.valor)}
                 disabled={enviando || selecionado !== null}
                 className={`relative p-6 rounded-2xl font-semibold text-white shadow-lg transition-all transform
-                  ${selecionado === op.valor ? "scale-95 opacity-90" : "hover:scale-105"}
-                  ${enviando && selecionado === op.valor ? "animate-pulse" : ""}
+                  ${selecionado === op.valor ? 'scale-95 opacity-90' : 'hover:scale-105'}
+                  ${enviando && selecionado === op.valor ? 'animate-pulse' : ''}
                   ${op.cor}
                 `}
               >
                 <span className="block text-sm md:text-base">{op.label}</span>
                 <span className="block text-3xl md:text-4xl font-bold mt-2">
-                  {op.valor === 0 && "0"}
-                  {op.valor === 25 && "¼"}
-                  {op.valor === 50 && "½"}
-                  {op.valor === 75 && "¾"}
-                  {op.valor === 100 && "100"}
+                  {op.valor === 0 && '0'}
+                  {op.valor === 25 && '¼'}
+                  {op.valor === 50 && '½'}
+                  {op.valor === 75 && '¾'}
+                  {op.valor === 100 && '100'}
                 </span>
               </button>
             ))}
           </div>
 
           <p className="text-center text-sm text-gray-500 mt-10">
-            Toque na resposta que melhor descreve sua situação.<br />
+            Toque na resposta que melhor descreve sua situação.
+            <br />
             Você pode sair a qualquer momento e continuar depois.
           </p>
 

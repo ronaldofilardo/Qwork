@@ -75,7 +75,7 @@ describe('👥 Aba Funcionários', () => {
       ).toBeInTheDocument();
     });
 
-    const funcionariosTab = screen.getByText(/Funcionários Ativos/i);
+    const funcionariosTab = screen.getByText('👥 Funcionários');
     fireEvent.click(funcionariosTab);
 
     await waitFor(() => {
@@ -159,15 +159,15 @@ describe('👥 Aba Funcionários', () => {
   });
 
   /**
-   * @test Verifica existência da seção de funcionários ativos
-   * @expected Deve exibir testid "funcionarios-section-ativos"
+   * @test Verifica existência da seção de funcionários
+   * @expected Deve exibir testid "funcionarios-section-todos"
    */
-  it('deve exibir seção funcionarios-section-ativos', async () => {
+  it('deve exibir seção funcionarios-section-todos', async () => {
     // Act: Renderizar e navegar
     await renderAndNavigateToFuncionariosTab();
 
     // Assert: Verificar seção com testid
-    const section = screen.getByTestId('funcionarios-section-ativos');
+    const section = screen.getByTestId('funcionarios-section-todos');
     expect(section).toBeInTheDocument();
   });
 

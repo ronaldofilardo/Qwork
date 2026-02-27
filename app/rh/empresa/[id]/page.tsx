@@ -43,6 +43,10 @@ const LiberarLoteModal = dynamic(
     })),
   { ssr: false }
 );
+const PendenciasSection = dynamic(
+  () => import('@/components/pendencias/PendenciasSection'),
+  { ssr: false }
+);
 
 interface Session {
   cpf: string;
@@ -55,7 +59,7 @@ type TabType =
   | 'lotes'
   | 'laudos'
   | 'funcionarios'
-  | 'desligamentos';
+  | 'pendencias';
 
 interface Funcionario {
   cpf: string;
@@ -178,8 +182,7 @@ export default function EmpresaDashboardPage() {
       case 'funcionarios':
         fetchFuncionarios();
         break;
-      case 'desligamentos':
-        fetchFuncionarios();
+      case 'pendencias':
         break;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,7 +201,7 @@ export default function EmpresaDashboardPage() {
   // === LOADING STATE ===
   if (loading || !session || !empresa) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center py-20">
         <div
           role="status"
           className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
@@ -298,22 +301,18 @@ export default function EmpresaDashboardPage() {
               empresaId={parseInt(empresaId)}
               empresaNome={empresa.nome}
               onRefresh={fetchFuncionarios}
-              defaultStatusFilter="ativos"
+              defaultStatusFilter="todos"
             />
           </div>
         )}
 
-        {activeTab === 'desligamentos' && (
+        {activeTab === 'pendencias' && (
           <div className="space-y-6">
-            <FuncionariosSection
-              contexto="clinica"
-              empresaId={parseInt(empresaId)}
-              empresaNome={empresa.nome}
-              onRefresh={fetchFuncionarios}
-              defaultStatusFilter="inativos"
-            />
+            <PendenciasSection empresaId={parseInt(empresaId)} />
           </div>
         )}
+
+
       </main>
 
       {/* Modais */}
