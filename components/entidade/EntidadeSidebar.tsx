@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, ChevronDown, FileText, Users, User } from 'lucide-react';
+import { AlertTriangle, Building2, ChevronDown, FileText, Users, User } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 import { PWAMenuItem } from '@/components/PWAMenuItem';
@@ -62,6 +62,7 @@ export default function EntidadeSidebar({
   const isEmpresaActive =
     pathname?.startsWith('/entidade/lotes') ||
     pathname?.startsWith('/entidade/funcionarios') ||
+    pathname?.startsWith('/entidade/pendencias') ||
     pathname === '/entidade/dashboard';
 
   return (
@@ -109,10 +110,17 @@ export default function EntidadeSidebar({
             />
             <MenuItem
               icon={Users}
-              label="Funcionários Ativos"
+              label="Funcionários"
               count={counts.funcionarios}
               isActive={pathname === '/entidade/funcionarios'}
               onClick={() => router.push('/entidade/funcionarios')}
+            />
+            <MenuItem
+              icon={AlertTriangle}
+              label="Pendências"
+              count={counts.pendencias}
+              isActive={pathname?.startsWith('/entidade/pendencias')}
+              onClick={() => router.push('/entidade/pendencias')}
             />
           </div>
         )}

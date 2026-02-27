@@ -37,7 +37,9 @@ export default function SidebarLayout({
   };
 
   return (
-    <div className={`h-screen bg-white border-r border-gray-200 flex flex-col transition-all ${isCollapsed ? 'w-16' : 'w-64'}`}>
+    <div
+      className={`h-screen bg-white border-r border-gray-200 flex flex-col transition-all ${isCollapsed ? 'w-16' : 'w-64'}`}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -68,7 +70,9 @@ export default function SidebarLayout({
               <span className="text-primary-600">🏥</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800 truncate">{userName}</p>
+              <p className="text-sm font-semibold text-gray-800 truncate">
+                {userName}
+              </p>
               <p className="text-xs text-gray-500">{roleLabel}</p>
             </div>
           </div>
@@ -76,7 +80,15 @@ export default function SidebarLayout({
       )}
 
       {/* Navigation area */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav
+        className="flex-1 overflow-y-auto py-4"
+        style={
+          {
+            scrollbarWidth: 'none',
+            msOverflowStyle: 'none',
+          } as React.CSSProperties
+        }
+      >
         {children}
 
         {/* Logout posicionado logo após a navegação */}
@@ -91,7 +103,11 @@ export default function SidebarLayout({
         </div>
       </nav>
 
-      {footer && <div className="px-4 py-6 border-t border-gray-200 text-xs text-gray-500">{footer}</div>}
+      {footer && (
+        <div className="px-4 py-6 border-t border-gray-200 text-xs text-gray-500">
+          {footer}
+        </div>
+      )}
     </div>
   );
 }

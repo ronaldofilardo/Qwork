@@ -177,7 +177,7 @@ describe('📑 Sistema de Abas - Dashboard', () => {
     });
 
     // Act: Clicar em aba Funcionários
-    const funcionariosTab = screen.getByText(/Funcionários Ativos/i);
+    const funcionariosTab = screen.getByText('👥 Funcionários');
     fireEvent.click(funcionariosTab);
 
     // Assert: Verificar conteúdo da nova aba

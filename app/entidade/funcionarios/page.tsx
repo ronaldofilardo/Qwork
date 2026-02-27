@@ -40,16 +40,15 @@ export default function FuncionariosPage() {
   return (
     <div>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          Funcionários Ativos
-        </h1>
-        <p className="text-gray-600">Funcionários ativos da empresa</p>
+        <h1 className="text-2xl font-bold text-gray-800">Funcionários</h1>
+        <p className="text-gray-600">Todos os funcionários da empresa</p>
       </div>
 
       <FuncionariosSection
         contexto="entidade"
         tomadorId={session?.tomador_id}
         onRefresh={() => {}}
+        defaultStatusFilter="todos"
       />
     </div>
   );

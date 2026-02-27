@@ -60,6 +60,8 @@ interface Funcionario {
   // Última data de inativação
   ultima_inativacao_em?: string | null;
   ultima_inativacao_lote?: string | null;
+  // Número de ordem do lote da última avaliação (concluída ou inativada)
+  ultimo_lote_numero?: number | null;
   // Índice do funcionário (sequência de lotes concluídos)
   indice_avaliacao?: number;
   // Campo de elegibilidade - tem avaliação concluída há menos de 12 meses
@@ -551,7 +553,11 @@ export default function FuncionariosSection({
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-sm font-medium text-gray-900">
-                              {funcionario.ultimo_lote_id || '—'}
+                              {funcionario.ultimo_lote_numero != null
+                                ? `Lote ${funcionario.ultimo_lote_numero}`
+                                : funcionario.ultimo_lote_id
+                                  ? `#${funcionario.ultimo_lote_id}`
+                                  : '—'}
                             </span>
                             <span
                               className={`inline-flex px-2 py-0.5 text-xs font-semibold rounded-full ${

@@ -1,13 +1,13 @@
-'use client'
+'use client';
 
-import { escalasResposta, RespostaValor } from '@/lib/questoes'
+import { escalasResposta, RespostaValor } from '@/lib/questoes';
 
 interface RadioScaleProps {
-  questionId: string
-  questionText: string
-  value: number | null
-  onChange: (value: number) => void
-  required?: boolean
+  questionId: string;
+  questionText: string;
+  value: number | null;
+  onChange: (value: number) => void;
+  required?: boolean;
 }
 
 export default function RadioScale({
@@ -17,7 +17,7 @@ export default function RadioScale({
   onChange,
   required = true,
 }: RadioScaleProps) {
-  const opcoes = Object.entries(escalasResposta) as [RespostaValor, number][]
+  const opcoes = Object.entries(escalasResposta) as [RespostaValor, number][];
 
   return (
     <div className="py-6 border-b border-gray-200">
@@ -60,9 +60,11 @@ export default function RadioScale({
                   <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
                 )}
               </div>
-              <span className={`text-[12px] leading-tight text-center hyphens-auto ${
-                value === val ? 'text-white' : 'text-gray-600'
-              }`}>
+              <span
+                className={`text-[12px] leading-tight text-center hyphens-auto ${
+                  value === val ? 'text-white' : 'text-gray-600'
+                }`}
+              >
                 {label}
               </span>
             </button>
@@ -88,7 +90,7 @@ export default function RadioScale({
             <div
               className={`w-8 h-8 sm:w-10 sm:h-10 rounded-full border-2 flex items-center justify-center mb-3 ${
                 value === val
-                  ? 'border-primary bg-primary'
+                  ? 'border-white bg-white/20'
                   : 'border-gray-400 bg-white'
               }`}
             >
@@ -96,9 +98,11 @@ export default function RadioScale({
                 <div className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-white"></div>
               )}
             </div>
-            <span className={`text-xs sm:text-base font-medium text-center ${
-              value === val ? 'text-gray-900' : 'text-gray-600'
-            }`}>
+            <span
+              className={`text-xs sm:text-base font-medium text-center ${
+                value === val ? 'text-gray-900' : 'text-gray-600'
+              }`}
+            >
               {label}
             </span>
           </button>
@@ -110,5 +114,5 @@ export default function RadioScale({
         Selecione uma opção acima
       </p>
     </div>
-  )
+  );
 }
