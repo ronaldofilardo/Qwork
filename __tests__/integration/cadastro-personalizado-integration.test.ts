@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/cadastro-personalizado-integration.test.ts
+ * Testes: Integração - Cadastro Plano Personalizado para Tomador
+ */
+
 import { query } from '@/lib/db';
 
 // Mock Next.js modules minimalmente

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/cadastro-tomador-validation.test.ts
+ * Testes: API /api/cadastro/tomadores - validação de limite de funcionários
+ */
+
 import '@testing-library/jest-dom';
 
 jest.mock('@/lib/db', () => ({

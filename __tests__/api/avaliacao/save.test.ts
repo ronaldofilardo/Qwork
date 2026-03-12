@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/avaliacao/save.test.ts
+ * Testes: API /api/avaliacao/save
+ */
+
 global.TextEncoder = require('util').TextEncoder;
 global.TextDecoder = require('util').TextDecoder;
 

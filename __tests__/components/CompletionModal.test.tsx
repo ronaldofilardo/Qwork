@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/CompletionModal.test.tsx
+ * Testes: CompletionModal
+ */
+
 import { render, screen } from '@testing-library/react';
 import CompletionModal from '@/components/avaliacao/CompletionModal';
 

@@ -1,0 +1,95 @@
+{
+  "passed": true,
+  "totalViolations": 0,
+  "totalWarnings": 2,
+  "violations": [],
+  "warnings": [
+    {
+      "ruleId": "ADAPTER_DB_PURE",
+      "severity": "warning",
+      "file": "lib/db.ts",
+      "line": 0,
+      "importPath": "",
+      "description": "lib/db.ts deve ser adapter puro (apenas re-exports) ÔÇö 1491 linhas de l├│gica encontradas (m├íx: 30)",
+      "suggestion": "Mova a l├│gica para subm├│dulos e mantenha apenas re-exports"
+    },
+    {
+      "ruleId": "ADAPTER_DB_SECURITY_PURE",
+      "severity": "warning",
+      "file": "lib/db-security.ts",
+      "line": 0,
+      "importPath": "",
+      "description": "lib/db-security.ts deve ser adapter puro (apenas re-exports) ÔÇö 487 linhas de l├│gica encontradas (m├íx: 30)",
+      "suggestion": "Mova a l├│gica para subm├│dulos e mantenha apenas re-exports"
+    }
+  ],
+  "adapterStatus": [
+    {
+      "id": "ADAPTER_DB_PURE",
+      "file": "lib/db.ts",
+      "description": "lib/db.ts deve ser adapter puro (apenas re-exports)",
+      "maxNonExportLines": 30,
+      "passed": false,
+      "skipped": false,
+      "nonExportLines": 1491,
+      "maxAllowed": 30,
+      "hasLogic": true,
+      "logicLines": [
+        {
+          "line": 13,
+          "content": "if (!process.env.JEST_WORKER_ID && process.env.NODE_ENV !== 'test') {"
+        },
+        {
+          "line": 47,
+          "content": "return ("
+        },
+        {
+          "line": 57,
+          "content": "if (!isValidPerfil(value)) {"
+        },
+        {
+          "line": 68,
+          "content": "const { Pool } = pg;"
+        },
+        {
+          "line": 72,
+          "content": "const isRunningTests = !!process.env.JEST_WORKER_ID;"
+        }
+      ]
+    },
+    {
+      "id": "ADAPTER_DB_SECURITY_PURE",
+      "file": "lib/db-security.ts",
+      "description": "lib/db-security.ts deve ser adapter puro (apenas re-exports)",
+      "maxNonExportLines": 30,
+      "passed": false,
+      "skipped": false,
+      "nonExportLines": 487,
+      "maxAllowed": 30,
+      "hasLogic": true,
+      "logicLines": [
+        {
+          "line": 12,
+          "content": "function isValidPerfil(perfil: string): boolean {"
+        },
+        {
+          "line": 13,
+          "content": "return TypeValidators.isPerfil(perfil);"
+        },
+        {
+          "line": 19,
+          "content": "function isValidCPF(cpf: string): boolean {"
+        },
+        {
+          "line": 20,
+          "content": "return /^\\d{11}$/.test(cpf);"
+        },
+        {
+          "line": 27,
+          "content": "async function _validateSessionContext("
+        }
+      ]
+    }
+  ],
+  "circularImports": []
+}

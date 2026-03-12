@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/pdf/relatorio-helpers.test.ts
+ * Testes: Classificação de Risco - Lógica
+ */
+
 import { describe, it, expect } from '@jest/globals';
 
 // Estes testes verificam a lógica de classificação de risco

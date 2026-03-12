@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/funcionarios.route.test.ts
+ * Testes: /api/rh/funcionarios
+ */
+
 import { GET } from '@/app/api/rh/funcionarios/route';
 import { query } from '@/lib/db';
 

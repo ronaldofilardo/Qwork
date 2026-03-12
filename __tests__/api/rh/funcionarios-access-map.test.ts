@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/funcionarios-access-map.test.ts
+ * Testes: POST /api/rh/funcionarios - mapear clinica via tomador
+ */
+
 import { NextRequest } from 'next/server';
 
 jest.mock('@/lib/db');

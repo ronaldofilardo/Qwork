@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/planos-triggers.test.ts
+ * Testes: Testes de Banco de Dados - Fase 2
+ */
+
 import { describe, it, expect, beforeAll, afterAll } from '@jest/globals';
 import { query, queryMultiTenant, contarFuncionariosAtivos } from '@/lib/db';
 

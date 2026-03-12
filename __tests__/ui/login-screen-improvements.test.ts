@@ -1,389 +1,209 @@
 /**
+ * @jest-environment jsdom
  * @file __tests__/ui/login-screen-improvements.test.ts
  * @description Testes para melhorias da tela de login (logo maior + box explicativo)
- * @date 2026-02-12
  */
 
-import { describe, it, expect } from '@jest/globals';
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 
-/**
- * ============================================================================
- * TESTES: Melhorias da Tela de Login
- * ============================================================================
- */
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  useRouter: () => ({ push: jest.fn(), replace: jest.fn() }),
+}));
+
+// Mock components used by LoginPage
+jest.mock('@/components/QworkLogo', () => {
+  return function MockQworkLogo(props: any) {
+    return React.createElement(
+      'div',
+      {
+        'data-testid': 'qwork-logo',
+        'data-size': props.size,
+        'data-show-slogan': String(props.showSlogan),
+        className: props.className,
+      },
+      'QWork Logo'
+    );
+  };
+});
+
+jest.mock('@/components/modals/ModalCadastrotomador', () => {
+  return function MockModal() {
+    return null;
+  };
+});
+
+jest.mock('@/components/modals/ModalConfirmacaoIdentidade', () => {
+  return function MockModal() {
+    return null;
+  };
+});
+
+jest.mock('@/components/modals/ModalTermosAceite', () => {
+  return function MockModal() {
+    return null;
+  };
+});
+
+jest.mock('lucide-react', () => ({
+  Building2: () =>
+    React.createElement('span', { 'data-testid': 'building-icon' }),
+}));
+
+import LoginPage from '@/app/login/page';
 
 describe('Tela de Login: Melhorias de UX', () => {
+  beforeEach(() => {
+    render(React.createElement(LoginPage));
+  });
+
   describe('Logo Ampliado', () => {
-    it('✓ Deve renderizar logo com size="3xl" (w-48 h-48)', async () => {
-      // ARRANGE: Renderizar login page
-      // const { container } = render(<LoginPage />);
-
-      // ACT
-      // const logo = container.querySelector('img[alt="QWork"]');
-
-      // ASSERT: Logo deve ter classes w-48 h-48 (aumento de 50% em relação ao anterior 2xl)
-      // expect(logo?.parentElement).toHaveClass('w-48', 'h-48');
-      expect(true).toBe(true); // Placeholder
+    it('deve renderizar QworkLogo com size="3xl"', () => {
+      const logo = screen.getByTestId('qwork-logo');
+      expect(logo).toHaveAttribute('data-size', '3xl');
     });
 
-    it('✓ Logo deve ser 50% maior que o anterior (2xl → 3xl)', async () => {
-      // ARRANGE
-      // 2xl = w-32 h-32 = 32*4 = 128px
-      // 3xl = w-48 h-48 = 48*4 = 192px
-
-      // ASSERT: 192 / 128 = 1.5 (exatamente 50% maior)
-      const _lgSize = 128; // w-32 h-32 = 8rem = 128px
-      const _xlSize = 192; // w-48 h-48 = 12rem = 192px
-      expect(192 / 128).toBeCloseTo(1.5, 1); // 50% maior
+    it('deve renderizar logo com showSlogan=false', () => {
+      const logo = screen.getByTestId('qwork-logo');
+      expect(logo).toHaveAttribute('data-show-slogan', 'false');
     });
 
-    it('✓ Logo deve estar centralizado no topo do form', async () => {
-      // ARRANGE
-      // ASSERT: Logo está dentro <div className="text-center">
-      expect(true).toBe(true); // Placeholder
+    it('logo deve estar centralizado (text-center container)', () => {
+      const logo = screen.getByTestId('qwork-logo');
+      const container = logo.closest('.text-center');
+      expect(container).toBeTruthy();
     });
 
-    it('✓ QworkLogo component deve aceitar size="3xl"', async () => {
-      // ARRANGE: Importar QworkLogo
-      // const { container } = render(<QworkLogo size="3xl" />);
-
-      // ASSERT: Deve renderizar sem erro
-      // expect(container).toBeTruthy();
-      expect(true).toBe(true); // Placeholder
+    it('size 3xl deve ser 50% maior que 2xl', () => {
+      // 2xl = w-32 = 128px, 3xl = w-48 = 192px
+      expect(192 / 128).toBeCloseTo(1.5, 1);
     });
   });
 
   describe('Box Explicativo de Login', () => {
-    it('✓ Deve ter box com fundo azul claro (bg-blue-50)', async () => {
-      // ASSERT: Box "Como Fazer Login?" presente com bg-blue-50
-      expect(true).toBe(true); // Placeholder
+    it('deve ter título "Como Fazer Login?"', () => {
+      expect(screen.getByText('Como Fazer Login?')).toBeInTheDocument();
     });
 
-    it('✓ Box deve ter border azul (border-blue-200)', async () => {
-      // ASSERT: Border azul aplicado
-      expect(true).toBe(true); // Placeholder
+    it('deve ter box com fundo azul claro (bg-blue-50)', () => {
+      const title = screen.getByText('Como Fazer Login?');
+      const box = title.closest('.bg-blue-50');
+      expect(box).toBeTruthy();
     });
 
-    it('✓ Título "Como Fazer Login?" deve estar presente', async () => {
-      // ARRANGE
-      // ACT
-      // const title = screen.getByText('Como Fazer Login?');
-
-      // ASSERT
-      // expect(title).toBeVisible();
-      // expect(title).toHaveClass('font-semibold', 'text-blue-900');
-      expect(true).toBe(true); // Placeholder
+    it('deve ter border azul (border-blue-200)', () => {
+      const title = screen.getByText('Como Fazer Login?');
+      const box = title.closest('.border-blue-200');
+      expect(box).toBeTruthy();
     });
 
-    it('✓ Deve ter opção 1: COM SENHA para todos os usuários', async () => {
-      // ARRANGE
-      // ACT
-      // const option1 = screen.getByText(/Com Senha/);
-
-      // ASSERT
-      // expect(option1).toBeVisible();
-      // expect(option1.textContent).toContain('Todos os usuários');
-      // expect(option1.textContent).toContain('RH, Gestor, Emissor');
-      // expect(option1.textContent).toContain('CPF e Senha');
-      expect(true).toBe(true); // Placeholder
+    it('deve ter opção 1: Com Senha para todos', () => {
+      expect(screen.getByText('Com Senha')).toBeInTheDocument();
+      expect(screen.getByText(/Todos os usuários/)).toBeInTheDocument();
     });
 
-    it('✓ Deve ter opção 2: COM DATA DE NASCIMENTO para funcionários', async () => {
-      // ARRANGE
-      // ACT
-      // const option2 = screen.getByText(/Com Data de Nascimento/);
-
-      // ASSERT
-      // expect(option2).toBeVisible();
-      // expect(option2.textContent).toContain('Funcionários');
-      // expect(option2.textContent).toContain('CPF e Data de Nascimento');
-      // expect(option2.textContent).toContain('deixar o campo Senha em branco');
-      expect(true).toBe(true); // Placeholder
+    it('deve ter opção 2: Com Data de Nascimento para funcionários', () => {
+      expect(screen.getByText('Com Data de Nascimento')).toBeInTheDocument();
+      expect(
+        screen.getAllByText(/Funcionários sem/).length
+      ).toBeGreaterThanOrEqual(1);
     });
 
-    it('✓ Box deve ter padding e border-radius adequados', async () => {
-      // ASSERT: p-4 rounded-lg aplicados
-      expect(true).toBe(true); // Placeholder
+    it('deve ter números 1 e 2 nas opções', () => {
+      expect(screen.getByText('1')).toBeInTheDocument();
+      expect(screen.getByText('2')).toBeInTheDocument();
     });
 
-    it('✓ Lista de opções deve ser numerada (1 e 2)', async () => {
-      // ASSERT: Números 1 e 2 visíveis em texto
-      expect(true).toBe(true); // Placeholder
+    it('números devem ter estilo font-bold text-blue-600', () => {
+      const num1 = screen.getByText('1');
+      expect(num1.className).toContain('font-bold');
+      expect(num1.className).toContain('text-blue-600');
     });
   });
 
   describe('Labels dos Campos', () => {
-    it('✓ Label CPF deve mostrar "CPF" com indicação de obrigatório', async () => {
-      // ASSERT: Classe "required" aplicada
-      expect(true).toBe(true); // Placeholder
+    it('label CPF deve estar presente', () => {
+      expect(screen.getByLabelText('CPF')).toBeInTheDocument();
     });
 
-    it('✓ Label Senha deve indicar "(opcional se for funcionário)"', async () => {
-      // ARRANGE
-      // ACT
-      // const label = screen.getByText(/Senha/);
-
-      // ASSERT
-      // expect(label.textContent).toContain('(opcional se for funcionário)');
-      expect(true).toBe(true); // Placeholder
+    it('label Senha deve indicar "(opcional se for funcionário)"', () => {
+      expect(
+        screen.getByText(/opcional se for funcionário/)
+      ).toBeInTheDocument();
     });
 
-    it('✓ Nota de "opcional" em Senha deve ter classe text-gray-500', async () => {
-      // ASSERT: Subtexto cinza para indicar que é opcional
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Label Data de Nascimento deve indicar "(opcional se tiver senha)"', async () => {
-      // ARRANGE
-      // ACT
-      // const label = screen.getByText(/Data de nascimento/);
-
-      // ASSERT
-      // expect(label.textContent).toContain('(opcional se tiver senha)');
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Nota de "opcional" em Data deve ter classe text-gray-500', async () => {
-      // ASSERT: Subtexto cinza
-      expect(true).toBe(true); // Placeholder
+    it('nota de opcional deve ter classe text-gray-500', () => {
+      const span = screen.getByText(/opcional se for funcionário/);
+      expect(span.className).toContain('text-gray-500');
     });
   });
 
   describe('Dica de Formato de Data', () => {
-    it('✓ Deve exibir dica embaixo do campo Data de Nascimento', async () => {
-      // ARRANGE
-      // ACT
-      // const hint = screen.getByText(/Use este formato:/);
-
-      // ASSERT
-      // expect(hint).toBeVisible();
-      expect(true).toBe(true); // Placeholder
+    it('deve exibir dica com formato "ddmmaaaa"', () => {
+      expect(screen.getByText('ddmmaaaa')).toBeInTheDocument();
     });
 
-    it('✓ Dica deve mostrar formato "ddmmaaaa"', async () => {
-      // ASSERT: Texto contém "ddmmaaaa"
-      expect(true).toBe(true); // Placeholder
+    it('deve incluir exemplo "(ex: 15031990)"', () => {
+      expect(screen.getByText(/15031990/)).toBeInTheDocument();
     });
 
-    it('✓ Dica deve incluir exemplo "(ex: 15031990)"', async () => {
-      // ASSERT: Exemplo de data visível
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Dica deve ter classe text-xs text-gray-500', async () => {
-      // ASSERT: Estilo de dica cinza pequena
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('Layout e Responsive', () => {
-    it('✓ Box explicativo deve estar acima do formulário', async () => {
-      // ARRANGE
-      // ACT: Verificar ordem dos elementos no DOM
-
-      // ASSERT: Box está antes do <form>
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Box deve ter margin-bottom para separação do form', async () => {
-      // ASSERT: Classe mb-6 aplicada
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Deve manter responsividade em mobile', async () => {
-      // ASSERT: Classes sm:p-8, sm:mb-8 presentes
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Logo deve estar centrado tanto em desktop quanto mobile', async () => {
-      // ASSERT: Classe text-center em container
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('Cores e Styling', () => {
-    it('✓ Box explicativo deve usar cores azuis (blue-50, blue-200, blue-900)', async () => {
-      // ASSERT
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Números 1 e 2 devem ter cor blue-600 e font-bold', async () => {
-      // ASSERT
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Texto do box deve ter cor blue-800', async () => {
-      // ASSERT
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Labels devem manter cor gray-700', async () => {
-      // ASSERT
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Dicas em cinza devem ter cor gray-500', async () => {
-      // ASSERT
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('Acessibilidade', () => {
-    it('✓ Box deve ter estrutura semântica com <h3> para título', async () => {
-      // ASSERT: Heading nível 3 para "Como Fazer Login?"
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Lista de opções deve estar em <ul> com <li>', async () => {
-      // ASSERT: Estrutura semântica correta
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Labels devem estar associados aos inputs via htmlFor', async () => {
-      // ASSERT: Labels linked ao inputs corretos
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Contraste de cores deve passar WCAG AA', async () => {
-      // ASSERT: Blue-50 background vs blue-900 text = suficiente contraste
-      // ASSERT: Blue-50 background vs blue-800 text = suficiente contraste
-      expect(true).toBe(true); // Placeholder
+    it('dica deve ter classe text-xs text-gray-500', () => {
+      const hints = screen.getAllByText(/Funcionários sem senha/);
+      const hint = hints.find((el) => el.className.includes('text-xs'));
+      expect(hint).toBeTruthy();
+      expect(hint!.className).toContain('text-gray-500');
     });
   });
 
   describe('Componentes de Formulário', () => {
-    it('✓ Campo CPF ainda deve ser obrigatório (required)', async () => {
-      // ASSERT: Atributo required presente
-      expect(true).toBe(true); // Placeholder
+    it('campo CPF deve ser obrigatório (required)', () => {
+      const cpfInput = screen.getByPlaceholderText('00000000000');
+      expect(cpfInput).toHaveAttribute('required');
     });
 
-    it('✓ Campo Senha agora deve ser opcional', async () => {
-      // ASSERT: Atributo required removido (ou não presente)
-      expect(true).toBe(true); // Placeholder
+    it('campo CPF deve ter maxLength=11', () => {
+      const cpfInput = screen.getByPlaceholderText('00000000000');
+      expect(cpfInput).toHaveAttribute('maxLength', '11');
     });
 
-    it('✓ Campo Data de Nascimento deve ser opcional', async () => {
-      // ASSERT: Atributo required não presente
-      expect(true).toBe(true); // Placeholder
+    it('campo Senha deve ter placeholder "••••••••"', () => {
+      expect(screen.getByPlaceholderText('••••••••')).toBeInTheDocument();
     });
 
-    it('✓ Máximo de caracteres deve ser respeitado (CPF=11, Data=8)', async () => {
-      // ASSERT: maxLength="11" para CPF, maxLength="8" para Data
-      expect(true).toBe(true); // Placeholder
+    it('campo Senha não deve ser required', () => {
+      const senhaInput = screen.getByPlaceholderText('••••••••');
+      expect(senhaInput).not.toHaveAttribute('required');
     });
 
-    it('✓ Placeholders devem ser informativos', async () => {
-      // ASSERT
-      // - CPF: "00000000000"
-      // - Senha: "••••••••"
-      // - Data: "ddmmaaaa"
-      expect(true).toBe(true); // Placeholder
+    it('botão submit deve mostrar "Entrar"', () => {
+      expect(
+        screen.getByRole('button', { name: 'Entrar' })
+      ).toBeInTheDocument();
     });
   });
 
-  describe('Fluxo de Login Funcional', () => {
-    it('✓ Usuário que lê box deve entender que CPF é obrigatório', async () => {
-      // ASSERT: Box deixa claro "Todos os usuários: insira seu CPF"
-      expect(true).toBe(true); // Placeholder
+  describe('Acessibilidade', () => {
+    it('título deve estar em h3', () => {
+      const title = screen.getByText('Como Fazer Login?');
+      expect(title.tagName).toBe('H3');
     });
 
-    it('✓ Usuário RH/Gestor deve entender que precisa de Senha', async () => {
-      // ASSERT: Box opção 1 deixa claro "Todos os usuários...Senha"
-      expect(true).toBe(true); // Placeholder
+    it('lista deve estar em ul com li', () => {
+      const list = screen
+        .getByText('Como Fazer Login?')
+        .closest('div')
+        ?.querySelector('ul');
+      expect(list).toBeTruthy();
+      const items = list?.querySelectorAll('li');
+      expect(items?.length).toBe(2);
     });
 
-    it('✓ Usuário Funcionário deve entender alternativa de Data de Nascimento', async () => {
-      // ASSERT: Box opção 2 deixa claro "Funcionários...Data de Nascimento"
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Mensagem de erro deve sobrepor box (ou não aparecer ao mesmo tempo)', async () => {
-      // ASSERT: Error div tem z-index suficiente
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('QworkLogo Component Updates', () => {
-    it('✓ QworkLogo deve ter novo size "3xl" na interface', async () => {
-      // ARRANGE
-      // ACT: Importar QworkLogo
-      // const props: QworkLogoProps = { size: '3xl' };
-
-      // ASSERT: TypeScript aceita size="3xl"
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Dimensions para "3xl" devem ser "w-48 h-48"', async () => {
-      // ASSERT: Mapeamento correto no componente
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ SloganSize para "3xl" devem ser "text-xl"', async () => {
-      // ASSERT
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Size "3xl" deve ter altura visual 50% maior que "2xl"', async () => {
-      // ARRANGE
-      // 2xl = w-32 = 8rem = 128px
-      // 3xl = w-48 = 12rem = 192px
-
-      // ASSERT
-      expect(192 / 128).toBeCloseTo(1.5, 1); // Exatamente 50% maior
-    });
-
-    it('✓ Tamanho "2xl" ainda deve existir para compatibilidade', async () => {
-      // ASSERT: 2xl não foi removido, apenas adicionado 3xl
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ xxs breakpoint (320px) foi adicionado ao Tailwind config', async () => {
-      // ASSERT: Tailwind config contém xxs: '320px'
-      expect(true).toBe(true); // Placeholder
-    });
-  });
-
-  describe('Mensagens e Textos', () => {
-    it('✓ Textos devem estar em português brasileiro claro', async () => {
-      // ASSERT: Termos como "Como Fazer Login?", "Com Senha", etc.
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Instruções devem ser concisas e não exceder 2 linhas por opção', async () => {
-      // ASSERT: Cada opção cabe em espaço razoável
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Texto "deixar o campo Senha em branco" deve ser literal', async () => {
-      // ASSERT: Instrução clara aos funcionários
-      expect(true).toBe(true); // Placeholder
-    });
-
-    it('✓ Dica de data deve mencionar formato específico "ddmmaaaa"', async () => {
-      // ASSERT: Formato é exato (não "dd/mm/aaaa")
-      expect(true).toBe(true); // Placeholder
+    it('labels devem estar associados aos inputs via htmlFor', () => {
+      const cpfLabel = screen.getByText('CPF');
+      expect(cpfLabel.tagName).toBe('LABEL');
+      expect(cpfLabel).toHaveAttribute('for', 'cpf');
     });
   });
 });
-
-/**
- * ============================================================================
- * SUMMARY
- * ============================================================================
- *
- * TOTAL DE TESTES: 40
- * CATEGORIAS:
- *   1. Logo Ampliado (4 testes)
- *   2. Box Explicativo (7 testes)
- *   3. Labels dos Campos (4 testes)
- *   4. Dica de Formato (4 testes)
- *   5. Layout e Responsive (4 testes)
- *   6. Cores e Styling (5 testes)
- *   7. Acessibilidade (4 testes)
- *   8. Componentes de Formulário (5 testes)
- *   9. Fluxo de Login Funcional (4 testes)
- *   10. QworkLogo Component Updates (6 testes)
- *   11. Mensagens e Textos (4 testes)
- *
- * STATUS: ✓ DRAFT COMPLETO - PRONTO PARA VALIDAÇÃO
- */

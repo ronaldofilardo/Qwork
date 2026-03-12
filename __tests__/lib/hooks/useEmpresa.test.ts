@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/hooks/useEmpresa.test.ts
+ * Testes: useEmpresa
+ */
+
 import { renderHook, waitFor } from '@testing-library/react';
 import { useEmpresa } from '@/lib/hooks/useEmpresa';
 

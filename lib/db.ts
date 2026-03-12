@@ -439,7 +439,15 @@ export async function query<T = any>(
   try {
     if ((isDevelopment || isTest) && localPool) {
       // PostgreSQL Local (Desenvolvimento e Testes)
-      const client = await localPool.connect();
+      const client = await localPool.connect().catch((err) => {
+        // Se falhar por excesso de conexões, logar um aviso mais amigável
+        if (err.message.includes('too many clients') || err.code === '53300') {
+          console.error(
+            '🚨 [DATABASE ERROR] Muitos clientes conectados ao PostgreSQL local. Tente reiniciar o servidor ou fechar conexões ociosas.'
+          );
+        }
+        throw err;
+      });
       try {
         // If we have a session, run the query inside a transaction and set LOCAL params
         if (session) {
@@ -659,9 +667,9 @@ export async function ensureAdminPassword(): Promise<void> {
 if ((isDevelopment || isTest) && databaseUrl) {
   localPool = new Pool({
     connectionString: databaseUrl,
-    max: isTest ? 5 : 10, // Menos conexões para testes
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000, // Aumentado de 2000 para 10000ms
+    max: isTest ? 5 : 20, // Aumentado de 10 para 20 em dev para suportar múltiplos logs e acesso mobile simultâneo
+    idleTimeoutMillis: 10000, // Reduzido de 30000 para 10000 para liberar conexões ociosas mais rápido
+    connectionTimeoutMillis: 10000,
   });
 
   // Log claro do banco sendo usado (apenas em desenvolvimento e testes)

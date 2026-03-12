@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/pagamento-confirmar.test.ts
+ * Testes: API /api/pagamento/confirmar - Confirmação de Pagamento
+ */
+
 import '@testing-library/jest-dom';
 
 // Mock da API inteira

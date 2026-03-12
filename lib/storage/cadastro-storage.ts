@@ -141,7 +141,8 @@ async function uploadArquivoCadastroToBackblaze(
 export async function uploadArquivoCadastro(
   buffer: Buffer,
   tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
-  cnpj: string
+  cnpj: string,
+  _tipoTomador?: 'entidade' | 'clinica'
 ): Promise<CadastroArquivoResult> {
   const isServerless =
     process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';

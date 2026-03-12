@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/CobrancaContent.pagination.test.tsx
+ * Testes: CobrancaContent - paginação e ordenação
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';

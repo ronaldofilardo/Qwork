@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/dashboard/Dashboard.test.tsx
+ * Testes: Dashboard Component Mock
+ */
+
 import React from 'react'
 
 // Mock completo do dashboard para evitar problemas de hooks

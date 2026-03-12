@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/admin/clinicas.test.ts
+ * Testes: /api/admin/clinicas
+ */
+
 import { POST, GET } from '@/app/api/admin/clinicas/route';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';

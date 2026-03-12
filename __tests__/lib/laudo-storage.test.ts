@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/laudo-storage.test.ts
+ * Testes: Laudo Storage
+ */
+
 import fs from 'fs/promises';
 import path from 'path';
 import {

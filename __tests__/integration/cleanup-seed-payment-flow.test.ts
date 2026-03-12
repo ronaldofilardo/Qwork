@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/cleanup-seed-payment-flow.test.ts
+ * Testes: Scripts de Limpeza e Seed - Validação de Estrutura
+ */
+
 describe('Scripts de Limpeza e Seed - Validação de Estrutura', () => {
   describe('Script: clean-cnpj-cpf-data.sql', () => {
     it('deve ter estrutura correta para limpeza de dados', () => {

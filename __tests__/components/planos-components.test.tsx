@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/planos-components.test.tsx
+ * Testes: Testes de Frontend - Fase 3
+ */
+
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { usePlanosStore } from '@/lib/stores/planosStore';

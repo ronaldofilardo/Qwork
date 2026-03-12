@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/build-grupos-from-respostas.test.ts
+ * Testes: buildGruposFromRespostas
+ */
+
 import { buildGruposFromRespostas } from '@/lib/pdf/relatorio-individual';
 
 describe('buildGruposFromRespostas', () => {

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/backblaze-client.test.ts
+ * Testes: Backblaze client
+ */
+
 import {
   uploadToBackblaze,
   downloadFromBackblaze,

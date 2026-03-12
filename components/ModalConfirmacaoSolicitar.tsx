@@ -10,14 +10,14 @@
  * - Não impacta o fluxo de solicitação (puramente informativo)
  * - Exibe contato do gestor cadastrado (email e celular)
  * - Informa prazo de 24 horas úteis em horário comercial
- * - Email fixo da plataforma: ronaldofilardo@gmail.com
+ * - Email fixo da plataforma: contato@qwork.app.br
  */
 
 'use client';
 
 import { useEffect } from 'react';
 
-const PLATAFORMA_EMAIL = 'ronaldofilardo@gmail.com';
+const PLATAFORMA_EMAIL = 'contato@qwork.app.br';
 const SESSION_KEY_PREFIX = 'modal_solicitar_emissao_';
 
 /**

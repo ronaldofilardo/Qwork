@@ -57,7 +57,13 @@ export default function ModalConfirmacaoIdentidade({
   const dataFormatada = formatarData(dataNascimento);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-3 sm:p-4" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-3 sm:p-4"
+      style={{
+        paddingTop: 'max(12px, env(safe-area-inset-top))',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+      }}
+    >
       <div className="relative w-full max-w-lg sm:max-w-2xl rounded-lg bg-white shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 p-4 sm:p-6 flex-shrink-0">
@@ -99,15 +105,21 @@ export default function ModalConfirmacaoIdentidade({
               <div className="flex items-start gap-2">
                 <span className="mt-0.5 text-orange-600 flex-shrink-0">•</span>
                 <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-gray-700 text-sm">Nome: </span>
-                  <span className="text-gray-900 text-sm break-words">{nome}</span>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    Nome:{' '}
+                  </span>
+                  <span className="text-gray-900 text-sm break-words">
+                    {nome}
+                  </span>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
                 <span className="mt-0.5 text-orange-600 flex-shrink-0">•</span>
                 <div className="flex-1 min-w-0">
-                  <span className="font-semibold text-gray-700 text-sm">CPF: </span>
+                  <span className="font-semibold text-gray-700 text-sm">
+                    CPF:{' '}
+                  </span>
                   <span className="text-gray-900 text-sm tracking-wide">
                     {cpfFormatado}
                   </span>
@@ -125,27 +137,66 @@ export default function ModalConfirmacaoIdentidade({
               </div>
             </div>
 
-            {/* Declaração */}
+            {/* Declaração — incisos I–V */}
             <div className="rounded-lg border-l-4 border-green-500 bg-green-50 p-3 sm:p-4">
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700">
-                Confirmo que sou <strong>{nome}</strong>, CPF{' '}
-                <strong>{cpfFormatado}</strong>, e estou respondendo esta
-                avaliação de forma <strong>voluntária e consciente</strong>.
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-2">
+                Ao acessar a plataforma QWORK utilizando CPF e data de
+                nascimento, declaro que:
               </p>
+              <ol className="list-none space-y-1">
+                <li className="text-xs sm:text-sm text-gray-700">
+                  <span className="font-medium">I –</span> sou o próprio
+                  colaborador autorizado pela empresa para responder ao
+                  questionário;
+                </li>
+                <li className="text-xs sm:text-sm text-gray-700">
+                  <span className="font-medium">II –</span> estou acessando a
+                  plataforma de forma pessoal e voluntária;
+                </li>
+                <li className="text-xs sm:text-sm text-gray-700">
+                  <span className="font-medium">III –</span> compreendo que o
+                  questionário possui finalidade exclusivamente organizacional;
+                </li>
+                <li className="text-xs sm:text-sm text-gray-700">
+                  <span className="font-medium">IV –</span> estou ciente de que
+                  não se trata de avaliação psicológica clínica individual;
+                </li>
+                <li className="text-xs sm:text-sm text-gray-700">
+                  <span className="font-medium">V –</span> autorizo a utilização
+                  das respostas para elaboração de relatório organizacional
+                  consolidado.
+                </li>
+              </ol>
             </div>
 
-            {/* Observação legal */}
-            <p className="text-[11px] sm:text-xs text-gray-500 leading-relaxed">
-              Esta confirmação é obrigatória para garantir a autenticidade das
-              respostas e a validade jurídica do processo avaliativo. A
-              autenticidade é garantida por mecanismos de autenticação e
-              integridade técnica.
-            </p>
+            {/* Declaração de Ausência de Prontuário Psicológico */}
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 sm:p-4">
+              <p className="text-xs sm:text-sm font-semibold text-gray-800 mb-2 uppercase tracking-wide">
+                Declaração de Ausência de Prontuário Psicológico
+              </p>
+              <p className="text-xs sm:text-sm text-gray-700 mb-1">
+                A utilização da plataforma QWORK não gera prontuário psicológico
+                individual.
+              </p>
+              <p className="text-xs sm:text-sm text-gray-700 mb-1">
+                As respostas fornecidas pelos colaboradores são utilizadas
+                exclusivamente para fins estatísticos e organizacionais, não
+                constituindo avaliação clínica, diagnóstico psicológico ou
+                registro terapêutico.
+              </p>
+              <p className="text-xs sm:text-sm text-gray-700">
+                A plataforma opera como instrumento de apoio à gestão
+                organizacional de riscos psicossociais.
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Footer com botões */}
-        <div className="flex flex-col-reverse gap-3 border-t border-gray-200 p-4 sm:p-6 sm:flex-row sm:justify-end flex-shrink-0" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+        <div
+          className="flex flex-col-reverse gap-3 border-t border-gray-200 p-4 sm:p-6 sm:flex-row sm:justify-end flex-shrink-0"
+          style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
+        >
           <button
             onClick={onCancel}
             disabled={isLoading}

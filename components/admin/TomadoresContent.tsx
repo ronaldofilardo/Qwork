@@ -1,7 +1,18 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Building2, MapPin, Phone, Mail, User, Filter, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import {
+  Building2,
+  MapPin,
+  Phone,
+  Mail,
+  User,
+  Filter,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
+import ModalReativarTomador from './ModalReativarTomador';
 
 type TipoTomador = 'clinica' | 'entidade';
 
@@ -43,6 +54,9 @@ export function TomadoresContent({
     null
   );
   const [ativando, setAtivando] = useState(false);
+  const [showReativarModal, setShowReativarModal] = useState(false);
+  const [tomadorParaReativar, setTomadorParaReativar] =
+    useState<Tomador | null>(null);
 
   const fetchTomadores = async () => {
     try {
@@ -66,6 +80,14 @@ export function TomadoresContent({
   }, []);
 
   const toggleAtivo = async (tomador: Tomador) => {
+    // Se está reativando (inativo → ativo), abrir modal com opção de trocar gestor
+    if (!tomador.ativo) {
+      setTomadorParaReativar(tomador);
+      setShowReativarModal(true);
+      return;
+    }
+
+    // Desativação direta
     setAtivando(true);
     try {
       const endpoint =
@@ -75,17 +97,15 @@ export function TomadoresContent({
       const res = await fetch(endpoint, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ativa: !tomador.ativo }),
+        body: JSON.stringify({ ativa: false }),
       });
       if (res.ok) {
         setTomadores((prev) =>
-          prev.map((t) =>
-            t.id === tomador.id ? { ...t, ativo: !tomador.ativo } : t
-          )
+          prev.map((t) => (t.id === tomador.id ? { ...t, ativo: false } : t))
         );
         if (tomadorSelecionado?.id === tomador.id) {
           setTomadorSelecionado((prev) =>
-            prev ? { ...prev, ativo: !tomador.ativo } : null
+            prev ? { ...prev, ativo: false } : null
           );
         }
       } else {
@@ -96,6 +116,73 @@ export function TomadoresContent({
     } finally {
       setAtivando(false);
     }
+  };
+
+  const handleConfirmarReativar = async (trocarGestor?: {
+    cpf: string;
+    nome: string;
+    email: string;
+  }) => {
+    if (!tomadorParaReativar) return null;
+
+    const endpoint =
+      tomadorParaReativar.tipo === 'clinica'
+        ? `/api/admin/clinicas/${tomadorParaReativar.id}`
+        : `/api/admin/entidades/${tomadorParaReativar.id}`;
+
+    const body: Record<string, unknown> = { ativa: true };
+    if (trocarGestor) {
+      body.trocar_gestor = trocarGestor;
+    }
+
+    const res = await fetch(endpoint, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new Error(data?.error || 'Erro ao reativar tomador');
+    }
+
+    const data = await res.json();
+
+    // Atualizar lista local
+    const gestorAtualizado = trocarGestor
+      ? {
+          nome: trocarGestor.nome,
+          cpf: trocarGestor.cpf,
+          email: trocarGestor.email,
+          perfil:
+            tomadorParaReativar.tipo === 'clinica'
+              ? ('rh' as const)
+              : ('gestor' as const),
+        }
+      : tomadorParaReativar.gestor;
+
+    setTomadores((prev) =>
+      prev.map((t) =>
+        t.id === tomadorParaReativar.id
+          ? { ...t, ativo: true, gestor: gestorAtualizado }
+          : t
+      )
+    );
+    if (tomadorSelecionado?.id === tomadorParaReativar.id) {
+      setTomadorSelecionado((prev) =>
+        prev ? { ...prev, ativo: true, gestor: gestorAtualizado } : null
+      );
+    }
+
+    // Se não trocou gestor, fechar tudo
+    if (!trocarGestor) {
+      setShowReativarModal(false);
+      setTomadorParaReativar(null);
+      return null;
+    }
+
+    // Retornar credenciais do novo gestor para o modal exibir
+    return data.novo_gestor || null;
   };
 
   useEffect(() => {
@@ -440,9 +527,13 @@ export function TomadoresContent({
                     } disabled:opacity-50`}
                   >
                     {tomadorSelecionado.ativo ? (
-                      <><XCircle className="h-5 w-5" /> Desativar</>
+                      <>
+                        <XCircle className="h-5 w-5" /> Desativar
+                      </>
                     ) : (
-                      <><CheckCircle className="h-5 w-5" /> Ativar</>  
+                      <>
+                        <CheckCircle className="h-5 w-5" /> Ativar
+                      </>
                     )}
                   </button>
                 </div>
@@ -450,6 +541,18 @@ export function TomadoresContent({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal de Reativação */}
+      {showReativarModal && tomadorParaReativar && (
+        <ModalReativarTomador
+          tomador={tomadorParaReativar}
+          onCancel={() => {
+            setShowReativarModal(false);
+            setTomadorParaReativar(null);
+          }}
+          onConfirm={handleConfirmarReativar}
+        />
       )}
 
       {/* Mensagem quando não há tomadors */}

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/empresa-status-display.test.ts
+ * Testes: empresa-status-display (legacy .ts placeholder)
+ */
+
 // Este arquivo foi substituído por uma versão .tsx mais moderna.
 // Mantido para compatibilidade com runners que possam procurar o arquivo .ts.
 

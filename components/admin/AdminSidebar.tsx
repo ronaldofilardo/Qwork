@@ -31,6 +31,7 @@ interface AdminSidebarProps {
     pagamentos?: number;
     planos?: number;
     emissores?: number;
+    representantes?: number;
   };
 }
 
@@ -275,6 +276,14 @@ export default function AdminSidebar({
 
       {isExpanded('geral') && (
         <div className="border-l-2 border-gray-200 ml-4">
+          <SubMenuItem
+            label="Representantes"
+            count={counts.representantes}
+            isActive={
+              activeSection === 'geral' && activeSubSection === 'representantes'
+            }
+            onClick={() => onSectionChange('geral', 'representantes')}
+          />
           <SubMenuItem
             label="Emissores"
             count={counts.emissores}

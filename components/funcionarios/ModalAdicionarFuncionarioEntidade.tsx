@@ -115,8 +115,9 @@ export default function ModalAdicionarFuncionarioEntidade({
     if (!formData.funcao.trim()) {
       return 'Função é obrigatória';
     }
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      return 'Email válido é obrigatório';
+    // Email é opcional, mas se fornecido deve ser válido
+    if (formData.email.trim() && !formData.email.includes('@')) {
+      return 'Email inválido';
     }
     if (
       !formData.data_nascimento ||
@@ -302,7 +303,7 @@ export default function ModalAdicionarFuncionarioEntidade({
                 htmlFor="email"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Email <span className="text-red-600">*</span>
+                Email
               </label>
               <input
                 id="email"

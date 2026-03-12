@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/clinica/clinica-sidebar.test.tsx
+ * Testes: ClinicaSidebar
+ */
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import ClinicaSidebar from '@/components/clinica/ClinicaSidebar';

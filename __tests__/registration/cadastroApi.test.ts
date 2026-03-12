@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/registration/cadastroApi.test.ts
+ * Testes: cadastroApi
+ */
+
 import { createCadastroApi } from '@/lib/cadastroApi';
 
 describe('cadastroApi', () => {

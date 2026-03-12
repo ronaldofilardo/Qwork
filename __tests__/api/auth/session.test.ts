@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/session.test.ts
+ * Testes: /api/auth/session
+ */
+
 import { GET } from '@/app/api/auth/session/route';
 import { getSession } from '@/lib/session';
 

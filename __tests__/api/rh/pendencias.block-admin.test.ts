@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/pendencias.block-admin.test.ts
+ * Testes: /api/rh/pendencias - admin blocked
+ */
+
 import { GET } from '@/app/api/rh/pendencias/route';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';

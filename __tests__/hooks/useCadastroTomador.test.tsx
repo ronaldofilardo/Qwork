@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/hooks/useCadastroTomador.test.tsx
+ * Testes: useCadastroTomador
+ */
+
 import React, { useEffect } from 'react';
 import { render, waitFor, act } from '@testing-library/react';
 import { useCadastroTomador } from '@/hooks/useCadastroTomador';

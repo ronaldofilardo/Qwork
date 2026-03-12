@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/system/structured-logger.test.ts
+ * Testes: StructuredLogger
+ */
+
 // Jest globals available by default
 import { NextRequest } from 'next/server';
 import { StructuredLogger } from '@/lib/structured-logger';

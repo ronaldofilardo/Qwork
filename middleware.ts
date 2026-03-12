@@ -10,6 +10,7 @@ const SENSITIVE_ROUTES = [
   '/rh',
   '/emissor',
   '/entidade',
+  '/trocar-senha',
 ];
 
 // Rotas específicas para funcionários (não devem ser acessadas por gestores)
@@ -41,6 +42,7 @@ const PUBLIC_API_ROUTES = [
   '/api/cadastro',
   '/api/auth/login',
   '/api/auth/logout',
+  '/api/auth/trocar-senha', // Troca de senha (sessão verificada internamente)
 ];
 
 // Rotas de contratação com controle granular
@@ -376,5 +378,6 @@ export const config = {
     '/entidade/:path*',
     '/dashboard/:path*',
     '/avaliacao/:path*',
+    '/trocar-senha/:path*',
   ],
 };

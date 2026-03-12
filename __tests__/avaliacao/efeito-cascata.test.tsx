@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/avaliacao/efeito-cascata.test.tsx
+ * Testes: Efeito Cascata - AvaliacaoGrupoPage
+ */
+
 jest.mock('@/lib/questoes', () => {
   const actualQuestoes = jest.requireActual('@/lib/questoes')
   return {

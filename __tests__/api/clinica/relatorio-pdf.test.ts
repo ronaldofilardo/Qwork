@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/clinica/relatorio-pdf.test.ts
+ * Testes: /api/clinica/relatorio-individual-pdf
+ */
+
 import { query } from '@/lib/db';
 import { NextRequest } from 'next/server';
 

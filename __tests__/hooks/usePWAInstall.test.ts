@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/hooks/usePWAInstall.test.ts
+ * Testes: usePWAInstall
+ */
+
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePWAInstall } from '@/hooks/usePWAInstall';
 

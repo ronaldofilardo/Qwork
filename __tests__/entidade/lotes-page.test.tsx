@@ -212,7 +212,7 @@ describe('EntidadeLotesPage', () => {
 
   it('does NOT show laudo available when lote is not concluded even if laudo fields are present', async () => {
     (global.fetch as jest.Mock).mockImplementation((url) => {
-      if (url === '/api/entidade/lotes') {
+      if (url.startsWith('/api/entidade/lotes')) {
         return Promise.resolve({
           ok: true,
           json: () =>
@@ -235,6 +235,7 @@ describe('EntidadeLotesPage', () => {
                   laudo_status: 'enviado',
                   laudo_enviado_em: new Date().toISOString(),
                   laudo_hash: 'abc123',
+                  laudo_arquivo_remoto_url: 'https://example.com/laudo.pdf',
                 },
               ],
             }),
@@ -277,6 +278,8 @@ describe('EntidadeLotesPage', () => {
                   laudo_status: 'enviado',
                   laudo_enviado_em: new Date().toISOString(),
                   laudo_hash: 'def456',
+                  laudo_arquivo_remoto_url: 'https://example.com/laudo-101.pdf',
+                  emissor_nome: 'Emissor Teste',
                 },
               ],
             }),
@@ -339,6 +342,8 @@ describe('EntidadeLotesPage', () => {
                   laudo_id: 99,
                   laudo_status: 'enviado',
                   laudo_enviado_em: new Date().toISOString(),
+                  laudo_arquivo_remoto_url: 'https://example.com/laudo-200.pdf',
+                  emissor_nome: 'Emissor Cancelado',
                 },
               ],
             }),

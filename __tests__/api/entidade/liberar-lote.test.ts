@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/liberar-lote.test.ts
+ * Testes: /api/entidade/liberar-lote
+ */
+
 import { POST } from '@/app/api/entidade/liberar-lote/route';
 import * as sessionMod from '@/lib/session';
 import * as dbGestorMod from '@/lib/db-gestor';

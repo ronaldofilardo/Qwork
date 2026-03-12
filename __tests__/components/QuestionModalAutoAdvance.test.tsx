@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/QuestionModalAutoAdvance.test.tsx
+ * Testes: QuestionModal auto-advance behavior
+ */
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import QuestionModal from '@/components/avaliacao/QuestionModal'

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/scripts/batch-sync-laudos.test.ts
+ * Testes: scripts/batch-sync-laudos
+ */
+
 jest.mock('@/lib/db', () => ({
   query: jest.fn(),
 }));

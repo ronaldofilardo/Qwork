@@ -1,5 +1,10 @@
+/**
+ * @file __tests__/security/rls-context-visibility.test.ts
+ * Testes: RLS: context visibility in queries
+ */
+
 import { query } from '@/lib/db';
-import { Session } from '@/lib/session';
+import type { Session } from '@/lib/session';
 
 describe('RLS: context visibility in queries', () => {
   it('should expose current_setting values when calling query with session', async () => {

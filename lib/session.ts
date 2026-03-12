@@ -35,6 +35,7 @@ export interface Session {
   clinica_id?: number; // Apenas para perfil 'rh'
   entidade_id?: number; // Apenas para perfil 'gestor'
   tomador_id?: number; // Identification do tomador (entidade ou clínica)
+  representante_id?: number; // Apenas para perfil 'representante'
   sessionLogId?: number;
   sessionToken?: string; // Token único para rotação
   mfaVerified?: boolean; // Indica se MFA foi verificado

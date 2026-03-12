@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/QuestionModal.test.tsx
+ * Testes: QuestionModal
+ */
+
 import { render, screen } from '@testing-library/react'
 import QuestionModal from '@/components/avaliacao/QuestionModal'
 

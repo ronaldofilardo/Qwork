@@ -59,7 +59,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           dataUltimaConclusao: '2025-12-31',
         },
         totalFuncionariosAvaliados: 2,
-        percentualConclusao: 100,
         amostra: {
           operacional: 1,
           gestao: 1,
@@ -138,7 +137,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           dataUltimaConclusao: '2025-12-31',
         },
         totalFuncionariosAvaliados: 2,
-        percentualConclusao: 100,
         amostra: {
           operacional: 1,
           gestao: 1,
@@ -201,7 +199,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           dataUltimaConclusao: '2025-12-31',
         },
         totalFuncionariosAvaliados: 2,
-        percentualConclusao: 100,
         amostra: {
           operacional: 1,
           gestao: 1,
@@ -266,7 +263,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           dataUltimaConclusao: '2025-12-31',
         },
         totalFuncionariosAvaliados: 2,
-        percentualConclusao: 100,
         amostra: {
           operacional: 1,
           gestao: 1,
@@ -329,7 +325,6 @@ describe('Exibição do Hash SHA-256 na Interface', () => {
           dataUltimaConclusao: '2025-12-31',
         },
         totalFuncionariosAvaliados: 2,
-        percentualConclusao: 100,
         amostra: {
           operacional: 1,
           gestao: 1,

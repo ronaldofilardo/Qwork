@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/emissor/emissor-dashboard-ui.test.tsx
+ * Testes: Emissor Dashboard UI
+ */
+
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';

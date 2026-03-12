@@ -17,6 +17,7 @@ import {
   ModalConfirmacaoSolicitar,
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
+import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -136,6 +137,8 @@ export default function DetalhesLotePage() {
     gestorEmail: string | null;
     gestorCelular: string | null;
   } | null>(null);
+
+  const [showSetorModal, setShowSetorModal] = useState(false);
 
   // Filtros por coluna
   const [filtrosColuna, setFiltrosColuna] = useState<{
@@ -611,6 +614,21 @@ export default function DetalhesLotePage() {
     getClassificacaoLabel,
   ]);
 
+  const setores = useMemo(() => {
+    return [
+      ...new Set(
+        funcionarios
+          .filter(
+            (f) =>
+              f.avaliacao.status === 'concluida' ||
+              f.avaliacao.status === 'concluido'
+          )
+          .map((f) => f.setor)
+          .filter(Boolean)
+      ),
+    ].sort() as string[];
+  }, [funcionarios]);
+
   // Componente de filtro por coluna
   const FiltroColuna = ({
     coluna,
@@ -793,6 +811,36 @@ export default function DetalhesLotePage() {
 
   // CSV data download removed (permanent removal of CSV functionality)
   // Function intentionally disabled.
+
+  const gerarRelatorioSetor = async (setor: string) => {
+    toast.loading(`Gerando relatório do setor ${setor}...`, {
+      id: 'rel-setor',
+    });
+    try {
+      const response = await fetch(
+        `/api/entidade/relatorio-setor-pdf?lote_id=${loteId}&setor=${encodeURIComponent(setor)}`
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao gerar relatório');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-setor-${setor.replace(/\s+/g, '-')}-lote${loteId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Relatório gerado com sucesso!', { id: 'rel-setor' });
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao gerar relatório', {
+        id: 'rel-setor',
+      });
+      throw error;
+    }
+  };
 
   if (loading) {
     return (
@@ -1037,7 +1085,23 @@ export default function DetalhesLotePage() {
                 <FileText size={18} />
                 Gerar Relatório PDF
               </button>
-              {/* CSV download removed */}
+              <button
+                onClick={() => setShowSetorModal(true)}
+                disabled={
+                  lote.laudo_status !== 'emitido' || setores.length === 0
+                }
+                title={
+                  lote.laudo_status !== 'emitido'
+                    ? 'Aguardando emissão do laudo'
+                    : setores.length === 0
+                      ? 'Nenhum setor disponível neste ciclo'
+                      : 'Gerar relatório por setor'
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <FileText size={18} />
+                Gerar Relatório por Setor
+              </button>
             </div>
           </div>
 
@@ -1603,6 +1667,13 @@ export default function DetalhesLotePage() {
           gestorCelular={modalEmissao.gestorCelular}
         />
       )}
+
+      <ModalSetorRelatorioPDF
+        isOpen={showSetorModal}
+        setores={setores}
+        onClose={() => setShowSetorModal(false)}
+        onConfirm={gerarRelatorioSetor}
+      />
     </div>
   );
 }
