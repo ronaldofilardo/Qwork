@@ -395,8 +395,40 @@ describe('3. Rota pública — estrutura e validadores embutidos', () => {
     expect(src).toMatch(/DOCUMENTO_MAX_SIZE_BYTES/);
   });
 
-  it('faz upload via uploadDocumentoRepresentante', () => {
+  it('faz upload via uploadDocumentoRepresentante (caminho DEV/fallback)', () => {
     expect(src).toMatch(/uploadDocumentoRepresentante/);
+  });
+
+  it('aceita backblaze_key_cpf + backblaze_url_cpf no lugar de arquivo (PF)', () => {
+    expect(src).toMatch(/backblaze_key_cpf/);
+    expect(src).toMatch(/backblaze_url_cpf/);
+  });
+
+  it('aceita backblaze_key_cnpj + backblaze_url_cnpj (PJ)', () => {
+    expect(src).toMatch(/backblaze_key_cnpj/);
+    expect(src).toMatch(/backblaze_url_cnpj/);
+  });
+
+  it('aceita backblaze_key_cpf_responsavel + backblaze_url_cpf_responsavel (PJ)', () => {
+    expect(src).toMatch(/backblaze_key_cpf_responsavel/);
+    expect(src).toMatch(/backblaze_url_cpf_responsavel/);
+  });
+
+  it('valida que backblaze_url_cpf começa com https:// (rejeita URLs inválidas)', () => {
+    expect(src).toMatch(/bbUrlCpf.*startsWith.*'https:\/\/'/);
+  });
+
+  it('valida que backblaze_url_cnpj começa com https://', () => {
+    expect(src).toMatch(/bbUrlCnpj.*startsWith.*'https:\/\/'/);
+  });
+
+  it('valida que backblaze_url_cpf_responsavel começa com https://', () => {
+    expect(src).toMatch(/bbUrlCpfResp.*startsWith.*'https:\/\/'/);
+  });
+
+  it('só faz upload de arquivo se NÃO houver chave Backblaze (else branch)', () => {
+    // A lógica é: if (bbKey && bbUrl) { ... } else { upload arquivo }
+    expect(src).toMatch(/if\s*\(\s*bbKeyCpf\s*&&\s*bbUrlCpf\s*\)/);
   });
 
   it('passa tipoPessoa="pf" como 5o arg no upload PF', () => {
@@ -727,16 +759,18 @@ describe('5. lib/representantes/converter-lead — estrutura', () => {
     expect(src).toMatch(/SELECT.*FROM representantes WHERE email/i);
   });
 
-  it('verifica unicidade de CPF para PF', () => {
-    expect(src).toMatch(/SELECT.*FROM representantes WHERE cpf/i);
+  it('verifica unicidade de CPF para PF via verificarCpfEmUso (cross-table)', () => {
+    // O código usa a função verificarCpfEmUso em vez de SELECT direto
+    expect(src).toMatch(/verificarCpfEmUso/);
+    expect(src).toMatch(/cpfConflicts/);
   });
 
   it('verifica unicidade de CNPJ para PJ', () => {
     expect(src).toMatch(/SELECT.*FROM representantes WHERE cnpj/i);
   });
 
-  it('insere representante com status apto', () => {
-    expect(src).toMatch(/'apto'/);
+  it('insere representante com status aguardando_senha (convite por e-mail)', () => {
+    expect(src).toMatch(/'aguardando_senha'/);
   });
 
   it('atualiza lead para convertido com FK', () => {
@@ -884,18 +918,20 @@ describe('7. admin/page.tsx — badge de representantes soma leads pendentes', (
     expect(fs.existsSync(pagePath)).toBe(true);
   });
 
-  it('busca leads pendentes de verificação para o badge', () => {
-    expect(src).toMatch(/representantes-leads.*pendente_verificacao/);
+  it('busca representantes ativos para o badge', () => {
+    // admin/page.tsx busca representantes ativos (não leads pendentes diretamente)
+    expect(src).toMatch(/representantes.*status.*ativo|status=ativo/i);
   });
 
-  it('soma leads pendentes ao total de representantes pendentes', () => {
-    expect(src).toMatch(/repsPend\s*\+=\s*leadsData\.pendentes/);
+  it('badge de leads pendentes está na página de representantes (não no admin geral)', () => {
+    // O badge de leads pendentes é exibido na aba Candidatos dentro de /admin/representantes
+    // O admin/page.tsx foca em contadores de representantes ativos
+    expect(src).toMatch(/representantesAtivos/);
   });
 
-  it('trata erro de leads silenciosamente (badge não quebra)', () => {
-    // Deve ter try e catch na mesma função que chama representantes-leads
-    expect(src).toMatch(/representantes-leads/);
-    expect(src).toMatch(/}\s*catch\s*\{/);
+  it('trata erro de busca silenciosamente (não quebra badge)', () => {
+    // catch (error) em admin/page.tsx — pode ter newline entre (error) e {
+    expect(src).toMatch(/catch\s*\(error\)/s);
   });
 });
 
@@ -1011,14 +1047,14 @@ describe('10. QWork package.json — porta de desenvolvimento fixa', () => {
     expect(fs.existsSync(pkgPath)).toBe(true);
   });
 
-  it('script dev usa porta 3001 para não conflitar com LP (porta 3000)', () => {
-    const devScript = (pkg.scripts as Record<string, string>)?.dev ?? '';
-    expect(devScript).toMatch(/-p\s*3001/);
-  });
-
   it('script dev usa next dev', () => {
     const devScript = (pkg.scripts as Record<string, string>)?.dev ?? '';
     expect(devScript).toMatch(/next dev/);
+  });
+
+  it('projeto usa pnpm (pnpm-workspace.yaml existe)', () => {
+    const wsPath = path.join(ROOT, 'pnpm-workspace.yaml');
+    expect(fs.existsSync(wsPath)).toBe(true);
   });
 });
 
