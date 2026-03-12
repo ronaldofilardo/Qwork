@@ -40,13 +40,16 @@ async function resolveRepDocUrl(
       const repKeyId = process.env.BACKBLAZE_REP_KEY_ID?.trim();
       const repAppKey = process.env.BACKBLAZE_REP_APPLICATION_KEY?.trim();
 
-      const endpoint =
+      const rawEndpoint =
         process.env.BACKBLAZE_ENDPOINT ||
         process.env.BACKBLAZE_S2_ENDPOINT ||
-        'https://s3.us-east-005.backblazeb2.com';
+        's3.us-east-005.backblazeb2.com';
+      const endpoint = rawEndpoint.startsWith('https://') || rawEndpoint.startsWith('http://')
+        ? rawEndpoint
+        : `https://${rawEndpoint}`;
       const region =
         process.env.BACKBLAZE_REGION ||
-        endpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/)?.[1] ||
+        rawEndpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/)?.[1] ||
         'us-east-005';
 
       const keyId =
