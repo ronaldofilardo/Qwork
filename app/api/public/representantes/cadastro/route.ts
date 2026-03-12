@@ -12,6 +12,36 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+
+// ---------------------------------------------------------------------------
+// CORS — permite requisições da landing page (qwork.app.br) e do próprio app
+// ---------------------------------------------------------------------------
+const ALLOWED_ORIGINS = [
+  'https://www.qwork.app.br',
+  'https://qwork.app.br',
+  process.env.NEXT_PUBLIC_APP_URL,
+  process.env.NEXT_PUBLIC_BASE_URL,
+].filter(Boolean) as string[];
+
+function getCorsHeaders(origin: string | null): HeadersInit {
+  const allowed =
+    origin && ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  return {
+    'Access-Control-Allow-Origin': allowed,
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Max-Age': '86400',
+  };
+}
+
+/** Preflight OPTIONS para CORS */
+export async function OPTIONS(request: NextRequest): Promise<NextResponse> {
+  const origin = request.headers.get('origin');
+  return new NextResponse(null, {
+    status: 204,
+    headers: getCorsHeaders(origin),
+  });
+}
 import {
   uploadDocumentoRepresentante,
   validarMagicBytes,
@@ -588,6 +618,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
 
     // 10. Retornar sucesso
+    const origin = request.headers.get('origin');
     return NextResponse.json(
       {
         success: true,
@@ -596,18 +627,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         message:
           'Cadastro recebido com sucesso! Seus documentos serão analisados e você receberá um retorno em breve.',
       },
-      { status: 201 }
+      { status: 201, headers: getCorsHeaders(origin) }
     );
   } catch (error) {
     console.error('[CADASTRO-REP] Erro no cadastro:', error);
 
+    const origin = request.headers.get('origin');
     return NextResponse.json(
       {
         success: false,
         error: 'Erro interno ao processar cadastro. Tente novamente.',
         code: 'INTERNAL_ERROR',
       },
-      { status: 500 }
+      { status: 500, headers: getCorsHeaders(origin) }
     );
   }
 }
