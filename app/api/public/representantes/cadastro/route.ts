@@ -458,97 +458,133 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const docsUpload: UploadedDoc[] = [];
 
     if (tipoPessoa === 'pf') {
-      // PF: documento CPF obrigatório
-      const fileCpf = formData.get('documento_cpf') as File | null;
-      const valCpf = await validarArquivo(fileCpf, 'Documento CPF');
-      if (!valCpf.valid) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: valCpf.error,
-            field: 'documento_cpf',
-            code: 'VALIDATION',
-          },
-          { status: 400 }
-        );
-      }
-      const resultCpf = await uploadDocumentoRepresentante(
-        valCpf.buffer!,
-        'cpf',
-        identificador,
-        valCpf.contentType!,
-        'pf',
-        'CAD'
-      );
-      docsUpload.push({
-        tipo: 'cpf',
-        filename: fileCpf!.name,
-        key: resultCpf.arquivo_remoto?.key ?? resultCpf.path,
-        url: resultCpf.arquivo_remoto?.url ?? null,
-      });
-    } else {
-      // PJ: cartão CNPJ obrigatório
-      const fileCnpj = formData.get('documento_cnpj') as File | null;
-      const valCnpj = await validarArquivo(fileCnpj, 'Cartão CNPJ');
-      if (!valCnpj.valid) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: valCnpj.error,
-            field: 'documento_cnpj',
-            code: 'VALIDATION',
-          },
-          { status: 400 }
-        );
-      }
-      const resultCnpj = await uploadDocumentoRepresentante(
-        valCnpj.buffer!,
-        'cnpj',
-        identificador,
-        valCnpj.contentType!,
-        'pj',
-        'CAD'
-      );
-      docsUpload.push({
-        tipo: 'cnpj',
-        filename: fileCnpj!.name,
-        key: resultCnpj.arquivo_remoto?.key ?? resultCnpj.path,
-        url: resultCnpj.arquivo_remoto?.url ?? null,
-      });
+      // PF: documento CPF — aceita chave pré-uploadada (LP/Backblaze) ou arquivo direto (DEV)
+      const bbKeyCpf = (formData.get('backblaze_key_cpf') as string | null)?.trim() || null;
+      const bbUrlCpf = (formData.get('backblaze_url_cpf') as string | null)?.trim() || null;
 
-      // PJ: CPF do responsável obrigatório
-      const fileCpfResp = formData.get(
-        'documento_cpf_responsavel'
-      ) as File | null;
-      const valCpfResp = await validarArquivo(
-        fileCpfResp,
-        'CPF do responsável'
-      );
-      if (!valCpfResp.valid) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: valCpfResp.error,
-            field: 'documento_cpf_responsavel',
-            code: 'VALIDATION',
-          },
-          { status: 400 }
+      if (bbKeyCpf && bbUrlCpf) {
+        // Staging/prod: LP já fez upload; apenas registra as referências
+        if (!bbUrlCpf.startsWith('https://')) {
+          return NextResponse.json(
+            { success: false, error: 'URL do documento CPF inválida', field: 'backblaze_url_cpf', code: 'VALIDATION' },
+            { status: 400 }
+          );
+        }
+        docsUpload.push({
+          tipo: 'cpf',
+          filename: bbKeyCpf.split('/').pop() ?? 'documento_cpf',
+          key: bbKeyCpf,
+          url: bbUrlCpf,
+        });
+      } else {
+        // DEV / fallback: arquivo enviado diretamente
+        const fileCpf = formData.get('documento_cpf') as File | null;
+        const valCpf = await validarArquivo(fileCpf, 'Documento CPF');
+        if (!valCpf.valid) {
+          return NextResponse.json(
+            { success: false, error: valCpf.error, field: 'documento_cpf', code: 'VALIDATION' },
+            { status: 400 }
+          );
+        }
+        const resultCpf = await uploadDocumentoRepresentante(
+          valCpf.buffer!,
+          'cpf',
+          identificador,
+          valCpf.contentType!,
+          'pf',
+          'CAD'
         );
+        docsUpload.push({
+          tipo: 'cpf',
+          filename: fileCpf!.name,
+          key: resultCpf.arquivo_remoto?.key ?? resultCpf.path,
+          url: resultCpf.arquivo_remoto?.url ?? null,
+        });
       }
-      const resultCpfResp = await uploadDocumentoRepresentante(
-        valCpfResp.buffer!,
-        'cpf_responsavel',
-        identificador,
-        valCpfResp.contentType!,
-        'pj',
-        'CAD'
-      );
-      docsUpload.push({
-        tipo: 'cpf_responsavel',
-        filename: fileCpfResp!.name,
-        key: resultCpfResp.arquivo_remoto?.key ?? resultCpfResp.path,
-        url: resultCpfResp.arquivo_remoto?.url ?? null,
-      });
+    } else {
+      // PJ: cartão CNPJ — aceita chave pré-uploadada ou arquivo direto
+      const bbKeyCnpj = (formData.get('backblaze_key_cnpj') as string | null)?.trim() || null;
+      const bbUrlCnpj = (formData.get('backblaze_url_cnpj') as string | null)?.trim() || null;
+
+      if (bbKeyCnpj && bbUrlCnpj) {
+        if (!bbUrlCnpj.startsWith('https://')) {
+          return NextResponse.json(
+            { success: false, error: 'URL do documento CNPJ inválida', field: 'backblaze_url_cnpj', code: 'VALIDATION' },
+            { status: 400 }
+          );
+        }
+        docsUpload.push({
+          tipo: 'cnpj',
+          filename: bbKeyCnpj.split('/').pop() ?? 'documento_cnpj',
+          key: bbKeyCnpj,
+          url: bbUrlCnpj,
+        });
+      } else {
+        const fileCnpj = formData.get('documento_cnpj') as File | null;
+        const valCnpj = await validarArquivo(fileCnpj, 'Cartão CNPJ');
+        if (!valCnpj.valid) {
+          return NextResponse.json(
+            { success: false, error: valCnpj.error, field: 'documento_cnpj', code: 'VALIDATION' },
+            { status: 400 }
+          );
+        }
+        const resultCnpj = await uploadDocumentoRepresentante(
+          valCnpj.buffer!,
+          'cnpj',
+          identificador,
+          valCnpj.contentType!,
+          'pj',
+          'CAD'
+        );
+        docsUpload.push({
+          tipo: 'cnpj',
+          filename: fileCnpj!.name,
+          key: resultCnpj.arquivo_remoto?.key ?? resultCnpj.path,
+          url: resultCnpj.arquivo_remoto?.url ?? null,
+        });
+      }
+
+      // PJ: CPF do responsável — aceita chave pré-uploadada ou arquivo direto
+      const bbKeyCpfResp = (formData.get('backblaze_key_cpf_responsavel') as string | null)?.trim() || null;
+      const bbUrlCpfResp = (formData.get('backblaze_url_cpf_responsavel') as string | null)?.trim() || null;
+
+      if (bbKeyCpfResp && bbUrlCpfResp) {
+        if (!bbUrlCpfResp.startsWith('https://')) {
+          return NextResponse.json(
+            { success: false, error: 'URL do CPF do responsável inválida', field: 'backblaze_url_cpf_responsavel', code: 'VALIDATION' },
+            { status: 400 }
+          );
+        }
+        docsUpload.push({
+          tipo: 'cpf_responsavel',
+          filename: bbKeyCpfResp.split('/').pop() ?? 'documento_cpf_responsavel',
+          key: bbKeyCpfResp,
+          url: bbUrlCpfResp,
+        });
+      } else {
+        const fileCpfResp = formData.get('documento_cpf_responsavel') as File | null;
+        const valCpfResp = await validarArquivo(fileCpfResp, 'CPF do responsável');
+        if (!valCpfResp.valid) {
+          return NextResponse.json(
+            { success: false, error: valCpfResp.error, field: 'documento_cpf_responsavel', code: 'VALIDATION' },
+            { status: 400 }
+          );
+        }
+        const resultCpfResp = await uploadDocumentoRepresentante(
+          valCpfResp.buffer!,
+          'cpf_responsavel',
+          identificador,
+          valCpfResp.contentType!,
+          'pj',
+          'CAD'
+        );
+        docsUpload.push({
+          tipo: 'cpf_responsavel',
+          filename: fileCpfResp!.name,
+          key: resultCpfResp.arquivo_remoto?.key ?? resultCpfResp.path,
+          url: resultCpfResp.arquivo_remoto?.url ?? null,
+        });
+      }
     }
 
     // 8. Inserir no banco
