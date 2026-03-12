@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/criarContaResponsavel.clinica-creation.test.ts
+ * Testes: criarContaResponsavel - cria clínica se ausente
+ */
+
 import * as db from '@/lib/db';
 import { criarContaResponsavel } from '@/lib/db';
 

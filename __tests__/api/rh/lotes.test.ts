@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/lotes.test.ts
+ * Testes: /api/rh/lotes
+ */
+
 import { GET } from '@/app/api/rh/lotes/route';
 
 // Mock do módulo de banco de dados (a rota usa `query` de '@/lib/db')

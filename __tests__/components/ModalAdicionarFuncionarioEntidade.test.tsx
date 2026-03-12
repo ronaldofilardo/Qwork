@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalAdicionarFuncionarioEntidade.test.tsx
+ * Testes: ModalAdicionarFuncionarioEntidade
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ModalAdicionarFuncionarioEntidade from '@/components/funcionarios/ModalAdicionarFuncionarioEntidade';

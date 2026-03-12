@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/admin/auditorias.test.ts
+ * Testes: APIs de Auditoria
+ */
+
 import { GET as getAcessosRH } from '@/app/api/admin/auditorias/acessos-rh/route';
 import { GET as getAcessosFuncionarios } from '@/app/api/admin/auditorias/acessos-funcionarios/route';
 import { GET as getAvaliacoes } from '@/app/api/admin/auditorias/avaliacoes/route';

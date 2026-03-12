@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import ContratoPadrao from '@/components/terms/ContratoPadrao';
 import PoliticaPrivacidade from '@/components/terms/PoliticaPrivacidade';
+import TermosUnificados from '@/components/terms/TermosUnificados';
 
 interface Props {
-  tipo: 'termos_uso' | 'politica_privacidade';
+  tipo: 'termos_uso' | 'politica_privacidade' | 'termos_unificados';
   onAceitar: () => Promise<void>;
   onVoltar: () => void;
 }
@@ -34,15 +35,23 @@ export default function ModalConteudoTermo({
         {/* Header */}
         <div className="px-6 py-4 border-b flex justify-between items-center flex-shrink-0">
           <h2 className="text-xl font-bold">
-            {tipo === 'termos_uso'
-              ? 'Termos de Uso'
-              : 'Política de Privacidade'}
+            {tipo === 'termos_unificados'
+              ? 'Termos de Uso e Política de Privacidade'
+              : tipo === 'termos_uso'
+                ? 'Termos de Uso'
+                : 'Política de Privacidade'}
           </h2>
         </div>
 
         {/* Conteúdo scrollável */}
         <div className="flex-1 overflow-y-auto px-6 py-4">
-          {tipo === 'termos_uso' ? <ContratoPadrao /> : <PoliticaPrivacidade />}
+          {tipo === 'termos_unificados' ? (
+            <TermosUnificados />
+          ) : tipo === 'termos_uso' ? (
+            <ContratoPadrao />
+          ) : (
+            <PoliticaPrivacidade />
+          )}
         </div>
 
         {/* Footer com botões */}

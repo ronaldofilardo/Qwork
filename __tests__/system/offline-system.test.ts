@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/system/offline-system.test.ts
+ * Testes: Sistema Offline Aprimorado
+ */
+
 // Jest globals available by default
 
 // Mock simples do módulo offline

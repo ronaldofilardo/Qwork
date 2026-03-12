@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/clinica/clinica-laudos-section.test.tsx
+ * Testes: LaudosSection
+ */
+
 import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import LaudosSection from '@/components/clinica/LaudosSection';

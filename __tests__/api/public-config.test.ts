@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/public-config.test.ts
+ * Testes: GET /api/public-config
+ */
+
 import { GET } from '@/app/api/public-config/route';
 
 describe('GET /api/public-config', () => {

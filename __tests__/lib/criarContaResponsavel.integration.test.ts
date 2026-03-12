@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/criarContaResponsavel.integration.test.ts
+ * Testes: criarContaResponsavel - integração (mocks DB)
+ */
+
 import { query } from '@/lib/db';
 import * as db from '@/lib/db';
 import bcrypt from 'bcryptjs';

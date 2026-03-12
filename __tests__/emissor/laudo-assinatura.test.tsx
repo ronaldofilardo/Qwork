@@ -36,7 +36,6 @@ describe.skip('Página do Laudo do Emissor - Assinatura gov.br', () => {
         dataUltimaConclusao: '2024-01-31',
       },
       totalFuncionariosAvaliados: 50,
-      percentualConclusao: 100,
       amostra: {
         operacional: 40,
         gestao: 10,

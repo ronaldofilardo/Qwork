@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/funcionarios/import.route.test.ts
+ * Testes: import route - clínica
+ */
+
 import { POST } from '@/app/api/rh/funcionarios/import/route';
 
 jest.mock('@/lib/xlsxParser', () => {

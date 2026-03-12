@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/fluxo-cadastro-contrato-iniciar-pagamento.test.ts
+ * Testes: Integração: cadastro -> contrato aceito -> iniciar pagamento
+ */
+
 import '@testing-library/jest-dom';
 import { query } from '@/lib/db';
 import { POST } from '@/app/api/pagamento/iniciar/route';

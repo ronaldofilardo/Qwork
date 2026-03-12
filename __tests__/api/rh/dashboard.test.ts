@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/dashboard.test.ts
+ * Testes: /api/rh/dashboard
+ */
+
 import { GET } from '@/app/api/rh/dashboard/route';
 
 // Mock do módulo de banco de dados

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/laudo-storage-fallback.test.ts
+ * Testes: laudo-storage fallback
+ */
+
 // Mocks precisam estar antes dos imports
 const mockListObjectsByPrefix = jest.fn();
 const mockFindLatestLaudoForLote = jest.fn();

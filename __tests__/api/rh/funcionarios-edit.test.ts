@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/funcionarios-edit.test.ts
+ * Testes: /api/rh/funcionarios - PUT (Editar Funcionário)
+ */
+
 import { NextRequest } from 'next/server';
 
 // Mock das dependências conforme MOCKS_POLICY.md
@@ -48,9 +53,7 @@ describe('/api/rh/funcionarios - PUT (Editar Funcionário)', () => {
     const data = await response.json();
 
     expect(response.status).toBe(400);
-    expect(data.error).toBe(
-      'CPF, nome, setor, função e email são obrigatórios'
-    );
+    expect(data.error).toBe('CPF, nome, setor e função são obrigatórios');
   });
 
   it('deve validar CPF inválido', async () => {

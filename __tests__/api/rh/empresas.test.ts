@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/empresas.test.ts
+ * Testes: /api/rh/empresas
+ */
+
 import { GET, POST } from '@/app/api/rh/empresas/route';
 
 // Mock do módulo de banco de dados

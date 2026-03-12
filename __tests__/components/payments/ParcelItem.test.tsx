@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/payments/ParcelItem.test.tsx
+ * Testes: ParcelItem
+ */
+
 import { render, screen } from '@testing-library/react';
 import ParcelItem from '@/components/payments/ParcelItem';
 

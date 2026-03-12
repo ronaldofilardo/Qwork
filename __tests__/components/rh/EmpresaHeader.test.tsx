@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/rh/EmpresaHeader.test.tsx
+ * Testes: EmpresaHeader
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EmpresaHeader } from '@/components/rh/EmpresaHeader';

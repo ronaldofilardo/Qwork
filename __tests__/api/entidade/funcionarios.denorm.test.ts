@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/funcionarios.denorm.test.ts
+ * Testes: GET /api/entidade/funcionarios (denormalized columns present)
+ */
+
 import { GET as _GET } from '@/app/api/entidade/funcionarios/route';
 import * as sessionMod from '@/lib/session';
 

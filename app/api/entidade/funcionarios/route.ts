@@ -130,11 +130,11 @@ export async function POST(request: Request) {
     } = await request.json();
 
     // Validações básicas
-    if (!cpf || !nome || !data_nascimento || !setor || !funcao || !email) {
+    if (!cpf || !nome || !data_nascimento || !setor || !funcao) {
       return NextResponse.json(
         {
           error:
-            'CPF, nome, data de nascimento, setor, função e email são obrigatórios',
+            'CPF, nome, data de nascimento, setor e função são obrigatórios',
         },
         { status: 400 }
       );
@@ -146,8 +146,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
-    // Validar email
-    if (!email.includes('@')) {
+    // Validar email (opcional, mas se fornecido deve ser válido)
+    if (email && !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
@@ -263,11 +263,11 @@ export async function PUT(request: Request) {
     } = await request.json();
 
     // Validações básicas
-    if (!cpf || !nome || !data_nascimento || !setor || !funcao || !email) {
+    if (!cpf || !nome || !data_nascimento || !setor || !funcao) {
       return NextResponse.json(
         {
           error:
-            'CPF, nome, data de nascimento, setor, função e email são obrigatórios',
+            'CPF, nome, data de nascimento, setor e função são obrigatórios',
         },
         { status: 400 }
       );
@@ -279,8 +279,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
-    // Validar email
-    if (!email.includes('@')) {
+    // Validar email (opcional, mas se fornecido deve ser válido)
+    if (email && !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/contracts/pagamento.test.tsx
+ * Testes: Página de Pagamento - Finalizar Pagamento
+ */
+
 import '@testing-library/jest-dom';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import PagamentoPage from '@/app/pagamento/[contratoId]/page';

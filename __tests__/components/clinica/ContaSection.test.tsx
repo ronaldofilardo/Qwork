@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/clinica/ContaSection.test.tsx
+ * Testes: ContaSection
+ */
+
 import React from 'react';
 import {
   render,

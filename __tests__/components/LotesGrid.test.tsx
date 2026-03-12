@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/LotesGrid.test.tsx
+ * Testes: LotesGrid component
+ */
+
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { LotesGrid } from '@/components/rh/LotesGrid';

@@ -15,6 +15,7 @@ import {
   ModalConfirmacaoSolicitar,
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
+import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -81,6 +82,7 @@ interface Funcionario {
     data_conclusao: string | null;
     data_inativacao: string | null;
     motivo_inativacao: string | null;
+    total_respostas?: number;
   };
   grupos?: {
     g1?: number;
@@ -137,6 +139,8 @@ export default function DetalhesLotePage() {
     gestorEmail: string | null;
     gestorCelular: string | null;
   } | null>(null);
+
+  const [showSetorModal, setShowSetorModal] = useState(false);
 
   // Filtros por coluna
   const [filtrosColuna, setFiltrosColuna] = useState<{
@@ -355,6 +359,30 @@ export default function DetalhesLotePage() {
         'Erro ao gerar relatório: ' +
           (error instanceof Error ? error.message : 'Erro desconhecido')
       );
+    }
+  };
+
+  const gerarRelatorioSetor = async (setor: string) => {
+    try {
+      const response = await fetch(
+        `/api/rh/relatorio-setor-pdf?lote_id=${loteId}&empresa_id=${empresaId}&setor=${encodeURIComponent(setor)}`
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao gerar relatório');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-setor-${setor.replace(/\s+/g, '-')}-lote${loteId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Erro ao gerar relatório de setor:', error);
+      throw error;
     }
   };
 
@@ -712,6 +740,21 @@ export default function DetalhesLotePage() {
     );
   }, [estatisticas]);
 
+  const setores = useMemo(() => {
+    return [
+      ...new Set(
+        funcionarios
+          .filter(
+            (f) =>
+              f.avaliacao.status === 'concluida' ||
+              f.avaliacao.status === 'concluido'
+          )
+          .map((f) => f.setor)
+          .filter(Boolean)
+      ),
+    ].sort() as string[];
+  }, [funcionarios]);
+
   // Componente de filtro por coluna
   const FiltroColuna = ({
     coluna,
@@ -992,6 +1035,30 @@ export default function DetalhesLotePage() {
                       {isPronto
                         ? '📊 Gerar Relatório PDF'
                         : '⏳ Aguardando conclusão'}
+                    </button>
+
+                    <button
+                      onClick={() => setShowSetorModal(true)}
+                      disabled={
+                        !isPronto ||
+                        lote.laudo_status !== 'emitido' ||
+                        setores.length === 0
+                      }
+                      className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
+                      aria-label="Gerar Relatório PDF por Setor"
+                      title={
+                        lote.laudo_status !== 'emitido'
+                          ? 'Aguardando emissão do laudo'
+                          : setores.length === 0
+                            ? 'Nenhum setor cadastrado neste ciclo'
+                            : 'Gerar relatório por setor'
+                      }
+                    >
+                      {lote.laudo_status === 'emitido' && isPronto
+                        ? '📊 Gerar Relatório por Setor'
+                        : isPronto
+                          ? '⏳ Aguardando laudo'
+                          : '📊 Gerar Relatório por Setor'}
                     </button>
 
                     {estatisticas.avaliacoes_inativadas > 0 && (
@@ -1447,6 +1514,13 @@ export default function DetalhesLotePage() {
                       </td>
                       <td className="px-3 py-2 text-sm">
                         {getStatusBadge(func.avaliacao.status)}
+                        {(func.avaliacao.status === 'iniciada' ||
+                          func.avaliacao.status === 'em_andamento') &&
+                          (func.avaliacao.total_respostas ?? 0) > 0 && (
+                            <span className="block text-[10px] text-gray-600 mt-1">
+                              {func.avaliacao.total_respostas}/37 respostas
+                            </span>
+                          )}
                       </td>
                       <td className="px-3 py-2 text-sm text-gray-600">
                         {func.avaliacao.status === 'concluido' ||
@@ -1610,6 +1684,13 @@ export default function DetalhesLotePage() {
           gestorCelular={modalEmissao.gestorCelular}
         />
       )}
+
+      <ModalSetorRelatorioPDF
+        isOpen={showSetorModal}
+        setores={setores}
+        onClose={() => setShowSetorModal(false)}
+        onConfirm={gerarRelatorioSetor}
+      />
     </div>
   );
 }

@@ -258,7 +258,7 @@ function gerarSecaoEtapa1(etapa1: DadosGeraisEmpresa): string {
         <p><strong>CNPJ:</strong> <span>${etapa1.cnpj}</span></p>
         <p><strong>Endereço:</strong> <span>${etapa1.endereco}</span></p>
         <p><strong>Período das Avaliações Consideradas:</strong> <span>${etapa1.periodoAvaliacoes.dataLiberacao} a ${etapa1.periodoAvaliacoes.dataUltimaConclusao}</span></p>
-        <p><strong>Total de Funcionários Avaliados:</strong> <span>${etapa1.totalFuncionariosAvaliados} (${etapa1.percentualConclusao}% das avaliações ativas foram concluídas)</span></p>
+        <p><strong>Total de Funcionários Avaliados:</strong> <span>${etapa1.totalFuncionariosAvaliados}</span></p>
         <p><strong>Amostra:</strong> <span>${etapa1.amostra.operacional} funcionários do nível Operacional + ${etapa1.amostra.gestao} do nível Gestão</span></p>
       </div>
     </div>

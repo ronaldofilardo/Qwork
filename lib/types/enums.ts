@@ -26,7 +26,8 @@ export type PerfilUsuarioType =
   | 'admin'
   | 'emissor'
   | 'gestor'
-  | 'cadastro';
+  | 'cadastro'
+  | 'representante';
 
 /**
  * Status de avaliação
@@ -130,6 +131,7 @@ export const PERFIS_VALIDOS: PerfilUsuarioType[] = [
   'admin',
   'emissor',
   'gestor',
+  'representante',
 ];
 export const STATUS_AVALIACAO_VALIDOS: StatusAvaliacaoType[] = [
   'iniciada',

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/seed-admin.test.ts
+ * Testes: Seed: admin
+ */
+
 import { query } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 

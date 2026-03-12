@@ -19,7 +19,7 @@ interface Session {
 type MainSection = 'tomadores' | 'financeiro' | 'geral' | 'volume';
 type _TomadoresSubSection = 'clinicas' | 'entidades';
 type _FinanceiroSubSection = 'contagem' | 'pagamentos' | 'planos';
-type _GeralSubSection = 'emissores';
+type _GeralSubSection = 'emissores' | 'representantes';
 type _VolumeSubSection = 'entidade' | 'rh';
 
 export default function AdminPage() {
@@ -34,6 +34,7 @@ export default function AdminPage() {
   const [pagamentosPendentes, setPagamentosPendentes] = useState(0);
   const [planosAtivos, setPlanosAtivos] = useState(0);
   const [emissoresAtivos, setEmissoresAtivos] = useState(0);
+  const [representantesAtivos, setRepresentantesAtivos] = useState(0);
 
   const router = useRouter();
 
@@ -69,6 +70,14 @@ export default function AdminPage() {
               0
           );
         }
+      }
+
+      const representantesRes = await fetch(
+        '/api/admin/representantes?status=ativo&limit=1'
+      );
+      if (representantesRes.ok) {
+        const data = await representantesRes.json();
+        setRepresentantesAtivos(data.total || 0);
       }
     } catch (error) {
       console.error('Erro ao buscar contadores:', error);
@@ -133,6 +142,10 @@ export default function AdminPage() {
       if (activeSubSection === 'emissores') {
         return <EmissoresContent />;
       }
+      if (activeSubSection === 'representantes') {
+        router.push('/admin/representantes');
+        return null;
+      }
     }
 
     return (
@@ -171,6 +184,7 @@ export default function AdminPage() {
             pagamentos: pagamentosPendentes,
             planos: planosAtivos,
             emissores: emissoresAtivos,
+            representantes: representantesAtivos,
           }}
         />
 

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/QuestionModalExit.test.tsx
+ * Testes: QuestionModal exit affordance
+ */
+
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import QuestionModal from '@/components/avaliacao/QuestionModal'

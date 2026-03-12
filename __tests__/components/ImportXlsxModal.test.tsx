@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ImportXlsxModal.test.tsx
+ * Testes: ImportXlsxModal
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ImportXlsxModal from '@/components/funcionarios/ImportXlsxModal';

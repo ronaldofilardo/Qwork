@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/liberar-lote-permissions.test.ts
+ * Testes: /api/rh/liberar-lote - permissões
+ */
+
 jest.mock('@/lib/db', () => ({
   query: jest.fn(),
 }));

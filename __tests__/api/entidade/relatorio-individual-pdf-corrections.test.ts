@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/relatorio-individual-pdf-corrections.test.ts
+ * Testes: Entidade - Relatório Individual PDF Corrections
+ */
+
 import { GET as getEntidadeRelatorioIndividual } from '@/app/api/entidade/relatorio-individual-pdf/route';
 import { NextRequest } from 'next/server';
 

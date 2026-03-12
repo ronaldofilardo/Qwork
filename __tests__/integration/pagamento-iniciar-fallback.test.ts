@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/pagamento-iniciar-fallback.test.ts
+ * Testes: POST /api/pagamento/iniciar - fallback quando tabela contratos ausente
+ */
+
 import '@testing-library/jest-dom';
 import { POST } from '@/app/api/pagamento/iniciar/route';
 

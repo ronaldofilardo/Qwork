@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/rh/laudos-sidebar.test.tsx
+ * Testes: Laudos via Sidebar
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';

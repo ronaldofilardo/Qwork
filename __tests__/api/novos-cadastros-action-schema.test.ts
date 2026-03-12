@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/novos-cadastros-action-schema.test.ts
+ * Testes: NovosCadastrosActionSchema
+ */
+
 import { NovosCadastrosActionSchema } from '@/app/api/admin/novos-cadastros/schemas';
 
 describe('NovosCadastrosActionSchema', () => {

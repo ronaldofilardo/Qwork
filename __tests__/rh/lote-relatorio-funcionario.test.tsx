@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/rh/lote-relatorio-funcionario.test.tsx
+ * Testes: DetalhesLotePage - Relatório Individual de Funcionário
+ */
+
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';

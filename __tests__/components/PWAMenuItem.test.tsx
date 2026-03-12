@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/PWAMenuItem.test.tsx
+ * Testes: PWAMenuItem
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PWAMenuItem } from '@/components/PWAMenuItem';

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/admin/novos-cadastros-correcao-conteudo.test.ts
+ * Testes: POST /api/admin/novos-cadastros - Correção Conteudo Contrato
+ */
+
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/admin/novos-cadastros/route';
 import { query } from '@/lib/db';

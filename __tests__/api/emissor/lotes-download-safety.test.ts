@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/emissor/lotes-download-safety.test.ts
+ * Testes: Lotes route - não expõe laudos antes de lote concluído
+ */
+
 import { GET } from '@/app/api/emissor/lotes/route';
 import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';

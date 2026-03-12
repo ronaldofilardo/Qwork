@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/rh/penetration-test-rh-lotes.test.ts
+ * Testes: Penetration Test: Acesso não autorizado a /api/rh/lotes
+ */
+
 // Jest globals available by default
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/rh/lotes/route';

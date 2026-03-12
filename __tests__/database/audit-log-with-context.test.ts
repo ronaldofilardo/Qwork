@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/audit-log-with-context.test.ts
+ * Testes: audit_log_with_context defensive behavior
+ */
+
 import { query } from '@/lib/db';
 
 describe('audit_log_with_context defensive behavior', () => {

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/AvaliacaoConcluida.test.tsx
+ * Testes: AvaliacaoConcluidaPage - Recibo de Conclusão
+ */
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import AvaliacaoConcluidaPage from '@/app/avaliacao/concluida/page'

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalCadastrotomador.precoString.test.tsx
+ * Testes: ModalCadastrotomador - preços como string
+ */
+
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';

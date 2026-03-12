@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/db-security.test.ts
+ * Testes: db-security.queryWithContext
+ */
+
 import { queryWithContext } from '@/lib/db-security';
 
 const mockQuery = jest.fn();

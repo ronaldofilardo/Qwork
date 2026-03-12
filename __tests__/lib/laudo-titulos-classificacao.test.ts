@@ -21,7 +21,6 @@ const mockLaudo: LaudoPadronizado = {
     registroProfissional: 'CRP 00/000000',
     dataAvaliacao: '2026-01-01',
     totalFuncionariosAvaliados: 10,
-    percentualConclusao: 100,
     periodoAvaliacoes: {
       dataLiberacao: '01/01/2026',
       dataUltimaConclusao: '01/01/2026',

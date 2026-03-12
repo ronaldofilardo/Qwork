@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalCadastrotomador.integration.test.tsx
+ * Testes: ModalCadastrotomador - integração leve
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
