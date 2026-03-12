@@ -7,7 +7,6 @@
  * Uso: npx ts-node scripts/dump-prod-database.ts [--schema-only|--data-only]
  */
 
-import { client as pgClient } from 'pg';
 import { createWriteStream } from 'fs';
 import { mkdir } from 'fs/promises';
 import { join } from 'path';
