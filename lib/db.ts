@@ -348,7 +348,11 @@ export async function getNeonPool() {
   if (!neonPool && isProduction && process.env.DATABASE_URL) {
     try {
       const { Pool: NeonPool } = await import('@neondatabase/serverless');
-      neonPool = new NeonPool({ connectionString: process.env.DATABASE_URL });
+      neonPool = new NeonPool({
+        connectionString: process.env.DATABASE_URL,
+        max: 5,
+        idleTimeoutMillis: 10000,
+      });
       console.log('[db] Neon Pool criado para transações');
     } catch (_err) {
       console.error('Erro ao criar Neon Pool:', _err);

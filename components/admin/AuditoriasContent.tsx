@@ -52,16 +52,21 @@ interface AuditoriaLote {
 
 interface AuditoriaLaudo {
   laudo_id: number;
-  emissor_cpf: string;
-  emissor_nome: string;
+  lote_id: number;
+  clinica_nome: string;
+  empresa_cliente_nome: string;
+  tomador_nome: string;
   clinica_id: number;
   empresa_id: number;
+  entidade_id: number | null;
   numero_lote: string;
   status: string;
   hash_pdf: string | null;
   criado_em: string;
   emitido_em: string | null;
   enviado_em: string | null;
+  atualizado_em: string | null;
+  solicitado_em: string | null;
 }
 
 type AuditoriaSubTab =
@@ -497,7 +502,7 @@ export function AuditoriasContent({
                     ID
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                    Emissor
+                    Tomador
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                     Lote
@@ -520,7 +525,7 @@ export function AuditoriasContent({
                       {laudo.laudo_id}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-900">
-                      {laudo.emissor_nome}
+                      {laudo.tomador_nome}
                     </td>
                     <td className="px-4 py-3 text-sm text-gray-600">
                       {laudo.numero_lote}

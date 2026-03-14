@@ -18,7 +18,11 @@ export type AdminSection = 'tomadores' | 'financeiro' | 'geral' | 'volume';
 export type TomadoresSubSection = 'clinicas' | 'entidades';
 export type ClinicasTab = 'dados' | 'auditorias' | 'financeiro';
 export type EntidadesTab = 'dados' | 'auditorias';
-export type FinanceiroSubSection = 'contagem' | 'pagamentos' | 'planos';
+export type FinanceiroSubSection =
+  | 'contagem'
+  | 'pagamentos'
+  | 'planos'
+  | 'comissoes';
 export type VolumeSubSection = 'entidade' | 'rh';
 
 interface AdminSidebarProps {
@@ -32,6 +36,7 @@ interface AdminSidebarProps {
     planos?: number;
     emissores?: number;
     representantes?: number;
+    comissoes?: number;
   };
 }
 
@@ -257,6 +262,14 @@ export default function AdminSidebar({
               activeSubSection === 'pagamentos'
             }
             onClick={() => onSectionChange('financeiro', 'pagamentos')}
+          />
+          <SubMenuItem
+            label="Comissões"
+            count={counts.comissoes}
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'comissoes'
+            }
+            onClick={() => onSectionChange('financeiro', 'comissoes')}
           />
         </div>
       )}
