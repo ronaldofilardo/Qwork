@@ -40,7 +40,7 @@ export async function vincularFuncionarioEntidade(
   session?: Session
 ): Promise<EntidadeFuncionario> {
   const result = await query<EntidadeFuncionario>(
-    `INSERT INTO entidades_funcionarios (funcionario_id, entidade_id, tipo_tomador, vinculo_ativo)
+    `INSERT INTO funcionarios_entidades (funcionario_id, entidade_id, tipo_tomador, vinculo_ativo)
      VALUES ($1, $2, $3, true)
      ON CONFLICT (funcionario_id, entidade_id) 
      DO UPDATE SET vinculo_ativo = true, atualizado_em = CURRENT_TIMESTAMP
@@ -60,7 +60,7 @@ export async function getEntidadeDeFuncionario(
 ): Promise<Entidade | null> {
   const result = await query<Entidade>(
     `SELECT c.* FROM entidades c
-     INNER JOIN entidades_funcionarios cf ON cf.entidade_id = c.id
+     INNER JOIN funcionarios_entidades cf ON cf.entidade_id = c.id
      WHERE cf.funcionario_id = $1 AND cf.vinculo_ativo = true AND c.ativa = true
      ORDER BY cf.criado_em DESC
      LIMIT 1`,
@@ -80,10 +80,10 @@ export async function getFuncionariosDeEntidade(
 ) {
   const queryText = apenasAtivos
     ? `SELECT f.* FROM funcionarios f
-       INNER JOIN entidades_funcionarios cf ON cf.funcionario_id = f.id
+       INNER JOIN funcionarios_entidades cf ON cf.funcionario_id = f.id
        WHERE cf.entidade_id = $1 AND cf.vinculo_ativo = true AND f.ativo = true`
     : `SELECT f.* FROM funcionarios f
-       INNER JOIN entidades_funcionarios cf ON cf.funcionario_id = f.id
+       INNER JOIN funcionarios_entidades cf ON cf.funcionario_id = f.id
        WHERE cf.entidade_id = $1`;
 
   const result = await query(queryText, [entidadeId], session);
@@ -141,10 +141,14 @@ export async function contarFuncionariosAtivos(
   const result = await query<{ total: number }>(
     `SELECT COUNT(DISTINCT f.cpf) as total
      FROM contratos_planos cp
+     LEFT JOIN funcionarios_entidades fe ON (
+       cp.tipo_tomador = 'entidade' AND fe.entidade_id = cp.entidade_id AND fe.ativo = true
+     )
+     LEFT JOIN funcionarios_clinicas fc ON (
+       cp.tipo_tomador = 'clinica' AND fc.clinica_id = cp.clinica_id AND fc.ativo = true
+     )
      LEFT JOIN funcionarios f ON (
-       (cp.tipo_tomador = 'clinica' AND f.clinica_id = cp.clinica_id AND f.status = 'ativo')
-       OR 
-       (cp.tipo_tomador = 'entidade' AND f.entidade_id = cp.entidade_id AND f.status = 'ativo')
+       (fe.funcionario_id = f.id OR fc.funcionario_id = f.id) AND f.status = 'ativo'
      )
      WHERE cp.id = $1`,
     [contratoId],

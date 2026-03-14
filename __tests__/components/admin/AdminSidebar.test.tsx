@@ -50,12 +50,14 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('RH')).toBeInTheDocument();
   });
 
-  it('deve exibir apenas Planos e Pagamentos dentro de Financeiro (sem Cobrança)', () => {
+  it('deve exibir Contagem, Planos, Pagamentos e Comissões dentro de Financeiro (sem Cobrança)', () => {
     // Renderiza com seção neutra para que o clique EXPANDA (não colapse) o Financeiro
     render(<AdminSidebar {...defaultProps} activeSection="tomadores" />);
     fireEvent.click(screen.getByText('Financeiro'));
+    expect(screen.getByText('Contagem')).toBeInTheDocument();
     expect(screen.getByText('Planos')).toBeInTheDocument();
     expect(screen.getByText('Pagamentos')).toBeInTheDocument();
+    expect(screen.getByText('Comissões')).toBeInTheDocument();
     expect(screen.queryByText('Cobrança')).toBeNull();
   });
 
@@ -86,7 +88,7 @@ describe('AdminSidebar', () => {
     expect(onSectionChange).toHaveBeenCalledWith('volume', 'rh');
   });
 
-  it('deve chamar onSectionChange com "financeiro" e "planos" como default ao clicar em Financeiro', () => {
+  it('deve chamar onSectionChange com "financeiro" e "contagem" como default ao clicar em Financeiro', () => {
     const onSectionChange = jest.fn();
     render(
       <AdminSidebar
@@ -96,6 +98,34 @@ describe('AdminSidebar', () => {
       />
     );
     fireEvent.click(screen.getByText('Financeiro'));
-    expect(onSectionChange).toHaveBeenCalledWith('financeiro', 'planos');
+    expect(onSectionChange).toHaveBeenCalledWith('financeiro', 'contagem');
+  });
+
+  it('deve chamar onSectionChange com "financeiro" e "comissoes" ao clicar no submenu Comissões', () => {
+    const onSectionChange = jest.fn();
+    render(
+      <AdminSidebar
+        activeSection="financeiro"
+        activeSubSection="contagem"
+        onSectionChange={onSectionChange}
+        counts={{comissoes: 3}}
+      />
+    );
+    fireEvent.click(screen.getByText('Comissões'));
+    expect(onSectionChange).toHaveBeenCalledWith('financeiro', 'comissoes');
+  });
+
+  it('deve exibir badge de contagem para Comissões quando counts.comissoes > 0', () => {
+    render(
+      <AdminSidebar
+        activeSection="financeiro"
+        activeSubSection="comissoes"
+        onSectionChange={jest.fn()}
+        counts={{comissoes: 5}}
+      />
+    );
+    // O badge com valor 5 deve estar visível dentro do submenu Comissões
+    const badges = screen.getAllByText('5');
+    expect(badges.length).toBeGreaterThanOrEqual(1);
   });
 });
