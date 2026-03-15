@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { StatusAprovacao } from '@/lib/db';
+import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 
 // Validar CNPJ
 function validarCNPJ(cnpj: string): boolean {
@@ -642,6 +643,158 @@ export async function POST(request: NextRequest) {
         throw contratoError;
       }
 
+      // Auto-vincular representante se código fornecido
+      let representanteVinculado: {
+        representante_id: number;
+        representante_nome: string;
+        lead_id: number | null;
+      } | null = null;
+
+      const codigoRepresentante = formData.get('codigo_representante') as
+        | string
+        | null;
+      if (codigoRepresentante?.trim()) {
+        const codigoNorm = codigoRepresentante.trim().toUpperCase();
+
+        // Buscar representante pelo código
+        const repResult = await txClient.query<{
+          id: number;
+          nome: string;
+        }>(
+          `SELECT id, nome FROM representantes WHERE codigo = $1 AND ativo = true LIMIT 1`,
+          [codigoNorm]
+        );
+
+        if (repResult.rows.length > 0) {
+          const rep = repResult.rows[0];
+
+          // Buscar lead pendente deste representante para o CNPJ cadastrado
+          const leadResult = await txClient.query<{
+            id: number;
+            valor_negociado: number | null;
+          }>(
+            `SELECT id, valor_negociado FROM leads_representante
+             WHERE representante_id = $1
+               AND cnpj = $2
+               AND status = 'pendente'
+               AND data_expiracao > NOW()
+             LIMIT 1`,
+            [rep.id, cnpjLimpo]
+          );
+
+          const lead = leadResult.rows[0] ?? null;
+
+          // Determinar entidade_id para vinculos_comissao (NOT NULL)
+          let entidadeIdParaVinculo: number;
+          if (tipo === 'clinica') {
+            // Para clínicas, buscar entidade_id da clínica (se houver), senão inserir na entidade do admin
+            const clinicaEntidade = await txClient.query<{
+              entidade_id: number | null;
+            }>(`SELECT entidade_id FROM clinicas WHERE id = $1`, [entidade.id]);
+            const entIdFromClinica = clinicaEntidade.rows[0]?.entidade_id;
+            if (entIdFromClinica) {
+              entidadeIdParaVinculo = entIdFromClinica;
+            } else {
+              // Clínica sem entidade vinculada — usar o próprio id (fallback)
+              entidadeIdParaVinculo = entidade.id;
+            }
+          } else {
+            entidadeIdParaVinculo = entidade.id;
+          }
+
+          // Criar vínculo de comissão
+          try {
+            const dataInicio = new Date().toISOString().split('T')[0];
+            const dataExpiracao = new Date(
+              Date.now() + 365 * 24 * 60 * 60 * 1000
+            )
+              .toISOString()
+              .split('T')[0];
+
+            await txClient.query(
+              `INSERT INTO vinculos_comissao (
+                representante_id, entidade_id, lead_id,
+                data_inicio, data_expiracao, status
+              ) VALUES ($1, $2, $3, $4, $5, 'ativo')`,
+              [
+                rep.id,
+                entidadeIdParaVinculo,
+                lead?.id ?? null,
+                dataInicio,
+                dataExpiracao,
+              ]
+            );
+
+            console.info(
+              JSON.stringify({
+                event: 'cadastro_vinculo_comissao_created',
+                representante_id: rep.id,
+                entidade_id: entidadeIdParaVinculo,
+                lead_id: lead?.id ?? null,
+              })
+            );
+          } catch (vinculoError) {
+            // 23505 = duplicata — vínculo já existe, ignorar
+            if ((vinculoError as any)?.code !== '23505') {
+              throw vinculoError;
+            }
+            console.info(
+              JSON.stringify({
+                event: 'cadastro_vinculo_comissao_already_exists',
+                representante_id: rep.id,
+                entidade_id: entidadeIdParaVinculo,
+              })
+            );
+          }
+
+          // Atualizar lead para 'convertido' se encontrado
+          if (lead) {
+            await txClient.query(
+              `UPDATE leads_representante
+               SET status = 'convertido', data_conversao = NOW()
+               WHERE id = $1`,
+              [lead.id]
+            );
+            console.info(
+              JSON.stringify({
+                event: 'cadastro_lead_converted',
+                lead_id: lead.id,
+                representante_id: rep.id,
+              })
+            );
+          }
+
+          representanteVinculado = {
+            representante_id: rep.id,
+            representante_nome: rep.nome,
+            lead_id: lead?.id ?? null,
+          };
+        }
+      }
+
+      // Fallback: auto-converter leads pendentes por match de CNPJ (sem código)
+      if (!representanteVinculado && cnpjLimpo) {
+        try {
+          const autoResult = await autoConvertirLeadPorCnpj(
+            cnpjLimpo,
+            tipo === 'clinica' ? null : entidade.id,
+            tipo === 'clinica' ? entidade.id : null
+          );
+          if (autoResult) {
+            representanteVinculado = {
+              representante_id: autoResult.representante_id,
+              representante_nome: 'Representante vinculado por CNPJ',
+              lead_id: autoResult.lead_id,
+            };
+          }
+        } catch (autoErr) {
+          console.error(
+            '[CADASTRO] Erro no auto-link por CNPJ (não-bloqueante):',
+            autoErr
+          );
+        }
+      }
+
       // Retornar dados para fora da transação
       return {
         entidade,
@@ -651,6 +804,7 @@ export async function POST(request: NextRequest) {
         valorPorFuncionario,
         numeroFuncionarios,
         valorTotal,
+        representanteVinculado,
       };
     });
     // Transação comitada automaticamente se chegou aqui
@@ -684,6 +838,7 @@ export async function POST(request: NextRequest) {
               valor_total: result.valorTotal,
             }
           : null,
+        representante_vinculado: result.representanteVinculado,
         message: result.contratoIdCreated
           ? 'Cadastro e contrato realizado! Revise os termos e clique em aceitar.'
           : result.requiresPayment

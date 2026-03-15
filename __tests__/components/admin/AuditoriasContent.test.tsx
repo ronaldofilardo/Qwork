@@ -91,9 +91,7 @@ describe('AuditoriasContent', () => {
 
     it('deve exibir contagem total de laudos', () => {
       const laudos = [makeLaudo({ laudo_id: 1 }), makeLaudo({ laudo_id: 2 })];
-      render(
-        <AuditoriasContent {...defaultProps} auditoriaLaudos={laudos} />
-      );
+      render(<AuditoriasContent {...defaultProps} auditoriaLaudos={laudos} />);
       expect(screen.getByText(/Total: 2/)).toBeInTheDocument();
     });
 

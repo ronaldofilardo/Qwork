@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
+import {
+  normalizarDetalhesParcelas,
+  type Parcela,
+} from '@/lib/parcelas-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,7 +66,15 @@ export async function GET() {
       metodo: row.metodo,
       status: row.status,
       numeroParcelas: row.numero_parcelas ?? 1,
-      detalhesParcelas: row.detalhes_parcelas ?? null,
+      detalhesParcelas: row.detalhes_parcelas
+        ? normalizarDetalhesParcelas(
+            Array.isArray(row.detalhes_parcelas)
+              ? (row.detalhes_parcelas as Parcela[])
+              : (JSON.parse(row.detalhes_parcelas) as Parcela[]),
+            row.status,
+            row.data_pagamento ?? row.data_confirmacao ?? null
+          )
+        : null,
       numeroFuncionarios: row.numero_funcionarios ?? null,
       valorPorFuncionario: row.valor_por_funcionario
         ? parseFloat(row.valor_por_funcionario)

@@ -50,6 +50,7 @@ export default function CheckoutAsaas({
   onError,
 }: CheckoutAsaasProps) {
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamento>('PIX');
+  const [parcelas, setParcelas] = useState(1);
   const [loading, setLoading] = useState(false);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
   const [error, setError] = useState('');
@@ -120,7 +121,8 @@ export default function CheckoutAsaas({
           numero_funcionarios: numeroFuncionarios,
           valor_total: valor,
           metodo: formaPagamento,
-          lote_id: loteId, // Incluir lote_id para emissões
+          lote_id: loteId,
+          parcelas: parcelas > 1 ? parcelas : undefined,
         }),
       });
 
@@ -338,6 +340,36 @@ export default function CheckoutAsaas({
             </div>
           </label>
         </div>
+
+        {/* Parcelas — disponível para Boleto e Cartão */}
+        {(formaPagamento === 'BOLETO' || formaPagamento === 'CREDIT_CARD') && (
+          <div className="mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Número de parcelas
+            </label>
+            <select
+              value={parcelas}
+              onChange={(e) => setParcelas(Number(e.target.value))}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                <option key={n} value={n}>
+                  {n}x de{' '}
+                  {(valor / n).toLocaleString('pt-BR', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  })}
+                  {n === 1 ? ' (sem juros)' : ''}
+                </option>
+              ))}
+            </select>
+            {parcelas > 1 && formaPagamento === 'BOLETO' && (
+              <p className="text-xs text-gray-500 mt-1">
+                Serão gerados {parcelas} boletos individuais.
+              </p>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">

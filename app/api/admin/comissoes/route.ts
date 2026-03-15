@@ -78,11 +78,14 @@ export async function GET(request: NextRequest) {
          r.email                       AS representante_email,
          r.tipo_pessoa                 AS representante_tipo_pessoa,
          COALESCE(e.nome, cl.nome) AS entidade_nome,
-         NULL::text                    AS numero_laudo
+         c.lote_pagamento_id,
+         la.pagamento_metodo           AS lote_pagamento_metodo,
+         la.pagamento_parcelas         AS lote_pagamento_parcelas
        FROM comissoes_laudo c
        JOIN  representantes r  ON r.id  = c.representante_id
        LEFT JOIN entidades e   ON e.id  = c.entidade_id
        LEFT JOIN clinicas  cl  ON cl.id = c.clinica_id
+       LEFT JOIN lotes_avaliacao la ON la.id = c.lote_pagamento_id
        ${where}
        ORDER BY c.criado_em DESC
        LIMIT $${i} OFFSET $${i + 1}`,

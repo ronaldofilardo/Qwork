@@ -9,10 +9,14 @@ interface Comissao {
   representante_email: string;
   representante_tipo_pessoa: string;
   entidade_nome: string;
-  numero_laudo: string | null;
+  lote_pagamento_id: number | null;
+  lote_pagamento_metodo: string | null;
+  lote_pagamento_parcelas: number | null;
   valor_laudo: string;
   valor_comissao: string;
   percentual_comissao: string;
+  parcela_numero: number;
+  total_parcelas: number;
   status: string;
   motivo_congelamento: string | null;
   mes_emissao: string;
@@ -432,8 +436,11 @@ export function ComissoesContent() {
               <tr>
                 <th className="px-3 py-3 text-left">Representante</th>
                 <th className="px-3 py-3 text-left">Cliente</th>
-                <th className="px-3 py-3 text-left">Laudo</th>
+                <th className="px-3 py-3 text-left">Lote</th>
+                <th className="px-3 py-3 text-right">Valor Total</th>
                 <th className="px-3 py-3 text-right">Comissão</th>
+                <th className="px-3 py-3 text-center">%</th>
+                <th className="px-3 py-3 text-center">Parcelas</th>
                 <th className="px-3 py-3 text-left">Status</th>
                 <th className="px-3 py-3 text-center">NF/RPA</th>
                 <th className="px-3 py-3 text-left">Mês Pag.</th>
@@ -459,10 +466,27 @@ export function ComissoesContent() {
                       {c.entidade_nome}
                     </td>
                     <td className="px-3 py-3 text-gray-500 font-mono text-xs">
-                      {c.numero_laudo ?? '—'}
+                      {c.lote_pagamento_id
+                        ? `Lote #${c.lote_pagamento_id}`
+                        : '—'}
+                    </td>
+                    <td className="px-3 py-3 text-right text-gray-700">
+                      {fmt(c.valor_laudo)}
                     </td>
                     <td className="px-3 py-3 text-right font-semibold text-green-700">
                       {fmt(c.valor_comissao)}
+                    </td>
+                    <td className="px-3 py-3 text-center text-gray-600 text-xs">
+                      {parseFloat(c.percentual_comissao || '0')}%
+                    </td>
+                    <td className="px-3 py-3 text-center text-xs">
+                      {(c.total_parcelas ?? 1) > 1 ? (
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">
+                          {c.parcela_numero ?? 1}/{c.total_parcelas}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">À vista</span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <div>

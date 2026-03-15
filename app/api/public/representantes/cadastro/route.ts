@@ -35,7 +35,7 @@ function getCorsHeaders(origin: string | null): HeadersInit {
 }
 
 /** Preflight OPTIONS para CORS */
-export async function OPTIONS(request: NextRequest): Promise<NextResponse> {
+export function OPTIONS(request: NextRequest): NextResponse {
   const origin = request.headers.get('origin');
   return new NextResponse(null, {
     status: 204,
@@ -459,14 +459,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (tipoPessoa === 'pf') {
       // PF: documento CPF — aceita chave pré-uploadada (LP/Backblaze) ou arquivo direto (DEV)
-      const bbKeyCpf = (formData.get('backblaze_key_cpf') as string | null)?.trim() || null;
-      const bbUrlCpf = (formData.get('backblaze_url_cpf') as string | null)?.trim() || null;
+      const bbKeyCpf =
+        (formData.get('backblaze_key_cpf') as string | null)?.trim() || null;
+      const bbUrlCpf =
+        (formData.get('backblaze_url_cpf') as string | null)?.trim() || null;
 
       if (bbKeyCpf && bbUrlCpf) {
         // Staging/prod: LP já fez upload; apenas registra as referências
         if (!bbUrlCpf.startsWith('https://')) {
           return NextResponse.json(
-            { success: false, error: 'URL do documento CPF inválida', field: 'backblaze_url_cpf', code: 'VALIDATION' },
+            {
+              success: false,
+              error: 'URL do documento CPF inválida',
+              field: 'backblaze_url_cpf',
+              code: 'VALIDATION',
+            },
             { status: 400 }
           );
         }
@@ -482,7 +489,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const valCpf = await validarArquivo(fileCpf, 'Documento CPF');
         if (!valCpf.valid) {
           return NextResponse.json(
-            { success: false, error: valCpf.error, field: 'documento_cpf', code: 'VALIDATION' },
+            {
+              success: false,
+              error: valCpf.error,
+              field: 'documento_cpf',
+              code: 'VALIDATION',
+            },
             { status: 400 }
           );
         }
@@ -503,13 +515,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     } else {
       // PJ: cartão CNPJ — aceita chave pré-uploadada ou arquivo direto
-      const bbKeyCnpj = (formData.get('backblaze_key_cnpj') as string | null)?.trim() || null;
-      const bbUrlCnpj = (formData.get('backblaze_url_cnpj') as string | null)?.trim() || null;
+      const bbKeyCnpj =
+        (formData.get('backblaze_key_cnpj') as string | null)?.trim() || null;
+      const bbUrlCnpj =
+        (formData.get('backblaze_url_cnpj') as string | null)?.trim() || null;
 
       if (bbKeyCnpj && bbUrlCnpj) {
         if (!bbUrlCnpj.startsWith('https://')) {
           return NextResponse.json(
-            { success: false, error: 'URL do documento CNPJ inválida', field: 'backblaze_url_cnpj', code: 'VALIDATION' },
+            {
+              success: false,
+              error: 'URL do documento CNPJ inválida',
+              field: 'backblaze_url_cnpj',
+              code: 'VALIDATION',
+            },
             { status: 400 }
           );
         }
@@ -524,7 +543,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         const valCnpj = await validarArquivo(fileCnpj, 'Cartão CNPJ');
         if (!valCnpj.valid) {
           return NextResponse.json(
-            { success: false, error: valCnpj.error, field: 'documento_cnpj', code: 'VALIDATION' },
+            {
+              success: false,
+              error: valCnpj.error,
+              field: 'documento_cnpj',
+              code: 'VALIDATION',
+            },
             { status: 400 }
           );
         }
@@ -545,28 +569,50 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
 
       // PJ: CPF do responsável — aceita chave pré-uploadada ou arquivo direto
-      const bbKeyCpfResp = (formData.get('backblaze_key_cpf_responsavel') as string | null)?.trim() || null;
-      const bbUrlCpfResp = (formData.get('backblaze_url_cpf_responsavel') as string | null)?.trim() || null;
+      const bbKeyCpfResp =
+        (
+          formData.get('backblaze_key_cpf_responsavel') as string | null
+        )?.trim() || null;
+      const bbUrlCpfResp =
+        (
+          formData.get('backblaze_url_cpf_responsavel') as string | null
+        )?.trim() || null;
 
       if (bbKeyCpfResp && bbUrlCpfResp) {
         if (!bbUrlCpfResp.startsWith('https://')) {
           return NextResponse.json(
-            { success: false, error: 'URL do CPF do responsável inválida', field: 'backblaze_url_cpf_responsavel', code: 'VALIDATION' },
+            {
+              success: false,
+              error: 'URL do CPF do responsável inválida',
+              field: 'backblaze_url_cpf_responsavel',
+              code: 'VALIDATION',
+            },
             { status: 400 }
           );
         }
         docsUpload.push({
           tipo: 'cpf_responsavel',
-          filename: bbKeyCpfResp.split('/').pop() ?? 'documento_cpf_responsavel',
+          filename:
+            bbKeyCpfResp.split('/').pop() ?? 'documento_cpf_responsavel',
           key: bbKeyCpfResp,
           url: bbUrlCpfResp,
         });
       } else {
-        const fileCpfResp = formData.get('documento_cpf_responsavel') as File | null;
-        const valCpfResp = await validarArquivo(fileCpfResp, 'CPF do responsável');
+        const fileCpfResp = formData.get(
+          'documento_cpf_responsavel'
+        ) as File | null;
+        const valCpfResp = await validarArquivo(
+          fileCpfResp,
+          'CPF do responsável'
+        );
         if (!valCpfResp.valid) {
           return NextResponse.json(
-            { success: false, error: valCpfResp.error, field: 'documento_cpf_responsavel', code: 'VALIDATION' },
+            {
+              success: false,
+              error: valCpfResp.error,
+              field: 'documento_cpf_responsavel',
+              code: 'VALIDATION',
+            },
             { status: 400 }
           );
         }

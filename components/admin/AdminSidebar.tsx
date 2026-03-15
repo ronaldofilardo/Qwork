@@ -14,7 +14,12 @@ import {
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type AdminSection = 'tomadores' | 'financeiro' | 'geral' | 'volume';
+export type AdminSection =
+  | 'tomadores'
+  | 'financeiro'
+  | 'geral'
+  | 'volume'
+  | 'auditorias';
 export type TomadoresSubSection = 'clinicas' | 'entidades';
 export type ClinicasTab = 'dados' | 'auditorias' | 'financeiro';
 export type EntidadesTab = 'dados' | 'auditorias';
@@ -307,6 +312,14 @@ export default function AdminSidebar({
           />
         </div>
       )}
+
+      {/* Auditorias */}
+      <MenuItem
+        icon={Shield}
+        label="Auditorias"
+        isActive={activeSection === 'auditorias'}
+        onClick={() => onSectionChange('auditorias')}
+      />
     </SidebarLayout>
   );
 }

@@ -108,7 +108,7 @@ describe('AdminSidebar', () => {
         activeSection="financeiro"
         activeSubSection="contagem"
         onSectionChange={onSectionChange}
-        counts={{comissoes: 3}}
+        counts={{ comissoes: 3 }}
       />
     );
     fireEvent.click(screen.getByText('Comissões'));
@@ -121,7 +121,7 @@ describe('AdminSidebar', () => {
         activeSection="financeiro"
         activeSubSection="comissoes"
         onSectionChange={jest.fn()}
-        counts={{comissoes: 5}}
+        counts={{ comissoes: 5 }}
       />
     );
     // O badge com valor 5 deve estar visível dentro do submenu Comissões

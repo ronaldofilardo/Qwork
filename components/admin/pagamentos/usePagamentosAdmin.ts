@@ -191,6 +191,7 @@ export function usePagamentosAdmin() {
 
   const getTabCount = (tab: FilterTab) => {
     if (tab === 'todos') return solicitacoes.length;
+    if (tab === 'a_vencer') return -1; // Contagem gerenciada pelo componente ParcelasAVencer
     return solicitacoes.filter((s) => s.status_pagamento === tab).length;
   };
 
@@ -249,8 +250,12 @@ export function usePagamentosAdmin() {
       alert('Vincule um representante primeiro.');
       return;
     }
-    if (solicitacao.comissao_gerada) {
-      alert('Comissão já foi gerada para este lote.');
+
+    const totalParcelas = solicitacao.pagamento_parcelas ?? 1;
+    const geradas = solicitacao.comissoes_geradas_count ?? 0;
+
+    if (geradas >= totalParcelas) {
+      alert('Todas as comissões já foram geradas para este lote.');
       return;
     }
     if (
@@ -271,14 +276,21 @@ export function usePagamentosAdmin() {
       return;
     }
 
-    // Calcular preview
+    // A próxima parcela a gerar é geradas + 1
+    const proximaParcela = geradas + 1;
     // Number() garante coerção segura: PostgreSQL retorna NUMERIC como string em runtime
     const valorTotal = Number(solicitacao.valor_total_calculado);
-    const valorComissao = valorTotal * (percRep / 100);
+    const valorPorParcela = valorTotal / totalParcelas;
+    const valorComissao = valorPorParcela * (percRep / 100);
+
+    const parcelaInfo =
+      totalParcelas > 1
+        ? `Parcela ${proximaParcela}/${totalParcelas} (R$ ${valorPorParcela.toFixed(2)})`
+        : `Pagamento à vista (R$ ${valorTotal.toFixed(2)})`;
 
     const confirmar = confirm(
       `Gerar comissão para o representante ${solicitacao.representante_nome}?\n\n` +
-        `Valor total pago: R$ ${valorTotal.toFixed(2)}\n` +
+        `${parcelaInfo}\n` +
         `Comissão (${percRep}%): R$ ${valorComissao.toFixed(2)}\n\n` +
         `Confirmar?`
     );
@@ -293,6 +305,8 @@ export function usePagamentosAdmin() {
         representante_id: solicitacao.representante_id,
         laudo_id: solicitacao.laudo_id || null,
         valor_laudo: valorTotal,
+        parcela_numero: proximaParcela,
+        total_parcelas: totalParcelas,
       };
       if (solicitacao.entidade_id) {
         gerarPayload.entidade_id = solicitacao.entidade_id;

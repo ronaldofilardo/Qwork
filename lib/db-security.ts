@@ -182,6 +182,25 @@ export async function queryWithContext<T = Record<string, unknown>>(
           }
         }
 
+        // Para representantes: buscar representante_id para contexto RLS
+        let representanteId: string | null = null;
+        if (perfil === 'representante') {
+          try {
+            const repResult = await txClient.query(
+              `SELECT id FROM representantes WHERE cpf = $1 AND status = 'ativo' LIMIT 1`,
+              [cpf]
+            );
+            if (repResult.rows.length > 0) {
+              representanteId = repResult.rows[0].id.toString();
+            }
+          } catch (err) {
+            console.warn(
+              '[queryWithContext] Erro ao buscar representante_id:',
+              err
+            );
+          }
+        }
+
         // FASE 2: Configurar variáveis RLS (SET LOCAL - só para esta transação)
         await txClient.query('SELECT set_config($1, $2, true)', [
           'app.current_user_cpf',
@@ -215,6 +234,13 @@ export async function queryWithContext<T = Record<string, unknown>>(
           await txClient.query('SELECT set_config($1, $2, true)', [
             'app.current_contratante_id',
             entidadeId,
+          ]);
+        }
+
+        if (representanteId) {
+          await txClient.query('SELECT set_config($1, $2, true)', [
+            'app.current_representante_id',
+            representanteId,
           ]);
         }
 

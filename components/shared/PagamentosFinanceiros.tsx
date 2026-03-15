@@ -252,7 +252,26 @@ export default function PagamentosFinanceiros({
         {/* Lista de pagamentos */}
         <div className="space-y-4">
           {pagamentos.map((pag) => {
-            const parcelas = parseParcelas(pag.detalhesParcelas);
+            // Normalizar parcelas: quando status='pago' mas nenhuma parcela tem pago=true
+            // (webhook processou antes do fix), infere parcela 1 como paga.
+            const _rawParcelas = parseParcelas(pag.detalhesParcelas);
+            const parcelas: ReturnType<typeof parseParcelas> =
+              _rawParcelas.length > 0 &&
+              !_rawParcelas.some((p) => p.pago) &&
+              pag.status === 'pago'
+                ? _rawParcelas.map((p, idx) =>
+                    idx === 0
+                      ? {
+                          ...p,
+                          pago: true,
+                          data_pagamento:
+                            pag.dataPagamento ??
+                            pag.dataConfirmacao ??
+                            pag.criadoEm,
+                        }
+                      : p
+                  )
+                : _rawParcelas;
             const ehParcelado = pag.numeroParcelas > 1;
             const expandido = expandidos[pag.id] ?? false;
             const { label: metodoLabel, badge: metodoBadge } = labelMetodo(
@@ -419,9 +438,22 @@ export default function PagamentosFinanceiros({
                                 </td>
                                 <td className="py-2.5 pl-2 pr-4 text-center">
                                   <button
-                                    onClick={() => abrirModalParcela(pag, idx)}
-                                    title={`Recibo da ${parcela.numero}ª parcela`}
-                                    className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors inline-flex"
+                                    onClick={() =>
+                                      parcela.pago
+                                        ? abrirModalParcela(pag, idx)
+                                        : undefined
+                                    }
+                                    disabled={!parcela.pago}
+                                    title={
+                                      parcela.pago
+                                        ? `Recibo da ${parcela.numero}ª parcela`
+                                        : 'Parcela ainda não paga'
+                                    }
+                                    className={`p-1 rounded transition-colors inline-flex ${
+                                      parcela.pago
+                                        ? 'text-gray-400 hover:text-primary-600 hover:bg-primary-50 cursor-pointer'
+                                        : 'text-gray-200 cursor-not-allowed'
+                                    }`}
                                   >
                                     <Receipt size={14} />
                                   </button>
