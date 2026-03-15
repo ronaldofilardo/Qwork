@@ -1,3 +1,12 @@
+export interface ParcelaDetalhe {
+  numero: number;
+  valor: number;
+  data_vencimento: string;
+  pago: boolean;
+  data_pagamento: string | null;
+  status?: 'pago' | 'pendente' | 'cancelado';
+}
+
 export interface Solicitacao {
   lote_id: number;
   status_pagamento: 'aguardando_cobranca' | 'aguardando_pagamento' | 'pago';
@@ -25,6 +34,10 @@ export interface Solicitacao {
   representante_tipo_pessoa: string | null;
   representante_percentual_comissao: number | null;
   comissao_gerada: boolean;
+  /** Quantas comissões já foram geradas para este lote (inclui provisionadas futuras). */
+  comissoes_geradas_count: number;
+  /** Quantas comissões têm parcela_confirmada_em IS NOT NULL (parcela efetivamente paga). */
+  comissoes_ativas_count: number;
   // Dados do laudo (já existiam na view)
   laudo_id?: number | null;
   laudo_status?: string | null;
@@ -32,13 +45,15 @@ export interface Solicitacao {
   entidade_id?: number | null;
   clinica_id?: number | null;
   lead_valor_negociado?: number | null;
+  detalhes_parcelas?: ParcelaDetalhe[] | null;
 }
 
 export type FilterTab =
   | 'todos'
   | 'aguardando_cobranca'
   | 'aguardando_pagamento'
-  | 'pago';
+  | 'pago'
+  | 'a_vencer';
 
 export interface ModalLinkState {
   isOpen: boolean;

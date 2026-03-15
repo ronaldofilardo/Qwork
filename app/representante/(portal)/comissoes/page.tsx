@@ -22,6 +22,10 @@ interface Comissao {
   nf_rpa_rejeitada_em: string | null;
   nf_rpa_motivo_rejeicao: string | null;
   comprovante_pagamento_path: string | null;
+  parcela_numero: number | null;
+  total_parcelas: number | null;
+  /** NULL = parcela futura provisionada; NOT NULL = parcela efetivamente paga */
+  parcela_confirmada_em: string | null;
 }
 
 interface Resumo {
@@ -29,6 +33,7 @@ interface Resumo {
   liberadas: string;
   pagas: string;
   valor_pendente: string;
+  valor_futuro: string;
   valor_liberado: string;
   valor_pago_total: string;
 }
@@ -426,27 +431,35 @@ export default function ComissoesRepresentante() {
               value: fmt(resumo.valor_pendente),
               icon: '⏳',
               cor: 'text-blue-700',
+              title: 'Parcelas pagas aguardando NF/aprovação',
+            },
+            {
+              label: 'Futuro',
+              value: fmt(resumo.valor_futuro),
+              icon: '📆',
+              cor: 'text-slate-600',
+              title: 'Parcelas futuras ainda não vencidas',
             },
             {
               label: 'Liberado',
               value: fmt(resumo.valor_liberado),
               icon: '🟢',
               cor: 'text-purple-700',
+              title: 'NF aprovada, aguardando pagamento no dia 15',
             },
             {
               label: 'Total Pago',
               value: fmt(resumo.valor_pago_total),
               icon: '✅',
               cor: 'text-green-700',
-            },
-            {
-              label: 'Pendentes',
-              value: String(resumo.pendentes),
-              icon: '📋',
-              cor: 'text-gray-700',
+              title: 'Valor histórico de comissões pagas',
             },
           ].map((c) => (
-            <div key={c.label} className="bg-white rounded-xl border p-4">
+            <div
+              key={c.label}
+              className="bg-white rounded-xl border p-4"
+              title={c.title}
+            >
               <span className="text-2xl">{c.icon}</span>
               <div className={`text-xl font-bold mt-2 ${c.cor}`}>{c.value}</div>
               <div className="text-xs text-gray-500 mt-1">{c.label}</div>
@@ -533,6 +546,7 @@ export default function ComissoesRepresentante() {
                 <th className="px-4 py-3 text-left">Cliente</th>
                 <th className="px-4 py-3 text-left">Laudo</th>
                 <th className="px-4 py-3 text-left">Mês Emissão</th>
+                <th className="px-4 py-3 text-center">Parcela</th>
                 <th className="px-4 py-3 text-right">Valor Laudo</th>
                 <th className="px-4 py-3 text-right">Comissão</th>
                 <th className="px-4 py-3 text-left">Status</th>
@@ -557,6 +571,11 @@ export default function ComissoesRepresentante() {
                         })
                       : '—'}
                   </td>
+                  <td className="px-4 py-3 text-center text-xs text-gray-500 font-medium">
+                    {(c.total_parcelas ?? 1) > 1
+                      ? `${c.parcela_numero ?? 1}/${c.total_parcelas}`
+                      : 'À vista'}
+                  </td>
                   <td className="px-4 py-3 text-right text-gray-700">
                     {fmt(c.valor_laudo)}
                   </td>
@@ -565,11 +584,24 @@ export default function ComissoesRepresentante() {
                   </td>
                   <td className="px-4 py-3">
                     <div>
-                      <span
-                        className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[c.status]?.cor ?? 'bg-gray-100 text-gray-600'}`}
-                      >
-                        {STATUS_BADGE[c.status]?.label ?? c.status}
-                      </span>
+                      {/* Retida-futura: parcela não paga ainda (provisionada antecipadamente) */}
+                      {c.status === 'retida' && !c.parcela_confirmada_em ? (
+                        <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-500">
+                          ⏳ Aguardando parcela
+                        </span>
+                      ) : (
+                        <span
+                          className={`px-2 py-0.5 rounded text-xs font-medium ${STATUS_BADGE[c.status]?.cor ?? 'bg-gray-100 text-gray-600'}`}
+                        >
+                          {STATUS_BADGE[c.status]?.label ?? c.status}
+                        </span>
+                      )}
+                      {/* Retida com parcela paga: rep ainda não apto */}
+                      {c.status === 'retida' && !!c.parcela_confirmada_em && (
+                        <div className="text-xs text-gray-400 mt-0.5">
+                          Aguardando aprovação
+                        </div>
+                      )}
                       {c.motivo_congelamento && (
                         <div className="text-xs text-gray-400 mt-0.5">
                           {c.motivo_congelamento.replace(/_/g, ' ')}

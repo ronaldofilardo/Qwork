@@ -11,8 +11,11 @@ import {
   RefreshCw,
   UserCheck,
   Coins,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import type { Solicitacao } from './types';
+import { useState } from 'react';
+import type { Solicitacao, ParcelaDetalhe } from './types';
 
 interface SolicitacaoCardProps {
   solicitacao: Solicitacao;
@@ -112,6 +115,90 @@ function PaymentInfo({
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+function ParcelasDetalheSection({
+  parcelas,
+  total,
+}: {
+  parcelas: ParcelaDetalhe[] | null;
+  total: number;
+}) {
+  const [aberto, setAberto] = useState(false);
+
+  const fmt = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const fmtDate = (d: string | null) =>
+    d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+
+  return (
+    <div className="mt-2">
+      <button
+        onClick={() => setAberto((p) => !p)}
+        className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+      >
+        {aberto ? (
+          <ChevronUp className="w-3 h-3" />
+        ) : (
+          <ChevronDown className="w-3 h-3" />
+        )}
+        {aberto ? 'Ocultar' : 'Ver'} parcelas ({total}x)
+      </button>
+      {aberto && (
+        <div className="mt-2 border rounded-lg overflow-hidden text-xs">
+          {parcelas && parcelas.length > 0 ? (
+            <table className="w-full">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-3 py-2 text-left text-gray-500">Parc.</th>
+                  <th className="px-3 py-2 text-left text-gray-500">Valor</th>
+                  <th className="px-3 py-2 text-left text-gray-500">
+                    Vencimento
+                  </th>
+                  <th className="px-3 py-2 text-left text-gray-500">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {parcelas.map((p) => (
+                  <tr key={p.numero} className="border-t border-gray-100">
+                    <td className="px-3 py-2 font-medium text-gray-700">
+                      {p.numero}/{total}
+                    </td>
+                    <td className="px-3 py-2">{fmt(p.valor)}</td>
+                    <td className="px-3 py-2">
+                      {p.pago && p.data_pagamento
+                        ? fmtDate(p.data_pagamento)
+                        : fmtDate(p.data_vencimento)}
+                    </td>
+                    <td className="px-3 py-2">
+                      {p.pago ? (
+                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                          Pago
+                        </span>
+                      ) : (
+                        <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">
+                          A pagar
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            Array.from({ length: total }, (_, i) => i + 1).map((n) => (
+              <div
+                key={n}
+                className="px-3 py-2 border-t first:border-0 text-gray-500"
+              >
+                Parcela {n}/{total} — detalhes não disponíveis
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -223,12 +310,54 @@ function StatusActions({
   }
 
   // pago
+  const isPago = solicitacao.status_pagamento === 'pago';
+  const temParcelas =
+    isPago &&
+    solicitacao.pagamento_parcelas != null &&
+    solicitacao.pagamento_parcelas > 1;
+
+  // Normalizar detalhes_parcelas (pode vir como string JSON ou array)
+  let detalhes: ParcelaDetalhe[] | null = null;
+  if (temParcelas && solicitacao.detalhes_parcelas) {
+    try {
+      const raw: ParcelaDetalhe[] =
+        typeof solicitacao.detalhes_parcelas === 'string'
+          ? JSON.parse(solicitacao.detalhes_parcelas)
+          : solicitacao.detalhes_parcelas;
+      // Fallback: se o lote está pago mas nenhuma parcela registra pago=true,
+      // infere parcela 1 como paga usando pago_em do lote.
+      // Corrige dados stale do webhook processado antes do fix.
+      const algumaPaga = raw.some((p) => p.pago);
+      detalhes =
+        !algumaPaga && solicitacao.pago_em
+          ? raw.map((p) =>
+              p.numero === 1
+                ? {
+                    ...p,
+                    pago: true,
+                    status: 'pago' as const,
+                    data_pagamento: solicitacao.pago_em,
+                  }
+                : p
+            )
+          : raw;
+    } catch {
+      detalhes = null;
+    }
+  }
+
   return (
-    <div className="flex items-center gap-3">
+    <div className="space-y-2">
       <div className="flex items-center gap-2 text-green-600">
         <CheckCircle className="w-5 h-5" />
         <span className="font-medium">Pagamento confirmado</span>
       </div>
+      {temParcelas && (
+        <ParcelasDetalheSection
+          parcelas={detalhes}
+          total={solicitacao.pagamento_parcelas!}
+        />
+      )}
     </div>
   );
 }
@@ -288,26 +417,65 @@ function ComissaoSection({
               </p>
             </div>
             {isPago &&
-              (solicitacao.comissao_gerada ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  <CheckCircle className="w-3.5 h-3.5" />
-                  Comissão gerada
-                </span>
-              ) : (
-                <button
-                  onClick={() => onGerarComissao(loteId)}
-                  disabled={isProcessando}
-                  className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-                >
-                  <Coins className="w-4 h-4" />
-                  {isProcessando ? 'Gerando...' : 'Gerar Comissão'}
-                </button>
-              ))}
+              (() => {
+                const totalParcelas = solicitacao.pagamento_parcelas ?? 1;
+                const geradas = solicitacao.comissoes_geradas_count ?? 0;
+                const ativas = solicitacao.comissoes_ativas_count ?? 0;
+                const todosProvisionados = geradas >= totalParcelas;
+
+                if (todosProvisionados) {
+                  const futuras = geradas - ativas;
+                  if (futuras === 0) {
+                    // Todas as parcelas foram pagas e comissões ativas
+                    return (
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        {totalParcelas > 1
+                          ? `${geradas}/${totalParcelas} com comissão`
+                          : 'Comissão gerada'}
+                      </span>
+                    );
+                  }
+                  // Parcelas futuras ainda provisionadas (aguardando pagamento)
+                  return (
+                    <div className="flex flex-col items-end gap-1">
+                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <CheckCircle className="w-3.5 h-3.5" />
+                        {geradas} provisionadas
+                      </span>
+                      <span className="text-xs text-gray-500">
+                        {ativas} ativa{ativas !== 1 ? 's' : ''} · {futuras}{' '}
+                        aguardando parcela
+                      </span>
+                    </div>
+                  );
+                }
+
+                // Fallback: lote antigo sem provisionamento automático — botão visível
+                return (
+                  <div className="flex flex-col items-end gap-1">
+                    {geradas > 0 && (
+                      <span className="text-xs text-purple-600">
+                        {geradas}/{totalParcelas} com comissão
+                      </span>
+                    )}
+                    <button
+                      onClick={() => onGerarComissao(loteId)}
+                      disabled={isProcessando}
+                      className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    >
+                      <Coins className="w-4 h-4" />
+                      {isProcessando ? 'Gerando...' : 'Gerar Comissão'}
+                    </button>
+                  </div>
+                );
+              })()}
           </div>
 
-          {/* Preview dos valores - apenas quando pago */}
+          {/* Preview dos valores - apenas quando pago e lote sem provisionamento automático */}
           {isPago &&
-            !solicitacao.comissao_gerada &&
+            (solicitacao.comissoes_geradas_count ?? 0) <
+              (solicitacao.pagamento_parcelas ?? 1) &&
             solicitacao.valor_total_calculado && (
               <div className="grid grid-cols-2 gap-2 text-xs bg-gray-50 rounded-lg p-3">
                 <div>

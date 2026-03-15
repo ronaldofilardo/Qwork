@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
       clinica_id,
       valor_laudo,
       laudo_id,
+      parcela_numero,
+      total_parcelas,
     } = body;
 
     // Validação básica
@@ -49,6 +51,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const parcelaNum = typeof parcela_numero === 'number' ? parcela_numero : 1;
+    const totalParc = typeof total_parcelas === 'number' ? total_parcelas : 1;
+
+    if (parcelaNum > totalParc) {
+      return NextResponse.json(
+        { error: 'parcela_numero não pode ser maior que total_parcelas' },
+        { status: 400 }
+      );
+    }
+
     const result = await criarComissaoAdmin({
       lote_pagamento_id,
       vinculo_id,
@@ -57,7 +69,11 @@ export async function POST(request: NextRequest) {
       clinica_id: clinica_id ?? null,
       laudo_id: laudo_id ?? null,
       valor_laudo,
+      parcela_numero: parcelaNum,
+      total_parcelas: totalParc,
       admin_cpf: session.cpf,
+      // Admin gerando manualmente: parcela já foi paga (lote está no status 'pago')
+      parcela_confirmada_em: new Date(),
     });
 
     if (result.erro) {
