@@ -18,6 +18,7 @@ export enum PerfilUsuario {
   // Gestor de Entidade: gera funcionários DIRETAMENTE (sem passar por clínica/empresa)
   GESTOR = 'gestor',
   CADASTRO = 'cadastro',
+  REPRESENTANTE = 'representante',
 }
 
 export type PerfilUsuarioType =

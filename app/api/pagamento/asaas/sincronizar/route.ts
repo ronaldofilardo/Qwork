@@ -168,13 +168,44 @@ export async function POST(request: NextRequest) {
             loteCheck.rows[0].status_pagamento
           );
         if (!lotePendente) {
-          // Lote já está pago — nada a fazer
+          // Lote já pago: atualizar detalhes_parcelas se a parcela específica
+          // ainda não reflete pago=true (webhook processou antes do fix de parcela).
+          const numParcela: number = asaasPayment.installmentNumber ?? 1;
+          const dataPag: string =
+            asaasPayment.paymentDate ||
+            asaasPayment.confirmedDate ||
+            new Date().toISOString();
+
+          await query(
+            `UPDATE pagamentos
+             SET detalhes_parcelas = (
+               SELECT jsonb_agg(
+                 CASE
+                   WHEN (elem->>'numero')::int = $1
+                     AND NOT COALESCE((elem->>'pago')::boolean, false)
+                   THEN elem || jsonb_build_object(
+                     'pago', true,
+                     'status', 'pago',
+                     'data_pagamento', $2::text
+                   )
+                   ELSE elem
+                 END
+               )
+               FROM jsonb_array_elements(COALESCE(detalhes_parcelas, '[]'::jsonb)) AS elem
+             )
+             WHERE id = $3 AND detalhes_parcelas IS NOT NULL`,
+            [numParcela, dataPag, row.id]
+          );
+          console.log(
+            `[SINCRONIZAR] ✅ Parcela ${numParcela} marcada como paga em detalhes_parcelas (pagamento ${row.id})`
+          );
+
           return NextResponse.json({
             status: 'pago',
             asaas_status: asaasPayment.status,
-            synced: false,
+            synced: true,
             message:
-              'Pagamento e lote já confirmados (webhook processado anteriormente)',
+              'detalhes_parcelas sincronizados (parcela marcada como paga)',
           });
         }
         console.log(

@@ -11,10 +11,20 @@ import {
   RefreshCw,
   CheckCircle,
   XCircle,
+  UserCheck,
+  Link2,
 } from 'lucide-react';
 import ModalReativarTomador from './ModalReativarTomador';
 
 type TipoTomador = 'clinica' | 'entidade';
+
+interface RepresentanteVinculo {
+  vinculo_id: number;
+  representante_id: number;
+  nome: string;
+  codigo: string;
+  valor_negociado: number | null;
+}
 
 interface Tomador {
   id: string;
@@ -34,6 +44,7 @@ interface Tomador {
   } | null;
   ativo: boolean;
   created_at: string;
+  representante: RepresentanteVinculo | null;
 }
 
 export function TomadoresContent({
@@ -57,6 +68,11 @@ export function TomadoresContent({
   const [showReativarModal, setShowReativarModal] = useState(false);
   const [tomadorParaReativar, setTomadorParaReativar] =
     useState<Tomador | null>(null);
+
+  // Estado para vincular representante
+  const [codigoRepInput, setCodigoRepInput] = useState('');
+  const [valorNegociadoInput, setValorNegociadoInput] = useState('');
+  const [vinculando, setVinculando] = useState(false);
 
   const fetchTomadores = async () => {
     try {
@@ -194,6 +210,62 @@ export function TomadoresContent({
           : 'todos'
     );
   }, [activeSubSection]);
+
+  const handleVincularRepresentante = async () => {
+    if (!tomadorSelecionado || !codigoRepInput.trim()) return;
+    setVinculando(true);
+    try {
+      const body: Record<string, unknown> = {
+        codigo: codigoRepInput.trim(),
+        cnpj: tomadorSelecionado.cnpj,
+      };
+      if (tomadorSelecionado.tipo === 'clinica') {
+        body.clinica_id = Number(tomadorSelecionado.id);
+      } else {
+        body.entidade_id = Number(tomadorSelecionado.id);
+      }
+      if (valorNegociadoInput) {
+        const numVal = parseFloat(
+          valorNegociadoInput.replace(/\./g, '').replace(',', '.')
+        );
+        if (!isNaN(numVal) && numVal > 0) body.valor_negociado = numVal;
+      }
+      const res = await fetch('/api/admin/comissoes/vincular-representante', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || 'Erro ao vincular representante');
+        return;
+      }
+      // Atualizar representante no estado local
+      const rep: RepresentanteVinculo = {
+        vinculo_id: data.vinculo_id,
+        representante_id: data.representante_id,
+        nome: data.representante_nome,
+        codigo: codigoRepInput.trim().toUpperCase(),
+        valor_negociado: body.valor_negociado
+          ? (body.valor_negociado as number)
+          : null,
+      };
+      setTomadores((prev) =>
+        prev.map((t) =>
+          t.id === tomadorSelecionado.id ? { ...t, representante: rep } : t
+        )
+      );
+      setTomadorSelecionado((prev) =>
+        prev ? { ...prev, representante: rep } : null
+      );
+      setCodigoRepInput('');
+      setValorNegociadoInput('');
+    } catch {
+      alert('Erro ao vincular representante');
+    } finally {
+      setVinculando(false);
+    }
+  };
 
   const tomadoresFiltrados = tomadores.filter(
     (c) => filtro === 'todos' || c.tipo === filtro
@@ -368,6 +440,24 @@ export function TomadoresContent({
                 </p>
               )}
             </div>
+
+            {/* Representante vinculado */}
+            {tomador.representante && (
+              <div className="pt-3 border-t border-gray-100">
+                <div className="flex items-center gap-2">
+                  <UserCheck className="h-4 w-4 text-purple-500" />
+                  <span className="text-xs text-gray-500 font-medium">
+                    Representante:
+                  </span>
+                </div>
+                <p className="text-sm font-semibold text-gray-800 mt-1">
+                  {tomador.representante.nome}
+                </p>
+                <p className="text-xs text-purple-600">
+                  {tomador.representante.codigo}
+                </p>
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -503,6 +593,76 @@ export function TomadoresContent({
                       <p className="text-amber-800">
                         ⚠️ Este tomador não possui gestor vinculado
                       </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Representante Vinculado */}
+                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <UserCheck className="h-5 w-5 text-purple-600" />
+                    Representante
+                  </h3>
+                  {tomadorSelecionado.representante ? (
+                    <div className="space-y-2">
+                      <p className="font-semibold text-gray-900">
+                        {tomadorSelecionado.representante.nome}
+                      </p>
+                      <p className="text-sm text-purple-700">
+                        Código: {tomadorSelecionado.representante.codigo}
+                      </p>
+                      {tomadorSelecionado.representante.valor_negociado !=
+                        null && (
+                        <p className="text-sm text-gray-700">
+                          Valor negociado:{' '}
+                          <strong>
+                            R${' '}
+                            {tomadorSelecionado.representante.valor_negociado.toLocaleString(
+                              'pt-BR',
+                              { minimumFractionDigits: 2 }
+                            )}
+                          </strong>
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">
+                        Nenhum representante vinculado. Informe o código para
+                        vincular:
+                      </p>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Código (ex: REP-PJ123)"
+                          value={codigoRepInput}
+                          onChange={(e) =>
+                            setCodigoRepInput(e.target.value.toUpperCase())
+                          }
+                          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                          disabled={vinculando}
+                        />
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Valor negociado/func (opcional)"
+                          value={valorNegociadoInput}
+                          onChange={(e) =>
+                            setValorNegociadoInput(e.target.value)
+                          }
+                          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                          disabled={vinculando}
+                        />
+                        <button
+                          onClick={handleVincularRepresentante}
+                          disabled={vinculando || !codigoRepInput.trim()}
+                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          <Link2 className="h-4 w-4" />
+                          {vinculando ? 'Vinculando...' : 'Vincular'}
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

@@ -32,44 +32,68 @@ export async function GET(request: NextRequest) {
     if (filtroTipo === 'clinica') {
       sql = `
         SELECT
-          id,
+          cl.id,
           'clinica' as tipo,
-          nome,
-          cnpj,
-          endereco,
-          COALESCE(cidade, '') as cidade,
-          COALESCE(estado, '') as estado,
-          telefone,
-          email,
-          ativa,
-          criado_em,
-          responsavel_nome,
-          responsavel_cpf,
-          responsavel_email
-        FROM clinicas
-        ORDER BY nome
+          cl.nome,
+          cl.cnpj,
+          cl.endereco,
+          COALESCE(cl.cidade, '') as cidade,
+          COALESCE(cl.estado, '') as estado,
+          cl.telefone,
+          cl.email,
+          cl.ativa,
+          cl.criado_em,
+          cl.responsavel_nome,
+          cl.responsavel_cpf,
+          cl.responsavel_email,
+          vc.id AS vinculo_id,
+          vc.valor_negociado AS vinculo_valor_negociado,
+          r.id AS representante_id,
+          r.nome AS representante_nome,
+          r.codigo AS representante_codigo
+        FROM clinicas cl
+        LEFT JOIN LATERAL (
+          SELECT v.id, v.valor_negociado, v.representante_id
+          FROM vinculos_comissao v
+          WHERE v.clinica_id = cl.id AND v.status = 'ativo'
+          ORDER BY v.criado_em DESC LIMIT 1
+        ) vc ON true
+        LEFT JOIN representantes r ON r.id = vc.representante_id
+        ORDER BY cl.nome
       `;
     }
     // Se filtrar por entidades
     else if (filtroTipo === 'entidade') {
       sql = `
         SELECT
-          id,
+          e.id,
           'entidade' as tipo,
-          nome,
-          cnpj,
-          endereco,
-          COALESCE(cidade, '') as cidade,
-          COALESCE(estado, '') as estado,
-          telefone,
-          email,
-          ativa,
-          criado_em,
-          responsavel_nome,
-          responsavel_cpf,
-          responsavel_email
-        FROM entidades
-        ORDER BY nome
+          e.nome,
+          e.cnpj,
+          e.endereco,
+          COALESCE(e.cidade, '') as cidade,
+          COALESCE(e.estado, '') as estado,
+          e.telefone,
+          e.email,
+          e.ativa,
+          e.criado_em,
+          e.responsavel_nome,
+          e.responsavel_cpf,
+          e.responsavel_email,
+          vc.id AS vinculo_id,
+          vc.valor_negociado AS vinculo_valor_negociado,
+          r.id AS representante_id,
+          r.nome AS representante_nome,
+          r.codigo AS representante_codigo
+        FROM entidades e
+        LEFT JOIN LATERAL (
+          SELECT v.id, v.valor_negociado, v.representante_id
+          FROM vinculos_comissao v
+          WHERE v.entidade_id = e.id AND v.status = 'ativo'
+          ORDER BY v.criado_em DESC LIMIT 1
+        ) vc ON true
+        LEFT JOIN representantes r ON r.id = vc.representante_id
+        ORDER BY e.nome
       `;
     }
     // Se não filtrar, buscar AMBAS
@@ -77,40 +101,64 @@ export async function GET(request: NextRequest) {
       sql = `
         (
           SELECT
-            id,
+            e.id,
             'entidade' as tipo,
-            nome,
-            cnpj,
-            endereco,
-            COALESCE(cidade, '') as cidade,
-            COALESCE(estado, '') as estado,
-            telefone,
-            email,
-            ativa,
-            criado_em,
-            responsavel_nome,
-            responsavel_cpf,
-            responsavel_email
-          FROM entidades
+            e.nome,
+            e.cnpj,
+            e.endereco,
+            COALESCE(e.cidade, '') as cidade,
+            COALESCE(e.estado, '') as estado,
+            e.telefone,
+            e.email,
+            e.ativa,
+            e.criado_em,
+            e.responsavel_nome,
+            e.responsavel_cpf,
+            e.responsavel_email,
+            vc.id AS vinculo_id,
+            vc.valor_negociado AS vinculo_valor_negociado,
+            r.id AS representante_id,
+            r.nome AS representante_nome,
+            r.codigo AS representante_codigo
+          FROM entidades e
+          LEFT JOIN LATERAL (
+            SELECT v.id, v.valor_negociado, v.representante_id
+            FROM vinculos_comissao v
+            WHERE v.entidade_id = e.id AND v.status = 'ativo'
+            ORDER BY v.criado_em DESC LIMIT 1
+          ) vc ON true
+          LEFT JOIN representantes r ON r.id = vc.representante_id
         )
         UNION ALL
         (
           SELECT
-            id,
+            cl.id,
             'clinica' as tipo,
-            nome,
-            cnpj,
-            endereco,
-            COALESCE(cidade, '') as cidade,
-            COALESCE(estado, '') as estado,
-            telefone,
-            email,
-            ativa,
-            criado_em,
-            responsavel_nome,
-            responsavel_cpf,
-            responsavel_email
-          FROM clinicas
+            cl.nome,
+            cl.cnpj,
+            cl.endereco,
+            COALESCE(cl.cidade, '') as cidade,
+            COALESCE(cl.estado, '') as estado,
+            cl.telefone,
+            cl.email,
+            cl.ativa,
+            cl.criado_em,
+            cl.responsavel_nome,
+            cl.responsavel_cpf,
+            cl.responsavel_email,
+            vc.id AS vinculo_id,
+            vc.valor_negociado AS vinculo_valor_negociado,
+            r.id AS representante_id,
+            r.nome AS representante_nome,
+            r.codigo AS representante_codigo
+          FROM clinicas cl
+          LEFT JOIN LATERAL (
+            SELECT v.id, v.valor_negociado, v.representante_id
+            FROM vinculos_comissao v
+            WHERE v.clinica_id = cl.id AND v.status = 'ativo'
+            ORDER BY v.criado_em DESC LIMIT 1
+          ) vc ON true
+          LEFT JOIN representantes r ON r.id = vc.representante_id
         )
         ORDER BY tipo, nome
       `;
@@ -130,6 +178,19 @@ export async function GET(request: NextRequest) {
           }
         : null;
 
+      const representante =
+        row.representante_id != null
+          ? {
+              vinculo_id: row.vinculo_id,
+              representante_id: row.representante_id,
+              nome: row.representante_nome,
+              codigo: row.representante_codigo,
+              valor_negociado: row.vinculo_valor_negociado
+                ? parseFloat(row.vinculo_valor_negociado)
+                : null,
+            }
+          : null;
+
       return {
         id: row.id,
         tipo: row.tipo,
@@ -143,6 +204,7 @@ export async function GET(request: NextRequest) {
         ativo: row.ativa,
         created_at: row.criado_em,
         gestor,
+        representante,
       };
     });
 

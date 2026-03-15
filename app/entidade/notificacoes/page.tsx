@@ -1,14 +1,10 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
-import CentroOperacoes from '@/components/CentroOperacoes';
-
 export default function NotificacoesEntidadePage() {
-  const router = useRouter();
-
-  const handleNavigate = (url: string) => {
-    router.push(url);
-  };
-
-  return <CentroOperacoes tipoUsuario="tomador" onNavigate={handleNavigate} />;
+  return (
+    <div className="p-6">
+      <h1 className="text-2xl font-bold text-gray-800">Notificações</h1>
+      <p className="text-gray-500 mt-2">Nenhuma notificação no momento.</p>
+    </div>
+  );
 }

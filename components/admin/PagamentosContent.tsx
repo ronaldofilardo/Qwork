@@ -9,6 +9,7 @@ import {
 } from './pagamentos/usePagamentosAdmin';
 import { PagamentosFilterTabs } from './pagamentos/PagamentosFilterTabs';
 import { SolicitacaoCard } from './pagamentos/SolicitacaoCard';
+import { ParcelasAVencer } from './pagamentos/ParcelasAVencer';
 
 export default function PagamentosContent() {
   const {
@@ -73,8 +74,10 @@ export default function PagamentosContent() {
         getTabCount={getTabCount}
       />
 
-      {/* Lista de Solicitações */}
-      {filtradas.length === 0 ? (
+      {/* Lista de Solicitações ou Parcelas A Vencer */}
+      {filterTab === 'a_vencer' ? (
+        <ParcelasAVencer />
+      ) : filtradas.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
           <h3 className="text-lg font-medium text-gray-900 mb-2">

@@ -5,6 +5,7 @@ import {
   DollarSign,
   CheckCircle,
   Clock,
+  CalendarClock,
 } from 'lucide-react';
 import type { FilterTab } from './types';
 
@@ -16,7 +17,12 @@ interface PagamentosFilterTabsProps {
 
 const TABS: { key: FilterTab; label: string; icon: typeof Clock }[] = [
   { key: 'aguardando_cobranca', label: 'Aguardando Cobrança', icon: Clock },
-  { key: 'aguardando_pagamento', label: 'Aguardando Pagamento', icon: CreditCard },
+  {
+    key: 'aguardando_pagamento',
+    label: 'Aguardando Pagamento',
+    icon: CreditCard,
+  },
+  { key: 'a_vencer', label: 'A Vencer', icon: CalendarClock },
   { key: 'pago', label: 'Pagos', icon: CheckCircle },
   { key: 'todos', label: 'Todos', icon: DollarSign },
 ];
@@ -49,18 +55,20 @@ export function PagamentosFilterTabs({
             >
               <Icon className="w-5 h-5" />
               {tab.label}
-              <span
-                className={`
-                ml-2 py-0.5 px-2 rounded-full text-xs font-medium
-                ${
-                  isActive
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-gray-100 text-gray-600'
-                }
-              `}
-              >
-                {count}
-              </span>
+              {count >= 0 && (
+                <span
+                  className={`
+                  ml-2 py-0.5 px-2 rounded-full text-xs font-medium
+                  ${
+                    isActive
+                      ? 'bg-blue-100 text-blue-600'
+                      : 'bg-gray-100 text-gray-600'
+                  }
+                `}
+                >
+                  {count}
+                </span>
+              )}
             </button>
           );
         })}

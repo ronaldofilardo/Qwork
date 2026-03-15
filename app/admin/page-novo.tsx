@@ -10,6 +10,7 @@ import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent'
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';
 import PagamentosContent from '@/components/admin/PagamentosContent';
+import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
 
 interface Session {
   cpf: string;
@@ -17,7 +18,12 @@ interface Session {
   perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
 }
 
-type MainSection = 'novos-cadastros' | 'tomadores' | 'financeiro' | 'geral';
+type MainSection =
+  | 'novos-cadastros'
+  | 'tomadores'
+  | 'financeiro'
+  | 'geral'
+  | 'auditorias';
 type _tomadoresSubSection = 'clinicas' | 'entidades';
 type _FinanceiroSubSection = 'cobranca' | 'pagamentos';
 type _GeralSubSection = 'emissores';
@@ -30,10 +36,10 @@ export default function AdminPage() {
   const [activeSubSection, setActiveSubSection] = useState<string>('');
 
   // Contadores para badges do sidebar
-  const [pendingCount, setPendingCount] = useState(0);
+  const [_pendingCount, setPendingCount] = useState(0);
   const [clinicasCount, setClinicasCount] = useState(0);
   const [entidadesCount, setEntidadesCount] = useState(0);
-  const [cobrancaPendente, setCobrancaPendente] = useState(0);
+  const [_cobrancaPendente, setCobrancaPendente] = useState(0);
   const [pagamentosPendentes, setPagamentosPendentes] = useState(0);
   const [emissoresAtivos, setEmissoresAtivos] = useState(0);
 
@@ -137,6 +143,10 @@ export default function AdminPage() {
       if (activeSubSection === 'emissores') {
         return <EmissoresContent />;
       }
+    }
+
+    if (activeSection === 'auditorias') {
+      return <AuditoriasContent />;
     }
 
     return (
