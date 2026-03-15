@@ -6,6 +6,9 @@
  *   para evitar o erro PostgreSQL 42P08 "tipos inconsistentes deduzidos do parâmetro $10"
  * - Lógica de status inicial: 'pendente_nf' para rep.status='apto', 'retida' para demais
  * - Guards de negócio: duplicata, percentual nulo, vínculo inválido, sem entidade/clínica
+ * - Adições 15/03/2026 (migration 532):
+ *   - forcar_retida=true → status sempre 'retida' mesmo com rep apto
+ *   - parcela_confirmada_em=$15: NULL para futuras, Date para pagas
  */
 
 jest.mock('@/lib/db/query', () => ({
@@ -131,6 +134,70 @@ describe('criarComissaoAdmin', () => {
 
       const insertCallValues = mockQuery.mock.calls[3][1];
       expect(insertCallValues[9]).toBe('retida');
+    });
+
+    // ── forcar_retida (migration 532) ──────────────────────────────────────
+    it('deve usar status "retida" quando forcar_retida=true mesmo com rep apto', async () => {
+      mockFluxoCompleto({ repStatus: 'apto' });
+
+      await criarComissaoAdmin({ ...BASE_PARAMS, forcar_retida: true });
+
+      const insertCallValues = mockQuery.mock.calls[3][1];
+      expect(insertCallValues[9]).toBe('retida');
+    });
+
+    it('deve usar status "pendente_nf" quando forcar_retida=false e rep apto', async () => {
+      mockFluxoCompleto({ repStatus: 'apto' });
+
+      await criarComissaoAdmin({ ...BASE_PARAMS, forcar_retida: false });
+
+      const insertCallValues = mockQuery.mock.calls[3][1];
+      expect(insertCallValues[9]).toBe('pendente_nf');
+    });
+  });
+
+  // ── parcela_confirmada_em (migration 532) ─────────────────────────────────
+  describe('parcela_confirmada_em', () => {
+    it('deve passar null como $15 quando parcela_confirmada_em não informado (padrão)', async () => {
+      mockFluxoCompleto();
+
+      await criarComissaoAdmin(BASE_PARAMS);
+
+      const insertCallValues = mockQuery.mock.calls[3][1];
+      // $15 é o 15º parâmetro (índice 14)
+      expect(insertCallValues[14]).toBeNull();
+    });
+
+    it('deve passar null como $15 quando parcela_confirmada_em=null (parcela futura)', async () => {
+      mockFluxoCompleto();
+
+      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_confirmada_em: null });
+
+      const insertCallValues = mockQuery.mock.calls[3][1];
+      expect(insertCallValues[14]).toBeNull();
+    });
+
+    it('deve passar ISO string como $15 quando parcela_confirmada_em=Date (parcela paga)', async () => {
+      mockFluxoCompleto();
+
+      const agora = new Date('2026-03-15T10:00:00.000Z');
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_confirmada_em: agora,
+      });
+
+      const insertCallValues = mockQuery.mock.calls[3][1];
+      expect(insertCallValues[14]).toBe(agora.toISOString());
+    });
+
+    it('deve incluir parcela_confirmada_em no INSERT SQL (coluna $15)', async () => {
+      mockFluxoCompleto();
+
+      await criarComissaoAdmin(BASE_PARAMS);
+
+      const insertSql: string = mockQuery.mock.calls[3][0];
+      expect(insertSql).toContain('parcela_confirmada_em');
+      expect(insertSql).toMatch(/\$15/);
     });
   });
 
