@@ -5,6 +5,7 @@ import {
   requireEntity,
 } from '@/lib/session';
 import { query } from '@/lib/db';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,7 @@ export async function GET(request: NextRequest) {
   try {
     // Verificar sessão
     const session = getSession();
-    if (!session || (session.perfil !== 'rh' && session.perfil !== 'gestor')) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.RH, ROLES.GESTOR]);
 
     // Obter empresa_id da query
     const { searchParams } = new URL(request.url);
@@ -106,6 +105,9 @@ export async function GET(request: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao buscar pendências:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar pendências' },

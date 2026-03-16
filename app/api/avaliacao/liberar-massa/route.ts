@@ -1,22 +1,12 @@
 import { requireAuth } from '@/lib/session';
 import { queryWithContext } from '@/lib/db-security';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 export const POST = async (_req: Request) => {
   const user = await requireAuth();
-  if (!user || user.perfil !== 'rh') {
-    return NextResponse.json(
-      {
-        error: 'Acesso negado',
-        criadas: 0,
-        total: 0,
-        success: false,
-        detalhes: [],
-      },
-      { status: 200 }
-    );
-  }
+  assertRoles(user, [ROLES.RH]);
 
   const funcs = await queryWithContext(
     `SELECT cpf FROM funcionarios WHERE perfil = 'funcionario' AND ativo = true`

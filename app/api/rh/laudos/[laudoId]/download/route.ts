@@ -1,6 +1,7 @@
 import { getSession, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,16 +9,10 @@ export const GET = async (
   req: Request,
   { params }: { params: { laudoId: string } }
 ) => {
-  const session = await Promise.resolve(getSession());
-  if (!session || (session.perfil !== 'rh' && session.perfil !== 'emissor')) {
-    return NextResponse.json(
-      { error: 'Acesso negado', success: false },
-      { status: 403 }
-    );
-  }
-  const user = session;
-
   try {
+    const session = getSession();
+    assertRoles(session, [ROLES.RH, ROLES.EMISSOR]);
+    const user = session;
     const laudoId = parseInt(params.laudoId);
     if (isNaN(laudoId)) {
       return NextResponse.json(
@@ -167,6 +162,12 @@ export const GET = async (
       );
     }
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code, success: false },
+        { status: error.status }
+      );
+    }
     console.error('Erro ao fazer download do laudo:', error);
     return NextResponse.json(
       {

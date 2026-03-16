@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { requireRole } from '@/lib/session';
+import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,30 +19,8 @@ export async function POST(
   { params }: { params: { loteId: string } }
 ) {
   try {
-    // Validar autenticação e permissão
-    let session;
-    try {
-      session = await requireRole('emissor');
-    } catch {
-      // Fallback: alguns testes mockam next-auth/getServerSession em vez de cookies
-      try {
-        const { getServerSession } = await import('next-auth');
-        const serverSess = await getServerSession();
-        if (serverSess && (serverSess as any).user) {
-          session = (serverSess as any).user as any;
-          if (session.perfil !== 'emissor' && session.perfil !== 'admin') {
-            return NextResponse.json(
-              { error: 'Acesso negado' },
-              { status: 403 }
-            );
-          }
-        } else {
-          return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-        }
-      } catch {
-        return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-      }
-    }
+    const session = getSession();
+    assertRoles(session, [ROLES.EMISSOR, ROLES.ADMIN]);
 
     const loteId = parseInt(params.loteId, 10);
     if (isNaN(loteId)) {
@@ -157,6 +136,9 @@ export async function POST(
       fila_item_id: filaItemId,
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('[REPROCESSAR] Erro ao adicionar lote à fila:', error);
 
     return NextResponse.json(

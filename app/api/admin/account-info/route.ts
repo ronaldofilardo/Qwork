@@ -1,15 +1,14 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const session = getSession();
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     // Para admin, buscar informações do funcionário admin
     const adminQuery = `

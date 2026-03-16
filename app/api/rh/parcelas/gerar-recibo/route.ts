@@ -5,6 +5,7 @@ import { createHash } from 'crypto';
 import { writeFile, mkdir } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,10 +19,7 @@ export async function POST(request: Request) {
     console.log('[HANDLER rh] Getting session...');
     const session = getSession();
     console.log('[HANDLER rh] Session:', session ? 'found' : 'null');
-    if (!session || session.perfil !== 'rh') {
-      console.log('[HANDLER rh] Unauthorized: session perfil', session?.perfil);
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.RH]);
 
     const clinicaId = session.clinica_id;
     console.log('[HANDLER rh] Clinica ID:', clinicaId);

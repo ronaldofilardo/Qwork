@@ -119,7 +119,13 @@ describe('📊 API /api/entidade/account-info', () => {
       mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [mocktomador] });
       // 2ª chamada: representante vinculado
       mockQueryAsGestorEntidade.mockResolvedValueOnce({
-        rows: [{ nome: 'Rep Teste', email: 'rep@teste.com', telefone: '11988887777' }],
+        rows: [
+          {
+            nome: 'Rep Teste',
+            email: 'rep@teste.com',
+            telefone: '11988887777',
+          },
+        ],
       });
 
       const { GET } = require('@/app/api/entidade/account-info/route');

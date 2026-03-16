@@ -2,18 +2,14 @@ import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { maskCPF } from '@/lib/request-utils';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
 // Server-Sent Events endpoint para notificações em tempo real
 export const GET = async (req: Request) => {
-  const session = await Promise.resolve(getSession());
-  if (!session || session.perfil !== 'rh') {
-    return NextResponse.json(
-      { error: 'Acesso negado', success: false },
-      { status: 403 }
-    );
-  }
+  const session = getSession();
+  assertRoles(session, [ROLES.RH]);
   const user = session;
 
   // Configurar encoder para SSE

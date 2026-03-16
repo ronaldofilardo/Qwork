@@ -7,6 +7,7 @@ import {
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
 import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,18 +29,9 @@ export async function POST(request: Request) {
 
   try {
     const session = getSession();
-    if (!session) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.RH, ROLES.GESTOR]);
 
     const { perfil, cpf } = session;
-
-    if (perfil !== 'gestor' && perfil !== 'rh') {
-      return NextResponse.json(
-        { error: 'Troca de senha disponível apenas para gestores e RH' },
-        { status: 403 }
-      );
-    }
 
     const body = await request.json();
     const { senha_atual, nova_senha } = body;
@@ -165,6 +157,9 @@ export async function POST(request: Request) {
       message: 'Senha alterada com sucesso',
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('[TROCAR_SENHA] Erro:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

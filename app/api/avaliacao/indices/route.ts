@@ -1,15 +1,14 @@
-import { NextResponse } from "next/server";
-import { getSession } from "@/lib/session";
-import { query } from "@/lib/db";
+import { NextResponse } from 'next/server';
+import { getSession } from '@/lib/session';
+import { query } from '@/lib/db';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
-export const dynamic = "force-dynamic";
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
     const session = getSession();
-    if (!session || session.perfil !== "funcionario") {
-      return NextResponse.json({ error: "Não autorizado" }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.FUNCIONARIO]);
 
     // Para funcionários, retornar apenas o próprio índice
     const result = await query(
@@ -23,9 +22,9 @@ export async function GET() {
       indices: result.rows,
     });
   } catch (error) {
-    console.error("Erro ao buscar índices:", error);
+    console.error('Erro ao buscar índices:', error);
     return NextResponse.json(
-      { error: "Erro ao buscar índices" },
+      { error: 'Erro ao buscar índices' },
       { status: 500 }
     );
   }

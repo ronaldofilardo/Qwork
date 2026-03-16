@@ -240,8 +240,7 @@ SET client_min_messages = warning;
     const migRes = await client
       .query(
         `SELECT MAX(version) as max_version, COUNT(*) as total
-       FROM schema_migrations
-       WHERE executed_at IS NOT NULL`
+       FROM schema_migrations`
       )
       .catch(() => ({ rows: [{ max_version: 'N/A', total: 'N/A' }] }));
 

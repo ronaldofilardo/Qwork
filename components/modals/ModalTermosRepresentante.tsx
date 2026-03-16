@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   FileText,
-  Shield,
   ScrollText,
   CheckCircle,
   ChevronRight,
@@ -11,10 +10,9 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import ContratoRepresentante from '@/components/terms/ContratoRepresentante';
-import PoliticaPrivacidade from '@/components/terms/PoliticaPrivacidade';
-import ContratoPadrao from '@/components/terms/ContratoPadrao';
+import TermosUnificados from '@/components/terms/TermosUnificados';
 
-type TipoDoc = 'contrato_nao_clt' | 'politica_privacidade' | 'termos_uso';
+type TipoDoc = 'contrato_nao_clt' | 'termos_unificados';
 
 interface DocConfig {
   tipo: TipoDoc;
@@ -37,17 +35,10 @@ const DOCS: DocConfig[] = [
     requireScroll: true,
   },
   {
-    tipo: 'politica_privacidade',
-    titulo: 'Política de Privacidade',
-    subtitulo: 'Tratamento de dados pessoais (LGPD)',
-    icon: <Shield className="text-blue-600" size={22} />,
-    requireScroll: false,
-  },
-  {
-    tipo: 'termos_uso',
-    titulo: 'Termos de Uso',
-    subtitulo: 'Condições de utilização da plataforma',
-    icon: <FileText className="text-purple-600" size={22} />,
+    tipo: 'termos_unificados',
+    titulo: 'Termos de Uso e Política de Privacidade',
+    subtitulo: 'Condições de utilização e tratamento de dados (LGPD)',
+    icon: <FileText className="text-blue-600" size={22} />,
     requireScroll: false,
   },
 ];
@@ -56,10 +47,8 @@ function DocContent({ tipo }: { tipo: TipoDoc }) {
   switch (tipo) {
     case 'contrato_nao_clt':
       return <ContratoRepresentante />;
-    case 'politica_privacidade':
-      return <PoliticaPrivacidade />;
-    case 'termos_uso':
-      return <ContratoPadrao />;
+    case 'termos_unificados':
+      return <TermosUnificados />;
   }
 }
 
@@ -177,12 +166,11 @@ function SubModalLeitura({ doc, onAceitar, onVoltar }: SubModalProps) {
  * ModalTermosRepresentante
  *
  * Modal bloqueante exibido no primeiro acesso do representante ao portal.
- * Exige a leitura e aceite de 3 documentos:
+ * Exige a leitura e aceite de 2 documentos:
  *   1. Contrato de Representação (exige scroll até o fim)
- *   2. Política de Privacidade
- *   3. Termos de Uso
+ *   2. Termos de Uso e Política de Privacidade (unificado)
  *
- * Só libera o acesso à plataforma após todos os 3 aceites.
+ * Só libera o acesso à plataforma após todos os 2 aceites.
  */
 export default function ModalTermosRepresentante({ onConcluir }: Props) {
   const [aceitos, setAceitos] = useState<Set<TipoDoc>>(new Set());
@@ -195,18 +183,27 @@ export default function ModalTermosRepresentante({ onConcluir }: Props) {
 
   const handleAceitarDoc = async (tipo: TipoDoc) => {
     setErro('');
-    const res = await fetch('/api/representante/aceitar-termos', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo }),
-      credentials: 'same-origin',
-    });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(
-        (data as { error?: string }).error ?? 'Erro ao registrar aceite'
-      );
+    // termos_unificados registra dois aceites no backend: politica_privacidade + termos_uso
+    const tipos =
+      tipo === 'termos_unificados'
+        ? (['politica_privacidade', 'termos_uso'] as const)
+        : ([tipo] as const);
+
+    for (const t of tipos) {
+      const res = await fetch('/api/representante/aceitar-termos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: t }),
+        credentials: 'same-origin',
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          (data as { error?: string }).error ?? 'Erro ao registrar aceite'
+        );
+      }
     }
 
     setAceitos((prev) => new Set([...prev, tipo]));

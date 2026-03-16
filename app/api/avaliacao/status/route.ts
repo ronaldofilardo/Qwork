@@ -7,15 +7,30 @@ import {
   type StatusAvaliacaoType,
 } from '@/lib/types/avaliacao-status';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const session = await requireAuth();
-    const avaliacaoResult = await queryWithContext(
-      `SELECT id, status, inicio, envio, grupo_atual FROM avaliacoes
-       WHERE funcionario_cpf = $1 AND status != 'inativada'
-       ORDER BY inicio DESC LIMIT 1`,
-      [session.cpf]
-    );
+
+    // MULTI-EMPRESA: aceitar ?avaliacaoId para selecionar avaliação específica
+    const { searchParams } = new URL(request.url);
+    const avaliacaoIdParam = searchParams.get('avaliacaoId');
+
+    let avaliacaoResult;
+    if (avaliacaoIdParam) {
+      avaliacaoResult = await queryWithContext(
+        `SELECT id, status, inicio, envio, grupo_atual FROM avaliacoes
+         WHERE id = $1 AND funcionario_cpf = $2 AND status != 'inativada'`,
+        [parseInt(avaliacaoIdParam, 10), session.cpf]
+      );
+    } else {
+      // Fallback: avaliação mais recente (compatibilidade)
+      avaliacaoResult = await queryWithContext(
+        `SELECT id, status, inicio, envio, grupo_atual FROM avaliacoes
+         WHERE funcionario_cpf = $1 AND status != 'inativada'
+         ORDER BY inicio DESC LIMIT 1`,
+        [session.cpf]
+      );
+    }
 
     if (avaliacaoResult.rows.length === 0) {
       return NextResponse.json({ status: 'nao_iniciada' }, { status: 200 });

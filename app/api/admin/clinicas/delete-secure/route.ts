@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 interface DeleteRequestBody {
   password: string;
@@ -26,17 +27,7 @@ export async function POST(request: NextRequest) {
     // 1. Verificar sessão e permissão
     // eslint-disable-next-line @typescript-eslint/await-thenable
     const session = getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
-
-    if (session.perfil !== 'admin') {
-      return NextResponse.json(
-        { error: 'Apenas administradores podem excluir clínicas' },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     // 2. Extrair dados da requisição
     const body: DeleteRequestBody = await request.json();

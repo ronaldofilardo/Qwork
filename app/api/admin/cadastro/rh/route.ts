@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 /**
  * POST /api/admin/cadastro/rh
@@ -19,14 +20,7 @@ import { getSession } from '@/lib/session';
 export function POST(_request: NextRequest) {
   try {
     const session = getSession();
-
-    // APENAS admin pode usar este endpoint (se estivesse ativo)
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        { error: 'Acesso negado: apenas admin pode usar este endpoint' },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     return NextResponse.json(
       {

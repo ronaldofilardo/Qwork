@@ -5,6 +5,7 @@
 
 import * as XLSX from 'xlsx';
 import { validarCPF, limparCPF } from './cpf-utils';
+import { normalizeCNPJ, validarCNPJ } from './validators';
 
 export interface FuncionarioImportRow {
   cpf: string;
@@ -382,4 +383,189 @@ export function validarCPFsUnicos(rows: FuncionarioImportRow[]): {
     valido: duplicados.length === 0,
     duplicados,
   };
+}
+
+// ============================================================
+// BULK IMPORT: Empresas + Funcionários
+// ============================================================
+
+export interface EmpresaFuncionarioImportRow {
+  empresa_cnpj: string;
+  empresa_nome: string;
+  cpf: string;
+  nome: string;
+  data_nascimento: string;
+  setor: string;
+  funcao: string;
+  email?: string;
+  matricula?: string;
+  nivel_cargo?: string;
+  turno?: string;
+  escala?: string;
+}
+
+export interface ParseEmpresaFuncionarioResult {
+  success: boolean;
+  data?: EmpresaFuncionarioImportRow[];
+  error?: string;
+}
+
+const COLUNAS_OBRIGATORIAS_BULK = [
+  'empresa_cnpj',
+  'empresa_nome',
+  'cpf',
+  'nome',
+  'data_nascimento',
+  'setor',
+  'funcao',
+] as const;
+
+function normalizarColunasBulk(nome: string): string {
+  const n = normalizarNomeColuna(nome);
+  if (n.includes('nasc')) return 'data_nascimento';
+  if (n.includes('mail')) return 'email';
+  if (n.includes('empresa') && n.includes('cnpj')) return 'empresa_cnpj';
+  if (n.includes('empresa') && n.includes('nome')) return 'empresa_nome';
+  if (n === 'empresa') return 'empresa_nome';
+  // Standalone 'cnpj' column interpreted as empresa_cnpj
+  if (n === 'cnpj') return 'empresa_cnpj';
+  return n;
+}
+
+export function parseEmpresaFuncionarioXlsx(
+  buffer: Buffer
+): ParseEmpresaFuncionarioResult {
+  try {
+    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    if (workbook.SheetNames.length === 0) {
+      return { success: false, error: 'Arquivo não contém nenhuma aba' };
+    }
+
+    const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawData = XLSX.utils.sheet_to_json(worksheet, {
+      header: 1,
+      defval: '',
+      blankrows: false,
+    }) as unknown[][];
+
+    if (rawData.length < 2) {
+      return {
+        success: false,
+        error: 'Arquivo vazio ou sem dados (apenas cabeçalho)',
+      };
+    }
+
+    const headers: string[] = (rawData[0] as unknown[]).map((h) =>
+      normalizarColunasBulk(String(h ?? ''))
+    );
+
+    const faltando = COLUNAS_OBRIGATORIAS_BULK.filter(
+      (col) => !headers.includes(col)
+    );
+    if (faltando.length > 0) {
+      return {
+        success: false,
+        error: `Colunas obrigatórias ausentes: ${faltando.join(', ')}`,
+      };
+    }
+
+    const dados: EmpresaFuncionarioImportRow[] = [];
+    for (let i = 1; i < rawData.length; i++) {
+      const row = rawData[i] as unknown[];
+      if (row.every((cell) => !cell || String(cell).trim() === '')) continue;
+
+      const obj: Record<string, unknown> = {};
+      headers.forEach((key, idx) => {
+        const valor = row[idx];
+        obj[key] = valor !== undefined && valor !== null ? valor : '';
+      });
+
+      if (obj['cpf']) obj['cpf'] = limparCPF(String(obj['cpf']));
+      if (obj['empresa_cnpj'])
+        obj['empresa_cnpj'] = normalizeCNPJ(String(obj['empresa_cnpj']));
+
+      dados.push(obj as unknown as EmpresaFuncionarioImportRow);
+    }
+
+    if (dados.length === 0) {
+      return {
+        success: false,
+        error: 'Nenhum dado válido encontrado no arquivo',
+      };
+    }
+
+    return { success: true, data: dados };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? `Erro ao processar arquivo: ${error.message}`
+          : 'Erro desconhecido ao processar arquivo',
+    };
+  }
+}
+
+/**
+ * Valida linha individual no formato bulk (empresa + funcionário)
+ */
+export function validarLinhaEmpresaFuncionario(
+  row: EmpresaFuncionarioImportRow,
+  lineNumber: number
+): { valido: boolean; erros: string[] } {
+  const erros: string[] = [];
+
+  // Validar empresa_cnpj
+  if (!row.empresa_cnpj || String(row.empresa_cnpj).trim() === '') {
+    erros.push('CNPJ da empresa é obrigatório');
+  } else {
+    const cnpjNorm = normalizeCNPJ(String(row.empresa_cnpj));
+    if (!validarCNPJ(cnpjNorm)) {
+      erros.push(`CNPJ inválido: ${row.empresa_cnpj}`);
+    } else {
+      row.empresa_cnpj = cnpjNorm;
+    }
+  }
+
+  // Validar empresa_nome
+  if (!row.empresa_nome || String(row.empresa_nome).trim().length < 2) {
+    erros.push('Nome da empresa deve ter no mínimo 2 caracteres');
+  }
+
+  // Reusa validações de funcionário (aceita any)
+  const funcResult = validarLinhaFuncionario(
+    row as unknown as FuncionarioImportRow,
+    lineNumber
+  );
+  erros.push(...funcResult.erros);
+
+  return { valido: erros.length === 0, erros };
+}
+
+/**
+ * Verifica que o mesmo CNPJ sempre usa o mesmo nome de empresa no arquivo
+ */
+export function validarCNPJsEmpresaBulk(rows: EmpresaFuncionarioImportRow[]): {
+  valido: boolean;
+  erros: string[];
+} {
+  const cnpjNomeMap = new Map<string, string>();
+  const erros: string[] = [];
+
+  rows.forEach((row, idx) => {
+    const cnpj = normalizeCNPJ(String(row.empresa_cnpj ?? ''));
+    const nome = String(row.empresa_nome ?? '').trim();
+    if (!cnpj || !nome) return;
+
+    const existing = cnpjNomeMap.get(cnpj);
+    if (existing === undefined) {
+      cnpjNomeMap.set(cnpj, nome);
+    } else if (existing.toLowerCase() !== nome.toLowerCase()) {
+      erros.push(
+        `Linha ${idx + 2}: CNPJ ${cnpj} aparece com nome diferente ("${existing}" vs "${nome}")`
+      );
+    }
+  });
+
+  return { valido: erros.length === 0, erros };
 }

@@ -1,6 +1,7 @@
 import { requireAuth } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,12 +24,7 @@ export async function POST(
 ) {
   try {
     const user = await requireAuth();
-    if (!user || user.perfil !== 'gestor') {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
+    assertRoles(user, [ROLES.GESTOR]);
 
     const loteId = params.id;
     const avaliacaoId = params.avaliacaoId;

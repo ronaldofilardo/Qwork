@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { logAudit } from '@/lib/audit-logger';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 /**
  * POST /api/admin/cadastro/clinica
@@ -11,14 +12,7 @@ import { logAudit } from '@/lib/audit-logger';
 export async function POST(request: NextRequest) {
   try {
     const session = getSession();
-
-    // APENAS admin pode criar clínicas
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        { error: 'Acesso negado: apenas admin pode criar clínicas' },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     const body = await request.json();
     const { nome, cnpj, endereco, telefone, email } = body;

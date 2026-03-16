@@ -691,6 +691,8 @@ describe('EntidadeContaSection', () => {
       expect(screen.getByText('Clínica Teste')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Representante Comercial')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Representante Comercial')
+    ).not.toBeInTheDocument();
   });
 });
