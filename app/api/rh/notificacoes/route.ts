@@ -1,17 +1,13 @@
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = async (_req: Request) => {
-  const session = await Promise.resolve(getSession());
-  if (!session || session.perfil !== 'rh') {
-    return NextResponse.json(
-      { error: 'Acesso negado', success: false },
-      { status: 403 }
-    );
-  }
+  const session = getSession();
+  assertRoles(session, [ROLES.RH]);
   const user = session;
 
   try {

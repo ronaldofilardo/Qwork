@@ -4,6 +4,7 @@ import { query } from '@/lib/db';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
 import { existsSync } from 'fs';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,9 +15,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: Request) {
   try {
     const session = getSession();
-    if (!session || session.perfil !== 'rh') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.RH]);
 
     const { searchParams } = new URL(request.url);
     const reciboId = searchParams.get('id');

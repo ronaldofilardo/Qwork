@@ -1,6 +1,7 @@
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,11 +11,8 @@ export const dynamic = 'force-dynamic';
  * independente de status ou data. Usado no Monitor de Lotes e Laudos.
  */
 export const GET = async (_req: Request) => {
-  const session = await Promise.resolve(getSession());
-
-  if (!session || session.perfil !== 'rh') {
-    return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-  }
+  const session = getSession();
+  assertRoles(session, [ROLES.RH]);
 
   const clinicaId = session.clinica_id;
 

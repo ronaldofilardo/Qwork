@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,14 +13,7 @@ export async function GET(
   try {
     // Verificar sessão e perfil
     const session = getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    if (session.perfil !== 'gestor') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.GESTOR]);
 
     if (!session.entidade_id) {
       return NextResponse.json(
@@ -198,6 +192,9 @@ export async function GET(
 
     return response;
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao buscar detalhes do lote:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

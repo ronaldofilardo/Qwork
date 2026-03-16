@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { assertAuth, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,9 +17,7 @@ export async function GET(
 ) {
   try {
     const session = getSession();
-    if (!session || !session.cpf) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    assertAuth(session);
 
     const cpfSolicitado = params.cpf.replace(/\D/g, '');
     const cpfSessao = session.cpf.replace(/\D/g, '');
@@ -87,6 +86,9 @@ export async function GET(
       criado_em: funcionario.criado_em,
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('[API FUNCIONARIOS] Erro ao buscar funcionário:', error);
     return NextResponse.json(
       { error: 'Erro ao buscar dados do funcionário' },

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 import { createProposalLink } from '@/lib/utils/get-base-url';
 import crypto from 'crypto';
 
@@ -30,14 +31,7 @@ export async function POST(request: NextRequest) {
   try {
     // Validar sessão de admin
     const session = getSession();
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        {
-          error: 'Acesso negado. Apenas admins podem definir valores.',
-        },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     const body = await request.json();
     const { contratacao_id, numero_funcionarios, valor_por_funcionario } = body;

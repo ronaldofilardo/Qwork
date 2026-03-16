@@ -67,7 +67,7 @@ describe('API: POST /api/termos/registrar', () => {
       const res = await POST(makeRequest({ termo_tipo: 'termos_uso' }));
       expect(res.status).toBe(401);
       const data = await res.json();
-      expect(data.error).toBe('Não autenticado');
+      expect(data.error).toBe('Autenticação requerida');
     });
 
     it('deve rejeitar termo_tipo inválido (400)', async () => {
@@ -83,16 +83,16 @@ describe('API: POST /api/termos/registrar', () => {
       expect(data.error).toBe('Tipo de termo inválido');
     });
 
-    it('deve rejeitar perfis que não são rh ou gestor (400)', async () => {
+    it('deve rejeitar perfis sem permissão de aceite (403)', async () => {
       mockGetSession.mockReturnValue({
         cpf: '12345678901',
         nome: 'Admin',
         perfil: 'admin',
       } as any);
       const res = await POST(makeRequest({ termo_tipo: 'termos_uso' }));
-      expect(res.status).toBe(400);
+      expect(res.status).toBe(403);
       const data = await res.json();
-      expect(data.error).toContain('Aceite não requerido');
+      expect(data.error).toBe('Acesso negado');
     });
   });
 

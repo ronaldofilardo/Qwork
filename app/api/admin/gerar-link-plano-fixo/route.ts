@@ -3,6 +3,7 @@ import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { logAudit } from '@/lib/audit';
 import { getBaseUrl } from '@/lib/utils/get-base-url';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 /**
  * POST /api/admin/gerar-link-plano-fixo
@@ -27,14 +28,7 @@ export async function POST(request: NextRequest) {
   try {
     // Validar sessão de admin
     const session = getSession();
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        {
-          error: 'Acesso negado. Apenas admins podem gerar links de pagamento.',
-        },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     const body = await request.json();
     const { tomador_id } = body;
@@ -95,11 +89,7 @@ export async function POST(request: NextRequest) {
       // Validações de estado
       // Preferir mensagem de 'já está ativo' quando ambos flags estão setados
       if (tomador.ativa) {
-        console.warn(
-          '[ADMIN] tomador ativa true for id',
-          tomador_id,
-          tomador
-        );
+        console.warn('[ADMIN] tomador ativa true for id', tomador_id, tomador);
         if (transactionStarted) await query('ROLLBACK');
         return NextResponse.json(
           {
@@ -129,11 +119,7 @@ export async function POST(request: NextRequest) {
 
       // Validar que tem plano associado
       if (!tomador.plano_id) {
-        console.warn(
-          '[ADMIN] tomador missing plano_id',
-          tomador_id,
-          tomador
-        );
+        console.warn('[ADMIN] tomador missing plano_id', tomador_id, tomador);
         if (transactionStarted) await query('ROLLBACK');
         return NextResponse.json(
           {
@@ -214,10 +200,7 @@ export async function POST(request: NextRequest) {
         );
 
         if (contratoResult.rows.length === 0) {
-          console.warn(
-            '[ADMIN] contrato not found for tomador',
-            tomador_id
-          );
+          console.warn('[ADMIN] contrato not found for tomador', tomador_id);
           if (transactionStarted) await query('ROLLBACK');
           return NextResponse.json(
             {

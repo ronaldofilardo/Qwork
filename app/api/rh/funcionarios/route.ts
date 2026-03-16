@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRHWithEmpresaAccess, requireAuth } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 import { validarCPF, limparCPF } from '@/lib/cpf-utils';
 import bcrypt from 'bcryptjs';
 import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
@@ -67,7 +68,8 @@ export async function GET(request: Request) {
       session
     );
 
-    // Buscar avaliações de todos os funcionários da empresa/lote
+    // Buscar avaliações de todos os funcionários FILTRANDO por empresa (SEGREGAÇÃO)
+    // Sem este filtro, RH da Empresa A veria avaliações de João feitas na Empresa B
     const funcionariosCpfs = funcionariosResult.rows.map((f) => f.cpf);
     type AvaliacaoFuncionario = {
       id: number;
@@ -79,10 +81,11 @@ export async function GET(request: Request) {
     const avaliacoesMap: Record<string, AvaliacaoFuncionario[]> = {};
     if (funcionariosCpfs.length > 0) {
       const avaliacoesResult = await query(
-        `SELECT id, funcionario_cpf, inicio, envio, status, lote_id
-         FROM avaliacoes
-         WHERE funcionario_cpf = ANY($1)`,
-        [funcionariosCpfs],
+        `SELECT a.id, a.funcionario_cpf, a.inicio, a.envio, a.status, a.lote_id
+         FROM avaliacoes a
+         INNER JOIN lotes_avaliacao la ON la.id = a.lote_id
+         WHERE a.funcionario_cpf = ANY($1) AND la.empresa_id = $2`,
+        [funcionariosCpfs, empresaId],
         session
       );
       // Agrupar avaliações por cpf (convertendo para string)
@@ -107,6 +110,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ funcionarios });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao listar funcionários:', error);
     return NextResponse.json(
       { error: 'Erro ao listar funcionários' },
@@ -167,20 +173,64 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar se funcionário já existe
+    // MULTI-EMPRESA: Verificar se CPF já existe na tabela base
     const existingFunc = await query(
-      'SELECT cpf FROM funcionarios WHERE cpf = $1',
+      'SELECT id, cpf FROM funcionarios WHERE cpf = $1',
       [cpf],
       session
     );
 
     if (existingFunc.rows.length > 0) {
-      return NextResponse.json(
-        {
-          error: 'Funcionário com este CPF já existe',
-        },
-        { status: 409 }
+      // CPF já existe globalmente — verificar se já tem vínculo com ESTA empresa
+      const funcionarioId = existingFunc.rows[0].id;
+      const vinculoExistente = await query(
+        `SELECT id, ativo FROM funcionarios_clinicas 
+         WHERE funcionario_id = $1 AND empresa_id = $2`,
+        [funcionarioId, empresa_id],
+        session
       );
+
+      if (vinculoExistente.rows.length > 0) {
+        if (vinculoExistente.rows[0].ativo) {
+          return NextResponse.json(
+            { error: 'Funcionário já vinculado a esta empresa' },
+            { status: 409 }
+          );
+        }
+        // Vínculo inativo — reativar
+        await query(
+          `UPDATE funcionarios_clinicas 
+           SET ativo = true, data_desvinculo = NULL, atualizado_em = NOW()
+           WHERE id = $1`,
+          [vinculoExistente.rows[0].id],
+          session
+        );
+      } else {
+        // Criar novo vínculo com esta empresa (CPF existe em outra empresa)
+        await query(
+          `INSERT INTO funcionarios_clinicas (
+            funcionario_id, clinica_id, empresa_id, ativo
+          ) VALUES ($1, $2, $3, true)`,
+          [funcionarioId, clinicaId, empresa_id],
+          session
+        );
+      }
+
+      console.log(
+        `[AUDIT] Funcionário ${cpf} vinculado à empresa ${empresa_id} da clínica ${clinicaId} por ${session.cpf} (CPF já existia)`
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'Funcionário vinculado com sucesso',
+        funcionario: {
+          cpf,
+          nome: existingFunc.rows[0].nome || nome,
+          empresa_id,
+          clinica_id: clinicaId,
+          vinculo_criado: true,
+        },
+      });
     }
 
     // Hash da senha baseada na data de nascimento
@@ -241,6 +291,9 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao criar funcionário:', error);
 
     if (error instanceof Error && error.message.includes('permissão')) {
@@ -257,6 +310,7 @@ export async function POST(request: Request) {
 export async function PUT(request: Request) {
   try {
     const session = await requireAuth();
+    assertRoles(session, [ROLES.RH]);
 
     const {
       cpf,
@@ -298,14 +352,6 @@ export async function PUT(request: Request) {
     if (!clinicaId) {
       return NextResponse.json(
         { error: 'Clínica não identificada na sessão do RH' },
-        { status: 403 }
-      );
-    }
-
-    // Somente perfis RH podem editar
-    if (session.perfil !== 'rh') {
-      return NextResponse.json(
-        { error: 'Apenas gestores RH podem editar funcionários' },
         { status: 403 }
       );
     }
@@ -395,6 +441,9 @@ export async function PUT(request: Request) {
       senha_atualizada: !!novaSenhaHash,
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao atualizar funcionário:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

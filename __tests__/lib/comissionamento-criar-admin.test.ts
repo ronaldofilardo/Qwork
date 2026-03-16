@@ -337,7 +337,11 @@ describe('criarComissaoAdmin', () => {
     it('parcela 1/4 → mes_pagamento = abril/2026 (base)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_numero: 1, total_parcelas: 4 });
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_numero: 1,
+        total_parcelas: 4,
+      });
 
       const insertValues = mockQuery.mock.calls[3][1];
       // $12 = mes_pagamento (índice 11)
@@ -347,7 +351,11 @@ describe('criarComissaoAdmin', () => {
     it('parcela 2/4 → mes_pagamento = maio/2026 (base + 1 mês)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_numero: 2, total_parcelas: 4 });
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_numero: 2,
+        total_parcelas: 4,
+      });
 
       const insertValues = mockQuery.mock.calls[3][1];
       expect(insertValues[11]).toBe('2026-05-01');
@@ -356,7 +364,11 @@ describe('criarComissaoAdmin', () => {
     it('parcela 3/4 → mes_pagamento = junho/2026 (base + 2 meses)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_numero: 3, total_parcelas: 4 });
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_numero: 3,
+        total_parcelas: 4,
+      });
 
       const insertValues = mockQuery.mock.calls[3][1];
       expect(insertValues[11]).toBe('2026-06-01');
@@ -365,7 +377,11 @@ describe('criarComissaoAdmin', () => {
     it('parcela 4/4 → mes_pagamento = julho/2026 (base + 3 meses)', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_numero: 4, total_parcelas: 4 });
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_numero: 4,
+        total_parcelas: 4,
+      });
 
       const insertValues = mockQuery.mock.calls[3][1];
       expect(insertValues[11]).toBe('2026-07-01');
@@ -374,7 +390,11 @@ describe('criarComissaoAdmin', () => {
     it('à vista (parcela 1/1) → mes_pagamento = próximo mês sem deslocamento', async () => {
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_numero: 1, total_parcelas: 1 });
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_numero: 1,
+        total_parcelas: 1,
+      });
 
       const insertValues = mockQuery.mock.calls[3][1];
       expect(insertValues[11]).toBe('2026-04-01');
@@ -384,7 +404,11 @@ describe('criarComissaoAdmin', () => {
       jest.setSystemTime(new Date('2026-12-01T12:00:00.000Z'));
       mockFluxoCompleto({ repStatus: 'apto' });
 
-      await criarComissaoAdmin({ ...BASE_PARAMS, parcela_numero: 3, total_parcelas: 3 });
+      await criarComissaoAdmin({
+        ...BASE_PARAMS,
+        parcela_numero: 3,
+        total_parcelas: 3,
+      });
 
       const insertValues = mockQuery.mock.calls[3][1];
       // base = jan/2027, + 2 meses = mar/2027

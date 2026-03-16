@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { logAudit } from '@/lib/audit-logger';
 import bcrypt from 'bcryptjs';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 /**
  * POST /api/admin/cadastro/admin
@@ -12,14 +13,7 @@ import bcrypt from 'bcryptjs';
 export async function POST(request: NextRequest) {
   try {
     const session = getSession();
-
-    // APENAS admin pode criar outros admins
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        { error: 'Acesso negado: apenas admin pode criar administradores' },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.ADMIN]);
 
     const body = await request.json();
     const { cpf, nome, email, senha } = body;

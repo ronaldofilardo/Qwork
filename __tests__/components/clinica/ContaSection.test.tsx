@@ -344,6 +344,8 @@ describe('ContaSection', () => {
       expect(screen.getByText('Clínica Sem Rep')).toBeInTheDocument();
     });
 
-    expect(screen.queryByText('Representante Comercial')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Representante Comercial')
+    ).not.toBeInTheDocument();
   });
 });

@@ -4,16 +4,17 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { requireGestor } from '@/lib/auth-require';
 import { query } from '@/lib/db';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
+import { getSession } from '@/lib/session';
 
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticação (gestor de entidade ou gestor RH)
-    const session = requireGestor();
+    const session = getSession();
+    assertRoles(session, [ROLES.GESTOR, ROLES.RH]);
     const { id: loteId } = params;
 
     // Verificar acesso ao lote
@@ -141,6 +142,9 @@ export async function GET(
       },
     });
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+    }
     console.error('Erro ao exportar CSV de funcionários:', error);
     return NextResponse.json(
       {

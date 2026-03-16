@@ -2,10 +2,11 @@
  * @fileoverview Testes do ModalTermosRepresentante — fluxo de primeiro acesso
  *
  * Cobre:
- *   - Renderização do modal principal (3 documentos, botão desabilitado)
+ *   - Renderização do modal principal (2 documentos, botão desabilitado)
  *   - SubModal com zIndex 9999 (correção do bug z-60 inválido no Tailwind)
  *   - Abertura e fechamento do SubModal por documento
  *   - Chamada à API POST /api/representante/aceitar-termos com tipo correto
+ *   - aceite de termos_unificados chama a API para politica_privacidade E termos_uso
  *   - Exibição de erro quando API falha
  *   - Marcação do documento como aceito após sucesso
  */
@@ -19,15 +20,13 @@ jest.mock('@/components/terms/ContratoRepresentante', () => ({
     <div data-testid="conteudo-contrato">Contrato de Representação</div>
   ),
 }));
-jest.mock('@/components/terms/PoliticaPrivacidade', () => ({
+jest.mock('@/components/terms/TermosUnificados', () => ({
   __esModule: true,
   default: () => (
-    <div data-testid="conteudo-politica">Política de Privacidade</div>
+    <div data-testid="conteudo-termos-unificados">
+      Termos de Uso e Política de Privacidade
+    </div>
   ),
-}));
-jest.mock('@/components/terms/ContratoPadrao', () => ({
-  __esModule: true,
-  default: () => <div data-testid="conteudo-termos">Termos de Uso</div>,
 }));
 
 import {
@@ -49,14 +48,15 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
   });
 
   describe('Renderização do Modal Principal', () => {
-    it('deve exibir os 3 documentos para aceite', () => {
+    it('deve exibir os 2 documentos para aceite', () => {
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
 
       expect(
         screen.getByText(/Contrato de Representação Comercial/i)
       ).toBeInTheDocument();
-      expect(screen.getByText(/Política de Privacidade/i)).toBeInTheDocument();
-      expect(screen.getByText(/Termos de Uso/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Termos de Uso e Política de Privacidade/i)
+      ).toBeInTheDocument();
     });
 
     it('deve exibir o botão final desabilitado antes de todos os aceites', () => {
@@ -79,39 +79,51 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
       expect(dialog).toHaveAttribute('aria-modal', 'true');
     });
 
-    it('deve exibir 3 botões de leitura (um por documento)', () => {
+    it('deve exibir 2 botões de leitura (um por documento)', () => {
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
-      expect(screen.getAllByLabelText(/Ler e aceitar:/i)).toHaveLength(3);
+      expect(screen.getAllByLabelText(/Ler e aceitar:/i)).toHaveLength(2);
     });
   });
 
   describe('SubModal — zIndex 9999 (fix: z-60 era inválido no Tailwind)', () => {
-    it('deve abrir SubModal ao clicar em Política de Privacidade', async () => {
+    it('deve abrir SubModal ao clicar em Termos de Uso e Política de Privacidade', async () => {
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
       fireEvent.click(
-        screen.getByLabelText(/Ler e aceitar: Política de Privacidade/i)
+        screen.getByLabelText(
+          /Ler e aceitar: Termos de Uso e Política de Privacidade/i
+        )
       );
       await waitFor(() => {
-        expect(screen.getByTestId('conteudo-politica')).toBeInTheDocument();
+        expect(
+          screen.getByTestId('conteudo-termos-unificados')
+        ).toBeInTheDocument();
       });
     });
 
-    it('deve abrir SubModal ao clicar em Termos de Uso', async () => {
+    it('deve abrir SubModal ao clicar em Contrato de Representação Comercial', async () => {
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
-      fireEvent.click(screen.getByLabelText(/Ler e aceitar: Termos de Uso/i));
+      fireEvent.click(
+        screen.getByLabelText(
+          /Ler e aceitar: Contrato de Representação Comercial/i
+        )
+      );
       await waitFor(() => {
-        expect(screen.getByTestId('conteudo-termos')).toBeInTheDocument();
+        expect(screen.getByTestId('conteudo-contrato')).toBeInTheDocument();
       });
     });
 
     it('SubModal deve ter zIndex 9999 (maior que z-50 do modal principal)', async () => {
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
       fireEvent.click(
-        screen.getByLabelText(/Ler e aceitar: Política de Privacidade/i)
+        screen.getByLabelText(
+          /Ler e aceitar: Termos de Uso e Política de Privacidade/i
+        )
       );
 
       await waitFor(() => {
-        expect(screen.getByTestId('conteudo-politica')).toBeInTheDocument();
+        expect(
+          screen.getByTestId('conteudo-termos-unificados')
+        ).toBeInTheDocument();
       });
 
       const styleContainers = document.querySelectorAll('[style*="z-index"]');
@@ -127,23 +139,27 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
     it('deve fechar SubModal ao clicar em Voltar', async () => {
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
       fireEvent.click(
-        screen.getByLabelText(/Ler e aceitar: Política de Privacidade/i)
+        screen.getByLabelText(
+          /Ler e aceitar: Termos de Uso e Política de Privacidade/i
+        )
       );
       await waitFor(() =>
-        expect(screen.getByTestId('conteudo-politica')).toBeInTheDocument()
+        expect(
+          screen.getByTestId('conteudo-termos-unificados')
+        ).toBeInTheDocument()
       );
 
       fireEvent.click(screen.getByRole('button', { name: /voltar/i }));
       await waitFor(() => {
         expect(
-          screen.queryByTestId('conteudo-politica')
+          screen.queryByTestId('conteudo-termos-unificados')
         ).not.toBeInTheDocument();
       });
     });
   });
 
   describe('Fluxo de Aceite', () => {
-    it('deve chamar API com tipo correto ao aceitar Política de Privacidade', async () => {
+    it('deve chamar API duas vezes ao aceitar Termos de Uso e Política de Privacidade (unificado)', async () => {
       mockFetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ ok: true }),
@@ -151,16 +167,20 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
 
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
       fireEvent.click(
-        screen.getByLabelText(/Ler e aceitar: Política de Privacidade/i)
+        screen.getByLabelText(
+          /Ler e aceitar: Termos de Uso e Política de Privacidade/i
+        )
       );
       await waitFor(() =>
-        expect(screen.getByTestId('conteudo-politica')).toBeInTheDocument()
+        expect(
+          screen.getByTestId('conteudo-termos-unificados')
+        ).toBeInTheDocument()
       );
 
       await act(async () => {
         fireEvent.click(
           screen.getByRole('button', {
-            name: /aceitar Política de Privacidade/i,
+            name: /aceitar Termos de Uso e Política de Privacidade/i,
           })
         );
       });
@@ -173,28 +193,6 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
             body: JSON.stringify({ tipo: 'politica_privacidade' }),
           })
         );
-      });
-    });
-
-    it('deve chamar API com tipo correto ao aceitar Termos de Uso', async () => {
-      mockFetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({ ok: true }),
-      } as Response);
-
-      render(<ModalTermosRepresentante onConcluir={() => {}} />);
-      fireEvent.click(screen.getByLabelText(/Ler e aceitar: Termos de Uso/i));
-      await waitFor(() =>
-        expect(screen.getByTestId('conteudo-termos')).toBeInTheDocument()
-      );
-
-      await act(async () => {
-        fireEvent.click(
-          screen.getByRole('button', { name: /aceitar Termos de Uso/i })
-        );
-      });
-
-      await waitFor(() => {
         expect(mockFetch).toHaveBeenCalledWith(
           '/api/representante/aceitar-termos',
           expect.objectContaining({
@@ -202,6 +200,7 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
             body: JSON.stringify({ tipo: 'termos_uso' }),
           })
         );
+        expect(mockFetch).toHaveBeenCalledTimes(2);
       });
     });
 
@@ -212,19 +211,29 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
       } as Response);
 
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
-      fireEvent.click(screen.getByLabelText(/Ler e aceitar: Termos de Uso/i));
+      fireEvent.click(
+        screen.getByLabelText(
+          /Ler e aceitar: Termos de Uso e Política de Privacidade/i
+        )
+      );
       await waitFor(() =>
-        expect(screen.getByTestId('conteudo-termos')).toBeInTheDocument()
+        expect(
+          screen.getByTestId('conteudo-termos-unificados')
+        ).toBeInTheDocument()
       );
 
       await act(async () => {
         fireEvent.click(
-          screen.getByRole('button', { name: /aceitar Termos de Uso/i })
+          screen.getByRole('button', {
+            name: /aceitar Termos de Uso e Política de Privacidade/i,
+          })
         );
       });
 
       await waitFor(() => {
-        expect(screen.queryByTestId('conteudo-termos')).not.toBeInTheDocument();
+        expect(
+          screen.queryByTestId('conteudo-termos-unificados')
+        ).not.toBeInTheDocument();
         expect(screen.getByText(/aceito ✓/i)).toBeInTheDocument();
       });
     });
@@ -237,16 +246,20 @@ describe('ModalTermosRepresentante — Primeiro Acesso', () => {
 
       render(<ModalTermosRepresentante onConcluir={() => {}} />);
       fireEvent.click(
-        screen.getByLabelText(/Ler e aceitar: Política de Privacidade/i)
+        screen.getByLabelText(
+          /Ler e aceitar: Termos de Uso e Política de Privacidade/i
+        )
       );
       await waitFor(() =>
-        expect(screen.getByTestId('conteudo-politica')).toBeInTheDocument()
+        expect(
+          screen.getByTestId('conteudo-termos-unificados')
+        ).toBeInTheDocument()
       );
 
       await act(async () => {
         fireEvent.click(
           screen.getByRole('button', {
-            name: /aceitar Política de Privacidade/i,
+            name: /aceitar Termos de Uso e Política de Privacidade/i,
           })
         );
       });

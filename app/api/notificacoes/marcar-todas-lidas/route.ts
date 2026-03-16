@@ -7,13 +7,12 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { NotificationService } from '@/lib/notification-service';
 import type { DestinatarioTipo } from '@/lib/notification-service';
+import { assertAuth, isApiError } from '@/lib/authorization/policies';
 
 export async function POST() {
   try {
     const session = getSession();
-    if (!session || !session.cpf) {
-      return NextResponse.json({ erro: 'Não autenticado' }, { status: 401 });
-    }
+    assertAuth(session);
 
     const destinatarioTipo: DestinatarioTipo =
       session.perfil === 'admin'
@@ -32,6 +31,9 @@ export async function POST() {
       total_marcadas: totalMarcadas,
     });
   } catch (erro) {
+    if (isApiError(erro)) {
+      return NextResponse.json({ erro: erro.message }, { status: erro.status });
+    }
     console.error('[API Marcar Todas Lidas] Erro:', erro);
     return NextResponse.json(
       { erro: 'Erro ao marcar todas como lidas' },
