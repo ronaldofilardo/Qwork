@@ -9,6 +9,12 @@ interface ContaSectionState {
   cnpj?: string;
 }
 
+interface Representante {
+  nome: string;
+  email?: string;
+  telefone?: string;
+}
+
 interface AccountInfo {
   nome: string;
   cnpj?: string;
@@ -20,6 +26,7 @@ interface AccountInfo {
   responsavel_nome?: string;
   criado_em?: string;
   tem_contrato_aceito?: boolean;
+  representante?: Representante | null;
 }
 
 export default function EntidadeContaSection() {
@@ -215,6 +222,27 @@ export default function EntidadeContaSection() {
                     <p className="text-sm text-gray-900">
                       {accountInfo.responsavel_nome}
                     </p>
+                  </div>
+                )}
+
+                {accountInfo.representante && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">
+                      Representante Comercial
+                    </label>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {accountInfo.representante.nome}
+                    </p>
+                    {accountInfo.representante.email && (
+                      <p className="text-xs text-gray-500">
+                        {accountInfo.representante.email}
+                      </p>
+                    )}
+                    {accountInfo.representante.telefone && (
+                      <p className="text-xs text-gray-500">
+                        {accountInfo.representante.telefone}
+                      </p>
+                    )}
                   </div>
                 )}
 
