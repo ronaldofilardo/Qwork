@@ -116,6 +116,36 @@ export const GET = async () => {
     }
 
     // Buscar gestores RH da clínica/entidade
+    // Buscar representante vinculado à clínica ou entidade
+    let representante = null;
+    if (clinicaId) {
+      const repQuery = await query(
+        `SELECT r.nome, r.email, r.telefone
+         FROM vinculos_comissao vc
+         JOIN representantes r ON r.id = vc.representante_id
+         WHERE vc.clinica_id = $1
+         ORDER BY vc.criado_em DESC
+         LIMIT 1`,
+        [clinicaId]
+      );
+      if (repQuery.rows.length > 0) {
+        representante = repQuery.rows[0];
+      }
+    } else if (entidadeId) {
+      const repQuery = await query(
+        `SELECT r.nome, r.email, r.telefone
+         FROM vinculos_comissao vc
+         JOIN representantes r ON r.id = vc.representante_id
+         WHERE vc.entidade_id = $1
+         ORDER BY vc.criado_em DESC
+         LIMIT 1`,
+        [entidadeId]
+      );
+      if (repQuery.rows.length > 0) {
+        representante = repQuery.rows[0];
+      }
+    }
+
     let gestoresQuery;
 
     if (clinicaId) {
@@ -176,6 +206,13 @@ export const GET = async () => {
         criado_em: organizacao.criado_em || null,
         status: organizacao.status || organizacao.ativa || null,
         tem_contrato_aceito: organizacao.tem_contrato_aceito ?? false,
+        representante: representante
+          ? {
+              nome: representante.nome,
+              email: representante.email,
+              telefone: representante.telefone,
+            }
+          : null,
       },
       gestores: gestoresQuery.rows.map((gestor) => ({
         id: gestor.id,

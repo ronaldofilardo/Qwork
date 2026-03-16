@@ -45,6 +45,18 @@ export async function GET() {
 
     const entidade = entidadeResult.rows[0];
 
+    // Buscar representante vinculado à entidade
+    const repQuery = `
+      SELECT r.nome, r.email, r.telefone
+      FROM vinculos_comissao vc
+      JOIN representantes r ON r.id = vc.representante_id
+      WHERE vc.entidade_id = $1
+      ORDER BY vc.criado_em DESC
+      LIMIT 1
+    `;
+    const repResult = await queryAsGestorEntidade(repQuery, [entidadeId]);
+    const representante = repResult.rows.length > 0 ? repResult.rows[0] : null;
+
     const accountInfo = {
       nome: entidade.nome,
       cnpj: entidade.cnpj,
@@ -56,6 +68,13 @@ export async function GET() {
       responsavel_nome: entidade.responsavel_nome,
       criado_em: entidade.criado_em,
       tem_contrato_aceito: entidade.tem_contrato_aceito ?? false,
+      representante: representante
+        ? {
+            nome: representante.nome,
+            email: representante.email,
+            telefone: representante.telefone,
+          }
+        : null,
     };
 
     return NextResponse.json(accountInfo);

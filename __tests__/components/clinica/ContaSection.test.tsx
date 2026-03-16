@@ -289,4 +289,61 @@ describe('ContaSection', () => {
       within(vigContainer as HTMLElement).getByText('01/02/2025 — 31/01/2026')
     ).toBeInTheDocument();
   });
+
+  it('deve exibir Representante Comercial quando clínica possui vínculo ativo', async () => {
+    const mockData = {
+      clinica: {
+        id: 6,
+        nome: 'Clínica Com Rep',
+        cnpj: '12.345.678/0001-99',
+        email: 'clinica@rep.com',
+        representante: {
+          nome: 'João Representante',
+          email: 'rep@comercial.com',
+          telefone: '(11) 91234-5678',
+        },
+      },
+      gestores: [],
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
+
+    render(<ContaSection />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Clínica Com Rep')).toBeInTheDocument();
+    });
+
+    expect(screen.getByText('Representante Comercial')).toBeInTheDocument();
+    expect(screen.getByText('João Representante')).toBeInTheDocument();
+    expect(screen.getByText('rep@comercial.com')).toBeInTheDocument();
+    expect(screen.getByText('(11) 91234-5678')).toBeInTheDocument();
+  });
+
+  it('não deve exibir Representante Comercial quando clínica não possui vínculo', async () => {
+    const mockData = {
+      clinica: {
+        id: 7,
+        nome: 'Clínica Sem Rep',
+        representante: null,
+      },
+      gestores: [],
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
+
+    render(<ContaSection />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Clínica Sem Rep')).toBeInTheDocument();
+    });
+
+    expect(screen.queryByText('Representante Comercial')).not.toBeInTheDocument();
+  });
 });

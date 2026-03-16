@@ -987,7 +987,12 @@ export async function criarComissaoAdmin(params: {
   // Mês de emissão e pagamento
   const agora = new Date();
   const mesEmissao = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;
-  const { mes_pagamento } = calcularPrevisaoPagamento(agora);
+  const { mes_pagamento: mesPagBase } = calcularPrevisaoPagamento(agora);
+  // Parcelado: cada parcela N tem previsão deslocada em (N-1) meses
+  // parcela 1 → base, parcela 2 → base+1 mês, etc.
+  const mesPagDate = new Date(mesPagBase + 'T00:00:00Z');
+  mesPagDate.setUTCMonth(mesPagDate.getUTCMonth() + (parcelaNum - 1));
+  const mes_pagamento = `${mesPagDate.getUTCFullYear()}-${String(mesPagDate.getUTCMonth() + 1).padStart(2, '0')}-01`;
 
   const result = await query(
     `INSERT INTO comissoes_laudo (
