@@ -69,7 +69,21 @@ describe('ImportEmpresasModal', () => {
 
       expect(screen.getByText(/email/)).toBeInTheDocument();
       expect(screen.getByText(/matricula/)).toBeInTheDocument();
-      expect(screen.getByText(/nivel_cargo/)).toBeInTheDocument();
+      // O componente renderiza 'nivel_cargo*' em multiple lugares (badge e descrição)
+      const colunaOptionals = screen.queryAllByText(/nivel_cargo/);
+      expect(colunaOptionals.length).toBeGreaterThan(0);
+    });
+
+    it('deve exibir apenas operacional e gestao como opções de nivel_cargo', () => {
+      render(<ImportEmpresasModal {...defaultProps} />);
+
+      const nivelCargoText = screen.getByText(/operacional,\s*gestao/i);
+      expect(nivelCargoText).toBeInTheDocument();
+
+      // Validar que não incluem outras opções removidas
+      expect(
+        screen.queryByText(/analista.*coordenador.*supervisor.*gerente/i)
+      ).not.toBeInTheDocument();
     });
 
     it('deve exibir input de arquivo', () => {

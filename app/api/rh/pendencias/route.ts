@@ -106,7 +106,10 @@ export async function GET(request: NextRequest) {
     });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('Erro ao buscar pendências:', error);
     return NextResponse.json(

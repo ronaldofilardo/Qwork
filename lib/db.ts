@@ -254,7 +254,8 @@ const getDatabaseUrl = () => {
 
   // Ambiente de desenvolvimento
   if (isDevelopment) {
-    // Opt-in: permitir usar DATABASE_URL (produção) localmente quando explicitamente solicitado
+    // Opt-in: permitir usar DATABASE_URL (produção) localmente quando explicitamente solicitado.
+    // Se EMISSOR_CPF também estiver definido, apenas o emissor pode operar (guard aplicado em query()).
     if (
       process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
       process.env.DATABASE_URL
@@ -263,9 +264,15 @@ const getDatabaseUrl = () => {
         /(postgresql:\/\/.+?:).+?(@)/,
         '$1***$2'
       );
-      console.warn(
-        `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
-      );
+      if (process.env.EMISSOR_CPF) {
+        console.warn(
+          `⚠️ ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF=${process.env.EMISSOR_CPF}: banco de produção (Neon) ativo localmente — acesso restrito ao emissor. Conectando a: ${masked}`
+        );
+      } else {
+        console.warn(
+          `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
+        );
+      }
       return process.env.DATABASE_URL;
     }
 
@@ -443,6 +450,19 @@ export async function query<T = any>(
   try {
     if ((isDevelopment || isTest) && localPool) {
       // PostgreSQL Local (Desenvolvimento e Testes)
+      // Em modo emissor (ALLOW_PROD_DB_LOCAL + EMISSOR_CPF), localPool já aponta para Neon prod.
+      // Guard: bloquear qualquer sessão cujo CPF não seja o do emissor autorizado.
+      if (
+        isDevelopment &&
+        process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
+        process.env.EMISSOR_CPF &&
+        session &&
+        session.cpf !== process.env.EMISSOR_CPF
+      ) {
+        throw new Error(
+          `🚨 ACESSO BLOQUEADO: CPF ${session.cpf} não tem permissão para acessar o banco de produção localmente. Apenas o emissor (CPF ${process.env.EMISSOR_CPF}) pode operar neste ambiente.`
+        );
+      }
       const client = await localPool.connect().catch((err) => {
         // Se falhar por excesso de conexões, logar um aviso mais amigável
         if (err.message.includes('too many clients') || err.code === '53300') {

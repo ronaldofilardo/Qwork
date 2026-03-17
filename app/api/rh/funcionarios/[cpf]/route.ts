@@ -164,7 +164,10 @@ export async function GET(
     });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('Erro ao buscar funcionário:', error);
     return NextResponse.json(

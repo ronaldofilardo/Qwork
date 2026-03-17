@@ -158,7 +158,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('[TROCAR_SENHA] Erro:', error);
     return NextResponse.json(

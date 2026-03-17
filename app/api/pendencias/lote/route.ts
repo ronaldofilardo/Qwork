@@ -232,7 +232,10 @@ export async function GET(request: NextRequest) {
     return buildResponse(loteRef, pendentesEntResult.rows);
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('[API pendencias/lote] Erro:', error);
     return NextResponse.json(

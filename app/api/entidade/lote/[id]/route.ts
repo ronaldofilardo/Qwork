@@ -193,7 +193,10 @@ export async function GET(
     return response;
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('Erro ao buscar detalhes do lote:', error);
     return NextResponse.json(

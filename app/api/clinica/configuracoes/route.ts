@@ -6,7 +6,12 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { ClinicaConfiguracaoService } from '@/lib/clinica-configuracao-service';
-import { assertAuth, assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
+import {
+  assertAuth,
+  assertRoles,
+  ROLES,
+  isApiError,
+} from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +48,10 @@ export async function GET() {
     return NextResponse.json(config);
   } catch (erro) {
     if (isApiError(erro)) {
-      return NextResponse.json({ erro: erro.message, code: erro.code }, { status: erro.status });
+      return NextResponse.json(
+        { erro: erro.message, code: erro.code },
+        { status: erro.status }
+      );
     }
     console.error('[API Configuracoes] Erro ao buscar:', erro);
     return NextResponse.json(
@@ -99,7 +107,10 @@ export async function PUT(request: Request) {
     return NextResponse.json(config);
   } catch (erro: any) {
     if (isApiError(erro)) {
-      return NextResponse.json({ erro: erro.message, code: erro.code }, { status: erro.status });
+      return NextResponse.json(
+        { erro: erro.message, code: erro.code },
+        { status: erro.status }
+      );
     }
     console.error('[API Configuracoes] Erro ao atualizar:', erro);
     return NextResponse.json(
