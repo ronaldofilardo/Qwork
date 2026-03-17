@@ -1041,20 +1041,21 @@ export default function DetalhesLotePage() {
                       onClick={() => setShowSetorModal(true)}
                       disabled={
                         !isPronto ||
-                        lote.laudo_status !== 'emitido' ||
+                        !['emitido', 'enviado'].includes(lote.laudo_status) ||
                         setores.length === 0
                       }
                       className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                       aria-label="Gerar Relatório PDF por Setor"
                       title={
-                        lote.laudo_status !== 'emitido'
+                        !['emitido', 'enviado'].includes(lote.laudo_status)
                           ? 'Aguardando emissão do laudo'
                           : setores.length === 0
                             ? 'Nenhum setor cadastrado neste ciclo'
                             : 'Gerar relatório por setor'
                       }
                     >
-                      {lote.laudo_status === 'emitido' && isPronto
+                      {['emitido', 'enviado'].includes(lote.laudo_status) &&
+                      isPronto
                         ? '📊 Gerar Relatório por Setor'
                         : isPronto
                           ? '⏳ Aguardando laudo'

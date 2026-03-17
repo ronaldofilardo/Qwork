@@ -111,7 +111,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ funcionarios });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('Erro ao listar funcionários:', error);
     return NextResponse.json(
@@ -292,7 +295,10 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('Erro ao criar funcionário:', error);
 
@@ -442,7 +448,10 @@ export async function PUT(request: Request) {
     });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('Erro ao atualizar funcionário:', error);
     return NextResponse.json(

@@ -1,0 +1,4176 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "--testPathPatterns=avaliacao|conclusao" "--no-coverage"
+
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+FAIL __tests__/avaliacao/responder.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 2: Salvar resposta automaticamente ao clicar ÔÇ║ deve salvar resposta imediatamente ao clicar na op├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      52 |       const data = await response.json();
+      53 |
+    > 54 |       expect(response.status).toBe(200);
+         |                               ^
+      55 |       expect(data.success).toBe(true);
+      56 |       expect(mockQuery).toHaveBeenCalledWith(
+      57 |         expect.stringContaining('INSERT INTO respostas'),
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:54:31)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 2: Salvar resposta automaticamente ao clicar ÔÇ║ deve salvar resposta sem necessidade de bot├úo "Salvar"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      79 |
+      80 |       const response = await POST(request);
+    > 81 |       expect(response.status).toBe(200);
+         |                               ^
+      82 |
+      83 |       // N├úo deve haver necessidade de confirma├º├úo adicional
+      84 |       const data = await response.json();
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:81:31)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 2: Salvar resposta automaticamente ao clicar ÔÇ║ deve permitir altera├º├úo de resposta ao clicar novamente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      121 |       const response2 = await POST(request2);
+      122 |
+    > 123 |       expect(response2.status).toBe(200);
+          |                                ^
+      124 |       // A API deve fazer upsert, permitindo altera├º├úo
+      125 |     });
+      126 |   });
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:123:32)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 3: Progresso avan├ºa imediatamente ÔÇ║ deve retornar progresso num├®rico de 0 a 37
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 3
+    Received length: 0
+    Received array:  []
+
+      147 |       const data = await response.json();
+      148 |
+    > 149 |       expect(data.respostas).toHaveLength(3);
+          |                              ^
+      150 |       expect(data.total).toBe(3);
+      151 |       // O frontend deve calcular: "3 de 37"
+      152 |     });
+
+      at Object.toHaveLength (__tests__/avaliacao/responder.test.ts:149:30)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 3: Progresso avan├ºa imediatamente ÔÇ║ deve atualizar progresso ap├│s cada resposta salva
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+      201 |       const response2 = await getRespostas(request2);
+      202 |       const data2 = await response2.json();
+    > 203 |       expect(data2.total).toBe(1);
+          |                           ^
+      204 |       // Frontend deve mostrar "1 de 37"
+      205 |     });
+      206 |
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:203:27)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 3: Progresso avan├ºa imediatamente ÔÇ║ deve mostrar progresso exato at├® 37 quest├Áes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 35
+    Received: 0
+
+      223 |       const data = await response.json();
+      224 |
+    > 225 |       expect(data.total).toBe(35);
+          |                          ^
+      226 |       // Frontend deve mostrar "35 de 37"
+      227 |     });
+      228 |   });
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:225:26)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 4: Recarregar p├ígina retoma na quest├úo atual ÔÇ║ deve retornar todas as respostas j├í salvas ao recarregar
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 3
+    Received length: 0
+    Received array:  []
+
+      248 |       const data = await response.json();
+      249 |
+    > 250 |       expect(data.respostas).toHaveLength(3);
+          |                              ^
+      251 |       expect(data.respostas.map((r: any) => r.item)).toEqual([
+      252 |         'Q1',
+      253 |         'Q2',
+
+      at Object.toHaveLength (__tests__/avaliacao/responder.test.ts:250:30)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 4: Recarregar p├ígina retoma na quest├úo atual ÔÇ║ deve permitir continuar de onde parou ap├│s recarregar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 0
+
+      274 |       const data = await response.json();
+      275 |
+    > 276 |       expect(data.total).toBe(2);
+          |                          ^
+      277 |       // Frontend deve mostrar q3 como pr├│xima quest├úo n├úo respondida
+      278 |     });
+      279 |
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:276:26)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 4: Recarregar p├ígina retoma na quest├úo atual ÔÇ║ deve preservar respostas ap├│s m├║ltiplos recarregamentos
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 5
+    Received: 0
+
+      300 |       const response1 = await GET(request1);
+      301 |       const data1 = await response1.json();
+    > 302 |       expect(data1.total).toBe(5);
+          |                           ^
+      303 |
+      304 |       // Segunda "carga" (outro recarregamento)
+      305 |       const request2 = new NextRequest(
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:302:27)
+
+FAIL __tests__/api/avaliacao/save.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ API /api/avaliacao/save ÔÇ║ deve avan├ºar grupo_atual se todas as respostas do grupo forem preenchidas
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes SET grupo_atual", [2, "em_andamento", 1], ObjectContaining {"cpf": "123"}
+    Received
+           1
+              "SELECT id, lote_id FROM avaliacoes
+           WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+           ORDER BY inicio DESC LIMIT 1",
+              Array [
+            -   2,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+           2
+              "INSERT INTO avaliacoes (funcionario_cpf, status)
+             VALUES ($1, 'em_andamento')
+             RETURNING id, lote_id",
+              Array [
+            -   2,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+
+    Number of calls: 2
+
+      74 |
+      75 |     // Verifica se o queryWithContext foi chamado para UPDATE
+    > 76 |     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+         |                                         ^
+      77 |       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      78 |       [2, 'em_andamento', 1],
+      79 |       expect.objectContaining({ cpf: '123' })
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/save.test.ts:76:41)
+
+  ÔùÅ API /api/avaliacao/save ÔÇ║ deve manter grupo_atual se grupo est├í incompleto
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes SET grupo_atual", [1, "em_andamento", 1], ObjectContaining {"cpf": "123"}
+    Received
+           1
+              "SELECT id, lote_id FROM avaliacoes
+           WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+           ORDER BY inicio DESC LIMIT 1",
+              Array [
+            -   1,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+           2
+              "INSERT INTO avaliacoes (funcionario_cpf, status)
+             VALUES ($1, 'em_andamento')
+             RETURNING id, lote_id",
+              Array [
+            -   1,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+
+    Number of calls: 2
+
+      107 |
+      108 |     // Verifica se o queryWithContext foi chamado mantendo o mesmo grupo
+    > 109 |     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+          |                                         ^
+      110 |       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      111 |       [1, 'em_andamento', 1],
+      112 |       expect.objectContaining({ cpf: '123' })
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/save.test.ts:109:41)
+
+  ÔùÅ API /api/avaliacao/save ÔÇ║ deve atualizar status para em_andamento sempre que salvar
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes SET grupo_atual", ArrayContaining [1, "em_andamento", 1], ObjectContaining {"cpf": "123"}
+    Received
+           1: "SELECT id, lote_id FROM avaliacoes
+           WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+           ORDER BY inicio DESC LIMIT 1", ["123"]
+           2: "INSERT INTO avaliacoes (funcionario_cpf, status)
+             VALUES ($1, 'em_andamento')
+             RETURNING id, lote_id", ["123"]
+
+    Number of calls: 2
+
+      140 |
+      141 |     // Verifica se o status sempre ├® atualizado para 'em_andamento'
+    > 142 |     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+          |                                         ^
+      143 |       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      144 |       expect.arrayContaining([1, 'em_andamento', 1]),
+      145 |       expect.objectContaining({ cpf: '123' })
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/save.test.ts:142:41)
+
+FAIL __tests__/avaliacao/status.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve retornar status "iniciada" para avalia├º├úo n├úo come├ºada
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      47 |       const data = await response.json();
+      48 |
+    > 49 |       expect(response.status).toBe(200);
+         |                               ^
+      50 |       expect(data.status).toBe('iniciada');
+      51 |       expect(data.avaliacaoId).toBe(1);
+      52 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:49:31)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve retornar status "em_andamento" quando houver respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      70 |       const data = await response.json();
+      71 |
+    > 72 |       expect(response.status).toBe(200);
+         |                               ^
+      73 |       expect(data.status).toBe('em_andamento');
+      74 |       expect(data.grupo_atual).toBe(2);
+      75 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:72:31)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve permitir atualiza├º├úo de status de "iniciada" para "em_andamento"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+       98 |       const data = await response.json();
+       99 |
+    > 100 |       expect(response.status).toBe(200);
+          |                               ^
+      101 |       expect(data.success).toBe(true);
+      102 |       expect(mockQuery).toHaveBeenCalledWith(
+      103 |         expect.stringContaining('UPDATE avaliacoes SET status'),
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:100:31)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve retornar "concluido" quando avalia├º├úo finalizada
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "concluido"
+    Received: undefined
+
+      145 |       const data = await response.json();
+      146 |
+    > 147 |       expect(data.status).toBe('concluido');
+          |                           ^
+      148 |       expect(data.envio).toBeDefined();
+      149 |     });
+      150 |   });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:147:27)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve calcular progresso baseado no n├║mero de respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 10
+    Received: 0
+
+      169 |       const data = await response.json();
+      170 |
+    > 171 |       expect(data.total).toBe(10);
+          |                          ^
+      172 |       // Frontend deve mostrar "10 de 37"
+      173 |     });
+      174 |
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:171:26)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve retornar progresso 37 quando todas respondidas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 37
+    Received: 0
+
+      209 |       const data = await response.json();
+      210 |
+    > 211 |       expect(data.total).toBe(37);
+          |                          ^
+      212 |       // Frontend deve mostrar "37 de 37"
+      213 |     });
+      214 |
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:211:26)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve retornar progresso intermedi├írio preciso
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 15
+    Received: 0
+
+      234 |         const data = await response.json();
+      235 |
+    > 236 |         expect(data.total).toBe(progresso);
+          |                            ^
+      237 |         // Frontend deve mostrar "{progresso} de 37"
+      238 |       }
+      239 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:236:28)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve incluir progresso no status da avalia├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      257 |       const data = await response.json();
+      258 |
+    > 259 |       expect(data.avaliacaoId).toBe(1);
+          |                                ^
+      260 |       expect(data.status).toBe('em_andamento');
+      261 |       // O frontend deve buscar o progresso via /api/avaliacao/respostas-all
+      262 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:259:32)
+
+FAIL __tests__/api/avaliacao/respostas.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ GET ÔÇ║ deve retornar respostas de um grupo espec├¡fico
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      73 |       const data = await response.json();
+      74 |
+    > 75 |       expect(response.status).toBe(200);
+         |                               ^
+      76 |       expect(data.respostas).toEqual(mockRespostas);
+      77 |       // Primeira chamada: busca avalia├º├úo por CPF
+      78 |       expect(mockQuery).toHaveBeenNthCalledWith(1, expect.any(String), [
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:75:31)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ GET ÔÇ║ deve retornar array vazio quando n├úo h├í respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      132 |       const data = await response.json();
+      133 |
+    > 134 |       expect(response.status).toBe(200);
+          |                               ^
+      135 |       expect(data.respostas).toEqual([]);
+      136 |     });
+      137 |   });
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:134:31)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ POST ÔÇ║ deve salvar respostas corretamente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      168 |       const response = await POST(request);
+      169 |
+    > 170 |       expect(response.status).toBe(200);
+          |                               ^
+      171 |       expect(mockQuery).toHaveBeenCalled();
+      172 |     });
+      173 |
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:170:31)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ POST ÔÇ║ deve atualizar status para 'em_andamento' quando salvar respostas e avalia├º├úo estava 'iniciada'
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      216 |       const data = await response.json();
+      217 |
+    > 218 |       expect(response.status).toBe(200);
+          |                               ^
+      219 |       expect(mockQuery).toHaveBeenCalledWith(
+      220 |         expect.stringContaining(
+      221 |           "UPDATE avaliacoes SET status = 'em_andamento'"
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:218:31)
+
+FAIL __tests__/avaliacao/indice-avaliacao.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+    console.log
+      [dotenv@17.2.3] injecting env (8) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at Object.log (lib/db.ts:664:15)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Campos da tabela funcionarios ÔÇ║ deve ter campos indice_avaliacao e data_ultimo_lote
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Campo numero_ordem em lotes_avaliacao ÔÇ║ deve ter campo numero_ordem
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Fun├º├úo obter_proximo_numero_ordem ÔÇ║ deve retornar pr├│ximo n├║mero de ordem
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Atualiza├º├úo de ├ìndice ÔÇ║ deve atualizar ├¡ndice ap├│s conclus├úo de avalia├º├úo
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Atualiza├º├úo de ├ìndice ÔÇ║ n├úo deve considerar funcion├írio com indice = numero_ordem - 1 como atrasado (caso limite)
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+FAIL __tests__/avaliacao/efeito-cascata-grupo-unico.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ Efeito Cascata - Grupo ├Ünico ÔÇ║ deve funcionar com grupo que tem apenas uma quest├úo
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+    Ignored nodes: comments, script, style
+    <html>
+      <head />
+      <body>
+        <div>
+          <div
+            class="min-h-screen bg-gray-50"
+          >
+            <main
+              class="container mx-auto px-4 py-6 sm:py-8"
+            >
+              <div
+                class="max-w-6xl mx-auto"
+              >
+                <div
+                  data-testid="mock-progress"
+                >
+                  1
+                  /
+                  1
+                </div>
+                <div
+                  class="mt-6"
+                >
+                  <div
+                    data-testid="mock-form-group"
+                  >
+                    <h3>
+                      Grupo 1 - Demandas no Trabalho
+                    </h3>
+                  </div>
+                </div>
+                <div
+                  class="mt-6 sm:mt-8 flex justify-between items-center"
+                >
+                  <div
+                    class="text-sm text-gray-600"
+                  />
+                  <button
+                    class="px-6 sm:px-8 py-3 sm:py-4 bg-black text-white border-2 border-black rounded-lg hover:bg-gray-800 hover:border-gray-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-semibold"
+                  >
+                    Finalizar Avalia├º├úo
+                  </button>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </body>
+    </html>
+
+      138 |
+      139 |     await waitFor(() => {
+    > 140 |       expect(mockPush).toHaveBeenCalled()
+          |                        ^
+      141 |     })
+      142 |   })
+      143 | })
+
+      at toHaveBeenCalled (__tests__/avaliacao/efeito-cascata-grupo-unico.test.tsx:140:24)
+      at runWithExpensiveErrorDiagnosticsDisabled (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:47:12)
+      at checkCallback (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:124:77)
+      at checkRealTimersCallback (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:118:16)
+      at Timeout.task [as _onTimeout] (node_modules/.pnpm/jsdom@26.1.0/node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+
+FAIL __tests__/api/avaliacao/status.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ /api/avaliacao/status ÔÇ║ deve retornar status "nao_iniciada" quando n├úo h├í avalia├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      29 |     const data = await response.json()
+      30 |
+    > 31 |     expect(response.status).toBe(200)
+         |                             ^
+      32 |     expect(data).toEqual({ status: 'nao_iniciada' })
+      33 |     expect(mockQuery).toHaveBeenCalledWith(
+      34 |       expect.stringContaining('SELECT id, status, inicio, envio, grupo_atual FROM avaliacoes'),
+
+      at Object.toBe (__tests__/api/avaliacao/status.test.ts:31:29)
+
+  ÔùÅ /api/avaliacao/status ÔÇ║ deve retornar status da avalia├º├úo quando existe
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      51 |     const data = await response.json()
+      52 |
+    > 53 |     expect(response.status).toBe(200)
+         |                             ^
+      54 |     expect(data).toEqual({
+      55 |       status: 'concluido',
+      56 |       inicio: '2024-01-01T10:00:00Z',
+
+      at Object.toBe (__tests__/api/avaliacao/status.test.ts:53:29)
+
+FAIL __tests__/avaliacao/conclusao.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve finalizar avalia├º├úo ap├│s 37┬¬ resposta
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 410
+
+      52 |       const data = await response.json();
+      53 |
+    > 54 |       expect(response.status).toBe(200);
+         |                               ^
+      55 |       expect(data.success).toBe(true);
+      56 |     });
+      57 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:54:31)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve atualizar status para "concluido"
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes", ArrayContaining [Anything, 1]
+
+    Number of calls: 0
+
+      76 |       await POST(request);
+      77 |
+    > 78 |       expect(mockQuery).toHaveBeenCalledWith(
+         |                         ^
+      79 |         expect.stringContaining('UPDATE avaliacoes'),
+      80 |         expect.arrayContaining([expect.anything(), 1])
+      81 |       );
+
+      at Object.toHaveBeenCalledWith (__tests__/avaliacao/conclusao.test.ts:78:25)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve registrar data de envio ao finalizar
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "envio", Any<Array>
+
+    Number of calls: 0
+
+      103 |
+      104 |       // Verificar que a query UPDATE inclui o timestamp de envio
+    > 105 |       expect(mockQuery).toHaveBeenCalledWith(
+          |                         ^
+      106 |         expect.stringContaining('envio'),
+      107 |         expect.any(Array)
+      108 |       );
+
+      at Object.toHaveBeenCalledWith (__tests__/avaliacao/conclusao.test.ts:105:25)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve impedir finaliza├º├úo de avalia├º├úo j├í conclu├¡da
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 410
+
+      128 |       const data = await response.json();
+      129 |
+    > 130 |       expect(response.status).toBe(404);
+          |                               ^
+      131 |       expect(data.error).toBeDefined();
+      132 |     });
+      133 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:130:31)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve retornar sucesso com avaliacaoId ap├│s finalizar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: undefined
+
+      153 |       const data = await response.json();
+      154 |
+    > 155 |       expect(data.success).toBe(true);
+          |                            ^
+      156 |       expect(data.avaliacaoId).toBe(1);
+      157 |     });
+      158 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:155:28)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve permitir verifica├º├úo de status ap├│s conclus├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "concluido"
+    Received: undefined
+
+      175 |       const data = await response.json();
+      176 |
+    > 177 |       expect(data.status).toBe('concluido');
+          |                           ^
+      178 |       expect(data.envio).toBeDefined();
+      179 |       // Frontend deve redirecionar para /avaliacao/concluida ou dashboard
+      180 |     });
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:177:27)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve processar resultados ap├│s conclus├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 410
+
+      200 |       const response = await POST(request);
+      201 |
+    > 202 |       expect(response.status).toBe(200);
+          |                               ^
+      203 |       // A finaliza├º├úo deve calcular os resultados automaticamente
+      204 |     });
+      205 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:202:31)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve validar que avalia├º├úo pertence ao usu├írio antes de finalizar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 410
+
+      223 |       const data = await response.json();
+      224 |
+    > 225 |       expect(response.status).toBe(404);
+          |                               ^
+      226 |       expect(data.error).toContain('n├úo encontrada');
+      227 |     });
+      228 |   });
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:225:31)
+
+RBAC seed applied to test database
+FAIL __tests__/api/avaliacao/finalizar.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ API /api/avaliacao/finalizar ÔÇ║ n├úo permite finalizar se faltam respostas obrigat├│rias
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 410
+
+      29 |     const res = await finalizarAvaliacao(req);
+      30 |     const json = await res.json();
+    > 31 |     expect(res.status).toBe(400);
+         |                        ^
+      32 |     expect(json.error).toMatch(/n├úo est├í completa/i);
+      33 |   });
+      34 |
+
+      at Object.toBe (__tests__/api/avaliacao/finalizar.test.ts:31:24)
+
+  ÔùÅ API /api/avaliacao/finalizar ÔÇ║ permite finalizar se todas as respostas obrigat├│rias est├úo presentes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 410
+
+      49 |     const res = await finalizarAvaliacao(req);
+      50 |     const json = await res.json();
+    > 51 |     expect(res.status).toBe(200);
+         |                        ^
+      52 |     expect(json.success).toBe(true);
+      53 |
+      54 |     // Verifica que anomalias / warnings foram detectados durante o c├ílculo
+
+      at Object.toBe (__tests__/api/avaliacao/finalizar.test.ts:51:24)
+
+FAIL __tests__/avaliacao/iniciar.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ Avalia├º├úo - Iniciar ÔÇ║ Item 1: Redirecionamento do dashboard para avalia├º├úo ÔÇ║ deve redirecionar para /avaliacao quando houver avalia├º├úo dispon├¡vel
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      55 |       const data = await response.json()
+      56 |
+    > 57 |       expect(data.avaliacaoId).toBe(1)
+         |                                ^
+      58 |       expect(data.status).toBe('iniciada')
+      59 |       // No frontend, o dashboard deve detectar isso e mostrar o bot├úo "Iniciar Avalia├º├úo"
+      60 |     })
+
+      at Object.toBe (__tests__/avaliacao/iniciar.test.ts:57:32)
+
+  ÔùÅ Avalia├º├úo - Iniciar ÔÇ║ Item 1: Redirecionamento do dashboard para avalia├º├úo ÔÇ║ deve mostrar popup com avalia├º├úo dispon├¡vel no dashboard
+
+    TypeError: expect(received).toHaveLength(expected)
+
+    Matcher error: received value must have a length property whose value must be a number
+
+    Received has value: undefined
+
+      89 |       const data = await response.json()
+      90 |
+    > 91 |       expect(data.avaliacoes).toHaveLength(1)
+         |                               ^
+      92 |       expect(data.avaliacoes[0].status).toBe('iniciada')
+      93 |     })
+      94 |
+
+      at Object.toHaveLength (__tests__/avaliacao/iniciar.test.ts:91:31)
+
+  ÔùÅ Avalia├º├úo - Iniciar ÔÇ║ Item 1: Redirecionamento do dashboard para avalia├º├úo ÔÇ║ deve redirecionar para /avaliacao?id=X com ID correto
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 123
+    Received: undefined
+
+      123 |       const data = await response.json()
+      124 |
+    > 125 |       expect(data.avaliacaoId).toBe(avaliacaoId)
+          |                                ^
+      126 |       // O frontend deve usar esse ID para redirecionar: /avaliacao?id=123
+      127 |     })
+      128 |   })
+
+      at Object.toBe (__tests__/avaliacao/iniciar.test.ts:125:32)
+
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+FAIL __tests__/api/avaliacao/resultados.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ /api/avaliacao/resultados ÔÇ║ deve retornar resultados da avalia├º├úo conclu├¡da
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      46 |     const data = await response.json()
+      47 |
+    > 48 |     expect(response.status).toBe(200)
+         |                             ^
+      49 |     expect(data.resultados).toHaveLength(4)
+      50 |     expect(data.resultados[0].grupo).toBe(1)
+      51 |     expect(data.resultados[1].grupo).toBe(2)
+
+      at Object.toBe (__tests__/api/avaliacao/resultados.test.ts:48:29)
+
+  ÔùÅ /api/avaliacao/resultados ÔÇ║ deve retornar erro 404 quando n├úo h├í avalia├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 500
+
+      62 |     const data = await response.json()
+      63 |
+    > 64 |     expect(response.status).toBe(404)
+         |                             ^
+      65 |     expect(data).toEqual({ error: 'Nenhuma avalia├º├úo encontrada' })
+      66 |   })
+      67 |
+
+      at Object.toBe (__tests__/api/avaliacao/resultados.test.ts:64:29)
+
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+PASS __tests__/api/avaliacao/salvar.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+PASS __tests__/api/avaliacao/inativar.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+PASS __tests__/lib/hooks/useLotesAvaliacao.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+PASS __tests__/avaliacao/efeito-cascata.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+FAIL __tests__/rh/lotes-avaliacao.test.tsx (7.784 s)
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Se├º├úo de In├¡cio de Ciclo ÔÇ║ deve abrir modal ao clicar em Iniciar Ciclo
+
+    TestingLibraryElementError: Unable to find an element with the text: /Libere um novo lote de avalia├º├Áes para come├ºar\.|Crie um novo ciclo de coletas avaliativas para/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ­ƒôï Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒôä Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒæÑ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒÜ¬ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ­ƒÜÇ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      212 |       // Texto descritivo atual
+      213 |       expect(
+    > 214 |         screen.getByText(
+          |                ^
+      215 |           /Libere um novo lote de avalia├º├Áes para come├ºar\.|Crie um novo ciclo de coletas avaliativas para/
+      216 |         )
+      217 |       ).toBeInTheDocument();
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (__tests__/rh/lotes-avaliacao.test.tsx:214:16)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Se├º├úo de In├¡cio de Ciclo ÔÇ║ deve permitir preenchimento do formul├írio
+
+    TestingLibraryElementError: Unable to find an element with the placeholder text of: /Ex: Avalia├º├úo/
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ­ƒôï Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒôä Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒæÑ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒÜ¬ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ­ƒÜÇ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      266 |       await user.click(screen.getByText('­ƒÜÇ Iniciar Novo Ciclo'));
+      267 |
+    > 268 |       const tituloInput = screen.getByPlaceholderText(/Ex: Avalia├º├úo/);
+          |                                  ^
+      269 |       const descricaoTextarea = screen.getByPlaceholderText(
+      270 |         /Adicione informa├º├Áes adicionais/
+      271 |       );
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByPlaceholderText (__tests__/rh/lotes-avaliacao.test.tsx:268:34)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Integra├º├úo com API de Lotes ÔÇ║ deve chamar API de libera├º├úo de lote corretamente
+
+    TestingLibraryElementError: Unable to find an element with the placeholder text of: /Ex: Avalia├º├úo/
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ­ƒôï Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒôä Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒæÑ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒÜ¬ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ­ƒÜÇ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      290 |       await user.click(screen.getByText('­ƒÜÇ Iniciar Novo Ciclo'));
+      291 |
+    > 292 |       const tituloInput = screen.getByPlaceholderText(/Ex: Avalia├º├úo/);
+          |                                  ^
+      293 |       await user.type(tituloInput, 'Novo Ciclo Criado');
+      294 |
+      295 |       await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByPlaceholderText (__tests__/rh/lotes-avaliacao.test.tsx:292:34)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Integra├º├úo com API de Lotes ÔÇ║ deve Iniciar Ciclo com sucesso
+
+    TestingLibraryElementError: Unable to find an element with the placeholder text of: /Ex: Avalia├º├úo/
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ­ƒôï Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒôä Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒæÑ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ­ƒÜ¬ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ­ƒÜÇ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      319 |       await user.click(screen.getByText('­ƒÜÇ Iniciar Novo Ciclo'));
+      320 |
+    > 321 |       const tituloInput = screen.getByPlaceholderText(/Ex: Avalia├º├úo/);
+          |                                  ^
+      322 |       await user.type(tituloInput, 'Novo Ciclo Criado');
+      323 |
+      324 |       // N├úo h├í sele├º├úo de empresa (estamos em contexto de empresa espec├¡fica)
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByPlaceholderText (__tests__/rh/lotes-avaliacao.test.tsx:321:34)
+
+PASS __tests__/api/avaliacao/auto-conclusao-error-handling.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 10 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 37 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [AUTO-CONCLUSAO] Avaliacao 1 COMPLETA (37/37 respostas)! Status: iniciada -> concluida
+
+      at log (lib/avaliacao-conclusao.ts:91:11)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Resultados calculados e salvos
+
+      at log (lib/avaliacao-conclusao.ts:144:15)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da com sucesso
+
+      at log (lib/avaliacao-conclusao.ts:161:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da dentro da transa├º├úo
+
+      at log (lib/avaliacao-conclusao.ts:190:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Lote 1 recalculado
+
+      at log (lib/avaliacao-conclusao.ts:209:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 conclu├¡da automaticamente - 37/37 respostas recebidas
+
+      at log (lib/avaliacao-conclusao.ts:212:11)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 36 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 37 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [AUTO-CONCLUSAO] Avaliacao 1 COMPLETA (37/37 respostas)! Status: iniciada -> concluida
+
+      at log (lib/avaliacao-conclusao.ts:91:11)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da com sucesso
+
+      at log (lib/avaliacao-conclusao.ts:161:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da dentro da transa├º├úo
+
+      at log (lib/avaliacao-conclusao.ts:190:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Lote 1 recalculado
+
+      at log (lib/avaliacao-conclusao.ts:209:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 conclu├¡da automaticamente - 37/37 respostas recebidas
+
+      at log (lib/avaliacao-conclusao.ts:212:11)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 37 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [AUTO-CONCLUSAO] Avaliacao 1 COMPLETA (37/37 respostas)! Status: iniciada -> concluida
+
+      at log (lib/avaliacao-conclusao.ts:91:11)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da com sucesso
+
+      at log (lib/avaliacao-conclusao.ts:161:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Funcion├írio atualizado | Lote 1 ser├í recalculado automaticamente
+
+      at log (lib/avaliacao-conclusao.ts:185:15)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da dentro da transa├º├úo
+
+      at log (lib/avaliacao-conclusao.ts:190:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Lote 1 recalculado
+
+      at log (lib/avaliacao-conclusao.ts:209:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 conclu├¡da automaticamente - 37/37 respostas recebidas
+
+      at log (lib/avaliacao-conclusao.ts:212:11)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 37 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [AUTO-CONCLUSAO] Avaliacao 1 COMPLETA (37/37 respostas)! Status: iniciada -> concluida
+
+      at log (lib/avaliacao-conclusao.ts:91:11)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Resultados calculados e salvos
+
+      at log (lib/avaliacao-conclusao.ts:144:15)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da com sucesso
+
+      at log (lib/avaliacao-conclusao.ts:161:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Funcion├írio atualizado | Lote 1 ser├í recalculado automaticamente
+
+      at log (lib/avaliacao-conclusao.ts:185:15)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da dentro da transa├º├úo
+
+      at log (lib/avaliacao-conclusao.ts:190:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Lote 1 recalculado
+
+      at log (lib/avaliacao-conclusao.ts:209:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 conclu├¡da automaticamente - 37/37 respostas recebidas
+
+      at log (lib/avaliacao-conclusao.ts:212:11)
+
+    console.log
+      [RESPOSTAS] Ô£à Atualizado status da avalia├º├úo 1 para 'em_andamento'
+
+      at log (app/api/avaliacao/respostas/route.ts:68:17)
+
+    console.log
+      [AUTO-CONCLUS├âO] Avalia├º├úo 1 tem 37 respostas ├║nicas
+
+      at log (lib/avaliacao-conclusao.ts:43:11)
+
+    console.log
+      [AUTO-CONCLUSAO] Avaliacao 1 COMPLETA (37/37 respostas)! Status: iniciada -> concluida
+
+      at log (lib/avaliacao-conclusao.ts:91:11)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Resultados calculados e salvos
+
+      at log (lib/avaliacao-conclusao.ts:144:15)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da com sucesso
+
+      at log (lib/avaliacao-conclusao.ts:161:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Funcion├írio atualizado | Lote 1 ser├í recalculado automaticamente
+
+      at log (lib/avaliacao-conclusao.ts:185:15)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 marcada como conclu├¡da dentro da transa├º├úo
+
+      at log (lib/avaliacao-conclusao.ts:190:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Lote 1 recalculado
+
+      at log (lib/avaliacao-conclusao.ts:209:13)
+
+    console.log
+      [AUTO-CONCLUS├âO] Ô£à Avalia├º├úo 1 conclu├¡da automaticamente - 37/37 respostas recebidas
+
+      at log (lib/avaliacao-conclusao.ts:212:11)
+
+RBAC seed applied to test database
+PASS __tests__/components/ModalResetarAvaliacao.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+PASS __tests__/components/AvaliacaoConcluida.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+FAIL __tests__/avaliacao/avaliacao-navegacao.test.tsx
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../app/avaliacao/grupo/[id]/page' from '__tests__/avaliacao/avaliacao-navegacao.test.tsx'
+
+      12 | // Mock do fetch
+      13 | global.fetch = jest.fn()
+    > 14 |
+         | ^
+      15 | // Helper para verificar se um bot├úo est├í desabilitado
+      16 | const expectButtonToBeDisabled = (button: HTMLElement) => {
+      17 |   expect(button).toHaveAttribute('disabled')
+
+      at Resolver._throwModNotFoundError (node_modules/.pnpm/jest-resolve@30.2.0/node_modules/jest-resolve/build/index.js:863:11)
+      at Object.<anonymous> (__tests__/avaliacao/avaliacao-navegacao.test.tsx:14:54)
+
+PASS __tests__/avaliacao/popup-ui.test.tsx (5.772 s)
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+    console.log
+      [DEBUG] userNivelCargo: operacional
+
+      at log (app/avaliacao/page.tsx:45:17)
+
+    console.log
+      [DEBUG] questoesPorNivel grupos: 10
+
+      at log (app/avaliacao/page.tsx:46:17)
+
+    console.log
+      [DEBUG] todasQuestoesCarregadas: 37
+
+      at log (app/avaliacao/page.tsx:60:17)
+
+    console.log
+      [AVALIA├ç├âO] Usando avaliacaoId: 1
+
+      at log (app/avaliacao/page.tsx:123:17)
+
+A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+
+Summary of all failing tests
+FAIL __tests__/avaliacao/responder.test.ts
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 2: Salvar resposta automaticamente ao clicar ÔÇ║ deve salvar resposta imediatamente ao clicar na op├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      52 |       const data = await response.json();
+      53 |
+    > 54 |       expect(response.status).toBe(200);
+         |                               ^
+      55 |       expect(data.success).toBe(true);
+      56 |       expect(mockQuery).toHaveBeenCalledWith(
+      57 |         expect.stringContaining('INSERT INTO respostas'),
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:54:31)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 2: Salvar resposta automaticamente ao clicar ÔÇ║ deve salvar resposta sem necessidade de bot├úo "Salvar"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      79 |
+      80 |       const response = await POST(request);
+    > 81 |       expect(response.status).toBe(200);
+         |                               ^
+      82 |
+      83 |       // N├úo deve haver necessidade de confirma├º├úo adicional
+      84 |       const data = await response.json();
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:81:31)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 2: Salvar resposta automaticamente ao clicar ÔÇ║ deve permitir altera├º├úo de resposta ao clicar novamente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      121 |       const response2 = await POST(request2);
+      122 |
+    > 123 |       expect(response2.status).toBe(200);
+          |                                ^
+      124 |       // A API deve fazer upsert, permitindo altera├º├úo
+      125 |     });
+      126 |   });
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:123:32)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 3: Progresso avan├ºa imediatamente ÔÇ║ deve retornar progresso num├®rico de 0 a 37
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 3
+    Received length: 0
+    Received array:  []
+
+      147 |       const data = await response.json();
+      148 |
+    > 149 |       expect(data.respostas).toHaveLength(3);
+          |                              ^
+      150 |       expect(data.total).toBe(3);
+      151 |       // O frontend deve calcular: "3 de 37"
+      152 |     });
+
+      at Object.toHaveLength (__tests__/avaliacao/responder.test.ts:149:30)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 3: Progresso avan├ºa imediatamente ÔÇ║ deve atualizar progresso ap├│s cada resposta salva
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 0
+
+      201 |       const response2 = await getRespostas(request2);
+      202 |       const data2 = await response2.json();
+    > 203 |       expect(data2.total).toBe(1);
+          |                           ^
+      204 |       // Frontend deve mostrar "1 de 37"
+      205 |     });
+      206 |
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:203:27)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 3: Progresso avan├ºa imediatamente ÔÇ║ deve mostrar progresso exato at├® 37 quest├Áes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 35
+    Received: 0
+
+      223 |       const data = await response.json();
+      224 |
+    > 225 |       expect(data.total).toBe(35);
+          |                          ^
+      226 |       // Frontend deve mostrar "35 de 37"
+      227 |     });
+      228 |   });
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:225:26)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 4: Recarregar p├ígina retoma na quest├úo atual ÔÇ║ deve retornar todas as respostas j├í salvas ao recarregar
+
+    expect(received).toHaveLength(expected)
+
+    Expected length: 3
+    Received length: 0
+    Received array:  []
+
+      248 |       const data = await response.json();
+      249 |
+    > 250 |       expect(data.respostas).toHaveLength(3);
+          |                              ^
+      251 |       expect(data.respostas.map((r: any) => r.item)).toEqual([
+      252 |         'Q1',
+      253 |         'Q2',
+
+      at Object.toHaveLength (__tests__/avaliacao/responder.test.ts:250:30)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 4: Recarregar p├ígina retoma na quest├úo atual ÔÇ║ deve permitir continuar de onde parou ap├│s recarregar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 2
+    Received: 0
+
+      274 |       const data = await response.json();
+      275 |
+    > 276 |       expect(data.total).toBe(2);
+          |                          ^
+      277 |       // Frontend deve mostrar q3 como pr├│xima quest├úo n├úo respondida
+      278 |     });
+      279 |
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:276:26)
+
+  ÔùÅ Avalia├º├úo - Responder Quest├Áes ÔÇ║ Item 4: Recarregar p├ígina retoma na quest├úo atual ÔÇ║ deve preservar respostas ap├│s m├║ltiplos recarregamentos
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 5
+    Received: 0
+
+      300 |       const response1 = await GET(request1);
+      301 |       const data1 = await response1.json();
+    > 302 |       expect(data1.total).toBe(5);
+          |                           ^
+      303 |
+      304 |       // Segunda "carga" (outro recarregamento)
+      305 |       const request2 = new NextRequest(
+
+      at Object.toBe (__tests__/avaliacao/responder.test.ts:302:27)
+
+FAIL __tests__/api/avaliacao/save.test.ts
+  ÔùÅ API /api/avaliacao/save ÔÇ║ deve avan├ºar grupo_atual se todas as respostas do grupo forem preenchidas
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes SET grupo_atual", [2, "em_andamento", 1], ObjectContaining {"cpf": "123"}
+    Received
+           1
+              "SELECT id, lote_id FROM avaliacoes
+           WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+           ORDER BY inicio DESC LIMIT 1",
+              Array [
+            -   2,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+           2
+              "INSERT INTO avaliacoes (funcionario_cpf, status)
+             VALUES ($1, 'em_andamento')
+             RETURNING id, lote_id",
+              Array [
+            -   2,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+
+    Number of calls: 2
+
+      74 |
+      75 |     // Verifica se o queryWithContext foi chamado para UPDATE
+    > 76 |     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+         |                                         ^
+      77 |       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      78 |       [2, 'em_andamento', 1],
+      79 |       expect.objectContaining({ cpf: '123' })
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/save.test.ts:76:41)
+
+  ÔùÅ API /api/avaliacao/save ÔÇ║ deve manter grupo_atual se grupo est├í incompleto
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes SET grupo_atual", [1, "em_andamento", 1], ObjectContaining {"cpf": "123"}
+    Received
+           1
+              "SELECT id, lote_id FROM avaliacoes
+           WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+           ORDER BY inicio DESC LIMIT 1",
+              Array [
+            -   1,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+           2
+              "INSERT INTO avaliacoes (funcionario_cpf, status)
+             VALUES ($1, 'em_andamento')
+             RETURNING id, lote_id",
+              Array [
+            -   1,
+            -   "em_andamento",
+            -   1,
+            +   "123",
+              ],
+
+    Number of calls: 2
+
+      107 |
+      108 |     // Verifica se o queryWithContext foi chamado mantendo o mesmo grupo
+    > 109 |     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+          |                                         ^
+      110 |       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      111 |       [1, 'em_andamento', 1],
+      112 |       expect.objectContaining({ cpf: '123' })
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/save.test.ts:109:41)
+
+  ÔùÅ API /api/avaliacao/save ÔÇ║ deve atualizar status para em_andamento sempre que salvar
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes SET grupo_atual", ArrayContaining [1, "em_andamento", 1], ObjectContaining {"cpf": "123"}
+    Received
+           1: "SELECT id, lote_id FROM avaliacoes
+           WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+           ORDER BY inicio DESC LIMIT 1", ["123"]
+           2: "INSERT INTO avaliacoes (funcionario_cpf, status)
+             VALUES ($1, 'em_andamento')
+             RETURNING id, lote_id", ["123"]
+
+    Number of calls: 2
+
+      140 |
+      141 |     // Verifica se o status sempre ├® atualizado para 'em_andamento'
+    > 142 |     expect(dbSecurity.queryWithContext).toHaveBeenCalledWith(
+          |                                         ^
+      143 |       expect.stringContaining('UPDATE avaliacoes SET grupo_atual'),
+      144 |       expect.arrayContaining([1, 'em_andamento', 1]),
+      145 |       expect.objectContaining({ cpf: '123' })
+
+      at Object.toHaveBeenCalledWith (__tests__/api/avaliacao/save.test.ts:142:41)
+
+FAIL __tests__/avaliacao/status.test.ts
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve retornar status "iniciada" para avalia├º├úo n├úo come├ºada
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      47 |       const data = await response.json();
+      48 |
+    > 49 |       expect(response.status).toBe(200);
+         |                               ^
+      50 |       expect(data.status).toBe('iniciada');
+      51 |       expect(data.avaliacaoId).toBe(1);
+      52 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:49:31)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve retornar status "em_andamento" quando houver respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      70 |       const data = await response.json();
+      71 |
+    > 72 |       expect(response.status).toBe(200);
+         |                               ^
+      73 |       expect(data.status).toBe('em_andamento');
+      74 |       expect(data.grupo_atual).toBe(2);
+      75 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:72:31)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve permitir atualiza├º├úo de status de "iniciada" para "em_andamento"
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+       98 |       const data = await response.json();
+       99 |
+    > 100 |       expect(response.status).toBe(200);
+          |                               ^
+      101 |       expect(data.success).toBe(true);
+      102 |       expect(mockQuery).toHaveBeenCalledWith(
+      103 |         expect.stringContaining('UPDATE avaliacoes SET status'),
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:100:31)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 5: API retorna status "em_andamento" ou "iniciada" ÔÇ║ deve retornar "concluido" quando avalia├º├úo finalizada
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "concluido"
+    Received: undefined
+
+      145 |       const data = await response.json();
+      146 |
+    > 147 |       expect(data.status).toBe('concluido');
+          |                           ^
+      148 |       expect(data.envio).toBeDefined();
+      149 |     });
+      150 |   });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:147:27)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve calcular progresso baseado no n├║mero de respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 10
+    Received: 0
+
+      169 |       const data = await response.json();
+      170 |
+    > 171 |       expect(data.total).toBe(10);
+          |                          ^
+      172 |       // Frontend deve mostrar "10 de 37"
+      173 |     });
+      174 |
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:171:26)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve retornar progresso 37 quando todas respondidas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 37
+    Received: 0
+
+      209 |       const data = await response.json();
+      210 |
+    > 211 |       expect(data.total).toBe(37);
+          |                          ^
+      212 |       // Frontend deve mostrar "37 de 37"
+      213 |     });
+      214 |
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:211:26)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve retornar progresso intermedi├írio preciso
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 15
+    Received: 0
+
+      234 |         const data = await response.json();
+      235 |
+    > 236 |         expect(data.total).toBe(progresso);
+          |                            ^
+      237 |         // Frontend deve mostrar "{progresso} de 37"
+      238 |       }
+      239 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:236:28)
+
+  ÔùÅ Avalia├º├úo - Status ÔÇ║ Item 6: API retorna progresso num├®rico exato (0-37) ÔÇ║ deve incluir progresso no status da avalia├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      257 |       const data = await response.json();
+      258 |
+    > 259 |       expect(data.avaliacaoId).toBe(1);
+          |                                ^
+      260 |       expect(data.status).toBe('em_andamento');
+      261 |       // O frontend deve buscar o progresso via /api/avaliacao/respostas-all
+      262 |     });
+
+      at Object.toBe (__tests__/avaliacao/status.test.ts:259:32)
+
+FAIL __tests__/api/avaliacao/respostas.test.ts
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ GET ÔÇ║ deve retornar respostas de um grupo espec├¡fico
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      73 |       const data = await response.json();
+      74 |
+    > 75 |       expect(response.status).toBe(200);
+         |                               ^
+      76 |       expect(data.respostas).toEqual(mockRespostas);
+      77 |       // Primeira chamada: busca avalia├º├úo por CPF
+      78 |       expect(mockQuery).toHaveBeenNthCalledWith(1, expect.any(String), [
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:75:31)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ GET ÔÇ║ deve retornar array vazio quando n├úo h├í respostas
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      132 |       const data = await response.json();
+      133 |
+    > 134 |       expect(response.status).toBe(200);
+          |                               ^
+      135 |       expect(data.respostas).toEqual([]);
+      136 |     });
+      137 |   });
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:134:31)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ POST ÔÇ║ deve salvar respostas corretamente
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      168 |       const response = await POST(request);
+      169 |
+    > 170 |       expect(response.status).toBe(200);
+          |                               ^
+      171 |       expect(mockQuery).toHaveBeenCalled();
+      172 |     });
+      173 |
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:170:31)
+
+  ÔùÅ /api/avaliacao/respostas ÔÇ║ POST ÔÇ║ deve atualizar status para 'em_andamento' quando salvar respostas e avalia├º├úo estava 'iniciada'
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      216 |       const data = await response.json();
+      217 |
+    > 218 |       expect(response.status).toBe(200);
+          |                               ^
+      219 |       expect(mockQuery).toHaveBeenCalledWith(
+      220 |         expect.stringContaining(
+      221 |           "UPDATE avaliacoes SET status = 'em_andamento'"
+
+      at Object.toBe (__tests__/api/avaliacao/respostas.test.ts:218:31)
+
+FAIL __tests__/avaliacao/indice-avaliacao.test.ts
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Campos da tabela funcionarios ÔÇ║ deve ter campos indice_avaliacao e data_ultimo_lote
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Campo numero_ordem em lotes_avaliacao ÔÇ║ deve ter campo numero_ordem
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Fun├º├úo obter_proximo_numero_ordem ÔÇ║ deve retornar pr├│ximo n├║mero de ordem
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Atualiza├º├úo de ├ìndice ÔÇ║ deve atualizar ├¡ndice ap├│s conclus├úo de avalia├º├úo
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+  ÔùÅ Sistema de ├ìndice de Avalia├º├úo ÔÇ║ Atualiza├º├úo de ├ìndice ÔÇ║ n├úo deve considerar funcion├írio com indice = numero_ordem - 1 como atrasado (caso limite)
+
+    error: o valor nulo na coluna "telefone" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      478 |         // No session: just execute the query normally
+      479 |         try {
+    > 480 |           const result = await client.query(text, params);
+          |                          ^
+      481 |           const duration = Date.now() - start;
+      482 |
+      483 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/client.js:545:17
+      at query (lib/db.ts:480:26)
+      at Object.<anonymous> (__tests__/avaliacao/indice-avaliacao.test.ts:24:27)
+
+FAIL __tests__/avaliacao/efeito-cascata-grupo-unico.test.tsx
+  ÔùÅ Efeito Cascata - Grupo ├Ünico ÔÇ║ deve funcionar com grupo que tem apenas uma quest├úo
+
+    expect(jest.fn()).toHaveBeenCalled()
+
+    Expected number of calls: >= 1
+    Received number of calls:    0
+
+    Ignored nodes: comments, script, style
+    <html>
+      <head />
+      <body>
+        <div>
+          <div
+            class="min-h-screen bg-gray-50"
+          >
+            <main
+              class="container mx-auto px-4 py-6 sm:py-8"
+            >
+              <div
+                class="max-w-6xl mx-auto"
+              >
+                <div
+                  data-testid="mock-progress"
+                >
+                  1
+                  /
+                  1
+                </div>
+                <div
+                  class="mt-6"
+                >
+                  <div
+                    data-testid="mock-form-group"
+                  >
+                    <h3>
+                      Grupo 1 - Demandas no Trabalho
+                    </h3>
+                  </div>
+                </div>
+                <div
+                  class="mt-6 sm:mt-8 flex justify-between items-center"
+                >
+                  <div
+                    class="text-sm text-gray-600"
+                  />
+                  <button
+                    class="px-6 sm:px-8 py-3 sm:py-4 bg-black text-white border-2 border-black rounded-lg hover:bg-gray-800 hover:border-gray-800 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base font-semibold"
+                  >
+                    Finalizar Avalia├º├úo
+                  </button>
+                </div>
+              </div>
+            </main>
+          </div>
+        </div>
+      </body>
+    </html>
+
+      138 |
+      139 |     await waitFor(() => {
+    > 140 |       expect(mockPush).toHaveBeenCalled()
+          |                        ^
+      141 |     })
+      142 |   })
+      143 | })
+
+      at toHaveBeenCalled (__tests__/avaliacao/efeito-cascata-grupo-unico.test.tsx:140:24)
+      at runWithExpensiveErrorDiagnosticsDisabled (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:47:12)
+      at checkCallback (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:124:77)
+      at checkRealTimersCallback (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:118:16)
+      at Timeout.task [as _onTimeout] (node_modules/.pnpm/jsdom@26.1.0/node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+
+FAIL __tests__/api/avaliacao/status.test.ts
+  ÔùÅ /api/avaliacao/status ÔÇ║ deve retornar status "nao_iniciada" quando n├úo h├í avalia├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      29 |     const data = await response.json()
+      30 |
+    > 31 |     expect(response.status).toBe(200)
+         |                             ^
+      32 |     expect(data).toEqual({ status: 'nao_iniciada' })
+      33 |     expect(mockQuery).toHaveBeenCalledWith(
+      34 |       expect.stringContaining('SELECT id, status, inicio, envio, grupo_atual FROM avaliacoes'),
+
+      at Object.toBe (__tests__/api/avaliacao/status.test.ts:31:29)
+
+  ÔùÅ /api/avaliacao/status ÔÇ║ deve retornar status da avalia├º├úo quando existe
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      51 |     const data = await response.json()
+      52 |
+    > 53 |     expect(response.status).toBe(200)
+         |                             ^
+      54 |     expect(data).toEqual({
+      55 |       status: 'concluido',
+      56 |       inicio: '2024-01-01T10:00:00Z',
+
+      at Object.toBe (__tests__/api/avaliacao/status.test.ts:53:29)
+
+FAIL __tests__/avaliacao/conclusao.test.ts
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve finalizar avalia├º├úo ap├│s 37┬¬ resposta
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 410
+
+      52 |       const data = await response.json();
+      53 |
+    > 54 |       expect(response.status).toBe(200);
+         |                               ^
+      55 |       expect(data.success).toBe(true);
+      56 |     });
+      57 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:54:31)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve atualizar status para "concluido"
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "UPDATE avaliacoes", ArrayContaining [Anything, 1]
+
+    Number of calls: 0
+
+      76 |       await POST(request);
+      77 |
+    > 78 |       expect(mockQuery).toHaveBeenCalledWith(
+         |                         ^
+      79 |         expect.stringContaining('UPDATE avaliacoes'),
+      80 |         expect.arrayContaining([expect.anything(), 1])
+      81 |       );
+
+      at Object.toHaveBeenCalledWith (__tests__/avaliacao/conclusao.test.ts:78:25)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve registrar data de envio ao finalizar
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: StringContaining "envio", Any<Array>
+
+    Number of calls: 0
+
+      103 |
+      104 |       // Verificar que a query UPDATE inclui o timestamp de envio
+    > 105 |       expect(mockQuery).toHaveBeenCalledWith(
+          |                         ^
+      106 |         expect.stringContaining('envio'),
+      107 |         expect.any(Array)
+      108 |       );
+
+      at Object.toHaveBeenCalledWith (__tests__/avaliacao/conclusao.test.ts:105:25)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve impedir finaliza├º├úo de avalia├º├úo j├í conclu├¡da
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 410
+
+      128 |       const data = await response.json();
+      129 |
+    > 130 |       expect(response.status).toBe(404);
+          |                               ^
+      131 |       expect(data.error).toBeDefined();
+      132 |     });
+      133 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:130:31)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve retornar sucesso com avaliacaoId ap├│s finalizar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: undefined
+
+      153 |       const data = await response.json();
+      154 |
+    > 155 |       expect(data.success).toBe(true);
+          |                            ^
+      156 |       expect(data.avaliacaoId).toBe(1);
+      157 |     });
+      158 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:155:28)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve permitir verifica├º├úo de status ap├│s conclus├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "concluido"
+    Received: undefined
+
+      175 |       const data = await response.json();
+      176 |
+    > 177 |       expect(data.status).toBe('concluido');
+          |                           ^
+      178 |       expect(data.envio).toBeDefined();
+      179 |       // Frontend deve redirecionar para /avaliacao/concluida ou dashboard
+      180 |     });
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:177:27)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve processar resultados ap├│s conclus├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 410
+
+      200 |       const response = await POST(request);
+      201 |
+    > 202 |       expect(response.status).toBe(200);
+          |                               ^
+      203 |       // A finaliza├º├úo deve calcular os resultados automaticamente
+      204 |     });
+      205 |
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:202:31)
+
+  ÔùÅ Avalia├º├úo - Conclus├úo ÔÇ║ Item 15: Responder 37 quest├Áes muda status e redireciona ÔÇ║ deve validar que avalia├º├úo pertence ao usu├írio antes de finalizar
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 410
+
+      223 |       const data = await response.json();
+      224 |
+    > 225 |       expect(response.status).toBe(404);
+          |                               ^
+      226 |       expect(data.error).toContain('n├úo encontrada');
+      227 |     });
+      228 |   });
+
+      at Object.toBe (__tests__/avaliacao/conclusao.test.ts:225:31)
+
+FAIL __tests__/api/avaliacao/finalizar.test.ts
+  ÔùÅ API /api/avaliacao/finalizar ÔÇ║ n├úo permite finalizar se faltam respostas obrigat├│rias
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 400
+    Received: 410
+
+      29 |     const res = await finalizarAvaliacao(req);
+      30 |     const json = await res.json();
+    > 31 |     expect(res.status).toBe(400);
+         |                        ^
+      32 |     expect(json.error).toMatch(/n├úo est├í completa/i);
+      33 |   });
+      34 |
+
+      at Object.toBe (__tests__/api/avaliacao/finalizar.test.ts:31:24)
+
+  ÔùÅ API /api/avaliacao/finalizar ÔÇ║ permite finalizar se todas as respostas obrigat├│rias est├úo presentes
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 410
+
+      49 |     const res = await finalizarAvaliacao(req);
+      50 |     const json = await res.json();
+    > 51 |     expect(res.status).toBe(200);
+         |                        ^
+      52 |     expect(json.success).toBe(true);
+      53 |
+      54 |     // Verifica que anomalias / warnings foram detectados durante o c├ílculo
+
+      at Object.toBe (__tests__/api/avaliacao/finalizar.test.ts:51:24)
+
+FAIL __tests__/avaliacao/iniciar.test.ts
+  ÔùÅ Avalia├º├úo - Iniciar ÔÇ║ Item 1: Redirecionamento do dashboard para avalia├º├úo ÔÇ║ deve redirecionar para /avaliacao quando houver avalia├º├úo dispon├¡vel
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: undefined
+
+      55 |       const data = await response.json()
+      56 |
+    > 57 |       expect(data.avaliacaoId).toBe(1)
+         |                                ^
+      58 |       expect(data.status).toBe('iniciada')
+      59 |       // No frontend, o dashboard deve detectar isso e mostrar o bot├úo "Iniciar Avalia├º├úo"
+      60 |     })
+
+      at Object.toBe (__tests__/avaliacao/iniciar.test.ts:57:32)
+
+  ÔùÅ Avalia├º├úo - Iniciar ÔÇ║ Item 1: Redirecionamento do dashboard para avalia├º├úo ÔÇ║ deve mostrar popup com avalia├º├úo dispon├¡vel no dashboard
+
+    TypeError: expect(received).toHaveLength(expected)
+
+    Matcher error: received value must have a length property whose value must be a number
+
+    Received has value: undefined
+
+      89 |       const data = await response.json()
+      90 |
+    > 91 |       expect(data.avaliacoes).toHaveLength(1)
+         |                               ^
+      92 |       expect(data.avaliacoes[0].status).toBe('iniciada')
+      93 |     })
+      94 |
+
+      at Object.toHaveLength (__tests__/avaliacao/iniciar.test.ts:91:31)
+
+  ÔùÅ Avalia├º├úo - Iniciar ÔÇ║ Item 1: Redirecionamento do dashboard para avalia├º├úo ÔÇ║ deve redirecionar para /avaliacao?id=X com ID correto
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 123
+    Received: undefined
+
+      123 |       const data = await response.json()
+      124 |
+    > 125 |       expect(data.avaliacaoId).toBe(avaliacaoId)
+          |                                ^
+      126 |       // O frontend deve usar esse ID para redirecionar: /avaliacao?id=123
+      127 |     })
+      128 |   })
+
+      at Object.toBe (__tests__/avaliacao/iniciar.test.ts:125:32)
+
+FAIL __tests__/api/avaliacao/resultados.test.ts
+  ÔùÅ /api/avaliacao/resultados ÔÇ║ deve retornar resultados da avalia├º├úo conclu├¡da
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 200
+    Received: 500
+
+      46 |     const data = await response.json()
+      47 |
+    > 48 |     expect(response.status).toBe(200)
+         |                             ^
+      49 |     expect(data.resultados).toHaveLength(4)
+      50 |     expect(data.resultados[0].grupo).toBe(1)
+      51 |     expect(data.resultados[1].grupo).toBe(2)
+
+      at Object.toBe (__tests__/api/avaliacao/resultados.test.ts:48:29)
+
+  ÔùÅ /api/avaliacao/resultados ÔÇ║ deve retornar erro 404 quando n├úo h├í avalia├º├úo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 500
+
+      62 |     const data = await response.json()
+      63 |
+    > 64 |     expect(response.status).toBe(404)
+         |                             ^
+      65 |     expect(data).toEqual({ error: 'Nenhuma avalia├º├úo encontrada' })
+      66 |   })
+      67 |
+
+      at Object.toBe (__tests__/api/avaliacao/resultados.test.ts:64:29)
+
+FAIL __tests__/rh/lotes-avaliacao.test.tsx (7.784 s)
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Se├º├úo de In├¡cio de Ciclo ÔÇ║ deve abrir modal ao clicar em Iniciar Ciclo
+
+    TestingLibraryElementError: Unable to find an element with the text: /Libere um novo lote de avalia├º├Áes para come├ºar\.|Crie um novo ciclo de coletas avaliativas para/. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ´┐¢´┐¢ Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ´┐¢´┐¢ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      212 |       // Texto descritivo atual
+      213 |       expect(
+    > 214 |         screen.getByText(
+          |                ^
+      215 |           /Libere um novo lote de avalia├º├Áes para come├ºar\.|Crie um novo ciclo de coletas avaliativas para/
+      216 |         )
+      217 |       ).toBeInTheDocument();
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (__tests__/rh/lotes-avaliacao.test.tsx:214:16)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Se├º├úo de In├¡cio de Ciclo ÔÇ║ deve permitir preenchimento do formul├írio
+
+    TestingLibraryElementError: Unable to find an element with the placeholder text of: /Ex: Avalia├º├úo/
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ´┐¢´┐¢ Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ´┐¢´┐¢ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      266 |       await user.click(screen.getByText('´┐¢´┐¢ Iniciar Novo Ciclo'));
+      267 |
+    > 268 |       const tituloInput = screen.getByPlaceholderText(/Ex: Avalia├º├úo/);
+          |                                  ^
+      269 |       const descricaoTextarea = screen.getByPlaceholderText(
+      270 |         /Adicione informa├º├Áes adicionais/
+      271 |       );
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByPlaceholderText (__tests__/rh/lotes-avaliacao.test.tsx:268:34)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Integra├º├úo com API de Lotes ÔÇ║ deve chamar API de libera├º├úo de lote corretamente
+
+    TestingLibraryElementError: Unable to find an element with the placeholder text of: /Ex: Avalia├º├úo/
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ´┐¢´┐¢ Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ´┐¢´┐¢ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      290 |       await user.click(screen.getByText('´┐¢´┐¢ Iniciar Novo Ciclo'));
+      291 |
+    > 292 |       const tituloInput = screen.getByPlaceholderText(/Ex: Avalia├º├úo/);
+          |                                  ^
+      293 |       await user.type(tituloInput, 'Novo Ciclo Criado');
+      294 |
+      295 |       await user.click(screen.getByRole('button', { name: /Iniciar Ciclo/ }));
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByPlaceholderText (__tests__/rh/lotes-avaliacao.test.tsx:292:34)
+
+  ÔùÅ RH Empresa Dashboard - Sistema de Lotes ÔÇ║ Integra├º├úo com API de Lotes ÔÇ║ deve Iniciar Ciclo com sucesso
+
+    TestingLibraryElementError: Unable to find an element with the placeholder text of: /Ex: Avalia├º├úo/
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div>
+          <main
+            class="flex-1 container mx-auto px-4 py-6"
+          >
+            <div
+              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6"
+            >
+              <div>
+                <div
+                  class="flex items-center gap-3 mb-2"
+                >
+                  <button
+                    class="flex items-center gap-2 bg-white hover:bg-gray-50 text-gray-700 px-3 py-2 rounded-lg border border-gray-200 transition-colors text-sm"
+                  >
+                    ÔåÉ Voltar
+                  </button>
+                  <h1
+                    class="text-2xl font-bold text-gray-800"
+                  >
+                    Dashboard 
+                    Ind├║stria Metal├║rgica S├úo Paulo
+                  </h1>
+                </div>
+                <p
+                  class="text-sm text-gray-600"
+                >
+                  An├ílise das avalia├º├Áes psicossociais
+                </p>
+              </div>
+              <button
+                class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors text-sm"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="mb-6"
+            >
+              <div
+                class="border-b border-gray-200"
+              >
+                <nav
+                  class="-mb-px flex space-x-8"
+                >
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+                  >
+                    ´┐¢´┐¢ Ciclos de Coletas Avaliativas
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Laudos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Funcion├írios Ativos
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ÔÜá´©Å Pend├¬ncias
+                  </button>
+                  <button
+                    class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                  >
+                    ´┐¢´┐¢ Desligamentos
+                  </button>
+                </nav>
+              </div>
+            </div>
+            <div
+              class="space-y-6"
+            >
+              <div
+                class="bg-white rounded-lg shadow-sm p-6"
+              >
+                <div
+                  class="flex justify-between items-center mb-6"
+                >
+                  <div>
+                    <h3
+                      class="text-lg font-semibold text-gray-800"
+                    >
+                      Ciclos de Coletas Avaliativas
+                    </h3>
+                    <p
+                      class="text-sm text-gray-600 mt-1"
+                    >
+                      Gerencie os ciclos de coletas avaliativas da empresa
+                    </p>
+                  </div>
+                  <button
+                    class="inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-hover transition-colors font-medium"
+                  >
+                    ´┐¢´┐¢ Iniciar Novo Ciclo
+                  </button>
+                </div>
+                <div
+                  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+                >
+                  <div
+                    aria-label="Ver detalhes do lote 1"
+                    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+                    role="button"
+                    tabindex="0"
+                  >
+                    <div
+                      class="mb-4"
+                    >
+                      <div
+                        class="flex items-center justify-between mb-1"
+                      >
+                        <h5
+                          class="font-semibold text-gray-800 text-base"
+                        >
+                          Lote ID: 
+                          1
+                        </h5>
+                      </div>
+                      <p
+                        class="text-sm text-gray-600"
+                      >
+                        Empresa: 
+                        N/A
+                      </p>
+                      <p
+                        class="text-xs text-gray-500"
+                      >
+                        Liberado em
+                         
+                        29/11/2025
+                         ├ás
+                         
+                        07:00
+                      </p>
+                    </div>
+                    <div
+                      class="space-y-2 mb-4"
+                    >
+                      <div
+                        class="flex justify-between text-sm"
+                      >
+                        <span>
+                          Avalia├º├Áes liberadas:
+                        </span>
+                        <span
+                          class="font-medium"
+                        >
+                          5
+                        </span>
+             ...
+
+      319 |       await user.click(screen.getByText('´┐¢´┐¢ Iniciar Novo Ciclo'));
+      320 |
+    > 321 |       const tituloInput = screen.getByPlaceholderText(/Ex: Avalia├º├úo/);
+          |                                  ^
+      322 |       await user.type(tituloInput, 'Novo Ciclo Criado');
+      323 |
+      324 |       // N├úo h├í sele├º├úo de empresa (estamos em contexto de empresa espec├¡fica)
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByPlaceholderText (__tests__/rh/lotes-avaliacao.test.tsx:321:34)
+
+FAIL __tests__/avaliacao/avaliacao-navegacao.test.tsx
+  ÔùÅ Test suite failed to run
+
+    Cannot find module '../app/avaliacao/grupo/[id]/page' from '__tests__/avaliacao/avaliacao-navegacao.test.tsx'
+
+      12 | // Mock do fetch
+      13 | global.fetch = jest.fn()
+    > 14 |
+         | ^
+      15 | // Helper para verificar se um bot├úo est├í desabilitado
+      16 | const expectButtonToBeDisabled = (button: HTMLElement) => {
+      17 |   expect(button).toHaveAttribute('disabled')
+
+      at Resolver._throwModNotFoundError (node_modules/.pnpm/jest-resolve@30.2.0/node_modules/jest-resolve/build/index.js:863:11)
+      at Object.<anonymous> (__tests__/avaliacao/avaliacao-navegacao.test.tsx:14:54)
+
+
+Test Suites: 13 failed, 1 skipped, 8 passed, 21 of 22 total
+Tests:       51 failed, 15 skipped, 74 passed, 140 total
+Snapshots:   0 total
+Time:        14.304 s
+Ran all test suites matching avaliacao|conclusao.
+ÔÇëELIFECYCLEÔÇë Test failed. See above for more details.

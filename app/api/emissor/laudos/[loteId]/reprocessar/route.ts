@@ -137,7 +137,10 @@ export async function POST(
     });
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('[REPROCESSAR] Erro ao adicionar lote à fila:', error);
 

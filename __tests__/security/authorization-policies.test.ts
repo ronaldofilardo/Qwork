@@ -98,9 +98,7 @@ describe('assertRoles', () => {
 
   it('deve aceitar gestor quando gestor está na lista', () => {
     const session = makeSession({ perfil: 'gestor' });
-    expect(() =>
-      assertRoles(session, [ROLES.RH, ROLES.GESTOR])
-    ).not.toThrow();
+    expect(() => assertRoles(session, [ROLES.RH, ROLES.GESTOR])).not.toThrow();
   });
 
   it('deve aceitar emissor quando emissor está na lista', () => {

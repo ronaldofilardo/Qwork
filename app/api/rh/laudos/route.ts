@@ -131,7 +131,7 @@ export const GET = async (_req: Request) => {
       JOIN clinicas c ON ec.clinica_id = c.id
       LEFT JOIN funcionarios f ON l.emissor_cpf = f.cpf
       ${String(whereClause)}
-        AND l.status = 'emitido'
+        AND l.status IN ('emitido', 'enviado')
         AND l.arquivo_remoto_url IS NOT NULL
       ORDER BY l.enviado_em DESC
       LIMIT $${String(params.length)}

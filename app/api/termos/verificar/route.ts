@@ -28,7 +28,10 @@ export async function GET() {
     return NextResponse.json(aceites);
   } catch (error) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
     }
     console.error('[TERMOS] Erro ao verificar aceites:', error);
     return NextResponse.json(

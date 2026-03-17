@@ -60,6 +60,7 @@ export function LotesGrid({
             // Considerar laudos emitidos (novo fluxo) ou quando hash está presente
             (laudoAssociado as any).emitido_em ||
             laudoAssociado.status === 'emitido' ||
+            laudoAssociado.status === 'enviado' ||
             laudoAssociado.hash) &&
           (lote.status === 'concluido' || lote.status === 'finalizado')
         );

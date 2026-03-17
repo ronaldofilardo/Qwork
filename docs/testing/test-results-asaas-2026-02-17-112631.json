@@ -1,0 +1,98 @@
+[
+  {
+    "Name": "ASAAS_WEBHOOK_SECRET configurado",
+    "Passed": false,
+    "Message": "Variável não configurada ou não detectada",
+    "Timestamp": "2026-02-17 11:26:27"
+  },
+  {
+    "Name": "Webhook endpoint acessível",
+    "Passed": false,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:27"
+  },
+  {
+    "Name": "Webhook aceita requisições POST",
+    "Passed": false,
+    "Message": "Status: 401",
+    "Timestamp": "2026-02-17 11:26:27"
+  },
+  {
+    "Name": "Rate limiting implementado",
+    "Passed": true,
+    "Message": "Endpoint protegido contra spam",
+    "Timestamp": "2026-02-17 11:26:29"
+  },
+  {
+    "Name": "Webhook rejeita payloads inválidos",
+    "Passed": false,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Estrutura do banco documentada",
+    "Passed": true,
+    "Message": "Verificação manual necessária",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Endpoint protegido (sem auth)",
+    "Passed": false,
+    "Message": "Endpoint aberto sem autenticação!",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Validação de campos obrigatórios",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Configuração Asaas documentada",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Fluxo de pagamento documentado",
+    "Passed": true,
+    "Message": "Teste manual necessário",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Controles de segurança implementados",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Proteção contra replay attacks",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Sistema de logs implementado",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:30"
+  },
+  {
+    "Name": "Latência aceitável",
+    "Passed": true,
+    "Message": "255.46ms média",
+    "Timestamp": "2026-02-17 11:26:31"
+  },
+  {
+    "Name": "Compatibilidade de versões",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:31"
+  },
+  {
+    "Name": "Estratégias de rollback documentadas",
+    "Passed": true,
+    "Message": "",
+    "Timestamp": "2026-02-17 11:26:31"
+  }
+]

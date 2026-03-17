@@ -40,7 +40,7 @@ export const GET = async (
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.id = $1 
-        AND l.status = 'emitido' 
+        AND l.status IN ('emitido', 'enviado') 
         AND l.arquivo_remoto_url IS NOT NULL
     `,
       [laudoId]

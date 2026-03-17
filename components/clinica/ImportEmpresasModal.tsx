@@ -246,7 +246,7 @@ export default function ImportEmpresasModal({
               </li>
               <li>
                 <span className="font-medium">nivel_cargo*:</span> operacional,
-                gestao, analista, coordenador, supervisor, gerente, etc.
+                gestao
               </li>
               <li className="text-blue-500">
                 * Colunas opcionais. Múltiplas empresas e funcionários podem

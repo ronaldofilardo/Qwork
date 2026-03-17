@@ -150,7 +150,9 @@ describe('POST /api/auth/trocar-senha', () => {
 
   it('deve retornar 400 quando nova senha muito curta', async () => {
     mockGetSession.mockReturnValue(makeRhSession() as any);
-    const res = await POST(makeReq({ senha_atual: 'velha', nova_senha: '123' }));
+    const res = await POST(
+      makeReq({ senha_atual: 'velha', nova_senha: '123' })
+    );
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toContain('mínimo');

@@ -424,27 +424,24 @@ export default function ComissoesRepresentante() {
 
       {/* Resumo financeiro */}
       {resumo && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
               label: 'A Receber',
               value: fmt(resumo.valor_pendente),
               icon: '⏳',
               cor: 'text-blue-700',
+              bg: 'bg-blue-50',
+              borderCor: 'border-blue-200',
               title: 'Parcelas pagas aguardando NF/aprovação',
-            },
-            {
-              label: 'Futuro',
-              value: fmt(resumo.valor_futuro),
-              icon: '📆',
-              cor: 'text-slate-600',
-              title: 'Parcelas futuras ainda não vencidas',
             },
             {
               label: 'Liberado',
               value: fmt(resumo.valor_liberado),
               icon: '🟢',
               cor: 'text-purple-700',
+              bg: 'bg-purple-50',
+              borderCor: 'border-purple-200',
               title: 'NF aprovada, aguardando pagamento no dia 15',
             },
             {
@@ -452,17 +449,25 @@ export default function ComissoesRepresentante() {
               value: fmt(resumo.valor_pago_total),
               icon: '✅',
               cor: 'text-green-700',
+              bg: 'bg-green-50',
+              borderCor: 'border-green-200',
               title: 'Valor histórico de comissões pagas',
             },
           ].map((c) => (
             <div
               key={c.label}
-              className="bg-white rounded-xl border p-4"
+              className={`${c.bg} ${c.borderCor} rounded-2xl border-2 p-6 shadow-sm hover:shadow-md transition-shadow duration-200`}
               title={c.title}
             >
-              <span className="text-2xl">{c.icon}</span>
-              <div className={`text-xl font-bold mt-2 ${c.cor}`}>{c.value}</div>
-              <div className="text-xs text-gray-500 mt-1">{c.label}</div>
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="text-gray-600 text-sm font-semibold mb-3 tracking-wide">
+                    {c.label}
+                  </div>
+                  <div className={`text-3xl font-bold ${c.cor}`}>{c.value}</div>
+                </div>
+                <span className="text-4xl ml-3">{c.icon}</span>
+              </div>
             </div>
           ))}
         </div>

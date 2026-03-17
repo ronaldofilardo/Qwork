@@ -92,7 +92,10 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     if (isApiError(error)) {
-      return NextResponse.json({ error: error.message, code: error.code }, { status: error.status });
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
     }
     console.error('[TERMOS] Erro ao registrar aceite:', error);
 

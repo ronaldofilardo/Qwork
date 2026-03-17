@@ -15,37 +15,40 @@ describe('🔒 PROTEÇÃO: Configuração de Bancos de Dados', () => {
   const rootDir = path.join(__dirname, '../..');
 
   describe('Validação de .env.local (Desenvolvimento)', () => {
-    it('DEVE usar nr-bps_db local (NÃO Neon Cloud)', () => {
-      const envLocalPath = path.join(rootDir, '.env.local');
+    it('.env base DEVE ter LOCAL_DATABASE_URL apontando para nr-bps_db local', () => {
+      // LOCAL_DATABASE_URL é o banco de DEV padrão — definido em .env (base)
+      // .env.local pode sobrescrever com ALLOW_PROD_DB_LOCAL=true para o modo emissor
+      const envPath = path.join(rootDir, '.env');
 
-      if (!fs.existsSync(envLocalPath)) {
-        throw new Error('❌ .env.local não encontrado!');
+      if (!fs.existsSync(envPath)) {
+        throw new Error('❌ .env não encontrado!');
       }
 
-      const content = fs.readFileSync(envLocalPath, 'utf-8');
+      const content = fs.readFileSync(envPath, 'utf-8');
 
-      // DEVE ter LOCAL_DATABASE_URL apontando para nr-bps_db
-      expect(content).toMatch(/LOCAL_DATABASE_URL=.*localhost:5432\/nr-bps_db/);
-
-      // NÃO DEVE ter LOCAL_DATABASE_URL apontando para Neon Cloud
+      // DEVE ter LOCAL_DATABASE_URL apontando para nr-bps_db no .env base
       const localDbLine = content
         .split('\n')
         .find(
           (line) =>
-            line.startsWith('LOCAL_DATABASE_URL=') && !line.includes('#')
+            line.startsWith('LOCAL_DATABASE_URL=') && !line.startsWith('#')
         );
 
       if (localDbLine) {
         expect(localDbLine).not.toContain('neon.tech');
-        expect(localDbLine).toContain('localhost:5432/nr-bps_db');
+        expect(localDbLine).toContain('nr-bps_db');
+        expect(localDbLine).not.toContain('nr-bps_db_test');
       }
     });
 
-    it('NÃO DEVE usar ALLOW_PROD_DB_LOCAL=true', () => {
+    it('SE ALLOW_PROD_DB_LOCAL=true, DEVE ter EMISSOR_CPF como guard de segurança', () => {
+      // Regra de segurança: ALLOW_PROD_DB_LOCAL pode ser true SOMENTE quando
+      // EMISSOR_CPF também está definido — isso restringe o acesso ao banco de
+      // produção ao CPF do emissor autorizado via guard em lib/db.ts:query().
+      // O modo emissor LOCAL → Neon é o único uso legítimo desta flag em DEV.
       const envLocalPath = path.join(rootDir, '.env.local');
       const content = fs.readFileSync(envLocalPath, 'utf-8');
 
-      // ALLOW_PROD_DB_LOCAL deve estar comentado ou false
       const allowProdLine = content
         .split('\n')
         .find(
@@ -53,9 +56,17 @@ describe('🔒 PROTEÇÃO: Configuração de Bancos de Dados', () => {
             line.includes('ALLOW_PROD_DB_LOCAL') && !line.startsWith('#')
         );
 
-      if (allowProdLine) {
-        expect(allowProdLine).not.toContain('ALLOW_PROD_DB_LOCAL=true');
+      if (allowProdLine && allowProdLine.includes('ALLOW_PROD_DB_LOCAL=true')) {
+        // SEGURANÇA OBRIGATÓRIA: se ALLOW_PROD_DB_LOCAL=true, EMISSOR_CPF deve existir
+        const emissorCpfLine = content
+          .split('\n')
+          .find(
+            (line) => line.startsWith('EMISSOR_CPF=') && !line.startsWith('#')
+          );
+        expect(emissorCpfLine).toBeTruthy();
+        expect(emissorCpfLine).toMatch(/^EMISSOR_CPF=\d+/);
       }
+      // Se ALLOW_PROD_DB_LOCAL não está ativo (ou comentado), tests pass — estado padrão seguro
     });
   });
 

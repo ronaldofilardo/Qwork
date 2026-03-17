@@ -27,7 +27,8 @@ export default function LoteHeader({
   children,
 }: LoteHeaderProps) {
   const [showSetorModal, setShowSetorModal] = useState(false);
-  const laudoEmitido = lote.laudo_status === 'emitido';
+  const laudoEmitido =
+    lote.laudo_status === 'emitido' || lote.laudo_status === 'enviado';
 
   return (
     <>

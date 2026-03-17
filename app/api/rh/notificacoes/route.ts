@@ -60,7 +60,7 @@ export const GET = async (_req: Request) => {
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
       WHERE la.clinica_id = $2
-        AND l.status = 'emitido'
+        AND l.status IN ('emitido', 'enviado')
         AND l.arquivo_remoto_url IS NOT NULL
         AND l.emitido_em >= NOW() - INTERVAL '7 days'
 
