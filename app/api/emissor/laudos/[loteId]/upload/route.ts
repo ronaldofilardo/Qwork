@@ -287,8 +287,10 @@ export async function POST(
     );
 
     // 16. Atualizar status do lote para 'finalizado' (laudo disponível no bucket)
+    // laudo_enviado_em é incluído para satisfazer o trigger prevent_update_finalized_lote,
+    // que permite o update apenas quando laudo_enviado_em muda de NULL → valor.
     await query(
-      `UPDATE lotes_avaliacao SET status = 'finalizado', atualizado_em = NOW() WHERE id = $1`,
+      `UPDATE lotes_avaliacao SET status = 'finalizado', laudo_enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1`,
       [laudo.lote_id]
     );
 

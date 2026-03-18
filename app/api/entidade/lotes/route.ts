@@ -37,14 +37,14 @@ export async function GET() {
       // Schema: lotes recebem entidade_id via migration 1008, mas usamos join para compatibilidade
       lotesResult = await query(
         `
-        SELECT DISTINCT
+        SELECT
           la.id,
           la.tipo,
           la.status,
           la.criado_em,
           la.liberado_em,
           f2.nome as liberado_por_nome,
-          e.nome as empresa_nome,
+          ent.nome as empresa_nome,
           COUNT(DISTINCT a.id) as total_avaliacoes,
           COUNT(DISTINCT CASE WHEN a.status = 'concluida' THEN a.id END) as avaliacoes_concluidas,
           COUNT(DISTINCT CASE WHEN a.status = 'inativada' THEN a.id END) as avaliacoes_inativadas,
@@ -61,16 +61,18 @@ export async function GET() {
           fe.solicitado_em,
           fe.tipo_solicitante
         FROM lotes_avaliacao la
-        INNER JOIN avaliacoes a ON a.lote_id = la.id
-        INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-        INNER JOIN funcionarios_entidades fe_join ON fe_join.funcionario_id = f.id
-        LEFT JOIN entidades e ON fe_join.entidade_id = e.id
+        -- ISOLAMENTO: filtro direto por entidade_id garante que lotes de clínicas
+        -- nunca apareçam para entidades, mesmo que haja funcionários em comum
+        LEFT JOIN entidades ent ON ent.id = la.entidade_id
         LEFT JOIN funcionarios f2 ON la.liberado_por = f2.cpf
+        LEFT JOIN avaliacoes a ON a.lote_id = la.id
         LEFT JOIN laudos l ON l.lote_id = la.id
         LEFT JOIN funcionarios f3 ON l.emissor_cpf = f3.cpf
         LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
-        WHERE fe_join.entidade_id = $1 AND fe_join.ativo = true
-        GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome, e.nome,
+        WHERE la.entidade_id = $1
+          AND la.clinica_id IS NULL
+          AND la.empresa_id IS NULL
+        GROUP BY la.id, la.tipo, la.status, la.criado_em, la.liberado_em, f2.nome, ent.nome,
                  l.id, l.status, l.emitido_em, l.enviado_em, l.hash_pdf, f3.nome,
                  fe.solicitado_por, fe.solicitado_em, fe.tipo_solicitante
         ORDER BY la.criado_em DESC

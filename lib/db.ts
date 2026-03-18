@@ -255,25 +255,27 @@ const getDatabaseUrl = () => {
   // Ambiente de desenvolvimento
   if (isDevelopment) {
     // Opt-in: permitir usar DATABASE_URL (produção) localmente quando explicitamente solicitado.
-    // Se EMISSOR_CPF também estiver definido, apenas o emissor pode operar (guard aplicado em query()).
+    // Se EMISSOR_CPF estiver definido, o localPool continua apontando para nr-bps_db (local).
+    // As queries do emissor são roteadas para Neon diretamente dentro de query().
     if (
       process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
       process.env.DATABASE_URL
     ) {
-      const masked = process.env.DATABASE_URL.replace(
-        /(postgresql:\/\/.+?:).+?(@)/,
-        '$1***$2'
-      );
       if (process.env.EMISSOR_CPF) {
         console.warn(
-          `⚠️ ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF=${process.env.EMISSOR_CPF}: banco de produção (Neon) ativo localmente — acesso restrito ao emissor. Conectando a: ${masked}`
+          `⚠️ ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF=${process.env.EMISSOR_CPF}: pool local = nr-bps_db. Emissor roteado para Neon em query().`
         );
+        // fall-through: usar LOCAL_DATABASE_URL abaixo (localPool → nr-bps_db)
       } else {
+        const masked = process.env.DATABASE_URL.replace(
+          /(postgresql:\/\/.+?:).+?(@)/,
+          '$1***$2'
+        );
         console.warn(
           `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
         );
+        return process.env.DATABASE_URL;
       }
-      return process.env.DATABASE_URL;
     }
 
     if (!process.env.LOCAL_DATABASE_URL) {
@@ -352,7 +354,12 @@ async function getNeonSql() {
  * Pool mantém conexão WebSocket que permite SET LOCAL
  */
 export async function getNeonPool() {
-  if (!neonPool && isProduction && process.env.DATABASE_URL) {
+  if (
+    !neonPool &&
+    (isProduction ||
+      (isDevelopment && process.env.ALLOW_PROD_DB_LOCAL === 'true')) &&
+    process.env.DATABASE_URL
+  ) {
     try {
       const { Pool: NeonPool } = await import('@neondatabase/serverless');
       neonPool = new NeonPool({
@@ -448,21 +455,59 @@ export async function query<T = any>(
   validateDatabaseIsolation();
 
   try {
-    if ((isDevelopment || isTest) && localPool) {
-      // PostgreSQL Local (Desenvolvimento e Testes)
-      // Em modo emissor (ALLOW_PROD_DB_LOCAL + EMISSOR_CPF), localPool já aponta para Neon prod.
-      // Guard: bloquear qualquer sessão cujo CPF não seja o do emissor autorizado.
-      if (
-        isDevelopment &&
-        process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
-        process.env.EMISSOR_CPF &&
-        session &&
-        session.cpf !== process.env.EMISSOR_CPF
-      ) {
-        throw new Error(
-          `🚨 ACESSO BLOQUEADO: CPF ${session.cpf} não tem permissão para acessar o banco de produção localmente. Apenas o emissor (CPF ${process.env.EMISSOR_CPF}) pode operar neste ambiente.`
-        );
+    // [DEV EMISSOR MODE] Queries do emissor roteadas para Neon quando ALLOW_PROD_DB_LOCAL+EMISSOR_CPF está ativo
+    if (
+      isDevelopment &&
+      process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
+      process.env.EMISSOR_CPF &&
+      session?.cpf === process.env.EMISSOR_CPF
+    ) {
+      const pool = await getNeonPool();
+      if (!pool) {
+        throw new Error('Neon Pool não disponível para emissor em modo local');
       }
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const escapeString = (str: string) => str.replace(/'/g, "''");
+        await client.query(
+          `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
+        );
+        const result = await client.query(text, params);
+        await client.query('COMMIT');
+        const duration = Date.now() - start;
+        if (DEBUG_DB) {
+          console.log(
+            `[db][query] neon/emissor-local (${duration}ms): ${text.substring(0, 200)}...`
+          );
+        }
+        return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
+      } catch (err) {
+        try {
+          await client.query('ROLLBACK');
+        } catch (rollbackErr) {
+          console.error(
+            '[db][query] Erro durante ROLLBACK em Neon (emissor-local):',
+            rollbackErr
+          );
+        }
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+
+    if ((isDevelopment || isTest) && localPool) {
+      // PostgreSQL Local (Desenvolvimento e Testes) — nr-bps_db
       const client = await localPool.connect().catch((err) => {
         // Se falhar por excesso de conexões, logar um aviso mais amigável
         if (err.message.includes('too many clients') || err.code === '53300') {

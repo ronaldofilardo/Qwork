@@ -327,9 +327,9 @@ describe('EntidadeLotesPage', () => {
               lotes: [
                 {
                   id: 200,
-                  titulo: 'Lote Concluído',
+                  titulo: 'Lote Cancelado',
                   tipo: 'avaliacao_psicossocial',
-                  status: 'concluido',
+                  status: 'cancelado',
                   empresa_nome: 'Empresa Cancelada',
                   liberado_em: new Date().toISOString(),
                   liberado_por_nome: 'João Silva',
@@ -339,11 +339,11 @@ describe('EntidadeLotesPage', () => {
                   pode_emitir_laudo: false,
                   motivos_bloqueio: [],
                   taxa_conclusao: 0,
-                  laudo_id: 99,
-                  laudo_status: 'enviado',
-                  laudo_enviado_em: new Date().toISOString(),
-                  laudo_arquivo_remoto_url: 'https://example.com/laudo-200.pdf',
-                  emissor_nome: 'Emissor Cancelado',
+                  laudo_id: null,
+                  laudo_status: null,
+                  laudo_enviado_em: null,
+                  laudo_arquivo_remoto_url: null,
+                  emissor_nome: null,
                 },
               ],
             }),
@@ -360,14 +360,17 @@ describe('EntidadeLotesPage', () => {
       ).toBeInTheDocument();
     });
 
+    // LotesGrid mostra badge "Cancelado" quando lote.status === 'cancelado'
+    expect(screen.getByText('Cancelado')).toBeInTheDocument();
+
     // LotesGrid mostra badge de inativadas
     expect(screen.getByText('⚠️ 5 inativadas')).toBeInTheDocument();
 
-    // O botão de relatório por setor deve estar habilitado para lotes concluídos
-    expect(screen.getByText('📋 Relatório por Setor')).toBeEnabled();
+    // Botão de relatório por setor deve estar DESABILITADO para lote cancelado
+    expect(screen.getByText('📋 Relatório por Setor')).toBeDisabled();
 
-    // Laudo deve estar disponível quando lote está concluído e tem laudo
-    expect(screen.getByText('📄 Laudo disponível')).toBeInTheDocument();
+    // Laudo NÃO deve estar disponível para lote cancelado
+    expect(screen.queryByText('📄 Laudo disponível')).not.toBeInTheDocument();
 
     // LotesGrid permite clicar em cards cancelados, então deve navegar
     const card = screen.getByLabelText('Ver detalhes do lote 200');

@@ -1395,66 +1395,6 @@ export default function DetalhesLotePage() {
                   <th className="px-3 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Data/Motivo Inativação
                   </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G1</span>
-                      <FiltroColuna coluna="g1" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G2</span>
-                      <FiltroColuna coluna="g2" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G3</span>
-                      <FiltroColuna coluna="g3" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G4</span>
-                      <FiltroColuna coluna="g4" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G5</span>
-                      <FiltroColuna coluna="g5" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G6</span>
-                      <FiltroColuna coluna="g6" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G7</span>
-                      <FiltroColuna coluna="g7" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G8</span>
-                      <FiltroColuna coluna="g8" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G9</span>
-                      <FiltroColuna coluna="g9" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-24">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G10</span>
-                      <FiltroColuna coluna="g10" titulo="" />
-                    </div>
-                  </th>
                   <th className="px-3 py-2 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Ações
                   </th>
@@ -1545,36 +1485,6 @@ export default function DetalhesLotePage() {
                         ) : (
                           '-'
                         )}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g1, 1)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g2, 2)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g3, 3)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g4, 4)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g5, 5)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g6, 6)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g7, 7)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g8, 8)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g9, 9)}
-                      </td>
-                      <td className="px-1 py-2 text-sm text-center">
-                        {getClassificacaoGrupo(func.grupos?.g10, 10)}
                       </td>
                       <td className="px-3 py-2 text-sm text-center">
                         <div className="flex gap-1 justify-center">
