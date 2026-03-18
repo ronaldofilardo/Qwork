@@ -85,19 +85,13 @@ function laudoColunaTipo(
   return 'badge_laudo';
 }
 
-/** Lógica de isPronto/isCancelado do LotesGrid */
+/** Lógica de isPronto/isCancelado do LotesGrid (refatorada: usa lote.status diretamente) */
 function resolverStatusRelatorio(
   podEmitirLaudo: boolean,
   temLaudo: boolean,
-  totalAvaliacoes: number,
-  avaliacoesInativadas: number,
-  avaliacoesConcluidas: number
+  loteStatus: string
 ): 'Cancelado' | 'Pronto' | 'Pendente' {
-  const isCancelado =
-    totalAvaliacoes > 0 &&
-    avaliacoesInativadas === totalAvaliacoes &&
-    avaliacoesConcluidas === 0;
-  if (isCancelado) return 'Cancelado';
+  if (loteStatus === 'cancelado') return 'Cancelado';
   if (podEmitirLaudo || temLaudo) return 'Pronto';
   return 'Pendente';
 }
@@ -191,27 +185,27 @@ describe('Monitor 19/02/2026 — Coluna Laudo no monitor (lógica de exibição)
 });
 
 describe('Monitor 19/02/2026 — LotesGrid: Status relatório', () => {
-  it('todas inativadas, nenhuma concluída → "Cancelado"', () => {
-    expect(resolverStatusRelatorio(false, false, 2, 2, 0)).toBe('Cancelado');
-    expect(resolverStatusRelatorio(true, true, 3, 3, 0)).toBe('Cancelado'); // cancelado tem prioridade
+  it('status cancelado → "Cancelado" (independente de pode_emitir ou laudo)', () => {
+    expect(resolverStatusRelatorio(false, false, 'cancelado')).toBe('Cancelado');
+    expect(resolverStatusRelatorio(true, true, 'cancelado')).toBe('Cancelado'); // cancelado tem prioridade
   });
 
   it('pode emitir laudo → "Pronto"', () => {
-    expect(resolverStatusRelatorio(true, false, 2, 0, 2)).toBe('Pronto');
+    expect(resolverStatusRelatorio(true, false, 'concluido')).toBe('Pronto');
   });
 
   it('tem laudo → "Pronto"', () => {
-    expect(resolverStatusRelatorio(false, true, 2, 0, 1)).toBe('Pronto');
+    expect(resolverStatusRelatorio(false, true, 'ativo')).toBe('Pronto');
   });
 
   it('avaliações pendentes, sem laudo → "Pendente"', () => {
-    expect(resolverStatusRelatorio(false, false, 2, 0, 1)).toBe('Pendente');
+    expect(resolverStatusRelatorio(false, false, 'ativo')).toBe('Pendente');
   });
 
-  it('mix de inativadas e concluídas → não é cancelado', () => {
-    // 1 concluída, 1 inativada de 2 total → ainda Pendente/Pronto, não Cancelado
-    expect(resolverStatusRelatorio(true, false, 2, 1, 1)).toBe('Pronto');
-    expect(resolverStatusRelatorio(false, false, 2, 1, 0)).toBe('Pendente');
+  it('status não-cancelado com mix de inativadas → segue isPronto normalmente', () => {
+    // Status do banco determina cancelado — se não for 'cancelado', segue fluxo normal
+    expect(resolverStatusRelatorio(true, false, 'concluido')).toBe('Pronto');
+    expect(resolverStatusRelatorio(false, false, 'concluido')).toBe('Pendente');
   });
 });
 

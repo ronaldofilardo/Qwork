@@ -48,9 +48,32 @@ export default function LoteHeader({
                   Lote ID
                 </span>
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-3">
-                {lote.id}
-              </h1>
+              <div className="flex items-center gap-3 mb-3">
+                <h1 className="text-3xl font-bold text-gray-900">{lote.id}</h1>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    lote.status === 'cancelado'
+                      ? 'bg-red-100 text-red-800'
+                      : lote.status === 'concluido'
+                        ? 'bg-green-100 text-green-800'
+                        : lote.status === 'finalizado'
+                          ? 'bg-teal-100 text-teal-800'
+                          : lote.status === 'ativo'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  {lote.status === 'cancelado'
+                    ? 'Cancelado'
+                    : lote.status === 'concluido'
+                      ? 'Concluído'
+                      : lote.status === 'finalizado'
+                        ? 'Finalizado'
+                        : lote.status === 'ativo'
+                          ? 'Ativo'
+                          : lote.status}
+                </span>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">
                 <div>
                   <span className="text-gray-500">Empresa:</span>{' '}

@@ -65,10 +65,7 @@ export function LotesGrid({
           (lote.status === 'concluido' || lote.status === 'finalizado')
         );
         const isPronto = lote.pode_emitir_laudo || temLaudo;
-        const isCancelado =
-          lote.total_avaliacoes > 0 &&
-          lote.avaliacoes_inativadas === lote.total_avaliacoes &&
-          lote.avaliacoes_concluidas === 0;
+        const isCancelado = lote.status === 'cancelado';
 
         // Verificar se há solicitação de emissão pendente
         const emissaoSolicitada = !!(lote.solicitado_em && !temLaudo);

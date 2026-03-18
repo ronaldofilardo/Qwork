@@ -2,6 +2,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { formatarDataCorrigida } from './timezone-helper';
 import { buildGruposFromRespostas } from './relatorio-individual';
+import { QWORK_LOGO_BASE64 } from '@/lib/config/branding/logo';
 
 interface RespostaSetor {
   grupo: number;
@@ -169,6 +170,19 @@ export function gerarRelatorioSetorPDF(dados: DadosRelatorioSetor): Buffer {
     pageWidth / 2,
     doc.internal.pageSize.getHeight() - 10,
     { align: 'center', maxWidth: 180 }
+  );
+
+  // Logo QWork
+  const logoWidth = 40;
+  const logoHeight = 15;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  doc.addImage(
+    QWORK_LOGO_BASE64,
+    'PNG',
+    (pageWidth - logoWidth) / 2,
+    pageHeight - 30,
+    logoWidth,
+    logoHeight
   );
 
   return Buffer.from(doc.output('arraybuffer'));

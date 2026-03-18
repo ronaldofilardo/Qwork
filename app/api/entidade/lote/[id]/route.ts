@@ -66,10 +66,11 @@ export async function GET(
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
-      INNER JOIN avaliacoes a ON a.lote_id = la.id
-      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      INNER JOIN funcionarios_entidades fe2 ON fe2.funcionario_id = f.id
-      WHERE la.id = $1 AND fe2.entidade_id = $2 AND fe2.ativo = true
+      -- ISOLAMENTO: entidade_id direto na tabela de lotes previne acesso a lotes de clínicas
+      WHERE la.id = $1
+        AND la.entidade_id = $2
+        AND la.clinica_id IS NULL
+        AND la.empresa_id IS NULL
       LIMIT 1
     `,
       [loteId, session.entidade_id]

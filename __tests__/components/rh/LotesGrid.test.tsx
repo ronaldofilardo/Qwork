@@ -194,4 +194,26 @@ describe('LotesGrid', () => {
       'lotehash123456'
     );
   });
+
+  it('deve exibir "Cancelado" quando lote.status é "cancelado"', () => {
+    const loteCancelado = [
+      {
+        id: 10,
+        liberado_em: '2024-04-01T10:00:00Z',
+        status: 'cancelado',
+        total_avaliacoes: 4,
+        avaliacoes_concluidas: 0,
+        avaliacoes_inativadas: 4,
+        pode_emitir_laudo: false,
+      },
+    ];
+
+    render(
+      <LotesGrid {...defaultProps} lotes={loteCancelado as any} laudos={[]} />
+    );
+
+    expect(screen.getByText('Cancelado')).toBeInTheDocument();
+    // Botão de relatório deve estar desabilitado para lote cancelado
+    expect(screen.getByText('📋 Relatório por Setor')).toBeDisabled();
+  });
 });

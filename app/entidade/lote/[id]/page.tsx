@@ -1394,66 +1394,6 @@ export default function DetalhesLotePage() {
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Data Inativação
                   </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G1</span>
-                      <FiltroColuna coluna="g1" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G2</span>
-                      <FiltroColuna coluna="g2" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G3</span>
-                      <FiltroColuna coluna="g3" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G4</span>
-                      <FiltroColuna coluna="g4" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G5</span>
-                      <FiltroColuna coluna="g5" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G6</span>
-                      <FiltroColuna coluna="g6" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G7</span>
-                      <FiltroColuna coluna="g7" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G8</span>
-                      <FiltroColuna coluna="g8" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G9</span>
-                      <FiltroColuna coluna="g9" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G10</span>
-                      <FiltroColuna coluna="g10" titulo="" />
-                    </div>
-                  </th>
                   <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Ações
                   </th>
@@ -1590,20 +1530,6 @@ export default function DetalhesLotePage() {
                       <td className="px-2 py-1 text-sm text-gray-500">
                         {formatDate(func.avaliacao.inativada_em)}
                       </td>
-                      {/* Colunas G1-G10 */}
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((grupoNum) => (
-                        <td
-                          key={`g${grupoNum}`}
-                          className="px-1 py-1 text-center text-xs"
-                        >
-                          {renderClassificacao(
-                            func.grupos?.[
-                              `g${grupoNum}` as keyof typeof func.grupos
-                            ],
-                            grupoNum
-                          )}
-                        </td>
-                      ))}
                       <td className="px-2 py-1 text-center">
                         {(func.avaliacao.status === 'concluida' ||
                           func.avaliacao.status === 'concluido') && (

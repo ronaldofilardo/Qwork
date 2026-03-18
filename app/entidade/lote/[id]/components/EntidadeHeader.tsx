@@ -44,14 +44,27 @@ export default function EntidadeHeader({
               <h1 className="text-3xl font-bold text-gray-900">{lote.id}</h1>
               <span
                 className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  lote.status === 'concluido'
-                    ? 'bg-green-100 text-green-800'
-                    : lote.status === 'enviado'
-                      ? 'bg-blue-100 text-blue-800'
-                      : 'bg-yellow-100 text-yellow-800'
+                  lote.status === 'cancelado'
+                    ? 'bg-red-100 text-red-800'
+                    : lote.status === 'concluido'
+                      ? 'bg-green-100 text-green-800'
+                      : lote.status === 'enviado' ||
+                          lote.status === 'finalizado'
+                        ? 'bg-blue-100 text-blue-800'
+                        : lote.status === 'ativo'
+                          ? 'bg-blue-100 text-blue-800'
+                          : 'bg-yellow-100 text-yellow-800'
                 }`}
               >
-                {lote.status}
+                {lote.status === 'cancelado'
+                  ? 'Cancelado'
+                  : lote.status === 'concluido'
+                    ? 'Concluído'
+                    : lote.status === 'finalizado'
+                      ? 'Finalizado'
+                      : lote.status === 'ativo'
+                        ? 'Ativo'
+                        : lote.status}
               </span>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-700">

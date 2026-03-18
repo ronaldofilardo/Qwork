@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
       'cancelada',
     ];
     if (status && statusValidos.includes(status)) {
-      wheres.push(`c.status = $${i++}`);
+      wheres.push(`c.status::text = $${i++}`);
       params.push(status);
     }
 

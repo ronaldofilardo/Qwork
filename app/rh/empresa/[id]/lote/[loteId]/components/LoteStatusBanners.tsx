@@ -20,13 +20,37 @@ export default function LoteStatusBanners({
 }: LoteStatusBannersProps) {
   const canSolicitarEmissao =
     lote.status === 'concluido' &&
-    estatisticas.avaliacoes_concluidas + estatisticas.avaliacoes_pendentes > 0 &&
+    estatisticas.avaliacoes_concluidas + estatisticas.avaliacoes_pendentes >
+      0 &&
     estatisticas.avaliacoes_pendentes === 0 &&
     !lote.emissao_solicitada &&
     !lote.tem_laudo;
 
   return (
     <>
+      {/* Lote Cancelado */}
+      {lote.status === 'cancelado' && (
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-2xl">🚫</span>
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-red-900 mb-1">
+                  Lote Cancelado
+                </h4>
+                <p className="text-sm text-red-700">
+                  Todas as avaliações deste lote foram inativadas. O lote foi
+                  cancelado automaticamente e não pode mais ser editado ou
+                  emitido.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Botão de Solicitação de Emissão */}
       {canSolicitarEmissao && (
         <div className="mt-6 pt-6 border-t border-gray-200">
@@ -36,9 +60,12 @@ export default function LoteStatusBanners({
                 <span className="text-2xl">✅</span>
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-1">Lote Concluído</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">
+                  Lote Concluído
+                </h4>
                 <p className="text-sm text-gray-700">
-                  Todas as avaliações foram finalizadas. Você pode solicitar a emissão do laudo.
+                  Todas as avaliações foram finalizadas. Você pode solicitar a
+                  emissão do laudo.
                 </p>
               </div>
             </div>
@@ -62,13 +89,15 @@ export default function LoteStatusBanners({
                 <span className="text-2xl">📋</span>
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-1">Emissão Solicitada</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">
+                  Emissão Solicitada
+                </h4>
                 <p className="text-sm text-gray-700">
                   A emissão do laudo foi solicitada em{' '}
                   {lote.emissao_solicitado_em
                     ? formatDate(lote.emissao_solicitado_em)
-                    : 'data não disponível'}.
-                  {' '}O laudo está sendo processado pelo emissor.
+                    : 'data não disponível'}
+                  . O laudo está sendo processado pelo emissor.
                 </p>
               </div>
             </div>
@@ -85,16 +114,20 @@ export default function LoteStatusBanners({
                 <span className="text-2xl">✅</span>
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-1">Laudo Emitido</h4>
+                <h4 className="font-semibold text-gray-900 mb-1">
+                  Laudo Emitido
+                </h4>
                 <p className="text-sm text-gray-700 mb-2">
                   O laudo deste lote já foi emitido{' '}
                   {lote.laudo_status === 'enviado' ? 'e enviado' : ''}.
                   {lote.emitido_em && (
-                    <>{' '}Emitido em {formatDate(lote.emitido_em)}</>
+                    <> Emitido em {formatDate(lote.emitido_em)}</>
                   )}
                 </p>
                 {lote.emissor_nome && (
-                  <p className="text-xs text-purple-700">Emissor: {lote.emissor_nome}</p>
+                  <p className="text-xs text-purple-700">
+                    Emissor: {lote.emissor_nome}
+                  </p>
                 )}
               </div>
             </div>
@@ -133,7 +166,8 @@ export default function LoteStatusBanners({
                   {lote.hash_pdf}
                 </code>
                 <p className="text-xs text-purple-600 mt-2">
-                  Use este hash para verificar a autenticidade e integridade do PDF
+                  Use este hash para verificar a autenticidade e integridade do
+                  PDF
                 </p>
               </div>
             )}

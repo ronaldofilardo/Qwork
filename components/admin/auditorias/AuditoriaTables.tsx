@@ -196,10 +196,29 @@ export function TabelaAvaliacoes({ data }: { data: AuditoriaAvaliacao[] }) {
 /* ─── 4. Lotes ─── */
 
 const LOTE_STATUS_STYLES: Record<string, string> = {
+  // Status legados (dados antigos)
   pendente: 'bg-yellow-100 text-yellow-800',
   em_processamento: 'bg-blue-100 text-blue-800',
+  // Status atuais válidos
+  rascunho: 'bg-gray-100 text-gray-700',
+  ativo: 'bg-blue-100 text-blue-800',
   concluido: 'bg-green-100 text-green-800',
+  emissao_solicitada: 'bg-yellow-100 text-yellow-800',
+  emissao_em_andamento: 'bg-orange-100 text-orange-800',
+  laudo_emitido: 'bg-purple-100 text-purple-800',
   cancelado: 'bg-red-100 text-red-800',
+  finalizado: 'bg-teal-100 text-teal-800',
+};
+
+const LOTE_STATUS_LABELS: Record<string, string> = {
+  rascunho: 'Rascunho',
+  ativo: 'Ativo',
+  concluido: 'Concluído',
+  emissao_solicitada: 'Emissão Solicitada',
+  emissao_em_andamento: 'Emissão em Andamento',
+  laudo_emitido: 'Laudo Emitido',
+  cancelado: 'Cancelado',
+  finalizado: 'Finalizado',
 };
 
 export function TabelaLotes({ data }: { data: AuditoriaLote[] }) {
@@ -231,9 +250,9 @@ export function TabelaLotes({ data }: { data: AuditoriaLote[] }) {
               <Td className="text-gray-700 text-sm">{l.empresa_nome ?? '—'}</Td>
               <Td>
                 <span
-                  className={`px-2 py-1 rounded text-xs font-semibold ${LOTE_STATUS_STYLES[l.status] || 'bg-gray-100 text-gray-800'}`}
+                  className={`px-2 py-1 rounded text-xs font-semibold ${LOTE_STATUS_STYLES[l.status] ?? 'bg-gray-100 text-gray-800'}`}
                 >
-                  {l.status.toUpperCase()}
+                  {LOTE_STATUS_LABELS[l.status] ?? l.status.toUpperCase()}
                 </span>
               </Td>
               <Td center className="text-gray-900">
