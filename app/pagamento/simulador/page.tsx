@@ -7,9 +7,6 @@ import QworkLogo from '@/components/QworkLogo';
 interface SimuladorInfo {
   tomador_id: number;
   tomador_nome: string;
-  plano_id: number;
-  plano_nome: string;
-  plano_tipo: string;
   numero_funcionarios: number;
   valor_por_funcionario: number;
   valor_total: number;
@@ -41,15 +38,16 @@ export default function SimuladorPagamentoPage() {
         // Modo simplificado - parâmetros na URL
         // Parâmetro tomador_id (compatível com entidade_id e clinica_id)
         const tomadorId =
-          searchParams.get('tomador_id') || searchParams.get('entidade_id') || searchParams.get('clinica_id');
-        const planoId = searchParams.get('plano_id');
+          searchParams.get('tomador_id') ||
+          searchParams.get('entidade_id') ||
+          searchParams.get('clinica_id');
         const numeroFuncionarios = searchParams.get('numero_funcionarios');
         const contratoId = searchParams.get('contrato_id');
         const retry = searchParams.get('retry') === 'true';
 
-        if (!tomadorId || !planoId) {
+        if (!tomadorId) {
           throw new Error(
-            'Parâmetros obrigatórios: tomador_id (ou entidade_id/clinica_id) e plano_id'
+            'Parâmetro obrigatório: tomador_id (ou entidade_id/clinica_id)'
           );
         }
 
@@ -60,9 +58,9 @@ export default function SimuladorPagamentoPage() {
           setContratoExistente(Number(contratoId));
         }
 
-        // Buscar informações do tomador e plano
+        // Buscar informações do tomador
         const res = await fetch(
-          `/api/pagamento/simulador?tomador_id=${tomadorId}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`
+          `/api/pagamento/simulador?tomador_id=${tomadorId}&numero_funcionarios=${numeroFuncionarios || 0}`
         );
 
         if (!res.ok) {
@@ -110,14 +108,12 @@ export default function SimuladorPagamentoPage() {
 
       // Observação: a funcionalidade de gerar contrato pré-pagamento foi
       // permanentemente removida. Não tentamos criar contrato aqui.
-      // Vamos iniciar o pagamento diretamente, fornecendo os dados do
-      // plano para que o servidor calcule o valor corretamente.
+      // Vamos iniciar o pagamento diretamente.
 
       // Iniciar pagamento (fluxo correto: iniciar → confirmar)
       const iniciarPayload: any = {
         tomador_id: simuladorInfo.tomador_id,
         contrato_id: contrato_id, // pode ser null
-        plano_id: simuladorInfo.plano_id,
         numero_funcionarios: simuladorInfo.numero_funcionarios,
         valor_total: simuladorInfo.valor_total,
       };
@@ -252,7 +248,7 @@ export default function SimuladorPagamentoPage() {
         </div>
 
         <div className="bg-white shadow-md rounded-lg overflow-hidden">
-          {/* Informações do tomador e Plano */}
+          {/* Informações da Contratação */}
           <div className="bg-[#FF6B00] text-white px-6 py-4">
             <h2 className="text-xl font-bold">Resumo da Contratação</h2>
           </div>
@@ -264,14 +260,13 @@ export default function SimuladorPagamentoPage() {
               <p className="text-gray-700">{simuladorInfo.tomador_nome}</p>
             </div>
 
-            {/* Plano selecionado */}
+            {/* Informações da contratação */}
             <div className="border-b pb-4">
               <h3 className="font-semibold text-gray-900 mb-2">
-                Plano Selecionado
+                Serviço de Avaliação
               </h3>
               <p className="text-gray-700">
-                {simuladorInfo.plano_nome}
-                {simuladorInfo.plano_tipo === 'fixo' && ' (Plano Fixo)'}
+                Serviço de Avaliação de Risco Psicossocial
               </p>
             </div>
 

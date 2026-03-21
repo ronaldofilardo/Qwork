@@ -74,4 +74,20 @@ describe('GET /api/entidade/pagamentos-laudos', () => {
     const res = await GET();
     expect(res.status).toBe(500);
   });
+
+  it('usa la.entidade_id (não la.contratante_id) na query SQL de lotes', async () => {
+    // Valida fix crítico: SQL deve usar la.entidade_id após refactoring contratante→tomador
+    mockRequireEntity.mockResolvedValueOnce({
+      cpf: '111',
+      perfil: 'gestor',
+      entidade_id: 5,
+    } as any);
+    mockQueryGestor.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    await GET();
+
+    const [sqlQuery] = mockQueryGestor.mock.calls[0];
+    expect(String(sqlQuery)).toContain('la.entidade_id = p.entidade_id');
+    expect(String(sqlQuery)).not.toContain('la.contratante_id');
+  });
 });

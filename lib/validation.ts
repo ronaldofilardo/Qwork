@@ -8,21 +8,15 @@ import { z } from 'zod';
  */
 
 export const PlanoSchema = z.object({
-  tipo: z.enum(['personalizado', 'basico', 'premium']),
   nome: z.string().min(3).max(100),
   descricao: z.string().optional(),
-  valor_por_funcionario: z.number().positive().optional(),
-  valor_fixo_anual: z.number().positive().optional(),
-  limite_funcionarios: z.number().int().positive().optional(),
   ativo: z.boolean().default(true),
 });
 
 export const ContratoPlanoSchema = z.object({
-  plano_id: z.number().int().positive(),
   clinica_id: z.number().int().positive().optional(),
   tomador_id: z.number().int().positive().optional(),
   tipo_tomador: z.enum(['clinica', 'entidade']),
-  valor_personalizado_por_funcionario: z.number().positive().optional(),
   numero_funcionarios_estimado: z.number().int().positive(),
   forma_pagamento: z.enum(['anual', 'mensal']).default('anual'),
   numero_parcelas: z.number().int().min(1).max(12).default(1),

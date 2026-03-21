@@ -2,137 +2,82 @@
  * app/api/cadastro/tomadores/handlers.ts
  *
  * Lógica de negócio do cadastro de tomadores (entidades/clínicas).
- * Separados da rota para facilitar testes e manutenção.
+ * Extraída de route.ts para manutenibilidade (<500 linhas).
  */
 
 import { StatusAprovacao } from '@/lib/db';
-import type { CadastroTomadorInput, CadastroArquivos } from './schemas';
+import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
+import type { CadastroTomadorInput } from './schemas';
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface CadastroTomadorResult {
-  entidade: { id: number; nome: string; status: string };
+export interface CadastroArquivosPaths {
+  cartaoCnpjPath: string;
+  contratoSocialPath: string;
+  docIdentificacaoPath: string;
+}
+
+export interface CadastroResult {
+  entidade: { id: number; nome: string; status: StatusAprovacao };
   requiresPayment: boolean;
   simuladorUrl: string | null;
   contratoIdCreated: number | null;
   valorPorFuncionario: number | null;
   numeroFuncionarios: number | null;
   valorTotal: number | null;
+  representanteVinculado: {
+    representante_id: number;
+    representante_nome: string;
+    lead_id: number | null;
+  } | null;
+}
+
+export interface HttpErrorResult {
+  body: { error: string; details?: string };
+  status: number;
 }
 
 // ============================================================================
-// SALVAR ARQUIVO
+// FILE SAVING
 // ============================================================================
 
 /** Salva arquivo usando storage compartilhado (detecta DEV/PROD) */
 export async function salvarArquivo(
   file: File,
   tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
-  cnpjLimpo: string,
-  tipoTomador: 'entidade' | 'clinica' = 'entidade'
+  cnpj: string
 ): Promise<string> {
-  try {
-    console.debug('salvarArquivo chamado', {
-      name: (file as any).name,
-      type: (file as any).type,
-      size: (file as any).size,
-      hasArrayBuffer: typeof (file as any).arrayBuffer === 'function',
-    });
+  console.debug('salvarArquivo chamado', {
+    name: (file as any).name,
+    type: (file as any).type,
+    size: (file as any).size,
+    hasArrayBuffer: typeof (file as any).arrayBuffer === 'function',
+  });
 
-    if (typeof (file as any).arrayBuffer !== 'function') {
-      throw new Error('file.arrayBuffer não disponível');
-    }
-
-    const bytes = await (file as any).arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    const { uploadArquivoCadastro } =
-      await import('@/lib/storage/cadastro-storage');
-    const result = await uploadArquivoCadastro(
-      buffer,
-      tipo,
-      cnpjLimpo,
-      tipoTomador
-    );
-
-    return result.path;
-  } catch (error) {
-    console.error('Erro ao salvar arquivo:', error);
-    throw new Error('Erro ao salvar arquivo');
+  if (typeof (file as any).arrayBuffer !== 'function') {
+    throw new Error('file.arrayBuffer não disponível');
   }
+
+  const bytes = await (file as any).arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
+
+  const { uploadArquivoCadastro } =
+    await import('@/lib/storage/cadastro-storage');
+  const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo);
+  return result.path;
 }
 
 // ============================================================================
-// SALVAR TODOS OS ARQUIVOS
-// ============================================================================
-
-interface ArquivosPaths {
-  cartaoCnpjPath: string;
-  contratoSocialPath: string;
-  docIdentificacaoPath: string;
-}
-
-export async function salvarTodosArquivos(
-  files: CadastroArquivos,
-  cnpjLimpo: string,
-  tipoTomador: 'entidade' | 'clinica' = 'entidade'
-): Promise<ArquivosPaths> {
-  const cartaoCnpjPath = await salvarArquivo(
-    files.cartao_cnpj,
-    'cartao_cnpj',
-    cnpjLimpo,
-    tipoTomador
-  );
-  const contratoSocialPath = await salvarArquivo(
-    files.contrato_social,
-    'contrato_social',
-    cnpjLimpo,
-    tipoTomador
-  );
-  const docIdentificacaoPath = await salvarArquivo(
-    files.doc_identificacao,
-    'doc_identificacao',
-    cnpjLimpo,
-    tipoTomador
-  );
-  return { cartaoCnpjPath, contratoSocialPath, docIdentificacaoPath };
-}
-
-// ============================================================================
-// VALIDAÇÃO DE LIMITE DO PLANO
-// ============================================================================
-
-/**
- * Valida se número de funcionários não excede o limite do plano.
- * Retorna mensagem de erro ou null se OK.
- */
-export async function validarLimitePlano(
-  planoId: number,
-  numFuncionarios: number
-): Promise<string | null> {
-  const { query } = await import('@/lib/db');
-  const limiteRes = await query(
-    'SELECT limite_funcionarios as limite FROM planos WHERE id = $1',
-    [planoId]
-  );
-  const limiteRaw = limiteRes.rows[0]?.limite;
-  const limite = limiteRaw ? parseInt(limiteRaw) : null;
-  if (limite && numFuncionarios > limite) {
-    return `Número de funcionários excede o limite do plano (máx: ${limite})`;
-  }
-  return null;
-}
-
-// ============================================================================
-// HANDLER PRINCIPAL: CADASTRO DO TOMADOR
+// MAIN HANDLER
 // ============================================================================
 
 export async function handleCadastroTomador(
-  input: CadastroTomadorInput,
-  arquivosPaths: ArquivosPaths
-): Promise<CadastroTomadorResult> {
+  data: CadastroTomadorInput,
+  arquivos: CadastroArquivosPaths
+): Promise<CadastroResult> {
   const db = await import('@/lib/db');
 
   const {
@@ -146,40 +91,23 @@ export async function handleCadastroTomador(
     cidade,
     estado,
     cep,
-    plano_id: planoId,
     numero_funcionarios_estimado: numeroFuncionarios,
     responsavel_nome: responsavelNome,
     responsavel_cpf: responsavelCpf,
     responsavel_cargo: responsavelCargo,
     responsavel_email: responsavelEmail,
     responsavel_celular: responsavelCelular,
-  } = input;
+    codigo_representante: codigoRepresentante,
+  } = data;
 
   const cnpjLimpo = cnpj.replace(/[^\d]/g, '');
+  const tableName = tipo === 'clinica' ? 'clinicas' : 'entidades';
 
   const result = await db.transaction(async (txClient) => {
-    // ---- Determinar status inicial baseado no plano ----
-    let statusToUse: StatusAprovacao = 'pendente' as StatusAprovacao;
-    let requiresPersonalizadoSetup = false;
+    // Status padrão para novos cadastros
+    const statusToUse: StatusAprovacao = 'pendente' as StatusAprovacao;
 
-    if (planoId) {
-      const planoRes = await txClient.query(
-        'SELECT tipo FROM planos WHERE id = $1',
-        [planoId]
-      );
-      const plano = planoRes.rows[0];
-
-      if (plano?.tipo === 'personalizado') {
-        statusToUse = 'pendente' as StatusAprovacao;
-        requiresPersonalizadoSetup = true;
-      } else {
-        statusToUse = 'aguardando_pagamento' as StatusAprovacao;
-      }
-    }
-
-    // ---- Verificar duplicatas (email + CNPJ) ----
-    const tableName = tipo === 'clinica' ? 'clinicas' : 'entidades';
-
+    // Verificar duplicatas de email
     const emailCheck = await txClient.query(
       `SELECT id FROM ${tableName} WHERE email = $1`,
       [email]
@@ -188,6 +116,7 @@ export async function handleCadastroTomador(
       throw new Error('Email já cadastrado no sistema');
     }
 
+    // Verificar duplicatas de CNPJ
     const cnpjCheck = await txClient.query(
       `SELECT id FROM ${tableName} WHERE cnpj = $1`,
       [cnpjLimpo]
@@ -203,30 +132,7 @@ export async function handleCadastroTomador(
       })
     );
 
-    // ---- Inserir na tabela correta ----
-    const insertParams = [
-      nome,
-      cnpjLimpo,
-      inscricao_estadual || null,
-      email,
-      telefone,
-      endereco,
-      cidade,
-      estado.toUpperCase(),
-      cep,
-      responsavelNome,
-      responsavelCpf.replace(/[^\d]/g, ''),
-      responsavelCargo || null,
-      responsavelEmail,
-      responsavelCelular,
-      arquivosPaths.cartaoCnpjPath,
-      arquivosPaths.contratoSocialPath,
-      arquivosPaths.docIdentificacaoPath,
-      statusToUse,
-      planoId || null,
-      tipo === 'clinica' ? 'clinica' : tipo,
-    ];
-
+    // Inserir entidade/clínica
     const entidadeResult = await txClient.query<{
       id: number;
       nome: string;
@@ -237,16 +143,35 @@ export async function handleCadastroTomador(
         endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-        status, ativa, plano_id, pagamento_confirmado, tipo
+        status, ativa, pagamento_confirmado, tipo
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19, false, $20
+        $10, $11, $12, $13, $14, $15, $16, $17, $18, false, false, $19
       ) RETURNING id, nome, status`,
-      insertParams
+      [
+        nome,
+        cnpjLimpo,
+        inscricao_estadual || null,
+        email,
+        telefone,
+        endereco,
+        cidade,
+        estado.toUpperCase(),
+        cep,
+        responsavelNome,
+        responsavelCpf.replace(/[^\d]/g, ''),
+        responsavelCargo || null,
+        responsavelEmail,
+        responsavelCelular,
+        arquivos.cartaoCnpjPath,
+        arquivos.contratoSocialPath,
+        arquivos.docIdentificacaoPath,
+        statusToUse,
+        tipo === 'clinica' ? 'clinica' : tipo,
+      ]
     );
 
     const entidade = entidadeResult.rows[0];
-
     console.info(
       JSON.stringify({
         event: `cadastro_${tipo}_inserted_success`,
@@ -256,7 +181,7 @@ export async function handleCadastroTomador(
       })
     );
 
-    // ---- Persistir numero_funcionarios_estimado ----
+    // Persistir numero_funcionarios_estimado
     if (numeroFuncionarios && Number(numeroFuncionarios) > 0) {
       await txClient.query(
         `UPDATE ${tableName} SET numero_funcionarios_estimado = $1 WHERE id = $2`,
@@ -268,77 +193,22 @@ export async function handleCadastroTomador(
       });
     }
 
-    // ---- Determinar pagamento ----
-    let requiresPayment = false;
-    let simuladorUrl: string | null = null;
-    let valorTotal: number | null = null;
-    let valorPorFuncionario: number | null = null;
+    // Determinar pagamento e criar contrato
+    const requiresPayment = false;
+    const simuladorUrl: string | null = null;
+    const valorTotal: number | null = null;
+    const valorPorFuncionario: number | null = null;
     let contratoIdCreated: number | null = null;
 
     try {
-      let statusContrato = 'aguardando_aceite';
+      const statusContrato = 'aguardando_aceite';
 
-      if (planoId) {
-        const planoRes = await txClient.query(
-          'SELECT preco, tipo, nome FROM planos WHERE id = $1',
-          [planoId]
-        );
-        const p = planoRes.rows[0];
-        if (p) {
-          valorPorFuncionario = p.tipo === 'fixo' ? 20.0 : Number(p.preco || 0);
-
-          if (p.tipo === 'fixo' && numeroFuncionarios) {
-            valorTotal = valorPorFuncionario * numeroFuncionarios;
-            requiresPayment = valorTotal > 0;
-            if (requiresPayment) {
-              statusContrato = 'aguardando_pagamento';
-            }
-          } else if (p.tipo === 'personalizado') {
-            requiresPayment = valorPorFuncionario > 0;
-            valorTotal = valorPorFuncionario;
-            statusContrato = 'aguardando_pagamento';
-          }
-
-          if (requiresPersonalizadoSetup) {
-            console.info(
-              JSON.stringify({
-                event: 'cadastro_entidade_personalizado_pending',
-                entidade_id: entidade.id,
-                plano_id: planoId,
-                numero_funcionarios: numeroFuncionarios,
-                status: 'aguardando_valor_admin',
-                note: 'Tabela contratacao_personalizada será criada em migração futura',
-              })
-            );
-          } else if (requiresPayment) {
-            simuladorUrl = `/pagamento/simulador?entidade_id=${entidade.id}&plano_id=${planoId}&numero_funcionarios=${numeroFuncionarios || 0}`;
-          }
-
-          console.info(
-            JSON.stringify({
-              event: 'cadastro_entidade_payment_check',
-              entidade_id: entidade.id,
-              plano_id: planoId,
-              plano_tipo: p?.tipo,
-              plano_nome: p?.nome,
-              valor_por_funcionario: valorPorFuncionario,
-              numero_funcionarios: numeroFuncionarios,
-              valor_total: valorTotal,
-              requiresPayment,
-              simuladorUrl,
-              novo_fluxo: 'contract-first',
-            })
-          );
-        }
-      }
-
-      // ---- Criar contrato SEMPRE ----
+      // CRIAR CONTRATO SEMPRE
       const contratoIns = await txClient.query<{ id: number }>(
-        `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, status, aceito, tipo_tomador)
-         VALUES ($1, $2, $3, $4, $5, false, $6) RETURNING id`,
+        `INSERT INTO contratos (tomador_id, numero_funcionarios, valor_total, status, aceito, tipo_tomador)
+         VALUES ($1, $2, $3, $4, false, $5) RETURNING id`,
         [
           entidade.id,
-          planoId || null,
           numeroFuncionarios || null,
           valorTotal,
           statusContrato,
@@ -352,7 +222,6 @@ export async function handleCadastroTomador(
           event: 'cadastro_contract_created',
           entidade_id: entidade.id,
           contrato_id: contratoIdCreated,
-          plano_id: planoId || null,
           status: statusContrato,
           tipo_tomador: tipo,
           requiresPayment,
@@ -363,6 +232,138 @@ export async function handleCadastroTomador(
       throw contratoError;
     }
 
+    // Auto-vincular representante se código fornecido
+    let representanteVinculado: CadastroResult['representanteVinculado'] = null;
+
+    if (codigoRepresentante?.trim()) {
+      const codigoNorm = codigoRepresentante.trim().toUpperCase();
+
+      const repResult = await txClient.query<{ id: number; nome: string }>(
+        `SELECT id, nome FROM representantes WHERE codigo = $1 AND status = 'ativo' LIMIT 1`,
+        [codigoNorm]
+      );
+
+      if (repResult.rows.length > 0) {
+        const rep = repResult.rows[0];
+
+        const leadResult = await txClient.query<{
+          id: number;
+          valor_negociado: number | null;
+        }>(
+          `SELECT id, valor_negociado FROM leads_representante
+           WHERE representante_id = $1
+             AND cnpj = $2
+             AND status = 'pendente'
+             AND data_expiracao > NOW()
+           LIMIT 1`,
+          [rep.id, cnpjLimpo]
+        );
+
+        const lead = leadResult.rows[0] ?? null;
+
+        // Determinar entidade_id para vinculos_comissao (NOT NULL)
+        let entidadeIdParaVinculo: number;
+        if (tipo === 'clinica') {
+          const clinicaEntidade = await txClient.query<{
+            entidade_id: number | null;
+          }>(`SELECT entidade_id FROM clinicas WHERE id = $1`, [entidade.id]);
+          entidadeIdParaVinculo =
+            clinicaEntidade.rows[0]?.entidade_id ?? entidade.id;
+        } else {
+          entidadeIdParaVinculo = entidade.id;
+        }
+
+        // Criar vínculo de comissão
+        try {
+          const dataInicio = new Date().toISOString().split('T')[0];
+          const dataExpiracao = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
+            .toISOString()
+            .split('T')[0];
+
+          await txClient.query(
+            `INSERT INTO vinculos_comissao (
+              representante_id, entidade_id, lead_id,
+              data_inicio, data_expiracao, status
+            ) VALUES ($1, $2, $3, $4, $5, 'ativo')`,
+            [
+              rep.id,
+              entidadeIdParaVinculo,
+              lead?.id ?? null,
+              dataInicio,
+              dataExpiracao,
+            ]
+          );
+
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_vinculo_comissao_created',
+              representante_id: rep.id,
+              entidade_id: entidadeIdParaVinculo,
+              lead_id: lead?.id ?? null,
+            })
+          );
+        } catch (vinculoError) {
+          // 23505 = duplicata — vínculo já existe, ignorar
+          if ((vinculoError as any)?.code !== '23505') {
+            throw vinculoError;
+          }
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_vinculo_comissao_already_exists',
+              representante_id: rep.id,
+              entidade_id: entidadeIdParaVinculo,
+            })
+          );
+        }
+
+        // Atualizar lead para 'convertido' se encontrado
+        if (lead) {
+          await txClient.query(
+            `UPDATE leads_representante
+             SET status = 'convertido', data_conversao = NOW()
+             WHERE id = $1`,
+            [lead.id]
+          );
+          console.info(
+            JSON.stringify({
+              event: 'cadastro_lead_converted',
+              lead_id: lead.id,
+              representante_id: rep.id,
+            })
+          );
+        }
+
+        representanteVinculado = {
+          representante_id: rep.id,
+          representante_nome: rep.nome,
+          lead_id: lead?.id ?? null,
+        };
+      }
+    }
+
+    // Fallback: auto-converter leads pendentes por match de CNPJ (sem código)
+    if (!representanteVinculado && cnpjLimpo) {
+      try {
+        const autoResult = await autoConvertirLeadPorCnpj(
+          cnpjLimpo,
+          tipo === 'clinica' ? null : entidade.id,
+          tipo === 'clinica' ? entidade.id : null
+        );
+        if (autoResult) {
+          representanteVinculado = {
+            representante_id: autoResult.representante_id,
+            representante_nome: 'Representante vinculado por CNPJ',
+            lead_id: autoResult.lead_id,
+          };
+        }
+      } catch (autoErr) {
+        console.error(
+          '[CADASTRO] Erro no auto-link por CNPJ (não-bloqueante):',
+          autoErr
+        );
+      }
+    }
+
     return {
       entidade,
       requiresPayment,
@@ -371,6 +372,7 @@ export async function handleCadastroTomador(
       valorPorFuncionario,
       numeroFuncionarios: numeroFuncionarios ?? null,
       valorTotal,
+      representanteVinculado,
     };
   });
 
@@ -378,18 +380,12 @@ export async function handleCadastroTomador(
 }
 
 // ============================================================================
-// MAPEAR ERROS PARA STATUS HTTP
+// ERROR MAPPING
 // ============================================================================
-
-export interface HttpErrorResult {
-  body: { error: string; details?: string };
-  status: number;
-}
 
 /** Converte erros de negócio em status HTTP adequados */
 export function mapCadastroError(error: unknown): HttpErrorResult {
   if (error instanceof Error) {
-    // Erros de duplicação conhecidos
     if (error.message === 'Email já cadastrado no sistema') {
       return { body: { error: error.message }, status: 409 };
     }
@@ -431,5 +427,8 @@ export function mapCadastroError(error: unknown): HttpErrorResult {
     }
   }
 
-  return { body: { error: 'Erro interno ao processar cadastro' }, status: 500 };
+  return {
+    body: { error: 'Erro interno ao processar cadastro' },
+    status: 500,
+  };
 }

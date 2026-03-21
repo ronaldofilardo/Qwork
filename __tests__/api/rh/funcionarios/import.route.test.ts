@@ -10,8 +10,13 @@ jest.mock('@/lib/xlsxParser', () => {
   return {
     ...actual,
     parseXlsxBufferToRows: jest.fn(),
+    // Funções legadas (ainda exportadas)
     validarCPFsUnicos: jest.fn(() => ({ valido: true, duplicados: [] })),
     validarEmailsUnicos: jest.fn(() => ({ valido: true, duplicados: [] })),
+    // Funções novas — retornam válido por padrão; sobrescreva por teste quando necessário
+    validarCPFsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
+    validarEmailsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
+    validarMatriculasUnicasDetalhado: jest.fn(() => ({ valido: true, details: [] })),
     validarLinhaFuncionario: jest.fn(() => ({ valido: true, erros: [] })),
   };
 });
@@ -161,22 +166,16 @@ describe('import route - clínica', () => {
       ],
     });
 
-    // Setup: CPF não existe
+    // Setup: CPF não existe no banco
     query.mockResolvedValueOnce({ rows: [] });
 
     // Setup: Matrícula não existe
     query.mockResolvedValueOnce({ rows: [] });
 
-    // Setup: BEGIN
-    query.mockResolvedValueOnce({ rows: [] });
-
-    // Setup: INSERT funcionarios RETURNING id
+    // Setup: INSERT funcionarios RETURNING id (dentro da transação)
     query.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    // Setup: INSERT funcionarios_clinicas
-    query.mockResolvedValueOnce({ rows: [] });
-
-    // Setup: COMMIT
+    // Setup: INSERT funcionarios_clinicas (dentro da transação)
     query.mockResolvedValueOnce({ rows: [] });
 
     // Criar request com mock de arquivo
@@ -233,14 +232,15 @@ describe('import route - clínica', () => {
     expect(funcClinicasParams).toContain(1); // clinica_id aqui
     expect(funcClinicasParams).toContain(1); // empresa_id aqui
 
-    // Verificar que session foi passado
-    expect(insertFuncCalls[0][2]).toBeDefined();
+    // Verificar que parametros do INSERT estão corretos
+    expect(insertFuncCalls[0][1]).toBeDefined();
   });
 
   it('returns 400 when matriculas are duplicated in file', async () => {
     const {
-      validarCPFsUnicos,
-      validarEmailsUnicos,
+      validarCPFsUnicosDetalhado,
+      validarEmailsUnicosDetalhado,
+      validarMatriculasUnicasDetalhado,
     } = require('@/lib/xlsxParser');
 
     query.mockResolvedValueOnce({
@@ -271,8 +271,13 @@ describe('import route - clínica', () => {
       ],
     });
 
-    validarCPFsUnicos.mockReturnValue({ valido: true, duplicados: [] });
-    validarEmailsUnicos.mockReturnValue({ valido: true, duplicados: [] });
+    validarCPFsUnicosDetalhado.mockReturnValue({ valido: true, details: [] });
+    validarEmailsUnicosDetalhado.mockReturnValue({ valido: true, details: [] });
+    // Matrículas duplicadas — deve retornar 400 antes de qualquer query de transação
+    validarMatriculasUnicasDetalhado.mockReturnValueOnce({
+      valido: false,
+      details: ['Linha 2: Matrícula MAT001 duplicada no arquivo (também na linha 3)'],
+    });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -290,7 +295,7 @@ describe('import route - clínica', () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toContain('Matrículas duplicadas no arquivo');
-    expect(json.error).toContain('MAT001');
+    expect(json.details[0]).toContain('MAT001');
   });
 
   it('returns 409 when matricula already exists in database', async () => {
@@ -335,6 +340,102 @@ describe('import route - clínica', () => {
 
     expect(res.status).toBe(409);
     expect(json.error).toContain('Matrículas já existentes no sistema');
-    expect(json.error).toContain('MAT999');
+    expect(json.details[0]).toContain('MAT999');
+  });
+
+  it('vincula funcionario existente a nova empresa (multiplos empregos)', async () => {
+    // Arrange: empresa válida
+    query.mockResolvedValueOnce({ rows: [{ id: 1, clinica_id: 1 }] });
+
+    parseXlsxBufferToRows.mockReturnValue({
+      success: true,
+      data: [
+        {
+          cpf: '74867746070',
+          nome: 'Carlos Existente',
+          data_nascimento: '1988-06-22',
+          setor: 'TI',
+          funcao: 'Dev',
+          email: 'carlos@emp.com',
+        },
+      ],
+    });
+
+    // CPF já existe no banco com id=42
+    query.mockResolvedValueOnce({ rows: [{ id: 42, cpf: '74867746070' }] });
+
+    // (sem matriculas novas a verificar)
+
+    // Dentro da transação: CPF ainda não vinculado a esta empresa
+    query.mockResolvedValueOnce({ rows: [] }); // SELECT 1 FROM funcionarios_clinicas
+
+    // INSERT funcionarios_clinicas
+    query.mockResolvedValueOnce({ rows: [] });
+
+    const fakeFile = {
+      arrayBuffer: async () => new ArrayBuffer(8),
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      name: 'teste.xlsx',
+    };
+
+    const req = {
+      url: 'http://localhost/api/rh/funcionarios/import?empresa_id=1',
+      formData: async () => ({ get: () => fakeFile }),
+    } as unknown as Request;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.created).toBe(0);
+    expect(json.linked).toBe(1);
+    expect(json.warnings).toBeUndefined();
+  });
+
+  it('registra warning quando CPF já está vinculado a esta empresa', async () => {
+    // Arrange: empresa válida
+    query.mockResolvedValueOnce({ rows: [{ id: 1, clinica_id: 1 }] });
+
+    parseXlsxBufferToRows.mockReturnValue({
+      success: true,
+      data: [
+        {
+          cpf: '74867746070',
+          nome: 'Carlos Vinculado',
+          data_nascimento: '1988-06-22',
+          setor: 'TI',
+          funcao: 'Dev',
+          email: 'carlos@emp.com',
+        },
+      ],
+    });
+
+    // CPF existe no banco
+    query.mockResolvedValueOnce({ rows: [{ id: 42, cpf: '74867746070' }] });
+
+    // Dentro da transação: já está vinculado a esta empresa
+    query.mockResolvedValueOnce({ rows: [{ id: 999 }] }); // SELECT 1 FROM funcionarios_clinicas
+
+    const fakeFile = {
+      arrayBuffer: async () => new ArrayBuffer(8),
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      name: 'teste.xlsx',
+    };
+
+    const req = {
+      url: 'http://localhost/api/rh/funcionarios/import?empresa_id=1',
+      formData: async () => ({ get: () => fakeFile }),
+    } as unknown as Request;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.created).toBe(0);
+    expect(json.linked).toBe(0);
+    expect(Array.isArray(json.warnings)).toBe(true);
+    expect(json.warnings[0]).toContain('74867746070');
   });
 });

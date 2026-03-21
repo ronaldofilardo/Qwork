@@ -5,13 +5,8 @@ import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      entidade_id,
-      contrato_id,
-      _plano_id,
-      numero_parcelas,
-      metodo_pagamento,
-    } = body;
+    const { entidade_id, contrato_id, numero_parcelas, metodo_pagamento } =
+      body;
 
     if (!entidade_id) {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useCallback } from 'react';
+import Image from 'next/image';
 import {
   X,
   Download,
@@ -118,6 +119,7 @@ export default function ModalRecibo({
       <html lang="pt-BR">
       <head>
         <meta charset="UTF-8" />
+        <base href="${window.location.origin}/" />
         <title>Recibo de Pagamento</title>
         <style>
           * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -241,35 +243,21 @@ export default function ModalRecibo({
               </p>
             </div>
 
-            {/* Identificação do lote/laudo */}
-            {(pagamento.loteNumero || pagamento.laudoId) && (
+            {/* Identificação do laudo */}
+            {pagamento.laudoId && (
               <>
                 <p className="section-title text-xs font-bold text-gray-600 uppercase tracking-wide border-b border-gray-200 pb-1 mb-3 mt-4">
-                  Referência de Lote e Laudo
+                  Referência de Laudo
                 </p>
                 <div className="space-y-2">
-                  {pagamento.loteNumero && (
-                    <div className="field-row flex justify-between text-sm">
-                      <span className="field-label text-gray-500">
-                        Número do Lote
-                      </span>
-                      <span className="field-value font-semibold text-gray-800">
-                        {pagamento.loteCodigo
-                          ? `${pagamento.loteNumero} — ${pagamento.loteCodigo}`
-                          : `Lote ${pagamento.loteNumero}`}
-                      </span>
-                    </div>
-                  )}
-                  {pagamento.laudoId && (
-                    <div className="field-row flex justify-between text-sm">
-                      <span className="field-label text-gray-500">
-                        Número do Laudo
-                      </span>
-                      <span className="field-value font-semibold text-gray-800">
-                        {String(pagamento.laudoId).padStart(6, '0')}
-                      </span>
-                    </div>
-                  )}
+                  <div className="field-row flex justify-between text-sm">
+                    <span className="field-label text-gray-500">
+                      Número do Laudo
+                    </span>
+                    <span className="field-value font-semibold text-gray-800">
+                      {String(pagamento.laudoId).padStart(6, '0')}
+                    </span>
+                  </div>
                 </div>
               </>
             )}
@@ -406,8 +394,16 @@ export default function ModalRecibo({
               </>
             )}
 
-            {/* Rodapé do documento */}
+            {/* Logo + Rodapé do documento */}
             <div className="footer text-center mt-6 pt-4 border-t border-gray-100">
+              <Image
+                src="/logo-qwork.png"
+                alt="QWork"
+                width={120}
+                height={32}
+                className="mx-auto mb-3"
+                style={{ objectFit: 'contain' }}
+              />
               <p className="text-xs text-gray-400">
                 Documento gerado em {new Date().toLocaleDateString('pt-BR')} —{' '}
                 QWork · Gestão de Saúde Ocupacional

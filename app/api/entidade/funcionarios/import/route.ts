@@ -4,10 +4,13 @@ import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { withTransactionAsGestor } from '@/lib/db-transaction';
 import {
   parseXlsxBufferToRows,
-  parseDateCell,
   validarLinhaFuncionario,
-  validarEmailsUnicos,
-  validarCPFsUnicos,
+  localizarLinhaPorCPF,
+  localizarLinhaPorMatricula,
+  localizarLinhaPorEmail,
+  validarCPFsUnicosDetalhado,
+  validarEmailsUnicosDetalhado,
+  validarMatriculasUnicasDetalhado,
   type FuncionarioImportRow,
 } from '@/lib/xlsxParser';
 import bcrypt from 'bcryptjs';
@@ -60,38 +63,35 @@ export async function POST(request: Request) {
     const rows = parsed.data as FuncionarioImportRow[];
 
     // Validações de lote
-    const cpfUniqueCheck = validarCPFsUnicos(rows);
+    const cpfUniqueCheck = validarCPFsUnicosDetalhado(rows);
     if (!cpfUniqueCheck.valido) {
       return NextResponse.json(
         {
-          error: `CPFs duplicados no arquivo: ${cpfUniqueCheck.duplicados.join(', ')}`,
+          error: 'CPFs duplicados no arquivo',
+          details: cpfUniqueCheck.details,
         },
         { status: 400 }
       );
     }
 
-    const emailUniqueCheck = validarEmailsUnicos(rows);
+    const emailUniqueCheck = validarEmailsUnicosDetalhado(rows);
     if (!emailUniqueCheck.valido) {
       return NextResponse.json(
         {
-          error: `Emails duplicados no arquivo: ${emailUniqueCheck.duplicados.join(', ')}`,
+          error: 'Emails duplicados no arquivo',
+          details: emailUniqueCheck.details,
         },
         { status: 400 }
       );
     }
 
     // Validar matrículas únicas no arquivo (ignorar valores nulos/vazios)
-    const matriculas = rows
-      .map((r) => r.matricula)
-      .filter((m) => m && m.trim().length > 0);
-    const matriculasDuplicadas = matriculas.filter(
-      (m, i) => matriculas.indexOf(m) !== i
-    );
-    if (matriculasDuplicadas.length > 0) {
-      const uniqueDups = Array.from(new Set(matriculasDuplicadas));
+    const matriculaUniqueCheck = validarMatriculasUnicasDetalhado(rows);
+    if (!matriculaUniqueCheck.valido) {
       return NextResponse.json(
         {
-          error: `Matrículas duplicadas no arquivo: ${uniqueDups.join(', ')}`,
+          error: 'Matrículas duplicadas no arquivo',
+          details: matriculaUniqueCheck.details,
         },
         { status: 400 }
       );
@@ -118,22 +118,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Verificar CPFs já existentes no banco
+    // Verificar CPFs já existentes no banco — funcionário pode ter múltiplos empregos
+    // Nesse caso vincula o funcionário existente à nova entidade sem criar novo registro
     const cpfs = toInsert.map((r) => r.cpf);
     const existResult = await queryAsGestorEntidade(
-      'SELECT cpf FROM funcionarios WHERE cpf = ANY($1)',
+      'SELECT id, cpf FROM funcionarios WHERE cpf = ANY($1)',
       [cpfs]
     );
-    if (existResult.rows.length > 0) {
-      const exists = existResult.rows.map((r: any) => r.cpf).join(', ');
-      return NextResponse.json(
-        { error: `CPFs já existentes no sistema: ${exists}` },
-        { status: 409 }
-      );
-    }
+    const existingByCpf = new Map<string, number>(
+      existResult.rows.map((r: any) => [r.cpf as string, r.id as number])
+    );
+    const toInsertNew = toInsert.filter((r) => !existingByCpf.has(r.cpf));
+    const toLink = toInsert.filter((r) => existingByCpf.has(r.cpf));
 
-    // Verificar matrículas já existentes no banco (ignorar valores nulos/vazios)
-    const matriculasParaVerificar = toInsert
+    // Verificar matrículas já existentes no banco (apenas para funcionários novos)
+    const matriculasParaVerificar = toInsertNew
       .map((r) => r.matricula)
       .filter((m) => m && m.trim().length > 0);
 
@@ -143,62 +142,28 @@ export async function POST(request: Request) {
         [matriculasParaVerificar]
       );
       if (existMatriculaResult.rows.length > 0) {
-        const existsMatriculas = existMatriculaResult.rows
-          .map((r: any) => r.matricula)
-          .join(', ');
+        const details = existMatriculaResult.rows.map((r: any) => {
+          const linha = localizarLinhaPorMatricula(r.matricula, rows);
+          return linha
+            ? `Linha ${linha}: Matrícula ${r.matricula} já está cadastrada no sistema`
+            : `Matrícula ${r.matricula} já está cadastrada no sistema`;
+        });
         return NextResponse.json(
-          { error: `Matrículas já existentes no sistema: ${existsMatriculas}` },
+          { error: 'Matrículas já existentes no sistema', details },
           { status: 409 }
         );
       }
-    }
-
-    // Normalizar e validar datas antes de inserir
-    const dateErrors: string[] = [];
-    try {
-      for (let i = 0; i < toInsert.length; i++) {
-        const r = toInsert[i];
-        const iso = parseDateCell(r.data_nascimento);
-        const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
-        if (!iso || !isoPattern.test(iso)) {
-          dateErrors.push(
-            `Linha ${i + 2}: Data de nascimento inválida (${String(r.data_nascimento)})`
-          );
-        } else {
-          const year = parseInt(iso.slice(0, 4), 10);
-          const currentYear = new Date().getFullYear();
-          if (isNaN(year) || year < 1900 || year > currentYear) {
-            dateErrors.push(
-              `Linha ${i + 2}: Data de nascimento inválida (ano fora do intervalo)`
-            );
-          } else {
-            r.data_nascimento = iso;
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Erro ao validar datas:', err);
-      const msg =
-        err && (err as Error).message ? (err as Error).message : String(err);
-      return NextResponse.json(
-        { error: 'Erro ao validar datas do arquivo', details: [msg] },
-        { status: 400 }
-      );
-    }
-
-    if (dateErrors.length > 0) {
-      return NextResponse.json(
-        { error: 'Erros no arquivo', details: dateErrors },
-        { status: 400 }
-      );
     }
 
     // Inserir em transação usando client dedicado (solução robusta para auditoria)
     try {
       const result = await withTransactionAsGestor(async (client) => {
         let created = 0;
+        let linked = 0;
+        const skippedAlreadyLinked: string[] = [];
 
-        for (const r of toInsert) {
+        // Inserir funcionários novos
+        for (const r of toInsertNew) {
           const senhaPlaintext = gerarSenhaDeNascimento(r.data_nascimento);
           const senhaHash = await bcrypt.hash(senhaPlaintext, 10);
 
@@ -235,7 +200,33 @@ export async function POST(request: Request) {
           created++;
         }
 
-        return { created };
+        // Vincular funcionários existentes a esta entidade (múltiplos empregos)
+        for (const r of toLink) {
+          const funcionarioId = existingByCpf.get(r.cpf)!;
+
+          const alreadyLinked = await client.query(
+            'SELECT 1 FROM funcionarios_entidades WHERE funcionario_id = $1 AND entidade_id = $2',
+            [funcionarioId, entidadeId]
+          );
+
+          if (alreadyLinked.rows.length === 0) {
+            await client.query(
+              `INSERT INTO funcionarios_entidades (funcionario_id, entidade_id, ativo, data_vinculo)
+               VALUES ($1, $2, true, CURRENT_TIMESTAMP)`,
+              [funcionarioId, entidadeId]
+            );
+            linked++;
+          } else {
+            const linha = localizarLinhaPorCPF(r.cpf, rows);
+            skippedAlreadyLinked.push(
+              linha
+                ? `Linha ${linha}: CPF ${r.cpf} já está vinculado a esta entidade`
+                : `CPF ${r.cpf} já está vinculado a esta entidade`
+            );
+          }
+        }
+
+        return { created, linked, skippedAlreadyLinked };
       });
 
       const maskedCpf =
@@ -243,10 +234,17 @@ export async function POST(request: Request) {
           ? `***${String(session.cpf).slice(-4)}`
           : session.cpf;
       console.log(
-        `[AUDIT] Importação em massa: ${result.created} funcionários importados pela entidade ${entidadeId} por ${maskedCpf}`
+        `[AUDIT] Importação em massa: ${result.created} criados, ${result.linked} vinculados pela entidade ${entidadeId} por ${maskedCpf}`
       );
 
-      return NextResponse.json({ success: true, created: result.created });
+      return NextResponse.json({
+        success: true,
+        created: result.created,
+        linked: result.linked,
+        ...(result.skippedAlreadyLinked.length > 0
+          ? { warnings: result.skippedAlreadyLinked }
+          : {}),
+      });
     } catch (err) {
       console.error(
         'Erro ao inserir funcionários em massa:',
@@ -260,8 +258,13 @@ export async function POST(request: Request) {
       if (error.code === '23505' && error.constraint?.includes('cpf')) {
         const match = error.detail?.match(/Key \(cpf\)=\(([^)]+)\)/);
         const cpf = match ? match[1] : 'desconhecido';
+        const linha =
+          cpf !== 'desconhecido' ? localizarLinhaPorCPF(cpf, rows) : null;
+        const detail = linha
+          ? `Linha ${linha}: CPF ${cpf} já está cadastrado no sistema`
+          : `CPF ${cpf} já está cadastrado no sistema`;
         return NextResponse.json(
-          { error: `CPF ${cpf} já existe no sistema` },
+          { error: 'CPF duplicado', details: [detail] },
           { status: 409 }
         );
       }
@@ -270,8 +273,15 @@ export async function POST(request: Request) {
       if (error.code === '23505' && error.constraint?.includes('matricula')) {
         const match = error.detail?.match(/Key \(matricula\)=\(([^)]+)\)/);
         const matricula = match ? match[1] : 'desconhecida';
+        const linha =
+          matricula !== 'desconhecida'
+            ? localizarLinhaPorMatricula(matricula, rows)
+            : null;
+        const detail = linha
+          ? `Linha ${linha}: Matrícula ${matricula} já está cadastrada no sistema`
+          : `Matrícula ${matricula} já está cadastrada no sistema`;
         return NextResponse.json(
-          { error: `Matrícula ${matricula} já existe no sistema` },
+          { error: 'Matrícula duplicada', details: [detail] },
           { status: 409 }
         );
       }
@@ -280,8 +290,13 @@ export async function POST(request: Request) {
       if (error.code === '23505' && error.constraint?.includes('email')) {
         const match = error.detail?.match(/Key \(email\)=\(([^)]+)\)/);
         const email = match ? match[1] : 'desconhecido';
+        const linha =
+          email !== 'desconhecido' ? localizarLinhaPorEmail(email, rows) : null;
+        const detail = linha
+          ? `Linha ${linha}: Email ${email} já está cadastrado no sistema`
+          : `Email ${email} já está cadastrado no sistema`;
         return NextResponse.json(
-          { error: `Email ${email} já existe no sistema` },
+          { error: 'Email duplicado', details: [detail] },
           { status: 409 }
         );
       }

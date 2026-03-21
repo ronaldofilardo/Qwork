@@ -70,8 +70,6 @@ export function CobrancaFilters({
           >
             <option value="data_pagamento:desc">Data Pagamento (desc)</option>
             <option value="data_pagamento:asc">Data Pagamento (asc)</option>
-            <option value="plano_preco:desc">Plano Preço (desc)</option>
-            <option value="plano_preco:asc">Plano Preço (asc)</option>
           </select>
         </div>
 

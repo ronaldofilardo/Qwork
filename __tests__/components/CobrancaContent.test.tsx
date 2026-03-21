@@ -16,10 +16,7 @@ describe('CobrancaContent', () => {
       nome_tomador: 'Empresa Teste',
       cnpj: '12345678000199',
       contrato_id: 99,
-      plano_id: 1,
-      plano_nome: 'Plano Básico',
-      plano_preco: 2500,
-      plano_tipo: 'fixo',
+
       numero_funcionarios_estimado: 50,
       numero_funcionarios_atual: 45,
       valor_pago: 5000,
@@ -39,10 +36,7 @@ describe('CobrancaContent', () => {
       nome_tomador: 'Clínica Parcelada',
       cnpj: '99887766000100',
       contrato_id: 100,
-      plano_id: 2,
-      plano_nome: 'Plano Parcelado',
-      plano_preco: 1250,
-      plano_tipo: 'personalizado',
+
       numero_funcionarios_estimado: 20,
       numero_funcionarios_atual: 10,
       valor_pago: 2500,
@@ -100,10 +94,7 @@ describe('CobrancaContent', () => {
       0
     );
     // 'Contrato ID' foi removido do layout; verificar colunas essenciais
-    expect((await screen.findAllByText('Plano ID')).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText('Plano Preço')).length).toBeGreaterThan(
-      0
-    );
+
     expect((await screen.findAllByText('Pagamento')).length).toBeGreaterThan(0);
     expect(
       (await screen.findAllByText('Data Pagamento')).length
@@ -112,7 +103,7 @@ describe('CobrancaContent', () => {
     // Linha com Empresa Teste (verificar por CNPJ)
     expect(await screen.findByText('12345678000199')).toBeInTheDocument();
 
-    // Verificar valores renderizados (plano_preco e pagamento_valor)
+    // Verificar valores renderizados (pagamento_valor)
     expect((await screen.findAllByText(/2\.500,00/)).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Não informado')[0]).toBeInTheDocument();
 
@@ -192,10 +183,7 @@ describe('CobrancaContent', () => {
         nome_tomador: 'Entrada Teste',
         cnpj: '11111111000111',
         contrato_id: 101,
-        plano_id: 3,
-        plano_nome: 'Plano Com Entrada',
-        plano_preco: 400,
-        plano_tipo: 'personalizado',
+
         numero_funcionarios_estimado: 5,
         numero_funcionarios_atual: 5,
         valor_pago: 0,
@@ -284,9 +272,7 @@ describe('CobrancaContent', () => {
                 tomador_id: 1,
                 cnpj: '02494916000170',
                 contrato_id: 35,
-                plano_id: 4,
-                plano_nome: 'Plano Fixo',
-                plano_preco: 20.0,
+
                 pagamento_id: 21,
                 pagamento_valor: 20.0,
                 pagamento_status: 'pago',
@@ -294,7 +280,6 @@ describe('CobrancaContent', () => {
                 tipo_tomador: 'entidade',
                 nome_tomador: 'Entidade Teste',
                 numero_contrato: 35,
-                plano_tipo: 'fixo',
                 numero_funcionarios_estimado: 10,
                 numero_funcionarios_atual: 10,
                 status: 'ativo',
@@ -327,9 +312,7 @@ describe('CobrancaContent', () => {
         {
           tomador_id: 56,
           cnpj: '02494916000170',
-          plano_nome: 'Plano Fixo Teste',
-          plano_tipo: 'fixo',
-          plano_preco: 20,
+
           numero_funcionarios_estimado: 15,
           numero_funcionarios_atual: 15,
           valor_pago: 300,
@@ -341,9 +324,7 @@ describe('CobrancaContent', () => {
         {
           tomador_id: 55,
           cnpj: '09110380000191',
-          plano_nome: 'Plano Personalizado',
-          plano_tipo: 'personalizado',
-          plano_preco: 7,
+
           numero_funcionarios_estimado: 1200,
           numero_funcionarios_atual: 0,
           valor_pago: 8400,
@@ -365,10 +346,6 @@ describe('CobrancaContent', () => {
     // Esperar pelas linhas aparecerem
     expect(await screen.findByText('02494916000170')).toBeInTheDocument();
     expect(await screen.findByText('09110380000191')).toBeInTheDocument();
-
-    // Verificar plano_preco formatado
-    expect((await screen.findAllByText(/R\$ 20,00/)).length).toBeGreaterThan(0);
-    expect((await screen.findAllByText(/R\$ 7,00/)).length).toBeGreaterThan(0);
 
     // Verificar valor_pago formatado
     expect((await screen.findAllByText(/R\$ 300,00/)).length).toBeGreaterThan(
@@ -392,8 +369,7 @@ describe('CobrancaContent', () => {
             cnpj: '41877277000184',
             nome_tomador: 'Teste NaN',
             tipo_tomador: 'clinica',
-            plano_id: 1,
-            plano_preco: null,
+
             numero_funcionarios_estimado: 150,
             numero_funcionarios_atual: 1,
             valor_pago: 'R$ 0,00',
@@ -410,8 +386,6 @@ describe('CobrancaContent', () => {
             cnpj: '00000000000100',
             nome_tomador: 'Outro Teste',
             tipo_tomador: 'entidade',
-            plano_id: 2,
-            plano_preco: 360,
             numero_funcionarios_estimado: 1,
             numero_funcionarios_atual: 1,
             valor_pago: 360,

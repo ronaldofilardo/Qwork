@@ -5,7 +5,11 @@
  * Separados da rota para facilitar testes e manutenção
  */
 
-import { query } from '@/lib/infrastructure/database';
+import {
+  query,
+  criarContaResponsavel,
+  criarSenhaInicialEntidade,
+} from '@/lib/db';
 import {
   iniciarPagamento,
   confirmarPagamento,
@@ -17,10 +21,6 @@ import {
 } from '@/lib/db-contratacao';
 import { logAudit, extractRequestInfo } from '@/lib/audit';
 import { ativarEntidade } from '@/lib/entidade-activation';
-import {
-  criarContaResponsavel,
-  criarSenhaInicialEntidade,
-} from '@/lib/infrastructure/database';
 // Integração Asaas
 import { asaasClient } from '@/lib/asaas/client';
 import {
@@ -169,9 +169,7 @@ export async function handleIniciarPagamento(
       billingType,
       value: input.valor,
       dueDate,
-      description: truncateDescription(
-        `QWork - Assinatura Plano ${input.plano_tipo || 'Personalizado'}`
-      ),
+      description: truncateDescription(`QWork - Serviço de Avaliação`),
       externalReference: `pag_${pagamento.id}_${Date.now()}`,
       // Configurações de juros e multa
       fine: {

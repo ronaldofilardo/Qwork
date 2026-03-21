@@ -18,6 +18,9 @@ export const ROLES = {
   GESTOR: 'gestor',
   EMISSOR: 'emissor',
   FUNCIONARIO: 'funcionario',
+  SUPORTE: 'suporte',
+  COMERCIAL: 'comercial',
+  VENDEDOR: 'vendedor',
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
@@ -27,6 +30,8 @@ export const PARALLEL_ROLES: readonly Role[] = [
   ROLES.RH,
   ROLES.GESTOR,
   ROLES.EMISSOR,
+  ROLES.SUPORTE,
+  ROLES.COMERCIAL,
 ] as const;
 
 export const ROLE_HIERARCHY: Record<Role, number> = {
@@ -34,6 +39,9 @@ export const ROLE_HIERARCHY: Record<Role, number> = {
   rh: 50,
   gestor: 50,
   emissor: 50,
+  suporte: 50,
+  comercial: 50,
+  vendedor: 30,
   funcionario: 10,
 };
 

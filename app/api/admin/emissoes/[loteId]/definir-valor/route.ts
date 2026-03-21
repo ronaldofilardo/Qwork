@@ -7,7 +7,7 @@ export async function POST(
   { params }: { params: { loteId: string } }
 ) {
   try {
-    const user = await requireRole('admin', false);
+    const user = await requireRole('suporte', false);
     const loteId = parseInt(params.loteId);
 
     if (isNaN(loteId)) {

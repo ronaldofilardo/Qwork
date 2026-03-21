@@ -5,7 +5,7 @@ import { requireRole } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 
 /**
- * API para buscar informações do plano de um tomador (entidade/clínica)
+ * API para buscar informações do contrato ativo de um tomador (entidade/clínica)
  * GET /api/tomador/meu-plano
  */
 export async function GET() {
@@ -15,13 +15,10 @@ export async function GET() {
     // Usar entidade_id ou clinica_id da sessão (arquitetura segregada)
     const tomadorId = session.entidade_id || session.clinica_id;
 
-    // Buscar plano ativo do tomador (entidade ou clínica)
+    // Buscar contrato ativo do tomador
     const result = await query(
       `SELECT 
         cp.id,
-        p.nome as plano_nome,
-        p.tipo as plano_tipo,
-        p.descricao as plano_descricao,
         cp.numero_funcionarios_estimado,
         cp.numero_funcionarios_atual,
         cp.valor_pago,
@@ -34,7 +31,6 @@ export async function GET() {
         c.id as contrato_numero,
         c.conteudo as contrato_conteudo
       FROM contratos_planos cp
-      JOIN planos p ON cp.plano_id = p.id
       LEFT JOIN contratos c ON (
         (cp.tipo_tomador = 'entidade' AND c.entidade_id = cp.entidade_id) OR
         (cp.tipo_tomador = 'clinica' AND c.clinica_id = cp.clinica_id)
@@ -54,7 +50,7 @@ export async function GET() {
       return NextResponse.json({
         success: true,
         plano: null,
-        message: 'Nenhum plano ativo encontrado',
+        message: 'Nenhum contrato ativo encontrado',
       });
     }
 

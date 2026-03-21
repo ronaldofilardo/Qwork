@@ -39,7 +39,6 @@ const BASE_PAYMENT_RESPONSE = {
 
 const DEFAULT_PROPS = {
   tomadorId: 1,
-  planoId: 1,
   valor: 250,
 };
 

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireRole } from '@/lib/session';
 
 /**
  * PATCH /api/admin/cobranca/parcela/atualizar-status
@@ -12,6 +13,8 @@ import { query } from '@/lib/db';
  */
 export async function PATCH(request: NextRequest) {
   try {
+    await requireRole('suporte', false);
+
     const body = await request.json();
     const { pagamento_id, parcela_numero, novo_status } = body;
 
@@ -141,7 +144,6 @@ export async function GET(request: NextRequest) {
         p.numero_parcelas,
         p.numero_funcionarios,
         p.valor_por_funcionario,
-        pl.nome as plano,
         ct.status as status_contrato,
         r.vigencia_inicio,
         r.vigencia_fim,
@@ -149,7 +151,6 @@ export async function GET(request: NextRequest) {
         p.detalhes_parcelas
       FROM pagamentos p
       INNER JOIN contratos ct ON ct.id = p.contrato_id
-      INNER JOIN planos pl ON pl.id = ct.plano_id
       LEFT JOIN recibos r ON r.pagamento_id = p.id
       WHERE p.tomador_id = $1
       ORDER BY p.data_pagamento DESC`,

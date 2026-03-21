@@ -1,11 +1,26 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
-import { usePlanosStore } from '@/lib/stores/planosStore';
+import { useEffect, useCallback, useState } from 'react';
+
+interface Notificacao {
+  id: number;
+  tipo: string;
+  titulo: string;
+  mensagem: string;
+  prioridade: string;
+  lida: boolean;
+  created_at: string;
+}
 
 export default function NotificacoesFinanceiras() {
-  const { notificacoes, setNotificacoes, marcarComoLida, loading, setLoading } =
-    usePlanosStore();
+  const [notificacoes, setNotificacoes] = useState<Notificacao[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const marcarComoLida = (id: number) => {
+    setNotificacoes((prev) =>
+      prev.map((n) => (n.id === id ? { ...n, lida: true } : n))
+    );
+  };
 
   const loadNotificacoes = useCallback(async () => {
     setLoading(true);
@@ -19,7 +34,7 @@ export default function NotificacoesFinanceiras() {
     } finally {
       setLoading(false);
     }
-  }, [setNotificacoes, setLoading]);
+  }, []);
 
   useEffect(() => {
     loadNotificacoes();

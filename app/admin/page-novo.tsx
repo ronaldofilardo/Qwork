@@ -37,10 +37,10 @@ export default function AdminPage() {
 
   // Contadores para badges do sidebar
   const [_pendingCount, setPendingCount] = useState(0);
-  const [clinicasCount, setClinicasCount] = useState(0);
-  const [entidadesCount, setEntidadesCount] = useState(0);
+  const [_clinicasCount, setClinicasCount] = useState(0);
+  const [_entidadesCount, setEntidadesCount] = useState(0);
   const [_cobrancaPendente, setCobrancaPendente] = useState(0);
-  const [pagamentosPendentes, setPagamentosPendentes] = useState(0);
+  const [_pagamentosPendentes, setPagamentosPendentes] = useState(0);
   const [emissoresAtivos, setEmissoresAtivos] = useState(0);
 
   const router = useRouter();
@@ -186,9 +186,6 @@ export default function AdminPage() {
           ) => void
         }
         counts={{
-          clinicas: clinicasCount,
-          entidades: entidadesCount,
-          pagamentos: pagamentosPendentes,
           emissores: emissoresAtivos,
         }}
       />

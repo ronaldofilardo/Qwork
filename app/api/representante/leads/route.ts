@@ -33,6 +33,9 @@ export async function GET(request: NextRequest) {
     if (status && ['pendente', 'convertido', 'expirado'].includes(status)) {
       wheres.push(`l.status = $${i++}`);
       params.push(status);
+    } else {
+      // Por padrão, leads convertidos não aparecem na aba Leads (apenas em Vínculos)
+      wheres.push(`l.status != 'convertido'`);
     }
 
     const where = `WHERE ${wheres.join(' AND ')}`;
@@ -99,6 +102,7 @@ export async function POST(request: NextRequest) {
       contato_email,
       contato_telefone,
       valor_negociado,
+      percentual_comissao,
     } = body;
 
     const cnpjLimpo = normalizeCNPJ(cnpj ?? '');
@@ -113,6 +117,14 @@ export async function POST(request: NextRequest) {
     if (isNaN(valorNum) || valorNum <= 0) {
       return NextResponse.json(
         { error: 'Valor negociado é obrigatório e deve ser maior que zero.' },
+        { status: 400 }
+      );
+    }
+
+    const comissaoNum = Number(percentual_comissao);
+    if (isNaN(comissaoNum) || comissaoNum < 0 || comissaoNum > 100) {
+      return NextResponse.json(
+        { error: 'Percentual de comissão deve estar entre 0 e 100.' },
         { status: 400 }
       );
     }
@@ -170,8 +182,8 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await query(
-      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
       [
         sess.representante_id,
@@ -181,6 +193,7 @@ export async function POST(request: NextRequest) {
         contato_email ?? null,
         contato_telefone ?? null,
         valorNum,
+        comissaoNum,
       ]
     );
 

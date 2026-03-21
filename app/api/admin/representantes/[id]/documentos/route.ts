@@ -44,9 +44,10 @@ async function resolveRepDocUrl(
         process.env.BACKBLAZE_ENDPOINT ||
         process.env.BACKBLAZE_S2_ENDPOINT ||
         's3.us-east-005.backblazeb2.com';
-      const endpoint = rawEndpoint.startsWith('https://') || rawEndpoint.startsWith('http://')
-        ? rawEndpoint
-        : `https://${rawEndpoint}`;
+      const endpoint =
+        rawEndpoint.startsWith('https://') || rawEndpoint.startsWith('http://')
+          ? rawEndpoint
+          : `https://${rawEndpoint}`;
       const region =
         process.env.BACKBLAZE_REGION ||
         rawEndpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/)?.[1] ||
@@ -90,7 +91,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('admin', false);
+    await requireRole('comercial', false);
 
     const id = parseInt(params.id, 10);
     if (isNaN(id) || id <= 0) {

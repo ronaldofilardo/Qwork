@@ -45,9 +45,6 @@ export interface Entidade {
   motivo_rejeicao?: string;
   observacoes_reanalise?: string;
   ativa: boolean;
-  plano_id?: number;
-  plano_tipo?: string;
-  plano_nome?: string;
   pagamento_confirmado: boolean;
   numero_funcionarios_estimado?: number;
   criado_em: Date;
@@ -93,9 +90,8 @@ export async function getEntidadeById(
   session?: Session
 ): Promise<Entidade | null> {
   const result = await query<Entidade>(
-    `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
+    `SELECT c.*
      FROM entidades c
-     LEFT JOIN planos p ON c.plano_id = p.id
      WHERE c.id = $1`,
     [id],
     session
@@ -111,14 +107,12 @@ export async function getEntidadesPendentes(
   session?: Session
 ): Promise<Entidade[]> {
   const queryText = tipo
-    ? `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
+    ? `SELECT c.*
        FROM entidades c
-       LEFT JOIN planos p ON c.plano_id = p.id
        WHERE c.status IN ($1, $2, $3) AND c.tipo = $4
        ORDER BY c.criado_em DESC`
-    : `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
+    : `SELECT c.*
        FROM entidades c
-       LEFT JOIN planos p ON c.plano_id = p.id
        WHERE c.status IN ($1, $2, $3)
        ORDER BY c.tipo, c.criado_em DESC`;
 
@@ -207,7 +201,6 @@ export async function createEntidade(
   try {
     await query(
       `ALTER TABLE entidades
-       ADD COLUMN IF NOT EXISTS plano_id INTEGER,
        ADD COLUMN IF NOT EXISTS pagamento_confirmado BOOLEAN DEFAULT false,
        ADD COLUMN IF NOT EXISTS data_liberacao_login TIMESTAMP,
        ADD COLUMN IF NOT EXISTS data_primeiro_pagamento TIMESTAMP`,
@@ -226,10 +219,10 @@ export async function createEntidade(
         endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-        status, motivo_rejeicao, observacoes_reanalise, ativa, plano_id, pagamento_confirmado
+        status, motivo_rejeicao, observacoes_reanalise, ativa, pagamento_confirmado
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false, $22, false
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false, false
       ) RETURNING *`,
       [
         data.tipo,
@@ -253,7 +246,6 @@ export async function createEntidade(
         data.status,
         data.motivo_rejeicao,
         data.observacoes_reanalise,
-        data.plano_id,
       ],
       session
     );
@@ -274,10 +266,10 @@ export async function createEntidade(
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
           cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-          status, motivo_rejeicao, observacoes_reanalise, ativa, plano_id, pagamento_confirmado
+          status, motivo_rejeicao, observacoes_reanalise, ativa, pagamento_confirmado
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false, $22, false
+          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false, false
         ) RETURNING *`,
         [
           data.tipo,
@@ -301,7 +293,6 @@ export async function createEntidade(
           'pendente',
           data.motivo_rejeicao,
           data.observacoes_reanalise,
-          data.plano_id,
         ],
         session
       );

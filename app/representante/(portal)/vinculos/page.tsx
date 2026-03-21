@@ -14,6 +14,11 @@ interface Vinculo {
   valor_total_pago: string;
   valor_pendente: string;
   ultimo_laudo_em: string | null;
+  lead_valor_negociado: number | null;
+  lead_contato_nome: string | null;
+  lead_contato_email: string | null;
+  lead_criado_em: string | null;
+  lead_data_conversao: string | null;
 }
 
 const STATUS_BADGE: Record<string, string> = {
@@ -180,6 +185,45 @@ export default function VinculosRepresentante() {
                         </span>
                       )}
                     </div>
+
+                    {/* Dados do lead de origem */}
+                    {(v.lead_contato_nome ||
+                      v.lead_contato_email ||
+                      v.lead_valor_negociado ||
+                      v.lead_criado_em) && (
+                      <div className="mt-3 pt-3 border-t border-gray-100 flex items-center gap-4 flex-wrap text-xs text-gray-500">
+                        {v.lead_contato_nome && (
+                          <span>
+                            👤 {v.lead_contato_nome}
+                            {v.lead_contato_email
+                              ? ` · ${v.lead_contato_email}`
+                              : ''}
+                          </span>
+                        )}
+                        {v.lead_valor_negociado &&
+                          Number(v.lead_valor_negociado) > 0 && (
+                            <span className="text-emerald-600 font-medium">
+                              💰 {fmt(v.lead_valor_negociado)}
+                            </span>
+                          )}
+                        {v.lead_criado_em && (
+                          <span>
+                            📅 Lead criado:{' '}
+                            {new Date(v.lead_criado_em).toLocaleDateString(
+                              'pt-BR'
+                            )}
+                          </span>
+                        )}
+                        {v.lead_data_conversao && (
+                          <span className="text-green-600">
+                            ✅ Convertido:{' '}
+                            {new Date(v.lead_data_conversao).toLocaleDateString(
+                              'pt-BR'
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <div className="flex items-center gap-6 mt-3 text-sm">
                       <div>

@@ -6,14 +6,10 @@ export interface ContratoPlano {
   tomador_id: number;
   cnpj: string;
   contrato_id: number | null;
-  plano_id: number | null;
-  plano_nome: string | null;
-  plano_preco: number | null;
   id: number;
   numero_contrato: number;
   tipo_tomador: 'clinica' | 'entidade';
   nome_tomador: string;
-  plano_tipo: string;
   numero_funcionarios_estimado: number | null;
   numero_funcionarios_atual: number | null;
   pagamento_id: number | null;

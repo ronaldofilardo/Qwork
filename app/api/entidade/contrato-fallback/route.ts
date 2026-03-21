@@ -9,35 +9,14 @@ export async function GET() {
     const session = await requireEntity();
     const entidadeId = session.entidade_id;
 
-    // Detectar dinamicamente quais colunas de preço existem na tabela `planos`
-    const planColsRes = await queryAsGestorEntidade(
-      `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`
-    );
-    const availablePlanCols = planColsRes.rows.map((r: any) => r.column_name);
-
-    const planSelect: string[] = [
-      'p.nome as plano_nome',
-      'p.tipo as plano_tipo',
-    ];
-    if (availablePlanCols.includes('preco'))
-      planSelect.push('p.preco as plano_preco');
-    if (availablePlanCols.includes('valor_por_funcionario'))
-      planSelect.push('p.valor_por_funcionario as plano_valor_por_funcionario');
-    if (availablePlanCols.includes('valor_base'))
-      planSelect.push('p.valor_base as plano_valor_base');
-    if (availablePlanCols.includes('valor_fixo_anual'))
-      planSelect.push('p.valor_fixo_anual as plano_valor_fixo_anual');
-
+    // Buscar contrato plano mais recente da entidade
     const contratoPlanoQuery = `
       SELECT
         cp.id,
-        cp.plano_id,
-        ${planSelect.join(',\n        ')},
         cp.valor_pago as valor_total,
         COALESCE(cp.numero_funcionarios_estimado, cp.numero_funcionarios_atual) as numero_funcionarios,
         cp.created_at as criado_em
       FROM contratos_planos cp
-      LEFT JOIN planos p ON cp.plano_id = p.id
       WHERE cp.entidade_id = $1
       ORDER BY cp.created_at DESC
       LIMIT 1
@@ -80,17 +59,6 @@ export async function GET() {
 
     const contrato = {
       id: row.id,
-      plano_id: row.plano_id,
-      plano_nome: row.plano_nome,
-      plano_tipo: row.plano_tipo,
-      plano_preco_unitario: (() => {
-        const v =
-          row.plano_valor_por_funcionario ||
-          row.plano_preco ||
-          row.plano_valor_base ||
-          row.plano_valor_fixo_anual;
-        return v == null ? null : parseFloat(String(v));
-      })(),
       valor_total: row.valor_total ? parseFloat(String(row.valor_total)) : null,
       numero_funcionarios: row.numero_funcionarios
         ? parseInt(String(row.numero_funcionarios), 10)

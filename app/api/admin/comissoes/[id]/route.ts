@@ -1,7 +1,8 @@
 /**
  * PATCH /api/admin/comissoes/[id]
- * Admin atualiza status de uma comissão.
- * Ações: liberar, pagar, congelar, cancelar, descongelar
+ * Atualiza status de uma comissão.
+ * Ações suporte: liberar, pagar
+ * Ações comercial: congelar, cancelar, descongelar
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -10,12 +11,16 @@ import { requireRole } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
+// Ações permitidas por perfil
+const ACOES_SUPORTE = ['liberar', 'pagar'];
+const ACOES_COMERCIAL = ['congelar', 'cancelar', 'descongelar'];
+
 export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole(['comercial', 'suporte'], false);
     const comissaoId = parseInt(params.id, 10);
     if (isNaN(comissaoId))
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
@@ -23,19 +28,29 @@ export async function PATCH(
     const body = await request.json();
     const { acao, motivo, comprovante_path } = body;
 
-    const acoesValidas = [
-      'liberar',
-      'pagar',
-      'congelar',
-      'cancelar',
-      'descongelar',
-    ];
+    const acoesValidas = [...ACOES_SUPORTE, ...ACOES_COMERCIAL];
     if (!acao || !acoesValidas.includes(acao)) {
       return NextResponse.json(
         {
           error: `Ação inválida. Valores aceitos: ${acoesValidas.join(', ')}`,
         },
         { status: 400 }
+      );
+    }
+
+    // Verificar se o perfil do usuário tem permissão para a ação solicitada
+    if (session.perfil === 'suporte' && !ACOES_SUPORTE.includes(acao)) {
+      return NextResponse.json(
+        { error: `Perfil 'suporte' não tem permissão para a ação '${acao}'.` },
+        { status: 403 }
+      );
+    }
+    if (session.perfil === 'comercial' && !ACOES_COMERCIAL.includes(acao)) {
+      return NextResponse.json(
+        {
+          error: `Perfil 'comercial' não tem permissão para a ação '${acao}'.`,
+        },
+        { status: 403 }
       );
     }
 

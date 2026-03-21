@@ -6,7 +6,6 @@ import type { FormaPagamento, PaymentData } from './types';
 
 interface UseCheckoutAsaasOptions {
   tomadorId: number;
-  planoId: number;
   numeroFuncionarios: number;
   valor: number;
   contratoId: number | null;
@@ -17,7 +16,6 @@ interface UseCheckoutAsaasOptions {
 
 export function useCheckoutAsaas({
   tomadorId,
-  planoId,
   numeroFuncionarios,
   valor,
   contratoId,
@@ -89,7 +87,6 @@ export function useCheckoutAsaas({
         body: JSON.stringify({
           tomador_id: tomadorId,
           contrato_id: contratoId,
-          plano_id: planoId,
           numero_funcionarios: numeroFuncionarios,
           valor_total: valor,
           metodo: formaPagamento,
@@ -137,7 +134,6 @@ export function useCheckoutAsaas({
   }, [
     tomadorId,
     contratoId,
-    planoId,
     numeroFuncionarios,
     valor,
     formaPagamento,

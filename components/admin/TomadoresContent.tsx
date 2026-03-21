@@ -9,12 +9,10 @@ import {
   User,
   Filter,
   RefreshCw,
-  CheckCircle,
-  XCircle,
   UserCheck,
-  Link2,
 } from 'lucide-react';
 import ModalReativarTomador from './ModalReativarTomador';
+import TomadorDetailModal from './TomadorDetailModal';
 
 type TipoTomador = 'clinica' | 'entidade';
 
@@ -69,7 +67,6 @@ export function TomadoresContent({
   const [tomadorParaReativar, setTomadorParaReativar] =
     useState<Tomador | null>(null);
 
-  // Estado para vincular representante
   const [codigoRepInput, setCodigoRepInput] = useState('');
   const [valorNegociadoInput, setValorNegociadoInput] = useState('');
   const [vinculando, setVinculando] = useState(false);
@@ -164,7 +161,6 @@ export function TomadoresContent({
 
     const data = await res.json();
 
-    // Atualizar lista local
     const gestorAtualizado = trocarGestor
       ? {
           nome: trocarGestor.nome,
@@ -190,14 +186,11 @@ export function TomadoresContent({
       );
     }
 
-    // Se não trocou gestor, fechar tudo
     if (!trocarGestor) {
       setShowReativarModal(false);
       setTomadorParaReativar(null);
       return null;
     }
-
-    // Retornar credenciais do novo gestor para o modal exibir
     return data.novo_gestor || null;
   };
 
@@ -464,243 +457,18 @@ export function TomadoresContent({
 
       {/* Modal de Detalhes */}
       {tomadorSelecionado && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => setTomadorSelecionado(null)}
-        >
-          <div
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="p-6">
-              {/* Header do Modal */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`p-3 rounded-lg ${
-                      tomadorSelecionado.tipo === 'clinica'
-                        ? 'bg-blue-100'
-                        : 'bg-purple-100'
-                    }`}
-                  >
-                    <Building2
-                      className={`h-8 w-8 ${
-                        tomadorSelecionado.tipo === 'clinica'
-                          ? 'text-blue-600'
-                          : 'text-purple-600'
-                      }`}
-                    />
-                  </div>
-                  <div>
-                    <span
-                      className={`text-sm font-semibold px-3 py-1 rounded ${
-                        tomadorSelecionado.tipo === 'clinica'
-                          ? 'bg-blue-100 text-blue-700'
-                          : 'bg-purple-100 text-purple-700'
-                      }`}
-                    >
-                      {tomadorSelecionado.tipo === 'clinica'
-                        ? 'CLÍNICA'
-                        : 'ENTIDADE'}
-                    </span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setTomadorSelecionado(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* Dados do tomador */}
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    {tomadorSelecionado.nome}
-                  </h2>
-                  <p className="text-gray-600">
-                    CNPJ: {tomadorSelecionado.cnpj}
-                  </p>
-                </div>
-
-                {/* Endereço Completo */}
-                {tomadorSelecionado.endereco && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h3 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-gray-600" />
-                      Endereço
-                    </h3>
-                    <p className="text-gray-700">
-                      {tomadorSelecionado.endereco}
-                    </p>
-                    <p className="text-gray-700">
-                      {tomadorSelecionado.cidade}/{tomadorSelecionado.estado}
-                    </p>
-                  </div>
-                )}
-
-                {/* Contato */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-3">Contato</h3>
-                  <div className="space-y-2">
-                    {tomadorSelecionado.telefone && (
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Phone className="h-5 w-5 text-gray-600" />
-                        <span>{tomadorSelecionado.telefone}</span>
-                      </div>
-                    )}
-                    {tomadorSelecionado.email && (
-                      <div className="flex items-center gap-2 text-gray-700">
-                        <Mail className="h-5 w-5 text-gray-600" />
-                        <span>{tomadorSelecionado.email}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Gestor Responsável */}
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <User className="h-5 w-5 text-gray-600" />
-                    Gestor Responsável
-                  </h3>
-                  {tomadorSelecionado.gestor ? (
-                    <div className="space-y-2">
-                      <p className="font-semibold text-gray-900">
-                        {tomadorSelecionado.gestor.nome}
-                      </p>
-                      <p className="text-gray-700">
-                        CPF: {tomadorSelecionado.gestor.cpf}
-                      </p>
-                      <p className="text-gray-700">
-                        Email: {tomadorSelecionado.gestor.email}
-                      </p>
-                      <span
-                        className={`inline-block text-sm px-3 py-1 rounded ${
-                          tomadorSelecionado.gestor.perfil === 'rh'
-                            ? 'bg-blue-100 text-blue-700'
-                            : 'bg-purple-100 text-purple-700'
-                        }`}
-                      >
-                        {tomadorSelecionado.gestor.perfil === 'rh'
-                          ? 'RH'
-                          : 'Gestor Entidade'}
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="bg-amber-50 border border-amber-200 rounded p-3">
-                      <p className="text-amber-800">
-                        ⚠️ Este tomador não possui gestor vinculado
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Representante Vinculado */}
-                <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
-                  <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <UserCheck className="h-5 w-5 text-purple-600" />
-                    Representante
-                  </h3>
-                  {tomadorSelecionado.representante ? (
-                    <div className="space-y-2">
-                      <p className="font-semibold text-gray-900">
-                        {tomadorSelecionado.representante.nome}
-                      </p>
-                      <p className="text-sm text-purple-700">
-                        Código: {tomadorSelecionado.representante.codigo}
-                      </p>
-                      {tomadorSelecionado.representante.valor_negociado !=
-                        null && (
-                        <p className="text-sm text-gray-700">
-                          Valor negociado:{' '}
-                          <strong>
-                            R${' '}
-                            {tomadorSelecionado.representante.valor_negociado.toLocaleString(
-                              'pt-BR',
-                              { minimumFractionDigits: 2 }
-                            )}
-                          </strong>
-                        </p>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-sm text-gray-600">
-                        Nenhum representante vinculado. Informe o código para
-                        vincular:
-                      </p>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Código (ex: REP-PJ123)"
-                          value={codigoRepInput}
-                          onChange={(e) =>
-                            setCodigoRepInput(e.target.value.toUpperCase())
-                          }
-                          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                          disabled={vinculando}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          placeholder="Valor negociado/func (opcional)"
-                          value={valorNegociadoInput}
-                          onChange={(e) =>
-                            setValorNegociadoInput(e.target.value)
-                          }
-                          className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                          disabled={vinculando}
-                        />
-                        <button
-                          onClick={handleVincularRepresentante}
-                          disabled={vinculando || !codigoRepInput.trim()}
-                          className="px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center gap-2"
-                        >
-                          <Link2 className="h-4 w-4" />
-                          {vinculando ? 'Vinculando...' : 'Vincular'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Data de Cadastro */}
-                <div className="text-sm text-gray-600">
-                  Cadastrado em:{' '}
-                  {new Date(tomadorSelecionado.created_at).toLocaleDateString(
-                    'pt-BR'
-                  )}
-                </div>
-
-                {/* Ação: Ativar / Desativar */}
-                <div className="pt-4 border-t border-gray-200">
-                  <button
-                    onClick={() => toggleAtivo(tomadorSelecionado)}
-                    disabled={ativando}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
-                      tomadorSelecionado.ativo
-                        ? 'bg-red-100 text-red-700 hover:bg-red-200'
-                        : 'bg-green-100 text-green-700 hover:bg-green-200'
-                    } disabled:opacity-50`}
-                  >
-                    {tomadorSelecionado.ativo ? (
-                      <>
-                        <XCircle className="h-5 w-5" /> Desativar
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="h-5 w-5" /> Ativar
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <TomadorDetailModal
+          tomador={tomadorSelecionado}
+          onClose={() => setTomadorSelecionado(null)}
+          codigoRepInput={codigoRepInput}
+          setCodigoRepInput={setCodigoRepInput}
+          valorNegociadoInput={valorNegociadoInput}
+          setValorNegociadoInput={setValorNegociadoInput}
+          vinculando={vinculando}
+          ativando={ativando}
+          onVincular={handleVincularRepresentante}
+          onToggleAtivo={toggleAtivo}
+        />
       )}
 
       {/* Modal de Reativação */}

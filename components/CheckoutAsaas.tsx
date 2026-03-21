@@ -6,7 +6,6 @@ import { toast } from 'react-hot-toast';
 
 interface CheckoutAsaasProps {
   tomadorId: number;
-  planoId: number;
   numeroFuncionarios?: number;
   valor: number;
   contratoId?: number | null;
@@ -41,7 +40,6 @@ interface PaymentData {
 
 export default function CheckoutAsaas({
   tomadorId,
-  planoId,
   numeroFuncionarios = 0,
   valor,
   contratoId = null,
@@ -117,7 +115,6 @@ export default function CheckoutAsaas({
         body: JSON.stringify({
           tomador_id: tomadorId,
           contrato_id: contratoId,
-          plano_id: planoId,
           numero_funcionarios: numeroFuncionarios,
           valor_total: valor,
           metodo: formaPagamento,

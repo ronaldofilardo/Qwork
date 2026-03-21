@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole('comercial', false);
     const body = await request.json();
 
     const {

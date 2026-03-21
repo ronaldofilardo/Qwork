@@ -1,0 +1,2646 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs && dotenv -e .env.test --override -- node scripts/checks/validate-test-data-integrity.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "clinicas.ativa" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "entidades.tipo" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "empresas_clientes.ativa" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.empresa_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.clinica_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.tipo" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.status" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.liberado_por" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "avaliacoes.lote_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "avaliacoes.status" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "tomador_id" n├úo existe na tabela "funcionarios". Se testes falharem, verifique se migrations foram aplicadas.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "usuario_tipo" n├úo existe na tabela "funcionarios". Se testes falharem, verifique se migrations foram aplicadas.
+Ô£à [validate-test-data-integrity] Esquema do banco "nr-bps_db_test" foi validado (6 tabelas verificadas).
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest
+
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+FAIL __tests__/emissor/emissor-pdf-imutabilidade.unit.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+  ÔùÅ Endpoint Emissor PDF - Imutabilidade e Seguran├ºa ÔÇ║ Imutabilidade: Sem UPDATE em laudos emitidos ÔÇ║ n├úo deve ter UPDATE laudos SET no c├│digo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: false
+    Received: true
+
+      277 |       // Verificar que n├úo tem UPDATE em laudos ap├│s emiss├úo
+      278 |       const hasUpdateLaudos = /UPDATE\s+laudos\s+SET/i.test(routeCode);
+    > 279 |       expect(hasUpdateLaudos).toBe(false);
+          |                               ^
+      280 |     });
+      281 |
+      282 |     it('deve ter coment├írio sobre imutabilidade', () => {
+
+      at Object.toBe (__tests__/emissor/emissor-pdf-imutabilidade.unit.test.ts:279:31)
+
+FAIL __tests__/emissor/emissor-download-client-side-fallback.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+    console.log
+      [INFO] Servindo arquivo local de laudo: C:\apps\QWork/storage/laudos/laudo-456.pdf
+
+      at log (app/api/emissor/laudos/[loteId]/download/route.ts:99:17)
+
+    console.log
+      [INFO] Servindo arquivo local de laudo: C:\apps\QWork/storage/laudos/laudo-456.pdf
+
+      at log (app/api/emissor/laudos/[loteId]/download/route.ts:99:17)
+
+    console.log
+      [INFO] PDF n├úo encontrado localmente para laudo 123. Retornando instru├º├úo para gera├º├úo client-side.
+
+      at log (app/api/emissor/laudos/[loteId]/download/route.ts:115:13)
+
+    console.log
+      [INFO] PDF n├úo encontrado localmente para laudo 999. Retornando instru├º├úo para gera├º├úo client-side.
+
+      at log (app/api/emissor/laudos/[loteId]/download/route.ts:115:13)
+
+  ÔùÅ Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback ÔÇ║ Cen├írio 3: Seguran├ºa e Valida├º├Áes ÔÇ║ deve retornar 404 quando lote n├úo existe
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 500
+
+      212 |       const response = await GET(request, context);
+      213 |
+    > 214 |       expect(response.status).toBe(404);
+          |                               ^
+      215 |       const data = await response.json();
+      216 |       expect(data.error).toContain('n├úo encontrado');
+      217 |     });
+
+      at Object.toBe (__tests__/emissor/emissor-download-client-side-fallback.test.ts:214:31)
+
+  ÔùÅ Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback ÔÇ║ Cen├írio 3: Seguran├ºa e Valida├º├Áes ÔÇ║ deve retornar 403 quando emissor n├úo ├® dono do lote
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 500
+
+      238 |       const response = await GET(request, context);
+      239 |
+    > 240 |       expect(response.status).toBe(404);
+          |                               ^
+      241 |       const data = await response.json();
+      242 |       expect(data.error).toContain('n├úo encontrado');
+      243 |     });
+
+      at Object.toBe (__tests__/emissor/emissor-download-client-side-fallback.test.ts:240:31)
+
+  ÔùÅ Endpoint /api/emissor/laudos/[loteId]/download - Client-side Fallback ÔÇ║ Cen├írio 3: Seguran├ºa e Valida├º├Áes ÔÇ║ deve retornar 404 quando lote n├úo tem laudo emitido
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 404
+    Received: 500
+
+      263 |       const response = await GET(request, context);
+      264 |
+    > 265 |       expect(response.status).toBe(404);
+          |                               ^
+      266 |       const data = await response.json();
+      267 |       expect(data.error).toContain('n├úo encontrado');
+      268 |     });
+
+      at Object.toBe (__tests__/emissor/emissor-download-client-side-fallback.test.ts:265:31)
+
+FAIL __tests__/emissor/emissor-vercel-pdf-integration.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+  ÔùÅ Integra├º├úo: Fix Vercel Chromium - Fallback Client-side ÔÇ║ Documenta├º├úo: Arquivos de an├ílise ÔÇ║ deve existir ANALYSIS-VERCEL-PDF-ISSUE.md
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      298 |         'ANALYSIS-VERCEL-PDF-ISSUE.md'
+      299 |       );
+    > 300 |       expect(fs.existsSync(analysisFile)).toBe(true);
+          |                                           ^
+      301 |
+      302 |       const content = fs.readFileSync(analysisFile, 'utf-8');
+      303 |       expect(content).toContain('Vercel');
+
+      at Object.toBe (__tests__/emissor/emissor-vercel-pdf-integration.test.ts:300:43)
+
+  ÔùÅ Integra├º├úo: Fix Vercel Chromium - Fallback Client-side ÔÇ║ Documenta├º├úo: Arquivos de an├ílise ÔÇ║ deve existir IMPLEMENTATION-CLIENT-SIDE-PDF.md
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: true
+    Received: false
+
+      311 |         'IMPLEMENTATION-CLIENT-SIDE-PDF.md'
+      312 |       );
+    > 313 |       expect(fs.existsSync(implFile)).toBe(true);
+          |                                       ^
+      314 |
+      315 |       const content = fs.readFileSync(implFile, 'utf-8');
+      316 |       expect(content).toContain('jsPDF');
+
+      at Object.toBe (__tests__/emissor/emissor-vercel-pdf-integration.test.ts:313:39)
+
+FAIL __tests__/emissor/validation-manual-emission-changes.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+  ÔùÅ Valida├º├úo de Mudan├ºas - Emiss├úo Manual ÔÇ║ 1. API RH Status - N├úo deve emitir automaticamente ÔÇ║ n├úo deve ter chamada a emitirLaudoImediato
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "REMOVIDO: Emiss├úo autom├ítica de laudo"
+    Received string:    "import { NextResponse, NextRequest } from 'next/server';┬À
+    import { query } from '@/lib/db';┬À
+    import { requireRole } from '@/lib/session';┬À
+    import { StatusAvaliacao } from '@/lib/types/avaliacao-status';┬À
+    import { StatusLote } from '@/lib/types/lote-status';┬À┬À┬À
+    export const dynamic = 'force-dynamic';┬À
+    async function updateLotesStatus(cpf: string, session: any) {┬À
+      // Buscar lotes que t├¬m avalia├º├Áes deste funcion├írio┬À
+      const lotesResult = await query(┬À
+        `┬À
+        SELECT DISTINCT la.id, la.status┬À
+        FROM lotes_avaliacao la┬À
+        JOIN avaliacoes a ON la.id = a.lote_id┬À
+        WHERE a.funcionario_cpf = $1┬À
+      `,┬À
+        [cpf],┬À
+        session┬À
+      );┬À┬À┬À
+      console.log(┬À
+        `[INFO] Atualizando ${lotesResult.rowCount} lotes afetados pelo funcion├írio ${cpf}`┬À
+      );┬À┬À┬À
+      for (const lote of lotesResult.rows) {┬À
+        // Recalcular status do lote baseado nas avalia├º├Áes ativas (n├úo inativadas)┬À
+        const statsResult = await query(┬À
+          `┬À
+          SELECT┬À
+            COUNT(*) FILTER (WHERE a.status != $1) as ativas,┬À
+            COUNT(*) FILTER (WHERE a.status = $2) as concluidas┬À
+          FROM avaliacoes a┬À
+          WHERE a.lote_id = $3┬À
+        `,┬À
+          [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id],┬À
+          session┬À
+        );┬À┬À┬À
+        const { ativas, concluidas } = statsResult.rows[0];┬À
+        const ativasNum = parseInt(ativas) || 0;┬À
+        const concluidasNum = parseInt(concluidas) || 0;┬À┬À┬À
+        console.log(┬À
+          `[DEBUG] Lote ${lote.id}: ${ativasNum} ativas, ${concluidasNum} conclu├¡das, status atual: ${lote.status}`┬À
+        );┬À┬À┬À
+        // N├úo alterar status manuais (cancelado, finalizado)┬À
+        if ([StatusLote.CANCELADO, StatusLote.FINALIZADO].includes(lote.status)) {┬À
+          console.log(┬À
+            `[INFO] Lote ${lote.id} possui status manual '${lote.status}', n├úo ser├í alterado`┬À
+          );┬À
+          continue;┬À
+        }┬À┬À┬À
+        // Calcular novo status baseado nas avalia├º├Áes┬À
+        let novoStatus = StatusLote.ATIVO;┬À
+        if (ativasNum === 0) {┬À
+          novoStatus = StatusLote.RASCUNHO; // Nenhuma avalia├º├úo ativa┬À
+        } else if (concluidasNum === ativasNum) {┬À
+          novoStatus = StatusLote.CONCLUIDO; // Todas conclu├¡das┬À
+        }┬À┬À┬À
+        if (novoStatus !== lote.status) {┬À
+          // Atualizar status do lote┬À
+          await query(┬À
+            'UPDATE lotes_avaliacao SET status = $1 WHERE id = $2',┬À
+            [novoStatus, lote.id],┬À
+            session┬À
+          );┬À
+          console.log(┬À
+            `[INFO] Lote ${lote.id} alterado de '${lote.status}' para '${novoStatus}'`┬À
+          );┬À┬À┬À
+          if (novoStatus === StatusLote.CONCLUIDO) {┬À
+            console.log(┬À
+              `[INFO] Lote ${lote.id} est├í conclu├¡do e pronto para solicita├º├úo de emiss├úo manual`┬À
+            );┬À
+          }┬À
+        }┬À
+      }┬À
+    }┬À┬À┬À
+    async function handleStatusUpdate(request: NextRequest) {┬À
+      try {┬À
+        const session = await requireRole('rh');┬À
+        const body = await request.json();┬À
+        const { cpf, ativo, empresa_id: empresaId } = body;┬À┬À┬À
+        if (!cpf || typeof ativo !== 'boolean') {┬À
+          return NextResponse.json(┬À
+            { error: 'CPF e status ativo s├úo obrigat├│rios' },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // Obter cl├¡nica do RH da sess├úo┬À
+        const clinicaId = session.clinica_id;┬À
+        if (!clinicaId) {┬À
+          return NextResponse.json(┬À
+            { error: 'Cl├¡nica n├úo identificada na sess├úo do RH' },┬À
+            { status: 500 }┬À
+          );┬À
+        }┬À┬À┬À
+        // Se empresa_id n├úo foi fornecida, buscar pela cl├¡nica apenas┬À
+        let funcResult;┬À
+        if (empresaId) {┬À
+          // Verificar se funcion├írio existe e pertence ├á empresa/cl├¡nica espec├¡fica┬À
+          funcResult = await query(┬À
+            `SELECT f.cpf, f.ativo┬À┬À
+             FROM funcionarios f┬À
+             INNER JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id┬À
+             WHERE f.cpf = $1 AND fc.empresa_id = $2 AND fc.clinica_id = $3 AND fc.ativo = true`,┬À
+            [cpf, empresaId, clinicaId],┬À
+            session┬À
+          );┬À
+        } else {┬À
+          // Buscar funcion├írio pela cl├¡nica apenas (qualquer empresa da cl├¡nica)┬À
+          funcResult = await query(┬À
+            `SELECT f.cpf, f.ativo┬À┬À
+             FROM funcionarios f┬À
+             INNER JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id┬À
+             WHERE f.cpf = $1 AND fc.clinica_id = $2 AND fc.ativo = true`,┬À
+            [cpf, clinicaId],┬À
+            session┬À
+          );┬À
+        }┬À┬À┬À
+        if (funcResult.rows.length === 0) {┬À
+          return NextResponse.json(┬À
+            { error: 'Funcion├írio n├úo encontrado ou n├úo pertence ├á sua cl├¡nica' },┬À
+            { status: 404 }┬À
+          );┬À
+        }┬À┬À┬À
+        const statusAtual = funcResult.rows[0].ativo;┬À┬À┬À
+        // Se j├í est├í no status desejado, n├úo fazer nada┬À
+        if (statusAtual === ativo) {┬À
+          return NextResponse.json({┬À
+            success: true,┬À
+            message: 'Status j├í est├í atualizado',┬À
+          });┬À
+        }┬À┬À┬À
+        // Atualizar status do funcion├írio (com session para auditoria)┬À
+        await query(┬À
+          'UPDATE funcionarios SET ativo = $1 WHERE cpf = $2',┬À
+          [ativo, cpf],┬À
+          session┬À
+        );┬À┬À┬À
+        // Atualizar status das avalia├º├Áes baseado no status do funcion├írio┬À
+        if (!ativo) {┬À
+          // Desligando da empresa: marcar avalia├º├Áes n├úo conclu├¡das como 'inativada' (conclu├¡das permanecem)┬À
+          // Nota: verifica both 'concluida' e 'concluido' para retrocompatibilidade┬À
+          const updateResult = await query(┬À
+            \"UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != 'concluida' AND status != 'concluido' RETURNING id, status\",┬À
+            [StatusAvaliacao.INATIVADA, cpf],┬À
+            session┬À
+          );┬À
+          console.log(┬À
+            `[INFO] Inativadas ${updateResult.rowCount} avalia├º├Áes do funcion├írio ${cpf}`┬À
+          );┬À
+          if (updateResult.rowCount > 0) {┬À
+            console.log('[DEBUG] Avalia├º├Áes inativadas:', updateResult.rows);┬À
+          }┬À
+        }┬À
+        // Reativando: n├úo h├í necessidade de alterar, pois conclu├¡das j├í est├úo corretas e outras permanecem inativadas┬À┬À┬À
+        // Atualizar status dos lotes afetados┬À
+        await updateLotesStatus(cpf, session);┬À┬À┬À
+        return NextResponse.json({┬À
+          success: true,┬À
+          message: ativo┬À
+            ? 'Funcion├írio reativado com sucesso. Ele voltar├í a receber novos lotes de avalia├º├úo.'┬À
+            : 'Funcion├írio desligado da empresa. Avalia├º├Áes n├úo conclu├¡das foram marcadas como inativadas, mas seus dados e hist├│rico foram preservados.',┬À
+        });┬À
+      } catch (error) {┬À
+        console.error('Erro ao atualizar status do funcion├írio:', error);┬À
+        return NextResponse.json(┬À
+          { error: 'Erro interno do servidor' },┬À
+          { status: 500 }┬À
+        );┬À
+      }┬À
+    }┬À┬À┬À
+    export async function PUT(request: NextRequest) {┬À
+      return handleStatusUpdate(request);┬À
+    }┬À┬À┬À
+    export async function PATCH(request: NextRequest) {┬À
+      return handleStatusUpdate(request);┬À
+    }┬À
+    "
+
+      24 |
+      25 |       // Verificar que tem coment├írio sobre REMOVIDO
+    > 26 |       expect(content).toContain('REMOVIDO: Emiss├úo autom├ítica de laudo');
+         |                       ^
+      27 |
+      28 |       // Ô£ô API RH Status n├úo emite automaticamente
+      29 |     });
+
+      at Object.toContain (__tests__/emissor/validation-manual-emission-changes.test.ts:26:23)
+
+  ÔùÅ Valida├º├úo de Mudan├ºas - Emiss├úo Manual ÔÇ║ 2. API RH Status Batch - N├úo deve emitir automaticamente ÔÇ║ n├úo deve ter chamada a emitirLaudoImediato
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "REMOVIDO: Emiss├úo autom├ítica de laudo"
+    Received string:    "import { NextResponse, NextRequest } from 'next/server';┬À
+    import { query } from '@/lib/db';┬À
+    import { requireRole } from '@/lib/session';┬À
+    import { StatusAvaliacao } from '@/lib/types/avaliacao-status';┬À
+    import { StatusLote } from '@/lib/types/lote-status';┬À┬À┬À
+    export const dynamic = 'force-dynamic';┬À┬À┬À
+    async function updateLotesStatus(cpf: string) {┬À
+      // Buscar lotes que t├¬m avalia├º├Áes deste funcion├írio┬À
+      const lotesResult = await query(┬À
+        `┬À
+        SELECT DISTINCT la.id, la.status┬À
+        FROM lotes_avaliacao la┬À
+        JOIN avaliacoes a ON la.id = a.lote_id┬À
+        WHERE a.funcionario_cpf = $1┬À
+      `,┬À
+        [cpf]┬À
+      );┬À┬À┬À
+      console.log(┬À
+        `[INFO] Atualizando ${lotesResult.rowCount} lotes afetados pelo funcion├írio ${cpf}`┬À
+      );┬À┬À┬À
+      for (const lote of lotesResult.rows) {┬À
+        // Recalcular status do lote baseado nas avalia├º├Áes ativas (n├úo inativadas)┬À
+        const statsResult = await query(┬À
+          `┬À
+          SELECT┬À
+            COUNT(*) FILTER (WHERE a.status != $1) as ativas,┬À
+            COUNT(*) FILTER (WHERE a.status = $2) as concluidas┬À
+          FROM avaliacoes a┬À
+          WHERE a.lote_id = $3┬À
+        `,┬À
+          [StatusAvaliacao.INATIVADA, StatusAvaliacao.CONCLUIDA, lote.id]┬À
+        );┬À┬À┬À
+        const { ativas, concluidas } = statsResult.rows[0];┬À
+        const ativasNum = parseInt(ativas) || 0;┬À
+        const concluidasNum = parseInt(concluidas) || 0;┬À┬À┬À
+        console.log(┬À
+          `[DEBUG] Lote ${lote.id}: ${ativasNum} ativas, ${concluidasNum} conclu├¡das, status atual: ${lote.status}`┬À
+        );┬À┬À┬À
+        // N├úo alterar status manuais (cancelado, finalizado)┬À
+        if ([StatusLote.CANCELADO, StatusLote.FINALIZADO].includes(lote.status)) {┬À
+          console.log(┬À
+            `[INFO] Lote ${lote.id} possui status manual '${lote.status}', n├úo ser├í alterado`┬À
+          );┬À
+          continue;┬À
+        }┬À┬À┬À
+        // Calcular novo status baseado nas avalia├º├Áes┬À
+        let novoStatus = StatusLote.ATIVO;┬À
+        if (ativasNum === 0) {┬À
+          novoStatus = StatusLote.RASCUNHO; // Nenhuma avalia├º├úo ativa┬À
+        } else if (concluidasNum === ativasNum) {┬À
+          novoStatus = StatusLote.CONCLUIDO; // Todas conclu├¡das┬À
+        }┬À┬À┬À
+        if (novoStatus !== lote.status) {┬À
+          // Atualizar status do lote┬À
+          await query('UPDATE lotes_avaliacao SET status = $1 WHERE id = $2', [┬À
+            novoStatus,┬À
+            lote.id,┬À
+          ]);┬À
+          console.log(┬À
+            `[INFO] Lote ${lote.id} alterado de '${lote.status}' para '${novoStatus}'`┬À
+          );┬À┬À┬À
+          if (novoStatus === StatusLote.CONCLUIDO) {┬À
+            console.log(┬À
+              `[INFO] Lote ${lote.id} est├í conclu├¡do e pronto para solicita├º├úo de emiss├úo manual`┬À
+            );┬À
+          }┬À
+        }┬À
+      }┬À
+    }┬À┬À┬À
+    export async function PUT(request: NextRequest) {┬À
+      try {┬À
+        const session = await requireRole('rh');┬À
+        const { cpfs, ativo } = await request.json();┬À┬À┬À
+        if (┬À
+          !Array.isArray(cpfs) ||┬À
+          cpfs.length === 0 ||┬À
+          typeof ativo !== 'boolean'┬À
+        ) {┬À
+          return NextResponse.json(┬À
+            { error: 'Lista de CPFs e status ativo s├úo obrigat├│rios' },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // Limite de seguran├ºa: m├íximo 50 funcion├írios por opera├º├úo┬À
+        if (cpfs.length > 50) {┬À
+          return NextResponse.json(┬À
+            { error: 'Opera├º├úo limitada a 50 funcion├írios por vez' },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // Verificar se o RH pertence ├á mesma cl├¡nica dos funcion├írios┬À
+        const rhResult = await query(┬À
+          'SELECT clinica_id FROM funcionarios WHERE cpf = $1',┬À
+          [session.cpf]┬À
+        );┬À┬À┬À
+        if (rhResult.rows.length === 0) {┬À
+          return NextResponse.json(┬À
+            { error: 'Usu├írio RH n├úo encontrado' },┬À
+            { status: 404 }┬À
+          );┬À
+        }┬À┬À┬À
+        const clinicaId = rhResult.rows[0].clinica_id;┬À┬À┬À
+        // Verificar se todos os funcion├írios existem e pertencem ├á cl├¡nica┬À
+        const placeholders = cpfs.map((_, i) => `$${i + 1}`).join(',');┬À
+        const funcResult = await query(┬À
+          `SELECT cpf, ativo FROM funcionarios WHERE cpf IN (${placeholders}) AND clinica_id = $${cpfs.length + 1}`,┬À
+          [...cpfs, clinicaId]┬À
+        );┬À┬À┬À
+        if (funcResult.rows.length !== cpfs.length) {┬À
+          return NextResponse.json(┬À
+            {┬À
+              error:┬À
+                'Um ou mais funcion├írios n├úo foram encontrados ou n├úo pertencem ├á sua cl├¡nica',┬À
+            },┬À
+            { status: 404 }┬À
+          );┬À
+        }┬À┬À┬À
+        // Filtrar apenas os que precisam ser atualizados┬À
+        const funcionariosParaAtualizar = funcResult.rows.filter(┬À
+          (func) => func.ativo !== ativo┬À
+        );┬À┬À┬À
+        if (funcionariosParaAtualizar.length === 0) {┬À
+          return NextResponse.json({┬À
+            success: true,┬À
+            message: 'Todos os funcion├írios j├í est├úo no status desejado',┬À
+          });┬À
+        }┬À┬À┬À
+        // Usar transa├º├úo para garantir atomicidade┬À
+        await query('BEGIN');┬À┬À┬À
+        try {┬À
+          // Atualizar status dos funcion├írios┬À
+          const updatePlaceholders = funcionariosParaAtualizar┬À
+            .map((_, i) => `$${i + 1}`)┬À
+            .join(',');┬À
+          await query(┬À
+            `UPDATE funcionarios SET ativo = $${funcionariosParaAtualizar.length + 1} WHERE cpf IN (${updatePlaceholders})`,┬À
+            [...funcionariosParaAtualizar.map((f) => f.cpf), ativo]┬À
+          );┬À┬À┬À
+          // Para cada funcion├írio desativado, marcar avalia├º├Áes como inativadas┬À
+          if (!ativo) {┬À
+            for (const func of funcionariosParaAtualizar) {┬À
+              const updateResult = await query(┬À
+                'UPDATE avaliacoes SET status = $1 WHERE funcionario_cpf = $2 AND status != $3 RETURNING id',┬À
+                [StatusAvaliacao.INATIVADA, func.cpf, StatusAvaliacao.CONCLUIDA]┬À
+              );┬À
+              console.log(┬À
+                `[INFO] Inativadas ${updateResult.rowCount} avalia├º├Áes do funcion├írio ${func.cpf}`┬À
+              );┬À
+            }┬À
+          }┬À┬À┬À
+          // Atualizar status dos lotes afetados para cada funcion├írio┬À
+          for (const func of funcionariosParaAtualizar) {┬À
+            await updateLotesStatus(func.cpf);┬À
+          }┬À┬À┬À
+          await query('COMMIT');┬À┬À┬À
+          return NextResponse.json({┬À
+            success: true,┬À
+            message: ativo┬À
+              ? `${funcionariosParaAtualizar.length} funcion├írio(s) reativado(s) com sucesso.`┬À
+              : `${funcionariosParaAtualizar.length} funcion├írio(s) desligado(s) da empresa. Avalia├º├Áes n├úo conclu├¡das foram marcadas como inativadas, mas dados e hist├│rico foram preservados.`,┬À
+          });┬À
+        } catch (error) {┬À
+          await query('ROLLBACK');┬À
+          throw error;┬À
+        }┬À
+      } catch (error) {┬À
+        console.error('Erro na opera├º├úo em lote:', error);┬À
+        return NextResponse.json(┬À
+          { error: 'Erro interno do servidor' },┬À
+          { status: 500 }┬À
+        );┬À
+      }┬À
+    }┬À
+    "
+
+      39 |
+      40 |       expect(content).not.toContain('emitirLaudoImediato');
+    > 41 |       expect(content).toContain('REMOVIDO: Emiss├úo autom├ítica de laudo');
+         |                       ^
+      42 |
+      43 |       // Ô£ô API RH Status Batch n├úo emite automaticamente
+      44 |     });
+
+      at Object.toContain (__tests__/emissor/validation-manual-emission-changes.test.ts:41:23)
+
+  ÔùÅ Valida├º├úo de Mudan├ºas - Emiss├úo Manual ÔÇ║ 4. lib/laudo-auto - SEMPRE usa Puppeteer ÔÇ║ n├úo deve ter condicional NODE_ENV === test com jsPDF
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "SEMPRE usar Puppeteer"
+    Received string:    "import crypto from 'crypto';┬À
+    import { query } from '@/lib/db';┬À
+    import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';┬À
+    import {┬À
+      gerarDadosGeraisEmpresa,┬À
+      calcularScoresPorGrupo,┬À
+      gerarInterpretacaoRecomendacoes,┬À
+      gerarObservacoesConclusao,┬À
+    } from '@/lib/laudo-calculos';┬À
+    import {┬À
+      gerarHTMLLaudoCompleto,┬À
+      LaudoDadosCompletos,┬À
+    } from '@/lib/templates/laudo-html';┬À┬À┬À
+    /**┬À
+     * ­ƒöÆ PRINC├ìPIO DA IMUTABILIDADE DE LAUDOS┬À
+     *┬À
+     * Esta fun├º├úo implementa o fluxo CORRETO de emiss├úo de laudos:┬À
+     * 1. Criar/atualizar registro do laudo como 'rascunho'┬À
+     * 2. Gerar PDF f├¡sico com Puppeteer┬À
+     * 3. Salvar PDF em storage/laudos/laudo-{id}.pdf┬À
+     * 4. Calcular hash SHA-256 do arquivo f├¡sico┬À
+     * 5. SOMENTE ENT├âO marcar como 'emitido' com hash┬À
+     * 6. Salvar metadata JSON┬À
+     *┬À
+     * ÔØî NUNCA marcar como 'emitido' sem arquivo PDF f├¡sico┬À
+     * ÔØî NUNCA calcular hash de string aleat├│ria┬À
+     * Ô£à SEMPRE: PDF f├¡sico ÔåÆ Hash ÔåÆ Status 'emitido'┬À
+     */┬À
+    export async function gerarLaudoCompletoEmitirPDF(┬À
+      loteId: number,┬À
+      emissorCpf: string┬À
+    ): Promise<number> {┬À
+      const fs = await import('fs');┬À
+      const path = await import('path');┬À┬À┬À
+      console.log(┬À
+        `[EMISS├âO] Iniciando emiss├úo de laudo para lote ${loteId} por emissor ${emissorCpf}`┬À
+      );┬À┬À┬À
+      // ETAPA 1: Verificar se laudo j├í existe┬À
+      const laudoExistente = await query(┬À
+        `SELECT id, status FROM laudos WHERE lote_id = $1`,┬À
+        [loteId]┬À
+      );┬À┬À┬À
+      const laudoId = loteId; // Por design, laudos.id = lote_id┬À┬À┬À
+      if (laudoExistente.rows.length > 0) {┬À
+        const status = laudoExistente.rows[0].status;┬À┬À┬À
+        // Se laudo j├í est├í emitido ou enviado, n├úo permitir regera├º├úo (imutabilidade)┬À
+        if (status === 'emitido' || status === 'enviado') {┬À
+          throw new Error(┬À
+            `Laudo ${laudoId} j├í foi emitido e n├úo pode ser regenerado (princ├¡pio da imutabilidade)`┬À
+          );┬À
+        }┬À┬À┬À
+        // Se est├í em rascunho, podemos atualizar┬À
+        if (status === 'rascunho') {┬À
+          console.log(┬À
+            `[EMISS├âO] "
+
+       95 |         "if (process.env.NODE_ENV === 'test')"
+       96 |       );
+    >  97 |       expect(pdfGenerationSection).toContain('SEMPRE usar Puppeteer');
+          |                                    ^
+       98 |
+       99 |       // Ô£ô lib/laudo-auto sempre usa Puppeteer
+      100 |     });
+
+      at Object.toContain (__tests__/emissor/validation-manual-emission-changes.test.ts:97:36)
+
+  ÔùÅ Valida├º├úo de Mudan├ºas - Emiss├úo Manual ÔÇ║ 4. lib/laudo-auto - SEMPRE usa Puppeteer ÔÇ║ deve ter coment├írio sobre uso exclusivo de Puppeteer
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "SEMPRE usar Puppeteer para gera├º├úo de PDF"
+    Received string:    "import crypto from 'crypto';┬À
+    import { query } from '@/lib/db';┬À
+    import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';┬À
+    import {┬À
+      gerarDadosGeraisEmpresa,┬À
+      calcularScoresPorGrupo,┬À
+      gerarInterpretacaoRecomendacoes,┬À
+      gerarObservacoesConclusao,┬À
+    } from '@/lib/laudo-calculos';┬À
+    import {┬À
+      gerarHTMLLaudoCompleto,┬À
+      LaudoDadosCompletos,┬À
+    } from '@/lib/templates/laudo-html';┬À┬À┬À
+    /**┬À
+     * ­ƒöÆ PRINC├ìPIO DA IMUTABILIDADE DE LAUDOS┬À
+     *┬À
+     * Esta fun├º├úo implementa o fluxo CORRETO de emiss├úo de laudos:┬À
+     * 1. Criar/atualizar registro do laudo como 'rascunho'┬À
+     * 2. Gerar PDF f├¡sico com Puppeteer┬À
+     * 3. Salvar PDF em storage/laudos/laudo-{id}.pdf┬À
+     * 4. Calcular hash SHA-256 do arquivo f├¡sico┬À
+     * 5. SOMENTE ENT├âO marcar como 'emitido' com hash┬À
+     * 6. Salvar metadata JSON┬À
+     *┬À
+     * ÔØî NUNCA marcar como 'emitido' sem arquivo PDF f├¡sico┬À
+     * ÔØî NUNCA calcular hash de string aleat├│ria┬À
+     * Ô£à SEMPRE: PDF f├¡sico ÔåÆ Hash ÔåÆ Status 'emitido'┬À
+     */┬À
+    export async function gerarLaudoCompletoEmitirPDF(┬À
+      loteId: number,┬À
+      emissorCpf: string┬À
+    ): Promise<number> {┬À
+      const fs = await import('fs');┬À
+      const path = await import('path');┬À┬À┬À
+      console.log(┬À
+        `[EMISS├âO] Iniciando emiss├úo de laudo para lote ${loteId} por emissor ${emissorCpf}`┬À
+      );┬À┬À┬À
+      // ETAPA 1: Verificar se laudo j├í existe┬À
+      const laudoExistente = await query(┬À
+        `SELECT id, status FROM laudos WHERE lote_id = $1`,┬À
+        [loteId]┬À
+      );┬À┬À┬À
+      const laudoId = loteId; // Por design, laudos.id = lote_id┬À┬À┬À
+      if (laudoExistente.rows.length > 0) {┬À
+        const status = laudoExistente.rows[0].status;┬À┬À┬À
+        // Se laudo j├í est├í emitido ou enviado, n├úo permitir regera├º├úo (imutabilidade)┬À
+        if (status === 'emitido' || status === 'enviado') {┬À
+          throw new Error(┬À
+            `Laudo ${laudoId} j├í foi emitido e n├úo pode ser regenerado (princ├¡pio da imutabilidade)`┬À
+          );┬À
+        }┬À┬À┬À
+        // Se est├í em rascunho, podemos atualizar┬À
+        if (status === 'rascunho') {┬À
+          console.log(┬À
+            `[EMISS├âO] Laudo ${laudoId} j├í existe em rascunho, atualizando emissor...`┬À
+          );┬À
+          await query(┬À
+            `UPDATE laudos┬À┬À
+             SET emissor_cpf = $1, atualizado_em = NOW()┬À
+             WHERE id = $2`,┬À
+            [emissorCpf, laudoId]┬À
+          );┬À
+        }┬À
+      } else {┬À
+        // Laudo n├úo existe, criar novo em rascunho┬À
+        console.log(`[EMISS├âO] Criando novo laudo ${laudoId} em rascunho...`);┬À
+        await query(┬À
+          `INSERT INTO laudos (id, lote_id, status, criado_em, emissor_cpf)┬À
+           VALUES ($1, $1, 'rascunho', NOW(), $2)`,┬À
+          [loteId, emissorCpf]┬À
+        );┬À
+      }┬À┬À┬À
+      console.log(`[EMISS├âO] Laudo ${laudoId} preparado como rascunho`);┬À┬À┬À
+      try {┬À
+        // ETAPA 2: Gerar dados completos do laudo┬À
+        console.log(`[EMISS├âO] Gerando dados do laudo ${laudoId}...`);┬À
+        const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);┬À
+        const scoresPorGrupo = await calcularScoresPorGrupo(loteId);┬À
+        const interpretacaoRecomendacoes = gerarInterpretacaoRecomendacoes(┬À
+          dadosGeraisEmpresa.empresaAvaliada,┬À
+          scoresPorGrupo┬À
+        );┬À┬À┬À
+        // Buscar observa├º├Áes do laudo┬À
+        const laudoObsResult = await query(┬À
+          `SELECT observacoes FROM laudos WHERE id = $1`,┬À
+          [laudoId]┬À
+        );┬À
+        const observacoes = laudoObsResult.rows[0]?.observacoes || '';┬À
+        const observacoesConclusao = gerarObservacoesConclusao(observacoes);┬À┬À┬À
+        const laudoPadronizado: LaudoDadosCompletos = {┬À
+          loteId,┬À
+          etapa1: dadosGeraisEmpresa,┬À
+          etapa2: scoresPorGrupo,┬À
+          etapa3: interpretacaoRecomendacoes,┬À
+          etapa4: observacoesConclusao,┬À
+        };┬À┬À┬À
+        // ETAPA 3: Gerar HTML do laudo┬À
+        console.log(`[EMISS├âO] Gerando HTML do laudo ${laudoId}...`);┬À
+        const html = gerarHTMLLaudoCompleto({ loteId, ...laudoPadronizado });┬À┬À┬À
+        // ETAPA 4: Gerar PDF com Puppeteer┬À
+        console.log(`[EMISS├âO] Gerando PDF do laudo ${laudoId}...`);┬À
+        const puppeteer = await getPuppeteerInstance();┬À
+        const browser = await puppeteer.launch({┬À
+          headless: true,┬À
+          args: [┬À
+            '--no-sandbox',┬À
+            '--disable-setuid-sandbox',┬À
+            '--disable-dev-shm-usage',┬À
+            '--disable-gpu',┬À
+            '--disable-web-security',┬À
+            '--disable-features=IsolateOrigins,site-per-process',┬À
+          ],┬À
+        });┬À┬À┬À
+        const page = await (browser as any).newPage();┬À
+        await page.setContent(html, { waitUntil: 'networkidle0' });┬À┬À┬À
+        const pdfBuffer = await page.pdf({┬À
+          format: 'A4',┬À
+          printBackground: true,┬À
+          margin: {┬À
+            top: '20mm',┬À
+            right: '15mm',┬À
+            bottom: '20mm',┬À
+            left: '15mm',┬À
+          },┬À
+        });┬À┬À┬À
+        await browser.close();┬À
+        console.log(┬À
+          `[EMISS├âO] PDF gerado com sucesso (${pdfBuffer.byteLength} bytes)`┬À
+        );┬À┬À┬À
+        // ETAPA 5: Salvar PDF em storage/laudos/┬À
+        const storageDir = path.join(process.cwd(), 'storage', 'laudos');┬À
+        const fileName = `laudo-${laudoId}.pdf`;┬À
+        const filePath = path.join(storageDir, fileName);┬À┬À┬À
+        if (!fs.existsSync(storageDir)) {┬À
+          fs.mkdirSync(storageDir, { recursive: true });┬À
+          console.log(`[EMISS├âO] Diret├│rio ${storageDir} criado`);┬À
+        }┬À┬À┬À
+        fs.writeFileSync(filePath, Buffer.from(pdfBuffer));┬À
+        console.log(`[EMISS├âO] PDF salvo em ${filePath}`);┬À┬À┬À
+        // ETAPA 6: Calcular hash SHA-256 do arquivo f├¡sico┬À
+        const hashReal = crypto┬À
+          .createHash('sha256')┬À
+          .update(Buffer.from(pdfBuffer))┬À
+          .digest('hex');┬À
+        console.log(`[EMISS├âO] Hash SHA-256 calculado: ${hashReal}`);┬À┬À┬À
+        // ETAPA 7: Salvar hash E marcar como 'emitido'┬À
+        // Ô£à CORRE├ç├âO: O laudo ├® considerado 'emitido' quando o PDF ├® gerado localmente┬À
+        // O status mudar├í para 'enviado' quando for feito upload ao bucket┬À
+        console.log(`[EMISS├âO] Salvando hash do PDF e marcando como emitido...`);┬À
+        const updateResult = await query(┬À
+          `UPDATE laudos┬À┬À
+           SET hash_pdf = $1,┬À
+               status = 'emitido',┬À
+               emitido_em = NOW(),┬À
+               atualizado_em = NOW()┬À
+           WHERE id = $2 AND status = 'rascunho'┬À
+           RETURNING id`,┬À
+          [hashReal, laudoId]┬À
+        );┬À┬À┬À
+        if (!updateResult || updateResult.rowCount === 0) {┬À
+          throw new Error(┬À
+            'Falha ao salvar hash do laudo. Laudo pode j├í ter sido emitido.'┬À
+          );┬À
+        }┬À┬À┬À
+        // ETAPA 8: Salvar metadata JSON┬À
+        const metaFileName = `laudo-${laudoId}.json`;┬À
+        const metaFilePath = path.join(storageDir, metaFileName);┬À
+        const metadata = {┬À
+          laudo_id: laudoId,┬À
+          lote_id: loteId,┬À
+          emissor_cpf: emissorCpf,┬À
+          gerado_em: new Date().toISOString(),┬À
+          arquivo_local: fileName,┬À
+          tamanho_bytes: pdfBuffer.byteLength,┬À
+          hash_sha256: hashReal,┬À
+        };┬À
+        fs.writeFileSync(metaFilePath, JSON.stringify(metadata, null, 2));┬À
+        console.log(`[EMISS├âO] Metadata salvo em ${metaFilePath}`);┬À┬À┬À
+        console.log(┬À
+          `[EMISS├âO] Ô£à Laudo ${laudoId} emitido com sucesso! PDF gerado localmente e marcado como 'emitido'. Use /api/emissor/laudos/[loteId]/upload para enviar ao bucket.`┬À
+        );┬À
+        return laudoId;┬À
+      } catch (error) {┬À
+        // Se falhou, reverter para rascunho┬À
+        console.error(`[EMISS├âO] ÔØî Erro ao gerar laudo ${laudoId}:`, error);┬À
+        await query(┬À
+          `UPDATE laudos┬À┬À
+           SET status = 'rascunho',┬À
+               hash_pdf = NULL,┬À
+               emitido_em = NULL,┬À
+               atualizado_em = NOW()┬À
+           WHERE id = $1`,┬À
+          [laudoId]┬À
+        );┬À
+        throw error;┬À
+      }┬À
+    }┬À┬À┬À
+    export function emitirLaudosAutomaticamente(): Promise<void> {┬À
+      throw new Error('emitirLaudosAutomaticamente n├úo implementado (stub)');┬À
+    }┬À┬À┬À
+    export function emitirLaudoImediato(): Promise<void> {┬À
+      throw new Error('emitirLaudoImediato n├úo implementado (stub)');┬À
+    }┬À
+    "
+
+      104 |       const content = fs.readFileSync(libPath, 'utf-8');
+      105 |
+    > 106 |       expect(content).toContain('SEMPRE usar Puppeteer para gera├º├úo de PDF');
+          |                       ^
+      107 |
+      108 |       // Ô£ô Coment├írio sobre Puppeteer exclusivo presente
+      109 |     });
+
+      at Object.toContain (__tests__/emissor/validation-manual-emission-changes.test.ts:106:23)
+
+  ÔùÅ Valida├º├úo de Mudan├ºas - Emiss├úo Manual ÔÇ║ 5. Endpoint de Solicita├º├úo Manual - N├úo emite automaticamente ÔÇ║ deve informar que laudo ser├í gerado pelo emissor
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected substring: "ser├í gerado pelo emissor"
+    Received string:    "/**┬À
+     * API: Solicitar Emiss├úo Manual de Laudo┬À
+     *┬À
+     * Endpoint: POST /api/lotes/[loteId]/solicitar-emissao┬À
+     *┬À
+     * Descri├º├úo: Permite que RH (cl├¡nicas) e Entidades solicitem a emiss├úo┬À
+     * manual do laudo ap├│s o lote entrar em estado 'concluido'.┬À
+     *┬À
+     * ÔÜá´©Å IMPORTANTE: Esta API N├âO emite o laudo automaticamente!┬À
+     * Ela apenas REGISTRA a solicita├º├úo. O laudo ser├í emitido manualmente┬À
+     * pelo emissor quando ele clicar em \"Gerar Laudo\" no dashboard.┬À
+     *┬À
+     * Fluxo correto:┬À
+     * 1. RH/Entidade solicita emiss├úo (este endpoint)┬À
+     * 2. Lote fica dispon├¡vel no dashboard do emissor┬À
+     * 3. Emissor revisa e clica em \"Gerar Laudo\"┬À
+     * 4. Sistema chama POST /api/emissor/laudos/[loteId]┬À
+     * 5. Laudo ├® gerado com status 'emitido' (n├úo 'enviado')┬À
+     * 6. Emissor revisa e clica em \"Enviar\"┬À
+     * 7. Sistema chama PATCH /api/emissor/laudos/[loteId]┬À
+     * 8. Laudo ├® marcado como 'enviado'┬À
+     *┬À
+     * Seguran├ºa:┬À
+     * - RH: Valida acesso ├á empresa do lote┬À
+     * - Entidade: Valida tomador_id┬À
+     * - Bloqueia se laudo j├í foi emitido┬À
+     * - Advisory lock previne race conditions┬À
+     */┬À┬À┬À
+    import { NextResponse } from 'next/server';┬À
+    import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';┬À
+    import { query } from '@/lib/db';┬À┬À┬À
+    export async function POST(┬À
+      request: Request,┬À
+      { params }: { params: { loteId: string } }┬À
+    ) {┬À
+      try {┬À
+        // 1. Autentica├º├úo b├ísica┬À
+        const user = await requireAuth();┬À
+        const loteId = parseInt(params.loteId);┬À┬À┬À
+        if (isNaN(loteId)) {┬À
+          return NextResponse.json(┬À
+            { error: 'ID de lote inv├ílido' },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        console.log(┬À
+          `[INFO] Solicita├º├úo de emiss├úo manual para lote ${loteId} por ${user.cpf} (${user.perfil})`┬À
+        );┬À┬À┬À
+        // 2. Buscar informa├º├Áes do lote┬À
+        const loteResult = await query(┬À
+          `SELECT┬À┬À
+            id,┬À
+            status,┬À┬À
+            clinica_id,┬À┬À
+            empresa_id,┬À┬À
+            entidade_id,┬À┬À
+            emitido_em┬À
+          FROM lotes_avaliacao┬À┬À
+          WHERE id = $1`,┬À
+          [loteId]┬À
+        );┬À┬À┬À
+        if (loteResult.rows.length === 0) {┬À
+          return NextResponse.json(┬À
+            { error: 'Lote n├úo encontrado' },┬À
+            { status: 404 }┬À
+          );┬À
+        }┬À┬À┬À
+        const lote = loteResult.rows[0];┬À┬À┬À
+        // 3. Validar permiss├Áes baseado no tipo de lote┬À
+        if (lote.clinica_id && user.perfil === 'rh') {┬À
+          // Lote de cl├¡nica - validar acesso ├á empresa┬À
+          try {┬À
+            await requireRHWithEmpresaAccess(lote.empresa_id);┬À
+          } catch {┬À
+            console.warn(┬À
+              `[WARN] RH ${user.cpf} tentou solicitar emiss├úo de lote sem permiss├úo (empresa_id: ${lote.empresa_id})`┬À
+            );┬À
+            return NextResponse.json(┬À
+              { error: 'Sem permiss├úo para este lote' },┬À
+              { status: 403 }┬À
+            );┬À
+          }┬À
+        } else if (lote.entidade_id && user.perfil === 'gestor') {┬À
+          // Lote de entidade - validar entidade_id┬À
+          // O user j├í vem autenticado com entidade_id do requireAuth()┬À
+          if (user.entidade_id !== lote.entidade_id) {┬À
+            console.warn(┬À
+              `[WARN] Entidade ${user.cpf} tentou solicitar emiss├úo de lote de outra entidade (lote: ${lote.entidade_id}, user: ${user.entidade_id})`┬À
+            );┬À
+            return NextResponse.json(┬À
+              { error: 'Sem permiss├úo para este lote' },┬À
+              { status: 403 }┬À
+            );┬À
+          }┬À
+        } else {┬À
+          // Perfil n├úo autorizado┬À
+          return NextResponse.json(┬À
+            {┬À
+              error: `Perfil '${user.perfil}' n├úo pode solicitar emiss├úo de laudos`,┬À
+            },┬À
+            { status: 403 }┬À
+          );┬À
+        }┬À┬À┬À
+        // 4. Validar status do lote┬À
+        if (lote.status !== 'concluido') {┬À
+          return NextResponse.json(┬À
+            {┬À
+              error: `Lote n├úo est├í conclu├¡do. Status atual: ${lote.status}`,┬À
+            },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // 5. Validar que laudo n├úo foi emitido┬À
+        if (lote.emitido_em) {┬À
+          return NextResponse.json(┬À
+            {┬À
+              error: 'Laudo j├í foi emitido para este lote',┬À
+              emitido_em: lote.emitido_em,┬À
+            },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // 6. Verificar se j├í existe laudo enviado┬À
+        const laudoExistente = await query(┬À
+          `SELECT id, status, emitido_em┬À┬À
+           FROM laudos┬À┬À
+           WHERE lote_id = $1`,┬À
+          [loteId]┬À
+        );┬À┬À┬À
+        if (┬À
+          laudoExistente.rows.length > 0 &&┬À
+          laudoExistente.rows[0].status === 'enviado'┬À
+        ) {┬À
+          return NextResponse.json(┬À
+            {┬À
+              error: 'Laudo j├í foi enviado para este lote',┬À
+              laudo_id: laudoExistente.rows[0].id,┬À
+            },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // 7. Adicionar ├á fila e emitir (com lock para prevenir duplica├º├úo)┬À
+        await query('BEGIN');┬À┬À┬À
+        try {┬À
+          // Advisory lock para prevenir race condition┬À
+          await query('SELECT pg_advisory_xact_lock($1)', [loteId]);┬À
+          console.log(`[INFO] Advisory lock adquirido para lote ${loteId}`);┬À┬À┬À
+          // 8. Registrar solicita├º├úo de emiss├úo em auditoria_laudos┬À
+          // (substituiu a antiga fila_emissao - migration 201)┬À
+          // Usar INSERT com verifica├º├úo pr├®via otimizada (migration 202)┬À
+          // Normalizar `tipo_solicitante` para satisfazer CHECK constraints┬À
+          const tipoSolicitante = user.perfil === 'rh' ? 'rh' : 'gestor';┬À┬À┬À
+          const insertResult = await query(┬À
+            `WITH existing AS (┬À
+               SELECT id, tentativas┬À
+               FROM auditoria_laudos┬À
+               WHERE lote_id = $1┬À
+                 AND acao = 'solicitar_emissao'┬À
+                 AND solicitado_por = $2┬À
+                 AND status IN ('pendente', 'reprocessando')┬À
+               FOR UPDATE SKIP LOCKED┬À
+               LIMIT 1┬À
+             ),┬À
+             updated AS (┬À
+               UPDATE auditoria_laudos┬À
+               SET tentativas = tentativas + 1,┬À
+                   criado_em = NOW()┬À
+               WHERE id = (SELECT id FROM existing)┬À
+               RETURNING id, tentativas, TRUE as is_update┬À
+             ),┬À
+             inserted AS (┬À
+               INSERT INTO auditoria_laudos (┬À
+                 lote_id,┬À
+                 acao,┬À
+                 status,┬À
+                 solicitado_por,┬À
+                 tipo_solicitante,┬À
+                 criado_em┬À
+               )┬À
+               SELECT $1, 'solicitar_emissao', 'pendente', $2, $3, NOW()┬À
+               WHERE NOT EXISTS (SELECT 1 FROM existing)┬À
+               RETURNING id, tentativas, FALSE as is_update┬À
+             )┬À
+             SELECT * FROM updated┬À
+             UNION ALL┬À
+             SELECT * FROM inserted`,┬À
+            [loteId, user.cpf, tipoSolicitante]┬À
+          );┬À┬À┬À
+          const result = insertResult.rows[0];┬À
+          if (result?.is_update) {┬À
+            console.log(┬À
+              `[INFO] Solicita├º├úo duplicada atualizada para lote ${loteId} (tentativa #${result.tentativas})`┬À
+            );┬À
+          } else {┬À
+            console.log(`[INFO] Nova solicita├º├úo registrada para lote ${loteId}`);┬À
+          }┬À┬À┬À
+          // 9. Atualizar lote com status de pagamento (NOVO FLUXO)┬À
+          await query(┬À
+            `UPDATE lotes_avaliacao┬À
+             SET status_pagamento = 'aguardando_cobranca',┬À
+                 solicitacao_emissao_em = NOW(),┬À
+                 atualizado_em = NOW()┬À
+             WHERE id = $1`,┬À
+            [loteId]┬À
+          );┬À┬À┬À
+          console.log(┬À
+            `[INFO] Lote ${loteId} marcado como aguardando cobran├ºa - novo fluxo de pagamento`┬À
+          );┬À┬À┬À
+          // 10. Criar notifica├º├úo para ADMIN sobre solicita├º├úo de cobran├ºa┬À
+          // TODO: Ajustar para usar destinatario_cpf/destinatario_tipo ao inv├®s de destinatario_role┬À
+          /*┬À
+          await query(┬À
+            `INSERT INTO notificacoes (┬À
+               tipo,┬À┬À
+               prioridade,┬À┬À
+               destinatario_role,┬À
+               titulo,┬À┬À
+               mensagem,┬À
+               lote_id,┬À
+               dados_contexto┬À
+             )┬À
+             VALUES (┬À
+               'solicitacao_emissao'::tipo_notificacao,┬À
+               'alta'::prioridade_notificacao,┬À
+               'admin',┬À
+               $1,┬À
+               $2,┬À
+               $3,┬À
+               jsonb_build_object(┬À
+                 'solicitante_cpf', $4::text,┬À
+                 'solicitante_nome', $5::text,┬À
+                 'solicitante_tipo', $6::text,┬À
+                 'clinica_id', $7,┬À
+                 'empresa_id', $8,┬À
+                 'entidade_id', $9┬À
+               )┬À
+             )`,┬À
+            [┬À
+              'Nova solicita├º├úo de emiss├úo',┬À
+              `${user.perfil === 'rh' ? 'Cl├¡nica' : 'Entidade'} solicitou emiss├úo de laudo para lote #${loteId}`,┬À
+              loteId,┬À
+              user.cpf,┬À
+              user.nome,┬À
+              user.perfil,┬À
+              lote.clinica_id,┬À
+              lote.empresa_id,┬À
+              lote.entidade_id,┬À
+            ]┬À
+          );┬À
+          */┬À
+          console.log('[INFO] Notifica├º├úo para admin temporariamente desabilitada');┬À┬À┬À
+          // 11. Criar notifica├º├úo de sucesso para o solicitante┬À
+          let destinatarioTipo: string = user.perfil;┬À
+          if (user.perfil === 'rh') {┬À
+            destinatarioTipo = 'funcionario';┬À
+          } else if (user.perfil === 'gestor') {┬À
+            destinatarioTipo = 'gestor';┬À
+          }┬À┬À┬À
+          await query(┬À
+            `INSERT INTO notificacoes (┬À
+               tipo,┬À┬À
+               prioridade,┬À┬À
+               destinatario_cpf,┬À┬À
+               destinatario_tipo,┬À┬À
+               titulo,┬À┬À
+               mensagem,┬À
+               dados_contexto┬À
+             )┬À
+             VALUES (┬À
+               'emissao_solicitada_sucesso'::tipo_notificacao,┬À
+               'media'::prioridade_notificacao,┬À
+               $1,┬À
+               $2,┬À
+               $3,┬À
+               $4,┬À
+               jsonb_build_object('lote_id', $5::integer)┬À
+             )`,┬À
+            [┬À
+              user.cpf,┬À
+              destinatarioTipo,┬À
+              'Solicita├º├úo de emiss├úo enviada',┬À
+              `Solicita├º├úo enviada para lote #${loteId}. Aguarde o link de pagamento.`,┬À
+              loteId,┬À
+            ]┬À
+          );┬À┬À┬À
+          // COMMIT apenas ap├│s notifica├º├Áes criadas com sucesso┬À
+          await query('COMMIT');┬À┬À┬À
+          console.log(┬À
+            `[INFO] Ô£ô Solicita├º├úo de emiss├úo registrada com sucesso para lote ${loteId}`┬À
+          );┬À┬À┬À
+          // Buscar dados de contato do gestor para exibir na modal de confirma├º├úo (p├│s-commit)┬À
+          let gestorContato: { email: string | null; celular: string | null } = {┬À
+            email: null,┬À
+            celular: null,┬À
+          };┬À
+          try {┬À
+            if (user.perfil === 'gestor') {┬À
+              const contatoResult = await query(┬À
+                `SELECT responsavel_email AS email, responsavel_celular AS celular┬À
+                 FROM tomadores WHERE responsavel_cpf = $1 LIMIT 1`,┬À
+                [user.cpf]┬À
+              );┬À
+              if (contatoResult.rows.length > 0) {┬À
+                gestorContato = {┬À
+                  email: contatoResult.rows[0].email || null,┬À
+                  celular: contatoResult.rows[0].celular || null,┬À
+                };┬À
+              }┬À
+            } else if (user.perfil === 'rh') {┬À
+              const contatoResult = await query(┬À
+                `SELECT email, celular FROM funcionarios WHERE cpf = $1 LIMIT 1`,┬À
+                [user.cpf]┬À
+              );┬À
+              if (contatoResult.rows.length > 0) {┬À
+                gestorContato = {┬À
+                  email: contatoResult.rows[0].email || null,┬À
+                  celular: contatoResult.rows[0].celular || null,┬À
+                };┬À
+              }┬À
+            }┬À
+          } catch {┬À
+            // Falha ao buscar dados de contato n├úo impede a resposta┬À
+          }┬À┬À┬À
+          return NextResponse.json({┬À
+            success: true,┬À
+            message:┬À
+              'Solicita├º├úo enviada com sucesso. Aguarde o link de pagamento.',┬À
+            lote: {┬À
+              id: lote.id,┬À
+              status_pagamento: 'aguardando_cobranca',┬À
+            },┬À
+            gestor_contato: gestorContato,┬À
+          });┬À
+        } catch (emissaoError) {┬À
+          await query('ROLLBACK');┬À┬À┬À
+          console.error(┬À
+            `[ERROR] Exce├º├úo ao registrar solicita├º├úo de emiss├úo para lote ${loteId}:`,┬À
+            emissaoError┬À
+          );┬À┬À┬À
+          // Registrar erro no sistema (incluir `titulo` que ├® NOT NULL)┬À
+          const tituloNotificacao = 'Erro ao registrar solicita├º├úo de emiss├úo';┬À
+          const mensagemNotificacao = `Erro ao registrar solicita├º├úo de emiss├úo do lote ${loteId}: ${┬À
+            emissaoError instanceof Error┬À
+              ? emissaoError.message┬À
+              : String(emissaoError)┬À
+          }`;┬À┬À┬À
+          await query(┬À
+            `INSERT INTO notificacoes_admin (tipo, titulo, mensagem, lote_id, criado_em)┬À
+             VALUES ('erro_critico_solicitacao_emissao', $1, $2, $3, NOW())`,┬À
+            [tituloNotificacao, mensagemNotificacao, loteId]┬À
+          );┬À┬À┬À
+          return NextResponse.json(┬À
+            {┬À
+              error: 'Erro ao solicitar emiss├úo do laudo',┬À
+              details:┬À
+                emissaoError instanceof Error┬À
+                  ? emissaoError.message┬À
+                  : 'Erro desconhecido',┬À
+            },┬À
+            { status: 500 }┬À
+          );┬À
+        }┬À
+      } catch (error) {┬À
+        console.error('[ERROR] Erro no endpoint de solicita├º├úo de emiss├úo:', error);┬À┬À┬À
+        return NextResponse.json(┬À
+          {┬À
+            error: 'Erro interno no servidor',┬À
+            details: error instanceof Error ? error.message : 'Erro desconhecido',┬À
+          },┬À
+          { status: 500 }┬À
+        );┬À
+      }┬À
+    }┬À
+    "
+
+      136 |       const content = fs.readFileSync(routePath, 'utf-8');
+      137 |
+    > 138 |       expect(content).toContain('ser├í gerado pelo emissor');
+          |                       ^
+      139 |       expect(content).toContain('Lote fica dispon├¡vel no dashboard do emissor');
+      140 |
+      141 |       // Ô£ô Mensagem correta sobre emiss├úo pelo emissor
+
+      at Object.toContain (__tests__/emissor/validation-manual-emission-changes.test.ts:138:23)
+
+FAIL __tests__/emissor/emissor-page-client-pdf.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+  ÔùÅ EmissorDashboard - Client-side PDF Generation ÔÇ║ Cen├írio 1: PDF existe no servidor ÔÇ║ deve fazer download direto do PDF
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: "laudo-LOTE-ABC.pdf"
+    Received: "laudo-123.pdf"
+
+      109 |       );
+      110 |       expect(mockLink.click).toHaveBeenCalled();
+    > 111 |       expect(mockLink.download).toBe('laudo-LOTE-ABC.pdf');
+          |                                 ^
+      112 |     });
+      113 |   });
+      114 |
+
+      at Object.toBe (__tests__/emissor/emissor-page-client-pdf.test.tsx:111:33)
+
+  ÔùÅ EmissorDashboard - Client-side PDF Generation ÔÇ║ Cen├írio 3: gerarPDFClientSide ÔÇ║ deve criar iframe, renderizar HTML e gerar PDF
+
+    expect(jest.fn()).toHaveBeenCalledWith(...expected)
+
+    Expected: "[SUCCESS] PDF gerado e baixado: laudo-123.pdf"
+    Received: "[PDF] Iniciando gera├º├úo client-side para lote 123..."
+
+    Number of calls: 1
+
+      345 |         '[PDF] Iniciando gera├º├úo client-side para lote 123...'
+      346 |       );
+    > 347 |       expect(consoleSpy).toHaveBeenCalledWith(
+          |                          ^
+      348 |         '[SUCCESS] PDF gerado e baixado: laudo-123.pdf'
+      349 |       );
+      350 |
+
+      at Object.toHaveBeenCalledWith (__tests__/emissor/emissor-page-client-pdf.test.tsx:347:26)
+
+FAIL __tests__/emissor/emissor-workflow-improvements.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at Object.log (lib/db.ts:750:15)
+
+  ÔùÅ Emissor Workflow - Melhorias UX ÔÇ║ Backend - API /api/entidade/lote/[id] ÔÇ║ deve fazer LEFT JOIN com fila_emissao
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /LEFT JOIN fila_emissao.*ON.*lote_id/s
+    Received string:  "import { NextResponse } from 'next/server';┬À
+    import { query } from '@/lib/db';┬À
+    import { getSession } from '@/lib/session';┬À
+    import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';┬À┬À┬À
+    export const dynamic = 'force-dynamic';┬À
+    export const revalidate = 0;┬À┬À┬À
+    export async function GET(┬À
+      request: Request,┬À
+      { params }: { params: { id: string } }┬À
+    ) {┬À
+      try {┬À
+        // Verificar sess├úo e perfil┬À
+        const session = getSession();┬À
+        assertRoles(session, [ROLES.GESTOR]);┬À┬À┬À
+        if (!session.entidade_id) {┬À
+          return NextResponse.json(┬À
+            { error: 'Entidade n├úo identificada' },┬À
+            { status: 403 }┬À
+          );┬À
+        }┬À┬À┬À
+        const loteId = parseInt(params.id);┬À
+        if (isNaN(loteId)) {┬À
+          return NextResponse.json(┬À
+            { error: 'ID do lote inv├ílido' },┬À
+            { status: 400 }┬À
+          );┬À
+        }┬À┬À┬À
+        // Buscar informa├º├Áes do lote e verificar se pertence ├á entidade do usu├írio┬À
+        const loteResult = await query(┬À
+          `┬À
+          SELECT┬À
+            la.id,┬À
+            la.tipo,┬À
+            la.status,┬À
+            la.status_pagamento,┬À
+            la.criado_em,┬À
+            la.liberado_em,┬À
+            l.emitido_em as laudo_emitido_em,┬À
+            CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,┬À
+            fe.solicitado_em as emissao_solicitado_em,┬À
+            CASE┬À┬À
+              WHEN l.id IS NOT NULL AND l.status = 'emitido' AND l.arquivo_remoto_url IS NOT NULL┬À
+              THEN true┬À┬À
+              ELSE false┬À┬À
+            END as tem_laudo,┬À
+            l.id as laudo_id,┬À
+            l.status as laudo_status,┬À
+            l.emissor_cpf,┬À
+            l.hash_pdf,┬À
+            l.arquivo_remoto_url,┬À
+            -- Informa├º├úo de boleto pendente para auto-reconcilia├º├úo no frontend┬À
+            (┬À
+              SELECT p.asaas_payment_id┬À
+              FROM pagamentos p┬À
+              WHERE (p.entidade_id = la.entidade_id OR p.clinica_id = la.clinica_id)┬À
+                AND p.status = 'pendente'┬À
+                AND p.asaas_payment_id IS NOT NULL┬À
+              ORDER BY p.criado_em DESC┬À
+              LIMIT 1┬À
+            ) as boleto_asaas_id_pendente┬À
+          FROM lotes_avaliacao la┬À
+          LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id┬À
+          LEFT JOIN laudos l ON l.lote_id = la.id┬À
+          -- ISOLAMENTO: entidade_id direto na tabela de lotes previne acesso a lotes de cl├¡nicas┬À
+          WHERE la.id = $1┬À
+            AND la.entidade_id = $2┬À
+            AND la.clinica_id IS NULL┬À
+            AND la.empresa_id IS NULL┬À
+          LIMIT 1┬À
+        `,┬À
+          [loteId, session.entidade_id]┬À
+        );┬À┬À┬À
+        if (loteResult.rows.length === 0) {┬À
+          return NextResponse.json(┬À
+            { error: 'Lote n├úo encontrado ou n├úo pertence ├á sua entidade' },┬À
+            { status: 404 }┬À
+          );┬À
+        }┬À┬À┬À
+        const lote = loteResult.rows[0];┬À┬À┬À
+        // Buscar estat├¡sticas (excluindo avalia├º├Áes inativadas dos pendentes)┬À
+        const statsResult = await query(┬À
+          `┬À
+          SELECT┬À
+            COUNT(DISTINCT f.id) as total_funcionarios,┬À
+            COUNT(DISTINCT CASE WHEN a.status = 'concluida' OR a.status = 'concluido' THEN f.id END) as funcionarios_concluidos,┬À
+            COUNT(DISTINCT CASE WHEN a.status IN ('iniciada', 'em_andamento') THEN f.id END) as funcionarios_pendentes┬À
+          FROM avaliacoes a┬À
+          JOIN funcionarios f ON a.funcionario_cpf = f.cpf┬À
+          JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true┬À
+          WHERE a.lote_id = $1 AND fe.entidade_id = $2 AND a.status != 'inativada'┬À
+        `,┬À
+          [loteId, session.entidade_id]┬À
+        );┬À┬À┬À
+        const estatisticas = statsResult.rows[0];┬À┬À┬À
+        // Buscar funcion├írios e suas avalia├º├Áes (incluindo contagem de respostas)┬À
+        const funcionariosResult = await query(┬À
+          `┬À
+          SELECT┬À
+            f.cpf,┬À
+            f.nome,┬À
+            f.setor,┬À
+            f.funcao,┬À
+            f.nivel_cargo,┬À
+            a.id as avaliacao_id,┬À
+            a.status as avaliacao_status,┬À
+            a.inicio as avaliacao_data_inicio,┬À
+            a.envio as avaliacao_data_conclusao,┬À
+            a.motivo_inativacao,┬À
+            a.inativada_em,┬À
+            (SELECT COUNT(DISTINCT (r.grupo, r.item)) FROM respostas r WHERE r.avaliacao_id = a.id) as total_respostas┬À
+          FROM funcionarios f┬À
+          JOIN avaliacoes a ON a.funcionario_cpf = f.cpf┬À
+          JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true┬À
+          WHERE a.lote_id = $1 AND fe.entidade_id = $2┬À
+          ORDER BY f.nome ASC┬À
+        `,┬À
+          [loteId, session.entidade_id]┬À
+        );┬À┬À┬À
+        // Calcular m├®dias dos grupos G1-G10 para cada funcion├írio┬À
+        const funcionariosComGrupos = await Promise.all(┬À
+          funcionariosResult.rows.map(async (row) => {┬À
+            const mediasGrupos: { [key: string]: number } = {};┬À┬À┬À
+            // Apenas calcular se avalia├º├úo est├í conclu├¡da┬À
+            if (┬À
+              row.avaliacao_status === 'concluida' ||┬À
+              row.avaliacao_status === 'concluido'┬À
+            ) {┬À
+              const respostasResult = await query(┬À
+                `┬À
+                SELECT grupo, AVG(valor) as media┬À
+                FROM respostas┬À
+                WHERE avaliacao_id = $1┬À
+                GROUP BY grupo┬À
+                ORDER BY grupo┬À
+              `,┬À
+                [row.avaliacao_id]┬À
+              );┬À┬À┬À
+              respostasResult.rows.forEach((grupoRow: any) => {┬À
+                mediasGrupos[`g${grupoRow.grupo}`] = parseFloat(grupoRow.media);┬À
+              });┬À
+            }┬À┬À┬À
+            return {┬À
+              cpf: row.cpf,┬À
+              nome: row.nome,┬À
+              setor: row.setor,┬À
+              funcao: row.funcao,┬À
+              nivel_cargo: row.nivel_cargo,┬À
+              avaliacao: {┬À
+                id: row.avaliacao_id,┬À
+                status: row.avaliacao_status,┬À
+                data_inicio: row.avaliacao_data_inicio,┬À
+                data_conclusao: row.avaliacao_data_conclusao,┬À
+                motivo_inativacao: row.motivo_inativacao,┬À
+                inativada_em: row.inativada_em,┬À
+                total_respostas: parseInt(row.total_respostas) || 0,┬À
+              },┬À
+              grupos: mediasGrupos,┬À
+            };┬À
+          })┬À
+        );┬À┬À┬À
+        const response = NextResponse.json({┬À
+          lote,┬À
+          estatisticas: {┬À
+            total_funcionarios: parseInt(estatisticas.total_funcionarios),┬À
+            funcionarios_concluidos: parseInt(estatisticas.funcionarios_concluidos),┬À
+            funcionarios_pendentes: parseInt(estatisticas.funcionarios_pendentes),┬À
+          },┬À
+          funcionarios: funcionariosComGrupos,┬À
+        });┬À┬À┬À
+        // For├ºar sem cache┬À
+        response.headers.set(┬À
+          'Cache-Control',┬À
+          'no-store, no-cache, must-revalidate, max-age=0'┬À
+        );┬À
+        response.headers.set('Pragma', 'no-cache');┬À
+        response.headers.set('Expires', '0');┬À┬À┬À
+        return response;┬À
+      } catch (error) {┬À
+        if (isApiError(error)) {┬À
+          return NextResponse.json(┬À
+            { error: error.message, code: error.code },┬À
+            { status: error.status }┬À
+          );┬À
+        }┬À
+        console.error('Erro ao buscar detalhes do lote:', error);┬À
+        return NextResponse.json(┬À
+          { error: 'Erro interno do servidor' },┬À
+          { status: 500 }┬À
+        );┬À
+      }┬À
+    }┬À
+    "
+
+      162 |
+      163 |     it('deve fazer LEFT JOIN com fila_emissao', () => {
+    > 164 |       expect(apiContent).toMatch(/LEFT JOIN fila_emissao.*ON.*lote_id/s);
+          |                          ^
+      165 |     });
+      166 |
+      167 |     it('deve fazer LEFT JOIN com laudos', () => {
+
+      at Object.toMatch (__tests__/emissor/emissor-workflow-improvements.test.ts:164:26)
+
+  ÔùÅ Emissor Workflow - Melhorias UX ÔÇ║ Integra├º├úo - Valida├º├úo de Estrutura ÔÇ║ deve permitir consultar fila_emissao com campos de rastreabilidade
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 3
+    Received: 0
+
+      229 |       );
+      230 |
+    > 231 |       expect(result.rows.length).toBe(3);
+          |                                  ^
+      232 |
+      233 |       const columns = result.rows.map((r) => r.column_name);
+      234 |       expect(columns).toContain('solicitado_por');
+
+      at Object.toBe (__tests__/emissor/emissor-workflow-improvements.test.ts:231:34)
+
+  ÔùÅ Emissor Workflow - Melhorias UX ÔÇ║ Integra├º├úo - Valida├º├úo de Estrutura ÔÇ║ deve combinar fila_emissao e laudos corretamente
+
+    error: coluna fe.solicitado_por n├úo existe
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/emissor/emissor-workflow-improvements.test.ts:281:22)
+
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+RBAC seed applied to test database
+FAIL __tests__/representantes-leads-cadastro.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+  ÔùÅ 9. LP route ÔÇö mapeamento camelCase ÔåÆ snake_case ao encaminhar ao QWork ÔÇ║ mapeia erro duplicata de CPF para mensagem leg├¡vel
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /CPF.*registrado|registrado.*CPF/i
+    Received string:  "/**┬À
+     * POST /api/representantes/cadastro┬À
+     *┬À
+     * Recebe FormData do formul├írio de cadastro de representantes.┬À
+     * Valida campos, gera token de confirma├º├úo, dispara e-mails via Resend┬À
+     * e encaminha os dados ao backend QWork para persist├¬ncia.┬À
+     */┬À
+    import { NextRequest, NextResponse } from \"next/server\";┬À
+    import crypto from \"node:crypto\";┬À
+    import {┬À
+      pessoaFisicaSchema,┬À
+      pessoaJuridicaSchema,┬À
+      validateFile,┬À
+    } from \"@/lib/validators/representante\";┬À
+    import { sendConfirmationEmail, sendAdminNotification } from \"@/lib/email\";┬À
+    import type { AdminNotificationPayload } from \"@/lib/email\";┬À
+    import type { DocUploadResult } from \"@/lib/storage/representante-storage\";┬À┬À┬À
+    // ÔöÇÔöÇ Helpers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À┬À┬À
+    function fieldErrors(┬À
+      issues: { path: PropertyKey[]; message: string }[],┬À
+    ): Record<string, string> {┬À
+      const errors: Record<string, string> = {};┬À
+      for (const issue of issues) {┬À
+        const key = String(issue.path[0] ?? \"form\");┬À
+        if (!errors[key]) errors[key] = issue.message;┬À
+      }┬À
+      return errors;┬À
+    }┬À┬À┬À
+    // ÔöÇÔöÇ Handler ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À┬À┬À
+    export async function POST(req: NextRequest) {┬À
+      try {┬À
+        // Isola a falha de parse (ex.: body sem boundary multipart) como 400,┬À
+        // evitando que vire Unexpected error 500.┬À
+        let formData: FormData;┬À
+        try {┬À
+          formData = await req.formData();┬À
+        } catch {┬À
+          return NextResponse.json(┬À
+            { errors: { form: \"Formato de envio inv├ílido. Tente novamente.\" } },┬À
+            { status: 400 },┬À
+          );┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Honeypot ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const honeypot = formData.get(\"website\") as string | null;┬À
+        if (honeypot) {┬À
+          // Bot detected ÔÇö retorna 200 silencioso┬À
+          return NextResponse.json({ ok: true }, { status: 200 });┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Extrair campos de texto ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const tipoPessoa = formData.get(\"tipoPessoa\") as string;┬À
+        const nome = formData.get(\"nome\") as string;┬À
+        const email = formData.get(\"email\") as string;┬À
+        const telefone = formData.get(\"telefone\") as string;┬À┬À┬À
+        const raw: Record<string, string> = {┬À
+          tipoPessoa,┬À
+          nome: nome ?? \"\",┬À
+          email: email ?? \"\",┬À
+          telefone: telefone ?? \"\",┬À
+          website: \"\",┬À
+        };┬À┬À┬À
+        if (tipoPessoa === \"PF\") {┬À
+          raw.cpf = (formData.get(\"cpf\") as string) ?? \"\";┬À
+        } else if (tipoPessoa === \"PJ\") {┬À
+          raw.razaoSocial = (formData.get(\"razaoSocial\") as string) ?? \"\";┬À
+          raw.cnpj = (formData.get(\"cnpj\") as string) ?? \"\";┬À
+          raw.cpfResponsavel = (formData.get(\"cpfResponsavel\") as string) ?? \"\";┬À
+        } else {┬À
+          return NextResponse.json(┬À
+            { errors: { tipoPessoa: \"Tipo de pessoa inv├ílido.\" } },┬À
+            { status: 400 },┬À
+          );┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Valida├º├úo Zod ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const schema =┬À
+          tipoPessoa === \"PF\" ? pessoaFisicaSchema : pessoaJuridicaSchema;┬À
+        const result = schema.safeParse(raw);┬À┬À┬À
+        if (!result.success) {┬À
+          return NextResponse.json(┬À
+            { errors: fieldErrors(result.error.issues) },┬À
+            { status: 400 },┬À
+          );┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Validar arquivos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const fileErrors: Record<string, string> = {};┬À
+        let hasFiles = false;┬À┬À┬À
+        if (tipoPessoa === \"PF\") {┬À
+          const docCpf = formData.get(\"documentoCpf\") as File | null;┬À
+          if (docCpf && docCpf.size > 0) {┬À
+            const v = validateFile(docCpf);┬À
+            if (!v.valid) fileErrors.documentoCpf = v.error;┬À
+            else hasFiles = true;┬À
+          }┬À
+        } else {┬À
+          const docCnpj = formData.get(\"documentoCnpj\") as File | null;┬À
+          const docCpfResp = formData.get(\"documentoCpfResponsavel\") as File | null;┬À┬À┬À
+          if (docCnpj && docCnpj.size > 0) {┬À
+            const v = validateFile(docCnpj);┬À
+            if (!v.valid) fileErrors.documentoCnpj = v.error;┬À
+            else hasFiles = true;┬À
+          }┬À
+          if (docCpfResp && docCpfResp.size > 0) {┬À
+            const v = validateFile(docCpfResp);┬À
+            if (!v.valid) fileErrors.documentoCpfResponsavel = v.error;┬À
+            else hasFiles = true;┬À
+          }┬À
+        }┬À┬À┬À
+        if (Object.keys(fileErrors).length > 0) {┬À
+          return NextResponse.json({ errors: fileErrors }, { status: 400 });┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Upload Backblaze (staging/prod ÔÇö VERCEL=1) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        // Em DEV o backend QWork faz o upload; no Vercel a LP sobe diretamente.┬À
+        // Se credenciais n├úo existem ÔÇö fallback para delega├º├úo ao QWork.┬À
+        const isVercel = process.env.VERCEL === \"1\";┬À
+        const backblazeUploads: Record<string, DocUploadResult> = {};┬À
+        let backblazeCredentialsMissing = false;┬À┬À┬À
+        if (isVercel) {┬À
+          const { uploadDocumentoRepresentante } =┬À
+            await import(\"@/lib/storage/representante-storage\");┬À┬À┬À
+          // Identificador somente d├¡gitos (CPF para PF, CNPJ para PJ)┬À
+          const identificador =┬À
+            tipoPessoa === \"PF\"┬À
+              ? (raw.cpf ?? \"\").replace(/\\D/g, \"\")┬À
+              : (raw.cnpj ?? \"\").replace(/\\D/g, \"\");┬À┬À┬À
+          try {┬À
+            if (tipoPessoa === \"PF\") {┬À
+              const docCpf = formData.get(\"documentoCpf\") as File | null;┬À
+              if (docCpf && docCpf.size > 0) {┬À
+                console.log(┬À
+                  `[REPRESENTANTE] Upload PF: documentoCpf (${docCpf.size} bytes, ${docCpf.type})`,┬À
+                );┬À
+                backblazeUploads.cpf = await uploadDocumentoRepresentante(┬À
+                  docCpf,┬À
+                  \"cpf\",┬À
+                  identificador,┬À
+                  \"PF\",┬À
+                );┬À
+              }┬À
+            } else {┬À
+              const docCnpj = formData.get(\"documentoCnpj\") as File | null;┬À
+              const docCpfResp = formData.get(┬À
+                \"documentoCpfResponsavel\",┬À
+              ) as File | null;┬À┬À┬À
+              if (docCnpj && docCnpj.size > 0) {┬À
+                console.log(┬À
+                  `[REPRESENTANTE] Upload PJ: documentoCnpj (${docCnpj.size} bytes, ${docCnpj.type})`,┬À
+                );┬À
+                backblazeUploads.cnpj = await uploadDocumentoRepresentante(┬À
+                  docCnpj,┬À
+                  \"cnpj\",┬À
+                  identificador,┬À
+                  \"PJ\",┬À
+                );┬À
+              }┬À
+              if (docCpfResp && docCpfResp.size > 0) {┬À
+                console.log(┬À
+                  `[REPRESENTANTE] Upload PJ: documentoCpfResponsavel (${docCpfResp.size} bytes, ${docCpfResp.type})`,┬À
+                );┬À
+                backblazeUploads.cpf_responsavel =┬À
+                  await uploadDocumentoRepresentante(┬À
+                    docCpfResp,┬À
+                    \"cpf_responsavel\",┬À
+                    identificador,┬À
+                    \"PJ\",┬À
+                  );┬À
+              }┬À
+            }┬À
+          } catch (uploadErr) {┬À
+            const errMsg =┬À
+              uploadErr instanceof Error ? uploadErr.message : String(uploadErr);┬À┬À┬À
+            // Se credenciais n├úo configuradas ÔÇö fallback para DEV mode (repassa ao QWork)┬À
+            if (┬À
+              (uploadErr as any)?.code === \"BACKBLAZE_CREDENTIALS_MISSING\" ||┬À
+              errMsg.includes(\"Credenciais n├úo configuradas\")┬À
+            ) {┬À
+              console.warn(┬À
+                \"[REPRESENTANTE] Credenciais Backblaze n├úo configuradas ÔÇö fallback para DEV mode (QWork far├í upload)\",┬À
+              );┬À
+              backblazeCredentialsMissing = true;┬À
+              // Continuar normalmente ÔÇö forwardData repassar├í os arquivos ao QWork┬À
+            } else {┬À
+              // Outros erros ÔÇö logar com detalhes e rejeitar┬À
+              console.error(\"[REPRESENTANTE] Falha cr├¡tica no upload Backblaze:\", {┬À
+                message: errMsg,┬À
+                code: (uploadErr as any)?.Code || (uploadErr as any)?.code,┬À
+                keyId: process.env.BACKBLAZE_REP_KEY_ID┬À
+                  ? `${process.env.BACKBLAZE_REP_KEY_ID.slice(0, 10)}...`┬À
+                  : process.env.BACKBLAZE_KEY_ID┬À
+                    ? `${process.env.BACKBLAZE_KEY_ID.slice(0, 10)}... (fallback BACKBLAZE_KEY_ID)`┬À
+                    : \"(nenhuma credencial encontrada)\",┬À
+                endpoint: process.env.BACKBLAZE_ENDPOINT || \"(default)\",┬À
+              });┬À
+              return NextResponse.json(┬À
+                { errors: { form: \"Erro ao enviar documentos. Tente novamente.\" } },┬À
+                { status: 503 },┬À
+              );┬À
+            }┬À
+          }┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Gerar token ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const token = crypto.randomUUID();┬À┬À┬À
+        // ÔöÇÔöÇ Encaminhar ao backend QWork ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        // QWORK_API_SKIP=true permite testar a LP localmente sem o backend QWork.┬À
+        // Em produ├º├úo, mantenha QWORK_API_SKIP indefinido ou false.┬À
+        const skipQWork = process.env.QWORK_API_SKIP === \"true\";┬À
+        const qworkUrl = process.env.QWORK_API_URL || \"http://localhost:3001\";┬À┬À┬À
+        if (skipQWork) {┬À
+          console.log(┬À
+            \"[REPRESENTANTE][DEV] QWORK_API_SKIP=true ÔÇö encaminhamento ao QWork ignorado.\",┬À
+            {┬À
+              tipoPessoa: raw.tipoPessoa,┬À
+              nome: raw.nome,┬À
+              email: raw.email,┬À
+              token,┬À
+              hasFiles,┬À
+            },┬À
+          );┬À
+        } else {┬À
+          // Mapeia campos camelCase da LP para snake_case esperado pelo QWork┬À
+          const forwardData = new FormData();┬À┬À┬À
+          // Campos comuns┬À
+          forwardData.append(\"tipo_pessoa\", (raw.tipoPessoa ?? \"\").toLowerCase());┬À
+          forwardData.append(\"nome\", raw.nome ?? \"\");┬À
+          forwardData.append(\"email\", raw.email ?? \"\");┬À
+          forwardData.append(\"telefone\", raw.telefone ?? \"\");┬À
+          forwardData.append(\"website\", \"\"); // honeypot vazio┬À┬À┬À
+          // Campos PF┬À
+          if (raw.tipoPessoa === \"PF\") {┬À
+            forwardData.append(\"cpf\", raw.cpf ?? \"\");┬À
+            if (isVercel && !backblazeCredentialsMissing && backblazeUploads.cpf) {┬À
+              // Staging/prod com credenciais: arquivos j├í foram enviados ao Backblaze; passa as chaves┬À
+              forwardData.append(\"backblaze_key_cpf\", backblazeUploads.cpf.key);┬À
+              forwardData.append(\"backblaze_url_cpf\", backblazeUploads.cpf.url);┬À
+            } else {┬À
+              // DEV ou fallback (credenciais ausentes): repassa o arquivo para o QWork fazer o upload┬À
+              const docCpf = formData.get(\"documentoCpf\") as File | null;┬À
+              if (docCpf && docCpf.size > 0)┬À
+                forwardData.append(\"documento_cpf\", docCpf);┬À
+            }┬À
+          }┬À┬À┬À
+          // Campos PJ┬À
+          if (raw.tipoPessoa === \"PJ\") {┬À
+            forwardData.append(\"cnpj\", raw.cnpj ?? \"\");┬À
+            forwardData.append(\"razao_social\", raw.razaoSocial ?? \"\");┬À
+            forwardData.append(\"cpf_responsavel\", raw.cpfResponsavel ?? \"\");┬À
+            if (isVercel && !backblazeCredentialsMissing) {┬À
+              // Staging/prod com credenciais: passa as chaves Backblaze┬À
+              if (backblazeUploads.cnpj) {┬À
+                forwardData.append(\"backblaze_key_cnpj\", backblazeUploads.cnpj.key);┬À
+                forwardData.append(\"backblaze_url_cnpj\", backblazeUploads.cnpj.url);┬À
+              }┬À
+              if (backblazeUploads.cpf_responsavel) {┬À
+                forwardData.append(┬À
+                  \"backblaze_key_cpf_responsavel\",┬À
+                  backblazeUploads.cpf_responsavel.key,┬À
+                );┬À
+                forwardData.append(┬À
+                  \"backblaze_url_cpf_responsavel\",┬À
+                  backblazeUploads.cpf_responsavel.url,┬À
+                );┬À
+              }┬À
+            } else {┬À
+              // DEV ou fallback (credenciais ausentes): repassa os arquivos para o QWork fazer o upload┬À
+              const docCnpj = formData.get(\"documentoCnpj\") as File | null;┬À
+              const docCpfResp = formData.get(┬À
+                \"documentoCpfResponsavel\",┬À
+              ) as File | null;┬À
+              if (docCnpj && docCnpj.size > 0)┬À
+                forwardData.append(\"documento_cnpj\", docCnpj);┬À
+              if (docCpfResp && docCpfResp.size > 0)┬À
+                forwardData.append(\"documento_cpf_responsavel\", docCpfResp);┬À
+            }┬À
+          }┬À┬À┬À
+          forwardData.append(\"token\", token);┬À┬À┬À
+          try {┬À
+            const bypassSecret = process.env.VERCEL_BYPASS_SECRET;┬À
+            const qworkHeaders: HeadersInit = bypassSecret┬À
+              ? { \"x-vercel-protection-bypass\": bypassSecret }┬À
+              : {};┬À┬À┬À
+            const qworkRes = await fetch(┬À
+              `${qworkUrl}/api/public/representantes/cadastro`,┬À
+              { method: \"POST\", body: forwardData, headers: qworkHeaders },┬À
+            );┬À┬À┬À
+            if (!qworkRes.ok) {┬À
+              let errBody = await qworkRes.text();┬À
+              console.error(\"[REPRESENTANTE] QWork API error:\", errBody);┬À┬À┬À
+              // Tentar parsear como JSON e extrair mensagem espec├¡fica┬À
+              let qworkError: {┬À
+                message?: string;┬À
+                error?: string;┬À
+                code?: string;┬À
+                field?: string;┬À
+                details?: Record<string, string>;┬À
+              } = {};┬À
+              try {┬À
+                qworkError = JSON.parse(errBody);┬À
+              } catch {┬À
+                // Se n├úo for JSON, continua com errBody como texto┬À
+              }┬À┬À┬À
+              const errorMsg =┬À
+                qworkError.message || qworkError.error || errBody.toLowerCase();┬À┬À┬À
+              // Mapear erros de duplica├º├úo para mensagens amig├íveis┬À
+              let userMessage = \"Erro ao processar cadastro. Tente novamente.\";┬À
+              let errorField: string | undefined;┬À┬À┬À
+              const isDuplicate =┬À
+                qworkError.code === \"DUPLICATE\" ||┬À
+                errorMsg.includes(\"duplicat\") ||┬À
+                errorMsg.includes(\"duplicate\") ||┬À
+                errorMsg.includes(\"├║nico\") ||┬À
+                errorMsg.includes(\"unico\") ||┬À
+                errorMsg.includes(\"unique\") ||┬À
+                errorMsg.includes(\"j├í existe\") ||┬À
+                errorMsg.includes(\"j├í possui um cadastro\") ||┬À
+                errorMsg.includes(\"em an├ílise\");┬À┬À┬À
+              const dupeField =┬À
+                qworkError.field ??┬À
+                (errorMsg.includes(\"cpf\")┬À
+                  ? \"cpf\"┬À
+                  : errorMsg.includes(\"cnpj\")┬À
+                    ? \"cnpj\"┬À
+                    : errorMsg.includes(\"email\")┬À
+                      ? \"email\"┬À
+                      : undefined);┬À┬À┬À
+              if (isDuplicate && dupeField === \"cpf\") {┬À
+                userMessage = \"Este CPF j├í possui um cadastro em an├ílise.\";┬À
+                errorField = \"cpf\";┬À
+              } else if (isDuplicate && dupeField === \"cnpj\") {┬À
+                userMessage = \"Este CNPJ j├í possui um cadastro em an├ílise.\";┬À
+                errorField = \"cnpj\";┬À
+              } else if (isDuplicate && dupeField === \"email\") {┬À
+                userMessage = \"Este e-mail j├í possui um cadastro em an├ílise.\";┬À
+                errorField = \"email\";┬À
+              } else if (isDuplicate) {┬À
+                userMessage = \"Cadastro duplicado. Verifique seus dados.\";┬À
+              }┬À┬À┬À
+              return NextResponse.json(┬À
+                {┬À
+                  errors: {┬À
+                    form: userMessage,┬À
+                    ...(errorField ? { [errorField]: userMessage } : {}),┬À
+                  },┬À
+                },┬À
+                { status: 400 },┬À
+              );┬À
+            }┬À
+          } catch (fetchErr) {┬À
+            console.error(\"[REPRESENTANTE] QWork API unreachable:\", fetchErr);┬À
+            return NextResponse.json(┬À
+              { errors: { form: \"Servi├ºo temporariamente indispon├¡vel.\" } },┬À
+              { status: 503 },┬À
+            );┬À
+          }┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Disparar e-mails (aguardados ÔÇö erros aparecem no terminal) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const adminPayload: AdminNotificationPayload = {┬À
+          tipoPessoa: tipoPessoa as \"PF\" | \"PJ\",┬À
+          nome: raw.nome,┬À
+          email: raw.email,┬À
+          telefone: raw.telefone,┬À
+          cpf: raw.cpf,┬À
+          cnpj: raw.cnpj,┬À
+          razaoSocial: raw.razaoSocial,┬À
+          cpfResponsavel: raw.cpfResponsavel,┬À
+          temDocumentos: hasFiles,┬À
+        };┬À┬À┬À
+        const emailResults = await Promise.allSettled([┬À
+          sendConfirmationEmail(raw.email, raw.nome, token),┬À
+          sendAdminNotification(adminPayload),┬À
+        ]);┬À┬À┬À
+        emailResults.forEach((result, i) => {┬À
+          const label =┬À
+            i === 0 ? \"confirma├º├úo (representante)\" : \"notifica├º├úo (admin)\";┬À
+          if (result.status === \"rejected\") {┬À
+            console.error(┬À
+              `[REPRESENTANTE] Falha no email de ${label}:`,┬À
+              result.reason,┬À
+            );┬À
+          }┬À
+        });┬À┬À┬À
+        return NextResponse.json({ ok: true }, { status: 200 });┬À
+      } catch (err) {┬À
+        console.error(\"[REPRESENTANTE] Unexpected error:\", err);┬À
+        return NextResponse.json(┬À
+          { errors: { form: \"Erro interno.\" } },┬À
+          { status: 500 },┬À
+        );┬À
+      }┬À
+    }┬À
+    "
+
+      1024 |
+      1025 |   testIf('mapeia erro duplicata de CPF para mensagem leg├¡vel', () => {
+    > 1026 |     expect(src).toMatch(/CPF.*registrado|registrado.*CPF/i);
+           |                 ^
+      1027 |   });
+      1028 |
+      1029 |   testIf('mapeia erro duplicata de email para mensagem leg├¡vel', () => {
+
+      at Object.toMatch (__tests__/representantes-leads-cadastro.test.ts:1026:17)
+
+  ÔùÅ 9. LP route ÔÇö mapeamento camelCase ÔåÆ snake_case ao encaminhar ao QWork ÔÇ║ mapeia erro duplicata de email para mensagem leg├¡vel
+
+    expect(received).toMatch(expected)
+
+    Expected pattern: /e-mail.*registrado|registrado.*e-mail/i
+    Received string:  "/**┬À
+     * POST /api/representantes/cadastro┬À
+     *┬À
+     * Recebe FormData do formul├írio de cadastro de representantes.┬À
+     * Valida campos, gera token de confirma├º├úo, dispara e-mails via Resend┬À
+     * e encaminha os dados ao backend QWork para persist├¬ncia.┬À
+     */┬À
+    import { NextRequest, NextResponse } from \"next/server\";┬À
+    import crypto from \"node:crypto\";┬À
+    import {┬À
+      pessoaFisicaSchema,┬À
+      pessoaJuridicaSchema,┬À
+      validateFile,┬À
+    } from \"@/lib/validators/representante\";┬À
+    import { sendConfirmationEmail, sendAdminNotification } from \"@/lib/email\";┬À
+    import type { AdminNotificationPayload } from \"@/lib/email\";┬À
+    import type { DocUploadResult } from \"@/lib/storage/representante-storage\";┬À┬À┬À
+    // ÔöÇÔöÇ Helpers ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À┬À┬À
+    function fieldErrors(┬À
+      issues: { path: PropertyKey[]; message: string }[],┬À
+    ): Record<string, string> {┬À
+      const errors: Record<string, string> = {};┬À
+      for (const issue of issues) {┬À
+        const key = String(issue.path[0] ?? \"form\");┬À
+        if (!errors[key]) errors[key] = issue.message;┬À
+      }┬À
+      return errors;┬À
+    }┬À┬À┬À
+    // ÔöÇÔöÇ Handler ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À┬À┬À
+    export async function POST(req: NextRequest) {┬À
+      try {┬À
+        // Isola a falha de parse (ex.: body sem boundary multipart) como 400,┬À
+        // evitando que vire Unexpected error 500.┬À
+        let formData: FormData;┬À
+        try {┬À
+          formData = await req.formData();┬À
+        } catch {┬À
+          return NextResponse.json(┬À
+            { errors: { form: \"Formato de envio inv├ílido. Tente novamente.\" } },┬À
+            { status: 400 },┬À
+          );┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Honeypot ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const honeypot = formData.get(\"website\") as string | null;┬À
+        if (honeypot) {┬À
+          // Bot detected ÔÇö retorna 200 silencioso┬À
+          return NextResponse.json({ ok: true }, { status: 200 });┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Extrair campos de texto ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const tipoPessoa = formData.get(\"tipoPessoa\") as string;┬À
+        const nome = formData.get(\"nome\") as string;┬À
+        const email = formData.get(\"email\") as string;┬À
+        const telefone = formData.get(\"telefone\") as string;┬À┬À┬À
+        const raw: Record<string, string> = {┬À
+          tipoPessoa,┬À
+          nome: nome ?? \"\",┬À
+          email: email ?? \"\",┬À
+          telefone: telefone ?? \"\",┬À
+          website: \"\",┬À
+        };┬À┬À┬À
+        if (tipoPessoa === \"PF\") {┬À
+          raw.cpf = (formData.get(\"cpf\") as string) ?? \"\";┬À
+        } else if (tipoPessoa === \"PJ\") {┬À
+          raw.razaoSocial = (formData.get(\"razaoSocial\") as string) ?? \"\";┬À
+          raw.cnpj = (formData.get(\"cnpj\") as string) ?? \"\";┬À
+          raw.cpfResponsavel = (formData.get(\"cpfResponsavel\") as string) ?? \"\";┬À
+        } else {┬À
+          return NextResponse.json(┬À
+            { errors: { tipoPessoa: \"Tipo de pessoa inv├ílido.\" } },┬À
+            { status: 400 },┬À
+          );┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Valida├º├úo Zod ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const schema =┬À
+          tipoPessoa === \"PF\" ? pessoaFisicaSchema : pessoaJuridicaSchema;┬À
+        const result = schema.safeParse(raw);┬À┬À┬À
+        if (!result.success) {┬À
+          return NextResponse.json(┬À
+            { errors: fieldErrors(result.error.issues) },┬À
+            { status: 400 },┬À
+          );┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Validar arquivos ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const fileErrors: Record<string, string> = {};┬À
+        let hasFiles = false;┬À┬À┬À
+        if (tipoPessoa === \"PF\") {┬À
+          const docCpf = formData.get(\"documentoCpf\") as File | null;┬À
+          if (docCpf && docCpf.size > 0) {┬À
+            const v = validateFile(docCpf);┬À
+            if (!v.valid) fileErrors.documentoCpf = v.error;┬À
+            else hasFiles = true;┬À
+          }┬À
+        } else {┬À
+          const docCnpj = formData.get(\"documentoCnpj\") as File | null;┬À
+          const docCpfResp = formData.get(\"documentoCpfResponsavel\") as File | null;┬À┬À┬À
+          if (docCnpj && docCnpj.size > 0) {┬À
+            const v = validateFile(docCnpj);┬À
+            if (!v.valid) fileErrors.documentoCnpj = v.error;┬À
+            else hasFiles = true;┬À
+          }┬À
+          if (docCpfResp && docCpfResp.size > 0) {┬À
+            const v = validateFile(docCpfResp);┬À
+            if (!v.valid) fileErrors.documentoCpfResponsavel = v.error;┬À
+            else hasFiles = true;┬À
+          }┬À
+        }┬À┬À┬À
+        if (Object.keys(fileErrors).length > 0) {┬À
+          return NextResponse.json({ errors: fileErrors }, { status: 400 });┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Upload Backblaze (staging/prod ÔÇö VERCEL=1) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        // Em DEV o backend QWork faz o upload; no Vercel a LP sobe diretamente.┬À
+        // Se credenciais n├úo existem ÔÇö fallback para delega├º├úo ao QWork.┬À
+        const isVercel = process.env.VERCEL === \"1\";┬À
+        const backblazeUploads: Record<string, DocUploadResult> = {};┬À
+        let backblazeCredentialsMissing = false;┬À┬À┬À
+        if (isVercel) {┬À
+          const { uploadDocumentoRepresentante } =┬À
+            await import(\"@/lib/storage/representante-storage\");┬À┬À┬À
+          // Identificador somente d├¡gitos (CPF para PF, CNPJ para PJ)┬À
+          const identificador =┬À
+            tipoPessoa === \"PF\"┬À
+              ? (raw.cpf ?? \"\").replace(/\\D/g, \"\")┬À
+              : (raw.cnpj ?? \"\").replace(/\\D/g, \"\");┬À┬À┬À
+          try {┬À
+            if (tipoPessoa === \"PF\") {┬À
+              const docCpf = formData.get(\"documentoCpf\") as File | null;┬À
+              if (docCpf && docCpf.size > 0) {┬À
+                console.log(┬À
+                  `[REPRESENTANTE] Upload PF: documentoCpf (${docCpf.size} bytes, ${docCpf.type})`,┬À
+                );┬À
+                backblazeUploads.cpf = await uploadDocumentoRepresentante(┬À
+                  docCpf,┬À
+                  \"cpf\",┬À
+                  identificador,┬À
+                  \"PF\",┬À
+                );┬À
+              }┬À
+            } else {┬À
+              const docCnpj = formData.get(\"documentoCnpj\") as File | null;┬À
+              const docCpfResp = formData.get(┬À
+                \"documentoCpfResponsavel\",┬À
+              ) as File | null;┬À┬À┬À
+              if (docCnpj && docCnpj.size > 0) {┬À
+                console.log(┬À
+                  `[REPRESENTANTE] Upload PJ: documentoCnpj (${docCnpj.size} bytes, ${docCnpj.type})`,┬À
+                );┬À
+                backblazeUploads.cnpj = await uploadDocumentoRepresentante(┬À
+                  docCnpj,┬À
+                  \"cnpj\",┬À
+                  identificador,┬À
+                  \"PJ\",┬À
+                );┬À
+              }┬À
+              if (docCpfResp && docCpfResp.size > 0) {┬À
+                console.log(┬À
+                  `[REPRESENTANTE] Upload PJ: documentoCpfResponsavel (${docCpfResp.size} bytes, ${docCpfResp.type})`,┬À
+                );┬À
+                backblazeUploads.cpf_responsavel =┬À
+                  await uploadDocumentoRepresentante(┬À
+                    docCpfResp,┬À
+                    \"cpf_responsavel\",┬À
+                    identificador,┬À
+                    \"PJ\",┬À
+                  );┬À
+              }┬À
+            }┬À
+          } catch (uploadErr) {┬À
+            const errMsg =┬À
+              uploadErr instanceof Error ? uploadErr.message : String(uploadErr);┬À┬À┬À
+            // Se credenciais n├úo configuradas ÔÇö fallback para DEV mode (repassa ao QWork)┬À
+            if (┬À
+              (uploadErr as any)?.code === \"BACKBLAZE_CREDENTIALS_MISSING\" ||┬À
+              errMsg.includes(\"Credenciais n├úo configuradas\")┬À
+            ) {┬À
+              console.warn(┬À
+                \"[REPRESENTANTE] Credenciais Backblaze n├úo configuradas ÔÇö fallback para DEV mode (QWork far├í upload)\",┬À
+              );┬À
+              backblazeCredentialsMissing = true;┬À
+              // Continuar normalmente ÔÇö forwardData repassar├í os arquivos ao QWork┬À
+            } else {┬À
+              // Outros erros ÔÇö logar com detalhes e rejeitar┬À
+              console.error(\"[REPRESENTANTE] Falha cr├¡tica no upload Backblaze:\", {┬À
+                message: errMsg,┬À
+                code: (uploadErr as any)?.Code || (uploadErr as any)?.code,┬À
+                keyId: process.env.BACKBLAZE_REP_KEY_ID┬À
+                  ? `${process.env.BACKBLAZE_REP_KEY_ID.slice(0, 10)}...`┬À
+                  : process.env.BACKBLAZE_KEY_ID┬À
+                    ? `${process.env.BACKBLAZE_KEY_ID.slice(0, 10)}... (fallback BACKBLAZE_KEY_ID)`┬À
+                    : \"(nenhuma credencial encontrada)\",┬À
+                endpoint: process.env.BACKBLAZE_ENDPOINT || \"(default)\",┬À
+              });┬À
+              return NextResponse.json(┬À
+                { errors: { form: \"Erro ao enviar documentos. Tente novamente.\" } },┬À
+                { status: 503 },┬À
+              );┬À
+            }┬À
+          }┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Gerar token ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const token = crypto.randomUUID();┬À┬À┬À
+        // ÔöÇÔöÇ Encaminhar ao backend QWork ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        // QWORK_API_SKIP=true permite testar a LP localmente sem o backend QWork.┬À
+        // Em produ├º├úo, mantenha QWORK_API_SKIP indefinido ou false.┬À
+        const skipQWork = process.env.QWORK_API_SKIP === \"true\";┬À
+        const qworkUrl = process.env.QWORK_API_URL || \"http://localhost:3001\";┬À┬À┬À
+        if (skipQWork) {┬À
+          console.log(┬À
+            \"[REPRESENTANTE][DEV] QWORK_API_SKIP=true ÔÇö encaminhamento ao QWork ignorado.\",┬À
+            {┬À
+              tipoPessoa: raw.tipoPessoa,┬À
+              nome: raw.nome,┬À
+              email: raw.email,┬À
+              token,┬À
+              hasFiles,┬À
+            },┬À
+          );┬À
+        } else {┬À
+          // Mapeia campos camelCase da LP para snake_case esperado pelo QWork┬À
+          const forwardData = new FormData();┬À┬À┬À
+          // Campos comuns┬À
+          forwardData.append(\"tipo_pessoa\", (raw.tipoPessoa ?? \"\").toLowerCase());┬À
+          forwardData.append(\"nome\", raw.nome ?? \"\");┬À
+          forwardData.append(\"email\", raw.email ?? \"\");┬À
+          forwardData.append(\"telefone\", raw.telefone ?? \"\");┬À
+          forwardData.append(\"website\", \"\"); // honeypot vazio┬À┬À┬À
+          // Campos PF┬À
+          if (raw.tipoPessoa === \"PF\") {┬À
+            forwardData.append(\"cpf\", raw.cpf ?? \"\");┬À
+            if (isVercel && !backblazeCredentialsMissing && backblazeUploads.cpf) {┬À
+              // Staging/prod com credenciais: arquivos j├í foram enviados ao Backblaze; passa as chaves┬À
+              forwardData.append(\"backblaze_key_cpf\", backblazeUploads.cpf.key);┬À
+              forwardData.append(\"backblaze_url_cpf\", backblazeUploads.cpf.url);┬À
+            } else {┬À
+              // DEV ou fallback (credenciais ausentes): repassa o arquivo para o QWork fazer o upload┬À
+              const docCpf = formData.get(\"documentoCpf\") as File | null;┬À
+              if (docCpf && docCpf.size > 0)┬À
+                forwardData.append(\"documento_cpf\", docCpf);┬À
+            }┬À
+          }┬À┬À┬À
+          // Campos PJ┬À
+          if (raw.tipoPessoa === \"PJ\") {┬À
+            forwardData.append(\"cnpj\", raw.cnpj ?? \"\");┬À
+            forwardData.append(\"razao_social\", raw.razaoSocial ?? \"\");┬À
+            forwardData.append(\"cpf_responsavel\", raw.cpfResponsavel ?? \"\");┬À
+            if (isVercel && !backblazeCredentialsMissing) {┬À
+              // Staging/prod com credenciais: passa as chaves Backblaze┬À
+              if (backblazeUploads.cnpj) {┬À
+                forwardData.append(\"backblaze_key_cnpj\", backblazeUploads.cnpj.key);┬À
+                forwardData.append(\"backblaze_url_cnpj\", backblazeUploads.cnpj.url);┬À
+              }┬À
+              if (backblazeUploads.cpf_responsavel) {┬À
+                forwardData.append(┬À
+                  \"backblaze_key_cpf_responsavel\",┬À
+                  backblazeUploads.cpf_responsavel.key,┬À
+                );┬À
+                forwardData.append(┬À
+                  \"backblaze_url_cpf_responsavel\",┬À
+                  backblazeUploads.cpf_responsavel.url,┬À
+                );┬À
+              }┬À
+            } else {┬À
+              // DEV ou fallback (credenciais ausentes): repassa os arquivos para o QWork fazer o upload┬À
+              const docCnpj = formData.get(\"documentoCnpj\") as File | null;┬À
+              const docCpfResp = formData.get(┬À
+                \"documentoCpfResponsavel\",┬À
+              ) as File | null;┬À
+              if (docCnpj && docCnpj.size > 0)┬À
+                forwardData.append(\"documento_cnpj\", docCnpj);┬À
+              if (docCpfResp && docCpfResp.size > 0)┬À
+                forwardData.append(\"documento_cpf_responsavel\", docCpfResp);┬À
+            }┬À
+          }┬À┬À┬À
+          forwardData.append(\"token\", token);┬À┬À┬À
+          try {┬À
+            const bypassSecret = process.env.VERCEL_BYPASS_SECRET;┬À
+            const qworkHeaders: HeadersInit = bypassSecret┬À
+              ? { \"x-vercel-protection-bypass\": bypassSecret }┬À
+              : {};┬À┬À┬À
+            const qworkRes = await fetch(┬À
+              `${qworkUrl}/api/public/representantes/cadastro`,┬À
+              { method: \"POST\", body: forwardData, headers: qworkHeaders },┬À
+            );┬À┬À┬À
+            if (!qworkRes.ok) {┬À
+              let errBody = await qworkRes.text();┬À
+              console.error(\"[REPRESENTANTE] QWork API error:\", errBody);┬À┬À┬À
+              // Tentar parsear como JSON e extrair mensagem espec├¡fica┬À
+              let qworkError: {┬À
+                message?: string;┬À
+                error?: string;┬À
+                code?: string;┬À
+                field?: string;┬À
+                details?: Record<string, string>;┬À
+              } = {};┬À
+              try {┬À
+                qworkError = JSON.parse(errBody);┬À
+              } catch {┬À
+                // Se n├úo for JSON, continua com errBody como texto┬À
+              }┬À┬À┬À
+              const errorMsg =┬À
+                qworkError.message || qworkError.error || errBody.toLowerCase();┬À┬À┬À
+              // Mapear erros de duplica├º├úo para mensagens amig├íveis┬À
+              let userMessage = \"Erro ao processar cadastro. Tente novamente.\";┬À
+              let errorField: string | undefined;┬À┬À┬À
+              const isDuplicate =┬À
+                qworkError.code === \"DUPLICATE\" ||┬À
+                errorMsg.includes(\"duplicat\") ||┬À
+                errorMsg.includes(\"duplicate\") ||┬À
+                errorMsg.includes(\"├║nico\") ||┬À
+                errorMsg.includes(\"unico\") ||┬À
+                errorMsg.includes(\"unique\") ||┬À
+                errorMsg.includes(\"j├í existe\") ||┬À
+                errorMsg.includes(\"j├í possui um cadastro\") ||┬À
+                errorMsg.includes(\"em an├ílise\");┬À┬À┬À
+              const dupeField =┬À
+                qworkError.field ??┬À
+                (errorMsg.includes(\"cpf\")┬À
+                  ? \"cpf\"┬À
+                  : errorMsg.includes(\"cnpj\")┬À
+                    ? \"cnpj\"┬À
+                    : errorMsg.includes(\"email\")┬À
+                      ? \"email\"┬À
+                      : undefined);┬À┬À┬À
+              if (isDuplicate && dupeField === \"cpf\") {┬À
+                userMessage = \"Este CPF j├í possui um cadastro em an├ílise.\";┬À
+                errorField = \"cpf\";┬À
+              } else if (isDuplicate && dupeField === \"cnpj\") {┬À
+                userMessage = \"Este CNPJ j├í possui um cadastro em an├ílise.\";┬À
+                errorField = \"cnpj\";┬À
+              } else if (isDuplicate && dupeField === \"email\") {┬À
+                userMessage = \"Este e-mail j├í possui um cadastro em an├ílise.\";┬À
+                errorField = \"email\";┬À
+              } else if (isDuplicate) {┬À
+                userMessage = \"Cadastro duplicado. Verifique seus dados.\";┬À
+              }┬À┬À┬À
+              return NextResponse.json(┬À
+                {┬À
+                  errors: {┬À
+                    form: userMessage,┬À
+                    ...(errorField ? { [errorField]: userMessage } : {}),┬À
+                  },┬À
+                },┬À
+                { status: 400 },┬À
+              );┬À
+            }┬À
+          } catch (fetchErr) {┬À
+            console.error(\"[REPRESENTANTE] QWork API unreachable:\", fetchErr);┬À
+            return NextResponse.json(┬À
+              { errors: { form: \"Servi├ºo temporariamente indispon├¡vel.\" } },┬À
+              { status: 503 },┬À
+            );┬À
+          }┬À
+        }┬À┬À┬À
+        // ÔöÇÔöÇ Disparar e-mails (aguardados ÔÇö erros aparecem no terminal) ÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇ┬À
+        const adminPayload: AdminNotificationPayload = {┬À
+          tipoPessoa: tipoPessoa as \"PF\" | \"PJ\",┬À
+          nome: raw.nome,┬À
+          email: raw.email,┬À
+          telefone: raw.telefone,┬À
+          cpf: raw.cpf,┬À
+          cnpj: raw.cnpj,┬À
+          razaoSocial: raw.razaoSocial,┬À
+          cpfResponsavel: raw.cpfResponsavel,┬À
+          temDocumentos: hasFiles,┬À
+        };┬À┬À┬À
+        const emailResults = await Promise.allSettled([┬À
+          sendConfirmationEmail(raw.email, raw.nome, token),┬À
+          sendAdminNotification(adminPayload),┬À
+        ]);┬À┬À┬À
+        emailResults.forEach((result, i) => {┬À
+          const label =┬À
+            i === 0 ? \"confirma├º├úo (representante)\" : \"notifica├º├úo (admin)\";┬À
+          if (result.status === \"rejected\") {┬À
+            console.error(┬À
+              `[REPRESENTANTE] Falha no email de ${label}:`,┬À
+              result.reason,┬À
+            );┬À
+          }┬À
+        });┬À┬À┬À
+        return NextResponse.json({ ok: true }, { status: 200 });┬À
+      } catch (err) {┬À
+        console.error(\"[REPRESENTANTE] Unexpected error:\", err);┬À
+        return NextResponse.json(┬À
+          { errors: { form: \"Erro interno.\" } },┬À
+          { status: 500 },┬À
+        );┬À
+      }┬À
+    }┬À
+    "
+
+      1028 |
+      1029 |   testIf('mapeia erro duplicata de email para mensagem leg├¡vel', () => {
+    > 1030 |     expect(src).toMatch(/e-mail.*registrado|registrado.*e-mail/i);
+           |                 ^
+      1031 |   });
+      1032 | });
+      1033 |
+
+      at Object.toMatch (__tests__/representantes-leads-cadastro.test.ts:1030:17)
+
+  ÔùÅ 8. BACKBLAZE_CADASTRO_SETUP.md ÔÇö documenta bucket rep-qwork ÔÇ║ arquivo existe
+
+    ENOENT: no such file or directory, open 'C:\apps\QWork\BACKBLAZE_CADASTRO_SETUP.md'
+
+      1068 |
+      1069 |   beforeAll(() => {
+    > 1070 |     src = fs.readFileSync(docPath, 'utf-8');
+           |              ^
+      1071 |   });
+      1072 |
+      1073 |   it('arquivo existe', () => {
+
+      at Object.readFileSync (__tests__/representantes-leads-cadastro.test.ts:1070:14)
+
+  ÔùÅ 8. BACKBLAZE_CADASTRO_SETUP.md ÔÇö documenta bucket rep-qwork ÔÇ║ documenta bucket rep-qwork
+
+    ENOENT: no such file or directory, open 'C:\apps\QWork\BACKBLAZE_CADASTRO_SETUP.md'
+
+      1068 |
+      1069 |   beforeAll(() => {
+    > 1070 |     src = fs.readFileSync(docPath, 'utf-8');
+           |              ^
+      1071 |   });
+      1072 |
+      1073 |   it('arquivo existe', () => {
+
+      at Object.readFileSync (__tests__/representantes-leads-cadastro.test.ts:1070:14)
+
+  ÔùÅ 8. BACKBLAZE_CADASTRO_SETUP.md ÔÇö documenta bucket rep-qwork ÔÇ║ documenta endpoint Backblaze us-east-005
+
+    ENOENT: no such file or directory, open 'C:\apps\QWork\BACKBLAZE_CADASTRO_SETUP.md'
+
+      1068 |
+      1069 |   beforeAll(() => {
+    > 1070 |     src = fs.readFileSync(docPath, 'utf-8');
+           |              ^
+      1071 |   });
+      1072 |
+      1073 |   it('arquivo existe', () => {
+
+      at Object.readFileSync (__tests__/representantes-leads-cadastro.test.ts:1070:14)
+
+  ÔùÅ 8. BACKBLAZE_CADASTRO_SETUP.md ÔÇö documenta bucket rep-qwork ÔÇ║ documenta vari├íveis de ambiente necess├írias
+
+    ENOENT: no such file or directory, open 'C:\apps\QWork\BACKBLAZE_CADASTRO_SETUP.md'
+
+      1068 |
+      1069 |   beforeAll(() => {
+    > 1070 |     src = fs.readFileSync(docPath, 'utf-8');
+           |              ^
+      1071 |   });
+      1072 |
+      1073 |   it('arquivo existe', () => {
+
+      at Object.readFileSync (__tests__/representantes-leads-cadastro.test.ts:1070:14)
+
+FAIL __tests__/integration/recibo-on-demand.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at Object.log (lib/db.ts:750:15)
+
+  ÔùÅ Integra├º├úo: Recibo sob demanda (confirmar -> gerar) ÔÇ║ Confirmar pagamento: marca pago, ativa tomador e cria login
+
+    error: a nova linha da rela├º├úo "pagamentos" viola a restri├º├úo de verifica├º├úo "pagamentos_entidade_or_clinica_check"
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/integration/recibo-on-demand.test.ts:108:29)
+
+  ÔùÅ Integra├º├úo: Recibo sob demanda (confirmar -> gerar) ÔÇ║ Gerar recibo via API /api/recibo/gerar (contrato)
+
+    error: a nova linha da rela├º├úo "pagamentos" viola a restri├º├úo de verifica├º├úo "pagamentos_entidade_or_clinica_check"
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/integration/recibo-on-demand.test.ts:161:29)
+
+  ÔùÅ Integra├º├úo: Recibo sob demanda (confirmar -> gerar) ÔÇ║ Gerar recibo via endpoint RH (/api/rh/parcelas/gerar-recibo)
+
+    error: o valor nulo na coluna "email" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/integration/recibo-on-demand.test.ts:249:24)
+
+  ÔùÅ Integra├º├úo: Recibo sob demanda (confirmar -> gerar) ÔÇ║ POL├ìTICA: N├úo pode gerar recibo sem contrato aceito
+
+    error: a nova linha da rela├º├úo "pagamentos" viola a restri├º├úo de verifica├º├úo "pagamentos_entidade_or_clinica_check"
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/integration/recibo-on-demand.test.ts:463:27)
+
+  ÔùÅ Integra├º├úo: Recibo sob demanda (confirmar -> gerar) ÔÇ║ POL├ìTICA: N├úo pode gerar recibo com pagamento n├úo confirmado
+
+    error: o valor nulo na coluna "email" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/integration/recibo-on-demand.test.ts:499:25)
+
+  ÔùÅ Integra├º├úo: Recibo sob demanda (confirmar -> gerar) ÔÇ║ Gerar recibo falha graciosamente quando tabela recibos n├úo existe (rh)
+
+    error: o valor nulo na coluna "email" da rela├º├úo "clinicas" viola a restri├º├úo de n├úo-nulo
+
+      564 |         // No session: just execute the query normally
+      565 |         try {
+    > 566 |           const result = await client.query(text, params);
+          |                          ^
+      567 |           const duration = Date.now() - start;
+      568 |
+      569 |           // Log apenas queries lentas (>500ms)
+
+      at node_modules/.pnpm/pg@8.19.0/node_modules/pg/lib/client.js:631:17
+      at query (lib/db.ts:566:26)
+      at Object.<anonymous> (__tests__/integration/recibo-on-demand.test.ts:562:24)
+
+RBAC seed applied to test database

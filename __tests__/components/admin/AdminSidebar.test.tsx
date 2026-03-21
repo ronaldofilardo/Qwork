@@ -50,12 +50,11 @@ describe('AdminSidebar', () => {
     expect(screen.getByText('RH')).toBeInTheDocument();
   });
 
-  it('deve exibir Contagem, Planos, Pagamentos e Comissões dentro de Financeiro (sem Cobrança)', () => {
+  it('deve exibir Contagem, Pagamentos e Comissões dentro de Financeiro (sem Cobrança)', () => {
     // Renderiza com seção neutra para que o clique EXPANDA (não colapse) o Financeiro
     render(<AdminSidebar {...defaultProps} activeSection="tomadores" />);
     fireEvent.click(screen.getByText('Financeiro'));
     expect(screen.getByText('Contagem')).toBeInTheDocument();
-    expect(screen.getByText('Planos')).toBeInTheDocument();
     expect(screen.getByText('Pagamentos')).toBeInTheDocument();
     expect(screen.getByText('Comissões')).toBeInTheDocument();
     expect(screen.queryByText('Cobrança')).toBeNull();

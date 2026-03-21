@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireRole } from '@/lib/session';
 
 // Força renderização dinâmica - não pré-renderizar durante build
 export const dynamic = 'force-dynamic';
@@ -12,6 +13,8 @@ export const revalidate = 0;
  */
 export async function GET(_request: NextRequest) {
   try {
+    await requireRole('suporte', false);
+
     const columnExistsResult = await query(
       `SELECT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'pagamentos' AND column_name = 'detalhes_parcelas') as column_exists`
     );

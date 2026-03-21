@@ -19,15 +19,13 @@ import {
   handleAprovarEntidade,
   handleRejeitarEntidade,
   handleSolicitarReanalise,
-  handleAprovarPersonalizado,
-  handleRegenerarLink,
   handleDeletarEntidade,
 } from './handlers';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = handleRequest({
-  allowedRoles: [ROLES.ADMIN],
+  allowedRoles: [ROLES.SUPORTE],
   validate: GetNovosCadastrosSchema,
   execute: handleGetNovosCadastros,
   extractInput: (request: NextRequest) => {
@@ -42,7 +40,7 @@ export const GET = handleRequest({
 });
 
 export const POST = handleRequest({
-  allowedRoles: [ROLES.ADMIN],
+  allowedRoles: [ROLES.SUPORTE],
   validate: NovosCadastrosActionSchema,
   execute: async (input, context) => {
     switch (input.acao) {
@@ -54,12 +52,6 @@ export const POST = handleRequest({
 
       case 'solicitar_reanalise':
         return handleSolicitarReanalise(input, context);
-
-      case 'aprovar_personalizado':
-        return handleAprovarPersonalizado(input, context);
-
-      case 'regenerar_link':
-        return handleRegenerarLink(input, context);
 
       case 'deletar':
         return handleDeletarEntidade(input, context);

@@ -15,7 +15,7 @@ export default function RadioScale({
   questionText,
   value,
   onChange,
-  required = true,
+  required: _required = true,
 }: RadioScaleProps) {
   const opcoes = Object.entries(escalasResposta) as [RespostaValor, number][];
 
@@ -25,7 +25,7 @@ export default function RadioScale({
       <div className="mb-6">
         <label
           htmlFor={questionId}
-          className={`block text-[1.2rem] sm:text-[1.5rem] font-semibold text-center text-gray-800 ${required ? 'required' : ''}`}
+          className="block text-[1.2rem] sm:text-[1.5rem] font-semibold text-center text-gray-800"
         >
           {questionText}
         </label>

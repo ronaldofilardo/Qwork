@@ -22,6 +22,15 @@ export default function HomePage() {
     case 'emissor':
       redirect('/emissor');
       break;
+    case 'suporte':
+      redirect('/suporte');
+      break;
+    case 'comercial':
+      redirect('/comercial');
+      break;
+    case 'vendedor':
+      redirect('/vendedor');
+      break;
     default:
       redirect('/dashboard');
   }

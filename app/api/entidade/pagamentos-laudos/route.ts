@@ -32,24 +32,24 @@ export async function GET() {
         -- Lote mais recente associado à entidade
         (
           SELECT la.id FROM lotes_avaliacao la
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY la.criado_em DESC LIMIT 1
         ) as lote_id,
         (
           SELECT la.id::text FROM lotes_avaliacao la
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY la.criado_em DESC LIMIT 1
         ) as lote_codigo,
         (
           SELECT la.numero_ordem FROM lotes_avaliacao la
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY la.criado_em DESC LIMIT 1
         ) as lote_numero,
         -- Laudo associado ao lote mais recente
         (
           SELECT l.id FROM laudos l
           INNER JOIN lotes_avaliacao la ON la.id = l.lote_id
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY l.emitido_em DESC NULLS LAST LIMIT 1
         ) as laudo_id
       FROM pagamentos p

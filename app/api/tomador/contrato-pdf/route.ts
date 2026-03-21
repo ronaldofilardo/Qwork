@@ -359,7 +359,27 @@ export async function GET() {
       );
     }
 
+    // ── Logo QWork na última página ───────────────────────────────────
+    let logoBase64: string | null = null;
+    try {
+      const logoPath = resolve(process.cwd(), 'public', 'logo-qwork.png');
+      const logoBuffer = await readFile(logoPath);
+      logoBase64 = logoBuffer.toString('base64');
+    } catch {
+      // Logo não encontrada — continua sem ela
+    }
+
     const totalPages = doc.getNumberOfPages();
+
+    if (logoBase64) {
+      doc.setPage(totalPages);
+      const logoWidth = 45;
+      const logoHeight = 14;
+      const logoX = (pageWidth - logoWidth) / 2;
+      const logoY = pageHeight - 28;
+      doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+    }
+
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
       doc.setFontSize(7);

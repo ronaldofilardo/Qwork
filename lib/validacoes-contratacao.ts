@@ -86,11 +86,6 @@ export function validarValor(valor: number): boolean {
   return valor > 0 && !isNaN(valor);
 }
 
-// Validação de plano selecionado
-export function validarPlano(planoId: number | null | undefined): boolean {
-  return planoId !== null && planoId !== undefined && planoId > 0;
-}
-
 // Validação de método de pagamento
 export function validarMetodoPagamento(metodo: string | null): boolean {
   return metodo !== null && ['pix', 'boleto', 'cartao'].includes(metodo);
@@ -189,7 +184,6 @@ export const MENSAGENS_ERRO = {
   TAMANHO_MINIMO: (min: number) => `Mínimo de ${min} caracteres`,
   ARQUIVO_TAMANHO: (max: number) => `Arquivo maior que ${max}MB`,
   ARQUIVO_TIPO: 'Tipo de arquivo não permitido',
-  PLANO_OBRIGATORIO: 'Selecione um plano',
   METODO_PAGAMENTO_OBRIGATORIO: 'Selecione um método de pagamento',
   VALOR_INVALIDO: 'Valor inválido',
 };
@@ -204,7 +198,6 @@ export interface ErrosFormulariotomador {
   cidade?: string;
   estado?: string;
   cep?: string;
-  plano_id?: string;
   responsavel_nome?: string;
   responsavel_cpf?: string;
   responsavel_email?: string;
@@ -223,7 +216,6 @@ export function validarFormulariotomador(dados: {
   cidade: string;
   estado: string;
   cep: string;
-  plano_id: number | null;
   responsavel_nome: string;
   responsavel_cpf: string;
   responsavel_email: string;
@@ -278,11 +270,6 @@ export function validarFormulariotomador(dados: {
     erros.cep = MENSAGENS_ERRO.CAMPO_OBRIGATORIO;
   } else if (!validarCEP(dados.cep)) {
     erros.cep = MENSAGENS_ERRO.CEP_INVALIDO;
-  }
-
-  // Validar plano
-  if (!validarPlano(dados.plano_id)) {
-    erros.plano_id = MENSAGENS_ERRO.PLANO_OBRIGATORIO;
   }
 
   // Validar responsável

@@ -62,7 +62,7 @@ export async function GET() {
 
     const clinica = clinicaResult.rows[0];
 
-    // Buscar contrato ativo do plano da clínica
+    // Buscar contrato ativo da clínica
     const contratoQuery = `
       SELECT
         cp.id,
@@ -72,11 +72,8 @@ export async function GET() {
         cp.vigencia_inicio,
         cp.vigencia_fim,
         cp.status,
-        cp.created_at,
-        p.nome as plano_nome,
-        p.tipo as plano_tipo
+        cp.created_at
       FROM contratos_planos cp
-      JOIN planos p ON cp.plano_id = p.id
       WHERE cp.clinica_id = $1 AND cp.status = 'ativo'
       ORDER BY cp.created_at DESC
       LIMIT 1
@@ -111,11 +108,9 @@ export async function GET() {
       SELECT
         COUNT(DISTINCT c.id) as total_clinicas,
         COUNT(DISTINCT e.id) as total_entidades,
-        COUNT(DISTINCT p.id) as total_planos_ativos,
         COUNT(DISTINCT co.id) as total_contratos_ativos
       FROM clinicas c
       CROSS JOIN empresas_clientes e
-      LEFT JOIN planos p ON p.ativo = true
       LEFT JOIN contratos_planos co ON co.status = 'ativo'
       WHERE c.ativa = true AND e.ativa = true
     `;
@@ -143,12 +138,10 @@ export async function GET() {
         criado_em: clinica.criado_em,
       },
 
-      // Plano Cadastrado
-      plano: contrato
+      // Contrato ativo
+      contrato: contrato
         ? {
             numero_contrato: contrato.numero_contrato,
-            plano_nome: contrato.plano_nome,
-            plano_tipo: contrato.plano_tipo,
             valor_total: parseFloat(contrato.valor_total),
             qtd_funcionarios_contratada:
               contrato.numero_funcionarios_contratados,
@@ -173,7 +166,6 @@ export async function GET() {
       estatisticas: {
         total_clinicas: parseInt(stats.total_clinicas),
         total_entidades: parseInt(stats.total_entidades),
-        total_planos_ativos: parseInt(stats.total_planos_ativos),
         total_contratos_ativos: parseInt(stats.total_contratos_ativos),
       },
     };

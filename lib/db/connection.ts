@@ -28,7 +28,7 @@ const isRunningTests = !!process.env.JEST_WORKER_ID;
 const hasTestDatabaseUrl = !!process.env.TEST_DATABASE_URL;
 const NODE_ENV = process.env.NODE_ENV;
 
-let environment = isRunningTests
+export let environment = isRunningTests
   ? 'test'
   : NODE_ENV === 'production'
     ? 'production'
@@ -60,6 +60,8 @@ if (process.env.TEST_DATABASE_URL) {
       process.env.LOCAL_DATABASE_URL.includes('_test'));
 
   if (otherDbIndicatesTest) {
+    // CORREÇÃO: Forçar test mode APENAS quando NODE_ENV=test ou estamos em Jest
+    // NÃO forçar em desenvolvimento — isso causava uso acidental do banco de testes
     if (process.env.NODE_ENV === 'test' || isRunningTests) {
       environment = 'test';
     } else {
@@ -106,6 +108,7 @@ if ((environment === 'test' || isRunningTests) && !isNextBuild) {
   }
 }
 
+// Validações de isolamento de ambiente
 if (environment === 'test' && !hasTestDatabaseUrl && !isNextBuild) {
   throw new Error(
     'ERRO DE CONFIGURAÇÃO: Ambiente detectado como "test" mas TEST_DATABASE_URL não está definida. ' +
@@ -119,7 +122,6 @@ if (environment === 'development' && hasTestDatabaseUrl && !isRunningTests) {
   );
 }
 
-export { environment };
 export const isDevelopment = environment === 'development';
 export const isTest = environment === 'test';
 export const isProduction = environment === 'production';
@@ -129,7 +131,8 @@ export const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
 // SELEÇÃO DE URL DO BANCO
 // ============================================================================
 
-const getDatabaseUrl = (): string | null => {
+const getDatabaseUrl = () => {
+  // Validação rigorosa para ambiente de testes
   if (isTest) {
     if (!process.env.TEST_DATABASE_URL) {
       throw new Error(
@@ -159,74 +162,59 @@ const getDatabaseUrl = (): string | null => {
       }
     }
 
-    try {
-      const parsed = new URL(process.env.TEST_DATABASE_URL);
-      if (!parsed.username || !parsed.password) {
-        const user =
-          process.env.TEST_DB_USER ||
-          process.env.PGUSER ||
-          parsed.username ||
-          'postgres';
-        const pass =
-          process.env.TEST_DB_PASSWORD ||
-          process.env.PGPASSWORD ||
-          parsed.password ||
-          '123456';
-        parsed.username = user;
-        parsed.password = pass;
-        const patched = parsed.toString();
-        console.warn(
-          `[WARN] TEST_DATABASE_URL did not contain full credentials; using user/password from env or defaults. Using connection: ${patched.replace(/password=[^&\s]+/, 'password=***')}`
-        );
-        return patched;
-      }
-    } catch (err) {
-      console.warn(
-        '[WARN] Falha ao parsear TEST_DATABASE_URL para injetar credenciais automaticamente:',
-        err
-      );
-    }
-
     return process.env.TEST_DATABASE_URL;
   }
 
+  // Ambiente de desenvolvimento
   if (isDevelopment) {
     if (
       process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
       process.env.DATABASE_URL
     ) {
-      const masked = process.env.DATABASE_URL.replace(
-        /(postgresql:\/\/.+?:).+?(@)/,
-        '$1***$2'
-      );
-      console.warn(
-        `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
-      );
-      return process.env.DATABASE_URL;
+      if (process.env.EMISSOR_CPF) {
+        console.warn(
+          `⚠️ ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF=${process.env.EMISSOR_CPF}: pool local = nr-bps_db. Emissor roteado para Neon em query().`
+        );
+      } else {
+        const masked = process.env.DATABASE_URL.replace(
+          /(postgresql:\/\/.+?:).+?(@)/,
+          '$1***$2'
+        );
+        console.warn(
+          `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
+        );
+        return process.env.DATABASE_URL;
+      }
     }
 
     if (!process.env.LOCAL_DATABASE_URL) {
       console.warn(
-        '⚠️ LOCAL_DATABASE_URL não está definido. Se pretende usar o banco Neon em desenvolvimento, defina LOCAL_DATABASE_URL no seu .env.local apontando para a URL do Neon. Alternativamente defina ALLOW_PROD_DB_LOCAL=true (usa DATABASE_URL diretamente). Exemplo: LOCAL_DATABASE_URL=postgresql://neondb_owner:***@host/neondb?sslmode=require'
+        '⚠️ LOCAL_DATABASE_URL não está definido. Usando configuração padrão: nr-bps_db.'
       );
       return 'postgresql://postgres:123456@localhost:5432/nr-bps_db';
     }
 
+    // CORREÇÃO: throw em vez de warn quando LOCAL_DATABASE_URL aponta para banco de testes
     try {
       const parsed = new URL(process.env.LOCAL_DATABASE_URL);
       const dbName = parsed.pathname.replace(/^\//, '');
       if (dbName === 'nr-bps_db_test') {
-        console.warn(
-          `⚠️ LOCAL_DATABASE_URL aponta para o banco de testes "${dbName}". Desenvolvimento deve usar "nr-bps_db". Verifique seu .env (LOCAL_DATABASE_URL) e corrija para: postgresql://postgres:123456@localhost:5432/nr-bps_db`
+        throw new Error(
+          `🚨 ERRO CRÍTICO DE ISOLAMENTO: LOCAL_DATABASE_URL aponta para o banco de TESTES "${dbName}" em ambiente de DESENVOLVIMENTO!\n` +
+            `Desenvolvimento DEVE usar "nr-bps_db".\n` +
+            `Corrija LOCAL_DATABASE_URL no .env.local para: postgresql://postgres:123456@localhost:5432/nr-bps_db`
         );
       }
-    } catch {
-      // Se parsing falhar, não bloquear
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('ERRO CRÍTICO')) {
+        throw error;
+      }
     }
 
     return process.env.LOCAL_DATABASE_URL;
   }
 
+  // Ambiente de produção
   if (isProduction) {
     if (!process.env.DATABASE_URL) {
       throw new Error(
@@ -242,7 +230,7 @@ const getDatabaseUrl = (): string | null => {
 export const databaseUrl = getDatabaseUrl();
 
 // ============================================================================
-// CONEXÕES NEON (PRODUÇÃO)
+// CONEXÃO NEON (PRODUÇÃO)
 // ============================================================================
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -266,7 +254,12 @@ export async function getNeonSql() {
 }
 
 export async function getNeonPool() {
-  if (!neonPool && isProduction && process.env.DATABASE_URL) {
+  if (
+    !neonPool &&
+    (isProduction ||
+      (isDevelopment && process.env.ALLOW_PROD_DB_LOCAL === 'true')) &&
+    process.env.DATABASE_URL
+  ) {
     try {
       const { Pool: NeonPool } = await import('@neondatabase/serverless');
       neonPool = new NeonPool({
@@ -274,7 +267,7 @@ export async function getNeonPool() {
         max: 5,
         idleTimeoutMillis: 10000,
       });
-      console.log('[db] Neon Pool criado para transações');
+      console.log('[db/connection] Neon Pool criado para transações');
     } catch (_err) {
       console.error('Erro ao criar Neon Pool:', _err);
       throw _err;
@@ -289,56 +282,73 @@ export async function getNeonPool() {
 
 let localPool: pg.Pool | null = null;
 
-if ((isDevelopment || isTest) && databaseUrl) {
-  localPool = new Pool({
-    connectionString: databaseUrl,
-    max: isTest ? 5 : 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 10000,
-  });
+export function getLocalPool(): pg.Pool {
+  if (!localPool) {
+    const connectionString = getDatabaseUrl();
+    if (!connectionString) {
+      throw new Error('Nenhuma URL de banco configurada');
+    }
 
-  if (DEBUG_DB) {
+    localPool = new Pool({
+      connectionString,
+      max: isTest ? 5 : 20,
+      idleTimeoutMillis: isTest ? 100 : 30000,
+      connectionTimeoutMillis: isTest ? 2000 : 10000,
+    });
+
+    localPool.on('error', (err) => {
+      console.error('Erro inesperado no pool de conexões:', err);
+    });
+
+    // Log da conexão
     try {
-      const parsed = new URL(databaseUrl);
+      const parsed = new URL(connectionString);
       const dbName = parsed.pathname.replace(/^\//, '');
       const host = parsed.hostname;
       console.log(
         `🔌 [lib/db/connection] Conectado ao banco: ${dbName} @ ${host} (ambiente: ${environment})`
       );
     } catch {
-      // Se parsing falhar, não bloquear
+      // Se parsing falhar, continuar sem log
     }
   }
-}
-
-/** Obtém o pool local (pode ser null se não inicializado) */
-export function getLocalPool(): pg.Pool | null {
   return localPool;
 }
 
-/** Obtém o pool local garantido (throws se produção ou não inicializado) */
-export function getPool(): pg.Pool {
-  if (isProduction) {
-    throw new Error('getPool() não deve ser usado em produção (usa Neon)');
-  }
-  if (!localPool) {
-    throw new Error(
-      'Pool local não inicializado. Verifique se está em desenvolvimento/teste.'
-    );
-  }
-  return localPool;
-}
-
-/** Fecha pool local (útil para testes) */
-export async function closePool() {
+export async function closeLocalPool(): Promise<void> {
   if (localPool) {
     await localPool.end();
     localPool = null;
   }
 }
 
-/** Informações do ambiente atual */
-export function getDatabaseInfo() {
+// ============================================================================
+// ALIASES DE COMPATIBILIDADE (para callers legacy de lib/db.ts)
+// ============================================================================
+
+/** Alias de getLocalPool com guard de produção */
+export function getPool(): pg.Pool {
+  if (isProduction) {
+    throw new Error('getPool() não deve ser usado em produção (usa Neon)');
+  }
+  return getLocalPool();
+}
+
+/** Alias de closeLocalPool */
+export async function closePool(): Promise<void> {
+  return closeLocalPool();
+}
+
+/** Retorna informações diagnósticas do banco (com URL mascarada) */
+export function getDatabaseInfo(): {
+  environment: string;
+  isDevelopment: boolean;
+  isTest: boolean;
+  isProduction: boolean;
+  databaseUrl: string;
+  hasLocalPool: boolean;
+  hasNeonSql: boolean;
+} {
   return {
     environment,
     isDevelopment,

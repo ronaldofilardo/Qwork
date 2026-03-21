@@ -204,7 +204,18 @@ export default function PagamentosFinanceiros({
             Dados Financeiros de Laudos
           </h2>
         </div>
-        <p className="text-sm text-red-600">{error}</p>
+        <div className="flex flex-col items-center py-6 gap-3">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle size={16} />
+            <p className="text-sm">{error}</p>
+          </div>
+          <button
+            onClick={carregarPagamentos}
+            className="text-xs text-primary-600 hover:text-primary-700 underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
       </div>
     );
   }
@@ -223,9 +234,20 @@ export default function PagamentosFinanceiros({
             <p className="text-sm text-gray-600">Histórico de pagamentos</p>
           </div>
         </div>
-        <p className="text-sm text-gray-500 py-4 text-center">
-          Nenhum pagamento registrado até o momento.
-        </p>
+        <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+          <div className="p-4 bg-gray-100 rounded-full">
+            <CreditCard className="text-gray-400" size={28} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Nenhum pagamento registrado
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Os pagamentos de laudos aparecerão aqui após a contratação do
+              primeiro ciclo.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }

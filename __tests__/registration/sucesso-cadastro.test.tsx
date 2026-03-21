@@ -18,7 +18,6 @@ interface Mocktomador {
   tipo?: 'empresa' | 'clinica' | 'entidade';
   pagamento_confirmado: boolean;
   contrato_aceito?: boolean;
-  plano_id?: number;
   status?: string;
 }
 
@@ -276,7 +275,6 @@ describe('SucessoCadastroPage', () => {
       nome: 'Empresa Teste',
       pagamento_confirmado: false,
       contrato_aceito: true,
-      plano_id: 2,
     };
 
     (global.fetch as Mock).mockImplementationOnce(() =>

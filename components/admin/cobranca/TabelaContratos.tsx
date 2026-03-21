@@ -47,12 +47,6 @@ export function TabelaContratos({
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 CNPJ
               </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Plano ID
-              </th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Plano Preço
-              </th>
               <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
                 Funcionários
               </th>
@@ -110,18 +104,6 @@ export function TabelaContratos({
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">
                       {contrato.cnpj}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {contrato.plano_id ?? '—'}
-                    </div>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {contrato.plano_preco
-                        ? formatarValor(Number(contrato.plano_preco))
-                        : 'Não informado'}
                     </div>
                   </td>
                   <td className="px-4 py-4 whitespace-nowrap text-center">

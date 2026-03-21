@@ -4,7 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdminRoute, isRhRoute, isEntidadeRoute } from '@/lib/config/routes';
+import {
+  isAdminRoute,
+  isRhRoute,
+  isEntidadeRoute,
+  isSuporteRoute,
+  isComercialRoute,
+  isVendedorRoute,
+} from '@/lib/config/routes';
 import { ROLES } from '@/lib/config/roles';
 
 export function rbacMiddleware(request: NextRequest): NextResponse | null {
@@ -50,6 +57,33 @@ export function rbacMiddleware(request: NextRequest): NextResponse | null {
     if (session.perfil !== ROLES.GESTOR && session.perfil !== ROLES.ADMIN) {
       console.error(
         `[RBAC] Usuário ${session.cpf} (${session.perfil}) tentou acessar rota entidade ${pathname}`
+      );
+      return new NextResponse('Acesso negado', { status: 403 });
+    }
+  }
+
+  if (isSuporteRoute(pathname)) {
+    if (session.perfil !== ROLES.SUPORTE && session.perfil !== ROLES.ADMIN) {
+      console.error(
+        `[RBAC] Usuário ${session.cpf} (${session.perfil}) tentou acessar rota suporte ${pathname}`
+      );
+      return new NextResponse('Acesso negado', { status: 403 });
+    }
+  }
+
+  if (isComercialRoute(pathname)) {
+    if (session.perfil !== ROLES.COMERCIAL && session.perfil !== ROLES.ADMIN) {
+      console.error(
+        `[RBAC] Usuário ${session.cpf} (${session.perfil}) tentou acessar rota comercial ${pathname}`
+      );
+      return new NextResponse('Acesso negado', { status: 403 });
+    }
+  }
+
+  if (isVendedorRoute(pathname)) {
+    if (session.perfil !== ROLES.VENDEDOR && session.perfil !== ROLES.ADMIN) {
+      console.error(
+        `[RBAC] Usuário ${session.cpf} (${session.perfil}) tentou acessar rota vendedor ${pathname}`
       );
       return new NextResponse('Acesso negado', { status: 403 });
     }

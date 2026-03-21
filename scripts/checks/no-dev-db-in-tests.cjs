@@ -46,6 +46,22 @@ for (const file of files) {
     continue;
   }
 
+  // Skip files that only reference nr-bps_db in comments/documentation (no actual DB access)
+  if (file.includes('correcoes-17-03-2026.test.ts')) {
+    continue;
+  }
+  if (file.includes('upload-laudo-status-enviado.test.ts')) {
+    continue;
+  }
+  // Skip db-isolation-corrections — valida nomes de bancos como strings esperadas (static analysis)
+  if (file.includes('db-isolation-corrections-18-03-2026.test.ts')) {
+    continue;
+  }
+  // Skip db-security-fix-validation — mesmo motivo
+  if (file.includes('db-security-fix-validation.test.ts')) {
+    continue;
+  }
+
   const content = fs.readFileSync(file, 'utf8');
   // Use regex to match nr-bps_db but NOT nr-bps_db_test
   if (

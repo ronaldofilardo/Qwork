@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { requireRole } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -51,6 +52,8 @@ export async function GET(
   _request: NextRequest
 ): Promise<NextResponse<ContagemResponse>> {
   try {
+    await requireRole('admin', false);
+
     // ── ENTIDADES ──────────────────────────────────────────────────────────
 
     // Total de entidades (tabela 'entidades' — NÃO 'tomadores')

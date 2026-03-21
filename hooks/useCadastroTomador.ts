@@ -10,12 +10,10 @@ import {
   validarCNPJ,
   validarEtapaDados,
   validarEtapaResponsavel,
-  gerarContratoSimulado,
   TipoEntidade,
   DadosTomador as DT,
   DadosResponsavel as DR,
   Arquivos as AR,
-  Plano,
 } from '@/lib/cadastroTomador';
 
 export type UseCadastroDeps = {
@@ -30,15 +28,13 @@ export function useCadastroTomador({
   const api = createCadastroApi(apiFetcher);
 
   const [etapaAtual, setEtapaAtual] = useState<
-    'tipo' | 'plano' | 'dados' | 'responsavel' | 'contrato' | 'confirmacao'
-  >(initialTipo ? 'dados' : 'tipo'); // NOVO: pula plano, vai direto para dados
+    'tipo' | 'dados' | 'responsavel' | 'confirmacao'
+  >(initialTipo ? 'dados' : 'tipo');
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [tipo, setTipo] = useState<TipoEntidade>(initialTipo || 'entidade');
   const [cnpjError, setCnpjError] = useState('');
-  const [planos, setPlanos] = useState<Plano[]>([]);
-  const [planoSelecionado, setPlanoSelecionado] = useState<Plano | null>(null);
   const [numeroFuncionarios, setNumeroFuncionarios] = useState<number>(1);
   const [contratoAceito, setContratoAceito] = useState(false);
   const [contratoGerado, setContratoGerado] = useState('');
@@ -73,27 +69,6 @@ export function useCadastroTomador({
   });
 
   const [redirectUrl, setRedirectUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!planos.length) {
-      api
-        .getPlanos()
-        .then((data: any) => {
-          if (Array.isArray(data)) setPlanos(data as Plano[]);
-          else if (data.planos) setPlanos(data.planos as Plano[]);
-        })
-        .catch(() => {
-          // noop - caller can surface error state via setErro
-        });
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!planoSelecionado) return;
-    if (planoSelecionado.tipo === 'fixo') setNumeroFuncionarios(1);
-    else setNumeroFuncionarios(0);
-  }, [planoSelecionado]);
 
   const handleDadosChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -197,7 +172,6 @@ export function useCadastroTomador({
     dadosResponsavel,
     etapaAtual,
     numeroFuncionarios,
-    planoSelecionado,
     tipo,
   ]);
 
@@ -219,9 +193,6 @@ export function useCadastroTomador({
       Object.entries(dadostomador).forEach(([key, value]) =>
         formData.append(key, value as string)
       );
-
-      // Não enviar plano (foi removido do fluxo)
-      // formData.append('plano_id', String(planoSelecionado.id));
 
       if (codigoRepresentante.trim()) {
         formData.append('codigo_representante', codigoRepresentante.trim());
@@ -319,9 +290,6 @@ export function useCadastroTomador({
     tipo,
     setTipo,
     cnpjError,
-    planos,
-    planoSelecionado,
-    setPlanoSelecionado,
     numeroFuncionarios,
     setNumeroFuncionarios,
     contratoAceito,

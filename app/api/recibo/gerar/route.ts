@@ -151,30 +151,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Buscar dados completos do contrato, pagamento e entidade
-    // Detectar colunas de preço disponíveis para planos
-    let planColsRes;
-    try {
-      planColsRes = await query(
-        `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`
-      );
-    } catch (error) {
-      console.error('Erro ao detectar colunas do plano:', error);
-      planColsRes = { rows: [] };
-    }
-    const availablePlanCols = planColsRes.rows.map((r: any) => r.column_name);
-
-    const planSelect: string[] = [
-      'pl.nome as plano_nome',
-      'pl.tipo as plano_tipo',
-    ];
-    if (availablePlanCols.includes('preco')) planSelect.push('pl.preco');
-    if (availablePlanCols.includes('valor_por_funcionario'))
-      planSelect.push('pl.valor_por_funcionario');
-    if (availablePlanCols.includes('valor_base'))
-      planSelect.push('pl.valor_base');
-    if (availablePlanCols.includes('valor_fixo_anual'))
-      planSelect.push('pl.valor_fixo_anual');
-
     let dadosResult;
 
     if (contrato_id) {
@@ -182,7 +158,6 @@ export async function POST(request: NextRequest) {
       dadosResult = await query(
         `SELECT 
           c.id as contrato_id,
-          c.plano_id,
           c.valor_total as contrato_valor_total,
           c.numero_funcionarios,
           e.nome,
@@ -191,12 +166,10 @@ export async function POST(request: NextRequest) {
           p.valor as pagamento_valor,
           p.metodo as pagamento_metodo,
           p.data_pagamento,
-          p.numero_parcelas,
-          ${planSelect.join(',\n          ')}
+          p.numero_parcelas
         FROM contratos c
         INNER JOIN entidades e ON c.entidade_id = e.id
         INNER JOIN pagamentos p ON p.contrato_id = c.id AND p.id = $2
-        INNER JOIN planos pl ON c.plano_id = pl.id
         WHERE c.id = $1`,
         [contrato_id, pagamento_id]
       );
@@ -213,8 +186,7 @@ export async function POST(request: NextRequest) {
           p.valor_por_funcionario,
           e.nome as entidade_nome,
           e.cnpj as entidade_cnpj,
-          e.numero_funcionarios_estimado,
-          e.plano_id as entidade_plano_id
+          e.numero_funcionarios_estimado
         FROM pagamentos p
         INNER JOIN entidades e ON p.entidade_id = e.id
         WHERE p.id = $1`,

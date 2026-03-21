@@ -51,7 +51,11 @@ export function parseDateCell(value: any): string | null {
 
   // Se for objeto Date
   if (value instanceof Date && !isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10);
+    // Usar métodos UTC para evitar shift de fuso horário (xlsx retorna midnight UTC)
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, '0');
+    const d = String(value.getUTCDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
   }
 
   // Se for número (serial do Excel)
@@ -119,17 +123,25 @@ export function validarLinhaFuncionario(
   if (!row.cpf || String(row.cpf).trim() === '') {
     erros.push('CPF é obrigatório');
   } else {
-    const cpfLimpo = limparCPF(String(row.cpf));
-    if (!validarCPF(cpfLimpo)) {
-      erros.push('CPF inválido');
-    }
-    if (cpfLimpo.length !== 11) {
-      erros.push('CPF deve ter 11 dígitos');
+    const cpfRaw = String(row.cpf).trim();
+    if (/[a-zA-Z]/.test(cpfRaw)) {
+      erros.push('CPF contém letras — apenas números são permitidos');
+    } else {
+      const cpfLimpo = limparCPF(cpfRaw);
+      if (cpfLimpo.length !== 11) {
+        erros.push(
+          `CPF deve ter 11 dígitos (${cpfLimpo.length} informado${cpfLimpo.length === 1 ? '' : 's'})`
+        );
+      } else if (!validarCPF(cpfLimpo)) {
+        erros.push('CPF inválido — verifique os dígitos verificadores');
+      }
     }
   }
 
   if (!row.nome || String(row.nome).trim() === '') {
     erros.push('Nome é obrigatório');
+  } else if (/\d/.test(String(row.nome).trim())) {
+    erros.push('Nome não deve conter números');
   }
 
   // Data de nascimento obrigatória e válida
@@ -166,8 +178,10 @@ export function validarLinhaFuncionario(
   // Email é opcional, mas se fornecido deve ser válido
   if (row.email && String(row.email).trim() !== '') {
     const email = String(row.email).trim();
-    if (!email.includes('@') || !email.includes('.')) {
-      erros.push('Email inválido');
+    if (!email.includes('@')) {
+      erros.push('Email inválido — falta o @');
+    } else if (email.indexOf('.', email.indexOf('@')) === -1) {
+      erros.push('Email inválido — falta o domínio após @');
     }
   }
 
@@ -232,7 +246,8 @@ export function validarLinhaFuncionario(
 export function parseXlsxBufferToRows(buffer: Buffer): ParseResult {
   try {
     // Ler workbook do buffer
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
+    // cellDates:true garante que células de data venham como Date objects (evita erros no parse de serial)
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
 
     // Verificar se há pelo menos uma aba
     if (workbook.SheetNames.length === 0) {
@@ -383,6 +398,132 @@ export function validarCPFsUnicos(rows: FuncionarioImportRow[]): {
     valido: duplicados.length === 0,
     duplicados,
   };
+}
+
+/**
+ * Localiza a linha Excel de um CPF no array de linhas do arquivo.
+ * Retorna o número da linha (base 1, com header em linha 1) ou null se não encontrado.
+ */
+export function localizarLinhaPorCPF(
+  cpf: string,
+  rows: FuncionarioImportRow[]
+): number | null {
+  const cpfBuscado = limparCPF(cpf);
+  const idx = rows.findIndex((r) => limparCPF(r.cpf) === cpfBuscado);
+  return idx >= 0 ? idx + 2 : null;
+}
+
+/**
+ * Localiza a linha Excel de uma matrícula no array de linhas do arquivo.
+ */
+export function localizarLinhaPorMatricula(
+  matricula: string,
+  rows: FuncionarioImportRow[]
+): number | null {
+  const m = matricula.trim();
+  const idx = rows.findIndex((r) => r.matricula?.trim() === m);
+  return idx >= 0 ? idx + 2 : null;
+}
+
+/**
+ * Localiza a linha Excel de um email no array de linhas do arquivo.
+ */
+export function localizarLinhaPorEmail(
+  email: string,
+  rows: FuncionarioImportRow[]
+): number | null {
+  const emailBuscado = email.toLowerCase().trim();
+  const idx = rows.findIndex(
+    (r) => r.email && String(r.email).toLowerCase().trim() === emailBuscado
+  );
+  return idx >= 0 ? idx + 2 : null;
+}
+
+/**
+ * Valida CPFs únicos retornando mensagens detalhadas com número de linha para cada duplicata.
+ */
+export function validarCPFsUnicosDetalhado(rows: FuncionarioImportRow[]): {
+  valido: boolean;
+  details: string[];
+} {
+  const cpfLinhas = new Map<string, number[]>();
+  rows.forEach((row, i) => {
+    const cpf = limparCPF(row.cpf);
+    if (cpf) {
+      const existing = cpfLinhas.get(cpf) ?? [];
+      existing.push(i + 2);
+      cpfLinhas.set(cpf, existing);
+    }
+  });
+
+  const details: string[] = [];
+  cpfLinhas.forEach((linhas, cpf) => {
+    if (linhas.length > 1) {
+      details.push(
+        `Linha ${linhas[0]}: CPF ${cpf} duplicado no arquivo (também nas linhas ${linhas.slice(1).join(', ')})`
+      );
+    }
+  });
+
+  return { valido: details.length === 0, details };
+}
+
+/**
+ * Valida emails únicos retornando mensagens detalhadas com número de linha para cada duplicata.
+ */
+export function validarEmailsUnicosDetalhado(rows: FuncionarioImportRow[]): {
+  valido: boolean;
+  details: string[];
+} {
+  const emailLinhas = new Map<string, number[]>();
+  rows.forEach((row, i) => {
+    if (!row.email || String(row.email).trim() === '') return;
+    const email = String(row.email).toLowerCase().trim();
+    const existing = emailLinhas.get(email) ?? [];
+    existing.push(i + 2);
+    emailLinhas.set(email, existing);
+  });
+
+  const details: string[] = [];
+  emailLinhas.forEach((linhas, email) => {
+    if (linhas.length > 1) {
+      details.push(
+        `Linha ${linhas[0]}: Email ${email} duplicado no arquivo (também nas linhas ${linhas.slice(1).join(', ')})`
+      );
+    }
+  });
+
+  return { valido: details.length === 0, details };
+}
+
+/**
+ * Valida matrículas únicas retornando mensagens detalhadas com número de linha para cada duplicata.
+ */
+export function validarMatriculasUnicasDetalhado(
+  rows: FuncionarioImportRow[]
+): {
+  valido: boolean;
+  details: string[];
+} {
+  const matriculaLinhas = new Map<string, number[]>();
+  rows.forEach((row, i) => {
+    if (!row.matricula || String(row.matricula).trim() === '') return;
+    const mat = String(row.matricula).trim();
+    const existing = matriculaLinhas.get(mat) ?? [];
+    existing.push(i + 2);
+    matriculaLinhas.set(mat, existing);
+  });
+
+  const details: string[] = [];
+  matriculaLinhas.forEach((linhas, mat) => {
+    if (linhas.length > 1) {
+      details.push(
+        `Linha ${linhas[0]}: Matrícula ${mat} duplicada no arquivo (também nas linhas ${linhas.slice(1).join(', ')})`
+      );
+    }
+  });
+
+  return { valido: details.length === 0, details };
 }
 
 // ============================================================
