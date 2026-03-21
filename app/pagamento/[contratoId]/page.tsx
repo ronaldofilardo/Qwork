@@ -8,13 +8,11 @@ import CheckoutAsaas from '@/components/CheckoutAsaas';
 interface PagamentoInfo {
   pagamento_id: number;
   valor: number;
-  valor_plano: number;
+  valor_unitario: number;
   numero_funcionarios: number;
-  plano_nome: string;
   tomador_nome: string;
   status: string;
   tomador_id?: number;
-  plano_id?: number;
   contrato_id?: number;
 }
 
@@ -48,29 +46,24 @@ export default function PagamentoPage() {
       try {
         let tomadorId: number | null = null;
         let contratoIdNumeric: number | null = null;
-        let planoId: number;
         let numeroFuncionarios: number;
         let valorTotal: number;
 
         // Token a ser usado para iniciar o pagamento (pode vir de query/contratação/teste)
         let _tokenForStart: string | undefined;
 
-        // Tratamento especial para link de pagamento personalizado (parâmetros diretos)
+        // Tratamento para link de pagamento com parâmetros diretos
         const searchParamsGlobal = new URLSearchParams(window.location.search);
-        const isPersonalizado =
+        const hasDirectParams =
           contratoId === 'personalizado' ||
           searchParamsGlobal.has('contratacao_id');
 
-        if (isPersonalizado) {
+        if (hasDirectParams) {
           const searchParams = searchParamsGlobal;
 
-          // Suporta dois modos:
-          // 1) ?tomador_id=..&plano_id=.. (direto)
-          // 2) ?contratacao_id=.. (contratação personalizada) -> buscar /api/contratacao_personalizada/:id
           const contratacaoIdParam = searchParams.get('contratacao_id');
           const tomadorIdParam =
             searchParams.get('tomador_id') || searchParams.get('tomador_id');
-          const planoIdParam = searchParams.get('plano_id');
           const numeroFuncionariosParam = searchParams.get(
             'numero_funcionarios'
           );
@@ -80,35 +73,17 @@ export default function PagamentoPage() {
           const tokenFromQuery = searchParams.get('token') || undefined;
 
           if (contratacaoIdParam) {
-            // Buscar dados da contratação personalizada
-            // DEBUG
-            // eslint-disable-next-line no-console
-            console.log(
-              'DEBUG fetch: /api/contratacao_personalizada/',
-              contratacaoIdParam
-            );
             const contratacaoRes = await fetch(
               `/api/contratacao_personalizada/${contratacaoIdParam}`
             );
             if (!contratacaoRes.ok) {
-              throw new Error('Contratação personalizada não encontrada');
+              throw new Error('Contratação não encontrada');
             }
             const contratacaoData = await contratacaoRes.json();
-            // DEBUG
-            // eslint-disable-next-line no-console
-            console.log('DEBUG contratacaoData:', contratacaoData);
 
-            tomadorId =
-              contratacaoData.tomador_id || contratacaoData.tomador_id
-                ? parseInt(
-                    String(
-                      contratacaoData.tomador_id || contratacaoData.tomador_id
-                    )
-                  )
-                : null;
-            planoId = contratacaoData.plano_id
-              ? parseInt(String(contratacaoData.plano_id))
-              : (undefined as any);
+            tomadorId = contratacaoData.tomador_id
+              ? parseInt(String(contratacaoData.tomador_id))
+              : null;
             numeroFuncionarios =
               contratacaoData.numero_funcionarios ??
               (numeroFuncionariosParam ? parseInt(numeroFuncionariosParam) : 1);
@@ -116,69 +91,42 @@ export default function PagamentoPage() {
               contratacaoData.valor_total ??
               (valorTotalParam ? parseFloat(valorTotalParam) : 0);
 
-            // Pré-preencher informações para exibição, se disponíveis
             setPagamentoInfo({
               pagamento_id: 0,
               valor: valorTotal,
-              valor_plano: contratacaoData.valor_por_funcionario
+              valor_unitario: contratacaoData.valor_por_funcionario
                 ? contratacaoData.valor_por_funcionario
                 : valorTotal,
               numero_funcionarios: numeroFuncionarios,
-              plano_nome: contratacaoData.plano_nome ?? 'Plano Personalizado',
-              tomador_nome:
-                (contratacaoData.tomador_nome ||
-                  contratacaoData.tomador_nome) ??
-                '',
+              tomador_nome: contratacaoData.tomador_nome ?? '',
               status: 'aguardando_pagamento',
             });
 
-            // Preferir token retornado pelo recurso, senão query string, senão fallback 'abc123' para compatibilidade de teste
             _tokenForStart =
               contratacaoData.token || tokenFromQuery || 'abc123';
           } else {
-            if (!tomadorIdParam || !planoIdParam) {
-              throw new Error('Parâmetros obrigatórios: tomador_id e plano_id');
+            if (!tomadorIdParam) {
+              throw new Error('Parâmetro obrigatório: tomador_id');
             }
 
             tomadorId = parseInt(tomadorIdParam);
-            planoId = parseInt(planoIdParam);
             numeroFuncionarios = numeroFuncionariosParam
               ? parseInt(numeroFuncionariosParam)
               : 1;
             valorTotal = valorTotalParam ? parseFloat(valorTotalParam) : 0;
 
-            // Buscar informações do tomador e plano
+            // Buscar informações do tomador
             const tomadorRes = await fetch(`/api/public/tomador/${tomadorId}`);
             if (!tomadorRes.ok) {
               throw new Error('Tomador não encontrado');
             }
             const tomadorData = await tomadorRes.json();
 
-            // Buscar informações do plano
-            const planoRes = await fetch(`/api/planos/${planoIdParam}`);
-            if (!planoRes.ok) {
-              throw new Error('Plano não encontrado');
-            }
-            const planoData = await planoRes.json();
-
-            // Calcular valor se não fornecido
-            let valorCalculado = valorTotal;
-            if (valorCalculado === 0) {
-              if (planoData.tipo === 'fixo') {
-                valorCalculado =
-                  parseFloat(planoData.preco) * numeroFuncionarios;
-              } else {
-                valorCalculado = parseFloat(planoData.preco);
-              }
-            }
-
-            // Pré-preencher informações para exibição
             setPagamentoInfo({
               pagamento_id: 0,
-              valor: valorCalculado,
-              valor_plano: valorCalculado,
+              valor: valorTotal,
+              valor_unitario: valorTotal,
               numero_funcionarios: numeroFuncionarios,
-              plano_nome: planoData.nome,
               tomador_nome: tomadorData.nome,
               status: 'aguardando_pagamento',
             });
@@ -186,7 +134,7 @@ export default function PagamentoPage() {
             _tokenForStart = tokenFromQuery;
           }
         } else {
-          // Buscar tomador_id a partir do contrato_id (rota correta: /api/contratos)
+          // Buscar tomador_id a partir do contrato_id
           const contratoRes = await fetch(`/api/contratos/${contratoId}`);
           if (!contratoRes.ok) {
             throw new Error('Contrato não encontrado');
@@ -196,8 +144,6 @@ export default function PagamentoPage() {
           tomadorId = contrato.tomador_id || contrato.tomador_id;
           contratoIdNumeric = parseInt(contratoId);
 
-          // Fetch additional data needed for payment
-          planoId = contrato.plano_id;
           numeroFuncionarios = contrato.numero_funcionarios;
           valorTotal = contrato.valor_total;
         }
@@ -206,7 +152,6 @@ export default function PagamentoPage() {
         const payload: any = {
           tomador_id: tomadorId,
           contrato_id: contratoIdNumeric,
-          plano_id: planoId,
           numero_funcionarios: numeroFuncionarios,
           valor_total: valorTotal,
         };
@@ -231,13 +176,9 @@ export default function PagamentoPage() {
         const mapped: PagamentoInfo = {
           pagamento_id: data.pagamento_id || 0,
           valor: data.valor ?? data.valor_total ?? 0,
-          valor_plano:
-            data.valor_plano ?? data.valor_unitario ?? data.valor ?? 0,
+          valor_unitario:
+            data.valor_unitario ?? data.valor_plano ?? data.valor ?? 0,
           numero_funcionarios: data.numero_funcionarios ?? 0,
-          plano_nome:
-            data.plano_nome ??
-            pagamentoInfo?.plano_nome ??
-            'Plano Personalizado',
           tomador_nome:
             (data.tomador_nome || data.tomador_nome) ??
             pagamentoInfo?.tomador_nome ??
@@ -245,7 +186,6 @@ export default function PagamentoPage() {
           status:
             data.status ?? pagamentoInfo?.status ?? 'aguardando_pagamento',
           tomador_id: tomadorId,
-          plano_id: planoId,
           contrato_id: contratoIdNumeric,
         };
 
@@ -264,12 +204,7 @@ export default function PagamentoPage() {
     if (contratoId) {
       iniciarPagamento();
     }
-  }, [
-    contratoId,
-    pagamentoInfo?.tomador_nome,
-    pagamentoInfo?.plano_nome,
-    pagamentoInfo?.status,
-  ]);
+  }, [contratoId, pagamentoInfo?.tomador_nome, pagamentoInfo?.status]);
 
   const formatCurrency = (value: any) => {
     if (
@@ -357,13 +292,9 @@ export default function PagamentoPage() {
           </div>
 
           {/* Mostrar CheckoutAsaas quando solicitado */}
-          {mostrarCheckout &&
-          pagamentoInfo &&
-          pagamentoInfo.tomador_id &&
-          pagamentoInfo.plano_id ? (
+          {mostrarCheckout && pagamentoInfo && pagamentoInfo.tomador_id ? (
             <CheckoutAsaas
               tomadorId={pagamentoInfo.tomador_id}
-              planoId={pagamentoInfo.plano_id}
               numeroFuncionarios={pagamentoInfo.numero_funcionarios}
               valor={pagamentoInfo.valor}
               contratoId={pagamentoInfo.contrato_id || null}
@@ -372,7 +303,7 @@ export default function PagamentoPage() {
             />
           ) : (
             <>
-              {/* Informações do Plano */}
+              {/* Informações da Contratação */}
               {pagamentoInfo && (
                 <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
                   <h2 className="text-xl font-semibold text-gray-800 mb-4">
@@ -382,20 +313,13 @@ export default function PagamentoPage() {
                     <div className="flex justify-between">
                       <span className="text-gray-600">Tomador:</span>
                       <span className="font-semibold">
-                        {pagamentoInfo.tomador_nome ||
-                          pagamentoInfo.tomador_nome}
+                        {pagamentoInfo.tomador_nome}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Plano:</span>
+                      <span className="text-gray-600">Valor Unitário:</span>
                       <span className="font-semibold">
-                        {pagamentoInfo.plano_nome}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Valor do Plano:</span>
-                      <span className="font-semibold">
-                        R$ {formatCurrency(pagamentoInfo.valor_plano)}
+                        R$ {formatCurrency(pagamentoInfo.valor_unitario)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -416,7 +340,7 @@ export default function PagamentoPage() {
                         </span>
                       </div>
                       <div className="text-sm text-gray-600 mt-1">
-                        (R$ {formatCurrency(pagamentoInfo.valor_plano)} ×{' '}
+                        (R$ {formatCurrency(pagamentoInfo.valor_unitario)} ×{' '}
                         {pagamentoInfo.numero_funcionarios} funcionários)
                       </div>
                     </div>

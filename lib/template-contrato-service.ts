@@ -5,7 +5,7 @@
 
 import { query } from '@/lib/db';
 
-export type TipoTemplate = 'plano_fixo' | 'plano_personalizado' | 'padrao';
+export type TipoTemplate = 'padrao';
 
 export interface TemplateContrato {
   id: number;

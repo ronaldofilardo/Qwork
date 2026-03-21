@@ -7,7 +7,7 @@ import { assertRoles, ROLES } from '@/lib/authorization/policies';
 export const dynamic = 'force-dynamic';
 
 // Server-Sent Events endpoint para notificações em tempo real
-export const GET = async (req: Request) => {
+export const GET = (req: Request) => {
   const session = getSession();
   assertRoles(session, [ROLES.RH]);
   const user = session;

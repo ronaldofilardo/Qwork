@@ -1,0 +1,24 @@
+
+> qwork2026@1.0.0 build C:\apps\QWork
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.production.local, .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+Failed to compile.
+
+./lib/infrastructure/pdf/templates/recibo-template.ts:193:5
+Type error: Property 'plano_descricao' does not exist on type 'ReciboTemplateData'.
+
+  191 |     plano_nome,
+  192 |     plano_tipo,
+> 193 |     plano_descricao,
+      |     ^
+  194 |     valor_total,
+  195 |     valor_por_funcionario,
+  196 |     qtd_funcionarios,
+Next.js build worker exited with code: 1 and signal: null
+ÔÇëELIFECYCLEÔÇë Command failed with exit code 1.

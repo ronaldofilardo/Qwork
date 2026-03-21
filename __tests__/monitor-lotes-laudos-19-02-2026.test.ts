@@ -186,7 +186,9 @@ describe('Monitor 19/02/2026 — Coluna Laudo no monitor (lógica de exibição)
 
 describe('Monitor 19/02/2026 — LotesGrid: Status relatório', () => {
   it('status cancelado → "Cancelado" (independente de pode_emitir ou laudo)', () => {
-    expect(resolverStatusRelatorio(false, false, 'cancelado')).toBe('Cancelado');
+    expect(resolverStatusRelatorio(false, false, 'cancelado')).toBe(
+      'Cancelado'
+    );
     expect(resolverStatusRelatorio(true, true, 'cancelado')).toBe('Cancelado'); // cancelado tem prioridade
   });
 

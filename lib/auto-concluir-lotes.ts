@@ -1,4 +1,4 @@
-import { query } from '../lib/db.js';
+import { query } from '@/lib/db';
 // REMOVIDO: import { emitirLaudoImediato } - não mais necessário pois emissão é manual
 
 /**

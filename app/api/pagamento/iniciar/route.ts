@@ -9,7 +9,6 @@ export async function POST(request: NextRequest) {
       entidade_id, // backward compat
       contrato_id,
       _contrato_id,
-      plano_id,
       numero_funcionarios,
       valor_total,
       payment_link_token,
@@ -104,22 +103,19 @@ export async function POST(request: NextRequest) {
     let tomadorResult;
     if (contratoIdParam) {
       tomadorResult = await query(
-        `SELECT t.id, t.nome, t.plano_id, t.status, COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios, 
+        `SELECT t.id, t.nome, t.status, COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios, 
                 t.tipo,
-                p.nome as plano_nome, p.tipo as plano_tipo, p.preco, ctr.id as contrato_id, ctr.aceito as contrato_aceito, ctr.valor_total as contrato_valor_total
+                ctr.id as contrato_id, ctr.aceito as contrato_aceito, ctr.valor_total as contrato_valor_total
          FROM tomadores t
-         LEFT JOIN planos p ON t.plano_id = p.id
          JOIN contratos ctr ON ctr.tomador_id = t.id AND ctr.id = $2
          WHERE t.id = $1`,
         [finalTomadorId, contratoIdParam]
       );
     } else {
       tomadorResult = await query(
-        `SELECT t.id, t.nome, t.plano_id, t.status, COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios, 
-                t.tipo,
-                p.nome as plano_nome, p.tipo as plano_tipo, p.preco
+        `SELECT t.id, t.nome, t.status, COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios, 
+                t.tipo
          FROM tomadores t
-         LEFT JOIN planos p ON t.plano_id = p.id
          WHERE t.id = $1`,
         [finalTomadorId]
       );
@@ -140,10 +136,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar se o tomador tem status válido para iniciar pagamento
-    // Normalmente exigimos que o tomador esteja em 'aguardando_pagamento'.
-    // Para casos de plano personalizado, um contrato pode ter sido criado com
-    // status 'aguardando_pagamento' mesmo que o tomador ainda esteja 'pendente'.
-    // Neste caso, permitimos iniciar o pagamento quando houver um contrato
+    // Permitimos iniciar o pagamento quando houver um contrato
     // com status 'aguardando_pagamento' ou com `aceito = true`.
     if (tomador.status !== 'aguardando_pagamento') {
       // checar se existe um contrato que justifique iniciar o pagamento
@@ -255,8 +248,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Usar dados fornecidos ou calcular baseado no plano
-    const finalPlanoId = plano_id || tomador.plano_id;
+    // Usar dados fornecidos ou do contrato
     const finalNumeroFuncionarios =
       numero_funcionarios || tomador.numero_funcionarios || 1;
     let finalValorTotal = valor_total;
@@ -265,21 +257,16 @@ export async function POST(request: NextRequest) {
       // Preferir valor_total já calculado no tomador quando disponível
       if (tomador.valor_total) {
         finalValorTotal = tomador.valor_total;
-      } else if (tomador.plano_tipo === 'fixo') {
-        finalValorTotal = 20.0 * finalNumeroFuncionarios; // R$20 por funcionário para planos fixos
       } else {
-        finalValorTotal =
-          parseFloat(tomador.preco || '0') * finalNumeroFuncionarios;
+        finalValorTotal = 20.0 * finalNumeroFuncionarios;
       }
     }
 
     console.log(`[PAGAMENTO] Dados calculados:`, {
       tomador_id: finalTomadorId,
       tipo: tomador.tipo,
-      plano_id: finalPlanoId,
       numero_funcionarios: finalNumeroFuncionarios,
       valor_total: finalValorTotal,
-      plano_tipo: tomador.plano_tipo,
     });
 
     // Criar registro de pagamento (associado ao contrato aceito)
@@ -296,9 +283,9 @@ export async function POST(request: NextRequest) {
     const pagamentoId = pagamentoResult.rows[0].id;
 
     const valorPorFuncionario =
-      tomador.plano_tipo === 'fixo'
-        ? 20.0
-        : finalValorTotal / finalNumeroFuncionarios;
+      finalNumeroFuncionarios > 0
+        ? finalValorTotal / finalNumeroFuncionarios
+        : finalValorTotal;
 
     return NextResponse.json({
       success: true,
@@ -309,7 +296,6 @@ export async function POST(request: NextRequest) {
       valor_plano: valorPorFuncionario,
       valor_unitario: valorPorFuncionario,
       numero_funcionarios: finalNumeroFuncionarios,
-      plano_nome: tomador.plano_nome,
       tomador_nome: tomador.nome,
       message: 'Pagamento iniciado com sucesso',
     });

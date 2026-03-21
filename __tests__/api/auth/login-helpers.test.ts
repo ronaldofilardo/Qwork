@@ -23,9 +23,15 @@ import {
 } from '@/app/api/auth/login/helpers';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
-const mockCompare = bcrypt.compare as jest.MockedFunction<typeof bcrypt.compare>;
-const mockCreateSession = createSession as jest.MockedFunction<typeof createSession>;
-const mockGerarSenha = gerarSenhaDeNascimento as jest.MockedFunction<typeof gerarSenhaDeNascimento>;
+const mockCompare = bcrypt.compare as jest.MockedFunction<
+  typeof bcrypt.compare
+>;
+const mockCreateSession = createSession as jest.MockedFunction<
+  typeof createSession
+>;
+const mockGerarSenha = gerarSenhaDeNascimento as jest.MockedFunction<
+  typeof gerarSenhaDeNascimento
+>;
 
 const contexto = { ip: '127.0.0.1', userAgent: 'test' };
 
@@ -39,7 +45,11 @@ describe('handleRepresentanteLogin', () => {
   it('deve retornar 401 se representante não encontrado em nenhuma tabela', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
 
-    const res = await handleRepresentanteLogin('99999999999', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '99999999999',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(401);
@@ -48,11 +58,26 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 403 se representante estiver desativado', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'desativado', tipo_pessoa: 'pf', senha_repres: null, senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'desativado',
+          tipo_pessoa: 'pf',
+          senha_repres: null,
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
-    const res = await handleRepresentanteLogin('12345678901', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(403);
@@ -61,11 +86,26 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 403 se representante estiver rejeitado', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'rejeitado', tipo_pessoa: 'pf', senha_repres: null, senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'rejeitado',
+          tipo_pessoa: 'pf',
+          senha_repres: null,
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
-    const res = await handleRepresentanteLogin('12345678901', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(403);
@@ -73,11 +113,26 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 403 se representante estiver aguardando_senha', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'aguardando_senha', tipo_pessoa: 'pf', senha_repres: null, senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'aguardando_senha',
+          tipo_pessoa: 'pf',
+          senha_repres: null,
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
-    const res = await handleRepresentanteLogin('12345678901', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(403);
@@ -86,11 +141,26 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 403 se representante estiver expirado', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'expirado', tipo_pessoa: 'pf', senha_repres: null, senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'expirado',
+          tipo_pessoa: 'pf',
+          senha_repres: null,
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
-    const res = await handleRepresentanteLogin('12345678901', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(403);
@@ -99,11 +169,26 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 400 se senha não for fornecida para representante ativo', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'ativo', tipo_pessoa: 'pf', senha_repres: '$2a$10$hash', senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'ativo',
+          tipo_pessoa: 'pf',
+          senha_repres: '$2a$10$hash',
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
-    const res = await handleRepresentanteLogin('12345678901', undefined, contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      undefined,
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(400);
@@ -112,11 +197,26 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 500 se representante sem senha_repres e sem senha_hash', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'ativo', tipo_pessoa: 'pf', senha_repres: null, senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'ativo',
+          tipo_pessoa: 'pf',
+          senha_repres: null,
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
-    const res = await handleRepresentanteLogin('12345678901', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(500);
@@ -125,13 +225,28 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 401 se senha de representante for inválida (via senha_repres)', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 1, nome: 'Rep', cpf: '12345678901', cpf_responsavel_pj: null, status: 'ativo', tipo_pessoa: 'pf', senha_repres: '$2a$10$hash', senha_hash: null }],
+      rows: [
+        {
+          id: 1,
+          nome: 'Rep',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'ativo',
+          tipo_pessoa: 'pf',
+          senha_repres: '$2a$10$hash',
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
     mockCompare.mockResolvedValue(false as never);
 
-    const res = await handleRepresentanteLogin('12345678901', 'senhaErrada', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senhaErrada',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(401);
@@ -140,14 +255,29 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve retornar 200 e criar sessão se senha via senha_repres for válida', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 5, nome: 'Rep Valido', cpf: '12345678901', cpf_responsavel_pj: null, status: 'ativo', tipo_pessoa: 'pf', senha_repres: '$2a$10$hash', senha_hash: null }],
+      rows: [
+        {
+          id: 5,
+          nome: 'Rep Valido',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'ativo',
+          tipo_pessoa: 'pf',
+          senha_repres: '$2a$10$hash',
+          senha_hash: null,
+        },
+      ],
       rowCount: 1,
     });
 
     mockCompare.mockResolvedValue(true as never);
     mockCreateSession.mockResolvedValue(undefined as never);
 
-    const res = await handleRepresentanteLogin('12345678901', 'senhaCorreta', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senhaCorreta',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -161,14 +291,29 @@ describe('handleRepresentanteLogin', () => {
 
   it('deve usar senha_hash como fallback quando senha_repres não está definida', async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 7, nome: 'Rep Hash', cpf: '12345678901', cpf_responsavel_pj: null, status: 'ativo', tipo_pessoa: 'pf', senha_repres: null, senha_hash: '$2a$10$legacyhash' }],
+      rows: [
+        {
+          id: 7,
+          nome: 'Rep Hash',
+          cpf: '12345678901',
+          cpf_responsavel_pj: null,
+          status: 'ativo',
+          tipo_pessoa: 'pf',
+          senha_repres: null,
+          senha_hash: '$2a$10$legacyhash',
+        },
+      ],
       rowCount: 1,
     });
 
     mockCompare.mockResolvedValue(true as never);
     mockCreateSession.mockResolvedValue(undefined as never);
 
-    const res = await handleRepresentanteLogin('12345678901', 'senha', contexto);
+    const res = await handleRepresentanteLogin(
+      '12345678901',
+      'senha',
+      contexto
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -195,8 +340,8 @@ describe('validarSenhaFuncionario', () => {
     );
 
     expect(res).not.toBeNull();
-    expect(res!.status).toBe(500);
-    const data = await res!.json();
+    expect(res.status).toBe(500);
+    const data = await res.json();
     expect(data.error).toMatch(/configura/i);
   });
 
@@ -232,8 +377,8 @@ describe('validarSenhaFuncionario', () => {
     );
 
     expect(res).not.toBeNull();
-    expect(res!.status).toBe(401);
-    const data = await res!.json();
+    expect(res.status).toBe(401);
+    const data = await res.json();
     expect(data.error).toMatch(/data de nascimento/i);
   });
 
@@ -274,6 +419,6 @@ describe('validarSenhaFuncionario', () => {
     );
 
     expect(res).not.toBeNull();
-    expect(res!.status).toBe(401);
+    expect(res.status).toBe(401);
   });
 });

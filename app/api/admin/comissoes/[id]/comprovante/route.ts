@@ -33,7 +33,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole('suporte', false);
     const comissaoId = parseInt(params.id, 10);
     if (isNaN(comissaoId))
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });

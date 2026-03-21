@@ -29,7 +29,6 @@ const TomadorFormSchema = z.object({
     .string()
     .regex(/^\d{8}$/, 'CEP inválido (8 dígitos)')
     .optional(),
-  plano_id: z.number().int().positive('Plano obrigatório'),
 });
 
 export type tomadorFormData = z.infer<typeof TomadorFormSchema>;

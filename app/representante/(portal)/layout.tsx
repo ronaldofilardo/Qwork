@@ -80,20 +80,11 @@ export default function PortalLayout({
     }
   };
 
-  const dadosBancariosStatus = session?.dados_bancarios_status;
-  const mostrarBadgeDados =
-    dadosBancariosStatus != null && dadosBancariosStatus !== 'confirmado';
-
   const NAV_ITEMS = [
-    {
-      href: '/representante/dados',
-      label: 'Dados',
-      badge: mostrarBadgeDados,
-    },
     { href: '/representante/dashboard', label: 'Dashboard', badge: false },
-    { href: '/representante/leads', label: 'Leads', badge: false },
-    { href: '/representante/vinculos', label: 'Vínculos', badge: false },
-    { href: '/representante/comissoes', label: 'Comissões', badge: false },
+    { href: '/representante/metricas', label: 'Métricas', badge: false },
+    { href: '/representante/equipe', label: 'Minha Equipe', badge: false },
+    { href: '/representante/dados', label: 'Dados', badge: false },
   ];
 
   if (loading) {

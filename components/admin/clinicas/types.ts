@@ -13,8 +13,6 @@ export interface Clinica {
   responsavel_cpf: string;
   responsavel_email: string;
   criado_em: string;
-  plano_personalizado_pendente?: boolean;
-  numero_funcionarios_estimado?: number;
 }
 
 export interface Gestor {
@@ -39,12 +37,4 @@ export interface Empresa {
   total_avaliacoes: number;
   avaliacoes_concluidas: number;
   avaliacoes_liberadas: number;
-}
-
-export interface ContratoPersonalizadoData {
-  contratoId: number;
-  tomadorNome: string;
-  valorPorFuncionario: number;
-  numeroFuncionarios: number;
-  valorTotal: number;
 }

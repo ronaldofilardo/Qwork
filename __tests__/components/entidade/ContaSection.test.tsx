@@ -50,7 +50,6 @@ describe('EntidadeContaSection', () => {
     contrato: {
       id: 10,
       numero_contrato: 'CONT-2025-001',
-      plano_nome: 'Premium',
       valor_total: 500,
       numero_funcionarios: 50,
       status: 'ativo',

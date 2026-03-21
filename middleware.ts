@@ -6,10 +6,16 @@ const SENSITIVE_ROUTES = [
   '/api/rh',
   '/api/emissor',
   '/api/entidade',
+  '/api/suporte',
+  '/api/comercial',
+  '/api/vendedor',
   '/admin',
   '/rh',
   '/emissor',
   '/entidade',
+  '/suporte',
+  '/comercial',
+  '/vendedor',
   '/trocar-senha',
 ];
 
@@ -32,12 +38,10 @@ const MFA_REQUIRED_ROUTES = ['/api/admin/financeiro', '/admin/financeiro'];
 
 // Rotas públicas que não requerem autenticação (mesmo sob /api)
 const PUBLIC_API_ROUTES = [
-  '/api/planos',
   '/api/contratacao/cadastro-inicial',
   '/api/public',
   '/api/contrato/', // Rotas de visualização de contrato
   '/api/pagamento/iniciar', // Rota de iniciar pagamento (após aceite de contrato)
-  '/api/pagamento/gerar-link-plano-fixo', // Gerar link de retry para plano fixo
   '/api/tomador/verificar-pagamento', // Verificar status de pagamento
   '/api/cadastro',
   '/api/auth/login',
@@ -55,13 +59,9 @@ const CONTRATACAO_ROUTES = {
     '/api/admin/contratacao/pendentes',
   ],
   // Gestor de Entidade: Criar e gerenciar próprias contratações
-  gestor: [
-    '/api/contratacao/personalizado/pre-cadastro',
-    '/api/contratacao/personalizado/aceitar-contrato',
-    '/api/contratacao/personalizado/cancelar',
-  ],
+  gestor: ['/api/contratacao/cadastro-inicial'],
   // Público: Rotas abertas para cadastro inicial
-  public: ['/api/planos', '/api/contratacao/cadastro-inicial'],
+  public: ['/api/contratacao/cadastro-inicial'],
 };
 
 export function middleware(request: NextRequest) {
@@ -366,6 +366,57 @@ export function middleware(request: NextRequest) {
     }
   }
 
+  // Verificação de segregação: apenas suporte acessa rotas /suporte
+  const SUPORTE_ROUTES = ['/suporte', '/api/suporte'];
+  if (SUPORTE_ROUTES.some((route) => pathname.startsWith(route))) {
+    const sessionCookie = request.cookies.get('bps-session')?.value;
+    let session: { perfil?: string; cpf?: string } | null = null;
+    if (sessionCookie) {
+      try {
+        session = JSON.parse(sessionCookie);
+      } catch {
+        /* já tratado */
+      }
+    }
+    if (session && session.perfil !== 'suporte') {
+      return new NextResponse('Acesso negado', { status: 403 });
+    }
+  }
+
+  // Verificação de segregação: apenas comercial acessa rotas /comercial
+  const COMERCIAL_ROUTES = ['/comercial', '/api/comercial'];
+  if (COMERCIAL_ROUTES.some((route) => pathname.startsWith(route))) {
+    const sessionCookie = request.cookies.get('bps-session')?.value;
+    let session: { perfil?: string; cpf?: string } | null = null;
+    if (sessionCookie) {
+      try {
+        session = JSON.parse(sessionCookie);
+      } catch {
+        /* já tratado */
+      }
+    }
+    if (session && session.perfil !== 'comercial') {
+      return new NextResponse('Acesso negado', { status: 403 });
+    }
+  }
+
+  // Verificação de segregação: apenas vendedor acessa rotas /vendedor
+  const VENDEDOR_ROUTES = ['/vendedor', '/api/vendedor'];
+  if (VENDEDOR_ROUTES.some((route) => pathname.startsWith(route))) {
+    const sessionCookie = request.cookies.get('bps-session')?.value;
+    let session: { perfil?: string; cpf?: string } | null = null;
+    if (sessionCookie) {
+      try {
+        session = JSON.parse(sessionCookie);
+      } catch {
+        /* já tratado */
+      }
+    }
+    if (session && session.perfil !== 'vendedor') {
+      return new NextResponse('Acesso negado', { status: 403 });
+    }
+  }
+
   return NextResponse.next();
 }
 
@@ -376,6 +427,9 @@ export const config = {
     '/rh/:path*',
     '/emissor/:path*',
     '/entidade/:path*',
+    '/suporte/:path*',
+    '/comercial/:path*',
+    '/vendedor/:path*',
     '/dashboard/:path*',
     '/avaliacao/:path*',
     '/trocar-senha/:path*',

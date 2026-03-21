@@ -48,12 +48,19 @@ export async function GET(request: NextRequest) {
          COALESCE(SUM(CASE WHEN c.status = 'paga' THEN c.valor_comissao ELSE 0 END), 0) AS valor_total_pago,
          COALESCE(SUM(CASE WHEN c.status IN ('aprovada','liberada') THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,
          -- Alerta de expiração (dias restantes)
-         (v.data_expiracao - CURRENT_DATE) AS dias_para_expirar
+         (v.data_expiracao - CURRENT_DATE) AS dias_para_expirar,
+         -- Dados do lead de origem
+         lr.valor_negociado           AS lead_valor_negociado,
+         lr.contato_nome              AS lead_contato_nome,
+         lr.contato_email             AS lead_contato_email,
+         lr.criado_em                 AS lead_criado_em,
+         lr.data_conversao            AS lead_data_conversao
        FROM vinculos_comissao v
        JOIN entidades e ON e.id = v.entidade_id
        LEFT JOIN comissoes_laudo c ON c.vinculo_id = v.id
+       LEFT JOIN leads_representante lr ON lr.id = v.lead_id
        ${where}
-       GROUP BY v.id, e.nome, e.cnpj
+       GROUP BY v.id, e.nome, e.cnpj, lr.valor_negociado, lr.contato_nome, lr.contato_email, lr.criado_em, lr.data_conversao
        ORDER BY v.data_expiracao ASC
        LIMIT $${i} OFFSET $${i + 1}`,
       params

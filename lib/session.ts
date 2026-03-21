@@ -15,10 +15,23 @@ export interface Session {
   nivelCargo?: NivelCargoType;
   // POLÍTICA DE NEGÓCIO - PAPÉIS E PERMISSÕES:
   //
-  // 'admin': Gestão da PLATAFORMA (financeiro, auditoria, configurações globais)
+  // 'admin': Gestão da PLATAFORMA (auditorias, volume, emissores, configurações)
   //          → NÃO tem clinica_id/entidade_id operacional
-  //          → NÃO pode criar/editar empresas, funcionários, lotes
-  //          → PODE acessar dados para auditorias/relatórios (via APIs /api/admin/*)
+  //          → Acesso a auditorias, cadastros iniciais, volume
+  //
+  // 'suporte': Gestão FINANCEIRA da plataforma
+  //            → Cobrança, parcelas, pagamentos, comissões (liberar/pagar/NF)
+  //            → Gerencia clínicas/entidades (ativar/desativar, trocar gestor)
+  //            → Novos cadastros, contratos, emissões (gestão de lotes)
+  //
+  // 'comercial': Gestão de REPRESENTANTES e VENDAS
+  //              → Representantes (CRUD, aprovação, ativação status apto)
+  //              → Leads (aprovar/rejeitar/converter)
+  //              → Comissões (gerar, vincular, aprovar/congelar/descongelar)
+  //
+  // 'vendedor': VENDAS diretas
+  //             → Métricas pessoais de vendas
+  //             → Relatórios próprios
   //
   // 'rh': Gestor de CLÍNICA (operações dentro da clínica)
   //       → TEM clinica_id obrigatório

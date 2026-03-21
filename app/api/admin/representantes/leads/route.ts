@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireRole('admin', false);
+    await requireRole('comercial', false);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') ?? undefined;
     const representante_id = searchParams.get('representante_id') ?? undefined;

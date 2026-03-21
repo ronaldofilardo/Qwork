@@ -14,7 +14,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole(['suporte', 'admin'], false);
 
     const searchParams = request.nextUrl.searchParams;
     const filtroTipo = searchParams.get('tipo'); // 'clinica' ou 'entidade' ou null (todos)

@@ -387,7 +387,7 @@ export default function DetalhesLotePage() {
   }, []);
 
   // Função para classificar grupos (reutilizada do RH)
-  const renderClassificacao = useCallback(
+  const _renderClassificacao = useCallback(
     (media: number | undefined, numeroGrupo: number) => {
       if (media === undefined) return <span className="text-gray-400">-</span>;
 
@@ -1002,14 +1002,6 @@ export default function DetalhesLotePage() {
                 </svg>
                 Atualizar
               </button>
-              <button
-                onClick={handleDownloadReport}
-                disabled={lote.status === 'criado'}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileText size={18} />
-                Gerar Relatório
-              </button>
             </div>
           </div>
         </div>
@@ -1088,10 +1080,11 @@ export default function DetalhesLotePage() {
               <button
                 onClick={() => setShowSetorModal(true)}
                 disabled={
-                  lote.laudo_status !== 'emitido' || setores.length === 0
+                  !['emitido', 'enviado'].includes(lote.laudo_status ?? '') ||
+                  setores.length === 0
                 }
                 title={
-                  lote.laudo_status !== 'emitido'
+                  !['emitido', 'enviado'].includes(lote.laudo_status ?? '')
                     ? 'Aguardando emissão do laudo'
                     : setores.length === 0
                       ? 'Nenhum setor disponível neste ciclo'

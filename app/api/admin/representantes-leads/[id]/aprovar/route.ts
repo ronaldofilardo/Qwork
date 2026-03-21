@@ -14,7 +14,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole('comercial', false);
     const leadId = params.id;
 
     if (!leadId) {

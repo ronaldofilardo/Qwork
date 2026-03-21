@@ -12,8 +12,8 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Validar permissão de admin
-    await requireRole('admin');
+    // Validar permissão de suporte/admin
+    await requireRole(['suporte', 'admin'], false);
 
     const clinicaId = parseInt(params.id);
 

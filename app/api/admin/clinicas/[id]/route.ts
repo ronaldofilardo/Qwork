@@ -31,7 +31,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('admin');
+    await requireRole(['suporte', 'admin'], false);
 
     const body = await request.json();
     const { ativa, trocar_gestor } = body;

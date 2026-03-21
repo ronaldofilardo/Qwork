@@ -2,46 +2,27 @@
 
 import { useState } from 'react';
 import {
-  Building2,
   DollarSign,
   Settings,
   ChevronDown,
   ChevronRight,
   FileCheck,
   Shield,
-  Users,
   BarChart2,
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type AdminSection =
-  | 'tomadores'
-  | 'financeiro'
-  | 'geral'
-  | 'volume'
-  | 'auditorias';
-export type TomadoresSubSection = 'clinicas' | 'entidades';
-export type ClinicasTab = 'dados' | 'auditorias' | 'financeiro';
-export type EntidadesTab = 'dados' | 'auditorias';
-export type FinanceiroSubSection =
-  | 'contagem'
-  | 'pagamentos'
-  | 'planos'
-  | 'comissoes';
+export type AdminSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
 export type VolumeSubSection = 'entidade' | 'rh';
+export type FinanceiroSubSection = 'contagem';
+export type GeralSubSection = 'emissores';
 
 interface AdminSidebarProps {
   activeSection: AdminSection;
   activeSubSection?: string;
   onSectionChange: (section: AdminSection, subSection?: string) => void;
   counts?: {
-    clinicas?: number;
-    entidades?: number;
-    pagamentos?: number;
-    planos?: number;
     emissores?: number;
-    representantes?: number;
-    comissoes?: number;
   };
 }
 
@@ -71,14 +52,6 @@ export default function AdminSidebar({
 
   const legend = (
     <>
-      <div className="flex items-center gap-2 mb-2">
-        <Users size={14} />
-        <span>Clínicas: Medicina Ocupacional</span>
-      </div>
-      <div className="flex items-center gap-2 mb-2">
-        <Building2 size={14} />
-        <span>Entidades: Empresas Privadas</span>
-      </div>
       <div className="flex items-center gap-2 mb-2">
         <FileCheck size={14} />
         <span>Emissores: Laudos Técnicos</span>
@@ -165,40 +138,6 @@ export default function AdminSidebar({
       onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
       footer={legend}
     >
-      {/* Tomadores */}
-      <MenuItem
-        icon={Building2}
-        label="Tomadores"
-        isActive={activeSection === 'tomadores'}
-        onClick={() => {
-          toggleSection('tomadores');
-          onSectionChange('tomadores', 'clinicas');
-        }}
-        hasSubMenu
-        isExpanded={isExpanded('tomadores')}
-      />
-
-      {isExpanded('tomadores') && (
-        <div className="border-l-2 border-gray-200 ml-4">
-          <SubMenuItem
-            label="Clínicas"
-            count={counts.clinicas}
-            isActive={
-              activeSection === 'tomadores' && activeSubSection === 'clinicas'
-            }
-            onClick={() => onSectionChange('tomadores', 'clinicas')}
-          />
-          <SubMenuItem
-            label="Entidades"
-            count={counts.entidades}
-            isActive={
-              activeSection === 'tomadores' && activeSubSection === 'entidades'
-            }
-            onClick={() => onSectionChange('tomadores', 'entidades')}
-          />
-        </div>
-      )}
-
       {/* Volume */}
       <MenuItem
         icon={BarChart2}
@@ -235,83 +174,20 @@ export default function AdminSidebar({
         label="Financeiro"
         isActive={activeSection === 'financeiro'}
         onClick={() => {
-          toggleSection('financeiro');
           onSectionChange('financeiro', 'contagem');
         }}
-        hasSubMenu
-        isExpanded={isExpanded('financeiro')}
       />
-
-      {isExpanded('financeiro') && (
-        <div className="border-l-2 border-gray-200 ml-4">
-          <SubMenuItem
-            label="Contagem"
-            isActive={
-              activeSection === 'financeiro' && activeSubSection === 'contagem'
-            }
-            onClick={() => onSectionChange('financeiro', 'contagem')}
-          />
-          <SubMenuItem
-            label="Planos"
-            count={counts.planos}
-            isActive={
-              activeSection === 'financeiro' && activeSubSection === 'planos'
-            }
-            onClick={() => onSectionChange('financeiro', 'planos')}
-          />
-          <SubMenuItem
-            label="Pagamentos"
-            count={counts.pagamentos}
-            isActive={
-              activeSection === 'financeiro' &&
-              activeSubSection === 'pagamentos'
-            }
-            onClick={() => onSectionChange('financeiro', 'pagamentos')}
-          />
-          <SubMenuItem
-            label="Comissões"
-            count={counts.comissoes}
-            isActive={
-              activeSection === 'financeiro' && activeSubSection === 'comissoes'
-            }
-            onClick={() => onSectionChange('financeiro', 'comissoes')}
-          />
-        </div>
-      )}
 
       {/* Geral */}
       <MenuItem
         icon={Settings}
-        label="Geral"
+        label="Emissores"
+        count={counts.emissores}
         isActive={activeSection === 'geral'}
         onClick={() => {
-          toggleSection('geral');
           onSectionChange('geral', 'emissores');
         }}
-        hasSubMenu
-        isExpanded={isExpanded('geral')}
       />
-
-      {isExpanded('geral') && (
-        <div className="border-l-2 border-gray-200 ml-4">
-          <SubMenuItem
-            label="Representantes"
-            count={counts.representantes}
-            isActive={
-              activeSection === 'geral' && activeSubSection === 'representantes'
-            }
-            onClick={() => onSectionChange('geral', 'representantes')}
-          />
-          <SubMenuItem
-            label="Emissores"
-            count={counts.emissores}
-            isActive={
-              activeSection === 'geral' && activeSubSection === 'emissores'
-            }
-            onClick={() => onSectionChange('geral', 'emissores')}
-          />
-        </div>
-      )}
 
       {/* Auditorias */}
       <MenuItem

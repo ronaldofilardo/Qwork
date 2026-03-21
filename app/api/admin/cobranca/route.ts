@@ -11,7 +11,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: Request) {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole('suporte', false);
 
     // Suporte a filtro por CNPJ (opcional) via query string
     const url = new URL(request.url);
@@ -24,12 +24,8 @@ export async function GET(request: Request) {
     let sql = `SELECT
         ct.id as tomador_id,
         ct.cnpj,
-        ct.plano_id as plano_id,
-        pl.nome as plano_nome,
-        COALESCE(pl.valor_por_funcionario, 20.00) as plano_preco,
         ct.id as numero_contrato,
         ct.nome as nome_tomador,
-        pl.tipo as plano_tipo,
         ct.numero_funcionarios_estimado as numero_funcionarios_estimado,
         (SELECT COUNT(DISTINCT f.id) FROM funcionarios f 
          INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id AND fe.ativo = true 
@@ -41,7 +37,7 @@ export async function GET(request: Request) {
         CASE WHEN pg.numero_parcelas IS NOT NULL AND pg.numero_parcelas > 1 THEN 'parcelado' ELSE 'a_vista' END as modalidade_pagamento,
         pg.numero_parcelas,
         NULL as parcelas_json,
-        COALESCE(pg.valor, (ct.numero_funcionarios_estimado * COALESCE(pl.valor_por_funcionario, 20.00)))::numeric as valor_pago,
+        COALESCE(pg.valor, (ct.numero_funcionarios_estimado * 20.00))::numeric as valor_pago,
         CASE
           WHEN ct.status = 'aprovado' AND ct.pagamento_confirmado = true THEN 'ativo'
           WHEN ct.status != 'aprovado' THEN 'cancelado'
@@ -52,7 +48,6 @@ export async function GET(request: Request) {
         pg.data_pagamento as data_pagamento,
         ct.criado_em
       FROM entidades ct
-      LEFT JOIN planos pl ON ct.plano_id = pl.id
       LEFT JOIN (
         SELECT entidade_id, id, valor, status, metodo, data_pagamento, numero_parcelas, plataforma_nome, detalhes_parcelas
         FROM pagamentos

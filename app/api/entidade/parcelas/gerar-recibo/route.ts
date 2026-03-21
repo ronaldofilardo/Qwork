@@ -179,13 +179,10 @@ export async function POST(request: Request) {
         p.numero_parcelas,
         p.detalhes_parcelas,
         p.metodo,
-        p.criado_em as pagamento_criado_em,
-        pl.nome as plano_nome,
-        pl.tipo as plano_tipo
+        p.criado_em as pagamento_criado_em
       FROM contratos co
       INNER JOIN entidades e ON co.entidade_id = e.id
       INNER JOIN pagamentos p ON p.entidade_id = e.id
-      INNER JOIN planos pl ON co.plano_id = pl.id
       WHERE e.id = $1 AND p.id = $2 AND co.aceito = true
       LIMIT 1
     `;
@@ -330,7 +327,6 @@ Email: ${dados.entidade_email}
 
 CONTRATO:
 Data de Contratação: ${new Date(dados.contratacao_at).toLocaleDateString('pt-BR')}
-Plano: ${dados.plano_nome} - ${dados.plano_tipo || ''}
 Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(dados.valor_total))}
 Funcionários Cobertos: ${dados.numero_funcionarios}
 

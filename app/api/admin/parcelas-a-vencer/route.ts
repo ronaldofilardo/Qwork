@@ -22,7 +22,7 @@ interface ParcelaJsonb {
 
 export async function GET() {
   try {
-    await requireRole('admin', false);
+    await requireRole('suporte', false);
 
     // Buscar pagamentos parcelados com detalhes_parcelas
     const result = await query<{

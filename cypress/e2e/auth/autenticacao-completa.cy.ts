@@ -100,4 +100,85 @@ describe('Autenticação — E2E Completo', () => {
       });
     });
   });
+
+  describe('Redirecionamento por Perfil — Novos Perfis', () => {
+    it('deve redirecionar suporte para /suporte', () => {
+      cy.intercept('GET', '/api/auth/session', {
+        statusCode: 200,
+        body: {
+          cpf: '33333333333',
+          nome: 'Suporte',
+          perfil: 'suporte',
+          sessionToken: 'token',
+        },
+      }).as('session');
+
+      cy.visit('/suporte', { timeout: TIMEOUT });
+      cy.wait('@session', { timeout: TIMEOUT });
+      cy.url().should('include', '/suporte');
+    });
+
+    it('deve redirecionar comercial para /comercial', () => {
+      cy.intercept('GET', '/api/auth/session', {
+        statusCode: 200,
+        body: {
+          cpf: '44444444444',
+          nome: 'Comercial',
+          perfil: 'comercial',
+          sessionToken: 'token',
+        },
+      }).as('session');
+
+      cy.intercept('GET', '/api/admin/representantes*', {
+        statusCode: 200,
+        body: { representantes: [], total: 0 },
+      });
+      cy.intercept('GET', '/api/admin/representantes-leads*', {
+        statusCode: 200,
+        body: { leads: [], total: 0 },
+      });
+      cy.intercept('GET', '/api/admin/comissoes*', {
+        statusCode: 200,
+        body: { comissoes: [], total: 0 },
+      });
+
+      cy.visit('/comercial', { timeout: TIMEOUT });
+      cy.wait('@session', { timeout: TIMEOUT });
+      cy.url().should('include', '/comercial');
+    });
+
+    it('deve redirecionar vendedor para /vendedor', () => {
+      cy.intercept('GET', '/api/auth/session', {
+        statusCode: 200,
+        body: {
+          cpf: '55555555555',
+          nome: 'Vendedor',
+          perfil: 'vendedor',
+          sessionToken: 'token',
+        },
+      }).as('session');
+
+      cy.visit('/vendedor', { timeout: TIMEOUT });
+      cy.wait('@session', { timeout: TIMEOUT });
+      cy.url().should('include', '/vendedor');
+    });
+
+    it('suporte sem autenticação deve redirecionar para /login', () => {
+      cy.clearCookies();
+      cy.visit('/suporte', { failOnStatusCode: false, timeout: TIMEOUT });
+      cy.url({ timeout: TIMEOUT }).should('include', '/login');
+    });
+
+    it('comercial sem autenticação deve redirecionar para /login', () => {
+      cy.clearCookies();
+      cy.visit('/comercial', { failOnStatusCode: false, timeout: TIMEOUT });
+      cy.url({ timeout: TIMEOUT }).should('include', '/login');
+    });
+
+    it('vendedor sem autenticação deve redirecionar para /login', () => {
+      cy.clearCookies();
+      cy.visit('/vendedor', { failOnStatusCode: false, timeout: TIMEOUT });
+      cy.url({ timeout: TIMEOUT }).should('include', '/login');
+    });
+  });
 });

@@ -13,7 +13,7 @@ import {
   requireSession,
   createApiError,
 } from '@/lib/application/handlers/api-handler';
-import { query } from '@/lib/infrastructure/database';
+import { query } from '@/lib/db';
 import { ROLES } from '@/lib/config/roles';
 import { z } from 'zod';
 
@@ -39,10 +39,8 @@ async function gettomadorsPendentes(input: GettomadorsInput) {
       c.cnpj,
       c.email,
       c.status_aprovacao,
-      c.criado_em,
-      p.nome as plano_nome
+      c.criado_em
     FROM entidades c
-    LEFT JOIN planos p ON c.plano_id = p.id
     WHERE ($1::text IS NULL OR c.status_aprovacao = $1)
     ORDER BY c.criado_em DESC
     LIMIT $2 OFFSET $3

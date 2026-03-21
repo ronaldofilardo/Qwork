@@ -23,7 +23,7 @@ export async function POST(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    await requireRole('admin', false);
+    await requireRole('comercial', false);
 
     const representanteId = parseInt(params.id, 10);
     if (isNaN(representanteId)) {

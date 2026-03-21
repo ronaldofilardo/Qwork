@@ -192,9 +192,8 @@ export async function POST(request: Request) {
 
     // Buscar contrato plano mais recente da clínica (se houver)
     const cpRes = await query(
-      `SELECT NULL::INTEGER as contrato_id, cp.created_at as contratacao_at, cp.valor_personalizado_por_funcionario, pl.nome as plano_nome, pl.tipo as plano_tipo
+      `SELECT NULL::INTEGER as contrato_id, cp.created_at as contratacao_at, cp.valor_personalizado_por_funcionario
        FROM contratos_planos cp
-       LEFT JOIN planos pl ON cp.plano_id = pl.id
        WHERE cp.clinica_id = $1
        ORDER BY cp.created_at DESC
        LIMIT 1`,
@@ -299,8 +298,6 @@ export async function POST(request: Request) {
         pagamento.detalhes_parcelas || pagamento.parcelas_json || null,
       metodo: pagamento.metodo,
       pagamento_criado_em: pagamento.data_pagamento || pagamento.criado_em,
-      plano_nome: cpRow.plano_nome || null,
-      plano_tipo: cpRow.plano_tipo || null,
     };
 
     // Calcular número de funcionários ativos da clínica (fallback caso contrato não tenha a informação)
@@ -448,7 +445,6 @@ Email: ${dados.clinica_email}
 
 CONTRATO:
 Data de Contratação: ${new Date(dados.contratacao_at).toLocaleDateString('pt-BR')}
-Plano: ${dados.plano_nome} - ${dados.plano_tipo || ''}
 Valor Total: ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(parseFloat(dados.pagamento_valor))}
 Funcionários Cobertos: ${dados.numero_funcionarios}
 

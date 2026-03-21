@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const session = getSession();
-    assertRoles(session, [ROLES.ADMIN]);
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const entidadeId = params.id;
 

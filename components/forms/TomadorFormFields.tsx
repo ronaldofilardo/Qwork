@@ -22,10 +22,8 @@ interface tomadorFormFieldsProps {
     cidade?: string;
     estado?: string;
     cep?: string;
-    plano_id?: number;
   };
   errors: Record<string, string>;
-  planos: Array<{ id: number; nome: string; tipo: string }>;
   onChange: (field: string, value: any) => void;
   disabled?: boolean;
 }
@@ -33,7 +31,6 @@ interface tomadorFormFieldsProps {
 export function tomadorFormFields({
   formData,
   errors,
-  planos,
   onChange,
   disabled = false,
 }: tomadorFormFieldsProps) {
@@ -174,29 +171,6 @@ export function tomadorFormFields({
           <span className="text-red-500 text-sm">
             {errors.responsavel_telefone}
           </span>
-        )}
-      </div>
-
-      {/* Plano */}
-      <div>
-        <label className="block text-sm font-medium mb-1">Plano *</label>
-        <select
-          value={formData.plano_id || ''}
-          onChange={(e) => onChange('plano_id', parseInt(e.target.value))}
-          disabled={disabled}
-          className="w-full px-3 py-2 border rounded-lg"
-        >
-          <option value="">Selecione um plano</option>
-          {planos
-            .filter((p) => p.tipo === formData.tipo)
-            .map((plano) => (
-              <option key={plano.id} value={plano.id}>
-                {plano.nome}
-              </option>
-            ))}
-        </select>
-        {errors.plano_id && (
-          <span className="text-red-500 text-sm">{errors.plano_id}</span>
         )}
       </div>
 

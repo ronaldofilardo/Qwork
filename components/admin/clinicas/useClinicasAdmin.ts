@@ -1,12 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import type {
-  Clinica,
-  Gestor,
-  Empresa,
-  ContratoPersonalizadoData,
-} from './types';
+import type { Clinica, Gestor, Empresa } from './types';
 
 export function useClinicasAdmin() {
   const [clinicas, setClinicas] = useState<Clinica[]>([]);
@@ -24,12 +19,6 @@ export function useClinicasAdmin() {
   const [deletingClinica, setDeletingClinica] = useState<number | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
-  const [clinicasPersonalizado, setClinicasPersonalizado] = useState<Clinica[]>(
-    []
-  );
-  const [showLinkContratoModal, setShowLinkContratoModal] = useState(false);
-  const [contratoPersonalizadoData, setContratoPersonalizadoData] =
-    useState<ContratoPersonalizadoData | null>(null);
   const [showCadastroModal, setShowCadastroModal] = useState(false);
 
   const fetchClinicas = useCallback(async () => {
@@ -39,14 +28,6 @@ export function useClinicasAdmin() {
       if (resAprovadas.ok) {
         const dataAprovadas = await resAprovadas.json();
         setClinicas(dataAprovadas.tomadores || []);
-      }
-
-      const resPersonalizado = await fetch(
-        '/api/admin/tomadores?tipo=clinica&plano_personalizado_pendente=true'
-      );
-      if (resPersonalizado.ok) {
-        const dataPersonalizado = await resPersonalizado.json();
-        setClinicasPersonalizado(dataPersonalizado.tomadores || []);
       }
     } catch (error) {
       console.error('Erro ao buscar clínicas:', error);
@@ -176,7 +157,6 @@ export function useClinicasAdmin() {
     // Data
     clinicas,
     loading,
-    clinicasPersonalizado,
     expandedClinica,
     gestoresPorClinica,
     empresasPorClinica,
@@ -189,12 +169,6 @@ export function useClinicasAdmin() {
     deleteTargetId,
     setDeleteTargetId,
     deleteClinica,
-
-    // Link contrato modal
-    showLinkContratoModal,
-    setShowLinkContratoModal,
-    contratoPersonalizadoData,
-    setContratoPersonalizadoData,
 
     // Cadastro modal
     showCadastroModal,

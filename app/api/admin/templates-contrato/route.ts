@@ -11,7 +11,7 @@ import { assertRoles, ROLES } from '@/lib/authorization/policies';
 export async function GET(request: Request) {
   try {
     const session = getSession();
-    assertRoles(session, [ROLES.ADMIN]);
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const { searchParams } = new URL(request.url);
     const tipo = searchParams.get('tipo') as any;
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = getSession();
-    assertRoles(session, [ROLES.ADMIN]);
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const body = await request.json();
 

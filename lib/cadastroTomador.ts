@@ -1,7 +1,5 @@
 'use strict';
 
-import { formatarValor } from '@/lib/validacoes-contratacao';
-
 export type TipoEntidade = 'clinica' | 'entidade';
 
 export interface DadosTomador {
@@ -31,15 +29,6 @@ export interface Arquivos {
   cartao_cnpj: File | null;
   contrato_social: File | null;
   doc_identificacao: File | null;
-}
-
-export interface Plano {
-  id: number;
-  nome: string;
-  descricao?: string;
-  preco: number | string;
-  tipo: string;
-  caracteristicas?: Record<string, any>;
 }
 
 // Formatters
@@ -183,16 +172,12 @@ export const validarEtapaResponsavel = (
 };
 
 export const gerarContratoSimulado = (params: {
-  plano: Plano;
   dadosTomador: DadosTomador;
   dadosResponsavel: DadosResponsavel;
   numeroFuncionarios: number;
   tipo: TipoEntidade;
 }): string => {
-  const { plano, dadosTomador, dadosResponsavel, numeroFuncionarios, tipo } =
-    params;
-
-  if (!plano) return '';
+  const { dadosTomador, dadosResponsavel, numeroFuncionarios, tipo } = params;
 
   if (
     !dadosTomador.nome ||
@@ -213,8 +198,6 @@ export const gerarContratoSimulado = (params: {
   const tipoLabel =
     tipo === 'clinica' ? 'CLÍNICA DE MEDICINA OCUPACIONAL' : 'EMPRESA';
 
-  const precoNum = Number(plano.preco) || 0;
-
   return `
 CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 PLATAFORMA QWORK – AVALIAÇÃO DE RISCO PSICOSSOCIAL ORGANIZACIONAL
@@ -234,8 +217,8 @@ CPF: ${dadosResponsavel.cpf}
 Cargo: ${dadosResponsavel.cargo || 'Não informado'}
 Email: ${dadosResponsavel.email}
 
-Plano: ${plano.nome} (${plano.tipo === 'fixo' ? 'Fixo' : 'Personalizado'})
-${plano.tipo === 'fixo' ? `Valor unitário anual por funcionário: ${formatarValor(precoNum)}\nValor total anual (para ${numeroFuncionarios} funcionário(s)): ${formatarValor(precoNum * numeroFuncionarios)}` : `Valor: ${formatarValor(precoNum)}`}
+Serviço: Avaliação de Risco Psicossocial Organizacional
+Funcionários: ${numeroFuncionarios}
 
 Data: ${dataAtual}
 

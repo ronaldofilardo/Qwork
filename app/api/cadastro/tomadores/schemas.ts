@@ -85,7 +85,6 @@ export const CadastroTomadorSchema = z.object({
   cidade: z.string().min(1, 'Cidade é obrigatória'),
   estado: z.string().length(2, 'Estado deve ter 2 caracteres (UF)'),
   cep: z.string().min(1, 'CEP é obrigatório'),
-  plano_id: z.number().int().positive('Plano inválido').nullable().optional(),
   numero_funcionarios_estimado: z
     .number()
     .int()
@@ -177,7 +176,6 @@ export function extractFormDataFields(
   formData: FormData
 ): Record<string, unknown> {
   const str = (key: string) => formData.get(key) as string | null;
-  const planoIdStr = str('plano_id');
   const numFuncStr = str('numero_funcionarios_estimado');
 
   return {
@@ -191,7 +189,6 @@ export function extractFormDataFields(
     cidade: str('cidade') || '',
     estado: str('estado') || '',
     cep: str('cep') || '',
-    plano_id: planoIdStr ? parseInt(planoIdStr) : null,
     numero_funcionarios_estimado: numFuncStr ? parseInt(numFuncStr) : null,
     responsavel_nome: str('responsavel_nome') || '',
     responsavel_cpf: str('responsavel_cpf') || '',

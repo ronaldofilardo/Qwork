@@ -111,7 +111,9 @@ describe('sanitizarString', () => {
   });
 
   it('deve remover caracteres < e >', () => {
-    expect(sanitizarString('<script>alert(1)</script>')).toBe('scriptalert(1)/script');
+    expect(sanitizarString('<script>alert(1)</script>')).toBe(
+      'scriptalert(1)/script'
+    );
   });
 
   it('deve preservar texto normal sem modificação', () => {

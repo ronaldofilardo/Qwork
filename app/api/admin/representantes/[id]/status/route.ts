@@ -28,7 +28,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole(['comercial', 'suporte', 'admin'], false);
     const repId = parseInt(params.id, 10);
     if (isNaN(repId))
       return NextResponse.json({ error: 'ID inválido' }, { status: 400 });

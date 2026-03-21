@@ -16,7 +16,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole('comercial', false);
     void session;
 
     const leadId = params.id;

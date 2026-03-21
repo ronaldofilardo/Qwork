@@ -37,6 +37,7 @@ describe('Dashboard do Funcionário', () => {
                 criado_em: new Date().toISOString(),
                 envio: null,
                 grupo_atual: 3,
+                total_respostas: 5,
               },
             ],
           }),
@@ -66,6 +67,7 @@ describe('Dashboard do Funcionário', () => {
                 criado_em: new Date().toISOString(),
                 envio: null,
                 grupo_atual: 3,
+                total_respostas: 5,
               },
             ],
           }),
@@ -234,6 +236,7 @@ describe('Dashboard do Funcionário', () => {
                 criado_em: new Date().toISOString(),
                 envio: null,
                 grupo_atual: 2,
+                total_respostas: 5,
               },
             ],
           }),
@@ -343,7 +346,7 @@ describe('Dashboard do Funcionário', () => {
       render(<Dashboard />);
 
       await waitFor(() => {
-        expect(screen.getByText(/concluída em/i)).toBeInTheDocument();
+        expect(screen.getByText(/finalizada em/i)).toBeInTheDocument();
       });
     });
 
@@ -375,7 +378,7 @@ describe('Dashboard do Funcionário', () => {
 
       await waitFor(() => {
         // Deve exibir data formatada (formato pode variar com toLocaleString)
-        expect(screen.getByText(/concluída em/i)).toBeInTheDocument();
+        expect(screen.getByText(/finalizada em/i)).toBeInTheDocument();
         expect(screen.getByText(/\d{2}\/\d{2}\/\d{4}/)).toBeInTheDocument(); // Formato DD/MM/YYYY
       });
     });
@@ -509,7 +512,9 @@ describe('Dashboard do Funcionário', () => {
       render(<Dashboard />);
 
       await waitFor(() => {
-        expect(screen.getByText(/avaliações disponíveis/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/avaliação\(ões\) disponível/i)
+        ).toBeInTheDocument();
         expect(screen.getByText(/histórico/i)).toBeInTheDocument();
       });
     });

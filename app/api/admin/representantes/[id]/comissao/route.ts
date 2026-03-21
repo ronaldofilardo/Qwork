@@ -15,7 +15,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('admin', false);
+    await requireRole('comercial', false);
 
     const id = parseInt(params.id, 10);
     if (isNaN(id))

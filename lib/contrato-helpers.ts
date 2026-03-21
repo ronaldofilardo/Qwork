@@ -18,20 +18,11 @@ interface Dadostomador {
   responsavel_cargo?: string;
 }
 
-interface DadosPlano {
-  nome: string;
-  tipo: 'fixo' | 'personalizado';
-  descricao?: string;
-}
-
 /**
  * Gera contrato padrão neutro (sem valores financeiros)
  * Conteúdo baseado no CONTRATO_PS.txt oficial
  */
-export function gerarContratoNeutro(
-  tomador: Dadostomador,
-  plano: DadosPlano
-): string {
+export function gerarContratoNeutro(tomador: Dadostomador): string {
   const dataAtual = new Date().toLocaleDateString('pt-BR', {
     day: '2-digit',
     month: '2-digit',
@@ -52,8 +43,6 @@ CPF: ${tomador.responsavel_cpf}
 ${tomador.responsavel_cargo ? `Cargo: ${tomador.responsavel_cargo}` : ''}
 
 Data: ${dataAtual}
-Plano contratado: ${plano.nome} (${plano.tipo === 'fixo' ? 'Fixo' : 'Personalizado'})
-${plano.descricao ? `Descrição: ${plano.descricao}` : ''}
 
 As partes celebram o presente contrato mediante as cláusulas e condições seguintes.
 
@@ -168,7 +157,6 @@ IP de aceite: [A SER REGISTRADO AUTOMATICAMENTE]
 export function gerarTextoRecibo(dados: {
   numero_recibo: string;
   tomador: Dadostomador;
-  plano: DadosPlano;
   vigencia_inicio: string;
   vigencia_fim: string;
   numero_funcionarios: number;
@@ -202,8 +190,7 @@ CPF Responsável: ${dados.tomador.responsavel_cpf}
 
 DETALHES DO SERVIÇO CONTRATADO
 
-Plano: ${dados.plano.nome}
-Tipo: ${dados.plano.tipo === 'fixo' ? 'Plano Fixo' : 'Plano Personalizado'}
+Serviço: Avaliação Psicossocial Organizacional - QWork
 
 VIGÊNCIA DO CONTRATO
 Data de Início: ${new Date(dados.vigencia_inicio).toLocaleDateString('pt-BR')}
@@ -248,10 +235,10 @@ Documento gerado automaticamente em ${dataEmissao}
 /**
  * Valida dados antes de gerar contrato
  */
-export function validarDadosContrato(
-  tomador: Dadostomador,
-  plano: DadosPlano
-): { valido: boolean; erros: string[] } {
+export function validarDadosContrato(tomador: Dadostomador): {
+  valido: boolean;
+  erros: string[];
+} {
   const erros: string[] = [];
 
   if (!tomador.nome || tomador.nome.trim().length < 3) {
@@ -268,14 +255,6 @@ export function validarDadosContrato(
 
   if (!tomador.responsavel_cpf || tomador.responsavel_cpf.length < 11) {
     erros.push('CPF do responsável inválido');
-  }
-
-  if (!plano.nome || plano.nome.trim().length === 0) {
-    erros.push('Nome do plano inválido');
-  }
-
-  if (!['fixo', 'personalizado'].includes(plano.tipo)) {
-    erros.push('Tipo de plano inválido');
   }
 
   return {

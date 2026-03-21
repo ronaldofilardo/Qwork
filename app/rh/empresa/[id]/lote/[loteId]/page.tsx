@@ -440,7 +440,7 @@ export default function DetalhesLotePage() {
   }, []);
 
   // Função para classificar risco dos grupos
-  const getClassificacaoGrupo = useCallback(
+  const _getClassificacaoGrupo = useCallback(
     (media: number | undefined, numeroGrupo: number) => {
       if (media === undefined) return null;
 

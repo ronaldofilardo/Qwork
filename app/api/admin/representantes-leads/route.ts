@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    const session = await requireRole('admin', false);
+    const session = await requireRole('comercial', false);
     void session;
 
     const { searchParams } = new URL(request.url);

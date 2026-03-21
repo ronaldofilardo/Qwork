@@ -270,4 +270,224 @@ describe('Segurança E2E - RBAC e Autorização', () => {
       cy.getCookie('bps-session').should('exist');
     });
   });
-});
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // Novos Perfis: Suporte, Comercial e Vendedor
+  // ──────────────────────────────────────────────────────────────────────────
+
+  describe('Hierarquia de Roles — Suporte', () => {
+    beforeEach(() => {
+      cy.login('33333333333', 'suporte123', 'suporte');
+    });
+
+    it('Suporte pode acessar cobrança', () => {
+      cy.request({
+        url: '/api/admin/cobranca',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.not.eq(401);
+        expect(response.status).to.not.eq(403);
+      });
+    });
+
+    it('Suporte pode acessar emissões', () => {
+      cy.request({
+        url: '/api/admin/emissoes',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.not.eq(401);
+        expect(response.status).to.not.eq(403);
+      });
+    });
+
+    it('Suporte NÃO pode gerenciar emissores (exclusivo admin)', () => {
+      cy.request({
+        url: '/api/admin/emissores',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403]);
+      });
+    });
+
+    it('Suporte NÃO pode aprovar representantes-leads (exclusivo comercial)', () => {
+      cy.request({
+        method: 'POST',
+        url: '/api/admin/representantes-leads/1/aprovar',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403, 404]);
+      });
+    });
+
+    it('Suporte NÃO deve acessar rota /admin', () => {
+      cy.request({ url: '/admin', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+
+    it('Suporte NÃO deve acessar rota /comercial', () => {
+      cy.request({ url: '/comercial', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+  });
+
+  describe('Hierarquia de Roles — Comercial', () => {
+    beforeEach(() => {
+      cy.login('44444444444', 'comercial123', 'comercial');
+    });
+
+    it('Comercial pode listar representantes', () => {
+      cy.request({
+        url: '/api/admin/representantes',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.not.eq(401);
+        expect(response.status).to.not.eq(403);
+      });
+    });
+
+    it('Comercial pode listar leads', () => {
+      cy.request({
+        url: '/api/admin/representantes-leads',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.not.eq(401);
+        expect(response.status).to.not.eq(403);
+      });
+    });
+
+    it('Comercial pode acessar comissões', () => {
+      cy.request({
+        url: '/api/admin/comissoes',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.not.eq(401);
+        expect(response.status).to.not.eq(403);
+      });
+    });
+
+    it('Comercial NÃO pode acessar cobrança (exclusivo suporte)', () => {
+      cy.request({
+        url: '/api/admin/cobranca',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403]);
+      });
+    });
+
+    it('Comercial NÃO pode gerenciar emissores (exclusivo admin)', () => {
+      cy.request({
+        url: '/api/admin/emissores',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403]);
+      });
+    });
+
+    it('Comercial NÃO deve acessar rota /admin', () => {
+      cy.request({ url: '/admin', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+
+    it('Comercial NÃO deve acessar rota /suporte', () => {
+      cy.request({ url: '/suporte', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+  });
+
+  describe('Hierarquia de Roles — Vendedor', () => {
+    beforeEach(() => {
+      cy.login('55555555555', 'vendedor123', 'vendedor');
+    });
+
+    it('Vendedor NÃO pode acessar representantes (exclusivo comercial)', () => {
+      cy.request({
+        url: '/api/admin/representantes',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403]);
+      });
+    });
+
+    it('Vendedor NÃO pode acessar cobrança (exclusivo suporte)', () => {
+      cy.request({
+        url: '/api/admin/cobranca',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403]);
+      });
+    });
+
+    it('Vendedor NÃO pode acessar emissores (exclusivo admin)', () => {
+      cy.request({
+        url: '/api/admin/emissores',
+        failOnStatusCode: false,
+      }).then((response) => {
+        expect(response.status).to.be.oneOf([401, 403]);
+      });
+    });
+
+    it('Vendedor NÃO deve acessar rota /admin', () => {
+      cy.request({ url: '/admin', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+
+    it('Vendedor NÃO deve acessar rota /suporte', () => {
+      cy.request({ url: '/suporte', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+
+    it('Vendedor NÃO deve acessar rota /comercial', () => {
+      cy.request({ url: '/comercial', failOnStatusCode: false }).then(
+        (response) => {
+          expect(response.status).to.be.oneOf([403, 302]);
+        }
+      );
+    });
+  });
+
+  describe('Segregação cruzada — Novos perfis não acessam rh/entidade/emissor', () => {
+    const novosPerfisCases = [
+      { perfil: 'suporte', cpf: '33333333333', senha: 'suporte123' },
+      { perfil: 'comercial', cpf: '44444444444', senha: 'comercial123' },
+      { perfil: 'vendedor', cpf: '55555555555', senha: 'vendedor123' },
+    ];
+
+    novosPerfisCases.forEach(({ perfil, cpf, senha }) => {
+      it(`${perfil} NÃO deve acessar /api/rh/empresas`, () => {
+        cy.login(cpf, senha, perfil);
+        cy.request({ url: '/api/rh/empresas', failOnStatusCode: false }).then(
+          (response) => {
+            expect(response.status).to.be.oneOf([401, 403]);
+          }
+        );
+      });
+
+      it(`${perfil} NÃO deve acessar /api/emissor/lotes`, () => {
+        cy.login(cpf, senha, perfil);
+        cy.request({
+          url: '/api/emissor/lotes',
+          failOnStatusCode: false,
+        }).then((response) => {
+          expect(response.status).to.be.oneOf([401, 403]);
+        });
+      });
+    });
+  });

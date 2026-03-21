@@ -15,7 +15,6 @@ interface ModalContratoProps {
 interface Contrato {
   id: number;
   tomador_id: number;
-  plano_id: number;
   conteudo: string;
   aceito: boolean;
   ip_aceite?: string;

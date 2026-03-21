@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     const session = getSession();
-    assertRoles(session, [ROLES.ADMIN]);
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const tomadorId = params.id;
 
@@ -22,9 +22,8 @@ export async function GET(
 
     // Buscar contrato do tomador
     const contratoResult = await query(
-      `SELECT c.*, p.nome as plano_nome, COALESCE(p.valor_por_funcionario, p.valor_base) as plano_preco
+      `SELECT c.*
        FROM contratos c
-       LEFT JOIN planos p ON c.plano_id = p.id
        WHERE c.tomador_id = $1
        ORDER BY c.criado_em DESC
        LIMIT 1`,

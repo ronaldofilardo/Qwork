@@ -10,8 +10,6 @@ export async function POST(request: NextRequest) {
       tomador_id,
       entidade_id, // backward compat
       contrato_id,
-      _plano_id,
-      _numero_funcionarios,
       valor_total,
       metodo = 'PIX', // PIX, BOLETO, CREDIT_CARD
       lote_id, // ID do lote de emissão (opcional)
@@ -35,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Buscar dados do tomador
     const tomadorResult = await query(
-      `SELECT t.id, t.nome, t.plano_id, t.status, 
+      `SELECT t.id, t.nome, t.status, 
               COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios,
               t.tipo,
               e.cnpj as entidade_cnpj,

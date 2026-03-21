@@ -259,105 +259,18 @@ describe('API Cadastro Tomador - Integração', () => {
   });
 
   describe('GET /api/admin/novos-cadastros', () => {
-    it('deve listar tomadores pendentes com plano_tipo', async () => {
-      try {
-        const result = await query(
-          `SELECT e.id, e.nome, e.status, e.plano_id, p.tipo as plano_tipo, 'entidade' as tipo
-           FROM entidades e
-           LEFT JOIN planos p ON e.plano_id = p.id
-           WHERE e.status IN ('pendente', 'em_reanalise')
-           LIMIT 5`
-        );
-
-        expect(result.rows.length).toBeGreaterThanOrEqual(0);
-
-        if (result.rows.length > 0) {
-          const tomador = result.rows[0];
-          expect(tomador).toHaveProperty('id');
-          expect(tomador).toHaveProperty('nome');
-          expect(tomador).toHaveProperty('status');
-
-          // Se tem plano_id, deve ter plano_tipo
-          if (tomador.plano_id) {
-            expect(tomador.plano_tipo).toBeDefined();
-          }
-        }
-      } catch (error) {
-        // Se clinicas não tiver as colunas esperadas, teste é pulado
-        console.warn('Teste pulado - estrutura de tabela diferente');
-        expect(true).toBe(true);
-      }
-    });
+    // Tests for plan-specific functionality have been removed
+    // as the planos system has been entirely deprecated
   });
 
   describe('POST /api/admin/novos-cadastros - Aprovação', () => {
-    it('deve permitir aprovação de plano personalizado SEM pagamento', async () => {
-      // Criar tomador personalizado
-      const planoPersonalizadoRes = await query(
-        `SELECT id FROM planos WHERE tipo = 'personalizado' LIMIT 1`
-      );
-
-      if (planoPersonalizadoRes.rows.length === 0) {
-        console.warn('Plano personalizado não encontrado, pulando teste');
-        return;
-      }
-
-      const planoId = planoPersonalizadoRes.rows[0].id;
-
-      const tomadorRes = await query(
-        `INSERT INTO entidades (
-          nome, cnpj, email, telefone,
-          endereco, cidade, estado, cep,
-          responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-          cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-          tipo, status, ativa, plano_id, pagamento_confirmado
-        ) VALUES (
-          'Empresa Personalizada Teste', '55555555000155', 'pers@test.com', '11999999999',
-          'Rua Pers, 1', 'São Paulo', 'SP', '01234567',
-          'Responsável Pers', '55555555555', 'resp@test.com', '11988888888',
-          '/uploads/test1.pdf', '/uploads/test2.pdf', '/uploads/test3.pdf',
-          'entidade', 'pendente', false, $1, false
-        ) RETURNING id`,
-        [planoId]
-      );
-
-      const testTomadorId = tomadorRes.rows[0].id;
-
-      // Verificar que pode aprovar mesmo sem pagamento (para personalizado)
-      const tomador = await query(
-        `SELECT e.*, p.tipo as plano_tipo
-         FROM entidades e
-         LEFT JOIN planos p ON e.plano_id = p.id
-         WHERE e.id = $1`,
-        [testTomadorId]
-      );
-
-      const c = tomador.rows[0];
-
-      // Lógica de validação corrigida
-      if (c.plano_tipo !== 'personalizado' && !c.pagamento_confirmado) {
-        // Deve falhar
-        expect(c.pagamento_confirmado).toBe(true);
-      } else {
-        // Deve passar
-        expect(true).toBe(true);
-      }
-
-      // Limpar
-      await query(`DELETE FROM entidades WHERE id = $1`, [testTomadorId]);
-    });
+    // Tests for plan-specific approval logic have been removed
+    // as the planos system has been entirely deprecated
   });
 });
 
 describe('Validações de Schema e Migrations', () => {
   it('deve ter tabelas entidades e clinicas com estrutura correta', async () => {
-    // Verificar coluna plano_id em entidades
-    const entidadePlanoCol = await query(
-      `SELECT column_name FROM information_schema.columns
-       WHERE table_name = 'entidades' AND column_name = 'plano_id'`
-    );
-    expect(entidadePlanoCol.rows.length).toBe(1);
-
     // Verificar coluna status em entidades
     const entidadeStatusCol = await query(
       `SELECT column_name FROM information_schema.columns

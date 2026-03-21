@@ -10,7 +10,13 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
 
@@ -144,14 +150,17 @@ describe('AuditoriasContent', () => {
       render(<AuditoriasContent />);
     });
 
-    const fetchCallsBeforeRefresh = (global.fetch as jest.Mock).mock.calls.length;
+    const fetchCallsBeforeRefresh = (global.fetch as jest.Mock).mock.calls
+      .length;
 
     await act(async () => {
       fireEvent.click(screen.getByText('Atualizar'));
     });
 
     await waitFor(() => {
-      expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThan(fetchCallsBeforeRefresh);
+      expect((global.fetch as jest.Mock).mock.calls.length).toBeGreaterThan(
+        fetchCallsBeforeRefresh
+      );
     });
   });
 });

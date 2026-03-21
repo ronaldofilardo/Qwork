@@ -19,7 +19,6 @@ interface AccountInfo {
   criado_em: string;
   contrato?: {
     numero_contrato: string;
-    plano_nome: string;
     valor_total: number;
     qtd_funcionarios_contratada: number;
     vigencia_inicio: string;
@@ -84,7 +83,7 @@ export default function AccountInfoContent({
           Informações da Conta
         </h1>
         <p className="text-gray-600">
-          Dados cadastrais e informações do plano contratado
+          Dados cadastrais e informações do serviço contratado
         </p>
         <p className="mt-2 text-sm text-gray-500">
           Exibe as informações da <strong>Clínica logada</strong>. As
@@ -178,7 +177,7 @@ export default function AccountInfoContent({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
             <CreditCard className="text-primary" size={20} />
-            Plano Contratado
+            Serviço Contratado
           </h2>
           {accountInfo?.contrato ? (
             <dl className="space-y-3">
@@ -192,10 +191,10 @@ export default function AccountInfoContent({
               </div>
               <div>
                 <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                  Plano
+                  Serviço
                 </dt>
                 <dd className="text-sm text-gray-900 mt-1">
-                  {accountInfo.contrato.plano_nome}
+                  Serviço de Avaliação
                 </dd>
               </div>
               <div>

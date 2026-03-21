@@ -9,7 +9,7 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    await requireRole('admin', false);
+    await requireRole(['comercial', 'suporte'], false);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') ?? undefined;
     const mes = searchParams.get('mes') ?? undefined; // YYYY-MM

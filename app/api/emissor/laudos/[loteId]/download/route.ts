@@ -38,7 +38,7 @@ export const GET = async (
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       WHERE l.lote_id = $1 
         AND l.emissor_cpf = $2 
-        AND l.status = 'emitido'
+        AND l.status IN ('emitido', 'enviado')
     `,
       [loteId, user.cpf]
     );
@@ -49,7 +49,7 @@ export const GET = async (
       // Não há registro no DB, mas pode haver arquivo local
       // Buscar informações do lote para verificar permissão
       const loteQuery = await query(
-        `SELECT id, titulo, emissor_cpf FROM lotes_avaliacao WHERE id = $1`,
+        `SELECT id, emissor_cpf FROM lotes_avaliacao WHERE id = $1`,
         [loteId]
       );
 
