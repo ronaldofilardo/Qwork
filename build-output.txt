@@ -1,6 +1,0 @@
-  Ôû▓ Next.js 14.2.35
-  - Environments: .env.test, .env
-
-   Creating an optimized production build ...
- Ô£ô Compiled successfully
-   Linting and checking validity of types ...

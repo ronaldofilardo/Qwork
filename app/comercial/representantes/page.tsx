@@ -8,7 +8,10 @@ import {
   DollarSign,
   Activity,
   Search,
+  UserX,
+  UserPlus,
 } from 'lucide-react';
+import CadastrarRepresentanteModal from './CadastrarRepresentanteModal';
 
 interface RepMetrica {
   id: number;
@@ -23,19 +26,31 @@ interface RepMetrica {
   valor_pendente: number;
 }
 
+type Aba = 'ativos' | 'inativos';
+
 export default function ComercialRepresentantesPage() {
   const router = useRouter();
-  const [reps, setReps] = useState<RepMetrica[]>([]);
+  const [ativos, setAtivos] = useState<RepMetrica[]>([]);
+  const [inativos, setInativos] = useState<RepMetrica[]>([]);
+  const [aba, setAba] = useState<Aba>('ativos');
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
+  const [showCadastrar, setShowCadastrar] = useState(false);
 
   const carregar = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/comercial/representantes/metricas');
-      if (res.ok) {
-        const d = await res.json();
-        setReps(d.representantes ?? []);
+      const [resAtivos, resInativos] = await Promise.all([
+        fetch('/api/comercial/representantes/metricas'),
+        fetch('/api/comercial/representantes/metricas?status=desativado'),
+      ]);
+      if (resAtivos.ok) {
+        const d = await resAtivos.json();
+        setAtivos(d.representantes ?? []);
+      }
+      if (resInativos.ok) {
+        const d = await resInativos.json();
+        setInativos(d.representantes ?? []);
       }
     } catch (e) {
       console.error('Erro ao buscar representantes:', e);
@@ -51,7 +66,9 @@ export default function ComercialRepresentantesPage() {
   const fmtBRL = (v: number) =>
     (v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-  const filtrados = reps.filter((r) => {
+  const lista = aba === 'ativos' ? ativos : inativos;
+
+  const filtrados = lista.filter((r) => {
     if (!busca) return true;
     const q = busca.toLowerCase();
     return (
@@ -63,26 +80,99 @@ export default function ComercialRepresentantesPage() {
 
   return (
     <div className="p-6 space-y-6">
+      {showCadastrar && (
+        <CadastrarRepresentanteModal
+          onClose={() => setShowCadastrar(false)}
+          onSuccess={() => {
+            setShowCadastrar(false);
+            void carregar();
+          }}
+        />
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900">Representantes</h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {reps.length} representante{reps.length !== 1 ? 's' : ''} na rede
+            {lista.length} representante{lista.length !== 1 ? 's' : ''}{' '}
+            {aba === 'ativos' ? 'na rede' : 'inativos'}
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            size={16}
-          />
-          <input
-            type="text"
-            placeholder="Buscar por nome, email ou código..."
-            value={busca}
-            onChange={(e) => setBusca(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
-          />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowCadastrar(true)}
+            className="flex items-center gap-2 px-4 py-2.5 bg-green-600 text-white text-sm font-semibold rounded-xl hover:bg-green-700 transition-colors cursor-pointer"
+          >
+            <UserPlus size={15} />
+            Cadastrar Representante
+          </button>
+          <div className="relative w-full sm:w-72">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Buscar por nome, email ou código..."
+              value={busca}
+              onChange={(e) => setBusca(e.target.value)}
+              className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
+            />
+          </div>
         </div>
+      </div>
+
+      {/* Abas */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => {
+            setAba('ativos');
+            setBusca('');
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            aba === 'ativos'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <Users size={14} />
+          Ativos
+          {ativos.length > 0 && (
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                aba === 'ativos'
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {ativos.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => {
+            setAba('inativos');
+            setBusca('');
+          }}
+          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            aba === 'inativos'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          <UserX size={14} />
+          Inativos
+          {inativos.length > 0 && (
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${
+                aba === 'inativos'
+                  ? 'bg-red-100 text-red-600'
+                  : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {inativos.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {loading ? (
@@ -100,7 +190,9 @@ export default function ComercialRepresentantesPage() {
           <p className="text-sm text-gray-400 font-medium">
             {busca
               ? 'Nenhum resultado para a busca.'
-              : 'Nenhum representante encontrado.'}
+              : aba === 'inativos'
+                ? 'Nenhum representante inativo.'
+                : 'Nenhum representante encontrado.'}
           </p>
         </div>
       ) : (
@@ -109,9 +201,21 @@ export default function ComercialRepresentantesPage() {
             <div
               key={r.id}
               onClick={() => router.push(`/comercial/representantes/${r.id}`)}
-              className="group bg-white rounded-2xl border border-gray-100 p-5 hover:border-green-200 hover:shadow-xl hover:shadow-green-900/[0.03] transition-all cursor-pointer relative overflow-hidden flex flex-col h-full active:scale-[0.98]"
+              className={`group bg-white rounded-2xl border p-5 transition-all cursor-pointer relative overflow-hidden flex flex-col h-full active:scale-[0.98] ${
+                aba === 'inativos'
+                  ? 'border-gray-100 opacity-75 hover:opacity-100 hover:border-red-200 hover:shadow-xl hover:shadow-red-900/[0.03]'
+                  : 'border-gray-100 hover:border-green-200 hover:shadow-xl hover:shadow-green-900/[0.03]'
+              }`}
             >
-              {r.status === 'apto_pendente' && (
+              {aba === 'inativos' && (
+                <div className="absolute top-0 right-0">
+                  <div className="bg-gray-400 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm flex items-center gap-1.5 uppercase tracking-wider">
+                    <UserX size={10} />
+                    Inativo
+                  </div>
+                </div>
+              )}
+              {aba === 'ativos' && r.status === 'apto_pendente' && (
                 <div className="absolute top-0 right-0">
                   <div className="bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm animate-pulse flex items-center gap-1.5 uppercase tracking-wider">
                     <div className="w-1.5 h-1.5 bg-white rounded-full" />
@@ -128,11 +232,13 @@ export default function ComercialRepresentantesPage() {
                     </h4>
                     <span
                       className={`flex-shrink-0 w-2 h-2 rounded-full ${
-                        r.status === 'ativo'
-                          ? 'bg-green-500'
-                          : r.status === 'apto_pendente'
-                            ? 'bg-amber-500'
-                            : 'bg-gray-300'
+                        r.status === 'desativado'
+                          ? 'bg-red-400'
+                          : r.status === 'ativo'
+                            ? 'bg-green-500'
+                            : r.status === 'apto_pendente'
+                              ? 'bg-amber-500'
+                              : 'bg-gray-300'
                       }`}
                     />
                   </div>
@@ -192,10 +298,20 @@ export default function ComercialRepresentantesPage() {
                     </p>
                   </div>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
+                <div
+                  className={`w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center transition-colors ${
+                    aba === 'inativos'
+                      ? 'group-hover:bg-red-50'
+                      : 'group-hover:bg-green-50'
+                  }`}
+                >
                   <ChevronRight
                     size={18}
-                    className="text-gray-300 group-hover:text-green-600 transition-colors"
+                    className={`text-gray-300 transition-colors ${
+                      aba === 'inativos'
+                        ? 'group-hover:text-red-400'
+                        : 'group-hover:text-green-600'
+                    }`}
                   />
                 </div>
               </div>

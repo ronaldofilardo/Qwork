@@ -1,9 +1,0 @@
-
-> qwork2026@1.0.0 build C:\apps\QWork
-> next build
-
-  Ôû▓ Next.js 14.2.35
-  - Environments: .env.production.local, .env.local, .env.production, .env
-
-   Creating an optimized production build ...
-ÔÇëELIFECYCLEÔÇë Command failed with exit code 3221225786.

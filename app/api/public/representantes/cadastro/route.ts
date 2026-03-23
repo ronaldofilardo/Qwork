@@ -399,19 +399,52 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       `[CADASTRO-REP] Novo lead criado: ${leadId} — ${tipoPessoa.toUpperCase()} — ${nome} — ${email}`
     );
 
-    // 9. Notificar admin por log (email externo pode ser adicionado depois)
-    console.log(
-      `[NOTIF-ADMIN] Novo cadastro de representante para análise.\n` +
-        `  ID: ${leadId}\n` +
-        `  Tipo: ${tipoPessoa.toUpperCase()}\n` +
-        `  Nome: ${nome}\n` +
-        `  Email: ${email}\n` +
-        `  Tel: ${telefone}\n` +
-        `  ${tipoPessoa === 'pf' ? `CPF: ***${cpf?.slice(-4)}` : `CNPJ: ***${cnpj?.slice(-4)}`}\n` +
-        `  Docs: ${docsUpload.map((d) => d.tipo).join(', ')}\n` +
-        `  IP: ${ip}\n` +
-        `  Admin: contato@qwork.app.br`
+    // 9. Notificar usuários comercial e suporte sobre novo cadastro de representante
+    const nomeExibido = tipoPessoa === 'pf' ? nome : (razaoSocial ?? nome);
+    const mensagemNotif = `${nomeExibido} solicitou cadastro como representante. Clique para analisar.`;
+
+    const notificarPerfil = async (
+      tipoUsuario: string,
+      destinatarioTipo: string,
+      linkAcao: string,
+      logTag: string
+    ) => {
+      try {
+        const usuarios = await query<{ cpf: string }>(
+          `SELECT cpf FROM usuarios WHERE tipo_usuario = $1 AND ativo = true`,
+          [tipoUsuario]
+        );
+        if (usuarios.rows.length === 0) return;
+        for (const u of usuarios.rows) {
+          await query(
+            `INSERT INTO notificacoes
+               (tipo, destinatario_cpf, destinatario_tipo, titulo, mensagem, link_acao)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              'novo_cadastro_representante',
+              u.cpf,
+              destinatarioTipo,
+              'Novo cadastro de representante',
+              mensagemNotif,
+              linkAcao,
+            ]
+          );
+        }
+        console.log(
+          `${logTag} ${usuarios.rows.length} notificação(ões) criada(s) para lead ${leadId}`
+        );
+      } catch (notifErr) {
+        console.error(`${logTag} Erro ao criar notificações:`, notifErr);
+      }
+    };
+
+    await notificarPerfil(
+      'comercial',
+      'comercial',
+      `/comercial/representantes/cadastros/${leadId}`,
+      '[NOTIF-COMERCIAL]'
     );
+    await notificarPerfil('suporte', 'suporte', `/suporte`, '[NOTIF-SUPORTE]');
 
     // 10. Retornar sucesso
     const origin = request.headers.get('origin');

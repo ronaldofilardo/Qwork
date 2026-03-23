@@ -41,7 +41,7 @@ export async function GET(): Promise<NextResponse> {
       `SELECT
          COUNT(DISTINCT hc.representante_id) FILTER (WHERE hc.ativo = true)        AS representantes_ativos,
          COUNT(DISTINCT c.id) FILTER (
-           WHERE c.mes_emissao = $2
+           WHERE TO_CHAR(c.mes_emissao, 'YYYY-MM') = $2
          )                                                                           AS emissoes_mes,
          COUNT(DISTINCT c.id) FILTER (
            WHERE c.status IN ('pendente_nf', 'nf_em_analise', 'liberada')

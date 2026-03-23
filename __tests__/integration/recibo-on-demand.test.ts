@@ -106,7 +106,7 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
   test('Confirmar pagamento: marca pago, ativa tomador e cria login', async () => {
     // Criar pagamento manualmente (pendente)
     const pagamentoInsert = await query(
-      `INSERT INTO pagamentos (tomador_id,contrato_id,valor,status,metodo,data_pagamento) VALUES ($1,$2,500,'pendente','pix', NULL) RETURNING id`,
+      `INSERT INTO pagamentos (entidade_id,contrato_id,valor,status,metodo,data_pagamento) VALUES ($1,$2,500,'pendente','pix', NULL) RETURNING id`,
       [tomadorId, contratoId]
     );
     pagamentoId = pagamentoInsert.rows[0].id;
@@ -247,7 +247,7 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
     const clinicaCnpj = `111222${timestamp}${randomSuffix}`; // 14 dígitos únicos
     // Criar clínica como tomador
     const clinicaRes = await query(
-      `INSERT INTO clinicas (nome, cnpj, ativa) VALUES ('Clinica Test Recibo', $1, true) RETURNING id`,
+      `INSERT INTO clinicas (nome, cnpj, email, ativa) VALUES ('Clinica Test Recibo', $1, 'clinica@test.local', true) RETURNING id`,
       [clinicaCnpj]
     );
     const clinicaId = clinicaRes.rows[0].id;
@@ -271,7 +271,7 @@ describe('Integração: Recibo sob demanda (confirmar -> gerar)', () => {
 
     // Criar pagamento ligado ao tomador (sem coluna clinica_id no schema de testes)
     const pagamentoInsert = await query(
-      `INSERT INTO pagamentos (tomador_id,valor,status,metodo,data_pagamento) VALUES ($1,500,'pago','pix', NOW()) RETURNING id`,
+      `INSERT INTO pagamentos (clinica_id,valor,status,metodo,data_pagamento) VALUES ($1,500,'pago','pix', NOW()) RETURNING id`,
       [tomadorClinicaId]
     );
     const pagoId = pagamentoInsert.rows[0].id;

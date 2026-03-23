@@ -53,17 +53,18 @@ export async function GET(
     }
 
     const result = await query(
-      `SELECT vdb.*, vp.codigo AS codigo_vendedor
-       FROM vendedores_dados_bancarios vdb
-       RIGHT JOIN usuarios u ON u.id = $1
+      `SELECT vdb.banco_codigo, vdb.agencia, vdb.conta, vdb.tipo_conta,
+              vdb.titular_conta, vdb.pix_chave, vdb.pix_tipo, vdb.atualizado_em,
+              vp.codigo AS codigo_vendedor
+       FROM usuarios u
+       LEFT JOIN vendedores_dados_bancarios vdb ON vdb.usuario_id = u.id
        LEFT JOIN vendedores_perfil vp ON vp.usuario_id = u.id
-       WHERE vdb.usuario_id = $1 OR vdb.usuario_id IS NULL
-       LIMIT 1`,
+       WHERE u.id = $1`,
       [usuarioId]
     );
 
-    // Se não tiver dados bancários, retornar objeto vazio com metadata
-    const dados = result.rows[0] ?? { usuario_id: usuarioId };
+    // Se não tiver dados bancários, as colunas serão null (LEFT JOIN)
+    const dados = result.rows[0] ?? null;
 
     return NextResponse.json({
       vendedor: userCheck.rows[0],

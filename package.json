@@ -79,7 +79,12 @@
     "db:sync": "powershell -ExecutionPolicy Bypass -File scripts/sync-database.ps1",
     "db:sync:force": "powershell -ExecutionPolicy Bypass -File scripts/sync-database.ps1 -Force",
     "db:sync:quick": "powershell -ExecutionPolicy Bypass -File scripts/sync-database.ps1 -SkipBackup -SkipValidation",
-    "db:snapshot": "npx tsx scripts/generate-schema-snapshot.ts"
+    "db:snapshot": "npx tsx scripts/generate-schema-snapshot.ts",
+    "db:snapshot:update": "npx tsx scripts/validate-schema-snapshot.ts --update",
+    "db:validate:schema": "npx tsx scripts/validate-schema-snapshot.ts --check",
+    "db:check-divergence": "npx tsx scripts/detect-code-db-divergence.ts",
+    "db:check-divergence:strict": "npx tsx scripts/detect-code-db-divergence.ts --strict",
+    "db:erd": "npx tsx scripts/generate-erd.ts"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [

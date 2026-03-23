@@ -22,6 +22,46 @@ export interface AcessoRH {
   ip_address: string;
 }
 
+export interface AcessoSuporte {
+  id: number;
+  cpf: string;
+  nome: string | null;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string;
+}
+
+export interface AcessoComercial {
+  id: number;
+  cpf: string;
+  nome: string | null;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string;
+}
+
+export interface AcessoRepresentante {
+  id: number;
+  cpf: string;
+  representante_nome: string | null;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string;
+}
+
+export interface AcessoVendedor {
+  id: number;
+  cpf: string;
+  nome: string | null;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string;
+}
+
 export interface AuditoriaAvaliacao {
   avaliacao_id: number;
   lote_id: number;
@@ -124,7 +164,11 @@ export type AuditoriaSubTab =
   | 'acesso-rh'
   | 'avaliacoes'
   | 'lotes'
-  | 'laudos';
+  | 'laudos'
+  | 'acesso-suporte'
+  | 'acesso-comercial'
+  | 'acesso-representante'
+  | 'acesso-vendedor';
 
 export interface AuditoriasContentProps {
   auditoriaSubTab: AuditoriaSubTab;

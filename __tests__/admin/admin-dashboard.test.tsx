@@ -35,7 +35,7 @@ describe('AdminPage - Dashboard de Administração', () => {
     jest.clearAllMocks();
   });
 
-  it('deve renderizar dashboard com abas de Clínicas e Emissores', async () => {
+  it('deve renderizar dashboard com seções de Volume e Emissores', async () => {
     const user = userEvent.setup();
     // Mock da sessão
     mockFetch.mockImplementation((url) => {
@@ -49,32 +49,11 @@ describe('AdminPage - Dashboard de Administração', () => {
         );
       }
 
-      if (url === '/api/admin/clinicas') {
-        return Promise.resolve(
-          createMockResponse([
-            {
-              id: 1,
-              nome: 'Clínica São Paulo',
-              ativa: true,
-            },
-          ])
-        );
-      }
-
-      if (url === '/api/admin/clinicas/stats') {
+      if (url === '/api/admin/emissores') {
         return Promise.resolve(
           createMockResponse({
             success: true,
-            data: [
-              {
-                clinica_id: 1,
-                total_empresas: 5,
-                total_lotes: 10,
-                total_avaliacoes: 100,
-                avaliacoes_concluidas: 80,
-                avaliacoes_em_andamento: 20,
-              },
-            ],
+            emissores: [{ id: 1, ativo: true }],
           })
         );
       }
@@ -86,24 +65,23 @@ describe('AdminPage - Dashboard de Administração', () => {
 
     // Aguarda carregamento
     await waitFor(() => {
-      expect(screen.getByText('Painel Administrativo')).toBeInTheDocument();
+      const headings = screen.getAllByText('Painel Administrativo');
+      expect(headings.length).toBeGreaterThan(0);
     });
 
-    // Verifica título e descrição
-    expect(screen.getByText('Painel Administrativo')).toBeInTheDocument();
+    // Verifica título e boas-vindas
+    const headings = screen.getAllByText('Painel Administrativo');
+    expect(headings[0]).toBeInTheDocument();
     expect(screen.getByText('Bem-vindo,')).toBeInTheDocument();
 
-    // Clica na seção tomadores para expandir
-    const tomadoresButton = screen.getByRole('button', { name: /tomadores/i });
-    await user.click(tomadoresButton);
-
-    // Verifica se abas existem
-    expect(screen.getByText('tomadores')).toBeInTheDocument();
-    expect(screen.getByText('Clínicas')).toBeInTheDocument();
-    expect(screen.getByText('Entidades')).toBeInTheDocument();
+    // Verifica seções da sidebar
+    expect(screen.getByRole('button', { name: /volume/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /emissores/i })
+    ).toBeInTheDocument();
   });
 
-  it('deve fazer fetch dos dados das clínicas', async () => {
+  it('deve fazer fetch dos dados de emissores', async () => {
     mockFetch.mockImplementation((url) => {
       if (url === '/api/auth/session') {
         return Promise.resolve(
@@ -115,36 +93,13 @@ describe('AdminPage - Dashboard de Administração', () => {
         );
       }
 
-      if (url === '/api/admin/clinicas') {
-        return Promise.resolve(
-          createMockResponse([
-            { id: 1, nome: 'Clínica A', ativa: true },
-            { id: 2, nome: 'Clínica B', ativa: true },
-          ])
-        );
-      }
-
-      if (url === '/api/admin/clinicas/stats') {
+      if (url === '/api/admin/emissores') {
         return Promise.resolve(
           createMockResponse({
             success: true,
-            data: [
-              {
-                clinica_id: 1,
-                total_empresas: 10,
-                total_lotes: 5,
-                total_avaliacoes: 200,
-                avaliacoes_concluidas: 180,
-                avaliacoes_em_andamento: 20,
-              },
-              {
-                clinica_id: 2,
-                total_empresas: 8,
-                total_lotes: 3,
-                total_avaliacoes: 150,
-                avaliacoes_concluidas: 140,
-                avaliacoes_em_andamento: 10,
-              },
+            emissores: [
+              { id: 1, ativo: true },
+              { id: 2, ativo: false },
             ],
           })
         );
@@ -158,14 +113,11 @@ describe('AdminPage - Dashboard de Administração', () => {
     // Aguarda carregamento e fetch dos dados
     await waitFor(() => {
       expect(mockFetch).toHaveBeenCalledWith('/api/auth/session');
-      expect(mockFetch).toHaveBeenCalledWith(
-        '/api/admin/tomadores?tipo=clinica'
-      );
-      // stats endpoint foi removido do fluxo; não é mais chamado pelo componente
+      expect(mockFetch).toHaveBeenCalledWith('/api/admin/emissores');
     });
   });
 
-  it('deve permitir alternar entre abas Clínicas e Emissores', async () => {
+  it('deve permitir alternar entre seções Volume e Emissores', async () => {
     const user = userEvent.setup();
 
     mockFetch.mockImplementation((url) => {
@@ -177,14 +129,6 @@ describe('AdminPage - Dashboard de Administração', () => {
             perfil: 'admin',
           })
         );
-      }
-
-      if (url === '/api/admin/clinicas') {
-        return Promise.resolve(createMockResponse([]));
-      }
-
-      if (url === '/api/admin/clinicas/stats') {
-        return Promise.resolve(createMockResponse({ success: true, data: [] }));
       }
 
       if (url === '/api/admin/emissores') {
@@ -200,18 +144,23 @@ describe('AdminPage - Dashboard de Administração', () => {
 
     // Aguarda carregamento inicial
     await waitFor(() => {
-      expect(screen.getByText('Painel Administrativo')).toBeInTheDocument();
+      const headings = screen.getAllByText('Painel Administrativo');
+      expect(headings.length).toBeGreaterThan(0);
     });
 
-    // Clica na seção tomadores para expandir
-    const tomadoresButton = screen.getByRole('button', { name: /tomadores/i });
-    await user.click(tomadoresButton);
+    // Clica no botão Volume
+    const volumeButton = screen.getByRole('button', { name: /volume/i });
+    await user.click(volumeButton);
 
-    // Verifica que podemos clicar nas abas
-    const clinicasElements = screen.getAllByText('Clínicas');
-    const entidadesElement = screen.getByText('Entidades');
+    // Clica em Emissores
+    const emissoresButton = screen.getByRole('button', { name: /emissores/i });
+    await user.click(emissoresButton);
 
-    expect(clinicasElements.length).toBeGreaterThan(0);
-    expect(entidadesElement).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /financeiro/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /auditorias/i })
+    ).toBeInTheDocument();
   });
 });

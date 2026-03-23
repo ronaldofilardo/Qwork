@@ -1,225 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Plus, X, Loader2, AlertCircle } from 'lucide-react';
-
-interface Lead {
-  id: number;
-  status: string;
-  contato_nome: string;
-  contato_email: string | null;
-  contato_telefone: string | null;
-  cnpj: string | null;
-  valor_negociado: string | null;
-  criado_em: string;
-  data_conversao: string | null;
-  representante_id: number;
-  representante_nome: string;
-  representante_codigo: string;
-}
-
-// ---------------------------------------------------------------------------
-// Modal Novo Lead
-// ---------------------------------------------------------------------------
-
-interface NovoLeadForm {
-  contato_nome: string;
-  contato_email: string;
-  contato_telefone: string;
-  cnpj: string;
-  valor_negociado: string;
-  percentual_comissao: string;
-  observacoes: string;
-}
-
-function NovoLeadModal({
-  onClose,
-  onSuccess,
-}: {
-  onClose: () => void;
-  onSuccess: () => void;
-}) {
-  const [form, setForm] = useState<NovoLeadForm>({
-    contato_nome: '',
-    contato_email: '',
-    contato_telefone: '',
-    cnpj: '',
-    valor_negociado: '',
-    percentual_comissao: '',
-    observacoes: '',
-  });
-  const [salvando, setSalvando] = useState(false);
-  const [erro, setErro] = useState<string | null>(null);
-
-  const salvar = async () => {
-    if (!form.contato_nome.trim()) {
-      setErro('Nome do contato é obrigatório.');
-      return;
-    }
-    setSalvando(true);
-    setErro(null);
-    try {
-      const body: Record<string, unknown> = {
-        contato_nome: form.contato_nome.trim(),
-      };
-      if (form.contato_email.trim())
-        body.contato_email = form.contato_email.trim();
-      if (form.contato_telefone.trim())
-        body.contato_telefone = form.contato_telefone.trim();
-      if (form.cnpj.trim()) body.cnpj = form.cnpj.trim();
-      if (form.valor_negociado.trim())
-        body.valor_negociado = parseFloat(form.valor_negociado);
-      if (form.percentual_comissao.trim())
-        body.percentual_comissao = parseFloat(form.percentual_comissao);
-      if (form.observacoes.trim()) body.observacoes = form.observacoes.trim();
-
-      const res = await fetch('/api/vendedor/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const d = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(d.error ?? 'Erro ao salvar');
-      }
-      onSuccess();
-    } catch (e: unknown) {
-      setErro(e instanceof Error ? e.message : 'Erro desconhecido');
-    } finally {
-      setSalvando(false);
-    }
-  };
-
-  return (
-    <div
-      className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-        <div className="flex items-center justify-between px-6 py-4 border-b">
-          <h2 className="font-bold text-gray-900">Novo Lead</h2>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
-          >
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="px-6 py-5 space-y-3 max-h-[70vh] overflow-y-auto">
-          {erro && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
-              <AlertCircle size={14} className="shrink-0" />
-              {erro}
-            </div>
-          )}
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Nome do contato <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.contato_nome}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, contato_nome: e.target.value }))
-              }
-              placeholder="Nome da empresa ou pessoa"
-              className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
-            />
-          </div>
-
-          {[
-            {
-              key: 'contato_email',
-              label: 'E-mail do contato',
-              type: 'email',
-              placeholder: 'email@empresa.com.br',
-            },
-            {
-              key: 'contato_telefone',
-              label: 'Telefone',
-              type: 'tel',
-              placeholder: '(11) 99999-9999',
-            },
-            {
-              key: 'cnpj',
-              label: 'CNPJ (se disponível)',
-              type: 'text',
-              placeholder: '00.000.000/0000-00',
-            },
-            {
-              key: 'valor_negociado',
-              label: 'Valor negociado (R$)',
-              type: 'number',
-              placeholder: '0,00',
-            },
-            {
-              key: 'percentual_comissao',
-              label: 'Comissão (%)',
-              type: 'number',
-              placeholder: '0',
-            },
-          ].map(({ key, label, type, placeholder }) => (
-            <div key={key}>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                {label}
-              </label>
-              <input
-                type={type}
-                value={form[key as keyof NovoLeadForm]}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, [key]: e.target.value }))
-                }
-                placeholder={placeholder}
-                className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400"
-              />
-            </div>
-          ))}
-
-          <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
-              Observações
-            </label>
-            <textarea
-              value={form.observacoes}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, observacoes: e.target.value }))
-              }
-              rows={3}
-              placeholder="Informações adicionais sobre o lead..."
-              className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 resize-none"
-            />
-          </div>
-        </div>
-
-        <div className="px-6 py-4 border-t flex gap-3">
-          <button
-            onClick={onClose}
-            disabled={salvando}
-            className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
-          >
-            Cancelar
-          </button>
-          <button
-            onClick={salvar}
-            disabled={salvando}
-            className="flex-1 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold transition-colors disabled:opacity-60 flex items-center justify-center gap-2"
-          >
-            {salvando ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Plus size={14} />
-            )}
-            {salvando ? 'Enviando...' : 'Enviar Lead'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
+import { Plus } from 'lucide-react';
+import VendedorNovoLeadModal from './components/NovoLeadModal';
+import type { VendedorLead } from './types';
 
 const STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente',
@@ -250,7 +34,7 @@ const STATUS_OPTS = [
 ];
 
 export default function VendedorLeadsPage() {
-  const [leads, setLeads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<VendedorLead[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('');
@@ -266,7 +50,7 @@ export default function VendedorLeadsPage() {
       const res = await fetch(`/api/vendedor/leads?${params.toString()}`);
       if (res.ok) {
         const d = (await res.json()) as {
-          leads?: Lead[];
+          leads?: VendedorLead[];
           total?: number;
           sem_representante?: boolean;
         };
@@ -304,8 +88,10 @@ export default function VendedorLeadsPage() {
   const totalPages = Math.ceil(total / 30);
 
   // Agrupar por representante para exibição segregada
-  const byRep: Record<number, { nome: string; codigo: string; leads: Lead[] }> =
-    {};
+  const byRep: Record<
+    number,
+    { nome: string; codigo: string; leads: VendedorLead[] }
+  > = {};
   for (const l of leads) {
     if (!byRep[l.representante_id]) {
       byRep[l.representante_id] = {
@@ -425,6 +211,9 @@ export default function VendedorLeadsPage() {
                           Valor
                         </th>
                         <th className="px-4 py-3 text-center font-medium">
+                          % Comissão
+                        </th>
+                        <th className="px-4 py-3 text-center font-medium">
                           Enviado em
                         </th>
                         <th className="px-4 py-3 text-center font-medium">
@@ -471,6 +260,12 @@ export default function VendedorLeadsPage() {
                           <td className="px-4 py-3 text-right text-gray-700">
                             {fmtBRL(lead.valor_negociado)}
                           </td>
+                          <td className="px-4 py-3 text-center text-gray-600">
+                            {lead.percentual_comissao !== null &&
+                            lead.percentual_comissao !== undefined
+                              ? `${parseFloat(String(lead.percentual_comissao)).toFixed(2)}%`
+                              : '—'}
+                          </td>
                           <td className="px-4 py-3 text-center text-gray-500">
                             {fmtDate(lead.criado_em)}
                           </td>
@@ -511,7 +306,7 @@ export default function VendedorLeadsPage() {
       )}
 
       {showNovoLead && (
-        <NovoLeadModal
+        <VendedorNovoLeadModal
           onClose={() => setShowNovoLead(false)}
           onSuccess={() => {
             setShowNovoLead(false);

@@ -89,7 +89,23 @@ export async function handleRepresentanteLogin(
   }
 
   let senhaRepValida = false;
-  if (rep.senha_repres) {
+  let primeiraSenhaAlterada = true; // default: não forçar troca
+
+  // Tentar validar com representantes_senhas (nova tabela) primeiro
+  const repSenhaResult = await query(
+    `SELECT senha_hash, primeira_senha_alterada FROM public.representantes_senhas
+     WHERE representante_id = $1 LIMIT 1`,
+    [rep.id]
+  );
+
+  if (repSenhaResult.rows.length > 0 && repSenhaResult.rows[0].senha_hash) {
+    senhaRepValida = await bcrypt.compare(
+      senha,
+      repSenhaResult.rows[0].senha_hash
+    );
+    primeiraSenhaAlterada =
+      repSenhaResult.rows[0].primeira_senha_alterada ?? true;
+  } else if (rep.senha_repres) {
     senhaRepValida = await bcrypt.compare(senha, rep.senha_repres);
   } else if (rep.senha_hash) {
     senhaRepValida = await bcrypt.compare(senha, rep.senha_hash);
@@ -131,6 +147,38 @@ export async function handleRepresentanteLogin(
     representante_id: rep.id,
   });
 
+  // Registrar acesso em session_logs para auditoria de acesso
+  try {
+    const ipForDb =
+      (contextoRequisicao.ip_address as string | undefined) === 'unknown'
+        ? null
+        : ((contextoRequisicao.ip_address as string | undefined) ?? null);
+    const sessionLogResult = await query(
+      `INSERT INTO session_logs (cpf, perfil, clinica_id, empresa_id, ip_address, user_agent)
+       VALUES ($1, 'representante', NULL, NULL, $2, $3)
+       RETURNING id`,
+      [
+        rep.cpf || rep.cpf_responsavel_pj,
+        ipForDb,
+        (contextoRequisicao.user_agent as string | undefined) ?? null,
+      ]
+    );
+    if (sessionLogResult.rows[0]?.id) {
+      createSession({
+        cpf: rep.cpf || rep.cpf_responsavel_pj,
+        nome: rep.nome,
+        perfil: 'representante' as any,
+        representante_id: rep.id,
+        sessionLogId: sessionLogResult.rows[0].id,
+      });
+    }
+  } catch (err) {
+    console.warn(
+      '[LOGIN] Falha ao registrar session_log para representante:',
+      err
+    );
+  }
+
   try {
     await registrarAuditoria({
       entidade_tipo: 'login',
@@ -149,12 +197,16 @@ export async function handleRepresentanteLogin(
 
   console.log(`[LOGIN] Sessão criada para representante #${rep.id}`);
 
+  // Verificar se representante precisa trocar senha no primeiro acesso
+  const precisaTrocarSenha = !primeiraSenhaAlterada;
+
   return NextResponse.json({
     success: true,
     cpf: rep.cpf || rep.cpf_responsavel_pj,
     nome: rep.nome,
     perfil: 'representante',
     termosPendentes: { termos_uso: false, politica_privacidade: false },
+    precisaTrocarSenha,
     redirectTo: '/representante/dashboard',
   });
 }

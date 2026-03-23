@@ -18,14 +18,17 @@ export async function GET() {
 
     // Buscar dados completos e frescos do banco
     const result = await query(
-      `SELECT id, nome, email, codigo, status, tipo_pessoa, telefone,
-              cpf, cnpj,
-              aceite_termos, aceite_disclaimer_nv, aceite_politica_privacidade, criado_em, aprovado_em,
-              banco_codigo, agencia, conta, tipo_conta, titular_conta,
-              pix_chave, pix_tipo,
-              dados_bancarios_status, dados_bancarios_solicitado_em,
-              dados_bancarios_confirmado_em
-       FROM representantes WHERE id = $1 LIMIT 1`,
+      `SELECT r.id, r.nome, r.email, r.codigo, r.status, r.tipo_pessoa, r.telefone,
+              r.cpf, r.cnpj,
+              r.aceite_termos, r.aceite_disclaimer_nv, r.aceite_politica_privacidade, r.criado_em, r.aprovado_em,
+              r.banco_codigo, r.agencia, r.conta, r.tipo_conta, r.titular_conta,
+              r.pix_chave, r.pix_tipo,
+              r.dados_bancarios_status, r.dados_bancarios_solicitado_em,
+              r.dados_bancarios_confirmado_em,
+              COALESCE(rs.primeira_senha_alterada, TRUE) = FALSE AS precisa_trocar_senha
+       FROM representantes r
+       LEFT JOIN representantes_senhas rs ON rs.representante_id = r.id
+       WHERE r.id = $1 LIMIT 1`,
       [sess.representante_id]
     );
 

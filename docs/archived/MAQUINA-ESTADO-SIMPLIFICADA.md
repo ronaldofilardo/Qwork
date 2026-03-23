@@ -8,7 +8,7 @@ Documento consolidado com decisões, runbook, checklist e impactos da simplifica
 
 - O estado `rascunho` foi removido do sistema para eliminar caminhos divergentes e comportamentos imprevisíveis.
 - O cron de emissão foi desabilitado: a emissão agora ocorre **imediatamente** quando um lote é detectado como `concluido`.
-- Edição do campo `observacoes` está **bloqueada** no fluxo padrão; apenas a emissão em **modo emergência** permite justificativa e edição controlada.
+- Edição do campo `observacoes` está **bloqueada** no fluxo padrão.
 - Operação destrutiva autorizada: lotes aptos/emitidos e laudos pré-existentes foram **deletados** (script `scripts/delete_aptos_emitidos.sql` executado em 2026-01-16).
 
 ## Objetivos
@@ -27,13 +27,8 @@ Documento consolidado com decisões, runbook, checklist e impactos da simplifica
    - Função central: `gerarLaudoCompletoEmitirPDF(loteId, emissorCPF)` — gera HTML, PDF, hash e atualiza `laudos.status = 'emitido'` e timestamps.
    - Após geração do PDF, o processo de envio segue normalmente (marcação `enviado`).
 
-3. Emissão de emergência
-   - Endpoint: `POST /api/emissor/laudos/[loteId]/emergencia`
-   - Requer `motivo` (mínimo 20 caracteres)
-   - Registra `modo_emergencia = true`, armazena justificativa, registra auditoria e permite ações manuais necessárias.
-
-4. Edição de observações
-   - `PUT /api/emissor/laudos/[loteId]` agora retorna 403 com mensagem: "Edição de observações não permitida". Use rota de emergência se necessário.
+3. Edição de observações
+   - `PUT /api/emissor/laudos/[loteId]` agora retorna 403 com mensagem: "Edição de observações não permitida".
 
 ## Migração e banco de dados
 
@@ -44,10 +39,6 @@ Documento consolidado com decisões, runbook, checklist e impactos da simplifica
 
 ## Runbook operacional (resumo rápido)
 
-- Intervenção emergencial:
-  1. Fazer `POST /api/emissor/laudos/[loteId]/emergencia` com `motivo` (>=20 chars)
-  2. Conferir auditoria: `SELECT * FROM auditoria_laudos WHERE lote_id = $1;`
-  3. Ver logs: `logs/2026-01-16-remocao-rascunho.log` e `notificacoes_admin`
 - Falhas de geração de PDF: verificar `logs` e `notificacoes_admin`, reprocessar com `app/api/emissor/laudos/[loteId]/reprocessar` se necessário.
 
 ## Checklist de validação

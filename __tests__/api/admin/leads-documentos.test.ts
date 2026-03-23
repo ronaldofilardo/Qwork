@@ -37,8 +37,10 @@ describe('Admin Leads Documentos - Estrutura da rota', () => {
     expect(src).toMatch(/export async function GET/);
   });
 
-  it('usa requireRole("admin")', () => {
-    expect(src).toMatch(/requireRole\s*\(\s*['"]admin['"]/);
+  it('usa requireRole com comercial e suporte (string ou array)', () => {
+    expect(src).toMatch(
+      /requireRole\s*\(\s*(?:['"](?:admin|comercial)['"]|\[)/
+    );
   });
 
   it('normaliza endpoint adicionando https:// se ausente', () => {

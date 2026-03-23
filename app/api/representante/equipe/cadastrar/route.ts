@@ -18,6 +18,10 @@ import {
   repAuthErrorResponse,
 } from '@/lib/session-representante';
 import type { Session } from '@/lib/session';
+import {
+  gerarTokenConviteVendedor,
+  logEmailConviteVendedor,
+} from '@/lib/vendedores/gerar-convite';
 
 export const dynamic = 'force-dynamic';
 
@@ -132,8 +136,19 @@ export async function POST(request: NextRequest) {
     );
     const vinculoId = vinculoResult.rows[0].id;
 
+    // Gerar token de convite para o vendedor criar sua senha
+    const convite = await gerarTokenConviteVendedor(vendedorId, {
+      query: (sql: string, params?: unknown[]) => query(sql, params, rlsSess),
+    } as never);
+    logEmailConviteVendedor(nome, email ?? '', convite.link, convite.expira_em);
+
     return NextResponse.json(
-      { vendedor_id: vendedorId, codigo, vinculo_id: vinculoId },
+      {
+        vendedor_id: vendedorId,
+        codigo,
+        vinculo_id: vinculoId,
+        convite_url: convite.link,
+      },
       { status: 201 }
     );
   } catch (err: unknown) {

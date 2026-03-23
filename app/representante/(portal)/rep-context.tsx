@@ -28,6 +28,7 @@ export interface RepresentanteSession {
   dados_bancarios_status?: string | null;
   dados_bancarios_solicitado_em?: string | null;
   dados_bancarios_confirmado_em?: string | null;
+  precisa_trocar_senha?: boolean;
 }
 
 interface RepContextValue {

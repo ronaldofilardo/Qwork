@@ -9,10 +9,13 @@ import { requireRole } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(request: Request): Promise<NextResponse> {
   try {
     const session = await requireRole(['comercial', 'admin'], false);
     void session;
+
+    const { searchParams } = new URL(request.url);
+    const soDesativados = searchParams.get('status') === 'desativado';
 
     const rows = await query<{
       id: number;
@@ -53,7 +56,7 @@ export async function GET(): Promise<NextResponse> {
        LEFT JOIN public.leads_representante lr ON lr.representante_id = r.id
        LEFT JOIN public.vinculos_comissao vc ON vc.representante_id = r.id
        LEFT JOIN public.comissoes_laudo cl ON cl.vinculo_id = vc.id
-       WHERE r.status NOT IN ('desativado')
+       WHERE r.status ${soDesativados ? "= 'desativado'" : "NOT IN ('desativado')"}
        GROUP BY r.id
        ORDER BY leads_ativos DESC, r.nome`
     );

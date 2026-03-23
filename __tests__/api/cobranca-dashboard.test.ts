@@ -14,6 +14,12 @@ jest.mock('next/headers', () => ({
   })),
 }));
 
+jest.mock('@/lib/session', () => ({
+  requireRole: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }),
+  requireEntity: jest.fn().mockResolvedValue({ id: 1 }),
+  getSession: jest.fn().mockResolvedValue({ id: 1, role: 'admin' }),
+}));
+
 describe('API Dashboard de Cobrança', () => {
   let tomadorId1: number;
   let tomadorId2: number;
@@ -23,6 +29,11 @@ describe('API Dashboard de Cobrança', () => {
   let pagamentoId2: number;
 
   beforeAll(async () => {
+    // Limpar dados de runs anteriores
+    await query(
+      `DELETE FROM entidades WHERE cnpj IN ('55555555000105', '66666666000106')`
+    );
+
     // Criar tomadors
     const cont1 = await query(
       `INSERT INTO entidades (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, status,
@@ -97,10 +108,10 @@ describe('API Dashboard de Cobrança', () => {
     ];
 
     const pag1 = await query(
-      `INSERT INTO pagamentos (tomador_id, metodo, valor, numero_parcelas, status, data_pagamento)
-       VALUES ($1, 'cartao', 200.00, 4, 'pago', NOW())
+      `INSERT INTO pagamentos (entidade_id, metodo, valor, numero_parcelas, status, data_pagamento, detalhes_parcelas)
+       VALUES ($1, 'cartao', 200.00, 4, 'pago', NOW(), $2)
        RETURNING id`,
-      [tomadorId1]
+      [tomadorId1, JSON.stringify(detalhesParcelas1)]
     );
     pagamentoId1 = pag1.rows[0].id;
 
@@ -117,10 +128,10 @@ describe('API Dashboard de Cobrança', () => {
     ];
 
     const pag2 = await query(
-      `INSERT INTO pagamentos (tomador_id, metodo, valor, numero_parcelas, status, data_pagamento)
-       VALUES ($1, 'boleto', 300.00, 3, 'pago', NOW())
+      `INSERT INTO pagamentos (entidade_id, metodo, valor, numero_parcelas, status, data_pagamento, detalhes_parcelas)
+       VALUES ($1, 'boleto', 300.00, 3, 'pago', NOW(), $2)
        RETURNING id`,
-      [tomadorId2]
+      [tomadorId2, JSON.stringify(detalhesParcelas2)]
     );
     pagamentoId2 = pag2.rows[0].id;
   });
@@ -135,7 +146,7 @@ describe('API Dashboard de Cobrança', () => {
       contratoId1,
       contratoId2,
     ]);
-    await query('DELETE FROM tomadores WHERE id IN ($1, $2)', [
+    await query('DELETE FROM entidades WHERE id IN ($1, $2)', [
       tomadorId1,
       tomadorId2,
     ]);

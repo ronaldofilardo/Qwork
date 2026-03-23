@@ -303,9 +303,21 @@ export async function handleCadastroTomador(
             })
           );
         } catch (vinculoError) {
-          // 23505 = duplicata — vínculo já existe, ignorar
+          // 23505 = duplicata — vínculo já existe, atualizar lead_id se NULL
           if ((vinculoError as any)?.code !== '23505') {
             throw vinculoError;
+          }
+          // Backfill: vinculo existente pode ter lead_id = NULL (criado via rota admin sem lead)
+          // Atualizar para garantir que comissões apareçam em "Minhas Vendas" do representante
+          if (lead?.id != null) {
+            await txClient
+              .query(
+                `UPDATE vinculos_comissao
+               SET lead_id = $1, atualizado_em = NOW()
+               WHERE representante_id = $2 AND entidade_id = $3 AND lead_id IS NULL`,
+                [lead.id, rep.id, entidadeIdParaVinculo]
+              )
+              .catch(() => {});
           }
           console.info(
             JSON.stringify({

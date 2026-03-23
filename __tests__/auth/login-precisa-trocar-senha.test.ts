@@ -431,4 +431,151 @@ describe('Login API — campo precisaTrocarSenha', () => {
       expect(data.redirectTo).toBe('/rh');
     });
   });
+
+  // ── Vendedor ─────────────────────────────────────────────────────────────
+
+  describe('Perfil Vendedor', () => {
+    function setupVendedorMocks({
+      cpf = '12345678904',
+      primeiraSenhaAlterada = true,
+    }: { cpf?: string; primeiraSenhaAlterada?: boolean } = {}) {
+      mockQuery.mockImplementation((sql: string) => {
+        if (sql.includes('FROM funcionarios') && sql.includes('WHERE cpf =')) {
+          return Promise.resolve({ rows: [], rowCount: 0 });
+        }
+        if (sql.includes('FROM usuarios') && sql.includes('WHERE cpf =')) {
+          return Promise.resolve({
+            rows: [
+              {
+                cpf,
+                nome: 'Vendedor Teste',
+                tipo_usuario: 'vendedor',
+                clinica_id: null,
+                entidade_id: null,
+                ativo: true,
+                senha_hash: 'hash_vendedor',
+              },
+            ],
+            rowCount: 1,
+          } as any);
+        }
+        if (
+          sql.includes('vendedores_perfil') &&
+          sql.includes('primeira_senha_alterada')
+        ) {
+          return Promise.resolve({
+            rows: [{ primeira_senha_alterada: primeiraSenhaAlterada }],
+            rowCount: 1,
+          } as any);
+        }
+        return Promise.resolve({ rows: [], rowCount: 0 });
+      });
+      (mockBcryptCompare as any).mockResolvedValue(true);
+    }
+
+    it('deve retornar precisaTrocarSenha=true quando primeira_senha_alterada=false', async () => {
+      setupVendedorMocks({ primeiraSenhaAlterada: false });
+
+      const response = await loginHandler(
+        makeLoginRequest('12345678904', 'qualquer')
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.precisaTrocarSenha).toBe(true);
+    });
+
+    it('deve retornar precisaTrocarSenha=false quando primeira_senha_alterada=true', async () => {
+      setupVendedorMocks({ primeiraSenhaAlterada: true });
+
+      const response = await loginHandler(
+        makeLoginRequest('12345678904', 'qualquer')
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.precisaTrocarSenha).toBe(false);
+    });
+
+    it('deve consultar vendedores_perfil para obter primeira_senha_alterada', async () => {
+      setupVendedorMocks({ primeiraSenhaAlterada: false });
+
+      await loginHandler(makeLoginRequest('12345678904', 'qualquer'));
+
+      const vpCall = mockQuery.mock.calls.find(
+        ([sql]) =>
+          typeof sql === 'string' &&
+          sql.includes('vendedores_perfil') &&
+          sql.includes('primeira_senha_alterada')
+      );
+      expect(vpCall).toBeDefined();
+    });
+
+    it('precisaTrocarSenha=false se vendedores_perfil não encontrado (default seguro)', async () => {
+      // vendedores_perfil retorna vazio → primeiraSenhaAlterada default = true
+      mockQuery.mockImplementation((sql: string) => {
+        if (sql.includes('FROM funcionarios'))
+          return Promise.resolve({ rows: [], rowCount: 0 });
+        if (sql.includes('FROM usuarios')) {
+          return Promise.resolve({
+            rows: [
+              {
+                cpf: '12345678904',
+                nome: 'Vendedor Teste',
+                tipo_usuario: 'vendedor',
+                clinica_id: null,
+                entidade_id: null,
+                ativo: true,
+                senha_hash: 'hash',
+              },
+            ],
+            rowCount: 1,
+          } as any);
+        }
+        return Promise.resolve({ rows: [], rowCount: 0 });
+      });
+      (mockBcryptCompare as any).mockResolvedValue(true);
+
+      const response = await loginHandler(
+        makeLoginRequest('12345678904', 'qualquer')
+      );
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.precisaTrocarSenha).toBe(false);
+    });
+
+    it('403 se usuário vendedor está inativo', async () => {
+      mockQuery.mockImplementation((sql: string) => {
+        if (sql.includes('FROM funcionarios'))
+          return Promise.resolve({ rows: [], rowCount: 0 });
+        if (sql.includes('FROM usuarios')) {
+          return Promise.resolve({
+            rows: [
+              {
+                cpf: '12345678904',
+                nome: 'Vendedor Inativo',
+                tipo_usuario: 'vendedor',
+                clinica_id: null,
+                entidade_id: null,
+                ativo: false, // inativo!
+                senha_hash: 'hash',
+              },
+            ],
+            rowCount: 1,
+          } as any);
+        }
+        return Promise.resolve({ rows: [], rowCount: 0 });
+      });
+      (mockBcryptCompare as any).mockResolvedValue(true);
+
+      const response = await loginHandler(
+        makeLoginRequest('12345678904', 'qualquer')
+      );
+
+      expect(response.status).toBe(403);
+      const data = await response.json();
+      expect(data.error).toMatch(/inativo/i);
+    });
+  });
 });

@@ -14,7 +14,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('comercial', false);
+    await requireRole(['comercial', 'suporte'], false);
 
     const repId = parseInt(params.id, 10);
     if (isNaN(repId))

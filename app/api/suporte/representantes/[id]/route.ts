@@ -28,6 +28,7 @@ const PatchSchema = z.object({
     ])
     .optional(),
   percentual_comissao: z.number().min(0).max(100).optional().nullable(),
+  percentual_vendedor_direto: z.number().min(0).max(100).optional().nullable(),
   // Dados bancários do representante (campos opcionais)
   banco_codigo: z.string().max(10).optional().nullable(),
   agencia: z.string().max(20).optional().nullable(),
@@ -148,6 +149,8 @@ export async function PATCH(
     if (data.status !== undefined) repFields['status'] = data.status;
     if (data.percentual_comissao !== undefined)
       repFields['percentual_comissao'] = data.percentual_comissao;
+    if (data.percentual_vendedor_direto !== undefined)
+      repFields['percentual_vendedor_direto'] = data.percentual_vendedor_direto;
     if (data.banco_codigo !== undefined)
       repFields['banco_codigo'] = data.banco_codigo;
     if (data.agencia !== undefined) repFields['agencia'] = data.agencia;
@@ -174,7 +177,7 @@ export async function PATCH(
       `UPDATE representantes
        SET ${setClauses}, atualizado_em = NOW()
        WHERE id = $${keys.length + 1}
-       RETURNING id, nome, email, status, codigo, percentual_comissao, atualizado_em`,
+       RETURNING id, nome, email, status, codigo, percentual_comissao, percentual_vendedor_direto, atualizado_em`,
       [...values, id]
     );
 

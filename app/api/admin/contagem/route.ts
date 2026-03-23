@@ -44,7 +44,7 @@ interface ContagemResponse {
  * para Entidades e Clínicas.
  *
  * Schema real:
- * - lotes_avaliacao: contratante_id IS NOT NULL → entidade | clinica_id IS NOT NULL → clínica
+ * - lotes_avaliacao: entidade_id IS NOT NULL → entidade | clinica_id IS NOT NULL → clínica
  * - avaliacoes: status ∈ {'iniciada','em_andamento','concluida','inativada'}; link via lote_id
  * - funcionarios_entidades / funcionarios_clinicas: junction tables
  */
@@ -70,10 +70,10 @@ export async function GET(
     const entidadesFuncionarios =
       parseInt(entidadesFuncionariosResult.rows[0].count) || 0;
 
-    // Lotes de entidades: contratante_id IS NOT NULL
+    // Lotes de entidades: entidade_id IS NOT NULL
     const entidadesLotesResult = await query(
       `SELECT COUNT(*) as count FROM lotes_avaliacao 
-       WHERE contratante_id IS NOT NULL`
+       WHERE entidade_id IS NOT NULL`
     );
     const entidadesLotes = parseInt(entidadesLotesResult.rows[0].count) || 0;
 
@@ -81,7 +81,7 @@ export async function GET(
     const entidadesLaudosResult = await query(
       `SELECT COUNT(*) as count FROM laudos 
        WHERE lote_id IN (
-         SELECT id FROM lotes_avaliacao WHERE contratante_id IS NOT NULL
+         SELECT id FROM lotes_avaliacao WHERE entidade_id IS NOT NULL
        )`
     );
     const entidadesLaudos = parseInt(entidadesLaudosResult.rows[0].count) || 0;
@@ -90,7 +90,7 @@ export async function GET(
     const entidadesAvaliaoesLiberadasResult = await query(
       `SELECT COUNT(*) as count FROM avaliacoes 
        WHERE lote_id IN (
-         SELECT id FROM lotes_avaliacao WHERE contratante_id IS NOT NULL
+         SELECT id FROM lotes_avaliacao WHERE entidade_id IS NOT NULL
        ) AND status IN ('iniciada', 'em_andamento')`
     );
     const entidadesAvaliaoesLiberadas =
@@ -100,7 +100,7 @@ export async function GET(
     const entidadesAvaliaoesConcluidasResult = await query(
       `SELECT COUNT(*) as count FROM avaliacoes 
        WHERE lote_id IN (
-         SELECT id FROM lotes_avaliacao WHERE contratante_id IS NOT NULL
+         SELECT id FROM lotes_avaliacao WHERE entidade_id IS NOT NULL
        ) AND status = 'concluida'`
     );
     const entidadesAvaliaoesConcluidass =

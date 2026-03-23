@@ -312,18 +312,14 @@ export async function autoConvertirLeadPorCnpj(
         const vinculoId = vinculoResult.rows[0]?.id;
 
         // Marcar lead como convertido
-        const updateFields = entidadeId
-          ? `entidade_id = ${entidadeId}`
-          : `entidade_id = NULL`;
-
         await query(
           `UPDATE leads_representante
            SET status = 'convertido',
-               ${updateFields},
+               entidade_id = $2,
                data_conversao = NOW(),
                tipo_conversao = 'verificacao_cnpj'
            WHERE id = $1 AND status = 'pendente'`,
-          [lead.id]
+          [lead.id, entidadeId ?? null]
         );
 
         console.info(
@@ -345,8 +341,25 @@ export async function autoConvertirLeadPorCnpj(
           };
         }
       } catch (vinculoErr) {
-        // 23505 = duplicata — vínculo já existe, apenas converter o lead
+        // 23505 = duplicata — vínculo já existe, atualizar lead_id no vínculo se NULL e converter o lead
         if ((vinculoErr as any)?.code === '23505') {
+          // Backfill: vinculo existente pode ter lead_id = NULL (criado via rota admin sem lead)
+          // Atualizar para garantir que comissões apareçam em "Minhas Vendas" do representante
+          if (entidadeId) {
+            await query(
+              `UPDATE vinculos_comissao
+               SET lead_id = $1, atualizado_em = NOW()
+               WHERE representante_id = $2 AND entidade_id = $3 AND lead_id IS NULL`,
+              [lead.id, lead.representante_id, entidadeId]
+            ).catch(() => {});
+          } else if (clinicaId) {
+            await query(
+              `UPDATE vinculos_comissao
+               SET lead_id = $1, atualizado_em = NOW()
+               WHERE representante_id = $2 AND clinica_id = $3 AND lead_id IS NULL`,
+              [lead.id, lead.representante_id, clinicaId]
+            ).catch(() => {});
+          }
           await query(
             `UPDATE leads_representante
              SET status = 'convertido', data_conversao = NOW(), tipo_conversao = 'verificacao_cnpj'

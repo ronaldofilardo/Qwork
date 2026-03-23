@@ -82,7 +82,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('comercial', false);
+    await requireRole(['comercial', 'suporte'], false);
 
     const id = params.id?.trim();
     if (!id) {

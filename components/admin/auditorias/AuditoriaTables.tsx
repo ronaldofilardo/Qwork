@@ -2,6 +2,10 @@ import { formatDate, formatDuration } from './helpers';
 import type {
   AcessoGestor,
   AcessoRH,
+  AcessoSuporte,
+  AcessoComercial,
+  AcessoRepresentante,
+  AcessoVendedor,
   AuditoriaAvaliacao,
   AuditoriaLote,
   AuditoriaLaudo,
@@ -332,6 +336,146 @@ export function TabelaLaudos({
               </tr>
             ));
           })()}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+/* ─── 6. Acesso Suporte ─── */
+
+export function TabelaAcessosSuporte({ data }: { data: AcessoSuporte[] }) {
+  return (
+    <TableShell
+      title="Acessos de Suporte"
+      subtitle={`Total: ${data.length} registros`}
+    >
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <Th>Nome</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>Duração</Th>
+            <Th>IP</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {data.map((a) => (
+            <tr key={a.id} className="hover:bg-gray-50">
+              <Td className="text-gray-900">{a.nome ?? '—'}</Td>
+              <Td>{formatDate(a.login_timestamp)}</Td>
+              <Td>{formatDate(a.logout_timestamp)}</Td>
+              <Td>{formatDuration(a.session_duration)}</Td>
+              <Td mono>{a.ip_address}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+/* ─── 7. Acesso Comercial ─── */
+
+export function TabelaAcessosComercial({ data }: { data: AcessoComercial[] }) {
+  return (
+    <TableShell
+      title="Acessos Comercial"
+      subtitle={`Total: ${data.length} registros`}
+    >
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <Th>Nome</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>Duração</Th>
+            <Th>IP</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {data.map((a) => (
+            <tr key={a.id} className="hover:bg-gray-50">
+              <Td className="text-gray-900">{a.nome ?? '—'}</Td>
+              <Td>{formatDate(a.login_timestamp)}</Td>
+              <Td>{formatDate(a.logout_timestamp)}</Td>
+              <Td>{formatDuration(a.session_duration)}</Td>
+              <Td mono>{a.ip_address}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+/* ─── 8. Acesso Representante ─── */
+
+export function TabelaAcessosRepresentante({
+  data,
+}: {
+  data: AcessoRepresentante[];
+}) {
+  return (
+    <TableShell
+      title="Acessos de Representantes"
+      subtitle={`Total: ${data.length} registros`}
+    >
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <Th>Representante</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>Duração</Th>
+            <Th>IP</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {data.map((a) => (
+            <tr key={a.id} className="hover:bg-gray-50">
+              <Td className="text-gray-900">{a.representante_nome ?? '—'}</Td>
+              <Td>{formatDate(a.login_timestamp)}</Td>
+              <Td>{formatDate(a.logout_timestamp)}</Td>
+              <Td>{formatDuration(a.session_duration)}</Td>
+              <Td mono>{a.ip_address}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+/* ─── 9. Acesso Vendedor ─── */
+
+export function TabelaAcessosVendedor({ data }: { data: AcessoVendedor[] }) {
+  return (
+    <TableShell
+      title="Acessos de Vendedores"
+      subtitle={`Total: ${data.length} registros`}
+    >
+      <table className="w-full">
+        <thead className="bg-gray-50">
+          <tr>
+            <Th>Nome</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>Duração</Th>
+            <Th>IP</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-200">
+          {data.map((a) => (
+            <tr key={a.id} className="hover:bg-gray-50">
+              <Td className="text-gray-900">{a.nome ?? '—'}</Td>
+              <Td>{formatDate(a.login_timestamp)}</Td>
+              <Td>{formatDate(a.logout_timestamp)}</Td>
+              <Td>{formatDuration(a.session_duration)}</Td>
+              <Td mono>{a.ip_address}</Td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </TableShell>

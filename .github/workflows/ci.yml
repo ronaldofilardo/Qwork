@@ -49,7 +49,64 @@ jobs:
         run: pnpm quality:tests
 
   # ============================================================
-  # JOB 2: Testes Unitários
+  # JOB 2: Schema Snapshot Validation
+  # ============================================================
+  schema-validation:
+    name: 🗄️ Schema Snapshot Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [lint-and-typecheck]
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nr-bps_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Apply modular schemas (01→05)
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d nr-bps_db_test -f database/schemas/modular/01-foundation.sql
+          psql -h localhost -U postgres -d nr-bps_db_test -f database/schemas/modular/02-identidade.sql
+          psql -h localhost -U postgres -d nr-bps_db_test -f database/schemas/modular/03-entidades-comercial.sql
+          psql -h localhost -U postgres -d nr-bps_db_test -f database/schemas/modular/04-avaliacoes-laudos.sql
+          psql -h localhost -U postgres -d nr-bps_db_test -f database/schemas/modular/05-financeiro-notificacoes.sql
+
+      - name: Validate schema snapshot
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+        run: pnpm db:validate:schema
+
+  # ============================================================
+  # JOB 3: Testes Unitários
   # ============================================================
   unit-tests:
     name: 🧪 Unit Tests
@@ -101,6 +158,20 @@ jobs:
           NODE_ENV: test
         run: pnpm test:unit
         continue-on-error: false
+
+      - name: Detect code ↔ DB divergences
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+          NODE_ENV: test
+        run: pnpm db:check-divergence
+        continue-on-error: true
+
+      - name: Upload divergence report
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: schema-divergence-report
+          path: database/reports/schema-divergence-report.json
 
       - name: Upload coverage reports
         uses: codecov/codecov-action@v3
@@ -303,6 +374,7 @@ jobs:
     needs:
       [
         lint-and-typecheck,
+        schema-validation,
         unit-tests,
         integration-tests,
         e2e-critical-flows,
@@ -321,6 +393,7 @@ jobs:
           echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Lint & Type Check | ${{ needs.lint-and-typecheck.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Schema Validation | ${{ needs.schema-validation.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ${{ needs.unit-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Integration Tests | ${{ needs.integration-tests.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E Critical Flows | ${{ needs.e2e-critical-flows.result }} |" >> $GITHUB_STEP_SUMMARY
@@ -329,6 +402,7 @@ jobs:
       - name: Check if all jobs passed
         if: |
           needs.lint-and-typecheck.result != 'success' ||
+          needs.schema-validation.result != 'success' ||
           needs.unit-tests.result != 'success' ||
           needs.integration-tests.result != 'success' ||
           needs.e2e-critical-flows.result != 'success' ||

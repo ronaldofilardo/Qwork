@@ -241,6 +241,28 @@ export async function POST(request: Request) {
       senhaHash = usuario.senha_hash || null;
       tomadorId = null;
       tomadorAtivo = true;
+
+      // Para vendedor: buscar flag primeira_senha_alterada em vendedores_perfil
+      if (usuario.tipo_usuario === 'vendedor') {
+        try {
+          const vpResult = await query(
+            `SELECT vp.primeira_senha_alterada
+             FROM public.vendedores_perfil vp
+             JOIN public.usuarios u ON u.id = vp.usuario_id
+             WHERE u.cpf = $1 LIMIT 1`,
+            [cpf]
+          );
+          if (vpResult.rows.length > 0) {
+            primeiraSenhaAlterada =
+              vpResult.rows[0].primeira_senha_alterada ?? true;
+          }
+        } catch (err) {
+          console.warn(
+            '[LOGIN] Erro ao buscar primeira_senha_alterada do vendedor:',
+            err
+          );
+        }
+      }
     }
 
     // Verificar se tomador está ativo
@@ -335,6 +357,40 @@ export async function POST(request: Request) {
       entidade_id: usuario.entidade_id,
     });
 
+    // Registrar acesso em session_logs para auditoria de acesso
+    try {
+      const ipForDb =
+        contextoRequisicao.ip_address === 'unknown'
+          ? null
+          : contextoRequisicao.ip_address;
+      const sessionLogResult = await query(
+        `INSERT INTO session_logs (cpf, perfil, clinica_id, empresa_id, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+        [
+          usuario.cpf,
+          perfil,
+          usuario.clinica_id ?? null,
+          usuario.entidade_id ?? null,
+          ipForDb,
+          contextoRequisicao.user_agent ?? null,
+        ]
+      );
+      if (sessionLogResult.rows[0]?.id) {
+        createSession({
+          cpf: usuario.cpf,
+          nome: usuario.nome,
+          perfil: perfil as any,
+          tomador_id: tomadorId,
+          clinica_id: usuario.clinica_id,
+          entidade_id: usuario.entidade_id,
+          sessionLogId: sessionLogResult.rows[0].id,
+        });
+      }
+    } catch (err) {
+      console.warn('[LOGIN] Falha ao registrar session_log:', err);
+    }
+
     // Registrar login bem-sucedido
     try {
       await registrarAuditoria({
@@ -405,9 +461,10 @@ export async function POST(request: Request) {
       }
     }
 
-    // Verificar se gestor/RH precisa trocar senha no primeiro acesso
+    // Verificar se gestor/RH/vendedor precisa trocar senha no primeiro acesso
     const precisaTrocarSenha =
-      (perfil === 'gestor' || perfil === 'rh') && !primeiraSenhaAlterada;
+      (perfil === 'gestor' || perfil === 'rh' || perfil === 'vendedor') &&
+      !primeiraSenhaAlterada;
 
     return NextResponse.json({
       success: true,

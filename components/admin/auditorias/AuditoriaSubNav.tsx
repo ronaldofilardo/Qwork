@@ -11,6 +11,10 @@ const TABS: { key: AuditoriaSubTab; label: string }[] = [
   { key: 'avaliacoes', label: 'Avaliações' },
   { key: 'lotes', label: 'Lotes' },
   { key: 'laudos', label: 'Laudos' },
+  { key: 'acesso-suporte', label: 'Suporte' },
+  { key: 'acesso-comercial', label: 'Comercial' },
+  { key: 'acesso-representante', label: 'Representantes' },
+  { key: 'acesso-vendedor', label: 'Vendedores' },
 ];
 
 export function AuditoriaSubNav({

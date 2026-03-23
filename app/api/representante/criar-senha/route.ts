@@ -218,7 +218,26 @@ export async function POST(request: NextRequest) {
     // Tudo válido — criar hash da senha (rounds=12 padrão do projeto)
     const senhaHash = await bcrypt.hash(senha, 12);
 
-    // Salvar senha e marcar convite como usado atomicamente
+    // Buscar CPF do representante para a tabela de senhas
+    const cpfResult = await query<{
+      cpf: string;
+      cpf_responsavel_pj: string | null;
+    }>(`SELECT cpf, cpf_responsavel_pj FROM representantes WHERE id = $1`, [
+      rep.id,
+    ]);
+    const repCpf =
+      cpfResult.rows[0]?.cpf || cpfResult.rows[0]?.cpf_responsavel_pj || '';
+
+    // Salvar senha na tabela dedicada representantes_senhas (primeira_senha_alterada=FALSE → forçar troca no 1º login)
+    await query(
+      `INSERT INTO public.representantes_senhas (representante_id, cpf, senha_hash, primeira_senha_alterada)
+       VALUES ($1, $2, $3, FALSE)
+       ON CONFLICT (representante_id, cpf)
+       DO UPDATE SET senha_hash = $3, primeira_senha_alterada = FALSE, atualizado_em = NOW()`,
+      [rep.id, repCpf, senhaHash]
+    );
+
+    // Manter retrocompatibilidade: ainda gravar em senha_repres + marcar convite como usado
     await query(
       `UPDATE representantes
        SET senha_repres             = $1,
