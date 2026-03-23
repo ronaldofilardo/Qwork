@@ -7,8 +7,8 @@
  * manual do laudo após o lote entrar em estado 'concluido'.
  *
  * ⚠️ IMPORTANTE: Esta API NÃO emite o laudo automaticamente!
- * Ela apenas REGISTRA a solicitação. O laudo será emitido manualmente
- * pelo emissor quando ele clicar em "Gerar Laudo" no dashboard.
+ * Ela apenas REGISTRA a solicitação. O laudo será gerado pelo emissor
+ * quando ele clicar em "Gerar Laudo" no dashboard.
  *
  * Fluxo correto:
  * 1. RH/Entidade solicita emissão (este endpoint)

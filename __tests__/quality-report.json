@@ -993,18 +993,6 @@
       "qualityScore": 55
     },
     {
-      "path": "__tests__\\hooks\\useEmergenciaLaudo.test.tsx",
-      "hasJSDoc": false,
-      "hasTypeImports": false,
-      "hasBeforeEach": true,
-      "hasTsNoCheck": false,
-      "hasConsoleLog": false,
-      "hasDescribe": false,
-      "hasIt": true,
-      "lines": 263,
-      "qualityScore": 55
-    },
-    {
       "path": "__tests__\\lib\\lote-status-update.test.ts",
       "hasJSDoc": false,
       "hasTypeImports": false,
@@ -1027,18 +1015,6 @@
       "hasIt": false,
       "lines": 356,
       "qualityScore": 55
-    },
-    {
-      "path": "__tests__\\emissao-emergencial.integration.test.ts",
-      "hasJSDoc": true,
-      "hasTypeImports": false,
-      "hasBeforeEach": false,
-      "hasTsNoCheck": false,
-      "hasConsoleLog": false,
-      "hasDescribe": false,
-      "hasIt": true,
-      "lines": 290,
-      "qualityScore": 60
     },
     {
       "path": "__tests__\\system\\auto-laudo-emission.test.ts",
@@ -1314,18 +1290,6 @@
       "hasDescribe": true,
       "hasIt": true,
       "lines": 48,
-      "qualityScore": 65
-    },
-    {
-      "path": "__tests__\\api\\emissor\\emergencia-laudo.test.ts",
-      "hasJSDoc": false,
-      "hasTypeImports": false,
-      "hasBeforeEach": true,
-      "hasTsNoCheck": false,
-      "hasConsoleLog": false,
-      "hasDescribe": true,
-      "hasIt": true,
-      "lines": 428,
       "qualityScore": 65
     },
     {
@@ -2022,18 +1986,6 @@
       "hasDescribe": true,
       "hasIt": true,
       "lines": 280,
-      "qualityScore": 65
-    },
-    {
-      "path": "__tests__\\components\\ModalEmergencia.test.tsx",
-      "hasJSDoc": false,
-      "hasTypeImports": false,
-      "hasBeforeEach": true,
-      "hasTsNoCheck": false,
-      "hasConsoleLog": false,
-      "hasDescribe": true,
-      "hasIt": true,
-      "lines": 387,
       "qualityScore": 65
     },
     {
@@ -3858,18 +3810,6 @@
       "hasDescribe": true,
       "hasIt": true,
       "lines": 227,
-      "qualityScore": 70
-    },
-    {
-      "path": "__tests__\\lib\\pdf-emergencia-marcacao.test.ts",
-      "hasJSDoc": true,
-      "hasTypeImports": false,
-      "hasBeforeEach": false,
-      "hasTsNoCheck": false,
-      "hasConsoleLog": false,
-      "hasDescribe": true,
-      "hasIt": true,
-      "lines": 293,
       "qualityScore": 70
     },
     {

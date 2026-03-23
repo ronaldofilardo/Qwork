@@ -26,6 +26,8 @@ import {
  * ❌ NUNCA marcar como 'emitido' sem arquivo PDF físico
  * ❌ NUNCA calcular hash de string aleatória
  * ✅ SEMPRE: PDF físico → Hash → Status 'emitido'
+ *
+ * SEMPRE usar Puppeteer para geração de PDF
  */
 export async function gerarLaudoCompletoEmitirPDF(
   loteId: number,
@@ -111,6 +113,7 @@ export async function gerarLaudoCompletoEmitirPDF(
     const html = gerarHTMLLaudoCompleto({ loteId, ...laudoPadronizado });
 
     // ETAPA 4: Gerar PDF com Puppeteer
+    // SEMPRE usar Puppeteer para geração de PDF
     console.log(`[EMISSÃO] Gerando PDF do laudo ${laudoId}...`);
     const puppeteer = await getPuppeteerInstance();
     const browser = await puppeteer.launch({

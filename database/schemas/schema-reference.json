@@ -1,0 +1,7 @@
+{
+  "_readme": "Este arquivo é o snapshot de referência do schema do banco de dados. Gerado automaticamente por scripts/validate-schema-snapshot.ts. Para atualizar: npx tsx scripts/validate-schema-snapshot.ts --update",
+  "_status": "PENDING — execute 'pnpm db:snapshot:update' contra o banco nr-bps_db local para gerar a referência inicial.",
+  "generated_at": "PENDING",
+  "enums": {},
+  "tables": []
+}

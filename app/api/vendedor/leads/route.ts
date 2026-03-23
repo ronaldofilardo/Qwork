@@ -15,6 +15,7 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
+import { calcularRequerAprovacao } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -67,6 +68,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.contato_telefone,
          lr.cnpj,
          lr.valor_negociado,
+         lr.percentual_comissao,
          lr.criado_em,
          lr.data_conversao,
          r.id    AS representante_id,
@@ -102,10 +104,11 @@ const novoLeadSchema = z.object({
   contato_nome: z.string().min(3).max(120),
   contato_email: z.string().email().optional().nullable(),
   contato_telefone: z.string().optional().nullable(),
-  cnpj: z.string().optional().nullable(),
+  cnpj: z.string().min(1, 'CNPJ é obrigatório'),
   valor_negociado: z.number().positive().optional().nullable(),
   percentual_comissao: z.number().min(0).max(100).optional().nullable(),
   observacoes: z.string().max(1000).optional().nullable(),
+  tipo_cliente: z.enum(['entidade', 'clinica']).optional().default('entidade'),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -163,20 +166,71 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Telefone inválido' }, { status: 422 });
     }
 
-    let cnpjNorm: string | null = null;
-    if (data.cnpj) {
-      cnpjNorm = normalizeCNPJ(data.cnpj);
-      if (!validarCNPJ(cnpjNorm)) {
-        return NextResponse.json({ error: 'CNPJ inválido' }, { status: 422 });
-      }
+    const cnpjNorm = normalizeCNPJ(data.cnpj);
+    if (!validarCNPJ(cnpjNorm)) {
+      return NextResponse.json({ error: 'CNPJ inválido' }, { status: 422 });
     }
+
+    // Verificar se já existe lead ativo (pendente) para esse CNPJ
+    const leadExistente = await query(
+      `SELECT id, representante_id FROM leads_representante
+       WHERE cnpj = $1 AND status = 'pendente' LIMIT 1`,
+      [cnpjNorm]
+    );
+    if (leadExistente.rows.length > 0) {
+      const leadAtivo = leadExistente.rows[0];
+      if (leadAtivo.representante_id === representanteId) {
+        return NextResponse.json(
+          { error: 'Você já possui um lead ativo para este CNPJ' },
+          { status: 409 }
+        );
+      }
+      return NextResponse.json(
+        {
+          error:
+            'Este CNPJ já foi registrado como lead por outro representante',
+        },
+        { status: 409 }
+      );
+    }
+
+    // Verificar se o CNPJ já está cadastrado como entidade (cliente ativo)
+    const entidadeExiste = await query(
+      `SELECT id FROM entidades WHERE cnpj = $1 LIMIT 1`,
+      [cnpjNorm]
+    );
+    if (entidadeExiste.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Este CNPJ já está cadastrado como cliente no QWork' },
+        { status: 409 }
+      );
+    }
+
+    // Verificar se o CNPJ já está cadastrado como clínica
+    const clinicaExiste = await query(
+      `SELECT id FROM clinicas WHERE cnpj = $1 LIMIT 1`,
+      [cnpjNorm]
+    );
+    if (clinicaExiste.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Este CNPJ já está cadastrado como clínica no QWork' },
+        { status: 409 }
+      );
+    }
+
+    const requerAprovacao = calcularRequerAprovacao(
+      data.valor_negociado ?? 0,
+      data.percentual_comissao ?? 0,
+      data.tipo_cliente
+    );
 
     const leadResult = await query<{ id: number }>(
       `INSERT INTO public.leads_representante
          (representante_id, vendedor_id, contato_nome, contato_email,
           contato_telefone, cnpj, valor_negociado, percentual_comissao,
-          observacoes, status, criado_em)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'pendente',NOW())
+          observacoes, tipo_cliente, requer_aprovacao_comercial,
+          status, criado_em)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pendente',NOW())
        RETURNING id`,
       [
         representanteId,
@@ -188,6 +242,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         data.valor_negociado ?? null,
         data.percentual_comissao ?? null,
         data.observacoes ?? null,
+        data.tipo_cliente,
+        requerAprovacao,
       ]
     );
 
@@ -198,7 +254,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     });
 
     return NextResponse.json(
-      { id: leadResult.rows[0].id, message: 'Lead cadastrado com sucesso.' },
+      {
+        id: leadResult.rows[0].id,
+        message: requerAprovacao
+          ? 'Lead cadastrado! Aguardando aprovação do Comercial.'
+          : 'Lead cadastrado com sucesso.',
+        requer_aprovacao_comercial: requerAprovacao,
+      },
       { status: 201 }
     );
   } catch (err: unknown) {

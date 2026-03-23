@@ -47,6 +47,10 @@ const PUBLIC_API_ROUTES = [
   '/api/auth/login',
   '/api/auth/logout',
   '/api/auth/trocar-senha', // Troca de senha (sessão verificada internamente)
+  '/vendedor/criar-senha', // Página pública de criação de senha (convite por token)
+  '/api/vendedor/criar-senha', // API pública de validação/criação de senha via token
+  '/representante/criar-senha', // Página pública de criação de senha (convite por token)
+  '/api/representante/criar-senha', // API pública de validação/criação de senha via token
 ];
 
 // Rotas de contratação com controle granular

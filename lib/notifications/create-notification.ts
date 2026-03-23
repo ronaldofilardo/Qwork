@@ -18,6 +18,8 @@ export type TipoNotificacao =
   // Lotes e Laudos
   | 'lote_concluido_aguardando_laudo'
   | 'laudo_enviado'
+  // Representantes
+  | 'novo_cadastro_representante'
   // Legacy (sistema antigo)
   | 'pre_cadastro_criado'
   | 'valor_definido'
@@ -37,7 +39,9 @@ export type TipoDestinatario =
   | 'tomador'
   | 'clinica'
   | 'funcionario'
-  | 'gestor';
+  | 'gestor'
+  | 'comercial'
+  | 'suporte';
 
 /**
  * Prioridade da notificação

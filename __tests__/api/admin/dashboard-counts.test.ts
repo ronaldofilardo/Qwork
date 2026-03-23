@@ -10,16 +10,21 @@ jest.mock('@/lib/db', () => ({
 
 jest.mock('@/lib/session', () => ({
   requireRole: jest.fn(),
+  requireRHWithEmpresaAccess: jest.fn(),
 }));
 
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
-import { requireRole } from '@/lib/session';
+import { requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 import { GET as getFuncionariosCount } from '@/app/api/admin/empresas/[id]/funcionarios/count/route';
 import { GET as getAvaliacoesPendentesCount } from '@/app/api/admin/empresas/[id]/avaliacoes/pendentes/count/route';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
+const mockRequireRHWithEmpresaAccess =
+  requireRHWithEmpresaAccess as jest.MockedFunction<
+    typeof requireRHWithEmpresaAccess
+  >;
 
 describe('/api/admin/empresas/[id]/funcionarios/count', () => {
   beforeEach(() => {
@@ -79,6 +84,9 @@ describe('/api/admin/empresas/[id]/funcionarios/count', () => {
         perfil: 'rh',
         clinica_id: 3,
       });
+      mockRequireRHWithEmpresaAccess.mockRejectedValueOnce(
+        new Error('Sem permissão')
+      );
 
       mockQuery.mockResolvedValueOnce({
         rows: [{ clinica_id: 1 }],
@@ -98,11 +106,7 @@ describe('/api/admin/empresas/[id]/funcionarios/count', () => {
     });
 
     it('deve retornar 403 se for admin (sem acesso operacional)', async () => {
-      mockRequireRole.mockResolvedValue({
-        cpf: '00000000000',
-        nome: 'Admin Teste',
-        perfil: 'admin',
-      });
+      mockRequireRole.mockRejectedValueOnce(new Error('Acesso negado'));
 
       const request = new NextRequest(
         'http://localhost:3000/api/admin/empresas/1/funcionarios/count'
@@ -150,11 +154,7 @@ describe('/api/admin/empresas/[id]/avaliacoes/pendentes/count', () => {
     });
 
     it('deve retornar 403 se for admin (sem acesso operacional)', async () => {
-      mockRequireRole.mockResolvedValue({
-        cpf: '00000000000',
-        nome: 'Admin Teste',
-        perfil: 'admin',
-      });
+      mockRequireRole.mockRejectedValueOnce(new Error('Acesso negado'));
 
       const request = new NextRequest(
         'http://localhost:3000/api/admin/empresas/1/avaliacoes/pendentes/count'
@@ -191,7 +191,7 @@ describe('/api/admin/empresas/[id]/avaliacoes/pendentes/count', () => {
       // Verifica que a query exclui concluídas e inativadas
       const queryCall = mockQuery.mock.calls[1];
       expect(queryCall[0]).toContain(
-        "a.status NOT IN ('concluido', 'inativada')"
+        "a.status NOT IN ('concluida', 'inativada')"
       );
     });
 
@@ -221,4 +221,3 @@ describe('/api/admin/empresas/[id]/avaliacoes/pendentes/count', () => {
     });
   });
 });
-

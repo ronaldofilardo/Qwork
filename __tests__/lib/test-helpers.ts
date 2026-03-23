@@ -1,7 +1,7 @@
+// @ts-nocheck
 /**
  * Utilitários de Mock para Testes - Padrão QWork
  *
-// @ts-nocheck
  * Este arquivo contém helpers padronizados para criação de mocks
  * seguindo a Política de Mocks documentada em docs/testing/MOCKS_POLICY.md
  */

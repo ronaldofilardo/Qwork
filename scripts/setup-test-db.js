@@ -111,17 +111,62 @@ async function runMigrations() {
   }
 }
 
+// Aplicar schema a partir dos arquivos modulares (alternativa ao pg_dump sync)
+const fsNode = require('fs');
+const pathNode = require('path');
+
+const MODULAR_SCHEMA_FILES = [
+  '01-foundation.sql',
+  '02-identidade.sql',
+  '03-entidades-comercial.sql',
+  '04-avaliacoes-laudos.sql',
+  '05-financeiro-notificacoes.sql',
+  'acl.sql',
+];
+
+async function applyModularSchema() {
+  console.log('🔧 Aplicando schema modular no banco de teste...');
+  const testPool = new Pool({ ...DB_CONFIG, database: 'nr-bps_db_test' });
+
+  try {
+    const schemaDir = pathNode.join(
+      __dirname,
+      '..',
+      'database',
+      'schemas',
+      'modular'
+    );
+    for (const file of MODULAR_SCHEMA_FILES) {
+      const filePath = pathNode.join(schemaDir, file);
+      const sql = fsNode.readFileSync(filePath, 'utf-8');
+      console.log(`  📄 Executando ${file}...`);
+      await testPool.query(sql);
+      console.log(`  ✅ ${file} aplicado`);
+    }
+    console.log('✅ Schema modular aplicado com sucesso');
+  } catch (error) {
+    console.error('❌ Erro ao aplicar schema modular:', error.message);
+    throw error;
+  } finally {
+    await testPool.end();
+  }
+}
+
 async function main() {
+  const useModular = process.argv.includes('--modular');
   try {
     await createTestDatabase();
-    // Sincroniza schema do banco de dev (fonte da verdade) -> test
-    await syncSchemaFromDev();
+    if (useModular) {
+      // Aplica schema a partir dos arquivos modulares em database/schemas/modular/
+      await applyModularSchema();
+    } else {
+      // Sincroniza schema do banco de dev (fonte da verdade) -> test
+      await syncSchemaFromDev();
+    }
     // Executa migrações adicionais/compatibilidade local
     await runMigrations();
 
-    console.log(
-      '🎉 Configuração do banco de teste concluída com sucesso! (sincronizado com nr-bps_db)'
-    );
+    console.log('🎉 Configuração do banco de teste concluída com sucesso!');
   } catch (error) {
     console.error('💥 Falha na configuração do banco de teste:', error.message);
     process.exit(1);

@@ -32,29 +32,6 @@ async function main() {
     }
   }
 
-  // Garantir que lote está pronto (flags limpadas já pelo reset script)
-  console.log(`🔧 Reconfirmando estado do lote ${loteId}...`);
-  await query(
-    `UPDATE lotes_avaliacao SET modo_emergencia = FALSE, motivo_emergencia = NULL, processamento_em = NULL WHERE id = $1`,
-    [loteId]
-  );
-
-  // Registrar auditoria simples indicando que foi preparado para teste
-  console.log(
-    '✍️ Registrando auditoria de preparação para teste (user = emissor)...'
-  );
-  await query(
-    `INSERT INTO audit_logs (action, resource, resource_id, user_cpf, user_perfil, new_data, ip_address)
-     VALUES ('laudo_emergencia_prepared', 'lotes_avaliacao', $1, $2, $3, $4, $5)`,
-    [
-      String(loteId),
-      cpf,
-      'emissor',
-      JSON.stringify({ note: 'prepared for emergency emission test' }),
-      '127.0.0.1',
-    ]
-  );
-
   const audits = await query(
     `SELECT id, action, resource, resource_id, user_cpf, user_perfil, new_data, criado_em FROM audit_logs WHERE resource = 'lotes_avaliacao' AND resource_id = $1 ORDER BY id DESC LIMIT 10`,
     [String(loteId)]
@@ -63,9 +40,7 @@ async function main() {
   console.log('\n📄 Últimas auditorias relevantes:');
   console.table(audits.rows);
 
-  console.log(
-    '\nPronto. O emissor está preparado para testar a emissão emergencial no lote 2.'
-  );
+  console.log('\nPronto. O emissor está preparado para o lote 2.');
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

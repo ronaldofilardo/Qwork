@@ -20,7 +20,7 @@ export async function GET() {
         sl.empresa_id,
         sl.login_timestamp,
         sl.logout_timestamp,
-        sl.session_duration,
+        (sl.logout_timestamp - sl.login_timestamp) AS session_duration,
         sl.ip_address,
         sl.user_agent,
         ent.nome AS empresa_nome,

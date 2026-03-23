@@ -9,15 +9,16 @@ import {
   TrendingUp,
   Users2,
   ChevronRight,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Search,
-  AlertCircle,
 } from 'lucide-react';
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
 import { ComissoesContent } from '@/components/admin/ComissoesContent';
+import ComercialLeadsAprovacaoPage from './leads/page';
+import type { Lead } from '@/app/admin/representantes/types';
+import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
+import { useCachedDocs } from '@/app/admin/representantes/hooks/useCachedDocs';
+import { useRepActions } from '@/app/admin/representantes/hooks/useRepActions';
+import { LeadsTab } from '@/app/admin/representantes/components/LeadsTab';
 
 interface Session {
   cpf: string;
@@ -25,352 +26,117 @@ interface Session {
   perfil: string;
 }
 
-interface Candidato {
-  id: string;
-  tipo_pessoa: 'pf' | 'pj';
-  nome: string;
-  email: string;
-  cpf: string | null;
-  cnpj: string | null;
-  razao_social: string | null;
-  status: string;
-  motivo_rejeicao: string | null;
-  criado_em: string;
-  verificado_em: string | null;
-}
-
-const CAND_STATUS: Record<
-  string,
-  { label: string; cls: string; icon: React.ElementType }
-> = {
-  pendente_verificacao: {
-    label: 'Pendente',
-    cls: 'bg-amber-100 text-amber-700',
-    icon: Clock,
-  },
-  verificado: {
-    label: 'Verificado',
-    cls: 'bg-blue-100 text-blue-700',
-    icon: CheckCircle,
-  },
-  convertido: {
-    label: 'Convertido',
-    cls: 'bg-green-100 text-green-700',
-    icon: CheckCircle,
-  },
-  rejeitado: {
-    label: 'Rejeitado',
-    cls: 'bg-red-100 text-red-700',
-    icon: XCircle,
-  },
-};
-
 function CandidatosContent() {
-  const [candidatos, setCandidatos] = useState<Candidato[]>([]);
-  const [total, setTotal] = useState(0);
-  const [page, setPage] = useState(1);
-  const [statusFiltro, setStatusFiltro] = useState('');
-  const [busca, setBusca] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [acao, setAcao] = useState<{
-    id: string;
-    tipo: 'aprovar' | 'rejeitar';
-  } | null>(null);
-  const [motivo, setMotivo] = useState('');
-  const [salvando, setSalvando] = useState(false);
-  const [erroAcao, setErroAcao] = useState('');
+  const ld = useLeads('candidatos', 'pendente_verificacao');
+  const docs = useCachedDocs();
+  const actions = useRepActions();
 
-  const carregar = useCallback(async (p: number, s: string, b: string) => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams({ page: String(p) });
-      if (s) params.set('status', s);
-      if (b.trim()) params.set('busca', b.trim());
-      const res = await fetch(
-        `/api/admin/representantes-leads?${params.toString()}`
-      );
-      if (res.ok) {
-        const d = (await res.json()) as { leads?: Candidato[]; total?: number };
-        setCandidatos(d.leads ?? []);
-        setTotal(d.total ?? 0);
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const handleAprovarLead = useCallback(
+    (lead: Lead) =>
+      actions.aprovarLead(lead, {
+        onSuccess: () => {},
+        carregarLeads: ld.carregarLeads,
+      }),
+    [actions, ld.carregarLeads]
+  );
 
-  useEffect(() => {
-    void carregar(page, statusFiltro, busca);
-  }, [carregar, page, statusFiltro, busca]);
+  const handleRejeitarLead = useCallback(
+    (lead: Lead, motivo: string) =>
+      actions.rejeitarLead(lead, motivo, {
+        onSuccess: () => {},
+        carregarLeads: ld.carregarLeads,
+      }),
+    [actions, ld.carregarLeads]
+  );
 
-  const executarAcao = async () => {
-    if (!acao) return;
-    if (acao.tipo === 'rejeitar' && !motivo.trim()) {
-      setErroAcao('Informe o motivo da rejeição.');
-      return;
-    }
-    setSalvando(true);
-    setErroAcao('');
-    try {
-      const endpoint =
-        acao.tipo === 'aprovar'
-          ? `/api/admin/representantes-leads/${acao.id}/aprovar`
-          : `/api/admin/representantes-leads/${acao.id}/rejeitar`;
-      const body = acao.tipo === 'rejeitar' ? { motivo: motivo.trim() } : {};
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!res.ok) {
-        const e = (await res.json()) as { error?: string };
-        throw new Error(e.error ?? 'Erro ao executar ação');
-      }
-      setAcao(null);
-      setMotivo('');
-      void carregar(page, statusFiltro, busca);
-    } catch (err) {
-      setErroAcao(err instanceof Error ? err.message : 'Erro desconhecido');
-    } finally {
-      setSalvando(false);
-    }
-  };
-
-  const totalPages = Math.ceil(total / 30);
-  const fmtDate = (d: string | null) =>
-    d ? new Date(d).toLocaleDateString('pt-BR') : '—';
+  const handleConverterLead = useCallback(
+    (lead: Lead) =>
+      actions.converterLead(lead, {
+        onSuccess: () => {},
+        carregarLeads: ld.carregarLeads,
+        carregar: async () => {},
+      }),
+    [actions, ld.carregarLeads]
+  );
 
   return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Candidatos a Representante
-          </h2>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {total} candidato{total !== 1 ? 's' : ''} no sistema
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search
-              size={14}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
-            <input
-              type="text"
-              placeholder="Buscar nome / e-mail / CPF…"
-              value={busca}
-              onChange={(e) => {
-                setBusca(e.target.value);
-                setPage(1);
-              }}
-              className="pl-8 pr-3 py-2 text-sm border rounded-lg w-56 focus:outline-none focus:ring-2 focus:ring-green-500/30"
-            />
-          </div>
-          <select
-            value={statusFiltro}
-            onChange={(e) => {
-              setStatusFiltro(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 text-sm border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-500/30"
-          >
-            <option value="">Todos os status</option>
-            <option value="pendente_verificacao">Pendentes</option>
-            <option value="verificado">Verificados</option>
-            <option value="convertido">Convertidos</option>
-            <option value="rejeitado">Rejeitados</option>
-          </select>
-        </div>
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">
+          Candidatos a Representante
+        </h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Candidatos aguardando verificação e aprovação comercial.
+        </p>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-24">
-          <div className="animate-spin h-8 w-8 rounded-full border-4 border-amber-500 border-t-transparent" />
+      {/* Feedback de erro/sucesso */}
+      {actions.erro && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+          {actions.erro}
         </div>
-      ) : candidatos.length === 0 ? (
-        <div className="bg-white rounded-xl border p-16 text-center text-gray-400">
-          <UserPlus size={36} className="mx-auto mb-3 opacity-30" />
-          <p className="text-sm">Nenhum candidato encontrado.</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-xl border overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500 uppercase tracking-wide">
-              <tr>
-                <th className="px-5 py-3 text-left font-medium">Candidato</th>
-                <th className="px-4 py-3 text-center font-medium">Tipo</th>
-                <th className="px-4 py-3 text-center font-medium">Status</th>
-                <th className="px-4 py-3 text-center font-medium">
-                  Enviado em
-                </th>
-                <th className="px-4 py-3 text-center font-medium">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y">
-              {candidatos.map((c) => {
-                const st = CAND_STATUS[c.status] ?? {
-                  label: c.status,
-                  cls: 'bg-gray-100 text-gray-500',
-                  icon: AlertCircle,
-                };
-                const Icon = st.icon;
-                return (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <p className="font-medium text-gray-900">{c.nome}</p>
-                      <p className="text-xs text-gray-400">{c.email}</p>
-                      {c.razao_social && (
-                        <p className="text-xs text-gray-400">
-                          {c.razao_social}
-                        </p>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className="inline-block px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600 rounded-full uppercase">
-                        {c.tipo_pessoa === 'pf' ? 'PF' : 'PJ'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${st.cls}`}
-                      >
-                        <Icon size={11} />
-                        {st.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center text-gray-500">
-                      {fmtDate(c.criado_em)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      {c.status === 'pendente_verificacao' && (
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => {
-                              setAcao({ id: c.id, tipo: 'aprovar' });
-                              setMotivo('');
-                              setErroAcao('');
-                            }}
-                            className="px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 hover:bg-green-200 rounded-lg transition-colors"
-                          >
-                            Aprovar
-                          </button>
-                          <button
-                            onClick={() => {
-                              setAcao({ id: c.id, tipo: 'rejeitar' });
-                              setMotivo('');
-                              setErroAcao('');
-                            }}
-                            className="px-3 py-1 text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
-                          >
-                            Rejeitar
-                          </button>
-                        </div>
-                      )}
-                      {c.status === 'verificado' && (
-                        <span className="text-xs text-gray-400">
-                          Verificado em {fmtDate(c.verificado_em)}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      )}
+      {actions.sucesso && (
+        <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm">
+          {actions.sucesso}
         </div>
       )}
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 pt-2">
-          <button
-            disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Anterior
-          </button>
-          <span className="text-sm text-gray-600">
-            {page} / {totalPages}
-          </span>
-          <button
-            disabled={page >= totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-3 py-1.5 text-sm border rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-          >
-            Próxima
-          </button>
-        </div>
-      )}
-
-      {/* Modal de confirmação de ação */}
-      {acao && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6 space-y-4">
-            <h3 className="font-bold text-gray-900">
-              {acao.tipo === 'aprovar'
-                ? '✅ Aprovar Candidato'
-                : '❌ Rejeitar Candidato'}
-            </h3>
-            <p className="text-sm text-gray-600">
-              {acao.tipo === 'aprovar'
-                ? 'O candidato será marcado como verificado e poderá ser convertido em representante.'
-                : 'O candidato será rejeitado e não poderá prosseguir no processo.'}
+      {/* Link de acesso gerado após conversão */}
+      {actions.conviteLinkCopiavel && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-amber-800">
+              🔗 Link de acesso do representante — copie e envie ao candidato
             </p>
-            {acao.tipo === 'rejeitar' && (
-              <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
-                  Motivo da rejeição <span className="text-red-500">*</span>
-                </label>
-                <textarea
-                  rows={3}
-                  value={motivo}
-                  onChange={(e) => setMotivo(e.target.value)}
-                  placeholder="Descreva o motivo…"
-                  className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-red-400/30 resize-none"
-                />
-              </div>
-            )}
-            {erroAcao && (
-              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                <AlertCircle size={14} className="shrink-0" />
-                {erroAcao}
-              </div>
-            )}
-            <div className="flex gap-3 pt-1">
-              <button
-                onClick={() => {
-                  setAcao(null);
-                  setMotivo('');
-                  setErroAcao('');
-                }}
-                disabled={salvando}
-                className="flex-1 px-4 py-2 text-sm border rounded-lg hover:bg-gray-50 text-gray-600 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={() => void executarAcao()}
-                disabled={salvando}
-                className={`flex-1 px-4 py-2 text-sm font-semibold text-white rounded-lg transition-colors disabled:opacity-60 ${
-                  acao.tipo === 'aprovar'
-                    ? 'bg-green-600 hover:bg-green-700'
-                    : 'bg-red-600 hover:bg-red-700'
-                }`}
-              >
-                {salvando
-                  ? 'Aguarde…'
-                  : acao.tipo === 'aprovar'
-                    ? 'Confirmar Aprovação'
-                    : 'Confirmar Rejeição'}
-              </button>
-            </div>
+            <button
+              onClick={() => actions.setConviteLinkCopiavel(null)}
+              className="text-amber-500 hover:text-amber-700 text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-xs text-amber-700">
+            O representante deve usar este link para acessar a plataforma,
+            definir sua senha e aceitar o contrato e os termos de uso.
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-white border border-amber-200 rounded px-2 py-1.5 text-amber-900 overflow-x-auto whitespace-nowrap">
+              {actions.conviteLinkCopiavel}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard
+                  .writeText(actions.conviteLinkCopiavel!)
+                  .catch(() => {});
+                actions.setSucesso('Link copiado!');
+                setTimeout(() => actions.setSucesso(''), 2000);
+              }}
+              className="shrink-0 text-sm font-medium bg-amber-600 text-white rounded px-3 py-1.5 hover:bg-amber-700 transition-colors"
+            >
+              Copiar
+            </button>
           </div>
         </div>
       )}
+
+      <LeadsTab
+        leads={ld.leads}
+        leadsTotal={ld.leadsTotal}
+        leadsPage={ld.leadsPage}
+        setLeadsPage={ld.setLeadsPage}
+        leadsStatusFiltro={ld.leadsStatusFiltro}
+        setLeadsStatusFiltro={ld.setLeadsStatusFiltro}
+        leadsBusca={ld.leadsBusca}
+        setLeadsBusca={ld.setLeadsBusca}
+        leadsLoading={ld.leadsLoading}
+        leadActionLoading={actions.leadActionLoading}
+        leadDocsLoading={docs.leadDocsLoading}
+        openLeadDoc={docs.openLeadDoc}
+        onAprovarLead={handleAprovarLead}
+        onRejeitarLead={handleRejeitarLead}
+        onConverterLead={handleConverterLead}
+      />
     </div>
   );
 }
@@ -518,7 +284,14 @@ export default function ComercialPage() {
     }
 
     if (activeSection === 'leads') {
-      return <CandidatosContent />;
+      return (
+        <div className="space-y-8">
+          <ComercialLeadsAprovacaoPage />
+          <div className="border-t pt-6">
+            <CandidatosContent />
+          </div>
+        </div>
+      );
     }
 
     return (

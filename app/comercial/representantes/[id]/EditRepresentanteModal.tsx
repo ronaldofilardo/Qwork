@@ -40,6 +40,7 @@ interface RepresentanteData {
   tipo_pessoa: 'pf' | 'pj';
   status: string;
   percentual_comissao?: number | null;
+  percentual_vendedor_direto?: number | null;
   banco_codigo?: string | null;
   agencia?: string | null;
   conta?: string | null;
@@ -76,6 +77,11 @@ export default function EditRepresentanteModal({
   const [percentual, setPercentual] = useState(
     rep.percentual_comissao != null ? String(rep.percentual_comissao) : ''
   );
+  const [percentualVendedorDireto, setPercentualVendedorDireto] = useState(
+    rep.percentual_vendedor_direto != null
+      ? String(rep.percentual_vendedor_direto)
+      : ''
+  );
 
   // Dados bancários
   const [bancoCode, setBancoCode] = useState(rep.banco_codigo ?? '');
@@ -104,6 +110,16 @@ export default function EditRepresentanteModal({
       ) {
         body.percentual_comissao = percentual.trim()
           ? parseFloat(percentual)
+          : null;
+      }
+      if (
+        percentualVendedorDireto.trim() !==
+        (rep.percentual_vendedor_direto != null
+          ? String(rep.percentual_vendedor_direto)
+          : '')
+      ) {
+        body.percentual_vendedor_direto = percentualVendedorDireto.trim()
+          ? parseFloat(percentualVendedorDireto)
           : null;
       }
       if (rep.tipo_pessoa === 'pf' && cpf.trim() !== (rep.cpf ?? ''))
@@ -287,6 +303,21 @@ export default function EditRepresentanteModal({
                     value={percentual}
                     onChange={(e) => setPercentual(e.target.value)}
                     placeholder="Ex: 5.0"
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Comissão Venda Direta (%)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    className={inputCls}
+                    value={percentualVendedorDireto}
+                    onChange={(e) =>
+                      setPercentualVendedorDireto(e.target.value)
+                    }
+                    placeholder="Ex: 3.0"
                   />
                 </div>
               </div>

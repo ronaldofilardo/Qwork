@@ -34,8 +34,8 @@ export default function VinculosVendedor() {
   const [page, setPage] = useState(1);
   const [statusFiltro, setStatusFiltro] = useState('');
   const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState('');
+  const [erro, _setErro] = useState('');
+  const [sucesso, _setSucesso] = useState('');
 
   const carregar = useCallback(async () => {
     setLoading(true);

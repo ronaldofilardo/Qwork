@@ -178,7 +178,12 @@ describe('POST /api/representante/leads', () => {
 
   it('deve retornar 400 para email inválido', async () => {
     const res = await POST(
-      makePostReq({ cnpj: '12345678000190', contato_email: 'nao-e-email' })
+      makePostReq({
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+        percentual_comissao: 0,
+        contato_email: 'nao-e-email',
+      })
     );
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/e-mail/i);
@@ -186,7 +191,12 @@ describe('POST /api/representante/leads', () => {
 
   it('deve retornar 400 para telefone inválido', async () => {
     const res = await POST(
-      makePostReq({ cnpj: '12345678000190', contato_telefone: '123' })
+      makePostReq({
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+        percentual_comissao: 0,
+        contato_telefone: '123',
+      })
     );
     expect(res.status).toBe(400);
     expect((await res.json()).error).toMatch(/telefone/i);
@@ -198,7 +208,13 @@ describe('POST /api/representante/leads', () => {
       rowCount: 1,
     } as any);
 
-    const res = await POST(makePostReq({ cnpj: '12345678000190' }));
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+        percentual_comissao: 0,
+      })
+    );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/já possui/i);
   });
@@ -209,7 +225,13 @@ describe('POST /api/representante/leads', () => {
       rowCount: 1,
     } as any);
 
-    const res = await POST(makePostReq({ cnpj: '12345678000190' }));
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+        percentual_comissao: 0,
+      })
+    );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/outro representante/i);
   });
@@ -223,15 +245,45 @@ describe('POST /api/representante/leads', () => {
       rowCount: 1,
     } as any);
 
-    const res = await POST(makePostReq({ cnpj: '12345678000190' }));
+    const res = await POST(
+      makePostReq({
+        cnpj: '12345678000190',
+        valor_negociado: 1000,
+        percentual_comissao: 0,
+      })
+    );
     expect(res.status).toBe(409);
     expect((await res.json()).error).toMatch(/já está cadastrado/i);
+  });
+
+  it('deve retornar 409 quando CNPJ já é clínica existente', async () => {
+    // lead check — nenhum pendente
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // entidade check — nenhuma
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // clínica check — existe
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 200 }],
+      rowCount: 1,
+    } as any);
+
+    const res = await POST(
+      makePostReq({
+        cnpj: '09110380000191',
+        valor_negociado: 1000,
+        percentual_comissao: 0,
+      })
+    );
+    expect(res.status).toBe(409);
+    expect((await res.json()).error).toMatch(/clínica/i);
   });
 
   it('deve criar lead e retornar 201', async () => {
     // lead check
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // entidade check
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // clínica check
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT RETURNING
     const novoLead = {
@@ -249,6 +301,8 @@ describe('POST /api/representante/leads', () => {
         razao_social: 'Teste S.A.',
         contato_nome: 'João',
         contato_email: 'joao@test.dev',
+        valor_negociado: 1000,
+        percentual_comissao: 5,
       })
     );
     expect(res.status).toBe(201);

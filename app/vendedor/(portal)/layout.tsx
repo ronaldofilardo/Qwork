@@ -3,13 +3,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import ModalTermosVendedor from '@/components/modals/ModalTermosVendedor';
 
 interface VendedorSession {
   id: number;
   nome: string;
   cpf: string;
+  codigo?: string | null;
   email: string | null;
   perfil: string;
+  primeira_senha_alterada?: boolean;
+  aceite_politica_privacidade?: boolean;
 }
 
 export default function VendedorPortalLayout({
@@ -38,7 +42,7 @@ export default function VendedorPortalLayout({
       const dadosRes = await fetch('/api/vendedor/dados');
       if (dadosRes.ok) {
         const d = await dadosRes.json();
-        setSession(d.usuario ?? data);
+        setSession({ ...(d.usuario ?? data), perfil: 'vendedor' });
       } else {
         setSession(data);
       }
@@ -58,6 +62,31 @@ export default function VendedorPortalLayout({
     router.push('/login');
   };
 
+  const handleCopiarCodigo = async () => {
+    if (!session?.codigo) return;
+    try {
+      await navigator.clipboard.writeText(session.codigo);
+      // Visual feedback
+      const originalText = 'Copiado!';
+      const btn = document.getElementById('copy-codigo-btn');
+      if (btn) {
+        const original = btn.textContent;
+        btn.textContent = originalText;
+        setTimeout(() => {
+          if (btn) btn.textContent = original;
+        }, 2000);
+      }
+    } catch {
+      // Fallback
+      const input = document.createElement('input');
+      input.value = session.codigo;
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand('copy');
+      document.body.removeChild(input);
+    }
+  };
+
   const NAV_ITEMS = [
     { href: '/vendedor/dashboard', label: 'Dashboard' },
     { href: '/vendedor/leads', label: 'Leads' },
@@ -75,6 +104,23 @@ export default function VendedorPortalLayout({
   }
 
   if (!session) return null;
+
+  // Gate de troca de senha obrigatória (primeiro acesso)
+  if (
+    session.primeira_senha_alterada === false &&
+    pathname !== '/vendedor/trocar-senha'
+  ) {
+    router.push('/vendedor/trocar-senha');
+    return null;
+  }
+
+  // Gate de aceite de termos
+  if (
+    session.aceite_politica_privacidade === false &&
+    pathname !== '/vendedor/trocar-senha'
+  ) {
+    return <ModalTermosVendedor onConcluir={() => carregarSessao()} />;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -104,7 +150,19 @@ export default function VendedorPortalLayout({
               <p className="text-sm font-medium text-gray-900 leading-tight">
                 {session.nome}
               </p>
-              <p className="text-xs text-gray-400 leading-tight">Vendedor</p>
+              <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                <p className="text-xs text-gray-400 font-mono leading-tight">
+                  {session.codigo}
+                </p>
+                <button
+                  id="copy-codigo-btn"
+                  onClick={handleCopiarCodigo}
+                  title="Copiar código"
+                  className="ml-1 p-1 text-xs rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
+                >
+                  📋
+                </button>
+              </div>
             </div>
             <button
               onClick={handleLogout}

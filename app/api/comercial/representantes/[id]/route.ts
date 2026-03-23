@@ -35,6 +35,7 @@ export async function GET(
          r.dados_bancarios_solicitado_em,
          r.dados_bancarios_confirmado_em,
          r.percentual_comissao,
+         r.percentual_vendedor_direto,
          COUNT(DISTINCT l.id)                                                        AS total_leads,
          COUNT(DISTINCT l.id) FILTER (WHERE l.status = 'pendente')                  AS leads_ativos,
          COUNT(DISTINCT l.id) FILTER (WHERE l.status = 'convertido')                AS leads_convertidos,
@@ -72,20 +73,43 @@ export async function GET(
 // ─── PATCH ───────────────────────────────────────────────────────────────────
 
 const PatchSchema = z.object({
-  nome:            z.string().min(2).max(200).optional(),
-  email:           z.string().email().max(100).optional(),
-  telefone:        z.string().max(20).optional().nullable(),
-  cpf:             z.string().regex(/^\d{11}$/).optional().nullable(),
-  cnpj:            z.string().regex(/^\d{14}$/).optional().nullable(),
-  status:          z.enum(['ativo', 'apto_pendente', 'apto', 'apto_bloqueado', 'suspenso', 'desativado', 'rejeitado']).optional(),
+  nome: z.string().min(2).max(200).optional(),
+  email: z.string().email().max(100).optional(),
+  telefone: z.string().max(20).optional().nullable(),
+  cpf: z
+    .string()
+    .regex(/^\d{11}$/)
+    .optional()
+    .nullable(),
+  cnpj: z
+    .string()
+    .regex(/^\d{14}$/)
+    .optional()
+    .nullable(),
+  status: z
+    .enum([
+      'ativo',
+      'apto_pendente',
+      'apto',
+      'apto_bloqueado',
+      'suspenso',
+      'desativado',
+      'rejeitado',
+    ])
+    .optional(),
+  motivo: z.string().min(5).max(500).optional(),
   percentual_comissao: z.number().min(0).max(100).optional().nullable(),
-  banco_codigo:    z.string().max(10).optional().nullable(),
-  agencia:         z.string().max(20).optional().nullable(),
-  conta:           z.string().max(30).optional().nullable(),
-  tipo_conta:      z.enum(['corrente', 'poupanca']).optional().nullable(),
-  titular_conta:   z.string().max(200).optional().nullable(),
-  pix_chave:       z.string().max(200).optional().nullable(),
-  pix_tipo:        z.enum(['cpf', 'cnpj', 'email', 'telefone', 'aleatoria']).optional().nullable(),
+  percentual_vendedor_direto: z.number().min(0).max(100).optional().nullable(),
+  banco_codigo: z.string().max(10).optional().nullable(),
+  agencia: z.string().max(20).optional().nullable(),
+  conta: z.string().max(30).optional().nullable(),
+  tipo_conta: z.enum(['corrente', 'poupanca']).optional().nullable(),
+  titular_conta: z.string().max(200).optional().nullable(),
+  pix_chave: z.string().max(200).optional().nullable(),
+  pix_tipo: z
+    .enum(['cpf', 'cnpj', 'email', 'telefone', 'aleatoria'])
+    .optional()
+    .nullable(),
 });
 
 export async function PATCH(
@@ -93,7 +117,7 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole(['comercial', 'admin'], false);
+    const session = await requireRole(['comercial', 'admin'], false);
 
     const id = parseInt(params.id, 10);
     if (isNaN(id))
@@ -108,6 +132,105 @@ export async function PATCH(
       );
 
     const data = parsed.data;
+
+    // ── Verificação específica para soft delete (status = 'desativado') ─────
+    if (data.status === 'desativado') {
+      if (!data.motivo) {
+        return NextResponse.json(
+          { error: 'Motivo obrigatório para inativar representante' },
+          { status: 422 }
+        );
+      }
+
+      // Verificar representante atual
+      const repCheck = await query<{ status: string; nome: string }>(
+        `SELECT status, nome FROM representantes WHERE id = $1 LIMIT 1`,
+        [id]
+      );
+      if (repCheck.rows.length === 0) {
+        return NextResponse.json(
+          { error: 'Representante não encontrado' },
+          { status: 404 }
+        );
+      }
+      if (repCheck.rows[0].status === 'desativado') {
+        return NextResponse.json(
+          { error: 'Representante já está desativado' },
+          { status: 409 }
+        );
+      }
+
+      // Verificar comissões pendentes
+      const pendentes = await query<{ total: string }>(
+        `SELECT COUNT(*) AS total
+         FROM comissoes_laudo
+         WHERE representante_id = $1
+           AND status NOT IN ('paga', 'cancelada')`,
+        [id]
+      );
+      const totalPendente = parseInt(pendentes.rows[0]?.total ?? '0', 10);
+      if (totalPendente > 0) {
+        return NextResponse.json(
+          {
+            error: 'Representante possui comissões pendentes',
+            detail: `Existem ${totalPendente} comissão(ões) não quitadas. Regularize antes de inativar.`,
+            code: 'COMISSOES_PENDENTES',
+            total_pendente: totalPendente,
+          },
+          { status: 409 }
+        );
+      }
+
+      // Verificar leads pendentes (ainda em aberto)
+      const leadsPendentes = await query<{ total: string }>(
+        `SELECT COUNT(*) AS total
+         FROM leads_representante
+         WHERE representante_id = $1 AND status = 'pendente'`,
+        [id]
+      );
+      const totalLeads = parseInt(leadsPendentes.rows[0]?.total ?? '0', 10);
+
+      // Executar soft delete
+      await query(
+        `UPDATE representantes SET status = 'desativado', atualizado_em = NOW() WHERE id = $1`,
+        [id]
+      );
+
+      // Inativar vínculos na hierarquia_comercial
+      await query(
+        `UPDATE hierarquia_comercial
+         SET ativo = false, data_fim = NOW(), atualizado_em = NOW()
+         WHERE representante_id = $1 AND ativo = true`,
+        [id]
+      );
+
+      // Auditoria
+      const operadorCpf = (session as { cpf?: string }).cpf ?? '';
+      await query(
+        `INSERT INTO comissionamento_auditoria (
+           tabela, registro_id, status_anterior, status_novo,
+           triggador, motivo, dados_extras, criado_por_cpf
+         ) VALUES (
+           'representantes', $1, $2, 'desativado',
+           'comercial', $3, $4::jsonb, $5
+         )`,
+        [
+          id,
+          repCheck.rows[0].status,
+          data.motivo,
+          JSON.stringify({ leads_pendentes: totalLeads }),
+          operadorCpf,
+        ]
+      );
+
+      return NextResponse.json({
+        ok: true,
+        message: `Representante ${repCheck.rows[0].nome} desativado com sucesso`,
+        representante_id: id,
+      });
+    }
+    // ── Fim do bloco soft delete ─────────────────────────────────────────────
+
     const fields: string[] = [];
     const values: unknown[] = [];
     let idx = 1;
@@ -117,23 +240,31 @@ export async function PATCH(
       values.push(val);
     };
 
-    if (data.nome            !== undefined) addField('nome', data.nome);
-    if (data.email           !== undefined) addField('email', data.email);
-    if (data.telefone        !== undefined) addField('telefone', data.telefone);
-    if (data.cpf             !== undefined) addField('cpf', data.cpf);
-    if (data.cnpj            !== undefined) addField('cnpj', data.cnpj);
-    if (data.status          !== undefined) addField('status', data.status);
-    if (data.percentual_comissao !== undefined) addField('percentual_comissao', data.percentual_comissao);
-    if (data.banco_codigo    !== undefined) addField('banco_codigo', data.banco_codigo);
-    if (data.agencia         !== undefined) addField('agencia', data.agencia);
-    if (data.conta           !== undefined) addField('conta', data.conta);
-    if (data.tipo_conta      !== undefined) addField('tipo_conta', data.tipo_conta);
-    if (data.titular_conta   !== undefined) addField('titular_conta', data.titular_conta);
-    if (data.pix_chave       !== undefined) addField('pix_chave', data.pix_chave);
-    if (data.pix_tipo        !== undefined) addField('pix_tipo', data.pix_tipo);
+    if (data.nome !== undefined) addField('nome', data.nome);
+    if (data.email !== undefined) addField('email', data.email);
+    if (data.telefone !== undefined) addField('telefone', data.telefone);
+    if (data.cpf !== undefined) addField('cpf', data.cpf);
+    if (data.cnpj !== undefined) addField('cnpj', data.cnpj);
+    if (data.status !== undefined) addField('status', data.status);
+    if (data.percentual_comissao !== undefined)
+      addField('percentual_comissao', data.percentual_comissao);
+    if (data.percentual_vendedor_direto !== undefined)
+      addField('percentual_vendedor_direto', data.percentual_vendedor_direto);
+    if (data.banco_codigo !== undefined)
+      addField('banco_codigo', data.banco_codigo);
+    if (data.agencia !== undefined) addField('agencia', data.agencia);
+    if (data.conta !== undefined) addField('conta', data.conta);
+    if (data.tipo_conta !== undefined) addField('tipo_conta', data.tipo_conta);
+    if (data.titular_conta !== undefined)
+      addField('titular_conta', data.titular_conta);
+    if (data.pix_chave !== undefined) addField('pix_chave', data.pix_chave);
+    if (data.pix_tipo !== undefined) addField('pix_tipo', data.pix_tipo);
 
     if (fields.length === 0)
-      return NextResponse.json({ error: 'Nenhum campo para atualizar' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Nenhum campo para atualizar' },
+        { status: 400 }
+      );
 
     fields.push(`atualizado_em = NOW()`);
     values.push(id);

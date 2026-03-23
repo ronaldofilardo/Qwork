@@ -50,12 +50,10 @@ export default function SuportePage() {
         setNovosCadastrosCount(data.total || 0);
       }
 
-      const repsRes = await fetch(
-        '/api/admin/representantes?status=ativo&limit=1'
-      );
+      const repsRes = await fetch('/api/admin/representantes-leads?limit=1');
       if (repsRes.ok) {
         const data = await repsRes.json();
-        setRepresentantesPendentesCount(data.total || 0);
+        setRepresentantesPendentesCount(data.pendentes || 0);
       }
     } catch (error) {
       console.error('Erro ao buscar contadores:', error);

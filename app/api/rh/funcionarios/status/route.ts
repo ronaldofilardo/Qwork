@@ -72,6 +72,8 @@ async function updateLotesStatus(cpf: string, session: any) {
       );
 
       if (novoStatus === StatusLote.CONCLUIDO) {
+        // REMOVIDO: Emissão automática de laudo
+        // pronto para solicitação de emissão manual pelo RH/Entidade
         console.log(
           `[INFO] Lote ${lote.id} está concluído e pronto para solicitação de emissão manual`
         );

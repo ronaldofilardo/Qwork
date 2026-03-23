@@ -46,38 +46,10 @@ export const GET = async (
     let laudo;
 
     if (laudoQuery.rows.length === 0) {
-      // Não há registro no DB, mas pode haver arquivo local
-      // Buscar informações do lote para verificar permissão
-      const loteQuery = await query(
-        `SELECT id, emissor_cpf FROM lotes_avaliacao WHERE id = $1`,
-        [loteId]
+      return NextResponse.json(
+        { error: 'Laudo não encontrado', success: false },
+        { status: 404 }
       );
-
-      if (loteQuery.rows.length === 0) {
-        return NextResponse.json(
-          { error: 'Lote não encontrado', success: false },
-          { status: 404 }
-        );
-      }
-
-      const loteInfo = loteQuery.rows[0];
-
-      // Validar que o emissor tem permissão (ou se não há emissor definido ainda, permitir)
-      if (loteInfo.emissor_cpf && loteInfo.emissor_cpf !== user.cpf) {
-        return NextResponse.json(
-          {
-            error: 'Acesso negado: laudo pertence a outro emissor',
-            success: false,
-          },
-          { status: 403 }
-        );
-      }
-
-      // Usar dados do lote como fallback
-      laudo = {
-        id: loteInfo.id,
-        lote_id: loteInfo.id,
-      };
     } else {
       laudo = laudoQuery.rows[0];
     }

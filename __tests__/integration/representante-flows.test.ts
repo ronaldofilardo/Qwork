@@ -177,7 +177,7 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
         {
           id: 10,
           representante_id: 1,
-          cnpj: '12345678000190',
+          cnpj: '11222333000181',
           status: 'pendente',
         },
       ],
@@ -188,8 +188,10 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       new NextRequest('http://localhost/api/representante/leads', {
         method: 'POST',
         body: JSON.stringify({
-          cnpj: '12345678000190',
+          cnpj: '11222333000181',
           razao_social: 'Emp Test',
+          valor_negociado: 1000,
+          percentual_comissao: 5,
         }),
         headers: { 'Content-Type': 'application/json' },
       })
@@ -215,6 +217,8 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
     } as any);
     // Liberar comissões retidas
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 2 } as any);
+    // Solicitar dados bancários
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
     const res = await PATCH(
       new NextRequest('http://localhost/api/admin/representantes/1/status', {
@@ -303,10 +307,11 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       rows: [
         {
           id: 1,
-          status: 'aprovada',
+          status: 'nf_em_analise',
           representante_id: 1,
           representante_nome: 'Rep',
           valor_comissao: '500',
+          nf_rpa_enviada_em: '2026-01-10',
         },
       ],
       rowCount: 1,

@@ -35,7 +35,11 @@ const ESTADOS = [
 
 interface Props {
   onClose: () => void;
-  onSuccess: (codigo: string, nomeVendedor: string) => void;
+  onSuccess: (
+    codigo: string,
+    nomeVendedor: string,
+    conviteUrl?: string
+  ) => void;
 }
 
 export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
@@ -97,7 +101,7 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
         setErro(data.error ?? 'Erro ao cadastrar vendedor.');
         return;
       }
-      onSuccess(data.codigo, nome.trim());
+      onSuccess(data.codigo, nome.trim(), data.convite_url);
     } catch {
       setErro('Erro de conexão.');
     } finally {
@@ -298,20 +302,30 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
 interface SucessoProps {
   codigo: string;
   nomeVendedor: string;
+  conviteUrl?: string;
   onClose: () => void;
 }
 
 export function CodigoVendedorSucesso({
   codigo,
   nomeVendedor,
+  conviteUrl,
   onClose,
 }: SucessoProps) {
-  const [copiado, setCopiado] = useState(false);
+  const [copiadoCodigo, setCopiadoCodigo] = useState(false);
+  const [copiadoLink, setCopiadoLink] = useState(false);
 
-  const copiar = async () => {
+  const copiarCodigo = async () => {
     await navigator.clipboard.writeText(codigo);
-    setCopiado(true);
-    setTimeout(() => setCopiado(false), 2000);
+    setCopiadoCodigo(true);
+    setTimeout(() => setCopiadoCodigo(false), 2000);
+  };
+
+  const copiarLink = async () => {
+    if (!conviteUrl) return;
+    await navigator.clipboard.writeText(conviteUrl);
+    setCopiadoLink(true);
+    setTimeout(() => setCopiadoLink(false), 2000);
   };
 
   return (
@@ -323,12 +337,12 @@ export function CodigoVendedorSucesso({
         <h3 className="text-lg font-black text-gray-900">
           Vendedor Cadastrado!
         </h3>
-        <p className="text-sm text-gray-500 mt-1 mb-6">
+        <p className="text-sm text-gray-500 mt-1 mb-5">
           <span className="font-semibold text-gray-700">{nomeVendedor}</span>{' '}
           foi adicionado à sua equipe.
         </p>
 
-        <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6">
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-5 mb-4">
           <p className="text-[10px] font-bold text-green-700 uppercase tracking-widest mb-2">
             Código de Divulgação
           </p>
@@ -340,17 +354,43 @@ export function CodigoVendedorSucesso({
           </p>
         </div>
 
+        {conviteUrl && (
+          <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 mb-5 text-left">
+            <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest mb-2">
+              Link de Acesso — Criar Senha
+            </p>
+            <p className="text-xs text-blue-800 font-mono break-all mb-3">
+              {conviteUrl}
+            </p>
+            <button
+              onClick={copiarLink}
+              className={`w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold rounded-xl border transition-all ${
+                copiadoLink
+                  ? 'bg-blue-600 text-white border-blue-600'
+                  : 'border-blue-200 text-blue-600 hover:bg-blue-100'
+              }`}
+            >
+              {copiadoLink ? <CheckCheck size={12} /> : <Copy size={12} />}
+              {copiadoLink ? 'Copiado!' : 'Copiar link de convite'}
+            </button>
+            <p className="text-[10px] text-blue-500 mt-2">
+              Envie este link para o vendedor criar sua senha. Válido por 7
+              dias.
+            </p>
+          </div>
+        )}
+
         <div className="flex gap-3">
           <button
-            onClick={copiar}
+            onClick={copiarCodigo}
             className={`flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-semibold rounded-xl border transition-all ${
-              copiado
+              copiadoCodigo
                 ? 'bg-green-600 text-white border-green-600'
                 : 'border-gray-200 text-gray-600 hover:bg-gray-50'
             }`}
           >
-            {copiado ? <CheckCheck size={14} /> : <Copy size={14} />}
-            {copiado ? 'Copiado!' : 'Copiar código'}
+            {copiadoCodigo ? <CheckCheck size={14} /> : <Copy size={14} />}
+            {copiadoCodigo ? 'Copiado!' : 'Copiar código'}
           </button>
           <button
             onClick={onClose}

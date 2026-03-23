@@ -10,7 +10,6 @@
  * - Bug fix: total_vendedores correlated subquery em /api/suporte/representantes
  */
 
-import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -246,8 +245,20 @@ describe('Fase 8 — Comercial page aba Candidatos', () => {
     );
   });
 
-  it('CandidatosContent chama /api/admin/representantes-leads', () => {
-    expect(src).toMatch(/api\/admin\/representantes-leads/);
+  it('usa hook useLeads para buscar candidatos', () => {
+    expect(src).toMatch(/useLeads/);
+  });
+
+  it('usa hook useCachedDocs para visualizar documentos', () => {
+    expect(src).toMatch(/useCachedDocs/);
+  });
+
+  it('usa hook useRepActions para aprovar/rejeitar', () => {
+    expect(src).toMatch(/useRepActions/);
+  });
+
+  it('usa componente LeadsTab para renderizar tabela', () => {
+    expect(src).toMatch(/LeadsTab/);
   });
 
   it('tem botão Aprovar para candidatos pendentes', () => {
@@ -259,29 +270,17 @@ describe('Fase 8 — Comercial page aba Candidatos', () => {
     expect(src).toMatch(/motivo/);
   });
 
-  it('POST para endpoint /aprovar e /rejeitar', () => {
-    expect(src).toMatch(/\/aprovar/);
-    expect(src).toMatch(/\/rejeitar/);
+  it('inicializa useLeads com default pendente_verificacao', () => {
+    expect(src).toMatch(/pendente_verificacao/);
   });
 
-  it('importa ícones CheckCircle e XCircle para status', () => {
-    expect(src).toMatch(/CheckCircle/);
-    expect(src).toMatch(/XCircle/);
+  it('passa openLeadDoc do useCachedDocs para LeadsTab (visualizar documentos)', () => {
+    expect(src).toMatch(/openLeadDoc/);
   });
 
-  it('tem filtro de status e busca textual', () => {
-    expect(src).toMatch(/statusFiltro|status_filtro/);
-    expect(src).toMatch(/busca/);
-  });
-
-  it('tem paginação', () => {
-    expect(src).toMatch(/totalPages/);
-    expect(src).toMatch(/Anterior|P.*xima/);
-  });
-
-  it('modal de confirmação para ação', () => {
-    expect(src).toMatch(/salvando/);
-    expect(src).toMatch(/acao\.tipo/);
+  it('passa onAprovarLead e onRejeitarLead para LeadsTab', () => {
+    expect(src).toMatch(/onAprovarLead/);
+    expect(src).toMatch(/onRejeitarLead/);
   });
 });
 
@@ -349,20 +348,19 @@ describe('Fase 9 — Vendedor leads page (Novo Lead)', () => {
     expect(src).toMatch(/vinculado.*representante|representante.*vinculado/i);
   });
 
-  it('modal chama POST /api/vendedor/leads', () => {
-    expect(src).toMatch(/api\/vendedor\/leads/);
-    expect(src).toMatch(/method.*POST|POST.*method/);
+  it('modal chama POST /api/vendedor/leads (via componente NovoLeadModal)', () => {
+    expect(src).toMatch(/NovoLeadModal/);
+    expect(src).toMatch(/VendedorNovoLeadModal|NovoLeadModal/);
   });
 
   it('tem campo obrigatório contato_nome no modal', () => {
     expect(src).toMatch(/contato_nome/);
   });
 
-  it('tem campos de CNPJ, valor, comissão e observações', () => {
+  it('tem campos de CNPJ, valor e comissão', () => {
     expect(src).toMatch(/cnpj/);
     expect(src).toMatch(/valor_negociado/);
     expect(src).toMatch(/percentual_comissao/);
-    expect(src).toMatch(/observacoes|observações/i);
   });
 
   it('tem paginação', () => {

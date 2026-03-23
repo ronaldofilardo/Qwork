@@ -84,6 +84,11 @@ export default function PortalLayout({
     { href: '/representante/dashboard', label: 'Dashboard', badge: false },
     { href: '/representante/metricas', label: 'Métricas', badge: false },
     { href: '/representante/equipe', label: 'Minha Equipe', badge: false },
+    {
+      href: '/representante/minhas-vendas',
+      label: 'Minhas Vendas',
+      badge: false,
+    },
     { href: '/representante/dados', label: 'Dados', badge: false },
   ];
 
@@ -95,8 +100,22 @@ export default function PortalLayout({
     );
   }
 
+  // Gate de troca de senha obrigatória (primeiro acesso)
+  if (
+    session &&
+    session.precisa_trocar_senha &&
+    pathname !== '/representante/trocar-senha'
+  ) {
+    router.push('/representante/trocar-senha');
+    return null;
+  }
+
   // Gate de primeiro acesso: exibe modal bloqueante até todos os aceites serem concluídos
-  if (session && !session.aceite_politica_privacidade) {
+  if (
+    session &&
+    !session.aceite_politica_privacidade &&
+    pathname !== '/representante/trocar-senha'
+  ) {
     return (
       <ModalTermosRepresentante
         onConcluir={() => {

@@ -18,11 +18,14 @@ export async function GET(request: NextRequest) {
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = 20;
     const offset = (page - 1) * limit;
+    const soInativos = searchParams.get('ativo') === 'false';
 
     const countResult = await query<{ total: string }>(
       `SELECT COUNT(*) AS total
        FROM public.hierarquia_comercial hc
-       WHERE hc.representante_id = $1 AND hc.ativo = true`,
+       JOIN public.usuarios u ON u.id = hc.vendedor_id
+       WHERE hc.representante_id = $1 AND hc.ativo = ${soInativos ? 'false' : 'true'}
+         AND u.ativo = ${soInativos ? 'false' : 'true'}`,
       [sess.representante_id]
     );
     const total = parseInt(countResult.rows[0]?.total ?? '0', 10);
@@ -33,6 +36,7 @@ export async function GET(request: NextRequest) {
          hc.ativo,
          hc.percentual_override,
          hc.criado_em     AS vinculado_em,
+         hc.data_fim,
          u.id             AS vendedor_id,
          u.nome           AS vendedor_nome,
          u.email          AS vendedor_email,
@@ -43,7 +47,8 @@ export async function GET(request: NextRequest) {
        JOIN public.usuarios u ON u.id = hc.vendedor_id
        LEFT JOIN public.vendedores_perfil vp ON vp.usuario_id = u.id
        LEFT JOIN public.leads_representante lr ON lr.vendedor_id = u.id
-       WHERE hc.representante_id = $1 AND hc.ativo = true
+       WHERE hc.representante_id = $1 AND hc.ativo = ${soInativos ? 'false' : 'true'}
+         AND u.ativo = ${soInativos ? 'false' : 'true'}
        GROUP BY hc.id, u.id, vp.codigo
        ORDER BY u.nome
        LIMIT $2 OFFSET $3`,

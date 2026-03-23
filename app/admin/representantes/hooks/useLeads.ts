@@ -17,12 +17,15 @@ interface UseLeadsReturn {
   carregarLeads: () => Promise<void>;
 }
 
-export function useLeads(tabAtiva: string): UseLeadsReturn {
+export function useLeads(
+  tabAtiva: string,
+  defaultStatus: string = ''
+): UseLeadsReturn {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [leadsTotal, setLeadsTotal] = useState(0);
   const [leadsPendentes, setLeadsPendentes] = useState(0);
   const [leadsPage, setLeadsPage] = useState(1);
-  const [leadsStatusFiltro, setLeadsStatusFiltro] = useState('');
+  const [leadsStatusFiltro, setLeadsStatusFiltro] = useState(defaultStatus);
   const [leadsBusca, setLeadsBusca] = useState('');
   const [leadsLoading, setLeadsLoading] = useState(false);
 

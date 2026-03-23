@@ -14,11 +14,11 @@ export async function GET(request: NextRequest) {
     await requireRole(['suporte', 'comercial', 'admin'], false);
 
     const { searchParams } = new URL(request.url);
-    const busca  = searchParams.get('busca')?.trim()  ?? '';
+    const busca = searchParams.get('busca')?.trim() ?? '';
     const status = searchParams.get('status')?.trim() ?? '';
 
     const conditions: string[] = [];
-    const params: unknown[]    = [];
+    const params: unknown[] = [];
 
     if (busca) {
       params.push(`%${busca}%`);
@@ -28,14 +28,29 @@ export async function GET(request: NextRequest) {
     }
 
     const statusValidos = [
-      'ativo','apto_pendente','apto','apto_bloqueado','suspenso','desativado','rejeitado',
+      'ativo',
+      'apto_pendente',
+      'apto',
+      'apto_bloqueado',
+      'suspenso',
+      'desativado',
+      'rejeitado',
     ];
     if (status && statusValidos.includes(status)) {
       params.push(status);
       conditions.push(`r.status = $${params.length}`);
     }
 
-    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    // Filtro por grupo: ativos (excluindo desativado/rejeitado) ou inativos (desativado)
+    const grupo = searchParams.get('grupo')?.trim() ?? '';
+    if (grupo === 'inativos') {
+      conditions.push(`r.status IN ('desativado', 'rejeitado')`);
+    } else if (grupo === 'ativos') {
+      conditions.push(`r.status NOT IN ('desativado', 'rejeitado')`);
+    }
+
+    const where =
+      conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
     // Representantes com contagem de vendedores
     const repsResult = await query<{
@@ -76,15 +91,18 @@ export async function GET(request: NextRequest) {
 
     // Vendedores de todos os representantes em uma única query
     const repIds = repsResult.rows.map((r) => r.id);
-    const vendedoresPorRep: Record<number, Array<{
-      vendedor_id: number;
-      nome: string;
-      email: string | null;
-      cpf: string | null;
-      codigo: string | null;
-      vinculo_id: number;
-      vinculado_em: string;
-    }>> = {};
+    const vendedoresPorRep: Record<
+      number,
+      Array<{
+        vendedor_id: number;
+        nome: string;
+        email: string | null;
+        cpf: string | null;
+        codigo: string | null;
+        vinculo_id: number;
+        vinculado_em: string;
+      }>
+    > = {};
 
     if (repIds.length > 0) {
       const vResult = await query<{
@@ -116,7 +134,8 @@ export async function GET(request: NextRequest) {
       );
 
       for (const v of vResult.rows) {
-        if (!vendedoresPorRep[v.representante_id]) vendedoresPorRep[v.representante_id] = [];
+        if (!vendedoresPorRep[v.representante_id])
+          vendedoresPorRep[v.representante_id] = [];
         vendedoresPorRep[v.representante_id].push({
           vendedor_id: v.vendedor_id,
           nome: v.nome,

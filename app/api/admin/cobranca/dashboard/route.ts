@@ -83,7 +83,7 @@ export async function GET(_request: NextRequest) {
         CURRENT_DATE - (parcela->>'data_vencimento')::date as dias_atraso,
         parcela->>'status' as status_parcela
       FROM pagamentos p
-      INNER JOIN tomadors c ON c.id = p.tomador_id
+      INNER JOIN entidades c ON c.id = p.entidade_id
       CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
       WHERE p.detalhes_parcelas IS NOT NULL
         AND parcela->>'status' = 'pendente'
@@ -103,7 +103,7 @@ export async function GET(_request: NextRequest) {
         (parcela->>'data_vencimento')::date as data_vencimento,
         (parcela->>'data_vencimento')::date - CURRENT_DATE as dias_ate_vencimento
       FROM pagamentos p
-      INNER JOIN tomadors c ON c.id = p.tomador_id
+      INNER JOIN entidades c ON c.id = p.entidade_id
       CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
       WHERE p.detalhes_parcelas IS NOT NULL
         AND parcela->>'status' = 'pendente'
@@ -123,8 +123,8 @@ export async function GET(_request: NextRequest) {
         SUM((parcela->>'valor')::numeric) as valor_total_vencido,
         MIN((parcela->>'data_vencimento')::date) as primeira_parcela_vencida,
         MAX(CURRENT_DATE - (parcela->>'data_vencimento')::date) as dias_maior_atraso
-      FROM tomadors c
-      INNER JOIN pagamentos p ON p.tomador_id = c.id
+      FROM entidades c
+      INNER JOIN pagamentos p ON p.entidade_id = c.id
       CROSS JOIN LATERAL jsonb_array_elements(p.detalhes_parcelas) as parcela
       WHERE parcela->>'status' = 'pendente'
         AND (parcela->>'data_vencimento')::date < CURRENT_DATE
@@ -174,7 +174,9 @@ export async function GET(_request: NextRequest) {
         })),
         inadimplentes: inadimplentesResult.rows.map((row) => ({
           ...row,
+          total_parcelas_vencidas: Number(row.total_parcelas_vencidas),
           valor_total_vencido: parseFloat(row.valor_total_vencido),
+          dias_maior_atraso: Number(row.dias_maior_atraso),
         })),
       },
     });

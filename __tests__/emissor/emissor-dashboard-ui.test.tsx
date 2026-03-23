@@ -34,7 +34,6 @@ describe('Emissor Dashboard UI', () => {
                 clinica_nome: 'Clinica Y',
                 liberado_em: new Date().toISOString(),
                 total_avaliacoes: 10,
-                modo_emergencia: false,
                 solicitado_por: null,
                 solicitado_em: null,
                 laudo: {
@@ -89,13 +88,19 @@ describe('Emissor Dashboard UI', () => {
     fireEvent.click(screen.getByText('✅ Laudo Emitido'));
 
     await waitFor(() => {
-      expect(screen.getByText('Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)')).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          'Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)'
+        )
+      ).toBeInTheDocument();
       expect(screen.getByText('Emissor: Dra. Maria')).toBeInTheDocument();
       expect(screen.getByText('def456')).toBeInTheDocument();
     });
 
     // Click should attempt to download
-    const btn = screen.getByText('Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)');
+    const btn = screen.getByText(
+      'Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)'
+    );
 
     fireEvent.click(btn);
 

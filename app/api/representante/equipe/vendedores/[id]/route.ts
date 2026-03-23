@@ -1,6 +1,6 @@
 /**
- * PATCH /api/representante/equipe/vendedores/[id]
- * Edita dados do vendedor pertencente à equipe do representante logado.
+ * GET /api/representante/equipe/vendedores/[id] — dados completos do vendedor (inclui perfil)
+ * PATCH /api/representante/equipe/vendedores/[id] — edita dados do vendedor
  *
  * Permitido: nome, email, sexo, endereco, cidade, estado, cep (via vendedores_perfil + usuarios)
  * Bloqueado: cpf (imutável após cadastro), dados bancários (exclusivo do suporte)
@@ -25,6 +25,61 @@ const PatchSchema = z.object({
   estado: z.string().length(2).optional().nullable(),
   cep: z.string().max(9).optional().nullable(),
 });
+
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: { id: string } }
+): Promise<NextResponse> {
+  try {
+    const sess = requireRepresentante();
+
+    const vendedorId = parseInt(params.id, 10);
+    if (isNaN(vendedorId)) {
+      return NextResponse.json({ error: 'ID inválido' }, { status: 400 });
+    }
+
+    const rlsSess: Session = {
+      cpf: sess.cpf ?? '',
+      nome: sess.nome,
+      perfil: 'representante',
+      representante_id: sess.representante_id,
+    };
+
+    const result = await query(
+      `SELECT
+         u.id             AS vendedor_id,
+         u.nome           AS vendedor_nome,
+         u.email          AS vendedor_email,
+         u.cpf            AS vendedor_cpf,
+         vp.codigo        AS codigo_vendedor,
+         vp.sexo,
+         vp.endereco,
+         vp.cidade,
+         vp.estado,
+         vp.cep
+       FROM hierarquia_comercial hc
+       JOIN usuarios u ON u.id = hc.vendedor_id
+       LEFT JOIN vendedores_perfil vp ON vp.usuario_id = u.id
+       WHERE hc.vendedor_id = $1 AND hc.representante_id = $2 AND hc.ativo = true
+       LIMIT 1`,
+      [vendedorId, sess.representante_id],
+      rlsSess
+    );
+
+    if (result.rows.length === 0) {
+      return NextResponse.json(
+        { error: 'Vendedor não encontrado na sua equipe' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({ vendedor: result.rows[0] });
+  } catch (err: unknown) {
+    const e = err as Error;
+    const r = repAuthErrorResponse(e);
+    return NextResponse.json(r.body, { status: r.status });
+  }
+}
 
 export async function PATCH(
   request: NextRequest,

@@ -40,6 +40,7 @@ interface Representante {
   cpf: string | null;
   cnpj: string | null;
   percentual_comissao: number | null;
+  percentual_vendedor_direto: number | null;
   telefone: string | null;
   criado_em: string;
   total_vendedores: number;
@@ -205,6 +206,7 @@ function RepresentanteDrawer({
     telefone: '',
     status: '',
     percentual_comissao: '',
+    percentual_vendedor_direto: '',
   });
 
   const [vendedorBancario, setVendedorBancario] = useState<number | null>(null);
@@ -237,6 +239,8 @@ function RepresentanteDrawer({
       telefone: rep.telefone ?? '',
       status: rep.status ?? '',
       percentual_comissao: rep.percentual_comissao?.toString() ?? '',
+      percentual_vendedor_direto:
+        rep.percentual_vendedor_direto?.toString() ?? '',
     });
   }, [rep]);
 
@@ -255,6 +259,10 @@ function RepresentanteDrawer({
       if (form.status) body.status = form.status;
       if (form.percentual_comissao)
         body.percentual_comissao = parseFloat(form.percentual_comissao);
+      if (form.percentual_vendedor_direto)
+        body.percentual_vendedor_direto = parseFloat(
+          form.percentual_vendedor_direto
+        );
 
       const res = await fetch(`/api/suporte/representantes/${rep.id}`, {
         method: 'PATCH',
@@ -492,6 +500,11 @@ function RepresentanteDrawer({
                     {
                       key: 'percentual_comissao',
                       label: '% Comissao',
+                      type: 'number',
+                    },
+                    {
+                      key: 'percentual_vendedor_direto',
+                      label: '% Venda Direta',
                       type: 'number',
                     },
                   ].map(({ key, label, type }) => (
@@ -770,6 +783,7 @@ export function RepresentantesLista() {
   const [status, setStatus] = useState('');
   const [buscaInput, setBuscaInput] = useState('');
   const [drawerRep, setDrawerRep] = useState<Representante | null>(null);
+  const [grupo, setGrupo] = useState<'ativos' | 'inativos'>('ativos');
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -777,6 +791,7 @@ export function RepresentantesLista() {
       const params = new URLSearchParams();
       if (busca) params.set('busca', busca);
       if (status) params.set('status', status);
+      params.set('grupo', grupo);
       const res = await fetch(`/api/suporte/representantes?${params}`);
       if (res.ok) {
         const d = (await res.json()) as {
@@ -789,19 +804,46 @@ export function RepresentantesLista() {
     } finally {
       setLoading(false);
     }
-  }, [busca, status]);
+  }, [busca, status, grupo]);
 
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  // Resetar filtro de status ao trocar aba
+  const handleGrupo = (g: 'ativos' | 'inativos') => {
+    setGrupo(g);
+    setStatus('');
+  };
 
   const handleBuscaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setBusca(buscaInput);
   };
 
+  const STATUS_OPTIONS_ATIVOS = STATUS_OPTIONS.filter(
+    (o) => !['desativado', 'rejeitado'].includes(o.value)
+  );
+
   return (
     <div className="space-y-4">
+      {/* Abas Ativos / Inativos */}
+      <div className="flex border-b border-gray-200">
+        {(['ativos', 'inativos'] as const).map((g) => (
+          <button
+            key={g}
+            onClick={() => handleGrupo(g)}
+            className={`px-5 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px ${
+              grupo === g
+                ? 'border-green-600 text-green-700'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {g === 'ativos' ? 'Ativos' : 'Inativos'}
+          </button>
+        ))}
+      </div>
+
       <div className="flex flex-col sm:flex-row gap-3">
         <form onSubmit={handleBuscaSubmit} className="flex gap-2 flex-1">
           <div className="relative flex-1">
@@ -824,17 +866,19 @@ export function RepresentantesLista() {
             Buscar
           </button>
         </form>
-        <select
-          value={status}
-          onChange={(e) => setStatus(e.target.value)}
-          className="py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 bg-white"
-        >
-          {STATUS_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
+        {grupo === 'ativos' && (
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value)}
+            className="py-2 px-3 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 bg-white"
+          >
+            {STATUS_OPTIONS_ATIVOS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        )}
         <button
           onClick={() => carregar()}
           className="p-2 text-gray-400 hover:text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"

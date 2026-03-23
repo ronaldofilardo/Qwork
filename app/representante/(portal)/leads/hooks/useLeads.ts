@@ -8,6 +8,11 @@ import {
   validarTelefone,
   validarEmail,
 } from '@/lib/validators';
+import {
+  CUSTO_PRODUTO,
+  calcularRequerAprovacao,
+  type TipoCliente,
+} from '@/lib/leads-config';
 import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
 
 const FORM_INICIAL: NovoLeadForm = {
@@ -18,6 +23,7 @@ const FORM_INICIAL: NovoLeadForm = {
   contato_telefone: '',
   valor_negociado: '',
   percentual_comissao: '',
+  tipo_cliente: 'entidade',
 };
 
 const ERROS_INICIAL: ErrosCampos = {
@@ -140,6 +146,17 @@ export function useLeads() {
       novoForm.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
     ) || 0;
 
+  const custoAtual = CUSTO_PRODUTO[novoForm.tipo_cliente];
+  const requerAprovacao = calcularRequerAprovacao(
+    valorNegociadoNum,
+    percentualComissaoNum,
+    novoForm.tipo_cliente
+  );
+
+  const handleTipoClienteChange = (tipo: TipoCliente) => {
+    setNovoForm((p) => ({ ...p, tipo_cliente: tipo }));
+  };
+
   const formValido =
     normalizeCNPJ(novoForm.cnpj).length === 14 &&
     validarCNPJ(normalizeCNPJ(novoForm.cnpj)) &&
@@ -180,6 +197,7 @@ export function useLeads() {
           contato_telefone: novoForm.contato_telefone || null,
           valor_negociado: valorNegociadoNum,
           percentual_comissao: percentualComissaoNum,
+          tipo_cliente: novoForm.tipo_cliente,
         }),
       });
       const data = await res.json();
@@ -190,7 +208,10 @@ export function useLeads() {
       setShowNovo(false);
       setNovoForm(FORM_INICIAL);
       setErrosCampos(ERROS_INICIAL);
-      setSucesso('Lead registrado com sucesso!');
+      const msg = data.requer_aprovacao_comercial
+        ? 'Lead registrado! Aguardando aprovação do Comercial.'
+        : 'Lead registrado com sucesso!';
+      setSucesso(msg);
       setTimeout(() => setSucesso(''), 3000);
       await carregarLeads();
     } finally {
@@ -226,5 +247,8 @@ export function useLeads() {
     handleCNPJChange,
     handleTelefoneChange,
     handleEmailChange,
+    handleTipoClienteChange,
+    requerAprovacao,
+    custoAtual,
   };
 }

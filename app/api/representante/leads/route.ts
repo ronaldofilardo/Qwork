@@ -14,6 +14,8 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
+import { calcularRequerAprovacao, TIPOS_CLIENTE } from '@/lib/leads-config';
+import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -103,7 +105,13 @@ export async function POST(request: NextRequest) {
       contato_telefone,
       valor_negociado,
       percentual_comissao,
+      tipo_cliente: tipoClienteRaw,
     } = body;
+
+    const tipoCliente: TipoCliente =
+      tipoClienteRaw && TIPOS_CLIENTE.includes(tipoClienteRaw)
+        ? tipoClienteRaw
+        : 'entidade';
 
     const cnpjLimpo = normalizeCNPJ(cnpj ?? '');
     if (!cnpjLimpo || !validarCNPJ(cnpjLimpo)) {
@@ -181,9 +189,27 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verificar se o CNPJ já está cadastrado como clínica
+    const clinicaExiste = await query(
+      `SELECT id FROM clinicas WHERE cnpj = $1 LIMIT 1`,
+      [cnpjLimpo]
+    );
+    if (clinicaExiste.rows.length > 0) {
+      return NextResponse.json(
+        { error: 'Este CNPJ já está cadastrado como clínica no QWork' },
+        { status: 409 }
+      );
+    }
+
+    const requerAprovacao = calcularRequerAprovacao(
+      valorNum,
+      comissaoNum,
+      tipoCliente
+    );
+
     const result = await query(
-      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao, tipo_cliente, requer_aprovacao_comercial)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING *`,
       [
         sess.representante_id,
@@ -194,10 +220,15 @@ export async function POST(request: NextRequest) {
         contato_telefone ?? null,
         valorNum,
         comissaoNum,
+        tipoCliente,
+        requerAprovacao,
       ]
     );
 
-    return NextResponse.json({ lead: result.rows[0] }, { status: 201 });
+    return NextResponse.json(
+      { lead: result.rows[0], requer_aprovacao_comercial: requerAprovacao },
+      { status: 201 }
+    );
   } catch (err: unknown) {
     const e = err as Error;
     const r = repAuthErrorResponse(e);
