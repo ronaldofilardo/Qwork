@@ -1,0 +1,43 @@
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.production.local, .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./lib/db/comissionamento/comissoes.ts
+555:17  Warning: 'criarComissaoVendedor' was used before it was defined.  @typescript-eslint/no-use-before-define
+606:15  Warning: 'criarComissaoVendedor' was used before it was defined.  @typescript-eslint/no-use-before-define
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.3.1] injecting env (19) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+   Generating static pages (0/88) ...
+   Generating static pages (22/88) 
+   Generating static pages (44/88) 
+   Generating static pages (66/88) 
+ Ô£ô Generating static pages (88/88)
+
+> Build error occurred
+Error: ENOENT: no such file or directory, open 'C:\apps\QWork\.next\server\pages-manifest.json'
+    at readFileSync (node:fs:440:20)
+    at loadManifest (C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\server\load-manifest.js:36:52)
+    at getMaybePagePath (C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\server\require.js:59:58)
+    at getPagePath (C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\server\require.js:92:22)
+    at C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\build\index.js:1855:71
+    at Span.traceAsyncFn (C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\trace\trace.js:154:26)
+    at moveExportedPage (C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\build\index.js:1852:86)
+    at C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\build\index.js:1924:31
+    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+    at async Span.traceAsyncFn (C:\apps\QWork\node_modules\.pnpm\next@14.2.35_@babel+core@7._db764d419c11dd64cbaa41d33973ca97\node_modules\next\dist\trace\trace.js:154:20) {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'C:\\apps\\QWork\\.next\\server\\pages-manifest.json'
+}

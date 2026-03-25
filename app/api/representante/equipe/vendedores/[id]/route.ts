@@ -56,7 +56,12 @@ export async function GET(
          vp.endereco,
          vp.cidade,
          vp.estado,
-         vp.cep
+         vp.cep,
+         vp.tipo_pessoa,
+         vp.cnpj,
+         vp.razao_social,
+         vp.doc_cad_path,
+         vp.doc_nf_rpa_path
        FROM hierarquia_comercial hc
        JOIN usuarios u ON u.id = hc.vendedor_id
        LEFT JOIN vendedores_perfil vp ON vp.usuario_id = u.id

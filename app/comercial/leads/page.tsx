@@ -9,7 +9,11 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-react';
-import { CUSTO_PRODUTO, TIPO_CLIENTE_LABEL } from '@/lib/leads-config';
+import {
+  CUSTO_POR_AVALIACAO,
+  TIPO_CLIENTE_LABEL,
+  calcularValoresComissao,
+} from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 
 interface LeadAprovacao {
@@ -21,6 +25,10 @@ interface LeadAprovacao {
   tipo_cliente: TipoCliente;
   valor_negociado: number | null;
   percentual_comissao: number | null;
+  percentual_comissao_representante: number | null;
+  percentual_comissao_vendedor: number | null;
+  vendedor_nome: string | null;
+  num_vidas_estimado: number | null;
   criado_em: string;
   representante_nome: string;
   representante_codigo: string;
@@ -99,17 +107,20 @@ export default function ComercialLeadsAprovacaoPage() {
     }
   };
 
-  const fmtBRL = (v: number | null) =>
+  const fmtBRL = (v: number | null | undefined) =>
     v != null
       ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
       : '—';
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
 
-  const calcValorQWork = (lead: LeadAprovacao) => {
-    const v = Number(lead.valor_negociado ?? 0);
-    const c = Number(lead.percentual_comissao ?? 0);
-    return v * (1 - c / 100);
+  const getBreakdown = (lead: LeadAprovacao) => {
+    const valor = Number(lead.valor_negociado ?? 0);
+    const percRep = Number(
+      lead.percentual_comissao_representante ?? lead.percentual_comissao ?? 0
+    );
+    const percVend = Number(lead.percentual_comissao_vendedor ?? 0);
+    return calcularValoresComissao(valor, percRep, percVend, lead.tipo_cliente);
   };
 
   const totalPages = Math.ceil(total / 30);
@@ -150,19 +161,20 @@ export default function ComercialLeadsAprovacaoPage() {
                 <thead className="text-xs text-gray-500 uppercase tracking-wide bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left font-medium">
-                      Representante
+                      Representante / Vendedor
                     </th>
                     <th className="px-4 py-3 text-left font-medium">CNPJ</th>
                     <th className="px-4 py-3 text-center font-medium">Tipo</th>
                     <th className="px-4 py-3 text-right font-medium">Valor</th>
+                    <th className="px-4 py-3 text-center font-medium">Vidas</th>
                     <th className="px-4 py-3 text-center font-medium">
-                      Comissão
+                      % Rep / % Vend
                     </th>
                     <th className="px-4 py-3 text-right font-medium">
-                      Valor QWork
+                      QWork recebe
                     </th>
                     <th className="px-4 py-3 text-right font-medium">
-                      Custo Ref.
+                      Custo/Aval.
                     </th>
                     <th className="px-4 py-3 text-center font-medium">Data</th>
                     <th className="px-4 py-3 text-center font-medium">Ações</th>
@@ -170,8 +182,16 @@ export default function ComercialLeadsAprovacaoPage() {
                 </thead>
                 <tbody className="divide-y">
                   {leads.map((lead) => {
-                    const valorQWork = calcValorQWork(lead);
-                    const custo = CUSTO_PRODUTO[lead.tipo_cliente];
+                    const bd = getBreakdown(lead);
+                    const custo = CUSTO_POR_AVALIACAO[lead.tipo_cliente];
+                    const percRep = Number(
+                      lead.percentual_comissao_representante ??
+                        lead.percentual_comissao ??
+                        0
+                    );
+                    const percVend = Number(
+                      lead.percentual_comissao_vendedor ?? 0
+                    );
                     return (
                       <tr key={lead.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
@@ -181,6 +201,11 @@ export default function ComercialLeadsAprovacaoPage() {
                           <div className="text-xs text-gray-400">
                             #{lead.representante_codigo}
                           </div>
+                          {lead.vendedor_nome && (
+                            <div className="text-xs text-purple-600 mt-0.5">
+                              Vendedor: {lead.vendedor_nome}
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-gray-700 font-mono text-xs">
                           {lead.cnpj}
@@ -199,17 +224,52 @@ export default function ComercialLeadsAprovacaoPage() {
                         <td className="px-4 py-3 text-right text-gray-700">
                           {fmtBRL(Number(lead.valor_negociado))}
                         </td>
-                        <td className="px-4 py-3 text-center text-gray-700">
-                          {lead.percentual_comissao != null
-                            ? `${Number(lead.percentual_comissao).toFixed(1)}%`
-                            : '—'}
+                        <td className="px-4 py-3 text-center">
+                          {lead.num_vidas_estimado != null ? (
+                            <span
+                              className={`text-xs font-medium ${lead.num_vidas_estimado >= 200 ? 'text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded' : 'text-gray-600'}`}
+                            >
+                              {lead.num_vidas_estimado}
+                              {lead.num_vidas_estimado >= 200 && ' (volume)'}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="text-xs space-y-0.5">
+                            <div className="text-gray-700">
+                              Rep:{' '}
+                              <span className="font-semibold">
+                                {percRep.toFixed(1)}%
+                              </span>{' '}
+                              ({fmtBRL(bd.valorRep)})
+                            </div>
+                            {percVend > 0 && (
+                              <div className="text-purple-600">
+                                Vend:{' '}
+                                <span className="font-semibold">
+                                  {percVend.toFixed(1)}%
+                                </span>{' '}
+                                ({fmtBRL(bd.valorVendedor)})
+                              </div>
+                            )}
+                            <div className="text-gray-400">
+                              Total: {bd.percentualTotal.toFixed(1)}%
+                            </div>
+                          </div>
                         </td>
                         <td className="px-4 py-3 text-right">
                           <span
-                            className={`font-medium ${valorQWork < custo ? 'text-red-600' : 'text-green-600'}`}
+                            className={`font-medium ${bd.valorQWork < custo ? 'text-red-600' : 'text-green-600'}`}
                           >
-                            {fmtBRL(valorQWork)}
+                            {fmtBRL(bd.valorQWork)}
                           </span>
+                          {bd.abaixoCusto && (
+                            <div className="text-xs text-red-500">
+                              abaixo custo
+                            </div>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-right text-gray-500">
                           R$ {custo},00
@@ -285,6 +345,85 @@ export default function ComercialLeadsAprovacaoPage() {
               </p>
             </div>
             <div className="px-6 py-4 space-y-3">
+              {/* Breakdown financeiro */}
+              {(() => {
+                const bd = getBreakdown(modal.lead);
+                const custo = CUSTO_POR_AVALIACAO[modal.lead.tipo_cliente];
+                const percRep = Number(
+                  modal.lead.percentual_comissao_representante ??
+                    modal.lead.percentual_comissao ??
+                    0
+                );
+                const percVend = Number(
+                  modal.lead.percentual_comissao_vendedor ?? 0
+                );
+                return (
+                  <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-1.5 text-xs">
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">Valor negociado</span>
+                      <span className="font-semibold">
+                        {fmtBRL(Number(modal.lead.valor_negociado))}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-500">
+                        Comissão rep ({percRep.toFixed(1)}%)
+                      </span>
+                      <span className="text-gray-700">
+                        {fmtBRL(bd.valorRep)}
+                      </span>
+                    </div>
+                    {percVend > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-purple-600">
+                          Comissão vendedor ({percVend.toFixed(1)}%)
+                        </span>
+                        <span className="text-purple-600">
+                          {fmtBRL(bd.valorVendedor)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t pt-1.5">
+                      <span
+                        className={
+                          bd.abaixoCusto
+                            ? 'text-red-600 font-semibold'
+                            : 'text-green-600 font-semibold'
+                        }
+                      >
+                        QWork recebe
+                      </span>
+                      <span
+                        className={
+                          bd.abaixoCusto
+                            ? 'text-red-600 font-semibold'
+                            : 'text-green-600 font-semibold'
+                        }
+                      >
+                        {fmtBRL(bd.valorQWork)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-gray-400">
+                      <span>
+                        Custo por avaliação ({modal.lead.tipo_cliente})
+                      </span>
+                      <span>R$ {custo},00</span>
+                    </div>
+                    {bd.abaixoCusto && (
+                      <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded px-2 py-1.5 mt-1">
+                        <AlertTriangle
+                          size={12}
+                          className="text-red-500 shrink-0"
+                        />
+                        <p className="text-red-700">
+                          Abaixo do custo por avaliação! Aprovação com desconto
+                          ou margem negativa.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {modal.acao === 'rejeitar' && (
                 <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
                   <AlertTriangle

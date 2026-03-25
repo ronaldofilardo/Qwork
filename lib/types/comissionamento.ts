@@ -88,7 +88,12 @@ export type MotivoCongelamento =
   | 'aguardando_revisao';
 
 /** Tipo de ator que dispara uma transição de auditoria */
-export type Triggador = 'job' | 'admin_action' | 'rep_action' | 'sistema';
+export type Triggador =
+  | 'job'
+  | 'admin_action'
+  | 'suporte_action'
+  | 'rep_action'
+  | 'sistema';
 
 // ---------------------------------------------------------------------------
 // Interfaces (espelham as linhas das tabelas PostgreSQL)

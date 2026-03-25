@@ -33,6 +33,7 @@ export interface NovoLeadForm {
   valor_negociado: string;
   percentual_comissao: string;
   tipo_cliente: TipoCliente;
+  num_vidas_estimado: string;
 }
 
 export interface ErrosCampos {

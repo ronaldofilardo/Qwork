@@ -443,6 +443,21 @@ export const POST = async (
       }
     }
 
+    // Verificar se lote está na fila de emissão (v_fila_emissao)
+    const filaEntry = await query(
+      `SELECT id FROM v_fila_emissao WHERE lote_id = $1 LIMIT 1`,
+      [loteId]
+    );
+    if (!filaEntry.rows || filaEntry.rows.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'Lote não possui solicitação de emissão pendente',
+          success: false,
+        },
+        { status: 400 }
+      );
+    }
+
     // EMISSÃO MANUAL DE LAUDO PELO EMISSOR
     console.log(
       `[EMISSÃO MANUAL] Emissor ${user.cpf} gerando laudo para lote ${loteId}`

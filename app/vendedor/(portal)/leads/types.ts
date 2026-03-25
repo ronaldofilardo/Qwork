@@ -27,6 +27,7 @@ export interface NovoLeadVendedorForm {
   percentual_comissao: string;
   observacoes: string;
   tipo_cliente: TipoCliente;
+  num_vidas_estimado: string;
 }
 
 export interface ErrosCamposVendedor {

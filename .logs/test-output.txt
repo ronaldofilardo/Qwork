@@ -1,0 +1,278 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs && dotenv -e .env.test --override -- node scripts/checks/validate-test-data-integrity.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "clinicas.ativa" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "entidades.tipo" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "empresas_clientes.ativa" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.empresa_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.clinica_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.tipo" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.status" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.liberado_por" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "avaliacoes.lote_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "avaliacoes.status" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "tomador_id" n├úo existe na tabela "funcionarios". Se testes falharem, verifique se migrations foram aplicadas.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "usuario_tipo" n├úo existe na tabela "funcionarios". Se testes falharem, verifique se migrations foram aplicadas.
+Ô£à [validate-test-data-integrity] Esquema do banco "nr-bps_db_test" foi validado (6 tabelas verificadas).
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "__tests__/components/ImportEmpresasModal.test.tsx" "--no-coverage"
+
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+FAIL __tests__/components/ImportEmpresasModal.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+  ÔùÅ ImportEmpresasModal ÔÇ║ Renderiza├º├úo ÔÇ║ deve exibir colunas opcionais
+
+    TestingLibraryElementError: Found multiple elements with the text: /nivel_cargo/
+
+    Here are the matching elements:
+
+    Ignored nodes: comments, script, style
+    <span
+      class="inline-block bg-blue-100 text-blue-600 text-xs px-2 py-0.5 rounded border border-blue-200"
+    >
+      nivel_cargo
+      <span
+        class="ml-0.5 opacity-70"
+      >
+        *
+      </span>
+    </span>
+
+    Ignored nodes: comments, script, style
+    <span
+      class="font-medium"
+    >
+      nivel_cargo*:
+    </span>
+
+    (If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="fixed inset-0 z-50 flex items-center justify-center p-4"
+        >
+          <div
+            aria-hidden="true"
+            class="absolute inset-0 bg-black/50"
+          />
+          <div
+            aria-labelledby="import-empresas-modal-title"
+            aria-modal="true"
+            class="relative bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+            role="dialog"
+          >
+            <div
+              class="sticky top-0 bg-white flex items-center justify-between px-6 py-4 border-b border-gray-200 rounded-t-xl z-10"
+            >
+              <div
+                class="flex items-center gap-3"
+              >
+                <div
+                  class="p-2 bg-primary/10 rounded-lg"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-file-spreadsheet text-primary"
+                    fill="none"
+                    height="20"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"
+                    />
+                    <path
+                      d="M14 2v5a1 1 0 0 0 1 1h5"
+                    />
+                    <path
+                      d="M8 13h2"
+                    />
+                    <path
+                      d="M14 13h2"
+                    />
+                    <path
+                      d="M8 17h2"
+                    />
+                    <path
+                      d="M14 17h2"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h2
+                    class="text-lg font-semibold text-gray-900"
+                    id="import-empresas-modal-title"
+                  >
+                    Importar Empresas e Funcion├írios
+                  </h2>
+                  <p
+                    class="text-sm text-gray-500"
+                  >
+                    Upload em massa via planilha .xlsx
+                  </p>
+                </div>
+              </div>
+              <button
+                aria-label="Fechar modal"
+                class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-150 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/50 disabled:opacity-50"
+              >
+                <svg
+                  aria-hidden="true"
+                  class="lucide lucide-x"
+                  fill="none"
+                  height="20"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  viewBox="0 0 24 24"
+                  width="20"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M18 6 6 18"
+                  />
+                  <path
+                    d="m6 6 12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+            <div
+              class="px-6 py-5 space-y-5"
+            >
+              <div
+                class="bg-blue-50 border border-blue-200 rounded-lg p-4"
+              >
+                <p
+                  class="text-sm font-semibold text-blue-800 mb-3"
+                >
+                  Formato esperado da planilha (1┬¬ aba):
+                </p>
+                <div
+                  class="overflow-x-auto"
+                >
+                  <div
+                    class="flex flex-wrap gap-1 mb-2"
+                  >
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      empresa_cnpj
+                    </span>
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      empresa_nome
+                    </span>
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      cpf
+                    </span>
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      nome
+                    </span>
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      data_nascimento
+                    </span>
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      setor
+                    </span>
+                    <span
+                      class="inline-block bg-blue-200 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded"
+                    >
+                      funcao
+                    </span>
+                    <span
+                      [3...
+
+      71 |       expect(screen.getByText(/matricula/)).toBeInTheDocument();
+      72 |       // O componente renderiza 'nivel_cargo*' em uma span com opacidade
+    > 73 |       const colunaOptional = screen.getByText(/nivel_cargo/);
+         |                                     ^
+      74 |       expect(colunaOptional).toBeInTheDocument();
+      75 |     });
+      76 |
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:20:35)
+      at getMultipleElementsFoundError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:23:10)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (__tests__/components/ImportEmpresasModal.test.tsx:73:37)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 14 passed, 15 total
+Snapshots:   0 total
+Time:        2.481 s
+Ran all test suites matching __tests__/components/ImportEmpresasModal.test.tsx.
+ÔÇëELIFECYCLEÔÇë Test failed. See above for more details.

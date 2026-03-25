@@ -1,7 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Loader2, UserPlus, Copy, CheckCheck } from 'lucide-react';
+import { useState, useRef } from 'react';
+import {
+  X,
+  Loader2,
+  UserPlus,
+  Copy,
+  CheckCheck,
+  Upload,
+  FileText,
+} from 'lucide-react';
+
+const ACCEPT_DOCS = '.pdf,.jpg,.jpeg,.png';
 
 interface Props {
   onClose: () => void;
@@ -26,12 +36,30 @@ export default function CadastrarRepresentanteModal({
   const [tipoPessoa, setTipoPessoa] = useState<'pf' | 'pj'>('pf');
   const [copiado, setCopiado] = useState(false);
 
+  // Campos PJ
+  const [cnpj, setCnpj] = useState('');
+  const [razaoSocial, setRazaoSocial] = useState('');
+  const [cpfResponsavel, setCpfResponsavel] = useState('');
+
+  // Arquivo
+  const [docIdentificacao, setDocIdentificacao] = useState<File | null>(null);
+  const refDocId = useRef<HTMLInputElement>(null);
+
   const formatarCPF = (v: string): string => {
     const nums = v.replace(/\D/g, '').slice(0, 11);
     return nums
       .replace(/(\d{3})(\d)/, '$1.$2')
       .replace(/(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
       .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
+  };
+
+  const formatarCNPJ = (v: string): string => {
+    const nums = v.replace(/\D/g, '').slice(0, 14);
+    return nums
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/(\d{2})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3/$4')
+      .replace(/(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, '$1.$2.$3/$4-$5');
   };
 
   const formatarTelefone = (v: string): string => {
@@ -61,19 +89,48 @@ export default function CadastrarRepresentanteModal({
       setErro('Email é obrigatório.');
       return;
     }
+    if (!docIdentificacao) {
+      setErro('Documento de identificação é obrigatório.');
+      return;
+    }
+
+    if (tipoPessoa === 'pj') {
+      const cnpjLimpo = cnpj.replace(/\D/g, '');
+      if (cnpjLimpo.length !== 14) {
+        setErro('Informe um CNPJ válido com 14 dígitos.');
+        return;
+      }
+      if (!razaoSocial.trim() || razaoSocial.trim().length < 3) {
+        setErro('Razão social obrigatória (mín. 3 caracteres).');
+        return;
+      }
+      const cpfRespLimpo = cpfResponsavel.replace(/\D/g, '');
+      if (cpfRespLimpo.length !== 11) {
+        setErro('CPF do responsável PJ inválido.');
+        return;
+      }
+    }
 
     setSaving(true);
     try {
+      const fd = new FormData();
+      fd.append('nome', nome.trim());
+      fd.append('cpf', cpfLimpo);
+      fd.append('email', email.trim().toLowerCase());
+      fd.append('tipo_pessoa', tipoPessoa);
+      fd.append('documento_identificacao', docIdentificacao);
+      if (telefone.replace(/\D/g, ''))
+        fd.append('telefone', telefone.replace(/\D/g, ''));
+
+      if (tipoPessoa === 'pj') {
+        fd.append('cnpj', cnpj.replace(/\D/g, ''));
+        fd.append('razao_social', razaoSocial.trim());
+        fd.append('cpf_responsavel', cpfResponsavel.replace(/\D/g, ''));
+      }
+
       const res = await fetch('/api/comercial/representantes', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome: nome.trim(),
-          cpf: cpfLimpo,
-          email: email.trim().toLowerCase(),
-          telefone: telefone.replace(/\D/g, '') || null,
-          tipo_pessoa: tipoPessoa,
-        }),
+        body: fd,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -215,7 +272,12 @@ export default function CadastrarRepresentanteModal({
             <div>
               <label className={labelCls}>Tipo Pessoa *</label>
               <div className="flex gap-3 mt-1">
-                {(['pf', 'pj'] as const).map((tp) => (
+                {(
+                  [
+                    ['pf', 'Pessoa Física'],
+                    ['pj', 'Pessoa Jurídica'],
+                  ] as const
+                ).map(([tp, lbl]) => (
                   <label
                     key={tp}
                     className="flex items-center gap-2 cursor-pointer select-none"
@@ -225,16 +287,51 @@ export default function CadastrarRepresentanteModal({
                       name="tipo_pessoa"
                       value={tp}
                       checked={tipoPessoa === tp}
-                      onChange={() => setTipoPessoa(tp)}
+                      onChange={() => setTipoPessoa(tp as 'pf' | 'pj')}
                       className="accent-green-600"
                     />
-                    <span className="text-sm text-gray-700 uppercase">
-                      {tp}
-                    </span>
+                    <span className="text-sm text-gray-700">{lbl}</span>
                   </label>
                 ))}
               </div>
             </div>
+
+            {/* Campos PJ */}
+            {tipoPessoa === 'pj' && (
+              <>
+                <div>
+                  <label className={labelCls}>CNPJ *</label>
+                  <input
+                    className={inputCls}
+                    value={cnpj}
+                    onChange={(e) => setCnpj(formatarCNPJ(e.target.value))}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Razão Social *</label>
+                  <input
+                    className={inputCls}
+                    value={razaoSocial}
+                    onChange={(e) => setRazaoSocial(e.target.value)}
+                    placeholder="Razão social da empresa"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>CPF do Responsável PJ *</label>
+                  <input
+                    className={inputCls}
+                    value={cpfResponsavel}
+                    onChange={(e) =>
+                      setCpfResponsavel(formatarCPF(e.target.value))
+                    }
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="col-span-2">
               <label className={labelCls}>Email *</label>
@@ -257,6 +354,53 @@ export default function CadastrarRepresentanteModal({
                 maxLength={15}
               />
             </div>
+
+            {/* Upload de documento */}
+            <div className="col-span-2 space-y-2 pt-2">
+              <p className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                <Upload size={14} className="text-green-600" /> Documento
+                Obrigatório
+              </p>
+              <div>
+                <label className={labelCls}>
+                  Documento de Identificação (PDF, JPG, PNG) *
+                </label>
+                <input
+                  ref={refDocId}
+                  type="file"
+                  accept={ACCEPT_DOCS}
+                  onChange={(e) =>
+                    setDocIdentificacao(e.target.files?.[0] ?? null)
+                  }
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => refDocId.current?.click()}
+                  className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
+                >
+                  <FileText
+                    size={16}
+                    className={
+                      docIdentificacao ? 'text-green-600' : 'text-gray-400'
+                    }
+                  />
+                  <span className="text-sm text-gray-600 truncate flex-1 text-left">
+                    {docIdentificacao
+                      ? docIdentificacao.name
+                      : 'Selecionar documento...'}
+                  </span>
+                  {docIdentificacao && (
+                    <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
+                      OK
+                    </span>
+                  )}
+                </button>
+              </div>
+              <p className="text-[11px] text-gray-400">
+                Máx. 3MB. Formatos: PDF, JPG, PNG
+              </p>
+            </div>
           </div>
         </div>
 
@@ -274,7 +418,12 @@ export default function CadastrarRepresentanteModal({
               saving ||
               !nome.trim() ||
               cpf.replace(/\D/g, '').length !== 11 ||
-              !email.trim()
+              !email.trim() ||
+              !docIdentificacao ||
+              (tipoPessoa === 'pj' &&
+                (cnpj.replace(/\D/g, '').length !== 14 ||
+                  !razaoSocial.trim() ||
+                  cpfResponsavel.replace(/\D/g, '').length !== 11))
             }
             className="flex items-center gap-2 px-5 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors cursor-pointer"
           >

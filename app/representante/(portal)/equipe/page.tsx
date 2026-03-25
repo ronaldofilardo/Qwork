@@ -15,6 +15,10 @@ import {
   UserX,
   TriangleAlert,
   UserCheck,
+  FileText,
+  Upload,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import CadastrarVendedorModal, {
   CodigoVendedorSucesso,
@@ -140,6 +144,11 @@ interface VendedorCompleto {
   cidade: string | null;
   estado: string | null;
   cep: string | null;
+  tipo_pessoa: string | null;
+  cnpj: string | null;
+  razao_social: string | null;
+  doc_cad_path: string | null;
+  doc_nf_rpa_path: string | null;
 }
 
 function EditarVendedorDrawer({
@@ -167,6 +176,13 @@ function EditarVendedorDrawer({
   const [motivoInativar, setMotivoInativar] = useState('');
   const [inativando, setInativando] = useState(false);
   const [erroInativar, setErroInativar] = useState<string | null>(null);
+
+  // Documentos
+  const [dadosCompletos, setDadosCompletos] = useState<VendedorCompleto | null>(
+    null
+  );
+  const [uploadingDoc, setUploadingDoc] = useState<string | null>(null);
+  const [docErro, setDocErro] = useState<string | null>(null);
 
   const handleInativar = async () => {
     if (!vendedor) return;
@@ -210,10 +226,12 @@ function EditarVendedorDrawer({
   useEffect(() => {
     if (!vendedor) return;
     setErro(null);
+    setDocErro(null);
     setShowInativar(false);
     setMotivoInativar('');
     setCarregando(true);
-    // Buscar dados completos do vendedor (inclui perfil: sexo, endereco, cidade, estado, cep)
+    setDadosCompletos(null);
+    // Buscar dados completos do vendedor (inclui perfil: sexo, endereco, cidade, estado, cep, docs)
     fetch(`/api/representante/equipe/vendedores/${vendedor.vendedor_id}`)
       .then(
         (res) =>
@@ -221,6 +239,7 @@ function EditarVendedorDrawer({
       )
       .then((d) => {
         const v = d.vendedor;
+        setDadosCompletos(v ?? null);
         setForm({
           nome: v?.vendedor_nome ?? vendedor.vendedor_nome ?? '',
           email: v?.vendedor_email ?? vendedor.vendedor_email ?? '',
@@ -282,6 +301,41 @@ function EditarVendedorDrawer({
   };
 
   const isOpen = vendedor !== null;
+
+  const handleDocUpload = async (
+    tipo: 'cad' | 'nf_rpa',
+    file: File
+  ): Promise<void> => {
+    if (!vendedor) return;
+    setUploadingDoc(tipo);
+    setDocErro(null);
+    try {
+      const fd = new FormData();
+      fd.append('tipo', tipo);
+      fd.append('arquivo', file);
+      const res = await fetch(
+        `/api/representante/equipe/vendedores/${vendedor.vendedor_id}/documentos`,
+        { method: 'POST', body: fd }
+      );
+      if (!res.ok) {
+        const d = (await res.json().catch(() => ({}))) as { error?: string };
+        setDocErro(d.error ?? 'Erro ao enviar documento.');
+        return;
+      }
+      // Recarregar dados
+      const reloadRes = await fetch(
+        `/api/representante/equipe/vendedores/${vendedor.vendedor_id}`
+      );
+      if (reloadRes.ok) {
+        const d = (await reloadRes.json()) as { vendedor?: VendedorCompleto };
+        if (d.vendedor) setDadosCompletos(d.vendedor);
+      }
+    } catch {
+      setDocErro('Erro de conexão ao enviar documento.');
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
 
   return (
     <>
@@ -422,6 +476,170 @@ function EditarVendedorDrawer({
                   </select>
                 </div>
               </div>
+
+              {/* Seção de Documentos */}
+              {dadosCompletos && (
+                <div className="mt-5 pt-4 border-t border-gray-100 space-y-3">
+                  <p className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                    <FileText size={14} className="text-blue-600" /> Documentos
+                    {dadosCompletos.tipo_pessoa === 'pj' && (
+                      <span className="text-[10px] font-bold bg-blue-100 text-blue-700 rounded-full px-2 py-0.5">
+                        PJ
+                      </span>
+                    )}
+                  </p>
+
+                  {dadosCompletos.tipo_pessoa === 'pj' &&
+                    dadosCompletos.cnpj && (
+                      <div className="bg-blue-50 rounded-lg px-3 py-2 text-xs text-blue-700">
+                        <span className="font-semibold">CNPJ:</span>{' '}
+                        <span className="font-mono">{dadosCompletos.cnpj}</span>
+                        {dadosCompletos.razao_social && (
+                          <> — {dadosCompletos.razao_social}</>
+                        )}
+                      </div>
+                    )}
+
+                  {docErro && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-xs">
+                      <AlertCircle size={13} className="shrink-0" />
+                      {docErro}
+                    </div>
+                  )}
+
+                  {/* Doc Cadastro (CPF ou CNPJ) */}
+                  <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {dadosCompletos.doc_cad_path ? (
+                        <CheckCircle2
+                          size={16}
+                          className="text-green-600 shrink-0"
+                        />
+                      ) : (
+                        <XCircle size={16} className="text-gray-400 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-gray-700">
+                          {dadosCompletos.tipo_pessoa === 'pj'
+                            ? 'Doc. CNPJ'
+                            : 'Doc. CPF'}
+                        </p>
+                        <p className="text-[11px] text-gray-400 truncate">
+                          {dadosCompletos.doc_cad_path ? 'Enviado' : 'Pendente'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {dadosCompletos.doc_cad_path && (
+                        <a
+                          href={`/api/representante/equipe/vendedores/${vendedor?.vendedor_id}/documentos/visualizar?tipo=cad`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                          <FileText size={12} /> Ver
+                        </a>
+                      )}
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="hidden"
+                          disabled={uploadingDoc !== null}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleDocUpload('cad', f);
+                            e.target.value = '';
+                          }}
+                        />
+                        <span
+                          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                            uploadingDoc === 'cad'
+                              ? 'bg-gray-100 text-gray-400 border-gray-200'
+                              : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                          }`}
+                        >
+                          {uploadingDoc === 'cad' ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Upload size={12} />
+                          )}
+                          {dadosCompletos.doc_cad_path ? 'Reenviar' : 'Enviar'}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Doc NF/RPA */}
+                  <div className="flex items-center justify-between gap-3 bg-gray-50 rounded-lg px-4 py-3">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {dadosCompletos.doc_nf_rpa_path ? (
+                        <CheckCircle2
+                          size={16}
+                          className="text-green-600 shrink-0"
+                        />
+                      ) : (
+                        <XCircle size={16} className="text-gray-400 shrink-0" />
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-gray-700">
+                          Doc. NF / RPA
+                        </p>
+                        <p className="text-[11px] text-gray-400 truncate">
+                          {dadosCompletos.doc_nf_rpa_path
+                            ? 'Enviado'
+                            : 'Pendente'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {dadosCompletos.doc_nf_rpa_path && (
+                        <a
+                          href={`/api/representante/equipe/vendedores/${vendedor?.vendedor_id}/documentos/visualizar?tipo=nf_rpa`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-medium rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors"
+                        >
+                          <FileText size={12} /> Ver
+                        </a>
+                      )}
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          accept=".pdf,.jpg,.jpeg,.png"
+                          className="hidden"
+                          disabled={uploadingDoc !== null}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) void handleDocUpload('nf_rpa', f);
+                            e.target.value = '';
+                          }}
+                        />
+                        <span
+                          className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                            uploadingDoc === 'nf_rpa'
+                              ? 'bg-gray-100 text-gray-400 border-gray-200'
+                              : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                          }`}
+                        >
+                          {uploadingDoc === 'nf_rpa' ? (
+                            <Loader2 size={12} className="animate-spin" />
+                          ) : (
+                            <Upload size={12} />
+                          )}
+                          {dadosCompletos.doc_nf_rpa_path
+                            ? 'Reenviar'
+                            : 'Enviar'}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-gray-400">
+                    Máx. 3MB por arquivo. PDF, JPG, PNG.
+                  </p>
+                </div>
+              )}
             </>
           )}
         </div>

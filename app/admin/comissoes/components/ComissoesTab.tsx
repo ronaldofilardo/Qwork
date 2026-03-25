@@ -1,7 +1,13 @@
 'use client';
 
 import type { Comissao, Resumo } from '../types';
-import { STATUS_BADGE, ACOES_POR_STATUS, ACAO_LABEL, fmt } from '../types';
+import {
+  STATUS_BADGE,
+  ACOES_POR_STATUS,
+  ACAO_LABEL,
+  ACOES_COMERCIAL_BLOQUEADAS,
+  fmt,
+} from '../types';
 
 interface ComissoesTabProps {
   comissoes: Comissao[];
@@ -14,6 +20,8 @@ interface ComissoesTabProps {
   loading: boolean;
   actionLoading: number | null;
   onSetAcaoPendente: (v: { comissao: Comissao; acao: string }) => void;
+  /** Quando 'comercial', filtra ações bloqueadas (liberar, pagar). */
+  perfil?: string;
 }
 
 export function ComissoesTab({
@@ -27,6 +35,7 @@ export function ComissoesTab({
   loading,
   actionLoading,
   onSetAcaoPendente,
+  perfil,
 }: ComissoesTabProps) {
   return (
     <>
@@ -109,8 +118,11 @@ export function ComissoesTab({
               <tr>
                 <th className="px-3 py-3 text-left">Representante</th>
                 <th className="px-3 py-3 text-left">Cliente</th>
-                <th className="px-3 py-3 text-left">Laudo</th>
+                <th className="px-3 py-3 text-left">Lote</th>
+                <th className="px-3 py-3 text-right">Valor Total</th>
                 <th className="px-3 py-3 text-right">Comissão</th>
+                <th className="px-3 py-3 text-center">%</th>
+                <th className="px-3 py-3 text-center">Parcelas</th>
                 <th className="px-3 py-3 text-left">Status</th>
                 <th className="px-3 py-3 text-center">NF/RPA</th>
                 <th className="px-3 py-3 text-left">Mês Pag.</th>
@@ -119,7 +131,16 @@ export function ComissoesTab({
             </thead>
             <tbody className="divide-y">
               {comissoes.map((c) => {
-                const acoes = ACOES_POR_STATUS[c.status] ?? [];
+                const rawAcoes = ACOES_POR_STATUS[c.status] ?? [];
+                const acoes =
+                  perfil === 'comercial'
+                    ? rawAcoes.filter(
+                        (a) =>
+                          !ACOES_COMERCIAL_BLOQUEADAS.includes(
+                            a as (typeof ACOES_COMERCIAL_BLOQUEADAS)[number]
+                          )
+                      )
+                    : rawAcoes;
                 return (
                   <tr key={c.id} className="hover:bg-gray-50">
                     <td className="px-3 py-3">
@@ -135,10 +156,31 @@ export function ComissoesTab({
                       {c.entidade_nome}
                     </td>
                     <td className="px-3 py-3 text-gray-500 font-mono text-xs">
-                      {c.numero_laudo ?? '—'}
+                      {c.lote_pagamento_id ? (
+                        <span title={c.numero_laudo ?? undefined}>
+                          Lote #{c.lote_pagamento_id}
+                        </span>
+                      ) : (
+                        (c.numero_laudo ?? '—')
+                      )}
+                    </td>
+                    <td className="px-3 py-3 text-right text-gray-700">
+                      {fmt(c.valor_laudo)}
                     </td>
                     <td className="px-3 py-3 text-right font-semibold text-green-700">
                       {fmt(c.valor_comissao)}
+                    </td>
+                    <td className="px-3 py-3 text-center text-gray-600 text-xs">
+                      {parseFloat(c.percentual_comissao || '0')}%
+                    </td>
+                    <td className="px-3 py-3 text-center text-xs">
+                      {(c.total_parcelas ?? 1) > 1 ? (
+                        <span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-medium">
+                          {c.parcela_numero ?? 1}/{c.total_parcelas}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">À vista</span>
+                      )}
                     </td>
                     <td className="px-3 py-3">
                       <span
@@ -166,10 +208,12 @@ export function ComissoesTab({
                     </td>
                     <td className="px-3 py-3 text-gray-500 text-xs">
                       {c.mes_pagamento
-                        ? new Date(c.mes_pagamento).toLocaleDateString(
-                            'pt-BR',
-                            { month: 'short', year: 'numeric' }
-                          )
+                        ? new Date(
+                            c.mes_pagamento.substring(0, 10) + 'T12:00:00'
+                          ).toLocaleDateString('pt-BR', {
+                            month: 'short',
+                            year: 'numeric',
+                          })
                         : '—'}
                     </td>
                     <td className="px-3 py-3">

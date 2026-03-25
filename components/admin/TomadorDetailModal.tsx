@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import {
   Building2,
   MapPin,
@@ -8,6 +11,9 @@ import {
   XCircle,
   UserCheck,
   Link2,
+  FileText,
+  Download,
+  Loader2,
 } from 'lucide-react';
 
 type TipoTomador = 'clinica' | 'entidade';
@@ -66,6 +72,25 @@ export default function TomadorDetailModal({
   onVincular,
   onToggleAtivo,
 }: TomadorDetailModalProps) {
+  const [documentos, setDocumentos] = useState<{
+    cartao_cnpj: string | null;
+    contrato_social: string | null;
+    doc_identificacao: string | null;
+  } | null>(null);
+  const [loadingDocs, setLoadingDocs] = useState(false);
+
+  useEffect(() => {
+    setDocumentos(null);
+    setLoadingDocs(true);
+    fetch(`/api/admin/tomadores/${tomador.id}/documentos?tipo=${tomador.tipo}`)
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.success) setDocumentos(data.documentos);
+      })
+      .catch(() => null)
+      .finally(() => setLoadingDocs(false));
+  }, [tomador.id, tomador.tipo]);
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
@@ -257,6 +282,58 @@ export default function TomadorDetailModal({
             <div className="text-sm text-gray-600">
               Cadastrado em:{' '}
               {new Date(tomador.created_at).toLocaleDateString('pt-BR')}
+            </div>
+
+            {/* Documentos do Cadastro */}
+            <div className="bg-gray-50 p-4 rounded-lg">
+              <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <FileText className="h-5 w-5 text-gray-600" />
+                Documentos do Cadastro
+              </h3>
+              {loadingDocs ? (
+                <div className="flex items-center gap-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Carregando documentos...
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {(
+                    [
+                      { chave: 'cartao_cnpj', label: 'Cartão CNPJ' },
+                      { chave: 'contrato_social', label: 'Contrato Social' },
+                      {
+                        chave: 'doc_identificacao',
+                        label: 'Doc. Identificação',
+                      },
+                    ] as const
+                  ).map(({ chave, label }) => {
+                    const url = documentos?.[chave] ?? null;
+                    return (
+                      <div
+                        key={chave}
+                        className="flex items-center justify-between py-1.5 px-2 rounded hover:bg-gray-100 transition-colors"
+                      >
+                        <span className="text-sm text-gray-700">{label}</span>
+                        {url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-800 font-medium"
+                          >
+                            <Download className="h-4 w-4" />
+                            Baixar
+                          </a>
+                        ) : (
+                          <span className="text-xs text-gray-400">
+                            Não enviado
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Ação: Ativar / Desativar */}

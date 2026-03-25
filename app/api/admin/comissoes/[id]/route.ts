@@ -1,8 +1,8 @@
 /**
  * PATCH /api/admin/comissoes/[id]
  * Atualiza status de uma comissão.
- * Ações suporte: liberar, pagar
- * Ações comercial: congelar, cancelar, descongelar
+ * Ações suporte: liberar, pagar, congelar, cancelar, descongelar (acesso total)
+ * Ações comercial: congelar, cancelar, descongelar (sem liberar)
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -12,7 +12,13 @@ import { requireRole } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 
 // Ações permitidas por perfil
-const ACOES_SUPORTE = ['liberar', 'pagar'];
+const ACOES_SUPORTE = [
+  'liberar',
+  'pagar',
+  'congelar',
+  'cancelar',
+  'descongelar',
+];
 const ACOES_COMERCIAL = ['congelar', 'cancelar', 'descongelar'];
 
 export async function PATCH(

@@ -140,7 +140,9 @@ export default function ComissoesTable({
                 </td>
                 <td className="px-4 py-3 text-gray-500">
                   {c.mes_pagamento
-                    ? new Date(c.mes_pagamento).toLocaleDateString('pt-BR', {
+                    ? new Date(
+                        c.mes_pagamento.substring(0, 10) + 'T12:00:00'
+                      ).toLocaleDateString('pt-BR', {
                         month: 'short',
                         year: 'numeric',
                       })

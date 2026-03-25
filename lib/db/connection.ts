@@ -20,6 +20,10 @@ import pg from 'pg';
 
 const { Pool } = pg;
 
+// Retornar DATE (OID 1082) como string 'YYYY-MM-DD' em vez de Date object.
+// Evita serialização JSON para ISO-8601 completo que quebra renderização de mês.
+pg.types.setTypeParser(1082, (val: string) => val);
+
 // ============================================================================
 // DETECÇÃO DE AMBIENTE
 // ============================================================================

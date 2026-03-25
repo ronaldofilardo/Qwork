@@ -88,7 +88,11 @@ const ACAO_LABEL: Record<string, string> = {
   descongelar: '🔓 Descongelar',
 };
 
-export function ComissoesContent() {
+interface ComissoesContentProps {
+  perfil?: string;
+}
+
+export function ComissoesContent({ perfil }: ComissoesContentProps = {}) {
   const [comissoes, setComissoes] = useState<Comissao[]>([]);
   const [resumo, setResumo] = useState<Resumo | null>(null);
   const [total, setTotal] = useState(0);
@@ -449,7 +453,11 @@ export function ComissoesContent() {
             </thead>
             <tbody className="divide-y">
               {comissoes.map((c) => {
-                const acoes = ACOES_POR_STATUS[c.status] ?? [];
+                const rawAcoes = ACOES_POR_STATUS[c.status] ?? [];
+                const acoes =
+                  perfil === 'comercial'
+                    ? rawAcoes.filter((a) => a !== 'liberar' && a !== 'pagar')
+                    : rawAcoes;
 
                 return (
                   <tr key={c.id} className="hover:bg-gray-50">
@@ -521,10 +529,12 @@ export function ComissoesContent() {
                     </td>
                     <td className="px-3 py-3 text-gray-500 text-xs">
                       {c.mes_pagamento
-                        ? new Date(c.mes_pagamento).toLocaleDateString(
-                            'pt-BR',
-                            { month: 'short', year: 'numeric' }
-                          )
+                        ? new Date(
+                            c.mes_pagamento.substring(0, 10) + 'T12:00:00'
+                          ).toLocaleDateString('pt-BR', {
+                            month: 'short',
+                            year: 'numeric',
+                          })
                         : '—'}
                     </td>
                     <td className="px-3 py-3">

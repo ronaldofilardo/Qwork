@@ -17,7 +17,11 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import { calcularRequerAprovacao, TIPOS_CLIENTE } from '@/lib/leads-config';
+import {
+  calcularRequerAprovacao,
+  TIPOS_CLIENTE,
+  MAX_PERCENTUAL_COMISSAO,
+} from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
@@ -32,10 +36,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // Apenas leads DIRETOS — sem vendedor intermediário
-    const wheres = [
-      `l.representante_id = $1`,
-      `l.vendedor_id IS NULL`,
-    ];
+    const wheres = [`l.representante_id = $1`, `l.vendedor_id IS NULL`];
     const params: unknown[] = [sess.representante_id];
     let i = 2;
 
@@ -129,6 +130,7 @@ export async function POST(request: NextRequest) {
       valor_negociado,
       percentual_comissao,
       tipo_cliente: tipoClienteRaw,
+      num_vidas_estimado: numVidasRaw,
     } = body;
 
     const tipoCliente: TipoCliente =
@@ -154,9 +156,15 @@ export async function POST(request: NextRequest) {
     }
 
     const comissaoNum = Number(percentual_comissao);
-    if (isNaN(comissaoNum) || comissaoNum < 0 || comissaoNum > 100) {
+    if (
+      isNaN(comissaoNum) ||
+      comissaoNum < 0 ||
+      comissaoNum > MAX_PERCENTUAL_COMISSAO
+    ) {
       return NextResponse.json(
-        { error: 'Percentual de comissão deve estar entre 0 e 100.' },
+        {
+          error: `Percentual de comissão deve estar entre 0 e ${MAX_PERCENTUAL_COMISSAO}.`,
+        },
         { status: 400 }
       );
     }
@@ -234,12 +242,19 @@ export async function POST(request: NextRequest) {
       tipoCliente
     );
 
+    const numVidas =
+      typeof numVidasRaw === 'number' && numVidasRaw > 0
+        ? Math.round(numVidasRaw)
+        : null;
+
     // Lead direto: vendedor_id = NULL, origem implícita via representante_id
     const result = await query(
       `INSERT INTO leads_representante
          (representante_id, vendedor_id, cnpj, razao_social, contato_nome, contato_email,
-          contato_telefone, valor_negociado, percentual_comissao, tipo_cliente, requer_aprovacao_comercial)
-       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          contato_telefone, valor_negociado, percentual_comissao,
+          percentual_comissao_representante, percentual_comissao_vendedor,
+          tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
+       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, 0, $10, $11, $12)
        RETURNING *`,
       [
         sess.representante_id,
@@ -250,8 +265,11 @@ export async function POST(request: NextRequest) {
         typeof contato_telefone === 'string' ? contato_telefone : null,
         valorNum,
         comissaoNum,
+        comissaoNum, // percentual_comissao_representante
+        // 0 for percentual_comissao_vendedor handled inline above
         tipoCliente,
         requerAprovacao,
+        numVidas,
       ]
     );
 

@@ -48,13 +48,17 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.tipo_cliente,
          lr.valor_negociado,
          lr.percentual_comissao,
+         lr.percentual_comissao_representante,
+         lr.percentual_comissao_vendedor,
+         lr.num_vidas_estimado,
          lr.requer_aprovacao_comercial,
          lr.criado_em,
          lr.status,
          r.id   AS representante_id,
          r.nome AS representante_nome,
          r.codigo AS representante_codigo,
-         v.id   AS vendedor_id
+         v.id   AS vendedor_id,
+         v.nome AS vendedor_nome
        FROM public.leads_representante lr
        JOIN public.representantes r ON r.id = lr.representante_id
        LEFT JOIN public.usuarios v ON v.id = lr.vendedor_id

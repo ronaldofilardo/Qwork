@@ -1,10 +1,14 @@
 'use client';
 
 import { normalizeCNPJ } from '@/lib/validators';
-import { TIPO_CLIENTE_LABEL, TIPOS_CLIENTE } from '@/lib/leads-config';
-import type { TipoCliente } from '@/lib/leads-config';
+import {
+  TIPO_CLIENTE_LABEL,
+  TIPOS_CLIENTE,
+  MAX_PERCENTUAL_COMISSAO,
+} from '@/lib/leads-config';
+import type { TipoCliente, ValoresComissao } from '@/lib/leads-config';
 import type { NovoLeadForm, ErrosCampos } from '../types';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 interface NovoLeadModalProps {
   novoForm: NovoLeadForm;
@@ -19,6 +23,7 @@ interface NovoLeadModalProps {
   handleTipoClienteChange: (tipo: TipoCliente) => void;
   requerAprovacao: boolean;
   custoAtual: number;
+  valoresComissao: ValoresComissao;
   criarLead: (e: React.FormEvent) => void;
   onClose: () => void;
 }
@@ -36,6 +41,7 @@ export default function NovoLeadModal({
   handleTipoClienteChange,
   requerAprovacao,
   custoAtual,
+  valoresComissao,
   criarLead,
   onClose,
 }: NovoLeadModalProps) {
@@ -76,7 +82,7 @@ export default function NovoLeadModal({
               ))}
             </div>
             <p className="mt-1.5 text-xs text-gray-500">
-              Custo mínimo por produto:{' '}
+              Custo por avaliação:{' '}
               <span className="font-semibold text-gray-700">
                 R$ {custoAtual},00
               </span>
@@ -223,7 +229,10 @@ export default function NovoLeadModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                % Comissão *
+                % Comissão (Rep.) *
+                <span className="ml-1 text-xs font-normal text-gray-400">
+                  máx. {MAX_PERCENTUAL_COMISSAO}%
+                </span>
               </label>
               <input
                 type="text"
@@ -240,7 +249,7 @@ export default function NovoLeadModal({
                     return;
                   }
                   const val = Number(raw) / 100;
-                  if (val > 100) return;
+                  if (val > MAX_PERCENTUAL_COMISSAO) return;
                   const formatted = val.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -255,9 +264,69 @@ export default function NovoLeadModal({
               />
             </div>
           </div>
-          <p className="mt-1 text-xs text-gray-400">
+          {/* Breakdown de valores */}
+          {valoresComissao.percentualTotal > 0 && (
+            <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
+              <div className="text-xs text-blue-700 space-y-0.5">
+                <p>
+                  <span className="font-semibold">Sua comissão:</span> R${' '}
+                  {valoresComissao.valorRep.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                  })}
+                </p>
+                <p>
+                  <span className="font-semibold">QWork recebe:</span>{' '}
+                  <span
+                    className={
+                      valoresComissao.abaixoCusto
+                        ? 'text-amber-600 font-semibold'
+                        : ''
+                    }
+                  >
+                    R${' '}
+                    {valoresComissao.valorQWork.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                    {valoresComissao.abaixoCusto && ' ⚠'}
+                  </span>
+                </p>
+                <p className="text-blue-500">
+                  Custo por avaliação: R$ {custoAtual},00
+                </p>
+              </div>
+            </div>
+          )}
+          <p className="text-xs text-gray-400">
             Valor acordado com a empresa e percentual de comissão
           </p>
+
+          {/* Nº de Vidas Estimado */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nº de Vidas Estimado
+              <span className="ml-1 text-xs font-normal text-gray-400">
+                (opcional)
+              </span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Ex: 150"
+              value={novoForm.num_vidas_estimado}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '');
+                setNovoForm((p: NovoLeadForm) => ({
+                  ...p,
+                  num_vidas_estimado: raw,
+                }));
+              }}
+              className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Número estimado de funcionários/vidas do cliente
+            </p>
+          </div>
 
           {/* Banner de aprovação necessária */}
           {requerAprovacao && (
@@ -271,7 +340,8 @@ export default function NovoLeadModal({
                   Aprovação comercial necessária
                 </p>
                 <p className="text-xs text-amber-600 mt-0.5">
-                  A margem QWork ficará abaixo do custo mínimo (R$ {custoAtual}
+                  A margem QWork ficará abaixo do custo por avaliação (R${' '}
+                  {custoAtual}
                   ,00). Este lead será encaminhado para aprovação do time
                   Comercial.
                 </p>

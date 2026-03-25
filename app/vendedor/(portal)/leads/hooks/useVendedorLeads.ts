@@ -8,9 +8,12 @@ import {
   validarEmail,
 } from '@/lib/validators';
 import {
-  CUSTO_PRODUTO,
+  CUSTO_POR_AVALIACAO,
+  MAX_PERCENTUAL_COMISSAO,
   calcularRequerAprovacao,
+  calcularValoresComissao,
   type TipoCliente,
+  type ValoresComissao,
 } from '@/lib/leads-config';
 import type { NovoLeadVendedorForm, ErrosCamposVendedor } from '../types';
 
@@ -23,6 +26,7 @@ const FORM_INICIAL: NovoLeadVendedorForm = {
   percentual_comissao: '',
   observacoes: '',
   tipo_cliente: 'entidade',
+  num_vidas_estimado: '',
 };
 
 const ERROS_INICIAL: ErrosCamposVendedor = {
@@ -99,10 +103,19 @@ export function useVendedorLeads() {
       form.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
     ) || 0;
 
-  const custoAtual = CUSTO_PRODUTO[form.tipo_cliente];
+  const numVidasEstimadoNum =
+    parseInt(form.num_vidas_estimado.replace(/\D/g, ''), 10) || 0;
+
+  const custoAtual = CUSTO_POR_AVALIACAO[form.tipo_cliente];
   const requerAprovacao = calcularRequerAprovacao(
     valorNegociadoNum,
     percentualComissaoNum,
+    form.tipo_cliente
+  );
+  const valoresComissao: ValoresComissao = calcularValoresComissao(
+    valorNegociadoNum,
+    percentualComissaoNum,
+    0,
     form.tipo_cliente
   );
 
@@ -135,6 +148,8 @@ export function useVendedorLeads() {
         if (form.percentual_comissao.trim())
           body.percentual_comissao = percentualComissaoNum;
         if (form.observacoes.trim()) body.observacoes = form.observacoes.trim();
+        if (numVidasEstimadoNum > 0)
+          body.num_vidas_estimado = numVidasEstimadoNum;
 
         const res = await fetch('/api/vendedor/leads', {
           method: 'POST',
@@ -154,7 +169,7 @@ export function useVendedorLeads() {
         setSalvando(false);
       }
     },
-    [form, valorNegociadoNum, percentualComissaoNum]
+    [form, valorNegociadoNum, percentualComissaoNum, numVidasEstimadoNum]
   );
 
   const resetForm = () => {
@@ -176,6 +191,8 @@ export function useVendedorLeads() {
     handleTipoClienteChange,
     requerAprovacao,
     custoAtual,
+    valoresComissao,
+    MAX_PERCENTUAL_COMISSAO,
     salvar,
     resetForm,
   };

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import ContratoPadrao from '@/components/terms/ContratoPadrao';
 import PoliticaPrivacidade from '@/components/terms/PoliticaPrivacidade';
 import TermosUnificados from '@/components/terms/TermosUnificados';
@@ -31,7 +32,17 @@ export default function ModalConteudoTermo({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+      <div className="relative bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+        {/* Overlay de processamento */}
+        {processando && (
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/90 rounded-xl gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
+            <p className="text-sm font-semibold text-gray-700">
+              Registrando aceite...
+            </p>
+            <p className="text-xs text-gray-500">Aguarde um momento.</p>
+          </div>
+        )}
         {/* Header */}
         <div className="px-6 py-4 border-b flex justify-between items-center flex-shrink-0">
           <h2 className="text-xl font-bold">
