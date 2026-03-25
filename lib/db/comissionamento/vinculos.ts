@@ -41,6 +41,8 @@ export async function getVinculosByRepresentante(
        v.*,
        e.razao_social               AS entidade_nome,
        e.cnpj                       AS entidade_cnpj,
+       v.percentual_comissao_representante,
+       v.percentual_comissao_vendedor,
        COUNT(c.id)                  AS total_comissoes,
        COALESCE(SUM(CASE WHEN c.status::text = 'paga' THEN c.valor_comissao ELSE 0 END), 0) AS valor_total_pago,
        COALESCE(SUM(CASE WHEN c.status::text IN ('pendente_nf','nf_em_analise','liberada') THEN c.valor_comissao ELSE 0 END), 0) AS valor_pendente,

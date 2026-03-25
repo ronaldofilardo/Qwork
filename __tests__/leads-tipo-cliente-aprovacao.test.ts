@@ -1,5 +1,5 @@
 import {
-  CUSTO_PRODUTO,
+  CUSTO_POR_AVALIACAO,
   calcularRequerAprovacao,
   TIPOS_CLIENTE,
   TIPO_CLIENTE_LABEL,
@@ -7,8 +7,8 @@ import {
 
 describe('leads-config — constantes', () => {
   it('deve ter os custos corretos por tipo', () => {
-    expect(CUSTO_PRODUTO.entidade).toBe(15);
-    expect(CUSTO_PRODUTO.clinica).toBe(5);
+    expect(CUSTO_POR_AVALIACAO.entidade).toBe(15);
+    expect(CUSTO_POR_AVALIACAO.clinica).toBe(5);
   });
 
   it('deve listar os dois tipos de cliente', () => {

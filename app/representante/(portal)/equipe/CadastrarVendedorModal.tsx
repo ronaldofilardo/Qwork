@@ -1,7 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Loader2, UserPlus, FileText, Copy, CheckCheck } from 'lucide-react';
+import { useState, useRef } from 'react';
+import {
+  X,
+  Loader2,
+  UserPlus,
+  Upload,
+  FileText,
+  Copy,
+  CheckCheck,
+} from 'lucide-react';
 
 const ESTADOS = [
   'AC',
@@ -33,6 +41,8 @@ const ESTADOS = [
   'TO',
 ];
 
+const ACCEPT_DOCS = '.pdf,.jpg,.jpeg,.png';
+
 interface Props {
   onClose: () => void;
   onSuccess: (
@@ -46,6 +56,8 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
+  // Campos comuns
+  const [tipoPessoa, setTipoPessoa] = useState<'pf' | 'pj'>('pf');
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [sexo, setSexo] = useState<'masculino' | 'feminino' | ''>('');
@@ -55,7 +67,20 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
   const [estado, setEstado] = useState('');
   const [cep, setCep] = useState('');
 
-  const formatarCPF = (v: string) => {
+  // Campos PJ
+  const [cnpj, setCnpj] = useState('');
+  const [razaoSocial, setRazaoSocial] = useState('');
+  const [cpfResponsavel, setCpfResponsavel] = useState('');
+
+  // Arquivos
+  const [docCpf, setDocCpf] = useState<File | null>(null);
+  const [docCnpj, setDocCnpj] = useState<File | null>(null);
+  const [docCpfResp, setDocCpfResp] = useState<File | null>(null);
+  const refDocCpf = useRef<HTMLInputElement>(null);
+  const refDocCnpj = useRef<HTMLInputElement>(null);
+  const refDocCpfResp = useRef<HTMLInputElement>(null);
+
+  const formatarCPF = (v: string): string => {
     const nums = v.replace(/\D/g, '').slice(0, 11);
     return nums
       .replace(/(\d{3})(\d)/, '$1.$2')
@@ -63,14 +88,24 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
       .replace(/(\d{3})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3-$4');
   };
 
-  const formatarCEP = (v: string) => {
+  const formatarCNPJ = (v: string): string => {
+    const nums = v.replace(/\D/g, '').slice(0, 14);
+    return nums
+      .replace(/(\d{2})(\d)/, '$1.$2')
+      .replace(/(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
+      .replace(/(\d{2})\.(\d{3})\.(\d{3})(\d)/, '$1.$2.$3/$4')
+      .replace(/(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})(\d)/, '$1.$2.$3/$4-$5');
+  };
+
+  const formatarCEP = (v: string): string => {
     const nums = v.replace(/\D/g, '').slice(0, 8);
     return nums.replace(/(\d{5})(\d)/, '$1-$2');
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (): Promise<void> => {
     setErro(null);
     const cpfLimpo = cpf.replace(/\D/g, '');
+
     if (!nome.trim()) {
       setErro('Nome é obrigatório.');
       return;
@@ -80,21 +115,62 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
       return;
     }
 
+    if (tipoPessoa === 'pj') {
+      const cnpjLimpo = cnpj.replace(/\D/g, '');
+      if (cnpjLimpo.length !== 14) {
+        setErro('Informe um CNPJ válido com 14 dígitos.');
+        return;
+      }
+      if (!razaoSocial.trim() || razaoSocial.trim().length < 3) {
+        setErro('Razão social obrigatória (mín. 3 caracteres).');
+        return;
+      }
+      const cpfRespLimpo = cpfResponsavel.replace(/\D/g, '');
+      if (cpfRespLimpo.length !== 11) {
+        setErro('CPF do responsável PJ inválido.');
+        return;
+      }
+      if (!docCnpj) {
+        setErro('Documento do CNPJ é obrigatório.');
+        return;
+      }
+      if (!docCpfResp) {
+        setErro('Documento do CPF do responsável é obrigatório.');
+        return;
+      }
+    } else {
+      if (!docCpf) {
+        setErro('Documento do CPF é obrigatório.');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
+      const fd = new FormData();
+      fd.append('nome', nome.trim());
+      fd.append('cpf', cpfLimpo);
+      fd.append('tipo_pessoa', tipoPessoa);
+      if (sexo) fd.append('sexo', sexo);
+      if (email.trim()) fd.append('email', email.trim());
+      if (endereco.trim()) fd.append('endereco', endereco.trim());
+      if (cidade.trim()) fd.append('cidade', cidade.trim());
+      if (estado) fd.append('estado', estado);
+      if (cep.replace(/\D/g, '')) fd.append('cep', cep.replace(/\D/g, ''));
+
+      if (tipoPessoa === 'pj') {
+        fd.append('cnpj', cnpj.replace(/\D/g, ''));
+        fd.append('razao_social', razaoSocial.trim());
+        fd.append('cpf_responsavel', cpfResponsavel.replace(/\D/g, ''));
+        fd.append('documento_cnpj', docCnpj!);
+        fd.append('documento_cpf_responsavel', docCpfResp!);
+      } else {
+        fd.append('documento_cpf', docCpf!);
+      }
+
       const res = await fetch('/api/representante/equipe/cadastrar', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nome: nome.trim(),
-          cpf: cpfLimpo,
-          sexo: sexo || undefined,
-          email: email.trim() || null,
-          endereco: endereco.trim() || null,
-          cidade: cidade.trim() || null,
-          estado: estado || null,
-          cep: cep.replace(/\D/g, '') || null,
-        }),
+        body: fd,
       });
       const data = await res.json();
       if (!res.ok) {
@@ -113,6 +189,14 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
     'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-all';
   const labelCls =
     'block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide';
+
+  const isDisabled =
+    saving ||
+    !nome.trim() ||
+    cpf.replace(/\D/g, '').length !== 11 ||
+    (tipoPessoa === 'pf'
+      ? !docCpf
+      : !docCnpj || !docCpfResp || cnpj.replace(/\D/g, '').length !== 14);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -147,6 +231,34 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
               {erro}
             </div>
           )}
+
+          {/* Tipo Pessoa */}
+          <div>
+            <label className={labelCls}>Tipo de Pessoa *</label>
+            <div className="flex gap-4 mt-1">
+              {(
+                [
+                  ['pf', 'Pessoa Física'],
+                  ['pj', 'Pessoa Jurídica'],
+                ] as const
+              ).map(([val, lbl]) => (
+                <label
+                  key={val}
+                  className="flex items-center gap-2 cursor-pointer select-none"
+                >
+                  <input
+                    type="radio"
+                    name="tipoPessoa"
+                    value={val}
+                    checked={tipoPessoa === val}
+                    onChange={() => setTipoPessoa(val as 'pf' | 'pj')}
+                    className="accent-green-600"
+                  />
+                  <span className="text-sm text-gray-700">{lbl}</span>
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -193,6 +305,43 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
                 ))}
               </div>
             </div>
+
+            {/* Campos PJ */}
+            {tipoPessoa === 'pj' && (
+              <>
+                <div>
+                  <label className={labelCls}>CNPJ *</label>
+                  <input
+                    className={inputCls}
+                    value={cnpj}
+                    onChange={(e) => setCnpj(formatarCNPJ(e.target.value))}
+                    placeholder="00.000.000/0000-00"
+                    maxLength={18}
+                  />
+                </div>
+                <div>
+                  <label className={labelCls}>Razão Social *</label>
+                  <input
+                    className={inputCls}
+                    value={razaoSocial}
+                    onChange={(e) => setRazaoSocial(e.target.value)}
+                    placeholder="Razão social da empresa"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>CPF do Responsável PJ *</label>
+                  <input
+                    className={inputCls}
+                    value={cpfResponsavel}
+                    onChange={(e) =>
+                      setCpfResponsavel(formatarCPF(e.target.value))
+                    }
+                    placeholder="000.000.000-00"
+                    maxLength={14}
+                  />
+                </div>
+              </>
+            )}
 
             <div className="col-span-2">
               <label className={labelCls}>Email</label>
@@ -252,23 +401,120 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
               />
             </div>
 
-            {/* Documento pessoal — placeholder */}
-            <div className="col-span-2">
-              <label className={labelCls}>Documento Pessoal</label>
-              <div className="border border-dashed border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3 bg-gray-50 opacity-60">
-                <FileText size={16} className="text-gray-400 shrink-0" />
+            {/* Upload de documentos */}
+            <div className="col-span-2 space-y-3 pt-2">
+              <p className="text-xs font-bold text-gray-600 uppercase tracking-wide flex items-center gap-2">
+                <Upload size={14} className="text-green-600" /> Documentos
+                Obrigatórios
+              </p>
+
+              {tipoPessoa === 'pf' ? (
                 <div>
-                  <p className="text-xs font-medium text-gray-500">
-                    Upload de documento
-                  </p>
-                  <p className="text-[11px] text-gray-400">
-                    Funcionalidade em breve
-                  </p>
+                  <label className={labelCls}>
+                    Documento CPF (PDF, JPG, PNG) *
+                  </label>
+                  <input
+                    ref={refDocCpf}
+                    type="file"
+                    accept={ACCEPT_DOCS}
+                    onChange={(e) => setDocCpf(e.target.files?.[0] ?? null)}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => refDocCpf.current?.click()}
+                    className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
+                  >
+                    <FileText
+                      size={16}
+                      className={docCpf ? 'text-green-600' : 'text-gray-400'}
+                    />
+                    <span className="text-sm text-gray-600 truncate flex-1 text-left">
+                      {docCpf ? docCpf.name : 'Selecionar documento do CPF...'}
+                    </span>
+                    {docCpf && (
+                      <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
+                        OK
+                      </span>
+                    )}
+                  </button>
                 </div>
-                <span className="ml-auto text-[10px] font-bold bg-gray-200 text-gray-500 rounded-full px-2 py-0.5 uppercase">
-                  Em breve
-                </span>
-              </div>
+              ) : (
+                <>
+                  <div>
+                    <label className={labelCls}>
+                      Documento CNPJ (PDF, JPG, PNG) *
+                    </label>
+                    <input
+                      ref={refDocCnpj}
+                      type="file"
+                      accept={ACCEPT_DOCS}
+                      onChange={(e) => setDocCnpj(e.target.files?.[0] ?? null)}
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => refDocCnpj.current?.click()}
+                      className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
+                    >
+                      <FileText
+                        size={16}
+                        className={docCnpj ? 'text-green-600' : 'text-gray-400'}
+                      />
+                      <span className="text-sm text-gray-600 truncate flex-1 text-left">
+                        {docCnpj
+                          ? docCnpj.name
+                          : 'Selecionar documento do CNPJ...'}
+                      </span>
+                      {docCnpj && (
+                        <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
+                          OK
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                  <div>
+                    <label className={labelCls}>
+                      Documento CPF do Responsável (PDF, JPG, PNG) *
+                    </label>
+                    <input
+                      ref={refDocCpfResp}
+                      type="file"
+                      accept={ACCEPT_DOCS}
+                      onChange={(e) =>
+                        setDocCpfResp(e.target.files?.[0] ?? null)
+                      }
+                      className="hidden"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => refDocCpfResp.current?.click()}
+                      className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
+                    >
+                      <FileText
+                        size={16}
+                        className={
+                          docCpfResp ? 'text-green-600' : 'text-gray-400'
+                        }
+                      />
+                      <span className="text-sm text-gray-600 truncate flex-1 text-left">
+                        {docCpfResp
+                          ? docCpfResp.name
+                          : 'Selecionar documento do CPF responsável...'}
+                      </span>
+                      {docCpfResp && (
+                        <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
+                          OK
+                        </span>
+                      )}
+                    </button>
+                  </div>
+                </>
+              )}
+
+              <p className="text-[11px] text-gray-400">
+                Máx. 3MB por arquivo. Formatos: PDF, JPG, PNG
+              </p>
             </div>
           </div>
         </div>
@@ -283,9 +529,7 @@ export default function CadastrarVendedorModal({ onClose, onSuccess }: Props) {
           </button>
           <button
             onClick={handleSubmit}
-            disabled={
-              saving || !nome.trim() || cpf.replace(/\D/g, '').length !== 11
-            }
+            disabled={isDisabled}
             className="flex items-center gap-2 px-5 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors"
           >
             {saving && <Loader2 size={14} className="animate-spin" />}

@@ -200,14 +200,14 @@ export async function POST(request: NextRequest) {
       [senhaHash, vend.usuario_id]
     );
 
-    // Marcar convite como usado + primeira_senha_alterada=FALSE (forçar troca no 1º login)
+    // Marcar convite como usado — vendedor escolheu a própria senha, não precisa trocar no 1º login
     await query(
       `UPDATE vendedores_perfil
        SET convite_token             = NULL,
            convite_expira_em         = NULL,
            convite_tentativas_falhas = 0,
            convite_usado_em          = NOW(),
-           primeira_senha_alterada   = FALSE
+           primeira_senha_alterada   = TRUE
        WHERE id = $1 AND convite_token = $2`,
       [vend.perfil_id, token]
     );

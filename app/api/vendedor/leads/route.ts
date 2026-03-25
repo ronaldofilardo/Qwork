@@ -15,7 +15,11 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import { calcularRequerAprovacao } from '@/lib/leads-config';
+import {
+  calcularRequerAprovacao,
+  MAX_PERCENTUAL_COMISSAO,
+} from '@/lib/leads-config';
+import { NotificationService } from '@/lib/notification-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,9 +110,15 @@ const novoLeadSchema = z.object({
   contato_telefone: z.string().optional().nullable(),
   cnpj: z.string().min(1, 'CNPJ é obrigatório'),
   valor_negociado: z.number().positive().optional().nullable(),
-  percentual_comissao: z.number().min(0).max(100).optional().nullable(),
+  percentual_comissao: z
+    .number()
+    .min(0)
+    .max(MAX_PERCENTUAL_COMISSAO)
+    .optional()
+    .nullable(),
   observacoes: z.string().max(1000).optional().nullable(),
   tipo_cliente: z.enum(['entidade', 'clinica']).optional().default('entidade'),
+  num_vidas_estimado: z.number().int().positive().optional().nullable(),
 });
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -224,13 +234,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       data.tipo_cliente
     );
 
+    const numVidas =
+      data.num_vidas_estimado && data.num_vidas_estimado > 0
+        ? data.num_vidas_estimado
+        : null;
+
     const leadResult = await query<{ id: number }>(
       `INSERT INTO public.leads_representante
          (representante_id, vendedor_id, contato_nome, contato_email,
           contato_telefone, cnpj, valor_negociado, percentual_comissao,
+          percentual_comissao_vendedor, percentual_comissao_representante,
           observacoes, tipo_cliente, requer_aprovacao_comercial,
-          status, criado_em)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pendente',NOW())
+          num_vidas_estimado, status, criado_em)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12,$13,'pendente',NOW())
        RETURNING id`,
       [
         representanteId,
@@ -241,9 +257,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         cnpjNorm,
         data.valor_negociado ?? null,
         data.percentual_comissao ?? null,
+        data.percentual_comissao ?? 0,
         data.observacoes ?? null,
         data.tipo_cliente,
         requerAprovacao,
+        numVidas,
       ]
     );
 
@@ -252,6 +270,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       vendedor_id: vendedorId,
       representante_id: representanteId,
     });
+
+    // Notificar o representante sobre o novo lead do vendedor
+    try {
+      const repInfo = await query<{ cpf: string; nome: string }>(
+        `SELECT u.cpf, r.nome FROM representantes r
+         JOIN usuarios u ON u.cpf = r.cpf
+         WHERE r.id = $1 LIMIT 1`,
+        [representanteId]
+      );
+      if (repInfo.rows.length > 0) {
+        const vendedorNome =
+          (
+            await query<{ nome: string }>(
+              `SELECT nome FROM usuarios WHERE id = $1 LIMIT 1`,
+              [vendedorId]
+            )
+          ).rows[0]?.nome ?? 'Vendedor';
+
+        await NotificationService.criar({
+          tipo: 'alerta_geral',
+          prioridade: 'media',
+          destinatario_cpf: repInfo.rows[0].cpf,
+          destinatario_tipo: 'funcionario',
+          titulo: 'Novo lead cadastrado por vendedor',
+          mensagem: `${vendedorNome} cadastrou um novo lead (CNPJ: ${cnpjNorm}). Defina seu percentual de comissão.`,
+          link_acao: '/representante/equipe/leads',
+          botao_texto: 'Ver Leads da Equipe',
+          dados_contexto: {
+            lead_id: leadResult.rows[0].id,
+            vendedor_id: vendedorId,
+            vendedor_nome: vendedorNome,
+            cnpj: cnpjNorm,
+          },
+        });
+      }
+    } catch (notifErr) {
+      console.error(
+        '[POST /api/vendedor/leads] Erro ao notificar rep (não-bloqueante):',
+        notifErr
+      );
+    }
 
     return NextResponse.json(
       {

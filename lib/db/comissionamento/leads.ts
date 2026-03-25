@@ -215,10 +215,22 @@ export async function converterLeadEmVinculo(
     // Nota: Não usar ON CONFLICT pois usando índices parciais (PostgreSQL não suporta)
     // Se duplicata existir, o índice vinculo_unico_entidade vai gerar erro 23505,
     // que é capturado no catch e retorna false normalmente.
+
+    // Buscar percentuais do lead para propagar ao vínculo
+    const leadData = await query(
+      `SELECT percentual_comissao_representante, percentual_comissao_vendedor, percentual_comissao
+       FROM leads_representante WHERE id = $1 LIMIT 1`,
+      [leadId]
+    );
+    const lead = leadData.rows[0];
+    const percRep =
+      lead?.percentual_comissao_representante ?? lead?.percentual_comissao ?? 0;
+    const percVend = lead?.percentual_comissao_vendedor ?? 0;
+
     await query(
-      `INSERT INTO vinculos_comissao (representante_id, entidade_id, lead_id, data_inicio, data_expiracao)
-       VALUES ($1, $2, $3, NOW()::DATE, (NOW()::DATE + INTERVAL '1 year')::DATE)`,
-      [representanteId, entidadeId, leadId]
+      `INSERT INTO vinculos_comissao (representante_id, entidade_id, lead_id, data_inicio, data_expiracao, percentual_comissao_representante, percentual_comissao_vendedor)
+       VALUES ($1, $2, $3, NOW()::DATE, (NOW()::DATE + INTERVAL '1 year')::DATE, $4, $5)`,
+      [representanteId, entidadeId, leadId, percRep, percVend]
     );
 
     console.info(
@@ -270,8 +282,14 @@ export async function autoConvertirLeadPorCnpj(
       id: number;
       representante_id: number;
       valor_negociado: number | null;
+      percentual_comissao_representante: number | null;
+      percentual_comissao_vendedor: number | null;
+      percentual_comissao: number | null;
+      num_vidas_estimado: number | null;
     }>(
-      `SELECT id, representante_id, valor_negociado
+      `SELECT id, representante_id, valor_negociado,
+              percentual_comissao_representante, percentual_comissao_vendedor, percentual_comissao,
+              num_vidas_estimado
        FROM leads_representante
        WHERE cnpj = $1
          AND status = 'pendente'
@@ -297,16 +315,31 @@ export async function autoConvertirLeadPorCnpj(
           .split('T')[0];
 
         // Usar entidade_id ou clinica_id conforme o tipo do tomador
+        const percRep =
+          lead.percentual_comissao_representante ??
+          lead.percentual_comissao ??
+          0;
+        const percVend = lead.percentual_comissao_vendedor ?? 0;
+        const numVidas = lead.num_vidas_estimado ?? null;
         const insertFields = entidadeId
-          ? 'representante_id, entidade_id, lead_id, data_inicio, data_expiracao, status'
-          : 'representante_id, clinica_id, lead_id, data_inicio, data_expiracao, status';
+          ? 'representante_id, entidade_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, percentual_comissao_vendedor, num_vidas_estimado'
+          : 'representante_id, clinica_id, lead_id, data_inicio, data_expiracao, status, percentual_comissao_representante, percentual_comissao_vendedor, num_vidas_estimado';
         const targetId = entidadeId ?? clinicaId;
 
         const vinculoResult = await query<{ id: number }>(
           `INSERT INTO vinculos_comissao (${insertFields})
-           VALUES ($1, $2, $3, $4, $5, 'ativo')
+           VALUES ($1, $2, $3, $4, $5, 'ativo', $6, $7, $8)
            RETURNING id`,
-          [lead.representante_id, targetId, lead.id, dataInicio, dataExpiracao]
+          [
+            lead.representante_id,
+            targetId,
+            lead.id,
+            dataInicio,
+            dataExpiracao,
+            percRep,
+            percVend,
+            numVidas,
+          ]
         );
 
         const vinculoId = vinculoResult.rows[0]?.id;

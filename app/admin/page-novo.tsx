@@ -8,7 +8,6 @@ import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent'
 // import { ClinicasContent } from "@/components/admin/ClinicasContent";
 // import { EntidadesContent } from "@/components/admin/EntidadesContent";
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
-import { CobrancaContent } from '@/components/admin/CobrancaContent';
 import PagamentosContent from '@/components/admin/PagamentosContent';
 import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
 
@@ -25,7 +24,7 @@ type MainSection =
   | 'geral'
   | 'auditorias';
 type _tomadoresSubSection = 'clinicas' | 'entidades';
-type _FinanceiroSubSection = 'cobranca' | 'pagamentos';
+type _FinanceiroSubSection = 'pagamentos';
 type _GeralSubSection = 'emissores';
 
 export default function AdminPage() {
@@ -39,7 +38,6 @@ export default function AdminPage() {
   const [_pendingCount, setPendingCount] = useState(0);
   const [_clinicasCount, setClinicasCount] = useState(0);
   const [_entidadesCount, setEntidadesCount] = useState(0);
-  const [_cobrancaPendente, setCobrancaPendente] = useState(0);
   const [_pagamentosPendentes, setPagamentosPendentes] = useState(0);
   const [emissoresAtivos, setEmissoresAtivos] = useState(0);
 
@@ -63,7 +61,6 @@ export default function AdminPage() {
       setEntidadesCount(0);
 
       // Buscar contadores financeiros (placeholder - implementar depois)
-      setCobrancaPendente(0);
       setPagamentosPendentes(0);
 
       // Buscar emissores ativos
@@ -131,9 +128,6 @@ export default function AdminPage() {
     // }
 
     if (activeSection === 'financeiro') {
-      if (activeSubSection === 'cobranca') {
-        return <CobrancaContent />;
-      }
       if (activeSubSection === 'pagamentos') {
         return <PagamentosContent />;
       }

@@ -1,0 +1,247 @@
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+FAIL __tests__/ui/responsividade-funcionario.test.tsx
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 0, concluidas: 0, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (iniciada)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (iniciada)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 0, concluidas: 0, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 0, concluidas: 0, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 1 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+  ÔùÅ Responsividade: P├ígina de Login (/login) ÔÇ║ deve ter campo data de nascimento com inputMode="numeric"
+
+    TestingLibraryElementError: Unable to find a label with the text of: /data de nascimento/i
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100 flex items-center justify-center p-3 sm:p-6"
+          style="padding-top: max(12px, env(safe-area-inset-top)); padding-bottom: max(12px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="bg-white rounded-lg shadow-xl p-5 sm:p-8 w-full max-w-md"
+          >
+            <div
+              class="text-center mb-5 sm:mb-8"
+            >
+              <div
+                class="flex flex-col items-center justify-center mb-3 sm:mb-4"
+              >
+                <div
+                  class="w-48 h-48 flex items-center justify-center"
+                >
+                  <img
+                    alt="QWork"
+                    class="w-full h-full object-contain"
+                    height="48"
+                    src="data:image/png;base64,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...
+
+      63 |     render(<LoginPage />);
+      64 |
+    > 65 |     const dataInput = screen.getByLabelText(/data de nascimento/i);
+         |                              ^
+      66 |     expect(dataInput).toHaveAttribute('inputmode', 'numeric');
+      67 |   });
+      68 |
+
+      at Object.getElementError (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/config.js:37:19)
+      at getAllByLabelText (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/queries/label-text.js:111:38)
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByLabelText (__tests__/ui/responsividade-funcionario.test.tsx:65:30)
+
+  ÔùÅ Responsividade: Dashboard do Funcion├írio (/dashboard) ÔÇ║ cards de avalia├º├úo devem ter estrutura flex-col em mobile
+
+    Unable to find an element with the text: /avalia├º├Áes dispon├¡veis/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="space-y-4 sm:space-y-6 mb-6 sm:mb-8"
+            >
+              <div
+                class="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-4 border-blue-400"
+              >
+                <h2
+                  class="text-lg sm:text-2xl font-bold text-blue-600 mb-1"
+                >
+                  Avalia├º├úo
+                </h2>
+                <p
+                  class="text-xs text-gray-500 mb-4 sm:mb-6"
+                >
+                  1
+                   avalia├º├úo(├Áes) dispon├¡vel(is)
+                </p>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-xl"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base"
+                      >
+                        Avalia├º├úo #
+                        1
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Liberada em 
+                        22/03/2026, 15:36
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao?id=1"
+                    >
+                      Iniciar
+                       
+                      Avalia├º├úo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <p
+              class="text-gray-500"
+            >
+              Nenhuma avalia├º├úo conclu├¡da.
+            </p>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      247 |     const { container } = render(<Dashboard />);
+      248 |
+    > 249 |     await waitFor(() => screen.getByText(/avalia├º├Áes dispon├¡veis/i));
+          |                  ^
+      250 |
+      251 |     // Cards de avalia├º├úo devem ter flex-col para mobile
+      252 |     const cardFlex = container.querySelector('[class*="flex-col"]');
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/ui/responsividade-funcionario.test.tsx:249:18)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 55 passed, 57 total
+Snapshots:   0 total
+Time:        5.313 s
+Ran all test suites matching __tests__/ui/responsividade-funcionario.test.tsx.
+Force exiting Jest: Have you considered using `--detectOpenHandles` to detect async operations that kept running after all tests finished?

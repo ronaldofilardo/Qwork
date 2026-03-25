@@ -1,0 +1,513 @@
+import { NextResponse } from 'next/server';
+import { requireClinica } from '@/lib/session';
+import {
+  parseSpreadsheetAllRows,
+  type ColumnMapping,
+} from '@/lib/importacao/dynamic-parser';
+import { validarDadosImportacao } from '@/lib/importacao/data-validator';
+import { withTransaction } from '@/lib/db-transaction';
+import { limparCPF } from '@/lib/cpf-utils';
+import { normalizeCNPJ } from '@/lib/validators';
+import { parseDateCell } from '@/lib/xlsxParser';
+import bcrypt from 'bcryptjs';
+import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
+
+export const dynamic = 'force-dynamic';
+
+/**
+ * POST /api/rh/importacao/execute
+ * Executa importação de empresas e funcionários em transação.
+ */
+export async function POST(request: Request): Promise<NextResponse> {
+  try {
+    const session = await requireClinica();
+    const clinicaId = session.clinica_id;
+
+    const contentType = request.headers.get('content-type') ?? '';
+    if (!contentType.includes('multipart/form-data')) {
+      return NextResponse.json(
+        { error: 'Content-Type deve ser multipart/form-data' },
+        { status: 400 }
+      );
+    }
+
+    const formData = await request.formData();
+    const file = formData.get('file');
+    const mapeamentoRaw = formData.get('mapeamento');
+
+    if (!(file instanceof File) || file.size === 0) {
+      return NextResponse.json(
+        { error: 'Arquivo não enviado' },
+        { status: 400 }
+      );
+    }
+
+    if (!mapeamentoRaw || typeof mapeamentoRaw !== 'string') {
+      return NextResponse.json(
+        { error: 'Mapeamento de colunas não enviado' },
+        { status: 400 }
+      );
+    }
+
+    let mapeamento: ColumnMapping[];
+    try {
+      mapeamento = JSON.parse(mapeamentoRaw);
+      if (!Array.isArray(mapeamento) || mapeamento.length === 0) {
+        throw new Error('Mapeamento vazio');
+      }
+    } catch {
+      return NextResponse.json(
+        { error: 'Mapeamento de colunas inválido' },
+        { status: 400 }
+      );
+    }
+
+    // Optional: nivel_cargo map per funcao { funcao: 'gestao' | 'operacional' | '' }
+    const nivelCargoMapRaw = formData.get('nivelCargoMap');
+    let nivelCargoMap: Record<string, string> | null = null;
+    if (nivelCargoMapRaw && typeof nivelCargoMapRaw === 'string') {
+      try {
+        nivelCargoMap = JSON.parse(nivelCargoMapRaw);
+      } catch {
+        /* ignore */
+      }
+    }
+
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Parse com mapeamento
+    const parsed = parseSpreadsheetAllRows(buffer, mapeamento);
+    if (!parsed.success || !parsed.data) {
+      return NextResponse.json(
+        { error: parsed.error ?? 'Erro ao processar arquivo' },
+        { status: 400 }
+      );
+    }
+
+    // Validação de formato (bloqueia se erros críticos)
+    const validacao = validarDadosImportacao(parsed.data);
+    // Filtrar apenas linhas sem erros críticos
+    const linhasComErroSet = new Set(validacao.erros.map((e) => e.linha));
+    const linhasValidas = parsed.data.filter(
+      (_, i) => !linhasComErroSet.has(i + 2)
+    );
+
+    if (linhasValidas.length === 0) {
+      return NextResponse.json(
+        {
+          error: 'Nenhuma linha válida para importar',
+          details: validacao.erros,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Agrupar por empresa
+    const empresaMap = new Map<
+      string,
+      { nome: string; cnpj: string; rows: typeof linhasValidas }
+    >();
+
+    for (const row of linhasValidas) {
+      const nomeEmpresa = (row.nome_empresa ?? '').trim();
+      const cnpjEmpresa = row.cnpj_empresa
+        ? normalizeCNPJ(row.cnpj_empresa)
+        : '';
+      // Agrupar por CNPJ se disponível, senão por nome uppercased
+      const key = cnpjEmpresa || nomeEmpresa.toUpperCase();
+
+      const existing = empresaMap.get(key);
+      if (existing) {
+        existing.rows.push(row);
+      } else {
+        empresaMap.set(key, {
+          nome: nomeEmpresa,
+          cnpj: cnpjEmpresa,
+          rows: [row],
+        });
+      }
+    }
+
+    // Executar em transação
+    const startTime = Date.now();
+
+    const result = await withTransaction(async (client) => {
+      let empresasCriadas = 0;
+      let empresasExistentes = 0;
+      let funcionariosCriados = 0;
+      let funcionariosAtualizados = 0;
+      let vinculosCriados = 0;
+      let vinculosAtualizados = 0;
+      let inativacoesRealizadas = 0;
+      let readmissoesRealizadas = 0;
+      const errosProcessamento: Array<{
+        linha: number;
+        cpf: string;
+        mensagem: string;
+      }> = [];
+      const avisosProcessamento: Array<{
+        linha: number;
+        cpf: string;
+        mensagem: string;
+      }> = [];
+
+      for (const [, { nome, cnpj, rows }] of empresaMap) {
+        // Find or create empresa
+        let empresaId: number;
+
+        if (cnpj) {
+          const empresaExist = await client.query(
+            'SELECT id FROM empresas_clientes WHERE cnpj = $1 AND clinica_id = $2',
+            [cnpj, clinicaId]
+          );
+
+          if (empresaExist.rows.length > 0) {
+            empresaId = empresaExist.rows[0].id as number;
+            empresasExistentes++;
+          } else {
+            const insertEmpresa = await client.query(
+              `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa)
+               VALUES ($1, $2, $3, true)
+               RETURNING id`,
+              [nome, cnpj, clinicaId]
+            );
+            empresaId = insertEmpresa.rows[0].id as number;
+            empresasCriadas++;
+          }
+        } else {
+          // Sem CNPJ — buscar por nome
+          const empresaExist = await client.query(
+            'SELECT id FROM empresas_clientes WHERE UPPER(nome) = $1 AND clinica_id = $2',
+            [nome.toUpperCase(), clinicaId]
+          );
+
+          if (empresaExist.rows.length > 0) {
+            empresaId = empresaExist.rows[0].id as number;
+            empresasExistentes++;
+          } else {
+            const insertEmpresa = await client.query(
+              `INSERT INTO empresas_clientes (nome, clinica_id, ativa)
+               VALUES ($1, $2, true)
+               RETURNING id`,
+              [nome, clinicaId]
+            );
+            empresaId = insertEmpresa.rows[0].id as number;
+            empresasCriadas++;
+          }
+        }
+
+        // Processar funcionários desta empresa
+        for (const row of rows) {
+          const cpf = limparCPF(row.cpf ?? '');
+          const nomeFunc = (row.nome ?? '').trim();
+          const funcao = (row.funcao ?? 'Não informado').trim();
+          const setor = (row.setor ?? 'Não informado').trim();
+          const nivelCargo = (nivelCargoMap?.[funcao] ?? '') || null;
+          const dataNasc = row.data_nascimento
+            ? (parseDateCell(row.data_nascimento) ?? null)
+            : null;
+          const dataAdm = row.data_admissao
+            ? (parseDateCell(row.data_admissao) ?? null)
+            : null;
+          const dataDem = row.data_demissao
+            ? (parseDateCell(row.data_demissao) ?? null)
+            : null;
+          const email = (row.email ?? '').trim() || null;
+          const matricula = (row.matricula ?? '').trim() || null;
+          const linhaNum = parsed.data.indexOf(row) + 2;
+
+          const savepointName = `sp_func_${cpf.replace(/\D/g, '')}_${linhaNum}`;
+          try {
+            await client.query(`SAVEPOINT ${savepointName}`);
+
+            // Check if CPF already exists
+            const existFunc = await client.query(
+              'SELECT id FROM funcionarios WHERE cpf = $1',
+              [cpf]
+            );
+
+            let funcionarioId: number;
+
+            if (existFunc.rows.length > 0) {
+              funcionarioId = existFunc.rows[0].id as number;
+
+              // Atualizar dados se necessário
+              const updates: string[] = [];
+              const params: unknown[] = [];
+              let paramIdx = 1;
+
+              if (dataNasc) {
+                updates.push(`data_nascimento = $${paramIdx++}`);
+                params.push(dataNasc);
+              }
+
+              if (updates.length > 0) {
+                updates.push(`atualizado_em = NOW()`);
+                params.push(funcionarioId);
+                await client.query(
+                  `UPDATE funcionarios SET ${updates.join(', ')} WHERE id = $${paramIdx}`,
+                  params
+                );
+                funcionariosAtualizados++;
+              }
+            } else {
+              // Gerar senha com data de nascimento ou default
+              let senhaHash: string;
+              if (dataNasc) {
+                const senhaPlaintext = gerarSenhaDeNascimento(dataNasc);
+                senhaHash = await bcrypt.hash(senhaPlaintext, 10);
+              } else {
+                // Senha default para funcionários sem data de nascimento
+                senhaHash = await bcrypt.hash('12345678', 10);
+              }
+
+              const insertFunc = await client.query(
+                `INSERT INTO funcionarios (
+                  cpf, nome, data_nascimento, setor, funcao, email,
+                  senha_hash, perfil, ativo, matricula, nivel_cargo
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9)
+                RETURNING id`,
+                [
+                  cpf,
+                  nomeFunc,
+                  dataNasc,
+                  setor,
+                  funcao,
+                  email,
+                  senhaHash,
+                  matricula,
+                  nivelCargo,
+                ]
+              );
+              funcionarioId = insertFunc.rows[0].id as number;
+              funcionariosCriados++;
+            }
+
+            // Processar vínculo com empresa
+            const vinculoExist = await client.query(
+              `SELECT id, ativo, data_desvinculo FROM funcionarios_clinicas
+               WHERE funcionario_id = $1 AND empresa_id = $2`,
+              [funcionarioId, empresaId]
+            );
+
+            if (vinculoExist.rows.length > 0) {
+              const vinculo = vinculoExist.rows[0];
+
+              if (dataDem) {
+                // Inativar vínculo
+                if (vinculo.ativo) {
+                  await client.query(
+                    `UPDATE funcionarios_clinicas
+                     SET ativo = false, data_desvinculo = $1, funcao = $2, setor = $3, atualizado_em = NOW()
+                     WHERE id = $4`,
+                    [dataDem, funcao, setor, vinculo.id]
+                  );
+                  inativacoesRealizadas++;
+                  vinculosAtualizados++;
+                }
+              } else if (!vinculo.ativo && dataAdm) {
+                // Readmissão: nova data de admissão mais recente que a saída
+                const dataDesvinculo = vinculo.data_desvinculo
+                  ? new Date(vinculo.data_desvinculo as string)
+                  : null;
+                const isReadmissao =
+                  !dataDesvinculo || new Date(dataAdm) > dataDesvinculo;
+
+                if (isReadmissao) {
+                  await client.query(
+                    `UPDATE funcionarios_clinicas
+                     SET ativo = true, data_vinculo = $1, data_desvinculo = NULL,
+                         funcao = $2, setor = $3, matricula = $4,
+                         nivel_cargo = COALESCE($5, nivel_cargo), atualizado_em = NOW()
+                     WHERE id = $6`,
+                    [dataAdm, funcao, setor, matricula, nivelCargo, vinculo.id]
+                  );
+                  readmissoesRealizadas++;
+                  vinculosAtualizados++;
+                  avisosProcessamento.push({
+                    linha: linhaNum,
+                    cpf,
+                    mensagem: 'Funcionário readmitido e vínculo reativado',
+                  });
+                } else {
+                  // data de admissão não mais recente — apenas atualiza dados, não reativa
+                  await client.query(
+                    `UPDATE funcionarios_clinicas
+                     SET funcao = $1, setor = $2, matricula = $3,
+                         nivel_cargo = COALESCE($4, nivel_cargo), atualizado_em = NOW()
+                     WHERE id = $5`,
+                    [funcao, setor, matricula, nivelCargo, vinculo.id]
+                  );
+                  vinculosAtualizados++;
+                  avisosProcessamento.push({
+                    linha: linhaNum,
+                    cpf,
+                    mensagem:
+                      'Funcionário inativo — não reativado (data de admissão não mais recente que a saída)',
+                  });
+                }
+              } else {
+                // Atualizar dados do vínculo
+                await client.query(
+                  `UPDATE funcionarios_clinicas
+                   SET funcao = $1, setor = $2, matricula = $3,
+                       nivel_cargo = COALESCE($4, nivel_cargo), atualizado_em = NOW()
+                   WHERE id = $5`,
+                  [funcao, setor, matricula, nivelCargo, vinculo.id]
+                );
+                vinculosAtualizados++;
+
+                if (!vinculo.ativo) {
+                  avisosProcessamento.push({
+                    linha: linhaNum,
+                    cpf,
+                    mensagem:
+                      'Funcionário inativo — não reativado automaticamente',
+                  });
+                }
+              }
+            } else {
+              // Novo vínculo
+              await client.query(
+                `INSERT INTO funcionarios_clinicas (
+                  funcionario_id, clinica_id, empresa_id, ativo,
+                  data_vinculo, data_desvinculo, funcao, setor, matricula, nivel_cargo
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+                [
+                  funcionarioId,
+                  clinicaId,
+                  empresaId,
+                  !dataDem, // ativo = true se sem demissão
+                  dataAdm ?? new Date().toISOString(),
+                  dataDem,
+                  funcao,
+                  setor,
+                  matricula,
+                  nivelCargo,
+                ]
+              );
+              vinculosCriados++;
+              if (dataDem) {
+                inativacoesRealizadas++;
+              }
+            }
+
+            await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+          } catch (err: unknown) {
+            // Rollback parcial — desfaz só este funcionário, transação continua válida
+            await client.query(`ROLLBACK TO SAVEPOINT ${savepointName}`);
+            await client.query(`RELEASE SAVEPOINT ${savepointName}`);
+            const msg =
+              err instanceof Error ? err.message : 'Erro desconhecido';
+            errosProcessamento.push({ linha: linhaNum, cpf, mensagem: msg });
+          }
+        }
+      }
+
+      // Registrar importação no histórico
+      const tempoMs = Date.now() - startTime;
+      await client.query(
+        `INSERT INTO importacoes_clinica (
+          clinica_id, usuario_cpf, arquivo_nome, total_linhas,
+          empresas_criadas, empresas_existentes,
+          funcionarios_criados, funcionarios_atualizados,
+          vinculos_criados, vinculos_atualizados,
+          inativacoes, total_erros,
+          status, erros_detalhes, mapeamento_colunas, tempo_processamento_ms
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+        [
+          clinicaId,
+          session.cpf,
+          file.name,
+          linhasValidas.length,
+          empresasCriadas,
+          empresasExistentes,
+          funcionariosCriados,
+          funcionariosAtualizados,
+          vinculosCriados,
+          vinculosAtualizados,
+          inativacoesRealizadas,
+          errosProcessamento.length,
+          errosProcessamento.length > 0 ? 'parcial' : 'concluida',
+          errosProcessamento.length > 0
+            ? JSON.stringify(errosProcessamento)
+            : null,
+          JSON.stringify(mapeamento),
+          tempoMs,
+        ]
+      );
+
+      return {
+        empresasCriadas,
+        empresasExistentes,
+        funcionariosCriados,
+        funcionariosAtualizados,
+        vinculosCriados,
+        vinculosAtualizados,
+        inativacoesRealizadas,
+        readmissoesRealizadas,
+        errosProcessamento,
+        avisosProcessamento,
+      };
+    });
+
+    const maskedCpf = `***${String(session.cpf).slice(-4)}`;
+    console.log(
+      `[AUDIT] Importação dinâmica: ${result.empresasCriadas} emp criadas, ` +
+        `${result.funcionariosCriados} func criados, ` +
+        `${result.inativacoesRealizadas} inativações, ` +
+        `${result.readmissoesRealizadas} readmissões. Clínica ${clinicaId} por ${maskedCpf}`
+    );
+
+    return NextResponse.json({
+      success: true,
+      data: {
+        resumo: {
+          totalLinhasProcessadas: linhasValidas.length,
+          totalLinhasComErroFormato: validacao.resumo.linhasComErros,
+          empresasCriadas: result.empresasCriadas,
+          empresasExistentes: result.empresasExistentes,
+          funcionariosCriados: result.funcionariosCriados,
+          funcionariosAtualizados: result.funcionariosAtualizados,
+          vinculosCriados: result.vinculosCriados,
+          vinculosAtualizados: result.vinculosAtualizados,
+          inativacoesRealizadas: result.inativacoesRealizadas,
+          readmissoesRealizadas: result.readmissoesRealizadas,
+        },
+        erros: [
+          ...validacao.erros.map((e) => ({
+            linha: e.linha,
+            campo: e.campo,
+            mensagem: e.mensagem,
+          })),
+          ...result.errosProcessamento,
+        ],
+        avisos: [
+          ...validacao.avisos.map((a) => ({
+            linha: a.linha,
+            campo: a.campo,
+            mensagem: a.mensagem,
+          })),
+          ...result.avisosProcessamento,
+        ],
+      },
+    });
+  } catch (error: unknown) {
+    console.error('[importacao/execute] Erro:', error);
+
+    if (error instanceof Error) {
+      if (
+        error.message.includes('Clínica não identificada') ||
+        error.message.includes('Acesso restrito') ||
+        error.message.includes('Clínica inativa')
+      ) {
+        return NextResponse.json({ error: error.message }, { status: 403 });
+      }
+    }
+
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
+  }
+}

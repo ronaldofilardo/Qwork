@@ -46,7 +46,7 @@ export async function GET(
         al.criado_em as ultima_acao_em
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON la.id = l.lote_id
-      LEFT JOIN fila_emissao fe ON la.id = fe.lote_id
+      LEFT JOIN v_fila_emissao fe ON la.id = fe.lote_id
       LEFT JOIN LATERAL (
         SELECT acao, criado_em
         FROM auditoria_laudos

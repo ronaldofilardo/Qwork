@@ -1,0 +1,60 @@
+
+> qwork2026@1.0.0 build C:\apps\QWork
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.production.local, .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ ÔÜá Compiled with warnings
+
+./app/api/admin/novos-cadastros/route.ts
+Attempted import error: 'handleAprovarPersonalizado' is not exported from './handlers' (imported as 'handleAprovarPersonalizado').
+
+Import trace for requested module:
+./app/api/admin/novos-cadastros/route.ts
+
+./app/api/admin/novos-cadastros/route.ts
+Attempted import error: 'handleRegenerarLink' is not exported from './handlers' (imported as 'handleRegenerarLink').
+
+Import trace for requested module:
+./app/api/admin/novos-cadastros/route.ts
+
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./app/admin/comissoes/page.tsx
+21:5  Warning: 'setErro' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/cadastro/tomadores/handlers.ts
+198:9  Error: 'requiresPayment' is never reassigned. Use 'const' instead.  prefer-const
+199:9  Error: 'simuladorUrl' is never reassigned. Use 'const' instead.  prefer-const
+200:9  Error: 'valorTotal' is never reassigned. Use 'const' instead.  prefer-const
+201:9  Error: 'valorPorFuncionario' is never reassigned. Use 'const' instead.  prefer-const
+
+./app/api/public/representantes/cadastro/route.ts
+52:8  Warning: 'UploadedDoc' is defined but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/rh/notificacoes/stream/route.ts
+10:41  Warning: Async arrow function 'GET' has no 'await' expression.  @typescript-eslint/require-await
+
+./app/entidade/lote/[id]/page.tsx
+390:9  Warning: 'renderClassificacao' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/rh/empresa/[id]/lote/[loteId]/page.tsx
+443:9  Warning: 'getClassificacaoGrupo' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/modals/ModalCadastrotomador.tsx
+105:9  Warning: 'numeroFuncionarios' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+106:9  Warning: 'setNumeroFuncionarios' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+107:9  Warning: 'contratoAceito' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+108:9  Warning: 'setContratoAceito' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+109:9  Warning: 'contratoGerado' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/RadioScale.tsx
+18:3  Warning: 'required' is assigned a value but never used. Allowed unused args must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+ÔÇëELIFECYCLEÔÇë Command failed with exit code 1.

@@ -12,7 +12,16 @@ export async function GET(request: NextRequest) {
     await requireRole(['comercial', 'suporte'], false);
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') ?? undefined;
-    const mes = searchParams.get('mes') ?? undefined; // YYYY-MM
+    const mesRaw = searchParams.get('mes') ?? undefined; // YYYY-MM ou número 1-12
+    const anoRaw = searchParams.get('ano') ?? undefined;
+    // Normaliza: se mes=3 e ano=2026 → "2026-03"; se mes=2026-03 → usa direto
+    const mes = mesRaw
+      ? /^\d{4}-\d{2}$/.test(mesRaw)
+        ? mesRaw
+        : anoRaw
+          ? `${anoRaw}-${String(parseInt(mesRaw)).padStart(2, '0')}`
+          : undefined
+      : undefined;
     const repId = searchParams.get('rep_id') ?? undefined;
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1'));
     const limit = 30;
@@ -45,6 +54,12 @@ export async function GET(request: NextRequest) {
     if (repId && !isNaN(parseInt(repId))) {
       wheres.push(`c.representante_id = $${i++}`);
       params.push(parseInt(repId));
+    }
+
+    // provisionadas=1: comissões retidas com parcela futura não confirmada
+    const provisionadas = searchParams.get('provisionadas') === '1';
+    if (provisionadas && status === 'retida') {
+      wheres.push(`c.parcela_confirmada_em IS NULL`);
     }
 
     const where = wheres.length ? `WHERE ${wheres.join(' AND ')}` : '';

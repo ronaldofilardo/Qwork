@@ -85,6 +85,11 @@ export default function PortalLayout({
     { href: '/representante/metricas', label: 'Métricas', badge: false },
     { href: '/representante/equipe', label: 'Minha Equipe', badge: false },
     {
+      href: '/representante/equipe/leads',
+      label: 'Leads da Equipe',
+      badge: false,
+    },
+    {
       href: '/representante/minhas-vendas',
       label: 'Minhas Vendas',
       badge: false,

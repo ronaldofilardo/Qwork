@@ -37,6 +37,7 @@ export default function ModalContrato({
   const router = useRouter();
   const [contrato, setContrato] = useState<Contrato | null>(null);
   const [loading, setLoading] = useState(false);
+  const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState('');
   const [skipPaymentPhase, setSkipPaymentPhase] = useState(false);
 
@@ -114,7 +115,17 @@ export default function ModalContrato({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto relative">
+        {/* Overlay de processamento — bloqueia toda interação */}
+        {processando && (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 rounded-lg gap-4">
+            <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
+            <p className="text-gray-700 font-medium">Processando aceite...</p>
+            <p className="text-sm text-gray-500">
+              Aguarde, estamos registrando sua confirmação.
+            </p>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b sticky top-0 bg-white z-10">
           <div className="flex items-center gap-3">
@@ -263,9 +274,12 @@ export default function ModalContrato({
               Fechar
             </button>
 
-            {!loading && contrato && !contrato.aceito && (
+            {!processando && !loading && contrato && !contrato.aceito && (
               <button
-                onClick={async () => {
+                data-testid="aceitar-button"
+                className="px-6 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] disabled:opacity-50 flex items-center gap-2"
+                disabled={!scrolledToEnd || !aceiteChecked}
+                onClick={() => {
                   if (!scrolledToEnd) {
                     setErro(
                       'Por favor, role até o final do contrato antes de aceitar.'
@@ -278,89 +292,80 @@ export default function ModalContrato({
                     );
                     return;
                   }
-
+                  setProcessando(true);
                   setLoading(true);
                   setErro('');
-                  try {
-                    const res = await fetch('/api/contratos', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        acao: 'aceitar',
-                        contrato_id: contrato.id,
-                      }),
-                    });
-                    const data = await res.json();
-                    if (!res.ok)
-                      throw new Error(data.error || 'Erro ao aceitar contrato');
+                  void (async () => {
+                    try {
+                      const res = await fetch('/api/contratos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          acao: 'aceitar',
+                          contrato_id: contrato.id,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (!res.ok)
+                        throw new Error(
+                          data.error || 'Erro ao aceitar contrato'
+                        );
 
-                    console.info(
-                      '[CONTRATO] Aceite registrado:',
-                      JSON.stringify({
-                        contrato_id: contrato.id,
-                        simulador_url: data.simulador_url,
-                        timestamp: new Date().toISOString(),
-                      })
-                    );
-
-                    // Redirecionar para boas-vindas se credenciais foram geradas
-                    if (data.boasVindasUrl) {
                       console.info(
-                        '[CONTRATO] Redirecionando para boas-vindas'
+                        '[CONTRATO] Aceite registrado:',
+                        JSON.stringify({
+                          contrato_id: contrato.id,
+                          simulador_url: data.simulador_url,
+                          timestamp: new Date().toISOString(),
+                        })
                       );
-                      router.push(data.boasVindasUrl);
-                      return;
-                    }
 
-                    // Redirecionar diretamente para o simulador se URL fornecida
-                    if (data.simulador_url) {
-                      window.location.href = data.simulador_url;
-                      return;
-                    }
+                      if (data.boasVindasUrl) {
+                        console.info(
+                          '[CONTRATO] Redirecionando para boas-vindas'
+                        );
+                        router.push(data.boasVindasUrl);
+                        return;
+                      }
 
-                    // Se login foi liberado automaticamente (feature flag ativada)
-                    if (data.loginLiberadoImediatamente) {
-                      console.info(
-                        '[CONTRATO] Login liberado automaticamente após aceite'
+                      if (data.simulador_url) {
+                        window.location.href = data.simulador_url;
+                        return;
+                      }
+
+                      if (data.loginLiberadoImediatamente) {
+                        console.info(
+                          '[CONTRATO] Login liberado automaticamente após aceite'
+                        );
+                        alert(
+                          'Contrato aceito com sucesso!\n\n' +
+                            'Seu acesso foi liberado imediatamente.\n' +
+                            'Login: CPF do responsável + últimos 6 dígitos do CNPJ como senha.\n\n' +
+                            'Redirecionando para login...'
+                        );
+                        router.push('/login');
+                        return;
+                      }
+
+                      onClose();
+                      onAceiteSuccess?.();
+                    } catch (err) {
+                      console.error('[CONTRATO] Erro ao aceitar:', err);
+                      setErro(
+                        err instanceof Error
+                          ? err.message
+                          : 'Erro ao aceitar contrato'
                       );
-                      alert(
-                        'Contrato aceito com sucesso!\n\n' +
-                          'Seu acesso foi liberado imediatamente.\n' +
-                          'Login: CPF do responsável + últimos 6 dígitos do CNPJ como senha.\n\n' +
-                          'Redirecionando para login...'
-                      );
-                      router.push('/login');
-                      return;
+                    } finally {
+                      setLoading(false);
+                      setProcessando(false);
                     }
-
-                    // Caso contrário, fechar modal e chamar callback de sucesso
-                    onClose();
-                    onAceiteSuccess?.();
-                  } catch (err) {
-                    console.error('[CONTRATO] Erro ao aceitar:', err);
-                    setErro(
-                      err instanceof Error
-                        ? err.message
-                        : 'Erro ao aceitar contrato'
-                    );
-                  } finally {
-                    setLoading(false);
-                  }
+                  })();
                 }}
-                data-testid="aceitar-button"
-                className="px-6 py-2 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] flex items-center gap-2"
-                disabled={loading || !scrolledToEnd || !aceiteChecked}
               >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Processando...
-                  </>
-                ) : skipPaymentPhase ? (
-                  '✓ Aceitar Contrato e Liberar Acesso'
-                ) : (
-                  '✓ Aceitar Contrato e Iniciar o Uso'
-                )}
+                {skipPaymentPhase
+                  ? '✓ Aceitar Contrato e Liberar Acesso'
+                  : '✓ Aceitar Contrato e Iniciar o Uso'}
               </button>
             )}
           </div>

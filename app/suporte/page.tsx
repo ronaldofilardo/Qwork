@@ -5,11 +5,9 @@ import { useRouter } from 'next/navigation';
 import SuporteSidebar from '@/components/suporte/SuporteSidebar';
 import type { SuporteSection } from '@/components/suporte/SuporteSidebar';
 import { TomadoresContent } from '@/components/admin/TomadoresContent';
-import { CobrancaContent } from '@/components/admin/CobrancaContent';
 import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
-import { NovoscadastrosContent } from '@/components/admin/NovoscadastrosContent';
-import { ComissoesContent } from '@/components/admin/ComissoesContent';
 import { RepresentantesContent } from '@/components/suporte/RepresentantesContent';
+import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndividuaisContent';
 
 interface Session {
   cpf: string;
@@ -26,7 +24,6 @@ export default function SuportePage() {
 
   const [clinicasCount, setClinicasCount] = useState(0);
   const [entidadesCount, setEntidadesCount] = useState(0);
-  const [novosCadastrosCount, setNovosCadastrosCount] = useState(0);
   const [representantesPendentesCount, setRepresentantesPendentesCount] =
     useState(0);
 
@@ -40,14 +37,6 @@ export default function SuportePage() {
         const lista: { tipo: string }[] = data.entidades || [];
         setClinicasCount(lista.filter((t) => t.tipo === 'clinica').length);
         setEntidadesCount(lista.filter((t) => t.tipo === 'entidade').length);
-      }
-
-      const pendingRes = await fetch(
-        '/api/admin/novos-cadastros?status=pendente'
-      );
-      if (pendingRes.ok) {
-        const data = await pendingRes.json();
-        setNovosCadastrosCount(data.total || 0);
       }
 
       const repsRes = await fetch('/api/admin/representantes-leads?limit=1');
@@ -102,19 +91,12 @@ export default function SuportePage() {
     }
 
     if (activeSection === 'financeiro') {
-      if (activeSubSection === 'cobranca') {
-        return <CobrancaContent />;
-      }
       if (activeSubSection === 'pagamentos') {
         return <PagamentosContent />;
       }
-      if (activeSubSection === 'comissoes') {
-        return <ComissoesContent />;
+      if (activeSubSection === 'individuais') {
+        return <ComissoesIndividuaisContent />;
       }
-    }
-
-    if (activeSection === 'novos-cadastros') {
-      return <NovoscadastrosContent _onApproved={fetchCounts} />;
     }
 
     if (activeSection === 'representantes') {
@@ -152,10 +134,11 @@ export default function SuportePage() {
           activeSection={activeSection}
           activeSubSection={activeSubSection}
           onSectionChange={handleSectionChange}
+          userName={session.nome}
+          roleLabel="Suporte"
           counts={{
             clinicas: clinicasCount,
             entidades: entidadesCount,
-            novosCadastros: novosCadastrosCount,
             representantesPendentes: representantesPendentesCount,
           }}
         />

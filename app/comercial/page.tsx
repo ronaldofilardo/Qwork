@@ -280,7 +280,7 @@ export default function ComercialPage() {
 
   const renderContent = () => {
     if (activeSection === 'comissoes') {
-      return <ComissoesContent />;
+      return <ComissoesContent perfil="comercial" />;
     }
 
     if (activeSection === 'leads') {

@@ -6,29 +6,25 @@ import {
   DollarSign,
   ChevronDown,
   ChevronRight,
-  UserPlus,
   Users,
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type SuporteSection =
-  | 'tomadores'
-  | 'financeiro'
-  | 'novos-cadastros'
-  | 'representantes';
+export type SuporteSection = 'tomadores' | 'financeiro' | 'representantes';
 export type TomadoresSubSection = 'clinicas' | 'entidades';
-export type FinanceiroSubSection = 'cobranca' | 'pagamentos' | 'comissoes';
+export type FinanceiroSubSection = 'pagamentos' | 'comissoes' | 'individuais';
 export type RepresentantesSubSection = 'lista' | 'aprovacao';
 
 interface SuporteSidebarProps {
   activeSection: SuporteSection;
   activeSubSection?: string;
   onSectionChange: (section: SuporteSection, subSection?: string) => void;
+  userName?: string;
+  roleLabel?: string;
   counts?: {
     clinicas?: number;
     entidades?: number;
     pagamentos?: number;
-    novosCadastros?: number;
     representantesPendentes?: number;
   };
 }
@@ -37,6 +33,8 @@ export default function SuporteSidebar({
   activeSection,
   activeSubSection,
   onSectionChange,
+  userName,
+  roleLabel = 'Suporte',
   counts = {},
 }: SuporteSidebarProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
@@ -130,6 +128,8 @@ export default function SuporteSidebar({
       subtitle="Painel de Suporte"
       isCollapsed={isCollapsed}
       onToggleCollapsed={() => setIsCollapsed(!isCollapsed)}
+      userName={userName}
+      roleLabel={roleLabel}
     >
       {/* Tomadores */}
       <MenuItem
@@ -172,7 +172,7 @@ export default function SuporteSidebar({
         isActive={activeSection === 'financeiro'}
         onClick={() => {
           toggleSection('financeiro');
-          onSectionChange('financeiro', 'cobranca');
+          onSectionChange('financeiro', 'pagamentos');
         }}
         hasSubMenu
         isExpanded={isExpanded('financeiro')}
@@ -180,13 +180,6 @@ export default function SuporteSidebar({
 
       {isExpanded('financeiro') && (
         <div className="border-l-2 border-gray-200 ml-4">
-          <SubMenuItem
-            label="Cobrança"
-            isActive={
-              activeSection === 'financeiro' && activeSubSection === 'cobranca'
-            }
-            onClick={() => onSectionChange('financeiro', 'cobranca')}
-          />
           <SubMenuItem
             label="Pagamentos"
             count={counts.pagamentos}
@@ -199,9 +192,10 @@ export default function SuporteSidebar({
           <SubMenuItem
             label="Comissões"
             isActive={
-              activeSection === 'financeiro' && activeSubSection === 'comissoes'
+              activeSection === 'financeiro' &&
+              activeSubSection === 'individuais'
             }
-            onClick={() => onSectionChange('financeiro', 'comissoes')}
+            onClick={() => onSectionChange('financeiro', 'individuais')}
           />
         </div>
       )}
@@ -239,15 +233,6 @@ export default function SuporteSidebar({
           />
         </div>
       )}
-
-      {/* Novos Cadastros */}
-      <MenuItem
-        icon={UserPlus}
-        label="Novos Cadastros"
-        count={counts.novosCadastros}
-        isActive={activeSection === 'novos-cadastros'}
-        onClick={() => onSectionChange('novos-cadastros')}
-      />
     </SidebarLayout>
   );
 }

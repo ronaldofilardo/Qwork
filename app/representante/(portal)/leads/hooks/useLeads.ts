@@ -9,9 +9,12 @@ import {
   validarEmail,
 } from '@/lib/validators';
 import {
-  CUSTO_PRODUTO,
+  CUSTO_POR_AVALIACAO,
+  MAX_PERCENTUAL_COMISSAO,
   calcularRequerAprovacao,
+  calcularValoresComissao,
   type TipoCliente,
+  type ValoresComissao,
 } from '@/lib/leads-config';
 import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
 
@@ -24,6 +27,7 @@ const FORM_INICIAL: NovoLeadForm = {
   valor_negociado: '',
   percentual_comissao: '',
   tipo_cliente: 'entidade',
+  num_vidas_estimado: '',
 };
 
 const ERROS_INICIAL: ErrosCampos = {
@@ -146,10 +150,19 @@ export function useLeads() {
       novoForm.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
     ) || 0;
 
-  const custoAtual = CUSTO_PRODUTO[novoForm.tipo_cliente];
+  const numVidasEstimadoNum =
+    parseInt(novoForm.num_vidas_estimado.replace(/\D/g, ''), 10) || 0;
+
+  const custoAtual = CUSTO_POR_AVALIACAO[novoForm.tipo_cliente];
   const requerAprovacao = calcularRequerAprovacao(
     valorNegociadoNum,
     percentualComissaoNum,
+    novoForm.tipo_cliente
+  );
+  const valoresComissao: ValoresComissao = calcularValoresComissao(
+    valorNegociadoNum,
+    percentualComissaoNum,
+    0,
     novoForm.tipo_cliente
   );
 
@@ -198,6 +211,8 @@ export function useLeads() {
           valor_negociado: valorNegociadoNum,
           percentual_comissao: percentualComissaoNum,
           tipo_cliente: novoForm.tipo_cliente,
+          num_vidas_estimado:
+            numVidasEstimadoNum > 0 ? numVidasEstimadoNum : null,
         }),
       });
       const data = await res.json();
@@ -250,5 +265,7 @@ export function useLeads() {
     handleTipoClienteChange,
     requerAprovacao,
     custoAtual,
+    valoresComissao,
+    MAX_PERCENTUAL_COMISSAO,
   };
 }

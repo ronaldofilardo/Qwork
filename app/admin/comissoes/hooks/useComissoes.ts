@@ -11,6 +11,8 @@ interface UseComissoesReturn {
   setPage: (p: number | ((prev: number) => number)) => void;
   statusFiltro: string;
   setStatusFiltro: (s: string) => void;
+  mesFilter: string;
+  setMesFilter: (v: string) => void;
   loading: boolean;
   actionLoading: number | null;
   erro: string;
@@ -40,6 +42,7 @@ export function useComissoes(): UseComissoesReturn {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [statusFiltro, setStatusFiltro] = useState('');
+  const [mesFilter, setMesFilter] = useState(''); // YYYY-MM
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [erro, setErro] = useState('');
@@ -62,6 +65,7 @@ export function useComissoes(): UseComissoesReturn {
     try {
       const params = new URLSearchParams({ page: String(page), limit: '30' });
       if (statusFiltro) params.set('status', statusFiltro);
+      if (mesFilter) params.set('mes', mesFilter);
       const res = await fetch(`/api/admin/comissoes?${params}`);
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
@@ -79,7 +83,7 @@ export function useComissoes(): UseComissoesReturn {
     } finally {
       setLoading(false);
     }
-  }, [page, statusFiltro]);
+  }, [page, statusFiltro, mesFilter]);
 
   useEffect(() => {
     carregar();
@@ -168,6 +172,8 @@ export function useComissoes(): UseComissoesReturn {
     setPage,
     statusFiltro,
     setStatusFiltro,
+    mesFilter,
+    setMesFilter,
     loading,
     actionLoading,
     erro,

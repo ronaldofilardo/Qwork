@@ -35,9 +35,10 @@ export async function GET(request: Request) {
     // ARQUITETURA SEGREGADA: usa tabela intermediária funcionarios_clinicas
     const funcionariosResult = await query(
       `SELECT f.cpf, f.nome, f.data_nascimento, f.setor, f.funcao, f.email, f.matricula, 
-              f.nivel_cargo, f.turno, f.escala, f.ativo, f.criado_em, f.atualizado_em,
+              f.nivel_cargo, f.turno, f.escala, (f.ativo AND fc.ativo) as ativo, f.criado_em, f.atualizado_em,
               f.indice_avaliacao, f.data_ultimo_lote,
               f.ultima_avaliacao_id, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao,
+              fc.ativo as vinculo_ativo, fc.data_desvinculo,
               -- Data e lote da última inativação
               (
                 SELECT MAX(a2.inativada_em) FROM avaliacoes a2 WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada'
@@ -62,7 +63,7 @@ export async function GET(request: Request) {
               END as tem_avaliacao_recente
        FROM funcionarios f
        INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
-       WHERE fc.empresa_id = $1 AND fc.clinica_id = $2 AND fc.ativo = true
+       WHERE fc.empresa_id = $1 AND fc.clinica_id = $2
        ORDER BY f.nome`,
       [empresaId, clinicaId],
       session

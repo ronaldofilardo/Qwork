@@ -107,7 +107,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('admin', false);
+    await requireRole(['admin', 'suporte'], false);
 
     const { id } = params;
     const tipo = new URL(request.url).searchParams.get('tipo') as

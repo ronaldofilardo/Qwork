@@ -15,6 +15,14 @@ export type TipoDocumentoRepresentante =
   | 'cpf_responsavel' // PJ: CPF do responsável
   | 'rpa'; // Representante: NF/RPA de comissão
 
+/** Tipos de documento aceitos para vendedores */
+export type TipoDocumentoVendedor =
+  | 'cpf' // PF: documento de CPF
+  | 'cnpj' // PJ: cartão CNPJ
+  | 'cpf_responsavel' // PJ: CPF do responsável
+  | 'nf' // PJ: nota fiscal
+  | 'rpa'; // PF: recibo de pagamento autônomo
+
 export interface RepresentanteDocumentoResult {
   /** Path local (DEV) ou URL remota (PROD) */
   path: string;
@@ -252,5 +260,139 @@ export async function uploadDocumentoRepresentante(
       tipoPessoa,
       subpasta
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Upload de documentos de VENDEDORES (subordinados a representantes)
+// ---------------------------------------------------------------------------
+
+/** Subpastas válidas p/ vendedores */
+export type SubpastaVendedor = 'CAD' | 'NF' | 'RPA' | 'COMP';
+
+export interface VendedorDocumentoParams {
+  buffer: Buffer;
+  tipo: TipoDocumentoVendedor;
+  /** CPF (PF) ou CNPJ (PJ) do representante-pai — sem formatação */
+  repIdentificador: string;
+  /** Tipo pessoa do representante-pai */
+  repTipoPessoa: 'pf' | 'pj';
+  /** CPF (PF) ou CNPJ (PJ) do vendedor — sem formatação */
+  vendedorIdentificador: string;
+  /** Subpasta destino */
+  subpasta: SubpastaVendedor;
+  contentType: string;
+}
+
+/**
+ * Salvar doc de vendedor localmente (DEV)
+ *
+ * Path: storage/representantes/{PF|PJ}/{repId}/vendedores/{vendId}/{CAD|NF|RPA|COMP}/{tipo}_{ts}.{ext}
+ */
+async function uploadLocalVendedor(
+  params: VendedorDocumentoParams
+): Promise<RepresentanteDocumentoResult> {
+  const fs = await import('fs/promises');
+  const pathMod = await import('path');
+
+  const repDir = params.repTipoPessoa === 'pj' ? 'PJ' : 'PF';
+  const storageDir = pathMod.join(
+    process.cwd(),
+    'storage',
+    'representantes',
+    repDir,
+    params.repIdentificador,
+    'vendedores',
+    params.vendedorIdentificador,
+    params.subpasta
+  );
+  await fs.mkdir(storageDir, { recursive: true });
+
+  const ext = extensaoFromMime(params.contentType);
+  const timestamp = Date.now();
+  const filename = `${params.tipo}_${timestamp}.${ext}`;
+  const filepath = pathMod.join(storageDir, filename);
+
+  await fs.writeFile(filepath, params.buffer);
+
+  const relativePath = `storage/representantes/${repDir}/${params.repIdentificador}/vendedores/${params.vendedorIdentificador}/${params.subpasta}/${filename}`;
+  console.log(
+    `[VND-STORAGE] Documento ${params.tipo} salvo localmente: ${filepath}`
+  );
+
+  return { path: relativePath };
+}
+
+/**
+ * Upload doc de vendedor para Backblaze (PROD)
+ *
+ * Key: {PF|PJ}/{repId}/vendedores/{vendId}/{cad|nf|rpa|comp}/{tipo}_{ts}-{rnd}.{ext}
+ */
+async function uploadRemotoVendedor(
+  params: VendedorDocumentoParams
+): Promise<RepresentanteDocumentoResult> {
+  try {
+    const ext = extensaoFromMime(params.contentType);
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).slice(2, 8);
+    const repDir = params.repTipoPessoa === 'pj' ? 'PJ' : 'PF';
+    const subLower = params.subpasta.toLowerCase();
+    const key = `${repDir}/${params.repIdentificador}/vendedores/${params.vendedorIdentificador}/${subLower}/${params.tipo}_${timestamp}-${random}.${ext}`;
+
+    const repKeyId = process.env.BACKBLAZE_REP_KEY_ID?.trim();
+    const repAppKey = process.env.BACKBLAZE_REP_APPLICATION_KEY?.trim();
+    const credentialsOverride =
+      repKeyId && repAppKey
+        ? { keyId: repKeyId, applicationKey: repAppKey }
+        : undefined;
+
+    const result = await uploadToBackblaze(
+      params.buffer,
+      key,
+      params.contentType,
+      REP_BUCKET,
+      credentialsOverride
+    );
+
+    console.log(
+      `[VND-STORAGE] Documento ${params.tipo} (${params.vendedorIdentificador}) enviado para Backblaze: ${REP_BUCKET}/${key}`
+    );
+
+    return {
+      path: result.url,
+      arquivo_remoto: {
+        provider: result.provider,
+        bucket: result.bucket,
+        key: result.key,
+        url: result.url,
+      },
+    };
+  } catch (error) {
+    console.error(
+      '[VND-STORAGE] Erro ao upload doc de vendedor para Backblaze:',
+      error
+    );
+    throw new Error(
+      `Falha ao salvar documento de vendedor: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Upload de documento de vendedor (híbrido DEV/PROD)
+ *
+ * LOCAL: storage/representantes/{PF|PJ}/{repId}/vendedores/{vendId}/{CAD|NF|RPA|COMP}/{tipo}_{ts}.{ext}
+ * PROD:  Backblaze rep-qwork/{PF|PJ}/{repId}/vendedores/{vendId}/{cad|nf|rpa|comp}/{tipo}_{ts}-{rnd}.{ext}
+ */
+export async function uploadDocumentoVendedor(
+  params: VendedorDocumentoParams
+): Promise<RepresentanteDocumentoResult> {
+  const isServerless =
+    process.env.VERCEL === '1' || process.env.NODE_ENV === 'production';
+
+  if (isServerless) {
+    return uploadRemotoVendedor(params);
+  } else {
+    return uploadLocalVendedor(params);
   }
 }

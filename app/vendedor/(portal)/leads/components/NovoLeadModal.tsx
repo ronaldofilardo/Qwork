@@ -1,8 +1,19 @@
 'use client';
 
-import { X, Loader2, Plus, AlertCircle, AlertTriangle } from 'lucide-react';
+import {
+  X,
+  Loader2,
+  Plus,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+} from 'lucide-react';
 import { normalizeCNPJ } from '@/lib/validators';
-import { TIPO_CLIENTE_LABEL, TIPOS_CLIENTE } from '@/lib/leads-config';
+import {
+  TIPO_CLIENTE_LABEL,
+  TIPOS_CLIENTE,
+  MAX_PERCENTUAL_COMISSAO,
+} from '@/lib/leads-config';
 import { useVendedorLeads } from '../hooks/useVendedorLeads';
 
 interface VendedorNovoLeadModalProps {
@@ -27,6 +38,7 @@ export default function VendedorNovoLeadModal({
     handleTipoClienteChange,
     requerAprovacao,
     custoAtual,
+    valoresComissao,
     salvar,
   } = useVendedorLeads();
 
@@ -78,7 +90,7 @@ export default function VendedorNovoLeadModal({
               ))}
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Custo mínimo:{' '}
+              Custo por avaliação:{' '}
               <span className="font-semibold text-gray-700">
                 R$ {custoAtual},00
               </span>
@@ -198,7 +210,10 @@ export default function VendedorNovoLeadModal({
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">
-                Comissão (%)
+                Comissão Vendedor (%)
+                <span className="ml-1 text-xs font-normal text-gray-400">
+                  máx. {MAX_PERCENTUAL_COMISSAO}%
+                </span>
               </label>
               <input
                 type="text"
@@ -211,7 +226,7 @@ export default function VendedorNovoLeadModal({
                     return;
                   }
                   const val = Number(raw) / 100;
-                  if (val > 100) return;
+                  if (val > MAX_PERCENTUAL_COMISSAO) return;
                   const formatted = val.toLocaleString('pt-BR', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
@@ -224,6 +239,53 @@ export default function VendedorNovoLeadModal({
                 placeholder="0,00%"
                 className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
               />
+            </div>
+          </div>
+
+          {/* Nº de Vidas Estimado */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Nº de Vidas Estimado
+              <span className="ml-1 text-xs font-normal text-gray-400">
+                (opcional)
+              </span>
+            </label>
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Ex: 150"
+              value={form.num_vidas_estimado}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/\D/g, '');
+                setForm((f) => ({ ...f, num_vidas_estimado: raw }));
+              }}
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
+            />
+            <p className="mt-1 text-xs text-gray-400">
+              Número estimado de funcionários/vidas do cliente
+            </p>
+          </div>
+
+          {/* Informativo: rep definirá o percentual dele */}
+          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5">
+            <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
+            <div className="text-xs text-blue-700">
+              <p className="font-semibold">Como funciona?</p>
+              <p>
+                Você informa apenas a sua % de comissão. Seu representante
+                definirá o percentual dele durante a aprovação.
+              </p>
+              {valoresComissao.percentualTotal > 0 && (
+                <p className="mt-1">
+                  Sua comissão estimada:{' '}
+                  <span className="font-semibold">
+                    R${' '}
+                    {valoresComissao.valorRep.toLocaleString('pt-BR', {
+                      minimumFractionDigits: 2,
+                    })}
+                  </span>
+                </p>
+              )}
             </div>
           </div>
 
@@ -255,7 +317,8 @@ export default function VendedorNovoLeadModal({
                   Aprovação comercial necessária
                 </p>
                 <p className="text-xs text-amber-600 mt-0.5">
-                  A margem QWork ficará abaixo do custo mínimo (R$ {custoAtual}
+                  A margem QWork ficará abaixo do custo por avaliação (R${' '}
+                  {custoAtual}
                   ,00).
                 </p>
               </div>

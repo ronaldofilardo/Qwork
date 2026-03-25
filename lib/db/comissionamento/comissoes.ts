@@ -234,7 +234,7 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  // Verificar representante e buscar percentual de comissão
+  // Verificar representante
   const repResult = await query(
     `SELECT id, status, percentual_comissao FROM representantes WHERE id = $1 LIMIT 1`,
     [representante_id]
@@ -250,15 +250,23 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  // Verificar percentual de comissão definido
+  // Buscar percentual do vínculo (novo modelo) com fallback para representante (legado)
+  const vinculoPercResult = await query(
+    `SELECT percentual_comissao_representante FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
+    [vinculo_id]
+  );
+  const percVinculo =
+    vinculoPercResult.rows[0]?.percentual_comissao_representante;
   const percentualRep =
-    rep.percentual_comissao != null
-      ? parseFloat(rep.percentual_comissao)
-      : null;
+    percVinculo != null
+      ? parseFloat(percVinculo)
+      : rep.percentual_comissao != null
+        ? parseFloat(rep.percentual_comissao)
+        : null;
   if (percentualRep == null) {
     return {
       comissao: null,
-      erro: 'Percentual de comissão não definido para este representante. Defina o percentual na página do representante antes de gerar comissões.',
+      erro: 'Percentual de comissão não definido para este vínculo/representante.',
     };
   }
 
@@ -438,6 +446,170 @@ export async function ativarComissaoParcelaPaga(params: {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Comissão do VENDEDOR (linha separada em comissoes_laudo)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cria comissão para o vendedor associado ao vínculo, se percentual_comissao_vendedor > 0.
+ * Chamada após criarComissaoAdmin para gerar a linha separada do vendedor.
+ */
+export async function criarComissaoVendedor(params: {
+  lote_pagamento_id: number;
+  vinculo_id: number;
+  representante_id: number;
+  entidade_id?: number | null;
+  clinica_id?: number | null;
+  laudo_id?: number | null;
+  valor_laudo: number;
+  valor_parcela?: number | null;
+  parcela_numero?: number;
+  total_parcelas?: number;
+  admin_cpf?: string;
+  forcar_retida?: boolean;
+  parcela_confirmada_em?: Date | null;
+}): Promise<{ comissao: Record<string, unknown> | null; erro?: string }> {
+  const {
+    lote_pagamento_id,
+    vinculo_id,
+    representante_id,
+    entidade_id,
+    clinica_id,
+    laudo_id,
+    valor_laudo,
+    valor_parcela = null,
+    parcela_numero = 1,
+    total_parcelas = 1,
+    admin_cpf,
+    forcar_retida = false,
+    parcela_confirmada_em = undefined,
+  } = params;
+
+  // Buscar dados do vínculo + lead para identificar o vendedor
+  const vinculoResult = await query(
+    `SELECT vc.percentual_comissao_vendedor, lr.vendedor_id
+     FROM vinculos_comissao vc
+     LEFT JOIN leads_representante lr ON lr.id = vc.lead_id
+     WHERE vc.id = $1 LIMIT 1`,
+    [vinculo_id]
+  );
+
+  if (vinculoResult.rows.length === 0) return { comissao: null };
+
+  const vinculoData = vinculoResult.rows[0];
+  const percVendedor =
+    vinculoData.percentual_comissao_vendedor != null
+      ? parseFloat(vinculoData.percentual_comissao_vendedor)
+      : 0;
+  const vendedorId = vinculoData.vendedor_id;
+
+  // Se não há comissão de vendedor ou sem vendedor, skip
+  if (percVendedor <= 0 || !vendedorId) {
+    return { comissao: null };
+  }
+
+  const parcelaNum = Math.max(1, Math.min(parcela_numero, total_parcelas));
+  const totalParc = Math.max(1, total_parcelas);
+  const entId = entidade_id && entidade_id > 0 ? entidade_id : null;
+  const clinId = clinica_id && clinica_id > 0 ? clinica_id : null;
+
+  // Verificar duplicata
+  const dup = await query(
+    `SELECT id FROM comissoes_laudo
+     WHERE lote_pagamento_id = $1 AND parcela_numero = $2 AND tipo_beneficiario = 'vendedor' LIMIT 1`,
+    [lote_pagamento_id, parcelaNum]
+  );
+  if (dup.rows.length > 0) {
+    return {
+      comissao: null,
+      erro: `Comissão do vendedor já gerada para este lote (parcela ${parcelaNum}).`,
+    };
+  }
+
+  // Cálculo: base_calculo × percentual / 100
+  const baseCalculo =
+    valor_parcela != null && valor_parcela > 0
+      ? valor_parcela
+      : valor_laudo / totalParc;
+  const valorComissao =
+    Math.round(((baseCalculo * percVendedor) / 100) * 100) / 100;
+
+  // Status inicial (vendedor não tem conceito de "apto" como rep, usa mesmo rep status como proxy)
+  const repResult = await query(
+    `SELECT status FROM representantes WHERE id = $1 LIMIT 1`,
+    [representante_id]
+  );
+  const repStatus = repResult.rows[0]?.status ?? 'apto';
+  const statusInicial: StatusComissao =
+    forcar_retida || repStatus !== 'apto' ? 'retida' : 'pendente_nf';
+
+  const agora = new Date();
+  const mesEmissao = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-01`;
+  const { mes_pagamento: mesPagBase } = calcularPrevisaoPagamento(agora);
+  const mesPagDate = new Date(mesPagBase + 'T00:00:00Z');
+  mesPagDate.setUTCMonth(mesPagDate.getUTCMonth() + (parcelaNum - 1));
+  const mes_pagamento = `${mesPagDate.getUTCFullYear()}-${String(mesPagDate.getUTCMonth() + 1).padStart(2, '0')}-01`;
+
+  const result = await query(
+    `INSERT INTO comissoes_laudo (
+       vinculo_id, representante_id, vendedor_id, tipo_beneficiario,
+       entidade_id, clinica_id, laudo_id, lote_pagamento_id,
+       valor_laudo, percentual_comissao, valor_comissao,
+       status, mes_emissao, mes_pagamento, data_emissao_laudo,
+       data_aprovacao, parcela_numero, total_parcelas, parcela_confirmada_em
+     ) VALUES (
+       $1, $2, $3, 'vendedor',
+       $4, $5, $6, $7,
+       $8, $9, $10,
+       $11::status_comissao, $12::date, $13::date, NOW(),
+       CASE WHEN $11::status_comissao = 'pendente_nf' THEN NOW() ELSE NULL END,
+       $14, $15, $16
+     ) RETURNING *`,
+    [
+      vinculo_id,
+      representante_id,
+      vendedorId,
+      entId,
+      clinId,
+      laudo_id ?? null,
+      lote_pagamento_id,
+      valor_laudo,
+      percVendedor,
+      valorComissao,
+      statusInicial,
+      mesEmissao,
+      mes_pagamento,
+      parcelaNum,
+      totalParc,
+      parcela_confirmada_em != null
+        ? parcela_confirmada_em.toISOString()
+        : null,
+    ]
+  );
+
+  const comissaoCriada = result.rows[0];
+
+  if (comissaoCriada) {
+    await registrarAuditoria({
+      tabela: 'comissoes_laudo',
+      registro_id: comissaoCriada.id,
+      status_anterior: null,
+      status_novo: statusInicial,
+      triggador: 'admin_action',
+      motivo: `Comissão VENDEDOR parcela ${parcelaNum}/${totalParc} — lote ${lote_pagamento_id}`,
+      dados_extras: {
+        valor_laudo,
+        percentual_comissao: percVendedor,
+        valor_comissao: valorComissao,
+        vendedor_id: vendedorId,
+      },
+      criado_por_cpf: admin_cpf ?? null,
+    });
+  }
+
+  return { comissao: comissaoCriada };
+}
+
 /**
  * Gerencia comissões automaticamente ao confirmar pagamento via webhook Asaas.
  *
@@ -488,7 +660,7 @@ export async function criarComissaoAutomatica(params: {
 
     // Buscar vínculo ativo para a entidade ou clínica
     const vinculoResult = await query(
-      `SELECT vc.id, vc.representante_id, vc.entidade_id, vc.clinica_id
+      `SELECT vc.id, vc.representante_id, vc.entidade_id, vc.clinica_id, vc.num_vidas_estimado
        FROM vinculos_comissao vc
        WHERE vc.status = 'ativo'
          AND vc.data_expiracao > CURRENT_DATE
@@ -510,6 +682,55 @@ export async function criarComissaoAutomatica(params: {
     }
 
     const vinculo = vinculoResult.rows[0];
+
+    // Recálculo por volume real vs estimado
+    const numVidasEstimado =
+      vinculo.num_vidas_estimado != null
+        ? parseInt(vinculo.num_vidas_estimado, 10)
+        : null;
+    if (numVidasEstimado != null && numVidasEstimado > 0) {
+      try {
+        const avalResult = await query<{ num_avaliacoes: string }>(
+          `SELECT COUNT(a.id) AS num_avaliacoes
+           FROM avaliacoes a
+           JOIN lotes_avaliacao la ON la.id = a.lote_id
+           WHERE la.id = $1 AND a.status = 'concluida'`,
+          [lote_id]
+        );
+        const numAvaliacoesReal = parseInt(
+          avalResult.rows[0]?.num_avaliacoes ?? '0',
+          10
+        );
+        if (numAvaliacoesReal > 0 && numAvaliacoesReal !== numVidasEstimado) {
+          const variacao = (
+            ((numAvaliacoesReal - numVidasEstimado) / numVidasEstimado) *
+            100
+          ).toFixed(1);
+          console.log(
+            `[Comissionamento] Volume real (${numAvaliacoesReal}) difere do estimado (${numVidasEstimado}): ${variacao}% — lote ${lote_id}, vínculo ${vinculo.id}`
+          );
+          await registrarAuditoria({
+            tabela: 'vinculos_comissao',
+            registro_id: vinculo.id,
+            status_anterior: null,
+            status_novo: null,
+            triggador: 'sistema',
+            motivo: `Divergência de volume: estimado=${numVidasEstimado}, real=${numAvaliacoesReal} (${variacao}%) — lote ${lote_id}`,
+            dados_extras: {
+              lote_id,
+              num_vidas_estimado: numVidasEstimado,
+              num_avaliacoes_real: numAvaliacoesReal,
+              variacao_percentual: parseFloat(variacao),
+            },
+          });
+        }
+      } catch (volErr) {
+        console.warn(
+          `[Comissionamento] Erro ao comparar volume real vs estimado:`,
+          volErr
+        );
+      }
+    }
 
     // Verificar quantas comissões já existem para este lote
     const existingResult = await query<{ total: string }>(
@@ -545,6 +766,22 @@ export async function criarComissaoAutomatica(params: {
               `[Comissionamento] Erro ao provisionar parcela ${p}/${total_parcelas} do lote ${lote_id}: ${res.erro}`
             );
           }
+          // Criar comissão do vendedor (se houver)
+          await criarComissaoVendedor({
+            lote_pagamento_id: lote_id,
+            vinculo_id: vinculo.id,
+            representante_id: vinculo.representante_id,
+            entidade_id: vinculo.entidade_id ?? null,
+            clinica_id: vinculo.clinica_id ?? null,
+            laudo_id: null,
+            valor_laudo: valor_total_lote,
+            valor_parcela: p === parcela_numero ? valor_parcela_liquida : null,
+            parcela_numero: p,
+            total_parcelas,
+            admin_cpf: 'WEBHOOK',
+            forcar_retida: true,
+            parcela_confirmada_em: null,
+          });
         }
         console.log(
           `[Comissionamento] ✅ ${total_parcelas} comissões provisionadas para lote ${lote_id}`
@@ -579,6 +816,23 @@ export async function criarComissaoAutomatica(params: {
         console.log(
           `[Comissionamento] ✅ Comissão à vista criada: lote=${lote_id} valor_comissao=${String(result.comissao?.valor_comissao)}`
         );
+
+        // Criar comissão do vendedor (se houver)
+        await criarComissaoVendedor({
+          lote_pagamento_id: lote_id,
+          vinculo_id: vinculo.id,
+          representante_id: vinculo.representante_id,
+          entidade_id: vinculo.entidade_id ?? null,
+          clinica_id: vinculo.clinica_id ?? null,
+          laudo_id: null,
+          valor_laudo: valor_total_lote,
+          valor_parcela: valor_parcela_liquida,
+          parcela_numero: 1,
+          total_parcelas: 1,
+          admin_cpf: 'WEBHOOK',
+          parcela_confirmada_em: new Date(),
+        });
+
         return { ok: true, comissao: result.comissao ?? undefined };
       }
     }

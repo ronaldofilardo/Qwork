@@ -6,13 +6,18 @@ export interface Comissao {
   representante_tipo_pessoa: string;
   entidade_nome: string;
   numero_laudo: string | null;
+  lote_pagamento_id: number | null;
+  lote_pagamento_metodo: string | null;
+  lote_pagamento_parcelas: number | null;
   valor_laudo: string;
   valor_comissao: string;
   percentual_comissao: string;
   status: string;
   motivo_congelamento: string | null;
   mes_emissao: string;
-  mes_pagamento: string;
+  mes_pagamento: string | null;
+  parcela_numero: number;
+  total_parcelas: number;
   data_emissao_laudo: string;
   data_aprovacao: string | null;
   data_liberacao: string | null;
@@ -64,6 +69,9 @@ export const ACOES_POR_STATUS: Record<string, string[]> = {
   congelada_rep_suspenso: ['descongelar', 'cancelar'],
   retida: ['cancelar'],
 };
+
+/** Ações proibidas para o perfil comercial (servidor também bloqueia). */
+export const ACOES_COMERCIAL_BLOQUEADAS = ['liberar', 'pagar'] as const;
 
 export const ACAO_LABEL: Record<string, string> = {
   liberar: '✅ Liberar (aprovar NF)',

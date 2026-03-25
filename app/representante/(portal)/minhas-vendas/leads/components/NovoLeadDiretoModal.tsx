@@ -9,7 +9,7 @@ import {
   validarEmail,
 } from '@/lib/validators';
 import {
-  CUSTO_PRODUTO,
+  CUSTO_POR_AVALIACAO,
   calcularRequerAprovacao,
   TIPO_CLIENTE_LABEL,
   TIPOS_CLIENTE,
@@ -118,7 +118,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
       form.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
     ) || 0;
 
-  const custoAtual = CUSTO_PRODUTO[form.tipo_cliente];
+  const custoAtual = CUSTO_POR_AVALIACAO[form.tipo_cliente];
   const requerAprovacao = calcularRequerAprovacao(
     valorNegociadoNum,
     percentualComissaoNum,
@@ -218,7 +218,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
               ))}
             </div>
             <p className="mt-1 text-xs text-gray-500">
-              Custo mínimo:{' '}
+              Custo por avaliação:{' '}
               <span className="font-semibold text-gray-700">
                 R$ {custoAtual},00
               </span>
@@ -364,7 +364,7 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
               <AlertTriangle size={14} className="shrink-0 mt-0.5" />
               <span>
                 Este lead requer <strong>aprovação do Comercial</strong> antes
-                de ser processado (margem abaixo do custo mínimo de R${' '}
+                de ser processado (margem abaixo do custo por avaliação de R${' '}
                 {custoAtual},00).
               </span>
             </div>
