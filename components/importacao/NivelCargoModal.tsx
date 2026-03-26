@@ -13,6 +13,7 @@ export interface NivelCargoEntry {
 interface NivelCargoModalProps {
   funcoes: string[];
   initialMap?: Record<string, string>;
+  contexto?: 'inicial' | 'mudanca_funcao';
   onConfirm: (mapeamento: Record<string, NivelCargo>) => void;
   onSkip: () => void;
 }
@@ -20,6 +21,7 @@ interface NivelCargoModalProps {
 export default function NivelCargoModal({
   funcoes,
   initialMap,
+  contexto = 'inicial',
   onConfirm,
   onSkip,
 }: NivelCargoModalProps) {
@@ -68,8 +70,18 @@ export default function NivelCargoModal({
         </div>
 
         <p className="px-5 pt-3 pb-1 text-sm text-gray-600">
-          A planilha não tem coluna <strong>Nível de Cargo</strong>. Classifique
-          cada cargo abaixo ou pule essa etapa.
+          {contexto === 'mudanca_funcao' ? (
+            <>
+              Alguns funcionários <strong>mudaram de função</strong> nesta
+              planilha. Revise ou reclassifique o nível de cargo para cada nova
+              função abaixo.
+            </>
+          ) : (
+            <>
+              A planilha não tem coluna <strong>Nível de Cargo</strong>.
+              Classifique cada cargo abaixo ou pule essa etapa.
+            </>
+          )}
         </p>
 
         {/* Ação rápida */}

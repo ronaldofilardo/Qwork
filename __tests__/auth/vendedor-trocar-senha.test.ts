@@ -141,7 +141,7 @@ describe('POST /api/vendedor/trocar-senha', () => {
     expect(data.error).toMatch(/igual/i);
   });
 
-  it('200: sucesso — retorna { success: true }', async () => {
+  it('200: sucesso — retorna { success: true, codigo }', async () => {
     mockRequireRole.mockResolvedValue(VENDEDOR_SESSION as any);
     mockQuery
       .mockResolvedValueOnce({
@@ -149,7 +149,8 @@ describe('POST /api/vendedor/trocar-senha', () => {
         rowCount: 1,
       } as any)
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE usuarios
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // UPDATE vendedores_perfil
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE vendedores_perfil
+      .mockResolvedValueOnce({ rows: [{ codigo: '100' }], rowCount: 1 } as any); // SELECT codigo
     (mockBcryptCompare as any)
       .mockResolvedValueOnce(true) // senha atual válida
       .mockResolvedValueOnce(false); // nova != atual
@@ -159,6 +160,7 @@ describe('POST /api/vendedor/trocar-senha', () => {
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
+    expect(data.codigo).toBe('100');
   });
 
   it('200: deve atualizar usuarios.senha_hash', async () => {
@@ -169,7 +171,8 @@ describe('POST /api/vendedor/trocar-senha', () => {
         rowCount: 1,
       } as any)
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [{ codigo: '100' }], rowCount: 1 } as any);
     (mockBcryptCompare as any)
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false);
@@ -193,7 +196,8 @@ describe('POST /api/vendedor/trocar-senha', () => {
         rowCount: 1,
       } as any)
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [{ codigo: '100' }], rowCount: 1 } as any);
     (mockBcryptCompare as any)
       .mockResolvedValueOnce(true)
       .mockResolvedValueOnce(false);

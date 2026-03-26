@@ -5,7 +5,7 @@
  * Cobre:
  * - Retorno de codigo quando vendedor tem vendedores_perfil
  * - Retorno de null/undefined quando vendedor não tem perfil estendido
- * - Formato do codigo (VND-XXXXX)
+ * - Campo codigo presente na query SQL
  */
 
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));

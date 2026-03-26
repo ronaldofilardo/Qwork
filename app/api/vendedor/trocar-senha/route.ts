@@ -31,9 +31,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    if (nova_senha.length < 8 || !/[A-Z]/.test(nova_senha) || !/[0-9]/.test(nova_senha)) {
+    if (
+      nova_senha.length < 8 ||
+      !/[A-Z]/.test(nova_senha) ||
+      !/[0-9]/.test(nova_senha)
+    ) {
       return NextResponse.json(
-        { error: 'Nova senha deve ter mínimo 8 caracteres, uma maiúscula e um número.' },
+        {
+          error:
+            'Nova senha deve ter mínimo 8 caracteres, uma maiúscula e um número.',
+        },
         { status: 400 }
       );
     }
@@ -45,7 +52,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
 
     if (userRes.rows.length === 0) {
-      return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'Usuário não encontrado.' },
+        { status: 404 }
+      );
     }
 
     const user = userRes.rows[0];
@@ -59,7 +69,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const senhaAtualValida = await bcrypt.compare(senha_atual, user.senha_hash);
     if (!senhaAtualValida) {
-      return NextResponse.json({ error: 'Senha atual incorreta.' }, { status: 401 });
+      return NextResponse.json(
+        { error: 'Senha atual incorreta.' },
+        { status: 401 }
+      );
     }
 
     if (await bcrypt.compare(nova_senha, user.senha_hash)) {
@@ -72,15 +85,27 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const novaHash = await bcrypt.hash(nova_senha, 12);
 
     // Atualizar senha e marcar primeira_senha_alterada=TRUE
-    await query(`UPDATE usuarios SET senha_hash = $1 WHERE id = $2`, [novaHash, user.id]);
+    await query(`UPDATE usuarios SET senha_hash = $1 WHERE id = $2`, [
+      novaHash,
+      user.id,
+    ]);
     await query(
       `UPDATE vendedores_perfil SET primeira_senha_alterada = TRUE WHERE usuario_id = $1`,
       [user.id]
     );
 
-    console.log(`[TROCAR_SENHA_VENDEDOR] usuario_id=${user.id} (CPF: ${session.cpf}) alterou senha`);
+    // Buscar código do vendedor para exibir na tela de sucesso
+    const codigoResult = await query<{ codigo: string }>(
+      `SELECT codigo FROM vendedores_perfil WHERE usuario_id = $1 LIMIT 1`,
+      [user.id]
+    );
+    const codigo = codigoResult.rows[0]?.codigo ?? null;
 
-    return NextResponse.json({ success: true });
+    console.log(
+      `[TROCAR_SENHA_VENDEDOR] usuario_id=${user.id} (CPF: ${session.cpf}) alterou senha`
+    );
+
+    return NextResponse.json({ success: true, codigo });
   } catch (err: unknown) {
     const e = err as Error;
     if (e.message === 'UNAUTHORIZED' || e.message?.includes('401')) {

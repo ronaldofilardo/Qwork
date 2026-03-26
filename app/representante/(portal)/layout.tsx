@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { RepContext, type RepresentanteSession } from './rep-context';
 import ModalTermosRepresentante from '@/components/modals/ModalTermosRepresentante';
@@ -22,9 +22,11 @@ export default function PortalLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [session, setSession] = useState<RepresentanteSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [copiado, setCopiado] = useState(false);
+  const [showBoasVindas, setShowBoasVindas] = useState(false);
 
   const carregarSessao = useCallback(async () => {
     try {
@@ -45,6 +47,12 @@ export default function PortalLayout({
   useEffect(() => {
     carregarSessao();
   }, [carregarSessao]);
+
+  useEffect(() => {
+    if (searchParams.get('primeiro_acesso') === '1') {
+      setShowBoasVindas(true);
+    }
+  }, [searchParams]);
 
   const handleLogout = async () => {
     await fetch('/api/representante/logout', { method: 'POST' });
@@ -232,7 +240,35 @@ export default function PortalLayout({
         </header>
 
         {/* Page content */}
-        <main className="max-w-6xl mx-auto px-4 py-8">{children}</main>
+        <main className="max-w-6xl mx-auto px-4 py-8">
+          {showBoasVindas && session?.codigo && (
+            <div className="mb-6 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">&#127881;</span>
+                <div>
+                  <p className="text-sm font-semibold text-blue-900">
+                    Bem-vindo(a) à QWORK!
+                  </p>
+                  <p className="text-xs text-blue-700 mt-0.5">
+                    Seu código:{' '}
+                    <span className="font-mono font-bold text-blue-900">
+                      {session.codigo}
+                    </span>{' '}
+                    &mdash; Guarde-o, ele identifica você na plataforma.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowBoasVindas(false)}
+                className="text-blue-400 hover:text-blue-700 transition-colors text-lg leading-none cursor-pointer"
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </div>
+          )}
+          {children}
+        </main>
       </div>
     </RepContext.Provider>
   );

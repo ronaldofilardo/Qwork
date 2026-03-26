@@ -35,16 +35,6 @@ import { uploadDocumentoVendedor } from '@/lib/storage/representante-storage';
 
 export const dynamic = 'force-dynamic';
 
-// Gera código VND-XXXXX (5 chars alfanumérico maiúsculo)
-function gerarCodigoVendedor(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem I, O, 0, 1 (ambíguos)
-  const parte = Array.from(
-    { length: 5 },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join('');
-  return `VND-${parte}`;
-}
-
 export async function POST(request: NextRequest) {
   try {
     const sess = requireRepresentante();
@@ -227,23 +217,13 @@ export async function POST(request: NextRequest) {
     );
     const vendedorId = userResult.rows[0].id;
 
-    // Gerar código único
-    let codigo: string = '';
-    for (let tentativa = 0; tentativa < 10; tentativa++) {
-      const candidato = gerarCodigoVendedor();
-      const colisao = await query<{ id: number }>(
-        `SELECT id FROM public.vendedores_perfil WHERE codigo = $1 LIMIT 1`,
-        [candidato],
-        rlsSess
-      );
-      if (colisao.rows.length === 0) {
-        codigo = candidato;
-        break;
-      }
-    }
-    if (!codigo) {
-      codigo = `VND-${Date.now().toString(36).toUpperCase().slice(-5)}`;
-    }
+    // Gerar código sequencial via sequência do banco
+    const codigoResult = await query<{ codigo: string }>(
+      `SELECT nextval('public.seq_vendedor_codigo')::text AS codigo`,
+      [],
+      rlsSess
+    );
+    const codigo = codigoResult.rows[0].codigo;
 
     // Inserir perfil do vendedor (com novos campos PJ)
     await query(

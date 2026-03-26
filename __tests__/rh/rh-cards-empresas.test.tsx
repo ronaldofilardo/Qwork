@@ -53,26 +53,6 @@ jest.mock('@/components/clinica/EmpresaFormModal', () => {
   };
 });
 
-// Mock do ImportEmpresasModal
-jest.mock('@/components/clinica/ImportEmpresasModal', () => {
-  return function MockImportEmpresasModal({
-    isOpen,
-    onClose,
-  }: {
-    isOpen: boolean;
-    onClose: () => void;
-    onSuccess: (stats: any) => void;
-  }) {
-    if (!isOpen) return null;
-    return (
-      <div data-testid="modal-importar">
-        <h2>Modal Importar Planilha</h2>
-        <button onClick={onClose}>Fechar Import</button>
-      </div>
-    );
-  };
-});
-
 describe('RH Page - Tela Raiz com Cards de Empresas', () => {
   const mockEmpresas = [
     {
@@ -167,9 +147,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       expect(botaoNovaEmpresa).toBeInTheDocument();
     });
   });
@@ -332,91 +310,6 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
     });
   });
 
-  describe('Botão Importar Planilha', () => {
-    it('deve exibir botão "Importar Planilha" no header', async () => {
-      render(<RhPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
-      });
-
-      const botaoImportar = screen.getByTestId('importar-planilha-button');
-      expect(botaoImportar).toBeInTheDocument();
-      expect(botaoImportar).toHaveTextContent(/importar planilha/i);
-    });
-
-    it('deve abrir modal de importação ao clicar no botão', async () => {
-      render(<RhPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
-      });
-
-      const botaoImportar = screen.getByTestId('importar-planilha-button');
-      fireEvent.click(botaoImportar);
-
-      expect(screen.getByTestId('modal-importar')).toBeInTheDocument();
-      expect(screen.getByText('Modal Importar Planilha')).toBeInTheDocument();
-    });
-
-    it('deve fechar modal de importação ao clicar em fechar', async () => {
-      render(<RhPage />);
-
-      await waitFor(() => {
-        expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByTestId('importar-planilha-button'));
-
-      await waitFor(() => {
-        expect(screen.getByTestId('modal-importar')).toBeInTheDocument();
-      });
-
-      fireEvent.click(screen.getByRole('button', { name: /fechar import/i }));
-
-      await waitFor(() => {
-        expect(screen.queryByTestId('modal-importar')).not.toBeInTheDocument();
-      });
-    });
-
-    it('deve exibir botão Importar Planilha no estado vazio', async () => {
-      global.fetch = jest.fn((url) => {
-        if (url === '/api/rh/empresas') {
-          return Promise.resolve({
-            ok: true,
-            json: () => Promise.resolve([]),
-          });
-        }
-        if (url === '/api/rh/dashboard') {
-          return Promise.resolve({
-            ok: true,
-            json: () =>
-              Promise.resolve({
-                total_empresas: 0,
-                total_funcionarios: 0,
-                total_avaliacoes: 0,
-                avaliacoes_concluidas: 0,
-              }),
-          });
-        }
-        return Promise.reject(new Error('URL não mockada'));
-      }) as jest.Mock;
-
-      render(<RhPage />);
-
-      await waitFor(() => {
-        expect(
-          screen.getByText('Nenhuma empresa cadastrada')
-        ).toBeInTheDocument();
-      });
-
-      const botoesImportar = screen.getAllByRole('button', {
-        name: /importar planilha/i,
-      });
-      expect(botoesImportar.length).toBeGreaterThanOrEqual(1);
-    });
-  });
-
   describe('Modal de Nova Empresa', () => {
     it('deve abrir modal ao clicar no botão "Nova Empresa"', async () => {
       render(<RhPage />);
@@ -425,9 +318,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       fireEvent.click(botaoNovaEmpresa);
 
       expect(screen.getByTestId('modal-empresa')).toBeInTheDocument();
@@ -496,9 +387,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       fireEvent.click(botaoNovaEmpresa);
 
       const botaoFechar = screen.getByRole('button', { name: /fechar/i });
@@ -517,9 +406,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
       });
 
       // Abrir modal
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       fireEvent.click(botaoNovaEmpresa);
 
       // Criar empresa
@@ -594,9 +481,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         ).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       expect(botaoNovaEmpresa).toBeInTheDocument();
     });
   });
