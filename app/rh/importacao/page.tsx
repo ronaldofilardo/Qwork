@@ -50,6 +50,7 @@ interface ValidateData {
     funcionariosAReadmitir: number;
   };
   funcoesUnicas: string[];
+  funcoesComMudancaRole?: string[];
   erros: Array<{
     linha: number;
     campo: string;
@@ -66,6 +67,12 @@ interface ValidateData {
   }>;
 }
 
+interface FuncaoAlterada {
+  nome: string;
+  funcaoAnterior: string | null;
+  funcaoNova: string;
+}
+
 interface ExecuteData {
   resumo: {
     totalLinhasProcessadas: number;
@@ -74,9 +81,12 @@ interface ExecuteData {
     empresasExistentes: number;
     funcionariosCriados: number;
     funcionariosAtualizados: number;
+    nivelCargoAlterados: number;
+    funcoesAlteradas?: FuncaoAlterada[];
     vinculosCriados: number;
     vinculosAtualizados: number;
     inativacoesRealizadas: number;
+    empresasBloqueadas: number;
   };
   erros: Array<{ linha?: number; campo?: string; mensagem: string }>;
   avisos: Array<{ linha?: number; campo?: string; mensagem: string }>;
@@ -129,6 +139,7 @@ export default function ImportacaoPage() {
     string,
     NivelCargo
   > | null>(null);
+  const [isMudancaRoleModal, setIsMudancaRoleModal] = useState(false);
   // Novas funções não classificadas no template (para exibir no modal filtrado)
   const [novasFuncoes, setNovasFuncoes] = useState<string[]>([]);
   const [pendingNivelMap, setPendingNivelMap] = useState<Record<
@@ -247,29 +258,42 @@ export default function ImportacaoPage() {
     [mapeamento]
   );
 
-  // Step 3a: Pré-execute — filtra funções já classificadas no template
+  // Step 3a: Pré-execute — lógica de classificação de nível antes de executar
   const handlePreExecute = useCallback(() => {
-    const funcoes = validateData?.funcoesUnicas ?? [];
     const templateMap = (appliedTemplate?.nivelCargoMap ?? {}) as Record<
       string,
       NivelCargo
     >;
 
-    // Funções que não estão classificadas no template aplicado
-    const novasParaClassificar = funcoes.filter((f) => !templateMap[f]);
+    // Funções alteradas de funcionários existentes
+    const mudancaRole = validateData?.funcoesComMudancaRole ?? [];
 
+    // Caso 1: há mudanças de função → sempre pede reclassificação de nível
+    // (mesmo que nivel_cargo esteja mapeado diretamente, o nível pode mudar junto com a função)
+    if (mudancaRole.length > 0) {
+      setNovasFuncoes(mudancaRole);
+      setIsMudancaRoleModal(true);
+      setShowNivelCargoModal(true);
+      return;
+    }
+
+    // Caso 2: funções novas não classificadas no template (sem mudança de role existente)
+    const funcoes = validateData?.funcoesUnicas ?? [];
+    const novasParaClassificar = funcoes.filter((f) => !templateMap[f]);
     if (novasParaClassificar.length > 0 && nivelCargoMap === null) {
       setNovasFuncoes(novasParaClassificar);
+      setIsMudancaRoleModal(false);
       setShowNivelCargoModal(true);
-    } else {
-      // Todas já classificadas pelo template (ou sem funções)
-      const finalMap: Record<string, NivelCargo> = {
-        ...templateMap,
-        ...(nivelCargoMap ?? {}),
-      };
-      void handleExecute(Object.keys(finalMap).length > 0 ? finalMap : null);
+      return;
     }
-  }, [validateData, appliedTemplate, nivelCargoMap, handleExecute]);
+
+    // Caso 3: tudo já classificado
+    const finalMap: Record<string, NivelCargo> = {
+      ...templateMap,
+      ...(nivelCargoMap ?? {}),
+    };
+    void handleExecute(Object.keys(finalMap).length > 0 ? finalMap : null);
+  }, [validateData, mapeamento, appliedTemplate, nivelCargoMap, handleExecute]);
 
   // Reset
   const handleNovaImportacao = useCallback(() => {
@@ -285,6 +309,7 @@ export default function ImportacaoPage() {
     setShowSaveTemplate(false);
     setNivelCargoMap(null);
     setShowNivelCargoModal(false);
+    setIsMudancaRoleModal(false);
     setAppliedTemplate(null);
     setLastSavedTemplateId(null);
     setNovasFuncoes([]);
@@ -453,6 +478,7 @@ export default function ImportacaoPage() {
               funcionariosAReadmitir:
                 validateData.resumo.funcionariosAReadmitir ?? 0,
             }}
+            funcoesComMudancaRole={validateData.funcoesComMudancaRole}
             onConfirm={handlePreExecute}
             onBack={() => {
               setStep('mapeamento');
@@ -467,24 +493,31 @@ export default function ImportacaoPage() {
                   ? novasFuncoes
                   : (validateData.funcoesUnicas ?? [])
               }
-              initialMap={undefined}
+              initialMap={nivelCargoMap ?? {}}
+              contexto={isMudancaRoleModal ? 'mudanca_funcao' : 'inicial'}
               onConfirm={(mapa) => {
                 const templateMap = (appliedTemplate?.nivelCargoMap ??
                   {}) as Record<string, NivelCargo>;
                 const mergedMap: Record<string, NivelCargo> = {
                   ...templateMap,
+                  ...(nivelCargoMap ?? {}),
                   ...mapa,
                 };
                 setNivelCargoMap(mergedMap);
                 setShowNivelCargoModal(false);
 
-                if (appliedTemplate && novasFuncoes.length > 0) {
-                  // Template aplicado + novos cargos — perguntar se atualiza
+                if (
+                  !isMudancaRoleModal &&
+                  appliedTemplate &&
+                  novasFuncoes.length > 0
+                ) {
+                  // Template aplicado + cargos novos (apenas classificação inicial)
+                  // → perguntar se atualiza template antes de importar
                   setPendingNivelMap(mergedMap);
                   setShowUpdateTemplatePrompt(true);
                 } else {
-                  // Sem template — se salvou template nesta sessão, atualiza com os cargos
-                  if (lastSavedTemplateId) {
+                  // Mudança de role OU sem template → executa direto
+                  if (!isMudancaRoleModal && lastSavedTemplateId) {
                     updateTemplateNivelCargo(lastSavedTemplateId, mapa);
                   }
                   void handleExecute(mergedMap);
@@ -506,13 +539,18 @@ export default function ImportacaoPage() {
 
       {step === 'resultado' && executeData && (
         <ImportResult
-          sucesso={executeData.erros.length === 0}
+          sucesso={
+            executeData.erros.length === 0 &&
+            executeData.resumo.empresasBloqueadas === 0
+          }
           stats={{
             empresas_criadas: executeData.resumo.empresasCriadas,
             empresas_existentes: executeData.resumo.empresasExistentes,
+            empresas_bloqueadas: executeData.resumo.empresasBloqueadas,
             funcionarios_criados: executeData.resumo.funcionariosCriados,
             funcionarios_atualizados:
               executeData.resumo.funcionariosAtualizados,
+            nivel_cargo_alterados: executeData.resumo.nivelCargoAlterados,
             vinculos_criados: executeData.resumo.vinculosCriados,
             vinculos_atualizados: executeData.resumo.vinculosAtualizados,
             inativacoes: executeData.resumo.inativacoesRealizadas,
@@ -524,6 +562,7 @@ export default function ImportacaoPage() {
           }))}
           tempoMs={tempoMs}
           totalLinhas={executeData.resumo.totalLinhasProcessadas}
+          funcoesAlteradas={executeData.resumo.funcoesAlteradas ?? []}
           onNovaImportacao={handleNovaImportacao}
         />
       )}

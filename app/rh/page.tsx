@@ -9,11 +9,9 @@ import {
   CheckCircle,
   Plus,
   ArrowRight,
-  Upload,
 } from 'lucide-react';
 import FlowStepsExplainer from '@/components/FlowStepsExplainer';
 import EmpresaFormModal from '@/components/clinica/EmpresaFormModal';
-import ImportEmpresasModal from '@/components/clinica/ImportEmpresasModal';
 
 interface Empresa {
   id: number;
@@ -41,7 +39,6 @@ export default function RhPage() {
   const [stats, setStats] = useState<EmpresasStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
 
   const loadData = async () => {
     try {
@@ -107,15 +104,6 @@ export default function RhPage() {
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(true)}
-                data-testid="importar-planilha-button"
-                className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
-              >
-                <Upload size={18} />
-                Importar Planilha
-              </button>
               <button
                 type="button"
                 onClick={(e) => {
@@ -208,17 +196,9 @@ export default function RhPage() {
             </h2>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Para começar a gerenciar avaliações psicossociais, cadastre sua
-              primeira empresa cliente ou importe uma planilha.
+              primeira empresa cliente.
             </p>
             <div className="flex items-center justify-center gap-3 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setIsImportModalOpen(true)}
-                className="flex items-center gap-2 px-5 py-3 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Upload size={18} />
-                Importar Planilha
-              </button>
               <button
                 type="button"
                 onClick={() => setIsModalOpen(true)}
@@ -349,16 +329,6 @@ export default function RhPage() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={handleEmpresaCreated}
-      />
-
-      {/* Modal de Importação em Massa */}
-      <ImportEmpresasModal
-        isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
-        onSuccess={() => {
-          setIsImportModalOpen(false);
-          loadData();
-        }}
       />
     </div>
   );

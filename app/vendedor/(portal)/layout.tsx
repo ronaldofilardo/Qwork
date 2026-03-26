@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import ModalTermosVendedor from '@/components/modals/ModalTermosVendedor';
 
@@ -23,8 +23,10 @@ export default function VendedorPortalLayout({
 }) {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [session, setSession] = useState<VendedorSession | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showBoasVindas, setShowBoasVindas] = useState(false);
 
   const carregarSessao = useCallback(async () => {
     try {
@@ -56,6 +58,12 @@ export default function VendedorPortalLayout({
   useEffect(() => {
     carregarSessao();
   }, [carregarSessao]);
+
+  useEffect(() => {
+    if (searchParams.get('primeiro_acesso') === '1') {
+      setShowBoasVindas(true);
+    }
+  }, [searchParams]);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
@@ -174,7 +182,35 @@ export default function VendedorPortalLayout({
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 py-6">{children}</main>
+      <main className="max-w-6xl mx-auto px-4 py-6">
+        {showBoasVindas && session?.codigo && (
+          <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">&#127881;</span>
+              <div>
+                <p className="text-sm font-semibold text-green-900">
+                  Bem-vindo(a) à QWORK!
+                </p>
+                <p className="text-xs text-green-700 mt-0.5">
+                  Seu código:{' '}
+                  <span className="font-mono font-bold text-green-900">
+                    {session.codigo}
+                  </span>{' '}
+                  &mdash; Guarde-o, ele identifica você na plataforma.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowBoasVindas(false)}
+              className="text-green-400 hover:text-green-700 transition-colors text-lg leading-none cursor-pointer"
+              aria-label="Fechar"
+            >
+              ×
+            </button>
+          </div>
+        )}
+        {children}
+      </main>
     </div>
   );
 }

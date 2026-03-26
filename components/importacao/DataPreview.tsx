@@ -9,6 +9,7 @@ import {
   Link2,
   UserMinus,
   UserCheck,
+  ArrowRight,
 } from 'lucide-react';
 
 interface ValidationIssue {
@@ -41,6 +42,7 @@ interface DbStats {
 interface DataPreviewProps {
   validacao: ValidationSummary;
   dbStats: DbStats;
+  funcoesComMudancaRole?: string[];
   onConfirm: () => void;
   onBack: () => void;
   isLoading?: boolean;
@@ -77,6 +79,7 @@ function StatCard({
 export default function DataPreview({
   validacao,
   dbStats,
+  funcoesComMudancaRole = [],
   onConfirm,
   onBack,
   isLoading,
@@ -294,6 +297,33 @@ export default function DataPreview({
         <div className="bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
           <strong>Pronto para importar!</strong> {validacao.linhasValidas}{' '}
           linha(s) serão processadas.
+        </div>
+      )}
+
+      {/* Aviso de mudança de função */}
+      {funcoesComMudancaRole.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <ArrowRight
+              size={15}
+              className="text-orange-500 mt-0.5 flex-shrink-0"
+            />
+            <div>
+              <p className="text-sm font-semibold text-orange-800">
+                {funcoesComMudancaRole.length} função
+                {funcoesComMudancaRole.length > 1
+                  ? 'ões alteradas'
+                  : ' alterada'}{' '}
+                detectada{funcoesComMudancaRole.length > 1 ? 's' : ''}
+              </p>
+              <p className="text-xs text-orange-700 mt-0.5">
+                Ao confirmar, você será perguntado sobre o nível de cargo de:{' '}
+                <span className="font-medium">
+                  {funcoesComMudancaRole.join(', ')}
+                </span>
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

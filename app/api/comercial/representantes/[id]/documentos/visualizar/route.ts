@@ -82,8 +82,18 @@ export async function GET(
         { status: 404 }
       );
 
+    // doc_path pode conter múltiplos arquivos separados por ';' (PJ: CNPJ + CPF resp)
+    const firstPath = docPath.split(';')[0].trim();
+
+    // Remove prefixo 'storage/' se presente: uploadLocal salva com esse prefixo,
+    // mas baseDir já aponta para {cwd}/storage — evita caminho duplicado storage/storage/…
+    const normalizedPath = firstPath.startsWith('storage/')
+      ? firstPath.slice('storage/'.length)
+      : firstPath;
+    docPath = firstPath; // atualiza para Content-Disposition
+
     const baseDir = resolve(process.cwd(), 'storage');
-    const fullPath = resolve(baseDir, docPath);
+    const fullPath = resolve(baseDir, normalizedPath);
 
     if (!fullPath.startsWith(baseDir))
       return NextResponse.json(
@@ -92,7 +102,7 @@ export async function GET(
       );
 
     const fileBuffer = await readFile(fullPath);
-    const ext = docPath.toLowerCase().split('.').pop();
+    const ext = normalizedPath.toLowerCase().split('.').pop();
     let mimeType = 'application/octet-stream';
     if (ext === 'pdf') mimeType = 'application/pdf';
     else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';

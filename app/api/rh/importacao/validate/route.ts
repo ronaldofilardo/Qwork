@@ -85,16 +85,22 @@ export async function POST(request: Request): Promise<NextResponse> {
     let funcionariosJaInativos = 0;
     let funcionariosAReadmitir = 0;
     const avisosDb: typeof validacao.avisos = [];
+    const existingFuncaoMap = new Map<string, string | null>();
 
     if (cpfsUnicos.length > 0) {
-      // Buscar funcionários existentes
+      // Buscar funcionários existentes (inclui funcao para detectar mudanças)
       const existResult = await query(
-        'SELECT id, cpf FROM funcionarios WHERE cpf = ANY($1)',
+        'SELECT id, cpf, funcao FROM funcionarios WHERE cpf = ANY($1)',
         [cpfsUnicos]
       );
-      const existingCpfs = new Set(
-        existResult.rows.map((r: { cpf: string }) => r.cpf.trim())
-      );
+      const existingCpfs = new Set<string>();
+      for (const r of existResult.rows as {
+        cpf: string;
+        funcao: string | null;
+      }[]) {
+        existingCpfs.add(r.cpf.trim());
+        existingFuncaoMap.set(r.cpf.trim(), r.funcao);
+      }
       funcionariosExistentes = existingCpfs.size;
 
       // Buscar vínculos existentes na clínica
@@ -168,12 +174,45 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
     }
 
-    // Coletar funcoes únicas para o modal de nivel_cargo
-    const funcoesUnicas = [
-      ...new Set(
-        parsed.data.map((r) => (r.funcao ?? '').trim()).filter(Boolean)
-      ),
-    ].sort();
+    // Coletar funcoes únicas para o modal de nivel_cargo (somente linhas válidas)
+    // Suprimir modal quando nivel_cargo está diretamente mapeado como coluna
+    const temNivelCargoDirecto = mapeamento.some(
+      (m) => m.campoQWork === 'nivel_cargo'
+    );
+    const linhasComErroSetValidate = new Set(
+      validacao.erros.map((e) => e.linha)
+    );
+    const linhasValidasParaFuncoes = parsed.data.filter(
+      (_, i) => !linhasComErroSetValidate.has(i + 2)
+    );
+    const funcoesUnicas = temNivelCargoDirecto
+      ? []
+      : [
+          ...new Set(
+            linhasValidasParaFuncoes
+              .map((r) => (r.funcao ?? '').trim())
+              .filter(Boolean)
+          ),
+        ].sort();
+
+    // Detectar funções novas oriundas de mudança de função de funcionários existentes
+    // (sempre calculado, independente de mapeamento direto de nivel_cargo)
+    const funcoesNovasPorMudancaRole = new Set<string>();
+    for (const row of linhasValidasParaFuncoes) {
+      const cpf = limparCPF(row.cpf ?? '');
+      const novaFuncao = (row.funcao ?? '').trim();
+      if (
+        !novaFuncao ||
+        novaFuncao === 'Não informado' ||
+        !existingFuncaoMap.has(cpf)
+      )
+        continue;
+      const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
+      if (funcaoAtual !== novaFuncao) {
+        funcoesNovasPorMudancaRole.add(novaFuncao);
+      }
+    }
+    const funcoesComMudancaRole = [...funcoesNovasPorMudancaRole].sort();
 
     // Contar empresas novas vs existentes
     const nomeEmpresas = new Set<string>();
@@ -215,6 +254,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           funcionariosAReadmitir,
         },
         funcoesUnicas,
+        funcoesComMudancaRole,
         erros: validacao.erros,
         // Deduplicar: avisos do DB (com nome de empresa) sobrepõem avisos genéricos de data_demissao
         avisos: (() => {

@@ -3,18 +3,23 @@
 import {
   CheckCircle,
   XCircle,
+  AlertTriangle,
   Building2,
   Users,
   Link2,
   UserMinus,
   RotateCcw,
+  TrendingUp,
+  ArrowRight,
 } from 'lucide-react';
 
 interface ImportStats {
   empresas_criadas: number;
   empresas_existentes: number;
+  empresas_bloqueadas: number;
   funcionarios_criados: number;
   funcionarios_atualizados: number;
+  nivel_cargo_alterados: number;
   vinculos_criados: number;
   vinculos_atualizados: number;
   inativacoes: number;
@@ -26,12 +31,19 @@ interface ImportError {
   mensagem: string;
 }
 
+interface FuncaoAlterada {
+  nome: string;
+  funcaoAnterior: string | null;
+  funcaoNova: string;
+}
+
 interface ImportResultProps {
   sucesso: boolean;
   stats: ImportStats;
   erros: ImportError[];
   tempoMs: number;
   totalLinhas: number;
+  funcoesAlteradas?: FuncaoAlterada[];
   onNovaImportacao: () => void;
 }
 
@@ -59,34 +71,88 @@ export default function ImportResult({
   erros,
   tempoMs,
   totalLinhas,
+  funcoesAlteradas,
   onNovaImportacao,
 }: ImportResultProps) {
+  const temBloqueios = stats.empresas_bloqueadas > 0;
+  const status = !sucesso ? 'erro' : temBloqueios ? 'parcial' : 'sucesso';
+
   return (
     <div className="space-y-4">
       {/* Header */}
       <div
         className={`rounded-lg p-4 border flex items-center gap-3 ${
-          sucesso ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+          status === 'sucesso'
+            ? 'bg-green-50 border-green-200'
+            : status === 'parcial'
+              ? 'bg-amber-50 border-amber-200'
+              : 'bg-red-50 border-red-200'
         }`}
       >
-        {sucesso ? (
+        {status === 'sucesso' ? (
           <CheckCircle size={32} className="text-green-600 flex-shrink-0" />
+        ) : status === 'parcial' ? (
+          <AlertTriangle size={32} className="text-amber-600 flex-shrink-0" />
         ) : (
           <XCircle size={32} className="text-red-600 flex-shrink-0" />
         )}
         <div>
           <h3
-            className={`text-lg font-semibold ${sucesso ? 'text-green-800' : 'text-red-800'}`}
+            className={`text-lg font-semibold ${
+              status === 'sucesso'
+                ? 'text-green-800'
+                : status === 'parcial'
+                  ? 'text-amber-800'
+                  : 'text-red-800'
+            }`}
           >
-            {sucesso ? 'Importação Concluída!' : 'Importação com Erros'}
+            {status === 'sucesso'
+              ? 'Importação Concluída!'
+              : status === 'parcial'
+                ? 'Importação Parcial'
+                : 'Importação com Erros'}
           </h3>
           <p
-            className={`text-sm ${sucesso ? 'text-green-700' : 'text-red-700'}`}
+            className={`text-sm ${
+              status === 'sucesso'
+                ? 'text-green-700'
+                : status === 'parcial'
+                  ? 'text-amber-700'
+                  : 'text-red-700'
+            }`}
           >
             {totalLinhas} linhas processadas em {(tempoMs / 1000).toFixed(1)}s
           </p>
         </div>
       </div>
+
+      {/* Aviso de bloqueio por CNPJ */}
+      {temBloqueios && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-start gap-2">
+            <AlertTriangle
+              size={16}
+              className="text-amber-600 mt-0.5 flex-shrink-0"
+            />
+            <div>
+              <p className="text-sm font-semibold text-amber-800">
+                {stats.empresas_bloqueadas} empresa
+                {stats.empresas_bloqueadas > 1
+                  ? 's bloqueadas'
+                  : ' bloqueada'}{' '}
+                — CNPJ já cadastrado em outra clínica
+              </p>
+              <p className="text-xs text-amber-700 mt-1">
+                Os funcionários vinculados a
+                {stats.empresas_bloqueadas > 1
+                  ? ' essas empresas'
+                  : ' essa empresa'}{' '}
+                não foram importados. Consulte os erros abaixo.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -102,6 +168,13 @@ export default function ImportResult({
             label="Empresas existentes"
             value={stats.empresas_existentes}
           />
+          {stats.empresas_bloqueadas > 0 && (
+            <ResultItem
+              icon={<AlertTriangle size={16} className="text-amber-500" />}
+              label="Empresas bloqueadas"
+              value={stats.empresas_bloqueadas}
+            />
+          )}
           <ResultItem
             icon={<Users size={16} className="text-green-500" />}
             label="Funcionários criados"
@@ -112,6 +185,13 @@ export default function ImportResult({
             label="Funcionários atualizados"
             value={stats.funcionarios_atualizados}
           />
+          {stats.nivel_cargo_alterados > 0 && (
+            <ResultItem
+              icon={<TrendingUp size={16} className="text-purple-500" />}
+              label="Mudanças de nível"
+              value={stats.nivel_cargo_alterados}
+            />
+          )}
           <ResultItem
             icon={<Link2 size={16} className="text-green-500" />}
             label="Vínculos criados"
@@ -136,6 +216,37 @@ export default function ImportResult({
           )}
         </div>
       </div>
+
+      {/* Funções alteradas por mudança de cargo */}
+      {funcoesAlteradas && funcoesAlteradas.length > 0 && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-orange-800 mb-2 flex items-center gap-2">
+            <ArrowRight size={15} className="text-orange-500" />
+            Funções alteradas ({funcoesAlteradas.length})
+          </h3>
+          <div className="max-h-48 overflow-y-auto space-y-1">
+            {funcoesAlteradas.map((f, i) => (
+              <div
+                key={i}
+                className="text-xs text-orange-800 flex items-center gap-1.5"
+              >
+                <span className="font-medium min-w-0 truncate">{f.nome}</span>
+                <span className="text-orange-400 flex-shrink-0">:</span>
+                <span className="text-orange-600 flex-shrink-0">
+                  {f.funcaoAnterior ?? 'não definida'}
+                </span>
+                <ArrowRight
+                  size={11}
+                  className="text-orange-400 flex-shrink-0"
+                />
+                <span className="font-semibold text-orange-900 flex-shrink-0">
+                  {f.funcaoNova}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Erros */}
       {erros.length > 0 && (

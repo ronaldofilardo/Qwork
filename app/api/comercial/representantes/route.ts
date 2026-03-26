@@ -27,14 +27,6 @@ import { uploadDocumentoRepresentante } from '@/lib/storage/representante-storag
 
 export const dynamic = 'force-dynamic';
 
-function gerarCodigoRepresentante(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from(
-    { length: 8 },
-    () => chars[Math.floor(Math.random() * chars.length)]
-  ).join('');
-}
-
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await requireRole(['comercial', 'admin'], false);
@@ -69,8 +61,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       limparNumeros((formData.get('cnpj') as string) ?? '') || null;
     const razaoSocial =
       sanitizarString((formData.get('razao_social') as string) ?? '') || null;
-    const cpfResponsavelRaw =
-      limparNumeros((formData.get('cpf_responsavel') as string) ?? '') || null;
 
     // Validações
     if (!nome || nome.length < 2 || nome.length > 200)
@@ -100,12 +90,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           { error: 'Razão social obrigatória para PJ.' },
           { status: 400 }
         );
-      if (!cpfResponsavelRaw || !validarCPF(cpfResponsavelRaw))
-        return NextResponse.json(
-          { error: 'CPF do responsável PJ inválido.' },
-          { status: 400 }
-        );
-      // CPF do responsável também vai para coluna cpf do representante
       if (!cpfRaw || !validarCPF(cpfRaw))
         return NextResponse.json(
           { error: 'CPF do representante legal obrigatório.' },
@@ -163,22 +147,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Gerar código único (retry em caso de colisão)
-    let codigo = '';
-    for (let tentativa = 0; tentativa < 10; tentativa++) {
-      const candidato = gerarCodigoRepresentante();
-      const colisao = await query<{ id: number }>(
-        `SELECT id FROM public.representantes WHERE codigo = $1 LIMIT 1`,
-        [candidato]
-      );
-      if (colisao.rows.length === 0) {
-        codigo = candidato;
-        break;
-      }
-    }
-    if (!codigo) {
-      codigo = Date.now().toString(36).toUpperCase().slice(-8);
-    }
+    // Gerar código sequencial via sequência do banco
+    const codigoResult = await query<{ codigo: string }>(
+      `SELECT nextval('public.seq_representante_codigo')::text AS codigo`
+    );
+    const codigo = codigoResult.rows[0].codigo;
 
     // Inserir representante com status 'aguardando_senha'
     const insertResult = await query<{ id: number }>(
@@ -190,7 +163,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         nome,
         cpfRaw,
         tipoPessoa === 'pj' ? cnpjRaw : null,
-        tipoPessoa === 'pj' ? cpfResponsavelRaw : null,
+        null,
         email,
         telefone,
         tipoPessoa,
@@ -235,24 +208,19 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       docPaths.push(resultado.arquivo_remoto?.key ?? resultado.path);
     }
 
-    // Para PJ, se enviou documento_cpf_responsavel separadamente, fazer upload adicional
-    const arquivoCpfResp = formData.get(
-      'documento_cpf_responsavel'
-    ) as File | null;
-    if (tipoPessoa === 'pj' && arquivoCpfResp) {
-      const valCpfResp = await validarArquivo(
-        arquivoCpfResp,
-        'CPF do Responsável'
-      );
-      const resultCpfResp = await uploadDocumentoRepresentante(
-        valCpfResp.buffer!,
-        'cpf_responsavel',
+    // Para PJ, se enviou cartao_cnpj separadamente, fazer upload adicional
+    const arquivoCartaoCnpj = formData.get('cartao_cnpj') as File | null;
+    if (tipoPessoa === 'pj' && arquivoCartaoCnpj) {
+      const valCartao = await validarArquivo(arquivoCartaoCnpj, 'Cartão CNPJ');
+      const resultCartao = await uploadDocumentoRepresentante(
+        valCartao.buffer!,
+        'cnpj',
         identificador,
-        valCpfResp.contentType!,
+        valCartao.contentType!,
         'pj',
         'CAD'
       );
-      docPaths.push(resultCpfResp.arquivo_remoto?.key ?? resultCpfResp.path);
+      docPaths.push(resultCartao.arquivo_remoto?.key ?? resultCartao.path);
     }
 
     // Atualizar doc_identificacao_path

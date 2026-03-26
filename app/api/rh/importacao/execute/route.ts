@@ -14,6 +14,18 @@ import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 
 export const dynamic = 'force-dynamic';
 
+/** Normaliza valor bruto da coluna nivel_cargo para o enum do sistema */
+function normalizarNivelCargo(raw: string): 'gestao' | 'operacional' | null {
+  const v = raw
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  if (v === 'gestao') return 'gestao';
+  if (v === 'operacional') return 'operacional';
+  return null;
+}
+
 /**
  * POST /api/rh/importacao/execute
  * Executa importação de empresas e funcionários em transação.
@@ -134,8 +146,15 @@ export async function POST(request: Request): Promise<NextResponse> {
     const result = await withTransaction(async (client) => {
       let empresasCriadas = 0;
       let empresasExistentes = 0;
+      let empresasBloqueadas = 0;
       let funcionariosCriados = 0;
       let funcionariosAtualizados = 0;
+      let nivelCargoAlterados = 0;
+      const funcoesAlteradasList: Array<{
+        nome: string;
+        funcaoAnterior: string | null;
+        funcaoNova: string;
+      }> = [];
       let vinculosCriados = 0;
       let vinculosAtualizados = 0;
       let inativacoesRealizadas = 0;
@@ -153,17 +172,37 @@ export async function POST(request: Request): Promise<NextResponse> {
 
       for (const [, { nome, cnpj, rows }] of empresaMap) {
         // Find or create empresa
-        let empresaId: number;
+        let empresaId: number | undefined;
 
         if (cnpj) {
+          // Busca global por CNPJ — constraint é única globalmente (não por clinica_id)
           const empresaExist = await client.query(
-            'SELECT id FROM empresas_clientes WHERE cnpj = $1 AND clinica_id = $2',
-            [cnpj, clinicaId]
+            'SELECT id, clinica_id FROM empresas_clientes WHERE cnpj = $1',
+            [cnpj]
           );
 
           if (empresaExist.rows.length > 0) {
-            empresaId = empresaExist.rows[0].id as number;
-            empresasExistentes++;
+            const empresaRow = empresaExist.rows[0];
+            if (Number(empresaRow.clinica_id) === clinicaId) {
+              // Mesma clínica — reutilizar
+              empresaId = empresaRow.id as number;
+              empresasExistentes++;
+            } else {
+              // Outra clínica — bloquear todos os funcionários desta empresa
+              empresasBloqueadas++;
+              const cnpjFmt = cnpj.replace(
+                /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                '$1.$2.$3/$4-$5'
+              );
+              for (const row of rows) {
+                const linhaNum = parsed.data!.indexOf(row) + 2;
+                errosProcessamento.push({
+                  linha: linhaNum,
+                  cpf: limparCPF(row.cpf ?? ''),
+                  mensagem: `Empresa "${nome}" (CNPJ ${cnpjFmt || cnpj}) já está cadastrada em outra clínica — funcionário não importado`,
+                });
+              }
+            }
           } else {
             const insertEmpresa = await client.query(
               `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa)
@@ -196,13 +235,21 @@ export async function POST(request: Request): Promise<NextResponse> {
           }
         }
 
+        // Pular empresa bloqueada (CNPJ pertence a outra clínica)
+        if (!empresaId) continue;
+
         // Processar funcionários desta empresa
         for (const row of rows) {
           const cpf = limparCPF(row.cpf ?? '');
           const nomeFunc = (row.nome ?? '').trim();
           const funcao = (row.funcao ?? 'Não informado').trim();
           const setor = (row.setor ?? 'Não informado').trim();
-          const nivelCargo = (nivelCargoMap?.[funcao] ?? '') || null;
+          // Prioridade: coluna nivel_cargo mapeada diretamente > classificação do modal
+          const nivelCargoFromRow = row.nivel_cargo
+            ? normalizarNivelCargo(row.nivel_cargo)
+            : null;
+          const nivelCargo =
+            nivelCargoFromRow ?? ((nivelCargoMap?.[funcao] ?? '') || null);
           const dataNasc = row.data_nascimento
             ? (parseDateCell(row.data_nascimento) ?? null)
             : null;
@@ -222,7 +269,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
             // Check if CPF already exists
             const existFunc = await client.query(
-              'SELECT id FROM funcionarios WHERE cpf = $1',
+              'SELECT id, nivel_cargo, funcao FROM funcionarios WHERE cpf = $1',
               [cpf]
             );
 
@@ -230,6 +277,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
             if (existFunc.rows.length > 0) {
               funcionarioId = existFunc.rows[0].id as number;
+              const oldNivelCargo = existFunc.rows[0].nivel_cargo as
+                | string
+                | null;
+              const oldFuncao = existFunc.rows[0].funcao as string | null;
 
               // Atualizar dados se necessário
               const updates: string[] = [];
@@ -239,6 +290,31 @@ export async function POST(request: Request): Promise<NextResponse> {
               if (dataNasc) {
                 updates.push(`data_nascimento = $${paramIdx++}`);
                 params.push(dataNasc);
+              }
+
+              // Atualizar funcao quando fornecida e diferente (troca de função/promoção)
+              if (funcao !== 'Não informado' && funcao !== oldFuncao) {
+                updates.push(`funcao = $${paramIdx++}`);
+                params.push(funcao);
+                funcoesAlteradasList.push({
+                  nome: nomeFunc,
+                  funcaoAnterior: oldFuncao,
+                  funcaoNova: funcao,
+                });
+              }
+
+              // Atualizar nivel_cargo se classificado/mapeado; rastrear mudanças
+              if (nivelCargo) {
+                updates.push(`nivel_cargo = $${paramIdx++}`);
+                params.push(nivelCargo);
+                if (oldNivelCargo !== nivelCargo) {
+                  nivelCargoAlterados++;
+                  avisosProcessamento.push({
+                    linha: linhaNum,
+                    cpf,
+                    mensagem: `Nível de cargo atualizado: ${oldNivelCargo ?? 'não definido'} → ${nivelCargo}`,
+                  });
+                }
               }
 
               if (updates.length > 0) {
@@ -440,8 +516,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       return {
         empresasCriadas,
         empresasExistentes,
+        empresasBloqueadas,
         funcionariosCriados,
         funcionariosAtualizados,
+        nivelCargoAlterados,
+        funcoesAlteradas: funcoesAlteradasList,
         vinculosCriados,
         vinculosAtualizados,
         inativacoesRealizadas,
@@ -467,8 +546,11 @@ export async function POST(request: Request): Promise<NextResponse> {
           totalLinhasComErroFormato: validacao.resumo.linhasComErros,
           empresasCriadas: result.empresasCriadas,
           empresasExistentes: result.empresasExistentes,
+          empresasBloqueadas: result.empresasBloqueadas,
           funcionariosCriados: result.funcionariosCriados,
           funcionariosAtualizados: result.funcionariosAtualizados,
+          nivelCargoAlterados: result.nivelCargoAlterados,
+          funcoesAlteradas: result.funcoesAlteradas,
           vinculosCriados: result.vinculosCriados,
           vinculosAtualizados: result.vinculosAtualizados,
           inativacoesRealizadas: result.inativacoesRealizadas,

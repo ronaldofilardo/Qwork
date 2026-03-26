@@ -39,11 +39,12 @@ export default function CadastrarRepresentanteModal({
   // Campos PJ
   const [cnpj, setCnpj] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
-  const [cpfResponsavel, setCpfResponsavel] = useState('');
 
   // Arquivo
   const [docIdentificacao, setDocIdentificacao] = useState<File | null>(null);
+  const [cartaoCnpj, setCartaoCnpj] = useState<File | null>(null);
   const refDocId = useRef<HTMLInputElement>(null);
+  const refCartaoCnpj = useRef<HTMLInputElement>(null);
 
   const formatarCPF = (v: string): string => {
     const nums = v.replace(/\D/g, '').slice(0, 11);
@@ -104,9 +105,8 @@ export default function CadastrarRepresentanteModal({
         setErro('Razão social obrigatória (mín. 3 caracteres).');
         return;
       }
-      const cpfRespLimpo = cpfResponsavel.replace(/\D/g, '');
-      if (cpfRespLimpo.length !== 11) {
-        setErro('CPF do responsável PJ inválido.');
+      if (!cartaoCnpj) {
+        setErro('Cartão do CNPJ é obrigatório para Pessoa Jurídica.');
         return;
       }
     }
@@ -125,7 +125,7 @@ export default function CadastrarRepresentanteModal({
       if (tipoPessoa === 'pj') {
         fd.append('cnpj', cnpj.replace(/\D/g, ''));
         fd.append('razao_social', razaoSocial.trim());
-        fd.append('cpf_responsavel', cpfResponsavel.replace(/\D/g, ''));
+        if (cartaoCnpj) fd.append('cartao_cnpj', cartaoCnpj);
       }
 
       const res = await fetch('/api/comercial/representantes', {
@@ -319,16 +319,41 @@ export default function CadastrarRepresentanteModal({
                   />
                 </div>
                 <div className="col-span-2">
-                  <label className={labelCls}>CPF do Responsável PJ *</label>
+                  <label className={labelCls}>
+                    Cartão do CNPJ (PDF, JPG, PNG) *
+                  </label>
                   <input
-                    className={inputCls}
-                    value={cpfResponsavel}
-                    onChange={(e) =>
-                      setCpfResponsavel(formatarCPF(e.target.value))
-                    }
-                    placeholder="000.000.000-00"
-                    maxLength={14}
+                    ref={refCartaoCnpj}
+                    type="file"
+                    accept={ACCEPT_DOCS}
+                    onChange={(e) => setCartaoCnpj(e.target.files?.[0] ?? null)}
+                    className="hidden"
                   />
+                  <button
+                    type="button"
+                    onClick={() => refCartaoCnpj.current?.click()}
+                    className="w-full border border-dashed border-gray-300 rounded-xl px-4 py-3 flex items-center gap-3 hover:border-green-400 hover:bg-green-50/30 transition-all"
+                  >
+                    <FileText
+                      size={16}
+                      className={
+                        cartaoCnpj ? 'text-green-600' : 'text-gray-400'
+                      }
+                    />
+                    <span className="text-sm text-gray-600 truncate flex-1 text-left">
+                      {cartaoCnpj
+                        ? cartaoCnpj.name
+                        : 'Selecionar cartão do CNPJ...'}
+                    </span>
+                    {cartaoCnpj && (
+                      <span className="text-[10px] font-bold text-green-600 bg-green-100 rounded-full px-2 py-0.5">
+                        OK
+                      </span>
+                    )}
+                  </button>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Máx. 3MB. Formatos: PDF, JPG, PNG
+                  </p>
                 </div>
               </>
             )}
@@ -423,7 +448,7 @@ export default function CadastrarRepresentanteModal({
               (tipoPessoa === 'pj' &&
                 (cnpj.replace(/\D/g, '').length !== 14 ||
                   !razaoSocial.trim() ||
-                  cpfResponsavel.replace(/\D/g, '').length !== 11))
+                  !cartaoCnpj))
             }
             className="flex items-center gap-2 px-5 py-2 text-sm font-bold bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 transition-colors cursor-pointer"
           >

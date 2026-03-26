@@ -71,10 +71,10 @@ describe('FlowStepsExplainer', () => {
       expect(buttons[0]).toHaveTextContent('Inserção de Nova Empresa');
     });
 
-    it('renderiza 6 setas separadoras entre as 7 etapas de clínica', () => {
+    it('renderiza 7 setas separadoras no fluxo de clínica (6 entre etapas + 1 fork para sub-etapas)', () => {
       render(<FlowStepsExplainer isClinica={true} />);
       const arrows = screen.getAllByText('→');
-      expect(arrows).toHaveLength(6); // 7 etapas = 6 setas
+      expect(arrows).toHaveLength(7); // 7 etapas = 6 setas + 1 seta extra do fork de Inserção de Funcionário
     });
 
     it('exibe tooltip de Inserção de Nova Empresa ao passar o mouse', () => {
@@ -97,6 +97,48 @@ describe('FlowStepsExplainer', () => {
         screen.queryByText(
           /Cadastre as empresas clientes que terão funcionários avaliados pela clínica/
         )
+      ).not.toBeInTheDocument();
+    });
+
+    it('exibe sub-etapas de Inserção de Funcionário no fluxo de clínica', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      expect(screen.getByText("via 'Importação em massa'")).toBeInTheDocument();
+      expect(screen.getByText("via 'Nova empresa'")).toBeInTheDocument();
+    });
+
+    it('exibe tooltip de sub-etapa Importação em massa ao passar o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText("via 'Importação em massa'");
+      fireEvent.mouseEnter(btn);
+      expect(
+        screen.getByText(/Clique em 'Importação em massa' no menu a esquerda/)
+      ).toBeInTheDocument();
+    });
+
+    it('oculta tooltip de Importação em massa ao remover o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText("via 'Importação em massa'");
+      fireEvent.mouseEnter(btn);
+      fireEvent.mouseLeave(btn);
+      expect(
+        screen.queryByText(/Clique em 'Importação em massa' no menu a esquerda/)
+      ).not.toBeInTheDocument();
+    });
+
+    it('exibe tooltip de sub-etapa Nova empresa ao passar o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText("via 'Nova empresa'");
+      fireEvent.mouseEnter(btn);
+      expect(screen.getByText(/acesse via card abaixo/)).toBeInTheDocument();
+    });
+
+    it('oculta tooltip de Nova empresa ao remover o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText("via 'Nova empresa'");
+      fireEvent.mouseEnter(btn);
+      fireEvent.mouseLeave(btn);
+      expect(
+        screen.queryByText(/acesse via card abaixo/)
       ).not.toBeInTheDocument();
     });
   });

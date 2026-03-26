@@ -58,16 +58,27 @@ export async function GET(
         { status: 404 }
       );
 
-    const docPath = result.rows[0].doc_path as string | null;
-    if (!docPath)
+    const rawDocPath = result.rows[0].doc_path as string | null;
+    if (!rawDocPath)
       return NextResponse.json(
         { error: 'Documento não enviado' },
         { status: 404 }
       );
 
+    // doc_cad_path pode conter múltiplos arquivos separados por ';' (PJ: CNPJ + CPF resp)
+    // Usa o primeiro caminho disponível
+    const firstPath = rawDocPath.split(';')[0].trim();
+
+    // Remove prefixo 'storage/' se presente: uploadLocalVendedor salva com esse prefixo,
+    // mas baseDir já aponta para {cwd}/storage — evita caminho duplicado storage/storage/…
+    const normalizedPath = firstPath.startsWith('storage/')
+      ? firstPath.slice('storage/'.length)
+      : firstPath;
+    const docPath = firstPath; // mantém original apenas para Content-Disposition
+
     // Servir arquivo local
     const baseDir = resolve(process.cwd(), 'storage');
-    const fullPath = resolve(baseDir, docPath);
+    const fullPath = resolve(baseDir, normalizedPath);
 
     if (!fullPath.startsWith(baseDir))
       return NextResponse.json(
@@ -76,7 +87,7 @@ export async function GET(
       );
 
     const fileBuffer = await readFile(fullPath);
-    const ext = docPath.toLowerCase().split('.').pop();
+    const ext = normalizedPath.toLowerCase().split('.').pop();
     let mimeType = 'application/octet-stream';
     if (ext === 'pdf') mimeType = 'application/pdf';
     else if (ext === 'jpg' || ext === 'jpeg') mimeType = 'image/jpeg';
