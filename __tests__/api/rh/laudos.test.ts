@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/laudos.test.ts
+ * Testes: /api/rh/laudos
+ */
+
 import { GET } from '@/app/api/rh/laudos/route';
 
 // Mock do módulo de banco de dados
@@ -46,9 +51,7 @@ const mockRequireRHWithEmpresaAccess =
     typeof requireRHWithEmpresaAccess
   >;
 
-// TODO: Este teste precisa ser revisado e atualizado conforme a implementação atual da API
-// Os mocks não estão refletindo corretamente a estrutura de chamadas da rota
-describe.skip('/api/rh/laudos', () => {
+describe('/api/rh/laudos', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // ✅ Mock consistente seguindo política - sessão com clinica_id obrigatório
@@ -78,10 +81,8 @@ describe.skip('/api/rh/laudos', () => {
       },
     ];
 
-    // Mock da query de verificação da clínica (requireClinica) e da query principal
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 1, ativa: true }] })
-      .mockResolvedValueOnce({ rows: mockLaudos, rowCount: 1 });
+    // Única query: busca de laudos (sem empresa_id, só 1 query)
+    mockQuery.mockResolvedValueOnce({ rows: mockLaudos, rowCount: 1 });
 
     const request = new Request('http://localhost:3000/api/rh/laudos');
     const response = await GET(request);
@@ -151,8 +152,8 @@ describe.skip('/api/rh/laudos', () => {
   });
 
   it('deve retornar erro 403 para usuário sem perfil RH', async () => {
-    // Mock sessão sem perfil adequado
-    mockGetSession.mockReturnValue({
+    // Override requireAuth para retornar perfil não-RH
+    mockRequireAuth.mockResolvedValueOnce({
       cpf: '12345678901',
       nome: 'Funcionário Teste',
       perfil: 'funcionario',
@@ -169,13 +170,10 @@ describe.skip('/api/rh/laudos', () => {
   });
 
   it('deve retornar erro 403 quando clínica não identificada', async () => {
-    // Mock sessão sem clinica_id
-    mockGetSession.mockReturnValue({
-      cpf: '12345678901',
-      nome: 'RH Teste',
-      perfil: 'rh',
-      clinica_id: null,
-    });
+    // requireClinica rejeita quando clínica não identificada
+    mockRequireClinica.mockRejectedValueOnce(
+      new Error('Clínica não identificada na sessão')
+    );
 
     const request = new Request('http://localhost:3000/api/rh/laudos');
     const response = await GET(request);
@@ -187,10 +185,8 @@ describe.skip('/api/rh/laudos', () => {
   });
 
   it('deve retornar erro 500 em caso de falha na query', async () => {
-    // Mock da query de verificação da clínica bem-sucedida, depois falha na query principal
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: 1, ativa: true }] })
-      .mockRejectedValueOnce(new Error('Erro de conexão'));
+    // Única query: laudos query falha (sem empresa_id, só 1 query)
+    mockQuery.mockRejectedValueOnce(new Error('Erro de conexão'));
 
     const request = new Request('http://localhost:3000/api/rh/laudos');
     const response = await GET(request);

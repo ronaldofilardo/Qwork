@@ -52,11 +52,11 @@ async function applyMigration131() {
       SELECT column_name, data_type, is_nullable
       FROM information_schema.columns
       WHERE table_name = 'lotes_avaliacao'
-      AND column_name IN ('emitido_em', 'enviado_em', 'hash_pdf', 'modo_emergencia', 'motivo_emergencia', 'setor_id')
+      AND column_name IN ('emitido_em', 'enviado_em', 'hash_pdf', 'setor_id')
       ORDER BY column_name
     `);
 
-    console.log(`   Colunas encontradas: ${checkColumns.rows.length}/6`);
+    console.log(`   Colunas encontradas: ${checkColumns.rows.length}/4`);
     checkColumns.rows.forEach((col: any) => {
       console.log(
         `   - ${col.column_name}: ${col.data_type} (nullable: ${col.is_nullable})`
@@ -94,11 +94,11 @@ async function applyMigration131() {
       SELECT column_name, data_type, is_nullable, column_default
       FROM information_schema.columns
       WHERE table_name = 'lotes_avaliacao'
-      AND column_name IN ('emitido_em', 'enviado_em', 'hash_pdf', 'modo_emergencia', 'motivo_emergencia', 'setor_id')
+      AND column_name IN ('emitido_em', 'enviado_em', 'hash_pdf', 'setor_id')
       ORDER BY column_name
     `);
 
-    console.log(`   Colunas após migration: ${validateColumns.rows.length}/6`);
+    console.log(`   Colunas após migration: ${validateColumns.rows.length}/4`);
     console.log('');
     console.log('   Detalhes:');
     validateColumns.rows.forEach((col: any) => {

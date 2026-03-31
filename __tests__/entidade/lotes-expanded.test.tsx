@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/entidade/lotes-expanded.test.tsx
+ * Testes: Entidade Lotes - cards compactos
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';

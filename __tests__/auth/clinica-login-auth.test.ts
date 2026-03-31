@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/auth/clinica-login-auth.test.ts
+ * Testes: Autenticação de Clínica - Perfil RH (Nova Arquitetura)
+ */
+
 import { NextRequest } from 'next/server';
 import { POST as loginHandler } from '@/app/api/auth/login/route';
 import { query } from '@/lib/db';

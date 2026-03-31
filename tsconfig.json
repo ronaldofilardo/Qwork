@@ -38,5 +38,5 @@
     "**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": ["node_modules", "cypress", "__tests__", ".next", "dist", "build"]
+  "exclude": ["node_modules", "cypress", "__tests__", ".next", "dist", "build", "scripts"]
 }

@@ -7,15 +7,14 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { NotificationService } from '@/lib/notification-service';
 import type { DestinatarioTipo } from '@/lib/notification-service';
+import { assertAuth, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
   try {
     const session = getSession();
-    if (!session || !session.cpf) {
-      return NextResponse.json({ erro: 'Não autenticado' }, { status: 401 });
-    }
+    assertAuth(session);
 
     const { searchParams } = new URL(request.url);
     const apenasnaoLidas = searchParams.get('apenasnaoLidas') === 'true';
@@ -37,6 +36,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json(notificacoes);
   } catch (erro) {
+    if (isApiError(erro)) {
+      return NextResponse.json({ erro: erro.message }, { status: erro.status });
+    }
     console.error('[API Notificacoes] Erro ao listar:', erro);
     return NextResponse.json(
       { erro: 'Erro ao buscar notificações' },

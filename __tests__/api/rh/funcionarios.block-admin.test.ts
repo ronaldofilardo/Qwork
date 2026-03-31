@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/funcionarios.block-admin.test.ts
+ * Testes: /api/rh/funcionarios/[cpf] - admin blocked
+ */
+
 import { GET } from '@/app/api/rh/funcionarios/[cpf]/route';
 import { getSession } from '@/lib/session';
 

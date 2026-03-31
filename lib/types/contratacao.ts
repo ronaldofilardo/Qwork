@@ -2,8 +2,6 @@
 // TIPOS PARA SISTEMA DE CONTRATAÇÃO
 // ==========================================
 
-export type TipoPlano = 'fixo' | 'personalizado';
-
 export type MetodoPagamento =
   | 'avista'
   | 'parcelado'
@@ -31,22 +29,9 @@ export type StatusAprovacaoExtendido =
 // INTERFACES
 // ==========================================
 
-export interface Plano {
-  id: number;
-  nome: string;
-  descricao?: string;
-  preco: number;
-  tipo: TipoPlano;
-  caracteristicas?: Record<string, any>;
-  ativo: boolean;
-  criado_em: string;
-  atualizado_em: string;
-}
-
 export interface Contrato {
   id: number;
   entidade_id: number;
-  plano_id: number;
   conteudo: string;
   aceito: boolean;
   ip_aceite?: string;
@@ -122,12 +107,10 @@ export interface tomadorExtendido {
   aprovado_por_cpf?: string;
 
   // Novos campos
-  plano_id?: number;
   pagamento_confirmado: boolean;
   data_liberacao_login?: string;
 
   // Dados relacionados (joins)
-  plano?: Plano;
   pagamento?: Pagamento;
 }
 
@@ -187,19 +170,8 @@ export interface EntidadeExtendida {
   atualizado_em: string;
   aprovado_em?: string;
   aprovado_por_cpf?: string;
-  plano_id?: number;
   pagamento_confirmado?: boolean;
   data_liberacao_login?: string;
-  plano?: {
-    id: number;
-    nome: string;
-    descricao?: string;
-    preco: number;
-    tipo: string;
-    ativo: boolean;
-    criado_em: string;
-    atualizado_em: string;
-  };
   pagamento?: {
     id: number;
     entidade_id: number;

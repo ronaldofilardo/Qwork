@@ -6,18 +6,35 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    await requireRole('admin', false);
+    await requireRole('suporte', false);
 
     const result = await query(`
-      SELECT * FROM v_solicitacoes_emissao
+      SELECT
+        vs.*,
+        pg.detalhes_parcelas
+      FROM v_solicitacoes_emissao vs
+      LEFT JOIN LATERAL (
+        -- Prioriza o pagamento que referencia explicitamente este lote (dados_adicionais->lote_id).
+        -- Fallback: pagamento mais recente da entidade/clínica (pagamentos antigos sem lote_id).
+        SELECT detalhes_parcelas FROM pagamentos
+        WHERE (
+          (dados_adicionais->>'lote_id')::int = vs.lote_id
+          OR (vs.clinica_id  IS NOT NULL AND clinica_id  = vs.clinica_id)
+          OR (vs.entidade_id IS NOT NULL AND entidade_id = vs.entidade_id)
+        )
+        ORDER BY
+          CASE WHEN (dados_adicionais->>'lote_id')::int = vs.lote_id THEN 0 ELSE 1 END,
+          criado_em DESC
+        LIMIT 1
+      ) pg ON true
       ORDER BY 
         CASE 
-          WHEN status_pagamento = 'aguardando_cobranca' THEN 1
-          WHEN status_pagamento = 'aguardando_pagamento' THEN 2
-          WHEN status_pagamento = 'pago' THEN 3
+          WHEN vs.status_pagamento = 'aguardando_cobranca' THEN 1
+          WHEN vs.status_pagamento = 'aguardando_pagamento' THEN 2
+          WHEN vs.status_pagamento = 'pago' THEN 3
           ELSE 4
         END,
-        solicitacao_emissao_em DESC
+        vs.solicitacao_emissao_em DESC
     `);
 
     // Debug logs

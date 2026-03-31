@@ -9,7 +9,7 @@
  */
 
 import { describe, test, expect, beforeAll, afterAll } from '@jest/globals';
-import { validarTransicaoStatus, StatusLote } from '@/lib/types/lote-status';
+import type { validarTransicaoStatus, StatusLote } from '@/lib/types/lote-status';
 import {
   validarSolicitacaoEmissao,
   validarHashPDF,
@@ -23,7 +23,7 @@ import {
   limparMetricas,
   resetCircuitBreaker,
 } from '@/lib/services/retry-service';
-import {
+import type {
   ErroQWork,
   CodigoErro,
   NivelSeveridade,

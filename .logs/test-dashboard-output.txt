@@ -1,0 +1,987 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs && dotenv -e .env.test --override -- node scripts/checks/validate-test-data-integrity.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "clinicas.ativa" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "entidades.tipo" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "empresas_clientes.ativa" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.empresa_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.clinica_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.tipo" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.status" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "lotes_avaliacao.liberado_por" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "avaliacoes.lote_id" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "avaliacoes.status" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.
+
+Ô£à [validate-test-data-integrity] Esquema do banco "nr-bps_db_test" foi validado (6 tabelas verificadas).
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "tomador_id" n├úo existe na tabela "funcionarios". Se testes falharem, verifique se migrations foram aplicadas.
+
+ÔÜá´©Å  [validate-test-data-integrity] Coluna "usuario_tipo" n├úo existe na tabela "funcionarios". Se testes falharem, verifique se migrations foram aplicadas.
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "--testPathPatterns=funcionario/dashboard"
+
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+FAIL __tests__/funcionario/dashboard.test.tsx (9.409 s)
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøí´©Å auth for agents: https://vestauth.com
+
+      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (em_andamento)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (em_andamento)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (iniciada)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (em_andamento)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (em_andamento)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 2, concluidas: 0, disponiveis: 2, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: {
+        total: 2,
+        empresas: [ 'Avalia├º├úo' ],
+        ids: [ '#1 (iniciada)', '#2 (em_andamento)' ]
+      }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#123 (em_andamento)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 2, concluidas: 2, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 0, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (iniciada)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 2, concluidas: 1, disponiveis: 1, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 1, empresas: [ 'Avalia├º├úo' ], ids: [ '#1 (em_andamento)' ] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+    console.log
+      [Dashboard] Avalia├º├Áes carregadas: { total: 1, concluidas: 1, disponiveis: 0, comRespostas: 0 }
+
+      at log (app/dashboard/page.tsx:82:15)
+
+    console.log
+      [Dashboard] Avalia├º├Áes dispon├¡veis para iniciar: { total: 0, empresas: [], ids: [] }
+
+      at log (app/dashboard/page.tsx:138:11)
+
+  ÔùÅ Dashboard do Funcion├írio ÔÇ║ Item 9: Dashboard exibe card "Avalia├º├úo em andamento" ÔÇ║ deve exibir card com avalia├º├úo em andamento
+
+    Unable to find an element with the text: /continuar/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo Silva
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="space-y-4 sm:space-y-6 mb-6 sm:mb-8"
+            >
+              <div
+                class="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-4 border-blue-400"
+              >
+                <h2
+                  class="text-lg sm:text-2xl font-bold text-blue-600 mb-1"
+                >
+                  Avalia├º├úo
+                </h2>
+                <p
+                  class="text-xs text-gray-500 mb-4 sm:mb-6"
+                >
+                  1
+                   avalia├º├úo(├Áes) dispon├¡vel(is)
+                </p>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-xl"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base"
+                      >
+                        Avalia├º├úo #
+                        1
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Liberada em 
+                        19/03/2026, 14:46
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao?id=1"
+                    >
+                      Iniciar
+                       
+                      Avalia├º├úo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <p
+              class="text-gray-500"
+            >
+              Nenhuma avalia├º├úo conclu├¡da.
+            </p>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      46 |       render(<Dashboard />);
+      47 |
+    > 48 |       await waitFor(() => {
+         |                    ^
+      49 |         expect(screen.getByText(/continuar/i)).toBeInTheDocument();
+      50 |       });
+      51 |     });
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/funcionario/dashboard.test.tsx:48:20)
+
+  ÔùÅ Dashboard do Funcion├írio ÔÇ║ Item 9: Dashboard exibe card "Avalia├º├úo em andamento" ÔÇ║ deve exibir bot├úo "Continuar Avalia├º├úo" para avalia├º├úo em andamento
+
+    Unable to find an element with the text: /continuar/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo Silva
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="space-y-4 sm:space-y-6 mb-6 sm:mb-8"
+            >
+              <div
+                class="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-4 border-blue-400"
+              >
+                <h2
+                  class="text-lg sm:text-2xl font-bold text-blue-600 mb-1"
+                >
+                  Avalia├º├úo
+                </h2>
+                <p
+                  class="text-xs text-gray-500 mb-4 sm:mb-6"
+                >
+                  1
+                   avalia├º├úo(├Áes) dispon├¡vel(is)
+                </p>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-xl"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base"
+                      >
+                        Avalia├º├úo #
+                        1
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Liberada em 
+                        19/03/2026, 14:46
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao?id=1"
+                    >
+                      Iniciar
+                       
+                      Avalia├º├úo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <p
+              class="text-gray-500"
+            >
+              Nenhuma avalia├º├úo conclu├¡da.
+            </p>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      75 |       render(<Dashboard />);
+      76 |
+    > 77 |       await waitFor(() => {
+         |                    ^
+      78 |         expect(screen.getByText(/continuar/i)).toBeInTheDocument();
+      79 |       });
+      80 |     });
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/funcionario/dashboard.test.tsx:77:20)
+
+  ÔùÅ Dashboard do Funcion├írio ÔÇ║ Item 9: Dashboard exibe card "Avalia├º├úo em andamento" ÔÇ║ deve permitir clicar no card para ir para avalia├º├úo
+
+    Unable to find an element with the text: /continuar/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo Silva
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="space-y-4 sm:space-y-6 mb-6 sm:mb-8"
+            >
+              <div
+                class="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-4 border-blue-400"
+              >
+                <h2
+                  class="text-lg sm:text-2xl font-bold text-blue-600 mb-1"
+                >
+                  Avalia├º├úo
+                </h2>
+                <p
+                  class="text-xs text-gray-500 mb-4 sm:mb-6"
+                >
+                  1
+                   avalia├º├úo(├Áes) dispon├¡vel(is)
+                </p>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-xl"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base"
+                      >
+                        Avalia├º├úo #
+                        123
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Liberada em 
+                        19/03/2026, 14:46
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao?id=123"
+                    >
+                      Iniciar
+                       
+                      Avalia├º├úo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <p
+              class="text-gray-500"
+            >
+              Nenhuma avalia├º├úo conclu├¡da.
+            </p>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      243 |       render(<Dashboard />);
+      244 |
+    > 245 |       await waitFor(() => {
+          |                    ^
+      246 |         expect(screen.getByText(/continuar/i)).toBeInTheDocument();
+      247 |       });
+      248 |
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/funcionario/dashboard.test.tsx:245:20)
+
+  ÔùÅ Dashboard do Funcion├írio ÔÇ║ Item 10: Dashboard lista avalia├º├Áes conclu├¡das ÔÇ║ deve exibir data de conclus├úo nas avalia├º├Áes finalizadas
+
+    Unable to find an element with the text: /conclu├¡da em/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo Silva
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <div
+              class="space-y-4 sm:space-y-6"
+            >
+              <div>
+                <h3
+                  class="text-sm sm:text-base font-semibold text-gray-700 mb-2 sm:mb-3"
+                >
+                  Avalia├º├úo
+                </h3>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base text-green-600"
+                      >
+                        Ô£ô Avalia├º├úo #
+                        1
+                         Conclu├¡da
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Finalizada em 
+                        05/01/2025, 11:30
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao/concluida?avaliacao_id=1"
+                    >
+                      Ver Comprovante
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      343 |       render(<Dashboard />);
+      344 |
+    > 345 |       await waitFor(() => {
+          |                    ^
+      346 |         expect(screen.getByText(/conclu├¡da em/i)).toBeInTheDocument();
+      347 |       });
+      348 |     });
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/funcionario/dashboard.test.tsx:345:20)
+
+  ÔùÅ Dashboard do Funcion├írio ÔÇ║ Item 10: Dashboard lista avalia├º├Áes conclu├¡das ÔÇ║ deve exibir data e hora de conclus├úo das avalia├º├Áes finalizadas
+
+    Unable to find an element with the text: /conclu├¡da em/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo Silva
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <div
+              class="space-y-4 sm:space-y-6"
+            >
+              <div>
+                <h3
+                  class="text-sm sm:text-base font-semibold text-gray-700 mb-2 sm:mb-3"
+                >
+                  Avalia├º├úo
+                </h3>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base text-green-600"
+                      >
+                        Ô£ô Avalia├º├úo #
+                        1
+                         Conclu├¡da
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Finalizada em 
+                        05/01/2025, 13:45
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao/concluida?avaliacao_id=1"
+                    >
+                      Ver Comprovante
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      374 |       render(<Dashboard />);
+      375 |
+    > 376 |       await waitFor(() => {
+          |                    ^
+      377 |         // Deve exibir data formatada (formato pode variar com toLocaleString)
+      378 |         expect(screen.getByText(/conclu├¡da em/i)).toBeInTheDocument();
+      379 |         expect(screen.getByText(/\d{2}\/\d{2}\/\d{4}/)).toBeInTheDocument(); // Formato DD/MM/YYYY
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/funcionario/dashboard.test.tsx:376:20)
+
+  ÔùÅ Dashboard do Funcion├írio ÔÇ║ Item 10: Dashboard lista avalia├º├Áes conclu├¡das ÔÇ║ deve separar visualmente avalia├º├Áes dispon├¡veis e conclu├¡das
+
+    Unable to find an element with the text: /avalia├º├Áes dispon├¡veis/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="min-h-screen bg-gray-50 px-3 py-4 sm:px-6 sm:py-8"
+          style="padding-bottom: max(16px, env(safe-area-inset-bottom));"
+        >
+          <div
+            class="max-w-4xl mx-auto"
+          >
+            <div
+              class="flex flex-wrap items-start justify-between gap-3 mb-6 sm:mb-8"
+            >
+              <div
+                class="flex-1 min-w-0"
+              >
+                <h1
+                  class="text-xl sm:text-3xl font-bold mb-1 leading-tight"
+                >
+                  Bem-vindo, 
+                  Jo├úo Silva
+                  !
+                </h1>
+                <p
+                  class="text-xs sm:text-sm text-gray-600 leading-relaxed"
+                >
+                  Sistema de avalia├º├úo psicossocial Qwork (COPSOQ III).
+                  <br
+                    class="hidden sm:block"
+                  />
+                  <span
+                    class="sm:hidden"
+                  >
+                     
+                  </span>
+                  A avalia├º├úo leva cerca de 15ÔÇô20 minutos.
+                </p>
+              </div>
+              <button
+                class="flex-shrink-0 bg-red-500 hover:bg-red-600 text-white px-3 py-2 sm:px-4 rounded-lg text-sm font-medium transition-colors touch-target"
+              >
+                Sair
+              </button>
+            </div>
+            <div
+              class="space-y-4 sm:space-y-6 mb-6 sm:mb-8"
+            >
+              <div
+                class="bg-white rounded-2xl shadow-xl p-4 sm:p-8 border-4 border-blue-400"
+              >
+                <h2
+                  class="text-lg sm:text-2xl font-bold text-blue-600 mb-1"
+                >
+                  Avalia├º├úo
+                </h2>
+                <p
+                  class="text-xs text-gray-500 mb-4 sm:mb-6"
+                >
+                  1
+                   avalia├º├úo(├Áes) dispon├¡vel(is)
+                </p>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 p-3 sm:p-4 bg-gray-50 rounded-xl"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base"
+                      >
+                        Avalia├º├úo #
+                        1
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Liberada em 
+                        14/01/2025, 21:00
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao?id=1"
+                    >
+                      Iniciar
+                       
+                      Avalia├º├úo
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <h2
+              class="text-lg sm:text-2xl font-bold mt-8 sm:mt-12 mb-4 sm:mb-6"
+            >
+              Hist├│rico
+            </h2>
+            <div
+              class="space-y-4 sm:space-y-6"
+            >
+              <div>
+                <h3
+                  class="text-sm sm:text-base font-semibold text-gray-700 mb-2 sm:mb-3"
+                >
+                  Avalia├º├úo
+                </h3>
+                <div
+                  class="space-y-3 sm:space-y-4"
+                >
+                  <div
+                    class="bg-white rounded-xl shadow p-4 sm:p-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3"
+                  >
+                    <div>
+                      <p
+                        class="font-bold text-sm sm:text-base text-green-600"
+                      >
+                        Ô£ô Avalia├º├úo #
+                        2
+                         Conclu├¡da
+                      </p>
+                      <p
+                        class="text-xs sm:text-sm text-gray-600"
+                      >
+                        Finalizada em 
+                        04/01/2025, 21:00
+                      </p>
+                    </div>
+                    <a
+                      class="inline-flex items-center justify-center bg-green-500 hover:bg-green-600 text-white px-4 py-3 sm:px-6 rounded-lg font-semibold text-sm sm:text-base touch-target transition-colors"
+                      href="/avaliacao/concluida?avaliacao_id=2"
+                    >
+                      Ver Comprovante
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      509 |       render(<Dashboard />);
+      510 |
+    > 511 |       await waitFor(() => {
+          |                    ^
+      512 |         expect(screen.getByText(/avalia├º├Áes dispon├¡veis/i)).toBeInTheDocument();
+      513 |         expect(screen.getByText(/hist├│rico/i)).toBeInTheDocument();
+      514 |       });
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/funcionario/dashboard.test.tsx:511:20)
+
+Test Suites: 1 failed, 1 total
+Tests:       6 failed, 10 passed, 16 total
+Snapshots:   0 total
+Time:        11.359 s
+Ran all test suites matching funcionario/dashboard.
+ÔÇëELIFECYCLEÔÇë Test failed. See above for more details.

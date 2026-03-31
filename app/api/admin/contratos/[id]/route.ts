@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export async function GET(
   request: NextRequest,
@@ -8,13 +9,7 @@ export async function GET(
 ) {
   try {
     const session = getSession();
-
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores.' },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const tomadorId = params.id;
 
@@ -27,9 +22,8 @@ export async function GET(
 
     // Buscar contrato do tomador
     const contratoResult = await query(
-      `SELECT c.*, p.nome as plano_nome, COALESCE(p.valor_por_funcionario, p.valor_base) as plano_preco
+      `SELECT c.*
        FROM contratos c
-       LEFT JOIN planos p ON c.plano_id = p.id
        WHERE c.tomador_id = $1
        ORDER BY c.criado_em DESC
        LIMIT 1`,

@@ -14,7 +14,7 @@ import { POST } from '@/app/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/res
 import { query } from '@/lib/db';
 import { requireAuth } from '@/lib/session';
 import { NextRequest } from 'next/server';
-import { QueryResult } from 'pg';
+import type { QueryResult } from 'pg';
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;

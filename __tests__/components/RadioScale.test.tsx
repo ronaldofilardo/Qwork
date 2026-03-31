@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/RadioScale.test.tsx
+ * Testes: RadioScale
+ */
+
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import RadioScale from '@/components/RadioScale'
@@ -83,14 +88,14 @@ describe('RadioScale', () => {
     expect(sempreLabel.className).toMatch(/text-(xs|sm|base|lg|xl|\[.+\])/)
   })
 
-  it('deve aplicar classe required quando necessário', () => {
+  it('não deve aplicar classe required independente da prop', () => {
     render(<RadioScale {...defaultProps} required={true} />)
     
     const label = screen.getByText('Esta é uma pergunta de teste?')
-    expect(label).toHaveClass('required')
+    expect(label).not.toHaveClass('required')
   })
 
-  it('deve não aplicar classe required quando não necessário', () => {
+  it('label deve ter classes de estilo corretas sem required', () => {
     render(<RadioScale {...defaultProps} required={false} />)
     
     const label = screen.getByText('Esta é uma pergunta de teste?')

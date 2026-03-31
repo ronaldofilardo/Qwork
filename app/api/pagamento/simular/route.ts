@@ -16,8 +16,7 @@ import { calcularParcelas } from '@/lib/parcelas-helper';
 
 interface SimularPagamentoRequest {
   entidade_id?: number;
-  plano_id?: number;
-  valor_total?: number; // Pode vir pré-definido
+  valor_total?: number;
   numero_funcionarios?: number;
 }
 
@@ -25,25 +24,12 @@ interface SimularPagamentoRequest {
 export async function POST(request: NextRequest) {
   try {
     const body: SimularPagamentoRequest = await request.json();
-    const { entidade_id, plano_id, valor_total, numero_funcionarios } = body;
+    const { entidade_id, valor_total, numero_funcionarios } = body;
 
     let valorCalculado = 0;
-    let planoInfo = null;
     let entidadeInfo = null;
 
-    // Cenário único: Entidade e plano fornecidos diretamente
-    if (entidade_id && plano_id) {
-      const planoResult = await query(`SELECT * FROM planos WHERE id = $1`, [
-        plano_id,
-      ]);
-
-      if (planoResult.rows.length === 0) {
-        return NextResponse.json(
-          { error: 'Plano não encontrado' },
-          { status: 404 }
-        );
-      }
-
+    if (entidade_id) {
       const entidadeResult = await query(
         `SELECT id, nome, tipo, numero_funcionarios_estimado FROM entidades WHERE id = $1`,
         [entidade_id]
@@ -56,26 +42,18 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      planoInfo = planoResult.rows[0];
       entidadeInfo = entidadeResult.rows[0];
 
-      // Calcular valor baseado no tipo de plano
-      if (planoInfo.tipo === 'fixo') {
-        const qtdFunc =
-          numero_funcionarios || entidadeInfo.numero_funcionarios_estimado || 1;
-        valorCalculado = parseFloat(planoInfo.preco) * qtdFunc;
-      } else {
-        valorCalculado = valor_total || parseFloat(planoInfo.preco);
-      }
-    }
-    // Cenário alternativo: Valor total fornecido diretamente
-    else if (valor_total) {
+      // Calcular valor: R$20 por funcionário como padrão
+      const qtdFunc =
+        numero_funcionarios || entidadeInfo.numero_funcionarios_estimado || 1;
+      valorCalculado = valor_total || 20.0 * qtdFunc;
+    } else if (valor_total) {
       valorCalculado = valor_total;
     } else {
       return NextResponse.json(
         {
-          error:
-            'Parâmetros insuficientes. Forneça entidade_id + plano_id ou valor_total',
+          error: 'Parâmetros insuficientes. Forneça entidade_id ou valor_total',
         },
         { status: 400 }
       );
@@ -146,7 +124,6 @@ export async function POST(request: NextRequest) {
       success: true,
       valor_total: valorCalculado,
       entidade: entidadeInfo,
-      plano: planoInfo,
       simulacoes,
       observacoes: {
         pix: 'Pagamento instantâneo, acesso liberado imediatamente',

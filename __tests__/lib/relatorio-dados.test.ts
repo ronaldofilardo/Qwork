@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/relatorio-dados.test.ts
+ * Testes: Relatório Dados
+ */
+
 import { getRelatorioGrupo, getRecomendacao, dadosRelatorio } from '@/lib/relatorio-dados'
 
 describe('Relatório Dados', () => {

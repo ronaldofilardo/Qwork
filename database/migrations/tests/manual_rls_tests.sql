@@ -513,10 +513,6 @@ ORDER BY p.name;
 -- 10.1 Ver estatísticas de auditoria (após testes)
 SELECT * FROM audit_stats_by_user LIMIT 10;
 
--- 10.2 Ver atividades suspeitas (se houver)
-SELECT * FROM suspicious_activity;
--- ESPERADO: Vazio ou alertas se alguém fez >100 ações/hora
-
 -- ==========================================
 -- RESUMO DOS TESTES
 -- ==========================================

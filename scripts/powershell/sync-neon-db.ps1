@@ -1,7 +1,7 @@
 # Script PowerShell para sincronizar o banco Neon com o schema.sql local
 # Uso: ./sync-neon-db.ps1
 
-$schemaPath = "database/schema-clean-final.sql"
+$schemaPath = "database/schemas/schema-clean-final.sql"
 # Use PROD_CONN_STRING from environment to avoid hard-coded credentials
 $connString = $env:PROD_CONN_STRING
 if (-not $connString -or $connString -eq "") {

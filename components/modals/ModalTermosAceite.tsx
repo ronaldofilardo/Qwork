@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Lock, CheckCircle } from 'lucide-react';
+import { FileText, CheckCircle } from 'lucide-react';
 import ModalConteudoTermo from './ModalConteudoTermo';
 
 interface Props {
@@ -10,57 +10,50 @@ interface Props {
 }
 
 export default function ModalTermosAceite({ onConcluir, redirectTo }: Props) {
-  const [aceitos, setAceitos] = useState({
-    termos_uso: false,
-    politica_privacidade: false,
-  });
-  const [termoAtivo, setTermoAtivo] = useState<
-    'termos_uso' | 'politica_privacidade' | null
-  >(null);
+  const [aceito, setAceito] = useState(false);
+  const [termoAtivo, setTermoAtivo] = useState<'termos_unificados' | null>(
+    null
+  );
   const [erro, setErro] = useState('');
 
-  const handleAceitarTermo = async (
-    tipo: 'termos_uso' | 'politica_privacidade'
-  ) => {
+  const handleAceitarUnificado = async () => {
     try {
       setErro('');
 
-      const response = await fetch('/api/termos/registrar', {
+      // Registrar termos_uso
+      const r1 = await fetch('/api/termos/registrar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ termo_tipo: tipo }),
+        body: JSON.stringify({ termo_tipo: 'termos_uso' }),
         credentials: 'same-origin',
       });
+      if (!r1.ok) throw new Error('Erro ao registrar termos de uso');
 
-      if (!response.ok) {
-        throw new Error('Erro ao registrar aceite');
-      }
+      // Registrar politica_privacidade
+      const r2 = await fetch('/api/termos/registrar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ termo_tipo: 'politica_privacidade' }),
+        credentials: 'same-origin',
+      });
+      if (!r2.ok) throw new Error('Erro ao registrar política de privacidade');
 
-      // Atualizar estado local de aceitos
-      const novoEstado = { ...aceitos, [tipo]: true };
-      setAceitos(novoEstado);
+      setAceito(true);
       setTermoAtivo(null);
 
-      // Se é o segundo termo sendo aceito, redirecionar imediatamente
-      if (novoEstado.termos_uso && novoEstado.politica_privacidade) {
-        // Ambos foram aceitos - redirecionar sem delay
-        console.log(
-          '[TERMOS] Ambos os termos aceitos - redirecionando imediatamente'
-        );
-        if (redirectTo) {
-          window.location.href = redirectTo;
-        } else {
-          onConcluir();
-        }
+      console.log('[TERMOS] Termos unificados aceitos - redirecionando');
+      if (redirectTo) {
+        window.location.href = redirectTo;
+      } else {
+        onConcluir();
       }
     } catch (err) {
-      console.error('Erro ao aceitar termo:', err);
+      console.error('Erro ao aceitar termos:', err);
       setErro('Erro ao registrar aceite. Tente novamente.');
     }
   };
 
   const handleContinuar = () => {
-    // Redirecionar para página apropriada
     if (redirectTo) {
       window.location.href = redirectTo;
     } else {
@@ -68,7 +61,7 @@ export default function ModalTermosAceite({ onConcluir, redirectTo }: Props) {
     }
   };
 
-  const todosPendentes = !aceitos.termos_uso || !aceitos.politica_privacidade;
+  const todosPendentes = !aceito;
 
   return (
     <>
@@ -80,52 +73,28 @@ export default function ModalTermosAceite({ onConcluir, redirectTo }: Props) {
           </h2>
 
           <p className="text-gray-600 mb-6">
-            Para acessar a plataforma, você precisa ler e aceitar os seguintes
-            documentos:
+            Para acessar a plataforma, você precisa ler e aceitar o documento
+            abaixo:
           </p>
 
-          {/* Botões de termos */}
-          <div className="space-y-4 mb-6">
+          {/* Botão único do documento unificado */}
+          <div className="mb-6">
             <button
-              onClick={() => setTermoAtivo('termos_uso')}
+              onClick={() => setTermoAtivo('termos_unificados')}
               className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition flex items-center justify-between group"
             >
               <div className="flex items-center gap-3">
                 <FileText className="text-orange-500" size={24} />
                 <div className="text-left">
                   <div className="font-semibold text-gray-900">
-                    Termos de Uso
+                    Termos de Uso e Política de Privacidade – QWORK
                   </div>
                   <div className="text-sm text-gray-500">
-                    Condições de utilização da plataforma
+                    Condições de utilização e tratamento de dados pessoais
                   </div>
                 </div>
               </div>
-              {aceitos.termos_uso ? (
-                <CheckCircle className="text-green-500" size={24} />
-              ) : (
-                <span className="text-sm text-gray-400 group-hover:text-orange-500">
-                  Clique para ler
-                </span>
-              )}
-            </button>
-
-            <button
-              onClick={() => setTermoAtivo('politica_privacidade')}
-              className="w-full p-4 border-2 border-gray-300 rounded-lg hover:border-orange-500 hover:bg-orange-50 transition flex items-center justify-between group"
-            >
-              <div className="flex items-center gap-3">
-                <Lock className="text-orange-500" size={24} />
-                <div className="text-left">
-                  <div className="font-semibold text-gray-900">
-                    Política de Privacidade
-                  </div>
-                  <div className="text-sm text-gray-500">
-                    Como tratamos seus dados pessoais
-                  </div>
-                </div>
-              </div>
-              {aceitos.politica_privacidade ? (
+              {aceito ? (
                 <CheckCircle className="text-green-500" size={24} />
               ) : (
                 <span className="text-sm text-gray-400 group-hover:text-orange-500">
@@ -149,7 +118,7 @@ export default function ModalTermosAceite({ onConcluir, redirectTo }: Props) {
             className="w-full py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
             {todosPendentes
-              ? 'Aceite ambos os documentos para continuar'
+              ? 'Aceite o documento para continuar'
               : 'Continuar para Dashboard'}
           </button>
 
@@ -163,7 +132,7 @@ export default function ModalTermosAceite({ onConcluir, redirectTo }: Props) {
       {termoAtivo && (
         <ModalConteudoTermo
           tipo={termoAtivo}
-          onAceitar={() => handleAceitarTermo(termoAtivo)}
+          onAceitar={handleAceitarUnificado}
           onVoltar={() => setTermoAtivo(null)}
         />
       )}

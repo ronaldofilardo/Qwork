@@ -1,0 +1,148 @@
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "__tests__/api/rh/laudos-download.test.ts" "--passWithNoTests"
+
+[jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
+RBAC seed applied to test database
+PASS __tests__/api/rh/laudos-download.test.ts
+  ÔùÅ Console
+
+    console.log
+      [dotenv@17.2.3] injecting env (0) from .env.test -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL de produ├º├úo do ambiente de testes
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:124:17)
+
+    console.log
+      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+
+      at Object.<anonymous> (__tests__/config/jest.setup.js:138:13)
+
+    console.log
+      [dotenv@17.2.3] injecting env (12) from .env.local -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+
+      at _log (node_modules/.pnpm/dotenv@17.2.3/node_modules/dotenv/lib/main.js:142:11)
+
+    console.log
+      ­ƒöî [lib/db.ts] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
+
+      at Object.log (lib/db.ts:664:15)
+
+    console.log
+      [DEBUG] Laudo encontrado: id=15, lote_id=15, status=emitido
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:65:13)
+
+    console.log
+      [DEBUG] Laudo encontrado: id=15, lote_id=15, status=emitido
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:65:13)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-15/laudo.pdf
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:113:13)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-15/laudo.pdf
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:121:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:127:15)
+
+    console.log
+      [BACKBLAZE] PDF baixado com sucesso (11 bytes)
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:141:15)
+
+    console.log
+      [DEBUG] Laudo encontrado: id=10, lote_id=18, status=emitido
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:65:13)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-18/laudo.pdf
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:113:13)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-18/laudo.pdf
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:121:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:127:15)
+
+    console.log
+      [BACKBLAZE] PDF baixado com sucesso (3 bytes)
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:141:15)
+
+    console.log
+      [DEBUG] Laudo encontrado: id=12, lote_id=20, status=emitido
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:65:13)
+
+    console.log
+      [BACKBLAZE] Arquivo remoto encontrado no banco: laudos/lote-20/laudo.pdf
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:113:13)
+
+    console.log
+      [BACKBLAZE] Presigned URL gerada com sucesso para: laudos/lote-20/laudo.pdf
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:121:15)
+
+    console.log
+      [BACKBLAZE] Fazendo download server-side do PDF...
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:127:15)
+
+    console.log
+      [BACKBLAZE] PDF baixado com sucesso (3 bytes)
+
+      at log (app/api/rh/laudos/[laudoId]/download/route.ts:141:15)
+
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        5.214 s
+Ran all test suites matching __tests__/api/rh/laudos-download.test.ts.

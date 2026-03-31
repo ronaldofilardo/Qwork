@@ -27,7 +27,6 @@ export interface DadosGeraisEmpresa {
     dataUltimaConclusao: string;
   };
   totalFuncionariosAvaliados: number;
-  percentualConclusao: number;
   amostra: {
     operacional: number;
     gestao: number;

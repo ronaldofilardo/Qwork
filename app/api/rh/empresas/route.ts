@@ -49,16 +49,25 @@ export async function GET() {
 
     // requireClinica já garante que session.clinica_id exista e que a clínica seja válida
 
-    // Buscar empresas da clínica diretamente
+    // Inclui empresas "owned" pela clínica E empresas de outra clínica que
+    // já tenham vínculos (funcionarios_clinicas) com esta clínica — cenário
+    // de CNPJ único global (migration 006) compartilhado entre clínicas.
     const result = await query(
-      `SELECT id, nome, cnpj, email, ativa, criado_em,
-                      telefone, endereco, cidade, estado, cep,
-              (SELECT COUNT(*) FROM funcionarios_clinicas WHERE empresa_id = empresas_clientes.id AND ativo = true) as total_funcionarios,
-              (SELECT COUNT(*) FROM lotes_avaliacao WHERE empresa_id = empresas_clientes.id) as total_avaliacoes,
-              (SELECT COUNT(*) FROM avaliacoes a JOIN lotes_avaliacao l ON a.lote_id = l.id WHERE l.empresa_id = empresas_clientes.id AND a.status = 'concluida') as avaliacoes_concluidas
-        FROM empresas_clientes
-        WHERE ativa = true AND clinica_id = $1
-        ORDER BY nome`,
+      `SELECT ec.id, ec.nome, ec.cnpj, ec.email, ec.ativa, ec.criado_em,
+                      ec.telefone, ec.endereco, ec.cidade, ec.estado, ec.cep,
+              (SELECT COUNT(*) FROM funcionarios_clinicas WHERE empresa_id = ec.id AND clinica_id = $1 AND ativo = true) as total_funcionarios,
+              (SELECT COUNT(*) FROM lotes_avaliacao WHERE empresa_id = ec.id) as total_avaliacoes,
+              (SELECT COUNT(*) FROM avaliacoes a JOIN lotes_avaliacao l ON a.lote_id = l.id WHERE l.empresa_id = ec.id AND a.status = 'concluida') as avaliacoes_concluidas
+        FROM empresas_clientes ec
+        WHERE ec.ativa = true
+          AND (
+            ec.clinica_id = $1
+            OR EXISTS (
+              SELECT 1 FROM funcionarios_clinicas fc
+              WHERE fc.empresa_id = ec.id AND fc.clinica_id = $1
+            )
+          )
+        ORDER BY ec.nome`,
       [session.clinica_id],
       session
     );

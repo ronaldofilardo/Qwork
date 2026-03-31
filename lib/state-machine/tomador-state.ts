@@ -13,11 +13,8 @@ export type TomadorStatus =
   | 'rejeitado'
   | 'em_reanalise';
 
-export type TipoPlano = 'fixo' | 'personalizado';
-
 export interface TomadorState {
   status: TomadorStatus;
-  tipo_plano?: TipoPlano;
   pagamento_confirmado: boolean;
   contrato_aceito: boolean;
   recibo_gerado: boolean;
@@ -130,65 +127,6 @@ export function canActivateAccount(state: TomadorState): {
     valid: errors.length === 0,
     errors,
   };
-}
-
-/**
- * Fluxo de estados para Plano Fixo
- */
-export const FLUXO_PLANO_FIXO: TomadorStatus[] = [
-  'cadastro_inicial',
-  'aguardando_contrato', // Sistema gera contrato
-  'contrato_gerado', // Contrato gerado
-  'aguardando_pagamento', // Após aceite
-  'pagamento_confirmado', // Pagamento realizado
-  'aprovado', // Admin aprova e libera login
-];
-
-/**
- * Fluxo de estados para Plano Personalizado
- */
-export const FLUXO_PLANO_PERSONALIZADO: TomadorStatus[] = [
-  'cadastro_inicial',
-  'aguardando_contrato', // Admin preenche valores e gera link
-  'contrato_gerado', // Sistema gera contrato após admin
-  'aguardando_pagamento', // Após aceite
-  'pagamento_confirmado', // Pagamento realizado
-  'aprovado', // Admin aprova e libera login
-];
-
-/**
- * Obtém fluxo esperado baseado no tipo de plano
- */
-export function getExpectedFlow(tipo_plano: TipoPlano): TomadorStatus[] {
-  return tipo_plano === 'fixo' ? FLUXO_PLANO_FIXO : FLUXO_PLANO_PERSONALIZADO;
-}
-
-/**
- * Valida se o estado atual está no caminho esperado
- */
-export function isInExpectedFlow(
-  currentStatus: TomadorStatus,
-  tipo_plano: TipoPlano
-): boolean {
-  const expectedFlow = getExpectedFlow(tipo_plano);
-  return expectedFlow.includes(currentStatus);
-}
-
-/**
- * Obtém próximo passo esperado no fluxo
- */
-export function getNextExpectedStep(
-  currentStatus: TomadorStatus,
-  tipo_plano: TipoPlano
-): TomadorStatus | null {
-  const flow = getExpectedFlow(tipo_plano);
-  const currentIndex = flow.indexOf(currentStatus);
-
-  if (currentIndex === -1 || currentIndex === flow.length - 1) {
-    return null;
-  }
-
-  return flow[currentIndex + 1];
 }
 
 /**

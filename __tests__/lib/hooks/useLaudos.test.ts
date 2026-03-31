@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/hooks/useLaudos.test.ts
+ * Testes: useLaudos
+ */
+
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useLaudos } from '@/lib/hooks/useLaudos';
 

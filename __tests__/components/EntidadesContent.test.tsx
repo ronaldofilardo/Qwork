@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/EntidadesContent.test.tsx
+ * Testes: EntidadesContent
+ */
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import { EntidadesContent } from '@/components/admin/EntidadesContent';

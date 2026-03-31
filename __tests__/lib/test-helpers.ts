@@ -1,12 +1,12 @@
+// @ts-nocheck
 /**
  * Utilitários de Mock para Testes - Padrão QWork
  *
-// @ts-nocheck
  * Este arquivo contém helpers padronizados para criação de mocks
  * seguindo a Política de Mocks documentada em docs/testing/MOCKS_POLICY.md
  */
 
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect } from '@jest/globals';
 
 /**
  * Cria um mock consistente para fetch API responses
@@ -106,9 +106,7 @@ export const setupPWAMocks = () => {
     writable: true,
     value: {
       permission: 'granted',
-      requestPermission: jest
-        .fn()
-        .mockResolvedValue('granted' as NotificationPermission),
+      requestPermission: jest.fn().mockResolvedValue('granted' as any),
     } as any,
   });
 
@@ -116,13 +114,13 @@ export const setupPWAMocks = () => {
   Object.defineProperty(navigator, 'serviceWorker', {
     writable: true,
     value: {
-      register: jest.fn().mockResolvedValue({} as ServiceWorkerRegistration),
+      register: jest.fn().mockResolvedValue({} as any),
       ready: Promise.resolve({
         active: {} as ServiceWorker,
         waiting: null,
         controller: null,
-      } as ServiceWorkerRegistration),
-    } as ServiceWorkerContainer,
+      } as unknown as ServiceWorkerRegistration),
+    } as unknown as ServiceWorkerContainer,
   });
 };
 

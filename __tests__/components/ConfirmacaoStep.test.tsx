@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ConfirmacaoStep.test.tsx
+ * Testes: ConfirmacaoStep
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ConfirmacaoStep from '@/components/modals/ModalCadastroTomadorSteps/ConfirmacaoStep';

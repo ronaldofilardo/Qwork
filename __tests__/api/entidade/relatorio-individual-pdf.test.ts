@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/relatorio-individual-pdf.test.ts
+ * Testes: /api/entidade/relatorio-individual-pdf
+ */
+
 import { query } from '@/lib/db';
 import { NextRequest } from 'next/server';
 

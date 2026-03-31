@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/styles/print-styles.test.ts
+ * Testes: Print Styles
+ */
+
 import fs from 'fs';
 import path from 'path';
 

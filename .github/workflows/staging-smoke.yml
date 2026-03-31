@@ -1,0 +1,139 @@
+name: Staging Smoke Tests
+
+on:
+  # Disparar após deploy no staging
+  workflow_run:
+    workflows: ['Deploy Staging']
+    types: [completed]
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      target_url:
+        description: 'URL do ambiente staging para testar'
+        required: false
+        default: 'https://staging.qwork.app.br'
+
+env:
+  STAGING_URL: ${{ github.event.inputs.target_url || 'https://staging.qwork.app.br' }}
+
+jobs:
+  smoke-tests:
+    name: 🔥 Smoke Tests Pós-Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: '5a: Health Check — /api/health'
+        run: |
+          echo "🏥 Verificando ${{ env.STAGING_URL }}/api/health ..."
+          RESPONSE=$(curl -s -o /tmp/health.json -w "%{http_code}" \
+            --max-time 30 \
+            --retry 3 \
+            --retry-delay 10 \
+            "${{ env.STAGING_URL }}/api/health")
+
+          echo "HTTP Status: $RESPONSE"
+          cat /tmp/health.json | jq . || cat /tmp/health.json
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Health check falhou com status $RESPONSE"
+            exit 1
+          fi
+
+          STATUS=$(cat /tmp/health.json | jq -r '.status')
+          if [ "$STATUS" = "unhealthy" ]; then
+            echo "❌ Serviço unhealthy"
+            exit 1
+          fi
+          echo "✅ Health check OK — status: $STATUS"
+
+      - name: '5a: Verificar headers de segurança'
+        run: |
+          echo "🔒 Verificando headers de segurança..."
+          HEADERS=$(curl -s -I --max-time 15 "${{ env.STAGING_URL }}/api/health")
+
+          echo "$HEADERS"
+
+          # Verificar X-Robots-Tag noindex (staging não deve ser indexado)
+          if echo "$HEADERS" | grep -qi "x-robots-tag.*noindex"; then
+            echo "✅ X-Robots-Tag: noindex presente"
+          else
+            echo "⚠️ X-Robots-Tag: noindex ausente (esperado em staging)"
+          fi
+
+      - name: '5b: Login Page — /login acessível'
+        run: |
+          echo "🔐 Verificando página de login..."
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+            --max-time 15 \
+            --retry 2 \
+            "${{ env.STAGING_URL }}/login")
+
+          echo "HTTP Status: $RESPONSE"
+
+          if [ "$RESPONSE" -ne 200 ]; then
+            echo "❌ Página de login não acessível (HTTP $RESPONSE)"
+            exit 1
+          fi
+          echo "✅ Login page OK (HTTP 200)"
+
+      - name: '5b: API Auth — retorna 401 sem sessão'
+        run: |
+          echo "🔑 Verificando proteção de API..."
+          for ENDPOINT in "/api/admin/usuarios" "/api/rh/funcionarios" "/api/entidade/lotes"; do
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+              --max-time 15 \
+              "${{ env.STAGING_URL }}${ENDPOINT}")
+
+            echo "  ${ENDPOINT}: HTTP $RESPONSE"
+
+            if [ "$RESPONSE" -eq 200 ]; then
+              echo "❌ Endpoint desprotegido: ${ENDPOINT} retornou 200 sem autenticação"
+              exit 1
+            fi
+          done
+          echo "✅ Endpoints protegidos corretamente"
+
+      - name: '5c: Verificar banner STAGING presente'
+        run: |
+          echo "🏷️ Verificando banner de staging..."
+          HTML=$(curl -s --max-time 15 "${{ env.STAGING_URL }}/login")
+
+          if echo "$HTML" | grep -qi "staging"; then
+            echo "✅ Referência a 'staging' encontrada no HTML"
+          else
+            echo "⚠️ Referência a 'staging' não encontrada no HTML"
+          fi
+
+      - name: '5c: Verificar ambiente no /api/health'
+        run: |
+          echo "🌍 Verificando variável de ambiente..."
+          ENV=$(curl -s --max-time 15 "${{ env.STAGING_URL }}/api/health" | jq -r '.environment')
+
+          echo "Ambiente reportado: $ENV"
+
+          if [ "$ENV" = "staging" ]; then
+            echo "✅ APP_ENV=staging confirmado"
+          else
+            echo "⚠️ APP_ENV esperado 'staging', obteve '$ENV'"
+          fi
+
+      - name: Gerar relatório de smoke tests
+        if: always()
+        run: |
+          echo "## 🔥 Staging Smoke Tests Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Teste | Descrição |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 5a | Health check /api/health |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5a | Headers de segurança |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5b | Página /login acessível |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5b | API endpoints protegidos (401/403) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5c | Banner STAGING no HTML |" >> $GITHUB_STEP_SUMMARY
+          echo "| 5c | APP_ENV=staging confirmado |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL testada:** ${{ env.STAGING_URL }}" >> $GITHUB_STEP_SUMMARY

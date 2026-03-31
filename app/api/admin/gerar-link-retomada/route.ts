@@ -15,7 +15,7 @@ import { getBaseUrl } from '@/lib/utils/get-base-url';
 export async function POST(request: NextRequest) {
   try {
     const session = requireAuth(request);
-    requireRole(session, ['admin']);
+    requireRole(session, ['suporte']);
 
     const body = await request.json();
     const { tomador_id, contrato_id, enviar_email = false } = body;
@@ -38,11 +38,9 @@ export async function POST(request: NextRequest) {
         c.pagamento_confirmado,
         ct.id as contrato_id,
         ct.numero_contrato,
-        ct.valor_total,
-        p.tipo as plano_tipo
+        ct.valor_total
       FROM tomadors c
       JOIN contratos ct ON ct.id = $2 AND ct.tomador_id = c.id
-      JOIN planos p ON ct.plano_id = p.id
       WHERE c.id = $1`,
       [tomador_id, contrato_id]
     );
@@ -102,7 +100,6 @@ export async function POST(request: NextRequest) {
         tomador_id,
         JSON.stringify({
           contrato_id,
-          plano_tipo: dados.plano_tipo,
         }),
       ]
     );

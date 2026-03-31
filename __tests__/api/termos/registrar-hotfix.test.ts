@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/termos/registrar-hotfix.test.ts
+ * Testes: /api/termos/registrar - Hotfix TABLES_NOT_MIGRATED
+ */
+
 import { POST } from '@/app/api/termos/registrar/route';
 import { registrarAceite } from '@/lib/termos/registrar-aceite';
 

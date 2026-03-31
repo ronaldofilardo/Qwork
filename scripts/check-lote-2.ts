@@ -3,7 +3,7 @@ import { query } from '../lib/db';
 async function main() {
   const loteId = 2;
   const lote = await query(
-    `SELECT id, codigo, status, modo_emergencia, motivo_emergencia, processamento_em, emitido_em, enviado_em FROM lotes_avaliacao WHERE id = $1`,
+    `SELECT id, status, processamento_em, emitido_em, enviado_em FROM lotes_avaliacao WHERE id = $1`,
     [loteId]
   );
   console.log(JSON.stringify({ lote: lote.rows }, null, 2));

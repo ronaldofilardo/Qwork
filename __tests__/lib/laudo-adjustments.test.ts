@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/laudo-adjustments.test.ts
+ * Testes: Laudo Template Adjustments
+ */
+
 import { gerarHTMLLaudoCompleto } from '@/lib/templates/laudo-html';
 import { getLogoSignatureTemplate } from '@/lib/pdf/puppeteer-templates';
 
@@ -12,7 +17,6 @@ const laudoPadronizado = {
       dataUltimaConclusao: '10/01/2025',
     },
     totalFuncionariosAvaliados: 10,
-    percentualConclusao: 100,
     amostra: { operacional: 8, gestao: 2 },
   },
   etapa2: [

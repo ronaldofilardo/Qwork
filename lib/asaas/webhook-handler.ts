@@ -4,12 +4,9 @@
 import { NextRequest } from 'next/server';
 import type { AsaasWebhookPayload, AsaasWebhookEvent } from './types';
 import { mapAsaasStatusToLocal } from './mappers';
-import { Pool } from 'pg';
-
-// Pool de conexão com PostgreSQL
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+import { transaction, query as dbQuery } from '@/lib/db';
+// TODO: refatorar modelo de comissões — import congelado até nova implementação
+// import { criarComissaoAutomatica } from '@/lib/db/comissionamento';
 
 /**
  * Validar se o webhook veio realmente do Asaas
@@ -61,7 +58,7 @@ async function isWebhookProcessed(
   event: AsaasWebhookEvent
 ): Promise<boolean> {
   try {
-    const result = await pool.query(
+    const result = await dbQuery(
       `SELECT id FROM webhook_logs 
        WHERE payment_id = $1 AND event = $2 
        LIMIT 1`,
@@ -97,7 +94,7 @@ export async function logWebhookProcessed(
   payload: any
 ): Promise<void> {
   try {
-    await pool.query(
+    await dbQuery(
       `INSERT INTO webhook_logs (payment_id, event, payload, processed_at)
        VALUES ($1, $2, $3, NOW())
        ON CONFLICT (payment_id, event) DO NOTHING`,
@@ -123,7 +120,7 @@ async function updatePaymentStatus(
     // Usar operador || (merge) ao invés de substituição direta do JSONB.
     // Isso preserva campos que possam ter sido gravados anteriormente,
     // como 'lote_id' inserido pelo /api/pagamento/asaas/criar.
-    const result = await pool.query(
+    const result = await dbQuery(
       `UPDATE pagamentos 
        SET status = $1,
            asaas_payment_id = $2,
@@ -195,32 +192,67 @@ export async function activateSubscription(
     status: paymentData.status,
   });
 
-  const client = await pool.connect();
+  // Variáveis capturadas para geração de comissões após commit da transação
+  let _lotesAtualizados: number[] = [];
+  let _entidadeId: number | null = null;
+  let _clinicaId: number | null = null;
+  let _valorLote: number = 0;
+  let _numeroParcela: number = 1;
+  let _totalParcelas: number = 1;
 
   try {
-    await client.query('BEGIN');
-    console.log('[Asaas Webhook] ✅ Transação iniciada (BEGIN)');
+    await transaction(async (client) => {
+      console.log('[Asaas Webhook] ✅ Transação iniciada');
 
-    // 1. Buscar o pagamento usando asaas_payment_id
-    const paymentResult = await client.query(
-      `SELECT id, entidade_id, clinica_id, valor
+      // 1. Buscar o pagamento usando asaas_payment_id
+      let paymentResult = await client.query(
+        `SELECT id, entidade_id, clinica_id, valor, numero_parcelas
        FROM pagamentos
        WHERE asaas_payment_id = $1`,
-      [asaasPaymentId]
-    );
-
-    if (paymentResult.rowCount === 0) {
-      throw new Error(
-        `Pagamento não encontrado com asaas_payment_id: ${asaasPaymentId}`
+        [asaasPaymentId]
       );
-    }
 
-    const pagamento = paymentResult.rows[0];
-    const { id: pagamentoId, entidade_id, clinica_id, valor } = pagamento;
+      // Fallback para pagamentos parcelados: o Asaas gera IDs distintos por parcela.
+      // O externalReference (ex: lote_32_pagamento_44) contém o ID local do pagamento.
+      if (paymentResult.rowCount === 0 && paymentData.externalReference) {
+        const localIdMatch =
+          paymentData.externalReference.match(/pagamento_(\d+)/);
+        if (localIdMatch) {
+          const localPagamentoId = parseInt(localIdMatch[1], 10);
+          console.log(
+            `[Asaas Webhook] 🔄 Lookup por asaas_payment_id falhou — tentando via externalReference (pagamento local ${localPagamentoId})`
+          );
+          paymentResult = await client.query(
+            `SELECT id, entidade_id, clinica_id, valor, numero_parcelas
+           FROM pagamentos
+           WHERE id = $1`,
+            [localPagamentoId]
+          );
+        }
+      }
 
-    // 2. Atualizar status do pagamento para 'pago'
-    await client.query(
-      `UPDATE pagamentos
+      if (paymentResult.rowCount === 0) {
+        throw new Error(
+          `Pagamento não encontrado com asaas_payment_id: ${asaasPaymentId}`
+        );
+      }
+
+      const pagamento = paymentResult.rows[0];
+      const {
+        id: pagamentoId,
+        entidade_id,
+        clinica_id,
+        valor,
+        numero_parcelas,
+      } = pagamento;
+
+      // Número real de parcelas: salvo em numero_parcelas no momento da criação do pagamento.
+      // O Asaas envia um webhook por parcela — installmentCount não está disponível no payload.
+      const parcelasReais: number = numero_parcelas ?? 1;
+
+      // 2. Atualizar status do pagamento para 'pago'
+      await client.query(
+        `UPDATE pagamentos
        SET status = 'pago',
            data_pagamento = COALESCE($1::timestamp, NOW()),
            dados_adicionais = jsonb_set(
@@ -230,154 +262,214 @@ export async function activateSubscription(
            ),
            atualizado_em = NOW()
        WHERE id = $3`,
-      [
-        paymentData.paymentDate || paymentData.confirmedDate,
-        paymentData.confirmedDate,
-        pagamentoId,
-      ]
-    );
+        [
+          paymentData.paymentDate || paymentData.confirmedDate,
+          paymentData.confirmedDate,
+          pagamentoId,
+        ]
+      );
 
-    // 3. Tentar extrair lote_id do externalReference
-    const loteId = extractLoteIdFromExternalReference(
-      paymentData.externalReference
-    );
+      // 2b. Marcar a parcela específica como paga em detalhes_parcelas.
+      // paymentData.installmentNumber indica qual parcela chegou (1, 2, 3...).
+      // Para pagamentos à vista (não parcelados), installmentNumber é undefined → usa 1.
+      const numeroParcela = paymentData.installmentNumber ?? 1;
+      const dataPagamentoStr =
+        paymentData.paymentDate ||
+        paymentData.confirmedDate ||
+        new Date().toISOString();
 
-    let lotesResult;
-
-    if (loteId) {
-      // 3a. Se lote_id foi extraído, atualizar diretamente o lote específico
+      await client.query(
+        `UPDATE pagamentos
+       SET detalhes_parcelas = (
+         SELECT jsonb_agg(
+           CASE
+             WHEN (elem->>'numero')::int = $1
+             THEN elem || jsonb_build_object(
+               'pago', true,
+               'status', 'pago',
+               'data_pagamento', $2::text
+             )
+             ELSE elem
+           END
+         )
+         FROM jsonb_array_elements(COALESCE(detalhes_parcelas, '[]'::jsonb)) AS elem
+       )
+       WHERE id = $3 AND detalhes_parcelas IS NOT NULL`,
+        [numeroParcela, dataPagamentoStr, pagamentoId]
+      );
       console.log(
-        `[Asaas Webhook] 🎯 Lote identificado via externalReference: ${loteId}`
+        `[Asaas Webhook] ✅ Parcela ${numeroParcela} marcada como paga em detalhes_parcelas (pagamento ${pagamentoId})`
       );
 
-      console.log(
-        '[Asaas Webhook] 🔍 Executando query:',
-        `SELECT id FROM lotes_avaliacao WHERE id = ${loteId} AND status_pagamento = 'aguardando_pagamento'`
+      // 3. Tentar extrair lote_id do externalReference
+      const loteId = extractLoteIdFromExternalReference(
+        paymentData.externalReference
       );
 
-      lotesResult = await client.query(
-        `SELECT id FROM lotes_avaliacao
-         WHERE id = $1 AND status_pagamento = 'aguardando_pagamento'`,
-        [loteId]
-      );
+      let lotesResult;
 
-      console.log(
-        `[Asaas Webhook] 📊 Resultado da query: ${lotesResult.rowCount} linha(s) encontrada(s)`
-      );
-      if (lotesResult.rowCount > 0) {
+      if (loteId) {
+        // 3a. Se lote_id foi extraído, atualizar diretamente o lote específico
         console.log(
-          `[Asaas Webhook] ✅ Lote encontrado: ${lotesResult.rows[0].id}`
-        );
-      }
-
-      if (lotesResult.rowCount === 0) {
-        console.warn(
-          `[Asaas Webhook] ⚠️  Lote ${loteId} não encontrado ou não está aguardando pagamento`
+          `[Asaas Webhook] 🎯 Lote identificado via externalReference: ${loteId}`
         );
 
-        // Debug: Verificar estado atual do lote
-        const debugResult = await client.query(
-          `SELECT id, status_pagamento FROM lotes_avaliacao WHERE id = $1`,
+        console.log(
+          '[Asaas Webhook] 🔍 Executando query:',
+          `SELECT id FROM lotes_avaliacao WHERE id = ${loteId} AND status_pagamento = 'aguardando_pagamento'`
+        );
+
+        lotesResult = await client.query(
+          `SELECT id FROM lotes_avaliacao
+         WHERE id = $1 AND status_pagamento = 'aguardando_pagamento'`,
           [loteId]
         );
-        if (debugResult.rowCount > 0) {
-          console.warn(
-            `[Asaas Webhook] 🔍 Status atual do lote ${loteId}:`,
-            debugResult.rows[0]
-          );
-        } else {
-          console.error(
-            `[Asaas Webhook] ❌ Lote ${loteId} não existe no banco!`
+
+        console.log(
+          `[Asaas Webhook] 📊 Resultado da query: ${lotesResult.rowCount} linha(s) encontrada(s)`
+        );
+        if (lotesResult.rowCount > 0) {
+          console.log(
+            `[Asaas Webhook] ✅ Lote encontrado: ${lotesResult.rows[0].id}`
           );
         }
-      }
-    } else {
-      // 3b. Fallback: Buscar lotes por entidade_id/clinica_id (comportamento antigo)
-      console.log(
-        `[Asaas Webhook] Buscando lotes para entidade_id=${entidade_id}, clinica_id=${clinica_id}`
-      );
 
-      lotesResult = await client.query(
-        `SELECT id FROM lotes_avaliacao
+        if (lotesResult.rowCount === 0) {
+          console.warn(
+            `[Asaas Webhook] ⚠️  Lote ${loteId} não encontrado ou não está aguardando pagamento`
+          );
+
+          // Debug: Verificar estado atual do lote
+          const debugResult = await client.query(
+            `SELECT id, status_pagamento FROM lotes_avaliacao WHERE id = $1`,
+            [loteId]
+          );
+          if (debugResult.rowCount > 0) {
+            console.warn(
+              `[Asaas Webhook] 🔍 Status atual do lote ${loteId}:`,
+              debugResult.rows[0]
+            );
+          } else {
+            console.error(
+              `[Asaas Webhook] ❌ Lote ${loteId} não existe no banco!`
+            );
+          }
+        }
+      } else {
+        // 3b. Fallback: Buscar lotes por entidade_id/clinica_id (comportamento antigo)
+        console.log(
+          `[Asaas Webhook] Buscando lotes para entidade_id=${entidade_id}, clinica_id=${clinica_id}`
+        );
+
+        lotesResult = await client.query(
+          `SELECT id FROM lotes_avaliacao
          WHERE status_pagamento = 'aguardando_pagamento'
          AND (
            ($1::int IS NOT NULL AND entidade_id = $1)
            OR
            ($2::int IS NOT NULL AND clinica_id = $2)
          )`,
-        [entidade_id || null, clinica_id || null]
-      );
-    }
+          [entidade_id || null, clinica_id || null]
+        );
+      }
 
-    console.log(
-      `[Asaas Webhook] 🔍 Encontrados ${lotesResult.rowCount} lotes para atualizar:`,
-      lotesResult.rows.map((r: any) => r.id)
-    );
-
-    if (lotesResult.rowCount === 0) {
-      console.warn(
-        `[Asaas Webhook] ⚠️ ATENÇÃO: Nenhum lote encontrado para atualizar!`,
-        {
-          loteIdExtraido: loteId,
-          entidade_id,
-          clinica_id,
-          externalReference: paymentData.externalReference,
-        }
-      );
-    }
-
-    for (const lote of lotesResult.rows) {
-      console.log(`[Asaas Webhook] 🔄 Atualizando lote ${lote.id}...`);
       console.log(
-        `[Asaas Webhook] 📝 Executando UPDATE lotes_avaliacao SET status_pagamento='pago', pago_em=NOW() WHERE id=${lote.id}`
+        `[Asaas Webhook] 🔍 Encontrados ${lotesResult.rowCount} lotes para atualizar:`,
+        lotesResult.rows.map((r: any) => r.id)
       );
 
-      const updateResult = await client.query(
-        `UPDATE lotes_avaliacao
+      if (lotesResult.rowCount === 0) {
+        console.warn(
+          `[Asaas Webhook] ⚠️ ATENÇÃO: Nenhum lote encontrado para atualizar!`,
+          {
+            loteIdExtraido: loteId,
+            entidade_id,
+            clinica_id,
+            externalReference: paymentData.externalReference,
+          }
+        );
+      }
+
+      for (const lote of lotesResult.rows) {
+        console.log(`[Asaas Webhook] 🔄 Atualizando lote ${lote.id}...`);
+        console.log(
+          `[Asaas Webhook] 📝 Executando UPDATE lotes_avaliacao SET status_pagamento='pago', pago_em=NOW() WHERE id=${lote.id}`
+        );
+
+        const updateResult = await client.query(
+          `UPDATE lotes_avaliacao
          SET status_pagamento = 'pago',
              pago_em = NOW(),
              pagamento_metodo = $1,
-             pagamento_parcelas = 1
+             pagamento_parcelas = $3
          WHERE id = $2
-         RETURNING id, status_pagamento, pago_em, pagamento_metodo`,
-        [paymentData.billingType?.toLowerCase() || 'pix', lote.id]
-      );
-
-      if (updateResult.rowCount > 0) {
-        const loteAtualizado = updateResult.rows[0];
-        console.log('[Asaas Webhook] ✅ Lote atualizado com sucesso:', {
-          lote_id: loteAtualizado.id,
-          novo_status_pagamento: loteAtualizado.status_pagamento,
-          pago_em: loteAtualizado.pago_em,
-          pagamento_metodo: loteAtualizado.pagamento_metodo,
-        });
-      } else {
-        console.error(
-          `[Asaas Webhook] ❌ Falha ao atualizar lote ${lote.id}: nenhuma linha afetada`
+         RETURNING id, status_pagamento, pago_em, pagamento_metodo, pagamento_parcelas`,
+          [
+            paymentData.billingType?.toLowerCase() || 'pix',
+            lote.id,
+            parcelasReais,
+          ]
         );
+
+        if (updateResult.rowCount > 0) {
+          const loteAtualizado = updateResult.rows[0];
+          console.log('[Asaas Webhook] ✅ Lote atualizado com sucesso:', {
+            lote_id: loteAtualizado.id,
+            novo_status_pagamento: loteAtualizado.status_pagamento,
+            pago_em: loteAtualizado.pago_em,
+            pagamento_metodo: loteAtualizado.pagamento_metodo,
+          });
+        } else {
+          console.error(
+            `[Asaas Webhook] ❌ Falha ao atualizar lote ${lote.id}: nenhuma linha afetada`
+          );
+        }
       }
-    }
 
-    // 4. Commit: pagamentos + lotes atualizados atomicamente.
-    // O logWebhookProcessed é feito DEPOIS do COMMIT pelo chamador (handlePaymentWebhook).
-    // Isso garante que a entrada webhook_logs só existe SE e QUANDO o commit foi bem-sucedido.
-    await client.query('COMMIT');
+      // Capturar dados para geração de comissões após commit
+      _lotesAtualizados = lotesResult.rows.map((r: any) => r.id);
+      _entidadeId = entidade_id ?? null;
+      _clinicaId = clinica_id ?? null;
+      _valorLote = valor;
+      _numeroParcela = numeroParcela;
+      _totalParcelas = parcelasReais;
 
-    console.log(`[Asaas Webhook] ✅ PAGAMENTO CONFIRMADO:`, {
-      pagamentoId,
-      asaasPaymentId,
-      lotesAtualizados: lotesResult.rowCount,
-      valor,
-      netValue: paymentData.netValue,
-      formaPagamento: paymentData.billingType,
-    });
+      // 4. transaction() fará COMMIT automaticamente ao final do callback.
+      // O logWebhookProcessed é feito DEPOIS pelo chamador (handlePaymentWebhook).
+      // Isso garante que a entrada webhook_logs só existe SE e QUANDO o commit foi bem-sucedido.
+      console.log(`[Asaas Webhook] ✅ PAGAMENTO CONFIRMADO:`, {
+        pagamentoId,
+        asaasPaymentId,
+        lotesAtualizados: lotesResult.rowCount,
+        valor,
+        netValue: paymentData.netValue,
+        formaPagamento: paymentData.billingType,
+      });
+    }); // fim transaction()
   } catch (error) {
-    await client.query('ROLLBACK');
     console.error('[Asaas Webhook] Erro ao processar pagamento:', error);
     throw error;
-  } finally {
-    client.release();
   }
+
+  // TODO: refatorar modelo de comissões — geração automática congelada até nova implementação
+  // for (const loteId of _lotesAtualizados) {
+  //   try {
+  //     await criarComissaoAutomatica({
+  //       lote_id: loteId,
+  //       entidade_id: _entidadeId,
+  //       clinica_id: _clinicaId,
+  //       valor_total_lote: _valorLote,
+  //       valor_parcela_liquida: paymentData.netValue ?? paymentData.value,
+  //       parcela_numero: _numeroParcela,
+  //       total_parcelas: _totalParcelas,
+  //     });
+  //   } catch (errComissao) {
+  //     console.error(
+  //       `[Asaas Webhook] Erro ao gerar comissão automática para lote ${loteId}:`,
+  //       errComissao
+  //     );
+  //   }
+  // }
 }
 
 /**
@@ -538,7 +630,7 @@ export async function handlePaymentWebhook(
  */
 export async function ensureWebhookLogsTable(): Promise<void> {
   try {
-    await pool.query(`
+    await dbQuery(`
       CREATE TABLE IF NOT EXISTS webhook_logs (
         id SERIAL PRIMARY KEY,
         payment_id VARCHAR(50) NOT NULL,

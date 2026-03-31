@@ -53,6 +53,16 @@ const LOTE_CONCLUIDO = {
   taxa_conclusao: 100,
 };
 
+const LOTE_CANCELADO = {
+  ...LOTE_BASE,
+  id: 3,
+  status: 'cancelado',
+  avaliacoes_concluidas: 0,
+  avaliacoes_inativadas: 10,
+  pode_emitir_laudo: false,
+  taxa_conclusao: 0,
+};
+
 const LAUDO_BASE = {
   id: 10,
   lote_id: 2,
@@ -127,6 +137,19 @@ describe('LotesGrid — snapshots', () => {
         lotes={[LOTE_CONCLUIDO]}
         laudos={[LAUDO_BASE]}
         downloadingLaudo={LAUDO_BASE.id}
+        onLoteClick={noop}
+        onDownloadLaudo={noop}
+      />
+    );
+    expect(container.firstChild).toMatchSnapshot();
+  });
+
+  it('lote cancelado (status=cancelado)', () => {
+    const { container } = render(
+      <LotesGrid
+        lotes={[LOTE_CANCELADO]}
+        laudos={[]}
+        downloadingLaudo={null}
         onLoteClick={noop}
         onDownloadLaudo={noop}
       />

@@ -130,11 +130,11 @@ export async function POST(request: Request) {
     } = await request.json();
 
     // Validações básicas
-    if (!cpf || !nome || !data_nascimento || !setor || !funcao || !email) {
+    if (!cpf || !nome || !data_nascimento || !setor || !funcao) {
       return NextResponse.json(
         {
           error:
-            'CPF, nome, data de nascimento, setor, função e email são obrigatórios',
+            'CPF, nome, data de nascimento, setor e função são obrigatórios',
         },
         { status: 400 }
       );
@@ -146,22 +146,66 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
-    // Validar email
-    if (!email.includes('@')) {
+    // Validar email (opcional, mas se fornecido deve ser válido)
+    if (email && !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
-    // Verificar se funcionário já existe
+    // MULTI-ENTIDADE: Verificar se CPF já existe na tabela base
     const existingFunc = await queryAsGestorEntidade(
-      'SELECT cpf FROM funcionarios WHERE cpf = $1',
+      'SELECT id, cpf FROM funcionarios WHERE cpf = $1',
       [cpfLimpo]
     );
 
     if (existingFunc.rows.length > 0) {
-      return NextResponse.json(
-        { error: 'Funcionário com este CPF já existe' },
-        { status: 409 }
+      // CPF já existe globalmente — verificar se já tem vínculo com ESTA entidade
+      const funcionarioId = existingFunc.rows[0].id;
+      const vinculoExistente = await queryAsGestorEntidade(
+        `SELECT id, ativo FROM funcionarios_entidades 
+         WHERE funcionario_id = $1 AND entidade_id = $2`,
+        [funcionarioId, entidadeId]
       );
+
+      if (vinculoExistente.rows.length > 0) {
+        if (vinculoExistente.rows[0].ativo) {
+          return NextResponse.json(
+            { error: 'Funcionário já vinculado a esta entidade' },
+            { status: 409 }
+          );
+        }
+        // Vínculo inativo — reativar
+        await queryAsGestorEntidade(
+          `UPDATE funcionarios_entidades 
+           SET ativo = true, data_desvinculo = NULL, atualizado_em = NOW()
+           WHERE id = $1`,
+          [vinculoExistente.rows[0].id]
+        );
+      } else {
+        // Criar novo vínculo com esta entidade (CPF existe em outra entidade)
+        await queryAsGestorEntidade(
+          `INSERT INTO funcionarios_entidades (
+            funcionario_id, entidade_id, ativo
+          ) VALUES ($1, $2, true)
+          ON CONFLICT (funcionario_id, entidade_id) 
+          DO UPDATE SET ativo = true, data_desvinculo = NULL`,
+          [funcionarioId, entidadeId]
+        );
+      }
+
+      console.log(
+        `[AUDIT] Funcionário ${cpfLimpo} vinculado à entidade ${entidadeId} por ${session.cpf} (CPF já existia)`
+      );
+
+      return NextResponse.json({
+        success: true,
+        message: 'Funcionário vinculado com sucesso',
+        funcionario: {
+          cpf: cpfLimpo,
+          nome: existingFunc.rows[0].nome || nome,
+          entidade_id: entidadeId,
+          vinculo_criado: true,
+        },
+      });
     }
 
     // Hash da senha baseada na data de nascimento
@@ -263,11 +307,11 @@ export async function PUT(request: Request) {
     } = await request.json();
 
     // Validações básicas
-    if (!cpf || !nome || !data_nascimento || !setor || !funcao || !email) {
+    if (!cpf || !nome || !data_nascimento || !setor || !funcao) {
       return NextResponse.json(
         {
           error:
-            'CPF, nome, data de nascimento, setor, função e email são obrigatórios',
+            'CPF, nome, data de nascimento, setor e função são obrigatórios',
         },
         { status: 400 }
       );
@@ -279,8 +323,8 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'CPF inválido' }, { status: 400 });
     }
 
-    // Validar email
-    if (!email.includes('@')) {
+    // Validar email (opcional, mas se fornecido deve ser válido)
+    if (email && !email.includes('@')) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 

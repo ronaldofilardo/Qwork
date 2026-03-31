@@ -120,6 +120,24 @@ export const GET = async (
           return acc;
         }, {});
 
+        // Buscar total de respostas por avaliação (para o contador X/37)
+        const idsAvaliacoes = funcionarios.map((f) => f.avaliacao_id);
+        const totalRespostasMap: { [avaliacaoId: number]: number } = {};
+        if (idsAvaliacoes.length > 0) {
+          const totalRespostasResult = await queryTx(
+            `
+            SELECT avaliacao_id, COUNT(DISTINCT (grupo, item)) as total
+            FROM respostas
+            WHERE avaliacao_id = ANY($1)
+            GROUP BY avaliacao_id
+          `,
+            [idsAvaliacoes]
+          );
+          totalRespostasResult.rows.forEach((row: any) => {
+            totalRespostasMap[row.avaliacao_id] = parseInt(row.total) || 0;
+          });
+        }
+
         // Calcular médias dos grupos para cada funcionário
         funcionariosComGrupos = await Promise.all(
           funcionarios.map(async (func) => {
@@ -168,6 +186,7 @@ export const GET = async (
                   dadosInativacaoAvaliacao.data_inativacao || null,
                 motivo_inativacao:
                   dadosInativacaoAvaliacao.motivo_inativacao || null,
+                total_respostas: totalRespostasMap[func.avaliacao_id] ?? 0,
               },
               grupos: mediasGrupos,
             };

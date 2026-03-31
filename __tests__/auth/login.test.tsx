@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/auth/login.test.tsx
+ * Testes: LoginPage
+ */
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import LoginPage from '@/app/login/page';

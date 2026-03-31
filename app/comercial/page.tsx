@@ -1,0 +1,613 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import {
+  Users,
+  UserPlus,
+  DollarSign,
+  TrendingUp,
+  Users2,
+  ChevronRight,
+} from 'lucide-react';
+import ComercialSidebar from '@/components/comercial/ComercialSidebar';
+import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
+import { ComissoesContent } from '@/components/admin/ComissoesContent';
+import ComercialLeadsAprovacaoPage from './leads/page';
+import type { Lead } from '@/app/admin/representantes/types';
+import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
+import { useCachedDocs } from '@/app/admin/representantes/hooks/useCachedDocs';
+import { useRepActions } from '@/app/admin/representantes/hooks/useRepActions';
+import { LeadsTab } from '@/app/admin/representantes/components/LeadsTab';
+
+interface Session {
+  cpf: string;
+  nome: string;
+  perfil: string;
+}
+
+function CandidatosContent() {
+  const ld = useLeads('candidatos', 'pendente_verificacao');
+  const docs = useCachedDocs();
+  const actions = useRepActions();
+
+  const handleAprovarLead = useCallback(
+    (lead: Lead) =>
+      actions.aprovarLead(lead, {
+        onSuccess: () => {},
+        carregarLeads: ld.carregarLeads,
+      }),
+    [actions, ld.carregarLeads]
+  );
+
+  const handleRejeitarLead = useCallback(
+    (lead: Lead, motivo: string) =>
+      actions.rejeitarLead(lead, motivo, {
+        onSuccess: () => {},
+        carregarLeads: ld.carregarLeads,
+      }),
+    [actions, ld.carregarLeads]
+  );
+
+  const handleConverterLead = useCallback(
+    (lead: Lead) =>
+      actions.converterLead(lead, {
+        onSuccess: () => {},
+        carregarLeads: ld.carregarLeads,
+        carregar: async () => {},
+      }),
+    [actions, ld.carregarLeads]
+  );
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <h2 className="text-lg font-bold text-gray-900">
+          Candidatos a Representante
+        </h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          Candidatos aguardando verificação e aprovação comercial.
+        </p>
+      </div>
+
+      {/* Feedback de erro/sucesso */}
+      {actions.erro && (
+        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 text-sm">
+          {actions.erro}
+        </div>
+      )}
+      {actions.sucesso && (
+        <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-3 text-sm">
+          {actions.sucesso}
+        </div>
+      )}
+
+      {/* Link de acesso gerado após conversão */}
+      {actions.conviteLinkCopiavel && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-sm font-semibold text-amber-800">
+              🔗 Link de acesso do representante — copie e envie ao candidato
+            </p>
+            <button
+              onClick={() => actions.setConviteLinkCopiavel(null)}
+              className="text-amber-500 hover:text-amber-700 text-lg leading-none"
+            >
+              ✕
+            </button>
+          </div>
+          <p className="text-xs text-amber-700">
+            O representante deve usar este link para acessar a plataforma,
+            definir sua senha e aceitar o contrato e os termos de uso.
+          </p>
+          <div className="flex items-center gap-2">
+            <code className="flex-1 text-xs bg-white border border-amber-200 rounded px-2 py-1.5 text-amber-900 overflow-x-auto whitespace-nowrap">
+              {actions.conviteLinkCopiavel}
+            </code>
+            <button
+              onClick={() => {
+                navigator.clipboard
+                  .writeText(actions.conviteLinkCopiavel!)
+                  .catch(() => {});
+                actions.setSucesso('Link copiado!');
+                setTimeout(() => actions.setSucesso(''), 2000);
+              }}
+              className="shrink-0 text-sm font-medium bg-amber-600 text-white rounded px-3 py-1.5 hover:bg-amber-700 transition-colors"
+            >
+              Copiar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <LeadsTab
+        leads={ld.leads}
+        leadsTotal={ld.leadsTotal}
+        leadsPage={ld.leadsPage}
+        setLeadsPage={ld.setLeadsPage}
+        leadsStatusFiltro={ld.leadsStatusFiltro}
+        setLeadsStatusFiltro={ld.setLeadsStatusFiltro}
+        leadsBusca={ld.leadsBusca}
+        setLeadsBusca={ld.setLeadsBusca}
+        leadsLoading={ld.leadsLoading}
+        leadActionLoading={actions.leadActionLoading}
+        leadDocsLoading={docs.leadDocsLoading}
+        openLeadDoc={docs.openLeadDoc}
+        onAprovarLead={handleAprovarLead}
+        onRejeitarLead={handleRejeitarLead}
+        onConverterLead={handleConverterLead}
+      />
+    </div>
+  );
+}
+
+interface KPIs {
+  representantesAtivos: number;
+  representantesPendentes: number;
+  vendedoresAtivos: number;
+  leadsTotal: number;
+  leadsPendentes: number;
+  comissoesAbertas: number;
+  valorAReceber: number;
+  valorPagoMes: number;
+}
+
+interface RepMetrica {
+  id: number;
+  nome: string;
+  email: string;
+  status: string;
+  codigo: string;
+  leads_ativos: number;
+  leads_mes: number;
+  vinculos_ativos: number;
+  comissoes_pendentes: number;
+  valor_pendente: number;
+}
+
+export default function ComercialPage() {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] =
+    useState<ComercialSection>('representantes');
+  const [repsMetrica, setRepsMetrica] = useState<RepMetrica[]>([]);
+  const [loadingReps, setLoadingReps] = useState(false);
+  const [kpis, setKpis] = useState<KPIs>({
+    representantesAtivos: 0,
+    representantesPendentes: 0,
+    vendedoresAtivos: 0,
+    leadsTotal: 0,
+    leadsPendentes: 0,
+    comissoesAbertas: 0,
+    valorAReceber: 0,
+    valorPagoMes: 0,
+  });
+
+  const router = useRouter();
+
+  const fetchRepsMetrica = useCallback(async () => {
+    setLoadingReps(true);
+    try {
+      const res = await fetch('/api/comercial/representantes/metricas');
+      if (res.ok) {
+        const d = await res.json();
+        setRepsMetrica(d.representantes ?? []);
+      }
+    } catch (e) {
+      console.error('Erro ao buscar métricas de representantes:', e);
+    } finally {
+      setLoadingReps(false);
+    }
+  }, []);
+
+  const fetchKPIs = useCallback(async () => {
+    try {
+      const [repsRes, repsAtivosRes, leadsRes, comissoesRes, vendedoresRes] =
+        await Promise.allSettled([
+          fetch('/api/admin/representantes?status=ativo&limit=1'),
+          fetch('/api/admin/representantes?status=apto&limit=1'),
+          fetch('/api/admin/representantes-leads?limit=1'),
+          fetch('/api/admin/comissoes?limit=1'),
+          fetch('/api/comercial/vendedores?limit=1'),
+        ]);
+
+      const update: Partial<KPIs> = {};
+
+      if (repsRes.status === 'fulfilled' && repsRes.value.ok) {
+        const d = await repsRes.value.json();
+        update.representantesPendentes = d.total || 0;
+      }
+      if (repsAtivosRes.status === 'fulfilled' && repsAtivosRes.value.ok) {
+        const d = await repsAtivosRes.value.json();
+        update.representantesAtivos = d.total || 0;
+      }
+      if (leadsRes.status === 'fulfilled' && leadsRes.value.ok) {
+        const d = await leadsRes.value.json();
+        update.leadsTotal = d.total || 0;
+        update.leadsPendentes = d.pendentes || 0;
+      }
+      if (comissoesRes.status === 'fulfilled' && comissoesRes.value.ok) {
+        const d = await comissoesRes.value.json();
+        update.comissoesAbertas = d.total || 0;
+        update.valorAReceber = parseFloat(d.resumo?.valor_a_pagar ?? '0');
+        update.valorPagoMes = parseFloat(d.resumo?.valor_pago_total ?? '0');
+      }
+      if (vendedoresRes.status === 'fulfilled' && vendedoresRes.value.ok) {
+        const d = await vendedoresRes.value.json();
+        update.vendedoresAtivos = d.total || 0;
+      }
+
+      setKpis((prev) => ({ ...prev, ...update }));
+    } catch (error) {
+      console.error('Erro ao buscar KPIs:', error);
+    }
+  }, []);
+
+  const fetchSession = useCallback(async () => {
+    try {
+      const sessionRes = await fetch('/api/auth/session');
+      if (!sessionRes.ok) {
+        router.push('/login');
+        return;
+      }
+      const sessionData = await sessionRes.json();
+
+      if (sessionData.perfil !== 'comercial') {
+        router.push('/login');
+        return;
+      }
+
+      setSession(sessionData);
+      await Promise.all([fetchKPIs(), fetchRepsMetrica()]);
+    } catch (error) {
+      console.error('Erro ao carregar sessão:', error);
+      router.push('/login');
+    } finally {
+      setLoading(false);
+    }
+  }, [router, fetchKPIs, fetchRepsMetrica]);
+
+  useEffect(() => {
+    fetchSession();
+  }, [fetchSession]);
+
+  const handleSectionChange = (section: ComercialSection) => {
+    setActiveSection(section);
+  };
+
+  const fmtBRL = (v: number) =>
+    v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  const renderContent = () => {
+    if (activeSection === 'comissoes') {
+      return <ComissoesContent perfil="comercial" />;
+    }
+
+    if (activeSection === 'leads') {
+      return (
+        <div className="space-y-8">
+          <ComercialLeadsAprovacaoPage />
+          <div className="border-t pt-6">
+            <CandidatosContent />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Visão Geral — Departamento Comercial
+          </h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Métricas consolidadas de toda a operação comercial
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white rounded-xl border p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-green-50">
+                <Users size={20} className="text-green-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">
+                Representantes Aptos
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">
+              {kpis.representantesAtivos}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              <span className="text-amber-600 font-medium">
+                {kpis.representantesPendentes}
+              </span>{' '}
+              aguardando aprovação
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-blue-50">
+                <Users2 size={20} className="text-blue-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">
+                Vendedores Ativos
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">
+              {kpis.vendedoresAtivos}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              Vinculados a representantes
+            </p>
+          </div>
+
+          <div className="bg-white rounded-xl border p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-purple-50">
+                <UserPlus size={20} className="text-purple-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">
+                Leads / Candidatos
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">
+              {kpis.leadsTotal}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              <span className="text-orange-600 font-medium">
+                {kpis.leadsPendentes}
+              </span>{' '}
+              pendentes de verificação
+            </p>
+          </div>
+
+          <div
+            className="bg-white rounded-xl border p-5 cursor-pointer hover:shadow-md transition-shadow"
+            onClick={() => setActiveSection('comissoes')}
+          >
+            <div className="flex items-center gap-3 mb-3">
+              <div className="p-2 rounded-lg bg-emerald-50">
+                <DollarSign size={20} className="text-emerald-600" />
+              </div>
+              <span className="text-sm font-medium text-gray-600">
+                Comissões Abertas
+              </span>
+            </div>
+            <p className="text-3xl font-bold text-gray-900">
+              {kpis.comissoesAbertas}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">Total em aberto</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={18} className="text-amber-600" />
+              <span className="text-sm font-semibold text-amber-700">
+                A Pagar (em aberto)
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-amber-900">
+              {fmtBRL(kpis.valorAReceber)}
+            </p>
+            <p className="text-xs text-amber-600 mt-1">
+              Comissões NF + liberadas + análise
+            </p>
+          </div>
+          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <DollarSign size={18} className="text-green-600" />
+              <span className="text-sm font-semibold text-green-700">
+                Total Pago (histórico)
+              </span>
+            </div>
+            <p className="text-2xl font-bold text-green-900">
+              {fmtBRL(kpis.valorPagoMes)}
+            </p>
+            <p className="text-xs text-green-600 mt-1">
+              Comissões pagas acumuladas
+            </p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl border p-5">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">
+            Ações Rápidas
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            <button
+              onClick={() => router.push('/comercial/representantes')}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
+            >
+              <Users size={16} />
+              Gerenciar Representantes
+            </button>
+            <button
+              onClick={() => setActiveSection('comissoes')}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              <DollarSign size={16} />
+              Ver Comissões
+            </button>
+            <button
+              onClick={() => {
+                void fetchKPIs();
+                void fetchRepsMetrica();
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+            >
+              Atualizar
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 tracking-tight">
+                Performance por Representante
+              </h3>
+              <p className="text-sm text-gray-500">
+                Gestão de leads, vínculos e comissões da rede
+              </p>
+            </div>
+            <button
+              onClick={() => router.push('/comercial/representantes')}
+              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-medium shadow-sm active:scale-95"
+            >
+              Ver todos <ChevronRight size={16} className="text-gray-400" />
+            </button>
+          </div>
+
+          {loadingReps ? (
+            <div className="flex items-center justify-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin h-8 w-8 rounded-full border-3 border-green-500 border-t-transparent shadow-sm" />
+                <p className="text-sm text-gray-400 font-medium">
+                  Carregando representantes...
+                </p>
+              </div>
+            </div>
+          ) : repsMetrica.length === 0 ? (
+            <div className="py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
+              <div className="flex flex-col items-center gap-2">
+                <Users size={32} className="text-gray-200" />
+                <p className="text-sm text-gray-400 font-medium">
+                  Nenhum representante ativo encontrado.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {repsMetrica.map((r) => (
+                <div
+                  key={r.id}
+                  onClick={() =>
+                    router.push(`/comercial/representantes/${r.id}`)
+                  }
+                  className="group bg-white rounded-2xl border border-gray-100 p-5 hover:border-green-200 hover:shadow-xl hover:shadow-green-900/[0.03] transition-all cursor-pointer relative overflow-hidden flex flex-col h-full active:scale-[0.98]"
+                >
+                  {r.status === 'apto_pendente' && (
+                    <div className="absolute top-0 right-0">
+                      <div className="bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm animate-pulse flex items-center gap-1.5 uppercase tracking-wider">
+                        <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                        Aguardando Aprovação
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start justify-between mb-5">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h4 className="font-bold text-gray-900 group-hover:text-green-700 transition-colors truncate text-base">
+                          {r.nome}
+                        </h4>
+                        <span
+                          className={`flex-shrink-0 w-2 h-2 rounded-full ${
+                            r.status === 'apto'
+                              ? 'bg-green-500'
+                              : r.status === 'apto_pendente'
+                                ? 'bg-amber-500'
+                                : 'bg-gray-300'
+                          }`}
+                        />
+                      </div>
+                      <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
+                        {r.codigo || 'S/ COD'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-transparent group-hover:bg-white group-hover:border-gray-100 transition-colors">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
+                        Leads Totais
+                      </p>
+                      <p className="text-lg font-black text-gray-800 text-center">
+                        {r.leads_ativos + r.leads_mes}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-transparent group-hover:bg-white group-hover:border-gray-100 transition-colors">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
+                        Vínculos
+                      </p>
+                      <p className="text-lg font-black text-gray-800 text-center">
+                        {r.vinculos_ativos}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                        Pendente
+                      </p>
+                      <p
+                        className={`font-black tracking-tight ${r.valor_pendente > 0 ? 'text-amber-600' : 'text-gray-300'}`}
+                      >
+                        {r.valor_pendente > 0 ? fmtBRL(r.valor_pendente) : '—'}
+                      </p>
+                    </div>
+
+                    <div className="w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-green-50 transition-colors">
+                      <ChevronRight
+                        size={18}
+                        className="text-gray-300 group-hover:text-green-600 transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto" />
+          <p className="mt-4 text-gray-600">Carregando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session) return null;
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      <div className="w-64 flex-shrink-0 flex flex-col h-screen">
+        <ComercialSidebar
+          activeSection={activeSection}
+          onSectionChange={handleSectionChange}
+          counts={{
+            representantes: kpis.representantesAtivos,
+            leads: kpis.leadsPendentes,
+            comissoes: kpis.comissoesAbertas,
+          }}
+        />
+      </div>
+
+      <div className="flex-1 overflow-auto">
+        <div className="p-6">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold text-gray-900">
+              Painel Comercial
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">
+              Bem-vindo, <span className="font-medium">{session.nome}</span>
+            </p>
+          </div>
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
+}

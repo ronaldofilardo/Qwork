@@ -30,15 +30,6 @@ export function getBaseUrl(): string {
 }
 
 /**
- * Cria um link de pagamento personalizado
- * @param token - Token de pagamento gerado
- * @returns URL completa para o link de pagamento
- */
-export function createPaymentLink(token: string): string {
-  return `${getBaseUrl()}/pagamento/personalizado/${token}`;
-}
-
-/**
  * Cria um link de proposta
  * @param token - Token da proposta
  * @returns URL completa para o link da proposta

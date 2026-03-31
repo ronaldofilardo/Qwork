@@ -105,8 +105,9 @@ export default function EditEmployeeModal({
     if (!formData.funcao.trim()) {
       return 'Função é obrigatória';
     }
-    if (!formData.email.trim() || !formData.email.includes('@')) {
-      return 'Email válido é obrigatório';
+    // Email é opcional, mas se fornecido deve ser válido
+    if (formData.email.trim() && !formData.email.includes('@')) {
+      return 'Email deve ser válido (contendo @)';
     }
     return null;
   };
@@ -275,7 +276,7 @@ export default function EditEmployeeModal({
               {/* Email */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Email *
+                  Email
                 </label>
                 <input
                   type="email"

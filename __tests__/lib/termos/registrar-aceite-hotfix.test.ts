@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/termos/registrar-aceite-hotfix.test.ts
+ * Testes: registrarAceite - Hotfix TABLES_NOT_MIGRATED
+ */
+
 import { registrarAceite } from '@/lib/termos/registrar-aceite';
 
 jest.mock('@/lib/db', () => ({

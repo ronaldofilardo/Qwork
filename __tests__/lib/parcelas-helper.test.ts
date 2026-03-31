@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/parcelas-helper.test.ts
+ * Testes: parcelas-helper
+ */
+
 import {
   calcularParcelas,
   isContratoQuitado,

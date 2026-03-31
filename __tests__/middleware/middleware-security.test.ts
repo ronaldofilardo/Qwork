@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/middleware/middleware-security.test.ts
+ * Testes: Middleware de Segurança
+ */
+
 // Jest globals available by default
 
 // Mock completo do next/server ANTES de qualquer import

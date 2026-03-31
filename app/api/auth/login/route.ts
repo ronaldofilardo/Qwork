@@ -2,12 +2,12 @@ import { NextResponse } from 'next/server';
 import { query, getDatabaseInfo } from '@/lib/db';
 import { createSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
-import { gerarSenhaDeNascimento } from '@/lib/auth/password-generator';
 import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
 import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         `[LOGIN] Não encontrado em funcionarios; buscando em usuarios...`
       );
       const usuarioResult = await query(
-        `SELECT cpf, nome, tipo_usuario, clinica_id, entidade_id, ativo FROM usuarios WHERE cpf = $1`,
+        `SELECT cpf, nome, tipo_usuario, clinica_id, entidade_id, ativo, senha_hash FROM usuarios WHERE cpf = $1`,
         [cpf]
       );
 
@@ -100,173 +100,7 @@ export async function POST(request: Request) {
         usuarioResult && usuarioResult.rows ? usuarioResult.rows : [];
 
       if (usuarioRows.length === 0) {
-        // PASSO 1b: Não encontrado em usuarios — tentar tabela representantes (login unificado)
-        console.log(
-          `[LOGIN] Não encontrado em usuarios; buscando em representantes...`
-        );
-        const repResult = await query(
-          `SELECT id, nome, email, cpf, cpf_responsavel_pj, codigo, senha_hash, senha_repres, status, tipo_pessoa
-           FROM representantes
-           WHERE cpf = $1 OR cpf_responsavel_pj = $1
-           LIMIT 1`,
-          [cpf]
-        );
-
-        const repRows = repResult && repResult.rows ? repResult.rows : [];
-
-        if (repRows.length === 0) {
-          console.log(
-            `[LOGIN] Usuário não encontrado em nenhuma tabela: ${cpf}`
-          );
-          return NextResponse.json(
-            { error: 'CPF ou senha inválidos' },
-            { status: 401 }
-          );
-        }
-
-        // --- Fluxo especial: representante ---
-        const rep = repRows[0];
-        console.log(`[LOGIN] Representante encontrado:`, {
-          id: rep.id,
-          nome: rep.nome,
-          status: rep.status,
-          tipo_pessoa: rep.tipo_pessoa,
-        });
-
-        // Verificar status bloqueante
-        const statusBloqueados = ['desativado', 'rejeitado'];
-        if (statusBloqueados.includes(rep.status)) {
-          try {
-            await registrarAuditoria({
-              entidade_tipo: 'login',
-              acao: 'login_falha',
-              usuario_cpf: cpf,
-              metadados: {
-                motivo: 'representante_inativo',
-                status: rep.status,
-              },
-              ...contextoRequisicao,
-            });
-          } catch (err) {
-            console.warn(
-              '[LOGIN] Falha ao registrar auditoria (rep_inativo):',
-              err
-            );
-          }
-          return NextResponse.json(
-            {
-              error:
-                'Conta desativada ou rejeitada. Entre em contato com o administrador.',
-            },
-            { status: 403 }
-          );
-        }
-
-        // Status pendentes: representante ainda não criou senha via convite
-        if (rep.status === 'aguardando_senha') {
-          return NextResponse.json(
-            {
-              error:
-                'Você ainda não criou sua senha. Verifique seu e-mail e acesse o link de convite enviado pelo administrador.',
-            },
-            { status: 403 }
-          );
-        }
-
-        if (rep.status === 'expirado') {
-          return NextResponse.json(
-            {
-              error:
-                'Seu link de convite expirou. Entre em contato com o administrador para receber um novo convite.',
-            },
-            { status: 403 }
-          );
-        }
-
-        if (!senha) {
-          return NextResponse.json(
-            { error: 'Senha é obrigatória' },
-            { status: 400 }
-          );
-        }
-
-        // Validar senha:
-        // - senha_repres: senha criada pelo próprio representante (fluxo novo)
-        // - senha_hash  : fallback — hash do código gerado (retrocompatibilidade com reps antigos)
-        let senhaRepValida = false;
-        if (rep.senha_repres) {
-          // Fluxo novo: representante criou sua própria senha
-          senhaRepValida = await bcrypt.compare(senha, rep.senha_repres);
-        } else if (rep.senha_hash) {
-          // Retrocompatibilidade: login via código (reps migrados antes da migration 520)
-          senhaRepValida = await bcrypt.compare(senha, rep.senha_hash);
-        } else {
-          console.error(
-            `[LOGIN] Representante ${rep.id} sem senha_hash nem senha_repres — execute a migration 510/520 e o seed`
-          );
-          return NextResponse.json(
-            { error: 'Erro de configuração. Contate o administrador.' },
-            { status: 500 }
-          );
-        }
-        if (!senhaRepValida) {
-          try {
-            await registrarAuditoria({
-              entidade_tipo: 'login',
-              acao: 'login_falha',
-              usuario_cpf: cpf,
-              metadados: { motivo: 'senha_invalida_representante' },
-              ...contextoRequisicao,
-            });
-          } catch (err) {
-            console.warn(
-              '[LOGIN] Falha ao registrar auditoria (rep_senha_invalida):',
-              err
-            );
-          }
-          return NextResponse.json(
-            { error: 'CPF ou senha inválidos' },
-            { status: 401 }
-          );
-        }
-
-        // Login bem-sucedido — criar sessão unificada para representante
-        createSession({
-          cpf: rep.cpf || rep.cpf_responsavel_pj,
-          nome: rep.nome,
-          perfil: 'representante' as any,
-          representante_id: rep.id,
-        });
-
-        try {
-          await registrarAuditoria({
-            entidade_tipo: 'login',
-            acao: 'login_sucesso',
-            usuario_cpf: cpf,
-            usuario_perfil: 'representante',
-            metadados: {
-              representante_id: rep.id,
-              tipo_pessoa: rep.tipo_pessoa,
-            },
-            ...contextoRequisicao,
-          });
-        } catch (err) {
-          console.warn(
-            '[LOGIN] Falha ao registrar auditoria (rep_login_sucesso):',
-            err
-          );
-        }
-
-        console.log(`[LOGIN] Sessão criada para representante #${rep.id}`);
-
-        return NextResponse.json({
-          success: true,
-          cpf: rep.cpf || rep.cpf_responsavel_pj,
-          nome: rep.nome,
-          perfil: 'representante',
-          termosPendentes: { termos_uso: false, politica_privacidade: false },
-          redirectTo: '/representante/dashboard',
-        });
+        return await handleRepresentanteLogin(cpf, senha, contextoRequisicao);
       }
 
       usuario = usuarioRows[0];
@@ -315,6 +149,8 @@ export async function POST(request: Request) {
     let tomadorId: number | null = null;
     let tomadorAtivo = true;
 
+    let primeiraSenhaAlterada = true; // default: não forçar troca
+
     if (foundInFuncionarios) {
       // Usuário vindo da tabela `funcionarios`: senha já disponível na linha
       console.log(
@@ -327,7 +163,7 @@ export async function POST(request: Request) {
       // Buscar senha em entidades_senhas
       console.log(`[LOGIN] Buscando senha de gestor em entidades_senhas...`);
       const senhaResult = await query(
-        `SELECT es.senha_hash, e.id, e.ativa
+        `SELECT es.senha_hash, es.primeira_senha_alterada, e.id, e.ativa
          FROM entidades_senhas es
          JOIN entidades e ON e.id = es.entidade_id
          WHERE es.cpf = $1 AND es.entidade_id = $2`,
@@ -347,11 +183,13 @@ export async function POST(request: Request) {
       senhaHash = senhaResult.rows[0].senha_hash;
       tomadorId = senhaResult.rows[0].id;
       tomadorAtivo = senhaResult.rows[0].ativa;
+      primeiraSenhaAlterada =
+        senhaResult.rows[0].primeira_senha_alterada ?? true;
     } else if (usuario.tipo_usuario === 'rh') {
       // Buscar senha em clinicas_senhas
       console.log(`[LOGIN] Buscando senha de RH em clinicas_senhas...`);
       const senhaResult = await query(
-        `SELECT cs.senha_hash, c.id as clinica_id, c.ativa
+        `SELECT cs.senha_hash, cs.primeira_senha_alterada, c.id as clinica_id, c.ativa
          FROM clinicas_senhas cs
          JOIN clinicas c ON c.id = cs.clinica_id
          WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
@@ -389,42 +227,42 @@ export async function POST(request: Request) {
         senhaHash = senhaResult.rows[0].senha_hash;
         tomadorId = senhaResult.rows[0].clinica_id;
         tomadorAtivo = senhaResult.rows[0].ativa;
+        primeiraSenhaAlterada =
+          senhaResult.rows[0].primeira_senha_alterada ?? true;
       }
     } else if (
       usuario.tipo_usuario === 'admin' ||
-      usuario.tipo_usuario === 'emissor'
+      usuario.tipo_usuario === 'emissor' ||
+      usuario.tipo_usuario === 'suporte' ||
+      usuario.tipo_usuario === 'comercial' ||
+      usuario.tipo_usuario === 'vendedor'
     ) {
-      // NOTA: Admin/Emissor faz login SEM validação de senha
-      // (bypass de segurança para usuários administrativos)
-      console.log(
-        `[LOGIN] Login de ${usuario.tipo_usuario} — sem validação de senha`
-      );
+      console.log(`[LOGIN] Login de ${usuario.tipo_usuario} — validando senha`);
+      senhaHash = usuario.senha_hash || null;
+      tomadorId = null;
+      tomadorAtivo = true;
 
-      createSession({
-        cpf: usuario.cpf,
-        nome: usuario.nome,
-        perfil: usuario.tipo_usuario as any,
-      });
-
-      try {
-        await registrarAuditoria({
-          entidade_tipo: 'login',
-          acao: 'login_sucesso',
-          usuario_cpf: cpf,
-          usuario_perfil: usuario.tipo_usuario,
-          ...contextoRequisicao,
-        });
-      } catch (err) {
-        console.warn('[LOGIN] Falha ao registrar auditoria:', err);
+      // Para vendedor: buscar flag primeira_senha_alterada em vendedores_perfil
+      if (usuario.tipo_usuario === 'vendedor') {
+        try {
+          const vpResult = await query(
+            `SELECT vp.primeira_senha_alterada
+             FROM public.vendedores_perfil vp
+             JOIN public.usuarios u ON u.id = vp.usuario_id
+             WHERE u.cpf = $1 LIMIT 1`,
+            [cpf]
+          );
+          if (vpResult.rows.length > 0) {
+            primeiraSenhaAlterada =
+              vpResult.rows[0].primeira_senha_alterada ?? true;
+          }
+        } catch (err) {
+          console.warn(
+            '[LOGIN] Erro ao buscar primeira_senha_alterada do vendedor:',
+            err
+          );
+        }
       }
-
-      return NextResponse.json({
-        success: true,
-        cpf: usuario.cpf,
-        nome: usuario.nome,
-        perfil: usuario.tipo_usuario,
-        redirectTo: usuario.tipo_usuario === 'admin' ? '/admin' : '/emissor',
-      });
     }
 
     // Verificar se tomador está ativo
@@ -457,143 +295,16 @@ export async function POST(request: Request) {
       usuario.tipo_usuario === 'funcionario' && data_nascimento;
 
     if (isFuncionarioComDataNasc) {
-      console.log(
-        '[LOGIN] Funcionário com data de nascimento - validando contra hash armazenado'
+      const errResp = await validarSenhaFuncionario(
+        senhaHash,
+        data_nascimento,
+        senha,
+        cpf,
+        tomadorId,
+        usuario.tipo_usuario,
+        contextoRequisicao
       );
-
-      // Verificar se senhaHash existe
-      if (!senhaHash) {
-        console.error(
-          `[LOGIN] senhaHash não encontrado para funcionário CPF ${cpf}`
-        );
-        return NextResponse.json(
-          { error: 'Configuração de senha inválida. Contate o administrador.' },
-          { status: 500 }
-        );
-      }
-
-      // Gerar a senha esperada a partir da data de nascimento
-      try {
-        const senhaEsperada = gerarSenhaDeNascimento(data_nascimento);
-        console.log(
-          '[LOGIN] Senha gerada a partir de data_nascimento, comparando hash...'
-        );
-        console.log(`[LOGIN] DEBUG - senhaEsperada: ${senhaEsperada}`);
-        console.log(
-          `[LOGIN] DEBUG - senhaHash existe: ${!!senhaHash}, primeiros 10 chars: ${senhaHash?.substring(0, 10)}`
-        );
-
-        // Validar o hash da senha gerada contra o hash armazenado
-        const senhaValida = await bcrypt.compare(senhaEsperada, senhaHash);
-        console.log(`[LOGIN] Senha válida: ${senhaValida}`);
-
-        if (!senhaValida) {
-          try {
-            await registrarAuditoria({
-              entidade_tipo: 'login',
-              entidade_id: tomadorId,
-              acao: 'login_falha',
-              usuario_cpf: cpf,
-              metadados: {
-                motivo: 'data_nascimento_invalida',
-                tipo_usuario: usuario.tipo_usuario,
-              },
-              ...contextoRequisicao,
-            });
-          } catch (err) {
-            console.warn(
-              '[LOGIN] Falha ao registrar auditoria (data_nascimento_invalida):',
-              err
-            );
-          }
-
-          return NextResponse.json(
-            { error: 'Data de nascimento inválida' },
-            { status: 401 }
-          );
-        }
-      } catch (error) {
-        console.error(
-          '[LOGIN] Erro ao gerar/validar senha de data_nascimento:',
-          error
-        );
-        console.warn(
-          '[LOGIN] ⚠️ Data de nascimento inválida ou em formato inválido no banco. Tentando login com senha normal se disponível...'
-        );
-
-        // FALLBACK: Se houver erro ao validar data (ex: data impossível como 31/02 no banco),
-        // tentar login com senha normal se foi fornecida
-        if (senha && senhaHash) {
-          console.log(
-            '[LOGIN] Tentando validação com senha normal após falha em data_nascimento...'
-          );
-          try {
-            const senhaValida = await bcrypt.compare(senha, senhaHash);
-            if (senhaValida) {
-              console.log(
-                '[LOGIN] Login bem-sucedido com senha normal (fallback após erro em data_nascimento)'
-              );
-              // Continuar com o login normal abaixo
-              // Não fazer return aqui, deixar a lógica de criação de sessão executar
-            } else {
-              return NextResponse.json(
-                { error: 'Senha inválida' },
-                { status: 401 }
-              );
-            }
-          } catch (fallbackError) {
-            console.error(
-              '[LOGIN] Erro no fallback com senha normal:',
-              fallbackError
-            );
-            try {
-              await registrarAuditoria({
-                entidade_tipo: 'login',
-                entidade_id: tomadorId,
-                acao: 'login_falha',
-                usuario_cpf: cpf,
-                metadados: {
-                  motivo: 'data_nascimento_formato_invalido_e_sem_senha',
-                  tipo_usuario: usuario.tipo_usuario,
-                },
-                ...contextoRequisicao,
-              });
-            } catch (err) {
-              console.warn('[LOGIN] Falha ao registrar auditoria:', err);
-            }
-
-            return NextResponse.json(
-              {
-                error:
-                  'Data de nascimento em formato inválido ou senha não fornecida',
-              },
-              { status: 401 }
-            );
-          }
-        } else {
-          // Sem senha e data inválida
-          try {
-            await registrarAuditoria({
-              entidade_tipo: 'login',
-              entidade_id: tomadorId,
-              acao: 'login_falha',
-              usuario_cpf: cpf,
-              metadados: {
-                motivo: 'data_nascimento_formato_invalido',
-                tipo_usuario: usuario.tipo_usuario,
-              },
-              ...contextoRequisicao,
-            });
-          } catch (err) {
-            console.warn('[LOGIN] Falha ao registrar auditoria:', err);
-          }
-
-          return NextResponse.json(
-            { error: 'Data de nascimento em formato inválido' },
-            { status: 401 }
-          );
-        }
-      }
+      if (errResp) return errResp;
     } else if (senha && senhaHash) {
       // Validar senha para demais usuários (RH, Gestor)
       console.log('[LOGIN] Comparando senha contra hash...');
@@ -645,6 +356,40 @@ export async function POST(request: Request) {
       clinica_id: usuario.clinica_id,
       entidade_id: usuario.entidade_id,
     });
+
+    // Registrar acesso em session_logs para auditoria de acesso
+    try {
+      const ipForDb =
+        contextoRequisicao.ip_address === 'unknown'
+          ? null
+          : contextoRequisicao.ip_address;
+      const sessionLogResult = await query(
+        `INSERT INTO session_logs (cpf, perfil, clinica_id, empresa_id, ip_address, user_agent)
+         VALUES ($1, $2, $3, $4, $5, $6)
+         RETURNING id`,
+        [
+          usuario.cpf,
+          perfil,
+          usuario.clinica_id ?? null,
+          usuario.entidade_id ?? null,
+          ipForDb,
+          contextoRequisicao.user_agent ?? null,
+        ]
+      );
+      if (sessionLogResult.rows[0]?.id) {
+        createSession({
+          cpf: usuario.cpf,
+          nome: usuario.nome,
+          perfil: perfil as any,
+          tomador_id: tomadorId,
+          clinica_id: usuario.clinica_id,
+          entidade_id: usuario.entidade_id,
+          sessionLogId: sessionLogResult.rows[0].id,
+        });
+      }
+    } catch (err) {
+      console.warn('[LOGIN] Falha ao registrar session_log:', err);
+    }
 
     // Registrar login bem-sucedido
     try {
@@ -716,6 +461,11 @@ export async function POST(request: Request) {
       }
     }
 
+    // Verificar se gestor/RH/vendedor precisa trocar senha no primeiro acesso
+    const precisaTrocarSenha =
+      (perfil === 'gestor' || perfil === 'rh' || perfil === 'vendedor') &&
+      !primeiraSenhaAlterada;
+
     return NextResponse.json({
       success: true,
       cpf: usuario.cpf,
@@ -723,16 +473,23 @@ export async function POST(request: Request) {
       perfil: perfil,
       data_nascimento: usuario.data_nascimento || null,
       termosPendentes,
+      precisaTrocarSenha,
       redirectTo:
         perfil === 'admin'
           ? '/admin'
-          : perfil === 'gestor'
-            ? '/entidade' // Gestor de Entidade
-            : perfil === 'rh'
-              ? '/rh' // RH de Clínica
-              : perfil === 'funcionario'
-                ? '/dashboard'
-                : '/emissor',
+          : perfil === 'suporte'
+            ? '/suporte'
+            : perfil === 'comercial'
+              ? '/comercial'
+              : perfil === 'vendedor'
+                ? '/vendedor'
+                : perfil === 'gestor'
+                  ? '/entidade'
+                  : perfil === 'rh'
+                    ? '/rh'
+                    : perfil === 'funcionario'
+                      ? '/dashboard'
+                      : '/emissor',
     });
   } catch (error) {
     console.error('Erro no login:', error);

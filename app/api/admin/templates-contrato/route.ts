@@ -6,13 +6,12 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { TemplateContratoService } from '@/lib/template-contrato-service';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export async function GET(request: Request) {
   try {
     const session = getSession();
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json({ erro: 'Acesso negado' }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const { searchParams } = new URL(request.url);
     const tipo = searchParams.get('tipo') as any;
@@ -36,9 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const session = getSession();
-    if (!session || !session.cpf || session.perfil !== 'admin') {
-      return NextResponse.json({ erro: 'Acesso negado' }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const body = await request.json();
 

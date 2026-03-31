@@ -1,0 +1,12 @@
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.production.local, .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./lib/db/comissionamento/comissoes.ts
+555:17  Warning: 'criarComissaoVendedor' was used before it was defined.  @typescript-eslint/no-use-before-define
+606:15  Warning: 'criarComissaoVendedor' was used before it was defined.  @typescript-eslint/no-use-before-define
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/avaliacao/status.test.ts
+ * Testes: /api/avaliacao/status
+ */
+
 import { NextRequest } from 'next/server'
 import { GET } from '@/app/api/avaliacao/status/route'
 

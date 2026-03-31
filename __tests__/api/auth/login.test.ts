@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/login.test.ts
+ * Testes: /api/auth/login - Nova Arquitetura
+ */
+
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/login/route';
 import { query } from '@/lib/db';
@@ -256,10 +261,10 @@ describe('/api/auth/login - Nova Arquitetura', () => {
     });
   });
 
-  it('deve fazer login para admin sem validação de senha', async () => {
+  it('deve fazer login para admin com senha válida', async () => {
     (mockRequest.json as jest.Mock).mockResolvedValue({
       cpf: '00000000000',
-      senha: 'admin123',
+      senha: '5978rdF*',
     });
 
     mockQuery.mockImplementation((sql: string) => {
@@ -274,6 +279,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
               clinica_id: null,
               entidade_id: null,
               ativo: true,
+              senha_hash: '$2a$10$ValidAdminHash',
             },
           ],
           rowCount: 1,
@@ -286,6 +292,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
+    mockCompare.mockResolvedValue(true);
     mockCreateSession.mockResolvedValue();
 
     const response = await POST(mockRequest as NextRequest);
@@ -299,7 +306,81 @@ describe('/api/auth/login - Nova Arquitetura', () => {
     expect(data.redirectTo).toBe('/admin');
   });
 
-  it('deve fazer login para emissor sem validação de senha', async () => {
+  it('deve retornar erro 401 se admin usar senha inválida', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '00000000000',
+      senha: 'senhaErrada',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '00000000000',
+              nome: 'Administrador',
+              tipo_usuario: 'admin',
+              clinica_id: null,
+              entidade_id: null,
+              ativo: true,
+              senha_hash: '$2a$10$ValidAdminHash',
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    mockCompare.mockResolvedValue(false);
+
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(data.error).toBe('CPF ou senha inválidos');
+  });
+
+  it('deve retornar erro 401 se admin não tiver senha_hash configurada', async () => {
+    (mockRequest.json as jest.Mock).mockResolvedValue({
+      cpf: '00000000000',
+      senha: 'qualquerSenha',
+    });
+
+    mockQuery.mockImplementation((sql: string) => {
+      if (sql.includes('usuarios') && sql.includes('WHERE cpf =')) {
+        return Promise.resolve({
+          rows: [
+            {
+              cpf: '00000000000',
+              nome: 'Administrador',
+              tipo_usuario: 'admin',
+              clinica_id: null,
+              entidade_id: null,
+              ativo: true,
+              senha_hash: null,
+            },
+          ],
+          rowCount: 1,
+        });
+      }
+      if (sql.includes('INSERT INTO audit_logs')) {
+        return Promise.resolve({ rows: [], rowCount: 1 });
+      }
+      return Promise.resolve({ rows: [], rowCount: 0 });
+    });
+
+    const response = await POST(mockRequest as NextRequest);
+    const data = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(data.error).toBeDefined();
+  });
+
+  it('deve fazer login para emissor com senha válida', async () => {
     (mockRequest.json as jest.Mock).mockResolvedValue({
       cpf: '33333333333',
       senha: 'emissor123',
@@ -317,6 +398,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
               clinica_id: null,
               entidade_id: null,
               ativo: true,
+              senha_hash: '$2a$10$ValidEmissorHash',
             },
           ],
           rowCount: 1,
@@ -329,6 +411,7 @@ describe('/api/auth/login - Nova Arquitetura', () => {
       return Promise.resolve({ rows: [], rowCount: 0 });
     });
 
+    mockCompare.mockResolvedValue(true);
     mockCreateSession.mockResolvedValue();
 
     const response = await POST(mockRequest as NextRequest);

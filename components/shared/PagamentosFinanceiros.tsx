@@ -204,7 +204,18 @@ export default function PagamentosFinanceiros({
             Dados Financeiros de Laudos
           </h2>
         </div>
-        <p className="text-sm text-red-600">{error}</p>
+        <div className="flex flex-col items-center py-6 gap-3">
+          <div className="flex items-center gap-2 text-red-600">
+            <AlertCircle size={16} />
+            <p className="text-sm">{error}</p>
+          </div>
+          <button
+            onClick={carregarPagamentos}
+            className="text-xs text-primary-600 hover:text-primary-700 underline"
+          >
+            Tentar novamente
+          </button>
+        </div>
       </div>
     );
   }
@@ -223,9 +234,20 @@ export default function PagamentosFinanceiros({
             <p className="text-sm text-gray-600">Histórico de pagamentos</p>
           </div>
         </div>
-        <p className="text-sm text-gray-500 py-4 text-center">
-          Nenhum pagamento registrado até o momento.
-        </p>
+        <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+          <div className="p-4 bg-gray-100 rounded-full">
+            <CreditCard className="text-gray-400" size={28} />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-600">
+              Nenhum pagamento registrado
+            </p>
+            <p className="text-xs text-gray-400 mt-1">
+              Os pagamentos de laudos aparecerão aqui após a contratação do
+              primeiro ciclo.
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -252,7 +274,26 @@ export default function PagamentosFinanceiros({
         {/* Lista de pagamentos */}
         <div className="space-y-4">
           {pagamentos.map((pag) => {
-            const parcelas = parseParcelas(pag.detalhesParcelas);
+            // Normalizar parcelas: quando status='pago' mas nenhuma parcela tem pago=true
+            // (webhook processou antes do fix), infere parcela 1 como paga.
+            const _rawParcelas = parseParcelas(pag.detalhesParcelas);
+            const parcelas: ReturnType<typeof parseParcelas> =
+              _rawParcelas.length > 0 &&
+              !_rawParcelas.some((p) => p.pago) &&
+              pag.status === 'pago'
+                ? _rawParcelas.map((p, idx) =>
+                    idx === 0
+                      ? {
+                          ...p,
+                          pago: true,
+                          data_pagamento:
+                            pag.dataPagamento ??
+                            pag.dataConfirmacao ??
+                            pag.criadoEm,
+                        }
+                      : p
+                  )
+                : _rawParcelas;
             const ehParcelado = pag.numeroParcelas > 1;
             const expandido = expandidos[pag.id] ?? false;
             const { label: metodoLabel, badge: metodoBadge } = labelMetodo(
@@ -419,9 +460,22 @@ export default function PagamentosFinanceiros({
                                 </td>
                                 <td className="py-2.5 pl-2 pr-4 text-center">
                                   <button
-                                    onClick={() => abrirModalParcela(pag, idx)}
-                                    title={`Recibo da ${parcela.numero}ª parcela`}
-                                    className="p-1 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded transition-colors inline-flex"
+                                    onClick={() =>
+                                      parcela.pago
+                                        ? abrirModalParcela(pag, idx)
+                                        : undefined
+                                    }
+                                    disabled={!parcela.pago}
+                                    title={
+                                      parcela.pago
+                                        ? `Recibo da ${parcela.numero}ª parcela`
+                                        : 'Parcela ainda não paga'
+                                    }
+                                    className={`p-1 rounded transition-colors inline-flex ${
+                                      parcela.pago
+                                        ? 'text-gray-400 hover:text-primary-600 hover:bg-primary-50 cursor-pointer'
+                                        : 'text-gray-200 cursor-not-allowed'
+                                    }`}
                                   >
                                     <Receipt size={14} />
                                   </button>

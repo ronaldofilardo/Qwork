@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/delete-clinica-fallback.test.ts
+ * Testes: POST /api/admin/clinicas/delete-secure - fallback quando tabela contratos ausente
+ */
+
 import '@testing-library/jest-dom';
 import { POST } from '@/app/api/admin/clinicas/delete-secure/route';
 

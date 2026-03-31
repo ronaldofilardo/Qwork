@@ -11,21 +11,13 @@ import {
 } from 'lucide-react';
 import ModalPagamento from '@/components/modals/ModalPagamento';
 import ModalContrato from '@/components/modals/ModalContrato';
-import { formatarValor } from '@/lib/validacoes-contratacao';
 
 interface Tomador {
   id: number;
   nome: string;
-  plano_id?: number;
   pagamento_confirmado: boolean;
-  contrato_aceito?: boolean; // contract-first: require contrato aceito for payment UI
-  tipo?: string; // Added tipo property
-}
-
-interface Plano {
-  id: number;
-  nome: string;
-  preco: number;
+  contrato_aceito?: boolean;
+  tipo?: string;
 }
 
 export default function SucessoCadastroPage() {
@@ -34,14 +26,12 @@ export default function SucessoCadastroPage() {
   const tomadorId = searchParams.get('id');
   const tipoParam = searchParams.get('tipo');
 
-  const [dadosEnviadosPersonalizado, setDadosEnviadosPersonalizado] =
-    useState(false);
+  const [dadosEnviados, setDadosEnviados] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
 
   const [tomador, setTomador] = useState<Tomador | null>(null);
-  const [plano, setPlano] = useState<Plano | null>(null);
   const [aguardandoEnvioLink, setAguardandoEnvioLink] = useState(false);
   const [pagamentoConcluido, setPagamentoConcluido] = useState(false);
   // Fallback para cenários em que o simulador não retorna `id` na URL,
@@ -116,15 +106,6 @@ export default function SucessoCadastroPage() {
           return;
         }
 
-        if (sessionData.tomador.plano_id) {
-          const planoRes = await fetch(`/api/planos`);
-          const planoData = await planoRes.json();
-          const planoEncontrado = planoData.planos.find(
-            (p: Plano) => p.id === sessionData.tomador.plano_id
-          );
-          setPlano(planoEncontrado || null);
-        }
-
         setLoading(false);
         return;
       }
@@ -156,15 +137,6 @@ export default function SucessoCadastroPage() {
           return;
         }
 
-        if (tomadorData.tomador.plano_id) {
-          const planoRes = await fetch(`/api/planos`);
-          const planoData = await planoRes.json();
-          const planoEncontrado = planoData.planos.find(
-            (p: Plano) => p.id === tomadorData.tomador.plano_id
-          );
-          setPlano(planoEncontrado || null);
-        }
-
         setLoading(false);
         return;
       }
@@ -179,7 +151,7 @@ export default function SucessoCadastroPage() {
       // e a API pública pode falhar por race condition/timeout — para não mostrar
       // um erro alarmante, tratamos como "dados enviados" quando `tipo=personalizado`.
       if (tipoParam === 'personalizado') {
-        setDadosEnviadosPersonalizado(true);
+        setDadosEnviados(true);
         setLoading(false);
         return;
       }
@@ -261,11 +233,11 @@ export default function SucessoCadastroPage() {
     );
   }
 
-  if (dadosEnviadosPersonalizado) {
+  if (dadosEnviados) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div
-          data-testid="dados-enviados-personalizado"
+          data-testid="dados-enviados"
           className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center"
         >
           <div className="mx-auto w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
@@ -275,8 +247,8 @@ export default function SucessoCadastroPage() {
             Dados enviados com sucesso!
           </h2>
           <p className="text-gray-600 mb-6">
-            Recebemos seus dados personalizados e os encaminhamos para análise
-            do Administrador. Normalmente a resposta chega em até 48 horas; você
+            Recebemos seus dados e os encaminhamos para análise do
+            Administrador. Normalmente a resposta chega em até 48 horas; você
             será notificado por e-mail.
           </p>
           <button
@@ -340,22 +312,6 @@ export default function SucessoCadastroPage() {
               <p className="text-gray-600 mb-6">
                 Finalize seu cadastro realizando o pagamento.
               </p>
-
-              {plano && (
-                <div className="bg-orange-50 border border-orange-200 rounded-lg p-6 mb-6">
-                  <h3 className="font-semibold text-gray-900 mb-2">
-                    {plano.nome}
-                  </h3>
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-600">Valor:</span>
-                    <span className="text-2xl font-bold text-orange-600">
-                      {Number.isFinite(plano.preco)
-                        ? formatarValor(plano.preco)
-                        : 'Sob consulta'}
-                    </span>
-                  </div>
-                </div>
-              )}
 
               {contratoIdFromParam &&
               !pagamentoConcluido &&
@@ -435,14 +391,14 @@ export default function SucessoCadastroPage() {
       </div>
 
       {/* Modal de Pagamento */}
-      {mostrarModalPagamento && plano && tomador && (
+      {mostrarModalPagamento && tomador && (
         <ModalPagamento
           isOpen={mostrarModalPagamento}
           onClose={() => setMostrarModalPagamento(false)}
           tomadorId={tomador.id}
           contratoId={contratoIdFromParam}
-          valor={plano.preco}
-          planoNome={plano.nome}
+          valor={0}
+          planoNome={'Serviço de Avaliação'}
           onPagamentoConfirmado={handlePagamentoConfirmado}
           initialMetodo={null}
         />

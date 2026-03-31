@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/pagamento-simulador.test.ts
+ * Testes: Integração: simulador de pagamento (fluxo simples)
+ */
+
 import '@testing-library/jest-dom';
 import { query } from '@/lib/db';
 

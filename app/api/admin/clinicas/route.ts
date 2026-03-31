@@ -13,7 +13,7 @@ interface PostgresError extends Error {
 
 export async function GET() {
   try {
-    const session = await requireRole('admin');
+    const session = await requireRole(['suporte', 'admin'], false);
 
     const result = await query(
       `SELECT 
@@ -44,7 +44,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const session = await requireRole('admin');
+    const session = await requireRole(['suporte', 'admin'], false);
 
     const data = await request.json();
     const {

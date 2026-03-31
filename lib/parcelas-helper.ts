@@ -244,3 +244,35 @@ export function getStatusBadge(parcelas: Parcela[] | null): {
     ? { label: 'Quitado', colorClass: 'bg-green-100 text-green-800' }
     : { label: 'Em Aberto', colorClass: 'bg-yellow-100 text-yellow-800' };
 }
+
+/**
+ * Normaliza detalhes_parcelas stale: quando o pagamento foi confirmado mas o
+ * JSONB ainda não foi atualizado pelo webhook (webhook processado antes do fix).
+ *
+ * - Se `pagamentoStatus !== 'pago'` → retorna parcelas sem alteração.
+ * - Se alguma parcela já tem `pago: true` → retorna sem alteração (estado correto).
+ * - Caso contrário → marca a parcela com menor número como paga.
+ *
+ * É idempotente e não-destrutiva.
+ */
+export function normalizarDetalhesParcelas(
+  parcelas: Parcela[],
+  pagamentoStatus: string,
+  dataPagamento: string | null
+): Parcela[] {
+  if (!Array.isArray(parcelas) || parcelas.length === 0) return parcelas;
+  if (pagamentoStatus !== 'pago') return parcelas;
+  if (parcelas.some((p) => p.pago)) return parcelas;
+
+  const menorNumero = Math.min(...parcelas.map((p) => p.numero));
+  return parcelas.map((p) =>
+    p.numero === menorNumero
+      ? {
+          ...p,
+          pago: true,
+          status: 'pago' as const,
+          data_pagamento: dataPagamento ?? new Date().toISOString(),
+        }
+      : p
+  );
+}

@@ -148,15 +148,6 @@ describe('Regressão Visual - Componentes Admin', () => {
       status: 'authenticated',
     });
   });
-
-  describe('CentroOperacoes', () => {
-    it('deve manter estrutura visual consistente', () => {
-      const CentroOperacoes = require('@/components/CentroOperacoes').default;
-      const { container } = render(<CentroOperacoes />);
-
-      expect(container.firstChild).toMatchSnapshot();
-    });
-  });
 });
 
 describe('Regressão Visual - Modais', () => {

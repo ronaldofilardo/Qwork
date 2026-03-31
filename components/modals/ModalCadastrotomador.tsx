@@ -5,19 +5,12 @@ import { X, Check, AlertCircle, Building2, Stethoscope } from 'lucide-react';
 import QworkLogo from '@/components/QworkLogo';
 import { TipoEntidade } from '@/lib/cadastroTomador';
 
-import PlanoStep from './ModalCadastroTomadorSteps/PlanoStep';
 import { useCadastroTomador } from '@/hooks/useCadastroTomador';
 import DadosStep from './ModalCadastroTomadorSteps/DadosStep';
 import ResponsavelStep from './ModalCadastroTomadorSteps/ResponsavelStep';
 import ConfirmacaoStep from './ModalCadastroTomadorSteps/ConfirmacaoStep';
 
-type _Etapa =
-  | 'tipo'
-  | 'plano'
-  | 'dados'
-  | 'responsavel'
-  | 'contrato'
-  | 'confirmacao';
+type _Etapa = 'tipo' | 'dados' | 'responsavel' | 'confirmacao';
 
 interface ModalCadastroTomadorProps {
   isOpen: boolean;
@@ -51,15 +44,6 @@ interface _Arquivos {
   doc_identificacao: File | null;
 }
 
-interface _Plano {
-  id: number;
-  nome: string;
-  descricao: string;
-  preco: number;
-  tipo: string;
-  caracteristicas?: Record<string, any>;
-}
-
 export default function ModalCadastroTomador({
   isOpen,
   onClose,
@@ -79,9 +63,6 @@ export default function ModalCadastroTomador({
     tipo: tipoHook,
     setTipo: setTipoHook,
     cnpjError: cnpjErrorHook,
-    planos: planosHook,
-    planoSelecionado: planoSelecionadoHook,
-    setPlanoSelecionado: setPlanoSelecionadoHook,
     numeroFuncionarios: numeroFuncionariosHook,
     setNumeroFuncionarios: setNumeroFuncionariosHook,
     contratoAceito: contratoAceitoHook,
@@ -89,6 +70,10 @@ export default function ModalCadastroTomador({
     contratoGerado: contratoGeradoHook,
     confirmacaoFinalAceita: confirmacaoFinalAceitaHook,
     setConfirmacaoFinalAceita: setConfirmacaoFinalAceitaHook,
+    codigoRepresentante: codigoRepresentanteHook,
+    setCodigoRepresentante: setCodigoRepresentanteHook,
+    semIndicacao: semIndicacaoHook,
+    setSemIndicacao: setSemIndicacaoHook,
     dadosContratante: dadosContratanteHook,
     setDadosContratante: setDadosContratanteHook,
     dadosResponsavel: dadosResponsavelHook,
@@ -112,16 +97,17 @@ export default function ModalCadastroTomador({
   const tipo = tipoHook;
   const setTipo = setTipoHook;
   const cnpjError = cnpjErrorHook;
-  const planos = planosHook;
-  const planoSelecionado = planoSelecionadoHook;
-  const setPlanoSelecionado = setPlanoSelecionadoHook;
-  const numeroFuncionarios = numeroFuncionariosHook;
-  const setNumeroFuncionarios = setNumeroFuncionariosHook;
-  const contratoAceito = contratoAceitoHook;
-  const setContratoAceito = setContratoAceitoHook;
-  const contratoGerado = contratoGeradoHook;
+  const _numeroFuncionarios = numeroFuncionariosHook;
+  const _setNumeroFuncionarios = setNumeroFuncionariosHook;
+  const _contratoAceito = contratoAceitoHook;
+  const _setContratoAceito = setContratoAceitoHook;
+  const _contratoGerado = contratoGeradoHook;
   const confirmacaoFinalAceita = confirmacaoFinalAceitaHook;
   const setConfirmacaoFinalAceita = setConfirmacaoFinalAceitaHook;
+  const codigoRepresentante = codigoRepresentanteHook;
+  const setCodigoRepresentante = setCodigoRepresentanteHook;
+  const semIndicacao = semIndicacaoHook;
+  const setSemIndicacao = setSemIndicacaoHook;
   const dadosContratante = dadosContratanteHook;
   const _setDadosContratante = setDadosContratanteHook;
   const dadosResponsavel = dadosResponsavelHook;
@@ -192,11 +178,8 @@ export default function ModalCadastroTomador({
               </h2>
               <p className="text-sm text-gray-600 mt-1">
                 {etapaAtual === 'tipo' && 'Tipo de cadastro'}
-                {etapaAtual === 'plano' && 'Seleção de plano'}
                 {etapaAtual === 'dados' && 'Dados da empresa'}
                 {etapaAtual === 'responsavel' && `Dados do ${responsavelLabel}`}
-                {etapaAtual === 'contrato' &&
-                  'Contrato de prestação de serviços'}
                 {etapaAtual === 'confirmacao' && 'Confirmar e enviar'}
               </p>
             </div>
@@ -217,24 +200,12 @@ export default function ModalCadastroTomador({
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                 etapaAtual === 'tipo'
                   ? 'bg-orange-500 text-white'
-                  : [
-                        'plano',
-                        'dados',
-                        'responsavel',
-                        'contrato',
-                        'confirmacao',
-                      ].includes(etapaAtual)
+                  : ['dados', 'responsavel', 'confirmacao'].includes(etapaAtual)
                     ? 'bg-green-500 text-white'
                     : 'bg-gray-300 text-gray-600'
               }`}
             >
-              {[
-                'plano',
-                'dados',
-                'responsavel',
-                'contrato',
-                'confirmacao',
-              ].includes(etapaAtual) ? (
+              {['dados', 'responsavel', 'confirmacao'].includes(etapaAtual) ? (
                 <Check size={16} />
               ) : (
                 '1'
@@ -242,28 +213,21 @@ export default function ModalCadastroTomador({
             </div>
             <div className="w-8 h-1 bg-gray-300">
               <div
-                className={`h-full ${['plano', 'dados', 'responsavel', 'contrato', 'confirmacao'].includes(etapaAtual) ? 'bg-orange-500' : ''}`}
+                className={`h-full ${['dados', 'responsavel', 'confirmacao'].includes(etapaAtual) ? 'bg-orange-500' : ''}`}
               />
             </div>
 
-            {/* Etapa 2: Plano */}
+            {/* Etapa 2: Dados */}
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                etapaAtual === 'plano'
+                etapaAtual === 'dados'
                   ? 'bg-orange-500 text-white'
-                  : [
-                        'dados',
-                        'responsavel',
-                        'contrato',
-                        'confirmacao',
-                      ].includes(etapaAtual)
+                  : ['responsavel', 'confirmacao'].includes(etapaAtual)
                     ? 'bg-green-500 text-white'
                     : 'bg-gray-300 text-gray-600'
               }`}
             >
-              {['dados', 'responsavel', 'contrato', 'confirmacao'].includes(
-                etapaAtual
-              ) ? (
+              {['responsavel', 'confirmacao'].includes(etapaAtual) ? (
                 <Check size={16} />
               ) : (
                 '2'
@@ -271,69 +235,21 @@ export default function ModalCadastroTomador({
             </div>
             <div className="w-8 h-1 bg-gray-300">
               <div
-                className={`h-full ${['dados', 'responsavel', 'contrato', 'confirmacao'].includes(etapaAtual) ? 'bg-orange-500' : ''}`}
+                className={`h-full ${['responsavel', 'confirmacao'].includes(etapaAtual) ? 'bg-orange-500' : ''}`}
               />
             </div>
 
-            {/* Etapa 3: Dados */}
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                etapaAtual === 'dados'
-                  ? 'bg-orange-500 text-white'
-                  : ['responsavel', 'contrato', 'confirmacao'].includes(
-                        etapaAtual
-                      )
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-300 text-gray-600'
-              }`}
-            >
-              {['responsavel', 'contrato', 'confirmacao'].includes(
-                etapaAtual
-              ) ? (
-                <Check size={16} />
-              ) : (
-                '3'
-              )}
-            </div>
-            <div className="w-8 h-1 bg-gray-300">
-              <div
-                className={`h-full ${['responsavel', 'contrato', 'confirmacao'].includes(etapaAtual) ? 'bg-orange-500' : ''}`}
-              />
-            </div>
-
-            {/* Etapa 4: Responsável */}
+            {/* Etapa 3: Responsável */}
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                 etapaAtual === 'responsavel'
-                  ? 'bg-orange-500 text-white'
-                  : ['contrato', 'confirmacao'].includes(etapaAtual)
-                    ? 'bg-green-500 text-white'
-                    : 'bg-gray-300 text-gray-600'
-              }`}
-            >
-              {['contrato', 'confirmacao'].includes(etapaAtual) ? (
-                <Check size={16} />
-              ) : (
-                '4'
-              )}
-            </div>
-            <div className="w-8 h-1 bg-gray-300">
-              <div
-                className={`h-full ${['contrato', 'confirmacao'].includes(etapaAtual) ? 'bg-orange-500' : ''}`}
-              />
-            </div>
-
-            {/* Etapa 5: Contrato */}
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                etapaAtual === 'contrato'
                   ? 'bg-orange-500 text-white'
                   : etapaAtual === 'confirmacao'
                     ? 'bg-green-500 text-white'
                     : 'bg-gray-300 text-gray-600'
               }`}
             >
-              {etapaAtual === 'confirmacao' ? <Check size={16} /> : '5'}
+              {etapaAtual === 'confirmacao' ? <Check size={16} /> : '3'}
             </div>
             <div className="w-8 h-1 bg-gray-300">
               <div
@@ -341,7 +257,7 @@ export default function ModalCadastroTomador({
               />
             </div>
 
-            {/* Etapa 6: Confirmação */}
+            {/* Etapa 4: Confirmação */}
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
                 etapaAtual === 'confirmacao'
@@ -349,7 +265,7 @@ export default function ModalCadastroTomador({
                   : 'bg-gray-300 text-gray-600'
               }`}
             >
-              6
+              4
             </div>
           </div>
         </div>
@@ -364,39 +280,10 @@ export default function ModalCadastroTomador({
               <h3 className="text-xl font-bold text-gray-800 mb-2">
                 Cadastro Enviado com Sucesso!
               </h3>
-              {planoSelecionado?.tipo === 'personalizado' ? (
-                <div className="space-y-4">
-                  <p className="text-gray-700 font-medium">
-                    Seus dados foram enviados para análise pela equipe QWork.
-                  </p>
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-left">
-                    <p className="text-sm text-blue-900 mb-2">
-                      <strong>📧 Próximos passos:</strong>
-                    </p>
-                    <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-                      <li>Nossa equipe analisará sua solicitação</li>
-                      <li>
-                        Definiremos o valor personalizado conforme seu número de
-                        funcionários
-                      </li>
-                      <li>
-                        Você receberá um link por email para aceitar a proposta
-                      </li>
-                      <li>
-                        Após aceitar, poderá prosseguir com contrato e pagamento
-                      </li>
-                    </ul>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    ⏱️ Tempo estimado de resposta: até 48 horas úteis
-                  </p>
-                </div>
-              ) : (
-                <p className="text-gray-600 mb-6">
-                  Seu cadastro está em análise. Você receberá um email com o
-                  resultado em breve.
-                </p>
-              )}
+              <p className="text-gray-600 mb-6">
+                Seu cadastro está em análise. Você receberá um email com o
+                resultado em breve.
+              </p>
               <button
                 type="button"
                 onClick={handleClose}
@@ -481,18 +368,7 @@ export default function ModalCadastroTomador({
                 </div>
               )}
 
-              {/* Etapa 2: Plano (NOVA) */}
-              {etapaAtual === 'plano' && (
-                <PlanoStep
-                  planos={planos}
-                  planoSelecionado={planoSelecionado}
-                  setPlanoSelecionado={setPlanoSelecionado}
-                  numeroFuncionarios={numeroFuncionarios}
-                  setNumeroFuncionarios={setNumeroFuncionarios}
-                />
-              )}
-
-              {/* Etapa 3: Dados */}
+              {/* Etapa 2: Dados */}
               {etapaAtual === 'dados' && (
                 <DadosStep
                   dadostomador={dadosContratante}
@@ -503,57 +379,7 @@ export default function ModalCadastroTomador({
                 />
               )}
 
-              {/* Etapa 4: Contrato (NOVA) */}
-              {etapaAtual === 'contrato' && (
-                <div className="space-y-4">
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-blue-800">
-                      <strong>Leia atentamente o contrato abaixo.</strong> Você
-                      deve aceitar os termos para prosseguir com o cadastro.
-                    </p>
-                  </div>
-
-                  {/* Preview do Contrato */}
-                  <div className="border border-gray-300 rounded-lg p-6 bg-gray-50 max-h-96 overflow-y-auto">
-                    <pre className="whitespace-pre-wrap text-sm text-gray-800 font-sans">
-                      {contratoGerado}
-                    </pre>
-                  </div>
-
-                  {/* Checkbox de Aceite */}
-                  <div className="border-t pt-4">
-                    <label className="flex items-start gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={contratoAceito}
-                        onChange={(e) => setContratoAceito(e.target.checked)}
-                        className="mt-1 w-5 h-5 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
-                      />
-                      <span className="text-sm text-gray-700">
-                        <strong>
-                          Declaro que li e concordo com todos os termos deste
-                          contrato.
-                        </strong>
-                        <br />
-                        Estou ciente de que, ao aceitar, estarei firmando um
-                        compromisso legal com a QWORK LTDA e me comprometendo
-                        com todas as cláusulas acima descritas.
-                      </span>
-                    </label>
-                  </div>
-
-                  {!contratoAceito && (
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                      <p className="text-xs text-yellow-800">
-                        ⚠️ Você precisa aceitar os termos do contrato para
-                        continuar
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Etapa 2: Responsável */}
+              {/* Etapa 3: Responsável */}
               {etapaAtual === 'responsavel' && (
                 <ResponsavelStep
                   dadosResponsavel={dadosResponsavel}
@@ -572,6 +398,10 @@ export default function ModalCadastroTomador({
                   confirmacaoFinalAceita={confirmacaoFinalAceita}
                   setConfirmacaoFinalAceita={setConfirmacaoFinalAceita}
                   responsavelLabel={responsavelLabel}
+                  codigoRepresentante={codigoRepresentante}
+                  onCodigoRepresentanteChange={setCodigoRepresentante}
+                  semIndicacao={semIndicacao}
+                  setSemIndicacao={setSemIndicacao}
                 />
               )}
 
@@ -615,15 +445,9 @@ export default function ModalCadastroTomador({
                       onClick={avancarEtapa}
                       className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       disabled={
-                        enviando ||
-                        (etapaAtual === 'contrato' && !contratoAceito) ||
-                        (etapaAtual === 'dados' && !!cnpjError)
+                        enviando || (etapaAtual === 'dados' && !!cnpjError)
                       }
-                      title={
-                        etapaAtual === 'contrato' && !contratoAceito
-                          ? 'Você precisa aceitar o contrato para continuar'
-                          : undefined
-                      }
+                      title={undefined}
                     >
                       Próximo
                     </button>
@@ -631,7 +455,11 @@ export default function ModalCadastroTomador({
                     <button
                       type="submit"
                       className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                      disabled={enviando || !confirmacaoFinalAceita}
+                      disabled={
+                        enviando ||
+                        !confirmacaoFinalAceita ||
+                        (!codigoRepresentante.trim() && !semIndicacao)
+                      }
                       title={
                         !confirmacaoFinalAceita
                           ? 'Você precisa confirmar que revisou todos os dados'

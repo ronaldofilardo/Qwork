@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/entidade/lote-cards-navegacao.test.tsx
+ * Testes: Navegação dos Cards de Lote - Entidade
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useRouter } from 'next/navigation';

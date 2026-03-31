@@ -1,43 +1,11 @@
 import { query, Session } from './db';
 import type {
-  Plano,
   Contrato,
   Pagamento,
   EntidadeExtendida,
   IniciarPagamentoDTO,
   StatusPagamento,
 } from './types/contratacao';
-
-// ==========================================
-// FUNÇÕES PARA PLANOS (Mantidas - ainda necessárias)
-// ==========================================
-
-/**
- * Listar todos os planos ativos
- */
-export async function getPlanos(session?: Session): Promise<Plano[]> {
-  const result = await query<Plano>(
-    'SELECT * FROM planos WHERE ativo = true ORDER BY preco ASC',
-    [],
-    session
-  );
-  return result.rows;
-}
-
-/**
- * Buscar plano por ID
- */
-export async function getPlanoById(
-  id: number,
-  session?: Session
-): Promise<Plano | null> {
-  const result = await query<Plano>(
-    'SELECT * FROM planos WHERE id = $1',
-    [id],
-    session
-  );
-  return result.rows[0] || null;
-}
 
 // ==========================================
 // FUNÇÕES PARA CONTRATOS (mantidas para consulta de histórico)
@@ -237,52 +205,19 @@ export async function entidadePodeLogar(
 }
 
 /**
- * Buscar entidade com dados completos (incluindo plano, contrato, pagamento)
+ * Buscar entidade com dados completos (incluindo contrato e pagamento)
  */
 export async function getEntidadeCompleta(
   entidadeId: number,
   session?: Session
 ): Promise<any> {
-  // Detectar dinamicamente quais colunas de preço existem na tabela `planos`
-  const planColsRes = await query(
-    `SELECT column_name FROM information_schema.columns WHERE table_name = 'planos' AND column_name IN ('preco','valor_por_funcionario','valor_base','valor_fixo_anual')`,
-    [],
-    session
-  );
-  const availablePlanCols = planColsRes.rows.map((r: any) => r.column_name);
-
-  // Montar expressão segura para plano_preco sem referenciar colunas inexistentes
-  let planoPrecoExpr = '';
-  if (
-    availablePlanCols.includes('valor_por_funcionario') &&
-    availablePlanCols.includes('valor_base')
-  ) {
-    planoPrecoExpr =
-      "CASE WHEN p.tipo = 'fixo' THEN 20.00 ELSE COALESCE(p.valor_por_funcionario, p.valor_base) END";
-  } else if (availablePlanCols.includes('valor_por_funcionario')) {
-    planoPrecoExpr =
-      "CASE WHEN p.tipo = 'fixo' THEN 20.00 ELSE COALESCE(p.valor_por_funcionario) END";
-  } else if (availablePlanCols.includes('preco')) {
-    planoPrecoExpr =
-      "CASE WHEN p.tipo = 'fixo' THEN 20.00 ELSE COALESCE(p.preco) END";
-  } else if (availablePlanCols.includes('valor_fixo_anual')) {
-    planoPrecoExpr = '20.00'; // fallback static
-  } else {
-    planoPrecoExpr = '20.00';
-  }
-
   const result = await query<any>(
     `SELECT c.*,
-            p.nome as plano_nome,
-            p.descricao as plano_descricao,
-            ${planoPrecoExpr} as plano_preco,
-            p.tipo as plano_tipo,
             pg.id as pagamento_id,
             pg.status as pagamento_status,
             pg.valor as pagamento_valor,
             pg.data_pagamento as pagamento_data
      FROM entidades c
-     LEFT JOIN planos p ON c.plano_id = p.id
      LEFT JOIN pagamentos pg ON pg.tomador_id = c.id
      WHERE c.id = $1
      ORDER BY pg.criado_em DESC
@@ -326,24 +261,9 @@ export async function getEntidadeCompleta(
     atualizado_em: row.atualizado_em,
     aprovado_em: row.aprovado_em,
     aprovado_por_cpf: row.aprovado_por_cpf,
-    plano_id: row.plano_id,
     pagamento_confirmado: row.pagamento_confirmado,
     data_liberacao_login: row.data_liberacao_login,
   };
-
-  // Adicionar dados relacionados se existirem
-  if (row.plano_id) {
-    entidade.plano = {
-      id: row.plano_id,
-      nome: row.plano_nome,
-      descricao: row.plano_descricao,
-      preco: parseFloat(row.plano_preco),
-      tipo: row.plano_tipo,
-      ativo: true,
-      criado_em: '',
-      atualizado_em: '',
-    };
-  }
 
   if (row.pagamento_id) {
     entidade.pagamento = {
@@ -354,7 +274,7 @@ export async function getEntidadeCompleta(
       data_pagamento: row.pagamento_data,
       criado_em: '',
       atualizado_em: '',
-    } as any; // Usar any para evitar conflito de tipos
+    } as any;
   }
 
   return entidade;

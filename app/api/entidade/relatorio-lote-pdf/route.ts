@@ -23,8 +23,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Buscar dados do lote com hash do laudo e data de emissão
-    // Validar acesso via COALESCE(entidade_id, contratante_id)
-    // Funciona tanto em DEV (entidade_id preenchido) quanto em PROD (contratante_id preenchido)
     const loteResult = await query(
       `
       SELECT 
@@ -36,7 +34,7 @@ export async function GET(req: NextRequest) {
       FROM lotes_avaliacao la
       LEFT JOIN laudos l ON la.id = l.lote_id
       WHERE la.id = $1
-        AND COALESCE(la.entidade_id, la.contratante_id) = $2
+        AND la.entidade_id = $2
     `,
       [loteId, session.entidade_id],
       session
@@ -52,7 +50,6 @@ export async function GET(req: NextRequest) {
     const lote = loteResult.rows[0];
 
     // Buscar funcionários do lote com suas avaliações
-    // Usa COALESCE para compatibilidade com DEV e PROD
     const funcionariosResult = await query(
       `
       SELECT DISTINCT
@@ -66,7 +63,7 @@ export async function GET(req: NextRequest) {
       WHERE a.lote_id = $1 
         AND a.status = 'concluida'
         AND f.ativo = true
-        AND COALESCE(la.entidade_id, la.contratante_id) = $2
+        AND la.entidade_id = $2
       ORDER BY f.nome
     `,
       [loteId, session.entidade_id]

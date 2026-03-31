@@ -1,4 +1,9 @@
-import { TypeValidators, PERFIS_VALIDOS } from '@/lib/types/enums';
+/**
+ * @file __tests__/lib/legacy-profiles.test.ts
+ * Testes: Legacy profile validations
+ */
+
+import type { TypeValidators, PERFIS_VALIDOS } from '@/lib/types/enums';
 
 describe('Legacy profile validations', () => {
   it('should not consider "master" or "super" as valid profiles', () => {

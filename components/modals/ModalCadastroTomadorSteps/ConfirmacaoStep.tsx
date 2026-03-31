@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, AlertTriangle } from 'lucide-react';
 
 interface Dadostomador {
   nome: string;
@@ -32,6 +32,10 @@ interface Props {
   confirmacaoFinalAceita: boolean;
   setConfirmacaoFinalAceita: (v: boolean) => void;
   responsavelLabel?: string;
+  codigoRepresentante: string;
+  onCodigoRepresentanteChange: (v: string) => void;
+  semIndicacao: boolean;
+  setSemIndicacao: (v: boolean) => void;
 }
 
 export default function ConfirmacaoStep({
@@ -41,6 +45,10 @@ export default function ConfirmacaoStep({
   confirmacaoFinalAceita,
   setConfirmacaoFinalAceita,
   responsavelLabel = 'Responsável',
+  codigoRepresentante,
+  onCodigoRepresentanteChange,
+  semIndicacao,
+  setSemIndicacao,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -110,6 +118,59 @@ export default function ConfirmacaoStep({
             {arquivos.doc_identificacao?.name}
           </li>
         </ul>
+      </div>
+
+      {/* Seção de Indicação */}
+      <div className="border rounded-lg p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <h4 className="font-semibold text-gray-800">Indicação</h4>
+          <span className="text-xs font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">
+            Obrigatório
+          </span>
+        </div>
+        <p className="text-sm text-gray-600">
+          Informe o código do representante que indicou sua empresa, ou marque
+          que não possui indicação.
+        </p>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Código do Representante
+          </label>
+          <input
+            type="text"
+            value={codigoRepresentante}
+            onChange={(e) =>
+              onCodigoRepresentanteChange(e.target.value.toUpperCase())
+            }
+            placeholder="REP-ABC123"
+            disabled={semIndicacao}
+            maxLength={20}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:text-gray-400 transition-colors"
+          />
+        </div>
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={semIndicacao}
+            onChange={(e) => {
+              setSemIndicacao(e.target.checked);
+              if (e.target.checked) onCodigoRepresentanteChange('');
+            }}
+            className="w-4 h-4 text-orange-600 rounded focus:ring-orange-500"
+          />
+          <span className="text-sm text-gray-700">
+            Não fui indicado por nenhum representante
+          </span>
+        </label>
+        {!codigoRepresentante.trim() && !semIndicacao && (
+          <div className="flex items-center gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+            <AlertTriangle size={16} className="flex-shrink-0" />
+            <span className="text-xs">
+              Informe o código do representante ou marque que não possui
+              indicação para prosseguir.
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="border-2 border-orange-300 rounded-lg p-4 bg-orange-50">

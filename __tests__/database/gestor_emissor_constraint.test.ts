@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/gestor_emissor_constraint.test.ts
+ * Testes: DB constraints: Gestor Entidade / Emissor conflicts
+ */
+
 import { query } from '@/lib/db';
 
 describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {

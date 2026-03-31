@@ -56,7 +56,10 @@ describe('📊 API /api/entidade/account-info', () => {
         require('@/lib/db-gestor').queryAsGestorEntidade;
 
       mockRequireEntity.mockReturnValue(mockSession);
+      // 1ª chamada: dados da entidade
       mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [mocktomador] });
+      // 2ª chamada: representante vinculado — nenhum
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
       const { GET } = require('@/app/api/entidade/account-info/route');
 
@@ -76,6 +79,8 @@ describe('📊 API /api/entidade/account-info', () => {
       expect(data.estado).toBe('SP');
       expect(data.responsavel_nome).toBe('João Silva');
       expect(data.criado_em).toBe('2025-12-22T20:51:18.804Z');
+      // representante null quando nenhum vínculo encontrado
+      expect(data.representante).toBeNull();
     });
 
     test('✅ NÃO deve retornar status ou gestores da entidade', async () => {
@@ -84,7 +89,10 @@ describe('📊 API /api/entidade/account-info', () => {
         require('@/lib/db-gestor').queryAsGestorEntidade;
 
       mockRequireEntity.mockReturnValue(mockSession);
+      // 1ª chamada: dados da entidade
       mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [mocktomador] });
+      // 2ª chamada: representante — nenhum
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
       const { GET } = require('@/app/api/entidade/account-info/route');
 
@@ -99,6 +107,40 @@ describe('📊 API /api/entidade/account-info', () => {
       expect(data).not.toHaveProperty('gestores');
       expect(data).not.toHaveProperty('contrato');
       expect(data).not.toHaveProperty('pagamentos');
+    });
+
+    test('✅ Deve retornar representante quando entidade possui vínculo ativo', async () => {
+      const mockRequireEntity = require('@/lib/session').requireEntity;
+      const mockQueryAsGestorEntidade =
+        require('@/lib/db-gestor').queryAsGestorEntidade;
+
+      mockRequireEntity.mockReturnValue(mockSession);
+      // 1ª chamada: dados da entidade
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({ rows: [mocktomador] });
+      // 2ª chamada: representante vinculado
+      mockQueryAsGestorEntidade.mockResolvedValueOnce({
+        rows: [
+          {
+            nome: 'Rep Teste',
+            email: 'rep@teste.com',
+            telefone: '11988887777',
+          },
+        ],
+      });
+
+      const { GET } = require('@/app/api/entidade/account-info/route');
+
+      const request = new NextRequest(
+        'http://localhost:3000/api/entidade/account-info'
+      );
+      const response = await GET(request);
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.representante).not.toBeNull();
+      expect(data.representante.nome).toBe('Rep Teste');
+      expect(data.representante.email).toBe('rep@teste.com');
+      expect(data.representante.telefone).toBe('11988887777');
     });
 
     test('✅ Deve retornar erro 404 se entidade não encontrada', async () => {

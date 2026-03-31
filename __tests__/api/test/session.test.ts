@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/test/session.test.ts
+ * Testes: /api/test/session
+ */
+
 import { POST } from '@/app/api/test/session/route';
 import { query } from '@/lib/db';
 import { NextRequest } from 'next/server';

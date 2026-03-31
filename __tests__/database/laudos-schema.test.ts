@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/laudos-schema.test.ts
+ * Testes: Schema: laudos
+ */
+
 // Jest globals available by default
 import { query } from '@/lib/db'
 

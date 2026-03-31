@@ -44,7 +44,7 @@ export const GET = async (
         fe.solicitado_em as emissao_solicitado_em,
         -- Informações de laudo (somente considera como 'tem_laudo' se arquivo está no bucket)
         CASE 
-          WHEN l.id IS NOT NULL AND l.status = 'emitido' AND l.arquivo_remoto_url IS NOT NULL
+          WHEN l.id IS NOT NULL AND l.status IN ('emitido', 'enviado') AND l.arquivo_remoto_url IS NOT NULL
           THEN true 
           ELSE false 
         END as tem_laudo,

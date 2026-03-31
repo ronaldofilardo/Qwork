@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session';
 import { getContratosBytomador } from '@/lib/db-contratacao';
 import { query, criarContaResponsavel } from '@/lib/db';
 import { obterContrato } from '@/lib/contratos/contratos';
+import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 
 export const dynamic = 'force-dynamic';
 
@@ -187,6 +188,23 @@ export async function POST(request: NextRequest) {
         // Atualizar tomador para marcar como ativo
         const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
         await query(updateTableQuery, [updated.tomador_id]);
+
+        // Auto-converter leads pendentes por CNPJ
+        try {
+          const tomadorCnpj = (tomadorData.cnpj || '').replace(/\D/g, '');
+          if (tomadorCnpj) {
+            await autoConvertirLeadPorCnpj(
+              tomadorCnpj,
+              tabelaTomador === 'entidades' ? updated.tomador_id : null,
+              tabelaTomador === 'clinicas' ? updated.tomador_id : null
+            );
+          }
+        } catch (autoErr) {
+          console.error(
+            '[CONTRATOS] Erro no auto-link por CNPJ (não-bloqueante):',
+            autoErr
+          );
+        }
 
         // Calcular credenciais
         let cnpj = tomadorData.cnpj;

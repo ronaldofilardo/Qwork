@@ -13,6 +13,7 @@ exports[`SidebarLayout snapshots renders collapsed layout and matches snapshot 1
   </div>
   <nav
     class="flex-1 overflow-y-auto py-4"
+    style="scrollbar-width: none;"
   >
     <button>
       Item 1
@@ -109,6 +110,7 @@ exports[`SidebarLayout snapshots renders default layout and matches snapshot 1`]
   </div>
   <nav
     class="flex-1 overflow-y-auto py-4"
+    style="scrollbar-width: none;"
   >
     <button>
       Item 1

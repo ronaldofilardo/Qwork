@@ -219,11 +219,6 @@ export async function gerarDadosGeraisEmpresa(
     gestao: 0,
   };
 
-  const percentualConclusao =
-    lote.total_avaliacoes > 0
-      ? Math.round((lote.avaliacoes_concluidas / lote.total_avaliacoes) * 100)
-      : 0;
-
   return {
     empresaAvaliada: lote.empresa_nome,
     cnpj: lote.cnpj,
@@ -237,7 +232,6 @@ export async function gerarDadosGeraisEmpresa(
         : formatarDataApenasData(lote.liberado_em),
     },
     totalFuncionariosAvaliados: parseInt(lote.avaliacoes_concluidas),
-    percentualConclusao,
     amostra: {
       operacional: parseInt(funcs.operacional),
       gestao: parseInt(funcs.gestao),

@@ -3,6 +3,7 @@ import { getSession } from '@/lib/session';
 import { registrarAceite } from '@/lib/termos/registrar-aceite';
 import { query } from '@/lib/db';
 import { extrairContextoRequisicao } from '@/lib/auditoria/auditoria';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,10 +15,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const session = getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.RH, ROLES.GESTOR]);
 
     const { termo_tipo } = await request.json();
 
@@ -25,13 +23,6 @@ export async function POST(request: Request) {
     if (!['termos_uso', 'politica_privacidade'].includes(termo_tipo)) {
       return NextResponse.json(
         { error: 'Tipo de termo inválido' },
-        { status: 400 }
-      );
-    }
-
-    if (session.perfil !== 'rh' && session.perfil !== 'gestor') {
-      return NextResponse.json(
-        { error: 'Aceite não requerido para este perfil' },
         { status: 400 }
       );
     }
@@ -82,7 +73,7 @@ export async function POST(request: Request) {
     // Registrar aceite
     const resultado = await registrarAceite({
       usuario_cpf: session.cpf,
-      usuario_tipo: session.perfil,
+      usuario_tipo: session.perfil as 'rh' | 'gestor',
       usuario_entidade_id: entidadeDados.entidade_id,
       termo_tipo,
       ip_address: contexto.ip_address,
@@ -100,6 +91,12 @@ export async function POST(request: Request) {
       aceito_em: resultado.aceito_em,
     });
   } catch (error: any) {
+    if (isApiError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    }
     console.error('[TERMOS] Erro ao registrar aceite:', error);
 
     // HOTFIX: Retornar mensagem específica se migrations não foram executadas

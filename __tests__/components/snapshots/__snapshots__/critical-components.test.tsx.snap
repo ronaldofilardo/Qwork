@@ -307,6 +307,151 @@ exports[`LotesGrid — snapshots lote ativo sem laudo 1`] = `
 </div>
 `;
 
+exports[`LotesGrid — snapshots lote cancelado (status=cancelado) 1`] = `
+<div
+  class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
+>
+  <div
+    aria-label="Ver detalhes do lote 3"
+    class="bg-gray-50 rounded-lg p-5 border border-gray-200 hover:shadow-lg hover:border-primary transition-all cursor-pointer"
+    role="button"
+    tabindex="0"
+  >
+    <div
+      class="mb-4"
+    >
+      <div
+        class="flex items-center justify-between mb-1"
+      >
+        <h5
+          class="font-semibold text-gray-800 text-base"
+        >
+          Lote ID: 
+          3
+        </h5>
+        <span
+          class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200"
+        >
+          ⚠️ 
+          10
+           inativada
+          s
+        </span>
+      </div>
+      <p
+        class="text-sm text-gray-600"
+      >
+        Empresa: 
+        Empresa Snapshot Teste
+      </p>
+      <p
+        class="text-xs text-gray-500"
+      >
+        Liberado em
+         
+        15/01/2026
+         às
+         
+        07:00
+      </p>
+    </div>
+    <div
+      class="space-y-2 mb-4"
+    >
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Avaliações liberadas:
+        </span>
+        <span
+          class="font-medium"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Concluídas:
+        </span>
+        <span
+          class="font-medium text-green-600"
+        >
+          0
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span
+          class="flex items-center gap-1"
+        >
+          <span>
+            Inativadas:
+          </span>
+          <span
+            class="text-xs text-gray-500"
+            title="Avaliações de funcionários inativos não contam para a prontidão"
+          >
+            ⓘ
+          </span>
+        </span>
+        <span
+          class="font-medium text-red-600"
+        >
+          10
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Ativas consideradas:
+        </span>
+        <span
+          class="font-medium text-blue-600"
+        >
+          0
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Status relatório:
+        </span>
+        <span
+          class="px-2 py-1 text-xs rounded-full font-medium bg-red-100 text-red-800"
+        >
+          Cancelado
+        </span>
+      </div>
+      <div
+        class="flex justify-between text-sm"
+      >
+        <span>
+          Taxa de conclusão:
+        </span>
+        <span
+          class="font-medium text-gray-700"
+        >
+          0.00
+          %
+           
+          <span
+            class="text-xs text-gray-500"
+          >
+            (informativa)
+          </span>
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+`;
+
 exports[`LotesGrid — snapshots lote concluído com laudo emitido 1`] = `
 <div
   class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-h-[60vh] lg:max-h-none overflow-y-auto lotes-grid"
@@ -776,12 +921,12 @@ exports[`TabNavigation — snapshots aba desligamentos ativa 1`] = `
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        👥 Funcionários Ativos
+        👥 Funcionários
       </button>
       <button
-        class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
+        class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        🚪 Desligamentos
+        ⚠️ Pendências
       </button>
     </nav>
   </div>
@@ -811,12 +956,12 @@ exports[`TabNavigation — snapshots aba funcionários ativa 1`] = `
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-primary text-primary"
       >
-        👥 Funcionários Ativos
+        👥 Funcionários
       </button>
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        🚪 Desligamentos
+        ⚠️ Pendências
       </button>
     </nav>
   </div>
@@ -846,12 +991,12 @@ exports[`TabNavigation — snapshots aba laudos ativa 1`] = `
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        👥 Funcionários Ativos
+        👥 Funcionários
       </button>
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        🚪 Desligamentos
+        ⚠️ Pendências
       </button>
     </nav>
   </div>
@@ -881,12 +1026,12 @@ exports[`TabNavigation — snapshots aba padrão (lotes) 1`] = `
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        👥 Funcionários Ativos
+        👥 Funcionários
       </button>
       <button
         class="py-2 px-1 border-b-2 font-medium text-sm relative border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
       >
-        🚪 Desligamentos
+        ⚠️ Pendências
       </button>
     </nav>
   </div>

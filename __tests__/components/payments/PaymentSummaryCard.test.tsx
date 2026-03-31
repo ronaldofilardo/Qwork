@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/payments/PaymentSummaryCard.test.tsx
+ * Testes: PaymentSummaryCard
+ */
+
 import { render, screen } from '@testing-library/react';
 import PaymentSummaryCard from '@/components/payments/PaymentSummaryCard';
 

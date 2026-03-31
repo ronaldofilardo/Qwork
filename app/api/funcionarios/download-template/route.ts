@@ -83,9 +83,11 @@ export function GET() {
           '2. Data de Nascimento: dd/mm/aaaa (use texto ou formato dd/mm/aaaa para evitar perda por formatação do Excel)',
         ],
         ['3. CPF deve conter apenas 11 dígitos (sem pontos ou hífen)'],
-        ['4. Email deve ser único para cada funcionário'],
         [
-          '5. Campos obrigatórios: CPF, Nome, Data de Nascimento, Setor, Função e Email',
+          '4. Email (opcional) deve ser único para cada funcionário quando preenchido',
+        ],
+        [
+          '5. Campos obrigatórios: CPF, Nome, Data de Nascimento, Setor e Função',
         ],
         [
           '6. Senha será gerada automaticamente a partir da data de nascimento (formato: DDMMYYYY)',

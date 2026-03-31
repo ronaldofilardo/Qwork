@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/emissor/lotes-download-safety.test.ts
+ * Testes: Lotes route - não expõe laudos antes de lote concluído
+ */
+
 import { GET } from '@/app/api/emissor/lotes/route';
 import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';
@@ -39,8 +44,6 @@ describe('Lotes route - não expõe laudos antes de lote concluído', () => {
           tipo: 'padrao',
           lote_status: 'ativo',
           liberado_em: null,
-          // auto_emitir_em: removido pela Migration 302
-          modo_emergencia: false,
           empresa_nome: 'Empresa X',
           clinica_nome: 'Clinica Y',
           total_avaliacoes: 2,

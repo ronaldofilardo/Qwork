@@ -103,19 +103,21 @@ export default function RhPage() {
                 Gerencie as empresas clientes e suas avaliações psicossociais
               </p>
             </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setIsModalOpen(true);
-              }}
-              data-testid="nova-empresa-button"
-              className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors shadow-md"
-            >
-              <Plus size={20} />
-              Nova Empresa
-            </button>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setIsModalOpen(true);
+                }}
+                data-testid="nova-empresa-button"
+                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors shadow-md"
+              >
+                <Plus size={20} />
+                Nova Empresa
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -194,8 +196,18 @@ export default function RhPage() {
             </h2>
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               Para começar a gerenciar avaliações psicossociais, cadastre sua
-              primeira empresa cliente clicando no botão acima.
+              primeira empresa cliente.
             </p>
+            <div className="flex items-center justify-center gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+              >
+                <Plus size={18} />
+                Cadastrar Primeira Empresa
+              </button>
+            </div>
           </div>
         ) : (
           <>

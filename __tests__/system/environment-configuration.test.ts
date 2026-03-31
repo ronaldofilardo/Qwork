@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/system/environment-configuration.test.ts
+ * Testes: Environment Configuration Tests
+ */
+
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';

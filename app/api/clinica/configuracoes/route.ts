@@ -6,6 +6,12 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { ClinicaConfiguracaoService } from '@/lib/clinica-configuracao-service';
+import {
+  assertAuth,
+  assertRoles,
+  ROLES,
+  isApiError,
+} from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +21,12 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = getSession();
-    if (!session || !session.clinica_id) {
-      return NextResponse.json({ erro: 'Não autenticado' }, { status: 401 });
+    assertAuth(session);
+    if (!session.clinica_id) {
+      return NextResponse.json(
+        { erro: 'Clínica não identificada' },
+        { status: 403 }
+      );
     }
 
     const config = await ClinicaConfiguracaoService.buscarPorClinica(
@@ -37,6 +47,12 @@ export async function GET() {
 
     return NextResponse.json(config);
   } catch (erro) {
+    if (isApiError(erro)) {
+      return NextResponse.json(
+        { erro: erro.message, code: erro.code },
+        { status: erro.status }
+      );
+    }
     console.error('[API Configuracoes] Erro ao buscar:', erro);
     return NextResponse.json(
       { erro: 'Erro ao buscar configurações' },
@@ -51,13 +67,12 @@ export async function GET() {
 export async function PUT(request: Request) {
   try {
     const session = getSession();
-    if (!session || !session.cpf || !session.clinica_id) {
-      return NextResponse.json({ erro: 'Não autenticado' }, { status: 401 });
-    }
-
-    // Verificar permissão (admin ou gestor da clínica)
-    if (session.perfil !== 'admin' && session.perfil !== 'rh') {
-      return NextResponse.json({ erro: 'Acesso negado' }, { status: 403 });
+    assertRoles(session, [ROLES.ADMIN, ROLES.RH]);
+    if (!session.clinica_id) {
+      return NextResponse.json(
+        { erro: 'Clínica não identificada' },
+        { status: 403 }
+      );
     }
 
     const body = await request.json();
@@ -91,6 +106,12 @@ export async function PUT(request: Request) {
 
     return NextResponse.json(config);
   } catch (erro: any) {
+    if (isApiError(erro)) {
+      return NextResponse.json(
+        { erro: erro.message, code: erro.code },
+        { status: erro.status }
+      );
+    }
     console.error('[API Configuracoes] Erro ao atualizar:', erro);
     return NextResponse.json(
       { erro: erro.message || 'Erro ao atualizar configurações' },

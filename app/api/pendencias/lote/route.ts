@@ -5,6 +5,7 @@ import {
   requireEntity,
 } from '@/lib/session';
 import { query } from '@/lib/db';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,9 +75,7 @@ const semLoteResponse = () =>
 export async function GET(request: NextRequest) {
   try {
     const session = getSession();
-    if (!session || (session.perfil !== 'rh' && session.perfil !== 'gestor')) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.RH, ROLES.GESTOR]);
 
     const { searchParams } = new URL(request.url);
     const empresaIdParam = searchParams.get('empresa_id');
@@ -232,6 +231,12 @@ export async function GET(request: NextRequest) {
 
     return buildResponse(loteRef, pendentesEntResult.rows);
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    }
     console.error('[API pendencias/lote] Erro:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

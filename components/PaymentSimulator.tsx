@@ -48,7 +48,6 @@ interface Simulacao {
 
 interface PaymentSimulatorProps {
   tomadorId?: number;
-  planoId?: number;
   token?: string;
   valorTotal?: number;
   numeroFuncionarios?: number;
@@ -61,7 +60,6 @@ interface PaymentSimulatorProps {
 
 export default function PaymentSimulator({
   tomadorId,
-  planoId,
   token,
   valorTotal,
   numeroFuncionarios,
@@ -72,7 +70,6 @@ export default function PaymentSimulator({
   const [simulacao, setSimulacao] = useState<Simulacao | null>(null);
   const [valorCalculado, setValorCalculado] = useState(0);
   const [tomadorInfo, settomadorInfo] = useState<any>(null);
-  const [planoInfo, setPlanoInfo] = useState<any>(null);
 
   // Estados de seleção
   const [metodoSelecionado, setMetodoSelecionado] = useState<string>('');
@@ -92,9 +89,8 @@ export default function PaymentSimulator({
 
         if (token) {
           body.token = token;
-        } else if (tomadorId && planoId) {
+        } else if (tomadorId) {
           body.entidade_id = tomadorId;
-          body.plano_id = planoId;
           if (numeroFuncionarios) body.numero_funcionarios = numeroFuncionarios;
         } else if (valorTotal) {
           body.valor_total = valorTotal;
@@ -118,7 +114,6 @@ export default function PaymentSimulator({
         setSimulacao(data.simulacoes);
         setValorCalculado(data.valor_total);
         settomadorInfo(data.tomador);
-        setPlanoInfo(data.plano);
 
         // Selecionar PIX por padrão
         setMetodoSelecionado('pix');
@@ -132,7 +127,7 @@ export default function PaymentSimulator({
     };
 
     carregarSimulacao();
-  }, [token, tomadorId, planoId, numeroFuncionarios, valorTotal]);
+  }, [token, tomadorId, numeroFuncionarios, valorTotal]);
 
   // ============================================================================
   // FUNÇÕES
@@ -211,9 +206,8 @@ export default function PaymentSimulator({
 
                   if (token) {
                     body.token = token;
-                  } else if (tomadorId && planoId) {
+                  } else if (tomadorId) {
                     body.entidade_id = tomadorId;
-                    body.plano_id = planoId;
                     if (numeroFuncionarios)
                       body.numero_funcionarios = numeroFuncionarios;
                   } else if (valorTotal) {
@@ -240,7 +234,6 @@ export default function PaymentSimulator({
                   setSimulacao(data.simulacoes);
                   setValorCalculado(data.valor_total);
                   settomadorInfo(data.tomador);
-                  setPlanoInfo(data.plano);
 
                   // Selecionar PIX por padrão
                   setMetodoSelecionado('pix');
@@ -283,23 +276,12 @@ export default function PaymentSimulator({
             <strong>tomador:</strong> {tomadorInfo.nome}
           </p>
         )}
-        {planoInfo && (
-          <p className="text-gray-600">
-            <strong>Plano:</strong> {planoInfo.nome}
-          </p>
-        )}
       </div>
 
       {/* Valor Total */}
       <div className="bg-[#FF6B00] text-white rounded-lg shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold mb-2">Valor Total</h2>
         <p className="text-4xl font-bold">{formatarMoeda(valorCalculado)}</p>
-        {planoInfo?.qtd_funcionarios && (
-          <p className="text-sm mt-2 opacity-90">
-            {planoInfo.qtd_funcionarios} funcionários × R${' '}
-            {planoInfo.valor_por_funcionario?.toFixed(2)}
-          </p>
-        )}
       </div>
 
       {/* Seleção de Método de Pagamento */}

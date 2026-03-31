@@ -11,8 +11,8 @@ import {
 
 export async function GET(request: NextRequest) {
   try {
-    // Verificar autenticação e permissão admin
-    await requireRole('admin');
+    // Verificar autenticação e permissão suporte
+    await requireRole('suporte', false);
 
     const { searchParams } = new URL(request.url);
     const contratoId = searchParams.get('contrato_id');
@@ -56,8 +56,8 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Verificar autenticação e permissão admin
-    await requireRole('admin');
+    // Verificar autenticação e permissão suporte
+    await requireRole('suporte', false);
 
     const id = parseInt(params.id);
 

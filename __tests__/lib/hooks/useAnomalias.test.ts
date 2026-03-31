@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/hooks/useAnomalias.test.ts
+ * Testes: useAnomalias
+ */
+
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useAnomalias } from '@/lib/hooks/useAnomalias';
 

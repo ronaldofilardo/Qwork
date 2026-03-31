@@ -23,10 +23,11 @@ export async function POST(request: Request) {
     }
 
     // Se não foi passado avaliacaoId, buscar avaliação atual (não inativada)
+    // MULTI-EMPRESA: sem avaliacaoId explícito, usa a mais recente (compatibilidade)
     if (!avaliacaoId) {
       const avaliacaoResult = await queryWithContext(
         `SELECT id, lote_id FROM avaliacoes
-         WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento') AND status != 'inativada'
+         WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
          ORDER BY inicio DESC LIMIT 1`,
         [session.cpf]
       );
@@ -125,6 +126,7 @@ export async function GET(request: Request) {
     const session = await requireAuth();
     const { searchParams } = new URL(request.url);
     const grupo = searchParams.get('grupo');
+    const avaliacaoIdParam = searchParams.get('avaliacaoId');
 
     if (!grupo) {
       return NextResponse.json(
@@ -133,19 +135,33 @@ export async function GET(request: Request) {
       );
     }
 
-    // Buscar avaliação atual (não inativada)
-    const avaliacaoResult = await queryWithContext(
-      `SELECT id FROM avaliacoes
-       WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento') AND status != 'inativada'
-       ORDER BY inicio DESC LIMIT 1`,
-      [session.cpf]
-    );
+    let avaliacaoId: number;
 
-    if (avaliacaoResult.rows.length === 0) {
-      return NextResponse.json({ respostas: [], total: 0 }, { status: 200 });
+    if (avaliacaoIdParam) {
+      // MULTI-EMPRESA: buscar avaliação específica por ID
+      const checkResult = await queryWithContext(
+        `SELECT id FROM avaliacoes
+         WHERE id = $1 AND funcionario_cpf = $2 AND status IN ('iniciada', 'em_andamento')`,
+        [parseInt(avaliacaoIdParam, 10), session.cpf]
+      );
+      if (checkResult.rows.length === 0) {
+        return NextResponse.json({ respostas: [], total: 0 }, { status: 200 });
+      }
+      avaliacaoId = checkResult.rows[0].id as number;
+    } else {
+      // Fallback: avaliação mais recente (compatibilidade)
+      const avaliacaoResult = await queryWithContext(
+        `SELECT id FROM avaliacoes
+         WHERE funcionario_cpf = $1 AND status IN ('iniciada', 'em_andamento')
+         ORDER BY inicio DESC LIMIT 1`,
+        [session.cpf]
+      );
+
+      if (avaliacaoResult.rows.length === 0) {
+        return NextResponse.json({ respostas: [], total: 0 }, { status: 200 });
+      }
+      avaliacaoId = avaliacaoResult.rows[0].id as number;
     }
-
-    const avaliacaoId = avaliacaoResult.rows[0].id;
 
     // Buscar respostas do grupo
     const respostasResult = await queryWithContext(

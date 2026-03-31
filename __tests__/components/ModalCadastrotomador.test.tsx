@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalCadastrotomador.test.tsx
+ * Testes: ModalCadastrotomador - validações de planos
+ */
+
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';

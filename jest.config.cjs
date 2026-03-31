@@ -59,15 +59,15 @@ const customJestConfig = {
   bail: process.env.JEST_BAIL !== '0' ? 0 : 0, // 0 = rode tudo; aumente para 50 em CI agressivo
 
   // ── Cobertura mínima (ativada apenas com --coverage) ──────────────────────
-  // Uncomment para ativar threshold de cobertura em CI:
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 10,
-  //     functions: 20,
-  //     lines: 20,
-  //     statements: 20,
-  //   },
-  // },
+  // Thresholds conservadores para não bloquear CI — aumentar gradualmente.
+  coverageThreshold: {
+    global: {
+      branches: 10,
+      functions: 20,
+      lines: 20,
+      statements: 20,
+    },
+  },
 };
 
 // Permitir ignorar globalSetup em execuções locais de unit tests definindo SKIP_GLOBAL_JEST_SETUP=1
