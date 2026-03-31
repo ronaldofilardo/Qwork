@@ -296,11 +296,7 @@ export default function EditarLaudo() {
                   Total de Funcionários Avaliados:
                 </span>
                 <span className="text-sm text-gray-900">
-                  {laudoPadronizado.etapa1.totalFuncionariosAvaliados}{' '}
-                  <span className="text-green-600 font-semibold">
-                    ({laudoPadronizado.etapa1.percentualConclusao}% das
-                    avaliações liberadas foram concluídas)
-                  </span>
+                  {laudoPadronizado.etapa1.totalFuncionariosAvaliados}
                 </span>
               </div>
 

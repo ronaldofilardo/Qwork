@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/middleware/middleware-api-integration.test.ts
+ * Testes: Integração Middleware + API Routes
+ */
+
 // Jest globals available by default
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/rh/lotes/route';

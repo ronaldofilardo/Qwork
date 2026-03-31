@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/lote-detalhes-inativacao.test.ts
+ * Testes: GET /api/entidade/lote/[id] - Exibição de dados de inativação
+ */
+
 import { GET } from '@/app/api/entidade/lote/[id]/route';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';

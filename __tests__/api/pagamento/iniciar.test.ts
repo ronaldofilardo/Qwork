@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/pagamento/iniciar.test.ts
+ * Testes: API /api/pagamento/iniciar - iniciar pagamento
+ */
+
 import '@testing-library/jest-dom';
 
 jest.mock('@/lib/db', () => ({

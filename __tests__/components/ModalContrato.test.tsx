@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalContrato.test.tsx
+ * Testes: ModalContrato comportamento de aceite por rolagem
+ */
+
 import {
   render,
   screen,

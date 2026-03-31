@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ClinicasContent.test.tsx
+ * Testes: ClinicasContent
+ */
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { jest } from '@jest/globals';
 import { ClinicasContent } from '@/components/admin/ClinicasContent';

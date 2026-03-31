@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/avaliacao/efeito-cascata-grupo-unico.test.tsx
+ * Testes: Efeito Cascata - Grupo Único
+ */
+
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter, useParams } from 'next/navigation'

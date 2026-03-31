@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/avaliacao/resultados.test.ts
+ * Testes: /api/avaliacao/resultados
+ */
+
 import { GET } from '@/app/api/avaliacao/resultados/route'
 
 // Mock do módulo de banco de dados

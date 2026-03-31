@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/login-compat.test.ts
+ * Testes: Login compatibilidade - gestores (CPF join & schema fallback)
+ */
+
 import { POST } from '@/app/api/auth/login/route';
 import bcrypt from 'bcryptjs';
 

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/contracts/terms-contrato.page.test.tsx
+ * Testes: Página /termos/contrato
+ */
+
 import { render, screen } from '@testing-library/react';
 import TermosContratoPage from '@/app/termos/contrato/page';
 

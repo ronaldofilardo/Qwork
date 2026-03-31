@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/rh/funcionarios-bulk.test.tsx
+ * Testes: 🧪 Testes Robustos: Filtros, Operações em Massa e Estatísticas
+ */
+
 // @ts-nocheck
 import React from 'react';
 import {

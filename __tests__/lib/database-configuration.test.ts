@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/database-configuration.test.ts
+ * Testes: Database Configuration Tests
+ */
+
 import { jest } from '@jest/globals';
 
 // Importar o guard de proteção do banco de testes

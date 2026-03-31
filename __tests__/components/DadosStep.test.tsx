@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/DadosStep.test.tsx
+ * Testes: DadosStep
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import DadosStep from '@/components/modals/ModalCadastroTomadorSteps/DadosStep';

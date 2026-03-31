@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/visual-regression/visual-consistency.test.tsx
+ * Testes: Consistência Visual - Logos
+ */
+
 import { render, screen } from '@testing-library/react';
 // Jest globals available by default
 import LoginPage from '@/app/login/page';

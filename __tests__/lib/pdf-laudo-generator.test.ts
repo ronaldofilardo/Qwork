@@ -22,7 +22,6 @@ describe('templates/laudo-html - gerarHTMLLaudoCompleto', () => {
       registroProfissional: 'CRP 06/123456',
       dataAvaliacao: '2025-01-15',
       totalFuncionariosAvaliados: 50,
-      percentualConclusao: 100,
       periodoAvaliacoes: {
         dataLiberacao: '01/12/2025',
         dataUltimaConclusao: '10/12/2025',
@@ -103,6 +102,8 @@ describe('templates/laudo-html - gerarHTMLLaudoCompleto', () => {
   it('deve incluir título e metadados básicos', () => {
     const html = gerarHTMLLaudoCompleto(laudoPadronizado as any);
     // Ajustado: verifica se o título contém "Laudo de Identificação e Mapeamento de Riscos Psicossociais"
-    expect(html).toMatch(/<title>.*Laudo de Identificação e Mapeamento de Riscos Psicossociais.*<\/title>/i);
+    expect(html).toMatch(
+      /<title>.*Laudo de Identificação e Mapeamento de Riscos Psicossociais.*<\/title>/i
+    );
   });
 });

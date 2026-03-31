@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/login.test.ts
+ * Testes: /api/auth/login - Nova Arquitetura
+ */
+
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/auth/login/route';
 import { query } from '@/lib/db';

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/funcionarios-auth.test.ts
+ * Testes: /api/entidade/funcionarios - acesso por perfil
+ */
+
 import { NextRequest } from 'next/server';
 
 const mockQuery = jest.fn();

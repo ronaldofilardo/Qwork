@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/contrato-fallback.test.ts
+ * Testes: API contrato-fallback
+ */
+
 import { GET } from '@/app/api/entidade/contrato-fallback/route';
 
 jest.mock('@/lib/session', () => ({

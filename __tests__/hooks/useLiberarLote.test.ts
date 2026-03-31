@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/hooks/useLiberarLote.test.ts
+ * Testes: useLiberarLote Hook
+ */
+
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { useLiberarLote } from '@/lib/hooks/useLiberarLote';
 

@@ -96,14 +96,7 @@ function validarColunas(colunas: string[]): {
   valido: boolean;
   faltando: string[];
 } {
-  const obrigatorias = [
-    'cpf',
-    'nome',
-    'data_nascimento',
-    'setor',
-    'funcao',
-    'email',
-  ];
+  const obrigatorias = ['cpf', 'nome', 'data_nascimento', 'setor', 'funcao'];
   const faltando = obrigatorias.filter((col) => !colunas.includes(col));
 
   return {
@@ -169,9 +162,8 @@ export function validarLinhaFuncionario(
     erros.push('Função é obrigatória');
   }
 
-  if (!row.email || String(row.email).trim() === '') {
-    erros.push('Email é obrigatório');
-  } else {
+  // Email é opcional, mas se fornecido deve ser válido
+  if (row.email && String(row.email).trim() !== '') {
     const email = String(row.email).trim();
     if (!email.includes('@') || !email.includes('.')) {
       erros.push('Email inválido');
@@ -339,7 +331,7 @@ export function parseXlsxBufferToRows(buffer: Buffer): ParseResult {
 }
 
 /**
- * Valida email único dentro do lote
+ * Valida email único dentro do lote (ignora linhas com email vazio)
  */
 export function validarEmailsUnicos(rows: FuncionarioImportRow[]): {
   valido: boolean;
@@ -349,6 +341,10 @@ export function validarEmailsUnicos(rows: FuncionarioImportRow[]): {
   const duplicados: string[] = [];
 
   rows.forEach((row) => {
+    // Pular linhas sem email
+    if (!row.email || String(row.email).trim() === '') {
+      return;
+    }
     const email = row.email.toLowerCase().trim();
     if (emails.has(email)) {
       duplicados.push(email);

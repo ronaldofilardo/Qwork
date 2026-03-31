@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/seed-users.test.ts
+ * Testes: Seed Users Script
+ */
+
 import { jest } from '@jest/globals';
 
 // Mock do pg

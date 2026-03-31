@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/avaliacao/avaliacao-navegacao.test.tsx
+ * Testes: Avaliação por grupo - Navegação sem botão Voltar
+ */
+
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { useRouter, useParams } from 'next/navigation'

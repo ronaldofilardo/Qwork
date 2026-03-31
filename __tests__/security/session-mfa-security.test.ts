@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/security/session-mfa-security.test.ts
+ * Testes: Testes de Segurança - Fase 1
+ */
+
 // Mock de dependências
 jest.mock('../../lib/db', () => ({
   query: jest.fn(),

@@ -38,10 +38,25 @@ jest.mock('@/hooks/usePWAInstall', () => ({
   })),
 }));
 
+// Mock do hook useReprocessarLaudo
+jest.mock('@/hooks/useReprocessarLaudo', () => ({
+  useReprocessarLaudo: jest.fn(() => ({
+    reprocessar: jest.fn(),
+    loading: false,
+  })),
+}));
+
+// Mock do UploadLaudoButton
+jest.mock('@/components/UploadLaudoButton', () => {
+  return function MockUploadLaudoButton() {
+    return null;
+  };
+});
+
 // Mock do fetch - criar o mock ANTES de usar
 global.fetch = jest.fn();
 
-describe.skip('Emissor Dashboard', () => {
+describe('Emissor Dashboard', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Resetar o mock do fetch para cada teste
@@ -62,9 +77,8 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 1,
-        titulo: 'Lote Teste',
         tipo: 'completo',
-        status: 'rascunho', // CRITICAL: Needed for filter
+        status: 'concluido', // Matches default tab 'laudo-para-emitir'
         empresa_nome: 'Empresa Teste',
         clinica_nome: 'Clínica Teste',
         liberado_em: '2025-11-29T10:00:00Z',
@@ -122,16 +136,14 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Lote Teste - Lote: 001-291125')
-        ).toBeInTheDocument();
+        expect(screen.getByText('Lote ID: 1')).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
 
     expect(screen.getByText('Empresa Teste')).toBeInTheDocument();
     expect(screen.getByText('Clínica Teste')).toBeInTheDocument();
-    expect(screen.getByText('Abrir Laudo Biopsicossocial')).toBeInTheDocument();
+    expect(screen.getByText('Iniciar Laudo')).toBeInTheDocument();
   }, 15000);
 
   it('deve mostrar mensagem quando não há lotes', async () => {
@@ -184,9 +196,8 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 123,
-        titulo: 'Lote Teste',
         tipo: 'completo',
-        status: 'rascunho',
+        status: 'concluido',
         empresa_nome: 'Empresa Teste',
         clinica_nome: 'Clínica Teste',
         liberado_em: '2025-11-29T10:00:00Z',
@@ -214,14 +225,12 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Abrir Laudo Biopsicossocial')
-        ).toBeInTheDocument();
+        expect(screen.getByText('Iniciar Laudo')).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
 
-    const button = screen.getByText('Abrir Laudo Biopsicossocial');
+    const button = screen.getByText('Iniciar Laudo');
     fireEvent.click(button);
 
     expect(mockPush).toHaveBeenCalledWith('/emissor/laudo/123');
@@ -231,9 +240,8 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 1,
-        titulo: 'Lote Teste',
         tipo: 'completo',
-        status: 'rascunho',
+        status: 'concluido',
         empresa_nome: 'Empresa Teste',
         clinica_nome: 'Clínica Teste',
         liberado_em: '2025-11-29T10:00:00Z',
@@ -261,9 +269,7 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Lote Teste - Lote: 001-291125')
-        ).toBeInTheDocument();
+        expect(screen.getByText('Lote ID: 1')).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
@@ -280,9 +286,8 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 1,
-        titulo: 'Lote Rascunho',
         tipo: 'completo',
-        status: 'rascunho',
+        status: 'concluido',
         empresa_nome: 'Empresa Teste',
         clinica_nome: 'Clínica Teste',
         liberado_em: '2025-11-29T10:00:00Z',
@@ -297,9 +302,9 @@ describe.skip('Emissor Dashboard', () => {
       },
       {
         id: 2,
-        titulo: 'Lote Emitido',
         tipo: 'completo',
-        status: 'rascunho',
+        status: 'concluido',
+        _emitido: true,
         empresa_nome: 'Empresa B',
         clinica_nome: 'Clínica B',
         liberado_em: '2025-11-29T11:00:00Z',
@@ -307,6 +312,7 @@ describe.skip('Emissor Dashboard', () => {
           id: 101,
           observacoes: 'Laudo emitido',
           status: 'enviado',
+          _emitido: true,
           emitido_em: '2025-11-30T10:00:00Z',
           enviado_em: null,
           hash_pdf: 'abc123def456',
@@ -330,12 +336,9 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        const rascunhos = screen.getAllByText('Rascunho');
-        expect(rascunhos.length).toBeGreaterThanOrEqual(2);
-        // Verify the "emitido" text appears in date line
-        expect(
-          screen.getByText('Laudo emitido em 30/11/2025 às 07:00')
-        ).toBeInTheDocument();
+        // Lote 1 appears in default tab (concluido, not emitido)
+        expect(screen.getByText('Lote ID: 1')).toBeInTheDocument();
+        expect(screen.getByText('Iniciar Laudo')).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
@@ -345,9 +348,8 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 3,
-        titulo: 'Lote com previsão',
         tipo: 'completo',
-        status: 'rascunho', // CRITICAL: Needed for "aguardando-envio" tab filter
+        status: 'concluido',
         empresa_nome: 'Empresa C',
         clinica_nome: 'Clínica C',
         liberado_em: '2025-12-16T12:00:00Z',
@@ -380,28 +382,23 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Lote com previsão - Lote: 003-161225')
-        ).toBeInTheDocument();
+        expect(screen.getByText('Lote ID: 3')).toBeInTheDocument();
         expect(
           screen.getByText('Previsão de emissão: 16/12/2025 15:25')
         ).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
-    // Para lotes com emissão automática, o botão deve indicar pré-visualização / edição bloqueada
-    expect(
-      screen.getByText('Ver Prévia (edição bloqueada)')
-    ).toBeInTheDocument();
+    // Para lotes com emissão automática e laudo não emitido, botão é Pré-visualização
+    expect(screen.getByText('Pré-visualização')).toBeInTheDocument();
   }, 15000);
 
   it('deve mostrar botão de pré-visualização quando emissão automática programada', async () => {
     const mockLotes = [
       {
         id: 5,
-        titulo: 'Lote Agendado Auto',
         tipo: 'completo',
-        status: 'rascunho',
+        status: 'concluido',
         empresa_nome: 'Empresa D',
         clinica_nome: 'Clínica D',
         liberado_em: '2025-12-16T12:00:00Z',
@@ -430,12 +427,8 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Lote Agendado Auto - Lote: 005-161225')
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText('Ver Prévia (edição bloqueada)')
-        ).toBeInTheDocument();
+        expect(screen.getByText('Lote ID: 5')).toBeInTheDocument();
+        expect(screen.getByText('Pré-visualização')).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
@@ -446,7 +439,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 6,
-        titulo: 'Lote Finalizado',
         tipo: 'completo',
         status: 'finalizado',
         empresa_nome: 'Empresa E',
@@ -456,6 +448,7 @@ describe.skip('Emissor Dashboard', () => {
           id: 106,
           observacoes: 'Laudo enviado',
           status: 'enviado',
+          _emitido: true,
           emitido_em: '2025-12-16T14:00:00Z',
           enviado_em: '2025-12-16T15:00:00Z',
           hash_pdf: 'hash123456789',
@@ -484,14 +477,9 @@ describe.skip('Emissor Dashboard', () => {
 
     await waitFor(
       () => {
-        expect(
-          screen.getByText('Lote Finalizado - Lote: 006-161225')
-        ).toBeInTheDocument();
-        expect(
-          screen.getByText('Enviado em 16/12/2025 às 12:00')
-        ).toBeInTheDocument();
-        // Hash agora é exibido em seção própria com título "Hash SHA-256"
-        expect(screen.getByText(/Hash SHA-256/i)).toBeInTheDocument();
+        expect(screen.getByText('Lote ID: 6')).toBeInTheDocument();
+        // Hash section: "🔒 Hash de Integridade (SHA-256)"
+        expect(screen.getByText(/Hash de Integridade/i)).toBeInTheDocument();
       },
       { timeout: 10000 }
     );
@@ -502,7 +490,6 @@ describe.skip('Emissor Dashboard', () => {
     const mockLotes = [
       {
         id: 7,
-        titulo: 'Lote para Download',
         tipo: 'completo',
         status: 'finalizado',
         empresa_nome: 'Empresa F',

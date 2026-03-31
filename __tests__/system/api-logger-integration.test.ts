@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/system/api-logger-integration.test.ts
+ * Testes: Integração Logger com API Routes
+ */
+
 // Jest globals available by default
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/admin/funcionarios/route';

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/hooks/useFuncionarios.test.ts
+ * Testes: useFuncionarios
+ */
+
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useFuncionarios } from '@/lib/hooks/useFuncionarios';
 

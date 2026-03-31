@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/modals/LiberarLoteModal.test.tsx
+ * Testes: LiberarLoteModal
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';

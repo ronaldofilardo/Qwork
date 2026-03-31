@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalResetarAvaliacao.test.tsx
+ * Testes: ModalResetarAvaliacao
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';

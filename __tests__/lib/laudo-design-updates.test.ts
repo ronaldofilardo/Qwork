@@ -25,7 +25,6 @@ describe('Laudo - Alterações de Design', () => {
       registroProfissional: 'CRP 06/123456',
       dataAvaliacao: '2026-01-31',
       totalFuncionariosAvaliados: 100,
-      percentualConclusao: 100,
       periodoAvaliacoes: {
         dataLiberacao: '01/01/2026',
         dataUltimaConclusao: '31/01/2026',

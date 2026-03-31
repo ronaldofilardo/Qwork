@@ -22,7 +22,11 @@ export async function GET() {
         e.estado,
         e.responsavel_nome,
         e.criado_em,
-        e.status
+        e.status,
+        EXISTS(
+          SELECT 1 FROM contratos c
+          WHERE c.tomador_id = e.id AND c.aceito = true
+        ) AS tem_contrato_aceito
       FROM entidades e
       WHERE e.id = $1
       LIMIT 1
@@ -51,6 +55,7 @@ export async function GET() {
       estado: entidade.estado,
       responsavel_nome: entidade.responsavel_nome,
       criado_em: entidade.criado_em,
+      tem_contrato_aceito: entidade.tem_contrato_aceito ?? false,
     };
 
     return NextResponse.json(accountInfo);

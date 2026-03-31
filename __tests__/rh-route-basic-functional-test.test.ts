@@ -1,126 +1,159 @@
 /**
  * RH Route Basic Functional Test
  *
- * Valida que o RH route funciona após a correção
- * de transactionWithContext (removendo redundante clinica_id query)
+ * Valida que o RH route funciona com transactionWithContext
+ * e que session.clinica_id é utilizado para RLS context
  */
 
+jest.mock('@/lib/session', () => ({
+  requireAuth: jest.fn(),
+  requireRHWithEmpresaAccess: jest.fn(),
+}));
+jest.mock('@/lib/db-security', () => ({
+  transactionWithContext: jest.fn(),
+}));
+jest.mock('@/lib/queries', () => ({
+  getFuncionariosPorLote: jest.fn(),
+  getLoteInfo: jest.fn(),
+}));
+
+import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
+import { transactionWithContext } from '@/lib/db-security';
+import { getLoteInfo, getFuncionariosPorLote } from '@/lib/queries';
+import { GET } from '@/app/api/rh/lotes/[id]/funcionarios/route';
+
+const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
+const mockRequireRH = requireRHWithEmpresaAccess as jest.MockedFunction<
+  typeof requireRHWithEmpresaAccess
+>;
+const mockTransaction = transactionWithContext as jest.MockedFunction<
+  typeof transactionWithContext
+>;
+const mockGetLoteInfo = getLoteInfo as jest.MockedFunction<typeof getLoteInfo>;
+const mockGetFuncionarios = getFuncionariosPorLote as jest.MockedFunction<
+  typeof getFuncionariosPorLote
+>;
+
+function makeRequest(loteId: string, empresaId?: string): Request {
+  const url = new URL(
+    `http://localhost:3000/api/rh/lotes/${loteId}/funcionarios`
+  );
+  if (empresaId) url.searchParams.set('empresa_id', empresaId);
+  return new Request(url.toString());
+}
+
 describe('RH Lotes Funcionarios Route - Basic Functional Test', () => {
+  const mockSession = { cpf: '12345678909', perfil: 'rh', clinica_id: 5 };
+
+  beforeEach(() => {
+    mockRequireAuth.mockResolvedValue(mockSession as any);
+    mockRequireRH.mockResolvedValue(mockSession as any);
+    mockGetLoteInfo.mockResolvedValue({ id: 6, descricao: 'Lote Test' } as any);
+    mockGetFuncionarios.mockResolvedValue([]);
+    mockTransaction.mockImplementation(async (cb) => {
+      const mockQueryFn = jest
+        .fn()
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              total_avaliacoes: '0',
+              avaliacoes_concluidas: '0',
+              avaliacoes_inativadas: '0',
+              avaliacoes_pendentes: '0',
+            },
+          ],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+      return cb(mockQueryFn as any);
+    });
+  });
+
   describe('Correção Implementada', () => {
-    it('transactionWithContext agora usa session.clinica_id diretamente', () => {
-      // Antes: Tentava fazer SELECT ec.clinica_id FROM funcionarios...JOIN empresas_clientes
-      // Problema: Falhava se CPF não estava em funcionarios_clinicas ou não vinculado a empresa_cliente ativa
-      // Solução: Usar session.clinica_id que já foi validado por requireRHWithEmpresaAccess()
-
-      // Mudança de padrão:
-      // OLD: if (perfil === 'rh') { const clinicaResult = await query(`SELECT...JOIN...`) }
-      // NEW: if (session.clinica_id) { set_config('app.current_user_clinica_id', ...) }
-
-      expect(true).toBe(true);
+    it('transactionWithContext recebe session.clinica_id de requireRHWithEmpresaAccess', async () => {
+      const req = makeRequest('6', '1');
+      const res = await GET(req, { params: { id: '6' } } as any);
+      expect(res.status).toBe(200);
+      expect(mockRequireRH).toHaveBeenCalledWith(1);
     });
 
-    it('A rota RH agora consegue processar requisições sem erro de clinica_id', () => {
-      // Resultado esperado: POST /api/rh/lotes/6/funcionarios agora retorna dados
-      // em vez de erro "RH deve estar vinculado a uma clínica ativa"
-
-      // O fluxo agora é:
-      // 1. requireRHWithEmpresaAccess() - Valida RH e popula session.clinica_id ✓
-      // 2. transactionWithContext() - Usa session.clinica_id sem refazer query ✓
-      // 3. Queries dentro da transação executam com contexto RLS ✓
-
-      expect(true).toBe(true);
+    it('A rota RH retorna dados estruturados corretamente', async () => {
+      const req = makeRequest('6', '1');
+      const res = await GET(req, { params: { id: '6' } } as any);
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(json.lote).toBeDefined();
+      expect(json.estatisticas).toBeDefined();
+      expect(json.funcionarios).toBeDefined();
     });
 
-    it('Validação de format de clinica_id continua funcionando', () => {
-      // Mesmo após remover redundante DB query, a validação continua:
-      // if (!/^\d+$/.test(clinicaId)) {
-      //   throw new Error('ID de clínica inválido na sessão');
-      // }
-
-      expect(true).toBe(true);
+    it('requireRHWithEmpresaAccess é chamado antes de transactionWithContext', async () => {
+      const req = makeRequest('6', '1');
+      await GET(req, { params: { id: '6' } } as any);
+      const requireRHOrder = mockRequireRH.mock.invocationCallOrder[0];
+      const txOrder = mockTransaction.mock.invocationCallOrder[0];
+      expect(requireRHOrder).toBeLessThan(txOrder);
     });
   });
 
   describe('Entity Routes não são afetadas (No Regression)', () => {
-    it('Entity routes continuam funcionando normalmente', () => {
-      // Entity routes usam pattern diferente:
-      // requireEntity() -> query() direto
-      // Não usam transactionWithContext, então não são afetadas pela mudança
-
-      expect(true).toBe(true);
+    it('Rota RH rejeita perfis não-RH com 403', async () => {
+      mockRequireAuth.mockResolvedValue({
+        cpf: '11111111111',
+        perfil: 'gestor',
+      } as any);
+      const req = makeRequest('6', '1');
+      const res = await GET(req, { params: { id: '6' } } as any);
+      expect(res.status).toBe(403);
     });
 
-    it('queryWithContext ainda funciona para outras operações', () => {
-      // queryWithContext mantém sua lógica de buscar clinica_id/entidade_id via DB
-      // (não foi modificado no escopo desta correção)
-      // Apenas transactionWithContext foi simplificado
-
-      expect(true).toBe(true);
-    });
-  });
-
-  describe('RLS Context Variables', () => {
-    it('transactionWithContext define app.current_user_cpf', () => {
-      // await query('SELECT set_config($1, $2, false)', ['app.current_user_cpf', cpf])
-      expect(true).toBe(true);
-    });
-
-    it('transactionWithContext define app.current_user_perfil', () => {
-      // await query('SELECT set_config($1, $2, false)', ['app.current_user_perfil', perfil])
-      expect(true).toBe(true);
-    });
-
-    it('transactionWithContext define app.current_user_clinica_id para RH', () => {
-      // await query('SELECT set_config($1, $2, false)', ['app.current_user_clinica_id', clinicaId])
-      expect(true).toBe(true);
+    it('requireRHWithEmpresaAccess não é chamado para perfis não-RH', async () => {
+      mockRequireAuth.mockResolvedValue({
+        cpf: '11111111111',
+        perfil: 'gestor',
+      } as any);
+      const req = makeRequest('6', '1');
+      await GET(req, { params: { id: '6' } } as any);
+      expect(mockRequireRH).not.toHaveBeenCalled();
     });
   });
 
   describe('Error Handling', () => {
-    it('Lança erro se RH não tem clinica_id na sessão (auth layer bug)', () => {
-      // if (session.clinica_id is null and perfil === 'rh') {
-      //   throw new Error('Contexto RLS: RH sem clinica_id...')
-      // }
-      expect(true).toBe(true);
+    it('Retorna 403 se requireRHWithEmpresaAccess falhar', async () => {
+      mockRequireRH.mockRejectedValue(new Error('Sem permissão'));
+      const req = makeRequest('6', '1');
+      const res = await GET(req, { params: { id: '6' } } as any);
+      expect(res.status).toBe(403);
     });
 
-    it('Lança erro se clinica_id tem formato inválido', () => {
-      // if (!/^\d+$/.test(clinicaId)) {
-      //   throw new Error('ID de clínica inválido...')
-      // }
-      expect(true).toBe(true);
+    it('Retorna 400 se empresa_id faltando', async () => {
+      const req = makeRequest('6');
+      const res = await GET(req, { params: { id: '6' } } as any);
+      expect(res.status).toBe(400);
     });
 
-    it('Faz ROLLBACK em caso de erro na transação', () => {
-      // try { ... } catch { ROLLBACK; throw }
-      expect(true).toBe(true);
+    it('Retorna 404 se lote não encontrado', async () => {
+      mockGetLoteInfo.mockResolvedValue(null as any);
+      const req = makeRequest('999', '1');
+      const res = await GET(req, { params: { id: '999' } } as any);
+      expect(res.status).toBe(404);
     });
 
-    it('Faz COMMIT se transação bem-sucedida', () => {
-      // COMMIT após callback completar
-      expect(true).toBe(true);
+    it('Retorna 500 se transactionWithContext lançar erro', async () => {
+      mockTransaction.mockRejectedValue(new Error('DB error'));
+      const req = makeRequest('6', '1');
+      const res = await GET(req, { params: { id: '6' } } as any);
+      expect(res.status).toBe(500);
     });
   });
 
   describe('Padrão Arquitetural', () => {
-    it('RH segue pattern: auth > context-setup > execute-with-context', () => {
-      // 1. requireRHWithEmpresaAccess() - Auth + Session Population
-      // 2. transactionWithContext() - Context Setup (using session values)
-      // 3. query() - Execute with RLS
-      expect(true).toBe(true);
-    });
-
-    it('Entity segue pattern: auth > execute-direto (sem revalidação)', () => {
-      // 1. requireEntity() - Auth + Session Population
-      // 2. query() - Execute directly (no transactionWithContext)
-      expect(true).toBe(true);
-    });
-
-    it('Não há redundância entre camadas de autenticação', () => {
-      // - requireRHWithEmpresaAccess() valida e popula session
-      // - transactionWithContext() confia na sessão populada
-      // - Sem refazer buscas no banco que já foram feitas antes
-      expect(true).toBe(true);
+    it('RH segue pattern: auth > permission-check > loteInfo > transaction', async () => {
+      const req = makeRequest('6', '1');
+      await GET(req, { params: { id: '6' } } as any);
+      expect(mockRequireAuth).toHaveBeenCalled();
+      expect(mockRequireRH).toHaveBeenCalled();
+      expect(mockGetLoteInfo).toHaveBeenCalled();
+      expect(mockTransaction).toHaveBeenCalled();
     });
   });
 });

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/db/laudo-columns.test.ts
+ * Testes: DB - laudos columns
+ */
+
 import { query } from '@/lib/db';
 
 describe('DB - laudos columns', () => {

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalCadastrotomador.contractAcceptance.test.tsx
+ * Testes: ModalCadastrotomador - aceite do contrato habilita botão Próximo
+ */
+
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';

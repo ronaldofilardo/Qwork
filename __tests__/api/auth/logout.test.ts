@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/logout.test.ts
+ * Testes: /api/auth/logout
+ */
+
 import { NextRequest } from 'next/server'
 import { POST } from '@/app/api/auth/logout/route'
 import { destroySession } from '@/lib/session'

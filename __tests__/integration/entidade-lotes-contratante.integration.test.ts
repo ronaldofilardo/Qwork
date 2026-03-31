@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/entidade-lotes-contratante.integration.test.ts
+ * Testes: Integração: Entidade Lotes com contratante_id
+ */
+
 import { GET } from '@/app/api/entidade/lotes/route';
 import { query } from '@/lib/db';
 

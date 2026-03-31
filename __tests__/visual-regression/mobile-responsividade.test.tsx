@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/visual-regression/mobile-responsividade.test.tsx
+ * Testes: RadioScale - Responsividade Mobile
+ */
+
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 import RadioScale from '@/components/RadioScale'

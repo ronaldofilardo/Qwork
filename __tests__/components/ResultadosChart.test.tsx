@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ResultadosChart.test.tsx
+ * Testes: ResultadosChart
+ */
+
 import { render, screen } from "@testing-library/react";
 import ResultadosChart from "@/components/ResultadosChart";
 import * as ReactChartjs2 from 'react-chartjs-2';

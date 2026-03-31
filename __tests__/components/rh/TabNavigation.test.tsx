@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/rh/TabNavigation.test.tsx
+ * Testes: TabNavigation
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TabNavigation } from '@/components/rh/TabNavigation';

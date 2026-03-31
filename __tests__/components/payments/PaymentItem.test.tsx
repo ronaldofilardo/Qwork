@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/payments/PaymentItem.test.tsx
+ * Testes: PaymentItem
+ */
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import PaymentItem from '@/components/payments/PaymentItem';
 

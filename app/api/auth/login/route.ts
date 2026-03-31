@@ -315,6 +315,8 @@ export async function POST(request: Request) {
     let tomadorId: number | null = null;
     let tomadorAtivo = true;
 
+    let primeiraSenhaAlterada = true; // default: não forçar troca
+
     if (foundInFuncionarios) {
       // Usuário vindo da tabela `funcionarios`: senha já disponível na linha
       console.log(
@@ -327,7 +329,7 @@ export async function POST(request: Request) {
       // Buscar senha em entidades_senhas
       console.log(`[LOGIN] Buscando senha de gestor em entidades_senhas...`);
       const senhaResult = await query(
-        `SELECT es.senha_hash, e.id, e.ativa
+        `SELECT es.senha_hash, es.primeira_senha_alterada, e.id, e.ativa
          FROM entidades_senhas es
          JOIN entidades e ON e.id = es.entidade_id
          WHERE es.cpf = $1 AND es.entidade_id = $2`,
@@ -347,11 +349,13 @@ export async function POST(request: Request) {
       senhaHash = senhaResult.rows[0].senha_hash;
       tomadorId = senhaResult.rows[0].id;
       tomadorAtivo = senhaResult.rows[0].ativa;
+      primeiraSenhaAlterada =
+        senhaResult.rows[0].primeira_senha_alterada ?? true;
     } else if (usuario.tipo_usuario === 'rh') {
       // Buscar senha em clinicas_senhas
       console.log(`[LOGIN] Buscando senha de RH em clinicas_senhas...`);
       const senhaResult = await query(
-        `SELECT cs.senha_hash, c.id as clinica_id, c.ativa
+        `SELECT cs.senha_hash, cs.primeira_senha_alterada, c.id as clinica_id, c.ativa
          FROM clinicas_senhas cs
          JOIN clinicas c ON c.id = cs.clinica_id
          WHERE cs.cpf = $1 AND cs.clinica_id = $2`,
@@ -389,6 +393,8 @@ export async function POST(request: Request) {
         senhaHash = senhaResult.rows[0].senha_hash;
         tomadorId = senhaResult.rows[0].clinica_id;
         tomadorAtivo = senhaResult.rows[0].ativa;
+        primeiraSenhaAlterada =
+          senhaResult.rows[0].primeira_senha_alterada ?? true;
       }
     } else if (
       usuario.tipo_usuario === 'admin' ||
@@ -716,6 +722,10 @@ export async function POST(request: Request) {
       }
     }
 
+    // Verificar se gestor/RH precisa trocar senha no primeiro acesso
+    const precisaTrocarSenha =
+      (perfil === 'gestor' || perfil === 'rh') && !primeiraSenhaAlterada;
+
     return NextResponse.json({
       success: true,
       cpf: usuario.cpf,
@@ -723,6 +733,7 @@ export async function POST(request: Request) {
       perfil: perfil,
       data_nascimento: usuario.data_nascimento || null,
       termosPendentes,
+      precisaTrocarSenha,
       redirectTo:
         perfil === 'admin'
           ? '/admin'

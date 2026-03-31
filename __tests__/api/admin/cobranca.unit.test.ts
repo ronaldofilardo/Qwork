@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/admin/cobranca.unit.test.ts
+ * Testes: API /api/admin/cobranca
+ */
+
 import { GET } from '@/app/api/admin/cobranca/route';
 import { query } from '@/lib/db';
 
