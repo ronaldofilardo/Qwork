@@ -80,7 +80,7 @@ export default function QuestionModal({
     setEnviando(false);
   }, [question.itemId]);
 
-  async function handleResposta(valor: number) {
+  function handleResposta(valor: number) {
     if (enviando || selecionado !== null) return;
     setEnviando(true);
     setSelecionado(valor);

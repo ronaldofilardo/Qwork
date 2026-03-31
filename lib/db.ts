@@ -513,7 +513,8 @@ export async function query<T = any>(
       } catch (err) {
         try {
           await client.query('ROLLBACK');
-        } catch (_) {}
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_rollbackErr) {}
         throw err;
       } finally {
         client.release();
