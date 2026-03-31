@@ -185,6 +185,15 @@ const isTest = environment === 'test';
 const isProduction = environment === 'production';
 const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
 
+/**
+ * CPF do emissor que SEMPRE acessa o banco de PRODUÇÃO (Neon),
+ * mesmo quando rodando localmente em DEV.
+ *
+ * ⚠️ POLÍTICA DE SEGURANÇA IMUTÁVEL — não depende de variáveis de ambiente.
+ * Alterar este valor requer revisão explícita e aprovação.
+ */
+export const EMISSOR_CPF_PROD = '53051173991';
+
 // Selecionar URL do banco baseado no ambiente
 const getDatabaseUrl = () => {
   // Validação rigorosa para ambiente de testes
@@ -254,21 +263,6 @@ const getDatabaseUrl = () => {
 
   // Ambiente de desenvolvimento
   if (isDevelopment) {
-    // Opt-in: permitir usar DATABASE_URL (produção) localmente quando explicitamente solicitado
-    if (
-      process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
-      process.env.DATABASE_URL
-    ) {
-      const masked = process.env.DATABASE_URL.replace(
-        /(postgresql:\/\/.+?:).+?(@)/,
-        '$1***$2'
-      );
-      console.warn(
-        `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
-      );
-      return process.env.DATABASE_URL;
-    }
-
     if (!process.env.LOCAL_DATABASE_URL) {
       console.warn(
         '⚠️ LOCAL_DATABASE_URL não está definido. Se pretende usar o banco Neon em desenvolvimento, defina LOCAL_DATABASE_URL no seu .env.local apontando para a URL do Neon. Alternativamente defina ALLOW_PROD_DB_LOCAL=true (usa DATABASE_URL diretamente). Exemplo: LOCAL_DATABASE_URL=postgresql://neondb_owner:***@host/neondb?sslmode=require'
@@ -345,7 +339,7 @@ async function getNeonSql() {
  * Pool mantém conexão WebSocket que permite SET LOCAL
  */
 export async function getNeonPool() {
-  if (!neonPool && isProduction && process.env.DATABASE_URL) {
+  if (!neonPool && (isProduction || isDevelopment) && process.env.DATABASE_URL) {
     try {
       const { Pool: NeonPool } = await import('@neondatabase/serverless');
       neonPool = new NeonPool({ connectionString: process.env.DATABASE_URL });
@@ -437,6 +431,41 @@ export async function query<T = any>(
   validateDatabaseIsolation();
 
   try {
+    // ── Emissor: sessões com CPF do emissor SEMPRE vão para Neon PROD ────────────
+    // Política imutável: CPF 53051173991 (EMISSOR_CPF_PROD) sempre acessa Neon,
+    // mesmo em ambiente de desenvolvimento local. Independe de variáveis de ambiente.
+    if (isDevelopment && session?.cpf === EMISSOR_CPF_PROD && process.env.DATABASE_URL) {
+      const pool = await getNeonPool();
+      if (!pool) {
+        throw new Error(
+          'Neon Pool não disponível para rotear o emissor ao banco de PROD. Verifique DATABASE_URL no .env.'
+        );
+      }
+
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const escapeString = (str: string) => str.replace(/'/g, "''");
+        await client.query(`SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`);
+        await client.query(`SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`);
+        await client.query(`SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`);
+        await client.query(`SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`);
+        const result = await client.query(text, params);
+        await client.query('COMMIT');
+        const duration = Date.now() - start;
+        if (DEBUG_DB) {
+          console.log(`[db][query] emissor-neon (${duration}ms): ${text.substring(0, 200)}...`);
+        }
+        return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
+      } catch (err) {
+        try { await pool.query('ROLLBACK'); } catch (_) {}
+        throw err;
+      } finally {
+        client.release();
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if ((isDevelopment || isTest) && localPool) {
       // PostgreSQL Local (Desenvolvimento e Testes)
       const client = await localPool.connect();
