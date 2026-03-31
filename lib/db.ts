@@ -16,9 +16,26 @@ if (!process.env.JEST_WORKER_ID && process.env.NODE_ENV !== 'test') {
 
 import pg from 'pg';
 import bcrypt from 'bcryptjs';
-import { Session } from './session';
+import { Session, getSession } from './session';
 
 export type { Session };
+
+/**
+ * Lê a sessão da request atual via cookies do Next.js.
+ * Retorna undefined fora de contexto de request (scripts, migrations, testes).
+ * Usa try/catch para não quebrar em contextos sem cookies disponíveis.
+ *
+ * ⚠️ Dependência circular intencional: db.ts ↔ session.ts.
+ * Segura porque é chamada em runtime, não em load time.
+ * Em CJS, a referência ao exports object está completa no momento da chamada.
+ */
+function getSessionSafe(): Session | undefined {
+  try {
+    return getSession() ?? undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 // ============================================================================
 // TIPAGEM FORTE PARA PERFIS
@@ -194,6 +211,21 @@ const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
  */
 export const EMISSOR_CPF_PROD = '53051173991';
 
+/**
+ * Erro lançado quando o emissor tenta operar sem DATABASE_URL configurado.
+ * Status 403 sinaliza problema de configuração (não erro de sistema).
+ */
+export class EmissorProdRequired extends Error {
+  readonly status = 403;
+  constructor() {
+    super(
+      'Emissor CPF 53051173991 requer banco de PROD (Neon). ' +
+        'Defina DATABASE_URL no .env.local apontando para o Neon.'
+    );
+    this.name = 'EmissorProdRequired';
+  }
+}
+
 // Selecionar URL do banco baseado no ambiente
 const getDatabaseUrl = () => {
   // Validação rigorosa para ambiente de testes
@@ -339,7 +371,11 @@ async function getNeonSql() {
  * Pool mantém conexão WebSocket que permite SET LOCAL
  */
 export async function getNeonPool() {
-  if (!neonPool && (isProduction || isDevelopment) && process.env.DATABASE_URL) {
+  if (
+    !neonPool &&
+    (isProduction || isDevelopment) &&
+    process.env.DATABASE_URL
+  ) {
     try {
       const { Pool: NeonPool } = await import('@neondatabase/serverless');
       neonPool = new NeonPool({ connectionString: process.env.DATABASE_URL });
@@ -383,6 +419,10 @@ export async function query<T = any>(
   params?: unknown[],
   session?: Session
 ): Promise<QueryResult<T>> {
+  // Usar sessão explícita ou ler dos cookies da request atual via getSessionSafe().
+  // getSessionSafe() retorna undefined fora de contexto de request (scripts, testes),
+  // garantindo que o fallback para banco local funcione nesses casos.
+  const effectiveSession = session ?? getSessionSafe();
   const start = Date.now();
 
   // Validação de isolamento de ambiente - BLOQUEIO CRÍTICO
@@ -434,31 +474,46 @@ export async function query<T = any>(
     // ── Emissor: sessões com CPF do emissor SEMPRE vão para Neon PROD ────────────
     // Política imutável: CPF 53051173991 (EMISSOR_CPF_PROD) sempre acessa Neon,
     // mesmo em ambiente de desenvolvimento local. Independe de variáveis de ambiente.
-    if (isDevelopment && session?.cpf === EMISSOR_CPF_PROD && process.env.DATABASE_URL) {
+    // effectiveSession captura a sessão do AsyncLocalStorage propagada por requireRole,
+    // resolvendo o caso em que query() é chamado sem session explícita nas rotas.
+    if (effectiveSession?.cpf === EMISSOR_CPF_PROD && !isTest) {
+      if (!process.env.DATABASE_URL) {
+        throw new EmissorProdRequired();
+      }
       const pool = await getNeonPool();
       if (!pool) {
-        throw new Error(
-          'Neon Pool não disponível para rotear o emissor ao banco de PROD. Verifique DATABASE_URL no .env.'
-        );
+        throw new EmissorProdRequired();
       }
 
       const client = await pool.connect();
       try {
         await client.query('BEGIN');
         const escapeString = (str: string) => str.replace(/'/g, "''");
-        await client.query(`SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`);
-        await client.query(`SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`);
-        await client.query(`SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`);
-        await client.query(`SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`);
+        await client.query(
+          `SET LOCAL app.current_user_cpf = '${escapeString(effectiveSession.cpf)}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_perfil = '${escapeString(effectiveSession.perfil)}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_clinica_id = '${escapeString(String(effectiveSession.clinica_id || ''))}'`
+        );
+        await client.query(
+          `SET LOCAL app.current_user_entidade_id = '${escapeString(String(effectiveSession.entidade_id || ''))}'`
+        );
         const result = await client.query(text, params);
         await client.query('COMMIT');
         const duration = Date.now() - start;
         if (DEBUG_DB) {
-          console.log(`[db][query] emissor-neon (${duration}ms): ${text.substring(0, 200)}...`);
+          console.log(
+            `[db][query] emissor-neon (${duration}ms): ${text.substring(0, 200)}...`
+          );
         }
         return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
       } catch (err) {
-        try { await pool.query('ROLLBACK'); } catch (_) {}
+        try {
+          await client.query('ROLLBACK');
+        } catch (_) {}
         throw err;
       } finally {
         client.release();
