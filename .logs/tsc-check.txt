@@ -1,0 +1,13 @@
+__tests__/lib/test-helpers.ts(109,54): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+__tests__/lib/test-helpers.ts(117,45): error TS2345: Argument of type 'any' is not assignable to parameter of type 'never'.
+__tests__/lib/test-helpers.ts(261,44): error TS2559: Type '5' has no properties in common with type '{ timeout?: number; expectedCalls?: number; }'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(68,27): error TS2339: Property 'toHaveBeenCalledWith' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(81,9): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(111,59): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(115,35): error TS2339: Property 'toHaveBeenCalled' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(131,52): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(155,9): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(161,15): error TS2339: Property 'toBeInTheDocument' does not exist on type 'Assertion'.
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(173,28): error TS2551: Property 'toBeDisabled' does not exist on type 'Assertion'. Did you mean 'disabled'?
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(179,28): error TS2551: Property 'toBeDisabled' does not exist on type 'Assertion'. Did you mean 'disabled'?
+docs/testing/MOCKS_POLICY_EXAMPLE.test.tsx(185,28): error TS2339: Property 'toBeEnabled' does not exist on type 'Assertion'.

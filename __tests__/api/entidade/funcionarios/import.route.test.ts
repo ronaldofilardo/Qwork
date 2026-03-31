@@ -14,6 +14,7 @@ jest.mock('@/lib/xlsxParser', () => {
     parseXlsxBufferToRows: jest.fn() as jest.MockedFunction<
       typeof import('@/lib/xlsxParser').parseXlsxBufferToRows
     >,
+    // Legados (ainda exportados)
     validarCPFsUnicos: jest.fn(() => ({
       valido: true,
       duplicados: [],
@@ -26,6 +27,10 @@ jest.mock('@/lib/xlsxParser', () => {
     })) as jest.MockedFunction<
       typeof import('@/lib/xlsxParser').validarEmailsUnicos
     >,
+    // Novas funções — retornam válido por padrão
+    validarCPFsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
+    validarEmailsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
+    validarMatriculasUnicasDetalhado: jest.fn(() => ({ valido: true, details: [] })),
     validarLinhaFuncionario: jest.fn(() => ({
       valido: true,
       erros: [],
@@ -54,6 +59,14 @@ jest.mock('@/lib/db-gestor', () => ({
   queryAsGestorEntidade: jest.fn(() => ({ rows: [] })) as jest.MockedFunction<
     typeof import('@/lib/db-gestor').queryAsGestorEntidade
   >,
+}));
+
+// withTransactionAsGestor: passa client com query = queryAsGestorEntidade
+jest.mock('@/lib/db-transaction', () => ({
+  withTransactionAsGestor: jest.fn(async (fn: (client: any) => Promise<any>) => {
+    const { queryAsGestorEntidade } = require('@/lib/db-gestor');
+    return fn({ query: queryAsGestorEntidade });
+  }),
 }));
 
 jest.mock('bcryptjs', () => ({
@@ -92,6 +105,8 @@ describe('import route', () => {
    * @description Deve retornar 400 quando data_nascimento não é uma data válida
    */
   it('returns 400 when parsed rows have invalid date', async () => {
+    const { validarLinhaFuncionario } = require('@/lib/xlsxParser');
+
     // Arrange - Mock parser para retornar linha com data inválida
     parseXlsxBufferToRows.mockReturnValue({
       success: true,
@@ -107,10 +122,11 @@ describe('import route', () => {
       ],
     });
 
-    // Mock: CPF não existe
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
-    // Mock: Matrícula não existe (nenhuma matrícula fornecida)
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+    // validarLinhaFuncionario retorna erro de data para esta linha
+    validarLinhaFuncionario.mockReturnValueOnce({
+      valido: false,
+      erros: ['Data de nascimento inválida. Use dd/mm/aaaa'],
+    });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -124,15 +140,12 @@ describe('import route', () => {
 
     // Act - Processar request
     const res = await POST(req);
-    const json: Response<unknown> = await res.json();
+    const json = await res.json();
 
-    // Assert - Validar erro de validação
-    expect(res.status).toBe(400, 'Status deve ser 400 para data inválida');
+    // Assert - Validação de linha falha antes das queries de DB
+    expect(res.status).toBe(400);
     expect(json.details).toBeDefined();
-    expect(json.details[0]).toMatch(
-      /Data de nascimento inválida/,
-      'Mensagem deve indicar data inválida'
-    );
+    expect(json.details[0]).toMatch(/Data de nascimento inválida/);
   });
 
   /**
@@ -140,7 +153,9 @@ describe('import route', () => {
    * @description Deve retornar 400 quando data tem formato timezone inválido (+020011-02)
    */
   it('returns 400 when data_nascimento has timezone-like prefix', async () => {
-    // Arrange - Mock parser para retornar linha com formato timezone inválido
+    const { validarLinhaFuncionario } = require('@/lib/xlsxParser');
+
+    // Arrange
     parseXlsxBufferToRows.mockReturnValue({
       success: true,
       data: [
@@ -155,10 +170,10 @@ describe('import route', () => {
       ],
     });
 
-    // Mock: CPF não existe
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
-    // Mock: Matrícula não existe
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+    validarLinhaFuncionario.mockReturnValueOnce({
+      valido: false,
+      erros: ['Data de nascimento inválida. Use dd/mm/aaaa'],
+    });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -170,20 +185,14 @@ describe('import route', () => {
       formData: async () => ({ get: () => fakeFile }),
     } as unknown as Request;
 
-    // Act - Processar request
+    // Act
     const res = await POST(req);
-    const json: Response<unknown> = await res.json();
+    const json = await res.json();
 
-    // Assert - Validar erro de validação
-    expect(res.status).toBe(
-      400,
-      'Status deve ser 400 para data com timezone inválido'
-    );
+    // Assert
+    expect(res.status).toBe(400);
     expect(json.details).toBeDefined();
-    expect(json.details[0]).toMatch(
-      /Data de nascimento inválida/,
-      'Mensagem deve indicar data inválida'
-    );
+    expect(json.details[0]).toMatch(/Data de nascimento inválida/);
   });
 
   /**
@@ -192,8 +201,9 @@ describe('import route', () => {
    */
   it('returns 400 when matriculas are duplicated in file', async () => {
     const {
-      validarCPFsUnicos,
-      validarEmailsUnicos,
+      validarCPFsUnicosDetalhado,
+      validarEmailsUnicosDetalhado,
+      validarMatriculasUnicasDetalhado,
     } = require('@/lib/xlsxParser');
 
     parseXlsxBufferToRows.mockReturnValue({
@@ -220,8 +230,13 @@ describe('import route', () => {
       ],
     });
 
-    validarCPFsUnicos.mockReturnValue({ valido: true, duplicados: [] });
-    validarEmailsUnicos.mockReturnValue({ valido: true, duplicados: [] });
+    validarCPFsUnicosDetalhado.mockReturnValue({ valido: true, details: [] });
+    validarEmailsUnicosDetalhado.mockReturnValue({ valido: true, details: [] });
+    // Matrículas duplicadas — deve retornar 400 antes de qualquer query
+    validarMatriculasUnicasDetalhado.mockReturnValueOnce({
+      valido: false,
+      details: ['Linha 2: Matrícula MAT001 duplicada no arquivo (também na linha 3)'],
+    });
 
     const fakeFile = {
       arrayBuffer: async () => new ArrayBuffer(8),
@@ -238,7 +253,7 @@ describe('import route', () => {
 
     expect(res.status).toBe(400);
     expect(json.error).toContain('Matrículas duplicadas no arquivo');
-    expect(json.error).toContain('MAT001');
+    expect(json.details[0]).toContain('MAT001');
   });
 
   /**
@@ -287,13 +302,9 @@ describe('import route', () => {
 
     expect(res.status).toBe(409);
     expect(json.error).toContain('Matrículas já existentes no sistema');
-    expect(json.error).toContain('MAT999');
+    expect(json.details[0]).toContain('MAT999');
   });
 
-  /**
-   * @test Valida que perfil é definido corretamente e cria relacionamento
-   * @description Deve inserir com perfil='funcionario' e criar entrada em funcionarios_entidades
-   */
   it('inserts funcionarios with correct perfil and creates relationship', async () => {
     // Limpar todos os mocks anteriores
     queryAsGestorEntidade.mockReset();
@@ -319,16 +330,10 @@ describe('import route', () => {
     // Setup: Matrícula não existe
     queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
-    // Setup: BEGIN
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
-
-    // Setup: INSERT funcionarios RETURNING id
+    // Dentro da transação: INSERT funcionarios RETURNING id
     queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 1 }] });
 
-    // Setup: INSERT funcionarios_entidades
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
-
-    // Setup: COMMIT
+    // Dentro da transação: INSERT funcionarios_entidades
     queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     const fakeFile = {
@@ -369,9 +374,104 @@ describe('import route', () => {
     );
     expect(insertRelCalls.length).toBeGreaterThanOrEqual(1);
 
-    // Verificar que tomador_id foi passado como parâmetro
-    expect(lastInsert[1]).toBeDefined();
-    expect(Array.isArray(lastInsert[1])).toBe(true);
-    expect(lastInsert[1]).toContain(1); // entidade_id mockado
+    // Verificar que entidade_id foi passado no INSERT de funcionarios_entidades
+    const insertEntCalls = allCalls.filter((call) =>
+      call[0].includes('INSERT INTO funcionarios_entidades')
+    );
+    expect(insertEntCalls.length).toBeGreaterThanOrEqual(1);
+    const entParams = insertEntCalls[insertEntCalls.length - 1][1];
+    expect(entParams).toContain(1); // entidade_id mockado
+  });
+
+  it('vincula funcionario existente a nova entidade (multiplos empregos)', async () => {
+    queryAsGestorEntidade.mockReset();
+
+    parseXlsxBufferToRows.mockReturnValue({
+      success: true,
+      data: [
+        {
+          cpf: '74867746070',
+          nome: 'Carlos Existente',
+          data_nascimento: '1988-06-22',
+          setor: 'TI',
+          funcao: 'Dev',
+          email: 'carlos@emp.com',
+        },
+      ],
+    });
+
+    // CPF já existe no banco com id=42
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 42, cpf: '74867746070' }] });
+
+    // (sem matrículas novas a verificar — toInsertNew está vazio)
+
+    // Dentro da transação: CPF ainda não vinculado a esta entidade
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] }); // SELECT 1 FROM funcionarios_entidades
+
+    // INSERT funcionarios_entidades
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+    const fakeFile = {
+      arrayBuffer: async () => new ArrayBuffer(8),
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      name: 'teste.xlsx',
+    };
+
+    const req = {
+      formData: async () => ({ get: () => fakeFile }),
+    } as unknown as Request;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.created).toBe(0);
+    expect(json.linked).toBe(1);
+    expect(json.warnings).toBeUndefined();
+  });
+
+  it('registra warning quando CPF já está vinculado a esta entidade', async () => {
+    queryAsGestorEntidade.mockReset();
+
+    parseXlsxBufferToRows.mockReturnValue({
+      success: true,
+      data: [
+        {
+          cpf: '74867746070',
+          nome: 'Carlos Vinculado',
+          data_nascimento: '1988-06-22',
+          setor: 'TI',
+          funcao: 'Dev',
+          email: 'carlos@emp.com',
+        },
+      ],
+    });
+
+    // CPF existe no banco
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 42, cpf: '74867746070' }] });
+
+    // Dentro da transação: já está vinculado a esta entidade
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 999 }] }); // SELECT 1 FROM funcionarios_entidades
+
+    const fakeFile = {
+      arrayBuffer: async () => new ArrayBuffer(8),
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      name: 'teste.xlsx',
+    };
+
+    const req = {
+      formData: async () => ({ get: () => fakeFile }),
+    } as unknown as Request;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+    expect(json.created).toBe(0);
+    expect(json.linked).toBe(0);
+    expect(Array.isArray(json.warnings)).toBe(true);
+    expect(json.warnings[0]).toContain('74867746070');
   });
 });

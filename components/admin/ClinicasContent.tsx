@@ -7,17 +7,15 @@ import {
   Edit,
   ChevronDown,
   ChevronUp,
-  Users,
   Building2,
-  UserCheck,
   Mail,
   Phone,
   MapPin,
   Trash2,
 } from 'lucide-react';
-import ModalLinkContratoPersonalizado from '@/components/modals/ModalLinkContratoPersonalizado';
 import AdminConfirmDeleteModal from '@/components/modals/AdminConfirmDeleteModal';
 import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
+import ClinicaDetailsPanel from '@/components/admin/ClinicaDetailsPanel';
 
 interface Clinica {
   id: number;
@@ -34,8 +32,6 @@ interface Clinica {
   responsavel_cpf: string;
   responsavel_email: string;
   criado_em: string;
-  plano_personalizado_pendente?: boolean;
-  numero_funcionarios_estimado?: number;
 }
 
 interface Gestor {
@@ -79,33 +75,15 @@ export function ClinicasContent() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState<number | null>(null);
 
-  const [clinicasPersonalizado, setClinicasPersonalizado] = useState<Clinica[]>(
-    []
-  );
-
-  const [showLinkContratoModal, setShowLinkContratoModal] = useState(false);
-  const [contratoPersonalizadoData, setContratoPersonalizadoData] =
-    useState<any>(null);
-
   const [showCadastroModal, setShowCadastroModal] = useState(false);
 
   const fetchClinicas = async () => {
     setLoading(true);
     try {
-      // Buscar clínicas aprovadas
       const resAprovadas = await fetch('/api/admin/tomadores?tipo=clinica');
       if (resAprovadas.ok) {
         const dataAprovadas = await resAprovadas.json();
         setClinicas(dataAprovadas.tomadores || []);
-      }
-
-      // Buscar clínicas com plano personalizado pendente
-      const resPersonalizado = await fetch(
-        '/api/admin/tomadores?tipo=clinica&plano_personalizado_pendente=true'
-      );
-      if (resPersonalizado.ok) {
-        const dataPersonalizado = await resPersonalizado.json();
-        setClinicasPersonalizado(dataPersonalizado.tomadores || []);
       }
     } catch (error) {
       console.error('Erro ao buscar clínicas:', error);
@@ -228,153 +206,6 @@ export function ClinicasContent() {
     );
   }
 
-  // Componente para gerenciar plano personalizado
-  function PlanoPersonalizadoCard({
-    clinica,
-    onUpdate,
-  }: {
-    clinica: Clinica;
-    onUpdate: () => void;
-  }) {
-    const [valor, setValor] = useState('');
-    const [numeroFuncionarios, setNumeroFuncionarios] = useState(
-      clinica.numero_funcionarios_estimado?.toString() || ''
-    );
-    const [definindo, setDefinindo] = useState(false);
-    const [erro, setErro] = useState('');
-
-    const handleDefinirPlano = async () => {
-      if (!valor || parseFloat(valor) <= 0) {
-        setErro('Valor deve ser maior que zero');
-        return;
-      }
-
-      if (!numeroFuncionarios || parseInt(numeroFuncionarios) <= 0) {
-        setErro('Número de funcionários deve ser maior que zero');
-        return;
-      }
-
-      setDefinindo(true);
-      setErro('');
-
-      try {
-        const response = await fetch('/api/admin/tomadores', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: clinica.id,
-            plano_personalizado_valor: parseFloat(valor),
-            numero_funcionarios_estimado: parseInt(numeroFuncionarios),
-          }),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Erro ao definir plano');
-        }
-
-        const data = await response.json();
-
-        // Abrir modal com link e QR code
-        setContratoPersonalizadoData({
-          contratoId: data.contrato_id,
-          tomadorNome: clinica.nome,
-          valorPorFuncionario: parseFloat(valor),
-          numeroFuncionarios: parseInt(numeroFuncionarios),
-          valorTotal: parseFloat(valor) * parseInt(numeroFuncionarios),
-        });
-        setShowLinkContratoModal(true);
-
-        onUpdate(); // Recarregar lista
-      } catch (error) {
-        setErro(error instanceof Error ? error.message : 'Erro desconhecido');
-      } finally {
-        setDefinindo(false);
-      }
-    };
-
-    return (
-      <div className="border border-orange-300 rounded-lg bg-orange-50 p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h4 className="text-lg font-semibold text-gray-900">
-              {clinica.nome}
-            </h4>
-            <p className="text-sm text-gray-600 mt-1">
-              CNPJ: {clinica.cnpj} • {clinica.cidade}/{clinica.estado}
-            </p>
-            <p className="text-sm text-gray-600">
-              Responsável: {clinica.responsavel_nome} (
-              {clinica.responsavel_email})
-            </p>
-          </div>
-          <span className="px-3 py-1 text-sm font-medium bg-yellow-100 text-yellow-800 rounded-full">
-            Aguardando Definição
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Valor por Funcionário (R$)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0.01"
-              value={valor}
-              onChange={(e) => setValor(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-              placeholder="Ex: 150.00"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Número de Funcionários
-            </label>
-            <input
-              type="number"
-              min="1"
-              value={numeroFuncionarios}
-              onChange={(e) => setNumeroFuncionarios(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-              placeholder="Ex: 100"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Valor Total Estimado
-            </label>
-            <div className="px-3 py-2 bg-gray-100 border border-gray-300 rounded-md text-gray-700">
-              R${' '}
-              {(
-                parseFloat(valor || '0') * parseInt(numeroFuncionarios || '0')
-              ).toFixed(2)}
-            </div>
-          </div>
-        </div>
-
-        {erro && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-            <p className="text-sm text-red-600">{erro}</p>
-          </div>
-        )}
-
-        <div className="flex justify-end">
-          <button
-            onClick={handleDefinirPlano}
-            disabled={definindo || !valor || !numeroFuncionarios}
-            className="px-6 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {definindo ? 'Definindo...' : 'Definir Plano e Gerar Link'}
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
@@ -389,40 +220,6 @@ export function ClinicasContent() {
           Nova Clínica
         </button>
       </div>
-
-      {/* Seção de Planos Personalizados Pendentes */}
-      {clinicasPersonalizado.length > 0 && (
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-orange-600 mb-4">
-            📋 Planos Personalizados Pendentes de Definição
-          </h3>
-          <div className="space-y-4">
-            {clinicasPersonalizado.map((clinica) => (
-              <PlanoPersonalizadoCard
-                key={clinica.id}
-                clinica={clinica}
-                onUpdate={fetchClinicas}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Modal Link Contrato Personalizado */}
-      {contratoPersonalizadoData && (
-        <ModalLinkContratoPersonalizado
-          isOpen={showLinkContratoModal}
-          onClose={() => {
-            setShowLinkContratoModal(false);
-            setContratoPersonalizadoData(null);
-          }}
-          contratoId={contratoPersonalizadoData.contratoId}
-          tomadorNome={contratoPersonalizadoData.tomadorNome}
-          valorPorFuncionario={contratoPersonalizadoData.valorPorFuncionario}
-          numeroFuncionarios={contratoPersonalizadoData.numeroFuncionarios}
-          valorTotal={contratoPersonalizadoData.valorTotal}
-        />
-      )}
 
       {clinicas.length === 0 ? (
         <div className="text-center py-12">
@@ -520,203 +317,12 @@ export function ClinicasContent() {
 
                 {/* Detalhes Expandidos */}
                 {isExpanded && (
-                  <div className="border-t border-gray-200 bg-gray-50">
-                    {isLoadingDetails ? (
-                      <div className="p-6 flex items-center justify-center">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                      </div>
-                    ) : (
-                      <div className="p-6 space-y-6">
-                        {/* Responsável Principal */}
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <UserCheck className="w-4 h-4" />
-                            Responsável Principal
-                          </h4>
-                          <div className="bg-white rounded-md p-4 border border-gray-200">
-                            <div className="grid grid-cols-3 gap-4 text-sm">
-                              <div>
-                                <span className="text-gray-500">Nome:</span>
-                                <p className="font-medium text-gray-900">
-                                  {clinica.responsavel_nome}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-gray-500">CPF:</span>
-                                <p className="font-medium text-gray-900">
-                                  {clinica.responsavel_cpf}
-                                </p>
-                              </div>
-                              <div>
-                                <span className="text-gray-500">Email:</span>
-                                <p className="font-medium text-gray-900">
-                                  {clinica.responsavel_email}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* Gestores RH */}
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <Users className="w-4 h-4" />
-                            Gestores RH (
-                            {gestores.filter((g) => !g.is_responsavel).length})
-                          </h4>
-                          {gestores.filter((g) => !g.is_responsavel).length ===
-                          0 ? (
-                            <p className="text-sm text-gray-500 italic">
-                              Nenhum gestor RH adicional
-                            </p>
-                          ) : (
-                            <div className="space-y-2">
-                              {gestores
-                                .filter((g) => !g.is_responsavel)
-                                .map((gestor) => (
-                                  <div
-                                    key={gestor.cpf}
-                                    className="bg-white rounded-md p-4 border border-gray-200"
-                                  >
-                                    <div className="flex items-center justify-between">
-                                      <div className="grid grid-cols-4 gap-4 text-sm flex-1">
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Nome:
-                                          </span>
-                                          <p className="font-medium text-gray-900">
-                                            {gestor.nome}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Login (CPF):
-                                          </span>
-                                          <p className="font-medium text-gray-900">
-                                            {gestor.cpf}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Email:
-                                          </span>
-                                          <p className="font-medium text-gray-900">
-                                            {gestor.email}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Empresas geridas:
-                                          </span>
-                                          <p className="font-medium text-gray-900">
-                                            {gestor.total_empresas_geridas}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <span
-                                        className={`px-2 py-1 text-xs font-medium rounded-full ml-4 ${
-                                          gestor.ativo
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-red-100 text-red-800'
-                                        }`}
-                                      >
-                                        {gestor.ativo ? 'Ativo' : 'Inativo'}
-                                      </span>
-                                    </div>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Empresas Clientes */}
-                        <div>
-                          <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                            <Building2 className="w-4 h-4" />
-                            Empresas Clientes ({empresas.length})
-                          </h4>
-                          {empresas.length === 0 ? (
-                            <p className="text-sm text-gray-500 italic">
-                              Nenhuma empresa cliente
-                            </p>
-                          ) : (
-                            <div className="space-y-2">
-                              {empresas.map((empresa) => (
-                                <div
-                                  key={empresa.id}
-                                  className="bg-white rounded-md p-4 border border-gray-200"
-                                >
-                                  <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-2 mb-2">
-                                        <h5 className="font-medium text-gray-900">
-                                          {empresa.nome} [ID={empresa.id}]
-                                        </h5>
-                                        <span
-                                          className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                            empresa.ativa
-                                              ? 'bg-green-100 text-green-800'
-                                              : 'bg-red-100 text-red-800'
-                                          }`}
-                                        >
-                                          {empresa.ativa ? 'Ativa' : 'Inativa'}
-                                        </span>
-                                      </div>
-                                      <div className="grid grid-cols-4 gap-4 text-sm text-gray-600">
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Funcionários:
-                                          </span>
-                                          <p className="font-medium text-gray-900">
-                                            {empresa.total_funcionarios}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Avaliações:
-                                          </span>
-                                          <p className="font-medium text-gray-900">
-                                            {empresa.total_avaliacoes}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Concluídas:
-                                          </span>
-                                          <p className="font-medium text-green-700">
-                                            {empresa.avaliacoes_concluidas}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <span className="text-gray-500">
-                                            Liberadas:
-                                          </span>
-                                          <p className="font-medium text-blue-700">
-                                            {empresa.avaliacoes_liberadas}
-                                          </p>
-                                        </div>
-                                      </div>
-                                      <div className="mt-2 text-xs text-gray-500">
-                                        {empresa.cidade && empresa.estado && (
-                                          <span>
-                                            {empresa.cidade}/{empresa.estado}{' '}
-                                            •{' '}
-                                          </span>
-                                        )}
-                                        {empresa.cnpj && (
-                                          <span>CNPJ: {empresa.cnpj}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <ClinicaDetailsPanel
+                    clinica={clinica}
+                    gestores={gestores}
+                    empresas={empresas}
+                    isLoading={!!isLoadingDetails}
+                  />
                 )}
               </div>
             );

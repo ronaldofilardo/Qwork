@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/pagamento-simular.test.ts
+ * Testes: API /api/pagamento/simular - Simulação de Pagamento
+ */
+
 import '@testing-library/jest-dom';
 
 // Mock da API inteira

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export async function GET(
   request: NextRequest,
@@ -8,13 +9,7 @@ export async function GET(
 ) {
   try {
     const session = getSession();
-
-    if (!session || session.perfil !== 'admin') {
-      return NextResponse.json(
-        { error: 'Acesso negado. Apenas administradores.' },
-        { status: 403 }
-      );
-    }
+    assertRoles(session, [ROLES.SUPORTE]);
 
     const entidadeId = params.id;
 

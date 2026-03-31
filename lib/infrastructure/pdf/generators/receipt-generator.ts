@@ -48,9 +48,7 @@ export interface ReciboCompleto {
   tomador_cidade?: string;
   tomador_estado?: string;
   tomador_cep?: string;
-  plano_nome: string;
-  plano_tipo: string;
-  plano_descricao?: string;
+  servico_nome: string;
   valor_total: number;
   valor_por_funcionario?: number;
   qtd_funcionarios?: number;
@@ -220,28 +218,10 @@ export async function gerarRecibo(
       pagamento = pagamentoResult.rows[0];
     }
 
-    // 4. Buscar dados do plano do contrato
-    console.log('[RECIBO] Buscando plano do contrato...');
-    const planoResult = await query<{
-      nome?: string;
-      tipo?: string;
-      descricao?: string;
-    }>(
-      `SELECT pl.nome, pl.tipo, pl.descricao
-       FROM contratos c
-       LEFT JOIN planos pl ON c.plano_id = pl.id
-       WHERE c.id = $1`,
-      [data.contrato_id]
-    );
-
-    console.log('[RECIBO] Plano encontrado, rows:', planoResult.rows.length);
-
-    const planoData = planoResult.rows[0] || {};
+    // 4. Preparar dados do serviço (sem dependência de planos)
     const pagamentoCompleto = {
       ...pagamento,
-      plano_nome: planoData.nome || 'Plano Padrão',
-      plano_tipo: planoData.tipo || 'fixo',
-      plano_descricao: planoData.descricao || 'Descrição padrão',
+      servico_nome: 'Serviço de Avaliação',
     };
 
     // 5. Gerar número do recibo
@@ -293,9 +273,7 @@ export async function gerarRecibo(
       tomador_cidade: tomador.cidade,
       tomador_estado: tomador.estado,
       tomador_cep: tomador.cep,
-      plano_nome: pagamentoCompleto.plano_nome,
-      plano_tipo: pagamentoCompleto.plano_tipo,
-      plano_descricao: pagamentoCompleto.plano_descricao,
+      servico_nome: pagamentoCompleto.servico_nome,
       valor_total: computedValorTotal,
       valor_por_funcionario: computedValorPorFuncionario,
       qtd_funcionarios: computedNumeroFuncionarios,
@@ -632,16 +610,11 @@ export function gerarHtmlRecibo(recibo: ReciboCompleto): string {
   </div>
 
   <div class="section">
-    <div class="section-title">DADOS DO PLANO CONTRATADO</div>
+    <div class="section-title">DADOS DO SERVIÇO CONTRATADO</div>
     <div class="field">
-      <span class="field-label">Plano:</span>
-      ${recibo.plano_nome}
+      <span class="field-label">Serviço:</span>
+      ${recibo.servico_nome}
     </div>
-    <div class="field">
-      <span class="field-label">Tipo:</span>
-      ${recibo.plano_tipo === 'fixo' ? 'Plano Fixo' : 'Plano Personalizado'}
-    </div>
-    ${recibo.plano_descricao ? `<div class="field"><span class="field-label">Descrição:</span> ${recibo.plano_descricao}</div>` : ''}
     ${recibo.qtd_funcionarios ? `<div class="field"><span class="field-label">Quantidade de Funcionários:</span> ${recibo.qtd_funcionarios}</div>` : ''}
     ${recibo.valor_por_funcionario ? `<div class="field"><span class="field-label">Valor por Funcionário:</span> ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(Number(recibo.valor_por_funcionario))}</div>` : ''}
     <div class="field">

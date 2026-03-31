@@ -16,7 +16,7 @@ import fs from 'fs';
 
 describe('🔧 Emissor Local → Banco PROD', () => {
   describe('Validação de Configuração .env.local', () => {
-    it('DEVE ter DATABASE_URL apontando para Neon', () => {
+    it('DEVE ter ALLOW_PROD_DB_LOCAL=true para modo emissor', () => {
       const envPath = path.join(__dirname, '../../.env.local');
 
       if (!fs.existsSync(envPath)) {
@@ -25,46 +25,60 @@ describe('🔧 Emissor Local → Banco PROD', () => {
 
       const content = fs.readFileSync(envPath, 'utf-8');
 
-      // Deve conter URL do Neon
-      expect(content).toContain('neondb_owner');
-      expect(content).toContain('neon.tech');
-      expect(content).toContain('neondb');
-
-      // Deve ter DATABASE_URL
-      expect(content).toMatch(/DATABASE_URL=postgresql:\/\/neondb_owner/);
-    });
-
-    it('DEVE ter LOCAL_DATABASE_URL apontando para Neon', () => {
-      const envPath = path.join(__dirname, '../../.env.local');
-      const content = fs.readFileSync(envPath, 'utf-8');
-
-      // LOCAL_DATABASE_URL também deve apontar para Neon
-      expect(content).toMatch(/LOCAL_DATABASE_URL=postgresql:\/\/neondb_owner/);
-    });
-
-    it('DEVE ter ALLOW_PROD_DB_LOCAL=true', () => {
-      const envPath = path.join(__dirname, '../../.env.local');
-      const content = fs.readFileSync(envPath, 'utf-8');
-
-      // Flag para permitir acesso a PROD localmente
+      // Flag obrigatória para modo emissor local
       expect(content).toContain('ALLOW_PROD_DB_LOCAL=true');
     });
 
-    it('NÃO DEVE apontar para banco local de desenvolvimento', () => {
+    it('DEVE ter EMISSOR_CPF definido como guard de segurança', () => {
       const envPath = path.join(__dirname, '../../.env.local');
       const content = fs.readFileSync(envPath, 'utf-8');
 
-      // Garantir que não está usando banco local de desenvolvimento
-      const localDbMatch = content.match(/DATABASE_URL=.*localhost/);
-      expect(localDbMatch).toBeNull();
+      // EMISSOR_CPF é obrigatório quando ALLOW_PROD_DB_LOCAL=true
+      // Garante que apenas o emissor autorizado acessa o Neon em DEV
+      expect(content).toContain('EMISSOR_CPF=53051173991');
+    });
+
+    it('NÃO DEVE ter LOCAL_DATABASE_URL apontando para neon.tech', () => {
+      const envPath = path.join(__dirname, '../../.env.local');
+      const content = fs.readFileSync(envPath, 'utf-8');
+
+      // LOCAL_DATABASE_URL (quando presente) deve ser banco local ou estar ausente
+      // A conexão ao Neon em modo emissor usa DATABASE_URL (do .env base)
+      const localDbLine = content
+        .split('\n')
+        .find(
+          (line) =>
+            line.startsWith('LOCAL_DATABASE_URL=') && !line.startsWith('#')
+        );
+
+      if (localDbLine) {
+        expect(localDbLine).not.toContain('neon.tech');
+      }
+      // Se LOCAL_DATABASE_URL não estiver em .env.local, OK — vem do .env base
+    });
+
+    it('.env base DEVE ter DATABASE_URL apontando para Neon', () => {
+      // DATABASE_URL (Neon) é definido no .env base, não em .env.local
+      // lib/db.ts usa DATABASE_URL quando ALLOW_PROD_DB_LOCAL=true
+      const envBasePath = path.join(__dirname, '../../.env');
+
+      if (!fs.existsSync(envBasePath)) {
+        throw new Error('.env não encontrado!');
+      }
+
+      const content = fs.readFileSync(envBasePath, 'utf-8');
+
+      // .env base deve ter DATABASE_URL apontando para Neon
+      expect(content).toMatch(/DATABASE_URL=postgresql:\/\/neondb_owner/);
+      expect(content).toContain('neon.tech');
     });
 
     it('DEVE ter configurações Backblaze de PROD', () => {
       const envPath = path.join(__dirname, '../../.env.local');
       const content = fs.readFileSync(envPath, 'utf-8');
 
-      // Backblaze deve estar configurado
-      expect(content).toContain('BACKBLAZE_BUCKET=laudos-qwork');
+      // Backblaze deve estar configurado (aceita com ou sem aspas nos valores)
+      expect(content).toMatch(/BACKBLAZE_BUCKET=.?laudos-qwork.?/);
       expect(content).toContain('BACKBLAZE_KEY_ID');
       expect(content).toContain('BACKBLAZE_APPLICATION_KEY');
     });

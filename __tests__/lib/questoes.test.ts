@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/questoes.test.ts
+ * Testes: lib/questoes
+ */
+
 import {
   grupos,
   getQuestoesPorNivel,

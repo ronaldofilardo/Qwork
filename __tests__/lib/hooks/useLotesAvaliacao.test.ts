@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/hooks/useLotesAvaliacao.test.ts
+ * Testes: useLotesAvaliacao
+ */
+
 import { renderHook, waitFor, act } from '@testing-library/react';
 import { useLotesAvaliacao } from '@/lib/hooks/useLotesAvaliacao';
 

@@ -12,7 +12,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    await requireRole('admin');
+    await requireRole(['suporte', 'admin'], false);
 
     const clinicaId = parseInt(params.id);
 

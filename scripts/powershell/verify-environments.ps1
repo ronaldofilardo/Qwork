@@ -30,7 +30,7 @@ function Execute-Query {
 Write-Host "1. Verificando arquivos de configuração..." -ForegroundColor Yellow
 Check-File ".env.development" "Arquivo .env.development"
 Check-File ".env.production" "Arquivo .env.production"
-Check-File "database/schema-clean-final.sql" "Schema SQL"
+Check-File "database/schemas/schema-clean-final.sql" "Schema SQL"
 Check-File "lib/db.ts" "Biblioteca de conexão"
 
 Write-Host ""

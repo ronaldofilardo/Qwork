@@ -1,17 +1,13 @@
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
 export const GET = async (_req: Request) => {
-  const session = await Promise.resolve(getSession());
-  if (!session || session.perfil !== 'rh') {
-    return NextResponse.json(
-      { error: 'Acesso negado', success: false },
-      { status: 403 }
-    );
-  }
+  const session = getSession();
+  assertRoles(session, [ROLES.RH]);
   const user = session;
 
   try {
@@ -64,7 +60,7 @@ export const GET = async (_req: Request) => {
       JOIN lotes_avaliacao la ON l.lote_id = la.id
       JOIN empresas_clientes ec ON la.empresa_id = ec.id
       WHERE la.clinica_id = $2
-        AND l.status = 'emitido'
+        AND l.status IN ('emitido', 'enviado')
         AND l.arquivo_remoto_url IS NOT NULL
         AND l.emitido_em >= NOW() - INTERVAL '7 days'
 

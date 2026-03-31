@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/liberar-lote-rh-resilience.test.ts
+ * Testes: Integration: Liberar lote RH - resistência à corrida (resilience)
+ */
+
 jest.mock('@/lib/session', () => ({
   requireAuth: jest.fn(),
   requireRHWithEmpresaAccess: jest.fn(),

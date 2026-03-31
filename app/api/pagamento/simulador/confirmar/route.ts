@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const {
-      entidade_id,
-      contrato_id,
-      _plano_id,
-      numero_parcelas,
-      metodo_pagamento,
-    } = body;
+    const { entidade_id, contrato_id, numero_parcelas, metodo_pagamento } =
+      body;
 
     if (!entidade_id) {
       return NextResponse.json(
@@ -94,6 +90,20 @@ export async function POST(request: NextRequest) {
         `UPDATE entidades SET status = 'aprovado', ativa = true, pagamento_confirmado = true, aprovado_em = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
         [entidade_id]
       );
+
+      // Auto-converter leads pendentes por CNPJ
+      try {
+        const entidade = entidadeRes.rows[0];
+        const entidadeCnpj = (entidade.cnpj || '').replace(/\D/g, '');
+        if (entidadeCnpj) {
+          await autoConvertirLeadPorCnpj(entidadeCnpj, entidade_id, null);
+        }
+      } catch (autoErr) {
+        console.error(
+          '[SIMULADOR] Erro no auto-link por CNPJ (não-bloqueante):',
+          autoErr
+        );
+      }
 
       // Criar login simples (se não existir)
       const entidade = entidadeRes.rows[0];

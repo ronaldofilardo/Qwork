@@ -1,8 +1,17 @@
 /**
- * FASE 3: Backend Unificado - Gestão de Funcionários
+ * @deprecated FASE 3 LEGACY: Este módulo usa colunas que NÃO EXISTEM em produção
+ * (empresa_id, clinica_id, entidade_id, usuario_tipo em `funcionarios`).
  *
- * Módulo centralizado para criação e gestão de funcionários
- * com validação estrita de vínculos por tipo de usuário.
+ * A arquitetura correta usa tabelas intermediárias:
+ * - funcionarios_clinicas (funcionário ↔ empresa via clínica)
+ * - funcionarios_entidades (funcionário ↔ entidade)
+ *
+ * As rotas de produção em app/api/rh/funcionarios/ e app/api/entidade/funcionarios/
+ * já implementam a arquitetura correta. Este módulo é mantido apenas como referência
+ * e NÃO DEVE SER USADO em código novo.
+ *
+ * Qualquer chamada a funções deste módulo gerará erros silenciosos no PostgreSQL
+ * (colunas inexistentes retornam NULL, INSERTs falham).
  */
 
 import { query } from './db';

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * Exemplo de Teste Seguindo a Política de Mocks
  *

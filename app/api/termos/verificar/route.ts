@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { verificarAceites } from '@/lib/termos/verificar-aceites';
+import { assertAuth, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,10 +12,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
-    }
+    assertAuth(session);
 
     // Apenas RH e GESTOR precisam aceitar termos
     if (session.perfil !== 'rh' && session.perfil !== 'gestor') {
@@ -29,6 +27,12 @@ export async function GET() {
 
     return NextResponse.json(aceites);
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
     console.error('[TERMOS] Erro ao verificar aceites:', error);
     return NextResponse.json(
       { error: 'Erro ao verificar aceites' },

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/avaliacao/finalizar.test.ts
+ * Testes: API /api/avaliacao/finalizar
+ */
+
 
 jest.mock('@/lib/db', () => ({
   query: jest.fn()

@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     // Verificar autenticação e permissão admin
-    await requireRole('admin');
+    await requireRole('suporte', false);
 
     const { searchParams } = new URL(request.url);
     const contratoId = searchParams.get('contrato_id');

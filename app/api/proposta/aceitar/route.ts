@@ -37,8 +37,7 @@ export async function POST(request: NextRequest) {
           cp.*,
           e.nome AS entidade_nome,
           e.cnpj,
-          e.responsavel_nome,
-          e.plano_id
+          e.responsavel_nome
         FROM contratacao_personalizada cp
         JOIN entidades e ON cp.entidade_id = e.id
         WHERE cp.id = $1`,
@@ -66,13 +65,12 @@ export async function POST(request: NextRequest) {
       }
 
       // Criar contrato padrão
-      const contratoConteudo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS - PLANO PERSONALIZADO
+      const contratoConteudo = `CONTRATO DE PRESTAÇÃO DE SERVIÇOS
 
 ENTIDADE: ${contratacao.entidade_nome}
 CNPJ: ${contratacao.cnpj}
 RESPONSÁVEL: ${contratacao.responsavel_nome}
 
-PLANO: Personalizado
 NÚMERO DE FUNCIONÁRIOS: ${contratacao.numero_funcionarios_estimado}
 VALOR POR FUNCIONÁRIO: R$ ${parseFloat(contratacao.valor_por_funcionario).toFixed(2)}
 VALOR TOTAL: R$ ${parseFloat(contratacao.valor_total_estimado).toFixed(2)}
@@ -84,17 +82,15 @@ Status: Aguardando Aceite da Entidade`;
       const contratoResult = await query(
         `INSERT INTO contratos (
           contratante_id,
-          plano_id,
           numero_funcionarios,
           valor_total,
           status,
           conteudo,
           conteudo_gerado
-        ) VALUES ($1, $2, $3, $4, 'aguardando_aceite', $5, $5)
+        ) VALUES ($1, $2, $3, 'aguardando_aceite', $4, $4)
         RETURNING id`,
         [
           contratacao.entidade_id,
-          contratacao.plano_id,
           contratacao.numero_funcionarios_estimado,
           contratacao.valor_total_estimado,
           contratoConteudo,
@@ -146,7 +142,7 @@ Status: Aguardando Aceite da Entidade`;
       return NextResponse.json({
         success: true,
         message: 'Proposta aceita com sucesso',
-        redirect_url: `${baseUrl}/sucesso-cadastro?id=${contratacao.entidade_id}&contrato_id=${contratoId}&origem=personalizado`,
+        redirect_url: `${baseUrl}/sucesso-cadastro?id=${contratacao.entidade_id}&contrato_id=${contratoId}`,
         contrato_id: contratoId,
         contratacao_id,
       });

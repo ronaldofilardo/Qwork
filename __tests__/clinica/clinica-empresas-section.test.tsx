@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/clinica/clinica-empresas-section.test.tsx
+ * Testes: EmpresasSection
+ */
+
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import EmpresasSection from '@/components/clinica/EmpresasSection';

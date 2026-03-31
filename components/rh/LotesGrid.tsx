@@ -16,6 +16,7 @@ interface LotesGridProps {
   downloadingLaudo: number | null;
   onLoteClick: (loteId: number) => void;
   onDownloadLaudo: (laudo: any) => void;
+  onRelatorioSetor?: (loteId: number) => void;
   onRefresh?: () => void;
 }
 
@@ -28,6 +29,7 @@ export function LotesGrid({
   downloadingLaudo,
   onLoteClick,
   onDownloadLaudo,
+  onRelatorioSetor,
   onRefresh: _onRefresh,
 }: LotesGridProps) {
   if (lotes.length === 0) {
@@ -58,14 +60,12 @@ export function LotesGrid({
             // Considerar laudos emitidos (novo fluxo) ou quando hash está presente
             (laudoAssociado as any).emitido_em ||
             laudoAssociado.status === 'emitido' ||
+            laudoAssociado.status === 'enviado' ||
             laudoAssociado.hash) &&
           (lote.status === 'concluido' || lote.status === 'finalizado')
         );
         const isPronto = lote.pode_emitir_laudo || temLaudo;
-        const isCancelado =
-          lote.total_avaliacoes > 0 &&
-          lote.avaliacoes_inativadas === lote.total_avaliacoes &&
-          lote.avaliacoes_concluidas === 0;
+        const isCancelado = lote.status === 'cancelado';
 
         // Verificar se há solicitação de emissão pendente
         const emissaoSolicitada = !!(lote.solicitado_em && !temLaudo);
@@ -244,6 +244,20 @@ export function LotesGrid({
                   </p>
                 )}
               </div>
+            )}
+
+            {/* Botão Relatório por Setor */}
+            {onRelatorioSetor && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRelatorioSetor(lote.id);
+                }}
+                disabled={!isPronto}
+                className="w-full mb-3 bg-green-600 text-white px-3 py-2 rounded text-sm hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                📋 Relatório por Setor
+              </button>
             )}
 
             {/* Laudo associado (visível somente se realmente disponível) */}

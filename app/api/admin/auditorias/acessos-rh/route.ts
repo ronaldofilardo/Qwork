@@ -14,8 +14,22 @@ export async function GET() {
     await requireRole('admin');
 
     const result = await query(`
-      SELECT * FROM vw_auditoria_acessos_rh
-      ORDER BY login_timestamp DESC
+      SELECT
+        sl.id,
+        sl.cpf,
+        sl.clinica_id,
+        sl.login_timestamp,
+        sl.logout_timestamp,
+        (sl.logout_timestamp - sl.login_timestamp) AS session_duration,
+        sl.ip_address,
+        sl.user_agent,
+        f.nome,
+        c.nome AS clinica_nome
+      FROM session_logs sl
+      LEFT JOIN funcionarios f ON f.cpf = sl.cpf::bpchar
+      LEFT JOIN clinicas c ON c.id = sl.clinica_id
+      WHERE sl.perfil = 'rh'
+      ORDER BY sl.login_timestamp DESC
       LIMIT 1000
     `);
 

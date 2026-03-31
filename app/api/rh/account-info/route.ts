@@ -63,7 +63,11 @@ export const GET = async () => {
           telefone,
           endereco,
           ativa,
-          criado_em
+          criado_em,
+          EXISTS(
+            SELECT 1 FROM contratos c
+            WHERE c.tomador_id = clinicas.id AND c.aceito = true
+          ) AS tem_contrato_aceito
         FROM clinicas
         WHERE id = $1`,
         [clinicaId]
@@ -88,7 +92,11 @@ export const GET = async () => {
           estado, 
           responsavel_nome, 
           criado_em, 
-          status
+          status,
+          EXISTS(
+            SELECT 1 FROM contratos c
+            WHERE c.tomador_id = entidades.id AND c.aceito = true
+          ) AS tem_contrato_aceito
         FROM entidades 
         WHERE id = $1`,
         [entidadeId]
@@ -108,6 +116,36 @@ export const GET = async () => {
     }
 
     // Buscar gestores RH da clínica/entidade
+    // Buscar representante vinculado à clínica ou entidade
+    let representante = null;
+    if (clinicaId) {
+      const repQuery = await query(
+        `SELECT r.nome, r.email, r.telefone
+         FROM vinculos_comissao vc
+         JOIN representantes r ON r.id = vc.representante_id
+         WHERE vc.clinica_id = $1
+         ORDER BY vc.criado_em DESC
+         LIMIT 1`,
+        [clinicaId]
+      );
+      if (repQuery.rows.length > 0) {
+        representante = repQuery.rows[0];
+      }
+    } else if (entidadeId) {
+      const repQuery = await query(
+        `SELECT r.nome, r.email, r.telefone
+         FROM vinculos_comissao vc
+         JOIN representantes r ON r.id = vc.representante_id
+         WHERE vc.entidade_id = $1
+         ORDER BY vc.criado_em DESC
+         LIMIT 1`,
+        [entidadeId]
+      );
+      if (repQuery.rows.length > 0) {
+        representante = repQuery.rows[0];
+      }
+    }
+
     let gestoresQuery;
 
     if (clinicaId) {
@@ -167,6 +205,14 @@ export const GET = async () => {
         responsavel_nome: organizacao.responsavel_nome || null,
         criado_em: organizacao.criado_em || null,
         status: organizacao.status || organizacao.ativa || null,
+        tem_contrato_aceito: organizacao.tem_contrato_aceito ?? false,
+        representante: representante
+          ? {
+              nome: representante.nome,
+              email: representante.email,
+              telefone: representante.telefone,
+            }
+          : null,
       },
       gestores: gestoresQuery.rows.map((gestor) => ({
         id: gestor.id,

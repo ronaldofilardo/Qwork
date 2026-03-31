@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/ensure-admin-password.test.ts
+ * Testes: Inicialização: garantir hash do admin (dev/test)
+ */
+
 import { query } from '@/lib/db';
 import { ensureAdminPassword } from '@/lib/db';
 import bcrypt from 'bcryptjs';

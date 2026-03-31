@@ -18,6 +18,13 @@ export enum PerfilUsuario {
   // Gestor de Entidade: gera funcionários DIRETAMENTE (sem passar por clínica/empresa)
   GESTOR = 'gestor',
   CADASTRO = 'cadastro',
+  REPRESENTANTE = 'representante',
+  // Suporte: gestão financeira da plataforma (cobrança, pagamentos, comissões-pagamento)
+  SUPORTE = 'suporte',
+  // Comercial: gestão de representantes, leads, comissões-aprovação
+  COMERCIAL = 'comercial',
+  // Vendedor: vendas diretas, métricas pessoais
+  VENDEDOR = 'vendedor',
 }
 
 export type PerfilUsuarioType =
@@ -26,7 +33,11 @@ export type PerfilUsuarioType =
   | 'admin'
   | 'emissor'
   | 'gestor'
-  | 'cadastro';
+  | 'cadastro'
+  | 'representante'
+  | 'suporte'
+  | 'comercial'
+  | 'vendedor';
 
 /**
  * Status de avaliação
@@ -130,6 +141,10 @@ export const PERFIS_VALIDOS: PerfilUsuarioType[] = [
   'admin',
   'emissor',
   'gestor',
+  'representante',
+  'suporte',
+  'comercial',
+  'vendedor',
 ];
 export const STATUS_AVALIACAO_VALIDOS: StatusAvaliacaoType[] = [
   'iniciada',
@@ -150,44 +165,6 @@ export const TIPO_LOTE_VALIDOS: TipoLoteType[] = [
   'gestao',
 ];
 export const NIVEL_CARGO_VALIDOS: NivelCargoType[] = ['operacional', 'gestao'];
-/**
- * Status de contratação personalizada
- * Sincronizado com enum status_contratacao_personalizada (migration 021)
- * @enum {string}
- */
-export enum StatusContratacaoPersonalizada {
-  PRE_CADASTRO = 'pre_cadastro',
-  AGUARDANDO_VALOR_ADMIN = 'aguardando_valor_admin',
-  VALOR_DEFINIDO = 'valor_definido',
-  AGUARDANDO_PAGAMENTO = 'aguardando_pagamento',
-  PAGAMENTO_CONFIRMADO = 'pagamento_confirmado',
-  ATIVO = 'ativo',
-  REJEITADO = 'rejeitado',
-  CANCELADO = 'cancelado',
-}
-
-export type StatusContratacaoPersonalizadaType =
-  | 'pre_cadastro'
-  | 'aguardando_valor_admin'
-  | 'valor_definido'
-  | 'aguardando_pagamento'
-  | 'pagamento_confirmado'
-  | 'ativo'
-  | 'rejeitado'
-  | 'cancelado';
-
-/**
- * Tipo de plano de contratação
- * @enum {string}
- */
-export enum TipoPlano {
-  FIXO = 'fixo',
-  PERSONALIZADO = 'personalizado',
-  BASICO = 'basico',
-  PREMIUM = 'premium',
-}
-
-export type TipoPlanoType = 'fixo' | 'personalizado' | 'basico' | 'premium';
 
 /**
  * Tipo de tomador
@@ -206,18 +183,6 @@ export type TipoEntidadeType = 'clinica' | 'entidade';
 export const ExtendedTypeValidators = {
   ...TypeValidators,
 
-  isStatusContratacaoPersonalizada: (
-    value: string
-  ): value is StatusContratacaoPersonalizadaType => {
-    return Object.values(StatusContratacaoPersonalizada).includes(
-      value as StatusContratacaoPersonalizada
-    );
-  },
-
-  isTipoPlano: (value: string): value is TipoPlanoType => {
-    return Object.values(TipoPlano).includes(value as TipoPlano);
-  },
-
   isTipoEntidade: (value: string): value is TipoEntidadeType => {
     return Object.values(TipoEntidade).includes(value as TipoEntidade);
   },
@@ -226,20 +191,6 @@ export const ExtendedTypeValidators = {
 /**
  * Arrays de valores válidos para contratação
  */
-export const STATUS_CONTRATACAO_PERSONALIZADA_VALIDOS: StatusContratacaoPersonalizadaType[] =
-  [
-    'pre_cadastro',
-    'aguardando_valor_admin',
-    'valor_definido',
-    'aguardando_pagamento',
-    'pagamento_confirmado',
-    'ativo',
-    'rejeitado',
-    'cancelado',
-  ];
-
-export const TIPO_PLANO_VALIDOS: TipoPlanoType[] = ['fixo', 'personalizado'];
-
 export const TIPO_ENTIDADE_VALIDOS: TipoEntidadeType[] = [
   'clinica',
   'entidade',
@@ -248,27 +199,6 @@ export const TIPO_ENTIDADE_VALIDOS: TipoEntidadeType[] = [
 /**
  * Mapeamento de labels para exibição
  */
-export const StatusContratacaoPersonalizadaLabels: Record<
-  StatusContratacaoPersonalizadaType,
-  string
-> = {
-  pre_cadastro: 'Pré-cadastro',
-  aguardando_valor_admin: 'Aguardando Definição de Valor',
-  valor_definido: 'Valor Definido',
-  aguardando_pagamento: 'Aguardando Pagamento',
-  pagamento_confirmado: 'Pagamento Confirmado',
-  ativo: 'Ativo',
-  rejeitado: 'Rejeitado',
-  cancelado: 'Cancelado',
-};
-
-export const TipoPlanoLabels: Record<TipoPlanoType, string> = {
-  fixo: 'Plano Fixo',
-  personalizado: 'Plano Personalizado',
-  basico: 'Plano Básico',
-  premium: 'Plano Premium',
-};
-
 export const TipoEntidadeLabels: Record<TipoEntidadeType, string> = {
   clinica: 'Serviço de Medicina Ocupacional',
   entidade: 'Empresa Privada',

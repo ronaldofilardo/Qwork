@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ModalPagamento.simular.test.tsx
+ * Testes: ModalPagamento - simulação de pagamento (dev)
+ */
+
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';

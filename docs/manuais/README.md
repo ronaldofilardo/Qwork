@@ -1,12 +1,12 @@
 # Manuais de Usuário - Sistema QWork
 
-**Versão:** 1.0 | **Atualização:** Fevereiro/2026
+**Versão:** 1.1 | **Atualização:** Março/2026
 
 ---
 
 ## Visão Geral
 
-O sistema QWork possui **4 tipos de usuários**, cada um com funcionalidades e jornadas específicas. Selecione o manual correspondente ao seu perfil:
+O sistema QWork possui **5 tipos de usuários**, cada um com funcionalidades e jornadas específicas. Selecione o manual correspondente ao seu perfil:
 
 ---
 
@@ -74,17 +74,35 @@ O sistema QWork possui **4 tipos de usuários**, cada um com funcionalidades e j
 
 ---
 
+### 5. [Manual do Representante Comercial](./MANUAL-REPRESENTANTE-ONBOARDING.md)
+
+**Quem é:** Parceiro comercial que indica empresas para o QWork e recebe comissões por laudos emitidos.
+
+**Principais Funcionalidades:**
+
+- Cadastro via landing page (PF ou PJ) com upload de documentos
+- Criar e acompanhar leads (indicações de empresas)
+- Monitorar vínculos ativos e alertas de expiração
+- Pipeline de comissões e envio de NF/RPA
+- Gerenciar dados bancários para recebimento
+
+**Acesso:** `/representante/*` | **Autenticação:** E-mail + Código de Representante
+
+---
+
 ## Comparativo Rápido
 
-| Característica            | Gestor RH       | Gestor Entidade | Funcionário      | Emissor     |
-| ------------------------- | --------------- | --------------- | ---------------- | ----------- |
-| **Autenticação**          | CPF + Senha     | CPF + Senha     | CPF + Data Nasc. | CPF + Senha |
-| **Gerencia Empresas**     | Sim (múltiplas) | Não             | Não              | Não         |
-| **Gerencia Funcionários** | Sim             | Sim             | Não              | Não         |
-| **Cria Ciclos**           | Sim             | Sim             | Não              | Não         |
-| **Responde Avaliação**    | Não             | Não             | Sim              | Não         |
-| **Emite Laudos**          | Não             | Não             | Não              | Sim         |
-| **Pré-cadastrado**        | Não             | Não             | Não              | Sim         |
+| Característica            | Gestor RH       | Gestor Entidade | Funcionário      | Emissor     | Representante       |
+| ------------------------- | --------------- | --------------- | ---------------- | ----------- | ------------------- |
+| **Autenticação**          | CPF + Senha     | CPF + Senha     | CPF + Data Nasc. | CPF + Senha | E-mail + Código     |
+| **Cadastro próprio**      | Não             | Não             | Não              | Não         | Sim (landing page)  |
+| **Gerencia Empresas**     | Sim (múltiplas) | Não             | Não              | Não         | Não                 |
+| **Gerencia Funcionários** | Sim             | Sim             | Não              | Não         | Não                 |
+| **Cria Ciclos**           | Sim             | Sim             | Não              | Não         | Não                 |
+| **Responde Avaliação**    | Não             | Não             | Sim              | Não         | Não                 |
+| **Emite Laudos**          | Não             | Não             | Não              | Sim         | Não                 |
+| **Recebe Comissões**      | Não             | Não             | Não              | Não         | Sim                 |
+| **Pré-cadastrado**        | Não             | Não             | Não              | Sim         | Não (auto-cadastro) |
 
 ---
 

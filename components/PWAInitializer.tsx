@@ -17,27 +17,6 @@ export default function PWAInitializer() {
     // Configurar sincronização online
     setupOnlineSync();
 
-    // Função para sincronizar planos offline
-    const syncPlanosData = async () => {
-      try {
-        // Sincronizar planos
-        const planosResponse = await fetch('/api/admin/financeiro/planos');
-        if (planosResponse.ok) {
-          const planosData = await planosResponse.json();
-          localStorage.setItem('planos-cache', JSON.stringify(planosData));
-        }
-
-        // Sincronizar notificações
-        const notifResponse = await fetch('/api/admin/financeiro/notificacoes');
-        if (notifResponse.ok) {
-          const notifData = await notifResponse.json();
-          localStorage.setItem('notificacoes-cache', JSON.stringify(notifData));
-        }
-      } catch (error) {
-        console.error('Erro ao sincronizar dados de planos:', error);
-      }
-    };
-
     // Detectar status de conexão inicial
     setIsOnline(navigator.onLine);
 
@@ -49,8 +28,6 @@ export default function PWAInitializer() {
       window.dispatchEvent(new CustomEvent('sync-offline-data'));
       // Sincronizar índices de funcionários
       void syncIndicesFuncionarios();
-      // Sincronizar dados de planos e notificações
-      void syncPlanosData();
     };
 
     const handleOffline = () => {

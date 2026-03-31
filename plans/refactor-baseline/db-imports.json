@@ -1,0 +1,2673 @@
+{
+  "target": "lib/db.ts",
+  "totalImporters": 522,
+  "symbolUsage": {
+    "query": 458,
+    "(require)": 58,
+    "(dynamic)": 17,
+    "criarContaResponsavel": 7,
+    "* as db": 6,
+    "transaction": 5,
+    "getDatabaseInfo": 3,
+    "QueryResult": 3,
+    "criarEmissorIndependente": 2,
+    "getNotificacoesFinanceiras": 2,
+    "StatusAprovacao": 2,
+    "getPool": 2,
+    "foo": 2,
+    "ativartomador": 2,
+    "marcarNotificacaoComoLida": 1,
+    "aprovarEntidade": 1,
+    "rejeitarEntidade": 1,
+    "solicitarReanalise": 1,
+    "Perfil": 1,
+    "getNeonPool": 1,
+    "Session": 1,
+    "isProduction": 1,
+    "criarSenhaInicialEntidade": 1,
+    "testConnection": 1,
+    "bar": 1,
+    "Foo": 1,
+    "db": 1,
+    "*": 1,
+    "gettomadorById": 1,
+    "queryMultiTenant": 1,
+    "contarFuncionariosAtivos": 1,
+    "ensureAdminPassword": 1,
+    "closePool": 1
+  },
+  "importers": [
+    {
+      "file": "__tests__/admin/admin-contagem-api.test.ts",
+      "symbols": ["* as db"],
+      "types": ["static-star"]
+    },
+    {
+      "file": "__tests__/api/account-info-payment-status-consistency.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin-cobranca-get.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/auditorias.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/clinicas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/cobranca.unit.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/dashboard-counts.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/emissores-create.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/emissores.test.ts",
+      "symbols": ["QueryResult", "query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/funcionarios.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/gerar-link-plano-fixo.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/novos-cadastros-correcao-conteudo.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/novos-cadastros-regenerar-link.test.ts",
+      "symbols": ["query", "gettomadorById"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/planos-delete.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/admin/planos.test.ts",
+      "symbols": ["QueryResult", "query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/auth/login-compat.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/auth/login-emissor.test.ts",
+      "symbols": ["query", "(require)"],
+      "types": ["static-named", "require"]
+    },
+    {
+      "file": "__tests__/api/auth/login.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/conclusao-migracao-165.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/finalizar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/respostas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/resultados.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/salvar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/save.test.ts",
+      "symbols": ["* as db"],
+      "types": ["static-star"]
+    },
+    {
+      "file": "__tests__/api/avaliacao/status.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/cadastro-bifurcacao-personalizado.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/cadastro-tomador-api.test.ts",
+      "symbols": ["query", "(dynamic)"],
+      "types": ["static-named", "dynamic"]
+    },
+    {
+      "file": "__tests__/api/cadastro-tomador-validation.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/clinica/relatorio-pdf.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/cobranca-dashboard.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/cobranca-parcelas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/consentimento.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/fluxo-emissao-laudo.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/laudos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/laudos/hash-sha256-laudo.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/laudos/laudos-emissor.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/lotes-download-safety.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/lotes-hash-removal.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/lotes.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/emissor/notificacoes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/pdf.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/emissor/upload-laudo-bucket.test.ts",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "__tests__/api/entidade/contrato-fallback.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/dashboard.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/funcionarios.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/entidade/funcionarios/import.route.test.ts",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "__tests__/api/entidade/laudos-download-backblaze-proxy.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/laudos-verify-hash-no-filesystem.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/laudos/verify-hash.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lote-avaliacoes-inativar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lote-detalhes-grupos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lote-detalhes-inativacao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lotes-avaliacoes-reset.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lotes-fila-emissao-compat.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lotes-listing-no-filesystem.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/lotes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/relatorio-individual-pdf.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/entidade/reset-security-context.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/funcionarios-inativos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/funcionarios-usuario-tipo.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/jobs/process-pdf.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/pagamento-tomador-flow.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/pagamento/confirmar-bytea.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/pagamento/iniciar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/pdf-client-generation-apis.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/pendencias/lote.route.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/planos.test.ts",
+      "symbols": ["QueryResult", "query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/recibo-gerar.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/recibo/gerar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/recibo/pdf-bytea.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/dashboard.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/empresas-ativacao-isolated.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/empresas-ativacao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/empresas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios-access-map.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios-status-batch.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios-status.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios.route.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/funcionarios/import.route.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/api/rh/laudos-download-backblaze-proxy.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/laudos-download-remote.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/laudos-download.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/laudos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/liberar-lote-permissions.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/lotes-avaliacoes-inativar-cancelado.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/lotes-avaliacoes-inativar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/lotes-avaliacoes-reset.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/lotes-detalhes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/lotes-fila-emissao-compat.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/lotes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/notificacoes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/pendencias.block-admin.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/relatorio-individual-pdf.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/rh/reset-security-context.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/termos/registrar-hotfix.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/test/session.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/api/verificar-pagamento.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/asaas/pagamento-status-left-join.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/asaas/sincronizar-bypass-idempotencia.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/asaas/sincronizar-lote.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/asaas/webhook-handler-idempotencia-atomicidade.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/audit/empresas-audit.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/auth/clinica-login-auth.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/auth/first_login_change_password.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/auth/funcionario-rls-authentication.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/auth/integracao-aprovacao-login-gestor.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/avaliacao/conclusao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/avaliacao/indice-avaliacao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/avaliacao/iniciar.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/avaliacao/responder.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/avaliacao/status.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/components/ModalInserirFuncionario.test.tsx",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/concurrency/empresas-concurrency.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/contracts/payment-confirmation-integration.test.ts",
+      "symbols": ["criarContaResponsavel", "ativartomador"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/correcao-webhook-remocao-codigo-obsoleto.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/correcoes-08-02-2026.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/correcoes-09-02-2026-entidade-id.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/correcoes-card-laudo-bucket-16-02-2026.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/audit-log-with-context.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/audit-trigger.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/clinica-consistency.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/data-integrity.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/database-migrations-schema.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/database-reset.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/detectar-anomalias-indice.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/funcionarios-constraint.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/gestor_emissor_constraint.test.ts",
+      "symbols": ["query", "(require)"],
+      "types": ["static-named", "require"]
+    },
+    {
+      "file": "__tests__/database/laudos-schema.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/migracao-laudo-enviado-em.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/migrations-integrity.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/planos-triggers.test.ts",
+      "symbols": [
+        "query",
+        "queryMultiTenant",
+        "contarFuncionariosAtivos",
+        "(require)"
+      ],
+      "types": ["static-named", "require"]
+    },
+    {
+      "file": "__tests__/database/role-gestor-entidade.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/status-constraints.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/trigger-hash-backfill.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/triggers/reservar-laudo-on-lote.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/database/vw_funcionarios_por_lote.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/db/laudo-columns.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/db/schema-smoke-test.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/e2e/cadastro-plano-fixo-completo.test.ts",
+      "symbols": ["query", "transaction"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/e2e/cadastro-plano-personalizado-completo.test.ts",
+      "symbols": ["query", "transaction"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/e2e/fluxo-completo-lote.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/e2e/fluxo-pagamento-completo.test.ts",
+      "symbols": ["query", "ativartomador"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/e2e/funcionario-avaliacao-completa.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/emissor/emissor-download-client-side-fallback.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/emissor/emissor-pdf-imutabilidade.unit.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/emissor/emissor-workflow-improvements.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/emissor/rastreabilidade-emissao-manual.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/entidade/entidade-lotes-imutabilidade.unit.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/feature/sistema-pagamento-emissao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/fluxo-pagamento-emissao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/helpers/db-mocks.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/helpers/test-data-factory.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/helpers/test-fixtures.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/helpers/test-helpers.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/asaas-payment-integration.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/asaas-webhook-lote-sync.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/backfill-recibos-retroativos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/cadastro-clinica-personalizado.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/cadastro-endpoints-criticos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/cadastro-fluxo-completo-integration.test.ts",
+      "symbols": ["query", "transaction"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/cadastro-personalizado-integration.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/centro-operacoes-notificacoes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/ciclo-completo-emissao-laudo.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/clinica-criacao-rh-fluxo-corrigido.test.ts",
+      "symbols": ["query", "(require)"],
+      "types": ["static-named", "require"]
+    },
+    {
+      "file": "__tests__/integration/clinicas-rh.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/contratos-skip-payment-phase.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/correcao-autenticacao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/delete-clinica-fallback.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/diagnostico-api-novos-cadastros.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/empresa-status-display.test.tsx",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/integration/ensure-admin-password.test.ts",
+      "symbols": ["query", "ensureAdminPassword"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/entidade-create-funcionario.e2e.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/entidade-lotes-tomador.integration.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/entidades-gestores.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-cadastro-aceite-simulador.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-cadastro-contrato-iniciar-pagamento.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-cadastro-pagamento-ativacao.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-cadastro-regressao.test.ts",
+      "symbols": ["query", "closePool"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-completo-personalizado.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-novo-personalizado.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-personalizado-completo-e2e.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-personalizado-redirecionamento.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/fluxo-personalizado-simples.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/funcionario-entidade-create.integration.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/isolamento-entidade-clinica.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/liberar-lote-atomicity.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/liberar-lote-rh-resilience.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/liberar-lote-rh.integration.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/lote-encerramento-com-inativadas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/pagamento-iniciar-fallback.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/pagamento-simulador.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/rls-isolamento-rh-gestor.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/savepoint-laudo-duplicate.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/seed-admin.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/testes-basicos-estado.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/transaction-audit-context.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/ui-personalizado-sem-redirect.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/validacao-constraints.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/validacao-enum-estados.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/integration/webhook-null-safe-query-fix.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/auditoria.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/criarContaResponsavel.clinica-creation.test.ts",
+      "symbols": ["criarContaResponsavel", "* as db"],
+      "types": ["static-named", "static-star"]
+    },
+    {
+      "file": "__tests__/lib/criarContaResponsavel.integration.test.ts",
+      "symbols": ["query", "* as db"],
+      "types": ["static-named", "static-star"]
+    },
+    {
+      "file": "__tests__/lib/criarContaResponsavel.usuarios.test.ts",
+      "symbols": ["query", "* as db"],
+      "types": ["static-named", "static-star"]
+    },
+    {
+      "file": "__tests__/lib/db-admin-scripts.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/db-emissor.test.ts",
+      "symbols": ["query", "criarEmissorIndependente"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/db-transaction.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/laudo-calculos.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/logs-cleanup.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/lote-id-allocator.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/recalculo-emissao-inativadas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/receipt-generator-pdf-hash.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/receipt-generator.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/requireRHWithEmpresaAccess.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/status-aprovacao-type.test.ts",
+      "symbols": ["StatusAprovacao"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/termos/registrar-aceite-hotfix.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/validacoes-avancadas.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/lib/validate-session-context.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/monitor-lotes-laudos-19-02-2026.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/monitoring/detect-orphan-lotes.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/performance/load-liberar-lote.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/registration/separacao-novos-cadastros-vs-tomadores.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/rh/penetration-test-rh-lotes.test.ts",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "__tests__/scripts/batch-sync-laudos.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/scripts/link-remote-laudos.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/security/audit-logs.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/security/rls-context-visibility.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "__tests__/security/session-mfa-security.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/system/api-logger-integration.test.ts",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "__tests__/system/remocao-campos-legados.test.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/account-info/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/auditorias/acessos-funcionarios/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/auditorias/acessos-rh/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/auditorias/avaliacoes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/cadastro/admin/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/cadastro/clinica/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/clinicas/[id]/empresas/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/clinicas/[id]/gestores/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/clinicas/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/clinicas/delete-secure/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/clinicas/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/clinicas/stats/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/cobranca/dashboard/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/cobranca/parcela/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/cobranca/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/contagem/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/contratos/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissoes/[loteId]/definir-valor/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissoes/[loteId]/gerar-link/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissoes/contagem/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissoes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissores/[cpf]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissores/create/route.ts",
+      "symbols": ["criarEmissorIndependente", "query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/emissores/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/empresas/[id]/avaliacoes/pendentes/count/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/empresas/[id]/funcionarios/count/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/entidades/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/entidades/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/financeiro/notificacoes/[id]/route.ts",
+      "symbols": ["getNotificacoesFinanceiras", "marcarNotificacaoComoLida"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/financeiro/notificacoes/route.ts",
+      "symbols": ["getNotificacoesFinanceiras"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/financeiro/planos/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/funcionarios/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/gerar-link-plano-fixo/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/gerar-link-retomada/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/notificacoes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/novos-cadastros/handlers.ts",
+      "symbols": ["aprovarEntidade", "rejeitarEntidade", "solicitarReanalise"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/pagamentos/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/personalizado/definir-valor/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/planos/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/planos/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/reenviar-lote/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/admin/volume/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/auth/login/route.ts",
+      "symbols": ["query", "getDatabaseInfo"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/avaliacao/confirmar-identidade/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/avaliacao/indices/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/cadastro/tomadores/route.ts",
+      "symbols": ["StatusAprovacao", "(dynamic)"],
+      "types": ["static-named", "dynamic"]
+    },
+    {
+      "file": "app/api/clinica/laudos/[laudoId]/download/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/clinica/relatorio-individual-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/clinica/relatorio-lote-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/consentimento/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/contratacao_personalizada/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/contratacao/registrar-pagamento/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/contratos/route.ts",
+      "symbols": ["query", "criarContaResponsavel"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/data/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/download/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/html/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/progresso/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/reprocessar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/upload-confirm/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/upload-url/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/laudos/[loteId]/upload/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/lotes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/notificacoes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/emissor/reprocessar-emissao/[loteId]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/debug-status/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/laudos/[laudoId]/download/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/laudos/[laudoId]/verify-hash/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/inativar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lote/[id]/avaliacoes/[avaliacaoId]/reset/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lote/[id]/funcionarios/export/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lote/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lote/[id]/solicitar-emissao/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lotes/[id]/avaliacoes/[avaliacaoId]/reset/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/lotes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/relatorio-individual-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/entidade/relatorio-lote-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/funcionarios/[cpf]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/laudos/validar-lote/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/lotes/[loteId]/solicitar-emissao/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/master/clinicas/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/master/clinicas/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/asaas/criar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/asaas/sincronizar-lote/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/asaas/sincronizar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/confirmar-simples/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/confirmar/route.ts",
+      "symbols": ["query", "criarContaResponsavel"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/emissao/[token]/confirmar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/emissao/[token]/info/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/emissao/[token]/simular/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/gerar-link-plano-fixo/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/iniciar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/personalizado/[token]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/simulador/confirmar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/simulador/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/simular/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pagamento/status/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/pendencias/lote/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/proposta/[token]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/proposta/aceitar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/public/tomador/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/recibo/[id]/pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/recibo/[id]/verificar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/recibo/gerar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/account-info/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/dashboard/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/empresas/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/empresas/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/funcionarios/[cpf]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/funcionarios/import/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/funcionarios/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/funcionarios/status/batch/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/funcionarios/status/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/laudos/[laudoId]/download/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/laudos/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/liberar-lote/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/liberar-por-nivel/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/reset/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/lotes/[id]/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/lotes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/monitor/laudos/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/monitor/lotes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/notificacoes/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/notificacoes/stream/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/pagamentos-laudos/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/parcelas/download-recibo/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/parcelas/gerar-recibo/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/parcelas/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/pendencias/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/relatorio-individual-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/rh/relatorio-lote-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/temp-list-payments/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/termos/registrar/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/test/db/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/test/rows/route.ts",
+      "symbols": ["query", "getDatabaseInfo"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/test/session/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/test/usuarios/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/tomador/contrato-pdf/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/tomador/meu-plano/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "app/api/tomador/verificar-pagamento/route.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/audit-integration-examples.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/audit-logger.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/audit.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/auditoria/auditoria.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/auth-require.ts",
+      "symbols": ["Perfil"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/clinica-configuracao-service.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/contratos/contratos.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/db-admin-scripts.ts",
+      "symbols": ["getNeonPool", "getPool"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/db-contratacao.ts",
+      "symbols": ["query", "Session"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/db-gestor.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/db-security.ts",
+      "symbols": ["query", "transaction"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/db-transaction.ts",
+      "symbols": ["getPool", "isProduction", "transaction"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/entidade-activation.ts",
+      "symbols": ["query", "criarContaResponsavel"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/funcionarios.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/health-check.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/helpers/link-pagamento.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/i18n-service.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/infrastructure/database/index.ts",
+      "symbols": ["criarContaResponsavel", "criarSenhaInicialEntidade"],
+      "types": ["re-export-named"]
+    },
+    {
+      "file": "lib/infrastructure/pdf/generators/receipt-generator.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/laudo-auto.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/laudo-calculos.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/lotes.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/mfa.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/notification-service.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/notifications/create-notification.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/paid-access-middleware.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/pdf-service.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/queries.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/security-validation.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/security/rls-context.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/services/laudo-validation-service.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/session.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/storage/laudo-storage.ts",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "lib/template-contrato-service.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/termos/registrar-aceite.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/termos/verificar-aceites.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "lib/validacao-lote-laudo.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/analysis/listar-lotes.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/apply-migration-072.mts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/apply-migration-131.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/apply-migration-150.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/apply-migration-151.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/apply-migration-152.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/archive/debug-cobranca.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/archive/find-contratante-lotes.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/audit-all-evaluations.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/auditar-cpfs.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/backfill-laudos-hash.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/backfill/laudos-backfill.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/batch-sync-laudos.ts",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "scripts/check-avaliacao-1.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-avaliacoes-producao.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-clinicas.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-cpf.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-data-consistency.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-data.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-db.ts",
+      "symbols": ["getDatabaseInfo", "testConnection"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-direct-status.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-emissor-permissions.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-emissor-role.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-entidade-lotes-5.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-enum-producao.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-imports.mjs",
+      "symbols": [
+        "foo",
+        "bar",
+        "Foo",
+        "* as db",
+        "db",
+        "(dynamic)",
+        "(require)",
+        "*"
+      ],
+      "types": [
+        "static-named",
+        "static-star",
+        "static-default",
+        "dynamic",
+        "require",
+        "re-export-named",
+        "re-export-star"
+      ]
+    },
+    {
+      "file": "scripts/check-laudo-id-mismatch.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/check-lote-2.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-lotes-status.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-recalc-function.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-rls-function.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/check-specific-avaliacoes.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/check_users.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/check-contratante-3.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/check-contratantes-schema.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/check-entities.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/check-lotes.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/check-password.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/check-rh-constraints.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/check-tables.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/check-test-db.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/execute-rh-sql.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/find-contratante-lotes.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/list-contratantes-temp.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/list-contratantes.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/checks/post-migration-check.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/schema-contratantes-senhas.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/set-contratante-password.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/checks/verify-password-for-cpf.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/compare-databases-full.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/corrigir-senhas-gestores.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/create-test-rh-user.js",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "scripts/db/set-senha-hash.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/db/set-senha-hash.js",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/debug-cobranca.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/debug-lotes-status.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/debug-rh-parcelas.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/debug/fetch-account-info-by-cnpj.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/debug/fetch-account-info-by-cnpj.js",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/diagnose-auto-emission.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/diagnose-lote-alt.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/diagnose-lote.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/diagnose-lote.mts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/diagnose-sequence-deep.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/find-lote.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fix-allocator.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fix-incomplete-evaluations.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fix-lotes-emitido-em.mts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fix-lotes-sequence.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/aplicar-correcao-funcao.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/corrigir-contratante-id-force.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/corrigir-contratante-id-lotes.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/corrigir-emissor-force.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/corrigir-emissor-laudos-gestores.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/corrigir-emissor-oficial.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/corrigir-emissor-safe.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/debug-login.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/fixes/delete-test-data.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/fix-missing-clinicas.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/fixes/fix-senha.js",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/fixes/investigar-gestores.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/listar-triggers-laudos.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/listar-triggers-lotes.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/process_pdf_jobs.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/set-senha-from-cnpj.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/fixes/sync-local-schema-to-neon.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/fixes/verificar-contratante-id-lotes.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/fixes/verificar-laudos-gestores.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/force-fix-sequence.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/get-view-definition.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/insert-e2e-contratante.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/insert-login-test-data.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/insert-test-data.js",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/inspect-fila.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/investigar-cpf-87545772920.ts",
+      "symbols": ["query", "(dynamic)"],
+      "types": ["static-named", "dynamic"]
+    },
+    {
+      "file": "scripts/link-remote-laudos.ts",
+      "symbols": ["(dynamic)"],
+      "types": ["dynamic"]
+    },
+    {
+      "file": "scripts/monitor-integridade.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/prepare-emissor-53051173991.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/run-migration.mjs",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/runCriarConta.ts",
+      "symbols": ["criarContaResponsavel", "(dynamic)"],
+      "types": ["static-named", "dynamic"]
+    },
+    {
+      "file": "scripts/sync-lote-allocator.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/test-api-lotes-status.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/test-conn.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/test-funcionario-query.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/test-lote-api.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/tests/login-and-create-empresa.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/tests/test-fix.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/tests/test-rh-routes.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/tests/validar-sessao-rh-clinica.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/tools/check-db-state.cjs",
+      "symbols": ["(require)"],
+      "types": ["require"]
+    },
+    {
+      "file": "scripts/ultimate-fix-sequence.ts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    },
+    {
+      "file": "scripts/upload-laudo.mts",
+      "symbols": ["query"],
+      "types": ["static-named"]
+    }
+  ]
+}

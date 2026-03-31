@@ -147,9 +147,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       expect(botaoNovaEmpresa).toBeInTheDocument();
     });
   });
@@ -320,9 +318,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       fireEvent.click(botaoNovaEmpresa);
 
       expect(screen.getByTestId('modal-empresa')).toBeInTheDocument();
@@ -391,9 +387,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         expect(screen.getByText('Gestão de Empresas')).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       fireEvent.click(botaoNovaEmpresa);
 
       const botaoFechar = screen.getByRole('button', { name: /fechar/i });
@@ -412,9 +406,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
       });
 
       // Abrir modal
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       fireEvent.click(botaoNovaEmpresa);
 
       // Criar empresa
@@ -489,9 +481,7 @@ describe('RH Page - Tela Raiz com Cards de Empresas', () => {
         ).toBeInTheDocument();
       });
 
-      const botaoNovaEmpresa = screen.getByRole('button', {
-        name: /nova empresa/i,
-      });
+      const botaoNovaEmpresa = screen.getByTestId('nova-empresa-button');
       expect(botaoNovaEmpresa).toBeInTheDocument();
     });
   });

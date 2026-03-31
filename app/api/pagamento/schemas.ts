@@ -17,7 +17,6 @@ export const IniciarPagamentoSchema = z.object({
   valor: z.number().positive(),
   metodo: z.enum(['PIX', 'Cartao', 'Boleto', 'Transferencia']),
   plataforma_nome: z.string().optional().default('Simulado'),
-  plano_tipo: z.string().optional(), // Tipo do plano para descrição Asaas
 });
 
 export const ConfirmarPagamentoSchema = z.object({

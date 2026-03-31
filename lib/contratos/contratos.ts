@@ -151,13 +151,9 @@ export async function obterContrato(contrato_id: number) {
     `SELECT c.*, 
             t.nome as tomador_nome,
             t.cnpj as tomador_cnpj,
-            t.tipo as tomador_tipo,
-            p.nome as plano_nome,
-            p.tipo as plano_tipo,
-            p.preco as plano_preco
+            t.tipo as tomador_tipo
      FROM contratos c
      LEFT JOIN tomadores t ON c.tomador_id = t.id
-     LEFT JOIN planos p ON c.plano_id = p.id
      WHERE c.id = $1`,
     [contrato_id]
   );

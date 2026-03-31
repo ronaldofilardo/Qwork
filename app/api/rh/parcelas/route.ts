@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { calcularParcelas } from '@/lib/parcelas-helper';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,9 +13,7 @@ export const dynamic = 'force-dynamic';
 export async function GET() {
   try {
     const session = getSession();
-    if (!session || session.perfil !== 'rh') {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
+    assertRoles(session, [ROLES.RH]);
 
     // Determinar clinica_id válido
     const clinicaId = session.clinica_id;

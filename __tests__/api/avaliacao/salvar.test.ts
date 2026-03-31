@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/avaliacao/salvar.test.ts
+ * Testes: /api/avaliacao/salvar
+ */
+
 // Teste removido - arquivo route não existe
 // TODO: Reativar quando o arquivo app/api/avaliacao/salvar/route.ts for criado
 

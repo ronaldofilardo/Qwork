@@ -188,12 +188,7 @@ export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
     tomador_cidade,
     tomador_estado,
     tomador_cep,
-    plano_nome,
-    plano_tipo,
-    plano_descricao,
     valor_total,
-    valor_por_funcionario,
-    qtd_funcionarios,
     metodo_pagamento,
     numero_parcelas,
     detalhes_parcelas,
@@ -206,9 +201,6 @@ export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
 
   // Formatação de valores
   const valorFormatado = formatarMoeda(valor_total);
-  const valorPorFuncFormatado = valor_por_funcionario
-    ? formatarMoeda(valor_por_funcionario)
-    : null;
   const dataInicioFormatada = formatarData(new Date(data_inicio_vigencia));
   const dataFimFormatada = formatarData(new Date(data_fim_vigencia));
   const dataEmissao = formatarData(new Date(recibo.emitido_em || new Date()));
@@ -458,49 +450,6 @@ export function gerarHtmlReciboTemplate(recibo: ReciboTemplateData): string {
           <div class="info-item">
             <div class="info-label">Endereço</div>
             <div class="info-value">${enderecoCompleto}</div>
-          </div>
-          `
-              : ''
-          }
-        </div>
-      </div>
-    </div>
-
-    <!-- PLANO CONTRATADO -->
-    <div class="secao">
-      <div class="secao-titulo">📦 Plano Contratado</div>
-      <div class="destaque">
-        <div class="info-item">
-          <div class="info-label">Plano</div>
-          <div class="info-value">${plano_nome} (${plano_tipo})</div>
-        </div>
-        ${
-          plano_descricao
-            ? `
-        <div class="info-item">
-          <div class="info-label">Descrição</div>
-          <div class="info-value">${plano_descricao}</div>
-        </div>
-        `
-            : ''
-        }
-        <div class="info-grid">
-          ${
-            qtd_funcionarios
-              ? `
-          <div class="info-item">
-            <div class="info-label">Quantidade de Funcionários</div>
-            <div class="info-value">${qtd_funcionarios}</div>
-          </div>
-          `
-              : ''
-          }
-          ${
-            valorPorFuncFormatado
-              ? `
-          <div class="info-item">
-            <div class="info-label">Valor por Funcionário</div>
-            <div class="info-value">${valorPorFuncFormatado}</div>
           </div>
           `
               : ''

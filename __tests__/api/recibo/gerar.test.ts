@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/recibo/gerar.test.ts
+ * Testes: GET /api/recibo/gerar
+ */
+
 import { GET as gerarReciboGET } from '@/app/api/recibo/gerar/route';
 import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';

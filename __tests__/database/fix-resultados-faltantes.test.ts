@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/fix-resultados-faltantes.test.ts
+ * Testes: fix-resultados-faltantes.mjs
+ */
+
 import pg from 'pg';
 const { Client } = pg;
 

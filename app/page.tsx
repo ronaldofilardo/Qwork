@@ -11,7 +11,7 @@ export default function HomePage() {
   // Redirecionamento baseado no perfil da sessão
   switch (session.perfil) {
     case 'gestor':
-      redirect('/entidade');
+      redirect('/entidade/dashboard');
       break;
     case 'rh':
       redirect('/rh');
@@ -21,6 +21,15 @@ export default function HomePage() {
       break;
     case 'emissor':
       redirect('/emissor');
+      break;
+    case 'suporte':
+      redirect('/suporte');
+      break;
+    case 'comercial':
+      redirect('/comercial');
+      break;
+    case 'vendedor':
+      redirect('/vendedor');
       break;
     default:
       redirect('/dashboard');

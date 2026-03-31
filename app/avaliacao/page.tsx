@@ -21,6 +21,7 @@ interface RespostaData {
 
 export default function NovaAvaliacaoPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
   const [respostas, setRespostas] = useState<{ [key: string]: number }>({});
   const [avaliacaoId, setAvaliacaoId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,6 +33,12 @@ export default function NovaAvaliacaoPage() {
   const [completionStatus, setCompletionStatus] = useState<
     'processing' | 'success'
   >('processing');
+
+  useEffect(() => {
+    setIsAnimating(true);
+    const timer = setTimeout(() => setIsAnimating(false), 2500);
+    return () => clearTimeout(timer);
+  }, [currentIndex]);
 
   useEffect(() => {
     async function carregar() {
@@ -243,7 +250,7 @@ export default function NovaAvaliacaoPage() {
       setTimeout(() => {
         setCurrentIndex(proximoIndex);
         setIsSaving(false);
-      }, 220);
+      }, 400);
     } else {
       // Se é a última questão, mostrar modal IMEDIATAMENTE
       setShowCompletionModal(true);
@@ -366,9 +373,6 @@ export default function NovaAvaliacaoPage() {
               <h1 className="text-base sm:text-xl font-bold leading-tight">
                 Avaliação Psicossocial
               </h1>
-              <p className="text-xs sm:text-sm opacity-90 truncate">
-                {questaoAtual.grupoTitulo}
-              </p>
             </div>
           </div>
           <button
@@ -400,21 +404,33 @@ export default function NovaAvaliacaoPage() {
             }}
           />
         </div>
-        <p className="text-right text-xs sm:text-sm mt-1.5 opacity-90">
-          {currentIndex + 1} de {todasQuestoes.length}
-        </p>
       </div>
 
       {/* Questão */}
       <div className="flex-1 flex flex-col justify-center items-center px-3 py-4 sm:px-6 sm:py-8 overflow-y-auto">
         <div className="max-w-4xl w-full">
-          <RadioScale
-            questionId={questaoAtual.itemId}
-            questionText={questaoAtual.texto}
-            value={respostas[questaoAtual.itemId] ?? null}
-            onChange={(valor) => responder(valor)}
-            required={true}
-          />
+          {/* Badge de contador e grupo */}
+          <div className="flex justify-between items-center mb-6">
+            <span className="bg-primary/10 text-primary text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+              Questão {currentIndex + 1} de {todasQuestoes.length}
+            </span>
+            <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">
+              {questaoAtual.grupoTitulo}
+            </span>
+          </div>
+
+          <div
+            key={currentIndex}
+            className={isAnimating ? 'animate-slide-in' : ''}
+          >
+            <RadioScale
+              questionId={questaoAtual.itemId}
+              questionText={questaoAtual.texto}
+              value={respostas[questaoAtual.itemId] ?? null}
+              onChange={(valor) => responder(valor)}
+              required={true}
+            />
+          </div>
 
           {isSaving && (
             <div className="text-center mt-4 text-gray-600 text-sm">

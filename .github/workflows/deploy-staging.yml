@@ -1,0 +1,299 @@
+name: Deploy → Staging
+
+# ============================================================
+# Dispara automaticamente em push para a branch staging
+# Também pode ser acionado manualmente via workflow_dispatch
+# ============================================================
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+    inputs:
+      smoke_tests:
+        description: 'Executar smoke tests após deploy'
+        required: false
+        default: 'true'
+        type: boolean
+
+env:
+  NODE_VERSION: '18'
+  PNPM_VERSION: '8'
+  VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+  VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+
+jobs:
+  # ============================================================
+  # JOB 1: Build e Testes de Pré-deploy
+  # ============================================================
+  pre-deploy-checks:
+    name: 🔍 Pre-deploy Checks (Lint + Type + Tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nr-bps_db_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint:ci
+
+      - name: TypeScript type-check
+        run: pnpm type-check
+
+      - name: Unit tests (excl. DB-dependentes)
+        env:
+          NODE_ENV: test
+          TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nr-bps_db_test
+        run: |
+          pnpm test -- --testPathPatterns="system/|environment|middleware" \
+            --no-coverage --forceExit --passWithNoTests
+        continue-on-error: false
+
+  # ============================================================
+  # JOB 2: Deploy para Staging (Vercel Preview — branch staging)
+  # ============================================================
+  deploy:
+    name: 🚀 Deploy → Vercel Staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: [pre-deploy-checks]
+    outputs:
+      preview_url: ${{ steps.deploy_step.outputs.preview_url }}
+
+    steps:
+      - name: Checkout staging
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Vercel CLI
+        run: pnpm add -g vercel@latest
+
+      - name: Pull Vercel environment (staging branch)
+        run: |
+          vercel pull --yes --environment=preview \
+            --git-branch=staging \
+            --token=${{ secrets.VERCEL_TOKEN }}
+
+      - name: Build para Staging
+        run: |
+          vercel build \
+            --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          NODE_ENV: production
+          APP_ENV: staging
+
+      - name: Deploy para Vercel Preview
+        id: deploy_step
+        run: |
+          DEPLOY_URL=$(vercel deploy --prebuilt \
+            --token=${{ secrets.VERCEL_TOKEN }} \
+            --meta gitBranch=staging)
+          echo "preview_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
+          echo "✅ Staging deployed: $DEPLOY_URL"
+
+      - name: Assign alias staging.qwork.app.br
+        run: |
+          vercel alias set ${{ steps.deploy_step.outputs.preview_url }} \
+            staging.qwork.app.br \
+            --token=${{ secrets.VERCEL_TOKEN }} || \
+          echo "⚠️  Alias assignment failed — configure DNS CNAME: staging.qwork.app.br → cname.vercel-dns.com"
+
+  # ============================================================
+  # JOB 3: Smoke Tests pós-deploy
+  # ============================================================
+  smoke-tests:
+    name: 🔥 Smoke Tests (Staging)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [deploy]
+    if: ${{ github.event.inputs.smoke_tests != 'false' }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Smoke Test — Health Check
+        env:
+          STAGING_URL: ${{ needs.deploy.outputs.preview_url }}
+        run: |
+          echo "🔥 Rodando smoke tests em: $STAGING_URL"
+          # Health: raiz retorna 200 ou 301
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL" --max-time 30 -L)
+          if [[ "$STATUS" != "200" && "$STATUS" != "301" && "$STATUS" != "302" ]]; then
+            echo "❌ Health check falhou: HTTP $STATUS"
+            exit 1
+          fi
+          echo "✅ Health check OK: HTTP $STATUS"
+
+      - name: Smoke Test — Header X-Environment: staging
+        env:
+          STAGING_URL: ${{ needs.deploy.outputs.preview_url }}
+        run: |
+          HEADER=$(curl -sI "$STAGING_URL" --max-time 30 -L | grep -i "x-environment" | tr -d '\r\n')
+          if [[ -z "$HEADER" ]]; then
+            echo "⚠️  Header X-Environment não encontrado (pode ser bloqueado por CDN)"
+          else
+            echo "✅ Header encontrado: $HEADER"
+          fi
+
+      - name: Smoke Test — X-Robots-Tag: noindex
+        env:
+          STAGING_URL: ${{ needs.deploy.outputs.preview_url }}
+        run: |
+          HEADER=$(curl -sI "$STAGING_URL" --max-time 30 -L | grep -i "x-robots-tag" | tr -d '\r\n')
+          if [[ -z "$HEADER" ]]; then
+            echo "⚠️  X-Robots-Tag não encontrado"
+          elif echo "$HEADER" | grep -qi "noindex"; then
+            echo "✅ X-Robots-Tag noindex confirmado: $HEADER"
+          else
+            echo "❌ X-Robots-Tag incorreto: $HEADER"
+            exit 1
+          fi
+
+      - name: Smoke Test — Login page acessível
+        env:
+          STAGING_URL: ${{ needs.deploy.outputs.preview_url }}
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/login" --max-time 30 -L)
+          if [[ "$STATUS" == "200" ]]; then
+            echo "✅ /login acessível: HTTP $STATUS"
+          else
+            echo "⚠️  /login retornou HTTP $STATUS (esperado 200)"
+          fi
+
+      - name: Smoke Test — API auth rejeita sem sessão
+        env:
+          STAGING_URL: ${{ needs.deploy.outputs.preview_url }}
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$STAGING_URL/api/admin" --max-time 30)
+          if [[ "$STATUS" == "401" || "$STATUS" == "403" ]]; then
+            echo "✅ API protegida corretamente: HTTP $STATUS"
+          else
+            echo "⚠️  API retornou HTTP $STATUS (esperado 401/403)"
+          fi
+
+      - name: Smoke Test — Banner de staging presente no HTML
+        env:
+          STAGING_URL: ${{ needs.deploy.outputs.preview_url }}
+        run: |
+          HTML=$(curl -s "$STAGING_URL" --max-time 30 -L)
+          if echo "$HTML" | grep -qi "STAGING\|staging"; then
+            echo "✅ Banner de staging detectado no HTML"
+          else
+            echo "⚠️  Banner de staging não detectado no HTML (pode estar em CSR)"
+          fi
+
+      - name: Upload smoke test report
+        if: always()
+        run: |
+          echo "## 🔥 Smoke Test Report — Staging" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**URL:** ${{ needs.deploy.outputs.preview_url }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** staging" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================
+  # JOB 4: Notificação de Deploy
+  # ============================================================
+  notify:
+    name: 📣 Notificação Deploy Staging
+    runs-on: ubuntu-latest
+    needs: [deploy, smoke-tests]
+    if: always()
+
+    steps:
+      - name: Gerar resumo de deploy
+        run: |
+          DEPLOY_STATUS="${{ needs.deploy.result }}"
+          SMOKE_STATUS="${{ needs.smoke-tests.result }}"
+          PREVIEW_URL="${{ needs.deploy.outputs.preview_url }}"
+
+          echo "## 🏗️ Deploy Staging — Resultado" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Etapa | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Deploy (Vercel) | $DEPLOY_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "| Smoke Tests | $SMOKE_STATUS |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "$DEPLOY_STATUS" == "success" ]]; then
+            echo "**✅ Preview URL:** $PREVIEW_URL" >> $GITHUB_STEP_SUMMARY
+            echo "**🌐 Staging:** https://staging.qwork.app.br" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**❌ Deploy falhou** — verificar logs acima" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Notificar via webhook (se configurado)
+        if: ${{ secrets.SLACK_WEBHOOK_URL != '' }}
+        run: |
+          ICON="${{ needs.deploy.result == 'success' && '✅' || '❌' }}"
+          MSG="$ICON *QWork Staging Deploy*\n"
+          MSG+="Branch: \`staging\` | Commit: \`${{ github.sha }}\`\n"
+          MSG+="Deploy: ${{ needs.deploy.result }} | Smoke: ${{ needs.smoke-tests.result }}\n"
+          MSG+="URL: ${{ needs.deploy.outputs.preview_url }}\n"
+          MSG+="Staging: https://staging.qwork.app.br"
+          curl -s -X POST "${{ secrets.SLACK_WEBHOOK_URL }}" \
+            -H 'Content-type: application/json' \
+            --data "{\"text\": \"$MSG\"}" || echo "Webhook notification skipped"
+
+      - name: Falhar job se deploy falhou
+        if: ${{ needs.deploy.result == 'failure' }}
+        run: |
+          echo "❌ Staging deploy falhou!"
+          exit 1

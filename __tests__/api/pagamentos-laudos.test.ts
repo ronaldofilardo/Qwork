@@ -83,16 +83,14 @@ describe('GET /api/rh/pagamentos-laudos', () => {
       clinica_id: null,
       entidade_id: null,
     });
-    // Busca por CPF retorna vazio em ambas as queries
-    mockQueryRh
-      .mockResolvedValueOnce({ rows: [] }) // funcionarios_clinicas
-      .mockResolvedValueOnce({ rows: [] }); // funcionarios_entidades
+    // Route rh apenas busca clínica via CPF — sem fallback para entidade
+    mockQueryRh.mockResolvedValueOnce({ rows: [] }); // funcionarios_clinicas vazio
 
     const response = await getRh();
     const body = await response.json();
 
     expect(response.status).toBe(403);
-    expect(body.error).toContain('não está vinculado');
+    expect(body.error).toContain('não está vinculado a uma clínica');
   });
 
   it('retorna pagamentos quando sessão tem clinica_id direto', async () => {
@@ -141,37 +139,52 @@ describe('GET /api/rh/pagamentos-laudos', () => {
     expect(body.pagamentos).toHaveLength(1);
   });
 
-  it('busca entidade_id por CPF quando não tem clínica', async () => {
+  it('retorna 403 quando CPF não encontra clínica (sem fallback para entidade)', async () => {
+    // Route rh removeu o fallback para entidade — apenas clínica é suportada
     mockRequireRole.mockResolvedValueOnce({
       cpf: '11122233344',
       clinica_id: null,
       entidade_id: null,
     });
-    mockQueryRh
-      .mockResolvedValueOnce({ rows: [] }) // sem clinica
-      .mockResolvedValueOnce({ rows: [{ entidade_id: 8 }] }) // com entidade
-      .mockResolvedValueOnce(successRows({ lote_codigo: '55', lote_id: 55 }));
+    mockQueryRh.mockResolvedValueOnce({ rows: [] }); // clinica não encontrada via CPF
 
     const response = await getRh();
     const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body.pagamentos[0].loteId).toBe(55);
+    expect(response.status).toBe(403);
+    expect(body.error).toContain('não está vinculado a uma clínica');
   });
 
-  it('usa entidade_id direto da sessão quando presente', async () => {
+  it('retorna 403 quando sessão tem apenas entidade_id sem clínica', async () => {
+    // entidade_id na sessão não é suficiente para a rota rh (que é exclusiva de clínicas)
     mockRequireRole.mockResolvedValueOnce({
       cpf: '00011122233',
       clinica_id: null,
       entidade_id: 20,
     });
-    mockQueryRh.mockResolvedValueOnce(successRows());
+    mockQueryRh.mockResolvedValueOnce({ rows: [] }); // clinica não encontrada via CPF
 
     const response = await getRh();
     const body = await response.json();
 
-    expect(response.status).toBe(200);
-    expect(body.pagamentos).toBeDefined();
+    expect(response.status).toBe(403);
+    expect(body.error).toContain('não está vinculado a uma clínica');
+  });
+
+  it('usa la.clinica_id (não la.contratante_id) na query SQL de lotes', async () => {
+    // Valida fix: SQL deve usar la.clinica_id após refactoring contratante→tomador
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: '12345678900',
+      clinica_id: 7,
+      entidade_id: null,
+    });
+    mockQueryRh.mockResolvedValueOnce({ rows: [] });
+
+    await getRh();
+
+    const [sqlQuery] = mockQueryRh.mock.calls[0];
+    expect(String(sqlQuery)).toContain('la.clinica_id = p.clinica_id');
+    expect(String(sqlQuery)).not.toContain('la.contratante_id');
   });
 
   it('mapeia valor_por_funcionario null para null no retorno', async () => {
@@ -245,8 +258,12 @@ describe('GET /api/rh/pagamentos-laudos', () => {
 
     const p = body.pagamentos[0];
     expect(p.numeroParcelas).toBe(3);
-    expect(p.detalhesParcelas).toEqual(parcelas);
     expect(p.metodo).toBe('cartao');
+    // normalizarDetalhesParcelas enriquece parcelas com campos de status ─ verificar estrutura core
+    expect(p.detalhesParcelas).toHaveLength(3);
+    expect(p.detalhesParcelas[0]).toMatchObject({ numero: 1, valor: 500 });
+    expect(p.detalhesParcelas[1]).toMatchObject({ numero: 2, valor: 500 });
+    expect(p.detalhesParcelas[2]).toMatchObject({ numero: 3, valor: 500 });
   });
 });
 
@@ -428,19 +445,25 @@ describe('Normalização de campos de pagamento', () => {
     expect(body.pagamentos[0].detalhesParcelas).toBeNull();
   });
 
-  it('preserva detalhes_parcelas como objeto quando presente', async () => {
-    const parcelas = { parcelas: [{ numero: 1, valor: 500 }] };
+  it('normaliza detalhes_parcelas array quando presente', async () => {
+    // detalhes_parcelas vem do Postgres como array JSONB ─ normalizarDetalhesParcelas processa
+    const parcelasArray = [{ numero: 1, valor: 500, vencimento: '2026-03-01' }];
     mockRequireEntity.mockResolvedValueOnce({
       entidade_id: 100,
       cpf: '29930511059',
     } as never);
     mockQueryGestor.mockResolvedValueOnce(
-      successRows({ detalhes_parcelas: parcelas })
+      successRows({ detalhes_parcelas: parcelasArray })
     );
 
     const response = await getEntidade();
     const body = await response.json();
 
-    expect(body.pagamentos[0].detalhesParcelas).toEqual(parcelas);
+    expect(Array.isArray(body.pagamentos[0].detalhesParcelas)).toBe(true);
+    expect(body.pagamentos[0].detalhesParcelas).toHaveLength(1);
+    expect(body.pagamentos[0].detalhesParcelas[0]).toMatchObject({
+      numero: 1,
+      valor: 500,
+    });
   });
 });

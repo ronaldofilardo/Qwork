@@ -35,10 +35,6 @@ export async function GET(request: NextRequest) {
         cont.status as contrato_status,
         cont.valor_total as contrato_valor,
         cont.numero_funcionarios,
-        cont.plano_id,
-        pl.nome as plano_nome,
-        pl.tipo as plano_tipo,
-        pl.valor_por_funcionario as plano_preco,
         p.id as pagamento_id,
         p.status as pagamento_status,
         p.data_pagamento,
@@ -56,7 +52,6 @@ export async function GET(request: NextRequest) {
         (source.tipo = 'entidade' AND cont.entidade_id = source.tomador_id) OR
         (source.tipo = 'clinica' AND cont.clinica_id = source.tomador_id)
       )
-      LEFT JOIN planos pl ON pl.id = cont.plano_id
       LEFT JOIN pagamentos p ON (
         (source.tipo = 'entidade' AND p.entidade_id = source.tomador_id) OR
         (source.tipo = 'clinica' AND p.clinica_id = source.tomador_id)
@@ -112,12 +107,6 @@ export async function GET(request: NextRequest) {
             status: data.contrato_status,
             valor_total: data.contrato_valor,
             numero_funcionarios: data.numero_funcionarios,
-            plano: {
-              id: data.plano_id,
-              nome: data.plano_nome,
-              tipo: data.plano_tipo,
-              preco: data.plano_preco,
-            },
           }
         : null,
       pagamento: data.pagamento_id

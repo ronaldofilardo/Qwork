@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/empresa-modal-interaction.test.tsx
+ * Testes: Integração: Modal Nova Empresa (interação real)
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';

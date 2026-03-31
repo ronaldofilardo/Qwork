@@ -2,18 +2,14 @@ import { getSession } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { maskCPF } from '@/lib/request-utils';
+import { assertRoles, ROLES } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 
 // Server-Sent Events endpoint para notificações em tempo real
-export const GET = async (req: Request) => {
-  const session = await Promise.resolve(getSession());
-  if (!session || session.perfil !== 'rh') {
-    return NextResponse.json(
-      { error: 'Acesso negado', success: false },
-      { status: 403 }
-    );
-  }
+export const GET = (req: Request) => {
+  const session = getSession();
+  assertRoles(session, [ROLES.RH]);
   const user = session;
 
   // Configurar encoder para SSE
@@ -70,7 +66,7 @@ export const GET = async (req: Request) => {
             JOIN lotes_avaliacao la ON l.lote_id = la.id
             JOIN empresas_clientes ec ON la.empresa_id = ec.id
             WHERE la.clinica_id = (SELECT clinica_id FROM funcionarios WHERE cpf = $1)
-              AND l.status = 'emitido'
+              AND l.status IN ('emitido', 'enviado')
               AND l.arquivo_remoto_url IS NOT NULL
               AND l.emitido_em >= NOW() - INTERVAL '7 days'
 

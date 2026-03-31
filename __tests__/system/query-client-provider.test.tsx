@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/system/query-client-provider.test.tsx
+ * Testes: QueryClientProvider
+ */
+
 import { render, screen } from '@testing-library/react';
 import { QueryClientProvider } from '@/components/QueryClientProvider';
 import { queryClient } from '@/lib/query-client';

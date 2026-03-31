@@ -177,23 +177,38 @@ export default function LoginPage() {
         setShowConfirmacaoModal(true);
       } else if (
         (data.perfil === 'rh' || data.perfil === 'gestor') &&
-        data.termosPendentes
+        (data.termosPendentes || data.precisaTrocarSenha)
       ) {
+        // Determinar destino final após termos e/ou troca de senha
+        const destinoFinal = data.precisaTrocarSenha
+          ? '/trocar-senha'
+          : data.redirectTo || '/dashboard';
+
         // Verificar se precisa aceitar termos (apenas rh e gestor)
-        const { termos_uso, politica_privacidade } = data.termosPendentes;
+        const { termos_uso, politica_privacidade } = data.termosPendentes || {};
 
         if (termos_uso || politica_privacidade) {
           // Tem termos pendentes - mostrar modal
+          // Após aceitar termos, redireciona para troca de senha (se necessário) ou dashboard
           console.log(
             '[LOGIN] Termos pendentes detectados - mostrar modal de aceite'
           );
-          setRedirectTo(data.redirectTo || '/dashboard');
+          setRedirectTo(destinoFinal);
           setShowTermosModal(true);
           setLoading(false);
           return;
         }
 
-        // Se não há termos pendentes, redirecionar normal
+        // Se precisa trocar senha mas não tem termos pendentes
+        if (data.precisaTrocarSenha) {
+          console.log(
+            '[LOGIN] Primeiro acesso detectado - redirecionando para troca de senha'
+          );
+          window.location.href = '/trocar-senha';
+          return;
+        }
+
+        // Se não há termos pendentes nem troca de senha, redirecionar normal
         const targetUrl = data.redirectTo || '/dashboard';
         console.log(
           '[LOGIN] Redirecionando para:',

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ResponsavelStep.test.tsx
+ * Testes: ResponsavelStep
+ */
+
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import ResponsavelStep from '@/components/modals/ModalCadastroTomadorSteps/ResponsavelStep';

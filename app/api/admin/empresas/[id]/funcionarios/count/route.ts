@@ -58,7 +58,10 @@ export async function GET(
     return NextResponse.json({ count });
   } catch (error) {
     console.error('Erro ao contar funcionários:', error);
-    if (error instanceof Error && error.message === 'Sem permissão') {
+    if (
+      error instanceof Error &&
+      (error.message === 'Sem permissão' || error.message === 'Acesso negado')
+    ) {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
     }
     return NextResponse.json(

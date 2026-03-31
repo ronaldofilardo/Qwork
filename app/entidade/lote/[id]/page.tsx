@@ -17,6 +17,7 @@ import {
   ModalConfirmacaoSolicitar,
   foiExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
+import ModalSetorRelatorioPDF from '@/components/ModalSetorRelatorioPDF';
 
 // Função para normalizar strings (remove acentos e converte para minúsculas)
 function normalizeString(str: string): string {
@@ -136,6 +137,8 @@ export default function DetalhesLotePage() {
     gestorEmail: string | null;
     gestorCelular: string | null;
   } | null>(null);
+
+  const [showSetorModal, setShowSetorModal] = useState(false);
 
   // Filtros por coluna
   const [filtrosColuna, setFiltrosColuna] = useState<{
@@ -384,7 +387,7 @@ export default function DetalhesLotePage() {
   }, []);
 
   // Função para classificar grupos (reutilizada do RH)
-  const renderClassificacao = useCallback(
+  const _renderClassificacao = useCallback(
     (media: number | undefined, numeroGrupo: number) => {
       if (media === undefined) return <span className="text-gray-400">-</span>;
 
@@ -611,6 +614,21 @@ export default function DetalhesLotePage() {
     getClassificacaoLabel,
   ]);
 
+  const setores = useMemo(() => {
+    return [
+      ...new Set(
+        funcionarios
+          .filter(
+            (f) =>
+              f.avaliacao.status === 'concluida' ||
+              f.avaliacao.status === 'concluido'
+          )
+          .map((f) => f.setor)
+          .filter(Boolean)
+      ),
+    ].sort() as string[];
+  }, [funcionarios]);
+
   // Componente de filtro por coluna
   const FiltroColuna = ({
     coluna,
@@ -794,6 +812,36 @@ export default function DetalhesLotePage() {
   // CSV data download removed (permanent removal of CSV functionality)
   // Function intentionally disabled.
 
+  const gerarRelatorioSetor = async (setor: string) => {
+    toast.loading(`Gerando relatório do setor ${setor}...`, {
+      id: 'rel-setor',
+    });
+    try {
+      const response = await fetch(
+        `/api/entidade/relatorio-setor-pdf?lote_id=${loteId}&setor=${encodeURIComponent(setor)}`
+      );
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Erro ao gerar relatório');
+      }
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `relatorio-setor-${setor.replace(/\s+/g, '-')}-lote${loteId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      toast.success('Relatório gerado com sucesso!', { id: 'rel-setor' });
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao gerar relatório', {
+        id: 'rel-setor',
+      });
+      throw error;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20 bg-gray-50">
@@ -954,14 +1002,6 @@ export default function DetalhesLotePage() {
                 </svg>
                 Atualizar
               </button>
-              <button
-                onClick={handleDownloadReport}
-                disabled={lote.status === 'criado'}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileText size={18} />
-                Gerar Relatório
-              </button>
             </div>
           </div>
         </div>
@@ -1037,7 +1077,24 @@ export default function DetalhesLotePage() {
                 <FileText size={18} />
                 Gerar Relatório PDF
               </button>
-              {/* CSV download removed */}
+              <button
+                onClick={() => setShowSetorModal(true)}
+                disabled={
+                  !['emitido', 'enviado'].includes(lote.laudo_status ?? '') ||
+                  setores.length === 0
+                }
+                title={
+                  !['emitido', 'enviado'].includes(lote.laudo_status ?? '')
+                    ? 'Aguardando emissão do laudo'
+                    : setores.length === 0
+                      ? 'Nenhum setor disponível neste ciclo'
+                      : 'Gerar relatório por setor'
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <FileText size={18} />
+                Gerar Relatório por Setor
+              </button>
             </div>
           </div>
 
@@ -1330,66 +1387,6 @@ export default function DetalhesLotePage() {
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Data Inativação
                   </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G1</span>
-                      <FiltroColuna coluna="g1" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G2</span>
-                      <FiltroColuna coluna="g2" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G3</span>
-                      <FiltroColuna coluna="g3" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G4</span>
-                      <FiltroColuna coluna="g4" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G5</span>
-                      <FiltroColuna coluna="g5" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G6</span>
-                      <FiltroColuna coluna="g6" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G7</span>
-                      <FiltroColuna coluna="g7" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G8</span>
-                      <FiltroColuna coluna="g8" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G9</span>
-                      <FiltroColuna coluna="g9" titulo="" />
-                    </div>
-                  </th>
-                  <th className="px-1 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider w-12">
-                    <div className="flex flex-col items-center gap-1">
-                      <span>G10</span>
-                      <FiltroColuna coluna="g10" titulo="" />
-                    </div>
-                  </th>
                   <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Ações
                   </th>
@@ -1526,20 +1523,6 @@ export default function DetalhesLotePage() {
                       <td className="px-2 py-1 text-sm text-gray-500">
                         {formatDate(func.avaliacao.inativada_em)}
                       </td>
-                      {/* Colunas G1-G10 */}
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((grupoNum) => (
-                        <td
-                          key={`g${grupoNum}`}
-                          className="px-1 py-1 text-center text-xs"
-                        >
-                          {renderClassificacao(
-                            func.grupos?.[
-                              `g${grupoNum}` as keyof typeof func.grupos
-                            ],
-                            grupoNum
-                          )}
-                        </td>
-                      ))}
                       <td className="px-2 py-1 text-center">
                         {(func.avaliacao.status === 'concluida' ||
                           func.avaliacao.status === 'concluido') && (
@@ -1603,6 +1586,13 @@ export default function DetalhesLotePage() {
           gestorCelular={modalEmissao.gestorCelular}
         />
       )}
+
+      <ModalSetorRelatorioPDF
+        isOpen={showSetorModal}
+        setores={setores}
+        onClose={() => setShowSetorModal(false)}
+        onConfirm={gerarRelatorioSetor}
+      />
     </div>
   );
 }

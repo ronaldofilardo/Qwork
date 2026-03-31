@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/login-emissor.test.ts
+ * Testes: POST /api/auth/login - emissor mapping
+ */
+
 import { query as realQuery } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 
@@ -36,6 +41,7 @@ describe('POST /api/auth/login - emissor mapping', () => {
               clinica_id: null,
               entidade_id: null,
               ativo: true,
+              senha_hash: '$2a$10$ValidEmissorHash',
             },
           ],
         };

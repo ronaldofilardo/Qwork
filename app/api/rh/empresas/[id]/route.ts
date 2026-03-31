@@ -56,15 +56,18 @@ export async function PATCH(
           { status: 404 }
         );
       }
-      // Se inativando a empresa, inativar também os funcionários (exceto RH, admin, emissor)
+      // Se inativando a empresa, inativar os VÍNCULOS dos funcionários (não o funcionário globalmente)
+      // SEGREGAÇÃO: inativa apenas o vinculo em funcionarios_clinicas, preservando vínculos com outras empresas
       if (!ativa) {
         const funcionariosResult = await query(
-          `UPDATE funcionarios
-          SET ativo = false, atualizado_em = CURRENT_TIMESTAMP
-          WHERE empresa_id = $1
-            AND perfil = 'funcionario'
-            AND ativo = true
-          RETURNING cpf`,
+          `UPDATE funcionarios_clinicas fc
+          SET ativo = false, data_desvinculo = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP
+          FROM funcionarios f
+          WHERE fc.funcionario_id = f.id
+            AND fc.empresa_id = $1
+            AND f.perfil = 'funcionario'
+            AND fc.ativo = true
+          RETURNING f.cpf`,
           [empresaId]
         );
 
@@ -74,7 +77,7 @@ export async function PATCH(
           success: true,
           empresa: empresaResult.rows[0],
           funcionarios_inativados: funcionariosResult.rows.length,
-          mensagem: `Empresa inativada com sucesso. ${funcionariosResult.rows.length} funcionário(s) foram inativados.`,
+          mensagem: `Empresa inativada com sucesso. ${funcionariosResult.rows.length} vínculo(s) de funcionário(s) foram inativados.`,
         });
       } else {
         // Se ativando, apenas atualizar a empresa (funcionários permanecem inativos)

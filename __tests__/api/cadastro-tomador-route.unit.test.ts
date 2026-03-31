@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/cadastro-tomador-route.unit.test.ts
+ * Testes: Route POST - unitário (sem DB real)
+ */
+
 // Teste unitário do handler POST para checar que arquivos são obrigatórios
 describe('Route POST - unitário (sem DB real)', () => {
   beforeEach(() => {

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/hooks/useReprocessarLaudo.test.tsx
+ * Testes: useReprocessarLaudo Hook
+ */
+
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useReprocessarLaudo } from '@/hooks/useReprocessarLaudo';

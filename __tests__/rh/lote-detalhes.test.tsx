@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/rh/lote-detalhes.test.tsx
+ * Testes: Página de Detalhes do Lote
+ */
+
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { useRouter, useParams } from 'next/navigation';

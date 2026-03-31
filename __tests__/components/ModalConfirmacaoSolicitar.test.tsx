@@ -24,7 +24,7 @@ import {
   marcarExibidaParaLote,
 } from '@/components/ModalConfirmacaoSolicitar';
 
-const PLATAFORMA_EMAIL = 'ronaldofilardo@gmail.com';
+const PLATAFORMA_EMAIL = 'contato@qwork.app.br';
 
 describe('ModalConfirmacaoSolicitar', () => {
   const defaultProps = {

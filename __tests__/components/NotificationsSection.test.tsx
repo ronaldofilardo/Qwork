@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/NotificationsSection.test.tsx
+ * Testes: NotificationsSection
+ */
+
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import NotificationsSection from '../../components/NotificationsSection';

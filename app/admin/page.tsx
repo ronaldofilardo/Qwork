@@ -3,63 +3,32 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '@/components/admin/AdminSidebar';
-import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { EmissoresContent } from '@/components/admin/EmissoresContent';
-import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
-import { PlanosContent } from '@/components/admin/PlanosContent';
 import { VolumeContent } from '@/components/admin/VolumeContent';
 import { ContagemContent } from '@/components/admin/ContagemContent';
+import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
 
 interface Session {
   cpf: string;
   nome: string;
-  perfil: 'funcionario' | 'rh' | 'admin' | 'emissor';
+  perfil: string;
 }
 
-type MainSection = 'tomadores' | 'financeiro' | 'geral' | 'volume';
-type _TomadoresSubSection = 'clinicas' | 'entidades';
-type _FinanceiroSubSection = 'contagem' | 'pagamentos' | 'planos';
-type _GeralSubSection = 'emissores';
+type MainSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
 type _VolumeSubSection = 'entidade' | 'rh';
 
 export default function AdminPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] = useState<MainSection>('tomadores');
-  const [activeSubSection, setActiveSubSection] = useState<string>('clinicas');
+  const [activeSection, setActiveSection] = useState<MainSection>('volume');
+  const [activeSubSection, setActiveSubSection] = useState<string>('entidade');
 
-  // Contadores para badges do sidebar
-  const [clinicasCount, setClinicasCount] = useState(0);
-  const [entidadesCount, setEntidadesCount] = useState(0);
-  const [pagamentosPendentes, setPagamentosPendentes] = useState(0);
-  const [planosAtivos, setPlanosAtivos] = useState(0);
   const [emissoresAtivos, setEmissoresAtivos] = useState(0);
 
   const router = useRouter();
 
   const fetchCounts = useCallback(async () => {
     try {
-      // Usar a mesma fonte do TomadoresContent (UNION ALL) para os badges ficarem consistentes
-      const tomadoresRes = await fetch('/api/admin/entidades');
-      if (tomadoresRes.ok) {
-        const data = await tomadoresRes.json();
-        const lista: { tipo: string }[] = data.entidades || [];
-        setClinicasCount(lista.filter((t) => t.tipo === 'clinica').length);
-        setEntidadesCount(lista.filter((t) => t.tipo === 'entidade').length);
-      }
-
-      setPagamentosPendentes(0);
-
-      const planosRes = await fetch('/api/admin/planos');
-      if (planosRes.ok) {
-        const data = await planosRes.json();
-        if (data.success) {
-          setPlanosAtivos(
-            data.planos?.filter((p: { ativo: boolean }) => p.ativo).length || 0
-          );
-        }
-      }
-
       const emissoresRes = await fetch('/api/admin/emissores');
       if (emissoresRes.ok) {
         const data = await emissoresRes.json();
@@ -109,30 +78,22 @@ export default function AdminPage() {
   };
 
   const renderContent = () => {
-    if (activeSection === 'tomadores') {
-      return <TomadoresContent activeSubSection={activeSubSection} />;
-    }
-
     if (activeSection === 'volume') {
       return <VolumeContent activeSubSection={activeSubSection} />;
     }
 
     if (activeSection === 'financeiro') {
-      if (activeSubSection === 'contagem') {
-        return <ContagemContent />;
-      }
-      if (activeSubSection === 'planos') {
-        return <PlanosContent />;
-      }
-      if (activeSubSection === 'pagamentos') {
-        return <PagamentosContent />;
-      }
+      return <ContagemContent />;
     }
 
     if (activeSection === 'geral') {
       if (activeSubSection === 'emissores') {
         return <EmissoresContent />;
       }
+    }
+
+    if (activeSection === 'auditorias') {
+      return <AuditoriasContent />;
     }
 
     return (
@@ -166,10 +127,6 @@ export default function AdminPage() {
           activeSubSection={activeSubSection}
           onSectionChange={handleSectionChange}
           counts={{
-            clinicas: clinicasCount,
-            entidades: entidadesCount,
-            pagamentos: pagamentosPendentes,
-            planos: planosAtivos,
             emissores: emissoresAtivos,
           }}
         />

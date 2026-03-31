@@ -256,9 +256,9 @@ export async function POST(
       };
     }
 
-    // 15. Persistir metadados no banco de dados E MARCAR COMO EMITIDO
-    // ⚠️ IMPORTANTE: Este é o momento em que o laudo é efetivamente marcado como 'emitido'
-    // O status 'emitido' significava que o laudo está disponível ao usuário (no bucket)
+    // 15. Persistir metadados no banco de dados E MARCAR COMO ENVIADO
+    // ⚠️ IMPORTANTE: Este é o momento em que o laudo é efetivamente marcado como 'enviado'
+    // O status 'enviado' significa que o laudo está disponível ao usuário (no bucket)
     // CORREÇÃO: Não verificar status='rascunho' pois o laudo pode já estar com status='emitido'
     // A validação de imutabilidade já foi feita no passo 4 (verificando arquivo_remoto_key)
     await query(
@@ -270,8 +270,9 @@ export async function POST(
            arquivo_remoto_uploaded_at = NOW(),
            arquivo_remoto_etag = $5,
            arquivo_remoto_size = $6,
-           status = 'emitido',
+           status = 'enviado',
            emitido_em = COALESCE(emitido_em, NOW()),
+           enviado_em = NOW(),
            atualizado_em = NOW()
        WHERE id = $7`,
       [
@@ -285,7 +286,26 @@ export async function POST(
       ]
     );
 
-    // 16. Auditoria de sucesso
+    // 16. Atualizar status do lote para 'finalizado' (laudo disponível no bucket)
+    // laudo_enviado_em marca quando o PDF ficou disponível no bucket.
+    // O trigger prevent_modification_lote_when_laudo_emitted pode bloquear
+    // este UPDATE em ambientes onde a migration 1021 ainda não foi aplicada.
+    // Nesse caso, logamos como warning — o upload já foi concluído com sucesso.
+    try {
+      await query(
+        `UPDATE lotes_avaliacao SET status = 'finalizado', laudo_enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1`,
+        [laudo.lote_id]
+      );
+    } catch (loteUpdateError: unknown) {
+      console.warn(
+        `[UPLOAD] Aviso: não foi possível marcar lote ${laudo.lote_id} como finalizado (trigger pode estar bloqueando). Upload do laudo já concluído.`,
+        loteUpdateError instanceof Error
+          ? loteUpdateError.message
+          : loteUpdateError
+      );
+    }
+
+    // 17. Auditoria de sucesso
     await query(
       `INSERT INTO audit_logs (action, resource, resource_id, new_data, user_perfil, user_cpf)
        VALUES ('laudo_upload_backblaze_sucesso', 'laudos', $1, $2, $3, $4)`,

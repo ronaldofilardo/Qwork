@@ -182,6 +182,25 @@ export async function queryWithContext<T = Record<string, unknown>>(
           }
         }
 
+        // Para representantes: buscar representante_id para contexto RLS
+        let representanteId: string | null = null;
+        if (perfil === 'representante') {
+          try {
+            const repResult = await txClient.query(
+              `SELECT id FROM representantes WHERE cpf = $1 AND status = 'ativo' LIMIT 1`,
+              [cpf]
+            );
+            if (repResult.rows.length > 0) {
+              representanteId = repResult.rows[0].id.toString();
+            }
+          } catch (err) {
+            console.warn(
+              '[queryWithContext] Erro ao buscar representante_id:',
+              err
+            );
+          }
+        }
+
         // FASE 2: Configurar variáveis RLS (SET LOCAL - só para esta transação)
         await txClient.query('SELECT set_config($1, $2, true)', [
           'app.current_user_cpf',
@@ -215,6 +234,13 @@ export async function queryWithContext<T = Record<string, unknown>>(
           await txClient.query('SELECT set_config($1, $2, true)', [
             'app.current_contratante_id',
             entidadeId,
+          ]);
+        }
+
+        if (representanteId) {
+          await txClient.query('SELECT set_config($1, $2, true)', [
+            'app.current_representante_id',
+            representanteId,
           ]);
         }
 
@@ -439,109 +465,89 @@ export async function transactionWithContext<T = void>(
   );
 
   // ✅ USAR transaction() de lib/db.ts que garante cliente dedicado (mesma conexão)
-  return await transaction(async (txClient) => {
-    // FASE 1: Buscar IDs de contexto (dentro da transação, mesma conexão)
-    let clinicaId: string | null = null;
-    let entidadeId: string | null = null;
+  // transaction() executa BEGIN antes do callback, COMMIT se bem-sucedido, ROLLBACK em erro
+  try {
+    return await transaction(async (txClient) => {
+      // FASE 1: Resolver IDs de contexto a partir da sessão (sem refazer DB query)
+      let clinicaId: string | null = null;
+      let entidadeId: string | null = null;
 
-    if (perfil === 'rh') {
-      try {
-        const clinicaResult = await txClient.query(
-          `SELECT DISTINCT ec.clinica_id
-           FROM funcionarios f
-           JOIN funcionarios_clinicas fc ON f.id = fc.funcionario_id
-           JOIN empresas_clientes ec ON ec.id = fc.empresa_id
-           WHERE f.cpf = $1 AND fc.ativo = true
-           LIMIT 1`,
-          [cpf]
-        );
-        if (clinicaResult.rows.length > 0 && clinicaResult.rows[0].clinica_id) {
-          clinicaId = clinicaResult.rows[0].clinica_id.toString();
+      if (perfil === 'rh' && session.clinica_id) {
+        const rawId = String(session.clinica_id);
+        if (!/^\d+$/.test(rawId)) {
+          throw new Error('clinica_id com formato inválido na sessão');
         }
-      } catch (err) {
-        console.warn(
-          '[transactionWithContext] Erro ao buscar clinica_id:',
-          err
-        );
+        clinicaId = rawId;
       }
-    }
 
-    if (perfil === 'gestor') {
-      try {
-        const entidadeResult = await txClient.query(
-          `SELECT DISTINCT fe.entidade_id
-           FROM funcionarios f
-           JOIN funcionarios_entidades fe ON f.id = fe.funcionario_id
-           WHERE f.cpf = $1 AND fe.ativo = true
-           LIMIT 1`,
-          [cpf]
-        );
-        if (
-          entidadeResult.rows.length > 0 &&
-          entidadeResult.rows[0].entidade_id
-        ) {
-          entidadeId = entidadeResult.rows[0].entidade_id.toString();
+      if (perfil === 'gestor' && session.entidade_id) {
+        const rawEntId = String(session.entidade_id);
+        if (!/^\d+$/.test(rawEntId)) {
+          throw new Error('entidade_id com formato inválido na sessão');
         }
-      } catch (err) {
-        console.warn(
-          '[transactionWithContext] Erro ao buscar entidade_id:',
-          err
-        );
+        entidadeId = rawEntId;
       }
-    }
 
-    // FASE 2: Configurar variáveis RLS (SET LOCAL - só para esta transação)
-    await txClient.query('SELECT set_config($1, $2, true)', [
-      'app.current_user_cpf',
-      cpf,
-    ]);
-    await txClient.query('SELECT set_config($1, $2, true)', [
-      'app.current_perfil',
-      perfil,
-    ]);
-    await txClient.query('SELECT set_config($1, $2, true)', [
-      'app.current_user_perfil',
-      perfil,
-    ]);
-    await txClient.query('SELECT set_config($1, $2, true)', [
-      'app.current_user_tipo',
-      perfil,
-    ]);
-
-    if (clinicaId) {
+      // FASE 2: Configurar variáveis RLS (SET LOCAL - só para esta transação)
       await txClient.query('SELECT set_config($1, $2, true)', [
-        'app.current_clinica_id',
-        clinicaId,
-      ]);
-    }
-
-    if (entidadeId) {
-      await txClient.query('SELECT set_config($1, $2, true)', [
-        'app.current_entidade_id',
-        entidadeId,
+        'app.current_user_cpf',
+        cpf,
       ]);
       await txClient.query('SELECT set_config($1, $2, true)', [
-        'app.current_contratante_id',
-        entidadeId,
+        'app.current_perfil',
+        perfil,
       ]);
-    }
+      await txClient.query('SELECT set_config($1, $2, true)', [
+        'app.current_user_perfil',
+        perfil,
+      ]);
+      await txClient.query('SELECT set_config($1, $2, true)', [
+        'app.current_user_tipo',
+        perfil,
+      ]);
 
-    console.log(
-      '[transactionWithContext] ✅ RLS configurado (transação dedicada)'
-    );
+      if (clinicaId) {
+        await txClient.query('SELECT set_config($1, $2, true)', [
+          'app.current_clinica_id',
+          clinicaId,
+        ]);
+        await txClient.query('SELECT set_config($1, $2, true)', [
+          'app.current_user_clinica_id',
+          clinicaId,
+        ]);
+      }
 
-    // FASE 3: Executar callback (mesma conexão/transação/cliente)
-    // callback recebe uma função que usa txClient.query
-    const result = await callback(async (text, params) => {
-      return await txClient.query(text, params);
-    });
+      if (entidadeId) {
+        await txClient.query('SELECT set_config($1, $2, true)', [
+          'app.current_entidade_id',
+          entidadeId,
+        ]);
+        await txClient.query('SELECT set_config($1, $2, true)', [
+          'app.current_contratante_id',
+          entidadeId,
+        ]);
+      }
 
-    console.log('[transactionWithContext] ✅ Transação concluída');
+      console.log(
+        '[transactionWithContext] ✅ RLS configurado (transação dedicada)'
+      );
 
-    return result;
-  }, session);
+      // FASE 3: Executar callback (mesma conexão/transação/cliente)
+      // callback recebe uma função que usa txClient.query
+      // transaction() faz COMMIT automaticamente se não houver erro, ROLLBACK em caso de erro
+      const result = await callback(async (text, params) => {
+        return await txClient.query(text, params);
+      });
+
+      console.log('[transactionWithContext] ✅ Transação concluída');
+
+      return result;
+    }, session);
+  } catch (err) {
+    // transaction() já fez ROLLBACK automaticamente
+    throw err;
+  }
 }
-
 /**
  * Helper para obter todas as permissões de um perfil
  */

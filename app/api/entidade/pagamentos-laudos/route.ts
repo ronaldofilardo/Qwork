@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { requireEntity } from '@/lib/session';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
+import {
+  normalizarDetalhesParcelas,
+  type Parcela,
+} from '@/lib/parcelas-helper';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,24 +32,24 @@ export async function GET() {
         -- Lote mais recente associado à entidade
         (
           SELECT la.id FROM lotes_avaliacao la
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY la.criado_em DESC LIMIT 1
         ) as lote_id,
         (
           SELECT la.id::text FROM lotes_avaliacao la
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY la.criado_em DESC LIMIT 1
         ) as lote_codigo,
         (
           SELECT la.numero_ordem FROM lotes_avaliacao la
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY la.criado_em DESC LIMIT 1
         ) as lote_numero,
         -- Laudo associado ao lote mais recente
         (
           SELECT l.id FROM laudos l
           INNER JOIN lotes_avaliacao la ON la.id = l.lote_id
-          WHERE la.contratante_id = p.entidade_id
+          WHERE la.entidade_id = p.entidade_id
           ORDER BY l.emitido_em DESC NULLS LAST LIMIT 1
         ) as laudo_id
       FROM pagamentos p
@@ -62,7 +66,15 @@ export async function GET() {
       metodo: row.metodo,
       status: row.status,
       numeroParcelas: row.numero_parcelas ?? 1,
-      detalhesParcelas: row.detalhes_parcelas ?? null,
+      detalhesParcelas: row.detalhes_parcelas
+        ? normalizarDetalhesParcelas(
+            Array.isArray(row.detalhes_parcelas)
+              ? (row.detalhes_parcelas as Parcela[])
+              : (JSON.parse(row.detalhes_parcelas) as Parcela[]),
+            row.status,
+            row.data_pagamento ?? row.data_confirmacao ?? null
+          )
+        : null,
       numeroFuncionarios: row.numero_funcionarios ?? null,
       valorPorFuncionario: row.valor_por_funcionario
         ? parseFloat(row.valor_por_funcionario)

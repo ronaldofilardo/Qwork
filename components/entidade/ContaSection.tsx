@@ -1,12 +1,18 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Building2 } from 'lucide-react';
+import { Building2, Download } from 'lucide-react';
 import PagamentosFinanceiros from '@/components/shared/PagamentosFinanceiros';
 
 interface ContaSectionState {
   nome: string;
   cnpj?: string;
+}
+
+interface Representante {
+  nome: string;
+  email?: string;
+  telefone?: string;
 }
 
 interface AccountInfo {
@@ -19,6 +25,8 @@ interface AccountInfo {
   estado?: string;
   responsavel_nome?: string;
   criado_em?: string;
+  tem_contrato_aceito?: boolean;
+  representante?: Representante | null;
 }
 
 export default function EntidadeContaSection() {
@@ -26,6 +34,32 @@ export default function EntidadeContaSection() {
   const [orgInfo, setOrgInfo] = useState<ContaSectionState | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [downloadingContrato, setDownloadingContrato] = useState(false);
+
+  const handleBaixarContrato = async () => {
+    try {
+      setDownloadingContrato(true);
+      const response = await fetch('/api/tomador/contrato-pdf');
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'contrato-qwork.pdf';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('Erro ao baixar contrato');
+      }
+    } catch (error) {
+      console.error('Erro ao baixar contrato:', error);
+      alert('Erro ao baixar contrato');
+    } finally {
+      setDownloadingContrato(false);
+    }
+  };
 
   const loadAccountInfo = useCallback(async () => {
     try {
@@ -95,12 +129,22 @@ export default function EntidadeContaSection() {
             <div className="p-3 bg-primary-100 rounded-lg">
               <Building2 className="text-primary-600" size={24} />
             </div>
-            <div>
+            <div className="flex-1">
               <h2 className="text-lg font-semibold text-gray-900">
                 Dados da Entidade
               </h2>
               <p className="text-sm text-gray-600">Informações cadastrais</p>
             </div>
+            {accountInfo?.tem_contrato_aceito && (
+              <button
+                onClick={handleBaixarContrato}
+                disabled={downloadingContrato}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                {downloadingContrato ? 'Baixando...' : 'Baixar Contrato'}
+              </button>
+            )}
           </div>
 
           {accountInfo ? (
@@ -178,6 +222,27 @@ export default function EntidadeContaSection() {
                     <p className="text-sm text-gray-900">
                       {accountInfo.responsavel_nome}
                     </p>
+                  </div>
+                )}
+
+                {accountInfo.representante && (
+                  <div>
+                    <label className="text-xs text-gray-500 uppercase tracking-wide">
+                      Representante Comercial
+                    </label>
+                    <p className="text-sm text-gray-900 font-medium">
+                      {accountInfo.representante.nome}
+                    </p>
+                    {accountInfo.representante.email && (
+                      <p className="text-xs text-gray-500">
+                        {accountInfo.representante.email}
+                      </p>
+                    )}
+                    {accountInfo.representante.telefone && (
+                      <p className="text-xs text-gray-500">
+                        {accountInfo.representante.telefone}
+                      </p>
+                    )}
                   </div>
                 )}
 

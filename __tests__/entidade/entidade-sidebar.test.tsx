@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/entidade/entidade-sidebar.test.tsx
+ * Testes: EntidadeSidebar
+ */
+
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import EntidadeSidebar from '@/components/entidade/EntidadeSidebar';

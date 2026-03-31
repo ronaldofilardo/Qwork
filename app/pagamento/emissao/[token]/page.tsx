@@ -262,7 +262,6 @@ export default function PagamentoEmissaoPage({ params }: PageProps) {
               dados.tomador_id ? (
                 <CheckoutAsaas
                   tomadorId={dados.tomador_id}
-                  planoId={1} // Não usado em emissão, mas obrigatório
                   numeroFuncionarios={dados.num_avaliacoes}
                   valor={dados.valor_total}
                   contratoId={null}

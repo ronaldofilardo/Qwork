@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/calculate.test.ts
+ * Testes: lib/calculate
+ */
+
 import {
   calcularScoreGrupo,
   categorizarScore,

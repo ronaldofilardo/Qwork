@@ -4,11 +4,11 @@
 
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/entidade/dashboard/route';
-import { query } from '@/lib/db';
+import { queryAsGestorEntidade } from '@/lib/db-gestor';
 
-// Mock do db
-jest.mock('@/lib/db', () => ({
-  query: jest.fn(),
+// Mock do db-gestor
+jest.mock('@/lib/db-gestor', () => ({
+  queryAsGestorEntidade: jest.fn(),
 }));
 
 // Mock da sessão
@@ -16,7 +16,9 @@ jest.mock('@/lib/session', () => ({
   requireEntity: jest.fn(),
 }));
 
-const mockQuery = query as jest.MockedFunction<typeof query>;
+const mockQueryAsGestor = queryAsGestorEntidade as jest.MockedFunction<
+  typeof queryAsGestorEntidade
+>;
 const mockRequireEntity = require('@/lib/session').requireEntity;
 
 describe('/api/entidade/dashboard', () => {
@@ -27,11 +29,11 @@ describe('/api/entidade/dashboard', () => {
   it('deve retornar dados do dashboard com sucesso', async () => {
     // Mock da sessão
     mockRequireEntity.mockResolvedValue({
-      tomador_id: 1,
+      entidade_id: 1,
     });
 
     // Mock das consultas
-    mockQuery
+    mockQueryAsGestor
       .mockResolvedValueOnce({
         rows: [
           {
@@ -94,10 +96,10 @@ describe('/api/entidade/dashboard', () => {
 
   it('deve retornar erro 500 quando ocorre erro na consulta', async () => {
     mockRequireEntity.mockResolvedValue({
-      tomador_id: 1,
+      entidade_id: 1,
     });
 
-    mockQuery.mockRejectedValueOnce(new Error('Erro de banco'));
+    mockQueryAsGestor.mockRejectedValueOnce(new Error('Erro de banco'));
 
     const request = new NextRequest(
       'http://localhost:3000/api/entidade/dashboard'

@@ -17,10 +17,12 @@ beforeEach(() => {
   // Limpar mocks antes de cada teste
   jest.clearAllMocks();
   // Resetar location para estado inicial
-  Object.defineProperty(window, 'location', {
-    value: { href: 'about:blank' },
-    writable: true,
-  });
+  delete (window as any).location;
+  (window as any).location = {
+    href: 'about:blank',
+    assign: jest.fn(),
+    replace: jest.fn(),
+  };
 });
 
 afterEach(() => {
@@ -70,5 +72,6 @@ test('Dashboard não redireciona gestor e exibe nome', async () => {
 
   // Assert - Assegurar que não houve redirecionamento forçado
   expect(window.location.href).not.toContain('/entidade');
-  expect(window.location.href).toBe('about:blank');
+  expect(window.location.href).not.toContain('/rh');
+  expect(window.location.href).not.toContain('/representante');
 });

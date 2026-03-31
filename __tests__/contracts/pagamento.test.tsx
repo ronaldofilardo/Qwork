@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/contracts/pagamento.test.tsx
+ * Testes: Página de Pagamento - Finalizar Pagamento
+ */
+
 import '@testing-library/jest-dom';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import PagamentoPage from '@/app/pagamento/[contratoId]/page';
@@ -46,7 +51,6 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor: 500,
         valor_plano: 50,
         numero_funcionarios: 10,
-        plano_nome: 'Plano Básico',
         tomador_nome: 'Empresa Teste',
         message: 'Pagamento iniciado com sucesso',
       }),
@@ -60,8 +64,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
 
     // Verificar se os detalhes são exibidos
     expect(screen.getByText('Empresa Teste')).toBeInTheDocument();
-    expect(screen.getByText('Plano Básico')).toBeInTheDocument();
-    expect(screen.getByText('R$ 50,00')).toBeInTheDocument(); // valor_plano
+    expect(screen.getByText('R$ 50,00')).toBeInTheDocument(); // valor_unitario (mapeado de valor_plano)
     expect(screen.getByText('10')).toBeInTheDocument(); // numero_funcionarios
     expect(screen.getByText('R$ 500,00')).toBeInTheDocument(); // total
     expect(
@@ -98,7 +101,7 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor: 500,
         valor_plano: 50,
         numero_funcionarios: 10,
-        plano_nome: 'Plano Básico',
+
         tomador_nome: 'Empresa Teste',
       }),
     } as any);
@@ -134,7 +137,6 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor: 500,
         valor_plano: 50,
         numero_funcionarios: 10,
-        plano_nome: 'Plano Básico',
         tomador_nome: 'Empresa Teste',
       }),
     } as any);
@@ -177,7 +179,6 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor: 500,
         valor_plano: 50,
         numero_funcionarios: 10,
-        plano_nome: 'Plano Básico',
         tomador_nome: 'Empresa Teste',
       }),
     } as any);
@@ -217,7 +218,6 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor: 500,
         valor_plano: 50,
         numero_funcionarios: 10,
-        plano_nome: 'Plano Básico',
         tomador_nome: 'Empresa Teste',
       }),
     } as any);
@@ -292,7 +292,6 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
         valor: 2500,
         valor_plano: 100,
         numero_funcionarios: 25,
-        plano_nome: 'Personalizado TEST',
         tomador_nome: 'Empresa Token',
       }),
     } as any);
@@ -304,7 +303,6 @@ describe('Página de Pagamento - Finalizar Pagamento', () => {
       expect(screen.getByText('Resumo da Contratação')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('Personalizado TEST')).toBeInTheDocument();
     expect(screen.getByText('25')).toBeInTheDocument();
     expect(screen.getByText('R$ 2.500,00')).toBeInTheDocument();
 

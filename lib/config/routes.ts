@@ -19,6 +19,12 @@ export const ENTIDADE_ROUTES = ['/entidade', '/api/entidade'] as const;
 
 export const EMISSOR_ROUTES = ['/emissor', '/api/emissor'] as const;
 
+export const SUPORTE_ROUTES = ['/suporte', '/api/suporte'] as const;
+
+export const COMERCIAL_ROUTES = ['/comercial', '/api/comercial'] as const;
+
+export const VENDEDOR_ROUTES = ['/vendedor', '/api/vendedor'] as const;
+
 export const FUNCIONARIO_ROUTES = [
   '/dashboard',
   '/avaliacao',
@@ -39,4 +45,16 @@ export function isRhRoute(path: string): boolean {
 
 export function isEntidadeRoute(path: string): boolean {
   return ENTIDADE_ROUTES.some((route) => path.startsWith(route));
+}
+
+export function isSuporteRoute(path: string): boolean {
+  return SUPORTE_ROUTES.some((route) => path.startsWith(route));
+}
+
+export function isComercialRoute(path: string): boolean {
+  return COMERCIAL_ROUTES.some((route) => path.startsWith(route));
+}
+
+export function isVendedorRoute(path: string): boolean {
+  return VENDEDOR_ROUTES.some((route) => path.startsWith(route));
 }

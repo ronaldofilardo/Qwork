@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/relatorio-individual-pdf-corrections.test.ts
+ * Testes: RH - Relatório Individual PDF Corrections
+ */
+
 describe('RH - Relatório Individual PDF Corrections', () => {
   let mockSession: any;
 

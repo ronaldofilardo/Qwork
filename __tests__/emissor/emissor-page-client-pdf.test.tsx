@@ -108,7 +108,7 @@ describe('EmissorDashboard - Client-side PDF Generation', () => {
         '/api/emissor/laudos/123/download'
       );
       expect(mockLink.click).toHaveBeenCalled();
-      expect(mockLink.download).toBe('laudo-LOTE-ABC.pdf');
+      expect(mockLink.download).toBe('laudo-123.pdf');
     });
   });
 

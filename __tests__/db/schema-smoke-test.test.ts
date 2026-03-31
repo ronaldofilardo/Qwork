@@ -110,6 +110,9 @@ const EXPECTED_COLUMNS: Array<{ table: string; column: string }> = [
   { table: 'lotes_avaliacao', column: 'tipo' },
   { table: 'lotes_avaliacao', column: 'status' },
 
+  // clinicas — colunas funcionais usadas ativamente pelo código
+  { table: 'clinicas', column: 'entidade_id' }, // FK → entidades(id), usada em handlers.ts e delete-secure
+
   // usuarios — campos usados em autenticação
   { table: 'usuarios', column: 'tipo_usuario' },
   { table: 'usuarios', column: 'clinica_id' },
@@ -143,17 +146,38 @@ const REMOVED_COLUMNS: Array<{
     column: 'empresa_id',
     reason: 'Removida: funcionários não têm vínculo direto com empresa',
   },
-  {
-    table: 'clinicas',
-    column: 'entidade_id',
-    reason: 'Removida: clínicas não têm FK para entidades no schema atual',
-  },
+  // NOTA: clinicas.entidade_id foi removida desta lista — a coluna EXISTE com
+  // FK ativa para entidades(id) e é usada por handlers.ts e delete-secure/route.ts.
+  // A entrada anterior estava ERRADA. Para remoção futura, crie migration explícita.
   {
     table: 'lotes_avaliacao',
     column: 'titulo',
     reason: 'Removida: lotes identificados por numero_ordem, não por título',
   },
+  {
+    table: 'lotes_avaliacao',
+    column: 'codigo',
+    reason: 'Removida pela migration 163 — campo código legado',
+  },
+  {
+    table: 'lotes_avaliacao',
+    column: 'modo_emergencia',
+    reason: 'Removida pela migration 163 — campo legado de emergência',
+  },
+  {
+    table: 'lotes_avaliacao',
+    column: 'motivo_emergencia',
+    reason: 'Removida pela migration 163 — campo legado de emergência',
+  },
 ];
+
+// ────────────────────────────────────────────────────────────
+// Views que DEVEM existir (criadas por migrations)
+// ────────────────────────────────────────────────────────────
+
+const REQUIRED_VIEWS = [
+  'v_auditoria_emissoes', // criada pela migration 164
+] as const;
 
 // ────────────────────────────────────────────────────────────
 // Views que NÃO devem existir (foram removidas)
@@ -163,6 +187,10 @@ const REMOVED_VIEWS: Array<{ view: string; reason: string }> = [
   {
     view: 'usuarios_resumo',
     reason: 'View removida — consultas diretas em usuarios',
+  },
+  {
+    view: 'suspicious_activity',
+    reason: 'View removida pela migration 168 — campo legado de segurança',
   },
 ];
 
@@ -203,6 +231,15 @@ describe('Schema Smoke Test — banco de testes', () => {
           );
         }
         expect(exists).toBe(false);
+      });
+    });
+  });
+
+  describe('Views obrigatórias existem', () => {
+    REQUIRED_VIEWS.forEach((view) => {
+      it(`view "${view}" existe`, async () => {
+        const exists = await viewExists(view);
+        expect(exists).toBe(true);
       });
     });
   });

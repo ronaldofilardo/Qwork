@@ -24,7 +24,6 @@ export async function GET(req: NextRequest) {
     }
 
     // Buscar dados da avaliação - entidade só acessa lotes da sua entidade
-    // Usa COALESCE para compatibilidade com DEV e PROD
     const avaliacaoResult = await query(
       `
       SELECT 
@@ -41,12 +40,12 @@ export async function GET(req: NextRequest) {
       FROM avaliacoes a
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       JOIN lotes_avaliacao la ON a.lote_id = la.id
-      JOIN tomadores t ON t.id = COALESCE(la.entidade_id, la.contratante_id)
+      JOIN tomadores t ON t.id = la.entidade_id
       WHERE a.lote_id = $1 
         AND f.cpf = $2
         AND a.status = 'concluida'
         AND f.ativo = true
-        AND COALESCE(la.entidade_id, la.contratante_id) = $3
+        AND la.entidade_id = $3
     `,
       [loteId, cpf, session.entidade_id],
       session

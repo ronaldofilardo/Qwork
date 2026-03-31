@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { getSession } from '@/lib/session';
+import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -12,14 +13,7 @@ export async function GET(
   try {
     // Verificar sessão e perfil
     const session = getSession();
-
-    if (!session) {
-      return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-    }
-
-    if (session.perfil !== 'gestor') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    assertRoles(session, [ROLES.GESTOR]);
 
     if (!session.entidade_id) {
       return NextResponse.json(
@@ -50,7 +44,7 @@ export async function GET(
         CASE WHEN fe.id IS NOT NULL THEN true ELSE false END as emissao_solicitada,
         fe.solicitado_em as emissao_solicitado_em,
         CASE 
-          WHEN l.id IS NOT NULL AND l.status = 'emitido' AND l.arquivo_remoto_url IS NOT NULL
+          WHEN l.id IS NOT NULL AND l.status IN ('emitido', 'enviado') AND l.arquivo_remoto_url IS NOT NULL
           THEN true 
           ELSE false 
         END as tem_laudo,
@@ -72,10 +66,11 @@ export async function GET(
       FROM lotes_avaliacao la
       LEFT JOIN v_fila_emissao fe ON fe.lote_id = la.id
       LEFT JOIN laudos l ON l.lote_id = la.id
-      INNER JOIN avaliacoes a ON a.lote_id = la.id
-      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      INNER JOIN funcionarios_entidades fe2 ON fe2.funcionario_id = f.id
-      WHERE la.id = $1 AND fe2.entidade_id = $2 AND fe2.ativo = true
+      -- ISOLAMENTO: entidade_id direto na tabela de lotes previne acesso a lotes de clínicas
+      WHERE la.id = $1
+        AND la.entidade_id = $2
+        AND la.clinica_id IS NULL
+        AND la.empresa_id IS NULL
       LIMIT 1
     `,
       [loteId, session.entidade_id]
@@ -198,6 +193,12 @@ export async function GET(
 
     return response;
   } catch (error) {
+    if (isApiError(error)) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.status }
+      );
+    }
     console.error('Erro ao buscar detalhes do lote:', error);
     return NextResponse.json(
       { error: 'Erro interno do servidor' },

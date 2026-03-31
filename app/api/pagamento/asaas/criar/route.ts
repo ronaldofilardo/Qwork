@@ -10,12 +10,13 @@ export async function POST(request: NextRequest) {
       tomador_id,
       entidade_id, // backward compat
       contrato_id,
-      _plano_id,
-      _numero_funcionarios,
       valor_total,
       metodo = 'PIX', // PIX, BOLETO, CREDIT_CARD
       lote_id, // ID do lote de emissão (opcional)
+      parcelas = 1, // Número de parcelas (1-12, apenas BOLETO e CREDIT_CARD)
     } = body;
+
+    const numeroParcelas = Math.max(1, Math.min(12, Number(parcelas) || 1));
 
     const finalTomadorId = tomador_id || entidade_id;
 
@@ -32,7 +33,7 @@ export async function POST(request: NextRequest) {
 
     // Buscar dados do tomador
     const tomadorResult = await query(
-      `SELECT t.id, t.nome, t.plano_id, t.status, 
+      `SELECT t.id, t.nome, t.status, 
               COALESCE(t.numero_funcionarios_estimado, 1) as numero_funcionarios,
               t.tipo,
               e.cnpj as entidade_cnpj,
@@ -131,10 +132,16 @@ export async function POST(request: NextRequest) {
         pagamento_id: pagamentoId,
       });
 
+      const valorTotal = Number(valor_total);
+      const valorParcela =
+        numeroParcelas > 1
+          ? Math.round((valorTotal / numeroParcelas) * 100) / 100
+          : valorTotal;
+
       const payment = await asaas.createPayment({
         customer: asaasCustomerId,
         billingType: asaasBillingType,
-        value: Number(valor_total),
+        value: valorTotal,
         dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000) // 3 dias
           .toISOString()
           .split('T')[0],
@@ -142,6 +149,12 @@ export async function POST(request: NextRequest) {
           ? `Emissão de Laudo - Lote #${lote_id}`
           : `Pagamento de Avaliação - Lote`,
         externalReference,
+        ...(numeroParcelas > 1 &&
+          (asaasBillingType === 'BOLETO' ||
+            asaasBillingType === 'CREDIT_CARD') && {
+            installmentCount: numeroParcelas,
+            installmentValue: valorParcela,
+          }),
       });
 
       console.log('[Asaas] ✅ Pagamento criado no Asaas:', {
@@ -164,6 +177,23 @@ export async function POST(request: NextRequest) {
         '[Asaas] 🔗 Verifique se esta URL está configurada no painel Asaas Sandbox!'
       );
 
+      // Gerar detalhes_parcelas JSONB quando parcelado
+      let detalhesParcelas = null;
+      if (numeroParcelas > 1) {
+        const baseDue = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000);
+        detalhesParcelas = Array.from({ length: numeroParcelas }, (_, i) => {
+          const venc = new Date(baseDue);
+          venc.setMonth(venc.getMonth() + i);
+          return {
+            numero: i + 1,
+            valor: valorParcela,
+            data_vencimento: venc.toISOString().split('T')[0],
+            pago: false,
+            status: 'pendente',
+          };
+        });
+      }
+
       // Atualizar pagamento com dados do Asaas
       await query(
         `UPDATE pagamentos 
@@ -171,7 +201,9 @@ export async function POST(request: NextRequest) {
              asaas_payment_id = $2,
              asaas_payment_url = $3,
              asaas_invoice_url = $4,
-             asaas_due_date = $5
+             asaas_due_date = $5,
+             numero_parcelas = $7,
+             detalhes_parcelas = $8
          WHERE id = $6`,
         [
           asaasCustomerId,
@@ -180,6 +212,8 @@ export async function POST(request: NextRequest) {
           payment.invoiceUrl || null,
           payment.dueDate,
           pagamentoId,
+          numeroParcelas,
+          detalhesParcelas ? JSON.stringify(detalhesParcelas) : null,
         ]
       );
 

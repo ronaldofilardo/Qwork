@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/scripts/link-remote-laudos.test.ts
+ * Testes: scripts/link-remote-laudos
+ */
+
 import { main as linkMain } from '@/scripts/link-remote-laudos';
 
 jest.mock('@/lib/db', () => ({

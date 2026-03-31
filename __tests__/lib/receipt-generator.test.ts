@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/receipt-generator.test.ts
+ * Testes: receipt-generator
+ */
+
 import { gerarRecibo, gerarHtmlRecibo } from '@/lib/receipt-generator';
 import { query } from '@/lib/db';
 
@@ -29,7 +34,7 @@ jest.mock('@/lib/audit-logger', () => ({
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
 
-describe.skip('receipt-generator', () => {
+describe('receipt-generator', () => {
   beforeEach(() => {
     jest.resetAllMocks();
   });
@@ -87,6 +92,14 @@ describe.skip('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
+      // Mock - busca plano do contrato
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          { nome: 'Plano Fixo', tipo: 'fixo', descricao: 'Plano fixo mensal' },
+        ],
+        rowCount: 1,
+      } as any);
+
       // Mock - gerar número do recibo
       mockQuery.mockResolvedValueOnce({
         rows: [{ numero: 'REC-2025-00001' }],
@@ -113,14 +126,8 @@ describe.skip('receipt-generator', () => {
       // Mock - update pagamento
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      // Garantir mock explícito do PDF (às vezes jest hoisting causa conflito em caminhos relativos)
-      const pdfMod = require('@/lib/pdf-generator');
-      (pdfMod.gerarPdfRecibo as jest.Mock).mockResolvedValueOnce({
-        pdfBuffer: Buffer.from('fake-pdf-content'),
-        hash: 'a'.repeat(64),
-        localPath: 'storage/recibos/2025/01-janeiro/recibo-TEST.pdf',
-        size: 15000,
-      });
+      // Mock - auditoria
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
       const result = await gerarRecibo({
         tomador_id: 3,
@@ -132,9 +139,7 @@ describe.skip('receipt-generator', () => {
 
       expect(result).toHaveProperty('id', 123);
       expect(result).toHaveProperty('numero_recibo', 'REC-2025-00001');
-      expect(result).toHaveProperty('pdf');
-      expect(result).toHaveProperty('hash_pdf');
-      expect(result.hash_pdf).toMatch(/^[a-f0-9]{64}$/);
+      expect(result).toHaveProperty('valor_total');
     });
 
     it('deve calcular total a partir de valor_por_funcionario × numero_funcionarios', async () => {
@@ -179,15 +184,15 @@ describe.skip('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
-      // 4) numero do recibo
+      // 4) plano do contrato
       mockQuery.mockResolvedValueOnce({
-        rows: [{ numero: 'REC-20251231-0001' }],
+        rows: [{ nome: 'Plano Padrão', tipo: 'fixo', descricao: 'Desc' }],
         rowCount: 1,
       } as any);
 
-      // 5) hash contrato
+      // 5) numero do recibo
       mockQuery.mockResolvedValueOnce({
-        rows: [{ hash: 'deadbeef' }],
+        rows: [{ numero: 'REC-20251231-0001' }],
         rowCount: 1,
       } as any);
 
@@ -197,10 +202,13 @@ describe.skip('receipt-generator', () => {
         rowCount: 1,
       } as any);
 
-      // 7) criar notificação
+      // 7) update pagamento
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
-      // 8) update pagamento
+      // 8) criar notificação
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+
+      // 9) auditoria
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
       const result = await gerarRecibo({
