@@ -99,7 +99,6 @@ export default function VendedorPortalLayout({
     { href: '/vendedor/dashboard', label: 'Dashboard' },
     { href: '/vendedor/leads', label: 'Leads' },
     { href: '/vendedor/vinculos', label: 'Vínculos' },
-    { href: '/vendedor/comissoes', label: 'Comissões' },
     { href: '/vendedor/dados', label: 'Dados' },
   ];
 

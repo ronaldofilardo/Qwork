@@ -9,11 +9,8 @@ import {
 } from '@/lib/validators';
 import {
   CUSTO_POR_AVALIACAO,
-  MAX_PERCENTUAL_COMISSAO,
   calcularRequerAprovacao,
-  calcularValoresComissao,
   type TipoCliente,
-  type ValoresComissao,
 } from '@/lib/leads-config';
 import type { NovoLeadVendedorForm, ErrosCamposVendedor } from '../types';
 
@@ -23,7 +20,6 @@ const FORM_INICIAL: NovoLeadVendedorForm = {
   contato_telefone: '',
   cnpj: '',
   valor_negociado: '',
-  percentual_comissao: '',
   observacoes: '',
   tipo_cliente: 'entidade',
   num_vidas_estimado: '',
@@ -34,7 +30,6 @@ const ERROS_INICIAL: ErrosCamposVendedor = {
   contato_email: '',
   contato_telefone: '',
   cnpj: '',
-  percentual_comissao: '',
 };
 
 function aplicarMascaraCNPJ(valor: string): string {
@@ -98,23 +93,12 @@ export function useVendedorLeads() {
     parseFloat(form.valor_negociado.replace(/[^\d,]/g, '').replace(',', '.')) ||
     0;
 
-  const percentualComissaoNum =
-    parseFloat(
-      form.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
-    ) || 0;
-
   const numVidasEstimadoNum =
     parseInt(form.num_vidas_estimado.replace(/\D/g, ''), 10) || 0;
 
   const custoAtual = CUSTO_POR_AVALIACAO[form.tipo_cliente];
   const requerAprovacao = calcularRequerAprovacao(
     valorNegociadoNum,
-    percentualComissaoNum,
-    form.tipo_cliente
-  );
-  const valoresComissao: ValoresComissao = calcularValoresComissao(
-    valorNegociadoNum,
-    percentualComissaoNum,
     0,
     form.tipo_cliente
   );
@@ -145,8 +129,6 @@ export function useVendedorLeads() {
         if (form.cnpj.trim()) body.cnpj = normalizeCNPJ(form.cnpj);
         if (form.valor_negociado.trim())
           body.valor_negociado = valorNegociadoNum;
-        if (form.percentual_comissao.trim())
-          body.percentual_comissao = percentualComissaoNum;
         if (form.observacoes.trim()) body.observacoes = form.observacoes.trim();
         if (numVidasEstimadoNum > 0)
           body.num_vidas_estimado = numVidasEstimadoNum;
@@ -169,7 +151,7 @@ export function useVendedorLeads() {
         setSalvando(false);
       }
     },
-    [form, valorNegociadoNum, percentualComissaoNum, numVidasEstimadoNum]
+    [form, valorNegociadoNum, numVidasEstimadoNum]
   );
 
   const resetForm = () => {
@@ -191,8 +173,6 @@ export function useVendedorLeads() {
     handleTipoClienteChange,
     requerAprovacao,
     custoAtual,
-    valoresComissao,
-    MAX_PERCENTUAL_COMISSAO,
     salvar,
     resetForm,
   };

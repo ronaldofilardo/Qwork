@@ -168,7 +168,26 @@ export type AuditoriaSubTab =
   | 'acesso-suporte'
   | 'acesso-comercial'
   | 'acesso-representante'
-  | 'acesso-vendedor';
+  | 'acesso-vendedor'
+  | 'aceites';
+
+// ── Aceites (consolidado por usuário) ─────────────────────────────────────
+
+export interface AceiteUsuario {
+  cpf: string;
+  nome: string | null;
+  perfil: string;
+  aceite_contrato: boolean | null;
+  aceite_contrato_em: string | null;
+  aceite_termos: boolean | null;
+  aceite_termos_em: string | null;
+  aceite_politica_privacidade: boolean | null;
+  aceite_politica_privacidade_em: string | null;
+  aceite_disclaimer_nv: boolean | null;
+  aceite_disclaimer_nv_em: string | null;
+  confirmacao_identificacao: boolean | null;
+  confirmacao_identificacao_em: string | null;
+}
 
 export interface AuditoriasContentProps {
   auditoriaSubTab: AuditoriaSubTab;

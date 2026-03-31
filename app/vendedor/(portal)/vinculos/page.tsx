@@ -10,9 +10,6 @@ interface Vinculo {
   data_inicio: string;
   data_expiracao: string;
   dias_para_expirar: number;
-  total_comissoes: string;
-  valor_total_pago: string;
-  valor_pendente: string;
   ultimo_laudo_em: string | null;
   lead_valor_negociado: number | null;
   lead_contato_nome: string | null;
@@ -170,25 +167,6 @@ export default function VinculosVendedor() {
                         )}
                       </div>
                     )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 text-right">
-                    <div className="bg-gray-50 rounded-lg p-2 min-w-[100px]">
-                      <p className="text-[10px] text-gray-400 uppercase">
-                        Recebido
-                      </p>
-                      <p className="font-bold text-green-700 text-sm">
-                        {fmt(v.valor_total_pago)}
-                      </p>
-                    </div>
-                    <div className="bg-gray-50 rounded-lg p-2 min-w-[100px]">
-                      <p className="text-[10px] text-gray-400 uppercase">
-                        Pendente
-                      </p>
-                      <p className="font-bold text-gray-700 text-sm">
-                        {fmt(v.valor_pendente)}
-                      </p>
-                    </div>
                   </div>
                 </div>
               </div>

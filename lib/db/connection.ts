@@ -131,6 +131,17 @@ export const isTest = environment === 'test';
 export const isProduction = environment === 'production';
 export const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
 
+/**
+ * Modo especial: emissor rodando localmente mas acessando banco de PRODUÇÃO (Neon).
+ * Exige: ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF + DATABASE_URL configurados no .env.local.
+ * Apenas o CPF definido em EMISSOR_CPF pode executar queries nesse modo.
+ */
+export const isEmissorLocalProdMode =
+  isDevelopment &&
+  process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
+  !!process.env.EMISSOR_CPF &&
+  !!process.env.DATABASE_URL;
+
 // ============================================================================
 // SELEÇÃO DE URL DO BANCO
 // ============================================================================

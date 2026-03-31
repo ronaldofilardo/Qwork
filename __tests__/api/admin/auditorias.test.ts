@@ -6,8 +6,7 @@
 import { GET as getAcessosRH } from '@/app/api/admin/auditorias/acessos-rh/route';
 import { GET as getAcessosFuncionarios } from '@/app/api/admin/auditorias/acessos-funcionarios/route';
 import { GET as getAvaliacoes } from '@/app/api/admin/auditorias/avaliacoes/route';
-// REMOVIDO: import { GET as getLotes } from '@/app/api/admin/auditorias/lotes/route';
-// REMOVIDO: import { GET as getLaudos } from '@/app/api/admin/auditorias/laudos/route';
+import { GET as getAceites } from '@/app/api/admin/auditorias/aceites/route';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
 
@@ -144,6 +143,85 @@ describe('APIs de Auditoria', () => {
 
   // REMOVIDO: Testes de /api/admin/auditorias/laudos
   // Admin não deve ter acesso a dados operacionais (lotes, laudos)
+
+  describe('/api/admin/auditorias/aceites', () => {
+    const makeAceite = (overrides: Record<string, unknown> = {}) => ({
+      cpf: '12345678901',
+      nome: 'João da Silva',
+      perfil: 'representante',
+      aceite_contrato: true,
+      aceite_contrato_em: '2024-03-01T10:00:00Z',
+      aceite_termos: true,
+      aceite_termos_em: '2024-03-01T10:01:00Z',
+      aceite_politica_privacidade: true,
+      aceite_politica_privacidade_em: '2024-03-01T10:02:00Z',
+      aceite_disclaimer_nv: false,
+      aceite_disclaimer_nv_em: null,
+      confirmacao_identificacao: null,
+      confirmacao_identificacao_em: null,
+      ...overrides,
+    });
+
+    it('deve retornar lista de aceites para admin', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery.mockResolvedValue({
+        rows: [makeAceite(), makeAceite({ cpf: '98765432100', perfil: 'funcionario', nome: 'Maria Funcio' })],
+        rowCount: 2,
+      });
+
+      // Act
+      const response = await getAceites();
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(data.aceites).toHaveLength(2);
+      expect(data.aceites[0].cpf).toBe('12345678901');
+      expect(data.aceites[1].perfil).toBe('funcionario');
+    });
+
+    it('deve retornar 403 para usuário não-admin', async () => {
+      // Arrange
+      mockRequireRole.mockRejectedValue(new Error('Sem permissão'));
+
+      // Act
+      const response = await getAceites();
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(403);
+      expect(data.error).toBeDefined();
+    });
+
+    it('deve retornar 500 em falha no banco', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery.mockRejectedValue(new Error('connection timeout'));
+
+      // Act
+      const response = await getAceites();
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(500);
+      expect(data.error).toBeDefined();
+    });
+
+    it('deve retornar lista vazia quando não há aceites', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery.mockResolvedValue({ rows: [], rowCount: 0 });
+
+      // Act
+      const response = await getAceites();
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(data.aceites).toHaveLength(0);
+    });
+  });
 
   describe('Tratamento de erros', () => {
     it('deve retornar erro 500 em caso de falha no banco', async () => {

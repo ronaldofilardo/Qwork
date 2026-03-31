@@ -211,9 +211,6 @@ export default function VendedorLeadsPage() {
                           Valor
                         </th>
                         <th className="px-4 py-3 text-center font-medium">
-                          % Comissão
-                        </th>
-                        <th className="px-4 py-3 text-center font-medium">
                           Enviado em
                         </th>
                         <th className="px-4 py-3 text-center font-medium">
@@ -259,12 +256,6 @@ export default function VendedorLeadsPage() {
                           </td>
                           <td className="px-4 py-3 text-right text-gray-700">
                             {fmtBRL(lead.valor_negociado)}
-                          </td>
-                          <td className="px-4 py-3 text-center text-gray-600">
-                            {lead.percentual_comissao !== null &&
-                            lead.percentual_comissao !== undefined
-                              ? `${parseFloat(String(lead.percentual_comissao)).toFixed(2)}%`
-                              : '—'}
                           </td>
                           <td className="px-4 py-3 text-center text-gray-500">
                             {fmtDate(lead.criado_em)}

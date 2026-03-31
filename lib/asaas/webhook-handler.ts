@@ -5,7 +5,8 @@ import { NextRequest } from 'next/server';
 import type { AsaasWebhookPayload, AsaasWebhookEvent } from './types';
 import { mapAsaasStatusToLocal } from './mappers';
 import { transaction, query as dbQuery } from '@/lib/db';
-import { criarComissaoAutomatica } from '@/lib/db/comissionamento';
+// TODO: refatorar modelo de comissões — import congelado até nova implementação
+// import { criarComissaoAutomatica } from '@/lib/db/comissionamento';
 
 /**
  * Validar se o webhook veio realmente do Asaas
@@ -450,26 +451,25 @@ export async function activateSubscription(
     throw error;
   }
 
-  // Gerar comissões automáticas após commit bem-sucedido.
-  // Falha aqui não desfaz o pagamento já confirmado.
-  for (const loteId of _lotesAtualizados) {
-    try {
-      await criarComissaoAutomatica({
-        lote_id: loteId,
-        entidade_id: _entidadeId,
-        clinica_id: _clinicaId,
-        valor_total_lote: _valorLote,
-        valor_parcela_liquida: paymentData.netValue ?? paymentData.value,
-        parcela_numero: _numeroParcela,
-        total_parcelas: _totalParcelas,
-      });
-    } catch (errComissao) {
-      console.error(
-        `[Asaas Webhook] Erro ao gerar comissão automática para lote ${loteId}:`,
-        errComissao
-      );
-    }
-  }
+  // TODO: refatorar modelo de comissões — geração automática congelada até nova implementação
+  // for (const loteId of _lotesAtualizados) {
+  //   try {
+  //     await criarComissaoAutomatica({
+  //       lote_id: loteId,
+  //       entidade_id: _entidadeId,
+  //       clinica_id: _clinicaId,
+  //       valor_total_lote: _valorLote,
+  //       valor_parcela_liquida: paymentData.netValue ?? paymentData.value,
+  //       parcela_numero: _numeroParcela,
+  //       total_parcelas: _totalParcelas,
+  //     });
+  //   } catch (errComissao) {
+  //     console.error(
+  //       `[Asaas Webhook] Erro ao gerar comissão automática para lote ${loteId}:`,
+  //       errComissao
+  //     );
+  //   }
+  // }
 }
 
 /**

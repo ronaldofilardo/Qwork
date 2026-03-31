@@ -5,9 +5,8 @@
  * Cobre:
  * - Autenticação e autorização
  * - Filtro por status
- * - Retorno de percentual_comissao na listagem
- * - Validações do POST (schema, CNPJ, percentual)
- * - Criação de lead com percentual_comissao
+ * - Validações do POST (schema, CNPJ)
+ * - Criação de lead
  */
 
 jest.mock('@/lib/db', () => ({ query: jest.fn() }));
@@ -99,55 +98,6 @@ describe('GET /api/vendedor/leads', () => {
     expect(d.total).toBe(0);
   });
 
-  it('200 retorna leads com percentual_comissao como string (postgres numeric)', async () => {
-    const lead = {
-      id: 1,
-      status: 'pendente',
-      contato_nome: 'Empresa X',
-      contato_email: 'x@x.com',
-      contato_telefone: null,
-      cnpj: '12345678000199',
-      valor_negociado: '1500.00',
-      percentual_comissao: '8.50', // PostgreSQL retorna numeric como string
-      criado_em: '2026-03-22T10:00:00Z',
-      data_conversao: null,
-      representante_id: 5,
-      representante_nome: 'Rep X',
-      representante_codigo: 'RX01',
-    };
-    mockGetSuccess([lead], 1);
-    const res = await GET(makeGetReq());
-    expect(res.status).toBe(200);
-    const d = await res.json();
-    expect(d.leads).toHaveLength(1);
-    expect(d.leads[0].percentual_comissao).toBe('8.50');
-    expect(d.total).toBe(1);
-    expect(d.page).toBe(1);
-  });
-
-  it('200 retorna percentual_comissao null quando não informado', async () => {
-    const lead = {
-      id: 2,
-      status: 'pendente',
-      contato_nome: 'Empresa Y',
-      contato_email: null,
-      contato_telefone: null,
-      cnpj: null,
-      valor_negociado: '500.00',
-      percentual_comissao: null,
-      criado_em: '2026-03-22T10:00:00Z',
-      data_conversao: null,
-      representante_id: 5,
-      representante_nome: 'Rep X',
-      representante_codigo: 'RX01',
-    };
-    mockGetSuccess([lead], 1);
-    const res = await GET(makeGetReq());
-    expect(res.status).toBe(200);
-    const d = await res.json();
-    expect(d.leads[0].percentual_comissao).toBeNull();
-  });
-
   it('200 filtra por status quando parâmetro fornecido', async () => {
     mockGetSuccess([], 0);
     const res = await GET(makeGetReq('?status=convertido'));
@@ -165,15 +115,6 @@ describe('GET /api/vendedor/leads', () => {
     const d = await res.json();
     expect(d.page).toBe(2);
     expect(d.limit).toBe(30);
-  });
-
-  it('query SELECT inclui campo percentual_comissao', async () => {
-    mockGetSuccess([]);
-    await GET(makeGetReq());
-    const calls = mockQuery.mock.calls;
-    // 3ª chamada é o SELECT de leads
-    const sql = calls[2][0];
-    expect(sql).toMatch(/lr\.percentual_comissao/);
   });
 });
 
@@ -223,30 +164,6 @@ describe('POST /api/vendedor/leads', () => {
       rowCount: 1,
     } as any);
     const res = await POST(makePostReq({}));
-    expect(res.status).toBe(422);
-  });
-
-  it('422 se percentual_comissao > 100', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 10 }], rowCount: 1 } as any);
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ representante_id: 5 }],
-      rowCount: 1,
-    } as any);
-    const res = await POST(
-      makePostReq({ contato_nome: 'Lead', percentual_comissao: 150 })
-    );
-    expect(res.status).toBe(422);
-  });
-
-  it('422 se percentual_comissao negativo', async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ id: 10 }], rowCount: 1 } as any);
-    mockQuery.mockResolvedValueOnce({
-      rows: [{ representante_id: 5 }],
-      rowCount: 1,
-    } as any);
-    const res = await POST(
-      makePostReq({ contato_nome: 'Lead', percentual_comissao: -5 })
-    );
     expect(res.status).toBe(422);
   });
 
@@ -344,59 +261,17 @@ describe('POST /api/vendedor/leads', () => {
     expect((await res.json()).error).toMatch(/clínica/i);
   });
 
-  it('201 cria lead sem percentual_comissao (null)', async () => {
+  it('201 cria lead sem comissão (padrão)', async () => {
     mockPostSuccess();
     const res = await POST(
       makePostReq({
-        contato_nome: 'Empresa Sem Comissão',
+        contato_nome: 'Empresa Teste',
         cnpj: '12345678000190',
       })
     );
     expect(res.status).toBe(201);
     const d = await res.json();
     expect(d.id).toBe(99);
-
-    // Verifica que INSERT foi chamado com null na posição de percentual_comissao
-    // calls: 0=usuarios, 1=hierarquia, 2=lead_check, 3=entidade_check, 4=clinica_check, 5=INSERT
-    const insertCall = mockQuery.mock.calls[5];
-    const params = insertCall[1];
-    // params[7] é percentual_comissao (idx 0-based: rep_id,vend_id,nome,email,tel,cnpj,valor,percentual,obs)
-    expect(params[7]).toBeNull();
-  });
-
-  it('201 cria lead com percentual_comissao informado', async () => {
-    mockPostSuccess();
-    const res = await POST(
-      makePostReq({
-        contato_nome: 'Empresa Com Comissão',
-        cnpj: '12345678000190',
-        percentual_comissao: 8.5,
-      })
-    );
-    expect(res.status).toBe(201);
-    const d = await res.json();
-    expect(d.id).toBe(99);
-
-    // calls: 0=usuarios, 1=hierarquia, 2=lead_check, 3=entidade_check, 4=clinica_check, 5=INSERT
-    const insertCall = mockQuery.mock.calls[5];
-    const params = insertCall[1];
-    expect(params[7]).toBe(8.5);
-  });
-
-  it('201 cria lead com percentual_comissao = 0 (edge case válido)', async () => {
-    mockPostSuccess();
-    const res = await POST(
-      makePostReq({
-        contato_nome: 'Empresa Zero Comissão',
-        cnpj: '12345678000190',
-        percentual_comissao: 0,
-      })
-    );
-    expect(res.status).toBe(201);
-    // calls: 0=usuarios, 1=hierarquia, 2=lead_check, 3=entidade_check, 4=clinica_check, 5=INSERT
-    const insertCall = mockQuery.mock.calls[5];
-    const params = insertCall[1];
-    expect(params[7]).toBe(0);
   });
 
   it('201 cria lead com todos os campos preenchidos', async () => {
@@ -408,17 +283,13 @@ describe('POST /api/vendedor/leads', () => {
         contato_telefone: '11999999999',
         cnpj: '12345678000199',
         valor_negociado: 2500,
-        percentual_comissao: 12,
         observacoes: 'Lead qualificado',
       })
     );
     expect(res.status).toBe(201);
     // calls: 0=usuarios, 1=hierarquia, 2=lead_check, 3=entidade_check, 4=clinica_check, 5=INSERT
     const insertCall = mockQuery.mock.calls[5];
-    const sql = insertCall[0];
-    expect(sql).toMatch(/percentual_comissao/);
     const params = insertCall[1];
-    expect(params[7]).toBe(12);
-    expect(params[6]).toBe(2500);
+    expect(params[6]).toBe(2500); // valor_negociado
   });
 });

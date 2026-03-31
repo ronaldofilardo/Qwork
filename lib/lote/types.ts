@@ -1,5 +1,40 @@
 // ── Shared types for lote detail pages (RH + Entidade) ─────────────────────
 
+export type LotePageVariant = 'entidade' | 'rh';
+
+export interface Estatisticas {
+  total: number;
+  concluidas: number;
+  inativadas: number;
+  pendentes: number;
+}
+
+export interface LoteInfo {
+  id: number;
+  status: string;
+  tipo: string;
+  criado_em: string | null;
+  // Entidade
+  status_pagamento: string | null;
+  laudo_id: number | null;
+  tem_laudo: boolean;
+  emissao_solicitada: boolean;
+  emissao_solicitado_em: string | null;
+  emitido_em: string | null;
+  laudo_status: string | null;
+  emissor_cpf: string | null;
+  emissor_nome: string | null;
+  arquivo_remoto_url: string | null;
+  hash_pdf: string | null;
+  // RH
+  empresa_nome: string | null;
+  liberado_em: string | null;
+  liberado_por_nome: string | null;
+}
+
+/** Funcionário completo retornado pelas APIs de lote (extends FuncionarioBase) */
+export type Funcionario = FuncionarioBase;
+
 export interface GruposData {
   g1?: number;
   g2?: number;
@@ -52,11 +87,16 @@ export interface FuncionarioBase {
   setor: string;
   funcao: string;
   nivel_cargo: string | null;
+  matricula?: string | null;
   avaliacao: {
     id: number;
     status: string;
     data_inicio: string;
     data_conclusao: string | null;
+    total_respostas?: number;
+    motivo_inativacao?: string | null;
+    inativada_em?: string | null;
+    data_inativacao?: string | null;
   };
   grupos?: GruposData;
 }

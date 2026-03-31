@@ -31,7 +31,6 @@ interface LeadEquipe {
   vendedor_nome: string | null;
   valor_negociado: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_vendedor: number | null;
   num_vidas_estimado: number | null;
   requer_aprovacao_comercial: boolean;
   tipo_cliente: TipoCliente | null;
@@ -54,7 +53,6 @@ export default function EquipeLeadsPage() {
   // Modal comissão
   const [modalLead, setModalLead] = useState<LeadEquipe | null>(null);
   const [percRepInput, setPercRepInput] = useState('');
-  const [percVendInput, setPercVendInput] = useState('');
   const [salvandoComissao, setSalvandoComissao] = useState(false);
   const [erroComissao, setErroComissao] = useState('');
   const [sucesso, setSucesso] = useState('');
@@ -102,7 +100,6 @@ export default function EquipeLeadsPage() {
         ? String(lead.percentual_comissao_representante)
         : ''
     );
-    setPercVendInput(String(lead.percentual_comissao_vendedor ?? 0));
     setErroComissao('');
   };
 
@@ -113,14 +110,9 @@ export default function EquipeLeadsPage() {
       setErroComissao('Informe um percentual válido para o representante.');
       return;
     }
-    const percVend = parseFloat(percVendInput.replace(',', '.'));
-    if (isNaN(percVend) || percVend < 0) {
-      setErroComissao('Informe um percentual válido para o vendedor.');
-      return;
-    }
-    if (percRep + percVend > MAX_PERCENTUAL_COMISSAO) {
+    if (percRep > MAX_PERCENTUAL_COMISSAO) {
       setErroComissao(
-        `Total (${(percRep + percVend).toFixed(1)}%) excede o máximo de ${MAX_PERCENTUAL_COMISSAO}%.`
+        `Percentual (${percRep.toFixed(1)}%) excede o máximo de ${MAX_PERCENTUAL_COMISSAO}%.`
       );
       return;
     }
@@ -134,7 +126,6 @@ export default function EquipeLeadsPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             percentual_comissao_representante: percRep,
-            percentual_comissao_vendedor: percVend,
           }),
         }
       );
@@ -171,13 +162,10 @@ export default function EquipeLeadsPage() {
   const renderLead = (lead: LeadEquipe) => {
     const tipo = (lead.tipo_cliente ?? 'entidade') as TipoCliente;
     const percRep = Number(lead.percentual_comissao_representante ?? 0);
-    const percVend = Number(lead.percentual_comissao_vendedor ?? 0);
     const valor = Number(lead.valor_negociado ?? 0);
     const temComissaoRep = percRep > 0;
     const bd =
-      valor > 0
-        ? calcularValoresComissao(valor, percRep, percVend, tipo)
-        : null;
+      valor > 0 ? calcularValoresComissao(valor, percRep, 0, tipo) : null;
 
     return (
       <tr key={lead.id} className="hover:bg-gray-50 text-sm">
@@ -231,11 +219,6 @@ export default function EquipeLeadsPage() {
             >
               Rep: {temComissaoRep ? `${percRep.toFixed(1)}%` : 'Pendente'}
             </div>
-            {percVend > 0 && (
-              <div className="text-purple-600">
-                Vend: {percVend.toFixed(1)}%
-              </div>
-            )}
             {bd && (
               <div className="text-gray-400">
                 Total: {bd.percentualTotal.toFixed(1)}%
@@ -271,26 +254,15 @@ export default function EquipeLeadsPage() {
 
   // Dados do preview no modal
   const modalPercRep = parseFloat(percRepInput.replace(',', '.')) || 0;
-  const modalPercVend = parseFloat(percVendInput.replace(',', '.')) || 0;
   const modalValor = Number(modalLead?.valor_negociado ?? 0);
   const modalTipo = (modalLead?.tipo_cliente ?? 'entidade') as TipoCliente;
   const modalBd =
     modalValor > 0
-      ? calcularValoresComissao(
-          modalValor,
-          modalPercRep,
-          modalPercVend,
-          modalTipo
-        )
+      ? calcularValoresComissao(modalValor, modalPercRep, 0, modalTipo)
       : null;
   const modalRequer =
     modalValor > 0
-      ? calcularRequerAprovacao(
-          modalValor,
-          modalPercRep,
-          modalTipo,
-          modalPercVend
-        )
+      ? calcularRequerAprovacao(modalValor, modalPercRep, modalTipo, 0)
       : false;
 
   return (
@@ -490,12 +462,7 @@ export default function EquipeLeadsPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     % Representante
                     <span className="ml-1 text-xs font-normal text-gray-400">
-                      máx.{' '}
-                      {Math.max(
-                        0,
-                        MAX_PERCENTUAL_COMISSAO - modalPercVend
-                      ).toFixed(1)}
-                      %
+                      máx. {MAX_PERCENTUAL_COMISSAO.toFixed(1)}%
                     </span>
                   </label>
                   <input
@@ -509,33 +476,10 @@ export default function EquipeLeadsPage() {
                     className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    % Vendedor
-                    <span className="ml-1 text-xs font-normal text-gray-400">
-                      máx.{' '}
-                      {Math.max(
-                        0,
-                        MAX_PERCENTUAL_COMISSAO - modalPercRep
-                      ).toFixed(1)}
-                      %
-                    </span>
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    placeholder="0.00"
-                    value={percVendInput}
-                    onChange={(e) =>
-                      setPercVendInput(e.target.value.replace(/[^\d.,]/g, ''))
-                    }
-                    className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
               </div>
 
               {/* Preview */}
-              {modalBd && (modalPercRep > 0 || modalPercVend > 0) && (
+              {modalBd && modalPercRep > 0 && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5 text-xs text-blue-700 space-y-1.5">
                   {/* Linha de totais: valor = rep + vend + QWork */}
                   <div className="flex items-center justify-between font-semibold text-blue-800 pb-1 border-b border-blue-200">
@@ -548,12 +492,7 @@ export default function EquipeLeadsPage() {
                       − {fmtBRL(modalBd.valorRep)}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Vendedor ({modalPercVend.toFixed(1)}%)</span>
-                    <span className="font-semibold text-purple-700">
-                      − {fmtBRL(modalBd.valorVendedor)}
-                    </span>
-                  </div>
+
                   <div
                     className={`flex items-center justify-between border-t border-blue-200 pt-1 font-semibold ${modalBd.abaixoCusto ? 'text-amber-600' : 'text-blue-800'}`}
                   >
@@ -561,14 +500,14 @@ export default function EquipeLeadsPage() {
                     <span>{fmtBRL(modalBd.valorQWork)}</span>
                   </div>
                   <p className="text-blue-400 pt-0.5">
-                    Total comissões: {modalBd.percentualTotal.toFixed(1)}% ={' '}
-                    {fmtBRL(modalBd.valorRep + modalBd.valorVendedor)} |
-                    Custo/aval.: R$ {CUSTO_POR_AVALIACAO[modalTipo]},00
+                    Comissão: {modalBd.percentualTotal.toFixed(1)}% ={' '}
+                    {fmtBRL(modalBd.valorRep)} | Custo/aval.: R${' '}
+                    {CUSTO_POR_AVALIACAO[modalTipo]},00
                   </p>
                 </div>
               )}
 
-              {modalRequer && (modalPercRep > 0 || modalPercVend > 0) && (
+              {modalRequer && modalPercRep > 0 && (
                 <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
                   <AlertTriangle
                     size={14}

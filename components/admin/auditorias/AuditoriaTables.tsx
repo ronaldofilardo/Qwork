@@ -1,3 +1,6 @@
+'use client';
+
+import { useMemo, useState } from 'react';
 import { formatDate, formatDuration } from './helpers';
 import type {
   AcessoGestor,
@@ -9,6 +12,7 @@ import type {
   AuditoriaAvaliacao,
   AuditoriaLote,
   AuditoriaLaudo,
+  AceiteUsuario,
 } from './types';
 
 /* ─── Shared Table Shell ─── */
@@ -479,5 +483,192 @@ export function TabelaAcessosVendedor({ data }: { data: AcessoVendedor[] }) {
         </tbody>
       </table>
     </TableShell>
+  );
+}
+
+/* ─── 10. Aceites (consolidado por usuário) ─── */
+
+const PERFIL_BADGE: Record<string, string> = {
+  rh: 'bg-blue-100 text-blue-800',
+  gestor: 'bg-purple-100 text-purple-800',
+  representante: 'bg-orange-100 text-orange-800',
+  vendedor: 'bg-yellow-100 text-yellow-800',
+  funcionario: 'bg-green-100 text-green-800',
+};
+
+const PERFIL_LABEL: Record<string, string> = {
+  rh: 'RH',
+  gestor: 'Gestor',
+  representante: 'Representante',
+  vendedor: 'Vendedor',
+  funcionario: 'Funcionário',
+};
+
+function formatCpf(cpf: string | null | undefined): string {
+  if (!cpf) return '—';
+  const digits = cpf.replace(/\D/g, '').trim();
+  if (digits.length !== 11) return cpf.trim();
+  return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function AceiteCell({
+  aceito,
+  data,
+}: {
+  aceito: boolean | null;
+  data: string | null;
+}) {
+  if (aceito === null) {
+    return <span className="text-gray-300 text-xs">N/A</span>;
+  }
+  if (!aceito) {
+    return <span className="text-gray-400 text-xs">—</span>;
+  }
+  return (
+    <span
+      className="inline-flex flex-col items-center gap-0.5"
+      title={data ? formatDate(data) : undefined}
+    >
+      <span className="text-green-600 font-semibold text-sm">✓</span>
+      {data && (
+        <span className="text-gray-400 text-xs leading-none">
+          {new Date(data).toLocaleDateString('pt-BR')}
+        </span>
+      )}
+    </span>
+  );
+}
+
+// eslint-disable-next-line max-lines-per-function
+export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
+  const [busca, setBusca] = useState('');
+
+  const normalizar = (s: string) =>
+    s
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+  const filtrados = useMemo(() => {
+    const termo = busca.trim();
+    if (!termo) return data;
+    const termoNorm = normalizar(termo);
+    const termoDigits = termo.replace(/\D/g, '');
+    return data.filter((u) => {
+      const cpfRaw = (u.cpf ?? '').replace(/\s/g, '');
+      const cpfDigits = cpfRaw.replace(/\D/g, '');
+      const cpfFormatado = formatCpf(cpfRaw);
+      return (
+        normalizar(u.nome ?? '').includes(termoNorm) ||
+        (termoDigits.length > 0 && cpfDigits.includes(termoDigits)) ||
+        cpfFormatado.includes(termo)
+      );
+    });
+  }, [busca, data]);
+
+  return (
+    <div>
+      <div className="mb-3 flex items-center gap-2">
+        <input
+          type="text"
+          placeholder="Buscar por nome ou CPF..."
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+          className="w-72 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+        {busca && (
+          <button
+            onClick={() => setBusca('')}
+            className="text-xs text-gray-400 hover:text-gray-600"
+          >
+            Limpar
+          </button>
+        )}
+        <span className="ml-auto text-xs text-gray-500">
+          {filtrados.length} de {data.length} usuários
+        </span>
+      </div>
+      <TableShell
+        title="Aceites por Usuário"
+        subtitle={`Total: ${data.length} usuários`}
+      >
+        <table className="w-full">
+          <thead className="bg-gray-50">
+            <tr>
+              <Th>Perfil</Th>
+              <Th>CPF</Th>
+              <Th>Nome</Th>
+              <Th center>Contrato</Th>
+              <Th center>Termos de Uso</Th>
+              <Th center>Política Privacidade</Th>
+              <Th center>Disclaimer NV</Th>
+              <Th center>Conf. Identificação</Th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {filtrados.length === 0 && (
+              <tr>
+                <td
+                  colSpan={8}
+                  className="px-4 py-8 text-center text-sm text-gray-400"
+                >
+                  {busca
+                    ? 'Nenhum resultado para a busca.'
+                    : 'Nenhum registro encontrado.'}
+                </td>
+              </tr>
+            )}
+            {filtrados.map((u, idx) => (
+              <tr
+                key={`${u.perfil}-${u.cpf ?? idx}-${idx}`}
+                className="hover:bg-gray-50"
+              >
+                <Td>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-semibold ${PERFIL_BADGE[u.perfil] ?? 'bg-gray-100 text-gray-800'}`}
+                  >
+                    {PERFIL_LABEL[u.perfil] ?? u.perfil}
+                  </span>
+                </Td>
+                <Td mono>{formatCpf(u.cpf)}</Td>
+                <Td className="text-gray-900 max-w-[180px] truncate">
+                  {u.nome ?? '—'}
+                </Td>
+                <Td center>
+                  <AceiteCell
+                    aceito={u.aceite_contrato}
+                    data={u.aceite_contrato_em}
+                  />
+                </Td>
+                <Td center>
+                  <AceiteCell
+                    aceito={u.aceite_termos}
+                    data={u.aceite_termos_em}
+                  />
+                </Td>
+                <Td center>
+                  <AceiteCell
+                    aceito={u.aceite_politica_privacidade}
+                    data={u.aceite_politica_privacidade_em}
+                  />
+                </Td>
+                <Td center>
+                  <AceiteCell
+                    aceito={u.aceite_disclaimer_nv}
+                    data={u.aceite_disclaimer_nv_em}
+                  />
+                </Td>
+                <Td center>
+                  <AceiteCell
+                    aceito={u.confirmacao_identificacao}
+                    data={u.confirmacao_identificacao_em}
+                  />
+                </Td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableShell>
+    </div>
   );
 }
