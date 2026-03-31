@@ -3,9 +3,7 @@
  *
  * Retorna métricas do dashboard para o vendedor autenticado:
  * - Representantes vinculados (hierarquia_comercial)
- * - Emissões do mês corrente (lotes) via comissoes_laudo
- * - Comissões pendentes (a receber)
- * - Valor total de comissões pagas
+ * - Emissões do mês corrente (lotes)
  */
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
@@ -35,20 +33,14 @@ export async function GET(): Promise<NextResponse> {
     const resumoResult = await query<{
       representantes_ativos: string;
       emissoes_mes: string;
-      comissoes_pendentes: string;
-      comissoes_pagas_valor: string;
     }>(
       `SELECT
-         COUNT(DISTINCT hc.representante_id) FILTER (WHERE hc.ativo = true)        AS representantes_ativos,
-         COUNT(DISTINCT c.id) FILTER (
-           WHERE TO_CHAR(c.mes_emissao, 'YYYY-MM') = $2
-         )                                                                           AS emissoes_mes,
-         COUNT(DISTINCT c.id) FILTER (
-           WHERE c.status IN ('pendente_nf', 'nf_em_analise', 'liberada')
-         )                                                                           AS comissoes_pendentes,
-         COALESCE(SUM(c.valor_comissao) FILTER (WHERE c.status = 'paga'), 0)        AS comissoes_pagas_valor
+         COUNT(DISTINCT hc.representante_id) FILTER (WHERE hc.ativo = true) AS representantes_ativos,
+         COUNT(DISTINCT lr.id) FILTER (
+           WHERE TO_CHAR(lr.data_conversao, 'YYYY-MM') = $2
+         )                                                                   AS emissoes_mes
        FROM hierarquia_comercial hc
-       LEFT JOIN comissoes_laudo c ON c.representante_id = hc.representante_id
+       LEFT JOIN leads_representante lr ON lr.vendedor_id = $1
        WHERE hc.vendedor_id = $1`,
       [vendedorId, mesAtual]
     );
@@ -67,8 +59,6 @@ export async function GET(): Promise<NextResponse> {
     return NextResponse.json({
       representantes_ativos: parseInt(row?.representantes_ativos ?? '0', 10),
       emissoes_mes: parseInt(row?.emissoes_mes ?? '0', 10),
-      comissoes_pendentes: parseInt(row?.comissoes_pendentes ?? '0', 10),
-      comissoes_pagas_valor: parseFloat(row?.comissoes_pagas_valor ?? '0'),
       representante: repResult.rows[0] ?? null,
     });
   } catch (err: unknown) {

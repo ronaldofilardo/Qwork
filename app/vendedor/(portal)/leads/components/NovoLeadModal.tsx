@@ -1,19 +1,8 @@
 'use client';
 
-import {
-  X,
-  Loader2,
-  Plus,
-  AlertCircle,
-  AlertTriangle,
-  Info,
-} from 'lucide-react';
+import { X, Loader2, Plus, AlertCircle, AlertTriangle } from 'lucide-react';
 import { normalizeCNPJ } from '@/lib/validators';
-import {
-  TIPO_CLIENTE_LABEL,
-  TIPOS_CLIENTE,
-  MAX_PERCENTUAL_COMISSAO,
-} from '@/lib/leads-config';
+import { TIPO_CLIENTE_LABEL, TIPOS_CLIENTE } from '@/lib/leads-config';
 import { useVendedorLeads } from '../hooks/useVendedorLeads';
 
 interface VendedorNovoLeadModalProps {
@@ -38,7 +27,6 @@ export default function VendedorNovoLeadModal({
     handleTipoClienteChange,
     requerAprovacao,
     custoAtual,
-    valoresComissao,
     salvar,
   } = useVendedorLeads();
 
@@ -179,67 +167,33 @@ export default function VendedorNovoLeadModal({
             )}
           </div>
 
-          {/* Valor + Comissao */}
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Valor negociado (R$)
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={form.valor_negociado}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^\d]/g, '');
-                  if (!raw) {
-                    setForm((f) => ({ ...f, valor_negociado: '' }));
-                    return;
-                  }
-                  const formatted = (Number(raw) / 100).toLocaleString(
-                    'pt-BR',
-                    { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-                  );
-                  setForm((f) => ({
-                    ...f,
-                    valor_negociado: `R$ ${formatted}`,
-                  }));
-                }}
-                placeholder="R$ 0,00"
-                className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">
-                Comissão Vendedor (%)
-                <span className="ml-1 text-xs font-normal text-gray-400">
-                  máx. {MAX_PERCENTUAL_COMISSAO}%
-                </span>
-              </label>
-              <input
-                type="text"
-                inputMode="decimal"
-                value={form.percentual_comissao}
-                onChange={(e) => {
-                  const raw = e.target.value.replace(/[^\d]/g, '');
-                  if (!raw) {
-                    setForm((f) => ({ ...f, percentual_comissao: '' }));
-                    return;
-                  }
-                  const val = Number(raw) / 100;
-                  if (val > MAX_PERCENTUAL_COMISSAO) return;
-                  const formatted = val.toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  });
-                  setForm((f) => ({
-                    ...f,
-                    percentual_comissao: `${formatted}%`,
-                  }));
-                }}
-                placeholder="0,00%"
-                className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
-              />
-            </div>
+          {/* Valor negociado */}
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              Valor negociado (R$)
+            </label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.valor_negociado}
+              onChange={(e) => {
+                const raw = e.target.value.replace(/[^\d]/g, '');
+                if (!raw) {
+                  setForm((f) => ({ ...f, valor_negociado: '' }));
+                  return;
+                }
+                const formatted = (Number(raw) / 100).toLocaleString('pt-BR', {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                });
+                setForm((f) => ({
+                  ...f,
+                  valor_negociado: `R$ ${formatted}`,
+                }));
+              }}
+              placeholder="R$ 0,00"
+              className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
+            />
           </div>
 
           {/* Nº de Vidas Estimado */}
@@ -264,29 +218,6 @@ export default function VendedorNovoLeadModal({
             <p className="mt-1 text-xs text-gray-400">
               Número estimado de funcionários/vidas do cliente
             </p>
-          </div>
-
-          {/* Informativo: rep definirá o percentual dele */}
-          <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2.5">
-            <Info size={14} className="text-blue-500 mt-0.5 shrink-0" />
-            <div className="text-xs text-blue-700">
-              <p className="font-semibold">Como funciona?</p>
-              <p>
-                Você informa apenas a sua % de comissão. Seu representante
-                definirá o percentual dele durante a aprovação.
-              </p>
-              {valoresComissao.percentualTotal > 0 && (
-                <p className="mt-1">
-                  Sua comissão estimada:{' '}
-                  <span className="font-semibold">
-                    R${' '}
-                    {valoresComissao.valorRep.toLocaleString('pt-BR', {
-                      minimumFractionDigits: 2,
-                    })}
-                  </span>
-                </p>
-              )}
-            </div>
           </div>
 
           {/* Observações */}

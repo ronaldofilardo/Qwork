@@ -11,6 +11,7 @@ import {
   isDevelopment,
   isTest,
   isProduction,
+  isEmissorLocalProdMode,
   databaseUrl,
   DEBUG_DB,
   getNeonSql,
@@ -118,6 +119,81 @@ export async function query<T = any>(
   validateDatabaseIsolation();
 
   try {
+    // ── Modo especial: emissor local acessando banco de PRODUÇÃO (Neon) ──────────
+    if (isEmissorLocalProdMode) {
+      // Guard de segurança: bloquear qualquer sessão que não seja do emissor autorizado
+      if (session && session.cpf !== process.env.EMISSOR_CPF) {
+        throw new Error(
+          `🚨 ACESSO BLOQUEADO: Modo produção local ativo (ALLOW_PROD_DB_LOCAL=true). ` +
+            `Apenas o emissor autorizado (CPF ${process.env.EMISSOR_CPF}) pode executar queries nesse ambiente.`
+        );
+      }
+
+      const pool = await getNeonPool();
+      if (!pool) {
+        throw new Error(
+          'Neon Pool não disponível no modo emissor local. Verifique DATABASE_URL no .env.local.'
+        );
+      }
+
+      if (session) {
+        const client = await pool.connect();
+        try {
+          await client.query('BEGIN');
+          const escapeString = (str: string) => str.replace(/'/g, "''");
+          await client.query(
+            `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
+          );
+          await client.query(
+            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
+          );
+          if (session.representante_id) {
+            await client.query(
+              `SET LOCAL app.current_representante_id = '${escapeString(String(session.representante_id))}'`
+            );
+          }
+          const result = await client.query(text, params);
+          await client.query('COMMIT');
+          const duration = Date.now() - start;
+          if (DEBUG_DB) {
+            console.log(
+              `[db][query] emissor-neon (${duration}ms): ${text.substring(0, 200)}...`
+            );
+          }
+          return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
+        } catch (err) {
+          try {
+            await pool.query('ROLLBACK');
+          } catch (_) {}
+          throw err;
+        } finally {
+          client.release();
+        }
+      } else {
+        // Sem sessão (ex: login — validação de credenciais no banco prod)
+        const client = await pool.connect();
+        try {
+          const result = await client.query(text, params);
+          const duration = Date.now() - start;
+          if (DEBUG_DB) {
+            console.log(
+              `[db][query] emissor-neon-no-session (${duration}ms): ${text.substring(0, 200)}...`
+            );
+          }
+          return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
+        } finally {
+          client.release();
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     if ((isDevelopment || isTest) && localPool) {
       // PostgreSQL Local (Desenvolvimento e Testes)
       const client = await localPool.connect();

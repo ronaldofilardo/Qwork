@@ -71,6 +71,27 @@ describe('AuditoriasContent', () => {
     expect(screen.getByText('Avaliações')).toBeInTheDocument();
     expect(screen.getByText('Lotes')).toBeInTheDocument();
     expect(screen.getByText('Laudos')).toBeInTheDocument();
+    expect(screen.getByText('Aceites')).toBeInTheDocument();
+  });
+
+  it('deve chamar fetch com endpoint de aceites ao clicar na tab Aceites', async () => {
+    mockFetchWith({ acessos: [] });
+
+    await act(async () => {
+      render(<AuditoriasContent />);
+    });
+
+    mockFetchWith({ aceites: [] });
+
+    await act(async () => {
+      fireEvent.click(screen.getByText('Aceites'));
+    });
+
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('aceites')
+      );
+    });
   });
 
   it('deve chamar fetch com endpoint correto ao trocar de sub-tab', async () => {

@@ -1,10 +1,17 @@
 /**
  * @fileoverview Testes do PATCH /api/representante/equipe/leads/[id]
  *
+ * CONTEXTO (30/03/2026): A UI do representante (equipe/leads/page.tsx) foi
+ * atualizada para remover o campo "% Vendedor" do modal de comissão.
+ * O front-end envia APENAS percentual_comissao_representante no PATCH.
+ * O percVend é sempre lido do banco de dados pelo backend.
+ * A API mantém suporte opcional a percentual_comissao_vendedor para
+ * compatibilidade com chamadas diretas à rota.
+ *
  * Cobre:
- * - Representante define percRep + percVend (novo comportamento: ambos editáveis)
- * - Representante define só percRep (percVend mantido do DB)
- * - percVend atualizado no UPDATE quando enviado pelo front
+ * - Representante define só percRep — fluxo padrão atual da UI
+ * - percVend mantido do DB quando não enviado pelo front (fluxo principal)
+ * - API ainda aceita percVend explícito para backward-compatibility
  * - Validação de total > MAX_PERCENTUAL_COMISSAO
  * - requer_aprovacao_comercial = true quando valorQWork < custo
  * - requer_aprovacao_comercial = false quando valorQWork >= custo
@@ -93,7 +100,7 @@ beforeEach(() => {
 // 1. Sucesso — percRep + percVend enviados juntos
 // ─────────────────────────────────────────────────────────────────────────
 
-describe('PATCH /api/representante/equipe/leads/[id] — sucesso com percVend', () => {
+describe('PATCH /api/representante/equipe/leads/[id] — sucesso com percVend (backward-compat: API ainda aceita campo opcional)', () => {
   test('deve salvar percRep e percVend e retornar 200', async () => {
     // Arrange
     mockQuery
@@ -174,6 +181,7 @@ describe('PATCH /api/representante/equipe/leads/[id] — sucesso com percVend', 
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('PATCH — percVend omitido: mantém valor do DB', () => {
+  // FLUXO PRINCIPAL DA UI: a interface não envia mais percentual_comissao_vendedor desde 30/03/2026
   test('deve usar percVend do DB quando não enviado', async () => {
     // lead tem percVend=10 no DB
     mockQuery

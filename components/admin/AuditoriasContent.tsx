@@ -13,6 +13,7 @@ import {
   TabelaAcessosComercial,
   TabelaAcessosRepresentante,
   TabelaAcessosVendedor,
+  TabelaAceites,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
 import type {
@@ -26,6 +27,7 @@ import type {
   AuditoriaAvaliacao,
   AuditoriaLote,
   AuditoriaLaudo,
+  AceiteUsuario,
 } from './auditorias/types';
 
 const ENDPOINTS: Record<AuditoriaSubTab, string> = {
@@ -38,6 +40,7 @@ const ENDPOINTS: Record<AuditoriaSubTab, string> = {
   'acesso-comercial': '/api/admin/auditorias/acesso-comercial',
   'acesso-representante': '/api/admin/auditorias/acesso-representante',
   'acesso-vendedor': '/api/admin/auditorias/acesso-vendedor',
+  aceites: '/api/admin/auditorias/aceites',
 };
 
 export function AuditoriasContent() {
@@ -60,6 +63,7 @@ export function AuditoriasContent() {
     AcessoRepresentante[]
   >([]);
   const [acessosVendedor, setAcessosVendedor] = useState<AcessoVendedor[]>([]);
+  const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
     setLoading(true);
@@ -98,6 +102,9 @@ export function AuditoriasContent() {
           break;
         case 'acesso-vendedor':
           setAcessosVendedor(json.acessos ?? []);
+          break;
+        case 'aceites':
+          setAceites(json.aceites ?? []);
           break;
       }
       setLastUpdated(new Date());
@@ -174,6 +181,7 @@ export function AuditoriasContent() {
           {activeTab === 'acesso-vendedor' && (
             <TabelaAcessosVendedor data={acessosVendedor} />
           )}
+          {activeTab === 'aceites' && <TabelaAceites data={aceites} />}
         </>
       )}
 

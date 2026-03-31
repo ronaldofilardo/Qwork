@@ -15,10 +15,7 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import {
-  calcularRequerAprovacao,
-  MAX_PERCENTUAL_COMISSAO,
-} from '@/lib/leads-config';
+import { calcularRequerAprovacao } from '@/lib/leads-config';
 import { NotificationService } from '@/lib/notification-service';
 
 export const dynamic = 'force-dynamic';
@@ -72,7 +69,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.contato_telefone,
          lr.cnpj,
          lr.valor_negociado,
-         lr.percentual_comissao,
          lr.criado_em,
          lr.data_conversao,
          r.id    AS representante_id,
@@ -110,12 +106,6 @@ const novoLeadSchema = z.object({
   contato_telefone: z.string().optional().nullable(),
   cnpj: z.string().min(1, 'CNPJ é obrigatório'),
   valor_negociado: z.number().positive().optional().nullable(),
-  percentual_comissao: z
-    .number()
-    .min(0)
-    .max(MAX_PERCENTUAL_COMISSAO)
-    .optional()
-    .nullable(),
   observacoes: z.string().max(1000).optional().nullable(),
   tipo_cliente: z.enum(['entidade', 'clinica']).optional().default('entidade'),
   num_vidas_estimado: z.number().int().positive().optional().nullable(),
@@ -230,7 +220,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const requerAprovacao = calcularRequerAprovacao(
       data.valor_negociado ?? 0,
-      data.percentual_comissao ?? 0,
+      0,
       data.tipo_cliente
     );
 
@@ -242,11 +232,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const leadResult = await query<{ id: number }>(
       `INSERT INTO public.leads_representante
          (representante_id, vendedor_id, contato_nome, contato_email,
-          contato_telefone, cnpj, valor_negociado, percentual_comissao,
-          percentual_comissao_vendedor, percentual_comissao_representante,
+          contato_telefone, cnpj, valor_negociado,
           observacoes, tipo_cliente, requer_aprovacao_comercial,
           num_vidas_estimado, status, criado_em)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,0,$10,$11,$12,$13,'pendente',NOW())
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'pendente',NOW())
        RETURNING id`,
       [
         representanteId,
@@ -256,8 +245,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         data.contato_telefone ?? null,
         cnpjNorm,
         data.valor_negociado ?? null,
-        data.percentual_comissao ?? null,
-        data.percentual_comissao ?? 0,
         data.observacoes ?? null,
         data.tipo_cliente,
         requerAprovacao,
