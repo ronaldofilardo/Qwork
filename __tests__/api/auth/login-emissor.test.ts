@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/login-emissor.test.ts
+ * Testes: POST /api/auth/login - emissor mapping
+ */
+
 import { query as realQuery } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 

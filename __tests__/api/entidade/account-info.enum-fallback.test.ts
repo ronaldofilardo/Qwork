@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/account-info.enum-fallback.test.ts
+ * Testes: 📌 API account-info — rota simplificada (dados cadastrais apenas)
+ */
+
 import { NextRequest } from 'next/server';
 
 // Mocks

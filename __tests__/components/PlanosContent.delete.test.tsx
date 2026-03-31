@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/PlanosContent.delete.test.tsx
+ * Testes: PlanosContent — exclusão com senha e motivo
+ */
+
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { PlanosContent } from '@/components/admin/PlanosContent';

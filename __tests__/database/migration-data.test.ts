@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/migration-data.test.ts
+ * Testes: Migration 300 - Integridade de dados
+ */
+
 import { Pool } from 'pg';
 
 const pool = new Pool({

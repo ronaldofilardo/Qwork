@@ -63,7 +63,11 @@ export const GET = async () => {
           telefone,
           endereco,
           ativa,
-          criado_em
+          criado_em,
+          EXISTS(
+            SELECT 1 FROM contratos c
+            WHERE c.tomador_id = clinicas.id AND c.aceito = true
+          ) AS tem_contrato_aceito
         FROM clinicas
         WHERE id = $1`,
         [clinicaId]
@@ -88,7 +92,11 @@ export const GET = async () => {
           estado, 
           responsavel_nome, 
           criado_em, 
-          status
+          status,
+          EXISTS(
+            SELECT 1 FROM contratos c
+            WHERE c.tomador_id = entidades.id AND c.aceito = true
+          ) AS tem_contrato_aceito
         FROM entidades 
         WHERE id = $1`,
         [entidadeId]
@@ -167,6 +175,7 @@ export const GET = async () => {
         responsavel_nome: organizacao.responsavel_nome || null,
         criado_em: organizacao.criado_em || null,
         status: organizacao.status || organizacao.ativa || null,
+        tem_contrato_aceito: organizacao.tem_contrato_aceito ?? false,
       },
       gestores: gestoresQuery.rows.map((gestor) => ({
         id: gestor.id,

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/rh/lotes-avaliacao.test.tsx
+ * Testes: RH Empresa Dashboard - Sistema de Lotes
+ */
+
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom';

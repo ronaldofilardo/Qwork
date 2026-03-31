@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/funcionarios-create.test.ts
+ * Testes: /api/rh/funcionarios - POST (Criar Funcionário)
+ */
+
 import { NextRequest } from 'next/server';
 
 const mockQuery = jest.fn();

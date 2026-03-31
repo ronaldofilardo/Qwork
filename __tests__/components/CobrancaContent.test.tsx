@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/CobrancaContent.test.tsx
+ * Testes: CobrancaContent
+ */
+
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { CobrancaContent } from '@/components/admin/CobrancaContent';

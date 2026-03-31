@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/admin/planos-delete.test.ts
+ * Testes: API DELETE /api/admin/planos/[id] - exclusão segura de planos
+ */
+
 import { NextRequest } from 'next/server';
 import { DELETE } from '@/app/api/admin/planos/[id]/route';
 import { requireRole } from '@/lib/session';

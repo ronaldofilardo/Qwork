@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/audit-trigger.test.ts
+ * Testes: Database - Audit Trigger
+ */
+
 // Jest globals available by default
 import { query } from '@/lib/db'
 import { createSession } from '@/lib/session'

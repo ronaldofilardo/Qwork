@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/RadioScale.test.tsx
+ * Testes: RadioScale
+ */
+
 import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import RadioScale from '@/components/RadioScale'

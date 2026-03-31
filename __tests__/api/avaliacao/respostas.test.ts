@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/avaliacao/respostas.test.ts
+ * Testes: /api/avaliacao/respostas
+ */
+
 import { Request, Response } from 'node-fetch';
 import { GET, POST } from '@/app/api/avaliacao/respostas/route';
 

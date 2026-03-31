@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/vw_funcionarios_por_lote.test.ts
+ * Testes: vw_funcionarios_por_lote
+ */
+
 import { query } from '@/lib/db'
 
 jest.mock('@/lib/db', () => ({

@@ -204,6 +204,7 @@ export async function uploadToBackblaze(
       Key: key,
       Body: buffer,
       ContentType: contentType,
+      ContentLength: buffer.length, // obrigatório no Vercel — SDK v3 não infere automaticamente
       ContentMD5: md5Hash,
       // Metadados adicionais
       Metadata: {

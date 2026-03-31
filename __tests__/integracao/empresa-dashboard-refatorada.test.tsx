@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integracao/empresa-dashboard-refatorada.test.tsx
+ * Testes: Integração: EmpresaDashboardPage refatorada
+ */
+
 import React from 'react';
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { useRouter } from 'next/navigation';

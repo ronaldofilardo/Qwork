@@ -1,0 +1,243 @@
+{
+  "target": "lib/db-security.ts",
+  "totalImporters": 25,
+  "symbolUsage": {
+    "queryWithContext": 20,
+    "transactionWithContext": 6,
+    "(require)": 3,
+    "* as dbSecurity": 1
+  },
+  "importers": [
+    {
+      "file": "__tests__/api/avaliacao/auto-conclusao-error-handling.test.ts",
+      "symbols": [
+        "queryWithContext",
+        "(require)"
+      ],
+      "types": [
+        "static-named",
+        "require"
+      ]
+    },
+    {
+      "file": "__tests__/api/avaliacao/respostas.test.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/api/avaliacao/save.test.ts",
+      "symbols": [
+        "* as dbSecurity"
+      ],
+      "types": [
+        "static-star"
+      ]
+    },
+    {
+      "file": "__tests__/api/rh/laudos.test.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/audit/empresas-audit.test.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/auth/funcionario-rls-authentication.test.ts",
+      "symbols": [
+        "queryWithContext",
+        "transactionWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/e2e/funcionario-avaliacao-completa.test.ts",
+      "symbols": [
+        "queryWithContext",
+        "transactionWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/helpers/db-mocks.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/lib/db-security.test.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/lib/validate-session-context.test.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/middleware/middleware-api-integration.test.ts",
+      "symbols": [
+        "(require)"
+      ],
+      "types": [
+        "require"
+      ]
+    },
+    {
+      "file": "__tests__/rh/liberar-massa.test.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "__tests__/system/api-logger-integration.test.ts",
+      "symbols": [
+        "(require)"
+      ],
+      "types": [
+        "require"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/cascata/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/check-sync/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/liberar-massa/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/respostas-all/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/respostas/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/resultados/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/save/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/status/route.ts",
+      "symbols": [
+        "queryWithContext",
+        "transactionWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/avaliacao/todas/route.ts",
+      "symbols": [
+        "queryWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "app/api/rh/lotes/[id]/funcionarios/route.ts",
+      "symbols": [
+        "transactionWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "lib/avaliacao-conclusao.ts",
+      "symbols": [
+        "queryWithContext",
+        "transactionWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    },
+    {
+      "file": "lib/lotes.ts",
+      "symbols": [
+        "transactionWithContext"
+      ],
+      "types": [
+        "static-named"
+      ]
+    }
+  ]
+}

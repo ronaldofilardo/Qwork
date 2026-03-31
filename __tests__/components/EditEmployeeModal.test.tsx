@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/EditEmployeeModal.test.tsx
+ * Testes: EditEmployeeModal - Component
+ */
+
 /// <reference types="@testing-library/jest-dom" />
 
 import '@testing-library/jest-dom'

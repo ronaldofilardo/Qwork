@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/ConditionalHeader.test.tsx
+ * Testes: ConditionalHeader
+ */
+
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';

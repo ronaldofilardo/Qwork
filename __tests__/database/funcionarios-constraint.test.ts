@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/database/funcionarios-constraint.test.ts
+ * Testes: Constraint funcionarios_clinica_id_check
+ */
+
 import { query } from '@/lib/db';
 
 describe('Constraint funcionarios_clinica_id_check', () => {

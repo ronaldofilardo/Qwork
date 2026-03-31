@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/integration/webhook-null-safe-query-fix.test.ts
+ * Testes: Webhook NULL-safe Query Fix
+ */
+
 import { query } from '@/lib/db';
 import { handlePaymentWebhook } from '@/lib/asaas/webhook-handler';
 import { AsaasWebhookPayload } from '@/lib/asaas/types';

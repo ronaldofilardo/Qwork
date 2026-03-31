@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/rh/lotes-avaliacoes-inativar-cancelado.test.ts
+ * Testes: POST /api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar - cancelado
+ */
+
 import { NextRequest } from 'next/server';
 import { POST } from '@/app/api/rh/lotes/[id]/avaliacoes/[avaliacaoId]/inativar/route';
 import { requireAuth } from '@/lib/session';

@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/auth/login-gestor.test.ts
+ * Testes: /api/auth/login - gestor entidade
+ */
+
 import bcrypt from 'bcryptjs';
 // Usar Request padrão para compatibilidade no ambiente de testes
 import { Request } from 'node-fetch';

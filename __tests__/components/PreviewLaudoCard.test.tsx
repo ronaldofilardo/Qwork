@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/components/PreviewLaudoCard.test.tsx
+ * Testes: PreviewLaudoCard UI semantics
+ */
+
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import PreviewLaudoCard, {

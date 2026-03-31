@@ -16,7 +16,7 @@ process.env.DATABASE_URL =
   'postgresql://localhost/nr-bps_db_test';
 
 import { NextRequest } from 'next/server';
-import { QueryResult } from 'pg';
+import type { QueryResult } from 'pg';
 
 // Garantir que testes usem exclusivamente o banco de teste
 process.env.DATABASE_URL =

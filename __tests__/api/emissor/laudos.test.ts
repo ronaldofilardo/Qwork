@@ -16,12 +16,25 @@ import { query } from '@/lib/db';
 
 jest.mock('@/lib/session');
 jest.mock('@/lib/db');
+jest.mock('@/lib/laudo-auto', () => ({
+  gerarLaudoCompletoEmitirPDF: jest.fn().mockResolvedValue(42),
+}));
+jest.mock('@/lib/laudo-calculos', () => ({
+  gerarDadosGeraisEmpresa: jest.fn().mockResolvedValue({
+    empresaAvaliada: { nome: 'Empresa A', cnpj: '12345678000195' },
+  }),
+  calcularScoresPorGrupo: jest.fn().mockResolvedValue([
+    { grupo: 1, valor: 75 },
+    { grupo: 2, valor: 80 },
+  ]),
+  gerarInterpretacaoRecomendacoes: jest.fn().mockReturnValue({}),
+  gerarObservacoesConclusao: jest.fn().mockReturnValue({}),
+}));
 
 const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 const mockQuery = query as jest.MockedFunction<typeof query>;
 
-// IGNORADO: testes de emissão de laudos temporariamente skipados para breve refatoração
-describe.skip('/api/emissor/laudos/[loteId]', () => {
+describe('/api/emissor/laudos/[loteId]', () => {
   const mockEmissor = {
     cpf: '99999999999',
     nome: 'Emissor',
@@ -61,7 +74,10 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
 
     it('deve retornar 404 se lote não existir', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+      mockQuery
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // loteCheck
+        .mockResolvedValueOnce({} as any) // BEGIN
+        .mockResolvedValueOnce({} as any); // ROLLBACK
 
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '999' } };
@@ -75,19 +91,24 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
 
     it('deve retornar 400 se lote não estiver pronto', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            id: 1,
-            status: 'ativo',
-            empresa_nome: 'Empresa A',
-            clinica_nome: 'Clínica A',
-            total: '5',
-            concluidas: '3', // Não está pronto
-          },
-        ],
-        rowCount: 1,
-      } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              id: 1,
+              status: 'ativo',
+              empresa_nome: 'Empresa A',
+              clinica_nome: 'Clínica A',
+              total_liberadas: '5',
+              concluidas: '3',
+              inativadas: '0',
+            },
+          ],
+          rowCount: 1,
+        } as any) // loteCheck
+        .mockResolvedValueOnce({} as any) // BEGIN
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // laudoQuery (no laudo)
+        .mockResolvedValueOnce({} as any); // ROLLBACK
 
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '1' } };
@@ -102,7 +123,7 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
     it('deve retornar laudo existente se já criado', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
 
-      // Mock lote pronto
+      // Mock lote pronto (concluido)
       mockQuery.mockResolvedValueOnce({
         rows: [
           {
@@ -110,53 +131,16 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
             status: 'ativo',
             empresa_nome: 'Empresa A',
             clinica_nome: 'Clínica A',
-            total: '4',
+            total_liberadas: '4',
             concluidas: '4',
+            inativadas: '0',
           },
         ],
         rowCount: 1,
       } as any);
 
-      // Mock dados da empresa (lote query in gerarDadosGeraisEmpresa)
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            id: 1,
-            liberado_em: '2025-11-29T10:00:00Z',
-            empresa_nome: 'Empresa A',
-            cnpj: '12345678000195',
-            endereco: 'Rua A, 123',
-            cidade: 'São Paulo',
-            estado: 'SP',
-            cep: '01234567',
-          },
-        ],
-        rowCount: 1,
-      } as any);
-
-      // Mock stats (stats query in gerarDadosGeraisEmpresa)
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            total_avaliacoes: '4',
-            avaliacoes_concluidas: '4',
-            primeira_avaliacao: '2025-11-29T11:00:00Z',
-            ultima_conclusao: '2025-11-29T12:00:00Z',
-            operacional: '3',
-            gestao: '1',
-          },
-        ],
-        rowCount: 1,
-      } as any);
-
-      // Mock scores (scores query in calcularScoresPorGrupo)
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          { grupo: 1, valor: 75 },
-          { grupo: 2, valor: 80 },
-        ],
-        rowCount: 2,
-      } as any);
+      // BEGIN transaction
+      mockQuery.mockResolvedValueOnce({} as any);
 
       // Mock laudo existente
       mockQuery.mockResolvedValueOnce({
@@ -168,10 +152,14 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
             criado_em: '2025-11-29T10:00:00Z',
             emitido_em: null,
             enviado_em: null,
+            hash_pdf: null,
           },
         ],
         rowCount: 1,
       } as any);
+
+      // COMMIT transaction
+      mockQuery.mockResolvedValueOnce({} as any);
 
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '1' } };
@@ -188,7 +176,7 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       expect(data.lote.empresa_nome).toBe('Empresa A');
     });
 
-    it('deve criar novo laudo se não existir', async () => {
+    it('deve retornar preview quando lote concluído mas sem laudo', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
 
       // Mock lote pronto
@@ -199,71 +187,22 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
             status: 'ativo',
             empresa_nome: 'Empresa A',
             clinica_nome: 'Clínica A',
-            total: '4',
+            total_liberadas: '4',
             concluidas: '4',
+            inativadas: '0',
           },
         ],
         rowCount: 1,
       } as any);
 
-      // Mock dados da empresa (lote query in gerarDadosGeraisEmpresa)
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            id: 1,
-            liberado_em: '2025-11-29T10:00:00Z',
-            empresa_nome: 'Empresa A',
-            cnpj: '12345678000195',
-            endereco: 'Rua A, 123',
-            cidade: 'São Paulo',
-            estado: 'SP',
-            cep: '01234567',
-          },
-        ],
-        rowCount: 1,
-      } as any);
+      // BEGIN
+      mockQuery.mockResolvedValueOnce({} as any);
 
-      // Mock stats (stats query in gerarDadosGeraisEmpresa)
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            total_avaliacoes: '4',
-            avaliacoes_concluidas: '4',
-            primeira_avaliacao: '2025-11-29T11:00:00Z',
-            ultima_conclusao: '2025-11-29T12:00:00Z',
-            operacional: '3',
-            gestao: '1',
-          },
-        ],
-        rowCount: 1,
-      } as any);
-
-      // Mock scores (scores query in calcularScoresPorGrupo)
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          { grupo: 1, valor: 75 },
-          { grupo: 2, valor: 80 },
-        ],
-        rowCount: 2,
-      } as any);
-
-      // Mock laudo não existente
+      // laudoQuery - no existing laudo
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-      // Mock criação de novo laudo
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            id: 200,
-            observacoes: null,
-            status: 'rascunho',
-            criado_em: '2025-11-29T12:00:00Z',
-            emitido_em: null,
-            enviado_em: null,
-          },
-        ],
-        rowCount: 1,
-      } as any);
+      // COMMIT
+      mockQuery.mockResolvedValueOnce({} as any);
 
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '1' } };
@@ -273,11 +212,8 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.laudoPadronizado.status).toBe('rascunho');
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('INSERT INTO laudos'),
-        expect.arrayContaining([1, '99999999999'])
-      );
+      expect(data.previa).toBe(true);
+      expect(data.laudoPadronizado).toBeDefined();
     });
   });
 
@@ -299,7 +235,6 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
 
     it('deve retornar 403 ao tentar atualizar observações (edição bloqueada)', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
 
       const mockReq = {
         json: jest.fn().mockResolvedValue({ observacoes: 'Novas observações' }),
@@ -313,7 +248,7 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       expect(data.error).toBe('Edição de observações não permitida');
     });
 
-    it('deve retornar 400 para loteId inválido', async () => {
+    it('deve retornar 403 para loteId inválido (edição sempre bloqueada)', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
 
       const mockReq = {
@@ -324,8 +259,8 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       const response = await PUT(mockReq, mockParams);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('ID do lote inválido');
+      expect(response.status).toBe(403);
+      expect(data.error).toBe('Edição de observações não permitida');
     });
   });
 
@@ -346,18 +281,25 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
     it('deve emitir laudo com sucesso', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
 
-      mockQuery.mockImplementation(async (text) => {
-        if (text.includes('lotes_avaliacao')) {
-          return {
-            rows: [{ id: 1, clinica_id: 1 }],
-            rowCount: 1,
-          } as any;
-        }
-        if (text.includes('UPDATE')) {
-          return { rows: [], rowCount: 1 } as any;
-        }
-        return { rows: [], rowCount: 0 } as any;
-      });
+      // loteCheck - lote concluído
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            status: 'concluido',
+            status_pagamento: 'pago',
+            pago_em: '2025-01-01',
+            empresa_nome: 'Empresa A',
+            total_liberadas: '4',
+            concluidas: '4',
+            inativadas: '0',
+          },
+        ],
+        rowCount: 1,
+      } as any);
+
+      // laudoExistente - nenhum laudo
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '1' } };
@@ -365,17 +307,10 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       const response = await POST(mockReq, mockParams);
       const data = await response.json();
 
-      expect([200, 404, 500]).toContain(response.status);
-      if (response.status === 200) {
-        expect(data.success).toBe(true);
-        expect(data.message).toContain('emitido');
-      }
+      expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toContain('emitido com sucesso');
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining("status = 'emitido'"),
-        expect.arrayContaining([1, '99999999999'])
-      );
+      expect(data.message).toBe('Laudo gerado com sucesso');
+      expect(data.laudo_id).toBe(42);
     });
 
     it('deve retornar 400 para loteId inválido', async () => {
@@ -396,7 +331,9 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
     it('deve retornar 403 se usuário não for emissor', async () => {
       mockRequireRole.mockResolvedValue(null as any);
 
-      const mockReq = {} as Request;
+      const mockReq = {
+        json: jest.fn().mockResolvedValue({ status: 'enviado' }),
+      } as any;
       const mockParams = { params: { loteId: '1' } };
 
       const response = await PATCH(mockReq, mockParams);
@@ -408,9 +345,14 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
 
     it('deve enviar laudo para clínica com sucesso', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
-      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ id: 100, status: 'enviado' }],
+        rowCount: 1,
+      } as any);
 
-      const mockReq = {} as Request;
+      const mockReq = {
+        json: jest.fn().mockResolvedValue({ status: 'enviado' }),
+      } as any;
       const mockParams = { params: { loteId: '1' } };
 
       const response = await PATCH(mockReq, mockParams);
@@ -418,7 +360,7 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.message).toContain('enviado para clínica');
+      expect(data.message).toBe('Laudo enviado para clínica');
       expect(mockQuery).toHaveBeenCalledWith(
         expect.stringContaining("status = 'enviado'"),
         expect.arrayContaining([1, '99999999999'])
@@ -428,7 +370,9 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
     it('deve retornar 400 para loteId inválido', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
 
-      const mockReq = {} as Request;
+      const mockReq = {
+        json: jest.fn().mockResolvedValue({ status: 'enviado' }),
+      } as any;
       const mockParams = { params: { loteId: 'bad' } };
 
       const response = await PATCH(mockReq, mockParams);
@@ -455,9 +399,8 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       expect(data.error).toBe('Erro interno do servidor');
     });
 
-    it('PUT deve retornar 500 em caso de erro no banco', async () => {
+    it('PUT deve retornar 403 (edição sempre bloqueada)', async () => {
       mockRequireRole.mockResolvedValue(mockEmissor);
-      mockQuery.mockRejectedValue(new Error('Database error'));
 
       const mockReq = {
         json: jest.fn().mockResolvedValue({ observacoes: 'Teste' }),
@@ -467,8 +410,8 @@ describe.skip('/api/emissor/laudos/[loteId]', () => {
       const response = await PUT(mockReq, mockParams);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
-      expect(data.success).toBe(false);
+      expect(response.status).toBe(403);
+      expect(data.error).toBe('Edição de observações não permitida');
     });
   });
 });

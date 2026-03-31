@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/emissor/logo-consistency.test.tsx
+ * Testes: Emissor - Logo no Laudo
+ */
+
 import { render, screen, waitFor } from '@testing-library/react';
 import fs from 'fs';
 import EditarLaudo from '@/app/emissor/laudo/[loteId]/page';
@@ -37,7 +42,6 @@ describe('Emissor - Logo no Laudo', () => {
         dataUltimaConclusao: '2024-01-31',
       },
       totalFuncionariosAvaliados: 50,
-      percentualConclusao: 100,
       amostra: {
         operacional: 40,
         gestao: 10,

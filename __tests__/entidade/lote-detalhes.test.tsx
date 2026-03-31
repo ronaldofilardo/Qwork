@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/entidade/lote-detalhes.test.tsx
+ * Testes: Integração: Inativar avaliação (Entidade)
+ */
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -159,7 +164,7 @@ describe('Integração: Inativar avaliação (Entidade)', () => {
 
     // @ts-ignore
     global.fetch = jest.fn((url: string) => {
-      if (url.endsWith('/api/entidade/lote/1')) {
+      if (url.includes('/api/entidade/lote/1')) {
         return Promise.resolve({ ok: true, json: async () => emittedLote });
       }
       return Promise.reject(new Error('unexpected url'));

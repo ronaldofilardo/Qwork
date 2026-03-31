@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/api/entidade/lotes-fila-emissao-compat.test.ts
+ * Testes: /api/entidade/lotes - compat v_fila_emissao
+ */
+
 import { GET } from '@/app/api/entidade/lotes/route';
 
 // Mocks isolados para este teste

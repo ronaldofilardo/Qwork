@@ -1,3 +1,8 @@
+/**
+ * @file __tests__/lib/lote-id-allocator.test.ts
+ * Testes: Lote ID allocator (fn_next_lote_id)
+ */
+
 import { query } from '@/lib/db';
 
 describe('Lote ID allocator (fn_next_lote_id)', () => {
