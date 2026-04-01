@@ -2,7 +2,7 @@
 -- Idempotente: atualiza registros existentes e insere recibo se ausente
 BEGIN;
 
--- 1) Atualiza pagamento contratante 57 (id 53) -> personalizado 150x R$12 = R$1800 em 5x R$360
+-- 1) Atualiza pagamento contratante 57 (id 53) -> 150x R$12 = R$1800 em 5x R$360
 UPDATE pagamentos
 SET valor_por_funcionario = 12.00,
     numero_funcionarios = 150,
@@ -20,7 +20,7 @@ SET valor_por_funcionario = 12.00,
     data_confirmacao = '2025-12-31 12:50:11.35805'
 WHERE id = 53;
 
--- 2) Atualiza pagamento contratante 55 (id 48) -> personalizado 1200x R$7 = R$8400 à vista
+-- 2) Atualiza pagamento contratante 55 (id 48) -> 1200x R$7 = R$8400 à vista
 UPDATE pagamentos
 SET valor_por_funcionario = 7.00,
     numero_funcionarios = 1200,

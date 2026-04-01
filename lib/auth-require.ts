@@ -1,4 +1,4 @@
-import { getSession, Session } from './session';
+import { requireRole as sessionRequireRole, Session } from './session';
 import { NextResponse } from 'next/server';
 import { Perfil } from './db';
 
@@ -13,36 +13,36 @@ export class AccessDeniedError extends Error {
 }
 
 /**
- * Requer que o usuário tenha um dos perfis especificados
- * Lança erro se não estiver autenticado ou não tiver permissão
+ * Requer que o usuário tenha um dos perfis especificados.
+ * Delega para lib/session.ts requireRole (implementação canônica).
  */
-export function requireRole(allowedRoles: Perfil[]): Session {
-  const session = getSession();
-
-  if (!session) {
-    throw new AccessDeniedError('Usuário não autenticado');
+export async function requireRole(allowedRoles: Perfil[]): Promise<Session> {
+  try {
+    return await sessionRequireRole(allowedRoles);
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message === 'Não autenticado') {
+        throw new AccessDeniedError('Usuário não autenticado');
+      }
+      throw new AccessDeniedError(
+        `Acesso negado. Perfis permitidos: ${allowedRoles.join(', ')}`
+      );
+    }
+    throw new AccessDeniedError();
   }
-
-  if (!allowedRoles.includes(session.perfil as Perfil)) {
-    throw new AccessDeniedError(
-      `Acesso negado. Perfis permitidos: ${allowedRoles.join(', ')}`
-    );
-  }
-
-  return session;
 }
 
 /**
  * Requer perfil de emissor (APENAS emissor)
  */
-export function requireEmissor(): Session {
+export async function requireEmissor(): Promise<Session> {
   return requireRole(['emissor']);
 }
 
 /**
  * Requer perfil de admin
  */
-export function requireAdmin(): Session {
+export async function requireAdmin(): Promise<Session> {
   return requireRole(['admin']);
 }
 
@@ -50,7 +50,7 @@ export function requireAdmin(): Session {
  * Requer perfil de RH (gestor de clínica) - APENAS rh
  * Para gestores de entidade, use requireGestorEntidade()
  */
-export function requireRH(): Session {
+export async function requireRH(): Promise<Session> {
   return requireRole(['rh']);
 }
 
@@ -58,7 +58,7 @@ export function requireRH(): Session {
  * Requer perfil de gestor de entidade - APENAS gestor
  * Para gestores RH, use requireRH()
  */
-export function requireGestorEntidade(): Session {
+export async function requireGestorEntidade(): Promise<Session> {
   return requireRole(['gestor']);
 }
 
@@ -66,7 +66,7 @@ export function requireGestorEntidade(): Session {
  * Requer perfil de gestor (RH ou Entidade) - para endpoints comuns
  * Use com cautela - prefira requireRH() ou requireGestorEntidade() quando possível
  */
-export function requireGestor(): Session {
+export async function requireGestor(): Promise<Session> {
   return requireRole(['rh', 'gestor']);
 }
 
@@ -140,7 +140,7 @@ export function withAuth<T extends any[]>(
 ) {
   return async (request: Request, ...args: T): Promise<NextResponse> => {
     try {
-      const session = requireRole(allowedRoles);
+      const session = await requireRole(allowedRoles);
       return await handler(request, session, ...args);
     } catch (error) {
       if (error instanceof AccessDeniedError) {

@@ -1,4 +1,4 @@
-import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
+import { requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
@@ -7,15 +7,8 @@ export const dynamic = 'force-dynamic';
 export const GET = async (req: Request) => {
   let user;
   try {
-    user = await requireAuth();
+    user = await requireRole('rh');
   } catch {
-    return NextResponse.json(
-      { error: 'Acesso negado', success: false },
-      { status: 403 }
-    );
-  }
-
-  if (!user || user.perfil !== 'rh') {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }

@@ -172,7 +172,7 @@ describe('ClinicasContent', () => {
         }),
     } as Response);
 
-    // Mock para buscar clínicas (plano personalizado pendente)
+    // Mock para buscar clínicas (segunda chamada)
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () =>
@@ -283,7 +283,7 @@ describe('ClinicasContent', () => {
         }),
     } as Response);
 
-    // Mock para buscar clínicas (plano personalizado pendente)
+    // Mock para buscar clínicas (segunda chamada)
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () =>
@@ -346,7 +346,7 @@ describe('ClinicasContent', () => {
         }),
     } as Response);
 
-    // Mock para buscar clínicas (plano personalizado pendente)
+    // Mock para buscar clínicas (segunda chamada)
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () =>

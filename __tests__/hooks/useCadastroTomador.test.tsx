@@ -135,14 +135,6 @@ describe('useCadastroTomador', () => {
     expect(res.data).toBeDefined();
   });
 
-  test('fluxo personalizado cria redirect com tipo=personalizado', async () => {
-    const ref: any = { current: null };
-
-    const fakeFetcher = makeFetcher({ cadastro: { id: 777 } });
-
-    // ... existing test continues
-  });
-
   test('quando cadastro retorna contrato_id, redirect inclui contrato_id', async () => {
     const ref: any = { current: null };
 

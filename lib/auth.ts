@@ -10,7 +10,10 @@ export function requireAuth(_request: NextRequest): Session {
   return session;
 }
 
-// Requer role específico
+/**
+ * @deprecated Use `requireRole` from `@/lib/session` instead.
+ * Requer role específico
+ */
 export function requireRole(session: Session, allowedRoles: string[]): void {
   if (!allowedRoles.includes(session.perfil)) {
     throw new Error(

@@ -178,14 +178,9 @@ module.exports = async function globalSetup() {
 
     // If core post-migration tables exist, skip full migration application to speed up tests
     const coreCheck = await client.query(
-      "SELECT to_regclass('public.entidades_senhas') as cs, to_regclass('public.planos') as planos, to_regclass('public.contratacao_personalizada') as cp"
+      "SELECT to_regclass('public.entidades_senhas') as cs"
     );
-    if (
-      coreCheck.rows[0].cs &&
-      coreCheck.rows[0].planos &&
-      coreCheck.rows[0].cp &&
-      !process.env.FORCE_REAPPLY_TEST_MIGRATIONS
-    ) {
+    if (coreCheck.rows[0].cs && !process.env.FORCE_REAPPLY_TEST_MIGRATIONS) {
       console.log(
         '[jest globalSetup] Core migrations parecem aplicadas — pulando aplicação completa para acelerar testes. Set FORCE_REAPPLY_TEST_MIGRATIONS=1 para ignorar.'
       );

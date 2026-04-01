@@ -3,12 +3,13 @@
 import { useState } from 'react';
 import { Users, UserPlus, DollarSign } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
+import { useComercial } from '@/app/comercial/comercial-context';
 
 export type ComercialSection = 'representantes' | 'leads' | 'comissoes';
 
 interface ComercialSidebarProps {
-  activeSection: ComercialSection;
-  onSectionChange: (section: ComercialSection) => void;
+  activeSection?: ComercialSection;
+  onSectionChange?: (section: ComercialSection) => void;
   counts?: {
     representantes?: number;
     leads?: number;
@@ -17,11 +18,21 @@ interface ComercialSidebarProps {
 }
 
 export default function ComercialSidebar({
-  activeSection,
-  onSectionChange,
+  activeSection: propActiveSection,
+  onSectionChange: propOnSectionChange,
   counts = {},
 }: ComercialSidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Consume Comercial context; default value é seguro fora do ComercialProvider
+  const {
+    activeSection: ctxActiveSection,
+    setActiveSection: ctxSetActiveSection,
+  } = useComercial();
+
+  // Props têm precedência sobre contexto
+  const activeSection = propActiveSection ?? ctxActiveSection;
+  const onSectionChange = propOnSectionChange ?? ctxSetActiveSection;
 
   const MenuItem = ({
     icon: Icon,

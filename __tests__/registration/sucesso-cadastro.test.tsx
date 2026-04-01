@@ -166,43 +166,6 @@ describe('SucessoCadastroPage', () => {
   });
 
   /**
-   * @test Verifica mensagem quando tipo personalizado e API falha
-   * @expected Deve exibir "Dados enviados com sucesso!" mesmo com erro da API
-   */
-  it('exibe mensagem de dados enviados para administrador quando tipo=personalizado e API falha', async () => {
-    // Arrange: Simular query params id=50, tipo=personalizado
-    mockGet.mockImplementation((key: string) =>
-      key === 'id' ? '50' : key === 'tipo' ? 'personalizado' : null
-    );
-
-    // Arrange: Sessão retorna não autenticada
-    (global.fetch as Mock).mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: false,
-        json: () => Promise.resolve({}),
-      } as Response)
-    );
-
-    // Arrange: API /api/public/tomador retorna erro
-    (global.fetch as Mock).mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: false,
-        json: () => Promise.resolve({ error: 'Erro ao buscar dados' }),
-      } as Response)
-    );
-
-    // Act: Renderizar página
-    render(<SucessoCadastroPage />);
-
-    // Assert: Verificar mensagem de dados enviados
-    await waitFor(() => {
-      expect(
-        screen.getByText('Dados enviados com sucesso!')
-      ).toBeInTheDocument();
-    });
-  });
-
-  /**
    * @test Verifica abertura automática do modal de contrato via querystring
    * @expected Modal de contrato deve abrir quando contrato_id está na URL
    */
@@ -265,7 +228,7 @@ describe('SucessoCadastroPage', () => {
    * @test Verifica popup de sucesso após simulação de pagamento
    * @expected Alert deve ser chamado e modal de conclusão deve aparecer
    */
-  it('mostra o popup de sucesso (alert) igual ao simulador quando pagamento é confirmado no fluxo personalizado', async () => {
+  it('mostra o popup de sucesso (alert) igual ao simulador quando pagamento é confirmado', async () => {
     // Arrange: Sem ID na URL
     mockGet.mockReturnValue(null);
 

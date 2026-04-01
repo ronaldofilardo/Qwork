@@ -203,10 +203,11 @@ const getDatabaseUrl = () => {
     }
 
     if (!process.env.LOCAL_DATABASE_URL) {
-      console.warn(
-        '⚠️ LOCAL_DATABASE_URL não está definido. Usando configuração padrão: nr-bps_db.'
+      throw new Error(
+        '🚨 LOCAL_DATABASE_URL não está definido.\n' +
+          'Configure LOCAL_DATABASE_URL no seu .env.local apontando para o banco de desenvolvimento local.\n' +
+          'Consulte docs/policies/DATABASE_SETUP.md para instruções de configuração.'
       );
-      return 'postgresql://postgres:123456@localhost:5432/nr-bps_db';
     }
 
     // CORREÇÃO: throw em vez de warn quando LOCAL_DATABASE_URL aponta para banco de testes
@@ -216,8 +217,9 @@ const getDatabaseUrl = () => {
       if (dbName === 'nr-bps_db_test') {
         throw new Error(
           `🚨 ERRO CRÍTICO DE ISOLAMENTO: LOCAL_DATABASE_URL aponta para o banco de TESTES "${dbName}" em ambiente de DESENVOLVIMENTO!\n` +
-            `Desenvolvimento DEVE usar "nr-bps_db".\n` +
-            `Corrija LOCAL_DATABASE_URL no .env.local para: postgresql://postgres:123456@localhost:5432/nr-bps_db`
+            `Desenvolvimento DEVE usar o banco "nr-bps_db".\n` +
+            `Corrija LOCAL_DATABASE_URL no .env.local para apontar para o banco de desenvolvimento.\n` +
+            `Consulte docs/policies/DATABASE_SETUP.md para instruções de configuração.`
         );
       }
     } catch (error) {

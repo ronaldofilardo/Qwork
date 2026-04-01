@@ -3,16 +3,13 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { requireAuth } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await requireAuth();
-    if (session.perfil !== 'vendedor' && session.perfil !== 'admin') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    const session = await requireRole(['vendedor', 'admin']);
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status') ?? undefined;

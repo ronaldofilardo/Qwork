@@ -1980,7 +1980,7 @@ CREATE TABLE public.templates_contrato (
     atualizado_por_cpf text,
     tags text[],
     metadata jsonb DEFAULT '{}'::jsonb,
-    CONSTRAINT templates_contrato_tipo_template_check CHECK ((tipo_template = ANY (ARRAY['plano_fixo'::text, 'plano_personalizado'::text, 'padrao'::text])))
+    CONSTRAINT templates_contrato_tipo_template_check CHECK ((tipo_template = ANY (ARRAY['plano_fixo'::text, 'padrao'::text])))
 );
 
 
@@ -2583,14 +2583,6 @@ CREATE INDEX idx_contratos_tipo_tomador ON public.contratos USING btree (tipo_to
 --
 
 CREATE INDEX idx_contratos_tomador_id ON public.contratos USING btree (tomador_id);
-
-
-
---
--- Name: idx_contratos_valor_personalizado; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratos_valor_personalizado ON public.contratos USING btree (valor_personalizado);
 
 
 

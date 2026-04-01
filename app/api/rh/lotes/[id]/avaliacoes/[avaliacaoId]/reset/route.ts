@@ -1,4 +1,4 @@
-import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
+import { requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
@@ -22,13 +22,7 @@ export async function POST(
   { params }: { params: { id: string; avaliacaoId: string } }
 ) {
   try {
-    const user = await requireAuth();
-    if (!user || user.perfil !== 'rh') {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
+    const user = await requireRole('rh');
 
     const loteId = params.id;
     const avaliacaoId = params.avaliacaoId;

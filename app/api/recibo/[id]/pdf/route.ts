@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { getSession } from '@/lib/session';
 
 /**
  * API GET /api/recibo/[id]/pdf
@@ -18,6 +19,15 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Verificar autenticação
+    const session = getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Autenticação requerida' },
+        { status: 401 }
+      );
+    }
+
     const reciboId = parseInt(params.id);
 
     if (isNaN(reciboId)) {

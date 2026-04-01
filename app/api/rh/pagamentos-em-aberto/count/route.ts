@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { queryAsGestorRH } from '@/lib/db-gestor';
 
 /**
@@ -9,11 +9,7 @@ import { queryAsGestorRH } from '@/lib/db-gestor';
  */
 export async function GET() {
   try {
-    const session = await requireAuth();
-
-    if (session.perfil !== 'rh') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    const session = await requireRole('rh');
 
     if (!session.clinica_id) {
       return NextResponse.json(

@@ -28,4 +28,4 @@ CREATE INDEX IF NOT EXISTS idx_pagamentos_contratante ON pagamentos (contratante
 CREATE INDEX IF NOT EXISTS idx_pagamentos_status ON pagamentos (status);
 CREATE INDEX IF NOT EXISTS idx_pagamentos_contrato_id ON pagamentos (contrato_id);
 
-COMMENT ON TABLE pagamentos IS 'Tabela de pagamentos com suporte a planos fixos e personalizados';
+COMMENT ON TABLE pagamentos IS 'Tabela de pagamentos';

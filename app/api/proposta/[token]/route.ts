@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
  * Endpoint legado — o fluxo de contratação personalizada com links de proposta
  * foi removido. O sistema atual usa fluxo direto: Cadastro → Aprovação → Pagamento.
  */
-export async function GET(
+export function GET(
   _request: NextRequest,
   _context: { params: { token: string } }
 ) {

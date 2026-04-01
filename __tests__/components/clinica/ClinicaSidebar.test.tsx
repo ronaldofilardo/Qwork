@@ -31,6 +31,22 @@ jest.mock('lucide-react', () => ({
   Bell: (props: Record<string, unknown>) => (
     <span data-testid="icon-bell" {...props} />
   ),
+  Upload: (props: Record<string, unknown>) => (
+    <span data-testid="icon-upload" {...props} />
+  ),
+}));
+
+// Mock do RHContext — default value seguro para testes fora do portal RH
+jest.mock('@/app/rh/rh-context', () => ({
+  useRH: () => ({
+    session: null,
+    counts: { empresas: 0, notificacoes: 0, laudos: 0 },
+    isLoading: false,
+    reloadCounts: jest.fn(),
+  }),
+  RHContext: {
+    Provider: ({ children }: { children: React.ReactNode }) => children,
+  },
 }));
 
 // Mock do SidebarLayout

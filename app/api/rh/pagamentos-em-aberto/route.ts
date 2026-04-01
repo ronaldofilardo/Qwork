@@ -1,6 +1,6 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { requireAuth } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { queryAsGestorRH } from '@/lib/db-gestor';
 
 /**
@@ -9,14 +9,13 @@ import { queryAsGestorRH } from '@/lib/db-gestor';
  */
 export async function GET() {
   try {
-    const session = await requireAuth();
-
-    if (session.perfil !== 'rh') {
-      return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
-    }
+    const session = await requireRole('rh');
 
     if (!session.clinica_id) {
-      return NextResponse.json({ error: 'Clínica não identificada' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'Clínica não identificada' },
+        { status: 403 }
+      );
     }
 
     const result = await queryAsGestorRH(
@@ -44,9 +43,13 @@ export async function GET() {
       status_pagamento: row.status_pagamento,
       token: row.link_pagamento_token,
       disponibilizado_em: row.link_disponibilizado_em,
-      valor_por_funcionario: parseFloat(String(row.valor_por_funcionario || '0')),
+      valor_por_funcionario: parseFloat(
+        String(row.valor_por_funcionario || '0')
+      ),
       num_avaliacoes: parseInt(String(row.num_avaliacoes || '0'), 10),
-      valor_total: parseFloat(String(row.valor_por_funcionario || '0')) * parseInt(String(row.num_avaliacoes || '0'), 10),
+      valor_total:
+        parseFloat(String(row.valor_por_funcionario || '0')) *
+        parseInt(String(row.num_avaliacoes || '0'), 10),
       metodo: row.pagamento_metodo,
       empresa_nome: row.empresa_nome,
     }));

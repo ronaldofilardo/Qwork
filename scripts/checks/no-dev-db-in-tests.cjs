@@ -61,6 +61,10 @@ for (const file of files) {
   if (file.includes('db-security-fix-validation.test.ts')) {
     continue;
   }
+  // Skip db-no-hardcoded-credentials — análise estática de código-fonte (verifica ausência de hardcode)
+  if (file.includes('db-no-hardcoded-credentials.test.ts')) {
+    continue;
+  }
 
   const content = fs.readFileSync(file, 'utf8');
   // Use regex to match nr-bps_db but NOT nr-bps_db_test

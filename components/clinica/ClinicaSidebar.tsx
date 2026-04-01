@@ -5,6 +5,7 @@ import { Building2, User, Bell, Upload } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 import { PWAMenuItem } from '@/components/PWAMenuItem';
+import { useRH } from '@/app/rh/rh-context';
 
 interface ClinicaSidebarProps {
   counts?: {
@@ -17,12 +18,24 @@ interface ClinicaSidebarProps {
 }
 
 export default function ClinicaSidebar({
-  counts = {},
-  userName = 'Gestor',
+  counts: propCounts,
+  userName: propUserName,
 }: ClinicaSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+
+  // Consume RH context; default value (session: null, counts: zeros) é seguro fora do RHProvider
+  const { session: ctxSession, counts: ctxCounts } = useRH();
+
+  // Props têm precedência sobre contexto. Unifica tipos para acesso seguro.
+  const counts: {
+    empresas?: number;
+    lotes?: number;
+    laudos?: number;
+    notificacoes?: number;
+  } = propCounts ?? ctxCounts;
+  const userName = propUserName ?? ctxSession?.nome ?? 'Gestor';
 
   const MenuItem = ({
     icon: Icon,
