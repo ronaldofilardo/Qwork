@@ -162,7 +162,7 @@ export default function ResultadosChart({ resultados = [] }: ResultadosChartProp
       <div className="relative print:static print:transform-none print:w-full" style={{ height: `${Math.max(250, resultados.length * 35)}px` }}>
         <Bar data={data} options={options} />
       </div>
-      <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row justify-center space-y-1 sm:space-y-0 sm:space-x-4 sm:space-x-6 text-xs print:flex-col print:space-y-1 print:space-x-0">
+      <div className="mt-3 sm:mt-4 flex flex-col sm:flex-row justify-center space-y-1 sm:space-y-0 sm:space-x-6 text-xs print:flex-col print:space-y-1 print:space-x-0">
         <div className="flex items-center justify-center print:justify-start">
           <div className="w-3 h-3 bg-green-500 rounded mr-2 print:w-3 print:h-3"></div>
           <span>Adequado/Excelente</span>

@@ -4,7 +4,6 @@ import { Check } from 'lucide-react';
 
 const ETAPAS = [
   'tipo',
-  'plano',
   'dados',
   'responsavel',
   'contrato',

@@ -6,7 +6,7 @@
 import { query } from '@/lib/db';
 import { NextRequest } from 'next/server';
 
-describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
+describe.skip('🔍 Diagnóstico - API Novos Cadastros com Personalizados [LEGADO: contratacao_personalizada removida em migration 1136]', () => {
   it('deve retornar pré-cadastros personalizados pendentes', async () => {
     // \n=== TESTE DIAGNÓSTICO: API NOVOS CADASTROS ===\n
 
@@ -54,8 +54,7 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
 
       data.tomadors.forEach((c: any) => {
         if (c.contratacao_personalizada_id) {
-            `    🔥 PERSONALIZADO ID: ${c.contratacao_personalizada_id}`
-          );
+          console.log(`    🔥 PERSONALIZADO ID: ${c.contratacao_personalizada_id}`);
         }
       });
     }
@@ -73,15 +72,12 @@ describe('🔍 Diagnóstico - API Novos Cadastros com Personalizados', () => {
         c.contratacao_status === 'aguardando_valor_admin'
     );
 
-      `\n🔥 Total de personalizados pendentes: ${personalizados.length}`
-    );
+    console.log(`\n🔥 Total de personalizados pendentes: ${personalizados.length}`);
 
     if (personalizados.length > 0) {
-        '✅ SUCESSO! API está retornando pré-cadastros personalizados'
-      );
+      console.log('✅ SUCESSO! API está retornando pré-cadastros personalizados');
     } else {
-        '⚠️ ATENÇÃO: Nenhum personalizado pendente encontrado na resposta da API'
-      );
+      console.log('⚠️ ATENÇÃO: Nenhum personalizado pendente encontrado na resposta da API');
     }
   });
 });

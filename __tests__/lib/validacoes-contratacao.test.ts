@@ -295,7 +295,6 @@ describe('Validações de Contratação', () => {
       cidade: 'São Paulo',
       estado: 'SP',
       cep: '01310-100',
-      plano_id: 1,
       responsavel_nome: 'João Silva',
       responsavel_cpf: '123.456.789-09',
       responsavel_email: 'joao@clinica.com',
@@ -353,14 +352,6 @@ describe('Validações de Contratação', () => {
         responsavel_cpf: '123.456.789-00',
       });
       expect(erros.responsavel_cpf).toBe(MENSAGENS_ERRO.CPF_INVALIDO);
-    });
-
-    it('deve validar plano não selecionado', () => {
-      const erros = validarFormulariotomador({
-        ...dadosValidos,
-        plano_id: null,
-      });
-      expect(erros.plano_id).toBe(MENSAGENS_ERRO.PLANO_OBRIGATORIO);
     });
 
     it('deve validar arquivo faltando', () => {

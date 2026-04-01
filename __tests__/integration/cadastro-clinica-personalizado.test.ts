@@ -33,7 +33,7 @@ jest.mock('@/lib/session', () => ({
   destroySession: jest.fn(),
 }));
 
-describe('Simulação Real - Cadastro Clínica Plano Personalizado', () => {
+describe.skip('Simulação Real - Cadastro Clínica Plano Personalizado [LEGADO: planos removidos em migration 1136]', () => {
   let planoPersonalizadoId: number;
   const testCnpj = '49303528000129'; // CNPJ válido
   const testCpfResp = '12345678909'; // CPF válido

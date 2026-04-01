@@ -83,7 +83,7 @@ describe('receipt-generator', () => {
             plataforma_nome: 'PagBank',
             plataforma_id: 'PAG123',
             data_pagamento: new Date('2025-01-15'),
-            plano_id: 1,
+
             plano_nome: 'Plano Fixo',
             plano_tipo: 'fixo',
             plano_descricao: 'Plano fixo mensal',

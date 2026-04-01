@@ -132,26 +132,24 @@ export async function queryMultiTenant<T = unknown>(
 }
 
 /**
- * Contar funcionários ativos para um contrato de plano
+ * Contar funcionários ativos de uma entidade ou clínica
  */
 export async function contarFuncionariosAtivos(
-  contratoId: number,
+  entidadeId: number,
+  tipo: 'entidade' | 'clinica' = 'entidade',
   session?: Session
 ): Promise<number> {
   const result = await query<{ total: number }>(
-    `SELECT COUNT(DISTINCT f.cpf) as total
-     FROM contratos_planos cp
-     LEFT JOIN funcionarios_entidades fe ON (
-       cp.tipo_tomador = 'entidade' AND fe.entidade_id = cp.entidade_id AND fe.ativo = true
-     )
-     LEFT JOIN funcionarios_clinicas fc ON (
-       cp.tipo_tomador = 'clinica' AND fc.clinica_id = cp.clinica_id AND fc.ativo = true
-     )
-     LEFT JOIN funcionarios f ON (
-       (fe.funcionario_id = f.id OR fc.funcionario_id = f.id) AND f.status = 'ativo'
-     )
-     WHERE cp.id = $1`,
-    [contratoId],
+    tipo === 'entidade'
+      ? `SELECT COUNT(DISTINCT f.cpf) as total
+         FROM funcionarios_entidades fe
+         JOIN funcionarios f ON fe.funcionario_id = f.id
+         WHERE fe.entidade_id = $1 AND fe.ativo = true AND f.status = 'ativo'`
+      : `SELECT COUNT(DISTINCT f.cpf) as total
+         FROM funcionarios_clinicas fc
+         JOIN funcionarios f ON fc.funcionario_id = f.id
+         WHERE fc.clinica_id = $1 AND fc.ativo = true AND f.status = 'ativo'`,
+    [entidadeId],
     session
   );
 

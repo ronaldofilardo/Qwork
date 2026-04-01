@@ -190,22 +190,9 @@ export async function POST(request: Request) {
       );
     }
 
-    // Buscar contrato plano mais recente da clínica (se houver)
-    const cpRes = await query(
-      `SELECT NULL::INTEGER as contrato_id, cp.created_at as contratacao_at, cp.valor_personalizado_por_funcionario
-       FROM contratos_planos cp
-       WHERE cp.clinica_id = $1
-       ORDER BY cp.created_at DESC
-       LIMIT 1`,
-      [clinicaId]
-    );
-
-    const cpRow = cpRes.rows[0] || {};
-
     // Buscar entidade_id associado ao pagamento/contrato
     let entidadeId: number | null = null;
-    let contratoId: number | null =
-      cpRow.contrato_id || pagamento.contrato_id || null;
+    let contratoId: number | null = pagamento.contrato_id || null;
     if (pagamento.entidade_id) {
       entidadeId = pagamento.entidade_id;
     } else if (contratoId) {
@@ -283,7 +270,6 @@ export async function POST(request: Request) {
     const dados: any = {
       contrato_id: contratoId,
       contratacao_at:
-        cpRow.contratacao_at ||
         pagamento.criado_em ||
         pagamento.data_pagamento ||
         new Date().toISOString(),
@@ -309,26 +295,6 @@ export async function POST(request: Request) {
       dados.numero_funcionarios = parseInt(funcsRes.rows[0].count) || 1;
     } catch {
       dados.numero_funcionarios = 1;
-    }
-
-    // Se contratos_planos tem valor_personalizado_por_funcionario e não há valor_pago explícito, calcular um valor_pago aproximado
-    try {
-      let cpValor = cpRow.valor_pago;
-      if (!cpValor && cpRow.valor_personalizado_por_funcionario) {
-        cpValor =
-          parseFloat(cpRow.valor_personalizado_por_funcionario) *
-          (dados.numero_funcionarios || 0);
-      }
-      if (cpValor) {
-        // Priorizar valor encontrado no contrato plano para o valor do pagamento
-        dados.pagamento_valor = cpValor;
-      }
-    } catch (err) {
-      // Silencioso: manter pagamento.valor original
-      console.warn(
-        '[HANDLER rh] erro ao calcular valor a partir de contratos_planos:',
-        err?.message || err
-      );
     }
 
     // Processar detalhes das parcelas (se não vierem, reconstruir a partir do pagamento)

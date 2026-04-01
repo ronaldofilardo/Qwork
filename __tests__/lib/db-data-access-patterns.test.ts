@@ -16,32 +16,12 @@ describe('db.ts — Padrões de Acesso a Dados', () => {
   // ==========================================================================
   // LEFT JOIN Pattern
   // ==========================================================================
-  describe('LEFT JOIN Pattern — getEntidadeById', () => {
-    it('deve incluir LEFT JOIN com planos para enriquecer dados', () => {
-      const sql = `SELECT c.*, p.tipo as plano_tipo, p.nome as plano_nome
-       FROM entidades c
-       LEFT JOIN planos p ON c.plano_id = p.id
-       WHERE c.id = $1`;
+  describe('SELECT Pattern — getEntidadeById', () => {
+    it('deve selecionar entidade com todas as colunas básicas', () => {
+      const sql = `SELECT c.* FROM entidades c WHERE c.id = $1`;
 
-      // Validar estrutura da query
-      expect(sql).toContain('LEFT JOIN planos');
-      expect(sql).toContain('p.tipo as plano_tipo');
-      expect(sql).toContain('p.nome as plano_nome');
+      expect(sql).toContain('FROM entidades c');
       expect(sql).toContain('WHERE c.id = $1');
-    });
-
-    it('LEFT JOIN deve retornar entidade mesmo sem plano vinculado', () => {
-      // Simular resultado de LEFT JOIN onde plano é NULL
-      const row = {
-        id: 1,
-        nome: 'Empresa A',
-        plano_id: null,
-        plano_tipo: null,
-        plano_nome: null,
-      };
-
-      expect(row.id).toBe(1);
-      expect(row.plano_tipo).toBeNull();
     });
   });
 
@@ -124,35 +104,6 @@ describe('db.ts — Padrões de Acesso a Dados', () => {
         : 'WHERE cf.entidade_id = $1';
 
       expect(sql).not.toContain('f.ativo = true');
-    });
-  });
-
-  // ==========================================================================
-  // COUNT DISTINCT Pattern
-  // ==========================================================================
-  describe('COUNT DISTINCT — contarFuncionariosAtivos', () => {
-    it('deve usar COUNT(DISTINCT f.cpf) para evitar duplicatas', () => {
-      const sql = `SELECT COUNT(DISTINCT f.cpf) as total
-     FROM contratos_planos cp
-     LEFT JOIN funcionarios f ON (
-       (cp.tipo_tomador = 'clinica' AND f.clinica_id = cp.clinica_id AND f.status = 'ativo')
-       OR 
-       (cp.tipo_tomador = 'entidade' AND f.entidade_id = cp.entidade_id AND f.status = 'ativo')
-     )
-     WHERE cp.id = $1`;
-
-      expect(sql).toContain('COUNT(DISTINCT f.cpf)');
-      expect(sql).toContain("f.status = 'ativo'");
-    });
-
-    it('deve retornar 0 quando nenhum funcionário ativo', () => {
-      const rows = [{ total: 0 }];
-      expect(rows[0]?.total || 0).toBe(0);
-    });
-
-    it('deve retornar total quando há funcionários', () => {
-      const rows = [{ total: 15 }];
-      expect(rows[0]?.total || 0).toBe(15);
     });
   });
 

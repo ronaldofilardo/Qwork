@@ -398,7 +398,7 @@ export default function SucessoCadastroPage() {
           tomadorId={tomador.id}
           contratoId={contratoIdFromParam}
           valor={0}
-          planoNome={'Serviço de Avaliação'}
+          titulo={'Serviço de Avaliação'}
           onPagamentoConfirmado={handlePagamentoConfirmado}
           initialMetodo={null}
         />

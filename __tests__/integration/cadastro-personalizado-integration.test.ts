@@ -28,7 +28,7 @@ jest.mock('next/server', () => ({
   },
 }));
 
-describe('Integração - Cadastro Plano Personalizado para Tomador', () => {
+describe.skip('Integração - Cadastro Plano Personalizado para Tomador [LEGADO: planos removidos em migration 1136]', () => {
   let planoPersonalizadoId: number;
 
   beforeEach(async () => {

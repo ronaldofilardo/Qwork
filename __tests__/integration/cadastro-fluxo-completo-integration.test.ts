@@ -8,7 +8,7 @@
 import { query, transaction } from '@/lib/db';
 import { ativartomador } from '@/lib/entidade-activation';
 
-describe('Integração: Fluxo Completo Cadastro → Ativação', () => {
+describe.skip('Integração: Fluxo Completo Cadastro → Ativação [LEGADO: planos removidos em migration 1136]', () => {
   describe('Cenário 1: Plano Fixo - Fluxo Feliz', () => {
     let tomadorId: number;
     let contratoId: number;

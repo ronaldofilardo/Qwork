@@ -10,7 +10,6 @@ export interface HealthCheckResult {
     database: HealthStatus;
     session: HealthStatus;
     mfa: HealthStatus;
-    planos: HealthStatus;
   };
   version: string;
   environment: string;
@@ -103,39 +102,16 @@ async function checkMFA(): Promise<HealthStatus> {
 }
 
 /**
- * Verificar sistema de planos
- */
-async function checkPlanos(): Promise<HealthStatus> {
-  try {
-    const result = await query(
-      "SELECT COUNT(*) FROM contratos_planos WHERE status = 'ativo'"
-    );
-    const activeContracts = result.rows[0]?.count || 0;
-
-    return {
-      status: 'ok',
-      message: `${activeContracts} contratos ativos`,
-    };
-  } catch (error) {
-    return {
-      status: 'error',
-      message: `Planos check failed: ${error instanceof Error ? error.message : 'Unknown'}`,
-    };
-  }
-}
-
-/**
  * Executar todos os health checks
  */
 export async function performHealthCheck(): Promise<HealthCheckResult> {
-  const [database, session, mfa, planos] = await Promise.all([
+  const [database, session, mfa] = await Promise.all([
     checkDatabase(),
     checkSession(),
     checkMFA(),
-    checkPlanos(),
   ]);
 
-  const checks = { database, session, mfa, planos };
+  const checks = { database, session, mfa };
 
   // Determinar status geral
   const hasError = Object.values(checks).some((c) => c.status === 'error');

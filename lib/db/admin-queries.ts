@@ -3,7 +3,7 @@
  *
  * Funções administrativas extraídas de lib/db.ts
  * Contém: ensureAdminPassword, getNotificacoesFinanceiras,
- *          marcarNotificacaoComoLida, getContratosPlanos
+ *          marcarNotificacaoComoLida
  */
 
 import bcrypt from 'bcryptjs';
@@ -114,42 +114,4 @@ export async function marcarNotificacaoComoLida(
     session
   );
   return result.rows[0];
-}
-
-/**
- * Obter contratos de planos para uma clínica ou entidade
- */
-export async function getContratosPlanos(
-  filter: {
-    clinica_id?: number;
-    entidade_id?: number;
-  },
-  session?: Session
-) {
-  if (!filter.clinica_id && !filter.entidade_id) {
-    throw new Error('Filtro de clinica_id ou entidade_id é obrigatório');
-  }
-
-  let queryText = `
-    SELECT cp.*, p.nome as plano_nome, p.tipo as plano_tipo
-    FROM contratos_planos cp
-    JOIN planos p ON cp.plano_id = p.id
-    WHERE cp.status = 'ativo'
-  `;
-  const params: unknown[] = [];
-
-  if (filter.clinica_id) {
-    params.push(filter.clinica_id);
-    queryText += ` AND cp.clinica_id = $${params.length}`;
-  }
-
-  if (filter.entidade_id) {
-    params.push(filter.entidade_id);
-    queryText += ` AND cp.entidade_id = $${params.length}`;
-  }
-
-  queryText += ' ORDER BY cp.created_at DESC';
-
-  const result = await query(queryText, params, session);
-  return result.rows;
 }

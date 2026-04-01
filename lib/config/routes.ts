@@ -6,7 +6,6 @@ export const PUBLIC_ROUTES = [
   '/login',
   '/api/auth/login',
   '/api/auth/logout',
-  '/api/planos',
   '/api/cadastro',
   '/api/public',
 ] as const;

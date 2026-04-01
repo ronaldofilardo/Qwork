@@ -65,24 +65,23 @@ export async function GET() {
     // Buscar contrato ativo da clínica
     const contratoQuery = `
       SELECT
-        cp.id,
-        cp.numero_contrato,
-        cp.valor_total,
-        cp.numero_funcionarios_contratados,
-        cp.vigencia_inicio,
-        cp.vigencia_fim,
-        cp.status,
-        cp.created_at
-      FROM contratos_planos cp
-      WHERE cp.clinica_id = $1 AND cp.status = 'ativo'
-      ORDER BY cp.created_at DESC
+        c.id,
+        c.numero_contrato,
+        c.valor_total,
+        c.numero_funcionarios,
+        c.aceito,
+        c.data_aceite,
+        c.tipo_tomador
+      FROM contratos c
+      WHERE c.clinica_id = $1 AND c.aceito = true
+      ORDER BY c.data_aceite DESC
       LIMIT 1
     `;
 
     const contratoResult = await query(contratoQuery, [clinica.id]);
     const contrato = contratoResult.rows[0] || null;
 
-    // Buscar pagamentos relacionados ao contrato
+    // Buscar pagamentos relacionados ao tomador
     let pagamentos = [];
     if (contrato) {
       const pagamentosQuery = `
@@ -94,12 +93,12 @@ export async function GET() {
           p.numero_parcelas,
           p.detalhes_parcelas
         FROM pagamentos p
-        WHERE p.tomador_id = $1
+        WHERE p.clinica_id = $1
         ORDER BY p.data_solicitacao DESC
         LIMIT 10
       `;
 
-      const pagamentosResult = await query(pagamentosQuery, [contrato.id]);
+      const pagamentosResult = await query(pagamentosQuery, [clinica.id]);
       pagamentos = pagamentosResult.rows;
     }
 
@@ -107,11 +106,9 @@ export async function GET() {
     const statsQuery = `
       SELECT
         COUNT(DISTINCT c.id) as total_clinicas,
-        COUNT(DISTINCT e.id) as total_entidades,
-        COUNT(DISTINCT co.id) as total_contratos_ativos
+        COUNT(DISTINCT e.id) as total_entidades
       FROM clinicas c
       CROSS JOIN empresas_clientes e
-      LEFT JOIN contratos_planos co ON co.status = 'ativo'
       WHERE c.ativa = true AND e.ativa = true
     `;
 
@@ -141,14 +138,13 @@ export async function GET() {
       // Contrato ativo
       contrato: contrato
         ? {
-            numero_contrato: contrato.numero_contrato,
-            valor_total: parseFloat(contrato.valor_total),
-            qtd_funcionarios_contratada:
-              contrato.numero_funcionarios_contratados,
-            vigencia_inicio: contrato.vigencia_inicio,
-            vigencia_fim: contrato.vigencia_fim,
-            status: contrato.status,
-            criado_em: contrato.created_at,
+            numero_contrato: contrato.numero_contrato || String(contrato.id),
+            valor_total: parseFloat(contrato.valor_total || '0'),
+            qtd_funcionarios_contratada: contrato.numero_funcionarios,
+            vigencia_inicio: contrato.data_aceite,
+            vigencia_fim: null,
+            status: contrato.aceito ? 'ativo' : 'pendente',
+            criado_em: contrato.data_aceite,
           }
         : null,
 
@@ -166,7 +162,6 @@ export async function GET() {
       estatisticas: {
         total_clinicas: parseInt(stats.total_clinicas),
         total_entidades: parseInt(stats.total_entidades),
-        total_contratos_ativos: parseInt(stats.total_contratos_ativos),
       },
     };
 

@@ -9,7 +9,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
 
-describe('ModalCadastrotomador - validações de planos', () => {
+describe.skip('ModalCadastrotomador - validações de planos [LEGADO: sistema de planos removido em migration 1136]', () => {
   beforeEach(() => {
     // Mockar fetch de planos
     global.fetch = jest.fn((url) => {

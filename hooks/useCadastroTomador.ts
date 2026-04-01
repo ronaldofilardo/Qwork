@@ -136,7 +136,6 @@ export function useCadastroTomador({
   const avancarEtapa = useCallback(() => {
     setErro('');
     if (etapaAtual === 'tipo') {
-      // NOVO: pula plano, vai direto pro dados
       setEtapaAtual('dados');
       return;
     }
@@ -155,7 +154,6 @@ export function useCadastroTomador({
         return;
       }
 
-      // NOVO: não gera contrato aqui; será gerado após aceitar no backend
       // Ir direto para confirmacao
       setEtapaAtual('confirmacao');
       return;
@@ -187,7 +185,6 @@ export function useCadastroTomador({
     setErro('');
 
     try {
-      // NOVO: sem seleção de plano, todos os campos são enviados como null
       const formData = new FormData();
       formData.append('tipo', tipo);
       Object.entries(dadostomador).forEach(([key, value]) =>

@@ -82,7 +82,7 @@ export async function GET(request: NextRequest) {
  * POST: Criar ou aceitar contrato
  * Body:
  * - acao: 'criar' | 'aceitar'
- * - Para criar: { tomador_id, plano_id, ip_aceite? }
+ * - Para criar: { tomador_id, ip_aceite? }
  * - Para aceitar: { contrato_id, ip_aceite }
  *
  * IMPORTANTE: Aceite de contrato NÃO requer autenticação (novos tomadors)
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
 
       // Buscar contrato com tipo_tomador para saber onde buscar
       const contratoRes = await query(
-        `SELECT id, tomador_id, plano_id, numero_funcionarios, valor_total, aceito, tipo_tomador FROM contratos WHERE id = $1`,
+        `SELECT id, tomador_id, numero_funcionarios, valor_total, aceito, tipo_tomador FROM contratos WHERE id = $1`,
         [contrato_id]
       );
 
@@ -277,11 +277,11 @@ export async function POST(request: NextRequest) {
     }
 
     if (acao === 'criar') {
-      const { tomador_id, plano_id, ip_aceite } = body;
+      const { tomador_id, ip_aceite } = body;
 
-      if (!tomador_id || !plano_id) {
+      if (!tomador_id) {
         return NextResponse.json(
-          { error: 'Dados incompletos. Forneça tomador_id e plano_id' },
+          { error: 'Dados incompletos. Forneça tomador_id' },
           { status: 400 }
         );
       }

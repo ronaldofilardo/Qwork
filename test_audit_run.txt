@@ -1,0 +1,10 @@
+npm warn Unknown project config "approve-builds". This will stop working in the next major version of npm.
+testPathPattern:
+
+  Option "testPathPattern" was replaced by "--testPathPatterns". "--testPathPatterns" is only available as a command-line option.
+  
+  Please update your configuration.
+
+  CLI Options Documentation:
+  https://jestjs.io/docs/cli
+

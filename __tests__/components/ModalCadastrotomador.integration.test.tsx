@@ -24,7 +24,7 @@ jest.mock('@/lib/cadastroApi', () => ({
   }),
 }));
 
-describe('ModalCadastrotomador - integração leve', () => {
+describe.skip('ModalCadastrotomador - integração leve [LEGADO: sistema de planos removido em migration 1136]', () => {
   test('fluxo básico: selecionar plano fixo e enviar', async () => {
     jest.useFakeTimers();
     const onClose = jest.fn();

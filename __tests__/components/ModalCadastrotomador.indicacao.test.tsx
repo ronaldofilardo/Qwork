@@ -55,6 +55,8 @@ const hookDefaults = {
   },
   codigoRepresentante: '',
   setCodigoRepresentante: jest.fn(),
+  semIndicacao: false,
+  setSemIndicacao: jest.fn(),
   handleDadosChange: jest.fn(),
   handleResponsavelChange: jest.fn(),
   handleFileChange: jest.fn(),
@@ -126,8 +128,9 @@ describe('ModalCadastrotomador – botão "Confirmar e Enviar" na etapa confirma
 
   it('exibe aviso de indicação quando código vazio e semIndicacao=false', () => {
     setup({ confirmacaoFinalAceita: true, codigoRepresentante: '' });
+    // O aviso condicional (distinto do parágrafo estático) contém "para prosseguir"
     expect(
-      screen.getByText(/Informe o código do representante/i)
+      screen.getByText(/para prosseguir/i)
     ).toBeInTheDocument();
   });
 
@@ -143,15 +146,11 @@ describe('ModalCadastrotomador – botão "Confirmar e Enviar" na etapa confirma
     expect(screen.getByText('Obrigatório')).toBeInTheDocument();
   });
 
-  it('ao marcar semIndicacao, o input de código fica desabilitado', async () => {
-    setup({ confirmacaoFinalAceita: false, codigoRepresentante: '' });
-    const semIndicacaoBox = screen.getByRole('checkbox', {
-      name: /Não fui indicado por nenhum representante/i,
-    });
-    fireEvent.click(semIndicacaoBox);
-    await waitFor(() => {
-      const input = screen.getByPlaceholderText(/REP-ABC123/i);
-      expect(input).toBeDisabled();
-    });
+  it('quando semIndicacao=true, o input de código fica desabilitado', () => {
+    // Renderiza diretamente com semIndicacao=true para testar o atributo disabled
+    // (sem necessidade de estado reativo via mock)
+    setup({ semIndicacao: true });
+    const input = screen.getByPlaceholderText(/REP-ABC123/i);
+    expect(input).toBeDisabled();
   });
 });

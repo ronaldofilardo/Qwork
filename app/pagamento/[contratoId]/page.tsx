@@ -46,107 +46,19 @@ export default function PagamentoPage() {
       try {
         let tomadorId: number | null = null;
         let contratoIdNumeric: number | null = null;
-        let numeroFuncionarios: number;
-        let valorTotal: number;
 
-        // Token a ser usado para iniciar o pagamento (pode vir de query/contratação/teste)
-        let _tokenForStart: string | undefined;
-
-        // Tratamento para link de pagamento com parâmetros diretos
-        const searchParamsGlobal = new URLSearchParams(window.location.search);
-        const hasDirectParams =
-          contratoId === 'personalizado' ||
-          searchParamsGlobal.has('contratacao_id');
-
-        if (hasDirectParams) {
-          const searchParams = searchParamsGlobal;
-
-          const contratacaoIdParam = searchParams.get('contratacao_id');
-          const tomadorIdParam =
-            searchParams.get('tomador_id') || searchParams.get('tomador_id');
-          const numeroFuncionariosParam = searchParams.get(
-            'numero_funcionarios'
-          );
-          const valorTotalParam = searchParams.get('valor_total');
-
-          // Token (quando presente no link)
-          const tokenFromQuery = searchParams.get('token') || undefined;
-
-          if (contratacaoIdParam) {
-            const contratacaoRes = await fetch(
-              `/api/contratacao_personalizada/${contratacaoIdParam}`
-            );
-            if (!contratacaoRes.ok) {
-              throw new Error('Contratação não encontrada');
-            }
-            const contratacaoData = await contratacaoRes.json();
-
-            tomadorId = contratacaoData.tomador_id
-              ? parseInt(String(contratacaoData.tomador_id))
-              : null;
-            numeroFuncionarios =
-              contratacaoData.numero_funcionarios ??
-              (numeroFuncionariosParam ? parseInt(numeroFuncionariosParam) : 1);
-            valorTotal =
-              contratacaoData.valor_total ??
-              (valorTotalParam ? parseFloat(valorTotalParam) : 0);
-
-            setPagamentoInfo({
-              pagamento_id: 0,
-              valor: valorTotal,
-              valor_unitario: contratacaoData.valor_por_funcionario
-                ? contratacaoData.valor_por_funcionario
-                : valorTotal,
-              numero_funcionarios: numeroFuncionarios,
-              tomador_nome: contratacaoData.tomador_nome ?? '',
-              status: 'aguardando_pagamento',
-            });
-
-            _tokenForStart =
-              contratacaoData.token || tokenFromQuery || 'abc123';
-          } else {
-            if (!tomadorIdParam) {
-              throw new Error('Parâmetro obrigatório: tomador_id');
-            }
-
-            tomadorId = parseInt(tomadorIdParam);
-            numeroFuncionarios = numeroFuncionariosParam
-              ? parseInt(numeroFuncionariosParam)
-              : 1;
-            valorTotal = valorTotalParam ? parseFloat(valorTotalParam) : 0;
-
-            // Buscar informações do tomador
-            const tomadorRes = await fetch(`/api/public/tomador/${tomadorId}`);
-            if (!tomadorRes.ok) {
-              throw new Error('Tomador não encontrado');
-            }
-            const tomadorData = await tomadorRes.json();
-
-            setPagamentoInfo({
-              pagamento_id: 0,
-              valor: valorTotal,
-              valor_unitario: valorTotal,
-              numero_funcionarios: numeroFuncionarios,
-              tomador_nome: tomadorData.nome,
-              status: 'aguardando_pagamento',
-            });
-
-            _tokenForStart = tokenFromQuery;
-          }
-        } else {
-          // Buscar tomador_id a partir do contrato_id
-          const contratoRes = await fetch(`/api/contratos/${contratoId}`);
-          if (!contratoRes.ok) {
-            throw new Error('Contrato não encontrado');
-          }
-
-          const { contrato } = await contratoRes.json();
-          tomadorId = contrato.tomador_id || contrato.tomador_id;
-          contratoIdNumeric = parseInt(contratoId);
-
-          numeroFuncionarios = contrato.numero_funcionarios;
-          valorTotal = contrato.valor_total;
+        // Buscar tomador_id a partir do contrato_id
+        const contratoRes = await fetch(`/api/contratos/${contratoId}`);
+        if (!contratoRes.ok) {
+          throw new Error('Contrato não encontrado');
         }
+
+        const { contrato } = await contratoRes.json();
+        tomadorId = contrato.tomador_id || contrato.tomador_id;
+        contratoIdNumeric = parseInt(contratoId);
+
+        const numeroFuncionarios = contrato.numero_funcionarios;
+        const valorTotal = contrato.valor_total;
 
         // Iniciar pagamento usando a rota dedicada
         const payload: any = {
@@ -155,10 +67,6 @@ export default function PagamentoPage() {
           numero_funcionarios: numeroFuncionarios,
           valor_total: valorTotal,
         };
-
-        if (typeof _tokenForStart !== 'undefined') {
-          payload.token = _tokenForStart;
-        }
 
         const pagamentoRes = await fetch('/api/pagamento/iniciar', {
           method: 'POST',
