@@ -3,25 +3,6 @@
 
 import { z } from 'zod';
 
-/**
- * Schemas de validação para planos e contratos
- */
-
-export const PlanoSchema = z.object({
-  nome: z.string().min(3).max(100),
-  descricao: z.string().optional(),
-  ativo: z.boolean().default(true),
-});
-
-export const ContratoPlanoSchema = z.object({
-  clinica_id: z.number().int().positive().optional(),
-  tomador_id: z.number().int().positive().optional(),
-  tipo_tomador: z.enum(['clinica', 'entidade']),
-  numero_funcionarios_estimado: z.number().int().positive(),
-  forma_pagamento: z.enum(['anual', 'mensal']).default('anual'),
-  numero_parcelas: z.number().int().min(1).max(12).default(1),
-});
-
 export const MFACodeSchema = z.object({
   cpf: z.string().length(11).regex(/^\d+$/),
   code: z.string().length(6).regex(/^\d+$/),

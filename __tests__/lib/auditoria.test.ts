@@ -69,7 +69,7 @@ describe('Sistema de Auditoria', () => {
         resource: 'contratos',
         action: 'INSERT' as const,
         resourceId: 101,
-        newData: { tomador_id: 50, plano_id: 1 },
+        newData: { tomador_id: 50 },
         ipAddress: '10.0.0.1',
         userAgent: 'Chrome/120.0',
         details: 'Contrato criado automaticamente',

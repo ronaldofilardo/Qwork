@@ -23,7 +23,7 @@ interface ModalPagamentoProps {
   tomadorId: number;
   contratoId: number;
   valor: number;
-  planoNome: string;
+  titulo: string;
   onPagamentoConfirmado?: (data?: any) => void;
   // Para facilitar testes/integrações de dev: método inicial (opcional)
   initialMetodo?: MetodoPagamento | null;
@@ -37,7 +37,7 @@ export default function ModalPagamento({
   tomadorId,
   contratoId,
   valor,
-  planoNome,
+  titulo,
   onPagamentoConfirmado,
   initialMetodo = null,
 }: ModalPagamentoProps) {
@@ -244,11 +244,9 @@ export default function ModalPagamento({
         <div className="p-6">
           {!pagamentoRealizado ? (
             <>
-              {/* Informações do plano */}
+              {/* Informações do serviço */}
               <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  {planoNome}
-                </h3>
+                <h3 className="font-semibold text-gray-900 mb-2">{titulo}</h3>
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Valor:</span>
                   <span className="text-2xl font-bold text-orange-600">

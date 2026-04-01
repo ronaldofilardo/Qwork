@@ -243,7 +243,9 @@ export default function AccountInfoContent({
           ) : (
             <div className="text-center py-8">
               <FileText className="mx-auto text-gray-400 mb-2" size={32} />
-              <p className="text-sm text-gray-500">Nenhum plano contratado</p>
+              <p className="text-sm text-gray-500">
+                Nenhum contrato encontrado
+              </p>
             </div>
           )}
         </div>

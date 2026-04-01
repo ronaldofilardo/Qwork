@@ -33,7 +33,6 @@ export interface Notificacao {
   lida: boolean;
   data_leitura?: Date;
   arquivada: boolean;
-  contratacao_personalizada_id?: number;
   criado_em: Date;
   expira_em?: Date;
   // Campos da view
@@ -52,7 +51,6 @@ export interface CriarNotificacaoDTO {
   dados_contexto?: Record<string, any>;
   link_acao?: string;
   botao_texto?: string;
-  contratacao_personalizada_id?: number;
   expira_em?: Date;
 }
 
@@ -74,8 +72,8 @@ export class NotificationService {
       `INSERT INTO notificacoes (
         tipo, prioridade, destinatario_cpf, destinatario_tipo,
         titulo, mensagem, dados_contexto, link_acao, botao_texto,
-        contratacao_personalizada_id, expira_em
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        expira_em
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
       RETURNING *`,
       [
         dto.tipo,
@@ -87,7 +85,6 @@ export class NotificationService {
         dto.dados_contexto ? JSON.stringify(dto.dados_contexto) : null,
         dto.link_acao || null,
         dto.botao_texto || null,
-        dto.contratacao_personalizada_id || null,
         dto.expira_em || null,
       ]
     );
@@ -246,11 +243,11 @@ export class NotificationService {
       `INSERT INTO notificacoes (
         tipo, prioridade, destinatario_cpf, destinatario_tipo,
         titulo, mensagem, dados_contexto, link_acao, botao_texto,
-        contratacao_personalizada_id, expira_em
+        expira_em
       )
       SELECT 
         $1, $2, u.cpf, 'admin',
-        $3, $4, $5, $6, $7, $8, $9
+        $3, $4, $5, $6, $7, $8
       FROM usuarios u
       WHERE u.role = 'admin' AND u.ativo = TRUE
       RETURNING id`,
@@ -262,7 +259,6 @@ export class NotificationService {
         dto.dados_contexto ? JSON.stringify(dto.dados_contexto) : null,
         dto.link_acao || null,
         dto.botao_texto || null,
-        dto.contratacao_personalizada_id || null,
         dto.expira_em || null,
       ]
     );

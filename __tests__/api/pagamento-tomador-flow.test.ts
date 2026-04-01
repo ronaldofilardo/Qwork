@@ -75,12 +75,12 @@ describe('API Pagamento - Fluxo Tomador', () => {
     });
 
     it('deve usar tomador_id em INSERT to pagamentos', async () => {
-      // Validar que a query usa tomador_id, não tomador_id
+      // Validar que a query usa tomador_id, não contratante_id (nome legado)
       const expectedQuery =
         'INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo) VALUES ($1, $2, $3, $4, $5)';
 
       expect(expectedQuery).toContain('tomador_id');
-      expect(expectedQuery).not.toContain('tomador_id');
+      expect(expectedQuery).not.toContain('contratante_id');
     });
   });
 
@@ -192,51 +192,6 @@ describe('API Pagamento - Fluxo Tomador', () => {
     });
   });
 
-  describe('GET /api/pagamento/personalizado/[token]', () => {
-    it('deve buscar dados de tomadores na validação de link personalizado', async () => {
-      mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            contratacao_id: 100,
-            tomador_id: 123,
-            tomador_id: 123,
-            tipo: 'entidade',
-            tomador_nome: 'Empresa Teste',
-            valor_por_funcionario: 20.0,
-            numero_funcionarios_estimado: 50,
-            valor_total_estimado: 1000,
-            status: 'valor_definido',
-          },
-        ],
-        rowCount: 1,
-      });
-
-      const result = await mockQuery(
-        'SELECT t.tipo, t.id as tomador_id FROM contratacao_personalizada cp JOIN tomadores t WHERE cp.payment_link_token = $1',
-        ['abc123']
-      );
-
-      expect(result.rows[0].tomador_id).toBe(123);
-      expect(result.rows[0].tipo).toBe('entidade');
-    });
-
-    it('deve retornar tomador_id e tipo na resposta', async () => {
-      const responsePayload = {
-        valido: true,
-        contratacao_id: 100,
-        tomador_id: 123,
-        tipo: 'entidade',
-        tomador_nome: 'Empresa Teste',
-        valor_total: 1000,
-        status: 'valor_definido',
-      };
-
-      expect(responsePayload.tomador_id).toBeDefined();
-      expect(responsePayload.tipo).toBeDefined();
-      expect(responsePayload.tomador_id).toBe(123);
-    });
-  });
-
   describe('Validações de integridade', () => {
     it('deve garantir que contratos usam tomador_id em JOINs', async () => {
       const expectedQueries = [
@@ -246,7 +201,7 @@ describe('API Pagamento - Fluxo Tomador', () => {
 
       expectedQueries.forEach((query) => {
         expect(query).toContain('tomador_id');
-        expect(query).not.toContain('tomador_id');
+        expect(query).not.toContain('contratante_id');
       });
     });
 

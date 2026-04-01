@@ -470,7 +470,7 @@ export const DOMAIN_RULES: Array<{
     domain: 'Entidades & Comercial',
     emoji: '🏢',
     prefixes:
-      /^(entidades|empresas|representantes|planos|contratos|contratacoes|aceites|configuracoes_plano|vinculos)/,
+      /^(entidades|empresas|representantes|contratos|contratacoes|aceites|vinculos)/,
   },
   {
     domain: 'Avaliações & Laudos',

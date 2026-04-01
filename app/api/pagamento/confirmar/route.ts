@@ -624,21 +624,6 @@ export async function POST(request: NextRequest) {
             "UPDATE contratos SET status = 'pendente', aceito = false WHERE entidade_id = $1",
             [entidadeIdForRollback]
           );
-        }
-
-        // Voltar pré-contrato para fase de definição
-        if (entidadeIdForRollback) {
-          await query(
-            `UPDATE contratacao_personalizada
-             SET status = 'aguardando_valor_admin',
-                 valor_por_funcionario = NULL,
-                 valor_total_estimado = NULL,
-                 numero_funcionarios_estimado = NULL,
-                 payment_link_token = NULL,
-                 payment_link_expiracao = NULL
-             WHERE entidade_id = $1`,
-            [entidadeIdForRollback]
-          );
 
           // Marcar entidade como pendente novamente
           await query(

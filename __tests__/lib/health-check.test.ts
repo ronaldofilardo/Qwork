@@ -27,7 +27,6 @@ describe('lib/health-check — performHealthCheck', () => {
     expect(result.checks.database.status).toBe('ok');
     expect(result.checks.session.status).toBe('ok');
     expect(result.checks.mfa.status).toBe('ok');
-    expect(result.checks.planos.status).toBe('ok');
     expect(result.timestamp).toBeDefined();
     expect(result.version).toBeDefined();
     expect(result.environment).toBeDefined();
@@ -83,17 +82,7 @@ describe('lib/health-check — performHealthCheck', () => {
     expect(typeof result.checks.database.responseTime).toBe('number');
   });
 
-  it('planos deve sempre retornar ok (migrado para pagamento por lote)', async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ '?column?': 1 }] })
-      .mockResolvedValueOnce({ rows: [{ count: 0 }] })
-      .mockResolvedValueOnce({ rows: [{ count: 0 }] });
-
-    const result = await performHealthCheck();
-
-    expect(result.checks.planos.status).toBe('ok');
-    expect(result.checks.planos.message).toContain('migrado');
-  });
+  // planos foi removido do health-check (sistema migrado para pagamento por lote em migration 1136)
 });
 
 describe('lib/health-check — getSystemMetrics', () => {

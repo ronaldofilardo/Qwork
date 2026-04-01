@@ -56,7 +56,7 @@ describe('ModalPagamento - simulação de pagamento (dev)', () => {
         tomadorId={10}
         contratoId={99}
         valor={499}
-        planoNome="Plano Básico"
+        titulo="Plano Básico"
         onPagamentoConfirmado={onPagamentoConfirmado}
         initialMetodo={'pix'}
       />
@@ -150,7 +150,7 @@ describe('ModalPagamento - simulação de pagamento (dev)', () => {
         tomadorId={10}
         contratoId={99}
         valor={499}
-        planoNome="Plano Básico"
+        titulo="Plano Básico"
         onPagamentoConfirmado={() => {}}
         initialMetodo={null}
       />

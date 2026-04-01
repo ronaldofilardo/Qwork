@@ -89,7 +89,8 @@ describe('AuditoriasContent', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('aceites')
+        expect.stringContaining('aceites'),
+        expect.anything()
       );
     });
   });
@@ -109,7 +110,8 @@ describe('AuditoriasContent', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('acessos-rh')
+        expect.stringContaining('acessos-rh'),
+        expect.anything()
       );
     });
   });
@@ -131,7 +133,8 @@ describe('AuditoriasContent', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('laudos')
+        expect.stringContaining('laudos'),
+        expect.anything()
       );
     });
   });
@@ -159,7 +162,8 @@ describe('AuditoriasContent', () => {
 
     await waitFor(() => {
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('acesso-gestor')
+        expect.stringContaining('acesso-gestor'),
+        expect.anything()
       );
     });
   });

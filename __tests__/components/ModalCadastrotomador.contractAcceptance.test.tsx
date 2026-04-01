@@ -35,7 +35,7 @@ beforeEach(() => {
   }) as jest.Mock;
 });
 
-describe('ModalCadastrotomador - aceite do contrato habilita botão Próximo', () => {
+describe.skip('ModalCadastrotomador - aceite do contrato habilita botão Próximo [LEGADO: fluxo de planos removido em migration 1136]', () => {
   it('bloqueia Próximo na etapa contrato até aceitar os termos', async () => {
     render(<ModalCadastrotomador isOpen={true} onClose={() => {}} />);
 

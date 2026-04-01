@@ -52,7 +52,6 @@ export default function ModalCadastroTomador({
   // Estado e handlers agora são gerenciados pelo hook `useCadastroTomador`
   // (aliases abaixo mapeiam os nomes antigos para a API do hook)
 
-  // Novos estados para planos
   // Extrair estados e handlers para hook `useCadastroTomador`
   const hook = useCadastroTomador({ initialTipo: tipoInicial });
   const {
@@ -74,8 +73,8 @@ export default function ModalCadastroTomador({
     setCodigoRepresentante: setCodigoRepresentanteHook,
     semIndicacao: semIndicacaoHook,
     setSemIndicacao: setSemIndicacaoHook,
-    dadosContratante: dadosContratanteHook,
-    setDadosContratante: setDadosContratanteHook,
+    dadostomador: dadosContratanteHook,
+    setDadostomador: setDadosContratanteHook,
     dadosResponsavel: dadosResponsavelHook,
     setDadosResponsavel: setDadosResponsavelHook,
     arquivos: arquivosHook,
@@ -128,10 +127,7 @@ export default function ModalCadastroTomador({
     }
   }, [redirectUrl]);
 
-  // Fetch e ajustes de plano são gerenciados pelo hook `useCadastroTomador` (internamente já faz getPlanos e ajuste de número de funcionários).
-
-  // A geração de contrato foi extraída para `lib/cadastroTomador.ts` e deve ser
-  // chamada via `gerarContratoSimulado({ plano, dadosTomador, dadosResponsavel, numeroFuncionarios, tipo })` quando necessário.
+  // A geração de contrato foi extraída para `lib/cadastroTomador.ts`.
   // Local implementation removed to avoid duplicação e manter domínio testável.
 
   if (!isOpen) return null;

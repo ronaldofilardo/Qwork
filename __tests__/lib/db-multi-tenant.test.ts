@@ -7,7 +7,7 @@
  *  - contarFuncionariosAtivos
  *  - getNotificacoesFinanceiras (filtros combinados)
  *  - marcarNotificacaoComoLida
- *  - getContratosPlanos (filtro obrigatório)
+
  */
 
 const mockQueryFn = jest.fn();
@@ -205,52 +205,6 @@ describe('db.ts — Multi-Tenant & Notificações', () => {
 
       expect(buildQuery(true)).toContain('lida = false');
       expect(buildQuery(false)).not.toContain('lida = false');
-    });
-  });
-
-  // ==========================================================================
-  // getContratosPlanos - Validação de filtro obrigatório
-  // ==========================================================================
-  describe('getContratosPlanos - Lógica', () => {
-    it('deve rejeitar sem filtro', () => {
-      const getContratosPlanos = (filter: {
-        clinica_id?: number;
-        entidade_id?: number;
-      }) => {
-        if (!filter.clinica_id && !filter.entidade_id) {
-          throw new Error('Filtro de clinica_id ou entidade_id é obrigatório');
-        }
-      };
-
-      expect(() => getContratosPlanos({})).toThrow(/obrigatório/);
-    });
-
-    it('deve aceitar clinica_id', () => {
-      const getContratosPlanos = (filter: {
-        clinica_id?: number;
-        entidade_id?: number;
-      }) => {
-        if (!filter.clinica_id && !filter.entidade_id) {
-          throw new Error('Filtro obrigatório');
-        }
-        return true;
-      };
-
-      expect(getContratosPlanos({ clinica_id: 5 })).toBe(true);
-    });
-
-    it('deve aceitar entidade_id', () => {
-      const getContratosPlanos = (filter: {
-        clinica_id?: number;
-        entidade_id?: number;
-      }) => {
-        if (!filter.clinica_id && !filter.entidade_id) {
-          throw new Error('Filtro obrigatório');
-        }
-        return true;
-      };
-
-      expect(getContratosPlanos({ entidade_id: 10 })).toBe(true);
     });
   });
 });

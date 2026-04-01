@@ -11,7 +11,7 @@
 
 import { query } from '@/lib/db';
 
-describe('Consistência Payment Status - Entidade e Clínica', () => {
+describe.skip('Consistência Payment Status - Entidade e Clínica [LEGADO: usa contratos_planos removida em migration 1136]', () => {
   let testtomadorEntidadeId: number;
   let testtomadorClinicaId: number;
   let testContratoId: number;

@@ -31,7 +31,6 @@ export async function handleGetNovosCadastros(
     let queryText = `
       SELECT 
         c.*, 
-        NULL::INTEGER as contratacao_personalizada_id,
         NULL::INTEGER as numero_funcionarios_estimado,
         NULL::DECIMAL as valor_por_funcionario,
         NULL::DECIMAL as valor_total_estimado,
@@ -59,7 +58,6 @@ export async function handleGetNovosCadastros(
   const queryText = `
     SELECT 
       c.*, 
-      NULL::INTEGER as contratacao_personalizada_id,
       NULL::INTEGER as numero_funcionarios_estimado,
       NULL::DECIMAL as valor_por_funcionario,
       NULL::DECIMAL as valor_total_estimado,

@@ -597,7 +597,7 @@ describe('EntidadeContaSection', () => {
 
     // Não deve acionar o endpoint de fallback nem abrir modal
     expect(global.fetch).not.toHaveBeenCalledWith(
-      expect.stringContaining('/api/entidade/contrato-fallback')
+      expect.stringContaining('/api/contratos')
     );
     expect(screen.queryByTestId('modal-contrato')).not.toBeInTheDocument();
   });

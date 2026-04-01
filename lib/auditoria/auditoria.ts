@@ -11,7 +11,6 @@ export type EntidadeTipo =
   | 'contrato'
   | 'pagamento'
   | 'recibo'
-  | 'plano'
   | 'funcionario'
   | 'usuario'
   | 'login';
