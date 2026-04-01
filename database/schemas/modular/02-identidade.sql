@@ -474,7 +474,6 @@ CREATE TABLE public.clinicas (
     aprovado_por_cpf character varying(11),
     pagamento_confirmado boolean DEFAULT false,
     numero_funcionarios_estimado integer,
-    plano_id integer,
     data_primeiro_pagamento timestamp without time zone,
     data_liberacao_login timestamp without time zone,
     contrato_aceito boolean DEFAULT false,
@@ -1817,13 +1816,6 @@ ALTER TABLE ONLY public.clinicas
     ADD CONSTRAINT clinicas_entidade_id_fkey FOREIGN KEY (entidade_id) REFERENCES public.entidades(id);
 
 
-
---
--- Name: clinicas clinicas_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.clinicas
-    ADD CONSTRAINT clinicas_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
 
 
 

@@ -374,58 +374,6 @@ $$;
 ALTER FUNCTION public.marcar_notificacoes_lidas(p_notificacao_ids integer[], p_usuario_cpf text) OWNER TO postgres;
 
 
---
--- Name: notificar_sla_excedido(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.notificar_sla_excedido() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-DECLARE
-  v_contratante_nome TEXT;
-  v_horas_decorridas NUMERIC;
-BEGIN
-  -- Calcular horas desde criação
-  v_horas_decorridas := EXTRACT(EPOCH FROM (NOW() - NEW.criado_em)) / 3600;
-
-  IF v_horas_decorridas > 48 AND NEW.status = 'aguardando_valor_admin' THEN
-    -- Buscar nome do contratante
-    SELECT nome_fantasia INTO v_contratante_nome
-    FROM clinicas
-    WHERE id = NEW.contratante_id;
-
-    -- Notificar admins sobre SLA excedido
-    INSERT INTO notificacoes (
-      tipo, prioridade, destinatario_id, destinatario_tipo,
-      titulo, mensagem, dados_contexto, link_acao, botao_texto,
-      contratacao_personalizada_id
-    )
-    SELECT 
-      'sla_excedido',
-      'critica',
-      u.id,
-      'admin',
-      '🚨 SLA Excedido: ' || v_contratante_nome,
-      'Pré-cadastro aguardando definição de valor há mais de 48 horas. Ação urgente necessária.',
-      jsonb_build_object(
-        'contratacao_id', NEW.id,
-        'horas_decorridas', ROUND(v_horas_decorridas, 1),
-        'contratante_nome', v_contratante_nome
-      ),
-      '/admin/contratacao/pendentes',
-      'Definir Valor Agora',
-      NEW.id
-    FROM usuarios u
-    WHERE u.role = 'admin' AND u.ativo = TRUE;
-  END IF;
-
-  RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.notificar_sla_excedido() OWNER TO postgres;
-
 
 --
 -- Name: resolver_notificacao(integer, character varying); Type: FUNCTION; Schema: public; Owner: postgres
@@ -985,55 +933,6 @@ ALTER SEQUENCE public.pagamentos_id_seq OWNED BY public.pagamentos.id;
 
 
 
---
--- Name: payment_links; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.payment_links (
-    id integer NOT NULL,
-    token character varying(255) NOT NULL,
-    contrato_id integer NOT NULL,
-    criado_por_cpf character varying(11),
-    usado boolean DEFAULT false NOT NULL,
-    usado_em timestamp without time zone,
-    expiracao timestamp without time zone,
-    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL
-);
-
-
-ALTER TABLE public.payment_links OWNER TO postgres;
-
-
---
--- Name: TABLE payment_links; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON TABLE public.payment_links IS 'Links de uso único enviados pelo admin para permitir pagamento de planos personalizados';
-
-
-
---
--- Name: payment_links_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.payment_links_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.payment_links_id_seq OWNER TO postgres;
-
-
---
--- Name: payment_links_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.payment_links_id_seq OWNED BY public.payment_links.id;
-
 
 
 --
@@ -1331,12 +1230,6 @@ ALTER TABLE ONLY public.pagamentos ALTER COLUMN id SET DEFAULT nextval('public.p
 
 
 
---
--- Name: payment_links id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.payment_links ALTER COLUMN id SET DEFAULT nextval('public.payment_links_id_seq'::regclass);
-
 
 
 --
@@ -1425,22 +1318,6 @@ ALTER TABLE ONLY public.pagamentos
     ADD CONSTRAINT pagamentos_pkey PRIMARY KEY (id);
 
 
-
---
--- Name: payment_links payment_links_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.payment_links
-    ADD CONSTRAINT payment_links_pkey PRIMARY KEY (id);
-
-
-
---
--- Name: payment_links payment_links_token_key; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.payment_links
-    ADD CONSTRAINT payment_links_token_key UNIQUE (token);
 
 
 
@@ -1779,20 +1656,6 @@ CREATE INDEX idx_pagamentos_status ON public.pagamentos USING btree (status);
 CREATE INDEX idx_pagamentos_tomador_id ON public.pagamentos USING btree (tomador_id);
 
 
-
---
--- Name: idx_payment_links_contrato_id; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_payment_links_contrato_id ON public.payment_links USING btree (contrato_id);
-
-
-
---
--- Name: idx_payment_links_usado; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_payment_links_usado ON public.payment_links USING btree (usado) WHERE (usado = false);
 
 
 
@@ -2134,13 +1997,6 @@ ALTER TABLE ONLY public.pagamentos
     ADD CONSTRAINT pagamentos_contrato_id_fkey FOREIGN KEY (contrato_id) REFERENCES public.contratos(id) ON DELETE SET NULL;
 
 
-
---
--- Name: payment_links payment_links_contrato_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.payment_links
-    ADD CONSTRAINT payment_links_contrato_id_fkey FOREIGN KEY (contrato_id) REFERENCES public.contratos(id) ON DELETE CASCADE;
 
 
 
