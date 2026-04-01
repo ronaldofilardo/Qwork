@@ -50,48 +50,47 @@ describe('Database Configuration Tests', () => {
   });
 
   describe('Database URL validation messages', () => {
+    // Fonte de verdade: lib/db/connection.ts (módulo principal de conexão)
     test('should show clear message about development database when LOCAL_DATABASE_URL is not defined', () => {
-      // This test verifies that the warning message is clear about using the correct database
+      // Verifica que a mensagem de erro menciona o banco de desenvolvimento
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that the warning message mentions the development database
+      // A mensagem de erro deve mencionar o banco nr-bps_db
       expect(dbContent).toMatch(/banco "nr-bps_db"/);
     });
 
     test('should validate that test database URL points to test database', () => {
-      // This test verifies that the validation logic exists
+      // Verifica que existe validação da URL de teste
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that there's validation for test database URL
       expect(dbContent).toMatch(/TEST_DATABASE_URL.*banco de desenvolvimento/);
       expect(dbContent).toMatch(/nr-bps_db_test/);
     });
 
     test('should prevent development database usage in tests', () => {
-      // This test verifies that isolation validation exists
+      // Verifica que existe validação que impede banco de dev em testes
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that there's validation preventing dev DB in tests
-      expect(dbContent).toMatch(/banco de desenvolvimento.*ambiente de testes/);
+      // O módulo deve ter mensagem que menciona tentativa de usar banco de dev em testes
+      expect(dbContent).toMatch(/uso acidental do banco de desenvolvimento/i);
     });
 
     test('should prevent test database usage in development', () => {
-      // This test verifies that isolation validation exists
+      // Verifica que existe validação que impede banco de teste em desenvolvimento
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that there's validation preventing test DB in development
       expect(dbContent).toMatch(
         /banco de testes.*desenvolvimento|test.*development.*banco/i
       );
@@ -100,41 +99,46 @@ describe('Database Configuration Tests', () => {
 
   describe('Environment-specific database requirements', () => {
     test('should require TEST_DATABASE_URL for test environment', () => {
-      // This test verifies that the error message for missing TEST_DATABASE_URL exists
+      // Verifica que TEST_DATABASE_URL é exigida para ambiente de testes
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that TEST_DATABASE_URL is required for tests
       expect(dbContent).toMatch(/TEST_DATABASE_URL não está definido/);
       expect(dbContent).toMatch(/nr-bps_db_test/);
     });
 
     test('should require DATABASE_URL for production environment', () => {
-      // This test verifies that DATABASE_URL is required for production
+      // Verifica que DATABASE_URL é exigida para produção
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that DATABASE_URL is required for production
       expect(dbContent).toMatch(
         /DATABASE_URL não está definido para ambiente de produção/
       );
     });
 
-    test('should have fallback to development database when LOCAL_DATABASE_URL is not set', () => {
-      // This test verifies that there's a fallback for development
+    test('should throw error (not use hardcoded credentials) when LOCAL_DATABASE_URL is not set', () => {
+      // SEGURANÇA: verifica que o módulo lança erro em vez de usar URL hardcoded
+      // com credenciais padrão quando LOCAL_DATABASE_URL não está definido.
+      // Corrigido em 01/04/2026 — remoção de credenciais hardcoded (OWASP A2).
       const fs = require('fs');
       const path = require('path');
-      const dbPath = path.join(__dirname, '../../lib/db.ts');
+      const dbPath = path.join(__dirname, '../../lib/db/connection.ts');
       const dbContent = fs.readFileSync(dbPath, 'utf8');
 
-      // Verify that there's a fallback database URL for development
-      expect(dbContent).toMatch(
-        /postgresql:\/\/postgres:123456@localhost:5432\/nr-bps_db/
+      // NÃO deve conter URL hardcoded como fallback
+      expect(dbContent).not.toMatch(
+        /return 'postgresql:\/\/postgres:123456@localhost:5432\/nr-bps_db'/
       );
+
+      // DEVE lançar erro com mensagem clara quando LOCAL_DATABASE_URL não está definido
+      expect(dbContent).toMatch(/throw new Error/);
+      expect(dbContent).toMatch(/LOCAL_DATABASE_URL não está definido/);
+      expect(dbContent).toMatch(/DATABASE_SETUP\.md/);
     });
   });
 

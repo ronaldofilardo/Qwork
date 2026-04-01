@@ -24,9 +24,6 @@ export default function SucessoCadastroPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const tomadorId = searchParams.get('id');
-  const tipoParam = searchParams.get('tipo');
-
-  const [dadosEnviados, setDadosEnviados] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
@@ -147,22 +144,13 @@ export default function SucessoCadastroPage() {
     } catch (error) {
       console.error('Erro ao carregar dados:', error);
 
-      // Caso de contratacao personalizada: o simulador pode ter enviado os dados
-      // e a API pública pode falhar por race condition/timeout — para não mostrar
-      // um erro alarmante, tratamos como "dados enviados" quando `tipo=personalizado`.
-      if (tipoParam === 'personalizado') {
-        setDadosEnviados(true);
-        setLoading(false);
-        return;
-      }
-
       setErro(
         error instanceof Error ? error.message : 'Erro ao carregar dados'
       );
     } finally {
       setLoading(false);
     }
-  }, [tomadorId, tipoParam, getProximosPassosForTipo]);
+  }, [tomadorId, getProximosPassosForTipo]);
 
   useEffect(() => {
     // Sempre tentar carregar dados — carregador lida com ausência de `id`
@@ -227,35 +215,6 @@ export default function SucessoCadastroPage() {
             className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
           >
             Ir para Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  if (dadosEnviados) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-        <div
-          data-testid="dados-enviados"
-          className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full text-center"
-        >
-          <div className="mx-auto w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-            <Check className="w-12 h-12 text-blue-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-3">
-            Dados enviados com sucesso!
-          </h2>
-          <p className="text-gray-600 mb-6">
-            Recebemos seus dados e os encaminhamos para análise do
-            Administrador. Normalmente a resposta chega em até 48 horas; você
-            será notificado por e-mail.
-          </p>
-          <button
-            onClick={() => router.push('/')}
-            className="w-full px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600"
-          >
-            Voltar ao Início
           </button>
         </div>
       </div>

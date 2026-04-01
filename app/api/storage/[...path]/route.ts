@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
+import { getSession } from '@/lib/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,15 @@ export async function GET(
   { params }: { params: { path: string[] } }
 ) {
   try {
+    // Verificar autenticação
+    const session = getSession();
+    if (!session) {
+      return NextResponse.json(
+        { error: 'Autenticação requerida' },
+        { status: 401 }
+      );
+    }
+
     if (!params.path || params.path.length === 0) {
       return NextResponse.json(
         { error: 'Caminho não especificado' },

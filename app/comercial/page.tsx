@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
+import { useComercial } from './comercial-context';
 import { ComissoesContent } from '@/components/admin/ComissoesContent';
 import ComercialLeadsAprovacaoPage from './leads/page';
 import type { Lead } from '@/app/admin/representantes/types';
@@ -168,8 +169,7 @@ interface RepMetrica {
 export default function ComercialPage() {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeSection, setActiveSection] =
-    useState<ComercialSection>('representantes');
+  const { activeSection, setActiveSection } = useComercial();
   const [repsMetrica, setRepsMetrica] = useState<RepMetrica[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
   const [kpis, setKpis] = useState<KPIs>({

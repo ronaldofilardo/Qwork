@@ -39,34 +39,18 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
       },
     }).as('getClinicas');
 
-    cy.intercept(
-      'GET',
-      '/api/admin/tomadors?tipo=clinica&plano_personalizado_pendente=true',
-      {
-        statusCode: 200,
-        body: { success: true, tomadors: [], total: 0 },
-      }
-    ).as('getClinicasPersonalizado');
-
     // Interceptar DELETE e verificar senha no body
-    cy.intercept(
-      { method: 'DELETE', url: '/api/admin/tomadors' },
-      (req) => {
-        const body = req.body;
-        if (
-          body &&
-          body.admin_password &&
-          body.admin_password === 'wrongpass'
-        ) {
-          req.reply({
-            statusCode: 403,
-            body: { error: 'Senha do admin inválida' },
-          });
-        } else {
-          req.reply({ statusCode: 200, body: { success: true } });
-        }
+    cy.intercept({ method: 'DELETE', url: '/api/admin/tomadors' }, (req) => {
+      const body = req.body;
+      if (body && body.admin_password && body.admin_password === 'wrongpass') {
+        req.reply({
+          statusCode: 403,
+          body: { error: 'Senha do admin inválida' },
+        });
+      } else {
+        req.reply({ statusCode: 200, body: { success: true } });
       }
-    ).as('deleteClinica');
+    }).as('deleteClinica');
 
     // Visitar página de clínicas (Admin)
     cy.contains('Clínicas / Serviços de Medicina Ocupacional').should(
@@ -74,7 +58,7 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
     );
 
     // Esperar lista carregar
-    cy.wait(['@getClinicas', '@getClinicasPersonalizado']);
+    cy.wait(['@getClinicas']);
 
     // Clicar no botão de deletar (lixeira)
     cy.get('[title="Deletar clínica definitivamente"]').first().click();
@@ -122,22 +106,10 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
       });
     }).as('getClinicas2');
 
-    cy.intercept(
-      'GET',
-      '/api/admin/tomadors?tipo=clinica&plano_personalizado_pendente=true',
-      {
-        statusCode: 200,
-        body: { success: true, tomadors: [], total: 0 },
-      }
-    ).as('getClinicasPersonalizado2');
-
     // Interceptar DELETE e retornar sucesso
-    cy.intercept(
-      { method: 'DELETE', url: '/api/admin/tomadors' },
-      (req) => {
-        req.reply({ statusCode: 200, body: { success: true } });
-      }
-    ).as('deleteClinica2');
+    cy.intercept({ method: 'DELETE', url: '/api/admin/tomadors' }, (req) => {
+      req.reply({ statusCode: 200, body: { success: true } });
+    }).as('deleteClinica2');
 
     // Intercept para a chamada subsequente de GET que retornará lista vazia
     cy.intercept('GET', '/api/admin/tomadors?tipo=clinica', {
@@ -146,7 +118,7 @@ describe('Admin - Deletar Clínica com confirmação de senha', () => {
     }).as('getClinicasAfterDelete');
 
     // Esperar carregar
-    cy.wait(['@getClinicas2', '@getClinicasPersonalizado2']);
+    cy.wait(['@getClinicas2']);
 
     // Clicar no apagar
     cy.get('[title="Deletar clínica definitivamente"]').first().click();

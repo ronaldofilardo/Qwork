@@ -1,10 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, Building2, ChevronDown, FileText, Users, User } from 'lucide-react';
+import {
+  AlertTriangle,
+  Building2,
+  ChevronDown,
+  FileText,
+  Users,
+  User,
+} from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 import { PWAMenuItem } from '@/components/PWAMenuItem';
+import { useEntidade } from '@/app/entidade/entidade-context';
 
 interface EntidadeSidebarProps {
   counts?: {
@@ -17,13 +25,25 @@ interface EntidadeSidebarProps {
 }
 
 export default function EntidadeSidebar({
-  counts = {},
-  userName = 'Gestor',
+  counts: propCounts,
+  userName: propUserName,
 }: EntidadeSidebarProps) {
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [empresaExpanded, setEmpresaExpanded] = useState(true);
+
+  // Consume Entidade context; default value é seguro fora do EntidadeProvider
+  const { session: ctxSession, counts: ctxCounts } = useEntidade();
+
+  // Props têm precedência sobre contexto. Unifica tipos para acesso seguro.
+  const counts: {
+    funcionarios?: number;
+    lotes?: number;
+    pendencias?: number;
+    desligamentos?: number;
+  } = propCounts ?? ctxCounts;
+  const userName = propUserName ?? ctxSession?.nome ?? 'Gestor';
 
   const MenuItem = ({
     icon: Icon,

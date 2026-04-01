@@ -27,12 +27,6 @@ const FUNCIONARIO_ROUTES = [
   '/avaliacao',
 ];
 
-// Rotas específicas para gestores RH (clínica)
-const RH_ROUTES = ['/rh', '/api/rh'];
-
-// Rotas específicas para gestores de entidade (tomador)
-const ENTIDADE_ROUTES = ['/entidade', '/api/entidade'];
-
 // Rotas que requerem MFA (admin)
 const MFA_REQUIRED_ROUTES = ['/api/admin/financeiro', '/admin/financeiro'];
 
@@ -68,6 +62,66 @@ const CONTRATACAO_ROUTES = {
   public: ['/api/contratacao/cadastro-inicial'],
 };
 
+/**
+ * Strategy table: maps required perfil → route prefixes.
+ * Enforces segregation: only the specified perfil can access these routes.
+ */
+const ROLE_ROUTE_MAP: Record<string, string[]> = {
+  rh: ['/rh', '/api/rh'],
+  gestor: ['/entidade', '/api/entidade'],
+  suporte: ['/suporte', '/api/suporte'],
+  comercial: ['/comercial', '/api/comercial'],
+  vendedor: ['/vendedor', '/api/vendedor'],
+};
+
+/** Redirect destinations for gestores trying to access funcionário routes */
+const GESTOR_REDIRECT: Record<string, string> = {
+  rh: '/rh',
+  gestor: '/entidade',
+};
+
+// ─── Session Helpers (Edge Runtime compatible) ─────────────────────
+
+interface MiddlewareSession {
+  cpf?: string;
+  perfil?: string;
+  mfaVerified?: boolean;
+  [key: string]: unknown;
+}
+
+function maskCpf(cpf: string | undefined): string {
+  if (!cpf || typeof cpf !== 'string') return 'unknown';
+  return `***${cpf.slice(-4)}`;
+}
+
+/**
+ * Parse session from cookie or x-mock-session header (dev/test only).
+ * Centralised to avoid repeated JSON.parse calls throughout middleware.
+ */
+function parseSession(request: NextRequest): MiddlewareSession | null {
+  const sessionCookie = request.cookies.get('bps-session')?.value;
+  if (sessionCookie) {
+    try {
+      return JSON.parse(sessionCookie);
+    } catch (err) {
+      console.error('[SECURITY] Sessão inválida no cookie:', err);
+      return null;
+    }
+  }
+  const mockHeader = request.headers.get('x-mock-session');
+  if (
+    mockHeader &&
+    (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development')
+  ) {
+    try {
+      return JSON.parse(mockHeader);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
 export function middleware(request: NextRequest) {
   // IPs autorizados para acesso admin (lido em tempo de execução)
   const AUTHORIZED_ADMIN_IPS =
@@ -93,87 +147,39 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api/admin/contratacao');
 
   if (isContratacaoRoute) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-
-    // Rotas públicas de contratação
     if (CONTRATACAO_ROUTES.public.some((route) => pathname.startsWith(route))) {
-      // Permitir acesso sem autenticação
       return NextResponse.next();
     }
 
-    // Permitir injeção de sessão via header em dev/test para facilitar testes automáticos
-    let session: any = null;
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch (err) {
-        console.error(
-          '[SECURITY] Sessão inválida na cookie de contratação',
-          err
-        );
-        return new NextResponse('Sessão inválida', { status: 401 });
-      }
-    } else {
-      const mockHeader = request.headers.get('x-mock-session');
-      if (
-        mockHeader &&
-        (process.env.NODE_ENV === 'test' ||
-          process.env.NODE_ENV === 'development')
-      ) {
-        try {
-          session = JSON.parse(mockHeader);
-          console.log(
-            '[DEBUG] middleware using x-mock-session (contratacao route):',
-            {
-              pathname,
-              session: session?.cpf,
-            }
-          );
-        } catch (err) {
-          console.error(
-            '[SECURITY] Invalid x-mock-session header for contratacao route'
-          );
-          return new NextResponse('Sessão inválida', { status: 401 });
-        }
-      }
-    }
-
-    // Rotas requerem autenticação
-    if (!session) {
+    const contratacaoSession = parseSession(request);
+    if (!contratacaoSession) {
       console.error(
         `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
       );
       return new NextResponse('Autenticação requerida', { status: 401 });
     }
 
-    try {
-      // Verificar permissões específicas por role
-      if (session.perfil === 'admin') {
-        // Admin tem acesso a rotas admin de contratação
-        if (
-          CONTRATACAO_ROUTES.admin.some((route) => pathname.startsWith(route))
-        ) {
-          return NextResponse.next();
-        }
-      } else if (session.perfil === 'gestor') {
-        // Gestor de entidade tem acesso limitado
-        if (
-          CONTRATACAO_ROUTES.gestor.some((route) => pathname.startsWith(route))
-        ) {
-          return NextResponse.next();
-        }
-      }
-
-      // Se chegou aqui, não tem permissão
-      console.error(
-        `[SECURITY] Acesso negado para ${session.perfil} em ${pathname}`
-      );
-      return new NextResponse('Acesso negado', { status: 403 });
-    } catch (error) {
-      console.error('[SECURITY] Erro ao validar sessão de contratação:', error);
-      return new NextResponse('Sessão inválida', { status: 401 });
+    if (
+      contratacaoSession.perfil === 'admin' &&
+      CONTRATACAO_ROUTES.admin.some((route) => pathname.startsWith(route))
+    ) {
+      return NextResponse.next();
     }
+    if (
+      contratacaoSession.perfil === 'gestor' &&
+      CONTRATACAO_ROUTES.gestor.some((route) => pathname.startsWith(route))
+    ) {
+      return NextResponse.next();
+    }
+
+    console.error(
+      `[SECURITY] Acesso negado para ${contratacaoSession.perfil} em ${pathname}`
+    );
+    return new NextResponse('Acesso negado', { status: 403 });
   }
+
+  // ── Parse session ONCE for all remaining checks ──
+  const session = parseSession(request);
 
   // Proteção para rotas sensíveis
   if (SENSITIVE_ROUTES.some((route) => pathname.startsWith(route))) {
@@ -187,43 +193,6 @@ export function middleware(request: NextRequest) {
       }
     }
 
-    // Para outras rotas sensíveis, verificar se há cookie de sessão
-    // Nota: Não podemos chamar getSession() aqui pois é assíncrono
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: any = null;
-
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch (err) {
-        console.error('[SECURITY] Sessão inválida no cookie:', err);
-        return new NextResponse('Sessão inválida', { status: 401 });
-      }
-    } else {
-      const mockHeader = request.headers.get('x-mock-session');
-      if (
-        mockHeader &&
-        (process.env.NODE_ENV === 'test' ||
-          process.env.NODE_ENV === 'development')
-      ) {
-        try {
-          session = JSON.parse(mockHeader);
-          console.log(
-            '[DEBUG] middleware using x-mock-session (sensitive route):',
-            {
-              pathname,
-              session: session?.cpf,
-            }
-          );
-        } catch (err) {
-          console.error(
-            '[SECURITY] Invalid x-mock-session header for sensitive route'
-          );
-          return new NextResponse('Sessão inválida', { status: 401 });
-        }
-      }
-    }
-
     if (!session) {
       console.error(
         `[SECURITY] Tentativa de acesso sem sessão a ${pathname} (IP redacted)`
@@ -233,191 +202,44 @@ export function middleware(request: NextRequest) {
 
     // Verificar MFA para rotas críticas
     if (MFA_REQUIRED_ROUTES.some((route) => pathname.startsWith(route))) {
-      try {
-        if (session.perfil === 'admin' && !session.mfaVerified) {
-          const maskedCpf =
-            typeof session.cpf === 'string'
-              ? `***${String(session.cpf).slice(-4)}`
-              : session.cpf;
-          console.error(
-            `[SECURITY] Admin ${maskedCpf} tentou acessar ${pathname} sem MFA verificado`
-          );
-          return NextResponse.json(
-            {
-              error: 'MFA_REQUIRED',
-              message: 'Autenticação de dois fatores requerida',
-            },
-            { status: 403 }
-          );
-        }
-      } catch (error) {
-        console.error('[SECURITY] Erro ao validar MFA:', error);
-        return new NextResponse('Sessão inválida', { status: 401 });
+      if (session.perfil === 'admin' && !session.mfaVerified) {
+        console.error(
+          `[SECURITY] Admin ${maskCpf(session.cpf)} tentou acessar ${pathname} sem MFA verificado`
+        );
+        return NextResponse.json(
+          {
+            error: 'MFA_REQUIRED',
+            message: 'Autenticação de dois fatores requerida',
+          },
+          { status: 403 }
+        );
       }
     }
   }
 
-  // Verificações adicionais de segregação de funções
-  // Impedir que gestores acessem rotas de funcionários
+  // ── Funcionário route segregation — block gestores ──
   if (FUNCIONARIO_ROUTES.some((route) => pathname.startsWith(route))) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: any = null;
-
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch (err) {
-        console.error(
-          '[SECURITY] Sessão inválida na verificação de perfil:',
-          err
-        );
-        return new NextResponse('Sessão inválida', { status: 401 });
-      }
-    }
-
     if (session) {
-      // Se o usuário tem perfil de gestor, redirecionar para sua rota apropriada
-      if (session.perfil === 'rh') {
-        const maskedCpf =
-          typeof session.cpf === 'string'
-            ? `***${String(session.cpf).slice(-4)}`
-            : session.cpf;
+      const redirectTo = GESTOR_REDIRECT[session.perfil as string];
+      if (redirectTo) {
         console.error(
-          `[SECURITY] Gestor RH ${maskedCpf} tentou acessar rota de funcionário ${pathname}, redirecionando para /rh`
+          `[SECURITY] ${session.perfil} ${maskCpf(session.cpf)} tentou acessar rota de funcionário ${pathname}, redirecionando para ${redirectTo}`
         );
-        return NextResponse.redirect(new URL('/rh', request.url));
-      } else if (session.perfil === 'gestor') {
-        const maskedCpf =
-          typeof session.cpf === 'string'
-            ? `***${String(session.cpf).slice(-4)}`
-            : session.cpf;
+        return NextResponse.redirect(new URL(redirectTo, request.url));
+      }
+    }
+  }
+
+  // ── Role-based route segregation (Strategy Pattern) ──
+  for (const [requiredPerfil, routes] of Object.entries(ROLE_ROUTE_MAP)) {
+    if (routes.some((route) => pathname.startsWith(route))) {
+      if (session && session.perfil !== requiredPerfil) {
         console.error(
-          `[SECURITY] Gestor de entidade ${maskedCpf} tentou acessar rota de funcionário ${pathname}, redirecionando para /entidade`
+          `[SECURITY] Perfil ${session.perfil} (${maskCpf(session.cpf)}) tentou acessar rota ${requiredPerfil} ${pathname}`
         );
-        return NextResponse.redirect(new URL('/entidade', request.url));
+        return new NextResponse('Acesso negado', { status: 403 });
       }
-      // Funcionários podem acessar normalmente
-    }
-  }
-
-  // Verificação de segregação: apenas RH acessa rotas RH
-  if (RH_ROUTES.some((route) => pathname.startsWith(route))) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: any = null;
-
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-        // Sanitize session for logging: remove sensitive tokens and internal fields
-        const filteredKeys = Object.keys(session || {}).filter(
-          (k) => !['sessionToken', 'lastRotation'].includes(k)
-        );
-        const sanitizedSession: Record<string, any> = {};
-        for (const k of filteredKeys) {
-          sanitizedSession[k] =
-            k === 'cpf' && typeof session[k] === 'string'
-              ? `***${String(session[k]).slice(-4)}`
-              : session[k];
-        }
-
-        console.log('[DEBUG] RH Route check:', {
-          pathname,
-          sessionPerfil: sanitizedSession?.perfil,
-          sessionCpf: sanitizedSession?.cpf,
-          sessionKeys: filteredKeys,
-          session: sanitizedSession,
-        });
-      } catch (err) {
-        console.error('[SECURITY] Erro ao parsear sessão RH:', err);
-      }
-    }
-
-    // APENAS perfil 'rh' pode acessar rotas /rh e /api/rh
-    // gestor deve usar /entidade e /api/entidade
-    if (session && session.perfil !== 'rh') {
-      const maskedCpf =
-        typeof session.cpf === 'string'
-          ? `***${String(session.cpf).slice(-4)}`
-          : session.cpf;
-      console.error(
-        `[SECURITY] Usuário com perfil ${session.perfil} (${maskedCpf}) tentou acessar rota RH ${pathname}. Apenas gestores RH (clínica) têm acesso.`
-      );
-      return new NextResponse('Acesso negado', { status: 403 });
-    }
-  }
-
-  if (ENTIDADE_ROUTES.some((route) => pathname.startsWith(route))) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: any = null;
-
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch (err) {
-        // Já tratado acima
-      }
-    }
-
-    if (session && session.perfil !== 'gestor') {
-      const maskedCpf =
-        typeof session.cpf === 'string'
-          ? `***${String(session.cpf).slice(-4)}`
-          : session.cpf;
-      console.error(
-        `[SECURITY] Usuário com perfil ${session.perfil} (${maskedCpf}) tentou acessar rota de entidade ${pathname}`
-      );
-      return new NextResponse('Acesso negado', { status: 403 });
-    }
-  }
-
-  // Verificação de segregação: apenas suporte acessa rotas /suporte
-  const SUPORTE_ROUTES = ['/suporte', '/api/suporte'];
-  if (SUPORTE_ROUTES.some((route) => pathname.startsWith(route))) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: { perfil?: string; cpf?: string } | null = null;
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch {
-        /* já tratado */
-      }
-    }
-    if (session && session.perfil !== 'suporte') {
-      return new NextResponse('Acesso negado', { status: 403 });
-    }
-  }
-
-  // Verificação de segregação: apenas comercial acessa rotas /comercial
-  const COMERCIAL_ROUTES = ['/comercial', '/api/comercial'];
-  if (COMERCIAL_ROUTES.some((route) => pathname.startsWith(route))) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: { perfil?: string; cpf?: string } | null = null;
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch {
-        /* já tratado */
-      }
-    }
-    if (session && session.perfil !== 'comercial') {
-      return new NextResponse('Acesso negado', { status: 403 });
-    }
-  }
-
-  // Verificação de segregação: apenas vendedor acessa rotas /vendedor
-  const VENDEDOR_ROUTES = ['/vendedor', '/api/vendedor'];
-  if (VENDEDOR_ROUTES.some((route) => pathname.startsWith(route))) {
-    const sessionCookie = request.cookies.get('bps-session')?.value;
-    let session: { perfil?: string; cpf?: string } | null = null;
-    if (sessionCookie) {
-      try {
-        session = JSON.parse(sessionCookie);
-      } catch {
-        /* já tratado */
-      }
-    }
-    if (session && session.perfil !== 'vendedor') {
-      return new NextResponse('Acesso negado', { status: 403 });
+      break;
     }
   }
 

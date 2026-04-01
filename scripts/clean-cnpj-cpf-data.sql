@@ -22,13 +22,6 @@ DELETE FROM pagamentos WHERE contratante_id IN (SELECT id FROM tomadores);
 -- Limpar contratos relacionados a tomadores
 DELETE FROM contratos WHERE contratante_id IN (SELECT id FROM tomadores);
 
--- Limpar planos relacionados a tomadores (através da tabela tomadores)
--- ATENÇÃO: Não deletar planos fixos compartilhados automaticamente (ex: planos seed/mercadoria).
--- Apenas remover planos do tipo 'personalizado' que estejam vinculados a tomadores.
-DELETE FROM planos p
-WHERE p.tipo = 'personalizado'
-  AND p.id IN (SELECT plano_id FROM tomadores WHERE plano_id IS NOT NULL);
-
 -- PROTEÇÃO CRÍTICA: Senhas NÃO são mais deletadas automaticamente!
 -- Use fn_delete_senha_autorizado() se realmente precisar deletar senhas
 -- DELETE FROM entidades_senhas foi REMOVIDO para evitar perda de dados

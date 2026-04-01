@@ -6,7 +6,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
 import { NotificationService } from '@/lib/notification-service';
-import type { DestinatarioTipo } from '@/lib/notification-service';
+import { getDestinatarioTipo } from '@/lib/helpers/destinatario-tipo';
 import { assertAuth, isApiError } from '@/lib/authorization/policies';
 
 export async function POST() {
@@ -14,12 +14,7 @@ export async function POST() {
     const session = getSession();
     assertAuth(session);
 
-    const destinatarioTipo: DestinatarioTipo =
-      session.perfil === 'admin'
-        ? 'admin'
-        : session.perfil === 'rh'
-          ? 'gestor'
-          : 'funcionario';
+    const destinatarioTipo = getDestinatarioTipo(session);
 
     const totalMarcadas = await NotificationService.marcarTodasComoLidas(
       session.cpf,

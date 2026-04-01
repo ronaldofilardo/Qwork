@@ -469,19 +469,6 @@ ALTER TYPE public.tipo_pessoa_representante OWNER TO postgres;
 
 
 --
--- Name: tipo_plano; Type: TYPE; Schema: public; Owner: postgres
---
-
-CREATE TYPE public.tipo_plano AS ENUM (
-    'personalizado',
-    'fixo'
-);
-
-
-ALTER TYPE public.tipo_plano OWNER TO postgres;
-
-
---
 -- Name: usuario_tipo_enum; Type: TYPE; Schema: public; Owner: postgres
 --
 
@@ -2194,38 +2181,6 @@ COMMENT ON COLUMN public.comissoes_laudo.parcela_confirmada_em IS 'Timestamp em 
 
 
 --
--- Name: COLUMN contratacao_personalizada.payment_link_token; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratacao_personalizada.payment_link_token IS 'Token Ãºnico para link de pagamento personalizado';
-
-
-
---
--- Name: COLUMN contratacao_personalizada.payment_link_expiracao; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratacao_personalizada.payment_link_expiracao IS 'Data/hora de expiraÃ§Ã£o do link';
-
-
-
---
--- Name: COLUMN contratacao_personalizada.link_enviado_em; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratacao_personalizada.link_enviado_em IS 'Quando o link foi enviado ao contratante';
-
-
-
---
--- Name: COLUMN contratacao_personalizada.status; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratacao_personalizada.status IS 'Estados: aguardando_valor, valor_definido, aguardando_pagamento, pagamento_confirmado, cancelado';
-
-
-
---
 -- Name: COLUMN contratos.status; Type: COMMENT; Schema: public; Owner: postgres
 --
 
@@ -2238,14 +2193,6 @@ COMMENT ON COLUMN public.contratos.status IS 'Status extra usado para controle d
 --
 
 COMMENT ON COLUMN public.contratos.conteudo_gerado IS 'Conteúdo completo do contrato gerado para o contratante';
-
-
-
---
--- Name: COLUMN contratos.valor_personalizado; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON COLUMN public.contratos.valor_personalizado IS 'Valor personalizado por funcionário (para planos personalizados)';
 
 
 

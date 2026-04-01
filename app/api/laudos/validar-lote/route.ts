@@ -1,4 +1,4 @@
-import { requireAuth } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 
@@ -15,17 +15,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: Request) {
   try {
-    const user = await requireAuth();
-
-    // Apenas emissor e RH podem validar laudos (admin NÃO é operacional aqui)
-    if (!['emissor', 'rh'].includes(user.perfil)) {
-      return NextResponse.json(
-        {
-          error: 'Acesso negado. Apenas emissores e RH podem validar laudos.',
-        },
-        { status: 403 }
-      );
-    }
+    await requireRole(['emissor', 'rh']);
 
     const { searchParams } = new URL(req.url);
     const lote_id = searchParams.get('lote_id');

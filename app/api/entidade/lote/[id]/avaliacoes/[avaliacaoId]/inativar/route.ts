@@ -1,4 +1,4 @@
-import { getSession } from '@/lib/session';
+import { requireRole } from '@/lib/session';
 import { query } from '@/lib/db';
 import { queryAsGestorEntidade } from '@/lib/db-gestor';
 import { NextResponse } from 'next/server';
@@ -10,21 +10,7 @@ export async function POST(
   { params }: { params: { id: string; avaliacaoId: string } }
 ) {
   try {
-    const user = getSession();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Não autorizado', success: false },
-        { status: 401 }
-      );
-    }
-
-    if (user.perfil !== 'gestor' && user.perfil !== 'rh') {
-      return NextResponse.json(
-        { error: 'Acesso negado', success: false },
-        { status: 403 }
-      );
-    }
+    const user = await requireRole(['gestor', 'rh']);
 
     const loteId = params.id;
     const avaliacaoId = params.avaliacaoId;

@@ -1,4 +1,4 @@
-import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
+import { requireRole, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
 import { queryAsGestorRH } from '@/lib/db-gestor';
 import { withTransactionAsGestor } from '@/lib/db-transaction';
@@ -41,16 +41,7 @@ interface NumeroOrdemResult {
 
 export const dynamic = 'force-dynamic';
 export const POST = async (req: Request) => {
-  const user = await requireAuth();
-  if (!user || user.perfil !== 'rh') {
-    return NextResponse.json(
-      {
-        error: 'Acesso negado - apenas usuários RH podem Iniciar Ciclos',
-        success: false,
-      },
-      { status: 403 }
-    );
-  }
+  const user = await requireRole('rh');
 
   try {
     const { empresaId, descricao, dataFiltro, loteReferenciaId, tipo } =

@@ -698,7 +698,6 @@ CREATE TABLE public.notificacoes (
     lida boolean DEFAULT false,
     data_leitura timestamp without time zone,
     arquivada boolean DEFAULT false,
-    contratacao_personalizada_id integer,
     criado_em timestamp without time zone DEFAULT now(),
     expira_em timestamp without time zone,
     resolvida boolean DEFAULT false NOT NULL,
@@ -1502,14 +1501,6 @@ CREATE INDEX idx_notificacoes_admin_tipo ON public.notificacoes_admin USING btre
 --
 
 CREATE INDEX idx_notificacoes_clinica_id ON public.notificacoes USING btree (clinica_id);
-
-
-
---
--- Name: idx_notificacoes_contratacao; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_notificacoes_contratacao ON public.notificacoes USING btree (contratacao_personalizada_id);
 
 
 
