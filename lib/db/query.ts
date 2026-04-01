@@ -170,6 +170,7 @@ export async function query<T = any>(
         } catch (err) {
           try {
             await pool.query('ROLLBACK');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
           } catch (_) {}
           throw err;
         } finally {
