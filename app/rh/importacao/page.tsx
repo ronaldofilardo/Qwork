@@ -293,7 +293,7 @@ export default function ImportacaoPage() {
       ...(nivelCargoMap ?? {}),
     };
     void handleExecute(Object.keys(finalMap).length > 0 ? finalMap : null);
-  }, [validateData, mapeamento, appliedTemplate, nivelCargoMap, handleExecute]);
+  }, [validateData, appliedTemplate, nivelCargoMap, handleExecute]);
 
   // Reset
   const handleNovaImportacao = useCallback(() => {
