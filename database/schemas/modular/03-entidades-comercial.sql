@@ -1,24 +1,8 @@
 -- ============================================================================
 -- 03-entidades-comercial.sql
--- Entidades, empresas, contratos, planos, representantes, comissionamento
+-- Entidades, empresas, contratos, representantes, comissionamento
 -- Depends on: 01-foundation.sql, 02-identidade.sql
 -- ============================================================================
-
---
--- Name: atualizar_contratacao_personalizada_atualizado_em(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.atualizar_contratacao_personalizada_atualizado_em() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    NEW.atualizado_em = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.atualizar_contratacao_personalizada_atualizado_em() OWNER TO postgres;
 
 
 --
@@ -1135,52 +1119,6 @@ $$;
 ALTER FUNCTION public.sync_entidade_contratante_id() OWNER TO postgres;
 
 
---
--- Name: sync_personalizado_status(); Type: FUNCTION; Schema: public; Owner: postgres
---
-
-CREATE FUNCTION public.sync_personalizado_status() RETURNS trigger
-    LANGUAGE plpgsql
-    AS $$
-BEGIN
-    -- Quando contratacao_personalizada muda para valor_definido, atualizar contratante
-    IF NEW.status = 'valor_definido' AND (OLD.status IS NULL OR OLD.status = 'aguardando_valor_admin') THEN
-        UPDATE contratantes 
-        SET status = 'aguardando_pagamento', atualizado_em = CURRENT_TIMESTAMP 
-        WHERE id = NEW.contratante_id;
-        
-        RAISE NOTICE 'Contratante % atualizado para aguardando_pagamento', NEW.contratante_id;
-    END IF;
-    
-    -- Quando pago, ativar contratante e disparar criação de conta
-    IF NEW.status = 'pago' AND OLD.status = 'aguardando_pagamento' THEN
-        UPDATE contratantes 
-        SET status = 'ativo', 
-            data_liberacao_login = CURRENT_TIMESTAMP, 
-            ativa = true,
-            atualizado_em = CURRENT_TIMESTAMP 
-        WHERE id = NEW.contratante_id;
-        
-        -- Chamar função para criar conta responsável
-        PERFORM criar_conta_responsavel_personalizado(NEW.contratante_id);
-        
-        RAISE NOTICE 'Contratante % ativado e conta criada', NEW.contratante_id;
-    END IF;
-    
-    RETURN NEW;
-END;
-$$;
-
-
-ALTER FUNCTION public.sync_personalizado_status() OWNER TO postgres;
-
-
---
--- Name: FUNCTION sync_personalizado_status(); Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON FUNCTION public.sync_personalizado_status() IS 'Sincroniza automaticamente status entre contratacao_personalizada e contratantes';
-
 
 
 --
@@ -1517,58 +1455,6 @@ ALTER SEQUENCE public.comissoes_laudo_id_seq OWNED BY public.comissoes_laudo.id;
 
 
 
---
--- Name: contratacao_personalizada; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.contratacao_personalizada (
-    id integer NOT NULL,
-    numero_funcionarios_estimado integer,
-    valor_por_funcionario numeric(10,2),
-    valor_total_estimado numeric(12,2),
-    payment_link_token character varying(128),
-    payment_link_expiracao timestamp without time zone,
-    link_enviado_em timestamp without time zone,
-    status character varying(50) DEFAULT 'aguardando_valor'::character varying,
-    criado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    entidade_id integer
-);
-
-
-ALTER TABLE public.contratacao_personalizada OWNER TO postgres;
-
-
---
--- Name: TABLE contratacao_personalizada; Type: COMMENT; Schema: public; Owner: postgres
---
-
-COMMENT ON TABLE public.contratacao_personalizada IS 'Tabela de compatibilidade para contratacao personalizada (fluxo legacy e testes)';
-
-
-
---
--- Name: contratacao_personalizada_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.contratacao_personalizada_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.contratacao_personalizada_id_seq OWNER TO postgres;
-
-
---
--- Name: contratacao_personalizada_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.contratacao_personalizada_id_seq OWNED BY public.contratacao_personalizada.id;
-
 
 
 --
@@ -1577,7 +1463,6 @@ ALTER SEQUENCE public.contratacao_personalizada_id_seq OWNED BY public.contratac
 
 CREATE TABLE public.contratos (
     id integer NOT NULL,
-    plano_id integer,
     numero_funcionarios integer,
     valor_total numeric(12,2),
     status public.status_aprovacao_enum DEFAULT 'pendente'::public.status_aprovacao_enum NOT NULL,
@@ -1591,12 +1476,8 @@ CREATE TABLE public.contratos (
     data_aceite timestamp without time zone,
     hash_contrato character varying(128),
     conteudo_gerado text,
-    valor_personalizado numeric(10,2),
-    payment_link_expiracao timestamp without time zone,
-    link_enviado_em timestamp without time zone,
     data_pagamento timestamp without time zone,
     criado_por_cpf character varying(11),
-    payment_link_token character varying(128),
     entidade_id integer,
     tomador_id integer,
     tipo_tomador character varying(50) DEFAULT 'entidade'::character varying
@@ -1637,56 +1518,6 @@ ALTER SEQUENCE public.contratos_id_seq OWNER TO postgres;
 ALTER SEQUENCE public.contratos_id_seq OWNED BY public.contratos.id;
 
 
-
---
--- Name: contratos_planos; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.contratos_planos (
-    id integer NOT NULL,
-    plano_id integer,
-    clinica_id integer,
-    valor_personalizado_por_funcionario numeric(10,2),
-    inicio_vigencia date NOT NULL,
-    fim_vigencia date,
-    ativo boolean DEFAULT true,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    valor_pago numeric(10,2),
-    tipo_pagamento character varying(20),
-    modalidade_pagamento character varying(20),
-    data_pagamento timestamp without time zone,
-    parcelas_json jsonb,
-    entidade_id integer,
-    CONSTRAINT contratos_planos_modalidade_pagamento_check CHECK (((modalidade_pagamento)::text = ANY (ARRAY[('a_vista'::character varying)::text, ('parcelado'::character varying)::text, (NULL::character varying)::text]))),
-    CONSTRAINT contratos_planos_tipo_pagamento_check CHECK (((tipo_pagamento)::text = ANY (ARRAY[('boleto'::character varying)::text, ('cartao'::character varying)::text, ('pix'::character varying)::text, (NULL::character varying)::text])))
-);
-
-
-ALTER TABLE public.contratos_planos OWNER TO postgres;
-
-
---
--- Name: contratos_planos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.contratos_planos_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.contratos_planos_id_seq OWNER TO postgres;
-
-
---
--- Name: contratos_planos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.contratos_planos_id_seq OWNED BY public.contratos_planos.id;
 
 
 
@@ -1798,7 +1629,6 @@ CREATE TABLE public.entidades (
     aprovado_por_cpf character varying(11),
     pagamento_confirmado boolean DEFAULT false,
     numero_funcionarios_estimado integer,
-    plano_id integer,
     data_primeiro_pagamento timestamp without time zone,
     data_liberacao_login timestamp without time zone,
     contrato_aceito boolean DEFAULT false,
@@ -2050,50 +1880,6 @@ ALTER SEQUENCE public.leads_representante_id_seq OWNED BY public.leads_represent
 
 
 
---
--- Name: planos; Type: TABLE; Schema: public; Owner: postgres
---
-
-CREATE TABLE public.planos (
-    id integer NOT NULL,
-    tipo public.tipo_plano NOT NULL,
-    nome character varying(100) NOT NULL,
-    descricao text,
-    valor_por_funcionario numeric(10,2),
-    preco numeric(10,2),
-    limite_funcionarios integer,
-    ativo boolean DEFAULT true,
-    created_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    updated_at timestamp without time zone DEFAULT CURRENT_TIMESTAMP,
-    caracteristicas text
-);
-
-
-ALTER TABLE public.planos OWNER TO postgres;
-
-
---
--- Name: planos_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
---
-
-CREATE SEQUENCE public.planos_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-
-ALTER SEQUENCE public.planos_id_seq OWNER TO postgres;
-
-
---
--- Name: planos_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
---
-
-ALTER SEQUENCE public.planos_id_seq OWNED BY public.planos.id;
-
 
 
 --
@@ -2247,7 +2033,6 @@ CREATE VIEW public.tomadores AS
     entidades.responsavel_cpf,
     entidades.responsavel_email,
     entidades.responsavel_celular,
-    entidades.plano_id,
     entidades.ativa,
     entidades.pagamento_confirmado,
     entidades.status,
@@ -2266,7 +2051,6 @@ UNION ALL
     clinicas.responsavel_cpf,
     clinicas.responsavel_email,
     clinicas.responsavel_celular,
-    clinicas.plano_id,
     clinicas.ativa,
     clinicas.pagamento_confirmado,
     clinicas.status,
@@ -2355,12 +2139,6 @@ ALTER TABLE ONLY public.comissoes_laudo ALTER COLUMN id SET DEFAULT nextval('pub
 
 
 
---
--- Name: contratacao_personalizada id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratacao_personalizada ALTER COLUMN id SET DEFAULT nextval('public.contratacao_personalizada_id_seq'::regclass);
-
 
 
 --
@@ -2370,12 +2148,6 @@ ALTER TABLE ONLY public.contratacao_personalizada ALTER COLUMN id SET DEFAULT ne
 ALTER TABLE ONLY public.contratos ALTER COLUMN id SET DEFAULT nextval('public.contratos_id_seq'::regclass);
 
 
-
---
--- Name: contratos_planos id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratos_planos ALTER COLUMN id SET DEFAULT nextval('public.contratos_planos_id_seq'::regclass);
 
 
 
@@ -2418,12 +2190,6 @@ ALTER TABLE ONLY public.hierarquia_comercial ALTER COLUMN id SET DEFAULT nextval
 ALTER TABLE ONLY public.leads_representante ALTER COLUMN id SET DEFAULT nextval('public.leads_representante_id_seq'::regclass);
 
 
-
---
--- Name: planos id; Type: DEFAULT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.planos ALTER COLUMN id SET DEFAULT nextval('public.planos_id_seq'::regclass);
 
 
 
@@ -2469,13 +2235,6 @@ ALTER TABLE ONLY public.comissoes_laudo
 
 
 
---
--- Name: contratacao_personalizada contratacao_personalizada_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratacao_personalizada
-    ADD CONSTRAINT contratacao_personalizada_pkey PRIMARY KEY (id);
-
 
 
 --
@@ -2486,13 +2245,6 @@ ALTER TABLE ONLY public.contratos
     ADD CONSTRAINT contratos_pkey PRIMARY KEY (id);
 
 
-
---
--- Name: contratos_planos contratos_planos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratos_planos
-    ADD CONSTRAINT contratos_planos_pkey PRIMARY KEY (id);
 
 
 
@@ -2612,13 +2364,6 @@ ALTER TABLE ONLY public.leads_representante
     ADD CONSTRAINT leads_representante_token_atual_key UNIQUE (token_atual);
 
 
-
---
--- Name: planos planos_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.planos
-    ADD CONSTRAINT planos_pkey PRIMARY KEY (id);
 
 
 
@@ -2791,27 +2536,7 @@ CREATE INDEX idx_comissoes_vinculo_id ON public.comissoes_laudo USING btree (vin
 
 
 
---
--- Name: idx_contratacao_personalizada_entidade_id; Type: INDEX; Schema: public; Owner: postgres
---
 
-CREATE INDEX idx_contratacao_personalizada_entidade_id ON public.contratacao_personalizada USING btree (entidade_id);
-
-
-
---
--- Name: idx_contratacao_personalizada_token; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratacao_personalizada_token ON public.contratacao_personalizada USING btree (payment_link_token);
-
-
-
---
--- Name: idx_contratos_data_pagamento; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratos_data_pagamento ON public.contratos_planos USING btree (data_pagamento);
 
 
 
@@ -2823,12 +2548,6 @@ CREATE INDEX idx_contratos_entidade_id ON public.contratos USING btree (entidade
 
 
 
---
--- Name: idx_contratos_modalidade_pagamento; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratos_modalidade_pagamento ON public.contratos_planos USING btree (modalidade_pagamento);
-
 
 
 --
@@ -2839,20 +2558,6 @@ CREATE INDEX idx_contratos_numero_funcionarios ON public.contratos USING btree (
 
 
 
---
--- Name: idx_contratos_planos_clinica; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratos_planos_clinica ON public.contratos_planos USING btree (clinica_id);
-
-
-
---
--- Name: idx_contratos_planos_entidade_id; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratos_planos_entidade_id ON public.contratos_planos USING btree (entidade_id);
-
 
 
 --
@@ -2862,12 +2567,6 @@ CREATE INDEX idx_contratos_planos_entidade_id ON public.contratos_planos USING b
 CREATE INDEX idx_contratos_status ON public.contratos USING btree (status);
 
 
-
---
--- Name: idx_contratos_tipo_pagamento; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_contratos_tipo_pagamento ON public.contratos_planos USING btree (tipo_pagamento);
 
 
 
@@ -3231,12 +2930,6 @@ CREATE TRIGGER trg_representantes_atualizado_em BEFORE UPDATE ON public.represen
 
 
 
---
--- Name: contratos_planos trg_validar_parcelas; Type: TRIGGER; Schema: public; Owner: postgres
---
-
-CREATE TRIGGER trg_validar_parcelas BEFORE INSERT OR UPDATE ON public.contratos_planos FOR EACH ROW EXECUTE FUNCTION public.validar_parcelas_json();
-
 
 
 --
@@ -3323,22 +3016,6 @@ ALTER TABLE ONLY public.comissoes_laudo
     ADD CONSTRAINT comissoes_laudo_vinculo_id_fkey FOREIGN KEY (vinculo_id) REFERENCES public.vinculos_comissao(id) ON DELETE RESTRICT;
 
 
-
---
--- Name: contratos contratos_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratos
-    ADD CONSTRAINT contratos_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
-
-
-
---
--- Name: contratos_planos contratos_planos_plano_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.contratos_planos
-    ADD CONSTRAINT contratos_planos_plano_id_fkey FOREIGN KEY (plano_id) REFERENCES public.planos(id);
 
 
 

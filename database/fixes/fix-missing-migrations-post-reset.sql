@@ -101,24 +101,6 @@ BEGIN
 END $$;
 
 -- ============================================================================
--- 2.8 ADICIONAR COLUNA plano_id em tomadores
--- ============================================================================
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'tomadores' 
-        AND column_name = 'plano_id'
-    ) THEN
-        ALTER TABLE tomadores ADD COLUMN plano_id INTEGER REFERENCES planos(id);
-        COMMENT ON COLUMN tomadores.plano_id IS 'ID do plano associado ao contratante';
-        RAISE NOTICE 'Coluna plano_id adicionada em tomadores';
-    ELSE
-        RAISE NOTICE 'Coluna plano_id já existe em tomadores';
-    END IF;
-END $$;
-
--- ============================================================================
 -- 3. CRIAR TABELA entidades_senhas
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS entidades_senhas (
@@ -163,92 +145,6 @@ CREATE TRIGGER trg_entidades_senhas_updated_at
 COMMENT ON TABLE entidades_senhas IS 'Senhas hash para gestores de entidades fazerem login';
 COMMENT ON COLUMN entidades_senhas.cpf IS 'CPF do responsavel_cpf em tomadores - usado para login';
 COMMENT ON COLUMN entidades_senhas.primeira_senha_alterada IS 'Flag para forçar alteração de senha no primeiro acesso';
-
--- ============================================================================
--- 4. CRIAR ENUM tipo_plano
--- ============================================================================
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'tipo_plano') THEN
-        CREATE TYPE tipo_plano AS ENUM ('personalizado', 'fixo');
-        RAISE NOTICE 'Enum tipo_plano criado';
-    ELSE
-        RAISE NOTICE 'Enum tipo_plano já existe';
-    END IF;
-END $$;
-
--- ============================================================================
--- 5. CRIAR TABELA planos
--- ============================================================================
-CREATE TABLE IF NOT EXISTS planos (
-    id SERIAL PRIMARY KEY,
-    tipo tipo_plano NOT NULL,
-    nome VARCHAR(100) NOT NULL,
-    descricao TEXT,
-    valor_por_funcionario DECIMAL(10,2), -- Para personalizado
-    preco DECIMAL(10,2), -- Para fixo
-    limite_funcionarios INTEGER, -- Para fixo
-    caracteristicas TEXT, -- Características do plano
-    ativo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Adicionar coluna caracteristicas se não existir
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name = 'planos' 
-        AND column_name = 'caracteristicas'
-    ) THEN
-        ALTER TABLE planos ADD COLUMN caracteristicas TEXT;
-        COMMENT ON COLUMN planos.caracteristicas IS 'Características e benefícios do plano';
-        RAISE NOTICE 'Coluna caracteristicas adicionada em planos';
-    ELSE
-        RAISE NOTICE 'Coluna caracteristicas já existe em planos';
-    END IF;
-END $$;
-
--- Inserir planos padrão (apenas se não existirem)
-INSERT INTO planos (tipo, nome, descricao, preco, limite_funcionarios)
-SELECT 'fixo', 'Plano Fixo Básico', 'Até 50 funcionários', 1224.00, 50
-WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Plano Fixo Básico');
-
-INSERT INTO planos (tipo, nome, descricao, preco, limite_funcionarios)
-SELECT 'fixo', 'Plano Fixo Premium', 'Até 200 funcionários', 3999.99, 200
-WHERE NOT EXISTS (SELECT 1 FROM planos WHERE nome = 'Plano Fixo Premium');
-
--- ============================================================================
--- 6. CRIAR TABELA contratos_planos
--- ============================================================================
-CREATE TABLE IF NOT EXISTS contratos_planos (
-    id SERIAL PRIMARY KEY,
-    plano_id INTEGER REFERENCES planos(id),
-    clinica_id INTEGER REFERENCES clinicas(id),
-    contratante_id INTEGER REFERENCES tomadores(id),
-    tipo_contratante VARCHAR(20) NOT NULL CHECK (tipo_contratante IN ('clinica', 'entidade')),
-    
-    -- Para plano personalizado
-    valor_personalizado_por_funcionario DECIMAL(10,2),
-    
-    -- Controle de vigência
-    inicio_vigencia DATE NOT NULL,
-    fim_vigencia DATE,
-    ativo BOOLEAN DEFAULT TRUE,
-    
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
-    CONSTRAINT contratos_planos_clinica_or_contratante 
-        CHECK (
-            (clinica_id IS NOT NULL AND contratante_id IS NULL) OR 
-            (clinica_id IS NULL AND contratante_id IS NOT NULL)
-        )
-);
-
-CREATE INDEX IF NOT EXISTS idx_contratos_planos_clinica ON contratos_planos(clinica_id);
-CREATE INDEX IF NOT EXISTS idx_contratos_planos_contratante ON contratos_planos(contratante_id);
 
 -- ============================================================================
 -- 7.5 CRIAR TABELA auditoria
@@ -404,18 +300,8 @@ BEGIN
     SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'entidades_senhas';
     RAISE NOTICE '✓ Tabela entidades_senhas: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
     
-    SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'planos';
-    RAISE NOTICE '✓ Tabela planos: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
-    
-    SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'contratos_planos';
-    RAISE NOTICE '✓ Tabela contratos_planos: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
-    
     SELECT COUNT(*) INTO v_count FROM information_schema.tables WHERE table_name = 'mfa_codes';
     RAISE NOTICE '✓ Tabela mfa_codes: %', CASE WHEN v_count > 0 THEN 'OK' ELSE 'FALTA' END;
-    
-    -- Verificar dados
-    SELECT COUNT(*) INTO v_count FROM planos;
-    RAISE NOTICE '✓ Planos cadastrados: %', v_count;
     
     SELECT COUNT(*) INTO v_count FROM tomadores WHERE tipo = 'entidade';
     RAISE NOTICE '✓ tomadores tipo entidade: %', v_count;

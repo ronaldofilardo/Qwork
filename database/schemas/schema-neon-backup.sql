@@ -1,3 +1,11 @@
+-- ============================================================================
+-- SNAPSHOT PRÉ-MIGRATION-1136
+-- Este arquivo reflete o estado do banco ANTES da remoção definitiva
+-- do sistema de planos (migration 1136_remocao_definitiva_planos_contratacao).
+-- Para o schema atual, use: pg_dump na conexão neondb_staging
+-- Data do snapshot: anterior a 01/04/2026
+-- ============================================================================
+
 --
 -- PostgreSQL database dump
 --

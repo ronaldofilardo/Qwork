@@ -260,20 +260,6 @@ GRANT USAGE ON SEQUENCE public.comissoes_laudo_id_seq TO dba_maintenance;
 
 
 
---
--- Name: TABLE contratacao_personalizada; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contratacao_personalizada TO dba_maintenance;
-
-
-
---
--- Name: SEQUENCE contratacao_personalizada_id_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT USAGE ON SEQUENCE public.contratacao_personalizada_id_seq TO dba_maintenance;
-
 
 
 --
@@ -291,20 +277,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contratos TO dba_maintenance;
 GRANT USAGE ON SEQUENCE public.contratos_id_seq TO dba_maintenance;
 
 
-
---
--- Name: TABLE contratos_planos; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.contratos_planos TO dba_maintenance;
-
-
-
---
--- Name: SEQUENCE contratos_planos_id_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT USAGE ON SEQUENCE public.contratos_planos_id_seq TO dba_maintenance;
 
 
 
@@ -704,20 +676,6 @@ GRANT USAGE ON SEQUENCE public.pagamentos_id_seq TO dba_maintenance;
 
 
 
---
--- Name: TABLE payment_links; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.payment_links TO dba_maintenance;
-
-
-
---
--- Name: SEQUENCE payment_links_id_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT USAGE ON SEQUENCE public.payment_links_id_seq TO dba_maintenance;
-
 
 
 --
@@ -751,20 +709,6 @@ GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.permissions TO dba_maintenance
 GRANT USAGE ON SEQUENCE public.permissions_id_seq TO dba_maintenance;
 
 
-
---
--- Name: TABLE planos; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT SELECT,INSERT,DELETE,UPDATE ON TABLE public.planos TO dba_maintenance;
-
-
-
---
--- Name: SEQUENCE planos_id_seq; Type: ACL; Schema: public; Owner: postgres
---
-
-GRANT USAGE ON SEQUENCE public.planos_id_seq TO dba_maintenance;
 
 
 
