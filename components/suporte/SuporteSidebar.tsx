@@ -7,11 +7,12 @@ import {
   ChevronDown,
   ChevronRight,
   Users,
+  FileText,
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
 export type SuporteSection = 'tomadores' | 'financeiro' | 'representantes';
-export type TomadoresSubSection = 'clinicas' | 'entidades';
+export type TomadoresSubSection = 'clinicas' | 'entidades' | 'pre-cadastro';
 export type FinanceiroSubSection = 'pagamentos' | 'comissoes' | 'individuais';
 export type RepresentantesSubSection = 'lista' | 'aprovacao';
 
@@ -26,6 +27,7 @@ interface SuporteSidebarProps {
     entidades?: number;
     pagamentos?: number;
     representantesPendentes?: number;
+    preCadastro?: number;
   };
 }
 
@@ -99,11 +101,13 @@ export default function SuporteSidebar({
     count,
     isActive,
     onClick,
+    icon: Icon,
   }: {
     label: string;
     count?: number;
     isActive: boolean;
     onClick: () => void;
+    icon?: React.ElementType;
   }) => (
     <button
       onClick={onClick}
@@ -113,9 +117,12 @@ export default function SuporteSidebar({
           : 'text-gray-600 hover:bg-gray-50'
       }`}
     >
-      <span>{label}</span>
+      <span className="flex items-center gap-1.5">
+        {Icon && <Icon size={13} />}
+        {label}
+      </span>
       {count !== undefined && count > 0 && (
-        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-gray-500 text-white">
+        <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-amber-500 text-white">
           {count}
         </span>
       )}
@@ -161,6 +168,16 @@ export default function SuporteSidebar({
               activeSection === 'tomadores' && activeSubSection === 'entidades'
             }
             onClick={() => onSectionChange('tomadores', 'entidades')}
+          />
+          <SubMenuItem
+            label="Pré-cadastro"
+            count={counts.preCadastro}
+            isActive={
+              activeSection === 'tomadores' &&
+              activeSubSection === 'pre-cadastro'
+            }
+            onClick={() => onSectionChange('tomadores', 'pre-cadastro')}
+            icon={FileText}
           />
         </div>
       )}
