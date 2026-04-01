@@ -8,6 +8,7 @@ import { TomadoresContent } from '@/components/admin/TomadoresContent';
 import { default as PagamentosContent } from '@/components/admin/PagamentosContent';
 import { RepresentantesContent } from '@/components/suporte/RepresentantesContent';
 import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndividuaisContent';
+import { PreCadastroContent } from '@/components/suporte/PreCadastroContent';
 
 interface Session {
   cpf: string;
@@ -26,6 +27,7 @@ export default function SuportePage() {
   const [entidadesCount, setEntidadesCount] = useState(0);
   const [representantesPendentesCount, setRepresentantesPendentesCount] =
     useState(0);
+  const [preCadastroCount, setPreCadastroCount] = useState(0);
 
   const router = useRouter();
 
@@ -43,6 +45,12 @@ export default function SuportePage() {
       if (repsRes.ok) {
         const data = await repsRes.json();
         setRepresentantesPendentesCount(data.pendentes || 0);
+      }
+
+      const preCadRes = await fetch('/api/suporte/pre-cadastro');
+      if (preCadRes.ok) {
+        const data = (await preCadRes.json()) as { total?: number };
+        setPreCadastroCount(data.total ?? 0);
       }
     } catch (error) {
       console.error('Erro ao buscar contadores:', error);
@@ -87,6 +95,9 @@ export default function SuportePage() {
 
   const renderContent = () => {
     if (activeSection === 'tomadores') {
+      if (activeSubSection === 'pre-cadastro') {
+        return <PreCadastroContent />;
+      }
       return <TomadoresContent activeSubSection={activeSubSection} />;
     }
 
@@ -140,6 +151,7 @@ export default function SuportePage() {
             clinicas: clinicasCount,
             entidades: entidadesCount,
             representantesPendentes: representantesPendentesCount,
+            preCadastro: preCadastroCount,
           }}
         />
       </div>
