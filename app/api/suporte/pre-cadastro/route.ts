@@ -31,6 +31,9 @@ export interface PreCadastroItem {
   contrato_id: number;
   contrato_criado_em: string;
   tipo: 'clinica' | 'entidade';
+  responsavel_nome: string | null;
+  responsavel_cargo: string | null;
+  responsavel_celular: string | null;
 }
 
 export interface PreCadastroResponse {
@@ -91,6 +94,9 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         e.status,
         e.criado_em,
         e.tipo,
+        e.responsavel_nome,
+        e.responsavel_cargo,
+        e.responsavel_celular,
         c.id       AS contrato_id,
         c.criado_em AS contrato_criado_em
       FROM entidades e
