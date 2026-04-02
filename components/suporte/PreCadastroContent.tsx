@@ -160,7 +160,18 @@ function PreCadastroRow({ item }: PreCadastroRowProps) {
         {item.email}
       </td>
 
-      {/* Status */}
+      {/* Responsável */}
+      <td className="px-4 py-3 hidden lg:table-cell">
+        <p className="text-sm text-gray-900">{item.responsavel_nome ?? '—'}</p>
+        <p className="text-xs text-gray-400">{item.responsavel_cargo ?? ''}</p>
+      </td>
+
+      {/* Telefone Responsável */}
+      <td className="px-4 py-3 text-sm text-gray-600 hidden lg:table-cell whitespace-nowrap">
+        {item.responsavel_celular ?? '—'}
+      </td>
+
+      {/* Status */}}
       <td className="px-4 py-3">
         <StatusBadge status={item.status} />
       </td>
@@ -308,6 +319,12 @@ export function PreCadastroContent() {
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden md:table-cell">
                       Email
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">
+                      Responsável
+                    </th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide hidden lg:table-cell">
+                      Telefone
                     </th>
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide">
                       Status

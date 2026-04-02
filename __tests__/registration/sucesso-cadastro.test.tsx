@@ -1,23 +1,18 @@
 /**
- * @fileoverview Testes da página de sucesso de cadastro (simplificada)
- * @description Testa fluxo de aceite de contrato após cadastro
+ * @fileoverview Testes da página /sucesso-cadastro
+ * @description Valida abertura automática do ModalContrato e estado de erro
  */
 
 import type { Mock } from 'jest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import SucessoCadastroPage from '@/app/sucesso-cadastro/page';
 
-// Mock do Next.js navigation
 const mockPush = jest.fn();
 const mockGet = jest.fn();
 
 jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: mockPush,
-  }),
-  useSearchParams: () => ({
-    get: mockGet,
-  }),
+  useRouter: () => ({ push: mockPush }),
+  useSearchParams: () => ({ get: mockGet }),
 }));
 
 describe('SucessoCadastroPage', () => {
@@ -26,67 +21,45 @@ describe('SucessoCadastroPage', () => {
     global.fetch = jest.fn() as jest.MockedFunction<typeof fetch>;
   });
 
-  it('exibe mensagem de link inválido quando não há contrato_id na URL', async () => {
+  it('exibe "Link inválido" quando não há contrato_id na URL', () => {
     mockGet.mockReturnValue(null);
-
     render(<SucessoCadastroPage />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/link inv.lido/i)).toBeInTheDocument();
-      expect(
-        screen.getByText(/Solicite um novo link ao suporte/i)
-      ).toBeInTheDocument();
-    });
+    expect(screen.getByText('Link inválido')).toBeInTheDocument();
+    expect(screen.getByText(/Solicite um novo link ao suporte/i)).toBeInTheDocument();
   });
 
-  it('exibe título Cadastro Realizado quando contrato_id está presente', async () => {
+  it('exibe "Cadastro Realizado!" com contrato_id presente', () => {
     mockGet.mockImplementation((key: string) =>
-      key === 'contrato_id' ? '999' : null
+      key === 'contrato_id' ? '59' : null
     );
-
-    const mockContrato = {
-      id: 999,
-      tomador_nome: 'Empresa Teste',
-      tomador_cnpj: '12.345.678/0001-90',
-      conteudo: 'Conteúdo do contrato',
-      aceito: false,
-      criado_em: '2024-01-01',
-      atualizado_em: '2024-01-01',
-    };
-
-    (global.fetch as Mock).mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ contrato: mockContrato }),
-      } as Response)
-    );
-
+    (global.fetch as Mock).mockResolvedValue({
+      ok: false,
+      json: async () => ({ error: 'not found' }),
+    } as Response);
     render(<SucessoCadastroPage />);
-
     expect(screen.getByText('Cadastro Realizado!')).toBeInTheDocument();
   });
 
-  it('abre ModalContrato automaticamente quando contrato_id está na URL', async () => {
+  it('abre ModalContrato automaticamente ao carregar com contrato_id', async () => {
     mockGet.mockImplementation((key: string) =>
-      key === 'contrato_id' ? '999' : null
+      key === 'contrato_id' ? '59' : null
     );
 
     const mockContrato = {
-      id: 999,
+      id: 59,
+      tomador_id: 8,
       tomador_nome: 'Empresa Teste',
-      tomador_cnpj: '12.345.678/0001-90',
+      tomador_cnpj: '28.081.722/0001-37',
       conteudo: 'Conteúdo do contrato',
       aceito: false,
-      criado_em: '2024-01-01',
-      atualizado_em: '2024-01-01',
+      criado_em: '2026-01-01T00:00:00.000Z',
+      atualizado_em: '2026-01-01T00:00:00.000Z',
     };
 
-    (global.fetch as Mock).mockImplementationOnce(() =>
-      Promise.resolve({
-        ok: true,
-        json: () => Promise.resolve({ contrato: mockContrato }),
-      } as Response)
-    );
+    (global.fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ contrato: mockContrato }),
+    } as Response);
 
     render(<SucessoCadastroPage />);
 
@@ -94,4 +67,42 @@ describe('SucessoCadastroPage', () => {
       expect(screen.getByText('Contrato de Serviço')).toBeInTheDocument();
     });
   });
+
+  it('exibe botão "Ver e Aceitar Contrato" quando modal está fechado', async () => {
+    mockGet.mockImplementation((key: string) =>
+      key === 'contrato_id' ? '59' : null
+    );
+
+    const mockContrato = {
+      id: 59,
+      tomador_id: 8,
+      tomador_nome: 'Empresa Teste',
+      conteudo: 'Conteúdo',
+      aceito: false,
+      criado_em: '2026-01-01T00:00:00.000Z',
+      atualizado_em: '2026-01-01T00:00:00.000Z',
+    };
+
+    (global.fetch as Mock).mockResolvedValue({
+      ok: true,
+      json: async () => ({ contrato: mockContrato }),
+    } as Response);
+
+    render(<SucessoCadastroPage />);
+
+    // Modal abre, então o botão só aparece quando modal é fechado
+    await waitFor(() =>
+      expect(screen.getByText('Contrato de Serviço')).toBeInTheDocument()
+    );
+
+    // Fechar modal
+    fireEvent.click(screen.getByRole('button', { name: '' }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole('button', { name: /Ver e Aceitar Contrato/i })
+      ).toBeInTheDocument();
+    });
+  });
 });
+

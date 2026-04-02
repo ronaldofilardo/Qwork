@@ -58,6 +58,9 @@ const fakePreCadastros = [
     tipo: 'clinica',
     contrato_id: 99,
     contrato_criado_em: '2026-01-01T11:00:00.000Z',
+    responsavel_nome: 'João Silva',
+    responsavel_cargo: 'Gestor',
+    responsavel_celular: '11988887777',
   },
   {
     id: 2,
@@ -70,6 +73,9 @@ const fakePreCadastros = [
     tipo: 'entidade',
     contrato_id: 100,
     contrato_criado_em: '2026-01-02T10:00:00.000Z',
+    responsavel_nome: 'Maria Souza',
+    responsavel_cargo: 'RH',
+    responsavel_celular: '21977776666',
   },
 ];
 

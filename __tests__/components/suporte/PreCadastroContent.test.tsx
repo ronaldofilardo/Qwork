@@ -56,6 +56,9 @@ const fakeItems = [
     tipo: 'clinica',
     contrato_id: 42,
     contrato_criado_em: '2026-01-15T10:05:00.000Z',
+    responsavel_nome: 'Dr. Paulo',
+    responsavel_cargo: 'Diretor',
+    responsavel_celular: '11988880000',
   },
   {
     id: 2,
@@ -68,6 +71,9 @@ const fakeItems = [
     tipo: 'entidade',
     contrato_id: 43,
     contrato_criado_em: '2026-01-16T09:05:00.000Z',
+    responsavel_nome: 'Ana Costa',
+    responsavel_cargo: 'RH',
+    responsavel_celular: null,
   },
 ];
 
