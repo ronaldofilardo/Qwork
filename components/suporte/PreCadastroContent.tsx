@@ -171,7 +171,7 @@ function PreCadastroRow({ item }: PreCadastroRowProps) {
         {item.responsavel_celular ?? '—'}
       </td>
 
-      {/* Status */}}
+      {/* Status */}
       <td className="px-4 py-3">
         <StatusBadge status={item.status} />
       </td>
