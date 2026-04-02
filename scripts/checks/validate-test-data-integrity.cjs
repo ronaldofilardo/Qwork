@@ -46,15 +46,12 @@ const REQUIRED_NOT_NULL_COLUMNS = {
   ],
   empresas_clientes: ['nome', 'cnpj', 'clinica_id', 'ativa'],
   lotes_avaliacao: [
-    'empresa_id',
-    'clinica_id',
     'tipo',
     'status',
     'numero_ordem',
-    'liberado_por',
   ],
   avaliacoes: ['lote_id', 'funcionario_cpf', 'status'],
-  funcionarios: ['cpf', 'nome', 'tomador_id', 'usuario_tipo'],
+  funcionarios: ['cpf', 'nome', 'usuario_tipo'],
 };
 
 async function main() {

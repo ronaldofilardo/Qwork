@@ -186,7 +186,7 @@ export async function POST(request: NextRequest) {
         await criarContaResponsavel(tomadorData);
 
         // Atualizar tomador para marcar como ativo
-        const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true, data_liberacao_login = CURRENT_TIMESTAMP WHERE id = $1`;
+        const updateTableQuery = `UPDATE ${tabelaTomador} SET ativa = true WHERE id = $1`;
         await query(updateTableQuery, [updated.tomador_id]);
 
         // Auto-converter leads pendentes por CNPJ
