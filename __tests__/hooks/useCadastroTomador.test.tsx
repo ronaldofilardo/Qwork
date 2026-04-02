@@ -1,6 +1,7 @@
 /**
  * @file __tests__/hooks/useCadastroTomador.test.tsx
  * Testes: useCadastroTomador
+ * Fluxo atual: tipo → dados → responsavel → confirmacao (sem planos)
  */
 
 import React, { useEffect } from 'react';
@@ -16,16 +17,9 @@ function Harness({ apiFetcher, resultRef, initialTipo }: any) {
   return null;
 }
 
-function makeFetcher({ planos = [], cadastro = {} }: any = {}) {
+function makeFetcher({ cadastro = {} }: any = {}) {
   return async (input: RequestInfo, init?: RequestInit) => {
     const url = String(input);
-    if (url.endsWith('/api/planos')) {
-      return {
-        ok: true,
-        json: async () => planos,
-      } as any;
-    }
-
     if (url.endsWith('/api/cadastro/tomadores')) {
       return {
         ok: true,
@@ -41,20 +35,9 @@ function makeFetcher({ planos = [], cadastro = {} }: any = {}) {
 }
 
 describe('useCadastroTomador', () => {
-  test('carrega planos via api e avança etapas', async () => {
+  test('inicia em dados quando initialTipo definido', () => {
     const ref: any = { current: null };
-
-    const fakeFetcher = makeFetcher({
-      planos: [
-        {
-          id: 1,
-          nome: 'Básico',
-          preco: 100,
-          tipo: 'fixo',
-          caracteristicas: {},
-        },
-      ],
-    });
+    const fakeFetcher = makeFetcher({ cadastro: { id: 123 } });
 
     render(
       <Harness
@@ -64,31 +47,15 @@ describe('useCadastroTomador', () => {
       />
     );
 
-    // esperar planos carregarem
-    await waitFor(() => expect(ref.current.planos.length).toBeGreaterThan(0));
-
-    // Definir plano e aguardar atualização de estado antes de avançar
-    act(() => {
-      ref.current.setPlanoSelecionado({
-        id: 1,
-        nome: 'Básico',
-        preco: 100,
-        tipo: 'fixo',
-        caracteristicas: {},
-      } as any);
-    });
-    await waitFor(() => expect(ref.current.planoSelecionado).not.toBeNull());
-    act(() => {
-      ref.current.avancarEtapa(); // agora deve ir para 'dados'
-    });
-
-    await waitFor(() => expect(ref.current.etapaAtual).toBe('dados'));
+    expect(ref.current.etapaAtual).toBe('dados');
   });
 
-  test('submit envia dados e retorna redirect', async () => {
+  test('submit envia dados e retorna redirect com contrato_id', async () => {
     const ref: any = { current: null };
 
-    const fakeFetcher = makeFetcher({ cadastro: { id: 123 } });
+    const fakeFetcher = makeFetcher({
+      cadastro: { id: 123, contrato_id: 999 },
+    });
 
     render(
       <Harness
@@ -114,17 +81,10 @@ describe('useCadastroTomador', () => {
       ref.current.setDadosResponsavel({
         nome: 'João',
         cpf: '12345678909',
-        cargo: '',
+        cargo: 'Gestor',
         email: 'j@j.com',
         celular: '(11) 99999-9999',
       });
-      ref.current.setPlanoSelecionado({
-        id: 1,
-        nome: 'Básico',
-        preco: 100,
-        tipo: 'fixo',
-        caracteristicas: {},
-      } as any);
     });
 
     let res: any;
@@ -132,10 +92,11 @@ describe('useCadastroTomador', () => {
       res = await ref.current.submit();
     });
 
-    expect(res.data).toBeDefined();
+    expect(res.data.id).toBe(123);
+    expect(res.redirect).toBe('/sucesso-cadastro?id=123&contrato_id=999');
   });
 
-  test('quando cadastro retorna contrato_id, redirect inclui contrato_id', async () => {
+  test('permite definir código de representante durante confirmacao', async () => {
     const ref: any = { current: null };
 
     const fakeFetcher = makeFetcher({
@@ -150,55 +111,18 @@ describe('useCadastroTomador', () => {
       />
     );
 
-    // preencher dados mínimos para enviar
     act(() => {
-      ref.current.setDadostomador({
-        nome: 'ACME',
-        cnpj: '11.444.777/0001-61',
-        inscricao_estadual: '',
-        email: 'a@a.com',
-        telefone: '(11) 99999-9999',
-        endereco: 'rua',
-        cidade: 'SP',
-        estado: 'SP',
-        cep: '01234-567',
-      });
-      ref.current.setDadosResponsavel({
-        nome: 'João',
-        cpf: '12345678909',
-        cargo: '',
-        email: 'j@j.com',
-        celular: '(11) 99999-9999',
-      });
-      ref.current.setPlanoSelecionado({
-        id: 1,
-        nome: 'Básico',
-        preco: 100,
-        tipo: 'fixo',
-        caracteristicas: {},
-      } as any);
+      ref.current.setCodigoRepresentante('REP-ABC123');
     });
 
-    let res: any;
-    await act(async () => {
-      res = await ref.current.submit();
-    });
-
-    expect(res.redirect).toBe('/sucesso-cadastro?id=123&contrato_id=999');
+    expect(ref.current.codigoRepresentante).toBe('REP-ABC123');
   });
 
-  test('validação de dados impede avançar quando faltam campos', async () => {
+  test('permite marcar semIndicacao para pular representante', async () => {
     const ref: any = { current: null };
+
     const fakeFetcher = makeFetcher({
-      planos: [
-        {
-          id: 1,
-          nome: 'Básico',
-          preco: 100,
-          tipo: 'fixo',
-          caracteristicas: {},
-        },
-      ],
+      cadastro: { id: 123, contrato_id: 999 },
     });
 
     render(
@@ -209,27 +133,43 @@ describe('useCadastroTomador', () => {
       />
     );
 
-    await waitFor(() => expect(ref.current.planos.length).toBeGreaterThan(0));
-
     act(() => {
-      ref.current.setPlanoSelecionado({
-        id: 1,
-        nome: 'Básico',
-        preco: 100,
-        tipo: 'fixo',
-        caracteristicas: {},
-      } as any);
+      ref.current.setSemIndicacao(true);
     });
-    await waitFor(() => expect(ref.current.planoSelecionado).not.toBeNull());
+
+    expect(ref.current.semIndicacao).toBe(true);
+  });
+
+  test('validação de CNPJ rejeita inválido', async () => {
+    const ref: any = { current: null };
+
+    const fakeFetcher = makeFetcher({ cadastro: { id: 123 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    // Tentar avancar sem preencher dados válidos
     act(() => {
+      ref.current.setDadostomador({
+        nome: 'ACME',
+        cnpj: '00.000.000/0000-00', // CNPJ inválido
+        inscricao_estadual: '',
+        email: 'a@a.com',
+        telefone: '(11) 99999-9999',
+        endereco: 'rua',
+        cidade: 'SP',
+        estado: 'SP',
+        cep: '01234-567',
+      });
       ref.current.avancarEtapa();
     });
 
-    // Sem preencher dados, tentativa de avançar deve manter erro
-    act(() => {
-      ref.current.avancarEtapa();
-    });
-
+    // Deve continuar em 'dados' com erro
     expect(ref.current.etapaAtual).toBe('dados');
     expect(ref.current.erro).toBeTruthy();
   });
