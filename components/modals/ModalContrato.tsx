@@ -39,7 +39,6 @@ export default function ModalContrato({
   const [loading, setLoading] = useState(false);
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState('');
-  const [skipPaymentPhase, setSkipPaymentPhase] = useState(false);
 
   const contentRef = useRef<HTMLDivElement | null>(null);
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
@@ -82,14 +81,6 @@ export default function ModalContrato({
       buscarContrato();
     }
   }, [isOpen, contratoId, buscarContrato]);
-
-  // Detectar feature flag de pular pagamento
-  useEffect(() => {
-    const skipPayment =
-      typeof window !== 'undefined' &&
-      (window as any).NEXT_PUBLIC_SKIP_PAYMENT_PHASE === 'true';
-    setSkipPaymentPhase(skipPayment);
-  }, []);
 
   // Reset checkbox and evaluate initial scroll state quando modal abre ou contrato muda
   useEffect(() => {
@@ -347,6 +338,7 @@ export default function ModalContrato({
                         return;
                       }
 
+                      // Caso contrário, fechar modal e notificar via onAceiteSuccess
                       onClose();
                       onAceiteSuccess?.();
                     } catch (err) {
@@ -363,9 +355,7 @@ export default function ModalContrato({
                   })();
                 }}
               >
-                {skipPaymentPhase
-                  ? '✓ Aceitar Contrato e Liberar Acesso'
-                  : '✓ Aceitar Contrato e Iniciar o Uso'}
+                {'Aceitar Contrato e Liberar Acesso'}
               </button>
             )}
           </div>

@@ -58,7 +58,7 @@ describe('ModalContrato comportamento de aceite por rolagem', () => {
     // O modal agora exibe o contrato padrão unificado
     await waitFor(() =>
       expect(content.textContent).toContain(
-        'CONTRATO DE PRESTAÇÃO DE SERVIÇOS DIGITAIS'
+        'CONTRATO DE PRESTAÇÃO DE SERVIÇOS'
       )
     );
     // Não deve exibir aviso de resumo nem conteúdos dinâmicos
@@ -280,7 +280,7 @@ describe('ModalContrato comportamento de aceite por rolagem', () => {
 
     await waitFor(() => {
       const btn = screen.getByTestId('aceitar-button');
-      expect(btn.textContent).toContain('Aceitar Contrato e Iniciar o Uso');
+      expect(btn.textContent).toContain('Aceitar Contrato e Liberar Acesso');
     });
   });
 });

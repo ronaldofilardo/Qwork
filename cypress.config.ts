@@ -12,14 +12,14 @@ export default defineConfig({
             const { query } = await import('./lib/db');
 
             const tomadorRes = await query(
-              `INSERT INTO tomadors (
+              `INSERT INTO entidades (
                 tipo, nome, cnpj, email, telefone,
                 responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
                 endereco, cidade, estado, cep, status, ativa, numero_funcionarios_estimado
               ) VALUES (
                 'entidade', $1, $2, $3, '(11) 90000-0000',
                 'Resp E2E', $4, $3, '(11) 90000-0001',
-                'Rua E2E', 'Cidade', 'SP', '00000-000', 'aguardando_pagamento', false, 1
+                'Rua E2E', 'Cidade', 'SP', '00000-000', 'aguardando_aceite_contrato', false, 1
               ) RETURNING id`,
               [nome, cnpj, email, cpf]
             );
@@ -27,25 +27,15 @@ export default defineConfig({
             const tomadorId = tomadorRes.rows[0].id;
 
             const contratoRes = await query(
-              `INSERT INTO contratos (tomador_id, plano_id, aceito, hash_contrato, criado_em)
-               SELECT $1, plano_id, true, md5(random()::text), CURRENT_TIMESTAMP
-               FROM tomadors WHERE id = $1
+              `INSERT INTO contratos (tomador_id, tipo_tomador, aceito, criado_em)
+               VALUES ($1, 'entidade', false, CURRENT_TIMESTAMP)
                RETURNING id`,
               [tomadorId]
             );
 
             const contratoId = contratoRes.rows[0].id;
 
-            const pagamentoRes = await query(
-              `INSERT INTO pagamentos (tomador_id, contrato_id, valor, status, metodo, numero_parcelas, criado_em)
-               VALUES ($1, $2, 1500.00, 'pendente', 'boleto', 1, CURRENT_TIMESTAMP)
-               RETURNING id`,
-              [tomadorId, contratoId]
-            );
-
-            const pagamentoId = pagamentoRes.rows[0].id;
-
-            return { tomadorId, contratoId, pagamentoId };
+            return { tomadorId, contratoId };
           } catch (err: any) {
             console.error('Task db:insertTesttomador error:', err);
             throw err;
@@ -57,19 +47,13 @@ export default defineConfig({
           try {
             const { query } = await import('./lib/db');
 
-            const tomador = await query(
-              'SELECT id FROM tomadors WHERE responsavel_cpf = $1 LIMIT 1',
+            const entidade = await query(
+              'SELECT id FROM entidades WHERE responsavel_cpf = $1 LIMIT 1',
               [cpf]
             );
-            const tomadorId = tomador.rows[0]?.id;
+            const tomadorId = entidade.rows[0]?.id;
 
             if (tomadorId) {
-              await query('DELETE FROM recibos WHERE tomador_id = $1', [
-                tomadorId,
-              ]);
-              await query('DELETE FROM pagamentos WHERE tomador_id = $1', [
-                tomadorId,
-              ]);
               await query('DELETE FROM contratos WHERE tomador_id = $1', [
                 tomadorId,
               ]);
@@ -78,7 +62,8 @@ export default defineConfig({
                 [cpf]
               );
               await query('DELETE FROM funcionarios WHERE cpf = $1', [cpf]);
-              await query('DELETE FROM tomadors WHERE id = $1', [
+              await query('DELETE FROM entidades_senhas WHERE cpf = $1', [cpf]);
+              await query('DELETE FROM entidades WHERE id = $1', [
                 tomadorId,
               ]);
             }
@@ -123,14 +108,10 @@ export default defineConfig({
 
             if (cnpj) {
               await query(
-                'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
+                'DELETE FROM contratos WHERE tomador_id IN (SELECT id FROM entidades WHERE cnpj = $1)',
                 [cnpj]
               );
-              await query(
-                'DELETE FROM pagamentos WHERE tomador_id IN (SELECT id FROM tomadors WHERE cnpj = $1)',
-                [cnpj]
-              );
-              await query('DELETE FROM tomadors WHERE cnpj = $1', [cnpj]);
+              await query('DELETE FROM entidades WHERE cnpj = $1', [cnpj]);
             }
 
             return true;
@@ -145,7 +126,7 @@ export default defineConfig({
           try {
             const { query } = await import('./lib/db');
             const res = await query(
-              'SELECT * FROM tomadors WHERE cnpj = $1 LIMIT 1',
+              'SELECT * FROM entidades WHERE cnpj = $1 LIMIT 1',
               [cnpj]
             );
             return res.rows[0] || null;
@@ -161,7 +142,7 @@ export default defineConfig({
             const { query } = await import('./lib/db');
 
             await query(
-              'UPDATE tomadors SET pagamento_confirmado = true, status = $1 WHERE id = $2',
+              'UPDATE entidades SET ativa = true, status = $1 WHERE id = $2',
               ['aprovado', tomadorId]
             );
 
@@ -212,8 +193,8 @@ export default defineConfig({
             const { query } = await import('./lib/db');
 
             const res = await query(
-              `INSERT INTO tomadors (tipo, nome, cnpj, email, responsavel_nome, responsavel_cpf, status, ativa, criado_em)
-               VALUES ('entidade', $1, $2, $3, 'Resp Inativo', $4, 'aguardando_pagamento', false, NOW()) RETURNING id`,
+              `INSERT INTO entidades (tipo, nome, cnpj, email, responsavel_nome, responsavel_cpf, status, ativa, criado_em)
+               VALUES ('entidade', $1, $2, $3, 'Resp Inativo', $4, 'aguardando_aceite_contrato', false, NOW()) RETURNING id`,
               [
                 `Clinica Inativa ${Date.now()}`,
                 cnpj || `99${Date.now()}`,

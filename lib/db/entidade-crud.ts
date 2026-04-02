@@ -18,8 +18,7 @@ export type StatusAprovacao =
   | 'pendente'
   | 'aprovado'
   | 'rejeitado'
-  | 'em_reanalise'
-  | 'aguardando_pagamento';
+  | 'em_reanalise';
 
 export interface Entidade {
   id: number;
@@ -72,10 +71,10 @@ export async function getEntidadesByTipo(
   const queryText = tipo
     ? `SELECT * FROM entidades 
        WHERE tipo = $1 
-       AND status NOT IN ('pendente', 'em_reanalise', 'aguardando_pagamento')
+       AND status NOT IN ('pendente', 'em_reanalise')
        ORDER BY nome`
     : `SELECT * FROM entidades 
-       WHERE status NOT IN ('pendente', 'em_reanalise', 'aguardando_pagamento')
+       WHERE status NOT IN ('pendente', 'em_reanalise')
        ORDER BY nome`;
   const params = tipo ? [tipo] : [];
   const result = await query<Entidade>(queryText, params, session);
@@ -109,16 +108,16 @@ export async function getEntidadesPendentes(
   const queryText = tipo
     ? `SELECT c.*
        FROM entidades c
-       WHERE c.status IN ($1, $2, $3) AND c.tipo = $4
+       WHERE c.status IN ($1, $2) AND c.tipo = $3
        ORDER BY c.criado_em DESC`
     : `SELECT c.*
        FROM entidades c
-       WHERE c.status IN ($1, $2, $3)
+       WHERE c.status IN ($1, $2)
        ORDER BY c.tipo, c.criado_em DESC`;
 
   const params = tipo
-    ? ['pendente', 'em_reanalise', 'aguardando_pagamento', tipo]
-    : ['pendente', 'em_reanalise', 'aguardando_pagamento'];
+    ? ['pendente', 'em_reanalise', tipo]
+    : ['pendente', 'em_reanalise'];
 
   const result = await query<Entidade>(queryText, params, session);
   return result.rows;
@@ -197,19 +196,7 @@ export async function createEntidade(
     }
   }
 
-  // Garantir que colunas adicionadas por migração existam
-  try {
-    await query(
-      `ALTER TABLE entidades
-       ADD COLUMN IF NOT EXISTS pagamento_confirmado BOOLEAN DEFAULT false,
-       ADD COLUMN IF NOT EXISTS data_liberacao_login TIMESTAMP,
-       ADD COLUMN IF NOT EXISTS data_primeiro_pagamento TIMESTAMP`,
-      [],
-      session
-    );
-  } catch (err) {
-    console.warn('Aviso: não foi possível garantir colunas em entidades:', err);
-  }
+  // Verificado: colunas necessárias existem (migrações 1137+ removeram colunas legacy)
 
   let result: QueryResult<Entidade>;
   try {
