@@ -57,9 +57,9 @@ export async function GET(
         l.finalizado_em,
         l.solicitacao_emissao_em,
         l.pago_em,
-        COALESCE(f_lib.nome, l.liberado_por)      AS liberado_por_nome,
-        -- CPF de quem liberou o lote (armazenado diretamente em liberado_por)
-        l.liberado_por                            AS rh_cpf,
+        COALESCE(f_lib.nome, NULLIF(TRIM(l.liberado_por), ''))  AS liberado_por_nome,
+        -- CPF de quem liberou o lote (normalizado: espaços e vazio → NULL)
+        NULLIF(TRIM(l.liberado_por), '')          AS rh_cpf,
         -- Tomador
         COALESCE(ent.nome, c.nome)                 AS tomador_nome,
         COALESCE(ent.cnpj, c.cnpj)                AS tomador_cnpj,
