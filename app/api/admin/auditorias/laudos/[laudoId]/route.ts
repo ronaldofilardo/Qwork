@@ -58,8 +58,8 @@ export async function GET(
         l.solicitacao_emissao_em,
         l.pago_em,
         COALESCE(f_lib.nome, l.liberado_por)      AS liberado_por_nome,
-        -- RH CPF para eventos de lote/solicitação
-        COALESCE(f_rh_ent.cpf, f_rh_cli.cpf)     AS rh_cpf,
+        -- RH CPF: busca por clínica se disponível, caso contrário NULL
+        COALESCE(f_rh_cli.cpf, l.liberado_por)    AS rh_cpf,
         -- Tomador
         COALESCE(ent.nome, c.nome)                 AS tomador_nome,
         COALESCE(ent.cnpj, c.cnpj)                AS tomador_cnpj,
@@ -73,7 +73,6 @@ export async function GET(
       JOIN lotes_avaliacao l ON l.id = ld.lote_id
       LEFT JOIN funcionarios  f_em  ON f_em.cpf  = ld.emissor_cpf
       LEFT JOIN funcionarios  f_lib ON f_lib.cpf = l.liberado_por
-      LEFT JOIN funcionarios  f_rh_ent ON f_rh_ent.entidade_id = l.entidade_id AND f_rh_ent.perfil = 'rh'
       LEFT JOIN funcionarios  f_rh_cli ON f_rh_cli.clinica_id = l.clinica_id AND f_rh_cli.perfil = 'rh'
       LEFT JOIN clinicas      c     ON c.id  = l.clinica_id
       LEFT JOIN empresas_clientes ec ON ec.id = l.empresa_id
