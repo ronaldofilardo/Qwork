@@ -204,14 +204,36 @@ export async function POST(request: Request): Promise<NextResponse> {
               }
             }
           } else {
-            const insertEmpresa = await client.query(
-              `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa)
-               VALUES ($1, $2, $3, true)
-               RETURNING id`,
-              [nome, cnpj, clinicaId]
+            // CNPJ não existe em empresas_clientes — verificar se pertence a uma Entidade
+            const entidadeCheck = await client.query(
+              'SELECT 1 FROM entidades WHERE cnpj = $1 LIMIT 1',
+              [cnpj]
             );
-            empresaId = insertEmpresa.rows[0].id as number;
-            empresasCriadas++;
+            if (entidadeCheck.rows.length > 0) {
+              // CNPJ pertence a uma Entidade — bloquear
+              empresasBloqueadas++;
+              const cnpjFmt = cnpj.replace(
+                /(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/,
+                '$1.$2.$3/$4-$5'
+              );
+              for (const row of rows) {
+                const linhaNum = parsed.data!.indexOf(row) + 2;
+                errosProcessamento.push({
+                  linha: linhaNum,
+                  cpf: limparCPF(row.cpf ?? ''),
+                  mensagem: `Empresa "${nome}" (CNPJ ${cnpjFmt || cnpj}) está cadastrada como Entidade no sistema — não é possível importar como empresa de clínica`,
+                });
+              }
+            } else {
+              const insertEmpresa = await client.query(
+                `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa)
+                 VALUES ($1, $2, $3, true)
+                 RETURNING id`,
+                [nome, cnpj, clinicaId]
+              );
+              empresaId = insertEmpresa.rows[0].id as number;
+              empresasCriadas++;
+            }
           }
         } else {
           // Sem CNPJ — buscar por nome
@@ -340,8 +362,8 @@ export async function POST(request: Request): Promise<NextResponse> {
               const insertFunc = await client.query(
                 `INSERT INTO funcionarios (
                   cpf, nome, data_nascimento, setor, funcao, email,
-                  senha_hash, perfil, ativo, matricula, nivel_cargo
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9)
+                  senha_hash, perfil, ativo, matricula, nivel_cargo, usuario_tipo
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,'funcionario_clinica'::usuario_tipo_enum)
                 RETURNING id`,
                 [
                   cpf,

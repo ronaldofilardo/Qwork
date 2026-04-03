@@ -474,7 +474,13 @@ describe('APIs de Auditoria — Laudos', () => {
       mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
       mockQuery
         .mockResolvedValueOnce({
-          rows: [makeLaudoRow({ finalizado_em: null, solicitacao_emissao_em: null, pago_em: null })],
+          rows: [
+            makeLaudoRow({
+              finalizado_em: null,
+              solicitacao_emissao_em: null,
+              pago_em: null,
+            }),
+          ],
           rowCount: 1,
         })
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })
@@ -500,13 +506,15 @@ describe('APIs de Auditoria — Laudos', () => {
       mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
       mockQuery
         .mockResolvedValueOnce({
-          rows: [makeLaudoRow({
-            rh_cpf: '11122233344',
-            finalizado_em: null,
-            solicitacao_emissao_em: null,
-            pago_em: null,
-            arquivo_remoto_uploaded_at: null,
-          })],
+          rows: [
+            makeLaudoRow({
+              rh_cpf: '11122233344',
+              finalizado_em: null,
+              solicitacao_emissao_em: null,
+              pago_em: null,
+              arquivo_remoto_uploaded_at: null,
+            }),
+          ],
           rowCount: 1,
         })
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })
@@ -554,18 +562,24 @@ describe('APIs de Auditoria — Laudos', () => {
       mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
       mockQuery
         .mockResolvedValueOnce({
-          rows: [makeLaudoRow({
-            liberado_em: null,
-            finalizado_em: null,
-            solicitacao_emissao_em: null,
-            pago_em: null,
-            arquivo_remoto_uploaded_at: null,
-          })],
+          rows: [
+            makeLaudoRow({
+              liberado_em: null,
+              finalizado_em: null,
+              solicitacao_emissao_em: null,
+              pago_em: null,
+              arquivo_remoto_uploaded_at: null,
+            }),
+          ],
           rowCount: 1,
         })
         .mockResolvedValueOnce({
           rows: [
-            makeAvaliacaoRow({ avaliacao_id: 5, funcionario_cpf: '55566677788', concluida_em: '2024-01-01T09:00:00.000Z' }),
+            makeAvaliacaoRow({
+              avaliacao_id: 5,
+              funcionario_cpf: '55566677788',
+              concluida_em: '2024-01-01T09:00:00.000Z',
+            }),
           ],
           rowCount: 1,
         })
@@ -591,7 +605,13 @@ describe('APIs de Auditoria — Laudos', () => {
       mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
       mockQuery
         .mockResolvedValueOnce({
-          rows: [makeLaudoRow({ solicitacao_emissao_em: null, pago_em: null, arquivo_remoto_uploaded_at: null })],
+          rows: [
+            makeLaudoRow({
+              solicitacao_emissao_em: null,
+              pago_em: null,
+              arquivo_remoto_uploaded_at: null,
+            }),
+          ],
           rowCount: 1,
         })
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })
@@ -630,14 +650,16 @@ describe('APIs de Auditoria — Laudos', () => {
       mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
       mockQuery
         .mockResolvedValueOnce({
-          rows: [makeLaudoRow({
-            rh_cpf: null,
-            liberado_por: null,
-            finalizado_em: null,
-            solicitacao_emissao_em: null,
-            pago_em: null,
-            arquivo_remoto_uploaded_at: null,
-          })],
+          rows: [
+            makeLaudoRow({
+              rh_cpf: null,
+              liberado_por: null,
+              finalizado_em: null,
+              solicitacao_emissao_em: null,
+              pago_em: null,
+              arquivo_remoto_uploaded_at: null,
+            }),
+          ],
           rowCount: 1,
         })
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })
@@ -665,15 +687,17 @@ describe('APIs de Auditoria — Laudos', () => {
       mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
       mockQuery
         .mockResolvedValueOnce({
-          rows: [makeLaudoRow({
-            rh_cpf: null,           // NULLIF(TRIM(''), '') → null
-            liberado_por_nome: null, // COALESCE(null, null) → null
-            liberado_por: null,
-            finalizado_em: null,
-            solicitacao_emissao_em: null,
-            pago_em: null,
-            arquivo_remoto_uploaded_at: null,
-          })],
+          rows: [
+            makeLaudoRow({
+              rh_cpf: null, // NULLIF(TRIM(''), '') → null
+              liberado_por_nome: null, // COALESCE(null, null) → null
+              liberado_por: null,
+              finalizado_em: null,
+              solicitacao_emissao_em: null,
+              pago_em: null,
+              arquivo_remoto_uploaded_at: null,
+            }),
+          ],
           rowCount: 1,
         })
         .mockResolvedValueOnce({ rows: [], rowCount: 0 })

@@ -102,13 +102,8 @@ describe.skip('Correções de Card e Status de Laudos (16/02/2026)', () => {
   });
 
   afterAll(async () => {
-    // Limpar dados de teste
+    // Limpar dados de teste (arquivos físicos de laudos NUNCA são removidos — imutabilidade)
     if (testLaudoId) {
-      const pdfPath = path.join(storageDir, `laudo-${testLaudoId}.pdf`);
-      const jsonPath = path.join(storageDir, `laudo-${testLaudoId}.json`);
-      if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
-      if (fs.existsSync(jsonPath)) fs.unlinkSync(jsonPath);
-
       await query('DELETE FROM laudos WHERE id = $1', [testLaudoId]);
     }
     if (testLoteId) {

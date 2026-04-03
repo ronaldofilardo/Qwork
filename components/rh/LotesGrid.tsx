@@ -2,6 +2,9 @@ import React from 'react';
 import toast from 'react-hot-toast';
 import { LoteAvaliacao } from '@/lib/hooks';
 
+/** Percentual mínimo de avaliações concluídas para emissão do laudo (Migration 1130) */
+const PERCENTUAL_MINIMO_EMISSAO = 70;
+
 interface LotesGridProps {
   lotes: LoteAvaliacao[];
   laudos: Array<{
@@ -185,14 +188,59 @@ export function LotesGrid({
                 </span>
               </div>
 
-              {/* Taxa de conclusão (informativa) */}
+              {/* Barra de progresso de conclusão com marcador 70% */}
               {typeof lote.taxa_conclusao === 'number' && (
-                <div className="flex justify-between text-sm">
-                  <span>Taxa de conclusão:</span>
-                  <span className="font-medium text-gray-700">
-                    {Number(lote.taxa_conclusao).toFixed(2)}%{' '}
-                    <span className="text-xs text-gray-500">(informativa)</span>
-                  </span>
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  {(() => {
+                    const pct = Math.min(Math.round(lote.taxa_conclusao), 100);
+                    const atingiu = pct >= PERCENTUAL_MINIMO_EMISSAO;
+                    const progressColor = atingiu
+                      ? 'bg-green-500'
+                      : pct >= 50
+                        ? 'bg-amber-400'
+                        : 'bg-red-400';
+                    const textColor = atingiu
+                      ? 'text-green-700'
+                      : pct >= 50
+                        ? 'text-amber-700'
+                        : 'text-red-600';
+                    return (
+                      <>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-gray-500 font-medium">
+                            Progresso
+                          </span>
+                          <span
+                            className={`text-xs font-semibold ${textColor}`}
+                          >
+                            {pct}%
+                          </span>
+                        </div>
+                        <div className="relative h-2.5 bg-gray-200 rounded-full overflow-visible">
+                          {/* Marcador 70% */}
+                          <div
+                            className="absolute top-0 bottom-0 w-px bg-gray-500 z-10"
+                            style={{ left: `${PERCENTUAL_MINIMO_EMISSAO}%` }}
+                            title={`Mínimo ${PERCENTUAL_MINIMO_EMISSAO}% para emissão`}
+                          />
+                          <div
+                            className={`h-2.5 rounded-full transition-all duration-500 ${progressColor}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        {atingiu ? (
+                          <p className="text-xs text-green-700 mt-1 font-medium">
+                            ✓ Liberado para solicitar laudo
+                          </p>
+                        ) : (
+                          <p className="text-xs text-gray-500 mt-1">
+                            mín. {PERCENTUAL_MINIMO_EMISSAO}% para solicitar
+                            laudo
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
 

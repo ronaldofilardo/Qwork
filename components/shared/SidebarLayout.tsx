@@ -13,6 +13,7 @@ interface SidebarLayoutProps {
   roleLabel?: string;
   children: React.ReactNode;
   footer?: React.ReactNode; // optional content rendered after nav (outside)
+  onLogout?: () => void | Promise<void>;
 }
 
 export default function SidebarLayout({
@@ -24,10 +25,15 @@ export default function SidebarLayout({
   children,
   footer,
   roleLabel = 'Gestor',
+  onLogout,
 }: SidebarLayoutProps) {
   const router = useRouter();
 
   const handleLogout = async () => {
+    if (onLogout) {
+      await onLogout();
+      return;
+    }
     try {
       await fetch('/api/auth/logout', { method: 'POST' });
       router.push('/login');

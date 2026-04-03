@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { requireClinica } from '@/lib/session';
+import { query } from '@/lib/db';
 import { withTransaction } from '@/lib/db-transaction';
 import {
   parseEmpresaFuncionarioXlsx,
@@ -41,7 +42,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const allowedMime =
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-    if (file.type !== allowedMime && !file.name.toLowerCase().endsWith('.xlsx')) {
+    if (
+      file.type !== allowedMime &&
+      !file.name.toLowerCase().endsWith('.xlsx')
+    ) {
       return NextResponse.json(
         { error: 'Apenas arquivos .xlsx são permitidos' },
         { status: 400 }
@@ -74,7 +78,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
     if (!cpfCheck.valido) {
       return NextResponse.json(
-        { error: `CPFs duplicados no arquivo: ${cpfCheck.duplicados.join(', ')}` },
+        {
+          error: `CPFs duplicados no arquivo: ${cpfCheck.duplicados.join(', ')}`,
+        },
         { status: 400 }
       );
     }
@@ -84,7 +90,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
     if (!emailCheck.valido) {
       return NextResponse.json(
-        { error: `Emails duplicados no arquivo: ${emailCheck.duplicados.join(', ')}` },
+        {
+          error: `Emails duplicados no arquivo: ${emailCheck.duplicados.join(', ')}`,
+        },
         { status: 400 }
       );
     }
@@ -168,6 +176,46 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
     }
 
+    // Verificar bloqueios de CNPJ: entidades + empresas de outra clínica
+    const cnpjsParaVerificar = [...empresaMap.keys()];
+    const cnpjsBloqueados = new Map<string, string>();
+    const avisosBloqueio: string[] = [];
+
+    if (cnpjsParaVerificar.length > 0) {
+      const conflictResult = await query<{ cnpj: string; origem: string }>(
+        `SELECT cnpj::text, 'entidade' AS origem FROM entidades WHERE cnpj = ANY($1)
+         UNION ALL
+         SELECT cnpj::text, 'outra_clinica' AS origem FROM empresas_clientes WHERE cnpj = ANY($1) AND clinica_id != $2`,
+        [cnpjsParaVerificar, clinicaId]
+      );
+      for (const row of conflictResult.rows) {
+        const msg =
+          row.origem === 'entidade'
+            ? `CNPJ ${row.cnpj} pertence a uma Entidade cadastrada — não é possível criar como empresa de clínica`
+            : `CNPJ ${row.cnpj} já está cadastrado em outra clínica`;
+        cnpjsBloqueados.set(row.cnpj, msg);
+      }
+    }
+
+    for (const [cnpj, { empresa_nome }] of empresaMap) {
+      const motivo = cnpjsBloqueados.get(cnpj);
+      if (motivo) {
+        avisosBloqueio.push(`Empresa "${empresa_nome}": ${motivo}`);
+        empresaMap.delete(cnpj);
+      }
+    }
+
+    if (empresaMap.size === 0) {
+      return NextResponse.json(
+        {
+          error:
+            'Nenhuma empresa pôde ser importada devido a conflitos de CNPJ',
+          details: avisosBloqueio,
+        },
+        { status: 409 }
+      );
+    }
+
     // Execute everything in a single transaction
     const result = await withTransaction(async (client) => {
       let empresasCriadas = 0;
@@ -176,17 +224,23 @@ export async function POST(request: Request): Promise<NextResponse> {
       let funcionariosVinculados = 0;
 
       for (const [cnpj, { empresa_nome, rows: empresaRows }] of empresaMap) {
-        // Find or create empresa
+        // Find or create empresa — busca global para detectar conflitos restantes
         const empresaExist = await client.query(
-          'SELECT id FROM empresas_clientes WHERE cnpj = $1 AND clinica_id = $2',
-          [cnpj, clinicaId]
+          'SELECT id, clinica_id FROM empresas_clientes WHERE cnpj = $1',
+          [cnpj]
         );
 
         let empresaId: number;
 
         if (empresaExist.rows.length > 0) {
-          empresaId = empresaExist.rows[0].id as number;
-          empresasExistentes++;
+          const empresaRow = empresaExist.rows[0];
+          if (Number(empresaRow.clinica_id) === clinicaId) {
+            empresaId = empresaRow.id as number;
+            empresasExistentes++;
+          } else {
+            // CNPJ de outra clínica (race condition — já filtrado no pré-check, mas por segurança)
+            continue;
+          }
         } else {
           const insertEmpresa = await client.query(
             `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa)
@@ -299,6 +353,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       funcionarios_criados: result.funcionariosCriados,
       funcionarios_vinculados: result.funcionariosVinculados,
       total_linhas: toInsert.length,
+      ...(avisosBloqueio.length > 0 ? { avisos: avisosBloqueio } : {}),
     });
   } catch (error: unknown) {
     console.error('Erro ao importar empresas+funcionários:', error);

@@ -120,7 +120,22 @@ export async function recalcularStatusLotePorId(
       return { novoStatus, loteFinalizado: false };
     }
 
-    const statusAtual = loteAtual.rows[0].status;
+    const statusAtual = loteAtual.rows[0].status as string;
+
+    // Estados pós-conclusão: a máquina de estados do DB não permite regredir para 'ativo'
+    // Se o lote já está em um desses estados e o recálculo sugeriria 'ativo', ignorar
+    const ESTADOS_POS_CONCLUSAO = [
+      'concluido',
+      'emissao_solicitada',
+      'emitido',
+    ];
+    if (ESTADOS_POS_CONCLUSAO.includes(statusAtual) && novoStatus === 'ativo') {
+      console.warn(
+        `[WARN] Lote ${String(loteId)}: recálculo sugere '${novoStatus}' mas lote já está em '${statusAtual}' ` +
+          `(${String(iniciadasNum)} avaliação(ões) ainda em andamento) — mantendo status atual`
+      );
+      return { novoStatus: statusAtual, loteFinalizado: true };
+    }
 
     let loteFinalizado = false;
 

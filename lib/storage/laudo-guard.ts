@@ -17,6 +17,7 @@
  */
 
 import path from 'path';
+import { unlink, rm } from 'fs/promises';
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
@@ -102,4 +103,33 @@ export function assertNotLaudoLocalPath(filePath: string): void {
   if (hasLaudosSegment && !hasPendingSegment) {
     throw new LaudoDeletionBlockedError(filePath, 'local');
   }
+}
+
+// ─── Utilitários seguros de deleção ──────────────────────────────────────────
+
+/**
+ * Deleta um arquivo de forma segura, bloqueando caminhos protegidos de laudos.
+ *
+ * Substitui chamadas diretas a `fs.unlink` em código que pode tocar storage/laudos.
+ * Chame este utilitário sempre que precisar deletar um arquivo do filesystem.
+ *
+ * @param filePath - Caminho absoluto ou relativo do arquivo a deletar
+ * @throws {LaudoDeletionBlockedError} se o path estiver sob storage/laudos (exceto /pending/)
+ */
+export async function deleteStorageFileSafe(filePath: string): Promise<void> {
+  assertNotLaudoLocalPath(filePath);
+  await unlink(filePath);
+}
+
+/**
+ * Remove recursivamente um diretório de forma segura, bloqueando storage/laudos.
+ *
+ * Substitui chamadas diretas a `fs.rm({ recursive })` em código que pode tocar storage/laudos.
+ *
+ * @param dirPath - Caminho do diretório a remover
+ * @throws {LaudoDeletionBlockedError} se o path estiver sob storage/laudos (exceto /pending/)
+ */
+export async function deleteStorageDirSafe(dirPath: string): Promise<void> {
+  assertNotLaudoLocalPath(dirPath);
+  await rm(dirPath, { recursive: true, force: true });
 }

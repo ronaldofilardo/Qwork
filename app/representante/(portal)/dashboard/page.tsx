@@ -10,6 +10,8 @@ import {
   X,
   Building2,
   UserCircle2,
+  Copy,
+  Check,
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -227,6 +229,7 @@ export default function DashboardRepresentante() {
   const [drawerLoading, setDrawerLoading] = useState(false);
   const [leadsEquipe, setLeadsEquipe] = useState<LeadsEquipe | null>(null);
   const [vinculos, setVinculos] = useState<VinculoItem[]>([]);
+  const [copiado, setCopiado] = useState(false);
 
   const _chartRegistered = useRef(false);
   _chartRegistered.current = true;
@@ -417,6 +420,22 @@ export default function DashboardRepresentante() {
     leads_mes: 'Leads Este Mês',
   };
 
+  const handleCopiarCodigo = async (): Promise<void> => {
+    const codigo = session?.codigo ?? '';
+    try {
+      await navigator.clipboard.writeText(codigo);
+    } catch {
+      const el = document.createElement('textarea');
+      el.value = codigo;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopiado(true);
+    setTimeout(() => setCopiado(false), 2000);
+  };
+
   return (
     <div className="space-y-8">
       {/* Boas-vindas */}
@@ -427,6 +446,40 @@ export default function DashboardRepresentante() {
         <p className="text-sm text-gray-500 mt-1">
           Aqui está um resumo da sua equipe de vendedores.
         </p>
+      </div>
+
+      {/* Banner do código */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-blue-100">
+            <UserCircle2 size={20} className="text-blue-600" />
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-blue-500">
+              Seu código no sistema
+            </p>
+            <p className="font-mono font-bold text-blue-700 text-lg leading-tight">
+              {session?.codigo ?? '—'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleCopiarCodigo}
+          aria-label="Copiar código"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium text-blue-600 hover:bg-blue-100 transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-blue-400"
+        >
+          {copiado ? (
+            <>
+              <Check size={15} />
+              <span>Copiado!</span>
+            </>
+          ) : (
+            <>
+              <Copy size={15} />
+              <span>Copiar</span>
+            </>
+          )}
+        </button>
       </div>
 
       {/* KPI cards clicáveis */}

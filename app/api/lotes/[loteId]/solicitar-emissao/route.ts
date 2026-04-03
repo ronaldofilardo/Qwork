@@ -111,10 +111,39 @@ export async function POST(
     }
 
     // 4. Validar status do lote
+    // Política 70% (Migration 1130): o trigger DB seta 'concluido' automaticamente ao atingir 70%
     if (lote.status !== 'concluido') {
       return NextResponse.json(
         {
-          error: `Lote não está concluído. Status atual: ${lote.status}`,
+          error: `Lote não está concluído. Status atual: ${lote.status}. Aguarde atingir 70% de avaliações concluídas.`,
+        },
+        { status: 400 }
+      );
+    }
+
+    // 4b. Validar política 70% — confirmar que o threshold é atendido
+    const avaliacoesResult = await query(
+      `SELECT
+        COUNT(*) FILTER (WHERE status != 'rascunho')::int AS total_liberadas,
+        COUNT(*) FILTER (WHERE status = 'concluida')::int AS concluidas
+       FROM avaliacoes WHERE lote_id = $1`,
+      [loteId]
+    );
+    const { total_liberadas, concluidas } = avaliacoesResult.rows[0] ?? {
+      total_liberadas: 0,
+      concluidas: 0,
+    };
+    const threshold70 =
+      total_liberadas > 0 ? Math.ceil(0.7 * total_liberadas) : 0;
+
+    if (total_liberadas === 0 || concluidas < threshold70) {
+      const pct =
+        total_liberadas > 0
+          ? Math.round((concluidas / total_liberadas) * 100)
+          : 0;
+      return NextResponse.json(
+        {
+          error: `Taxa de conclusão insuficiente: ${pct}% (mínimo 70%). Concluídas: ${concluidas} de ${total_liberadas} liberadas.`,
         },
         { status: 400 }
       );
@@ -225,6 +254,25 @@ export async function POST(
       console.log(
         `[INFO] Lote ${loteId} marcado como aguardando cobrança - novo fluxo de pagamento`
       );
+
+      // 9b. Inativar automaticamente todas as avaliações ainda não concluídas
+      // (funcionários podiam completar até o momento exato da solicitação)
+      const autoInativadasResult = await query(
+        `UPDATE avaliacoes
+         SET status = 'inativada',
+             motivo_inativacao = 'Inativação automática: emissão do laudo solicitada',
+             inativada_em = NOW()
+         WHERE lote_id = $1
+           AND status NOT IN ('concluida', 'inativada')
+         RETURNING id`,
+        [loteId]
+      );
+      const autoInativadasCount = autoInativadasResult.rowCount ?? 0;
+      if (autoInativadasCount > 0) {
+        console.log(
+          `[INFO] ${autoInativadasCount} avaliação(ões) inativada(s) automaticamente no lote ${loteId}`
+        );
+      }
 
       // 10. Criar notificação para ADMIN sobre solicitação de cobrança
       // TODO: Ajustar para usar destinatario_cpf/destinatario_tipo ao invés de destinatario_role
@@ -355,6 +403,7 @@ export async function POST(
           id: lote.id,
           status_pagamento: 'aguardando_cobranca',
         },
+        auto_inativadas_count: autoInativadasCount,
         gestor_contato: gestorContato,
       });
     } catch (emissaoError) {

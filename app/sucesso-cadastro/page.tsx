@@ -28,7 +28,8 @@ export default function SucessoCadastroPage() {
         <div className="bg-white shadow rounded-lg p-8 max-w-md text-center">
           <p className="text-red-600 font-semibold">Link inválido</p>
           <p className="text-gray-500 mt-2">
-            O link de cadastro está incompleto. Solicite um novo link ao suporte.
+            O link de cadastro está incompleto. Solicite um novo link ao
+            suporte.
           </p>
         </div>
       </div>
@@ -65,4 +66,3 @@ export default function SucessoCadastroPage() {
     </div>
   );
 }
-

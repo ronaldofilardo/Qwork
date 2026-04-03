@@ -238,6 +238,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'CNPJ inválido' }, { status: 400 });
     }
 
+    // Verificar unicidade global de CNPJ: não pode pertencer a Entidade nem a outra clínica
+    const cnpjGlobalCheck = await query(
+      `SELECT 'entidade' AS origem FROM entidades WHERE cnpj = $1
+       UNION ALL
+       SELECT 'outra_clinica' FROM empresas_clientes WHERE cnpj = $1 AND clinica_id != $2
+       LIMIT 1`,
+      [cnpjNormalizado, session.clinica_id]
+    );
+    if (cnpjGlobalCheck.rows.length > 0) {
+      const origem = cnpjGlobalCheck.rows[0].origem as string;
+      return NextResponse.json(
+        {
+          error:
+            origem === 'entidade'
+              ? 'Este CNPJ já está cadastrado como Entidade no sistema. Um CNPJ só pode pertencer a uma Entidade ou a uma Empresa de Clínica, nunca a ambos.'
+              : 'Este CNPJ já está cadastrado em outra clínica. Cada CNPJ só pode ser associado a uma única clínica.',
+        },
+        { status: 409 }
+      );
+    }
+
     // Validar email da empresa se fornecido
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return NextResponse.json(

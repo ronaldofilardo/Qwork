@@ -45,11 +45,7 @@ const REQUIRED_NOT_NULL_COLUMNS = {
     'responsavel_cpf',
   ],
   empresas_clientes: ['nome', 'cnpj', 'clinica_id', 'ativa'],
-  lotes_avaliacao: [
-    'tipo',
-    'status',
-    'numero_ordem',
-  ],
+  lotes_avaliacao: ['tipo', 'status', 'numero_ordem'],
   avaliacoes: ['lote_id', 'funcionario_cpf', 'status'],
   funcionarios: ['cpf', 'nome', 'usuario_tipo'],
 };

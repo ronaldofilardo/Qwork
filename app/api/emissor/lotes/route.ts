@@ -152,61 +152,17 @@ export const GET = async (req: Request) => {
         );
 
         if (invalid.rows.length > 0) {
+          // REGRA DE NEGÓCIO: laudos em storage/laudos NUNCA são deletados.
+          // Inconsistências são apenas logadas para revisão administrativa.
+          // Remoção de arquivos físicos de laudos é PROIBIDA por política de imutabilidade.
           console.warn(
-            `[WARN] Laudos inconsistentes detectados (lote não concluído):`,
-            invalid.rows
+            `[WARN] Laudos inconsistentes detectados (lote não concluído) — revisar manualmente:`,
+            invalid.rows.map((r) => ({
+              laudo_id: r.laudo_id,
+              lote_id: r.lote_id,
+              lote_status: r.lote_status,
+            }))
           );
-
-          // Limpeza opcional - habilitar via env var para evitar remoção automática sem aprovação
-          if (process.env.CLEANUP_LAUDOS_BEFORE_CONCLUSAO === '1') {
-            const fsCleanup = await import('fs/promises');
-            const pathCleanup = await import('path');
-            for (const r of invalid.rows) {
-              try {
-                // Remover arquivo local (se existir)
-                const localPath = pathCleanup.join(
-                  process.cwd(),
-                  'storage',
-                  'laudos',
-                  `laudo-${r.laudo_id}.pdf`
-                );
-                await fsCleanup.unlink(localPath).catch(() => {});
-
-                // Remover metadados locais
-                await fsCleanup
-                  .unlink(
-                    pathCleanup.join(
-                      process.cwd(),
-                      'storage',
-                      'laudos',
-                      `laudo-${r.laudo_id}.json`
-                    )
-                  )
-                  .catch(() => {});
-
-                // Remover registro no banco (operação deliberada)
-                await query('DELETE FROM laudos WHERE id = $1', [r.laudo_id]);
-
-                // Registrar notificação administrativa
-                await query(
-                  `INSERT INTO notificacoes_admin (tipo, mensagem, lote_id, criado_em) VALUES ('cleanup_laudo_invalido', $1, $2, NOW())`,
-                  [
-                    `Laudo ${r.laudo_id} removido: lote ${r.lote_id} está em status ${r.lote_status}`,
-                    r.lote_id,
-                  ]
-                );
-
-                console.log(
-                  `[CLEANUP] Laudo ${r.laudo_id} removido (lote ${r.lote_id} não concluído)`
-                );
-              } catch (cleanupErr) {
-                console.warn(
-                  `[WARN] Falha ao remover laudo inconsistente ${r.laudo_id}:`,
-                  cleanupErr
-                );
-              }
-            }
-          }
         }
       }
     } catch (err) {

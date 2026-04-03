@@ -25,7 +25,9 @@ describe('SucessoCadastroPage', () => {
     mockGet.mockReturnValue(null);
     render(<SucessoCadastroPage />);
     expect(screen.getByText('Link inválido')).toBeInTheDocument();
-    expect(screen.getByText(/Solicite um novo link ao suporte/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Solicite um novo link ao suporte/i)
+    ).toBeInTheDocument();
   });
 
   it('exibe "Cadastro Realizado!" com contrato_id presente', () => {
@@ -105,4 +107,3 @@ describe('SucessoCadastroPage', () => {
     });
   });
 });
-

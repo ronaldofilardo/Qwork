@@ -26,7 +26,10 @@ describe('Regressão E2E: Fluxo Cadastro Completo', () => {
   it('insere tomador/contrato via task, aceita contrato e permite login do gestor', () => {
     // Guard: garantir banco de testes
     cy.request({ url: '/api/test/db', timeout: 5000 }).then((resp) => {
-      if (!resp.body?.database || !String(resp.body.database).includes('_test')) {
+      if (
+        !resp.body?.database ||
+        !String(resp.body.database).includes('_test')
+      ) {
         throw new Error(
           `Ambiente incorreto: banco = ${resp.body?.database || 'desconhecido'}`
         );
@@ -56,8 +59,14 @@ describe('Regressão E2E: Fluxo Cadastro Completo', () => {
     const senhaPadrao = empresa.cnpj.replace(/[./-]/g, '').slice(-6);
     cy.wait(2000);
 
-    cy.get('input[name="cpf"]', { timeout: 10000 }).should('be.visible').clear().type(responsavel.cpf);
-    cy.get('input[name="senha"]', { timeout: 10000 }).should('be.visible').clear().type(senhaPadrao);
+    cy.get('input[name="cpf"]', { timeout: 10000 })
+      .should('be.visible')
+      .clear()
+      .type(responsavel.cpf);
+    cy.get('input[name="senha"]', { timeout: 10000 })
+      .should('be.visible')
+      .clear()
+      .type(senhaPadrao);
     cy.contains('Entrar').click();
 
     cy.url({ timeout: 10000 }).should('include', '/entidade');

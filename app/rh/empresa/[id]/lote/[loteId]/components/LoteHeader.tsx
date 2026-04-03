@@ -8,7 +8,6 @@ import type { LoteInfo, Estatisticas } from '../types';
 interface LoteHeaderProps {
   lote: LoteInfo;
   estatisticas: Estatisticas;
-  isPronto: boolean;
   gerarRelatorioLote: () => void;
   gerarRelatorioSetor: (setor: string) => Promise<void>;
   setores: string[];
@@ -19,7 +18,6 @@ interface LoteHeaderProps {
 export default function LoteHeader({
   lote,
   estatisticas,
-  isPronto,
   gerarRelatorioLote,
   gerarRelatorioSetor,
   setores,
@@ -116,29 +114,23 @@ export default function LoteHeader({
                 <div className="w-full sm:w-44 md:w-48 flex-shrink-0 flex flex-col gap-2">
                   <button
                     onClick={gerarRelatorioLote}
-                    disabled={!isPronto || !laudoEmitido}
+                    disabled={!laudoEmitido}
                     className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                     aria-label="Gerar Relatório PDF do Lote"
                     title={
                       !laudoEmitido
                         ? 'Aguardando emissão do laudo'
-                        : !isPronto
-                          ? 'Aguardando conclusão das avaliações'
-                          : 'Gerar relatório PDF do lote'
+                        : 'Gerar relatório PDF do lote'
                     }
                   >
-                    {laudoEmitido && isPronto
+                    {laudoEmitido
                       ? '📊 Gerar Relatório PDF'
-                      : isPronto
-                        ? '⏳ Aguardando laudo'
-                        : '⏳ Aguardando conclusão'}
+                      : '⏳ Aguardando emissão'}
                   </button>
 
                   <button
                     onClick={() => setShowSetorModal(true)}
-                    disabled={
-                      !isPronto || !laudoEmitido || setores.length === 0
-                    }
+                    disabled={!laudoEmitido || setores.length === 0}
                     className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                     aria-label="Gerar Relatório PDF por Setor"
                     title={
@@ -149,11 +141,9 @@ export default function LoteHeader({
                           : 'Gerar relatório por setor'
                     }
                   >
-                    {laudoEmitido && isPronto
+                    {laudoEmitido
                       ? '📊 Gerar relatório PDF por SETOR'
-                      : isPronto
-                        ? '⏳ Aguardando laudo'
-                        : '⏳ Aguardando conclusão'}
+                      : '⏳ Aguardando emissão'}
                   </button>
 
                   {estatisticas.avaliacoes_inativadas > 0 && (
@@ -172,12 +162,9 @@ export default function LoteHeader({
                             inativada
                             {estatisticas.avaliacoes_inativadas !== 1
                               ? 's'
-                              : ''}{' '}
-                            não{' '}
-                            {estatisticas.avaliacoes_inativadas !== 1
-                              ? 'contam'
-                              : 'conta'}{' '}
-                            para a prontidão do lote.
+                              : ''}
+                            . Contam no denominador dos 70% — o lote pode ser
+                            liberado sem que sejam concluídas.
                           </p>
                         </div>
                       </div>

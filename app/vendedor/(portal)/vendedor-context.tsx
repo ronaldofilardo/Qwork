@@ -8,8 +8,8 @@ import {
   useState,
 } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import ModalTermosVendedor from '@/components/modals/ModalTermosVendedor';
+import VendedorPortalSidebar from '@/components/vendedor/VendedorPortalSidebar';
 
 export interface VendedorSession {
   id: number;
@@ -36,13 +36,6 @@ export const useVendedor = (): VendedorContextValue =>
   useContext(VendedorContext);
 
 // --- Provider ---------------------------------------------------------
-
-const NAV_ITEMS = [
-  { href: '/vendedor/dashboard', label: 'Dashboard' },
-  { href: '/vendedor/leads', label: 'Leads' },
-  { href: '/vendedor/vinculos', label: 'Vínculos' },
-  { href: '/vendedor/dados', label: 'Dados' },
-];
 
 export function VendedorProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -94,28 +87,6 @@ export function VendedorProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  const handleCopiarCodigo = async () => {
-    if (!session?.codigo) return;
-    try {
-      await navigator.clipboard.writeText(session.codigo);
-      const btn = document.getElementById('copy-codigo-btn');
-      if (btn) {
-        const original = btn.textContent;
-        btn.textContent = 'Copiado!';
-        setTimeout(() => {
-          if (btn) btn.textContent = original;
-        }, 2000);
-      }
-    } catch {
-      const input = document.createElement('input');
-      input.value = session.codigo ?? '';
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand('copy');
-      document.body.removeChild(input);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -147,86 +118,42 @@ export function VendedorProvider({ children }: { children: React.ReactNode }) {
     <VendedorContext.Provider
       value={{ session, recarregarSessao: carregarSessao }}
     >
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b shadow-sm sticky top-0 z-30">
-          <div className="max-w-6xl mx-auto px-4 flex items-center justify-between h-14">
-            <nav className="flex items-center gap-0.5">
-              {NAV_ITEMS.map((item) => {
-                const isActive = pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-green-50 text-green-700'
-                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                    }`}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
-            </nav>
+      <div className="flex h-screen overflow-hidden bg-gray-50">
+        {/* Sidebar de navegação */}
+        <VendedorPortalSidebar session={session} onLogout={handleLogout} />
 
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden md:block">
-                <p className="text-sm font-medium text-gray-900 leading-tight">
-                  {session.nome}
-                </p>
-                <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                  <p className="text-xs text-gray-400 font-mono leading-tight">
-                    {session.codigo}
-                  </p>
-                  <button
-                    id="copy-codigo-btn"
-                    onClick={handleCopiarCodigo}
-                    title="Copiar código"
-                    className="ml-1 p-1 text-xs rounded hover:bg-gray-100 transition-colors text-gray-400 hover:text-gray-600"
-                  >
-                    📋
-                  </button>
+        {/* Conteúdo principal */}
+        <div className="flex-1 overflow-y-auto">
+          <main className="max-w-6xl mx-auto px-4 py-6">
+            {showBoasVindas && session?.codigo && (
+              <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl">&#127881;</span>
+                  <div>
+                    <p className="text-sm font-semibold text-green-900">
+                      Bem-vindo(a) à QWORK!
+                    </p>
+                    <p className="text-xs text-green-700 mt-0.5">
+                      Seu código:{' '}
+                      <span className="font-mono font-bold text-green-900">
+                        {session.codigo}
+                      </span>{' '}
+                      &mdash; Guarde-o, ele identifica você na plataforma.
+                    </p>
+                  </div>
                 </div>
+                <button
+                  onClick={() => setShowBoasVindas(false)}
+                  className="text-green-400 hover:text-green-700 transition-colors text-lg leading-none cursor-pointer"
+                  aria-label="Fechar"
+                >
+                  ×
+                </button>
               </div>
-              <button
-                onClick={handleLogout}
-                className="text-sm text-gray-500 hover:text-red-600 transition-colors"
-              >
-                Sair
-              </button>
-            </div>
-          </div>
-        </header>
-
-        <main className="max-w-6xl mx-auto px-4 py-6">
-          {showBoasVindas && session?.codigo && (
-            <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-3">
-                <span className="text-2xl">&#127881;</span>
-                <div>
-                  <p className="text-sm font-semibold text-green-900">
-                    Bem-vindo(a) à QWORK!
-                  </p>
-                  <p className="text-xs text-green-700 mt-0.5">
-                    Seu código:{' '}
-                    <span className="font-mono font-bold text-green-900">
-                      {session.codigo}
-                    </span>{' '}
-                    &mdash; Guarde-o, ele identifica você na plataforma.
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowBoasVindas(false)}
-                className="text-green-400 hover:text-green-700 transition-colors text-lg leading-none cursor-pointer"
-                aria-label="Fechar"
-              >
-                ×
-              </button>
-            </div>
-          )}
-          {children}
-        </main>
+            )}
+            {children}
+          </main>
+        </div>
       </div>
     </VendedorContext.Provider>
   );

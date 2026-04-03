@@ -29,10 +29,7 @@ function formatarData(iso: string): string {
 function formatarCNPJ(cnpj: string): string {
   const d = cnpj.replace(/\D/g, '');
   if (d.length !== 14) return cnpj;
-  return d.replace(
-    /^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,
-    '$1.$2.$3/$4-$5'
-  );
+  return d.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, '$1.$2.$3/$4-$5');
 }
 
 const STATUS_LABELS: Record<string, { label: string; color: string }> = {
@@ -120,8 +117,7 @@ function CopyButton({ url }: CopyButtonProps) {
 }
 
 function buildAceiteUrl(tomadorId: number, contratoId: number): string {
-  const origin =
-    typeof window !== 'undefined' ? window.location.origin : '';
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `${origin}/sucesso-cadastro?id=${tomadorId}&contrato_id=${contratoId}`;
 }
 
@@ -152,7 +148,9 @@ function PreCadastroRow({ item }: PreCadastroRowProps) {
       {/* Nome */}
       <td className="px-4 py-3">
         <p className="font-medium text-gray-900 text-sm">{item.nome}</p>
-        <p className="text-xs text-gray-400 mt-0.5">{formatarCNPJ(item.cnpj)}</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          {formatarCNPJ(item.cnpj)}
+        </p>
       </td>
 
       {/* Email */}
@@ -231,8 +229,8 @@ export function PreCadastroContent() {
             Pré-cadastros com Contrato Pendente
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            Entidades e clínicas que ainda não aceitaram o contrato. Gere o
-            link abaixo e envie por fora da plataforma.
+            Entidades e clínicas que ainda não aceitaram o contrato. Gere o link
+            abaixo e envie por fora da plataforma.
           </p>
         </div>
 
@@ -251,7 +249,11 @@ export function PreCadastroContent() {
                       : 'text-gray-500 hover:text-gray-700'
                   }`}
               >
-                {t === 'todos' ? 'Todos' : t === 'clinica' ? 'Clínicas' : 'Entidades'}
+                {t === 'todos'
+                  ? 'Todos'
+                  : t === 'clinica'
+                    ? 'Clínicas'
+                    : 'Entidades'}
               </button>
             ))}
           </div>

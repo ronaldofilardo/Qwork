@@ -75,4 +75,30 @@ describe('SidebarLayout snapshots', () => {
       expect(mockPush).toHaveBeenCalledWith('/login');
     });
   });
+
+  it('onLogout override é chamado em vez do comportamento padrão', async () => {
+    const customLogout = jest.fn().mockResolvedValue(undefined);
+    (global.fetch as jest.Mock) = jest.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <SidebarLayout
+        title="QWork"
+        subtitle="Painel Override"
+        userName="Gestor Override"
+        roleLabel="Teste"
+        onLogout={customLogout}
+      >
+        <button>Item</button>
+      </SidebarLayout>
+    );
+
+    const logoutButton = screen.getByText('Sair');
+    fireEvent.click(logoutButton);
+
+    await waitFor(() => {
+      expect(customLogout).toHaveBeenCalledTimes(1);
+      // O fetch interno NÃO deve ser chamado quando onLogout é fornecido
+      expect(global.fetch).not.toHaveBeenCalled();
+    });
+  });
 });
