@@ -123,6 +123,18 @@ export async function GET(
       [laudoId]
     );
 
+    // ── 3b. Eventos relacionados à solicitação de emissão ───────────────
+    const solicitacaoEmissaoResult =
+      laudo.solicitacao_emissao_em &&
+      auditoriaLaudosResult.rows.find((ev) => {
+        // Procura evento mais próximo ao timestamp de solicitação
+        const diff = Math.abs(
+          new Date(ev.criado_em).getTime() -
+            new Date(laudo.solicitacao_emissao_em).getTime()
+        );
+        return diff < 10000 && ev.acao === 'emissao_automatica'; // 10 segundos de tolerância
+      });
+
     // ── 4. Monta timeline ordenada por timestamp ──────────────────────────
     type RawEvent = {
       tipo: 'lote' | 'avaliacao' | 'laudo' | 'envio';
@@ -141,7 +153,7 @@ export async function GET(
         tipo: 'lote',
         label: 'Ciclo liberado',
         timestamp: laudo.liberado_em,
-        actor: laudo.rh_cpf ?? undefined,
+        actor: laudo.rh_cpf || undefined,
       });
     }
 
@@ -168,11 +180,14 @@ export async function GET(
 
     // Solicitação de emissão
     if (laudo.solicitacao_emissao_em) {
+      const solicitadorCpf =
+        solicitacaoEmissaoResult?.emissor_cpf || laudo.rh_cpf || undefined;
+
       timeline.push({
         tipo: 'laudo',
         label: 'Solicitação de emissão',
         timestamp: laudo.solicitacao_emissao_em,
-        actor: laudo.rh_cpf ?? undefined,
+        actor: solicitadorCpf,
       });
     }
 
