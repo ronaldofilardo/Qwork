@@ -53,11 +53,19 @@ export async function GET(
         l.status                                  AS lote_status,
         l.tipo                                    AS lote_tipo,
         l.liberado_em,
-        l.liberado_por                            AS rh_cpf,
+        l.liberado_por,
         l.finalizado_em,
         l.solicitacao_emissao_em,
         l.pago_em,
+        l.clinica_id,
+        l.entidade_id,
         COALESCE(f_lib.nome, l.liberado_por)      AS liberado_por_nome,
+        -- RH/Gestor CPF: busca por clínica (RH) ou entidade (Gestor)
+        COALESCE(
+          l.liberado_por,
+          (SELECT cpf FROM funcionarios WHERE clinica_id = l.clinica_id AND perfil = 'rh' LIMIT 1),
+          (SELECT cpf FROM funcionarios WHERE entidade_id = l.entidade_id AND perfil = 'rh' LIMIT 1)
+        ) AS rh_cpf,
         -- Tomador
         COALESCE(ent.nome, c.nome)                 AS tomador_nome,
         COALESCE(ent.cnpj, c.cnpj)                AS tomador_cnpj,
@@ -291,6 +299,7 @@ export async function GET(
         tipo: laudo.lote_tipo,
         liberado_em: laudo.liberado_em,
         liberado_por_nome: laudo.liberado_por_nome,
+        liberado_por_cpf: laudo.rh_cpf,
         solicitacao_emissao_em: laudo.solicitacao_emissao_em,
         pago_em: laudo.pago_em,
       },
