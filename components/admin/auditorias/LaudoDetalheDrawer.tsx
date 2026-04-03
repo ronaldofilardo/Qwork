@@ -293,7 +293,7 @@ export function LaudoDetalheDrawer({
       <tr><td>ID do Lote</td><td>#${d.lote.lote_id}</td></tr>
       <tr><td>Status</td><td>${d.lote.status?.toUpperCase() ?? '—'}</td></tr>
       <tr><td>Tipo</td><td>${d.lote.tipo ?? '—'}</td></tr>
-      <tr><td>Liberado por</td><td>${d.lote.liberado_por_nome ?? '—'}${d.lote.liberado_por_cpf ? ` (${d.lote.liberado_por_cpf})` : ''}</td></tr>
+      <tr><td>Liberado por</td><td>${d.lote.liberado_por_nome ?? '—'}</td></tr>
       <tr><td>Liberado em</td><td>${formatDate(d.lote.liberado_em)}</td></tr>
       <tr><td>Avaliações concluídas</td><td>${d.avaliacoes_resumo.concluidas}</td></tr>
     </table>
@@ -501,8 +501,8 @@ export function LaudoDetalheDrawer({
                   <InfoRow label="Tipo" value={dados.lote.tipo} />
                   <InfoRow
                     label="Liberado por"
-                    value={`${dados.lote.liberado_por_nome || '—'}${dados.lote.liberado_por_cpf ? ` (${dados.lote.liberado_por_cpf})` : ''}`}
-                    mono={!!dados.lote.liberado_por_cpf}
+                    value={dados.lote.liberado_por_nome || '—'}
+                    mono={false}
                   />
                   <InfoRow
                     label="Liberado em"
