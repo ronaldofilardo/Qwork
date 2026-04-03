@@ -26,7 +26,13 @@ jest.mock('@/components/modals/ModalTermosRepresentante', () => ({
   ),
 }));
 
-// Mock de next/link (usado na nav)
+// Mock do RepresentanteSidebar para isolar o provider
+jest.mock('@/components/representante/RepresentanteSidebar', () => ({
+  __esModule: true,
+  default: () => <nav data-testid="representante-sidebar" />,
+}));
+
+// Mock de next/link (usado na sidebar)
 jest.mock('next/link', () => ({
   __esModule: true,
   default: ({

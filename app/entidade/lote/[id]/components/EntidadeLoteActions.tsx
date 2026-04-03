@@ -19,7 +19,7 @@ interface EntidadeLoteActionsProps {
 
 export default function EntidadeLoteActions({
   lote,
-  estatisticas,
+  estatisticas: _estatisticas,
   handleDownloadReport,
   handleDownloadLaudo,
   solicitarEmissao,
@@ -31,12 +31,7 @@ export default function EntidadeLoteActions({
   const laudoEmitido = lote.laudo_status === 'emitido';
 
   const canSolicitarEmissao =
-    lote.status === 'concluido' &&
-    estatisticas.funcionarios_concluidos + estatisticas.funcionarios_pendentes >
-      0 &&
-    estatisticas.funcionarios_pendentes === 0 &&
-    !lote.emissao_solicitada &&
-    !lote.tem_laudo;
+    lote.status === 'concluido' && !lote.emissao_solicitada && !lote.tem_laudo;
 
   return (
     <>
@@ -92,11 +87,12 @@ export default function EntidadeLoteActions({
                 </div>
                 <div className="flex-1">
                   <h4 className="font-semibold text-gray-900 mb-1">
-                    Lote Conclu&#237;do
+                    Lote Conclu&#237;do &#8212; Pronto para Emiss&#227;o
                   </h4>
                   <p className="text-sm text-gray-700">
-                    Todas as avalia&#231;&#245;es foram finalizadas. Voc&#234;
-                    pode solicitar a emiss&#227;o do laudo.
+                    Pelo menos 70% das avalia&#231;&#245;es foram
+                    conclu&#237;das. Avalia&#231;&#245;es ainda em andamento
+                    ser&#227;o inativadas automaticamente ao solicitar.
                   </p>
                 </div>
               </div>

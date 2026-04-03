@@ -144,7 +144,9 @@ describe('/api/rh/liberar-lote - permissões', () => {
     // Verifica que o route não faz mais a checagem condicional de entidades_senhas.
     // O CPF do RH deve ser gravado diretamente, independente de estar em entidades_senhas.
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: 9, clinica_id: 5, nome: 'Empresa Y', clinica_nome: 'Clínica Z' }],
+      rows: [
+        { id: 9, clinica_id: 5, nome: 'Empresa Y', clinica_nome: 'Clínica Z' },
+      ],
       rowCount: 1,
     } as any);
 
@@ -152,13 +154,19 @@ describe('/api/rh/liberar-lote - permissões', () => {
 
     // Sem elegíveis — retorna 400 antes da transação
     mockQueryAsGestorRH
-      .mockResolvedValueOnce({ rows: [{ numero_ordem: 1 }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({
+        rows: [{ numero_ordem: 1 }],
+        rowCount: 1,
+      } as any)
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
-    const request = new NextRequest('http://localhost:3000/api/rh/liberar-lote', {
-      method: 'POST',
-      body: JSON.stringify({ empresaId: 9 }),
-    });
+    const request = new NextRequest(
+      'http://localhost:3000/api/rh/liberar-lote',
+      {
+        method: 'POST',
+        body: JSON.stringify({ empresaId: 9 }),
+      }
+    );
 
     await POST(request);
 

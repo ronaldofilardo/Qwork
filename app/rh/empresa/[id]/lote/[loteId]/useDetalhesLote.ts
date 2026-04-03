@@ -305,13 +305,17 @@ export function useDetalhesLote() {
     []
   );
 
+  // isPronto: delega ao status do lote (trigger DB garante 'concluido' ao atingir 70%)
+  // NÃO usa contagem local — evita divergência com a regra do banco
   const isPronto = useMemo(() => {
-    if (!estatisticas) return false;
-    return (
-      estatisticas.avaliacoes_concluidas ===
-      estatisticas.total_avaliacoes - estatisticas.avaliacoes_inativadas
-    );
-  }, [estatisticas]);
+    if (!lote) return false;
+    return [
+      'concluido',
+      'finalizado',
+      'emissao_solicitada',
+      'emissao_em_andamento',
+    ].includes(lote.status);
+  }, [lote]);
 
   // == Public API ==
   return {

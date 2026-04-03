@@ -16,6 +16,8 @@ export interface Lote {
   clinica_nome: string;
   liberado_em: string;
   total_avaliacoes: number;
+  /** Percentual de conclusão calculado pelo backend (0-100) — Política 70% Migration 1130 */
+  taxa_conclusao?: number;
   pagamento_pendente?: boolean;
   emissao_automatica?: boolean;
   solicitado_por?: string | null;

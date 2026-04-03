@@ -17,6 +17,7 @@ interface ImportStats {
   funcionarios_criados: number;
   funcionarios_vinculados: number;
   total_linhas: number;
+  avisos?: string[];
 }
 
 interface Props {
@@ -141,6 +142,7 @@ export default function ImportEmpresasModal({
           funcionarios_vinculados:
             (data['funcionarios_vinculados'] as number) ?? 0,
           total_linhas: (data['total_linhas'] as number) ?? 0,
+          avisos: (data['avisos'] as string[] | undefined) ?? undefined,
         };
         setResult(stats);
         onSuccess(stats);
@@ -402,6 +404,28 @@ export default function ImportEmpresasModal({
                   </p>
                 </div>
               </div>
+              {/* Avisos de CNPJs bloqueados */}
+              {result.avisos && result.avisos.length > 0 && (
+                <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertCircle
+                      className="text-yellow-600 shrink-0"
+                      size={15}
+                    />
+                    <p className="text-xs font-semibold text-yellow-800">
+                      {result.avisos.length} empresa(s) não importada(s) por
+                      conflito de CNPJ:
+                    </p>
+                  </div>
+                  <ul className="list-disc ml-5 space-y-1 max-h-32 overflow-y-auto">
+                    {result.avisos.map((aviso, idx) => (
+                      <li key={idx} className="text-xs text-yellow-700">
+                        {aviso}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>

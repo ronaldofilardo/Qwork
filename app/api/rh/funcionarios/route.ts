@@ -33,31 +33,72 @@ export async function GET(request: Request) {
 
     // Buscar funcionários ativos e inativos da empresa e clínica
     // ARQUITETURA SEGREGADA: usa tabela intermediária funcionarios_clinicas
+    // Todos os campos de avaliação são filtrados por empresa_id ($1) para evitar
+    // que avaliações feitas em outros CNPJs "contaminem" o status desta empresa.
     const funcionariosResult = await query(
       `SELECT f.cpf, f.nome, f.data_nascimento, f.setor, f.funcao, f.email, f.matricula, 
               f.nivel_cargo, f.turno, f.escala, (f.ativo AND fc.ativo) as ativo, f.criado_em, f.atualizado_em,
-              f.indice_avaliacao, f.data_ultimo_lote,
-              f.ultima_avaliacao_id, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao,
-              fc.ativo as vinculo_ativo, fc.data_desvinculo,
-              -- Data e lote da última inativação
+              fc.indice_avaliacao, fc.data_ultimo_lote,
+              -- Última avaliação DESTA empresa (não global)
               (
-                SELECT MAX(a2.inativada_em) FROM avaliacoes a2 WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada'
+                SELECT a_ua.id FROM avaliacoes a_ua
+                JOIN lotes_avaliacao la_ua ON la_ua.id = a_ua.lote_id
+                WHERE a_ua.funcionario_cpf = f.cpf AND la_ua.empresa_id = $1
+                  AND a_ua.status IN ('concluida', 'inativada')
+                ORDER BY COALESCE(a_ua.envio, a_ua.inativada_em, a_ua.criado_em) DESC NULLS LAST
+                LIMIT 1
+              ) as ultima_avaliacao_id,
+              (
+                SELECT CASE WHEN a_ua.status = 'concluida' THEN a_ua.envio ELSE NULL END
+                FROM avaliacoes a_ua
+                JOIN lotes_avaliacao la_ua ON la_ua.id = a_ua.lote_id
+                WHERE a_ua.funcionario_cpf = f.cpf AND la_ua.empresa_id = $1
+                  AND a_ua.status IN ('concluida', 'inativada')
+                ORDER BY COALESCE(a_ua.envio, a_ua.inativada_em, a_ua.criado_em) DESC NULLS LAST
+                LIMIT 1
+              ) as ultima_avaliacao_data_conclusao,
+              (
+                SELECT a_ua.status FROM avaliacoes a_ua
+                JOIN lotes_avaliacao la_ua ON la_ua.id = a_ua.lote_id
+                WHERE a_ua.funcionario_cpf = f.cpf AND la_ua.empresa_id = $1
+                  AND a_ua.status IN ('concluida', 'inativada')
+                ORDER BY COALESCE(a_ua.envio, a_ua.inativada_em, a_ua.criado_em) DESC NULLS LAST
+                LIMIT 1
+              ) as ultima_avaliacao_status,
+              (
+                SELECT a_ua.motivo_inativacao FROM avaliacoes a_ua
+                JOIN lotes_avaliacao la_ua ON la_ua.id = a_ua.lote_id
+                WHERE a_ua.funcionario_cpf = f.cpf AND la_ua.empresa_id = $1
+                  AND a_ua.status = 'inativada'
+                ORDER BY a_ua.inativada_em DESC NULLS LAST
+                LIMIT 1
+              ) as ultimo_motivo_inativacao,
+              fc.ativo as vinculo_ativo, fc.data_desvinculo,
+              -- Data e lote da última inativação DESTA empresa
+              (
+                SELECT MAX(a2.inativada_em) FROM avaliacoes a2
+                JOIN lotes_avaliacao la2 ON la2.id = a2.lote_id
+                WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND la2.empresa_id = $1
               ) as ultima_inativacao_em,
               (
-                SELECT l.id FROM avaliacoes a2 JOIN lotes_avaliacao l ON a2.lote_id = l.id WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL ORDER BY a2.inativada_em DESC LIMIT 1
+                SELECT l.id FROM avaliacoes a2 JOIN lotes_avaliacao l ON a2.lote_id = l.id
+                WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada'
+                  AND a2.inativada_em IS NOT NULL AND l.empresa_id = $1
+                ORDER BY a2.inativada_em DESC LIMIT 1
               ) as ultima_inativacao_lote,
-              -- Número do último lote em que o funcionário concluiu ou foi inativado (para coluna "Últimas Avaliações")
+              -- Número do último lote DESTA empresa em que concluiu ou foi inativado
               (
                 SELECT l.numero_ordem FROM avaliacoes a3
                 JOIN lotes_avaliacao l ON a3.lote_id = l.id
                 WHERE a3.funcionario_cpf = f.cpf
                   AND a3.status IN ('concluida', 'inativada')
+                  AND l.empresa_id = $1
                 ORDER BY COALESCE(a3.envio, a3.inativada_em, a3.criado_em) DESC NULLS LAST
                 LIMIT 1
               ) as ultimo_lote_numero,
-              -- Verificar se tem avaliação concluída há menos de 12 meses (mesmo critério da função de elegibilidade)
+              -- Avaliação válida (<12 meses) baseada em dados empresa-scoped
               CASE 
-                WHEN COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) IS NOT NULL AND COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) >= NOW() - INTERVAL '1 year' 
+                WHEN fc.data_ultimo_lote IS NOT NULL AND fc.data_ultimo_lote >= NOW() - INTERVAL '1 year' 
                   THEN true 
                 ELSE false 
               END as tem_avaliacao_recente

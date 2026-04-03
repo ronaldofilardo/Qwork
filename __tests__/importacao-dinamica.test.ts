@@ -218,4 +218,33 @@ describe('validarDadosImportacao', () => {
     const result = validarDadosImportacao([row]);
     expect(result.erros.some((e) => e.campo === 'data_demissao')).toBe(true);
   });
+
+  it('não gera erro para usuario_tipo não preenchido (será calculado automaticamente)', () => {
+    // usuario_tipo é calculado automaticamente na rota baseado em empresa_id e clinica_id
+    // não precisa estar presente no arquivo Excel
+    const row: MappedRow = {
+      cpf: '529.982.247-25',
+      nome: 'João da Silva',
+      nome_empresa: 'Empresa Teste LTDA',
+    };
+    const result = validarDadosImportacao([row]);
+    // Não deve gerar erro por usuario_tipo faltante
+    expect(result.erros.filter((e) => e.campo === 'usuario_tipo')).toHaveLength(
+      0
+    );
+  });
+
+  it('aceita usuario_tipo no arquivo (será sobrescrito pela rota)', () => {
+    // Se usuario_tipo vier no arquivo, será ignorado
+    const row: MappedRow = {
+      cpf: '529.982.247-25',
+      nome: 'João da Silva',
+      nome_empresa: 'Empresa Teste LTDA',
+      usuario_tipo: 'funcionario_clinica',
+    };
+    const result = validarDadosImportacao([row]);
+    expect(result.erros.filter((e) => e.campo === 'usuario_tipo')).toHaveLength(
+      0
+    );
+  });
 });

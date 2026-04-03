@@ -73,6 +73,15 @@ export default function LoteCard({
         </div>
       </div>
 
+      {/* Progresso de avaliações (Política 70% — Migration 1130) */}
+      {lote.taxa_conclusao !== undefined && (
+        // eslint-disable-next-line @typescript-eslint/no-use-before-define
+        <ProgressoAvaliacoes
+          taxaConclusao={lote.taxa_conclusao}
+          totalAvaliacoes={lote.total_avaliacoes}
+        />
+      )}
+
       {/* Timestamps */}
       <div className="space-y-1 mb-4">
         <div className="text-sm text-gray-500">
@@ -326,6 +335,60 @@ function NotificacoesSection({
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** Barra de progresso de avaliações com marcador de 70% (Política Migration 1130) */
+const PERCENTUAL_MINIMO = 70;
+
+function ProgressoAvaliacoes({
+  taxaConclusao,
+  totalAvaliacoes,
+}: {
+  taxaConclusao: number;
+  totalAvaliacoes: number;
+}) {
+  const pct = Math.min(Math.round(taxaConclusao), 100);
+  const atingiuMinimo = pct >= PERCENTUAL_MINIMO;
+  const progressColor = atingiuMinimo
+    ? 'bg-green-500'
+    : pct >= 50
+      ? 'bg-amber-400'
+      : 'bg-red-400';
+  const textColor = atingiuMinimo
+    ? 'text-green-700'
+    : pct >= 50
+      ? 'text-amber-600'
+      : 'text-red-600';
+
+  return (
+    <div className="mb-3 p-3 bg-gray-50 rounded-lg border border-gray-100">
+      <div className="flex items-center justify-between mb-1.5">
+        <span className="text-xs font-medium text-gray-600">
+          Progresso das avaliações
+        </span>
+        <span className={`text-xs font-semibold ${textColor}`}>
+          {pct}% concluído ({totalAvaliacoes} total)
+        </span>
+      </div>
+      <div className="relative h-2.5 bg-gray-200 rounded-full overflow-visible">
+        {/* Marcador 70% */}
+        <div
+          className="absolute top-0 bottom-0 w-px bg-gray-500 z-10"
+          style={{ left: `${PERCENTUAL_MINIMO}%` }}
+          title={`Mínimo para emissão: ${PERCENTUAL_MINIMO}%`}
+        />
+        <div
+          className={`h-2.5 rounded-full transition-all duration-500 ${progressColor}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {atingiuMinimo && (
+        <p className="text-xs text-green-700 mt-1 font-medium">
+          ✓ Atingiu o mínimo de {PERCENTUAL_MINIMO}% para emissão do laudo
+        </p>
+      )}
     </div>
   );
 }

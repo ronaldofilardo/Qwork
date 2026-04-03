@@ -326,42 +326,6 @@ export default function DetalhesLotePage() {
     }
   };
 
-  const gerarRelatorioFuncionario = async (cpf: string, nome: string) => {
-    if (!confirm(`Gerar relatório PDF de ${nome}?`)) return;
-
-    try {
-      // Nova API usando Puppeteer (server-side)
-      const response = await fetch(
-        `/api/rh/relatorio-individual-pdf?lote_id=${loteId}&cpf=${cpf}`
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        alert(
-          'Erro ao gerar relatório: ' + (error.error || 'Erro desconhecido')
-        );
-        return;
-      }
-
-      // Download do PDF
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `relatorio-individual-${nome.replace(/\s+/g, '-')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error('Erro ao gerar relatório:', error);
-      alert(
-        'Erro ao gerar relatório: ' +
-          (error instanceof Error ? error.message : 'Erro desconhecido')
-      );
-    }
-  };
-
   const gerarRelatorioSetor = async (setor: string) => {
     try {
       const response = await fetch(
@@ -731,15 +695,6 @@ export default function DetalhesLotePage() {
     getClassificacaoLabel,
   ]);
 
-  // Calcular se lote está pronto com useMemo
-  const isPronto = useMemo(() => {
-    if (!estatisticas) return false;
-    return (
-      estatisticas.avaliacoes_concluidas ===
-      estatisticas.total_avaliacoes - estatisticas.avaliacoes_inativadas
-    );
-  }, [estatisticas]);
-
   const setores = useMemo(() => {
     return [
       ...new Set(
@@ -1028,38 +983,48 @@ export default function DetalhesLotePage() {
                   <div className="w-full sm:w-44 md:w-48 flex-shrink-0 flex flex-col gap-2">
                     <button
                       onClick={gerarRelatorioLote}
-                      disabled={!isPronto}
+                      disabled={
+                        !['emitido', 'enviado'].includes(
+                          lote.laudo_status ?? ''
+                        )
+                      }
                       className="w-full bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                       aria-label="Gerar Relatório PDF do Lote"
+                      title={
+                        !['emitido', 'enviado'].includes(
+                          lote.laudo_status ?? ''
+                        )
+                          ? 'Aguardando emissão do laudo'
+                          : 'Gerar relatório do lote'
+                      }
                     >
-                      {isPronto
+                      {['emitido', 'enviado'].includes(lote.laudo_status ?? '')
                         ? '📊 Gerar Relatório PDF'
-                        : '⏳ Aguardando conclusão'}
+                        : '⏳ Aguardando emissão'}
                     </button>
 
                     <button
                       onClick={() => setShowSetorModal(true)}
                       disabled={
-                        !isPronto ||
-                        !['emitido', 'enviado'].includes(lote.laudo_status) ||
-                        setores.length === 0
+                        !['emitido', 'enviado'].includes(
+                          lote.laudo_status ?? ''
+                        ) || setores.length === 0
                       }
                       className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed text-sm font-medium"
                       aria-label="Gerar Relatório PDF por Setor"
                       title={
-                        !['emitido', 'enviado'].includes(lote.laudo_status)
+                        !['emitido', 'enviado'].includes(
+                          lote.laudo_status ?? ''
+                        )
                           ? 'Aguardando emissão do laudo'
                           : setores.length === 0
                             ? 'Nenhum setor cadastrado neste ciclo'
                             : 'Gerar relatório por setor'
                       }
                     >
-                      {['emitido', 'enviado'].includes(lote.laudo_status) &&
-                      isPronto
+                      {['emitido', 'enviado'].includes(lote.laudo_status ?? '')
                         ? '📊 Gerar Relatório por Setor'
-                        : isPronto
-                          ? '⏳ Aguardando laudo'
-                          : '📊 Gerar Relatório por Setor'}
+                        : '⏳ Aguardando laudo'}
                     </button>
 
                     {estatisticas.avaliacoes_inativadas > 0 && (
@@ -1078,12 +1043,9 @@ export default function DetalhesLotePage() {
                               inativada
                               {estatisticas.avaliacoes_inativadas !== 1
                                 ? 's'
-                                : ''}{' '}
-                              não{' '}
-                              {estatisticas.avaliacoes_inativadas !== 1
-                                ? 'contam'
-                                : 'conta'}{' '}
-                              para a prontidão do lote.
+                                : ''}
+                              . Contam no denominador dos 70% — o lote pode ser
+                              liberado sem que sejam concluídas.
                             </p>
                           </div>
                         </div>
@@ -1094,14 +1056,9 @@ export default function DetalhesLotePage() {
               </div>
             </div>
 
-            {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído (status='concluido'), sem laudo e sem solicitação */}
+            {/* Botão de Solicitação de Emissão - aparece quando lote atingiu 70% (status='concluido'), sem laudo e sem solicitação pendente */}
             {lote &&
               lote.status === 'concluido' &&
-              estatisticas &&
-              estatisticas.avaliacoes_concluidas +
-                estatisticas.avaliacoes_pendentes >
-                0 &&
-              estatisticas.avaliacoes_pendentes === 0 &&
               !lote.emissao_solicitada &&
               !lote.tem_laudo && (
                 <div className="mt-6 pt-6 border-t border-gray-200">
@@ -1112,18 +1069,19 @@ export default function DetalhesLotePage() {
                       </div>
                       <div className="flex-1">
                         <h4 className="font-semibold text-gray-900 mb-1">
-                          Lote Concluído
+                          Lote Concluído — Pronto para Emissão
                         </h4>
                         <p className="text-sm text-gray-700">
-                          Todas as avaliações foram finalizadas. Você pode
-                          solicitar a emissão do laudo.
+                          Pelo menos 70% das avaliações foram concluídas.
+                          Avaliações ainda em andamento serão inativadas
+                          automaticamente ao solicitar.
                         </p>
                       </div>
                     </div>
                     <button
                       onClick={async () => {
                         const confirmado = confirm(
-                          `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nO laudo será gerado e enviado para o emissor responsável.`
+                          `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nAvaliações ainda pendentes serão inativadas automaticamente.\nO laudo será gerado e enviado para o emissor responsável.`
                         );
                         if (!confirmado) return;
 
@@ -1527,24 +1485,6 @@ export default function DetalhesLotePage() {
                                 ↻ Reset
                               </button>
                             )}
-                          <button
-                            onClick={() =>
-                              gerarRelatorioFuncionario(func.cpf, func.nome)
-                            }
-                            disabled={
-                              func.avaliacao.status !== 'concluido' &&
-                              func.avaliacao.status !== 'concluida'
-                            }
-                            className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                            title={
-                              func.avaliacao.status === 'concluido' ||
-                              func.avaliacao.status === 'concluida'
-                                ? 'Gerar relatório PDF'
-                                : 'Relatório disponível apenas para avaliações concluídas'
-                            }
-                          >
-                            📄 PDF
-                          </button>
                         </div>
                       </td>
                     </tr>

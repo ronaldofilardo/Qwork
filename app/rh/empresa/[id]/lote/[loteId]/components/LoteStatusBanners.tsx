@@ -14,17 +14,15 @@ interface LoteStatusBannersProps {
 
 export default function LoteStatusBanners({
   lote,
-  estatisticas,
+  estatisticas: _estatisticas,
   solicitarEmissao,
   downloadLaudo,
 }: LoteStatusBannersProps) {
+  // Regra 70% (Migration 1130): o trigger DB seta status='concluido' quando >= 70% concluídas.
+  // Não verificar avaliacoes_pendentes — podem existir avaliações iniciadas/inativas
+  // e o lote ainda assim estar elegível. A fonte da verdade é lote.status.
   const canSolicitarEmissao =
-    lote.status === 'concluido' &&
-    estatisticas.avaliacoes_concluidas + estatisticas.avaliacoes_pendentes >
-      0 &&
-    estatisticas.avaliacoes_pendentes === 0 &&
-    !lote.emissao_solicitada &&
-    !lote.tem_laudo;
+    lote.status === 'concluido' && !lote.emissao_solicitada && !lote.tem_laudo;
 
   return (
     <>
@@ -64,8 +62,8 @@ export default function LoteStatusBanners({
                   Lote Concluído
                 </h4>
                 <p className="text-sm text-gray-700">
-                  Todas as avaliações foram finalizadas. Você pode solicitar a
-                  emissão do laudo.
+                  Pelo menos 70% das avaliações liberadas foram concluídas. Você
+                  pode solicitar a emissão do laudo.
                 </p>
               </div>
             </div>

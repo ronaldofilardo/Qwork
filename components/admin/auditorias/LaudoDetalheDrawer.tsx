@@ -293,7 +293,7 @@ export function LaudoDetalheDrawer({
       <tr><td>ID do Lote</td><td>#${d.lote.lote_id}</td></tr>
       <tr><td>Status</td><td>${d.lote.status?.toUpperCase() ?? '—'}</td></tr>
       <tr><td>Tipo</td><td>${d.lote.tipo ?? '—'}</td></tr>
-      <tr><td>Liberado por</td><td>${d.lote.liberado_por_nome ?? '—'}</td></tr>
+      <tr><td>Liberado por</td><td>${(() => { const n = d.lote.liberado_por_nome; const c = d.lote.liberado_por_cpf; if (!n && !c) return '—'; if (!n) return c; if (!c || n === c) return n; return `${n} (${c})`; })()}</td></tr>
       <tr><td>Liberado em</td><td>${formatDate(d.lote.liberado_em)}</td></tr>
       <tr><td>Avaliações concluídas</td><td>${d.avaliacoes_resumo.concluidas}</td></tr>
     </table>
@@ -501,7 +501,14 @@ export function LaudoDetalheDrawer({
                   <InfoRow label="Tipo" value={dados.lote.tipo} />
                   <InfoRow
                     label="Liberado por"
-                    value={dados.lote.liberado_por_nome || '—'}
+                    value={(() => {
+                      const nome = dados.lote.liberado_por_nome;
+                      const cpf  = dados.lote.liberado_por_cpf;
+                      if (!nome && !cpf) return '—';
+                      if (!nome) return cpf!;
+                      if (!cpf || nome === cpf) return nome;
+                      return `${nome} (${cpf})`;
+                    })()}
                     mono={false}
                   />
                   <InfoRow

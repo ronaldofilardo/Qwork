@@ -145,67 +145,38 @@ export const GET = async (req: Request) => {
       );
     }
 
-    const lotes = lotesQuery.rows.map((lote: any) => ({
-      id: lote.id,
-      tipo: lote.tipo,
-      status: lote.status,
-      liberado_em: lote.liberado_em,
-      liberado_por: lote.liberado_por,
-      liberado_por_nome: lote.liberado_por_nome,
-      empresa_nome: lote.empresa_nome,
-      // Hash do PDF do lote (quando disponível)
-      hash_pdf: lote.hash_pdf || null,
-      total_avaliacoes: parseInt(lote.total_avaliacoes),
-      avaliacoes_concluidas: parseInt(lote.avaliacoes_concluidas),
-      avaliacoes_inativadas: parseInt(lote.avaliacoes_inativadas),
-      solicitado_por: lote.solicitado_por,
-      solicitado_em: lote.solicitado_em,
-      tipo_solicitante: lote.tipo_solicitante,
-    }));
+    const lotes = lotesQuery.rows.map((lote: any) => {
+      const totalAv = parseInt(lote.total_avaliacoes) || 0;
+      const concluidas = parseInt(lote.avaliacoes_concluidas) || 0;
+      // taxa_conclusao: concluidas / total_liberadas (inclui inativadas, alinhado com trigger DB)
+      const taxaConclusao =
+        totalAv > 0 ? Math.round((concluidas / totalAv) * 100) : 0;
+      // pode_emitir_laudo: lote concluido pelo trigger DB (trigger garante >= 70%)
+      const podeEmitirLaudo = lote.status === 'concluido';
+
+      return {
+        id: lote.id,
+        tipo: lote.tipo,
+        status: lote.status,
+        liberado_em: lote.liberado_em,
+        liberado_por: lote.liberado_por,
+        liberado_por_nome: lote.liberado_por_nome,
+        empresa_nome: lote.empresa_nome,
+        hash_pdf: lote.hash_pdf || null,
+        total_avaliacoes: totalAv,
+        avaliacoes_concluidas: concluidas,
+        avaliacoes_inativadas: parseInt(lote.avaliacoes_inativadas) || 0,
+        solicitado_por: lote.solicitado_por,
+        solicitado_em: lote.solicitado_em,
+        tipo_solicitante: lote.tipo_solicitante,
+        taxa_conclusao: taxaConclusao,
+        pode_emitir_laudo: podeEmitirLaudo,
+      };
+    });
 
     const response = NextResponse.json({ lotes });
     response.headers.set('X-Lotes-Count', String(lotes.length));
     return response;
-    const lotesComValidacao = [];
-    for (const lote of lotes) {
-      try {
-        const validacao = await query(
-          `SELECT * FROM validar_lote_pre_laudo($1)`,
-          [lote.id],
-          user
-        );
-
-        const resultado = validacao.rows[0] || {
-          valido: false,
-          alertas: ['Erro ao validar lote'],
-          funcionarios_pendentes: 0,
-          detalhes: {},
-        };
-
-        lotesComValidacao.push({
-          ...lote,
-          hash_pdf: lote.hash_pdf || null,
-          pode_emitir_laudo: resultado.valido || false,
-          motivos_bloqueio: resultado.alertas || [],
-          taxa_conclusao: resultado.detalhes?.taxa_conclusao || 0,
-        });
-      } catch (validationError) {
-        console.error(`Erro ao validar lote ${lote.id}:`, validationError);
-        lotesComValidacao.push({
-          ...lote,
-          hash_pdf: lote.hash_pdf || null,
-          pode_emitir_laudo: false,
-          motivos_bloqueio: ['Erro ao validar lote'],
-          taxa_conclusao: 0,
-        });
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      lotes: lotesComValidacao,
-      total: lotesComValidacao.length,
-    });
   } catch (error) {
     console.error('Erro ao buscar lotes:', error);
     return NextResponse.json(

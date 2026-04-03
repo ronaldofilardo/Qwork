@@ -16,35 +16,67 @@ import {
 jest.mock('@/lib/storage/backblaze-client', () => ({
   downloadFromBackblaze: jest.fn().mockResolvedValue(Buffer.from('remotepdf')),
   checkBackblazeFileExists: jest.fn().mockResolvedValue(true),
-  uploadToBackblaze: jest
-    .fn()
-    .mockResolvedValue({
-      provider: 'backblaze',
-      bucket: 'laudos-qwork',
-      key: 'laudos/lote-1/remote.pdf',
-      url: 'https://s3.test/laudos-qwork/laudos/lote-1/remote.pdf',
-    }),
+  uploadToBackblaze: jest.fn().mockResolvedValue({
+    provider: 'backblaze',
+    bucket: 'laudos-qwork',
+    key: 'laudos/lote-1/remote.pdf',
+    url: 'https://s3.test/laudos-qwork/laudos/lote-1/remote.pdf',
+  }),
 }));
 
 const storageDir = path.join(process.cwd(), 'storage', 'laudos');
 
+// IDs criados nesta suíte — limpeza cirúrgica no afterAll (nunca destruir o diretório inteiro)
+const createdTestIds = new Set<number>();
+// ID estático usado em um dos testes
+const STATIC_TEST_ID = 999999;
+
 describe('Laudo Storage', () => {
+  beforeAll(async () => {
+    // Garantir que o diretório existe
+    await fs.mkdir(storageDir, { recursive: true });
+    // Limpar apenas o arquivo de ID estático para garantir estado inicial limpo
+    await fs
+      .rm(path.join(storageDir, `laudo-${STATIC_TEST_ID}.pdf`), { force: true })
+      .catch(() => {});
+    await fs
+      .rm(path.join(storageDir, `laudo-${STATIC_TEST_ID}.json`), {
+        force: true,
+      })
+      .catch(() => {});
+  });
+
   beforeEach(async () => {
-    // limpar pasta storage/laudos
-    try {
-      await fs.rm(storageDir, { recursive: true, force: true });
-    } catch (e) {}
+    // Apenas garantir que o diretório existe — NUNCA destruir storage/laudos inteiro
     await fs.mkdir(storageDir, { recursive: true });
   });
 
   afterAll(async () => {
-    try {
-      await fs.rm(storageDir, { recursive: true, force: true });
-    } catch (e) {}
+    // Limpeza cirúrgica: apenas arquivos criados nesta suíte de teste
+    for (const id of createdTestIds) {
+      await fs
+        .rm(path.join(storageDir, `laudo-${id}.pdf`), { force: true })
+        .catch(() => {});
+      await fs
+        .rm(path.join(storageDir, `laudo-${id}.json`), { force: true })
+        .catch(() => {});
+      await fs
+        .rm(path.join(storageDir, `laudo-${id}.pdf.tmp`), { force: true })
+        .catch(() => {});
+    }
+    await fs
+      .rm(path.join(storageDir, `laudo-${STATIC_TEST_ID}.pdf`), { force: true })
+      .catch(() => {});
+    await fs
+      .rm(path.join(storageDir, `laudo-${STATIC_TEST_ID}.json`), {
+        force: true,
+      })
+      .catch(() => {});
   });
 
   it('salvarLaudoLocal salva arquivo e metadados', async () => {
     const laudoId = Date.now();
+    createdTestIds.add(laudoId);
     const buf = Buffer.from('hello world');
     const hash = calcularHash(buf);
 
@@ -64,6 +96,7 @@ describe('Laudo Storage', () => {
 
   it('lerLaudo lê arquivo local quando presente', async () => {
     const laudoId = Date.now() + 1;
+    createdTestIds.add(laudoId);
     await fs.writeFile(
       path.join(storageDir, `laudo-${laudoId}.pdf`),
       'localpdf'
@@ -74,6 +107,7 @@ describe('Laudo Storage', () => {
 
   it('lerLaudo faz fallback para Backblaze quando local ausente', async () => {
     const laudoId = Date.now() + 2;
+    createdTestIds.add(laudoId);
     const meta = {
       arquivo: `laudo-${laudoId}.pdf`,
       hash: 'abc',
@@ -102,7 +136,7 @@ describe('Laudo Storage', () => {
   });
 
   it('laudoExists verifica local e remoto', async () => {
-    const laudoId = 999999;
+    const laudoId = STATIC_TEST_ID;
     // nenhum arquivo
     let exists = await laudoExists(laudoId);
     expect(exists).toBe(false);

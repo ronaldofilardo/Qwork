@@ -3,6 +3,9 @@
  *
  * Valida se lote está pronto para emissão antes de enviar request,
  * evitando chamadas desnecessárias ao backend e melhorando UX.
+ *
+ * Política vigente (Migration 1130): >= 70% das avaliações liberadas concluídas.
+ * O trigger DB seta o lote como 'concluido' automaticamente ao atingir 70%.
  */
 
 'use client';
@@ -68,12 +71,22 @@ export function useValidacaoEmissao(dados: DadosValidacaoLote) {
       erros.push('Lote não possui avaliações');
     }
 
-    // 5. Validar que avaliações ativas estão concluídas
-    const avaliacoesAtivas = dados.totalAvaliacoes - dados.avaliacoesInativadas;
+    // 5. Validar política 70%: CEIL(0.7 * total_liberadas) avaliações concluídas
+    // Base: totalAvaliacoes = liberadas (status != rascunho, inclui inativadas)
+    const PERCENTUAL_MINIMO = 70;
+    const threshold70 =
+      dados.totalAvaliacoes > 0
+        ? Math.ceil((PERCENTUAL_MINIMO / 100) * dados.totalAvaliacoes)
+        : 0;
+    const taxaConclusao =
+      dados.totalAvaliacoes > 0
+        ? Math.round((dados.avaliacoesConcluidas / dados.totalAvaliacoes) * 100)
+        : 0;
 
-    if (avaliacoesAtivas > 0 && dados.avaliacoesConcluidas < avaliacoesAtivas) {
+    if (dados.totalAvaliacoes > 0 && dados.avaliacoesConcluidas < threshold70) {
+      const faltam = threshold70 - dados.avaliacoesConcluidas;
       erros.push(
-        `Nem todas as avaliações estão concluídas (${dados.avaliacoesConcluidas}/${avaliacoesAtivas} concluídas)`
+        `Conclusão insuficiente: ${taxaConclusao}% (mínimo ${PERCENTUAL_MINIMO}%). Faltam ${faltam} avaliação(ões).`
       );
     }
 
@@ -84,6 +97,7 @@ export function useValidacaoEmissao(dados: DadosValidacaoLote) {
       );
     }
 
+    const avaliacoesAtivas = dados.totalAvaliacoes - dados.avaliacoesInativadas;
     if (avaliacoesAtivas < 3) {
       avisos.push(
         'Lote possui poucas avaliações ativas. Verifique se está correto.'

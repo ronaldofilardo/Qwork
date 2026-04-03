@@ -20,7 +20,9 @@ jest.mock('@/lib/session', () => ({ getSession: jest.fn() }));
 jest.mock('@/lib/authorization/policies', () => ({
   assertRoles: jest.fn(),
   ROLES: { SUPORTE: 'suporte' },
-  isApiError: (e: unknown): e is { message: string; code: string; status: number } =>
+  isApiError: (
+    e: unknown
+  ): e is { message: string; code: string; status: number } =>
     typeof e === 'object' && e !== null && 'status' in e && 'code' in e,
 }));
 
@@ -164,10 +166,7 @@ describe('GET /api/suporte/pre-cadastro', () => {
       // Assert
       expect(response.status).toBe(200);
       expect(body.pre_cadastros[0].tipo).toBe('entidade');
-      expect(mockQuery).toHaveBeenCalledWith(
-        expect.any(String),
-        ['entidade']
-      );
+      expect(mockQuery).toHaveBeenCalledWith(expect.any(String), ['entidade']);
     });
 
     it('deve retornar todos quando tipo=todos', async () => {
@@ -235,7 +234,10 @@ describe('GET /api/suporte/pre-cadastro', () => {
 
     it('deve retornar 403 quando sessão tem role errada', async () => {
       // Arrange
-      mockGetSession.mockReturnValue({ ...fakeSuorteSession, perfil: 'gestor' } as any);
+      mockGetSession.mockReturnValue({
+        ...fakeSuorteSession,
+        perfil: 'gestor',
+      } as any);
       mockAssertRoles.mockImplementation(() => {
         const error = new Error('Acesso negado') as any;
         error.status = 403;

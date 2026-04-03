@@ -92,8 +92,7 @@ function mockFetchSuccess(items = fakeItems) {
 function mockFetchEmpty() {
   mockFetch.mockResolvedValueOnce({
     ok: true,
-    json: () =>
-      Promise.resolve({ success: true, total: 0, pre_cadastros: [] }),
+    json: () => Promise.resolve({ success: true, total: 0, pre_cadastros: [] }),
   } as Response);
 }
 
@@ -144,7 +143,9 @@ describe('PreCadastroContent', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText(/2 pré-cadastros encontrados/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/2 pré-cadastros encontrados/i)
+        ).toBeInTheDocument();
       });
     });
 
@@ -175,7 +176,9 @@ describe('PreCadastroContent', () => {
 
       // Assert
       await waitFor(() => {
-        expect(screen.getByText(/1 pré-cadastro encontrado$/i)).toBeInTheDocument();
+        expect(
+          screen.getByText(/1 pré-cadastro encontrado$/i)
+        ).toBeInTheDocument();
       });
     });
   });
@@ -195,9 +198,7 @@ describe('PreCadastroContent', () => {
 
       // Assert
       await waitFor(() => {
-        expect(
-          screen.getByTestId('empty-state')
-        ).toBeInTheDocument();
+        expect(screen.getByTestId('empty-state')).toBeInTheDocument();
         expect(
           screen.getByText('Nenhum pré-cadastro pendente de aceite')
         ).toBeInTheDocument();
@@ -346,7 +347,9 @@ describe('PreCadastroContent', () => {
       );
 
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: /Copiar link de aceite/i }));
+        fireEvent.click(
+          screen.getByRole('button', { name: /Copiar link de aceite/i })
+        );
       });
 
       // Assert — URL deve conter tomador id e contrato_id
@@ -371,7 +374,9 @@ describe('PreCadastroContent', () => {
       );
 
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: /Copiar link de aceite/i }));
+        fireEvent.click(
+          screen.getByRole('button', { name: /Copiar link de aceite/i })
+        );
       });
 
       // Assert — feedback imediato
@@ -411,7 +416,9 @@ describe('PreCadastroContent', () => {
       );
 
       await act(async () => {
-        fireEvent.click(screen.getByRole('button', { name: /Atualizar lista/i }));
+        fireEvent.click(
+          screen.getByRole('button', { name: /Atualizar lista/i })
+        );
       });
 
       // Assert

@@ -1,6 +1,6 @@
 'use client';
 
-import { X, ShieldCheck, Loader2 } from 'lucide-react';
+import { X, ShieldCheck, Loader2, Lock } from 'lucide-react';
 
 interface ModalConfirmacaoIdentidadeProps {
   isOpen: boolean;
@@ -87,12 +87,25 @@ export default function ModalConfirmacaoIdentidade({
         {/* Body - scrollável */}
         <div className="p-4 sm:p-6 overflow-y-auto flex-1">
           <div className="space-y-4 sm:space-y-6">
-            {/* Texto principal */}
-            <div className="rounded-lg bg-orange-50 p-3 sm:p-4">
-              <p className="text-xs sm:text-sm leading-relaxed text-gray-700">
-                Você está prestes a acessar o sistema de avaliação de risco
-                psicossocial.
-              </p>
+            {/* Banner de anonimização */}
+            <div className="flex items-start gap-3 rounded-lg border border-blue-200 bg-blue-50 p-3 sm:p-4">
+              <div className="flex-shrink-0 mt-0.5">
+                <Lock
+                  className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600"
+                  aria-hidden="true"
+                />
+              </div>
+              <div>
+                <p className="text-xs sm:text-sm font-semibold text-blue-900 mb-1">
+                  Suas respostas são anônimas e confidenciais
+                </p>
+                <p className="text-xs sm:text-sm text-blue-800 leading-relaxed">
+                  Nenhuma pessoa — incluindo seu RH, gestores ou a empresa —
+                  terá acesso às suas respostas individuais. Somente relatórios
+                  consolidados do grupo são gerados, garantindo total sigilo das
+                  suas respostas.
+                </p>
+              </div>
             </div>
 
             <p className="text-xs sm:text-sm font-medium text-gray-700">

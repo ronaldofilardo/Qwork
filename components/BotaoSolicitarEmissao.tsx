@@ -108,6 +108,7 @@ export function BotaoSolicitarEmissao({
     const confirmado = confirm(
       `Confirma a solicitação de emissão do laudo para o lote #${loteId}?\n\n` +
         `Avaliações concluídas: ${avaliacoesConcluidas}/${totalAvaliacoes - avaliacoesInativadas}\n` +
+        'Avaliações ainda pendentes serão inativadas automaticamente.\n' +
         'O laudo será gerado e enviado para o emissor responsável.'
     );
 
@@ -238,6 +239,26 @@ export function BotaoSolicitarEmissao({
   }
 
   // Card com botão de solicitar emissão
+  const pctConclusao =
+    totalAvaliacoes > 0
+      ? Math.min(
+          Math.round((avaliacoesConcluidas / totalAvaliacoes) * 100),
+          100
+        )
+      : 0;
+  const PERCENTUAL_MINIMO = 70;
+  const atingiuMinimo = pctConclusao >= PERCENTUAL_MINIMO;
+  const progressColorBtn = atingiuMinimo
+    ? 'bg-green-500'
+    : pctConclusao >= 50
+      ? 'bg-amber-400'
+      : 'bg-red-400';
+  const textColorBtn = atingiuMinimo
+    ? 'text-green-700'
+    : pctConclusao >= 50
+      ? 'text-amber-700'
+      : 'text-red-600';
+
   return (
     <>
       <div className="mt-6 p-6 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-300 rounded-xl shadow-sm">
@@ -247,18 +268,45 @@ export function BotaoSolicitarEmissao({
           </div>
           <div className="flex-1">
             <h3 className="text-xl font-bold text-gray-900 mb-1">
-              Lote Concluído
+              Lote Concluído — Pronto para Emissão
             </h3>
             <p className="text-sm text-gray-700 leading-relaxed">
-              Todas as avaliações foram finalizadas. Você pode solicitar a
-              emissão do laudo agora.
+              Pelo menos 70% das avaliações foram concluídas. Avaliações ainda
+              em andamento serão inativadas automaticamente ao solicitar.
             </p>
-            <p className="text-xs text-gray-600 mt-2">
-              Avaliações: {avaliacoesConcluidas}/
-              {totalAvaliacoes - avaliacoesInativadas} concluídas
-              {avaliacoesInativadas > 0 &&
-                ` (${avaliacoesInativadas} inativadas)`}
-            </p>
+
+            {/* Mini barra de progresso com marcador 70% */}
+            <div className="mt-3">
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-xs text-gray-600 font-medium">
+                  {avaliacoesConcluidas}/
+                  {totalAvaliacoes - avaliacoesInativadas} avaliações concluídas
+                  {avaliacoesInativadas > 0 &&
+                    ` (${avaliacoesInativadas} inativadas)`}
+                </span>
+                <span className={`text-xs font-bold ${textColorBtn}`}>
+                  {pctConclusao}%
+                </span>
+              </div>
+              <div className="relative h-2.5 bg-gray-200 rounded-full overflow-visible">
+                {/* Marcador 70% */}
+                <div
+                  className="absolute top-0 bottom-0 w-px bg-gray-500 z-10"
+                  style={{ left: `${PERCENTUAL_MINIMO}%` }}
+                  title={`Mínimo ${PERCENTUAL_MINIMO}% para emissão`}
+                />
+                <div
+                  className={`h-2.5 rounded-full transition-all duration-500 ${progressColorBtn}`}
+                  style={{ width: `${pctConclusao}%` }}
+                />
+              </div>
+              {atingiuMinimo && (
+                <p className="text-xs text-green-700 mt-1 font-medium">
+                  ✓ Atingiu o mínimo de {PERCENTUAL_MINIMO}% — pronto para
+                  emissão
+                </p>
+              )}
+            </div>
           </div>
         </div>
 

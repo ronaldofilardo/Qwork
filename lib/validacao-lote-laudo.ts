@@ -1,9 +1,17 @@
 /**
  * Biblioteca para validação de lotes prontos para emissão de laudo
  * Centraliza a lógica de validação usada no backend para evitar discrepâncias com o frontend
+ *
+ * Política vigente (Migration 1130):
+ * - Threshold: CEIL(0.7 * total_liberadas) avaliações concluídas
+ * - total_liberadas = COUNT WHERE status != 'rascunho' (inclui inativadas)
+ * - O trigger DB (fn_recalcular_status_lote_on_avaliacao_update) seta status='concluido' ao atingir 70%
  */
 
 import { query } from '@/lib/db';
+
+/** Percentual mínimo de avaliações concluídas sobre o total liberado para emissão de laudo */
+export const PERCENTUAL_MINIMO_EMISSAO = 70;
 
 export interface ValidacaoLoteResult {
   pode_emitir_laudo: boolean;
@@ -22,9 +30,10 @@ export interface ValidacaoLoteResult {
 /**
  * Valida se um lote está pronto para emissão de laudo
  *
- * Critérios obrigatórios:
- * 1. Status do lote deve ser 'concluido'
- * 2. Todas as avaliações ativas devem estar concluídas (não considera inativadas)
+ * Critérios obrigatórios (Política 70% — Migration 1130):
+ * 1. Status do lote deve ser 'concluido' (o trigger DB seta isso automaticamente ao atingir 70%)
+ * 2. Pelo menos CEIL(0.7 * total_liberadas) avaliações concluídas
+ *    - total_liberadas = COUNT WHERE status != 'rascunho' (inclui inativadas)
  * 3. Índice psicossocial deve estar completo (todas as respostas de grupos 1-8)
  *
  * @param loteId ID do lote a ser validado
@@ -80,38 +89,33 @@ export async function validarLoteParaLaudo(
     motivos.push(`Status do lote é '${lote.status}' (esperado: 'concluido')`);
   }
 
-  // 3. Validar se há avaliações ativas
-  if (avaliacoesAtivas === 0) {
-    motivos.push('Lote não possui avaliações ativas');
+  // 3. Validar política 70% (PERCENTUAL_MINIMO_EMISSAO)
+  // Base: total_liberadas = status != 'rascunho' (inclui inativadas — alinhado com trigger DB)
+  const threshold70 =
+    totalAvaliacoes > 0
+      ? Math.ceil((PERCENTUAL_MINIMO_EMISSAO / 100) * totalAvaliacoes)
+      : 0;
+
+  if (totalAvaliacoes === 0) {
+    motivos.push(
+      'Lote não possui avaliações liberadas. Não é possível gerar laudo.'
+    );
+  } else if (avaliacoesConcluidas === 0) {
+    motivos.push(
+      'Nenhuma avaliação concluída neste lote. Não é possível gerar laudo.'
+    );
+  } else if (avaliacoesConcluidas < threshold70) {
+    const faltam = threshold70 - avaliacoesConcluidas;
+    motivos.push(
+      `Taxa de conclusão insuficiente: ${Math.round((avaliacoesConcluidas / totalAvaliacoes) * 100)}%` +
+        ` (mínimo ${PERCENTUAL_MINIMO_EMISSAO}%). Faltam ${faltam} avaliação(ões)` +
+        ` para atingir o mínimo de ${threshold70} de ${totalAvaliacoes} liberadas.`
+    );
   }
 
-  // 4. Validar se todas as avaliações liberadas estão concluídas ou inativadas
-  const avaliacoesLiberadas = avaliacoesConcluidas + avaliacoesInativadas;
-  const avaliacoesPendentes = totalAvaliacoes - avaliacoesLiberadas;
-
-  if (
-    avaliacoesPendentes > 0 ||
-    (avaliacoesAtivas > 0 && avaliacoesConcluidas === 0)
-  ) {
-    if (avaliacoesPendentes > 0) {
-      motivos.push(
-        `${avaliacoesPendentes} avaliação${avaliacoesPendentes > 1 ? 'ões' : ''} ainda não concluída${avaliacoesPendentes > 1 ? 's' : ''} ou inativada${avaliacoesPendentes > 1 ? 's' : ''}`
-      );
-    } else {
-      const pendentes = avaliacoesAtivas - avaliacoesConcluidas;
-      if (pendentes > 0) {
-        motivos.push(
-          `${pendentes} avaliação${pendentes > 1 ? 'ões' : ''} ativa${
-            pendentes > 1 ? 's' : ''
-          } ainda não concluída${pendentes > 1 ? 's' : ''}`
-        );
-      }
-    }
-  }
-
-  // 5. Calcular taxa de conclusão
+  // 5. Calcular taxa de conclusão (sobre total_liberadas — alinhado com SQL)
   const taxaConclusao =
-    avaliacoesAtivas > 0 ? (avaliacoesConcluidas / avaliacoesAtivas) * 100 : 0;
+    totalAvaliacoes > 0 ? (avaliacoesConcluidas / totalAvaliacoes) * 100 : 0;
 
   // 7. Verificar se índice está completo (grupos 1-8 do COPSOQ)
   // Cada grupo tem um conjunto de questões que devem estar respondidas

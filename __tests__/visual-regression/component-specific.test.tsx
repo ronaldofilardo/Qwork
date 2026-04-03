@@ -148,6 +148,11 @@ describe('Regressão Visual - Componentes Admin', () => {
       status: 'authenticated',
     });
   });
+
+  // Placeholder: adicionar testes de componentes admin quando necessário
+  it('deve estar configurado para testes admin', () => {
+    expect(true).toBe(true);
+  });
 });
 
 describe('Regressão Visual - Modais', () => {

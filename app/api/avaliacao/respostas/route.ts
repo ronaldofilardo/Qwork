@@ -42,6 +42,39 @@ export async function POST(request: Request) {
       avaliacaoId = avaliacaoResult.rows[0].id;
     }
 
+    // Verificar se a avaliação ainda está ativa antes de tentar salvar respostas
+    // Evita disparo do trigger check_resposta_immutability para avaliações já concluídas
+    const statusVerif = await queryWithContext(
+      `SELECT status FROM avaliacoes WHERE id = $1`,
+      [avaliacaoId]
+    );
+    const statusAvaliacao = statusVerif.rows[0]?.status as string | undefined;
+
+    if (!statusAvaliacao) {
+      return NextResponse.json(
+        { error: 'Avaliação não encontrada' },
+        { status: 404 }
+      );
+    }
+
+    if (statusAvaliacao === 'concluida') {
+      return NextResponse.json(
+        {
+          success: true,
+          completed: true,
+          message: 'Avaliação já foi concluída com sucesso.',
+        },
+        { status: 200 }
+      );
+    }
+
+    if (statusAvaliacao === 'inativada') {
+      return NextResponse.json(
+        { error: 'Esta avaliação foi inativada e não pode ser modificada.' },
+        { status: 400 }
+      );
+    }
+
     // Salvar respostas
     for (const resposta of respostas) {
       await queryWithContext(
@@ -53,15 +86,9 @@ export async function POST(request: Request) {
     }
 
     // ✅ ATUALIZAR STATUS PARA 'EM_ANDAMENTO' SE AINDA ESTIVER 'INICIADA'
-    // Fazer isso ANTES de verificar auto-conclusão para garantir que o status seja atualizado
+    // Usar o status já obtido na verificação anterior (evita query redundante)
     try {
-      const statusRes = await queryWithContext(
-        `SELECT status FROM avaliacoes WHERE id = $1`,
-        [avaliacaoId]
-      );
-      const currentStatus = statusRes.rows[0]?.status;
-
-      if (currentStatus === 'iniciada') {
+      if (statusAvaliacao === 'iniciada') {
         await queryWithContext(
           `UPDATE avaliacoes SET status = 'em_andamento', atualizado_em = NOW() WHERE id = $1 AND status = 'iniciada'`,
           [avaliacaoId]

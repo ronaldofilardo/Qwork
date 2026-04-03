@@ -5,6 +5,7 @@
  */
 
 import crypto from 'crypto';
+import { assertNotLaudoBackblazeKey } from './laudo-guard';
 
 interface BackblazeConfig {
   endpoint: string;
@@ -181,7 +182,8 @@ export async function uploadToBackblaze(
     const config = getBackblazeConfig();
     const bucket = bucketOverride ?? config.bucket;
     const keyId = credentialsOverride?.keyId ?? config.keyId;
-    const applicationKey = credentialsOverride?.applicationKey ?? config.applicationKey;
+    const applicationKey =
+      credentialsOverride?.applicationKey ?? config.applicationKey;
 
     // Usar SDK da AWS (compatível com S3) para Backblaze
     const { S3Client, PutObjectCommand } = await import('@aws-sdk/client-s3');
@@ -441,8 +443,12 @@ export async function getPresignedUrl(
  * Deletar arquivo do Backblaze
  *
  * @param key - Chave (caminho) do arquivo no bucket
+ * @throws {LaudoDeletionBlockedError} se a chave pertencer ao prefixo de laudos protegido
  */
 export async function deleteFromBackblaze(key: string): Promise<void> {
+  // Guard: laudos/… nunca podem ser deletados do bucket
+  assertNotLaudoBackblazeKey(key);
+
   try {
     const config = getBackblazeConfig();
 

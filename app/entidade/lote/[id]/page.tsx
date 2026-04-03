@@ -738,36 +738,6 @@ export default function DetalhesLotePage() {
     );
   };
 
-  const gerarRelatorioFuncionario = async (cpf: string, nome: string) => {
-    if (!confirm(`Gerar relatório PDF de ${nome}?`)) return;
-
-    toast.loading('Gerando relatório...', { id: 'rel-individual' });
-    try {
-      const response = await fetch(
-        `/api/entidade/relatorio-individual-pdf?lote_id=${loteId}&cpf=${cpf}`
-      );
-
-      if (!response.ok) {
-        throw new Error('Erro ao gerar relatório');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `relatorio-${nome.replace(/\s+/g, '-')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-
-      toast.success('Relatório gerado com sucesso!', { id: 'rel-individual' });
-    } catch (error) {
-      console.error('Erro:', error);
-      toast.error('Erro ao gerar relatório', { id: 'rel-individual' });
-    }
-  };
-
   const abrirModalInativar = (
     avaliacaoId: number,
     nome: string,
@@ -1072,10 +1042,20 @@ export default function DetalhesLotePage() {
             <div className="flex flex-wrap gap-3">
               <button
                 onClick={handleDownloadReport}
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                disabled={
+                  !['emitido', 'enviado'].includes(lote.laudo_status ?? '')
+                }
+                title={
+                  !['emitido', 'enviado'].includes(lote.laudo_status ?? '')
+                    ? 'Aguardando emissão do laudo'
+                    : 'Gerar relatório do lote'
+                }
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 <FileText size={18} />
-                Gerar Relatório PDF
+                {['emitido', 'enviado'].includes(lote.laudo_status ?? '')
+                  ? 'Gerar Relatório PDF'
+                  : '⏳ Aguardando emissão'}
               </button>
               <button
                 onClick={() => setShowSetorModal(true)}
@@ -1098,14 +1078,9 @@ export default function DetalhesLotePage() {
             </div>
           </div>
 
-          {/* Botão de Solicitação de Emissão - só aparece quando lote está concluído (status='concluido'), sem laudo e sem solicitação */}
+          {/* Botão de Solicitação de Emissão - aparece quando lote atingiu 70% (status='concluido'), sem laudo e sem solicitação pendente */}
           {lote &&
             lote.status === 'concluido' &&
-            estatisticas &&
-            estatisticas.funcionarios_concluidos +
-              estatisticas.funcionarios_pendentes >
-              0 &&
-            estatisticas.funcionarios_pendentes === 0 &&
             !lote.emissao_solicitada &&
             !lote.tem_laudo && (
               <div className="mt-6 pt-6 border-t border-gray-200">
@@ -1116,18 +1091,19 @@ export default function DetalhesLotePage() {
                     </div>
                     <div className="flex-1">
                       <h4 className="font-semibold text-gray-900 mb-1">
-                        Lote Concluído
+                        Lote Concluído — Pronto para Emissão
                       </h4>
                       <p className="text-sm text-gray-700">
-                        Todas as avaliações foram finalizadas. Você pode
-                        solicitar a emissão do laudo.
+                        Pelo menos 70% das avaliações foram concluídas.
+                        Avaliações ainda em andamento serão inativadas
+                        automaticamente ao solicitar.
                       </p>
                     </div>
                   </div>
                   <button
                     onClick={async () => {
                       const confirmado = confirm(
-                        `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nO laudo será gerado e enviado para o emissor responsável.`
+                        `Confirma a solicitação de emissão do laudo para o lote ${lote.id}?\n\nAvaliações ainda pendentes serão inativadas automaticamente.\nO laudo será gerado e enviado para o emissor responsável.`
                       );
                       if (!confirmado) return;
 
@@ -1387,16 +1363,13 @@ export default function DetalhesLotePage() {
                   <th className="px-2 py-1 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">
                     Data Inativação
                   </th>
-                  <th className="px-2 py-1 text-center text-xs font-medium text-gray-700 uppercase tracking-wider">
-                    Ações
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {funcionariosFiltrados.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={20}
+                      colSpan={19}
                       className="px-6 py-12 text-center text-gray-500"
                     >
                       {busca ||
@@ -1522,21 +1495,6 @@ export default function DetalhesLotePage() {
                       </td>
                       <td className="px-2 py-1 text-sm text-gray-500">
                         {formatDate(func.avaliacao.inativada_em)}
-                      </td>
-                      <td className="px-2 py-1 text-center">
-                        {(func.avaliacao.status === 'concluida' ||
-                          func.avaliacao.status === 'concluido') && (
-                          <button
-                            onClick={() =>
-                              gerarRelatorioFuncionario(func.cpf, func.nome)
-                            }
-                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-600 text-white rounded text-xs hover:bg-blue-700 transition-colors"
-                            title="Gerar PDF"
-                          >
-                            <FileText size={14} />
-                            PDF
-                          </button>
-                        )}
                       </td>
                     </tr>
                   ))
