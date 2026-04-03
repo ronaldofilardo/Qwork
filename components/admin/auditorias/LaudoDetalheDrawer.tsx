@@ -183,12 +183,21 @@ export function LaudoDetalheDrawer({
               : ev.tipo === 'envio'
                 ? '#7e22ce'
                 : '#c2410c';
+        
+        // Determina o ator/IP a exibir
+        const actorDisplay =
+          ev.actor && ev.actor.trim() 
+            ? `Por: ${ev.actor}` 
+            : ev.ip && ev.ip.trim()
+              ? `IP: ${ev.ip}`
+              : '';
+        
         return `
           <tr>
             <td style="padding:8px 12px; width:100px; white-space:nowrap; color:${cor}; font-weight:600; font-size:11px; border-bottom:1px solid #f0f0f0;">${evTipoLabel}</td>
             <td style="padding:8px 12px; border-bottom:1px solid #f0f0f0;">${ev.label}</td>
             <td style="padding:8px 12px; white-space:nowrap; color:#555; font-size:12px; border-bottom:1px solid #f0f0f0;">${formatDate(ev.timestamp)}</td>
-            <td style="padding:8px 12px; color:#555; font-size:12px; border-bottom:1px solid #f0f0f0;">${ev.actor ? `Por: ${ev.actor}` : ev.ip ? `IP: ${ev.ip}` : ''}</td>
+            <td style="padding:8px 12px; color:#555; font-size:12px; border-bottom:1px solid #f0f0f0;">${actorDisplay}</td>
           </tr>`;
       })
       .join('');
