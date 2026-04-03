@@ -144,6 +144,7 @@ export interface AuditoriaLaudoDetalhe {
     tipo: string;
     liberado_em: string | null;
     liberado_por_nome: string | null;
+    liberado_por_cpf: string | null;
     solicitacao_emissao_em: string | null;
     pago_em: string | null;
   };
