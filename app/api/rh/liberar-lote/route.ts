@@ -260,14 +260,9 @@ export const POST = async (req: Request) => {
     // Isso evita erro "SECURITY: app.current_user_cpf not set" após falhas parciais
 
     const resultado = await withTransactionAsGestor(async (client) => {
-      // Verificar se o CPF do usuário está presente em `entidades_senhas`.
-      // A FK `lotes_avaliacao.liberado_por` referencia `entidades_senhas(cpf)`,
-      // então somente atribuímos o CPF se existir o registro — caso contrário usamos NULL.
-      const liberadoPorCheck = await client.query<{ exists: boolean }>(
-        `SELECT 1 FROM entidades_senhas WHERE cpf = $1 LIMIT 1`,
-        [user.cpf]
-      );
-      const liberadoPor = liberadoPorCheck.rowCount > 0 ? user.cpf : null;
+      // ✅ CPF de quem liberou o lote — sempre registrado para cadeia de custódia
+      // A FK histórica para entidades_senhas foi removida; liberado_por é varchar livre.
+      const liberadoPor = user.cpf;
 
       // Criar o lote - Gestores RH usam query direta (não RLS)
       // Usa apenas ID (sem geração de codigo)

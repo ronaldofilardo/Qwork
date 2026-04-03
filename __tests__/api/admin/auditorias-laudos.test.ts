@@ -657,5 +657,40 @@ describe('APIs de Auditoria — Laudos', () => {
       expect(cicloEvento).toBeDefined();
       expect(cicloEvento.actor).toBeUndefined();
     });
+
+    it('deve tratar rh_cpf com string vazia como actor undefined (NULLIF/TRIM)', async () => {
+      // CHAR(11) do PostgreSQL pode retornar string vazia quando liberado_por era NULL.
+      // O SQL usa NULLIF(TRIM(l.liberado_por), '') para normalizar.
+      // Na camada de response: rh_cpf = null → actor = undefined
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({
+            rh_cpf: null,           // NULLIF(TRIM(''), '') → null
+            liberado_por_nome: null, // COALESCE(null, null) → null
+            liberado_por: null,
+            finalizado_em: null,
+            solicitacao_emissao_em: null,
+            pago_em: null,
+            arquivo_remoto_uploaded_at: null,
+          })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(data.lote.liberado_por_cpf).toBeNull();
+      const cicloEvento = data.timeline.find(
+        (e: { label: string }) => e.label === 'Ciclo liberado'
+      );
+      expect(cicloEvento).toBeDefined();
+      expect(cicloEvento.actor).toBeUndefined();
+    });
   });
 });

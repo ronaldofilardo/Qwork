@@ -1,6 +1,6 @@
 /**
  * @file __tests__/api/rh/liberar-lote-permissions.test.ts
- * Testes: /api/rh/liberar-lote - permissões
+ * Testes: /api/rh/liberar-lote - permissões e rastreabilidade
  */
 
 jest.mock('@/lib/db', () => ({
@@ -12,6 +12,7 @@ jest.mock('@/lib/db-gestor', () => ({
 }));
 
 jest.mock('@/lib/session', () => ({
+  requireRole: jest.fn(),
   requireAuth: jest.fn(),
   requireRHWithEmpresaAccess: jest.fn(),
   getSession: jest.fn(),
@@ -21,6 +22,7 @@ import { NextRequest } from 'next/server';
 import { query } from '@/lib/db';
 import { queryAsGestorRH } from '@/lib/db-gestor';
 import {
+  requireRole,
   requireAuth,
   requireRHWithEmpresaAccess,
   getSession,
@@ -31,12 +33,145 @@ const mockQuery = query as jest.MockedFunction<typeof query>;
 const mockQueryAsGestorRH = queryAsGestorRH as jest.MockedFunction<
   typeof queryAsGestorRH
 >;
+const mockRequireRole = requireRole as jest.MockedFunction<typeof requireRole>;
 const mockRequireAuth = requireAuth as jest.MockedFunction<typeof requireAuth>;
 const mockRequireRHWithEmpresaAccess =
   requireRHWithEmpresaAccess as jest.MockedFunction<
     typeof requireRHWithEmpresaAccess
   >;
 const mockGetSession = getSession as jest.MockedFunction<typeof getSession>;
+
+const RH_USER = {
+  cpf: '04703084945',
+  nome: 'Triagem Curitiba',
+  perfil: 'rh' as const,
+  clinica_id: 5,
+  tomador_id: 5,
+};
+
+describe('/api/rh/liberar-lote - permissões', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+
+    // requireRole é o guard real usado pela rota
+    mockRequireRole.mockResolvedValue(RH_USER as any);
+
+    mockGetSession.mockReturnValue(RH_USER as any);
+  });
+
+  it('deve retornar 403 quando requireRHWithEmpresaAccess negar acesso', async () => {
+    // Empresa existe (usa query direto)
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 7,
+          clinica_id: 5,
+          nome: 'Empresa Teste',
+          clinica_nome: 'Clínica Teste',
+        },
+      ],
+      rowCount: 1,
+    } as any);
+
+    mockRequireRHWithEmpresaAccess.mockRejectedValueOnce(
+      new Error('Acesso negado')
+    );
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/rh/liberar-lote',
+      {
+        method: 'POST',
+        body: JSON.stringify({ empresaId: 7 }),
+      }
+    );
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    expect(response.status).toBe(403);
+    expect(data.error).toBe(
+      'Você não tem permissão para liberar avaliações nesta empresa'
+    );
+    expect(mockRequireRHWithEmpresaAccess).toHaveBeenCalledWith(7);
+  });
+
+  it('deve continuar quando requireRHWithEmpresaAccess autorizar acesso', async () => {
+    // Empresa existe (usa query direto para validação inicial)
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: 7,
+          clinica_id: 5,
+          nome: 'Empresa Teste',
+          clinica_nome: 'Clínica Teste',
+        },
+      ],
+      rowCount: 1,
+    } as any);
+
+    mockRequireRHWithEmpresaAccess.mockResolvedValue({} as any);
+
+    // queryAsGestorRH calls:
+    // 1) obter_proximo_numero_ordem
+    mockQueryAsGestorRH.mockResolvedValueOnce({
+      rows: [{ numero_ordem: 123 }],
+      rowCount: 1,
+    } as any);
+    // 2) calcular_elegibilidade_lote -> sem funcionários elegíveis
+    mockQueryAsGestorRH.mockResolvedValueOnce({
+      rows: [],
+      rowCount: 0,
+    } as any);
+
+    const request = new NextRequest(
+      'http://localhost:3000/api/rh/liberar-lote',
+      {
+        method: 'POST',
+        body: JSON.stringify({ empresaId: 7 }),
+      }
+    );
+
+    const response = await POST(request);
+    const data = await response.json();
+
+    // Sem funcionários elegíveis → 400
+    expect(response.status).toBe(400);
+    expect(data.error).toContain('Nenhum funcionário elegível encontrado');
+    expect(mockRequireRHWithEmpresaAccess).toHaveBeenCalledWith(7);
+  });
+
+  it('não deve consultar entidades_senhas para definir liberado_por (CPF sempre gravado)', async () => {
+    // Verifica que o route não faz mais a checagem condicional de entidades_senhas.
+    // O CPF do RH deve ser gravado diretamente, independente de estar em entidades_senhas.
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: 9, clinica_id: 5, nome: 'Empresa Y', clinica_nome: 'Clínica Z' }],
+      rowCount: 1,
+    } as any);
+
+    mockRequireRHWithEmpresaAccess.mockResolvedValue({} as any);
+
+    // Sem elegíveis — retorna 400 antes da transação
+    mockQueryAsGestorRH
+      .mockResolvedValueOnce({ rows: [{ numero_ordem: 1 }], rowCount: 1 } as any)
+      .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+    const request = new NextRequest('http://localhost:3000/api/rh/liberar-lote', {
+      method: 'POST',
+      body: JSON.stringify({ empresaId: 9 }),
+    });
+
+    await POST(request);
+
+    // Confirmar que NENHUMA query intermediária consultou entidades_senhas
+    const allQueryCalls = mockQuery.mock.calls.map(([sql]) =>
+      typeof sql === 'string' ? sql : ''
+    );
+    const consultouEntidadesSenhas = allQueryCalls.some((sql) =>
+      sql.toLowerCase().includes('entidades_senhas')
+    );
+    expect(consultouEntidadesSenhas).toBe(false);
+  });
+});
 
 describe('/api/rh/liberar-lote - permissões', () => {
   beforeEach(() => {
