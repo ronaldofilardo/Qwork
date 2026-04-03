@@ -127,12 +127,12 @@ export async function GET(
     const solicitacaoEmissaoResult =
       laudo.solicitacao_emissao_em &&
       auditoriaLaudosResult.rows.find((ev) => {
-        // Procura evento mais próximo ao timestamp de solicitação
+        // Procura evento de emissão mais próximo ao timestamp de solicitação (até 30 segundos)
         const diff = Math.abs(
           new Date(ev.criado_em).getTime() -
             new Date(laudo.solicitacao_emissao_em).getTime()
         );
-        return diff < 10000 && ev.acao === 'emissao_automatica'; // 10 segundos de tolerância
+        return diff < 30000 && ev.acao.includes('emissao'); // 30 segundos de tolerância
       });
 
     // ── 4. Monta timeline ordenada por timestamp ──────────────────────────
@@ -175,13 +175,17 @@ export async function GET(
         tipo: 'lote',
         label: 'Lote finalizado',
         timestamp: laudo.finalizado_em,
+        actor: laudo.rh_cpf || undefined,
       });
     }
 
     // Solicitação de emissão
     if (laudo.solicitacao_emissao_em) {
       const solicitadorCpf =
-        solicitacaoEmissaoResult?.emissor_cpf || laudo.rh_cpf || undefined;
+        solicitacaoEmissaoResult?.emissor_cpf ||
+        laudo.rh_cpf ||
+        laudo.emissor_cpf ||
+        undefined;
 
       timeline.push({
         tipo: 'laudo',
@@ -250,6 +254,7 @@ export async function GET(
         tipo: 'envio',
         label: 'Arquivo enviado ao bucket',
         timestamp: laudo.arquivo_remoto_uploaded_at,
+        actor: laudo.emissor_cpf || undefined,
       });
     }
 
