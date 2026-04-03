@@ -53,10 +53,13 @@ export async function GET(
         l.status                                  AS lote_status,
         l.tipo                                    AS lote_tipo,
         l.liberado_em,
+        l.liberado_por                            AS liberado_por_cpf,
         l.finalizado_em,
         l.solicitacao_emissao_em,
         l.pago_em,
         COALESCE(f_lib.nome, l.liberado_por)      AS liberado_por_nome,
+        -- RH CPF para eventos de lote/solicitação
+        COALESCE(f_rh_ent.cpf, f_rh_cli.cpf)     AS rh_cpf,
         -- Tomador
         COALESCE(ent.nome, c.nome)                 AS tomador_nome,
         COALESCE(ent.cnpj, c.cnpj)                AS tomador_cnpj,
@@ -70,6 +73,8 @@ export async function GET(
       JOIN lotes_avaliacao l ON l.id = ld.lote_id
       LEFT JOIN funcionarios  f_em  ON f_em.cpf  = ld.emissor_cpf
       LEFT JOIN funcionarios  f_lib ON f_lib.cpf = l.liberado_por
+      LEFT JOIN funcionarios  f_rh_ent ON f_rh_ent.entidade_id = l.entidade_id AND f_rh_ent.perfil = 'rh'
+      LEFT JOIN funcionarios  f_rh_cli ON f_rh_cli.clinica_id = l.clinica_id AND f_rh_cli.perfil = 'rh'
       LEFT JOIN clinicas      c     ON c.id  = l.clinica_id
       LEFT JOIN empresas_clientes ec ON ec.id = l.empresa_id
       LEFT JOIN entidades     ent   ON ent.id = l.entidade_id
@@ -93,6 +98,7 @@ export async function GET(
       SELECT
         a.id            AS avaliacao_id,
         a.status,
+        a.funcionario_cpf,
         a.inicio        AS iniciada_em,
         a.envio         AS concluida_em,
         a.atualizado_em AS atualizado_em
@@ -112,6 +118,7 @@ export async function GET(
         al.observacoes,
         al.ip_address,
         al.emissor_nome,
+        al.emissor_cpf,
         al.criado_em
       FROM auditoria_laudos al
       WHERE al.laudo_id = $1
@@ -136,9 +143,9 @@ export async function GET(
     if (laudo.liberado_em) {
       timeline.push({
         tipo: 'lote',
-        label: 'Lote liberado para avaliações',
+        label: 'Ciclo liberado',
         timestamp: laudo.liberado_em,
-        actor: laudo.liberado_por_nome ?? undefined,
+        actor: laudo.rh_cpf ?? undefined,
       });
     }
 
@@ -149,6 +156,7 @@ export async function GET(
           tipo: 'avaliacao',
           label: `Avaliação #${av.avaliacao_id} concluída`,
           timestamp: av.concluida_em,
+          actor: av.funcionario_cpf ?? undefined,
         });
       }
     }
@@ -168,6 +176,7 @@ export async function GET(
         tipo: 'laudo',
         label: 'Solicitação de emissão',
         timestamp: laudo.solicitacao_emissao_em,
+        actor: laudo.rh_cpf ?? undefined,
       });
     }
 
@@ -177,6 +186,7 @@ export async function GET(
         tipo: 'laudo',
         label: 'Pagamento confirmado',
         timestamp: laudo.pago_em,
+        actor: laudo.emissor_cpf ?? undefined,
       });
     }
 
@@ -197,7 +207,7 @@ export async function GET(
             : 'laudo',
         label: labelMap[ev.acao] ?? ev.acao,
         timestamp: ev.criado_em,
-        actor: ev.emissor_nome ?? undefined,
+        actor: ev.emissor_cpf ?? ev.emissor_nome ?? undefined,
         ip: ev.ip_address ?? undefined,
         detalhe: ev.observacoes ?? undefined,
       });
@@ -210,7 +220,7 @@ export async function GET(
           tipo: 'laudo',
           label: 'Laudo emitido',
           timestamp: laudo.emitido_em,
-          actor: laudo.emissor_nome ?? undefined,
+          actor: laudo.emissor_cpf ?? laudo.emissor_nome ?? undefined,
         });
       }
       if (laudo.enviado_em) {
@@ -218,7 +228,7 @@ export async function GET(
           tipo: 'envio',
           label: 'Laudo enviado ao Backblaze',
           timestamp: laudo.enviado_em,
-          actor: laudo.emissor_nome ?? undefined,
+          actor: laudo.emissor_cpf ?? laudo.emissor_nome ?? undefined,
         });
       }
     }
