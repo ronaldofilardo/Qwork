@@ -43,10 +43,12 @@ function makeLaudoRow(overrides: Record<string, unknown> = {}) {
     lote_status: 'finalizado',
     lote_tipo: 'clinica',
     liberado_em: '2023-12-31T10:00:00.000Z',
+    liberado_por: '11122233344',
     finalizado_em: '2024-01-01T00:00:00.000Z',
     solicitacao_emissao_em: '2024-01-01T00:30:00.000Z',
     pago_em: '2024-01-01T00:45:00.000Z',
     liberado_por_nome: 'Gerente',
+    rh_cpf: '11122233344',
     tomador_nome: 'Clínica Saúde',
     tomador_cnpj: '12345678000199',
     tomador_tipo: 'clinica',
@@ -59,6 +61,7 @@ function makeAvaliacaoRow(overrides: Record<string, unknown> = {}) {
   return {
     avaliacao_id: 1,
     status: 'concluida',
+    funcionario_cpf: '55566677788',
     iniciada_em: '2024-01-01T00:00:00.000Z',
     concluida_em: '2024-01-01T00:30:00.000Z',
     atualizado_em: '2024-01-01T00:30:00.000Z',
@@ -462,6 +465,197 @@ describe('APIs de Auditoria — Laudos', () => {
       // Assert
       expect(response.status).toBe(500);
       expect(data.error).toBe('Erro interno do servidor');
+    });
+
+    // ── CPF tracking (correções de cadeia de custódia) ───────────────────
+
+    it('deve usar label "Ciclo liberado" (não "Lote liberado para avaliações")', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({ finalizado_em: null, solicitacao_emissao_em: null, pago_em: null })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Act
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      const loteEvento = data.timeline.find(
+        (e: { tipo: string }) => e.tipo === 'lote'
+      );
+      expect(loteEvento.label).toBe('Ciclo liberado');
+      expect(loteEvento.label).not.toBe('Lote liberado para avaliações');
+    });
+
+    it('deve expor rh_cpf (liberado_por) como actor no evento "Ciclo liberado"', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({
+            rh_cpf: '11122233344',
+            finalizado_em: null,
+            solicitacao_emissao_em: null,
+            pago_em: null,
+            arquivo_remoto_uploaded_at: null,
+          })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Act
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      const cicloEvento = data.timeline.find(
+        (e: { label: string }) => e.label === 'Ciclo liberado'
+      );
+      expect(cicloEvento).toBeDefined();
+      expect(cicloEvento.actor).toBe('11122233344');
+    });
+
+    it('deve expor liberado_por_cpf no objeto lote da resposta', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({ rh_cpf: '11122233344' })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [makeAvaliacaoRow()], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Act
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(data.lote.liberado_por_cpf).toBe('11122233344');
+    });
+
+    it('deve expor funcionario_cpf como actor em eventos de avaliação na timeline', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({
+            liberado_em: null,
+            finalizado_em: null,
+            solicitacao_emissao_em: null,
+            pago_em: null,
+            arquivo_remoto_uploaded_at: null,
+          })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({
+          rows: [
+            makeAvaliacaoRow({ avaliacao_id: 5, funcionario_cpf: '55566677788', concluida_em: '2024-01-01T09:00:00.000Z' }),
+          ],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Act
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      const avaliacaoEvento = data.timeline.find(
+        (e: { tipo: string }) => e.tipo === 'avaliacao'
+      );
+      expect(avaliacaoEvento).toBeDefined();
+      expect(avaliacaoEvento.actor).toBe('55566677788');
+    });
+
+    it('deve expor emissor_cpf de auditoria_laudos como actor nos eventos de emissão', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({ solicitacao_emissao_em: null, pago_em: null, arquivo_remoto_uploaded_at: null })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({
+          rows: [
+            {
+              acao: 'emissao_automatica',
+              status_evento: 'sucesso',
+              observacoes: null,
+              ip_address: '192.168.1.1',
+              emissor_nome: 'Sistema',
+              emissor_cpf: '99988877766',
+              criado_em: '2024-01-01T01:00:00.000Z',
+            },
+          ],
+          rowCount: 1,
+        });
+
+      // Act
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      const emissaoEvento = data.timeline.find(
+        (e: { label: string }) => e.label === 'Laudo emitido (automático)'
+      );
+      expect(emissaoEvento).toBeDefined();
+      expect(emissaoEvento.actor).toBe('99988877766');
+    });
+
+    it('deve retornar actor undefined quando liberado_por é nulo', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue({ perfil: 'admin' } as any);
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [makeLaudoRow({
+            rh_cpf: null,
+            liberado_por: null,
+            finalizado_em: null,
+            solicitacao_emissao_em: null,
+            pago_em: null,
+            arquivo_remoto_uploaded_at: null,
+          })],
+          rowCount: 1,
+        })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 })
+        .mockResolvedValueOnce({ rows: [], rowCount: 0 });
+
+      // Act
+      const response = await getLaudoDetalhe(makeRequest('1'), {
+        params: { laudoId: '1' },
+      });
+      const data = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      const cicloEvento = data.timeline.find(
+        (e: { label: string }) => e.label === 'Ciclo liberado'
+      );
+      expect(cicloEvento).toBeDefined();
+      expect(cicloEvento.actor).toBeUndefined();
     });
   });
 });
