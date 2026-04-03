@@ -58,12 +58,8 @@ export async function GET(
         l.solicitacao_emissao_em,
         l.pago_em,
         COALESCE(f_lib.nome, l.liberado_por)      AS liberado_por_nome,
-        -- RH/Gestor CPF: busca por clínica (RH) ou entidade (Gestor)
-        COALESCE(
-          l.liberado_por,
-          (SELECT f.cpf FROM funcionarios f WHERE f.clinica_id = l.clinica_id AND f.perfil = 'rh' LIMIT 1),
-          (SELECT f.cpf FROM funcionarios f WHERE f.entidade_id = l.entidade_id AND f.perfil = 'rh' LIMIT 1)
-        ) AS rh_cpf,
+        -- CPF de quem liberou o lote (armazenado diretamente em liberado_por)
+        l.liberado_por                            AS rh_cpf,
         -- Tomador
         COALESCE(ent.nome, c.nome)                 AS tomador_nome,
         COALESCE(ent.cnpj, c.cnpj)                AS tomador_cnpj,
