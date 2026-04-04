@@ -254,7 +254,10 @@ export default function PagamentosFinanceiros({
 
   return (
     <>
-      <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
+      <div
+        id="dados-financeiros"
+        className="bg-white rounded-lg shadow-sm p-6 border border-gray-200"
+      >
         {/* Título do bloco */}
         <div className="flex items-center gap-3 mb-5">
           <div className="p-3 bg-primary-100 rounded-lg">
