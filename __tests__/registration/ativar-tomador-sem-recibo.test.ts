@@ -1,16 +1,18 @@
 /**
  * Testes para TomadorStateMachine com política de recibo sob demanda
  * Testa a lógica de ativação e transições de estado
+ *
+ * NOTA: pagamento_confirmado removido do fluxo (01/04/2026).
+ * canActivateAccount agora exige apenas status='aprovado' + contrato_aceito=true.
  */
 
 import { TomadorStateMachine } from '@/lib/state-machine/tomador-state';
 
 describe('TomadorStateMachine - Recibo sob demanda', () => {
   describe('Validação de requisitos de ativação', () => {
-    it('deve permitir ativação quando aprovado, pago e contrato aceito', () => {
+    it('deve permitir ativação quando aprovado e contrato aceito', () => {
       const stateMachine = new TomadorStateMachine({
         status: 'aprovado',
-        pagamento_confirmado: true,
         contrato_aceito: true,
         recibo_gerado: false,
         ativa: false,
@@ -18,15 +20,14 @@ describe('TomadorStateMachine - Recibo sob demanda', () => {
 
       const result = stateMachine.canActivateAccount();
 
-      // Política atual: recibo não é obrigatório para ativação
+      // Política atual: recibo e pagamento não são obrigatórios para ativação
       expect(result).toBe(true);
     });
 
-    it('deve rejeitar ativação sem pagamento confirmado', () => {
+    it('deve rejeitar ativação sem contrato aceito', () => {
       const stateMachine = new TomadorStateMachine({
         status: 'aprovado',
-        pagamento_confirmado: false,
-        contrato_aceito: true,
+        contrato_aceito: false,
         recibo_gerado: false,
         ativa: false,
       });
@@ -39,7 +40,6 @@ describe('TomadorStateMachine - Recibo sob demanda', () => {
     it('deve rejeitar ativação se status não é aprovado', () => {
       const stateMachine = new TomadorStateMachine({
         status: 'pendente' as any,
-        pagamento_confirmado: true,
         contrato_aceito: true,
         recibo_gerado: false,
         ativa: false,
@@ -53,7 +53,6 @@ describe('TomadorStateMachine - Recibo sob demanda', () => {
     it('deve aceitar tomador já ativo como válido', () => {
       const stateMachine = new TomadorStateMachine({
         status: 'aprovado',
-        pagamento_confirmado: true,
         contrato_aceito: true,
         recibo_gerado: false,
         ativa: true,
@@ -64,10 +63,9 @@ describe('TomadorStateMachine - Recibo sob demanda', () => {
   });
 
   describe('Transições de status', () => {
-    it('deve permitir transição pagamento_confirmado → aprovado', () => {
+    it('deve permitir transição pagamento_confirmado → aprovado (estado legado)', () => {
       const stateMachine = new TomadorStateMachine({
         status: 'pagamento_confirmado',
-        pagamento_confirmado: true,
         contrato_aceito: true,
         recibo_gerado: false,
         ativa: false,
@@ -81,7 +79,6 @@ describe('TomadorStateMachine - Recibo sob demanda', () => {
     it('deve rejeitar transições inválidas', () => {
       const stateMachine = new TomadorStateMachine({
         status: 'cadastro_inicial',
-        pagamento_confirmado: false,
         contrato_aceito: false,
         recibo_gerado: false,
         ativa: false,

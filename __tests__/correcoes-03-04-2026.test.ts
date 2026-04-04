@@ -1288,7 +1288,8 @@ describe('14. Gerar Relatório PDF gateado por laudo_status (não isPronto)', ()
   });
 
   it('entidade page.tsx: botão deve ter disabled baseado em laudo_status', () => {
-    expect(entidadeSrc).toMatch(/disabled=\{!?\[?'emitido'.*laudo_status/s);
+    // Permite whitespace/newline entre { e ![ (formatação multi-linha)
+    expect(entidadeSrc).toMatch(/disabled=\{\s*!?\[?'emitido'.*laudo_status/s);
   });
 
   it('RH page.tsx: botão Gerar Relatório PDF usa laudo_status como condição', () => {

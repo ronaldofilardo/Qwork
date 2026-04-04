@@ -148,6 +148,20 @@ describe('GET /api/rh/empresas-overview — Estrutura da resposta', () => {
     expect(src).toMatch(/aguardando_emissao/);
     expect(src).toMatch(/aguardando_pagamento/);
   });
+
+  it('LaudosStatusInfo contém campo laudo_emitido separado de pago', () => {
+    expect(src).toMatch(/laudo_emitido:\s*number/);
+  });
+
+  it('lateral join laud separa pago (aguardando emissão) de laudo_emitido', () => {
+    // pago deve ter filtro excludindo laudo_emitido e finalizado
+    expect(src).toMatch(/status_pagamento\s*=\s*'pago'/);
+    expect(src).toMatch(/NOT IN\s*\(\s*'laudo_emitido',\s*'finalizado'\s*\)/);
+    // laudo_emitido conta lotes realmente emitidos
+    const lateralMatch = src.match(/laud ON true[\s\S]*?laud ON true/);
+    const laudSection = src.match(/AS laudo_emitido\s/);
+    expect(laudSection).not.toBeNull();
+  });
 });
 
 describe('GET /api/rh/empresas-overview — ResumoKPI campos estendidos', () => {

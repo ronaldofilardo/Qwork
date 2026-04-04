@@ -311,7 +311,7 @@ export async function POST(request: NextRequest) {
         // ========== FLUXO ENTIDADE ==========
         // Marcar entidade como ativa/confirmada
         await query(
-          `UPDATE entidades SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          `UPDATE entidades SET ativa = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
           [pagamento.tomador_id]
         );
 
@@ -356,7 +356,7 @@ export async function POST(request: NextRequest) {
         // ========== FLUXO CLINICA ==========
         // Marcar clinica como ativa/confirmada
         await query(
-          `UPDATE clinicas SET ativa = true, pagamento_confirmado = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          `UPDATE clinicas SET ativa = true, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
           [pagamento.tomador_id]
         );
 
@@ -445,7 +445,7 @@ export async function POST(request: NextRequest) {
 
         // Garantir que tomador esteja como aprovado/ativo após pagamento
         await query(
-          `UPDATE entidades SET status = 'aprovado', ativa = true, pagamento_confirmado = true, data_liberacao_login = COALESCE(data_liberacao_login, NOW()), aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          `UPDATE entidades SET status = 'aprovado', ativa = true, data_liberacao_login = COALESCE(data_liberacao_login, NOW()), aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
           [pagamento.tomador_id]
         );
 
@@ -498,7 +498,6 @@ export async function POST(request: NextRequest) {
         `UPDATE entidades 
          SET ativa = true,
              status = 'aprovado',
-             pagamento_confirmado = true,
              data_liberacao_login = COALESCE(data_liberacao_login, NOW()),
              aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP),
              aprovado_por_cpf = '00000000000',
@@ -627,7 +626,7 @@ export async function POST(request: NextRequest) {
 
           // Marcar entidade como pendente novamente
           await query(
-            `UPDATE entidades SET status = 'pendente', pagamento_confirmado = false, ativa = false WHERE id = $1`,
+            `UPDATE entidades SET status = 'pendente', ativa = false WHERE id = $1`,
             [entidadeIdForRollback]
           );
         }
@@ -674,7 +673,7 @@ export async function GET(request: NextRequest) {
     }
 
     const pagamentoResult = await query(
-      `SELECT p.*, c.nome as entidade_nome, c.pagamento_confirmado
+      `SELECT p.*, c.nome as entidade_nome
        FROM pagamentos p
        JOIN entidades c ON p.entidade_id = c.id
        WHERE p.id = $1`,

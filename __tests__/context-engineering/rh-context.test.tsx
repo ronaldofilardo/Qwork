@@ -60,6 +60,7 @@ function ContextInspector() {
       <span data-testid="empresas">{ctx.counts.empresas}</span>
       <span data-testid="notificacoes">{ctx.counts.notificacoes}</span>
       <span data-testid="laudos">{ctx.counts.laudos}</span>
+      <span data-testid="pagamentos">{ctx.counts.pagamentos}</span>
       <span data-testid="loading">{String(ctx.isLoading)}</span>
     </div>
   );
@@ -74,6 +75,7 @@ describe('RHContext', () => {
     const { getByTestId } = render(<ContextInspector />);
     expect(getByTestId('nome').textContent).toBe('null');
     expect(getByTestId('empresas').textContent).toBe('0');
+    expect(getByTestId('pagamentos').textContent).toBe('0');
     expect(getByTestId('loading').textContent).toBe('true');
   });
 
@@ -82,7 +84,7 @@ describe('RHContext', () => {
       session: { nome: 'Test', perfil: 'rh' } as Parameters<
         typeof RHContext.Provider
       >[0]['value']['session'],
-      counts: { empresas: 5, notificacoes: 3, laudos: 2 },
+      counts: { empresas: 5, notificacoes: 3, laudos: 2, pagamentos: 1 },
       isLoading: false,
       reloadCounts: jest.fn(),
     };
@@ -97,6 +99,7 @@ describe('RHContext', () => {
     expect(getByTestId('empresas').textContent).toBe('5');
     expect(getByTestId('notificacoes').textContent).toBe('3');
     expect(getByTestId('laudos').textContent).toBe('2');
+    expect(getByTestId('pagamentos').textContent).toBe('1');
     expect(getByTestId('loading').textContent).toBe('false');
   });
 
@@ -153,7 +156,8 @@ describe('RHContext', () => {
       .mockReturnValueOnce(makeCountsFetch({ laudos: [{ id: 1 }] })) // laudos
       .mockReturnValueOnce(
         makeCountsFetch({ totalNaoLidas: 4, notificacoes: [] })
-      ); // notificacoes
+      ) // notificacoes
+      .mockReturnValueOnce(makeCountsFetch({ count: 2 })); // pagamentos
 
     render(
       <RHProvider>

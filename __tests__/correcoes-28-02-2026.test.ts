@@ -73,12 +73,13 @@ describe('1. /api/rh/funcionarios — coluna Últimas Avaliações (clinica)', (
 // 2. FuncionariosSection — exibição via ultimo_lote_numero (clinica/entidade)
 // ─────────────────────────────────────────────────────────────
 
-describe('2. FuncionariosSection — coluna Últimas Avaliações exibe numero_ordem', () => {
+describe('2. FuncionarioRow — coluna Últimas Avaliações exibe numero_ordem', () => {
   const componentPath = path.join(
     ROOT,
     'components',
     'funcionarios',
-    'FuncionariosSection.tsx'
+    'components',
+    'FuncionarioRow.tsx'
   );
   let src: string;
 
@@ -86,16 +87,17 @@ describe('2. FuncionariosSection — coluna Últimas Avaliações exibe numero_o
     src = fs.readFileSync(componentPath, 'utf-8');
   });
 
-  it('deve exibir Lote ${ultimo_lote_numero} quando disponível', () => {
+  it('deve referenciar ultimo_lote_numero no componente de linha', () => {
     expect(src).toContain('ultimo_lote_numero');
   });
 
-  it('deve renderizar "Lote" seguido da variável ultimo_lote_numero', () => {
-    expect(src).toMatch(/`Lote \$\{funcionario\.ultimo_lote_numero\}`/);
+  it('deve renderizar texto "Lote" junto ao numero do lote', () => {
+    // JSX inline: Lote {funcionario.ultimo_lote_numero}
+    expect(src).toMatch(/Lote\s*\{funcionario\.ultimo_lote_numero\}/);
   });
 
-  it('deve ter fallback para ultimo_lote_id (ex: #${id})', () => {
-    expect(src).toMatch(/ultimo_lote_id/);
+  it('deve referenciar lote_ativo_numero para avaliaçoes ativas', () => {
+    expect(src).toContain('lote_ativo_numero');
   });
 });
 

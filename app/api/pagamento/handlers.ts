@@ -326,11 +326,9 @@ export async function handleConfirmarPagamento(
   // Fluxo pós-pagamento: ativação/contas/recibo
   let contaCriada = false;
   try {
-    // Marcar pagamento confirmado na entidade
     await query(
       `UPDATE entidades 
-       SET pagamento_confirmado = true,
-           metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
+       SET metadata = COALESCE(metadata, '{}'::jsonb) || jsonb_build_object(
              'pagamento_id', $1::int,
              'data_confirmacao', NOW(),
              'metodo_pagamento', $2

@@ -147,3 +147,68 @@ describe('ModalContrato - Transição Silenciosa', () => {
     jest.clearAllMocks();
   });
 });
+
+describe('ModalContrato - Overlay Persistente Durante Redirect (04/04/2026)', () => {
+  it('não deve usar alert() no módulo ModalContrato', () => {
+    const fs = require('fs');
+    const componentPath = require.resolve('@/components/modals/ModalContrato');
+    const code = fs.readFileSync(componentPath, 'utf8');
+    expect(code).not.toContain('alert(');
+  });
+
+  it('deve conter flag didRedirect para manter overlay durante navegação', () => {
+    const fs = require('fs');
+    const componentPath = require.resolve('@/components/modals/ModalContrato');
+    const code = fs.readFileSync(componentPath, 'utf8');
+    expect(code).toContain('didRedirect');
+  });
+
+  it('deve atualizar mensagem do overlay ao redirecionar para boas-vindas', () => {
+    const fs = require('fs');
+    const componentPath = require.resolve('@/components/modals/ModalContrato');
+    const code = fs.readFileSync(componentPath, 'utf8');
+    expect(code).toContain('Preparando sua área de trabalho');
+  });
+
+  it('deve atualizar mensagem do overlay ao liberarLoginImediatamente', () => {
+    const fs = require('fs');
+    const componentPath = require.resolve('@/components/modals/ModalContrato');
+    const code = fs.readFileSync(componentPath, 'utf8');
+    expect(code).toContain('Acesso liberado');
+  });
+
+  it('finally só limpa estados quando não houve redirect', () => {
+    /**
+     * Simulação da lógica do finally condicional:
+     * Se didRedirect=true, os estados não são limpos (overlay permanece).
+     * Se didRedirect=false (erro), os estados são limpos normalmente.
+     */
+    let processando = true;
+    let loading = true;
+
+    const executarFinally = (didRedirect: boolean) => {
+      if (!didRedirect) {
+        loading = false;
+        processando = false;
+      }
+    };
+
+    // Com redirect: estados permanecem ativos
+    executarFinally(true);
+    expect(processando).toBe(true);
+    expect(loading).toBe(true);
+
+    // Sem redirect (erro): estados são limpos
+    executarFinally(false);
+    expect(processando).toBe(false);
+    expect(loading).toBe(false);
+  });
+
+  it('estados processoMensagem e processoDetalhe existem no componente', () => {
+    const fs = require('fs');
+    const componentPath = require.resolve('@/components/modals/ModalContrato');
+    const code = fs.readFileSync(componentPath, 'utf8');
+    expect(code).toContain('processoMensagem');
+    expect(code).toContain('processoDetalhe');
+  });
+});

@@ -14,6 +14,7 @@ export interface Solicitacao {
   valor_por_funcionario: number | null;
   link_pagamento_token: string | null;
   link_pagamento_enviado_em: string | null;
+  link_disponibilizado_em: string | null;
   pagamento_metodo: string | null;
   pagamento_parcelas: number | null;
   pago_em: string | null;

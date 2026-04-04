@@ -36,12 +36,22 @@ export interface Funcionario {
   ultima_avaliacao_id?: number | null;
   ultimo_lote_id?: number | null;
   ultima_avaliacao_data_conclusao?: string | null;
-  ultima_avaliacao_status?: 'concluido' | 'inativada' | null;
+  ultima_avaliacao_status?:
+    | 'concluido'
+    | 'concluida'
+    | 'inativada'
+    | 'iniciada'
+    | 'em_andamento'
+    | null;
   ultimo_motivo_inativacao?: string | null;
   data_ultimo_lote?: string | null;
   ultima_inativacao_em?: string | null;
   ultima_inativacao_lote?: string | null;
   ultimo_lote_numero?: number | null;
+  /** Número do lote com avaliação ativa (iniciada/em_andamento) nesta empresa/entidade */
+  lote_ativo_numero?: number | null;
+  /** Status da avaliação ativa mais recente: 'iniciada' ou 'em_andamento' */
+  avaliacao_ativa_status?: 'iniciada' | 'em_andamento' | null;
   indice_avaliacao?: number;
   tem_avaliacao_recente?: boolean;
 }

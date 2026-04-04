@@ -25,8 +25,7 @@ export async function GET(request: NextRequest) {
     const pagamentoResult = await query(
       `SELECT
          p.*,
-         COALESCE(e.nome, c.nome) AS entidade_nome,
-         COALESCE(e.pagamento_confirmado, false) AS pagamento_confirmado
+         COALESCE(e.nome, c.nome) AS entidade_nome
        FROM pagamentos p
        LEFT JOIN entidades e ON p.entidade_id = e.id
        LEFT JOIN clinicas  c ON p.clinica_id  = c.id

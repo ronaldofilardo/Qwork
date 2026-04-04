@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
     // Ativar entidade e criar login
     try {
       await query(
-        `UPDATE entidades SET status = 'aprovado', ativa = true, pagamento_confirmado = true, aprovado_em = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+        `UPDATE entidades SET status = 'aprovado', ativa = true, aprovado_em = CURRENT_TIMESTAMP, atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
         [entidade_id]
       );
 

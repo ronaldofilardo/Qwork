@@ -100,9 +100,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       JSON.stringify({
         event: 'cadastro_entidade_success',
         entidade_id: result.entidade.id,
-        requiresPayment: result.requiresPayment,
-        simuladorUrl: result.simuladorUrl,
-        valor_total: result.valorTotal,
         numero_funcionarios: result.numeroFuncionarios,
         novo_fluxo: 'contract-first',
       })
@@ -112,23 +109,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       {
         success: true,
         id: result.entidade.id,
-        requires_payment: result.requiresPayment,
-        simulador_url: result.simuladorUrl,
         contrato_id: result.contratoIdCreated,
         requires_contract_acceptance: result.contratoIdCreated !== null,
-        payment_info: result.requiresPayment
-          ? {
-              valor_por_funcionario: result.valorPorFuncionario,
-              numero_funcionarios: result.numeroFuncionarios,
-              valor_total: result.valorTotal,
-            }
-          : null,
         representante_vinculado: result.representanteVinculado,
         message: result.contratoIdCreated
           ? 'Cadastro e contrato realizado! Revise os termos e clique em aceitar.'
-          : result.requiresPayment
-            ? 'Cadastro realizado! Prossiga para o simulador de pagamento.'
-            : 'Cadastro realizado com sucesso! Aguarde análise do administrador.',
+          : 'Cadastro realizado com sucesso! Aguarde análise do administrador.',
         entidade: {
           id: result.entidade.id,
           nome: result.entidade.nome,

@@ -78,30 +78,84 @@ export default function LoteStatusBanners({
         </div>
       )}
 
-      {/* Emissão Solicitada */}
-      {lote.emissao_solicitada && !lote.tem_laudo && (
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl">📋</span>
-              </div>
-              <div className="flex-1">
-                <h4 className="font-semibold text-gray-900 mb-1">
-                  Emissão Solicitada
-                </h4>
-                <p className="text-sm text-gray-700">
-                  A emissão do laudo foi solicitada em{' '}
-                  {lote.emissao_solicitado_em
-                    ? formatDate(lote.emissao_solicitado_em)
-                    : 'data não disponível'}
-                  . O laudo está sendo processado pelo emissor.
-                </p>
+      {/* Aguardando Pagamento */}
+      {lote.emissao_solicitada &&
+        !lote.tem_laudo &&
+        lote.status_pagamento === 'aguardando_pagamento' && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="p-4 bg-gradient-to-r from-orange-50 to-amber-50 border-2 border-orange-300 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">💳</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Aguardando Pagamento
+                  </h4>
+                  <p className="text-sm text-gray-700">
+                    O link de pagamento foi gerado. Aguardando confirmação do
+                    pagamento para iniciar a emissão do laudo.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+      {/* Pagamento Confirmado — Aguardando Emissão */}
+      {lote.emissao_solicitada &&
+        !lote.tem_laudo &&
+        lote.status_pagamento === 'pago' && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="p-4 bg-gradient-to-r from-emerald-50 to-green-50 border-2 border-emerald-300 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">✅</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Pagamento Confirmado — Aguardando Emissão
+                  </h4>
+                  <p className="text-sm text-gray-700">
+                    Pagamento confirmado em{' '}
+                    {lote.emissao_solicitado_em
+                      ? formatDate(lote.emissao_solicitado_em)
+                      : 'data não disponível'}
+                    . O laudo está na fila de emissão.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+      {/* Emissão Solicitada (sem status de pagamento / aguardando cobrança) */}
+      {lote.emissao_solicitada &&
+        !lote.tem_laudo &&
+        lote.status_pagamento !== 'aguardando_pagamento' &&
+        lote.status_pagamento !== 'pago' && (
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-lg">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                  <span className="text-2xl">📋</span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-gray-900 mb-1">
+                    Emissão Solicitada
+                  </h4>
+                  <p className="text-sm text-gray-700">
+                    A emissão do laudo foi solicitada em{' '}
+                    {lote.emissao_solicitado_em
+                      ? formatDate(lote.emissao_solicitado_em)
+                      : 'data não disponível'}
+                    . O laudo está sendo processado pelo emissor.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
       {/* Laudo Emitido */}
       {lote.tem_laudo && (

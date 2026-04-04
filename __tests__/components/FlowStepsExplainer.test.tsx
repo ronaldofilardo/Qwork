@@ -19,17 +19,19 @@ describe('FlowStepsExplainer', () => {
 
     it('renderiza todas as 6 etapas do fluxo de entidade', () => {
       render(<FlowStepsExplainer />);
-      expect(screen.getByText('Inserção de Funcionário')).toBeInTheDocument();
-      expect(screen.getByText('Liberação de Lotes')).toBeInTheDocument();
-      expect(screen.getByText('Avaliações')).toBeInTheDocument();
       expect(
-        screen.getByText('Solicitação de Emissão de Laudo')
+        screen.getByText('1. Inserção de Funcionário')
+      ).toBeInTheDocument();
+      expect(screen.getByText('2. Liberação de Lotes')).toBeInTheDocument();
+      expect(screen.getByText('3. Avaliações')).toBeInTheDocument();
+      expect(
+        screen.getByText('4. Solicitação de Emissão de Laudo')
       ).toBeInTheDocument();
       expect(
-        screen.getByText('Recebimento do Link para Pagamento')
+        screen.getByText('5. Recebimento do Link para Pagamento')
       ).toBeInTheDocument();
       expect(
-        screen.getByText('Emissão e Recebimento do Laudo')
+        screen.getByText('6. Emissão e Recebimento do Laudo')
       ).toBeInTheDocument();
     });
 
@@ -48,97 +50,113 @@ describe('FlowStepsExplainer', () => {
   });
 
   describe('Renderização de clínica (isClinica=true)', () => {
-    it('renderiza todas as 7 etapas do fluxo de clínica', () => {
+    it('exibe o bloco de fork com os dois caminhos de entrada', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      expect(screen.getByText('Inserção de Nova Empresa')).toBeInTheDocument();
-      expect(screen.getByText('Inserção de Funcionário')).toBeInTheDocument();
-      expect(screen.getByText('Liberação de Lotes')).toBeInTheDocument();
-      expect(screen.getByText('Avaliações')).toBeInTheDocument();
+      expect(screen.getByText('⚡ Importação em massa')).toBeInTheDocument();
+      expect(screen.getByText('1. Nova Empresa')).toBeInTheDocument();
       expect(
-        screen.getByText('Solicitação de Emissão de Laudo')
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText('Recebimento do Link para Pagamento')
-      ).toBeInTheDocument();
-      expect(
-        screen.getByText('Emissão e Recebimento do Laudo')
+        screen.getByText('2. Inserção de Funcionários')
       ).toBeInTheDocument();
     });
 
-    it('"Inserção de Nova Empresa" é a primeira etapa no fluxo de clínica', () => {
+    it('exibe separador "ou" entre os caminhos do fork', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      expect(screen.getByText('ou')).toBeInTheDocument();
+    });
+
+    it('exibe badge "Recomendado" no caminho de importação em massa', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      expect(screen.getByText('Recomendado')).toBeInTheDocument();
+    });
+
+    it('"⚡ Importação em massa" é o primeiro botão no fluxo de clínica', () => {
       render(<FlowStepsExplainer isClinica={true} />);
       const buttons = screen.getAllByRole('button');
-      expect(buttons[0]).toHaveTextContent('Inserção de Nova Empresa');
+      expect(buttons[0]).toHaveTextContent('Importação em massa');
     });
 
-    it('renderiza 7 setas separadoras no fluxo de clínica (6 entre etapas + 1 fork para sub-etapas)', () => {
+    it('renderiza os passos comuns do fluxo (3 ao 7) após o fork', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      expect(screen.getByText('3. Liberação de Lotes')).toBeInTheDocument();
+      expect(screen.getByText('4. Avaliações')).toBeInTheDocument();
+      expect(
+        screen.getByText('5. Solicitação de Emissão de Laudo')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('6. Recebimento do Link para Pagamento')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText('7. Emissão e Recebimento do Laudo')
+      ).toBeInTheDocument();
+    });
+
+    it('renderiza 6 setas no fluxo de clínica (5 entre blocos + 1 dentro do fork manual)', () => {
       render(<FlowStepsExplainer isClinica={true} />);
       const arrows = screen.getAllByText('→');
-      expect(arrows).toHaveLength(7); // 7 etapas = 6 setas + 1 seta extra do fork de Inserção de Funcionário
+      expect(arrows).toHaveLength(6);
     });
 
-    it('exibe tooltip de Inserção de Nova Empresa ao passar o mouse', () => {
+    it('NÃO exibe "Inserção de Nova Empresa" como passo isolado no fluxo de clínica', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      const btn = screen.getByText('Inserção de Nova Empresa');
+      // O nome antigo como passo standalone não existe mais
+      const buttons = screen.getAllByRole('button');
+      const labels = buttons.map((b) => b.textContent);
+      expect(labels).not.toContain('1. Inserção de Nova Empresa');
+      expect(labels).not.toContain('2. Inserção de Funcionário');
+    });
+
+    it('exibe tooltip de "⚡ Importação em massa" ao passar o mouse', () => {
+      render(<FlowStepsExplainer isClinica={true} />);
+      const btn = screen.getByText('⚡ Importação em massa');
       fireEvent.mouseEnter(btn);
       expect(
-        screen.getByText(
-          /Cadastre as empresas clientes que terão funcionários avaliados pela clínica/
-        )
+        screen.getByText(/Acesse 'Importação em massa' no menu à esquerda/)
       ).toBeInTheDocument();
     });
 
-    it('oculta tooltip de Nova Empresa ao remover o mouse', () => {
+    it('oculta tooltip de "⚡ Importação em massa" ao remover o mouse', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      const btn = screen.getByText('Inserção de Nova Empresa');
+      const btn = screen.getByText('⚡ Importação em massa');
       fireEvent.mouseEnter(btn);
       fireEvent.mouseLeave(btn);
       expect(
-        screen.queryByText(
-          /Cadastre as empresas clientes que terão funcionários avaliados pela clínica/
-        )
+        screen.queryByText(/Acesse 'Importação em massa' no menu à esquerda/)
       ).not.toBeInTheDocument();
     });
 
-    it('exibe sub-etapas de Inserção de Funcionário no fluxo de clínica', () => {
+    it('exibe tooltip de "1. Nova Empresa" ao passar o mouse', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      expect(screen.getByText("via 'Importação em massa'")).toBeInTheDocument();
-      expect(screen.getByText("via 'Nova empresa'")).toBeInTheDocument();
-    });
-
-    it('exibe tooltip de sub-etapa Importação em massa ao passar o mouse', () => {
-      render(<FlowStepsExplainer isClinica={true} />);
-      const btn = screen.getByText("via 'Importação em massa'");
+      const btn = screen.getByText('1. Nova Empresa');
       fireEvent.mouseEnter(btn);
       expect(
-        screen.getByText(/Clique em 'Importação em massa' no menu a esquerda/)
+        screen.getByText(/Clique em '\+Nova empresa' no topo desta página/)
       ).toBeInTheDocument();
     });
 
-    it('oculta tooltip de Importação em massa ao remover o mouse', () => {
+    it('oculta tooltip de "1. Nova Empresa" ao remover o mouse', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      const btn = screen.getByText("via 'Importação em massa'");
+      const btn = screen.getByText('1. Nova Empresa');
       fireEvent.mouseEnter(btn);
       fireEvent.mouseLeave(btn);
       expect(
-        screen.queryByText(/Clique em 'Importação em massa' no menu a esquerda/)
+        screen.queryByText(/Clique em '\+Nova empresa' no topo desta página/)
       ).not.toBeInTheDocument();
     });
 
-    it('exibe tooltip de sub-etapa Nova empresa ao passar o mouse', () => {
+    it('exibe tooltip de "2. Inserção de Funcionários" ao passar o mouse', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      const btn = screen.getByText("via 'Nova empresa'");
+      const btn = screen.getByText('2. Inserção de Funcionários');
       fireEvent.mouseEnter(btn);
-      expect(screen.getByText(/acesse via card abaixo/)).toBeInTheDocument();
+      expect(screen.getByText(/acesse o card dela abaixo/)).toBeInTheDocument();
     });
 
-    it('oculta tooltip de Nova empresa ao remover o mouse', () => {
+    it('oculta tooltip de "2. Inserção de Funcionários" ao remover o mouse', () => {
       render(<FlowStepsExplainer isClinica={true} />);
-      const btn = screen.getByText("via 'Nova empresa'");
+      const btn = screen.getByText('2. Inserção de Funcionários');
       fireEvent.mouseEnter(btn);
       fireEvent.mouseLeave(btn);
       expect(
-        screen.queryByText(/acesse via card abaixo/)
+        screen.queryByText(/acesse o card dela abaixo/)
       ).not.toBeInTheDocument();
     });
   });
@@ -153,7 +171,7 @@ describe('FlowStepsExplainer', () => {
 
     it('exibe tooltip de Inserção de Funcionário ao passar o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Inserção de Funcionário');
+      const btn = screen.getByText('1. Inserção de Funcionário');
       fireEvent.mouseEnter(btn);
       expect(
         screen.getByText(
@@ -164,7 +182,7 @@ describe('FlowStepsExplainer', () => {
 
     it('oculta tooltip ao remover o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Inserção de Funcionário');
+      const btn = screen.getByText('1. Inserção de Funcionário');
       fireEvent.mouseEnter(btn);
       fireEvent.mouseLeave(btn);
       expect(
@@ -176,7 +194,7 @@ describe('FlowStepsExplainer', () => {
 
     it('exibe tooltip de Liberação de Lotes ao passar o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Liberação de Lotes');
+      const btn = screen.getByText('2. Liberação de Lotes');
       fireEvent.mouseEnter(btn);
       expect(
         screen.getByText(/Libere lotes de avaliação para que os funcionários/)
@@ -185,7 +203,7 @@ describe('FlowStepsExplainer', () => {
 
     it('exibe tooltip de Avaliações ao passar o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Avaliações');
+      const btn = screen.getByText('3. Avaliações');
       fireEvent.mouseEnter(btn);
       expect(
         screen.getByText(/questionário de avaliação psicossocial/)
@@ -194,7 +212,7 @@ describe('FlowStepsExplainer', () => {
 
     it('exibe tooltip de Solicitação de Emissão ao passar o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Solicitação de Emissão de Laudo');
+      const btn = screen.getByText('4. Solicitação de Emissão de Laudo');
       fireEvent.mouseEnter(btn);
       expect(
         screen.getByText(/negocia o valor diretamente com a plataforma/)
@@ -203,7 +221,7 @@ describe('FlowStepsExplainer', () => {
 
     it('exibe tooltip de Recebimento do Link ao passar o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Recebimento do Link para Pagamento');
+      const btn = screen.getByText('5. Recebimento do Link para Pagamento');
       fireEvent.mouseEnter(btn);
       expect(
         screen.getByText(/via WhatsApp ou e-mail cadastrado/)
@@ -212,14 +230,14 @@ describe('FlowStepsExplainer', () => {
 
     it('exibe tooltip de Emissão do Laudo ao passar o mouse', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Emissão e Recebimento do Laudo');
+      const btn = screen.getByText('6. Emissão e Recebimento do Laudo');
       fireEvent.mouseEnter(btn);
       expect(screen.getByText(/incluído no PGR/)).toBeInTheDocument();
     });
 
     it('tooltip do último passo abre para baixo (evita corte no flex-wrap)', () => {
       render(<FlowStepsExplainer />);
-      const btn = screen.getByText('Emissão e Recebimento do Laudo');
+      const btn = screen.getByText('6. Emissão e Recebimento do Laudo');
       fireEvent.mouseEnter(btn);
       // O container do tooltip do último passo deve usar top-full (abre para baixo)
       const tooltipWrapper = screen

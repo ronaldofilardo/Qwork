@@ -34,6 +34,7 @@ export default function ClinicaSidebar({
     lotes?: number;
     laudos?: number;
     notificacoes?: number;
+    pagamentos?: number;
   } = propCounts ?? ctxCounts;
   const userName = propUserName ?? ctxSession?.nome ?? 'Gestor';
 
@@ -100,6 +101,7 @@ export default function ClinicaSidebar({
       <MenuItem
         icon={User}
         label="Informações da Conta"
+        count={counts.pagamentos}
         isActive={pathname === '/rh/conta'}
         onClick={() => router.push('/rh/conta')}
       />

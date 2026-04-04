@@ -127,13 +127,6 @@ export default function LotesPage() {
     [router]
   );
 
-  const handleRelatorioSetor = useCallback(
-    (loteId: number) => {
-      router.push(`/entidade/lote/${loteId}`);
-    },
-    [router]
-  );
-
   const handleDownloadLaudo = useCallback(async (laudo: Laudo) => {
     if (!laudo.id) {
       toast.error('Laudo não disponível');
@@ -254,7 +247,6 @@ export default function LotesPage() {
           downloadingLaudo={downloadingLaudo}
           onLoteClick={handleLoteClick}
           onDownloadLaudo={handleDownloadLaudo}
-          onRelatorioSetor={handleRelatorioSetor}
           onRefresh={loadLotes}
         />
       </div>

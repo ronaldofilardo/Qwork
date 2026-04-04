@@ -39,7 +39,9 @@ describe('Portal Comercial - API Metricas', () => {
       ],
     });
 
-    const res = await getMetricas();
+    const res = await getMetricas(
+      new Request('http://localhost/api/comercial/representantes/metricas')
+    );
     const data = await res.json();
 
     expect(res.status).toBe(200);
@@ -51,10 +53,41 @@ describe('Portal Comercial - API Metricas', () => {
   it('deve retornar 401/403 se não tiver permissão', async () => {
     requireRole.mockRejectedValue(new Error('Sem permissão'));
 
-    const res = await getMetricas();
+    const res = await getMetricas(
+      new Request('http://localhost/api/comercial/representantes/metricas')
+    );
     const data = await res.json();
 
     expect(res.status).toBe(401);
     expect(data.error).toBe('Sem permissão');
+  });
+});
+
+describe('Portal Comercial - SQL Metricas — estrutura da query', () => {
+  const fs = require('fs');
+  const path = require('path');
+  const routePath = path.resolve(
+    __dirname,
+    '../../app/api/comercial/representantes/metricas/route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(routePath, 'utf-8');
+  });
+
+  it('usa hierarquia_comercial para contar vendedores (não vendedores_perfil)', () => {
+    expect(src).toMatch(/hierarquia_comercial/);
+    expect(src).not.toMatch(
+      /FROM public\.vendedores_perfil vp WHERE vp\.representante_id/
+    );
+  });
+
+  it('filtra hc_v.ativo = true para vendedores ativos', () => {
+    expect(src).toMatch(/hc_v\.ativo\s*=\s*true/i);
+  });
+
+  it('faz join via hc_v.representante_id = r.id', () => {
+    expect(src).toMatch(/hc_v\.representante_id\s*=\s*r\.id/i);
   });
 });

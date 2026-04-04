@@ -21,12 +21,8 @@ export interface CadastroArquivosPaths {
 
 export interface CadastroResult {
   entidade: { id: number; nome: string; status: StatusAprovacao };
-  requiresPayment: boolean;
-  simuladorUrl: string | null;
   contratoIdCreated: number | null;
-  valorPorFuncionario: number | null;
   numeroFuncionarios: number | null;
-  valorTotal: number | null;
   representanteVinculado: {
     representante_id: number;
     representante_nome: string;
@@ -143,10 +139,10 @@ export async function handleCadastroTomador(
         endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-        status, ativa, pagamento_confirmado, tipo
+        status, ativa, tipo
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9,
-        $10, $11, $12, $13, $14, $15, $16, $17, $18, false, false, $19
+        $10, $11, $12, $13, $14, $15, $16, $17, $18, false, $19
       ) RETURNING id, nome, status`,
       [
         nome,
@@ -193,11 +189,7 @@ export async function handleCadastroTomador(
       });
     }
 
-    // Determinar pagamento e criar contrato
-    const requiresPayment = false;
-    const simuladorUrl: string | null = null;
-    const valorTotal: number | null = null;
-    const valorPorFuncionario: number | null = null;
+    // Criar contrato
     let contratoIdCreated: number | null = null;
 
     try {
@@ -207,13 +199,7 @@ export async function handleCadastroTomador(
       const contratoIns = await txClient.query<{ id: number }>(
         `INSERT INTO contratos (tomador_id, numero_funcionarios, valor_total, status, aceito, tipo_tomador)
          VALUES ($1, $2, $3, $4, false, $5) RETURNING id`,
-        [
-          entidade.id,
-          numeroFuncionarios || null,
-          valorTotal,
-          statusContrato,
-          tipo,
-        ]
+        [entidade.id, numeroFuncionarios || null, null, statusContrato, tipo]
       );
       contratoIdCreated = contratoIns.rows[0].id;
 
@@ -224,7 +210,6 @@ export async function handleCadastroTomador(
           contrato_id: contratoIdCreated,
           status: statusContrato,
           tipo_tomador: tipo,
-          requiresPayment,
         })
       );
     } catch (contratoError) {
@@ -378,12 +363,8 @@ export async function handleCadastroTomador(
 
     return {
       entidade,
-      requiresPayment,
-      simuladorUrl,
       contratoIdCreated,
-      valorPorFuncionario,
       numeroFuncionarios: numeroFuncionarios ?? null,
-      valorTotal,
       representanteVinculado,
     };
   });

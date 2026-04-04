@@ -27,6 +27,7 @@ export interface LoteInfo {
   liberado_em: string;
   liberado_por_nome: string | null;
   empresa_nome: string;
+  status_pagamento?: string | null;
   emitido_em?: string | null;
   laudo_id?: number | null;
   laudo_status?: string | null;

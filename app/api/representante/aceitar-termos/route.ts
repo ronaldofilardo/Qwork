@@ -64,6 +64,15 @@ export async function POST(request: NextRequest) {
       [sess.representante_id]
     );
 
+    // Garantir que primeira_senha_alterada = TRUE para reps que passaram pelo fluxo
+    // de convite com bug antigo (FALSE), eliminando o loop de troca de senha
+    await query(
+      `UPDATE public.representantes_senhas
+       SET primeira_senha_alterada = TRUE
+       WHERE representante_id = $1 AND primeira_senha_alterada = FALSE`,
+      [sess.representante_id]
+    );
+
     return NextResponse.json({ ok: true });
   } catch (err: unknown) {
     const e = err as Error;

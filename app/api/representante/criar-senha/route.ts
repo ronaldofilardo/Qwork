@@ -10,6 +10,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { createSession } from '@/lib/session';
 import bcrypt from 'bcryptjs';
 
 export const dynamic = 'force-dynamic';
@@ -157,12 +158,14 @@ export async function POST(request: NextRequest) {
       id: number;
       nome: string;
       email: string;
+      cpf: string | null;
+      cpf_responsavel_pj: string | null;
       status: string;
       convite_expira_em: string | null;
       convite_tentativas_falhas: number;
       convite_usado_em: string | null;
     }>(
-      `SELECT id, nome, email, status,
+      `SELECT id, nome, email, cpf, cpf_responsavel_pj, status,
               convite_expira_em, convite_tentativas_falhas, convite_usado_em
        FROM representantes
        WHERE convite_token = $1
@@ -218,22 +221,14 @@ export async function POST(request: NextRequest) {
     // Tudo válido — criar hash da senha (rounds=12 padrão do projeto)
     const senhaHash = await bcrypt.hash(senha, 12);
 
-    // Buscar CPF do representante para a tabela de senhas
-    const cpfResult = await query<{
-      cpf: string;
-      cpf_responsavel_pj: string | null;
-    }>(`SELECT cpf, cpf_responsavel_pj FROM representantes WHERE id = $1`, [
-      rep.id,
-    ]);
-    const repCpf =
-      cpfResult.rows[0]?.cpf || cpfResult.rows[0]?.cpf_responsavel_pj || '';
+    const repCpf = rep.cpf || rep.cpf_responsavel_pj || '';
 
-    // Salvar senha na tabela dedicada representantes_senhas (primeira_senha_alterada=FALSE → forçar troca no 1º login)
+    // Salvar senha na tabela dedicada representantes_senhas (primeira_senha_alterada=TRUE → senha escolhida pelo próprio rep)
     await query(
       `INSERT INTO public.representantes_senhas (representante_id, cpf, senha_hash, primeira_senha_alterada)
-       VALUES ($1, $2, $3, FALSE)
+       VALUES ($1, $2, $3, TRUE)
        ON CONFLICT (representante_id, cpf)
-       DO UPDATE SET senha_hash = $3, primeira_senha_alterada = FALSE, atualizado_em = NOW()`,
+       DO UPDATE SET senha_hash = $3, primeira_senha_alterada = TRUE, atualizado_em = NOW()`,
       [rep.id, repCpf, senhaHash]
     );
 
@@ -251,13 +246,22 @@ export async function POST(request: NextRequest) {
       [senhaHash, rep.id, token]
     );
 
+    // Criar sessão para aceitar contratos na próxima página
+    createSession({
+      cpf: rep.cpf || rep.cpf_responsavel_pj || '',
+      nome: rep.nome,
+      perfil: 'representante' as any,
+      representante_id: rep.id,
+    });
+
     console.log(
       `[CRIAR_SENHA] Representante #${rep.id} (${rep.email}) criou sua senha — status: apto`
     );
 
     return NextResponse.json({
       success: true,
-      message: 'Senha criada com sucesso! Você já pode fazer login.',
+      message:
+        'Senha criada com sucesso! Aceite o contrato e termos para continuar.',
     });
   } catch (err) {
     console.error('[POST /api/representante/criar-senha]', err);

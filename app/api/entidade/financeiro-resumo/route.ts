@@ -18,7 +18,8 @@ import type {
   EstadoCalculadoParcela,
 } from '@/lib/types/financeiro-resumo';
 
-export const revalidate = 300; // 5 minutos — invalidado via revalidatePath no webhook
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 function calcularEstado(
   pago: boolean,

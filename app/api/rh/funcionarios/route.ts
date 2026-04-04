@@ -88,7 +88,7 @@ export async function GET(request: Request) {
               ) as ultima_inativacao_lote,
               -- Número do último lote DESTA empresa em que concluiu ou foi inativado
               (
-                SELECT l.numero_ordem FROM avaliacoes a3
+                SELECT l.id FROM avaliacoes a3
                 JOIN lotes_avaliacao l ON a3.lote_id = l.id
                 WHERE a3.funcionario_cpf = f.cpf
                   AND a3.status IN ('concluida', 'inativada')
@@ -96,6 +96,26 @@ export async function GET(request: Request) {
                 ORDER BY COALESCE(a3.envio, a3.inativada_em, a3.criado_em) DESC NULLS LAST
                 LIMIT 1
               ) as ultimo_lote_numero,
+              -- Avaliação ativa (iniciada/em_andamento) mais recente DESTA empresa
+              (
+                SELECT l_at.id FROM avaliacoes a_at
+                JOIN lotes_avaliacao l_at ON a_at.lote_id = l_at.id
+                WHERE a_at.funcionario_cpf = f.cpf
+                  AND l_at.empresa_id = $1
+                  AND a_at.status IN ('iniciada', 'em_andamento')
+                ORDER BY a_at.criado_em DESC NULLS LAST
+                LIMIT 1
+              ) as lote_ativo_numero,
+              -- Status da avaliação ativa mais recente DESTA empresa
+              (
+                SELECT a_at.status FROM avaliacoes a_at
+                JOIN lotes_avaliacao l_at ON a_at.lote_id = l_at.id
+                WHERE a_at.funcionario_cpf = f.cpf
+                  AND l_at.empresa_id = $1
+                  AND a_at.status IN ('iniciada', 'em_andamento')
+                ORDER BY a_at.criado_em DESC NULLS LAST
+                LIMIT 1
+              ) as avaliacao_ativa_status,
               -- Avaliação válida (<12 meses) baseada em dados empresa-scoped
               CASE 
                 WHEN fc.data_ultimo_lote IS NOT NULL AND fc.data_ultimo_lote >= NOW() - INTERVAL '1 year' 

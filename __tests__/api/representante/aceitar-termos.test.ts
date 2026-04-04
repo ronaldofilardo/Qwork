@@ -153,5 +153,17 @@ describe('POST /api/representante/aceitar-termos', () => {
 
       expect(mockQuery).toHaveBeenCalledWith(expect.any(String), [42]);
     });
+
+    it('também atualiza representantes_senhas com primeira_senha_alterada = TRUE', async () => {
+      await POST(makeRequest({ tipo: 'politica_privacidade' }));
+
+      // primeira chamada: UPDATE representantes
+      // segunda chamada: UPDATE representantes_senhas
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const senhasCall = mockQuery.mock.calls[1];
+      expect(senhasCall[0]).toMatch(/representantes_senhas/);
+      expect(senhasCall[0]).toMatch(/primeira_senha_alterada\s*=\s*TRUE/i);
+      expect(senhasCall[1]).toEqual([7]);
+    });
   });
 });

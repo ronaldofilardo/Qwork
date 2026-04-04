@@ -172,13 +172,19 @@ export default function EmpresasTable({
                         </p>
                       )}
                       {empresa.laudos_status.pago > 0 && (
+                        <p className="text-teal-600">
+                          {empresa.laudos_status.pago} pago — aguard. emissão
+                        </p>
+                      )}
+                      {empresa.laudos_status.laudo_emitido > 0 && (
                         <p className="text-green-600">
-                          {empresa.laudos_status.pago} emitido(s)
+                          {empresa.laudos_status.laudo_emitido} emitido(s)
                         </p>
                       )}
                       {empresa.laudos_status.aguardando_emissao === 0 &&
                         empresa.laudos_status.aguardando_pagamento === 0 &&
-                        empresa.laudos_status.pago === 0 && (
+                        empresa.laudos_status.pago === 0 &&
+                        empresa.laudos_status.laudo_emitido === 0 && (
                           <span className="text-gray-400">—</span>
                         )}
                     </div>

@@ -37,7 +37,6 @@ describe('NovoscadastrosContent - Design Simplificado', () => {
       estado: 'SP',
       cep: '01234567',
       cnpj: '12.345.678/0001-99',
-      pagamento_confirmado: false,
       criado_em: '2025-01-01T10:00:00Z',
     },
     {
@@ -52,7 +51,6 @@ describe('NovoscadastrosContent - Design Simplificado', () => {
       estado: 'RJ',
       cep: '02345678',
       cnpj: '98.765.432/0001-00',
-      pagamento_confirmado: false,
       criado_em: '2025-01-02T10:00:00Z',
     },
     {
@@ -67,7 +65,6 @@ describe('NovoscadastrosContent - Design Simplificado', () => {
       estado: 'MG',
       cep: '03345678',
       cnpj: '11.111.111/0001-11',
-      pagamento_confirmado: true,
       data_liberacao_login: '2025-01-03T10:00:00Z',
       criado_em: '2025-01-03T10:00:00Z',
     },
@@ -214,15 +211,6 @@ describe('NovoscadastrosContent - Design Simplificado', () => {
   });
 
   describe('Badges de Status', () => {
-    it('deve exibir badge "Pago" para tomador com pagamento confirmado', async () => {
-      render(<NovoscadastrosContent />);
-
-      await waitFor(() => {
-        const pagoBadges = screen.getByText('✓ Pago');
-        expect(pagoBadges).toBeInTheDocument();
-      });
-    });
-
     it('deve exibir badge "Aguardando Pagamento" quando status é aguardando_pagamento', async () => {
       render(<NovoscadastrosContent />);
 
@@ -255,7 +243,6 @@ describe('NovoscadastrosContent - Design Simplificado', () => {
         estado: 'DF',
         cep: '04345678',
         cnpj: '44.444.444/0001-44',
-        pagamento_confirmado: false,
         criado_em: '2025-01-04T10:00:00Z',
       };
 

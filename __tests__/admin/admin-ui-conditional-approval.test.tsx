@@ -1,6 +1,7 @@
 /**
- * Testes para Admin UI - Renderização Condicional de Botões de Aprovação
- * Valida que botão "Aprovar" é escondido quando pagamento confirmado + contrato aceito
+ * Testes para Admin UI - Renderização de Cadastros Pendentes
+ * No novo fluxo (sem pagamento obrigatório), requer_aprovacao_manual é sempre true
+ * para novos cadastros pendentes.
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -12,49 +13,24 @@ global.fetch = jest.fn();
 
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>;
 
-describe('NovoscadastrosContent - Aprovação Condicional', () => {
+describe('NovoscadastrosContent - Exibição de Cadastros Pendentes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  it('deve esconder botão Aprovar quando requer_aprovacao_manual = false', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        tomadores: [
-          {
-            id: 1,
-            nome: 'Teste Entidade',
-            cpf_responsavel: '12345678900',
-            status: 'pendente',
-            pagamento_confirmado: true,
-            contrato_aceito: true,
-            requer_aprovacao_manual: false, // Pagamento confirmado + contrato aceito
-          },
-        ],
-      }),
-    } as any);
-
-    render(<NovoscadastrosContent />);
-
-    await waitFor(() => {
-      expect(screen.queryByText('Aprovar')).not.toBeInTheDocument();
-    });
-  });
-
-  it('deve mostrar botão Aprovar quando requer_aprovacao_manual = true', async () => {
+  it('deve renderizar tomador com requer_aprovacao_manual = true', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         tomadores: [
           {
             id: 2,
-            nome: 'Teste Entidade 2',
-            cpf_responsavel: '98765432100',
+            nome: 'Teste Entidade',
+            cnpj: '12.345.678/0001-99',
+            tipo: 'entidade',
             status: 'pendente',
-            pagamento_confirmado: false,
-            contrato_aceito: false,
-            requer_aprovacao_manual: true, // Sem pagamento confirmado
+            requer_aprovacao_manual: true,
+            criado_em: '2025-01-01T10:00:00Z',
           },
         ],
       }),
@@ -63,23 +39,47 @@ describe('NovoscadastrosContent - Aprovação Condicional', () => {
     render(<NovoscadastrosContent />);
 
     await waitFor(() => {
-      expect(screen.getByText('Aprovar')).toBeInTheDocument();
+      expect(screen.getByText('Teste Entidade')).toBeInTheDocument();
+      expect(screen.getByText('Pendente')).toBeInTheDocument();
     });
   });
 
-  it('deve esconder botão Forçar Aprovação quando requer_aprovacao_manual = false', async () => {
+  it('deve renderizar tomador mesmo sem requer_aprovacao_manual no payload', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        tomadores: [
+          {
+            id: 1,
+            nome: 'Outra Entidade',
+            cnpj: '98.765.432/0001-00',
+            tipo: 'entidade',
+            status: 'pendente',
+            criado_em: '2025-01-02T10:00:00Z',
+          },
+        ],
+      }),
+    } as any);
+
+    render(<NovoscadastrosContent />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Outra Entidade')).toBeInTheDocument();
+    });
+  });
+
+  it('não deve renderizar badge "✓ Pago" (campo removido do fluxo)', async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({
         tomadores: [
           {
             id: 3,
-            nome: 'Teste Entidade 3',
-            cpf_responsavel: '11111111111',
+            nome: 'Entidade Teste',
+            cnpj: '11.111.111/0001-11',
+            tipo: 'entidade',
             status: 'pendente',
-            pagamento_confirmado: true,
-            contrato_aceito: true,
-            requer_aprovacao_manual: false,
+            criado_em: '2025-01-03T10:00:00Z',
           },
         ],
       }),
@@ -88,119 +88,39 @@ describe('NovoscadastrosContent - Aprovação Condicional', () => {
     render(<NovoscadastrosContent />);
 
     await waitFor(() => {
-      expect(screen.queryByText('Forçar Aprovação')).not.toBeInTheDocument();
-    });
-  });
-
-  it('deve calcular requer_aprovacao_manual corretamente no backend', async () => {
-    // Simular query SQL do handler
-    const tomador = {
-      id: 1,
-      pagamento_confirmado: true,
-      contrato_aceito: true,
-    };
-
-    const requer_aprovacao_manual = !(
-      tomador.pagamento_confirmado && tomador.contrato_aceito
-    );
-
-    expect(requer_aprovacao_manual).toBe(false);
-  });
-
-  it('deve exigir aprovação manual quando pagamento não confirmado', async () => {
-    const tomador = {
-      id: 2,
-      pagamento_confirmado: false,
-      contrato_aceito: true,
-    };
-
-    const requer_aprovacao_manual = !(
-      tomador.pagamento_confirmado && tomador.contrato_aceito
-    );
-
-    expect(requer_aprovacao_manual).toBe(true);
-  });
-
-  it('deve exigir aprovação manual quando contrato não aceito', async () => {
-    const tomador = {
-      id: 3,
-      pagamento_confirmado: true,
-      contrato_aceito: false,
-    };
-
-    const requer_aprovacao_manual = !(
-      tomador.pagamento_confirmado && tomador.contrato_aceito
-    );
-
-    expect(requer_aprovacao_manual).toBe(true);
-  });
-
-  it('deve renderizar status "Pagamento Confirmado" para tomadores pagos', async () => {
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({
-        tomadores: [
-          {
-            id: 4,
-            nome: 'Teste Pago',
-            cpf_responsavel: '22222222222',
-            status: 'pendente',
-            pagamento_confirmado: true,
-            contrato_aceito: true,
-            requer_aprovacao_manual: false,
-          },
-        ],
-      }),
-    } as any);
-
-    render(<NovoscadastrosContent />);
-
-    await waitFor(() => {
-      expect(screen.getByText(/pagamento confirmado/i)).toBeInTheDocument();
+      expect(screen.queryByText('✓ Pago')).not.toBeInTheDocument();
     });
   });
 });
 
 describe('Handlers API - Coluna requer_aprovacao_manual', () => {
-  it('deve incluir CASE WHEN na query SQL de novos cadastros', () => {
+  it('backend retorna true AS requer_aprovacao_manual para todos os cadastros pendentes', () => {
+    const queryContains = (q: string) =>
+      q.includes('true AS requer_aprovacao_manual');
+
     const query = `
       SELECT c.*,
-        CASE 
-          WHEN c.pagamento_confirmado = true 
-            AND EXISTS (SELECT 1 FROM contratos ct WHERE ct.tomador_id = c.id AND ct.aceito = true)
-          THEN false 
-          ELSE true 
-        END AS requer_aprovacao_manual
-      FROM tomadores c
+        true AS requer_aprovacao_manual
+      FROM entidades c
       WHERE c.status = 'pendente'
     `;
 
-    expect(query).toContain('requer_aprovacao_manual');
-    expect(query).toContain('pagamento_confirmado = true');
-    expect(query).toContain('ct.aceito = true');
+    expect(queryContains(query)).toBe(true);
   });
 
-  it('deve retornar false quando pagamento confirmado E contrato aceito', () => {
-    const pagamento_confirmado = true;
-    const contrato_aceito = true;
-
-    const requer_aprovacao_manual = !(pagamento_confirmado && contrato_aceito);
-
-    expect(requer_aprovacao_manual).toBe(false);
+  it('requer_aprovacao_manual é sempre true para cadastros pendentes', () => {
+    const requer_aprovacao_manual = true;
+    expect(requer_aprovacao_manual).toBe(true);
   });
 
-  it('deve retornar true em qualquer outro caso', () => {
-    const casos = [
-      { pagamento_confirmado: false, contrato_aceito: false },
-      { pagamento_confirmado: true, contrato_aceito: false },
-      { pagamento_confirmado: false, contrato_aceito: true },
-    ];
+  it('não usa pagamento_confirmado para determinar aprovação manual', () => {
+    const handlerQuery = `
+      SELECT c.*, true AS requer_aprovacao_manual
+      FROM entidades c
+      WHERE c.status IN ('pendente', 'aguardando_pagamento', 'em_reanalise')
+    `;
 
-    casos.forEach((caso) => {
-      const requer_aprovacao_manual = !(
-        caso.pagamento_confirmado && caso.contrato_aceito
-      );
-      expect(requer_aprovacao_manual).toBe(true);
-    });
+    expect(handlerQuery).not.toContain('pagamento_confirmado');
+    expect(handlerQuery).toContain('true AS requer_aprovacao_manual');
   });
 });

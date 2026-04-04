@@ -35,7 +35,7 @@ export async function handleGetNovosCadastros(
         NULL::DECIMAL as valor_por_funcionario,
         NULL::DECIMAL as valor_total_estimado,
         NULL::VARCHAR as contratacao_status,
-        CASE WHEN c.pagamento_confirmado = true THEN false ELSE true END AS requer_aprovacao_manual
+        true AS requer_aprovacao_manual
       FROM entidades c
       WHERE c.status = $1
     `;
@@ -62,7 +62,7 @@ export async function handleGetNovosCadastros(
       NULL::DECIMAL as valor_por_funcionario,
       NULL::DECIMAL as valor_total_estimado,
       NULL::VARCHAR as contratacao_status,
-      CASE WHEN c.pagamento_confirmado = true THEN false ELSE true END AS requer_aprovacao_manual
+      true AS requer_aprovacao_manual
     FROM entidades c
     WHERE c.status IN ('pendente', 'aguardando_pagamento', 'em_reanalise')
   `;

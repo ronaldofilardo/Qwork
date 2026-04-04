@@ -28,6 +28,7 @@ export default function PagamentosContent() {
     handleGerarLink,
     handleVerLink,
     handleVerificarPagamento,
+    handleDisponibilizarLink,
     handleVincularRepresentante,
     handleGerarComissao,
     getSolicitacoesFiltradas,
@@ -104,6 +105,7 @@ export default function PagamentosContent() {
               onGerarLink={handleGerarLink}
               onVerLink={handleVerLink}
               onVerificarPagamento={handleVerificarPagamento}
+              onDisponibilizarLink={handleDisponibilizarLink}
               onVincularRepresentante={handleVincularRepresentante}
               onGerarComissao={handleGerarComissao}
               formatCurrency={formatCurrency}

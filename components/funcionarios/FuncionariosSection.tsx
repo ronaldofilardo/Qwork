@@ -201,7 +201,11 @@ export default function FuncionariosSection({
   // Baixar modelo Excel
   const handleDownloadTemplate = async () => {
     try {
-      const response = await fetch('/api/funcionarios/download-template');
+      const endpoint =
+        contexto === 'entidade'
+          ? '/api/entidade/funcionarios/download-template'
+          : '/api/funcionarios/download-template';
+      const response = await fetch(endpoint);
       if (!response.ok) {
         throw new Error('Erro ao baixar modelo');
       }

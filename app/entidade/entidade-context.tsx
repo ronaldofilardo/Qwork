@@ -13,6 +13,7 @@ import type { Session } from '@/lib/session';
 export interface EntidadeCounts {
   funcionarios: number;
   lotes: number;
+  pagamentos: number;
 }
 
 interface EntidadeContextValue {
@@ -22,7 +23,11 @@ interface EntidadeContextValue {
   reloadCounts: () => Promise<void>;
 }
 
-const defaultCounts: EntidadeCounts = { funcionarios: 0, lotes: 0 };
+const defaultCounts: EntidadeCounts = {
+  funcionarios: 0,
+  lotes: 0,
+  pagamentos: 0,
+};
 
 export const EntidadeContext = createContext<EntidadeContextValue>({
   session: null,
@@ -42,9 +47,10 @@ export function EntidadeProvider({ children }: { children: React.ReactNode }) {
 
   const loadCounts = useCallback(async () => {
     try {
-      const [lotesRes, funcRes] = await Promise.all([
+      const [lotesRes, funcRes, pagamentosRes] = await Promise.all([
         fetch('/api/entidade/lotes'),
         fetch('/api/entidade/funcionarios'),
+        fetch('/api/entidade/pagamentos-em-aberto/count'),
       ]);
 
       const next: EntidadeCounts = { ...defaultCounts };
@@ -56,6 +62,10 @@ export function EntidadeProvider({ children }: { children: React.ReactNode }) {
       if (funcRes.ok) {
         const data = await funcRes.json();
         next.funcionarios = data.funcionarios?.length || 0;
+      }
+      if (pagamentosRes.ok) {
+        const data = await pagamentosRes.json();
+        next.pagamentos = data.count || 0;
       }
 
       setCounts(next);

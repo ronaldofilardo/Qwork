@@ -32,6 +32,8 @@ export interface LoteAtualInfo {
   avaliacoes_concluidas: number;
   liberado_em: string | null;
   liberado_por: string | null;
+  /** True se existe laudo com status 'emitido' ou 'enviado' para este lote (independente de lotes_avaliacao.status) */
+  tem_laudo_emitido: boolean;
 }
 
 export interface LoteAnteriorInfo {
@@ -55,6 +57,7 @@ export interface LaudosStatusInfo {
   aguardando_emissao: number;
   aguardando_pagamento: number;
   pago: number;
+  laudo_emitido: number;
 }
 
 export interface EmpresaOverview {
@@ -117,6 +120,9 @@ interface EmpresaRow {
   laudos_aguardando_emissao: number | null;
   laudos_aguardando_pagamento: number | null;
   laudos_pago: number | null;
+  laudos_laudo_emitido: number | null;
+  // Flag do lote atual
+  lote_atual_tem_laudo_emitido: boolean | null;
   // Elegibilidade: determinada em memória com base nos lotes
   // (count de funcionários elegíveis via subquery já calculada)
   count_elegiveis: number | null;
@@ -229,6 +235,7 @@ export async function GET(request: NextRequest) {
         COALESCE(cnt_av.concluidas, 0)    AS lote_avaliacoes_concluidas,
         la_atual.liberado_em::text        AS lote_liberado_em,
         la_atual.liberado_por             AS lote_liberado_por,
+        la_atual.tem_laudo_emitido        AS lote_atual_tem_laudo_emitido,
 
         -- Lote anterior (numero_ordem - 1)
         la_ant.id                         AS lote_ant_id,
@@ -244,6 +251,7 @@ export async function GET(request: NextRequest) {
         COALESCE(laud.aguardando_emissao, 0) AS laudos_aguardando_emissao,
         COALESCE(laud.aguardando_pagamento, 0) AS laudos_aguardando_pagamento,
         COALESCE(laud.pago, 0)               AS laudos_pago,
+        COALESCE(laud.laudo_emitido, 0)      AS laudos_laudo_emitido,
 
         -- Funcionários elegíveis para próximo ciclo
         COALESCE(
@@ -269,12 +277,17 @@ export async function GET(request: NextRequest) {
 
       -- Lote atual: mais recente por numero_ordem
       LEFT JOIN LATERAL (
-        SELECT id, numero_ordem, status, status_pagamento,
-               solicitacao_emissao_em, link_pagamento_enviado_em, pago_em,
-               liberado_em, liberado_por
-        FROM lotes_avaliacao
-        WHERE empresa_id = ec.id
-        ORDER BY numero_ordem DESC
+        SELECT la.id, la.numero_ordem, la.status, la.status_pagamento,
+               la.solicitacao_emissao_em, la.link_pagamento_enviado_em, la.pago_em,
+               la.liberado_em, la.liberado_por,
+               EXISTS (
+                 SELECT 1 FROM laudos ld
+                 WHERE ld.lote_id = la.id
+                   AND ld.status IN ('emitido', 'enviado')
+               ) AS tem_laudo_emitido
+        FROM lotes_avaliacao la
+        WHERE la.empresa_id = ec.id
+        ORDER BY la.numero_ordem DESC
         LIMIT 1
       ) la_atual ON true
 
@@ -299,19 +312,40 @@ export async function GET(request: NextRequest) {
           AND a.status != 'inativada'
       ) cnt_av ON la_atual.id IS NOT NULL
 
-      -- Laudos agrupados por status_pagamento do lote atual
+      -- Laudos agrupados por status real (lotes_avaliacao + tabela laudos)
       LEFT JOIN LATERAL (
         SELECT
           COUNT(*) FILTER (
-            WHERE la_l.status IN ('rascunho', 'ativo', 'concluido', 'emissao_solicitada')
+            WHERE la_l.solicitacao_emissao_em IS NOT NULL
               AND COALESCE(la_l.status_pagamento::text, 'aguardando_cobranca') = 'aguardando_cobranca'
+              AND la_l.status NOT IN ('laudo_emitido', 'finalizado')
+              AND NOT EXISTS (
+                SELECT 1 FROM laudos ld
+                WHERE ld.lote_id = la_l.id AND ld.status IN ('emitido', 'enviado')
+              )
           )                                             AS aguardando_emissao,
           COUNT(*) FILTER (
             WHERE la_l.status_pagamento = 'aguardando_pagamento'
+              AND NOT EXISTS (
+                SELECT 1 FROM laudos ld
+                WHERE ld.lote_id = la_l.id AND ld.status IN ('emitido', 'enviado')
+              )
           )                                             AS aguardando_pagamento,
           COUNT(*) FILTER (
             WHERE la_l.status_pagamento = 'pago'
-          )                                             AS pago
+              AND la_l.status NOT IN ('laudo_emitido', 'finalizado')
+              AND NOT EXISTS (
+                SELECT 1 FROM laudos ld
+                WHERE ld.lote_id = la_l.id AND ld.status IN ('emitido', 'enviado')
+              )
+          )                                             AS pago,
+          COUNT(*) FILTER (
+            WHERE la_l.status IN ('laudo_emitido', 'finalizado')
+              OR EXISTS (
+                SELECT 1 FROM laudos ld
+                WHERE ld.lote_id = la_l.id AND ld.status IN ('emitido', 'enviado')
+              )
+          )                                             AS laudo_emitido
         FROM lotes_avaliacao la_l
         WHERE la_l.empresa_id = ec.id
           AND la_l.status NOT IN ('cancelado', 'rascunho')
@@ -364,6 +398,7 @@ export async function GET(request: NextRequest) {
                 : 0,
             liberado_em: row.lote_liberado_em,
             liberado_por: row.lote_liberado_por,
+            tem_laudo_emitido: row.lote_atual_tem_laudo_emitido ?? false,
           }
         : null;
 
@@ -398,6 +433,7 @@ export async function GET(request: NextRequest) {
           aguardando_emissao: Number(row.laudos_aguardando_emissao ?? 0),
           aguardando_pagamento: Number(row.laudos_aguardando_pagamento ?? 0),
           pago: Number(row.laudos_pago ?? 0),
+          laudo_emitido: Number(row.laudos_laudo_emitido ?? 0),
         },
       };
     });
@@ -407,6 +443,7 @@ export async function GET(request: NextRequest) {
     const lotes_em_andamento = empresas.filter(
       (e) =>
         e.lote_atual &&
+        !e.lote_atual.tem_laudo_emitido &&
         [
           'ativo',
           'emissao_solicitada',
@@ -498,7 +535,13 @@ export async function GET(request: NextRequest) {
             )
           )
           AND ec2.ativa = TRUE
-          AND la.status IN ('laudo_emitido', 'finalizado')
+          AND (
+            la.status IN ('laudo_emitido', 'finalizado')
+            OR EXISTS (
+              SELECT 1 FROM laudos ld
+              WHERE ld.lote_id = la.id AND ld.status IN ('emitido', 'enviado')
+            )
+          )
         ) AS total_laudos_emitidos
       `,
       [clinicaId],
