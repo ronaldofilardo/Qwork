@@ -9,6 +9,9 @@ import {
   TrendingUp,
   Users2,
   ChevronRight,
+  LayoutGrid,
+  LayoutList,
+  CalendarCheck,
 } from 'lucide-react';
 import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
@@ -164,6 +167,8 @@ interface RepMetrica {
   vinculos_ativos: number;
   comissoes_pendentes: number;
   valor_pendente: number;
+  aceite_contrato_em: string | null;
+  vendedores_count: number;
 }
 
 export default function ComercialPage() {
@@ -172,6 +177,20 @@ export default function ComercialPage() {
   const { activeSection, setActiveSection } = useComercial();
   const [repsMetrica, setRepsMetrica] = useState<RepMetrica[]>([]);
   const [loadingReps, setLoadingReps] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>(() => {
+    if (typeof window !== 'undefined') {
+      return (
+        (localStorage.getItem('comercial-view-mode') as 'card' | 'list') ??
+        'card'
+      );
+    }
+    return 'card';
+  });
+
+  const handleViewMode = (mode: 'card' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('comercial-view-mode', mode);
+  };
   const [kpis, setKpis] = useState<KPIs>({
     representantesAtivos: 0,
     representantesPendentes: 0,
@@ -454,12 +473,38 @@ export default function ComercialPage() {
                 Gestão de leads, vínculos e comissões da rede
               </p>
             </div>
-            <button
-              onClick={() => router.push('/comercial/representantes')}
-              className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-medium shadow-sm active:scale-95"
-            >
-              Ver todos <ChevronRight size={16} className="text-gray-400" />
-            </button>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center rounded-lg border border-gray-200 overflow-hidden">
+                <button
+                  onClick={() => handleViewMode('card')}
+                  title="Visualização em cards"
+                  className={`p-2 transition-colors ${
+                    viewMode === 'card'
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-white text-gray-400 hover:bg-gray-50'
+                  }`}
+                >
+                  <LayoutGrid size={16} />
+                </button>
+                <button
+                  onClick={() => handleViewMode('list')}
+                  title="Visualização em lista"
+                  className={`p-2 transition-colors ${
+                    viewMode === 'list'
+                      ? 'bg-green-50 text-green-700'
+                      : 'bg-white text-gray-400 hover:bg-gray-50'
+                  }`}
+                >
+                  <LayoutList size={16} />
+                </button>
+              </div>
+              <button
+                onClick={() => router.push('/comercial/representantes')}
+                className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 hover:border-gray-300 transition-all font-medium shadow-sm active:scale-95"
+              >
+                Ver todos <ChevronRight size={16} className="text-gray-400" />
+              </button>
+            </div>
           </div>
 
           {loadingReps ? (
@@ -480,7 +525,7 @@ export default function ComercialPage() {
                 </p>
               </div>
             </div>
-          ) : (
+          ) : viewMode === 'card' ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {repsMetrica.map((r) => (
                 <div
@@ -521,7 +566,7 @@ export default function ComercialPage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3 mb-6">
+                  <div className="grid grid-cols-2 gap-3 mb-3">
                     <div className="bg-gray-50/50 rounded-xl p-3 border border-transparent group-hover:bg-white group-hover:border-gray-100 transition-colors">
                       <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
                         Leads Totais
@@ -536,6 +581,31 @@ export default function ComercialPage() {
                       </p>
                       <p className="text-lg font-black text-gray-800 text-center">
                         {r.vinculos_ativos}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 mb-6">
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-transparent group-hover:bg-white group-hover:border-gray-100 transition-colors">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
+                        Vendedores
+                      </p>
+                      <p className="text-lg font-black text-gray-800 text-center">
+                        {r.vendedores_count}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50/50 rounded-xl p-3 border border-transparent group-hover:bg-white group-hover:border-gray-100 transition-colors">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase mb-1 tracking-wider text-center">
+                        Aceite
+                      </p>
+                      <p className="text-[11px] font-bold text-gray-700 text-center">
+                        {r.aceite_contrato_em ? (
+                          new Date(r.aceite_contrato_em).toLocaleDateString(
+                            'pt-BR'
+                          )
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -561,6 +631,115 @@ export default function ComercialPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80">
+                    <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                      Representante
+                    </th>
+                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                      Leads
+                    </th>
+                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                      Vínculos
+                    </th>
+                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                      Vendedores
+                    </th>
+                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                      Aceite Contrato
+                    </th>
+                    <th className="text-right px-4 py-3 font-semibold text-gray-600">
+                      Pendente
+                    </th>
+                    <th className="px-3 py-3" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {repsMetrica.map((r, idx) => (
+                    <tr
+                      key={r.id}
+                      onClick={() =>
+                        router.push(`/comercial/representantes/${r.id}`)
+                      }
+                      className={`cursor-pointer hover:bg-green-50/50 transition-colors ${
+                        idx < repsMetrica.length - 1
+                          ? 'border-b border-gray-50'
+                          : ''
+                      }`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                              r.status === 'apto'
+                                ? 'bg-green-500'
+                                : r.status === 'apto_pendente'
+                                  ? 'bg-amber-500'
+                                  : 'bg-gray-300'
+                            }`}
+                          />
+                          <div>
+                            <p className="font-semibold text-gray-900">
+                              {r.nome}
+                            </p>
+                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
+                              {r.codigo || 'S/ COD'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="text-center px-3 py-3 font-bold text-gray-800">
+                        {r.leads_ativos + r.leads_mes}
+                      </td>
+                      <td className="text-center px-3 py-3 font-bold text-gray-800">
+                        {r.vinculos_ativos}
+                      </td>
+                      <td className="text-center px-3 py-3 font-bold text-gray-800">
+                        {r.vendedores_count > 0 ? (
+                          r.vendedores_count
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="text-center px-3 py-3">
+                        {r.aceite_contrato_em ? (
+                          <span className="inline-flex items-center gap-1 text-green-700 font-medium">
+                            <CalendarCheck
+                              size={13}
+                              className="text-green-500"
+                            />
+                            {new Date(r.aceite_contrato_em).toLocaleDateString(
+                              'pt-BR'
+                            )}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+                      <td className="text-right px-4 py-3">
+                        <span
+                          className={`font-bold ${
+                            r.valor_pendente > 0
+                              ? 'text-amber-600'
+                              : 'text-gray-300'
+                          }`}
+                        >
+                          {r.valor_pendente > 0
+                            ? fmtBRL(r.valor_pendente)
+                            : '—'}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <ChevronRight size={16} className="text-gray-300" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

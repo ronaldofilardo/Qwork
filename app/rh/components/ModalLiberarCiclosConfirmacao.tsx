@@ -125,6 +125,12 @@ export default function ModalLiberarCiclosConfirmacao({
                 funcionário{totalFuncionarios !== 1 ? 's' : ''} elegíve
                 {totalFuncionarios !== 1 ? 'is' : 'l'} no total
               </p>
+              <p className="text-sm text-gray-700">
+                <span className="font-semibold">{totalFuncionarios}</span>{' '}
+                avaliação{totalFuncionarios !== 1 ? 'ões' : ''} será
+                {totalFuncionarios !== 1 ? 'ão' : ''} liberada
+                {totalFuncionarios !== 1 ? 's' : ''}
+              </p>
             </div>
 
             {/* Lista de empresas com contagens */}

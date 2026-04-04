@@ -23,7 +23,6 @@ interface tomador {
     | 'aguardando_pagamento'
     | 'pago';
   criado_em: string;
-  pagamento_confirmado: boolean;
   data_liberacao_login?: string;
 }
 
@@ -84,13 +83,6 @@ export function NovoscadastrosContent({
   };
 
   const getStatusBadge = (tomador: tomador) => {
-    if (tomador.pagamento_confirmado) {
-      return (
-        <span className="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-          ✓ Pago
-        </span>
-      );
-    }
     if (tomador.status === 'aguardando_pagamento') {
       return (
         <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">

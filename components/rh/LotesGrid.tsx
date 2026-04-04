@@ -70,8 +70,24 @@ export function LotesGrid({
         const isPronto = lote.pode_emitir_laudo || temLaudo;
         const isCancelado = lote.status === 'cancelado';
 
-        // Verificar se há solicitação de emissão pendente
-        const emissaoSolicitada = !!(lote.solicitado_em && !temLaudo);
+        // Verificar status de pagamento e emissão
+        const statusPagamento = (lote as any).status_pagamento as
+          | string
+          | undefined;
+        const aguardandoPagamento = Boolean(
+          lote.solicitado_em &&
+          statusPagamento === 'aguardando_pagamento' &&
+          !temLaudo
+        );
+        const aguardandoEmissao = Boolean(
+          lote.solicitado_em && statusPagamento === 'pago' && !temLaudo
+        );
+        const emissaoSolicitada = Boolean(
+          lote.solicitado_em &&
+          !aguardandoPagamento &&
+          !aguardandoEmissao &&
+          !temLaudo
+        );
 
         return (
           <div
@@ -268,6 +284,26 @@ export function LotesGrid({
                 </div>
               )}
             </div>
+
+            {/* Seção de status de emissão/pagamento */}
+            {aguardandoPagamento && (
+              <div className="p-3 bg-orange-50 rounded border border-orange-200 mb-4">
+                <p className="text-sm font-medium text-orange-800 flex items-center gap-2">
+                  <span>💳</span>
+                  Aguardando pagamento — link de pagamento gerado, aguardando
+                  confirmação.
+                </p>
+              </div>
+            )}
+
+            {aguardandoEmissao && (
+              <div className="p-3 bg-emerald-50 rounded border border-emerald-200 mb-4">
+                <p className="text-sm font-medium text-emerald-800 flex items-center gap-2">
+                  <span>✅</span>
+                  Pagamento confirmado — aguardando emissão do laudo.
+                </p>
+              </div>
+            )}
 
             {/* Seção de Emissão Solicitada */}
             {emissaoSolicitada && (

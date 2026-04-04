@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
         COALESCE(ct.email, cl.email) as email,
         COALESCE(ct.status, cl.status) as status,
         COALESCE(ct.ativa, cl.ativa) as ativa,
-        COALESCE(ct.pagamento_confirmado, cl.pagamento_confirmado) as pagamento_confirmado,
         cont.id as contrato_id,
         cont.status as contrato_status,
         cont.valor_total as contrato_valor,
@@ -71,16 +70,13 @@ export async function GET(request: NextRequest) {
 
     const data = result.rows[0];
 
-    // Verificar se tem pagamento confirmado
-    const hasPagamento = data.pagamento_confirmado === true;
     const hasContratoAtivo =
       data.contrato_status === 'aprovado' ||
       data.contrato_status === 'payment_paid';
     const statusTomador = data.status;
 
-    // Determinar se precisa de pagamento
+    // Sem coluna pagamento_confirmado — verificar pagamento pelo status do tomador e contrato
     const needsPayment =
-      !hasPagamento ||
       statusTomador === 'pendente_pagamento' ||
       statusTomador === 'pagamento_pendente';
 
@@ -99,7 +95,6 @@ export async function GET(request: NextRequest) {
         email: data.email,
         status: statusTomador,
         ativa: data.ativa,
-        pagamento_confirmado: hasPagamento,
       },
       contrato: data.contrato_id
         ? {
@@ -121,10 +116,10 @@ export async function GET(request: NextRequest) {
         : null,
       needs_payment: needsPayment,
       payment_link: paymentLink,
-      access_granted: hasPagamento && hasContratoAtivo,
+      access_granted: hasContratoAtivo,
       message: needsPayment
         ? 'Pagamento pendente. Complete o pagamento para ter acesso ao sistema.'
-        : 'Pagamento confirmado. Acesso liberado.',
+        : 'Acesso liberado.',
     });
   } catch (error) {
     console.error('Erro ao verificar pagamento:', error);

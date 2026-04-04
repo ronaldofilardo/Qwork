@@ -46,6 +46,7 @@ interface LoteInfo {
   liberado_em: string;
   liberado_por_nome: string | null;
   empresa_nome: string;
+  status_pagamento?: string | null;
   emitido_em?: string | null;
   laudo_id?: number | null;
   laudo_status?: string | null;
@@ -1533,6 +1534,7 @@ export default function DetalhesLotePage() {
           loteId={modalEmissao.loteId}
           gestorEmail={modalEmissao.gestorEmail}
           gestorCelular={modalEmissao.gestorCelular}
+          contexto="rh"
         />
       )}
 

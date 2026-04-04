@@ -153,6 +153,28 @@ export function usePagamentosAdmin() {
     }
   };
 
+  const handleDisponibilizarLink = async (loteId: number) => {
+    try {
+      setProcessando(loteId);
+      const response = await fetch(
+        `/api/admin/emissoes/${loteId}/disponibilizar-link`,
+        { method: 'POST' }
+      );
+      const data = await response.json();
+      if (!response.ok) {
+        alert(data.error || 'Erro ao disponibilizar link');
+        return;
+      }
+      alert('✅ Link disponibilizado na conta do tomador!');
+      await carregarSolicitacoes();
+    } catch (error) {
+      console.error('Erro ao disponibilizar link:', error);
+      alert('Erro ao disponibilizar link. Tente novamente.');
+    } finally {
+      setProcessando(null);
+    }
+  };
+
   // Auto-reconcilia silenciosamente ao entrar na aba de pagamentos pendentes
   useEffect(() => {
     if (filterTab !== 'aguardando_pagamento' || loading) return;
@@ -350,6 +372,7 @@ export function usePagamentosAdmin() {
     handleGerarLink,
     handleVerLink,
     handleVerificarPagamento,
+    handleDisponibilizarLink,
     handleVincularRepresentante,
     handleGerarComissao,
     getSolicitacoesFiltradas,

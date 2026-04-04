@@ -17,6 +17,8 @@ export async function GET() {
 
     // Query com isolamento: apenas funcionários vinculados à entidade via funcionarios_entidades
     // ARQUITETURA SEGREGADA: usa tabela intermediária funcionarios_entidades
+    // ISOLAMENTO DE AVALIAÇÕES: LEFT JOIN filtrado por lotes desta entidade para evitar
+    // misturar status/resultados de avaliações feitas em outras entidades ou clínicas
     const funcionarios = await queryAsGestorEntidade(
       `
       SELECT
@@ -32,51 +34,118 @@ export async function GET() {
         f.escala,
         f.ativo,
         f.criado_em,
-        f.ultima_avaliacao_id,
-        f.ultima_avaliacao_data_conclusao,
-        f.ultima_avaliacao_status,
         f.ultimo_motivo_inativacao,
         f.data_nascimento,
-        -- Campo índice e data da última avaliação válida (concluída)
         f.indice_avaliacao,
-        f.data_ultimo_lote as data_ultimo_lote,
-        -- Verificar se tem avaliação concluída há menos de 12 meses
-        CASE 
-          WHEN COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) IS NOT NULL 
-               AND COALESCE(f.data_ultimo_lote, f.ultima_avaliacao_data_conclusao) >= NOW() - INTERVAL '1 year' 
-            THEN true 
-          ELSE false 
+        -- Status/dados de avaliação isolados por ESTA entidade
+        (
+          SELECT a_ult.id FROM avaliacoes a_ult
+          JOIN lotes_avaliacao l_ult ON a_ult.lote_id = l_ult.id
+          WHERE a_ult.funcionario_cpf = f.cpf
+            AND l_ult.entidade_id = $1
+            AND a_ult.status NOT IN ('inativada')
+          ORDER BY COALESCE(a_ult.envio, a_ult.criado_em) DESC NULLS LAST
+          LIMIT 1
+        ) as ultima_avaliacao_id,
+        (
+          SELECT a_ult.envio FROM avaliacoes a_ult
+          JOIN lotes_avaliacao l_ult ON a_ult.lote_id = l_ult.id
+          WHERE a_ult.funcionario_cpf = f.cpf
+            AND l_ult.entidade_id = $1
+            AND a_ult.status IN ('concluida', 'concluido')
+          ORDER BY a_ult.envio DESC NULLS LAST
+          LIMIT 1
+        ) as ultima_avaliacao_data_conclusao,
+        (
+          SELECT a_ult.status FROM avaliacoes a_ult
+          JOIN lotes_avaliacao l_ult ON a_ult.lote_id = l_ult.id
+          WHERE a_ult.funcionario_cpf = f.cpf
+            AND l_ult.entidade_id = $1
+            AND a_ult.status NOT IN ('inativada')
+          ORDER BY COALESCE(a_ult.envio, a_ult.criado_em) DESC NULLS LAST
+          LIMIT 1
+        ) as ultima_avaliacao_status,
+        (
+          SELECT l_ult.emitido_em FROM avaliacoes a_ult
+          JOIN lotes_avaliacao l_ult ON a_ult.lote_id = l_ult.id
+          WHERE a_ult.funcionario_cpf = f.cpf
+            AND l_ult.entidade_id = $1
+            AND a_ult.status IN ('concluida', 'concluido')
+          ORDER BY a_ult.envio DESC NULLS LAST
+          LIMIT 1
+        ) as data_ultimo_lote,
+        -- Verificar se tem avaliação concluída nesta entidade há menos de 12 meses
+        CASE
+          WHEN EXISTS (
+            SELECT 1 FROM avaliacoes a_rec
+            JOIN lotes_avaliacao l_rec ON a_rec.lote_id = l_rec.id
+            WHERE a_rec.funcionario_cpf = f.cpf
+              AND l_rec.entidade_id = $1
+              AND a_rec.status IN ('concluida', 'concluido')
+              AND a_rec.envio >= NOW() - INTERVAL '1 year'
+          ) THEN true
+          ELSE false
         END as tem_avaliacao_recente,
+        -- Contagens isoladas por esta entidade
         COUNT(DISTINCT a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as avaliacoes_concluidas,
         COUNT(DISTINCT a.id) FILTER (WHERE a.status IN ('iniciada', 'em_andamento')) as avaliacoes_pendentes,
         MAX(a.envio) as ultima_avaliacao,
-        -- Data da última inativação (se houver)
         MAX(a.inativada_em) FILTER (WHERE a.status = 'inativada') as ultima_inativacao_em,
-        -- ID do lote da última inativação (se houver)
+        -- ID do lote da última inativação nesta entidade
         (
           SELECT l.id FROM avaliacoes a2
           JOIN lotes_avaliacao l ON a2.lote_id = l.id
-          WHERE a2.funcionario_cpf = f.cpf AND a2.status = 'inativada' AND a2.inativada_em IS NOT NULL
+          WHERE a2.funcionario_cpf = f.cpf
+            AND l.entidade_id = $1
+            AND a2.status = 'inativada'
+            AND a2.inativada_em IS NOT NULL
           ORDER BY a2.inativada_em DESC
           LIMIT 1
         ) as ultima_inativacao_lote,
-        -- Número de ordem do lote da última avaliação concluída ou inativada
+        -- Número de ordem do lote da última avaliação não-inativada nesta entidade
+        -- (mesmo critério/ordem de ultima_avaliacao_status para garantir coerência)
         (
-          SELECT l.numero_ordem FROM avaliacoes a3
+          SELECT l.id FROM avaliacoes a3
           JOIN lotes_avaliacao l ON a3.lote_id = l.id
           WHERE a3.funcionario_cpf = f.cpf
-            AND a3.status IN ('concluida', 'inativada')
-          ORDER BY COALESCE(a3.envio, a3.inativada_em, a3.criado_em) DESC NULLS LAST
+            AND l.entidade_id = $1
+            AND a3.status NOT IN ('inativada')
+          ORDER BY COALESCE(a3.envio, a3.criado_em) DESC NULLS LAST
           LIMIT 1
-        ) as ultimo_lote_numero
+        ) as ultimo_lote_numero,
+        -- Avaliação ativa (iniciada/em_andamento) mais recente nesta entidade
+        (
+          SELECT l_at.id FROM avaliacoes a_at
+          JOIN lotes_avaliacao l_at ON a_at.lote_id = l_at.id
+          WHERE a_at.funcionario_cpf = f.cpf
+            AND l_at.entidade_id = $1
+            AND a_at.status IN ('iniciada', 'em_andamento')
+          ORDER BY a_at.criado_em DESC NULLS LAST
+          LIMIT 1
+        ) as lote_ativo_numero,
+        -- Status da avaliação ativa mais recente nesta entidade
+        (
+          SELECT a_at.status FROM avaliacoes a_at
+          JOIN lotes_avaliacao l_at ON a_at.lote_id = l_at.id
+          WHERE a_at.funcionario_cpf = f.cpf
+            AND l_at.entidade_id = $1
+            AND a_at.status IN ('iniciada', 'em_andamento')
+          ORDER BY a_at.criado_em DESC NULLS LAST
+          LIMIT 1
+        ) as avaliacao_ativa_status
       FROM funcionarios f
       INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
-      LEFT JOIN avaliacoes a ON a.funcionario_cpf = f.cpf
+      -- Avaliações isoladas: apenas de lotes desta entidade
+      LEFT JOIN (
+        SELECT av.* FROM avaliacoes av
+        JOIN lotes_avaliacao la ON la.id = av.lote_id
+        WHERE la.entidade_id = $1
+      ) a ON a.funcionario_cpf = f.cpf
       WHERE fe.entidade_id = $1
         AND fe.ativo = true
         AND f.perfil <> 'gestor'
       GROUP BY f.id, f.cpf, f.nome, f.email, f.setor, f.funcao, f.matricula, f.nivel_cargo, f.turno, f.escala, f.ativo, f.criado_em,
-               f.ultima_avaliacao_id, f.ultima_avaliacao_data_conclusao, f.ultima_avaliacao_status, f.ultimo_motivo_inativacao, f.data_ultimo_lote
+               f.ultimo_motivo_inativacao, f.indice_avaliacao
       ORDER BY f.nome
     `,
       [entidadeId]

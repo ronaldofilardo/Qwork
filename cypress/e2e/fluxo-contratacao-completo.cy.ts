@@ -46,7 +46,6 @@ describe('Fluxo Completo - Plano Fixo', () => {
       statusCode: 200,
       body: {
         success: true,
-        pagamento_confirmado: true,
       },
     }).as('confirmarPagamento');
 

@@ -40,7 +40,7 @@ jest.mock('lucide-react', () => ({
 jest.mock('@/app/rh/rh-context', () => ({
   useRH: () => ({
     session: null,
-    counts: { empresas: 0, notificacoes: 0, laudos: 0 },
+    counts: { empresas: 0, notificacoes: 0, laudos: 0, pagamentos: 0 },
     isLoading: false,
     reloadCounts: jest.fn(),
   }),

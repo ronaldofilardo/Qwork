@@ -13,6 +13,7 @@ import {
   Coins,
   ChevronDown,
   ChevronUp,
+  Send,
 } from 'lucide-react';
 import { useState } from 'react';
 import type { Solicitacao, ParcelaDetalhe } from './types';
@@ -30,6 +31,7 @@ interface SolicitacaoCardProps {
   onGerarLink: (loteId: number) => void;
   onVerLink: (solicitacao: Solicitacao) => void;
   onVerificarPagamento: (loteId: number) => void;
+  onDisponibilizarLink: (loteId: number) => void;
   onVincularRepresentante: (loteId: number) => void;
   onGerarComissao: (loteId: number) => void;
   formatCurrency: (value: number | null) => string;
@@ -212,6 +214,7 @@ function StatusActions({
   onGerarLink,
   onVerLink,
   onVerificarPagamento,
+  onDisponibilizarLink,
 }: Omit<
   SolicitacaoCardProps,
   | 'formatCurrency'
@@ -286,25 +289,61 @@ function StatusActions({
   }
 
   if (solicitacao.status_pagamento === 'aguardando_pagamento') {
+    const jaDisponibilizado = !!solicitacao.link_disponibilizado_em;
     return (
-      <div className="flex items-center gap-3">
-        <button
-          onClick={() => onVerLink(solicitacao)}
-          className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <ExternalLink className="w-4 h-4" />
-          Ver Link / QR Code
-        </button>
-        <button
-          onClick={() => onVerificarPagamento(loteId)}
-          disabled={isProcessando}
-          className="px-6 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
-        >
-          <RefreshCw
-            className={`w-4 h-4 ${isProcessando ? 'animate-spin' : ''}`}
-          />
-          {isProcessando ? 'Verificando...' : 'Verificar Pagamento'}
-        </button>
+      <div className="space-y-2">
+        {!jaDisponibilizado && (
+          <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+            <Send className="w-4 h-4 text-amber-600 shrink-0" />
+            <span className="text-sm text-amber-800 flex-1">
+              Link gerado mas ainda não enviado ao tomador.
+            </span>
+            <button
+              onClick={() => onDisponibilizarLink(loteId)}
+              disabled={isProcessando}
+              className="px-4 py-1.5 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              {isProcessando
+                ? 'Enviando...'
+                : 'Disponibilizar na conta do Tomador'}
+            </button>
+          </div>
+        )}
+        {jaDisponibilizado && (
+          <p className="text-xs text-green-600">
+            ✓ Disponibilizado em{' '}
+            {new Date(solicitacao.link_disponibilizado_em!).toLocaleString(
+              'pt-BR',
+              {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+              }
+            )}
+          </p>
+        )}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => onVerLink(solicitacao)}
+            className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+          >
+            <ExternalLink className="w-4 h-4" />
+            Ver Link / QR Code
+          </button>
+          <button
+            onClick={() => onVerificarPagamento(loteId)}
+            disabled={isProcessando}
+            className="px-6 py-2 bg-orange-600 text-white font-medium rounded-lg hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isProcessando ? 'animate-spin' : ''}`}
+            />
+            {isProcessando ? 'Verificando...' : 'Verificar Pagamento'}
+          </button>
+        </div>
       </div>
     );
   }

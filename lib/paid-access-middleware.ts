@@ -1,8 +1,11 @@
 /**
- * Middleware de Proteção de Acesso Pago
+ * Middleware de Proteção de Acesso Ativo
  *
- * Garante que apenas entidades com pagamento confirmado acessem rotas protegidas
- * Uso: Importar e aplicar em rotas que exigem contrato ativo
+ * Garante que apenas entidades ativas acessem rotas protegidas
+ * Uso: Importar e aplicar em rotas que exigem conta ativa e aprovada
+ *
+ * NOTA: pagamento_confirmado removido do fluxo de cadastro (01/04/2026).
+ * A ativação agora depende apenas de ativa=true e status aprovado.
  */
 
 import { NextResponse } from 'next/server';
@@ -35,7 +38,7 @@ export async function validatePaidAccess(
 
   try {
     const result = await query(
-      `SELECT id, nome, ativa, pagamento_confirmado, status 
+      `SELECT id, nome, ativa, status 
        FROM entidades 
        WHERE id = $1`,
       [entidade_id]
@@ -51,12 +54,11 @@ export async function validatePaidAccess(
 
     const entidade = result.rows[0];
 
-    // Verificação dupla: ativa E pagamento confirmado
-    if (!entidade.ativa || !entidade.pagamento_confirmado) {
+    if (!entidade.ativa) {
       return {
         allowed: false,
         entidade_id,
-        message: 'Acesso negado. Pagamento não confirmado ou conta inativa.',
+        message: 'Acesso negado. Conta inativa.',
         status_code: 403,
       };
     }
@@ -111,7 +113,6 @@ export async function requirePaidAccess(
     return NextResponse.json(
       {
         error: validation.message || 'Acesso negado',
-        requires_payment: !validation.allowed,
         entidade_id: validation.entidade_id,
       },
       { status: validation.status_code || 403 }
@@ -161,7 +162,6 @@ export function withPaidAccess<
 export interface AccessCriteria {
   entidade_id: number;
   require_active?: boolean;
-  require_paid?: boolean;
   allow_statuses?: string[];
 }
 
@@ -171,12 +171,11 @@ export async function validateAccessCriteria(
   const {
     entidade_id,
     require_active = true,
-    require_paid = true,
     allow_statuses = ['aprovado', 'ativo'],
   } = criteria;
 
   const result = await query(
-    `SELECT id, nome, ativa, pagamento_confirmado, status 
+    `SELECT id, nome, ativa, status 
      FROM entidades 
      WHERE id = $1`,
     [entidade_id]
@@ -197,15 +196,6 @@ export async function validateAccessCriteria(
       allowed: false,
       entidade_id,
       message: 'Conta não está ativa',
-      status_code: 403,
-    };
-  }
-
-  if (require_paid && !entidade.pagamento_confirmado) {
-    return {
-      allowed: false,
-      entidade_id,
-      message: 'Pagamento não confirmado',
       status_code: 403,
     };
   }

@@ -35,11 +35,10 @@ export async function POST(request: NextRequest) {
         c.nome as tomador_nome,
         c.email as tomador_email,
         c.status as tomador_status,
-        c.pagamento_confirmado,
         ct.id as contrato_id,
         ct.numero_contrato,
         ct.valor_total
-      FROM tomadors c
+      FROM entidades c
       JOIN contratos ct ON ct.id = $2 AND ct.tomador_id = c.id
       WHERE c.id = $1`,
       [tomador_id, contrato_id]
@@ -53,14 +52,6 @@ export async function POST(request: NextRequest) {
     }
 
     const dados = verificacao.rows[0];
-
-    // Validar se já não foi pago
-    if (dados.pagamento_confirmado) {
-      return NextResponse.json(
-        { error: 'Pagamento já foi confirmado para este tomador' },
-        { status: 400 }
-      );
-    }
 
     // Construir URL de retomada sem uso de token (parâmetros por ID)
     const baseUrl = getBaseUrl();

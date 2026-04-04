@@ -14,6 +14,7 @@ export interface RHCounts {
   empresas: number;
   notificacoes: number;
   laudos: number;
+  pagamentos: number;
 }
 
 interface RHContextValue {
@@ -23,7 +24,12 @@ interface RHContextValue {
   reloadCounts: () => Promise<void>;
 }
 
-const defaultCounts: RHCounts = { empresas: 0, notificacoes: 0, laudos: 0 };
+const defaultCounts: RHCounts = {
+  empresas: 0,
+  notificacoes: 0,
+  laudos: 0,
+  pagamentos: 0,
+};
 
 export const RHContext = createContext<RHContextValue>({
   session: null,
@@ -42,11 +48,13 @@ export function RHProvider({ children }: { children: React.ReactNode }) {
 
   const loadCounts = useCallback(async () => {
     try {
-      const [empresasRes, laudosRes, notifRes] = await Promise.all([
-        fetch('/api/rh/empresas'),
-        fetch('/api/rh/laudos'),
-        fetch('/api/rh/notificacoes'),
-      ]);
+      const [empresasRes, laudosRes, notifRes, pagamentosRes] =
+        await Promise.all([
+          fetch('/api/rh/empresas'),
+          fetch('/api/rh/laudos'),
+          fetch('/api/rh/notificacoes'),
+          fetch('/api/rh/pagamentos-em-aberto/count'),
+        ]);
 
       const next: RHCounts = { ...defaultCounts };
 
@@ -62,6 +70,10 @@ export function RHProvider({ children }: { children: React.ReactNode }) {
         const data = await notifRes.json();
         next.notificacoes =
           data.totalNaoLidas || data.notificacoes?.length || 0;
+      }
+      if (pagamentosRes.ok) {
+        const data = await pagamentosRes.json();
+        next.pagamentos = data.count || 0;
       }
 
       setCounts(next);

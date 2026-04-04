@@ -94,13 +94,12 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
       cy.contains(/cadastro.*sucesso/i).should('be.visible');
     });
 
-    it('deve criar registro em tomadors com status aguardando_pagamento', () => {
+    it('deve criar registro em tomadors com status pendente', () => {
       cy.task('db:gettomador', { cnpj: mockCNPJ }).then((result: any) => {
         expect(result).to.not.be.null;
         expect(result.cnpj).to.eq(mockCNPJ);
-        expect(result.status).to.eq('aguardando_pagamento');
+        expect(result.status).to.eq('pendente');
         expect(result.ativa).to.be.false;
-        expect(result.pagamento_confirmado).to.be.false;
         tomadorId = result.id;
       });
     });
@@ -109,15 +108,12 @@ describe('Fluxo Crítico: Cadastro Entidade → Senha → Login', () => {
   describe('2. Confirmação de Pagamento e Ativação', () => {
     it('deve confirmar pagamento via admin', () => {
       // Simular confirmação de pagamento
-      cy.task('db:confirmarPagamento', { tomadorId }).then(
-        (result: any) => {
-          expect(result.success).to.be.true;
-        }
-      );
+      cy.task('db:confirmarPagamento', { tomadorId }).then((result: any) => {
+        expect(result.success).to.be.true;
+      });
 
       // Verificar atualização
       cy.task('db:gettomador', { cnpj: mockCNPJ }).then((result: any) => {
-        expect(result.pagamento_confirmado).to.be.true;
         expect(result.status).to.eq('aprovado');
       });
     });

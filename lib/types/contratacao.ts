@@ -107,7 +107,6 @@ export interface tomadorExtendido {
   aprovado_por_cpf?: string;
 
   // Novos campos
-  pagamento_confirmado: boolean;
   data_liberacao_login?: string;
 
   // Dados relacionados (joins)
@@ -170,7 +169,6 @@ export interface EntidadeExtendida {
   atualizado_em: string;
   aprovado_em?: string;
   aprovado_por_cpf?: string;
-  pagamento_confirmado?: boolean;
   data_liberacao_login?: string;
   pagamento?: {
     id: number;

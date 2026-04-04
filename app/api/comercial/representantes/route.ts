@@ -6,15 +6,14 @@
  * PF: documento_cpf obrigatório
  * PJ: documento_cnpj + documento_cpf_responsavel obrigatórios
  *
- * Retorna: { representante_id, codigo, convite_url }
+ * Retorna: { representante_id, codigo, senha_temporaria }
+ * O representante usa CPF + senha_temporaria para o 1º login.
+ * No 1º acesso o sistema exige troca de senha e aceite de termos (gates em rep-context).
  */
 import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
-import {
-  gerarTokenConvite,
-  logEmailConvite,
-} from '@/lib/representantes/gerar-convite';
 import {
   validarArquivo,
   validarCPF,
@@ -153,11 +152,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     );
     const codigo = codigoResult.rows[0].codigo;
 
-    // Inserir representante com status 'aguardando_senha'
+    // Gerar senha temporária determinística: 6 primeiros dígitos do CPF + 'Qw' + 2 últimos
+    // Atende requisitos de complexidade (8+ chars, maiúscula, número)
+    // DEVE ser trocada obrigatoriamente no 1º acesso (gate precisa_trocar_senha)
+    const senhaTemporaria = `${cpfRaw.slice(0, 6)}Qw${cpfRaw.slice(-2)}`;
+    const senhaHash = await bcrypt.hash(senhaTemporaria, 12);
+
+    // Inserir representante com status 'apto' — já pode fazer login com senha temporária
     const insertResult = await query<{ id: number }>(
       `INSERT INTO public.representantes
         (nome, cpf, cnpj, cpf_responsavel_pj, email, telefone, tipo_pessoa, codigo, status, aceite_termos, aceite_disclaimer_nv, aceite_politica_privacidade)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'aguardando_senha', FALSE, FALSE, FALSE)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'apto', FALSE, FALSE, FALSE)
        RETURNING id`,
       [
         nome,
@@ -173,11 +178,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const representanteId = insertResult.rows[0].id;
 
-    // Criar entrada vazia em representantes_senhas (sem senha ainda)
+    // Criar senha temporária em representantes_senhas (primeira_senha_alterada=FALSE → força troca no 1º acesso)
     await query(
-      `INSERT INTO public.representantes_senhas (representante_id, cpf, primeira_senha_alterada)
-       VALUES ($1, $2, FALSE)`,
-      [representanteId, cpfRaw]
+      `INSERT INTO public.representantes_senhas (representante_id, cpf, senha_hash, primeira_senha_alterada)
+       VALUES ($1, $2, $3, FALSE)`,
+      [representanteId, cpfRaw, senhaHash]
     );
 
     // Upload de documentos (mesmo fluxo da landing page)
@@ -231,21 +236,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Gerar token de convite (7 dias de validade)
-    const convite = await gerarTokenConvite(representanteId, { query } as any);
-
-    // Log fake email (padrão do projeto)
-    logEmailConvite(nome, email, convite.link, convite.expira_em);
-
     console.log(
-      `[COMERCIAL] Representante #${representanteId} (${nome}) criado por ${session.cpf} — convite gerado`
+      `[COMERCIAL] Representante #${representanteId} (${nome}) criado por ${session.cpf} — senha temporária gerada`
     );
 
     return NextResponse.json(
       {
         representante_id: representanteId,
         codigo,
-        convite_url: convite.link,
+        senha_temporaria: senhaTemporaria,
       },
       { status: 201 }
     );

@@ -35,6 +35,7 @@ export const GET = async (
         la.tipo,
         la.status,
         la.liberado_em,
+        la.status_pagamento,
         f.nome as liberado_por_nome,
         ec.id as empresa_id,
         ec.nome as empresa_nome,

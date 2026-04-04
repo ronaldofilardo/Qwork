@@ -50,6 +50,8 @@ interface ModalConfirmacaoSolicitarProps {
   loteId: number;
   gestorEmail?: string | null;
   gestorCelular?: string | null;
+  /** Contexto de quem solicita a emissão: 'rh' = perfil RH (clínica), 'gestor' = Gestor de Entidade */
+  contexto?: 'rh' | 'gestor';
 }
 
 export function ModalConfirmacaoSolicitar({
@@ -58,8 +60,11 @@ export function ModalConfirmacaoSolicitar({
   loteId,
   gestorEmail,
   gestorCelular,
+  contexto = 'gestor',
 }: ModalConfirmacaoSolicitarProps) {
   const temDadosContato = Boolean(gestorEmail || gestorCelular);
+  const labelPerfil =
+    contexto === 'rh' ? 'do seu perfil RH' : 'do gestor cadastrado';
 
   // Marcar como exibida quando abrir
   useEffect(() => {
@@ -117,11 +122,11 @@ export function ModalConfirmacaoSolicitar({
 
         {/* Corpo */}
         <div className="px-6 py-5 space-y-5">
-          {/* Seção: Contato do Gestor */}
+          {/* Seção: Contato do Gestor / RH */}
           <div>
             <p className="text-sm text-gray-700 leading-relaxed">
-              A plataforma entrará em contato com você através dos dados do
-              gestor cadastrados no momento da criação da sua conta:
+              A plataforma entrará em contato com você através dos dados{' '}
+              {labelPerfil}:
             </p>
 
             {temDadosContato ? (
@@ -163,9 +168,10 @@ export function ModalConfirmacaoSolicitar({
             ) : (
               <div className="mt-3 rounded-xl bg-amber-50 border border-amber-200 px-4 py-3">
                 <p className="text-sm text-amber-800">
-                  ⚠️ Nenhum dado de contato foi encontrado no cadastro. Para
-                  receber a proposta comercial, entre em contato diretamente com
-                  a plataforma pelo email abaixo.
+                  ⚠️ Nenhum dado de contato foi encontrado{' '}
+                  {contexto === 'rh'
+                    ? 'no cadastro do perfil RH. Verifique se seu email e celular estão preenchidos em "Informações da Conta".'
+                    : 'no cadastro. Para receber a proposta comercial, entre em contato diretamente com a plataforma pelo email abaixo.'}
                 </p>
               </div>
             )}

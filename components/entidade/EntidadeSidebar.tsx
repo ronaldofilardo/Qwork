@@ -42,6 +42,7 @@ export default function EntidadeSidebar({
     lotes?: number;
     pendencias?: number;
     desligamentos?: number;
+    pagamentos?: number;
   } = propCounts ?? ctxCounts;
   const userName = propUserName ?? ctxSession?.nome ?? 'Gestor';
 
@@ -150,6 +151,7 @@ export default function EntidadeSidebar({
       <MenuItem
         icon={User}
         label="Informações da Conta"
+        count={counts.pagamentos}
         isActive={pathname === '/entidade/conta'}
         onClick={() => router.push('/entidade/conta')}
       />

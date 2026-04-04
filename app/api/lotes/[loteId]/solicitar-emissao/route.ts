@@ -30,6 +30,7 @@
 import { NextResponse } from 'next/server';
 import { requireAuth, requireRHWithEmpresaAccess } from '@/lib/session';
 import { query } from '@/lib/db';
+import { transactionWithContext } from '@/lib/db-security';
 
 export async function POST(
   request: Request,
@@ -181,234 +182,185 @@ export async function POST(
       );
     }
 
-    // 7. Adicionar à fila e emitir (com lock para prevenir duplicação)
-    await query('BEGIN');
+    // 7. Executar operações em transação com contexto RLS (garante app.current_user_cpf para triggers)
+    let autoInativadasCount = 0;
 
     try {
-      // Advisory lock para prevenir race condition
-      await query('SELECT pg_advisory_xact_lock($1)', [loteId]);
-      console.log(`[INFO] Advisory lock adquirido para lote ${loteId}`);
+      autoInativadasCount = await transactionWithContext(async (q) => {
+        // Advisory lock para prevenir race condition
+        await q('SELECT pg_advisory_xact_lock($1)', [loteId]);
+        console.log(`[INFO] Advisory lock adquirido para lote ${loteId}`);
 
-      // 8. Registrar solicitação de emissão em auditoria_laudos
-      // (substituiu a antiga fila_emissao - migration 201)
-      // Usar INSERT com verificação prévia otimizada (migration 202)
-      // Normalizar `tipo_solicitante` para satisfazer CHECK constraints
-      const tipoSolicitante = user.perfil === 'rh' ? 'rh' : 'gestor';
+        // 8. Registrar solicitação de emissão em auditoria_laudos
+        // (substituiu a antiga fila_emissao - migration 201)
+        // Usar INSERT com verificação prévia otimizada (migration 202)
+        // Normalizar `tipo_solicitante` para satisfazer CHECK constraints
+        const tipoSolicitante = user.perfil === 'rh' ? 'rh' : 'gestor';
 
-      const insertResult = await query(
-        `WITH existing AS (
-           SELECT id, tentativas
-           FROM auditoria_laudos
-           WHERE lote_id = $1
-             AND acao = 'solicitar_emissao'
-             AND solicitado_por = $2
-             AND status IN ('pendente', 'reprocessando')
-           FOR UPDATE SKIP LOCKED
-           LIMIT 1
-         ),
-         updated AS (
-           UPDATE auditoria_laudos
-           SET tentativas = tentativas + 1,
-               criado_em = NOW()
-           WHERE id = (SELECT id FROM existing)
-           RETURNING id, tentativas, TRUE as is_update
-         ),
-         inserted AS (
-           INSERT INTO auditoria_laudos (
-             lote_id,
-             acao,
-             status,
-             solicitado_por,
-             tipo_solicitante,
-             criado_em
+        const insertResult = await q(
+          `WITH existing AS (
+             SELECT id, tentativas
+             FROM auditoria_laudos
+             WHERE lote_id = $1
+               AND acao = 'solicitar_emissao'
+               AND solicitado_por = $2
+               AND status IN ('pendente', 'reprocessando')
+             FOR UPDATE SKIP LOCKED
+             LIMIT 1
+           ),
+           updated AS (
+             UPDATE auditoria_laudos
+             SET tentativas = tentativas + 1,
+                 criado_em = NOW()
+             WHERE id = (SELECT id FROM existing)
+             RETURNING id, tentativas, TRUE as is_update
+           ),
+           inserted AS (
+             INSERT INTO auditoria_laudos (
+               lote_id,
+               acao,
+               status,
+               solicitado_por,
+               tipo_solicitante,
+               criado_em
+             )
+             SELECT $1, 'solicitar_emissao', 'pendente', $2, $3, NOW()
+             WHERE NOT EXISTS (SELECT 1 FROM existing)
+             RETURNING id, tentativas, FALSE as is_update
            )
-           SELECT $1, 'solicitar_emissao', 'pendente', $2, $3, NOW()
-           WHERE NOT EXISTS (SELECT 1 FROM existing)
-           RETURNING id, tentativas, FALSE as is_update
-         )
-         SELECT * FROM updated
-         UNION ALL
-         SELECT * FROM inserted`,
-        [loteId, user.cpf, tipoSolicitante]
-      );
-
-      const result = insertResult.rows[0];
-      if (result?.is_update) {
-        console.log(
-          `[INFO] Solicitação duplicada atualizada para lote ${loteId} (tentativa #${result.tentativas})`
+           SELECT * FROM updated
+           UNION ALL
+           SELECT * FROM inserted`,
+          [loteId, user.cpf, tipoSolicitante]
         );
-      } else {
-        console.log(`[INFO] Nova solicitação registrada para lote ${loteId}`);
-      }
 
-      // 9. Atualizar lote com status de pagamento (NOVO FLUXO)
-      await query(
-        `UPDATE lotes_avaliacao
-         SET status_pagamento = 'aguardando_cobranca',
-             solicitacao_emissao_em = NOW(),
-             atualizado_em = NOW()
-         WHERE id = $1`,
-        [loteId]
-      );
-
-      console.log(
-        `[INFO] Lote ${loteId} marcado como aguardando cobrança - novo fluxo de pagamento`
-      );
-
-      // 9b. Inativar automaticamente todas as avaliações ainda não concluídas
-      // (funcionários podiam completar até o momento exato da solicitação)
-      const autoInativadasResult = await query(
-        `UPDATE avaliacoes
-         SET status = 'inativada',
-             motivo_inativacao = 'Inativação automática: emissão do laudo solicitada',
-             inativada_em = NOW()
-         WHERE lote_id = $1
-           AND status NOT IN ('concluida', 'inativada')
-         RETURNING id`,
-        [loteId]
-      );
-      const autoInativadasCount = autoInativadasResult.rowCount ?? 0;
-      if (autoInativadasCount > 0) {
-        console.log(
-          `[INFO] ${autoInativadasCount} avaliação(ões) inativada(s) automaticamente no lote ${loteId}`
-        );
-      }
-
-      // 10. Criar notificação para ADMIN sobre solicitação de cobrança
-      // TODO: Ajustar para usar destinatario_cpf/destinatario_tipo ao invés de destinatario_role
-      /*
-      await query(
-        `INSERT INTO notificacoes (
-           tipo, 
-           prioridade, 
-           destinatario_role,
-           titulo, 
-           mensagem,
-           lote_id,
-           dados_contexto
-         )
-         VALUES (
-           'solicitacao_emissao'::tipo_notificacao,
-           'alta'::prioridade_notificacao,
-           'admin',
-           $1,
-           $2,
-           $3,
-           jsonb_build_object(
-             'solicitante_cpf', $4::text,
-             'solicitante_nome', $5::text,
-             'solicitante_tipo', $6::text,
-             'clinica_id', $7,
-             'empresa_id', $8,
-             'entidade_id', $9
-           )
-         )`,
-        [
-          'Nova solicitação de emissão',
-          `${user.perfil === 'rh' ? 'Clínica' : 'Entidade'} solicitou emissão de laudo para lote #${loteId}`,
-          loteId,
-          user.cpf,
-          user.nome,
-          user.perfil,
-          lote.clinica_id,
-          lote.empresa_id,
-          lote.entidade_id,
-        ]
-      );
-      */
-      console.log('[INFO] Notificação para admin temporariamente desabilitada');
-
-      // 11. Criar notificação de sucesso para o solicitante
-      let destinatarioTipo: string = user.perfil;
-      if (user.perfil === 'rh') {
-        destinatarioTipo = 'funcionario';
-      } else if (user.perfil === 'gestor') {
-        destinatarioTipo = 'gestor';
-      }
-
-      await query(
-        `INSERT INTO notificacoes (
-           tipo, 
-           prioridade, 
-           destinatario_cpf, 
-           destinatario_tipo, 
-           titulo, 
-           mensagem,
-           dados_contexto
-         )
-         VALUES (
-           'emissao_solicitada_sucesso'::tipo_notificacao,
-           'media'::prioridade_notificacao,
-           $1,
-           $2,
-           $3,
-           $4,
-           jsonb_build_object('lote_id', $5::integer)
-         )`,
-        [
-          user.cpf,
-          destinatarioTipo,
-          'Solicitação de emissão enviada',
-          `Solicitação enviada para lote #${loteId}. Aguarde o link de pagamento.`,
-          loteId,
-        ]
-      );
-
-      // COMMIT apenas após notificações criadas com sucesso
-      await query('COMMIT');
-
-      console.log(
-        `[INFO] ✓ Solicitação de emissão registrada com sucesso para lote ${loteId}`
-      );
-
-      // Buscar dados de contato do gestor para exibir na modal de confirmação (pós-commit)
-      let gestorContato: { email: string | null; celular: string | null } = {
-        email: null,
-        celular: null,
-      };
-      try {
-        if (user.perfil === 'gestor') {
-          const contatoResult = await query(
-            `SELECT responsavel_email AS email, responsavel_celular AS celular
-             FROM tomadores WHERE responsavel_cpf = $1 LIMIT 1`,
-            [user.cpf]
+        const result = insertResult.rows[0];
+        if (result?.is_update) {
+          console.log(
+            `[INFO] Solicitação duplicada atualizada para lote ${loteId} (tentativa #${String(result.tentativas)})`
           );
-          if (contatoResult.rows.length > 0) {
-            gestorContato = {
-              email: contatoResult.rows[0].email || null,
-              celular: contatoResult.rows[0].celular || null,
-            };
-          }
-        } else if (user.perfil === 'rh') {
-          const contatoResult = await query(
-            `SELECT email, celular FROM funcionarios WHERE cpf = $1 LIMIT 1`,
-            [user.cpf]
-          );
-          if (contatoResult.rows.length > 0) {
-            gestorContato = {
-              email: contatoResult.rows[0].email || null,
-              celular: contatoResult.rows[0].celular || null,
-            };
-          }
+        } else {
+          console.log(`[INFO] Nova solicitação registrada para lote ${loteId}`);
         }
-      } catch {
-        // Falha ao buscar dados de contato não impede a resposta
-      }
 
-      return NextResponse.json({
-        success: true,
-        message:
-          'Solicitação enviada com sucesso. Aguarde o link de pagamento.',
-        lote: {
-          id: lote.id,
-          status_pagamento: 'aguardando_cobranca',
-        },
-        auto_inativadas_count: autoInativadasCount,
-        gestor_contato: gestorContato,
+        // 9. Atualizar lote com status de pagamento (NOVO FLUXO)
+        await q(
+          `UPDATE lotes_avaliacao
+           SET status_pagamento = 'aguardando_cobranca',
+               solicitacao_emissao_em = NOW(),
+               atualizado_em = NOW()
+           WHERE id = $1`,
+          [loteId]
+        );
+
+        console.log(
+          `[INFO] Lote ${loteId} marcado como aguardando cobrança - novo fluxo de pagamento`
+        );
+
+        // 9b. Inativar automaticamente todas as avaliações ainda não concluídas
+        // (funcionários podiam completar até o momento exato da solicitação)
+        const autoInativadasResult = await q(
+          `UPDATE avaliacoes
+           SET status = 'inativada',
+               motivo_inativacao = 'Inativação automática: emissão do laudo solicitada',
+               inativada_em = NOW()
+           WHERE lote_id = $1
+             AND status NOT IN ('concluida', 'inativada')
+           RETURNING id`,
+          [loteId]
+        );
+        const count = autoInativadasResult.rowCount ?? 0;
+        if (count > 0) {
+          console.log(
+            `[INFO] ${count} avaliação(ões) inativada(s) automaticamente no lote ${loteId}`
+          );
+        }
+
+        // 10. Criar notificação para ADMIN sobre solicitação de cobrança
+        // TODO: Ajustar para usar destinatario_cpf/destinatario_tipo ao invés de destinatario_role
+        /*
+        await q(
+          `INSERT INTO notificacoes (
+             tipo, 
+             prioridade, 
+             destinatario_role,
+             titulo, 
+             mensagem,
+             lote_id,
+             dados_contexto
+           )
+           VALUES (
+             'solicitacao_emissao'::tipo_notificacao,
+             'alta'::prioridade_notificacao,
+             'admin',
+             $1,
+             $2,
+             $3,
+             jsonb_build_object(
+               'solicitante_cpf', $4::text,
+               'solicitante_nome', $5::text,
+               'solicitante_tipo', $6::text,
+               'clinica_id', $7,
+               'empresa_id', $8,
+               'entidade_id', $9
+             )
+           )`,
+          [
+            'Nova solicitação de emissão',
+            `${user.perfil === 'rh' ? 'Clínica' : 'Entidade'} solicitou emissão de laudo para lote #${loteId}`,
+            loteId,
+            user.cpf,
+            user.nome,
+            user.perfil,
+            lote.clinica_id,
+            lote.empresa_id,
+            lote.entidade_id,
+          ]
+        );
+        */
+        console.log(
+          '[INFO] Notificação para admin temporariamente desabilitada'
+        );
+
+        // 11. Criar notificação de sucesso para o solicitante
+        let destinatarioTipo: string = user.perfil;
+        if (user.perfil === 'rh') {
+          destinatarioTipo = 'funcionario';
+        } else if (user.perfil === 'gestor') {
+          destinatarioTipo = 'gestor';
+        }
+
+        await q(
+          `INSERT INTO notificacoes (
+             tipo, 
+             prioridade, 
+             destinatario_cpf, 
+             destinatario_tipo, 
+             titulo, 
+             mensagem,
+             dados_contexto
+           )
+           VALUES (
+             'emissao_solicitada_sucesso'::tipo_notificacao,
+             'media'::prioridade_notificacao,
+             $1,
+             $2,
+             $3,
+             $4,
+             jsonb_build_object('lote_id', $5::integer)
+           )`,
+          [
+            user.cpf,
+            destinatarioTipo,
+            'Solicitação de emissão enviada',
+            `Solicitação enviada para lote #${loteId}. Aguarde o link de pagamento.`,
+            loteId,
+          ]
+        );
+
+        return count;
       });
     } catch (emissaoError) {
-      await query('ROLLBACK');
-
       console.error(
         `[ERROR] Exceção ao registrar solicitação de emissão para lote ${loteId}:`,
         emissaoError
@@ -439,6 +391,55 @@ export async function POST(
         { status: 500 }
       );
     }
+
+    console.log(
+      `[INFO] ✓ Solicitação de emissão registrada com sucesso para lote ${loteId}`
+    );
+
+    // Buscar dados de contato do gestor para exibir na modal de confirmação (pós-transação)
+    let gestorContato: { email: string | null; celular: string | null } = {
+      email: null,
+      celular: null,
+    };
+    try {
+      if (user.perfil === 'gestor') {
+        const contatoResult = await query(
+          `SELECT responsavel_email AS email, responsavel_celular AS celular
+           FROM tomadores WHERE responsavel_cpf = $1 LIMIT 1`,
+          [user.cpf]
+        );
+        if (contatoResult.rows.length > 0) {
+          gestorContato = {
+            email: contatoResult.rows[0].email || null,
+            celular: contatoResult.rows[0].celular || null,
+          };
+        }
+      } else if (user.perfil === 'rh') {
+        const contatoResult = await query(
+          `SELECT email, celular FROM funcionarios WHERE cpf = $1 LIMIT 1`,
+          [user.cpf]
+        );
+        if (contatoResult.rows.length > 0) {
+          gestorContato = {
+            email: contatoResult.rows[0].email || null,
+            celular: contatoResult.rows[0].celular || null,
+          };
+        }
+      }
+    } catch {
+      // Falha ao buscar dados de contato não impede a resposta
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Solicitação enviada com sucesso. Aguarde o link de pagamento.',
+      lote: {
+        id: lote.id,
+        status_pagamento: 'aguardando_cobranca',
+      },
+      auto_inativadas_count: autoInativadasCount,
+      gestor_contato: gestorContato,
+    });
   } catch (error) {
     console.error('[ERROR] Erro no endpoint de solicitação de emissão:', error);
 

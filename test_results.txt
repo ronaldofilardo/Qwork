@@ -1,888 +1,41 @@
-npm warn Unknown project config "approve-builds". This will stop working in the next major version of npm.
+
+> qwork2026@1.0.0 pretest C:\apps\QWork
+> dotenv -e .env.test --override -- node scripts/checks/validate-test-isolation.js && dotenv -e .env.test --override -- node scripts/checks/ensure-test-env.js && dotenv -e .env.test --override -- node scripts/checks/no-dev-db-in-tests.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-duplicated-fk.cjs && dotenv -e .env.test --override -- node scripts/checks/fix-detectar-anomalias.cjs && dotenv -e .env.test --override -- node scripts/checks/validate-test-data-integrity.cjs
+
+
+­ƒöì Validando isolamento de ambientes...
+
+Ô£à TEST_DATABASE_URL: nr-bps_db_test
+ÔÜá´©Å  AVISO: LOCAL_DATABASE_URL aponta para banco de teste
+   Banco: nr-bps_db_test
+   LOCAL_DATABASE_URL deve apontar para nr-bps_db (desenvolvimento)
+
+ÔÜá´©Å  AVISO: JEST_WORKER_ID n├úo definida (executando fora do Jest?)
+
+
+======================================================================
+
+Ô£à VALIDA├ç├âO PASSOU: Ambiente de teste est├í isolado e seguro
+   Banco de testes: nr-bps_db_test
+   Banco de desenvolvimento protegido: nr-bps_db
+   Pol├¡tica: TESTING-POLICY.md
+
+Ô£à TEST_DATABASE_URL est├í definida e aponta para um banco de teste: nr-bps_db_test
+Ô£à Nenhuma refer├¬ncia direta a nr-bps_db encontrada em __tests__.
+Verificando e removendo FK duplicada lotes_avaliacao_liberado_por_fkey1 (se existir)...
+Corre├º├úo aplicada (se necess├íria).
+Aplicando corre├º├úo da fun├º├úo detectar_anomalias_indice...
+Corre├º├úo aplicada com sucesso.
+Ô£à [validate-test-data-integrity] Esquema do banco "nr-bps_db_test" foi validado (6 tabelas verificadas).
+
+> qwork2026@1.0.0 test C:\apps\QWork
+> dotenv -e .env.test --override -- jest "--testPathPatterns=admin-ui-conditional|NovoscadastrosContent|correcoes-01-04-2026-remocao" "--no-coverage"
+
 [jest.config] SKIP_GLOBAL_JEST_SETUP=1 ÔÇö globalSetup/globalTeardown removidos
 RBAC seed applied to test database
 RBAC seed applied to test database
 RBAC seed applied to test database
-RBAC seed applied to test database
-RBAC seed applied to test database
-RBAC seed applied to test database
-RBAC seed applied to test database
-PASS __tests__/registration/ativar-tomador-sem-recibo.test.ts
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-PASS __tests__/registration/cadastroApi.test.ts
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-FAIL __tests__/components/ModalContrato.transicao-silenciosa.test.tsx
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-  ÔùÅ ModalContrato - Transi├º├úo Silenciosa ÔÇ║ Interface e Comportamento ÔÇ║ n├úo deve usar window.location.reload no m├│dulo ModalContrato
-
-    expect(received).toBeTruthy()
-
-    Received: null
-
-      49 |         /\/\/\s*Caso\s+contr├írio[^}]*onAceiteSuccess/s
-      50 |       );
-    > 51 |       expect(hasReloadComments).toBeTruthy();
-         |                                 ^
-      52 |     });
-      53 |
-      54 |     it('deve chamar onAceiteSuccess quando aceite ├® bem-sucedido (comportamento esperado)', () => {
-
-      at Object.toBeTruthy (__tests__/components/ModalContrato.transicao-silenciosa.test.tsx:51:33)
-
-PASS __tests__/api/suporte/pre-cadastro.test.ts
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-PASS __tests__/registration/separacao-novos-cadastros-vs-tomadores.test.ts (5.209 s)
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-RBAC seed applied to test database
-RBAC seed applied to test database
-RBAC seed applied to test database
-FAIL __tests__/correcoes-01-04-2026-migration-1139-not-null.test.ts (6.973 s)
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-    console.log
-      ­ƒöî [lib/db/connection] Conectado ao banco: nr-bps_db_test @ localhost (ambiente: test)
-
-      at log (lib/db/connection.ts:325:15)
-
-    console.log
-      [db][query] local (1160ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (19ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (11ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (20ms): SELECT enumlabel FROM pg_enum
-               JOIN pg_type ON pg_enum.enumtypid = pg_type.oid
-               WHERE pg_type.typname = 'usuario_tipo_enum'
-               ORDER BY enumsortorder...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (14ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (34ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (15ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (12ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (11ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (28ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (12ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (25ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (17ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (13ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (19ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (21ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (13ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (10ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (16ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (16ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-    console.log
-      [db][query] local (14ms): SELECT is_nullable, udt_name, column_default
-             FROM information_schema.columns
-             WHERE table_schema = 'public'
-               AND table_name   = $1
-               AND column_name  = $2...
-
-      at log (lib/db/query.ts:231:23)
-
-  ÔùÅ Migration 1139 ÔÇö Corre├º├Áes NOT NULL + usuario_tipo em funcionarios ÔÇ║ 10. Script validate-test-data-integrity.cjs ÔÇ║ n├úo checa tomador_id em funcionarios (coluna removida na migration 605)
-
-    expect(received).not.toContain(expected) // indexOf
-
-    Expected substring: not "'tomador_id'"
-    Received string:        "#!/usr/bin/env node
-    'use strict';
-
-    /**
-     * validate-test-data-integrity.cjs
-     *
-     * Valida integridade do esquema do banco de testes antes de executar a suite.
-     * Verifica colunas NOT NULL obrigat├│rias que historicamente causaram falhas nos testes.
-     *
-     * Executado em: pnpm pretest (via package.json)
-     * Banco alvo: TEST_DATABASE_URL (nunca o banco de desenvolvimento)
-     */
-
-    const { Client } = require('pg');
-
-    function fail(msg) {
-      console.error(`\\nÔØî [validate-test-data-integrity] ${msg}\\n`);
-      process.exit(1);
-    }
-
-    function warn(msg) {
-      console.warn(`\\nÔÜá´©Å  [validate-test-data-integrity] ${msg}`);
-    }
-
-    function ok(msg) {
-      console.log(`Ô£à [validate-test-data-integrity] ${msg}`);
-    }
-
-    // Mapa: tabela ÔåÆ colunas NOT NULL que devem existir e n├úo podem ser ausentes nos INSERTs
-    const REQUIRED_NOT_NULL_COLUMNS = {
-      clinicas: [
-        'nome',
-        'cnpj',
-        'email',
-        'telefone', // Causa hist├│rica de falha: omitida em testes manuais
-        'ativa',
-      ],
-      entidades: [
-        'tipo',
-        'nome',
-        'cnpj',
-        'email',
-        'telefone',
-        'responsavel_nome',
-        'responsavel_cpf',
-      ],
-      empresas_clientes: ['nome', 'cnpj', 'clinica_id', 'ativa'],
-      lotes_avaliacao: [
-        'empresa_id',
-        'clinica_id',
-        'tipo',
-        'status',
-        'numero_ordem',
-        'liberado_por',
-      ],
-      avaliacoes: ['lote_id', 'funcionario_cpf', 'status'],
-      funcionarios: ['cpf', 'nome', 'tomador_id', 'usuario_tipo'],
-    };
-
-    async function main() {
-      const dbUrl = process.env.TEST_DATABASE_URL;
-      if (!dbUrl) {
-        warn(
-          'TEST_DATABASE_URL n├úo definida ÔÇö pulando valida├º├úo de integridade de esquema.'
-        );
-        process.exit(0);
-      }
-
-      // Garantia adicional: n├úo rodar contra banco de desenvolvimento
-      const dbName = (() => {
-        try {
-          return new URL(dbUrl).pathname.replace(/^\\/+/, '');
-        } catch {
-          return dbUrl.split('/').pop()?.split('?')[0] ?? '';
-        }
-      })();
-
-      if (dbName === 'nr-bps_db' || !dbName.includes('test')) {
-        fail(
-          `TEST_DATABASE_URL aponta para \"${dbName}\" ÔÇö n├úo ├® um banco de testes. Abortando.`
-        );
-      }
-
-      const client = new Client({ connectionString: dbUrl });
-
-      try {
-        await client.connect();
-
-        const errors = [];
-
-        for (const [tableName, requiredCols] of Object.entries(
-          REQUIRED_NOT_NULL_COLUMNS
-        )) {
-          // Verificar se a tabela existe
-          const tableCheck = await client.query(
-            `SELECT COUNT(*) FROM information_schema.tables
-             WHERE table_schema = 'public' AND table_name = $1`,
-            [tableName]
-          );
-
-          if (parseInt(tableCheck.rows[0].count, 10) === 0) {
-            errors.push(`Tabela \"${tableName}\" n├úo encontrada no banco de testes.`);
-            continue;
-          }
-
-          // Verificar colunas NOT NULL existentes
-          const colResult = await client.query(
-            `SELECT column_name, is_nullable
-             FROM information_schema.columns
-             WHERE table_schema = 'public' AND table_name = $1`,
-            [tableName]
-          );
-
-          const existingCols = new Map(
-            colResult.rows.map((r) => [r.column_name, r.is_nullable])
-          );
-
-          for (const col of requiredCols) {
-            if (!existingCols.has(col)) {
-              // Coluna n├úo existe ÔÇö isso ├® um AVISO, n├úo uma falha
-              // (migrations podem estar pendentes ou coluna foi removida do schema)
-              warn(
-                `Coluna \"${col}\" n├úo existe na tabela \"${tableName}\". ` +
-                  `Se testes falharem, verifique se migrations foram aplicadas.`
-              );
-            } else if (existingCols.get(col) !== 'NO') {
-              // Coluna existe mas n├úo ├® NOT NULL (schema pode ter mudado)
-              warn(
-                `Coluna \"${tableName}.${col}\" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.`
-              );
-            }
-          }
-        }
-
-        // Nota: erros de colunas faltantes agora s├úo apenas avisos (schema pode estar em transi├º├úo)
-        // O script continua com sucesso para permitir que os testes rodem e revelem qual ├® o problema real
-
-        ok(
-          `Esquema do banco \"${dbName}\" foi validado (${Object.keys(REQUIRED_NOT_NULL_COLUMNS).length} tabelas verificadas).`
-        );
-        process.exit(0);
-      } catch (err) {
-        // N├úo falhar a suite se o banco de testes estiver offline ÔÇö apenas avisar
-        warn(
-          `N├úo foi poss├¡vel conectar ao banco de testes para valida├º├úo de esquema: ${err.message}\\n` +
-            '  Continuando sem valida├º├úo de integridade.'
-        );
-        process.exit(0);
-      } finally {
-        await client.end().catch(() => {});
-      }
-    }
-
-    main();
-    "
-
-      231 |     it('n├úo checa tomador_id em funcionarios (coluna removida na migration 605)', () => {
-      232 |       // tomador_id foi removido da lista de checks
-    > 233 |       expect(scriptContent).not.toContain("'tomador_id'");
-          |                                 ^
-      234 |     });
-      235 |
-      236 |     it('n├úo checa empresa_id em lotes_avaliacao (nullable by design)', () => {
-
-      at Object.toContain (__tests__/correcoes-01-04-2026-migration-1139-not-null.test.ts:233:33)
-
-  ÔùÅ Migration 1139 ÔÇö Corre├º├Áes NOT NULL + usuario_tipo em funcionarios ÔÇ║ 10. Script validate-test-data-integrity.cjs ÔÇ║ n├úo checa empresa_id em lotes_avaliacao (nullable by design)
-
-    expect(received).not.toContain(expected) // indexOf
-
-    Expected substring: not "'empresa_id'"
-    Received string:        "#!/usr/bin/env node
-    'use strict';
-
-    /**
-     * validate-test-data-integrity.cjs
-     *
-     * Valida integridade do esquema do banco de testes antes de executar a suite.
-     * Verifica colunas NOT NULL obrigat├│rias que historicamente causaram falhas nos testes.
-     *
-     * Executado em: pnpm pretest (via package.json)
-     * Banco alvo: TEST_DATABASE_URL (nunca o banco de desenvolvimento)
-     */
-
-    const { Client } = require('pg');
-
-    function fail(msg) {
-      console.error(`\\nÔØî [validate-test-data-integrity] ${msg}\\n`);
-      process.exit(1);
-    }
-
-    function warn(msg) {
-      console.warn(`\\nÔÜá´©Å  [validate-test-data-integrity] ${msg}`);
-    }
-
-    function ok(msg) {
-      console.log(`Ô£à [validate-test-data-integrity] ${msg}`);
-    }
-
-    // Mapa: tabela ÔåÆ colunas NOT NULL que devem existir e n├úo podem ser ausentes nos INSERTs
-    const REQUIRED_NOT_NULL_COLUMNS = {
-      clinicas: [
-        'nome',
-        'cnpj',
-        'email',
-        'telefone', // Causa hist├│rica de falha: omitida em testes manuais
-        'ativa',
-      ],
-      entidades: [
-        'tipo',
-        'nome',
-        'cnpj',
-        'email',
-        'telefone',
-        'responsavel_nome',
-        'responsavel_cpf',
-      ],
-      empresas_clientes: ['nome', 'cnpj', 'clinica_id', 'ativa'],
-      lotes_avaliacao: [
-        'empresa_id',
-        'clinica_id',
-        'tipo',
-        'status',
-        'numero_ordem',
-        'liberado_por',
-      ],
-      avaliacoes: ['lote_id', 'funcionario_cpf', 'status'],
-      funcionarios: ['cpf', 'nome', 'tomador_id', 'usuario_tipo'],
-    };
-
-    async function main() {
-      const dbUrl = process.env.TEST_DATABASE_URL;
-      if (!dbUrl) {
-        warn(
-          'TEST_DATABASE_URL n├úo definida ÔÇö pulando valida├º├úo de integridade de esquema.'
-        );
-        process.exit(0);
-      }
-
-      // Garantia adicional: n├úo rodar contra banco de desenvolvimento
-      const dbName = (() => {
-        try {
-          return new URL(dbUrl).pathname.replace(/^\\/+/, '');
-        } catch {
-          return dbUrl.split('/').pop()?.split('?')[0] ?? '';
-        }
-      })();
-
-      if (dbName === 'nr-bps_db' || !dbName.includes('test')) {
-        fail(
-          `TEST_DATABASE_URL aponta para \"${dbName}\" ÔÇö n├úo ├® um banco de testes. Abortando.`
-        );
-      }
-
-      const client = new Client({ connectionString: dbUrl });
-
-      try {
-        await client.connect();
-
-        const errors = [];
-
-        for (const [tableName, requiredCols] of Object.entries(
-          REQUIRED_NOT_NULL_COLUMNS
-        )) {
-          // Verificar se a tabela existe
-          const tableCheck = await client.query(
-            `SELECT COUNT(*) FROM information_schema.tables
-             WHERE table_schema = 'public' AND table_name = $1`,
-            [tableName]
-          );
-
-          if (parseInt(tableCheck.rows[0].count, 10) === 0) {
-            errors.push(`Tabela \"${tableName}\" n├úo encontrada no banco de testes.`);
-            continue;
-          }
-
-          // Verificar colunas NOT NULL existentes
-          const colResult = await client.query(
-            `SELECT column_name, is_nullable
-             FROM information_schema.columns
-             WHERE table_schema = 'public' AND table_name = $1`,
-            [tableName]
-          );
-
-          const existingCols = new Map(
-            colResult.rows.map((r) => [r.column_name, r.is_nullable])
-          );
-
-          for (const col of requiredCols) {
-            if (!existingCols.has(col)) {
-              // Coluna n├úo existe ÔÇö isso ├® um AVISO, n├úo uma falha
-              // (migrations podem estar pendentes ou coluna foi removida do schema)
-              warn(
-                `Coluna \"${col}\" n├úo existe na tabela \"${tableName}\". ` +
-                  `Se testes falharem, verifique se migrations foram aplicadas.`
-              );
-            } else if (existingCols.get(col) !== 'NO') {
-              // Coluna existe mas n├úo ├® NOT NULL (schema pode ter mudado)
-              warn(
-                `Coluna \"${tableName}.${col}\" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.`
-              );
-            }
-          }
-        }
-
-        // Nota: erros de colunas faltantes agora s├úo apenas avisos (schema pode estar em transi├º├úo)
-        // O script continua com sucesso para permitir que os testes rodem e revelem qual ├® o problema real
-
-        ok(
-          `Esquema do banco \"${dbName}\" foi validado (${Object.keys(REQUIRED_NOT_NULL_COLUMNS).length} tabelas verificadas).`
-        );
-        process.exit(0);
-      } catch (err) {
-        // N├úo falhar a suite se o banco de testes estiver offline ÔÇö apenas avisar
-        warn(
-          `N├úo foi poss├¡vel conectar ao banco de testes para valida├º├úo de esquema: ${err.message}\\n` +
-            '  Continuando sem valida├º├úo de integridade.'
-        );
-        process.exit(0);
-      } finally {
-        await client.end().catch(() => {});
-      }
-    }
-
-    main();
-    "
-
-      235 |
-      236 |     it('n├úo checa empresa_id em lotes_avaliacao (nullable by design)', () => {
-    > 237 |       expect(scriptContent).not.toContain("'empresa_id'");
-          |                                 ^
-      238 |     });
-      239 |
-      240 |     it('n├úo checa clinica_id de lotes_avaliacao (nullable by design)', () => {
-
-      at Object.toContain (__tests__/correcoes-01-04-2026-migration-1139-not-null.test.ts:237:33)
-
-  ÔùÅ Migration 1139 ÔÇö Corre├º├Áes NOT NULL + usuario_tipo em funcionarios ÔÇ║ 10. Script validate-test-data-integrity.cjs ÔÇ║ n├úo checa clinica_id de lotes_avaliacao (nullable by design)
-
-    expect(received).not.toContain(expected) // indexOf
-
-    Expected substring: not "'clinica_id'"
-    Received string:        "lotes_avaliacao: [
-        'empresa_id',
-        'clinica_id',
-        'tipo',
-        'status',
-        'numero_ordem',
-        'liberado_por',
-      ]"
-
-      242 |       const loteBlock = scriptContent.match(/lotes_avaliacao[\s\S]*?]/);
-      243 |       if (loteBlock) {
-    > 244 |         expect(loteBlock[0]).not.toContain("'clinica_id'");
-          |                                  ^
-      245 |       }
-      246 |     });
-      247 |
-
-      at Object.toContain (__tests__/correcoes-01-04-2026-migration-1139-not-null.test.ts:244:34)
-
-  ÔùÅ Migration 1139 ÔÇö Corre├º├Áes NOT NULL + usuario_tipo em funcionarios ÔÇ║ 10. Script validate-test-data-integrity.cjs ÔÇ║ n├úo checa liberado_por em lotes_avaliacao (nullable by design)
-
-    expect(received).not.toContain(expected) // indexOf
-
-    Expected substring: not "'liberado_por'"
-    Received string:        "#!/usr/bin/env node
-    'use strict';
-
-    /**
-     * validate-test-data-integrity.cjs
-     *
-     * Valida integridade do esquema do banco de testes antes de executar a suite.
-     * Verifica colunas NOT NULL obrigat├│rias que historicamente causaram falhas nos testes.
-     *
-     * Executado em: pnpm pretest (via package.json)
-     * Banco alvo: TEST_DATABASE_URL (nunca o banco de desenvolvimento)
-     */
-
-    const { Client } = require('pg');
-
-    function fail(msg) {
-      console.error(`\\nÔØî [validate-test-data-integrity] ${msg}\\n`);
-      process.exit(1);
-    }
-
-    function warn(msg) {
-      console.warn(`\\nÔÜá´©Å  [validate-test-data-integrity] ${msg}`);
-    }
-
-    function ok(msg) {
-      console.log(`Ô£à [validate-test-data-integrity] ${msg}`);
-    }
-
-    // Mapa: tabela ÔåÆ colunas NOT NULL que devem existir e n├úo podem ser ausentes nos INSERTs
-    const REQUIRED_NOT_NULL_COLUMNS = {
-      clinicas: [
-        'nome',
-        'cnpj',
-        'email',
-        'telefone', // Causa hist├│rica de falha: omitida em testes manuais
-        'ativa',
-      ],
-      entidades: [
-        'tipo',
-        'nome',
-        'cnpj',
-        'email',
-        'telefone',
-        'responsavel_nome',
-        'responsavel_cpf',
-      ],
-      empresas_clientes: ['nome', 'cnpj', 'clinica_id', 'ativa'],
-      lotes_avaliacao: [
-        'empresa_id',
-        'clinica_id',
-        'tipo',
-        'status',
-        'numero_ordem',
-        'liberado_por',
-      ],
-      avaliacoes: ['lote_id', 'funcionario_cpf', 'status'],
-      funcionarios: ['cpf', 'nome', 'tomador_id', 'usuario_tipo'],
-    };
-
-    async function main() {
-      const dbUrl = process.env.TEST_DATABASE_URL;
-      if (!dbUrl) {
-        warn(
-          'TEST_DATABASE_URL n├úo definida ÔÇö pulando valida├º├úo de integridade de esquema.'
-        );
-        process.exit(0);
-      }
-
-      // Garantia adicional: n├úo rodar contra banco de desenvolvimento
-      const dbName = (() => {
-        try {
-          return new URL(dbUrl).pathname.replace(/^\\/+/, '');
-        } catch {
-          return dbUrl.split('/').pop()?.split('?')[0] ?? '';
-        }
-      })();
-
-      if (dbName === 'nr-bps_db' || !dbName.includes('test')) {
-        fail(
-          `TEST_DATABASE_URL aponta para \"${dbName}\" ÔÇö n├úo ├® um banco de testes. Abortando.`
-        );
-      }
-
-      const client = new Client({ connectionString: dbUrl });
-
-      try {
-        await client.connect();
-
-        const errors = [];
-
-        for (const [tableName, requiredCols] of Object.entries(
-          REQUIRED_NOT_NULL_COLUMNS
-        )) {
-          // Verificar se a tabela existe
-          const tableCheck = await client.query(
-            `SELECT COUNT(*) FROM information_schema.tables
-             WHERE table_schema = 'public' AND table_name = $1`,
-            [tableName]
-          );
-
-          if (parseInt(tableCheck.rows[0].count, 10) === 0) {
-            errors.push(`Tabela \"${tableName}\" n├úo encontrada no banco de testes.`);
-            continue;
-          }
-
-          // Verificar colunas NOT NULL existentes
-          const colResult = await client.query(
-            `SELECT column_name, is_nullable
-             FROM information_schema.columns
-             WHERE table_schema = 'public' AND table_name = $1`,
-            [tableName]
-          );
-
-          const existingCols = new Map(
-            colResult.rows.map((r) => [r.column_name, r.is_nullable])
-          );
-
-          for (const col of requiredCols) {
-            if (!existingCols.has(col)) {
-              // Coluna n├úo existe ÔÇö isso ├® um AVISO, n├úo uma falha
-              // (migrations podem estar pendentes ou coluna foi removida do schema)
-              warn(
-                `Coluna \"${col}\" n├úo existe na tabela \"${tableName}\". ` +
-                  `Se testes falharem, verifique se migrations foram aplicadas.`
-              );
-            } else if (existingCols.get(col) !== 'NO') {
-              // Coluna existe mas n├úo ├® NOT NULL (schema pode ter mudado)
-              warn(
-                `Coluna \"${tableName}.${col}\" existe mas permite NULL ÔÇö pode causar falhas em datasets de teste.`
-              );
-            }
-          }
-        }
-
-        // Nota: erros de colunas faltantes agora s├úo apenas avisos (schema pode estar em transi├º├úo)
-        // O script continua com sucesso para permitir que os testes rodem e revelem qual ├® o problema real
-
-        ok(
-          `Esquema do banco \"${dbName}\" foi validado (${Object.keys(REQUIRED_NOT_NULL_COLUMNS).length} tabelas verificadas).`
-        );
-        process.exit(0);
-      } catch (err) {
-        // N├úo falhar a suite se o banco de testes estiver offline ÔÇö apenas avisar
-        warn(
-          `N├úo foi poss├¡vel conectar ao banco de testes para valida├º├úo de esquema: ${err.message}\\n` +
-            '  Continuando sem valida├º├úo de integridade.'
-        );
-        process.exit(0);
-      } finally {
-        await client.end().catch(() => {});
-      }
-    }
-
-    main();
-    "
-
-      247 |
-      248 |     it('n├úo checa liberado_por em lotes_avaliacao (nullable by design)', () => {
-    > 249 |       expect(scriptContent).not.toContain("'liberado_por'");
-          |                                 ^
-      250 |     });
-      251 |
-      252 |     it('checa usuario_tipo em funcionarios (adicionado na migration 1139)', () => {
-
-      at Object.toContain (__tests__/correcoes-01-04-2026-migration-1139-not-null.test.ts:249:33)
-
 PASS __tests__/correcoes-01-04-2026-remocao-pagamento-cadastro.test.ts
-  ÔùÅ Console
-
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
-
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
-
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
-
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
-
-PASS __tests__/registration/sucesso-cadastro.test.tsx
   ÔùÅ Console
 
     console.log
@@ -900,7 +53,7 @@ PASS __tests__/registration/sucesso-cadastro.test.tsx
 
       at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
 
-PASS __tests__/components/suporte/PreCadastroContent.test.tsx (9.149 s)
+FAIL __tests__/admin/admin-ui-conditional-approval.test.tsx (6.237 s)
   ÔùÅ Console
 
     console.log
@@ -918,33 +71,405 @@ PASS __tests__/components/suporte/PreCadastroContent.test.tsx (9.149 s)
 
       at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
 
-PASS __tests__/components/ModalContrato.test.tsx
-  ÔùÅ Console
+  ÔùÅ NovoscadastrosContent - Aprova├º├úo Condicional ÔÇ║ deve mostrar bot├úo Aprovar quando requer_aprovacao_manual = true
 
-    console.log
-      [dotenv@17.3.1] injecting env (0) from .env.test -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+    Unable to find an element with the text: Aprovar. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
-      at _log (node_modules/.pnpm/dotenv@17.3.1/node_modules/dotenv/lib/main.js:139:11)
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="p-6"
+        >
+          <div
+            class="mb-6"
+          >
+            <h2
+              class="text-xl font-semibold text-gray-900 mb-4"
+            >
+              Novos Cadastros
+            </h2>
+            <div
+              class="flex gap-2"
+            >
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-orange-500 text-white"
+              >
+                Todos
+              </button>
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cl├¡nicas
+              </button>
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Entidades
+              </button>
+            </div>
+          </div>
+          <div
+            class="grid gap-3"
+          >
+            <div
+              class="border border-gray-200 rounded-lg p-4 transition-all bg-white hover:shadow-md"
+            >
+              <div
+                class="flex items-center justify-between gap-4"
+              >
+                <input
+                  class="w-5 h-5 rounded border-gray-300 cursor-pointer"
+                  type="checkbox"
+                />
+                <div
+                  class="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-building2 lucide-building-2 w-6 h-6 text-green-500 flex-shrink-0"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M10 12h4"
+                    />
+                    <path
+                      d="M10 8h4"
+                    />
+                    <path
+                      d="M14 21v-3a2 2 0 0 0-4 0v3"
+                    />
+                    <path
+                      d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"
+                    />
+                    <path
+                      d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"
+                    />
+                  </svg>
+                  <div
+                    class="min-w-0"
+                  >
+                    <h3
+                      class="text-sm font-semibold text-gray-900 truncate"
+                    >
+                      Teste Entidade 2
+                    </h3>
+                    <p
+                      class="text-xs text-gray-500"
+                    >
+                      CNPJ: 
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex-shrink-0"
+                >
+                  <span
+                    class="text-xs font-medium text-gray-600"
+                  >
+                    Entidade
+                  </span>
+                </div>
+                <div
+                  class="flex-shrink-0"
+                >
+                  <span
+                    class="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                  >
+                    Pendente
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
 
-    console.log
-      ­ƒøí´©Å [jest.setup] Removendo DATABASE_URL do ambiente de testes (valor n├úo importa)
+      37 |     render(<NovoscadastrosContent />);
+      38 |
+    > 39 |     await waitFor(() => {
+         |                  ^
+      40 |       expect(screen.getByText('Aprovar')).toBeInTheDocument();
+      41 |     });
+      42 |   });
 
-      at Object.<anonymous> (__tests__/config/jest.setup.js:125:17)
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/admin/admin-ui-conditional-approval.test.tsx:39:18)
 
-    console.log
-      ­ƒøí´©Å [jest.setup] Prote├º├úo do banco de testes ativada - usando: nr-bps_db_test
+  ÔùÅ NovoscadastrosContent - Aprova├º├úo Condicional ÔÇ║ deve mostrar bot├úo Aprovar quando requer_aprovacao_manual = true
 
-      at Object.<anonymous> (__tests__/config/jest.setup.js:150:13)
+    Unable to find an element with the text: Aprovar. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
 
-    console.info
-      [CONTRATO] Aceite registrado: {"contrato_id":999,"timestamp":"2026-04-02T18:59:10.051Z"}
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="p-6"
+        >
+          <div
+            class="mb-6"
+          >
+            <h2
+              class="text-xl font-semibold text-gray-900 mb-4"
+            >
+              Novos Cadastros
+            </h2>
+            <div
+              class="flex gap-2"
+            >
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-orange-500 text-white"
+              >
+                Todos
+              </button>
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cl├¡nicas
+              </button>
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Entidades
+              </button>
+            </div>
+          </div>
+          <div
+            class="grid gap-3"
+          >
+            <div
+              class="border border-gray-200 rounded-lg p-4 transition-all bg-white hover:shadow-md"
+            >
+              <div
+                class="flex items-center justify-between gap-4"
+              >
+                <input
+                  class="w-5 h-5 rounded border-gray-300 cursor-pointer"
+                  type="checkbox"
+                />
+                <div
+                  class="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-building2 lucide-building-2 w-6 h-6 text-green-500 flex-shrink-0"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M10 12h4"
+                    />
+                    <path
+                      d="M10 8h4"
+                    />
+                    <path
+                      d="M14 21v-3a2 2 0 0 0-4 0v3"
+                    />
+                    <path
+                      d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"
+                    />
+                    <path
+                      d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"
+                    />
+                  </svg>
+                  <div
+                    class="min-w-0"
+                  >
+                    <h3
+                      class="text-sm font-semibold text-gray-900 truncate"
+                    >
+                      Teste Entidade 2
+                    </h3>
+                    <p
+                      class="text-xs text-gray-500"
+                    >
+                      CNPJ: 
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex-shrink-0"
+                >
+                  <span
+                    class="text-xs font-medium text-gray-600"
+                  >
+                    Entidade
+                  </span>
+                </div>
+                <div
+                  class="flex-shrink-0"
+                >
+                  <span
+                    class="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                  >
+                    Pendente
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
 
-      at info (components/modals/ModalContrato.tsx:305:31)
+      175 |     render(<NovoscadastrosContent />);
+      176 |
+    > 177 |     await waitFor(() => {
+          |                  ^
+      178 |       expect(screen.getByText('Aprovar')).toBeInTheDocument();
+      179 |     });
+      180 |   });
 
-A worker process has failed to exit gracefully and has been force exited. This is likely caused by tests leaking due to improper teardown. Try running with --detectOpenHandles to find leaks. Active timers can also cause this, ensure that .unref() was called on them.
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/admin/admin-ui-conditional-approval.test.tsx:177:18)
 
-Test Suites: 2 failed, 8 passed, 10 total
-Tests:       5 failed, 91 passed, 96 total
-Snapshots:   0 total
-Time:        15.715 s
-Ran all test suites matching __tests__/components/ModalContrato|__tests__/components/suporte|__tests__/registration|__tests__/api/suporte|__tests__/correcoes-01-04-2026.
+  ÔùÅ NovoscadastrosContent - Aprova├º├úo Condicional ÔÇ║ deve renderizar status "Pagamento Confirmado" para tomadores pagos
+
+    Unable to find an element with the text: /pagamento confirmado/i. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    <body>
+      <div>
+        <div
+          class="p-6"
+        >
+          <div
+            class="mb-6"
+          >
+            <h2
+              class="text-xl font-semibold text-gray-900 mb-4"
+            >
+              Novos Cadastros
+            </h2>
+            <div
+              class="flex gap-2"
+            >
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-orange-500 text-white"
+              >
+                Todos
+              </button>
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Cl├¡nicas
+              </button>
+              <button
+                class="px-4 py-2 rounded-md text-sm font-medium transition-colors bg-gray-100 text-gray-700 hover:bg-gray-200"
+              >
+                Entidades
+              </button>
+            </div>
+          </div>
+          <div
+            class="grid gap-3"
+          >
+            <div
+              class="border border-gray-200 rounded-lg p-4 transition-all bg-white hover:shadow-md"
+            >
+              <div
+                class="flex items-center justify-between gap-4"
+              >
+                <input
+                  class="w-5 h-5 rounded border-gray-300 cursor-pointer"
+                  type="checkbox"
+                />
+                <div
+                  class="flex items-center gap-3 flex-1 min-w-0"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="lucide lucide-building2 lucide-building-2 w-6 h-6 text-green-500 flex-shrink-0"
+                    fill="none"
+                    height="24"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M10 12h4"
+                    />
+                    <path
+                      d="M10 8h4"
+                    />
+                    <path
+                      d="M14 21v-3a2 2 0 0 0-4 0v3"
+                    />
+                    <path
+                      d="M6 10H4a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-2"
+                    />
+                    <path
+                      d="M6 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16"
+                    />
+                  </svg>
+                  <div
+                    class="min-w-0"
+                  >
+                    <h3
+                      class="text-sm font-semibold text-gray-900 truncate"
+                    >
+                      Teste Pago
+                    </h3>
+                    <p
+                      class="text-xs text-gray-500"
+                    >
+                      CNPJ: 
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex-shrink-0"
+                >
+                  <span
+                    class="text-xs font-medium text-gray-600"
+                  >
+                    Entidade
+                  </span>
+                </div>
+                <div
+                  class="flex-shrink-0"
+                >
+                  <span
+                    class="px-3 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded-full"
+                  >
+                    Pendente
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </body>
+
+      268 |     render(<NovoscadastrosContent />);
+      269 |
+    > 270 |     await waitFor(() => {
+          |                  ^
+      271 |       expect(screen.getByText(/pagamento confirmado/i)).toBeInTheDocument();
+      272 |     });
+      273 |   });
+
+      at waitForWrapper (node_modules/.pnpm/@testing-library+dom@10.4.1/node_modules/@testing-library/dom/dist/wait-for.js:163:27)
+      at Object.<anonymous> (__tests__/admin/admin-ui-conditional-approval.test.tsx:270:18)
+

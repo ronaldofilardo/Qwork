@@ -15,14 +15,8 @@ jest.mock('@/lib/session', () => ({
     perfil: 'comercial',
   }),
 }));
-jest.mock('@/lib/representantes/gerar-convite', () => ({
-  gerarTokenConvite: jest
-    .fn()
-    .mockResolvedValue({
-      link: 'http://localhost/convite/abc',
-      expira_em: '2026-12-31',
-    }),
-  logEmailConvite: jest.fn(),
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn().mockResolvedValue('$2b$12$hashedvalue'),
 }));
 jest.mock('@/lib/storage/representante-storage', () => ({
   uploadDocumentoRepresentante: jest.fn().mockResolvedValue({
@@ -62,7 +56,7 @@ describe('POST /api/comercial/representantes — código sequencial', () => {
     jest.clearAllMocks();
   });
 
-  it('usa nextval(seq_representante_codigo) para gerar código', async () => {
+  function setupSuccessMocks() {
     mockQuery
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // CPF check
       .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // email check
@@ -70,6 +64,10 @@ describe('POST /api/comercial/representantes — código sequencial', () => {
       .mockResolvedValueOnce({ rows: [{ id: 1 }], rowCount: 1 } as any) // INSERT representante
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT senhas
       .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // UPDATE doc_path
+  }
+
+  it('usa nextval(seq_representante_codigo) para gerar código', async () => {
+    setupSuccessMocks();
 
     const { POST } = await import('@/app/api/comercial/representantes/route');
 
@@ -94,5 +92,75 @@ describe('POST /api/comercial/representantes — código sequencial', () => {
     if (res.status === 201) {
       expect(data.codigo).toBe('100');
     }
+  });
+
+  it('retorna senha_temporaria no formato CPF[0..5]+Qw+CPF[-2..] e NÃO retorna convite_url', async () => {
+    setupSuccessMocks();
+
+    const { POST } = await import('@/app/api/comercial/representantes/route');
+
+    const req = makeFakeRequest({
+      nome: 'Rep Senha Temp',
+      tipo_pessoa: 'pf',
+      email: 'senhatemp@test.com',
+      cpf: '12345678901',
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(201);
+    const data = await res.json();
+
+    expect(data).toHaveProperty('senha_temporaria');
+    expect(data.senha_temporaria).toMatch(/^\d{6}Qw\d{2}$/);
+    expect(data).not.toHaveProperty('convite_url');
+  });
+
+  it('insere representante com status apto (não aguardando_senha)', async () => {
+    setupSuccessMocks();
+
+    const { POST } = await import('@/app/api/comercial/representantes/route');
+
+    const req = makeFakeRequest({
+      nome: 'Rep Apto',
+      tipo_pessoa: 'pf',
+      email: 'apto@test.com',
+      cpf: '12345678901',
+    });
+
+    await POST(req);
+
+    const insertRepCall = mockQuery.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('INSERT INTO public.representantes')
+    );
+    expect(insertRepCall).toBeDefined();
+    expect(insertRepCall![0]).toMatch(/'apto'/);
+    expect(insertRepCall![0]).not.toMatch(/'aguardando_senha'/);
+  });
+
+  it('insere representantes_senhas com primeira_senha_alterada = FALSE', async () => {
+    setupSuccessMocks();
+
+    const { POST } = await import('@/app/api/comercial/representantes/route');
+
+    const req = makeFakeRequest({
+      nome: 'Rep Senha Hash',
+      tipo_pessoa: 'pf',
+      email: 'senhahash@test.com',
+      cpf: '12345678901',
+    });
+
+    await POST(req);
+
+    const senhasInsertCall = mockQuery.mock.calls.find(
+      ([sql]) =>
+        typeof sql === 'string' &&
+        sql.includes('representantes_senhas') &&
+        sql.includes('INSERT')
+    );
+    expect(senhasInsertCall).toBeDefined();
+    expect(senhasInsertCall![0]).toMatch(/primeira_senha_alterada/i);
+    expect(senhasInsertCall![0]).toMatch(/FALSE/i);
   });
 });

@@ -92,31 +92,19 @@ export async function ativarEntidade(
   session?: Session
 ): Promise<{ success: boolean; message: string; tomador?: Entidade }> {
   const checkResult = await query<{
-    pagamento_confirmado: boolean;
     ativa: boolean;
-  }>(
-    'SELECT pagamento_confirmado, ativa FROM entidades WHERE id = $1',
-    [id],
-    session
-  );
+  }>('SELECT ativa FROM entidades WHERE id = $1', [id], session);
 
   if (checkResult.rows.length === 0) {
     return { success: false, message: 'Entidade não encontrada' };
   }
 
-  const { pagamento_confirmado, ativa } = checkResult.rows[0];
+  const { ativa } = checkResult.rows[0];
 
-  if (DEBUG_DB)
-    console.log(
-      `[ativarEntidade] ID=${id}, pagamento_confirmado=${pagamento_confirmado}, ativa=${ativa}`
-    );
+  if (DEBUG_DB) console.log(`[ativarEntidade] ID=${id}, ativa=${ativa}`);
 
   if (ativa) {
     return { success: false, message: 'Entidade já está ativo' };
-  }
-
-  if (!pagamento_confirmado) {
-    return { success: false, message: 'Pagamento não confirmado' };
   }
 
   // Verificar recibo
@@ -190,7 +178,6 @@ export async function solicitarReanalise(
      SET status = 'em_reanalise',
          observacoes_reanalise = $2,
          ativa = false,
-         pagamento_confirmado = false,
          data_liberacao_login = NULL,
          data_primeiro_pagamento = NULL
      WHERE id = $1

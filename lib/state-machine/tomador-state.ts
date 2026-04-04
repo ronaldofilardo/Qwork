@@ -15,7 +15,6 @@ export type TomadorStatus =
 
 export interface TomadorState {
   status: TomadorStatus;
-  pagamento_confirmado: boolean;
   contrato_aceito: boolean;
   recibo_gerado: boolean;
   ativa: boolean;
@@ -113,10 +112,6 @@ export function canActivateAccount(state: TomadorState): {
     errors.push('Status deve ser "aprovado"');
   }
 
-  if (!state.pagamento_confirmado) {
-    errors.push('Pagamento deve estar confirmado');
-  }
-
   if (!state.contrato_aceito) {
     errors.push('Contrato deve estar aceito');
   }
@@ -174,10 +169,6 @@ export class TomadorStateMachine {
 
     // Atualizar estado baseado na transição
     this.data.status = nextStatus;
-
-    if (nextStatus === 'pagamento_confirmado') {
-      this.data.pagamento_confirmado = true;
-    }
 
     if (nextStatus === 'aprovado') {
       this.data.ativa = true;

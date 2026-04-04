@@ -38,6 +38,12 @@ export default function ModalContrato({
   const [contrato, setContrato] = useState<Contrato | null>(null);
   const [loading, setLoading] = useState(false);
   const [processando, setProcessando] = useState(false);
+  const [processoMensagem, setProcessoMensagem] = useState(
+    'Processando aceite...'
+  );
+  const [processoDetalhe, setProcessoDetalhe] = useState(
+    'Aguarde, estamos registrando sua confirmação.'
+  );
   const [erro, setErro] = useState('');
 
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -100,7 +106,7 @@ export default function ModalContrato({
     // Pequeno delay para o DOM atualizar
     const t = setTimeout(checkInitialScroll, 100);
     return () => clearTimeout(t);
-  }, [isOpen, contrato?.conteudo]);
+  }, [isOpen, contrato]);
 
   if (!isOpen) return null;
 
@@ -111,10 +117,8 @@ export default function ModalContrato({
         {processando && (
           <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/90 rounded-lg gap-4">
             <Loader2 className="w-10 h-10 animate-spin text-orange-600" />
-            <p className="text-gray-700 font-medium">Processando aceite...</p>
-            <p className="text-sm text-gray-500">
-              Aguarde, estamos registrando sua confirmação.
-            </p>
+            <p className="text-gray-700 font-medium">{processoMensagem}</p>
+            <p className="text-sm text-gray-500">{processoDetalhe}</p>
           </div>
         )}
         {/* Header */}
@@ -283,10 +287,15 @@ export default function ModalContrato({
                     );
                     return;
                   }
+                  setProcessoMensagem('Processando aceite...');
+                  setProcessoDetalhe(
+                    'Aguarde, estamos registrando sua confirmação.'
+                  );
                   setProcessando(true);
                   setLoading(true);
                   setErro('');
                   void (async () => {
+                    let didRedirect = false;
                     try {
                       const res = await fetch('/api/contratos', {
                         method: 'POST',
@@ -306,7 +315,6 @@ export default function ModalContrato({
                         '[CONTRATO] Aceite registrado:',
                         JSON.stringify({
                           contrato_id: contrato.id,
-                          simulador_url: data.simulador_url,
                           timestamp: new Date().toISOString(),
                         })
                       );
@@ -315,11 +323,23 @@ export default function ModalContrato({
                         console.info(
                           '[CONTRATO] Redirecionando para boas-vindas'
                         );
+                        didRedirect = true;
+                        setProcessoMensagem(
+                          'Tudo certo! Preparando sua área de trabalho...'
+                        );
+                        setProcessoDetalhe(
+                          'Você será redirecionado em instantes.'
+                        );
                         router.push(data.boasVindasUrl);
                         return;
                       }
 
                       if (data.simulador_url) {
+                        didRedirect = true;
+                        setProcessoMensagem(
+                          'Aceite confirmado! Redirecionando...'
+                        );
+                        setProcessoDetalhe('Aguarde um momento.');
                         window.location.href = data.simulador_url;
                         return;
                       }
@@ -328,11 +348,12 @@ export default function ModalContrato({
                         console.info(
                           '[CONTRATO] Login liberado automaticamente após aceite'
                         );
-                        alert(
-                          'Contrato aceito com sucesso!\n\n' +
-                            'Seu acesso foi liberado imediatamente.\n' +
-                            'Login: CPF do responsável + últimos 6 dígitos do CNPJ como senha.\n\n' +
-                            'Redirecionando para login...'
+                        didRedirect = true;
+                        setProcessoMensagem(
+                          'Acesso liberado! Redirecionando para login...'
+                        );
+                        setProcessoDetalhe(
+                          'Use seu CPF e os últimos 6 dígitos do CNPJ como senha.'
                         );
                         router.push('/login');
                         return;
@@ -349,8 +370,10 @@ export default function ModalContrato({
                           : 'Erro ao aceitar contrato'
                       );
                     } finally {
-                      setLoading(false);
-                      setProcessando(false);
+                      if (!didRedirect) {
+                        setLoading(false);
+                        setProcessando(false);
+                      }
                     }
                   })();
                 }}

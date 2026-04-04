@@ -44,7 +44,6 @@ export interface Entidade {
   motivo_rejeicao?: string;
   observacoes_reanalise?: string;
   ativa: boolean;
-  pagamento_confirmado: boolean;
   numero_funcionarios_estimado?: number;
   criado_em: Date;
   atualizado_em: Date;

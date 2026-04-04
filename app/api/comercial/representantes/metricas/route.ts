@@ -28,6 +28,8 @@ export async function GET(request: Request): Promise<NextResponse> {
       vinculos_ativos: string;
       comissoes_pendentes: string;
       valor_pendente: string;
+      aceite_contrato_em: string | null;
+      vendedores_count: string;
     }>(
       `SELECT
          r.id,
@@ -35,6 +37,7 @@ export async function GET(request: Request): Promise<NextResponse> {
          r.email,
          r.status,
          r.codigo,
+         r.aceite_disclaimer_nv_em                                  AS aceite_contrato_em,
          COUNT(DISTINCT lr.id) FILTER (
            WHERE lr.status NOT IN ('expirado', 'convertido')
          )                                                          AS leads_ativos,
@@ -51,13 +54,19 @@ export async function GET(request: Request): Promise<NextResponse> {
            SUM(cl.valor_comissao) FILTER (
              WHERE cl.status NOT IN ('paga', 'cancelada', 'congelada_rep_suspenso', 'congelada_aguardando_admin')
            ), 0
-         )                                                          AS valor_pendente
+         )                                                          AS valor_pendente,
+         (
+           SELECT COUNT(*)
+           FROM public.hierarquia_comercial hc_v
+           WHERE hc_v.representante_id = r.id
+             AND hc_v.ativo = true
+         )                                                          AS vendedores_count
        FROM public.representantes r
        LEFT JOIN public.leads_representante lr ON lr.representante_id = r.id
        LEFT JOIN public.vinculos_comissao vc ON vc.representante_id = r.id
        LEFT JOIN public.comissoes_laudo cl ON cl.vinculo_id = vc.id
        WHERE r.status ${soDesativados ? "= 'desativado'" : "NOT IN ('desativado')"}
-       GROUP BY r.id
+       GROUP BY r.id, r.aceite_disclaimer_nv_em
        ORDER BY leads_ativos DESC, r.nome`
     );
 
@@ -73,6 +82,8 @@ export async function GET(request: Request): Promise<NextResponse> {
         vinculos_ativos: parseInt(r.vinculos_ativos ?? '0', 10),
         comissoes_pendentes: parseInt(r.comissoes_pendentes ?? '0', 10),
         valor_pendente: parseFloat(r.valor_pendente ?? '0'),
+        aceite_contrato_em: r.aceite_contrato_em ?? null,
+        vendedores_count: parseInt(r.vendedores_count ?? '0', 10),
       })),
       total: rows.rows.length,
     });

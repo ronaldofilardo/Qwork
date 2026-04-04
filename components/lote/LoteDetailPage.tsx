@@ -1094,6 +1094,7 @@ export default function LoteDetailPage({
           loteId={modalEmissao.loteId}
           gestorEmail={modalEmissao.gestorEmail}
           gestorCelular={modalEmissao.gestorCelular}
+          contexto={isEntidade ? 'gestor' : 'rh'}
         />
       )}
 

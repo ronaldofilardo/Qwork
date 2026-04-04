@@ -122,9 +122,9 @@ export default function CriarSenhaForm() {
 
       if (res.ok && data.success) {
         setEstado({ fase: 'sucesso' });
-        // Redirecionar após 2s
+        // Redirecionar para aceitar contrato e termos após 2s
         setTimeout(() => {
-          router.push('/representante/login?msg=senha_criada');
+          router.push('/representante/aceitar-contrato');
         }, 2000);
       } else {
         setErroForm(data.error ?? 'Erro ao criar senha. Tente novamente.');
