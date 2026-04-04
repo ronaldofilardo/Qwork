@@ -67,7 +67,7 @@ export default function ImportacaoFlowGuide() {
 
       <div className="flex flex-wrap items-start gap-1.5 mb-2">
         {importacaoSteps.map((step, index) => {
-          const isLast = index === importacaoSteps.length - 1;
+          const _isLast = index === importacaoSteps.length - 1;
           return (
             <div key={index} className="flex items-start gap-2">
               {/* Main step button with tooltip */}

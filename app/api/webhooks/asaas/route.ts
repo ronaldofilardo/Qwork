@@ -2,6 +2,7 @@
 // Endpoint de webhook para receber notificações do Asaas Payment Gateway
 
 import { NextRequest, NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 import {
   validateWebhookSignature,
   handlePaymentWebhook,
@@ -117,6 +118,17 @@ export async function POST(request: NextRequest) {
       try {
         await handlePaymentWebhook(payload);
         console.log('[Asaas Webhook] ✅ Webhook processado com sucesso');
+        // Invalidar cache do mini-dashboard financeiro nas páginas de conta
+        if (
+          payload.event === 'PAYMENT_CONFIRMED' ||
+          payload.event === 'PAYMENT_RECEIVED'
+        ) {
+          revalidatePath('/rh/conta');
+          revalidatePath('/entidade/conta');
+          console.log(
+            '[Asaas Webhook] 🔄 Cache das páginas de conta invalidado'
+          );
+        }
       } catch (error: any) {
         console.error('[Asaas Webhook] ❌ Erro ao processar webhook:', error);
       }
@@ -125,14 +137,25 @@ export async function POST(request: NextRequest) {
       console.log(
         '[Asaas Webhook] Processando webhook de forma ASSÍNCRONA (production)'
       );
-      handlePaymentWebhook(payload).catch((error) => {
-        console.error(
-          '[Asaas Webhook] Erro no processamento assíncrono:',
-          error
-        );
-        // Em produção, você deve registrar este erro em um sistema de monitoramento
-        // Ex: Sentry, Datadog, CloudWatch, etc.
-      });
+      handlePaymentWebhook(payload)
+        .then(() => {
+          // Invalidar cache do mini-dashboard financeiro nas páginas de conta
+          if (
+            payload.event === 'PAYMENT_CONFIRMED' ||
+            payload.event === 'PAYMENT_RECEIVED'
+          ) {
+            revalidatePath('/rh/conta');
+            revalidatePath('/entidade/conta');
+          }
+        })
+        .catch((error) => {
+          console.error(
+            '[Asaas Webhook] Erro no processamento assíncrono:',
+            error
+          );
+          // Em produção, você deve registrar este erro em um sistema de monitoramento
+          // Ex: Sentry, Datadog, CloudWatch, etc.
+        });
     }
 
     const duration = Date.now() - startTime;

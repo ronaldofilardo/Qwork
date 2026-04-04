@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, User, Bell, Upload } from 'lucide-react';
+import { Building2, User, Upload } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 import { PWAMenuItem } from '@/components/PWAMenuItem';
@@ -88,19 +88,12 @@ export default function ClinicaSidebar({
         onClick={() => router.push('/rh')}
       />
 
-      {/* Seção Notificações */}
+      {/* Seção Importação em Massa */}
       <MenuItem
-        icon={Bell}
-        label="Notificações"
-        count={
-          counts.notificacoes || (counts.lotes || 0) + (counts.laudos || 0)
-        }
-        isActive={
-          pathname?.startsWith('/rh/notificacoes') ||
-          pathname === '/rh/lotes' ||
-          pathname === '/rh/laudos'
-        }
-        onClick={() => router.push('/rh/notificacoes')}
+        icon={Upload}
+        label="Importação em Massa"
+        isActive={pathname?.startsWith('/rh/importacao') || false}
+        onClick={() => router.push('/rh/importacao')}
       />
 
       {/* Seção Informações da Conta */}
@@ -109,14 +102,6 @@ export default function ClinicaSidebar({
         label="Informações da Conta"
         isActive={pathname === '/rh/conta'}
         onClick={() => router.push('/rh/conta')}
-      />
-
-      {/* Seção Importação em Massa */}
-      <MenuItem
-        icon={Upload}
-        label="Importação em Massa"
-        isActive={pathname?.startsWith('/rh/importacao') || false}
-        onClick={() => router.push('/rh/importacao')}
       />
 
       {/* Separador */}

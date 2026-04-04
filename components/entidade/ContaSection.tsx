@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Building2, Download } from 'lucide-react';
 import PagamentosFinanceiros from '@/components/shared/PagamentosFinanceiros';
+import MiniDashboardFinanceiro from '@/components/shared/financeiro/MiniDashboardFinanceiro';
 
 interface ContaSectionState {
   nome: string;
@@ -266,6 +267,9 @@ export default function EntidadeContaSection() {
             </p>
           )}
         </div>
+
+        {/* Mini-Dashboard Financeiro */}
+        <MiniDashboardFinanceiro apiUrl="/api/entidade/financeiro-resumo" />
 
         {/* Dados Financeiros de Laudos */}
         {orgInfo && (

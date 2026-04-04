@@ -116,7 +116,7 @@ export default function FlowStepsExplainer({
       {/* Flow Steps com Tooltips */}
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
         {flowSteps.map((step, index) => {
-          const isLast = index === flowSteps.length - 1;
+          const _isLast = index === flowSteps.length - 1;
           return (
             <div key={index} className="flex items-center gap-2">
               {/* Main step button with tooltip */}
