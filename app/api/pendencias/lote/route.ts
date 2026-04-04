@@ -144,6 +144,13 @@ export async function GET(request: NextRequest) {
          INNER JOIN funcionarios_clinicas fc ON fc.funcionario_id = f.id
          WHERE fc.empresa_id = $1
            AND fc.clinica_id = $2
+           AND (
+             fc.ativo = true
+             OR EXISTS (
+               SELECT 1 FROM avaliacoes a_lote
+               WHERE a_lote.funcionario_cpf = f.cpf AND a_lote.lote_id = $3
+             )
+           )
            AND NOT EXISTS (
              SELECT 1 FROM avaliacoes a5
              JOIN lotes_avaliacao la5 ON la5.id = a5.lote_id
@@ -217,6 +224,13 @@ export async function GET(request: NextRequest) {
        FROM funcionarios f
        INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
        WHERE fe.entidade_id = $1
+         AND (
+           fe.ativo = true
+           OR EXISTS (
+             SELECT 1 FROM avaliacoes a_lote
+             WHERE a_lote.funcionario_cpf = f.cpf AND a_lote.lote_id = $2
+           )
+         )
          AND NOT EXISTS (
            SELECT 1 FROM avaliacoes a5
            JOIN lotes_avaliacao la5 ON la5.id = a5.lote_id
