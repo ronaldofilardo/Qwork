@@ -23,8 +23,6 @@ interface ValidationIssue {
 interface ValidationSummary {
   totalLinhas: number;
   linhasValidas: number;
-  linhasComErro: number;
-  linhasComAviso: number;
   erros: ValidationIssue[];
   avisos: ValidationIssue[];
 }
@@ -84,7 +82,7 @@ export default function DataPreview({
   onBack,
   isLoading,
 }: DataPreviewProps) {
-  const temErros = validacao.linhasComErro > 0;
+  const temErros = validacao.erros.length > 0;
 
   return (
     <div className="space-y-4">
@@ -105,13 +103,13 @@ export default function DataPreview({
         <StatCard
           icon={<AlertCircle size={20} />}
           label="Linhas com Erro"
-          value={validacao.linhasComErro}
+          value={validacao.erros.length}
           color="red"
         />
         <StatCard
           icon={<AlertTriangle size={20} />}
           label="Linhas com Aviso"
-          value={validacao.linhasComAviso}
+          value={validacao.avisos.length}
           color="yellow"
         />
       </div>

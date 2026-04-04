@@ -1,8 +1,10 @@
 /**
  * Testes para /api/pendencias/lote
  *
- * Cobre mudanças de 27/02/2026:
- *  - Funcionários inativos INCLUÍDOS nas pendências (filtro f.ativo/fe.ativo removido)
+ * Comportamento esperado:
+ *  - Apenas funcionários ATIVOS (fc.ativo=true / fe.ativo=true) são incluídos nas pendências
+ *  - Exceção: inativos que estejam presentes no lote atual (INATIVADO_NO_LOTE) ainda aparecem
+ *  - Inativos que NUNCA participaram de nenhum lote são excluídos pelo filtro SQL
  *  - Lote de referência usa ID real (não numero_ordem)
  *  - Motivos: INATIVADO_NO_LOTE | NUNCA_AVALIADO | ADICIONADO_APOS_LOTE | SEM_CONCLUSAO_VALIDA
  *  - Dois modos: RH (empresa_id + funcionarios_clinicas) e GESTOR (entidade + funcionarios_entidades)
@@ -68,15 +70,15 @@ describe('/api/pendencias/lote', () => {
   // AUTH
   // ─────────────────────────────────────────────────────────────────────────
   describe('autenticação', () => {
-    it('deve retornar 403 quando sem sessão', async () => {
+    it('deve retornar 401 quando sem sessão', async () => {
       mockGetSession.mockReturnValue(null);
       const { GET } = await import('@/app/api/pendencias/lote/route');
       const res = await GET(
         makeRequest('http://localhost:3000/api/pendencias/lote')
       );
-      expect(res.status).toBe(403);
+      expect(res.status).toBe(401);
       const data = await res.json();
-      expect(data.error).toBe('Não autorizado');
+      expect(data.error).toBe('Autenticação requerida');
     });
 
     it('deve retornar 403 para perfil admin', async () => {
@@ -150,10 +152,16 @@ describe('/api/pendencias/lote', () => {
       expect(data.funcionarios[0].ativo).toBe(true);
     });
 
-    it('deve incluir funcionários INATIVOS nas pendências', async () => {
+    it('deve incluir INATIVADO_NO_LOTE quando inativo faz parte do lote atual', async () => {
+      const funcInativadoNoLote = {
+        ...FUNC_INATIVO,
+        motivo: 'INATIVADO_NO_LOTE',
+        inativacao_lote_id: 1036,
+        inativacao_lote_numero_ordem: 15,
+      };
       mockQuery
         .mockResolvedValueOnce({ rows: [LOTE_REF] })
-        .mockResolvedValueOnce({ rows: [FUNC_ATIVO, FUNC_INATIVO] });
+        .mockResolvedValueOnce({ rows: [FUNC_ATIVO, funcInativadoNoLote] });
 
       const { GET } = await import('@/app/api/pendencias/lote/route');
       const res = await GET(
@@ -161,10 +169,14 @@ describe('/api/pendencias/lote', () => {
       );
       expect(res.status).toBe(200);
       const data = await res.json();
+      // total = 2: ativo (NUNCA_AVALIADO) + inativo que estava no lote (INATIVADO_NO_LOTE)
       expect(data.total).toBe(2);
-      const inativos = data.funcionarios.filter((f: any) => !f.ativo);
-      expect(inativos).toHaveLength(1);
-      expect(inativos[0].nome).toBe('Funcionario Inativo');
+      const inativados = data.funcionarios.filter(
+        (f: any) => f.motivo === 'INATIVADO_NO_LOTE'
+      );
+      expect(inativados).toHaveLength(1);
+      expect(inativados[0].nome).toBe('Funcionario Inativo');
+      expect(inativados[0].inativacao_lote_id).toBe(1036);
     });
 
     it('deve retornar o ID real do lote (não numero_ordem)', async () => {
@@ -185,7 +197,7 @@ describe('/api/pendencias/lote', () => {
     it('deve calcular contadores por motivo corretamente', async () => {
       const funcs = [
         { ...FUNC_ATIVO, motivo: 'NUNCA_AVALIADO' },
-        { ...FUNC_INATIVO, motivo: 'NUNCA_AVALIADO' },
+        { ...FUNC_INATIVO, motivo: 'INATIVADO_NO_LOTE', inativacao_lote_id: 1036 },
         { ...FUNC_ATIVO, cpf: '33333333333', motivo: 'SEM_CONCLUSAO_VALIDA' },
       ];
       mockQuery
@@ -197,7 +209,8 @@ describe('/api/pendencias/lote', () => {
         makeRequest('http://localhost:3000/api/pendencias/lote?empresa_id=5')
       );
       const data = await res.json();
-      expect(data.contadores.NUNCA_AVALIADO).toBe(2);
+      expect(data.contadores.NUNCA_AVALIADO).toBe(1);
+      expect(data.contadores.INATIVADO_NO_LOTE).toBe(1);
       expect(data.contadores.SEM_CONCLUSAO_VALIDA).toBe(1);
     });
 
@@ -250,10 +263,15 @@ describe('/api/pendencias/lote', () => {
       expect(data.funcionarios).toHaveLength(1);
     });
 
-    it('deve incluir funcionários INATIVOS para entidade', async () => {
+    it('deve incluir INATIVADO_NO_LOTE para entidade quando inativo faz parte do lote', async () => {
+      const funcInativadoNoLote = {
+        ...FUNC_INATIVO,
+        motivo: 'INATIVADO_NO_LOTE',
+        inativacao_lote_id: 1036,
+      };
       mockQuery
         .mockResolvedValueOnce({ rows: [LOTE_REF] })
-        .mockResolvedValueOnce({ rows: [FUNC_ATIVO, FUNC_INATIVO] });
+        .mockResolvedValueOnce({ rows: [FUNC_ATIVO, funcInativadoNoLote] });
 
       const { GET } = await import('@/app/api/pendencias/lote/route');
       const res = await GET(
@@ -262,7 +280,9 @@ describe('/api/pendencias/lote', () => {
       expect(res.status).toBe(200);
       const data = await res.json();
       expect(data.total).toBe(2);
-      expect(data.funcionarios.some((f: any) => !f.ativo)).toBe(true);
+      expect(
+        data.funcionarios.some((f: any) => f.motivo === 'INATIVADO_NO_LOTE')
+      ).toBe(true);
     });
 
     it('deve retornar lote com id real (não numero_ordem)', async () => {

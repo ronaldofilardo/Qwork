@@ -4,6 +4,7 @@ import { useState, useCallback, useRef } from 'react';
 import { FileSpreadsheet, ArrowLeft, BookmarkPlus } from 'lucide-react';
 import Link from 'next/link';
 import UploadArea from '@/components/importacao/UploadArea';
+import ImportacaoFlowGuide from '@/components/ImportacaoFlowGuide';
 import ColumnMapper from '@/components/importacao/ColumnMapper';
 import DataPreview from '@/components/importacao/DataPreview';
 import ImportResult from '@/components/importacao/ImportResult';
@@ -331,6 +332,9 @@ export default function ImportacaoPage() {
         <h1 className="text-xl font-bold text-gray-900">Importação em Massa</h1>
       </div>
 
+      {/* Guia do fluxo de importação */}
+      <ImportacaoFlowGuide />
+
       {/* Stepper */}
       <div className="flex items-center gap-1 mb-6">
         {stepOrder.map((s, i) => (
@@ -364,7 +368,20 @@ export default function ImportacaoPage() {
 
       {/* Step Content */}
       {step === 'upload' && (
-        <UploadArea onFileSelect={handleFileSelect} isLoading={loading} />
+        <>
+          <UploadArea onFileSelect={handleFileSelect} isLoading={loading} />
+          {loading && (
+            <div className="mt-4 space-y-2">
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="h-full bg-primary animate-pulse rounded-full w-full" />
+              </div>
+              <p className="text-sm text-gray-500 text-center">
+                Analisando arquivo... isso pode levar alguns segundos para
+                planilhas grandes.
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {step === 'mapeamento' && analyzeData && (
@@ -396,21 +413,28 @@ export default function ImportacaoPage() {
         <>
           {/* Salvar template: apenas na primeira importação (sem template aplicado) */}
           {showSaveTemplate && mapeamento && !appliedTemplate && (
-            <SaveTemplateForm
-              mapeamentos={mapeamento.map((m) => ({
-                nomeOriginal: m.nomeOriginal,
-                campoQWork: m.campoQWork,
-              }))}
-              nivelCargoMap={nivelCargoMap ?? undefined}
-              onSaved={(id) => {
-                setLastSavedTemplateId(id);
-                setShowSaveTemplate(false);
-              }}
-              onSkip={() => {
-                setLastSavedTemplateId(null);
-                setShowSaveTemplate(false);
-              }}
-            />
+            <>
+              <div className="mb-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-sm text-blue-800">
+                💡 <strong>Template:</strong> salva o mapeamento de colunas
+                desta planilha para reutilizar em importações futuras com o
+                mesmo formato de colunas.
+              </div>
+              <SaveTemplateForm
+                mapeamentos={mapeamento.map((m) => ({
+                  nomeOriginal: m.nomeOriginal,
+                  campoQWork: m.campoQWork,
+                }))}
+                nivelCargoMap={nivelCargoMap ?? undefined}
+                onSaved={(id) => {
+                  setLastSavedTemplateId(id);
+                  setShowSaveTemplate(false);
+                }}
+                onSkip={() => {
+                  setLastSavedTemplateId(null);
+                  setShowSaveTemplate(false);
+                }}
+              />
+            </>
           )}
           {/* Prompt de atualização do template com novos cargos */}
           {showUpdateTemplatePrompt && pendingNivelMap && appliedTemplate && (
@@ -460,8 +484,6 @@ export default function ImportacaoPage() {
             validacao={{
               totalLinhas: validateData.resumo.totalLinhas,
               linhasValidas: validateData.resumo.linhasValidas,
-              linhasComErro: validateData.resumo.linhasComErros,
-              linhasComAviso: validateData.resumo.linhasComAvisos,
               erros: validateData.erros,
               avisos: validateData.avisos,
             }}
