@@ -33,14 +33,16 @@ async function resolveDocUrl(
         ''
       ).trim();
 
-      const endpoint =
+      const endpoint = (
         process.env.BACKBLAZE_ENDPOINT ||
         process.env.BACKBLAZE_S2_ENDPOINT ||
-        'https://s3.us-east-005.backblazeb2.com';
-      const region =
+        'https://s3.us-east-005.backblazeb2.com'
+      ).trim();
+      const region = (
         process.env.BACKBLAZE_REGION ||
         endpoint.match(/s3\.([a-z0-9-]+)\.backblazeb2\.com/)?.[1] ||
-        'us-east-005';
+        'us-east-005'
+      ).trim();
 
       const keyId =
         cadKeyId ||
