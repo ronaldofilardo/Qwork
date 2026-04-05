@@ -72,7 +72,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const rows = parsed.data;
 
-    // Batch validations
+    // Batch validations (usando funções legadas que aceitam tipos diferentes)
     const cpfCheck = validarCPFsUnicos(
       rows as unknown as Parameters<typeof validarCPFsUnicos>[0]
     );
@@ -298,8 +298,8 @@ export async function POST(request: Request): Promise<NextResponse> {
             const insertFunc = await client.query(
               `INSERT INTO funcionarios (
                 cpf, nome, data_nascimento, setor, funcao, email,
-                senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala
-              ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
+                senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, clinica_id
+              ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,$12)
               RETURNING id`,
               [
                 r.cpf,
@@ -313,6 +313,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                 r.nivel_cargo || null,
                 r.turno || null,
                 r.escala || null,
+                clinicaId,
               ]
             );
             const funcionarioId = insertFunc.rows[0].id as number;

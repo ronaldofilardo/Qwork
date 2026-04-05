@@ -362,8 +362,8 @@ export async function POST(request: Request): Promise<NextResponse> {
               const insertFunc = await client.query(
                 `INSERT INTO funcionarios (
                   cpf, nome, data_nascimento, setor, funcao, email,
-                  senha_hash, perfil, ativo, matricula, nivel_cargo, usuario_tipo
-                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,'funcionario_clinica'::usuario_tipo_enum)
+                  senha_hash, perfil, ativo, matricula, nivel_cargo, usuario_tipo, clinica_id
+                ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,'funcionario_clinica'::usuario_tipo_enum,$10)
                 RETURNING id`,
                 [
                   cpf,
@@ -375,6 +375,7 @@ export async function POST(request: Request): Promise<NextResponse> {
                   senhaHash,
                   matricula,
                   nivelCargo,
+                  clinicaId,
                 ]
               );
               funcionarioId = insertFunc.rows[0].id as number;

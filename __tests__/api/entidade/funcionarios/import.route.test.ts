@@ -474,4 +474,80 @@ describe('import route', () => {
     expect(Array.isArray(json.warnings)).toBe(true);
     expect(json.warnings[0]).toContain('74867746070');
   });
+
+  /**
+   * @test Valida que contratante_id é passado corretamente (constraint funcionarios_clinica_check)
+   * @description Deve passar contratante_id no INSERT para satisfazer a constraint que exige:
+   *              clinica_id IS NOT NULL OR contratante_id IS NOT NULL OR perfil IN (...)
+   */
+  it('passes contratante_id in INSERT funcionarios to satisfy constraint', async () => {
+    queryAsGestorEntidade.mockReset();
+
+    parseXlsxBufferToRows.mockReturnValue({
+      success: true,
+      data: [
+        {
+          cpf: '88888888888',
+          nome: 'Diego Test',
+          data_nascimento: '1995-05-10',
+          setor: 'TI',
+          funcao: 'Dev',
+          email: 'diego@entidade.com',
+        },
+      ],
+    });
+
+    // CPF não existe
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+    // Nenhuma matrícula a verificar
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+    // INSERT funcionarios RETURNING id
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 55 }] });
+
+    // INSERT funcionarios_entidades
+    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
+
+    const fakeFile = {
+      arrayBuffer: async () => new ArrayBuffer(8),
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      name: 'teste.xlsx',
+    };
+
+    const req = {
+      formData: async () => ({ get: () => fakeFile }),
+    } as unknown as Request;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+
+    // Extrair chamadas de INSERT
+    const allCalls = queryAsGestorEntidade.mock.calls;
+    const insertFuncCalls = allCalls.filter(
+      (call) =>
+        call[0].includes('INSERT INTO funcionarios') &&
+        !call[0].includes('funcionarios_entidades')
+    );
+
+    // Deve ter feito INSERT (e não apenas SELECTs)
+    expect(insertFuncCalls.length).toBeGreaterThanOrEqual(1);
+
+    // Buscar o INSERT específico
+    const lastInsertCall = insertFuncCalls[insertFuncCalls.length - 1];
+    const sqlQuery = lastInsertCall[0] as string;
+    const params = lastInsertCall[1] as unknown[];
+
+    // Validar que contratante_id está na query
+    expect(sqlQuery).toContain('contratante_id');
+
+    // Validar que entidade_id (1) foi passado como parâmetro
+    // A posição depende da ordem das colunas no INSERT
+    // mas sabemos que entidade_id deve estar nos parâmetros
+    const mockEntidadeId = 1; // do mock requireEntity
+    expect(params).toContain(mockEntidadeId);
+  });
 });
