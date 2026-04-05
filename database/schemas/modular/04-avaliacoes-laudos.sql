@@ -835,19 +835,48 @@ COMMENT ON FUNCTION public.fn_buscar_solicitante_laudo(p_laudo_id integer) IS 'R
 
 --
 -- Name: fn_next_lote_id(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Updated: migration 1142 (05/04/2026) — NULL-guard + GREATEST() anti-collision
 --
 
 CREATE FUNCTION public.fn_next_lote_id() RETURNS bigint
     LANGUAGE plpgsql
     AS $$
 DECLARE
-  v_next bigint;
+  v_next          bigint;
+  v_max_existing  bigint;
+  v_retries       int := 0;
+  v_max_retries   int := 5;
 BEGIN
-  UPDATE lote_id_allocator
-  SET last_id = last_id + 1
-  RETURNING last_id INTO v_next;
+  SELECT COALESCE(MAX(id), 0) INTO v_max_existing FROM lotes_avaliacao;
 
-  RETURN v_next;
+  LOOP
+    UPDATE lote_id_allocator
+       SET last_id = GREATEST(last_id + 1, v_max_existing + 1)
+    RETURNING last_id INTO v_next;
+
+    IF v_next IS NULL THEN
+      IF v_retries > 0 THEN
+        RAISE EXCEPTION '[fn_next_lote_id] lote_id_allocator vazia mesmo após tentativa de inicialização. '
+                        'Execute: INSERT INTO lote_id_allocator (last_id) SELECT COALESCE(MAX(id),0) FROM lotes_avaliacao;';
+      END IF;
+      INSERT INTO lote_id_allocator (last_id)
+        SELECT COALESCE(MAX(id), 0) FROM lotes_avaliacao;
+      v_retries := v_retries + 1;
+      CONTINUE;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM lotes_avaliacao WHERE id = v_next) THEN
+      RETURN v_next;
+    END IF;
+
+    v_retries := v_retries + 1;
+    IF v_retries >= v_max_retries THEN
+      RAISE EXCEPTION '[fn_next_lote_id] Falha ao gerar ID único após % tentativas (último candidato: %)',
+        v_max_retries, v_next;
+    END IF;
+    RAISE WARNING '[fn_next_lote_id] Colisão no ID %. Tentativa % de %', v_next, v_retries, v_max_retries;
+    SELECT COALESCE(MAX(id), 0) INTO v_max_existing FROM lotes_avaliacao;
+  END LOOP;
 END;
 $$;
 
