@@ -68,7 +68,10 @@ export function RepresentanteProvider({
 
   const carregarSessao = useCallback(async () => {
     try {
-      const res = await fetch('/api/representante/me');
+      const res = await fetch('/api/representante/me', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
       if (!res.ok) {
         router.push('/login');
         return;
@@ -93,7 +96,10 @@ export function RepresentanteProvider({
   }, [searchParams]);
 
   const handleLogout = async () => {
-    await fetch('/api/representante/logout', { method: 'POST' });
+    await fetch('/api/representante/logout', {
+      method: 'POST',
+      credentials: 'same-origin',
+    });
     router.push('/login');
   };
 

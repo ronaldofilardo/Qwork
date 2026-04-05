@@ -186,7 +186,10 @@ export default function DadosRepresentante() {
 
   const carregar = useCallback(async () => {
     try {
-      const res = await fetch('/api/representante/me');
+      const res = await fetch('/api/representante/me', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
       if (res.status === 401) {
         router.push('/login');
         return;
@@ -226,6 +229,7 @@ export default function DadosRepresentante() {
     try {
       const res = await fetch('/api/representante/dados-bancarios', {
         method: 'PATCH',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ [campo]: novoValor === '' ? null : novoValor }),
       });

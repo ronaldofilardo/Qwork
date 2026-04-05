@@ -10,7 +10,7 @@
 
 import dotenv from 'dotenv';
 
-// Load local env early to ensure LOCAL_DATABASE_URL, ALLOW_PROD_DB_LOCAL, and other overrides are available
+// Load local env early to ensure LOCAL_DATABASE_URL and other overrides are available
 // ⚠️ SEGURANÇA DE ISOLAMENTO DE TESTES: NÃO chamar dotenv.config em ambiente Jest.
 if (!process.env.JEST_WORKER_ID && process.env.NODE_ENV !== 'test') {
   dotenv.config({ path: '.env.local', override: true });
@@ -132,15 +132,10 @@ export const isProduction = environment === 'production';
 export const DEBUG_DB = !!process.env.DEBUG_DB || isTest;
 
 /**
- * Modo especial: emissor rodando localmente mas acessando banco de PRODUÇÃO (Neon).
- * Exige: ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF + DATABASE_URL configurados no .env.local.
- * Apenas o CPF definido em EMISSOR_CPF pode executar queries nesse modo.
+ * Modo especial: emissor local — desativado por política de segurança.
+ * Em desenvolvimento, use sempre LOCAL_DATABASE_URL.
  */
-export const isEmissorLocalProdMode =
-  isDevelopment &&
-  process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
-  !!process.env.EMISSOR_CPF &&
-  !!process.env.DATABASE_URL;
+export const isEmissorLocalProdMode = false;
 
 // ============================================================================
 // SELEÇÃO DE URL DO BANCO
@@ -182,24 +177,8 @@ const getDatabaseUrl = () => {
 
   // Ambiente de desenvolvimento
   if (isDevelopment) {
-    if (
-      process.env.ALLOW_PROD_DB_LOCAL === 'true' &&
-      process.env.DATABASE_URL
-    ) {
-      if (process.env.EMISSOR_CPF) {
-        console.warn(
-          `⚠️ ALLOW_PROD_DB_LOCAL=true + EMISSOR_CPF=${process.env.EMISSOR_CPF}: pool local = nr-bps_db. Emissor roteado para Neon em query().`
-        );
-      } else {
-        const masked = process.env.DATABASE_URL.replace(
-          /(postgresql:\/\/.+?:).+?(@)/,
-          '$1***$2'
-        );
-        console.warn(
-          `⚠️ ALLOW_PROD_DB_LOCAL=true: usando DATABASE_URL (produção) localmente por escolha do desenvolvedor. Conectando a: ${masked}`
-        );
-        return process.env.DATABASE_URL;
-      }
+    if (process.env.DATABASE_URL) {
+      console.warn('Ignorado em desenvolvimento. Use LOCAL_DATABASE_URL');
     }
 
     if (!process.env.LOCAL_DATABASE_URL) {
@@ -271,12 +250,7 @@ export async function getNeonSql() {
 }
 
 export async function getNeonPool() {
-  if (
-    !neonPool &&
-    (isProduction ||
-      (isDevelopment && process.env.ALLOW_PROD_DB_LOCAL === 'true')) &&
-    process.env.DATABASE_URL
-  ) {
+  if (!neonPool && isProduction && process.env.DATABASE_URL) {
     try {
       const { Pool: NeonPool } = await import('@neondatabase/serverless');
       neonPool = new NeonPool({

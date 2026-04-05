@@ -115,7 +115,7 @@ export default function CadastroRepresentante() {
               time QWork aprove seus documentos (status <strong>Apto</strong>).
             </p>
             <button
-              onClick={() => router.push('/representante/login')}
+              onClick={() => router.push('/login')}
               className="w-full bg-blue-600 text-white py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors"
             >
               Ir para o Login →
@@ -131,7 +131,7 @@ export default function CadastroRepresentante() {
       <header className="bg-white shadow-sm border-b">
         <div className="max-w-lg mx-auto px-4 py-4">
           <a
-            href="/representante/login"
+            href="/login"
             className="text-sm text-gray-500 hover:text-blue-600"
           >
             ← Já tenho cadastro

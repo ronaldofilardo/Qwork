@@ -2,9 +2,11 @@
  * lib/session-representante.ts
  * Gestão de sessão para Representantes Comerciais.
  *
- * Suporta DOIS modos de autenticação:
- * 1) Login UNIFICADO via bps-session (perfil='representante') — novo, recomendado
- * 2) Login LEGADO via rep-session (email + código) — mantido para retrocompatibilidade
+ * Suporta leitura DUAL-MODE:
+ * 1) bps-session (perfil='representante') — novo, criado via createSession()
+ * 2) rep-session — fallback para sessões antigas ainda ativas
+ *
+ * A criação de novas rep-session foi removida. Use lib/session.ts::createSession.
  */
 import { cookies } from 'next/headers';
 import { query } from './db';
@@ -23,30 +25,10 @@ export interface RepresentanteSession {
 
 const COOKIE_NAME = 'rep-session';
 const BPS_COOKIE_NAME = 'bps-session';
-const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 horas
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000; // 8 horas — validação de rep-session legado
 
 // ------------------------------------------------------------------
-// Criar sessão (legado — rep-session)
-// @deprecated Usar login unificado via bps-session com perfil='representante'.
-//             Esta função será removida em versão futura.
-// ------------------------------------------------------------------
-export function criarSessaoRepresentante(data: RepresentanteSession): void {
-  const cookieStore = cookies();
-  cookieStore.set(
-    COOKIE_NAME,
-    JSON.stringify({ ...data, criado_em_ms: Date.now() }),
-    {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: SESSION_DURATION_MS / 1000, // em segundos
-      path: '/',
-    }
-  );
-}
-
-// ------------------------------------------------------------------
-// Obter sessão — tenta bps-session (unificado), depois rep-session (legado)
+// Obter sessão — tenta bps-session (unificado), depois rep-session (fallback)
 // ------------------------------------------------------------------
 export function getSessaoRepresentante(): RepresentanteSession | null {
   try {

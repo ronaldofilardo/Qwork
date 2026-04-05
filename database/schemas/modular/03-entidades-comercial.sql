@@ -1779,7 +1779,6 @@ CREATE TABLE public.hierarquia_comercial (
     id integer NOT NULL,
     vendedor_id integer NOT NULL,
     representante_id integer,
-    comercial_id integer,
     ativo boolean DEFAULT true NOT NULL,
     percentual_override numeric(5,2),
     obs text,
@@ -2683,14 +2682,6 @@ CREATE INDEX idx_func_entidades_nivel_cargo ON public.funcionarios_entidades USI
 
 
 --
--- Name: idx_hierarquia_comercial_comercial_id; Type: INDEX; Schema: public; Owner: postgres
---
-
-CREATE INDEX idx_hierarquia_comercial_comercial_id ON public.hierarquia_comercial USING btree (comercial_id);
-
-
-
---
 -- Name: idx_hierarquia_comercial_representante_id; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -3026,15 +3017,6 @@ ALTER TABLE ONLY public.entidades_senhas
 
 ALTER TABLE ONLY public.funcionarios_entidades
     ADD CONSTRAINT funcionarios_entidades_funcionario_id_fkey FOREIGN KEY (funcionario_id) REFERENCES public.funcionarios(id) ON DELETE CASCADE;
-
-
-
---
--- Name: hierarquia_comercial hierarquia_comercial_comercial_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
---
-
-ALTER TABLE ONLY public.hierarquia_comercial
-    ADD CONSTRAINT hierarquia_comercial_comercial_id_fkey FOREIGN KEY (comercial_id) REFERENCES public.usuarios(id) ON DELETE SET NULL;
 
 
 

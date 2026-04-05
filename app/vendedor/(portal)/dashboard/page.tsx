@@ -8,7 +8,7 @@ import { useVendedor } from '../vendedor-context';
 interface Resumo {
   representantes_ativos: number;
   emissoes_mes: number;
-  representante: { id: number; nome: string } | null;
+  representante: { id: number; nome: string; codigo: string } | null;
 }
 
 export default function VendedorDashboard() {
@@ -118,6 +118,14 @@ export default function VendedorDashboard() {
               </span>
             )}
           </p>
+          {resumo?.representante?.codigo && (
+            <p className="text-sm text-gray-500 mt-2 font-mono">
+              Código:{' '}
+              <span className="font-semibold">
+                {resumo.representante.codigo}
+              </span>
+            </p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border p-5">

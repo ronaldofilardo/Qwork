@@ -26,10 +26,14 @@ export default function MinhasVendasPage() {
   useEffect(() => {
     const carregar = async () => {
       try {
+        const opts: RequestInit = {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        };
         const [leadsRes, vinculosRes, comissoesRes] = await Promise.all([
-          fetch('/api/representante/minhas-vendas/leads?page=1'),
-          fetch('/api/representante/minhas-vendas/vinculos?page=1'),
-          fetch('/api/representante/minhas-vendas/comissoes?page=1'),
+          fetch('/api/representante/minhas-vendas/leads?page=1', opts),
+          fetch('/api/representante/minhas-vendas/vinculos?page=1', opts),
+          fetch('/api/representante/minhas-vendas/comissoes?page=1', opts),
         ]);
 
         const [leadsData, vinculosData, comissoesData] = await Promise.all([

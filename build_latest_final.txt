@@ -8,33 +8,28 @@
    Creating an optimized production build ...
  Ô£ô Compiled successfully
    Linting and checking validity of types ...
-
-./app/api/proposta/[token]/route.ts
-9:8  Warning: Async function 'GET' has no 'await' expression.  @typescript-eslint/require-await
-
-info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
    Collecting page data ...
-[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
 [dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
-[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
 [dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
-[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
-[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
-[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
-   Generating static pages (0/87) ...
-   Generating static pages (21/87) 
-   Generating static pages (43/87) 
-   Generating static pages (65/87) 
- Ô£ô Generating static pages (87/87)
+   Generating static pages (0/86) ...
+   Generating static pages (21/86) 
+   Generating static pages (42/86) 
+   Generating static pages (64/86) 
+ Ô£ô Generating static pages (86/86)
    Finalizing page optimization ...
    Collecting build traces ...
 
 Route (app)                                                          Size     First Load JS
-Ôöî ãÆ /                                                                158 B            88 kB
-Ôö£ ãÆ /_not-found                                                      158 B            88 kB
-Ôö£ ãÆ /admin                                                           19.2 kB         174 kB
+Ôöî ãÆ /                                                                161 B            88 kB
+Ôö£ ãÆ /_not-found                                                      161 B            88 kB
+Ôö£ ãÆ /admin                                                           19.3 kB         174 kB
 Ôö£ ãÆ /admin/comissoes                                                 2.05 kB        93.8 kB
-Ôö£ ãÆ /admin/representantes                                            4.4 kB         97.2 kB
+Ôö£ ãÆ /admin/representantes                                            5.17 kB        98.1 kB
 Ôö£ ãÆ /admin/representantes/[id]                                       6.59 kB         103 kB
 Ôö£ ãÆ /admin/representantes/leads                                      2.4 kB           99 kB
 Ôö£ ãÆ /api/admin/account-info                                          0 B                0 B
@@ -169,7 +164,9 @@ Route (app)                                                          Size     Fi
 Ôö£ ãÆ /api/entidade/configuracoes                                      0 B                0 B
 Ôö£ ãÆ /api/entidade/dashboard                                          0 B                0 B
 Ôö£ ãÆ /api/entidade/empresas                                           0 B                0 B
+Ôö£ ãÆ /api/entidade/financeiro-resumo                                  0 B                0 B
 Ôö£ ãÆ /api/entidade/funcionarios                                       0 B                0 B
+Ôö£ ãÆ /api/entidade/funcionarios/download-template                     0 B                0 B
 Ôö£ ãÆ /api/entidade/funcionarios/import                                0 B                0 B
 Ôö£ ãÆ /api/entidade/funcionarios/status                                0 B                0 B
 Ôö£ ãÆ /api/entidade/laudos                                             0 B                0 B
@@ -217,7 +214,6 @@ Route (app)                                                          Size     Fi
 Ôö£ ãÆ /api/pagamento/emissao/[token]/confirmar                         0 B                0 B
 Ôö£ ãÆ /api/pagamento/emissao/[token]/info                              0 B                0 B
 Ôö£ ãÆ /api/pagamento/emissao/[token]/simular                           0 B                0 B
-Ôö£ ãÆ /api/pagamento/iniciar                                           0 B                0 B
 Ôö£ ãÆ /api/pagamento/reversao                                          0 B                0 B
 Ôö£ ãÆ /api/pagamento/simulador                                         0 B                0 B
 Ôö£ ãÆ /api/pagamento/simulador/confirmar                               0 B                0 B
@@ -251,7 +247,6 @@ Route (app)                                                          Size     Fi
 Ôö£ ãÆ /api/representante/equipe/vendedores/[id]/reenviar-convite       0 B                0 B
 Ôö£ ãÆ /api/representante/leads                                         0 B                0 B
 Ôö£ ãÆ /api/representante/leads/[id]/token                              0 B                0 B
-Ôö£ ãÆ /api/representante/login                                         0 B                0 B
 Ôö£ ãÆ /api/representante/logout                                        0 B                0 B
 Ôö£ ãÆ /api/representante/me                                            0 B                0 B
 Ôö£ ãÆ /api/representante/metricas                                      0 B                0 B
@@ -264,8 +259,11 @@ Route (app)                                                          Size     Fi
 Ôö£ ãÆ /api/rh/account-info                                             0 B                0 B
 Ôö£ ãÆ /api/rh/dashboard                                                0 B                0 B
 Ôö£ ãÆ /api/rh/empresas                                                 0 B                0 B
+Ôö£ ãÆ /api/rh/empresas-bulk/liberar-ciclos                             0 B                0 B
+Ôö£ ãÆ /api/rh/empresas-overview                                        0 B                0 B
 Ôö£ ãÆ /api/rh/empresas/[id]                                            0 B                0 B
 Ôö£ ãÆ /api/rh/empresas/import                                          0 B                0 B
+Ôö£ ãÆ /api/rh/financeiro-resumo                                        0 B                0 B
 Ôö£ ãÆ /api/rh/funcionarios                                             0 B                0 B
 Ôö£ ãÆ /api/rh/funcionarios/[cpf]                                       0 B                0 B
 Ôö£ ãÆ /api/rh/funcionarios/import                                      0 B                0 B
@@ -302,15 +300,15 @@ Route (app)                                                          Size     Fi
 Ôö£ ãÆ /api/rh/relatorio-individual-pdf                                 0 B                0 B
 Ôö£ ãÆ /api/rh/relatorio-lote-pdf                                       0 B                0 B
 Ôö£ ãÆ /api/rh/relatorio-setor-pdf                                      0 B                0 B
+Ôö£ ãÆ /api/rh/sidebar/empresas-mini                                    0 B                0 B
 Ôö£ ãÆ /api/storage/[...path]                                           0 B                0 B
+Ôö£ ãÆ /api/suporte/pre-cadastro                                        0 B                0 B
 Ôö£ ãÆ /api/suporte/representantes                                      0 B                0 B
 Ôö£ ãÆ /api/suporte/representantes/[id]                                 0 B                0 B
 Ôö£ ãÆ /api/suporte/vendedores/[id]                                     0 B                0 B
 Ôö£ ãÆ /api/suporte/vendedores/[id]/dados-bancarios                     0 B                0 B
 Ôö£ ãÆ /api/termos/registrar                                            0 B                0 B
 Ôö£ ãÆ /api/termos/verificar                                            0 B                0 B
-Ôö£ ãÆ /api/test/db                                                     0 B                0 B
-Ôö£ ãÆ /api/test/session                                                0 B                0 B
 Ôö£ ãÆ /api/tomador/contrato-pdf                                        0 B                0 B
 Ôö£ ãÆ /api/tomador/verificar-pagamento                                 0 B                0 B
 Ôö£ ãÆ /api/vendedor/aceitar-termos                                     0 B                0 B
@@ -327,61 +325,62 @@ Route (app)                                                          Size     Fi
 Ôö£ ãÆ /avaliacao/grupo/[id]                                            6.6 kB         94.5 kB
 Ôö£ ãÆ /boas-vindas                                                     3.54 kB         147 kB
 Ôö£ ãÆ /clinica                                                         342 B          88.2 kB
-Ôö£ ãÆ /comercial                                                       8.73 kB         106 kB
+Ôö£ ãÆ /comercial                                                       9.94 kB         107 kB
 Ôö£ ãÆ /comercial/leads                                                 178 B          92.5 kB
-Ôö£ ãÆ /comercial/representantes                                        6.38 kB        94.3 kB
+Ôö£ ãÆ /comercial/representantes                                        6.11 kB          94 kB
 Ôö£ ãÆ /comercial/representantes/[id]                                   8.87 kB        96.7 kB
 Ôö£ ãÆ /comercial/vendedores                                            405 B          88.3 kB
 Ôö£ ãÆ /dashboard                                                       2.04 kB        98.7 kB
-Ôö£ ãÆ /emissor                                                         7.93 kB         105 kB
-Ôö£ ãÆ /emissor/laudo/[loteId]                                          8.72 kB         157 kB
+Ôö£ ãÆ /emissor                                                         8.28 kB         105 kB
+Ôö£ ãÆ /emissor/laudo/[loteId]                                          8.7 kB          157 kB
 Ôö£ ãÆ /entidade                                                        349 B          88.2 kB
-Ôö£ ãÆ /entidade/conta                                                  1.7 kB          102 kB
-Ôö£ ãÆ /entidade/dashboard                                              2.21 kB        90.1 kB
+Ôö£ ãÆ /entidade/conta                                                  1.75 kB         106 kB
+Ôö£ ãÆ /entidade/dashboard                                              653 B            91 kB
 Ôö£ ãÆ /entidade/funcionarios                                           14.9 kB         108 kB
 Ôö£ ãÆ /entidade/laudos                                                 2.13 kB          90 kB
-Ôö£ ãÆ /entidade/lote/[id]                                              8.49 kB         107 kB
-Ôö£ ãÆ /entidade/lotes                                                  6.78 kB         103 kB
+Ôö£ ãÆ /entidade/lote/[id]                                              8.45 kB         107 kB
+Ôö£ ãÆ /entidade/lotes                                                  6.77 kB         103 kB
 Ôö£ ãÆ /entidade/notificacoes                                           349 B          88.2 kB
 Ôö£ ãÆ /entidade/pendencias                                             2.13 kB          90 kB
-Ôö£ ãÆ /login                                                           16.9 kB         160 kB
-Ôö£ ãÆ /pagamento/[contratoId]                                          3.15 kB         155 kB
-Ôö£ ãÆ /pagamento/emissao/[token]                                       4.71 kB         101 kB
+Ôö£ ãÆ /login                                                           17 kB           160 kB
+Ôö£ ãÆ /pagamento/[contratoId]                                          161 B            88 kB
+Ôö£ ãÆ /pagamento/emissao/[token]                                       7.5 kB          100 kB
 Ôö£ ãÆ /pagamento/emissao/sucesso                                       1.92 kB        89.8 kB
 Ôö£ ãÆ /pagamento/simulador                                             3.15 kB         146 kB
-Ôö£ ãÆ /representante/cadastro                                          3.05 kB        90.9 kB
+Ôö£ ãÆ /representante/aceitar-contrato                                  3.4 kB          151 kB
+Ôö£ ãÆ /representante/cadastro                                          3.04 kB        90.9 kB
 Ôö£ ãÆ /representante/comissoes                                         1.91 kB        99.1 kB
 Ôö£ ãÆ /representante/criar-senha                                       3.12 kB          91 kB
-Ôö£ ãÆ /representante/dados                                             3.29 kB        91.2 kB
-Ôö£ ãÆ /representante/dashboard                                         5.47 kB         169 kB
-Ôö£ ãÆ /representante/equipe                                            10.1 kB          98 kB
+Ôö£ ãÆ /representante/dados                                             3.17 kB         110 kB
+Ôö£ ãÆ /representante/dashboard                                         5.01 kB         179 kB
+Ôö£ ãÆ /representante/equipe                                            10.7 kB        98.6 kB
 Ôö£ ãÆ /representante/equipe/leads                                      4.95 kB        92.8 kB
-Ôö£ ãÆ /representante/leads                                             7.11 kB          95 kB
-Ôö£ ãÆ /representante/login                                             158 B            88 kB
-Ôö£ ãÆ /representante/metricas                                          2.16 kB         157 kB
-Ôö£ ãÆ /representante/minhas-vendas                                     2.52 kB        99.2 kB
+Ôö£ ãÆ /representante/leads                                             6.5 kB          113 kB
+Ôö£ ãÆ /representante/login                                             161 B            88 kB
+Ôö£ ãÆ /representante/metricas                                          2.19 kB         157 kB
+Ôö£ ãÆ /representante/minhas-vendas                                     2.56 kB        99.2 kB
 Ôö£ ãÆ /representante/minhas-vendas/comissoes                           1.92 kB        99.1 kB
 Ôö£ ãÆ /representante/minhas-vendas/leads                               5.99 kB        93.9 kB
 Ôö£ ãÆ /representante/minhas-vendas/vinculos                            1.78 kB        89.7 kB
 Ôö£ ãÆ /representante/trocar-senha                                      3.1 kB           91 kB
 Ôö£ ãÆ /representante/vinculos                                          2.38 kB        90.3 kB
-Ôö£ ãÆ /rh                                                              7.17 kB        95.1 kB
-Ôö£ ãÆ /rh/conta                                                        1.74 kB         102 kB
+Ôö£ ãÆ /rh                                                              9.53 kB        99.9 kB
+Ôö£ ãÆ /rh/conta                                                        1.79 kB         106 kB
 Ôö£ ãÆ /rh/dashboard                                                    2.24 kB        90.1 kB
-Ôö£ ãÆ /rh/empresa/[id]                                                 4 kB           99.9 kB
-Ôö£ ãÆ /rh/empresa/[id]/lote/[loteId]                                   7.92 kB         106 kB
-Ôö£ ãÆ /rh/importacao                                                   11.4 kB         108 kB
+Ôö£ ãÆ /rh/empresa/[id]                                                 4 kB            100 kB
+Ôö£ ãÆ /rh/empresa/[id]/lote/[loteId]                                   7.87 kB         106 kB
+Ôö£ ãÆ /rh/importacao                                                   12.7 kB         109 kB
 Ôö£ ãÆ /rh/laudos                                                       2.47 kB        90.4 kB
 Ôö£ ãÆ /rh/notificacoes                                                 350 B          88.2 kB
-Ôö£ ãÆ /sucesso-cadastro                                                9.37 kB         152 kB
-Ôö£ ãÆ /suporte                                                         33.9 kB         136 kB
+Ôö£ ãÆ /sucesso-cadastro                                                5.94 kB        93.8 kB
+Ôö£ ãÆ /suporte                                                         36.1 kB         138 kB
 Ôö£ ãÆ /termos/contrato                                                 2.07 kB        89.9 kB
-Ôö£ ãÆ /termos/contrato-padrao                                          158 B            88 kB
+Ôö£ ãÆ /termos/contrato-padrao                                          161 B            88 kB
 Ôö£ ãÆ /trocar-senha                                                    4.16 kB         147 kB
 Ôö£ ãÆ /vendedor                                                        402 B          88.3 kB
 Ôö£ ãÆ /vendedor/criar-senha                                            2.65 kB        90.5 kB
 Ôö£ ãÆ /vendedor/dados                                                  1.37 kB        89.2 kB
-Ôö£ ãÆ /vendedor/dashboard                                              1.94 kB        98.6 kB
+Ôö£ ãÆ /vendedor/dashboard                                              1.75 kB         108 kB
 Ôö£ ãÆ /vendedor/leads                                                  6.29 kB        94.2 kB
 Ôö£ ãÆ /vendedor/representantes                                         2.04 kB        89.9 kB
 Ôö£ ãÆ /vendedor/trocar-senha                                           3.07 kB        90.9 kB
@@ -392,7 +391,7 @@ Route (app)                                                          Size     Fi
   Ôöö other shared chunks (total)                                      2.34 kB
 
 
-ãÆ Middleware                                                         26.3 kB
+ãÆ Middleware                                                         26 kB
 
 Ôùï  (Static)   prerendered as static content
 ãÆ  (Dynamic)  server-rendered on demand

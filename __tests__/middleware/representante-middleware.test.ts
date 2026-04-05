@@ -54,11 +54,6 @@ describe('Middleware — Rotas de Representante', () => {
 
   // ─── Rotas públicas (não exigem auth) ──────────────────────────
 
-  it('deve permitir /api/representante/login sem auth', () => {
-    middleware(makeReq('/api/representante/login'));
-    expect(mockNextResponseNext).toHaveBeenCalled();
-  });
-
   it('deve permitir /api/representante/logout sem auth', () => {
     middleware(makeReq('/api/representante/logout'));
     expect(mockNextResponseNext).toHaveBeenCalled();
@@ -69,20 +64,10 @@ describe('Middleware — Rotas de Representante', () => {
     expect(mockNextResponseNext).toHaveBeenCalled();
   });
 
-  // ─── Rotas protegidas do portal (/representante/*) ─────────────
-
-  it('deve redirecionar /representante/dashboard sem rep-session para /login', () => {
-    middleware(makeReq('/representante/dashboard'));
-    expect(mockNextResponseRedirect).toHaveBeenCalled();
-    const redirectUrl = mockNextResponseRedirect.mock.calls[0][0];
-    expect(redirectUrl.toString()).toContain('/login');
-    expect(redirectUrl.toString()).not.toContain('/representante/login');
-  });
-
-  it('deve redirecionar /representante/leads sem rep-session', () => {
-    middleware(makeReq('/representante/leads'));
-    expect(mockNextResponseRedirect).toHaveBeenCalled();
-  });
+  // ─── Rotas do portal (/representante/*) ─────────────────────────
+  // Nota: /representante/* não está no matcher do middleware.
+  // O controle de acesso das páginas do portal é feito via requireRepresentante()
+  // nos Server Components. Por isso, o middleware não redireciona essas rotas.
 
   it('deve permitir /representante/dashboard com rep-session válida', () => {
     const repSession = JSON.stringify({ representante_id: 1, nome: 'Teste' });
