@@ -102,8 +102,10 @@ describe('2. cadastro/tomadores/handlers.ts — 23505 handler backfill lead_id',
     expect(src).toContain('lead?.id != null');
   });
 
-  it('deve filtrar por representante_id e entidade_id e lead_id IS NULL', () => {
-    expect(src).toContain('AND entidade_id = $3 AND lead_id IS NULL');
+  it('deve usar vinculoColuna dinâmico para suportar entidade_id e clinica_id', () => {
+    // handlers.ts usa template literal ${vinculoColuna} para cobrir ambos os casos
+    expect(src).toContain('vinculoColuna');
+    expect(src).toContain('AND lead_id IS NULL');
   });
 
   it('deve manter o log cadastro_vinculo_comissao_already_exists', () => {
@@ -272,22 +274,21 @@ describe('6. GET /api/representante/minhas-vendas/comissoes — EXISTS subquery'
 // ---------------------------------------------------------------------------
 // 7. Layout representante — nav item Minhas Vendas
 // ---------------------------------------------------------------------------
-describe('7. Layout representante — Minhas Vendas no menu', () => {
-  const layoutPath = path.join(
+describe('7. Sidebar representante — Minhas Vendas no menu', () => {
+  const sidebarPath = path.join(
     ROOT,
-    'app',
+    'components',
     'representante',
-    '(portal)',
-    'layout.tsx'
+    'RepresentanteSidebar.tsx'
   );
   let src: string;
 
   beforeAll(() => {
-    src = fs.readFileSync(layoutPath, 'utf-8');
+    src = fs.readFileSync(sidebarPath, 'utf-8');
   });
 
   it('arquivo deve existir', () => {
-    expect(fs.existsSync(layoutPath)).toBe(true);
+    expect(fs.existsSync(sidebarPath)).toBe(true);
   });
 
   it('deve ter item de nav Minhas Vendas', () => {
