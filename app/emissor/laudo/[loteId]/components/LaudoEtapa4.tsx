@@ -64,10 +64,9 @@ export default function LaudoEtapa4({
               Observações do Laudo
             </h3>
             <div className="bg-blue-50 rounded-lg p-5 border-l-4 border-blue-500">
-              <div
-                className="text-gray-800 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: etapa4.observacoesLaudo }}
-              />
+              <div className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+                {etapa4.observacoesLaudo}
+              </div>
             </div>
           </div>
         )}

@@ -109,14 +109,22 @@ describe('2. Fix coluna e.razao_social -> e.nome nas rotas', () => {
 
 describe('3. Paginas de comissoes — erros visiveis (sem silenciamento)', () => {
   const embed = path.join(ROOT, 'components', 'admin', 'ComissoesContent.tsx');
-  const adminPage = path.join(ROOT, 'app', 'admin', 'comissoes', 'page.tsx');
+  const adminPage = path.join(
+    ROOT,
+    'app',
+    'admin',
+    'comissoes',
+    'hooks',
+    'useComissoes.ts'
+  );
   const repPage = path.join(
     ROOT,
     'app',
     'representante',
     '(portal)',
     'comissoes',
-    'page.tsx'
+    'hooks',
+    'useComissoes.ts'
   );
 
   it.each([embed, adminPage, repPage])('%s sem "if (!res.ok) return;"', (p) => {
@@ -200,15 +208,15 @@ describe('5. lib/session-representante.ts — campo cpf no bps-session', () => {
   });
 });
 
-describe('6. lib/db/comissionamento.ts — registrarNfRep com cpf', () => {
+describe('6. lib/db/comissionamento/nf-rpa.ts — registrarNfRep com cpf', () => {
   const src = fs.readFileSync(
-    path.join(ROOT, 'lib', 'db', 'comissionamento.ts'),
+    path.join(ROOT, 'lib', 'db', 'comissionamento', 'nf-rpa.ts'),
     'utf-8'
   );
 
   it('importa type Session de lib/session', () => {
     expect(src).toMatch(
-      /import\s+type\s+\{[^}]*Session[^}]*\}\s+from\s+['"]\.\.\/session['"]/
+      /import\s+type\s+\{[^}]*Session[^}]*\}\s+from\s+['"]\.\.\/\.\.\/session['"]/
     );
   });
   it('registrarNfRep tem param cpf?: string', () => {
@@ -283,9 +291,16 @@ describe('7. Feature: botao Ver NF no painel admin', () => {
     });
   });
 
-  describe('admin/comissoes/page.tsx (standalone)', () => {
+  describe('admin/comissoes/components/ComissoesTab.tsx', () => {
     const src = fs.readFileSync(
-      path.join(ROOT, 'app', 'admin', 'comissoes', 'page.tsx'),
+      path.join(
+        ROOT,
+        'app',
+        'admin',
+        'comissoes',
+        'components',
+        'ComissoesTab.tsx'
+      ),
       'utf-8'
     );
     it('tem "Ver NF"', () => {
@@ -310,9 +325,9 @@ describe('8. Consistencia geral', () => {
     expect(fs.readFileSync(p, 'utf-8')).toMatch(/status::text/);
   });
 
-  it('comissionamento.ts usa e.nome (nao e.razao_social) na query de comissoes_laudo', () => {
+  it('comissionamento/comissoes.ts usa e.nome (nao e.razao_social) na query de comissoes_laudo', () => {
     const src = fs.readFileSync(
-      path.join(ROOT, 'lib', 'db', 'comissionamento.ts'),
+      path.join(ROOT, 'lib', 'db', 'comissionamento', 'comissoes.ts'),
       'utf-8'
     );
     // Verifica correcao: COALESCE(e.nome, cl.nome) na listagem

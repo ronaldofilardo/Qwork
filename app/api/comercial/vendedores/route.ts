@@ -68,8 +68,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
              'representante_id', hc.representante_id,
              'representante_nome', r.nome,
              'ativo', hc.ativo,
-             'percentual_override', hc.percentual_override,
-             'comercial_id', hc.comercial_id
+             'percentual_override', hc.percentual_override
            )
          ) FILTER (WHERE hc.id IS NOT NULL) AS vinculos
        FROM usuarios u
@@ -105,6 +104,7 @@ const criarVendedorSchema = z.object({
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
     const session = await requireRole(['comercial', 'admin'], false);
+    void session;
 
     const body = await request.json();
     const parsed = criarVendedorSchema.safeParse(body);
@@ -134,13 +134,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const senhaHash = await bcrypt.hash(senha, 10);
 
-    // Buscar ID do comercial que está criando (para registrar em hierarquia_comercial)
-    const comercialResult = await query<{ id: number }>(
-      `SELECT id FROM usuarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
-      [session.cpf]
-    );
-    const comercialId = comercialResult.rows[0]?.id ?? null;
-
     // Inserir vendedor
     const insertResult = await query<{ id: number }>(
       `INSERT INTO usuarios (cpf, nome, email, tipo_usuario, senha_hash, ativo)
@@ -159,10 +152,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
       if (repExists.rows.length > 0) {
         await query(
-          `INSERT INTO hierarquia_comercial (vendedor_id, representante_id, comercial_id, ativo)
-           VALUES ($1, $2, $3, true)
+          `INSERT INTO hierarquia_comercial (vendedor_id, representante_id, ativo)
+           VALUES ($1, $2, true)
            ON CONFLICT (vendedor_id, representante_id) DO UPDATE SET ativo = true, atualizado_em = now()`,
-          [vendedorId, representante_id, comercialId]
+          [vendedorId, representante_id]
         );
       }
     }

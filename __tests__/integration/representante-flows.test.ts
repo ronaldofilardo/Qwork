@@ -12,8 +12,6 @@ import { requireRole } from '@/lib/session';
 import {
   requireRepresentante,
   repAuthErrorResponse,
-  criarSessaoRepresentante,
-  destruirSessaoRepresentante,
 } from '@/lib/session-representante';
 import { registrarAuditoria } from '@/lib/db/comissionamento';
 import { NextRequest } from 'next/server';
@@ -25,12 +23,6 @@ const mockRequireRep = requireRepresentante as jest.MockedFunction<
 >;
 const mockErrResp = repAuthErrorResponse as jest.MockedFunction<
   typeof repAuthErrorResponse
->;
-const mockCriarSessao = criarSessaoRepresentante as jest.MockedFunction<
-  typeof criarSessaoRepresentante
->;
-const mockDestruirSessao = destruirSessaoRepresentante as jest.MockedFunction<
-  typeof destruirSessaoRepresentante
 >;
 const mockAuditoria = registrarAuditoria as jest.MockedFunction<
   typeof registrarAuditoria
@@ -60,8 +52,6 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
       role: 'admin',
     } as any);
     mockAuditoria.mockResolvedValue(undefined as any);
-    mockCriarSessao.mockResolvedValue(undefined as any);
-    mockDestruirSessao.mockReturnValue(undefined as any);
   });
 
   it('Fluxo 1: Cadastro → Login → Dashboard', async () => {
@@ -106,36 +96,7 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
     expect(cadastroData.success).toBe(true);
     expect(cadastroData.representante.codigo).toBe('AB12-CD34');
 
-    // 2. Login
-    const { POST: loginPost } =
-      await import('@/app/api/representante/login/route');
-
-    // Buscar por email
-    mockQuery.mockResolvedValueOnce({
-      rows: [
-        {
-          id: 1,
-          nome: 'Carlos Rep',
-          email: 'carlos@test.dev',
-          codigo: 'AB12-CD34',
-          status: 'ativo',
-          tipo_pessoa: 'pf',
-        },
-      ],
-      rowCount: 1,
-    } as any);
-
-    const loginRes = await loginPost(
-      new NextRequest('http://localhost/api/representante/login', {
-        method: 'POST',
-        body: JSON.stringify({ email: 'carlos@test.dev', codigo: 'AB12-CD34' }),
-        headers: { 'Content-Type': 'application/json' },
-      })
-    );
-    expect(loginRes.status).toBe(200);
-    expect(mockCriarSessao).toHaveBeenCalled();
-
-    // 3. GET /me
+    // 2. GET /me (sessão via bps-session gerenciada pelo mock de requireRepresentante)
     const { GET: meGet } = await import('@/app/api/representante/me/route');
 
     mockQuery.mockResolvedValueOnce({
@@ -170,6 +131,8 @@ describe('Fluxo de Integração — Ciclo de Vida do Representante', () => {
     // Lead check (nenhum)
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // Entidade check (não existe)
+    mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+    // Clínica check (não existe)
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
     // INSERT lead
     mockQuery.mockResolvedValueOnce({

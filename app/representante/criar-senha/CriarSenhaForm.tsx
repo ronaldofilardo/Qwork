@@ -8,7 +8,7 @@
  * 2. GET /api/representante/criar-senha?token= para validar
  * 3. Exibe formulário (ou estado de erro)
  * 4. POST /api/representante/criar-senha com { token, senha, confirmacao }
- * 5. Redireciona para /representante/login com mensagem de sucesso
+ * 5. Redireciona para /representante/aceitar-contrato após criar a senha
  */
 
 import { useEffect, useState, useCallback } from 'react';
@@ -224,7 +224,7 @@ export default function CriarSenhaForm() {
         <h3 className="text-lg font-semibold text-gray-900">{info.titulo}</h3>
         <p className="text-sm text-gray-500 max-w-xs">{info.descricao}</p>
         <a
-          href="/representante/login"
+          href="/login"
           className="mt-4 text-sm text-blue-600 hover:text-blue-700 underline"
         >
           Ir para o login

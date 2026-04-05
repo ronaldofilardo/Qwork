@@ -270,10 +270,16 @@ export default function DashboardRepresentante() {
           tipo === 'leads_mes'
             ? '/api/representante/equipe/leads?mes=true'
             : '/api/representante/equipe/leads';
-        const res = await fetch(url);
+        const res = await fetch(url, {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
         if (res.ok) setLeadsEquipe(await res.json());
       } else if (tipo === 'vinculos') {
-        const res = await fetch('/api/representante/vinculos?status=ativo');
+        const res = await fetch('/api/representante/vinculos?status=ativo', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+        });
         if (res.ok) {
           const d = await res.json();
           setVinculos(d.vinculos ?? []);

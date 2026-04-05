@@ -223,6 +223,17 @@ export async function query<T = any>(
               );
             }
 
+            // Verificar contexto RLS após SET LOCAL
+            const rlsVerify = await client.query(
+              `SELECT current_setting('app.current_user_cpf', true) as cpf`
+            );
+            if (!rlsVerify.rows[0]?.cpf) {
+              await client.query('ROLLBACK');
+              throw new Error(
+                'FALHA DE SEGURANÇA RLS: contexto RLS não propagado após SET LOCAL'
+              );
+            }
+
             const result = await client.query(text, params);
             await client.query('COMMIT');
 
@@ -303,6 +314,17 @@ export async function query<T = any>(
           if (session.representante_id) {
             await client.query(
               `SET LOCAL app.current_representante_id = '${escapeString(String(session.representante_id))}'`
+            );
+          }
+
+          // Verificar contexto RLS após SET LOCAL
+          const rlsVerifyNeon = await client.query(
+            `SELECT current_setting('app.current_user_cpf', true) as cpf`
+          );
+          if (!rlsVerifyNeon.rows[0]?.cpf) {
+            await client.query('ROLLBACK');
+            throw new Error(
+              'FALHA DE SEGURANÇA RLS: contexto RLS não propagado após SET LOCAL'
             );
           }
 

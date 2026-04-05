@@ -47,8 +47,8 @@ export async function GET(): Promise<NextResponse> {
 
     const row = resumoResult.rows[0];
 
-    const repResult = await query<{ id: number; nome: string }>(
-      `SELECT r.id, r.nome
+    const repResult = await query<{ id: number; nome: string; codigo: string }>(
+      `SELECT r.id, r.nome, r.codigo
        FROM public.hierarquia_comercial hc
        JOIN public.representantes r ON r.id = hc.representante_id
        WHERE hc.vendedor_id = $1 AND hc.ativo = true

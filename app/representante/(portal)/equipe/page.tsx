@@ -19,7 +19,6 @@ import {
   Upload,
   CheckCircle2,
   XCircle,
-  Link2,
   RefreshCcw,
 } from 'lucide-react';
 import CadastrarVendedorModal, {
@@ -41,8 +40,6 @@ interface Vendedor {
 
 interface ReenvioEstado {
   loading: boolean;
-  link?: string;
-  copiado?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -56,7 +53,6 @@ function VendedorCard({
   onClick,
   reenvioEstado,
   onReenviar,
-  onCopiarLink,
 }: {
   v: Vendedor;
   copiado: boolean;
@@ -64,7 +60,6 @@ function VendedorCard({
   onClick: () => void;
   reenvioEstado?: ReenvioEstado;
   onReenviar?: () => void;
-  onCopiarLink?: (link: string) => void;
 }) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 hover:border-blue-300 hover:shadow-md transition-all duration-150 p-5 group">
@@ -135,42 +130,18 @@ function VendedorCard({
       {/* Reenviar convite — apenas para vendedores sem onboarding concluído */}
       {!v.aceite_termos && v.vendedor_perfil_id && (
         <div className="mt-3 pt-3 border-t border-gray-100">
-          {reenvioEstado?.link ? (
-            <div className="flex items-center gap-2">
-              <Link2 size={12} className="text-blue-500 shrink-0" />
-              <span className="text-xs font-mono text-blue-700 truncate flex-1">
-                {reenvioEstado.link}
-              </span>
-              <button
-                onClick={() => onCopiarLink?.(reenvioEstado.link!)}
-                className={`flex items-center gap-1 text-xs px-2 py-1 rounded-lg border transition-colors cursor-pointer shrink-0 ${
-                  reenvioEstado.copiado
-                    ? 'bg-green-600 text-white border-green-600'
-                    : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {reenvioEstado.copiado ? (
-                  <Check size={11} />
-                ) : (
-                  <Copy size={11} />
-                )}
-                {reenvioEstado.copiado ? 'Copiado' : 'Copiar'}
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={onReenviar}
-              disabled={reenvioEstado?.loading}
-              className="flex items-center gap-1.5 text-xs text-blue-600 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50 cursor-pointer w-full justify-center"
-            >
-              {reenvioEstado?.loading ? (
-                <Loader2 size={12} className="animate-spin" />
-              ) : (
-                <RefreshCcw size={12} />
-              )}
-              Reenviar Convite
-            </button>
-          )}
+          <button
+            onClick={onReenviar}
+            disabled={reenvioEstado?.loading}
+            className="flex items-center gap-1.5 text-xs text-blue-600 border border-blue-200 rounded-lg px-3 py-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50 cursor-pointer w-full justify-center"
+          >
+            {reenvioEstado?.loading ? (
+              <Loader2 size={12} className="animate-spin" />
+            ) : (
+              <RefreshCcw size={12} />
+            )}
+            Reenviar Convite
+          </button>
         </div>
       )}
     </div>
@@ -1000,51 +971,28 @@ export default function EquipePage() {
     Record<number, ReenvioEstado>
   >({});
 
-  const handleReenviarConvite = async (perfilId: number): Promise<void> => {
+  const handleReenviarConvite = async (v: Vendedor): Promise<void> => {
+    if (!v.vendedor_perfil_id) return;
+    const perfilId = v.vendedor_perfil_id;
     setReenvioState((prev) => ({ ...prev, [perfilId]: { loading: true } }));
     try {
       const res = await fetch(
-        `/api/representante/equipe/vendedores/${perfilId}/reenviar-convite`,
+        `/api/representante/equipe/vendedores/${v.vendedor_id}/reenviar-convite`,
         { method: 'POST' }
       );
       const data = (await res.json().catch(() => ({}))) as {
         convite_url?: string;
         error?: string;
       };
-      if (!res.ok || !data.convite_url) {
-        setReenvioState((prev) => ({
-          ...prev,
-          [perfilId]: { loading: false },
-        }));
-        return;
-      }
-      setReenvioState((prev) => ({
-        ...prev,
-        [perfilId]: { loading: false, link: data.convite_url },
-      }));
+      setReenvioState((prev) => ({ ...prev, [perfilId]: { loading: false } }));
+      if (!res.ok || !data.convite_url) return;
+      setCodigoGerado({
+        codigo: v.codigo_vendedor ?? '',
+        nome: v.vendedor_nome,
+        conviteUrl: data.convite_url,
+      });
     } catch {
       setReenvioState((prev) => ({ ...prev, [perfilId]: { loading: false } }));
-    }
-  };
-
-  const handleCopiarLinkConvite = async (
-    perfilId: number,
-    link: string
-  ): Promise<void> => {
-    try {
-      await navigator.clipboard.writeText(link);
-      setReenvioState((prev) => ({
-        ...prev,
-        [perfilId]: { ...prev[perfilId], copiado: true },
-      }));
-      setTimeout(() => {
-        setReenvioState((prev) => ({
-          ...prev,
-          [perfilId]: { ...prev[perfilId], copiado: false },
-        }));
-      }, 2000);
-    } catch {
-      // clipboard indisponível
     }
   };
 
@@ -1199,16 +1147,7 @@ export default function EquipePage() {
                       ? reenvioState[v.vendedor_perfil_id]
                       : undefined
                   }
-                  onReenviar={() =>
-                    v.vendedor_perfil_id != null
-                      ? handleReenviarConvite(v.vendedor_perfil_id)
-                      : undefined
-                  }
-                  onCopiarLink={(link) =>
-                    v.vendedor_perfil_id != null
-                      ? handleCopiarLinkConvite(v.vendedor_perfil_id, link)
-                      : undefined
-                  }
+                  onReenviar={() => handleReenviarConvite(v)}
                 />
               ))}
             </div>

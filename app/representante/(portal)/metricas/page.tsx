@@ -92,7 +92,10 @@ export default function MetricasRepresentante() {
 
   const carregar = useCallback(async () => {
     try {
-      const res = await fetch('/api/representante/metricas');
+      const res = await fetch('/api/representante/metricas', {
+        credentials: 'same-origin',
+        cache: 'no-store',
+      });
       if (res.ok) setData(await res.json());
     } finally {
       setLoading(false);
