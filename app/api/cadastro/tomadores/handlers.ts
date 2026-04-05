@@ -246,17 +246,11 @@ export async function handleCadastroTomador(
 
         const lead = leadResult.rows[0] ?? null;
 
-        // Determinar entidade_id para vinculos_comissao (NOT NULL)
-        let entidadeIdParaVinculo: number;
-        if (tipo === 'clinica') {
-          const clinicaEntidade = await txClient.query<{
-            entidade_id: number | null;
-          }>(`SELECT entidade_id FROM clinicas WHERE id = $1`, [entidade.id]);
-          entidadeIdParaVinculo =
-            clinicaEntidade.rows[0]?.entidade_id ?? entidade.id;
-        } else {
-          entidadeIdParaVinculo = entidade.id;
-        }
+        // Determinar coluna e valor para vinculos_comissao:
+        // clínica → clinica_id = entidade.id; entidade → entidade_id = entidade.id
+        const isClinica = tipo === 'clinica';
+        const vinculoColuna = isClinica ? 'clinica_id' : 'entidade_id';
+        const vinculoValor = entidade.id;
 
         // Criar vínculo de comissão
         try {
@@ -267,12 +261,12 @@ export async function handleCadastroTomador(
 
           await txClient.query(
             `INSERT INTO vinculos_comissao (
-              representante_id, entidade_id, lead_id,
+              representante_id, ${vinculoColuna}, lead_id,
               data_inicio, data_expiracao, status
             ) VALUES ($1, $2, $3, $4, $5, 'ativo')`,
             [
               rep.id,
-              entidadeIdParaVinculo,
+              vinculoValor,
               lead?.id ?? null,
               dataInicio,
               dataExpiracao,
@@ -283,7 +277,7 @@ export async function handleCadastroTomador(
             JSON.stringify({
               event: 'cadastro_vinculo_comissao_created',
               representante_id: rep.id,
-              entidade_id: entidadeIdParaVinculo,
+              [vinculoColuna]: vinculoValor,
               lead_id: lead?.id ?? null,
             })
           );
@@ -299,8 +293,8 @@ export async function handleCadastroTomador(
               .query(
                 `UPDATE vinculos_comissao
                SET lead_id = $1, atualizado_em = NOW()
-               WHERE representante_id = $2 AND entidade_id = $3 AND lead_id IS NULL`,
-                [lead.id, rep.id, entidadeIdParaVinculo]
+               WHERE representante_id = $2 AND ${vinculoColuna} = $3 AND lead_id IS NULL`,
+                [lead.id, rep.id, vinculoValor]
               )
               .catch(() => {});
           }
@@ -308,7 +302,7 @@ export async function handleCadastroTomador(
             JSON.stringify({
               event: 'cadastro_vinculo_comissao_already_exists',
               representante_id: rep.id,
-              entidade_id: entidadeIdParaVinculo,
+              [vinculoColuna]: vinculoValor,
             })
           );
         }
