@@ -15,8 +15,14 @@ jest.mock('@/lib/xlsxParser', () => {
     validarEmailsUnicos: jest.fn(() => ({ valido: true, duplicados: [] })),
     // Funções novas — retornam válido por padrão; sobrescreva por teste quando necessário
     validarCPFsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
-    validarEmailsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
-    validarMatriculasUnicasDetalhado: jest.fn(() => ({ valido: true, details: [] })),
+    validarEmailsUnicosDetalhado: jest.fn(() => ({
+      valido: true,
+      details: [],
+    })),
+    validarMatriculasUnicasDetalhado: jest.fn(() => ({
+      valido: true,
+      details: [],
+    })),
     validarLinhaFuncionario: jest.fn(() => ({ valido: true, erros: [] })),
   };
 });
@@ -276,7 +282,9 @@ describe('import route - clínica', () => {
     // Matrículas duplicadas — deve retornar 400 antes de qualquer query de transação
     validarMatriculasUnicasDetalhado.mockReturnValueOnce({
       valido: false,
-      details: ['Linha 2: Matrícula MAT001 duplicada no arquivo (também na linha 3)'],
+      details: [
+        'Linha 2: Matrícula MAT001 duplicada no arquivo (também na linha 3)',
+      ],
     });
 
     const fakeFile = {
@@ -514,7 +522,9 @@ describe('import route - clínica', () => {
       call[0].includes('INSERT INTO funcionarios_clinicas')
     );
     expect(insertClinicaCalls.length).toBeGreaterThanOrEqual(1);
-    const clinicaParams = insertClinicaCalls[insertClinicaCalls.length - 1][1] as unknown[];
+    const clinicaParams = insertClinicaCalls[
+      insertClinicaCalls.length - 1
+    ][1] as unknown[];
     expect(clinicaParams).toContain(1); // clinica_id = 1 (session mock)
   });
 });
