@@ -3,15 +3,14 @@
  * Cria um novo representante (PF ou PJ) diretamente pelo Comercial, com upload de documentos.
  * Aceita multipart/form-data com dados cadastrais + arquivos obrigatórios.
  *
- * PF: documento_cpf obrigatório
- * PJ: documento_cnpj + documento_cpf_responsavel obrigatórios
+ * PF: documento_identificacao obrigatório
+ * PJ: documento_identificacao (CPF do responsável) + cartao_cnpj obrigatórios
  *
- * Retorna: { representante_id, codigo, senha_temporaria }
- * O representante usa CPF + senha_temporaria para o 1º login.
- * No 1º acesso o sistema exige troca de senha e aceite de termos (gates em rep-context).
+ * Fluxo: cria lead com status='pendente_verificacao' (aparece na fila de Candidatos).
+ * O comercial verifica o lead → converte → link de convite gerado no momento da conversão.
+ * Retorna: { lead_id, nome }
  */
 import { NextRequest, NextResponse } from 'next/server';
-import bcrypt from 'bcryptjs';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
 import {
@@ -100,7 +99,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const docFile =
       (formData.get('documento_identificacao') as File | null) ??
       (formData.get('documento_cpf') as File | null) ??
-      (formData.get('documento_cnpj') as File | null);
+      (formData.get('documento_cpf_responsavel') as File | null);
     const valDoc = await validarArquivo(docFile, 'Documento de identificação');
     if (!valDoc.valid)
       return NextResponse.json(
@@ -108,24 +107,47 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
 
-    // Verificar duplicata de CPF em representantes
-    const cpfExistente = await query<{ id: number }>(
-      `SELECT id FROM public.representantes WHERE cpf = $1 LIMIT 1`,
-      [cpfRaw]
-    );
-    if (cpfExistente.rows.length > 0) {
+    // PJ: validar cartao_cnpj obrigatório
+    if (tipoPessoa === 'pj') {
+      const cartaoFile = formData.get('cartao_cnpj') as File | null;
+      const valCartao = await validarArquivo(cartaoFile, 'Cartão CNPJ');
+      if (!valCartao.valid)
+        return NextResponse.json(
+          { error: valCartao.error, field: 'cartao_cnpj' },
+          { status: 400 }
+        );
+    }
+
+    // Verificar duplicata de CPF em representantes e em leads ativos
+    const [cpfRepResult, cpfLeadResult] = await Promise.all([
+      query<{ id: number }>(
+        `SELECT id FROM public.representantes WHERE cpf = $1 LIMIT 1`,
+        [cpfRaw]
+      ),
+      query<{ id: string }>(
+        `SELECT id FROM public.representantes_cadastro_leads WHERE cpf = $1 AND status NOT IN ('rejeitado','convertido') LIMIT 1`,
+        [cpfRaw]
+      ),
+    ]);
+    if (cpfRepResult.rows.length > 0 || cpfLeadResult.rows.length > 0) {
       return NextResponse.json(
         { error: 'Já existe um representante cadastrado com este CPF.' },
         { status: 409 }
       );
     }
 
-    // Verificar duplicata de email em representantes
-    const emailExistente = await query<{ id: number }>(
-      `SELECT id FROM public.representantes WHERE email = $1 LIMIT 1`,
-      [email]
-    );
-    if (emailExistente.rows.length > 0) {
+    // Verificar duplicata de email em representantes e em leads ativos
+    const [emailRepResult, emailLeadResult] = await Promise.all([
+      query<{ id: number }>(
+        `SELECT id FROM public.representantes WHERE email = $1 LIMIT 1`,
+        [email]
+      ),
+      query<{ id: string }>(
+        `SELECT id FROM public.representantes_cadastro_leads WHERE email = $1 AND status NOT IN ('rejeitado','convertido') LIMIT 1`,
+        [email]
+      ),
+    ]);
+    if (emailRepResult.rows.length > 0 || emailLeadResult.rows.length > 0) {
       return NextResponse.json(
         { error: 'Já existe um representante cadastrado com este email.' },
         { status: 409 }
@@ -134,11 +156,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Verificar duplicata de CNPJ (PJ)
     if (tipoPessoa === 'pj' && cnpjRaw) {
-      const cnpjExistente = await query<{ id: number }>(
-        `SELECT id FROM public.representantes WHERE cnpj = $1 LIMIT 1`,
-        [cnpjRaw]
-      );
-      if (cnpjExistente.rows.length > 0) {
+      const [cnpjRepResult, cnpjLeadResult] = await Promise.all([
+        query<{ id: number }>(
+          `SELECT id FROM public.representantes WHERE cnpj = $1 LIMIT 1`,
+          [cnpjRaw]
+        ),
+        query<{ id: string }>(
+          `SELECT id FROM public.representantes_cadastro_leads WHERE cnpj = $1 AND status NOT IN ('rejeitado','convertido') LIMIT 1`,
+          [cnpjRaw]
+        ),
+      ]);
+      if (cnpjRepResult.rows.length > 0 || cnpjLeadResult.rows.length > 0) {
         return NextResponse.json(
           { error: 'Já existe um representante cadastrado com este CNPJ.' },
           { status: 409 }
@@ -146,106 +174,116 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Gerar código sequencial via sequência do banco
-    const codigoResult = await query<{ codigo: string }>(
-      `SELECT nextval('public.seq_representante_codigo')::text AS codigo`
-    );
-    const codigo = codigoResult.rows[0].codigo;
-
-    // Gerar senha temporária determinística: 6 primeiros dígitos do CPF + 'Qw' + 2 últimos
-    // Atende requisitos de complexidade (8+ chars, maiúscula, número)
-    // DEVE ser trocada obrigatoriamente no 1º acesso (gate precisa_trocar_senha)
-    const senhaTemporaria = `${cpfRaw.slice(0, 6)}Qw${cpfRaw.slice(-2)}`;
-    const senhaHash = await bcrypt.hash(senhaTemporaria, 12);
-
-    // Inserir representante com status 'apto' — já pode fazer login com senha temporária
-    const insertResult = await query<{ id: number }>(
-      `INSERT INTO public.representantes
-        (nome, cpf, cnpj, cpf_responsavel_pj, email, telefone, tipo_pessoa, codigo, status, aceite_termos, aceite_disclaimer_nv, aceite_politica_privacidade)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'apto', FALSE, FALSE, FALSE)
-       RETURNING id`,
-      [
-        nome,
-        cpfRaw,
-        tipoPessoa === 'pj' ? cnpjRaw : null,
-        null,
-        email,
-        telefone,
-        tipoPessoa,
-        codigo,
-      ]
-    );
-
-    const representanteId = insertResult.rows[0].id;
-
-    // Criar senha temporária em representantes_senhas (primeira_senha_alterada=FALSE → força troca no 1º acesso)
-    await query(
-      `INSERT INTO public.representantes_senhas (representante_id, cpf, senha_hash, primeira_senha_alterada)
-       VALUES ($1, $2, $3, FALSE)`,
-      [representanteId, cpfRaw, senhaHash]
-    );
-
-    // Upload de documentos (mesmo fluxo da landing page)
+    // Upload de documentos antes de criar o lead
     const identificador = tipoPessoa === 'pj' && cnpjRaw ? cnpjRaw : cpfRaw;
-    const docPaths: string[] = [];
 
-    // Campo unificado: documento_identificacao (com fallback para nomes específicos)
-    const arquivoDoc =
+    // PF: documento_identificacao → doc_cpf_key
+    // PJ: documento_identificacao → doc_cpf_resp_key  |  cartao_cnpj → doc_cnpj_key
+    const arquivoDocId =
       (formData.get('documento_identificacao') as File | null) ??
       (tipoPessoa === 'pf'
         ? (formData.get('documento_cpf') as File | null)
-        : (formData.get('documento_cnpj') as File | null));
+        : (formData.get('documento_cpf_responsavel') as File | null));
 
-    if (arquivoDoc) {
-      const valDocUpload = await validarArquivo(
-        arquivoDoc,
+    const arquivoCartaoCnpj = formData.get('cartao_cnpj') as File | null;
+
+    // Upload do documento de identificação
+    let docIdKey: string | null = null;
+    let docIdFilename: string | null = null;
+    let docIdUrl: string | null = null;
+
+    if (arquivoDocId) {
+      const val = await validarArquivo(
+        arquivoDocId,
         'Documento de identificação'
       );
-      const subpasta = tipoPessoa === 'pj' ? 'cnpj' : 'cpf';
+      const tipoUpload = tipoPessoa === 'pf' ? 'cpf' : 'cpf_responsavel';
       const resultado = await uploadDocumentoRepresentante(
-        valDocUpload.buffer!,
-        subpasta,
+        val.buffer!,
+        tipoUpload,
         identificador,
-        valDocUpload.contentType!,
+        val.contentType!,
         tipoPessoa,
         'CAD'
       );
-      docPaths.push(resultado.arquivo_remoto?.key ?? resultado.path);
+      docIdKey = resultado.arquivo_remoto?.key ?? resultado.path;
+      docIdUrl = resultado.arquivo_remoto?.url ?? resultado.path;
+      docIdFilename = arquivoDocId.name;
     }
 
-    // Para PJ, se enviou cartao_cnpj separadamente, fazer upload adicional
-    const arquivoCartaoCnpj = formData.get('cartao_cnpj') as File | null;
+    // Upload do cartão CNPJ (apenas PJ)
+    let docCnpjKey: string | null = null;
+    let docCnpjFilename: string | null = null;
+    let docCnpjUrl: string | null = null;
+
     if (tipoPessoa === 'pj' && arquivoCartaoCnpj) {
-      const valCartao = await validarArquivo(arquivoCartaoCnpj, 'Cartão CNPJ');
-      const resultCartao = await uploadDocumentoRepresentante(
-        valCartao.buffer!,
+      const val = await validarArquivo(arquivoCartaoCnpj, 'Cartão CNPJ');
+      const resultado = await uploadDocumentoRepresentante(
+        val.buffer!,
         'cnpj',
         identificador,
-        valCartao.contentType!,
+        val.contentType!,
         'pj',
         'CAD'
       );
-      docPaths.push(resultCartao.arquivo_remoto?.key ?? resultCartao.path);
+      docCnpjKey = resultado.arquivo_remoto?.key ?? resultado.path;
+      docCnpjUrl = resultado.arquivo_remoto?.url ?? resultado.path;
+      docCnpjFilename = arquivoCartaoCnpj.name;
     }
 
-    // Atualizar doc_identificacao_path
-    if (docPaths.length > 0) {
-      await query(
-        `UPDATE public.representantes SET doc_identificacao_path = $1 WHERE id = $2`,
-        [docPaths.join(';'), representanteId]
-      );
-    }
+    // Obter IP e user-agent para auditoria do lead
+    const ipOrigem =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+      request.headers.get('x-real-ip') ??
+      'comercial';
+    const userAgent = request.headers.get('user-agent') ?? null;
+
+    // Criar lead com status='pendente_verificacao' — aparece na fila de Candidatos para verificação
+    const leadResult = await query<{ id: string }>(
+      `INSERT INTO public.representantes_cadastro_leads (
+        tipo_pessoa, nome, email, telefone,
+        cpf, cnpj, razao_social, cpf_responsavel,
+        doc_cpf_key, doc_cpf_filename, doc_cpf_url,
+        doc_cnpj_key, doc_cnpj_filename, doc_cnpj_url,
+        doc_cpf_resp_key, doc_cpf_resp_filename, doc_cpf_resp_url,
+        status, ip_origem, user_agent
+      ) VALUES (
+        $1, $2, $3, $4,
+        $5, $6, $7, $8,
+        $9, $10, $11,
+        $12, $13, $14,
+        $15, $16, $17,
+        'pendente_verificacao', $18, $19
+      ) RETURNING id`,
+      [
+        tipoPessoa,
+        nome,
+        email,
+        telefone,
+        tipoPessoa === 'pf' ? cpfRaw : null,
+        tipoPessoa === 'pj' ? cnpjRaw : null,
+        tipoPessoa === 'pj' ? razaoSocial : null,
+        tipoPessoa === 'pj' ? cpfRaw : null, // cpf_responsavel para PJ
+        tipoPessoa === 'pf' ? docIdKey : null, // doc_cpf_key (PF)
+        tipoPessoa === 'pf' ? docIdFilename : null, // doc_cpf_filename (PF)
+        tipoPessoa === 'pf' ? docIdUrl : null, // doc_cpf_url (PF)
+        tipoPessoa === 'pj' ? docCnpjKey : null, // doc_cnpj_key (PJ)
+        tipoPessoa === 'pj' ? docCnpjFilename : null, // doc_cnpj_filename (PJ)
+        tipoPessoa === 'pj' ? docCnpjUrl : null, // doc_cnpj_url (PJ)
+        tipoPessoa === 'pj' ? docIdKey : null, // doc_cpf_resp_key (PJ)
+        tipoPessoa === 'pj' ? docIdFilename : null, // doc_cpf_resp_filename (PJ)
+        tipoPessoa === 'pj' ? docIdUrl : null, // doc_cpf_resp_url (PJ)
+        ipOrigem,
+        userAgent,
+      ]
+    );
 
     console.log(
-      `[COMERCIAL] Representante #${representanteId} (${nome}) criado por ${session.cpf} — senha temporária gerada`
+      `[COMERCIAL] Lead ${leadResult.rows[0].id} (${nome}) criado por ${session.cpf} — aguardando verificação`
     );
 
     return NextResponse.json(
-      {
-        representante_id: representanteId,
-        codigo,
-        senha_temporaria: senhaTemporaria,
-      },
+      { lead_id: leadResult.rows[0].id, nome },
       { status: 201 }
     );
   } catch (err) {
@@ -253,6 +291,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const msg = (err as Error).message;
     if (msg === 'Sem permissão') {
       return NextResponse.json({ error: 'Sem permissão' }, { status: 403 });
+    }
+    if (msg.includes('Já existe representante')) {
+      return NextResponse.json({ error: msg }, { status: 409 });
     }
     return NextResponse.json({ error: 'Erro interno' }, { status: 500 });
   }
