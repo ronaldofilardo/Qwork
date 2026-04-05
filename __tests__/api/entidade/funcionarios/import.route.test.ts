@@ -29,8 +29,14 @@ jest.mock('@/lib/xlsxParser', () => {
     >,
     // Novas funções — retornam válido por padrão
     validarCPFsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
-    validarEmailsUnicosDetalhado: jest.fn(() => ({ valido: true, details: [] })),
-    validarMatriculasUnicasDetalhado: jest.fn(() => ({ valido: true, details: [] })),
+    validarEmailsUnicosDetalhado: jest.fn(() => ({
+      valido: true,
+      details: [],
+    })),
+    validarMatriculasUnicasDetalhado: jest.fn(() => ({
+      valido: true,
+      details: [],
+    })),
     validarLinhaFuncionario: jest.fn(() => ({
       valido: true,
       erros: [],
@@ -63,10 +69,12 @@ jest.mock('@/lib/db-gestor', () => ({
 
 // withTransactionAsGestor: passa client com query = queryAsGestorEntidade
 jest.mock('@/lib/db-transaction', () => ({
-  withTransactionAsGestor: jest.fn(async (fn: (client: any) => Promise<any>) => {
-    const { queryAsGestorEntidade } = require('@/lib/db-gestor');
-    return fn({ query: queryAsGestorEntidade });
-  }),
+  withTransactionAsGestor: jest.fn(
+    async (fn: (client: any) => Promise<any>) => {
+      const { queryAsGestorEntidade } = require('@/lib/db-gestor');
+      return fn({ query: queryAsGestorEntidade });
+    }
+  ),
 }));
 
 jest.mock('bcryptjs', () => ({
@@ -235,7 +243,9 @@ describe('import route', () => {
     // Matrículas duplicadas — deve retornar 400 antes de qualquer query
     validarMatriculasUnicasDetalhado.mockReturnValueOnce({
       valido: false,
-      details: ['Linha 2: Matrícula MAT001 duplicada no arquivo (também na linha 3)'],
+      details: [
+        'Linha 2: Matrícula MAT001 duplicada no arquivo (também na linha 3)',
+      ],
     });
 
     const fakeFile = {
@@ -401,7 +411,9 @@ describe('import route', () => {
     });
 
     // CPF já existe no banco com id=42
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 42, cpf: '74867746070' }] });
+    queryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ id: 42, cpf: '74867746070' }],
+    });
 
     // (sem matrículas novas a verificar — toInsertNew está vazio)
 
@@ -449,7 +461,9 @@ describe('import route', () => {
     });
 
     // CPF existe no banco
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 42, cpf: '74867746070' }] });
+    queryAsGestorEntidade.mockResolvedValueOnce({
+      rows: [{ id: 42, cpf: '74867746070' }],
+    });
 
     // Dentro da transação: já está vinculado a esta entidade
     queryAsGestorEntidade.mockResolvedValueOnce({ rows: [{ id: 999 }] }); // SELECT 1 FROM funcionarios_entidades
