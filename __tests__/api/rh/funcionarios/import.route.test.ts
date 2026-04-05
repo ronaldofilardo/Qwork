@@ -505,6 +505,10 @@ describe('import route - clínica', () => {
     expect(sqlQuery).not.toContain('contratante_id');
     expect(sqlQuery).not.toContain('tomador_id');
 
+    // usuario_tipo deve estar presente e com valor correto para clínica
+    expect(sqlQuery).toContain('usuario_tipo');
+    expect(sqlQuery).toContain("'funcionario_clinica'::usuario_tipo_enum");
+
     // Verificar que clinica_id está em funcionarios_clinicas, não em funcionarios
     const insertClinicaCalls = allCalls.filter((call) =>
       call[0].includes('INSERT INTO funcionarios_clinicas')

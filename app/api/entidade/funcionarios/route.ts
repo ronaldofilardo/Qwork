@@ -300,8 +300,8 @@ export async function POST(request: Request) {
     const result = await queryAsGestorEntidade(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        matricula, nivel_cargo, turno, escala, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
+        matricula, nivel_cargo, turno, escala, ativo, usuario_tipo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, 'funcionario_entidade'::usuario_tipo_enum)
       RETURNING id, cpf, nome, email, setor, funcao, data_nascimento`,
       [
         cpfLimpo,
