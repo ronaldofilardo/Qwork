@@ -296,12 +296,12 @@ export async function POST(request: Request) {
     }
 
     // ARQUITETURA SEGREGADA: Inserir em 2 etapas
-    // 1. Inserir funcionário (sem FKs diretas)
+    // 1. Inserir funcionário com contratante_id (para satisfazer constraint)
     const result = await queryAsGestorEntidade(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        matricula, nivel_cargo, turno, escala, ativo
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
+        matricula, nivel_cargo, turno, escala, ativo, contratante_id
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13)
       RETURNING id, cpf, nome, email, setor, funcao, data_nascimento`,
       [
         cpfLimpo,
@@ -316,6 +316,7 @@ export async function POST(request: Request) {
         nivel_cargo || null,
         turno || null,
         escala || null,
+        entidadeId,
       ]
     );
 

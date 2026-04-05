@@ -103,9 +103,9 @@ export default function FuncionariosSection({
         (f) =>
           f.nome.toLowerCase().includes(term) ||
           f.cpf.includes(term) ||
-          f.email.toLowerCase().includes(term) ||
-          f.setor.toLowerCase().includes(term) ||
-          f.funcao.toLowerCase().includes(term)
+          (f.email?.toLowerCase() || '').includes(term) ||
+          (f.setor?.toLowerCase() || '').includes(term) ||
+          (f.funcao?.toLowerCase() || '').includes(term)
       );
     }
 

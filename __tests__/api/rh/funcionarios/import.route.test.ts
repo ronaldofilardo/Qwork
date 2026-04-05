@@ -438,4 +438,79 @@ describe('import route - clínica', () => {
     expect(Array.isArray(json.warnings)).toBe(true);
     expect(json.warnings[0]).toContain('74867746070');
   });
+
+  /**
+   * @test Valida que clinica_id é passado corretamente (constraint funcionarios_clinica_check)
+   * @description Deve passar clinica_id no INSERT para satisfazer a constraint que exige:
+   *              clinica_id IS NOT NULL OR contratante_id IS NOT NULL OR perfil IN (...)
+   */
+  it('passes clinica_id in INSERT funcionarios to satisfy constraint', async () => {
+    // Arrange: empresa válida
+    query.mockResolvedValueOnce({ rows: [{ id: 1, clinica_id: 99 }] });
+
+    parseXlsxBufferToRows.mockReturnValue({
+      success: true,
+      data: [
+        {
+          cpf: '99999999999',
+          nome: 'Roberto Test',
+          data_nascimento: '1990-03-15',
+          setor: 'RH',
+          funcao: 'Analista',
+          email: 'roberto@clinica.com',
+        },
+      ],
+    });
+
+    // CPF não existe
+    query.mockResolvedValueOnce({ rows: [] });
+
+    // Nenhuma matrícula a verificar
+    query.mockResolvedValueOnce({ rows: [] });
+
+    // INSERT funcionarios RETURNING id
+    query.mockResolvedValueOnce({ rows: [{ id: 77 }] });
+
+    // INSERT funcionarios_clinicas
+    query.mockResolvedValueOnce({ rows: [] });
+
+    const fakeFile = {
+      arrayBuffer: async () => new ArrayBuffer(8),
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      name: 'teste.xlsx',
+    };
+
+    const req = {
+      url: 'http://localhost/api/rh/funcionarios/import?empresa_id=1',
+      formData: async () => ({ get: () => fakeFile }),
+    } as unknown as Request;
+
+    const res = await POST(req);
+    const json = await res.json();
+
+    expect(res.status).toBe(200);
+    expect(json.success).toBe(true);
+
+    // Extrair chamadas de INSERT
+    const allCalls = query.mock.calls;
+    const insertFuncCalls = allCalls.filter(
+      (call) =>
+        call[0].includes('INSERT INTO funcionarios') &&
+        !call[0].includes('funcionarios_clinicas')
+    );
+
+    // Deve ter feito INSERT
+    expect(insertFuncCalls.length).toBeGreaterThanOrEqual(1);
+
+    // Buscar o INSERT específico
+    const lastInsertCall = insertFuncCalls[insertFuncCalls.length - 1];
+    const sqlQuery = lastInsertCall[0] as string;
+    const params = lastInsertCall[1] as unknown[];
+
+    // Validar que clinica_id está na query
+    expect(sqlQuery).toContain('clinica_id');
+
+    // Validar que clinica_id (99, do mock empresa) foi passado
+    expect(params).toContain(99);
+  });
 });
