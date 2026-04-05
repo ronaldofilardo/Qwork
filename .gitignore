@@ -23,6 +23,7 @@ dist/
 # Logs
 logs/
 *.log
+/*.txt
 
 # Database
 *.sqlite
@@ -64,3 +65,9 @@ uploads/
 !lib/storage/
 .vercel
 .env*.local
+
+
+# sensitive backups and secrets
+/storage/backups/secure/*
+cookies*.txt
+cookiejar*
