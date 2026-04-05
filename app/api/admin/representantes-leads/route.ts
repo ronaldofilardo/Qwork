@@ -70,8 +70,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          l.doc_cpf_resp_filename, l.doc_cpf_resp_key, l.doc_cpf_resp_url,
          l.status, l.motivo_rejeicao,
          l.ip_origem, l.criado_em, l.verificado_em, l.convertido_em,
-         l.representante_id
+         l.representante_id,
+         r.convite_token, r.aceite_termos
        FROM representantes_cadastro_leads l
+       LEFT JOIN public.representantes r ON r.id = l.representante_id
        ${where}
        ORDER BY
          CASE l.status

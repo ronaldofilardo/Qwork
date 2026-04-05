@@ -983,6 +983,32 @@ describe('6. app/admin/representantes/page.tsx — tab Candidatos', () => {
     expect(src).toMatch(/Converter em Representante/);
     expect(src).toMatch(/status.*apto/i);
   });
+
+  it('exibe botão Copiar Link quando lead convertido e sem aceite de termos', () => {
+    // Botão condicional: {l.status === 'convertido' && !l.aceite_termos && l.convite_token && (...)}
+    expect(src).toMatch(/status.*===.*['"]convertido['"]/);
+    expect(src).toMatch(/!l\.aceite_termos/);
+    expect(src).toMatch(/l\.convite_token/);
+    expect(src).toMatch(/Copiar Link/);
+  });
+
+  it('usa convite_token na URL de convite /representante/criar-senha?token=', () => {
+    // Construir URL: const baseUrl = ...; const conviteUrl = `${baseUrl}/representante/criar-senha?token=${l.convite_token}`;
+    expect(src).toMatch(/\/representante\/criar-senha/);
+    expect(src).toMatch(/token=.*convite_token/);
+  });
+
+  it('oculta botão Copiar Link quando aceite_termos é true', () => {
+    // O && !l.aceite_termos garante que só mostra quando aceite_termos é false
+    // Verificar que a condição existe
+    expect(src).toMatch(/!l\.aceite_termos/);
+  });
+
+  it('interface Lead inclui campos convite_token e aceite_termos', () => {
+    expect(src).toMatch(/interface Lead/);
+    expect(src).toMatch(/convite_token/);
+    expect(src).toMatch(/aceite_termos/);
+  });
 });
 
 // ---------------------------------------------------------------------------

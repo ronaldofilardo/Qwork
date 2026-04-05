@@ -5,7 +5,6 @@ import {
   X,
   Loader2,
   UserPlus,
-  Copy,
   CheckCheck,
   Upload,
   FileText,
@@ -24,19 +23,13 @@ export default function CadastrarRepresentanteModal({
 }: Props) {
   const [saving, setSaving] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-  const [resultado, setResultado] = useState<{
-    codigo: string;
-    cpfFormatado: string;
-    senha_temporaria: string;
-  } | null>(null);
+  const [resultado, setResultado] = useState<{ nome: string } | null>(null);
 
   const [nome, setNome] = useState('');
   const [cpf, setCpf] = useState('');
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
   const [tipoPessoa, setTipoPessoa] = useState<'pf' | 'pj'>('pf');
-  const [copiadoCpf, setCopiadoCpf] = useState(false);
-  const [copiadoSenha, setCopiadoSenha] = useState(false);
 
   // Campos PJ
   const [cnpj, setCnpj] = useState('');
@@ -139,11 +132,7 @@ export default function CadastrarRepresentanteModal({
         setErro(data.error ?? 'Erro ao cadastrar representante.');
         return;
       }
-      setResultado({
-        codigo: data.codigo,
-        cpfFormatado: cpf,
-        senha_temporaria: data.senha_temporaria,
-      });
+      setResultado({ nome: data.nome });
       onSuccess();
     } catch {
       setErro('Erro de conexão.');
@@ -152,28 +141,12 @@ export default function CadastrarRepresentanteModal({
     }
   };
 
-  const copiarCpf = async (): Promise<void> => {
-    if (!resultado?.cpfFormatado) return;
-    await navigator.clipboard.writeText(
-      resultado.cpfFormatado.replace(/\D/g, '')
-    );
-    setCopiadoCpf(true);
-    setTimeout(() => setCopiadoCpf(false), 2000);
-  };
-
-  const copiarSenha = async (): Promise<void> => {
-    if (!resultado?.senha_temporaria) return;
-    await navigator.clipboard.writeText(resultado.senha_temporaria);
-    setCopiadoSenha(true);
-    setTimeout(() => setCopiadoSenha(false), 2000);
-  };
-
   const inputCls =
     'w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-all';
   const labelCls =
     'block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide';
 
-  // Tela de sucesso com credenciais de primeiro acesso
+  // Tela de sucesso — candidato na fila de verificação
   if (resultado) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
@@ -182,69 +155,21 @@ export default function CadastrarRepresentanteModal({
             <CheckCheck size={24} className="text-green-600" />
           </div>
           <h3 className="text-lg font-black text-gray-900">
-            Representante Cadastrado!
+            Candidato Cadastrado!
           </h3>
-          <p className="text-sm text-gray-500 mt-1 mb-4">
-            Código:{' '}
-            <span className="font-mono font-bold text-green-700">
-              {resultado.codigo}
-            </span>
+          <p className="text-sm text-gray-700 font-semibold mt-1">
+            {resultado.nome}
           </p>
 
-          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4 text-left space-y-3">
-            <p className="text-[10px] font-bold text-blue-700 uppercase tracking-widest">
-              Credenciais de Primeiro Acesso
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 my-5 text-left">
+            <p className="text-xs text-amber-800 leading-relaxed">
+              O candidato está na fila de{' '}
+              <span className="font-bold">
+                Candidatos aguardando verificação
+              </span>
+              . Acesse a aba <span className="font-bold">Candidatos</span> para
+              aprovar e enviar o link de ativação.
             </p>
-            <p className="text-xs text-blue-600 leading-relaxed">
-              Repasse ao representante. Ele deverá criar uma nova senha e
-              aceitar os termos no 1º acesso.
-            </p>
-
-            {/* CPF */}
-            <div className="flex items-center justify-between gap-2 bg-white border border-blue-100 rounded-lg px-3 py-2">
-              <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase">
-                  Login (CPF)
-                </p>
-                <p className="text-sm font-mono font-bold text-gray-800">
-                  {resultado.cpfFormatado}
-                </p>
-              </div>
-              <button
-                onClick={copiarCpf}
-                className={`flex items-center gap-1 px-2 py-1 text-xs rounded-lg border transition-all cursor-pointer ${
-                  copiadoCpf
-                    ? 'bg-green-600 text-white border-green-600'
-                    : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {copiadoCpf ? <CheckCheck size={12} /> : <Copy size={12} />}
-                {copiadoCpf ? 'Copiado' : 'Copiar'}
-              </button>
-            </div>
-
-            {/* Senha */}
-            <div className="flex items-center justify-between gap-2 bg-white border border-blue-100 rounded-lg px-3 py-2">
-              <div>
-                <p className="text-[10px] font-semibold text-gray-400 uppercase">
-                  Senha Temporária
-                </p>
-                <p className="text-sm font-mono font-bold text-gray-800 tracking-wider">
-                  {resultado.senha_temporaria}
-                </p>
-              </div>
-              <button
-                onClick={copiarSenha}
-                className={`flex items-center gap-1 px-2 py-1 text-xs rounded-lg border transition-all cursor-pointer ${
-                  copiadoSenha
-                    ? 'bg-green-600 text-white border-green-600'
-                    : 'border-gray-200 text-gray-500 hover:bg-gray-50'
-                }`}
-              >
-                {copiadoSenha ? <CheckCheck size={12} /> : <Copy size={12} />}
-                {copiadoSenha ? 'Copiado' : 'Copiar'}
-              </button>
-            </div>
           </div>
 
           <button
@@ -272,7 +197,7 @@ export default function CadastrarRepresentanteModal({
                 Cadastrar Representante
               </h2>
               <p className="text-xs text-gray-400 mt-0.5">
-                Credenciais de acesso serão geradas automaticamente
+                Documentos verificados antes da ativação
               </p>
             </div>
           </div>
