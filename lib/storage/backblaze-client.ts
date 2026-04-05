@@ -30,12 +30,12 @@ function getBackblazeConfig(): BackblazeConfig {
   const provider = (process.env.BACKBLAZE_PROVIDER || 'b2').toLowerCase();
 
   // Se o provedor for 's2' (Backblaze S2), permitir endpoint/região específicos via env
-  let endpoint = process.env.BACKBLAZE_ENDPOINT;
-  let region = process.env.BACKBLAZE_REGION || '';
+  let endpoint = process.env.BACKBLAZE_ENDPOINT?.trim();
+  let region = (process.env.BACKBLAZE_REGION || '').trim();
 
   if (provider === 's2') {
-    endpoint = endpoint || process.env.BACKBLAZE_S2_ENDPOINT || '';
-    region = region || process.env.BACKBLAZE_S2_REGION || '';
+    endpoint = endpoint || process.env.BACKBLAZE_S2_ENDPOINT?.trim() || '';
+    region = region || (process.env.BACKBLAZE_S2_REGION || '').trim();
 
     // Se região não foi especificada, extrair do endpoint
     if (!region && endpoint) {
