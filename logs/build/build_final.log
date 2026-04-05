@@ -1,0 +1,33 @@
+
+> qwork2026@1.0.0 build C:\apps\QWork
+> next build
+
+  Ôû▓ Next.js 14.2.35
+  - Environments: .env.production.local, .env.local, .env.production, .env
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+
+./components/FlowStepsExplainer.tsx
+119:17  Warning: 'isLast' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/ImportacaoFlowGuide.tsx
+70:17  Warning: 'isLast' is assigned a value but never used. Allowed unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜí´©Å secrets for agents: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ­ƒñû agentic secret storage: https://dotenvx.com/as2
+[dotenv@17.3.1] injecting env (17) from .env.local -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+   Generating static pages (0/86) ...
+   Generating static pages (21/86) 
+   Generating static pages (42/86) 
+   Generating static pages (64/86) 
+ Ô£ô Generating static pages (86/86)
+   Finalizing page optimization ...
+   Collecting build traces ...
