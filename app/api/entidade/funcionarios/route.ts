@@ -296,12 +296,12 @@ export async function POST(request: Request) {
     }
 
     // ARQUITETURA SEGREGADA: Inserir em 2 etapas
-    // 1. Inserir funcionário com tomador_id (para satisfazer constraint - migration 1017)
+    // 1. Inserir funcionário base (sem FK direta — migration 605 removeu colunas obsoletas)
     const result = await queryAsGestorEntidade(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        matricula, nivel_cargo, turno, escala, ativo, tomador_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13)
+        matricula, nivel_cargo, turno, escala, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
       RETURNING id, cpf, nome, email, setor, funcao, data_nascimento`,
       [
         cpfLimpo,
@@ -316,7 +316,6 @@ export async function POST(request: Request) {
         nivel_cargo || null,
         turno || null,
         escala || null,
-        entidadeId,
       ]
     );
 
