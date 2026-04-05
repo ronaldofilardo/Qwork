@@ -54,7 +54,7 @@ export default function AdminSidebar({
     <>
       <div className="flex items-center gap-2 mb-2">
         <FileCheck size={14} />
-        <span>Emissores: Laudos Técnicos</span>
+        <span>Perfis: Laudos Técnicos</span>
       </div>
       <div className="flex items-center gap-2">
         <Shield size={14} />
@@ -181,7 +181,7 @@ export default function AdminSidebar({
       {/* Geral */}
       <MenuItem
         icon={Settings}
-        label="Emissores"
+        label="Perfis"
         count={counts.emissores}
         isActive={activeSection === 'geral'}
         onClick={() => {
