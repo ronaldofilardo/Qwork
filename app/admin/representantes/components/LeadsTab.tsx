@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Copy, Check } from 'lucide-react';
 import type { Lead } from '../types';
 import { LEAD_STATUS_BADGE, LEAD_STATUS_OPTIONS, fmtData } from '../constants';
 
@@ -46,6 +47,9 @@ export function LeadsTab({
   const [leadRejeicaoMotivo, setLeadRejeicaoMotivo] = useState('');
   const [leadRejeicaoModal, setLeadRejeicaoModal] = useState<Lead | null>(null);
   const [leadConverterModal, setLeadConverterModal] = useState<Lead | null>(
+    null
+  );
+  const [conviteLinkCopiado, setConviteLinkCopiado] = useState<string | null>(
     null
   );
 
@@ -410,6 +414,45 @@ export function LeadsTab({
                           Converter
                         </button>
                       )}
+                      {l.status === 'convertido' &&
+                        !l.aceite_termos &&
+                        l.convite_token && (
+                          <button
+                            onClick={() => {
+                              const baseUrl =
+                                typeof window !== 'undefined'
+                                  ? window.location.origin
+                                  : 'http://localhost:3000';
+                              const conviteUrl = `${baseUrl}/representante/criar-senha?token=${l.convite_token}`;
+                              navigator.clipboard
+                                .writeText(conviteUrl)
+                                .then(() => {
+                                  setConviteLinkCopiado(l.id);
+                                  setTimeout(
+                                    () => setConviteLinkCopiado(null),
+                                    2000
+                                  );
+                                });
+                            }}
+                            className={`flex items-center gap-1 text-sm font-medium transition-all ${
+                              conviteLinkCopiado === l.id
+                                ? 'text-green-600'
+                                : 'text-blue-600 hover:text-blue-700'
+                            }`}
+                          >
+                            {conviteLinkCopiado === l.id ? (
+                              <>
+                                <Check size={14} />
+                                Copiado
+                              </>
+                            ) : (
+                              <>
+                                <Copy size={14} />
+                                Copiar Link
+                              </>
+                            )}
+                          </button>
+                        )}
                     </div>
                   </td>
                 </tr>
