@@ -35,10 +35,9 @@ export interface AtivarEntidadeResult {
  * Ativa uma entidade de forma segura e auditada
  *
  * Regras de negócio:
- * 1. Só ativa se pagamento_confirmado = true (ou isenção manual)
- * 2. Só ativa se status permitir (não pode ativar 'cancelado')
- * 3. Registra em audit_logs obrigatoriamente
- * 4. Valida transição de estado
+ * 1. Só ativa se status permitir (não pode ativar 'cancelado')
+ * 2. Registra em audit_logs obrigatoriamente
+ * 3. Valida transição de estado
  *
  * @throws Error se validações falharem ou se banco rejeitar
  */
@@ -64,7 +63,7 @@ export async function ativarEntidade(
   try {
     // Buscar estado atual da entidade
     const entidadeResult = await query(
-      `SELECT id, nome, ativa, pagamento_confirmado, status 
+      `SELECT id, nome, ativa, status 
        FROM entidades 
        WHERE id = $1`,
       [entidade_id]
@@ -90,11 +89,9 @@ export async function ativarEntidade(
       throw new Error('Não é possível ativar entidade cancelada');
     }
 
-    // Validar pagamento confirmado (ou isenção manual)
-    if (!entidade.pagamento_confirmado && !isencao_manual) {
-      throw new Error(
-        'Não é possível ativar entidade sem pagamento confirmado. Use isencao_manual apenas em casos excepcionais.'
-      );
+    // Isenção manual requer admin_cpf — auditoria obrigatória
+    if (isencao_manual && !admin_cpf) {
+      throw new Error('isenção manual requer admin_cpf obrigatoriamente');
     }
 
     // Atualizar para ativo
@@ -102,7 +99,6 @@ export async function ativarEntidade(
       `UPDATE entidades 
        SET ativa = true,
            status = 'aprovado',
-           data_liberacao_login = COALESCE(data_liberacao_login, NOW()),
            aprovado_em = COALESCE(aprovado_em, NOW())
        WHERE id = $1`,
       [entidade_id]
@@ -162,7 +158,6 @@ export async function ativarEntidade(
         details: JSON.stringify({
           motivo,
           isencao_manual,
-          pagamento_confirmado: entidade.pagamento_confirmado,
           ativado_por: admin_cpf || 'sistema_automatico',
           timestamp: new Date().toISOString(),
         }),
