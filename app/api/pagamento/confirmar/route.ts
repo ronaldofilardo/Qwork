@@ -445,7 +445,7 @@ export async function POST(request: NextRequest) {
 
         // Garantir que tomador esteja como aprovado/ativo após pagamento
         await query(
-          `UPDATE entidades SET status = 'aprovado', ativa = true, data_liberacao_login = COALESCE(data_liberacao_login, NOW()), aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
+          `UPDATE entidades SET status = 'aprovado', ativa = true, aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP), atualizado_em = CURRENT_TIMESTAMP WHERE id = $1`,
           [pagamento.tomador_id]
         );
 
@@ -498,7 +498,6 @@ export async function POST(request: NextRequest) {
         `UPDATE entidades 
          SET ativa = true,
              status = 'aprovado',
-             data_liberacao_login = COALESCE(data_liberacao_login, NOW()),
              aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP),
              aprovado_por_cpf = '00000000000',
              atualizado_em = CURRENT_TIMESTAMP

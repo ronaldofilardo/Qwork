@@ -260,7 +260,6 @@ export async function getEntidadeCompleta(
     atualizado_em: row.atualizado_em,
     aprovado_em: row.aprovado_em,
     aprovado_por_cpf: row.aprovado_por_cpf,
-    data_liberacao_login: row.data_liberacao_login,
   };
 
   if (row.pagamento_id) {

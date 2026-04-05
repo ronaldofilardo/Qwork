@@ -123,7 +123,6 @@ export async function ativarEntidade(
   const result = await query<Entidade>(
     `UPDATE entidades
      SET ativa = true,
-         data_liberacao_login = CURRENT_TIMESTAMP,
          status = CASE WHEN status <> 'aprovado' THEN 'aprovado' ELSE status END,
          aprovado_em = COALESCE(aprovado_em, CURRENT_TIMESTAMP),
          aprovado_por_cpf = COALESCE(aprovado_por_cpf, '00000000000')
@@ -178,7 +177,6 @@ export async function solicitarReanalise(
      SET status = 'em_reanalise',
          observacoes_reanalise = $2,
          ativa = false,
-         data_liberacao_login = NULL,
          data_primeiro_pagamento = NULL
      WHERE id = $1
      RETURNING *`,
