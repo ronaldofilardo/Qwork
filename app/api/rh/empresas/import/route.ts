@@ -298,8 +298,8 @@ export async function POST(request: Request): Promise<NextResponse> {
             const insertFunc = await client.query(
               `INSERT INTO funcionarios (
                 cpf, nome, data_nascimento, setor, funcao, email,
-                senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala
-              ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
+                senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, usuario_tipo
+              ) VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,'funcionario_clinica'::usuario_tipo_enum)
               RETURNING id`,
               [
                 r.cpf,

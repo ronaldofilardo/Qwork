@@ -170,8 +170,8 @@ export async function POST(request: Request) {
           // ARQUITETURA SEGREGADA: Inserir em 2 etapas
           // 1. Inserir funcionário base (sem FK direta — migration 605 removeu colunas obsoletas)
           const insertResult = await client.query(
-            `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11)
+            `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, usuario_tipo)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,'funcionario_entidade'::usuario_tipo_enum)
              RETURNING id`,
             [
               r.cpf,

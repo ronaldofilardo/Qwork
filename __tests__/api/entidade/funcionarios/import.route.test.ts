@@ -544,6 +544,10 @@ describe('import route', () => {
     const mockEntidadeId = 1; // do mock requireEntity
     expect(params).not.toContain(mockEntidadeId);
 
+    // usuario_tipo deve estar presente e com valor correto para entidade
+    expect(sqlQuery).toContain('usuario_tipo');
+    expect(sqlQuery).toContain("'funcionario_entidade'::usuario_tipo_enum");
+
     // Verificar que entidade_id está no INSERT de funcionarios_entidades
     const insertEntCalls = allCalls.filter((call) =>
       call[0].includes('INSERT INTO funcionarios_entidades')
