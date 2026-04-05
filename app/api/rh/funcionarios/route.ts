@@ -303,12 +303,12 @@ export async function POST(request: Request) {
     const senhaHash = await bcrypt.hash(senhaPlaintext, 10);
 
     // ARQUITETURA SEGREGADA: Inserir em 2 etapas
-    // 1. Inserir funcionário com clinica_id (para satisfazer constraint)
+    // 1. Inserir funcionário base (sem FK direta — migration 605 removeu colunas obsoletas)
     const insertFuncResult = await query(
       `INSERT INTO funcionarios (
         cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil,
-        matricula, nivel_cargo, turno, escala, ativo, clinica_id
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13)
+        matricula, nivel_cargo, turno, escala, ativo
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
       RETURNING id`,
       [
         cpf,
@@ -323,7 +323,6 @@ export async function POST(request: Request) {
         nivel_cargo || null,
         turno || null,
         escala || null,
-        session.clinica_id,
       ],
       session
     );

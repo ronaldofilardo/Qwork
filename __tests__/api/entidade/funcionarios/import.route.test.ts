@@ -476,11 +476,11 @@ describe('import route', () => {
   });
 
   /**
-   * @test Valida que contratante_id é passado corretamente (constraint funcionarios_clinica_check)
-   * @description Deve passar contratante_id no INSERT para satisfazer a constraint que exige:
-   *              clinica_id IS NOT NULL OR contratante_id IS NOT NULL OR perfil IN (...)
+   * @test Valida que INSERT em funcionarios NÃO inclui FKs obsoletas (migration 605)
+   * @description Migration 605 removeu colunas clinica_id/contratante_id/tomador_id da tabela funcionarios.
+   *              A relação entidade↔funcionário é gerenciada via funcionarios_entidades.
    */
-  it('passes contratante_id in INSERT funcionarios to satisfy constraint', async () => {
+  it('INSERT funcionarios não inclui FK obsoleta — relação fica em funcionarios_entidades (migration 605)', async () => {
     queryAsGestorEntidade.mockReset();
 
     parseXlsxBufferToRows.mockReturnValue({
@@ -498,9 +498,6 @@ describe('import route', () => {
     });
 
     // CPF não existe
-    queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
-
-    // Nenhuma matrícula a verificar
     queryAsGestorEntidade.mockResolvedValueOnce({ rows: [] });
 
     // INSERT funcionarios RETURNING id
@@ -533,21 +530,26 @@ describe('import route', () => {
         !call[0].includes('funcionarios_entidades')
     );
 
-    // Deve ter feito INSERT (e não apenas SELECTs)
     expect(insertFuncCalls.length).toBeGreaterThanOrEqual(1);
-
-    // Buscar o INSERT específico
     const lastInsertCall = insertFuncCalls[insertFuncCalls.length - 1];
     const sqlQuery = lastInsertCall[0] as string;
     const params = lastInsertCall[1] as unknown[];
 
-    // Validar que contratante_id está na query
-    expect(sqlQuery).toContain('contratante_id');
+    // Migration 605 removeu as colunas: INSERT não deve incluir FKs obsoletas
+    expect(sqlQuery).not.toContain('contratante_id');
+    expect(sqlQuery).not.toContain('tomador_id');
+    expect(sqlQuery).not.toContain('clinica_id');
 
-    // Validar que entidade_id (1) foi passado como parâmetro
-    // A posição depende da ordem das colunas no INSERT
-    // mas sabemos que entidade_id deve estar nos parâmetros
+    // entidade_id não deve estar nos parâmetros do INSERT em funcionarios
     const mockEntidadeId = 1; // do mock requireEntity
-    expect(params).toContain(mockEntidadeId);
+    expect(params).not.toContain(mockEntidadeId);
+
+    // Verificar que entidade_id está no INSERT de funcionarios_entidades
+    const insertEntCalls = allCalls.filter((call) =>
+      call[0].includes('INSERT INTO funcionarios_entidades')
+    );
+    expect(insertEntCalls.length).toBeGreaterThanOrEqual(1);
+    const entParams = insertEntCalls[insertEntCalls.length - 1][1] as unknown[];
+    expect(entParams).toContain(mockEntidadeId);
   });
 });

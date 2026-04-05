@@ -440,13 +440,13 @@ describe('import route - clínica', () => {
   });
 
   /**
-   * @test Valida que clinica_id é passado corretamente (constraint funcionarios_clinica_check)
-   * @description Deve passar clinica_id no INSERT para satisfazer a constraint que exige:
-   *              clinica_id IS NOT NULL OR contratante_id IS NOT NULL OR perfil IN (...)
+   * @test Valida que INSERT em funcionarios NÃO inclui FKs obsoletas (migration 605)
+   * @description Migration 605 removeu colunas clinica_id/contratante_id/tomador_id da tabela funcionarios.
+   *              A relação clínica↔funcionário é gerenciada via funcionarios_clinicas.
    */
-  it('passes clinica_id in INSERT funcionarios to satisfy constraint', async () => {
+  it('INSERT funcionarios não inclui FK obsoleta — relação fica em funcionarios_clinicas (migration 605)', async () => {
     // Arrange: empresa válida
-    query.mockResolvedValueOnce({ rows: [{ id: 1, clinica_id: 99 }] });
+    query.mockResolvedValueOnce({ rows: [{ id: 1, clinica_id: 1 }] });
 
     parseXlsxBufferToRows.mockReturnValue({
       success: true,
@@ -463,9 +463,6 @@ describe('import route - clínica', () => {
     });
 
     // CPF não existe
-    query.mockResolvedValueOnce({ rows: [] });
-
-    // Nenhuma matrícula a verificar
     query.mockResolvedValueOnce({ rows: [] });
 
     // INSERT funcionarios RETURNING id
@@ -499,18 +496,21 @@ describe('import route - clínica', () => {
         !call[0].includes('funcionarios_clinicas')
     );
 
-    // Deve ter feito INSERT
     expect(insertFuncCalls.length).toBeGreaterThanOrEqual(1);
-
-    // Buscar o INSERT específico
     const lastInsertCall = insertFuncCalls[insertFuncCalls.length - 1];
     const sqlQuery = lastInsertCall[0] as string;
-    const params = lastInsertCall[1] as unknown[];
 
-    // Validar que clinica_id está na query
-    expect(sqlQuery).toContain('clinica_id');
+    // Migration 605 removeu as colunas: INSERT não deve incluir FKs obsoletas
+    expect(sqlQuery).not.toContain('clinica_id');
+    expect(sqlQuery).not.toContain('contratante_id');
+    expect(sqlQuery).not.toContain('tomador_id');
 
-    // Validar que clinica_id (99, do mock empresa) foi passado
-    expect(params).toContain(99);
+    // Verificar que clinica_id está em funcionarios_clinicas, não em funcionarios
+    const insertClinicaCalls = allCalls.filter((call) =>
+      call[0].includes('INSERT INTO funcionarios_clinicas')
+    );
+    expect(insertClinicaCalls.length).toBeGreaterThanOrEqual(1);
+    const clinicaParams = insertClinicaCalls[insertClinicaCalls.length - 1][1] as unknown[];
+    expect(clinicaParams).toContain(1); // clinica_id = 1 (session mock)
   });
 });
