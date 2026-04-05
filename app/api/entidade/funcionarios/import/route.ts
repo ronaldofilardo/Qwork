@@ -168,9 +168,9 @@ export async function POST(request: Request) {
           const senhaHash = await bcrypt.hash(senhaPlaintext, 10);
 
           // ARQUITETURA SEGREGADA: Inserir em 2 etapas
-          // 1. Inserir funcionário com contratante_id (para satisfazer constraint)
+          // 1. Inserir funcionário com tomador_id (para satisfazer constraint - migration 1017)
           const insertResult = await client.query(
-            `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, contratante_id)
+            `INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, senha_hash, perfil, ativo, matricula, nivel_cargo, turno, escala, tomador_id)
              VALUES ($1,$2,$3,$4,$5,$6,$7,'funcionario',true,$8,$9,$10,$11,$12)
              RETURNING id`,
             [
