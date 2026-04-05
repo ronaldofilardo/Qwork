@@ -49,6 +49,8 @@ export interface Lead {
   ip_origem: string | null;
   criado_em: string;
   cpf_conflict: { origem: string; tipo_usuario: string } | null;
+  convite_token?: string | null;
+  aceite_termos?: boolean | null;
 }
 
 export type TabAtiva = 'representantes' | 'candidatos';
