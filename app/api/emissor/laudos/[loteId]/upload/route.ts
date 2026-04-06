@@ -208,57 +208,24 @@ export async function POST(
       );
     }
 
-    // 12. Fazer upload para Backblaze
+    // 12. Fazer upload para Backblaze e obter metadados da key real
     console.log(
       `[UPLOAD] Iniciando upload do laudo ${laudoId} (lote ${laudo.lote_id}) para Backblaze...`
     );
 
-    // uploadLaudoToBackblaze pode lançar erro se falhar - não capturar aqui para propagar
-    await uploadLaudoToBackblaze(laudoId, laudo.lote_id, buffer);
+    const uploadResult = await uploadLaudoToBackblaze(laudoId, laudo.lote_id, buffer);
 
-    // 13. Ler metadados locais atualizados (uploadLaudoToBackblaze grava arquivo_remoto no JSON local)
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const metaPath = path.join(
-      process.cwd(),
-      'storage',
-      'laudos',
-      `laudo-${laudoId}.json`
-    );
-
-    let uploadResult: any = null;
-    try {
-      const metaContent = await fs.readFile(metaPath, 'utf-8');
-      const metadata = JSON.parse(metaContent);
-      uploadResult = metadata.arquivo_remoto;
-    } catch (metaErr) {
-      console.warn(
-        `[UPLOAD] Não foi possível ler metadados locais após upload:`,
-        metaErr
+    if (!uploadResult) {
+      return NextResponse.json(
+        {
+          error: 'Upload Backblaze não disponível (configuração ausente ou serviço desabilitado)',
+          success: false,
+        },
+        { status: 503 }
       );
     }
 
-    // 14. Se metadados remotos não estão disponíveis, construir do ambiente
-    if (!uploadResult) {
-      // Fallback: usar padrão de chave e endpoint do ambiente
-      const timestamp = Date.now();
-      const random = Math.random().toString(36).slice(2, 8);
-      const key = `laudos/lote-${laudo.lote_id}/laudo-${timestamp}-${random}.pdf`;
-      const bucket = process.env.BACKBLAZE_BUCKET || 'laudos-qwork';
-      const endpoint =
-        process.env.BACKBLAZE_S2_ENDPOINT ||
-        process.env.BACKBLAZE_ENDPOINT ||
-        'https://s3.us-east-005.backblazeb2.com';
-
-      uploadResult = {
-        provider: 'backblaze',
-        bucket,
-        key,
-        url: `${endpoint}/${bucket}/${key}`,
-      };
-    }
-
-    // 15. Persistir metadados no banco de dados E MARCAR COMO ENVIADO
+    // 14. Persistir metadados no banco de dados E MARCAR COMO ENVIADO
     // ⚠️ IMPORTANTE: Este é o momento em que o laudo é efetivamente marcado como 'enviado'
     // O status 'enviado' significa que o laudo está disponível ao usuário (no bucket)
     // CORREÇÃO: Não verificar status='rascunho' pois o laudo pode já estar com status='emitido'
@@ -289,7 +256,7 @@ export async function POST(
       user
     );
 
-    // 16. Atualizar status do lote para 'finalizado' (laudo disponível no bucket)
+    // 15. Atualizar status do lote para 'finalizado' (laudo disponível no bucket)
     // laudo_enviado_em marca quando o PDF ficou disponível no bucket.
     // O trigger prevent_modification_lote_when_laudo_emitted pode bloquear
     // este UPDATE em ambientes onde a migration 1021 ainda não foi aplicada.
@@ -309,7 +276,7 @@ export async function POST(
       );
     }
 
-    // 17. Auditoria de sucesso
+    // 16. Auditoria de sucesso
     await query(
       `INSERT INTO audit_logs (action, resource, resource_id, new_data, user_perfil, user_cpf)
        VALUES ('laudo_upload_backblaze_sucesso', 'laudos', $1, $2, $3, $4)`,

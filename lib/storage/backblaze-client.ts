@@ -15,7 +15,7 @@ interface BackblazeConfig {
   applicationKey: string;
 }
 
-interface UploadResult {
+export interface UploadResult {
   provider: 'backblaze';
   bucket: string;
   key: string;
@@ -51,11 +51,10 @@ function getBackblazeConfig(): BackblazeConfig {
     region = region || 'us-east-005';
   }
 
-  // Trim and normalize env vars (remove accidental quotes)
-  const bucket = (process.env.BACKBLAZE_BUCKET || 'laudos-qwork').replace(
-    /^['"]|['"]$/g,
-    ''
-  );
+  // Trim and normalize env vars (remove accidental quotes and CRLF/whitespace)
+  const bucket = (process.env.BACKBLAZE_BUCKET || 'laudos-qwork')
+    .replace(/^['"]|['"]$/g, '')
+    .trim();
   // Suporte a nomes de variáveis antigos/alternativos (compatibilidade local)
   const rawKeyId =
     process.env.BACKBLAZE_KEY_ID ||
