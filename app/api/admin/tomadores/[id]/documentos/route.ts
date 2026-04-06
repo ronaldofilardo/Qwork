@@ -90,7 +90,22 @@ async function resolveDocUrl(
     return `/api/storage/${relativePath}`;
   }
 
-  // URL completa (upload direto para Backblaze sem key separada)
+  // URL direta do Backblaze — extrair key e gerar presigned URL
+  if (path && path.startsWith('https://') && path.includes('backblazeb2.com')) {
+    try {
+      const urlObj = new URL(path);
+      const segments = urlObj.pathname.replace(/^\//, '').split('/');
+      if (segments.length >= 2) {
+        const extractedKey = segments.slice(1).join('/');
+        return resolveDocUrl(null, extractedKey, expiresIn);
+      }
+    } catch {
+      // fallback: retornar path bruto
+    }
+    return path;
+  }
+
+  // Outra URL HTTPS genérica
   if (path && path.startsWith('https://')) {
     return path;
   }
