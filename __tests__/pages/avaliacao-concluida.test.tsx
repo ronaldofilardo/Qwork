@@ -73,7 +73,12 @@ describe('Página de Conclusão de Avaliação', () => {
   });
 
   it('deve exibir logo da organização no topo quando presente', async () => {
-    render(<AvaliacaoConcluidaPageTest orgLogoUrl="https://example.com/org.png" orgNome="Org Teste" />);
+    render(
+      <AvaliacaoConcluidaPageTest
+        orgLogoUrl="https://example.com/org.png"
+        orgNome="Org Teste"
+      />
+    );
 
     await waitFor(() => {
       const orgLogo = screen.getByAltText('Org Teste');

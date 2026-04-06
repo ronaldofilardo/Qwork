@@ -52,7 +52,9 @@ describe('useOrgInfo', () => {
   });
 
   it('deve retornar orgInfo null quando fetch lança exceção', async () => {
-    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error('Erro de rede'));
+    (global.fetch as jest.Mock).mockRejectedValueOnce(
+      new Error('Erro de rede')
+    );
 
     const { result } = renderHook(() => useOrgInfo());
 

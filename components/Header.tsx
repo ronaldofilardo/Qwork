@@ -99,7 +99,10 @@ export default function Header({
   }
 
   return (
-    <header className="bg-black text-white border-b-4 border-accent sticky top-0 z-[1000] w-full min-h-[56px] sm:min-h-[70px] flex items-center justify-between px-3 sm:px-6 lg:px-8 box-border" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+    <header
+      className="bg-black text-white border-b-4 border-accent sticky top-0 z-[1000] w-full min-h-[56px] sm:min-h-[70px] flex items-center justify-between px-3 sm:px-6 lg:px-8 box-border"
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+    >
       {/* Logo + Título */}
       <div className="flex items-center gap-2 sm:gap-4 min-w-0">
         <div className="w-8 h-8 sm:w-11 sm:h-11 flex-shrink-0 flex items-center justify-center bg-white rounded-lg p-1">
