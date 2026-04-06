@@ -1,7 +1,7 @@
 /**
  * Testes para Demanda 2: Remoção de Logs (Questões 2-36)
  * Garante que logs intermediários sejam removidos, mantendo apenas conclusão final
- * 
+ *
  * Contexto: Para evitar sobrecarga do servidor, remover logs verbosos das questões 2-36
  * Mantendo apenas logs de conclusão quando atinge 37 respostas
  */
@@ -25,9 +25,8 @@ import { verificarEConcluirAvaliacao } from '@/lib/avaliacao-conclusao';
 const mockQueryWithContext = queryWithContext as jest.MockedFunction<
   typeof queryWithContext
 >;
-const mockTransactionWithContext = transactionWithContext as jest.MockedFunction<
-  typeof transactionWithContext
->;
+const mockTransactionWithContext =
+  transactionWithContext as jest.MockedFunction<typeof transactionWithContext>;
 
 describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
   let consoleLogSpy: jest.SpyInstance;
@@ -108,9 +107,7 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
           rowCount: 1,
         })
         .mockResolvedValueOnce({
-          rows: [
-            { lote_id: 1, numero_ordem: 1 },
-          ],
+          rows: [{ lote_id: 1, numero_ordem: 1 }],
           rowCount: 1,
         });
 
@@ -118,7 +115,10 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
       mockTransactionWithContext.mockImplementation(async (fn) => {
         const mockQueryTx = jest.fn();
         mockQueryTx
-          .mockResolvedValueOnce({ rows: [{ grupo: 1, item: 'Q1', valor: 5 }], rowCount: 1 })
+          .mockResolvedValueOnce({
+            rows: [{ grupo: 1, item: 'Q1', valor: 5 }],
+            rowCount: 1,
+          })
           .mockResolvedValue({ rows: [], rowCount: 0 });
         await fn(mockQueryTx);
       });
@@ -149,7 +149,9 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
         });
 
       mockTransactionWithContext.mockImplementation(async (fn) => {
-        const mockQueryTx = jest.fn().mockResolvedValue({ rows: [], rowCount: 0 });
+        const mockQueryTx = jest
+          .fn()
+          .mockResolvedValue({ rows: [], rowCount: 0 });
         await fn(mockQueryTx);
       });
 
@@ -177,7 +179,9 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
         });
 
       mockTransactionWithContext.mockImplementation(async (fn) => {
-        const mockQueryTx = jest.fn().mockResolvedValue({ rows: [], rowCount: 0 });
+        const mockQueryTx = jest
+          .fn()
+          .mockResolvedValue({ rows: [], rowCount: 0 });
         await fn(mockQueryTx);
       });
 
@@ -207,7 +211,9 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
         });
 
       mockTransactionWithContext.mockImplementation(async (fn) => {
-        const mockQueryTx = jest.fn().mockResolvedValue({ rows: [], rowCount: 0 });
+        const mockQueryTx = jest
+          .fn()
+          .mockResolvedValue({ rows: [], rowCount: 0 });
         await fn(mockQueryTx);
       });
 
@@ -235,7 +241,9 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
         });
 
       mockTransactionWithContext.mockImplementation(async (fn) => {
-        const mockQueryTx = jest.fn().mockResolvedValue({ rows: [], rowCount: 0 });
+        const mockQueryTx = jest
+          .fn()
+          .mockResolvedValue({ rows: [], rowCount: 0 });
         await fn(mockQueryTx);
       });
 
@@ -264,7 +272,9 @@ describe('Demanda 2: Remoção de Logs de Questões 2-36', () => {
         });
 
       mockTransactionWithContext.mockImplementation(async (fn) => {
-        const mockQueryTx = jest.fn().mockResolvedValue({ rows: [], rowCount: 0 });
+        const mockQueryTx = jest
+          .fn()
+          .mockResolvedValue({ rows: [], rowCount: 0 });
         await fn(mockQueryTx);
       });
 
