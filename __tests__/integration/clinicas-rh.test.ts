@@ -29,11 +29,11 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
+        ativa
       ) VALUES (
         'clinica', $1, $2, $3, '1199999999', 'Rua Teste', 'São Paulo', 'SP', '01234567',
         'Responsável Clínica', '98765432100', $4, '11988888888',
-        true, true
+        true
       ) RETURNING id`,
       [
         `Clínica Teste ${timestamp}`,
@@ -89,9 +89,7 @@ describe('Clínicas (RH) - Gestão de Empresas', () => {
       await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
     }
     if (tomadorClinicaId) {
-      await query('DELETE FROM tomadors WHERE id = $1', [
-        tomadorClinicaId,
-      ]);
+      await query('DELETE FROM tomadors WHERE id = $1', [tomadorClinicaId]);
     }
   });
 

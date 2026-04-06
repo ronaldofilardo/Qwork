@@ -8,6 +8,12 @@ import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIden
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
 
+type DbEnvironment = 'development' | 'staging' | 'production';
+type EnvAvailability = Record<
+  DbEnvironment,
+  { allowed: boolean; reason: string }
+>;
+
 export default function LoginPage() {
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
@@ -17,6 +23,14 @@ export default function LoginPage() {
   const [modalAberto, setModalAberto] = useState(false);
   const [showConfirmacaoModal, setShowConfirmacaoModal] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
+  const [showDbSelector, setShowDbSelector] = useState(false);
+  const [dbEnvironment, setDbEnvironment] =
+    useState<DbEnvironment>('development');
+  const [pendingEmissorData, setPendingEmissorData] = useState<{
+    redirectTo: string;
+  } | null>(null);
+  const [envAvailability, setEnvAvailability] =
+    useState<EnvAvailability | null>(null);
   const [dadosConfirmacao, setDadosConfirmacao] = useState<{
     nome: string;
     cpf: string;
@@ -217,6 +231,15 @@ export default function LoginPage() {
           data.perfil
         );
         window.location.href = targetUrl;
+      } else if (data.perfil === 'emissor') {
+        // Emissor: mostrar seletor de ambiente de banco
+        setPendingEmissorData({ redirectTo: data.redirectTo || '/emissor' });
+        if (data.environmentAvailability) {
+          setEnvAvailability(data.environmentAvailability as EnvAvailability);
+        }
+        setShowDbSelector(true);
+        setLoading(false);
+        return;
       } else {
         // Para outros perfis, redirecionar normalmente
         const targetUrl = data.redirectTo || '/dashboard';
@@ -234,6 +257,29 @@ export default function LoginPage() {
       } else {
         setError(String(err));
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleConfirmarAmbiente = async () => {
+    if (!pendingEmissorData) return;
+    setLoading(true);
+    setError('');
+    try {
+      const response = await fetch('/api/auth/emissor/selecionar-ambiente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ dbEnvironment }),
+        credentials: 'same-origin',
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Erro ao selecionar ambiente');
+      }
+      window.location.href = pendingEmissorData.redirectTo;
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -258,6 +304,138 @@ export default function LoginPage() {
           cpf={dadosConfirmacao.cpf}
           dataNascimento={dadosConfirmacao.dataNascimento}
         />
+      )}
+
+      {/* Modal de Seletor de Ambiente — apenas emissor */}
+      {showDbSelector && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">
+              Selecionar Banco de Dados
+            </h2>
+            <p className="text-sm text-gray-600 mb-5">
+              Escolha qual ambiente deseja acessar para gerar laudos.
+            </p>
+
+            <div className="space-y-3 mb-6">
+              {(
+                [
+                  {
+                    value: 'development',
+                    label: 'Desenvolvimento (local)',
+                    description: 'Banco LOCAL — dados de desenvolvimento',
+                  },
+                  {
+                    value: 'staging',
+                    label: 'Homologação (staging)',
+                    description: 'Banco STAGING — Neon Cloud',
+                  },
+                  {
+                    value: 'production',
+                    label: 'Produção',
+                    description: 'Banco PRODUÇÃO — Neon Cloud (dados reais)',
+                  },
+                ] as {
+                  value: DbEnvironment;
+                  label: string;
+                  description: string;
+                }[]
+              ).map((opt) => {
+                const avail = envAvailability?.[opt.value];
+                const isUnavailable = avail !== undefined && !avail.allowed;
+                const isSelected = dbEnvironment === opt.value;
+                return (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => {
+                      if (isUnavailable) return;
+                      setDbEnvironment(opt.value);
+                      setError('');
+                    }}
+                    disabled={isUnavailable}
+                    className={[
+                      'w-full text-left px-4 py-3 rounded-lg border-2 transition-all duration-150',
+                      isUnavailable
+                        ? 'border-gray-100 bg-gray-50 opacity-60 cursor-not-allowed'
+                        : isSelected
+                          ? 'border-orange-500 bg-orange-50 cursor-pointer'
+                          : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/50 cursor-pointer',
+                    ].join(' ')}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={[
+                          'font-semibold text-sm',
+                          isUnavailable ? 'text-gray-400' : 'text-gray-900',
+                        ].join(' ')}
+                      >
+                        {opt.label}
+                      </span>
+                      {isSelected && !isUnavailable && (
+                        <span className="text-orange-500">
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                            className="w-5 h-5"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.704 4.153a.75.75 0 0 1 .143 1.052l-8 10.5a.75.75 0 0 1-1.127.075l-4.5-4.5a.75.75 0 0 1 1.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 0 1 1.05-.143Z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={[
+                        'text-xs mt-0.5',
+                        isUnavailable ? 'text-gray-400' : 'text-gray-500',
+                      ].join(' ')}
+                    >
+                      {opt.description}
+                    </p>
+                    {isUnavailable && avail?.reason && (
+                      <p className="text-xs text-red-500 mt-1 font-medium">
+                        {avail.reason}
+                      </p>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {error && (
+              <div className="mb-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md p-3">
+                {error}
+              </div>
+            )}
+
+            {dbEnvironment === 'production' &&
+              envAvailability?.production?.allowed && (
+                <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-md">
+                  <p className="text-xs text-amber-800 font-medium">
+                    ⚠ Acesso à produção restrito. Apenas emissores autorizados
+                    podem acessar este ambiente.
+                  </p>
+                </div>
+              )}
+
+            <button
+              type="button"
+              onClick={handleConfirmarAmbiente}
+              disabled={
+                loading ||
+                (!!envAvailability && !envAvailability[dbEnvironment]?.allowed)
+              }
+              className="w-full bg-orange-600 text-white py-3 px-4 rounded-md hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-semibold"
+            >
+              {loading ? 'Conectando...' : 'Confirmar e Entrar'}
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Modal de Aceite de Termos */}

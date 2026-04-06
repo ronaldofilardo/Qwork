@@ -35,7 +35,7 @@ export async function GET(
 ) {
   try {
     // Verificar autenticação
-    requireEmissor();
+    const session = await requireEmissor();
     const { loteId } = params;
 
     // Buscar dados do lote
@@ -43,7 +43,8 @@ export async function GET(
       `SELECT id, status, clinica_id, empresa_id
        FROM lotes_avaliacao
        WHERE id = $1`,
-      [loteId]
+      [loteId],
+      session
     );
 
     if (loteResult.rows.length === 0) {
@@ -62,7 +63,8 @@ export async function GET(
       `SELECT id, hash_pdf, status, emitido_em, emissor_cpf
        FROM laudos
        WHERE lote_id = $1`,
-      [loteId]
+      [loteId],
+      session
     );
 
     if (laudoResult.rows.length === 0) {
@@ -103,7 +105,8 @@ export async function GET(
       JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       WHERE a.lote_id = $1 AND a.status = 'concluido'
       ORDER BY f.nome`,
-      [loteId]
+      [loteId],
+      session
     );
 
     if (avaliacoesResult.rows.length === 0) {

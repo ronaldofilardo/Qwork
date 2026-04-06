@@ -42,11 +42,6 @@ describe('API Verificar Pagamento', () => {
     await query(`UPDATE contratos SET status = 'aprovado' WHERE id = $1`, [
       contratoComPagamento,
     ]);
-    // Atualizar tomador para ter pagamento confirmado
-    await query(
-      `UPDATE entidades SET pagamento_confirmado = true WHERE id = $1`,
-      [tomadorComPagamento]
-    );
     await createTestPagamento({
       entidade_id: tomadorComPagamento,
       contrato_id: contratoComPagamento,
@@ -129,7 +124,6 @@ describe('API Verificar Pagamento', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.tomador.pagamento_confirmado).toBe(true);
       expect(data.needs_payment).toBe(false);
       expect(data.access_granted).toBe(true);
       expect(data.payment_link).toBeNull();
@@ -151,7 +145,6 @@ describe('API Verificar Pagamento', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.tomador.pagamento_confirmado).toBe(false);
       expect(data.needs_payment).toBe(true);
       expect(data.access_granted).toBe(false);
       expect(data.payment_link).toBeTruthy();

@@ -48,7 +48,7 @@ describe('POST /api/admin/gerar-link-retomada', () => {
       rows: [
         {
           tomador_id: 1,
-          pagamento_confirmado: true,
+          tomador_status: 'pago',
           tomador_nome: 'X',
           tomador_email: 'x@x',
           numero_contrato: 'C1',
@@ -69,12 +69,11 @@ describe('POST /api/admin/gerar-link-retomada', () => {
         rows: [
           {
             tomador_id: 1,
-            pagamento_confirmado: false,
+            tomador_status: 'aguardando_pagamento',
             tomador_nome: 'Empresa X',
             tomador_email: 'x@x.com',
             numero_contrato: 'C-001',
             valor_total: 5000,
-            plano_tipo: 'fixo',
           },
         ],
         rowCount: 1,

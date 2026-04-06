@@ -1,0 +1,2 @@
+id,cpf,perfil,clinica_id,empresa_id,login_timestamp,logout_timestamp,ip_address,user_agent,criado_em
+1,00000000000,admin,,,2026-03-31 10:45:08.449676,,::1,"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36",2026-03-31 10:45:08.449676

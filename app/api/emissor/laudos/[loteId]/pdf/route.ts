@@ -1,4 +1,5 @@
 import { requireRole } from '@/lib/session';
+import type { Session } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { getPuppeteerInstance } from '@/lib/infrastructure/pdf/generators/pdf-generator';
@@ -19,7 +20,8 @@ export const dynamic = 'force-dynamic';
 async function validarAcessoLote(
   loteId: number,
   userCpf: string,
-  userRole: string
+  userRole: string,
+  session: Session
 ) {
   const loteCheck = await query(
     `
@@ -28,7 +30,8 @@ async function validarAcessoLote(
     LEFT JOIN empresas_clientes ec ON ec.id = la.empresa_id
     WHERE la.id = $1
     `,
-    [loteId]
+    [loteId],
+    session
   );
 
   if (loteCheck.rows.length === 0) {
@@ -56,7 +59,8 @@ async function validarAcessoLote(
         clinica_id: lote.clinica_id,
         status: lote.status,
       }),
-    ]
+    ],
+    session
   );
 
   return lote;
@@ -108,7 +112,7 @@ export const GET = async (
 
     // Validar acesso ao lote
     try {
-      await validarAcessoLote(loteId, user.cpf, user.perfil);
+      await validarAcessoLote(loteId, user.cpf, user.perfil, user);
     } catch (error) {
       return NextResponse.json(
         {
@@ -125,7 +129,8 @@ export const GET = async (
       SELECT id, status, emissor_cpf FROM laudos
       WHERE lote_id = $1 AND emissor_cpf = $2 AND status IN ('emitido','enviado')
     `,
-      [loteId, user.cpf]
+      [loteId, user.cpf],
+      user
     );
 
     if (laudoCheck.rows.length === 0) {
@@ -185,7 +190,8 @@ export const GET = async (
       SELECT observacoes FROM laudos
       WHERE lote_id = $1 AND emissor_cpf = $2
     `,
-      [loteId, user.cpf]
+      [loteId, user.cpf],
+      user
     );
 
     const observacoes = laudoResult.rows[0]?.observacoes || '';

@@ -37,9 +37,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
   afterAll(async () => {
     // Cleanup
     if (tomadorId) {
-      await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
-        tomadorId,
-      ]);
+      await query(`DELETE FROM contratos WHERE tomador_id = $1`, [tomadorId]);
       await query(`DELETE FROM entidades WHERE id = $1`, [tomadorId]);
     }
     await query(`DELETE FROM entidades_senhas WHERE cpf = $1`, [testCPF]);
@@ -100,7 +98,6 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       expect(tomador.nome).toContain('Clinica Teste API');
       expect(tomador.status).toBe('aguardando_pagamento');
       expect(tomador.ativa).toBe(false);
-      expect(tomador.pagamento_confirmado).toBe(false);
       expect(tomador.responsavel_cpf).toBe(testCPF);
     });
 
@@ -439,9 +436,7 @@ describe('API Integration: Endpoints Críticos de Cadastro', () => {
       await query(`DELETE FROM contratos WHERE tomador_id = $1`, [
         novotomadorId,
       ]);
-      await query(`DELETE FROM entidades WHERE id = $1`, [
-        novotomadorId,
-      ]);
+      await query(`DELETE FROM entidades WHERE id = $1`, [novotomadorId]);
       await query(`DELETE FROM entidades_senhas WHERE cpf = $1`, [novoCPF]);
     });
   });

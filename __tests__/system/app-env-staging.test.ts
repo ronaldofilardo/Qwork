@@ -7,7 +7,7 @@
  * correto de isStaging, isLiveProduction e das flags exportadas por
  * lib/db/connection.ts quando APP_ENV está definido.
  *
- * Referência: docs/ENVIRONMENTS.md
+ * Referência: docs/policies/ENVIRONMENTS.md
  * Status: CRÍTICO — NÃO REMOVER
  */
 
@@ -293,8 +293,8 @@ describe('APP_ENV — Segregação Staging vs Production', () => {
       expect(appEnvLine).toBeUndefined();
     });
 
-    it('docs/ENVIRONMENTS.md deve existir e documentar os 4 ambientes', () => {
-      const docPath = path.join(rootDir, 'docs', 'ENVIRONMENTS.md');
+    it('docs/policies/ENVIRONMENTS.md deve existir e documentar os 4 ambientes', () => {
+      const docPath = path.join(rootDir, 'docs', 'policies', 'ENVIRONMENTS.md');
       expect(fs.existsSync(docPath)).toBe(true);
       const content = fs.readFileSync(docPath, 'utf-8');
       expect(content).toContain('DEV');

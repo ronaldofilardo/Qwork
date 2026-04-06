@@ -13,17 +13,25 @@ describe('Integration: Criar funcionário para entidade', () => {
 
   beforeAll(async () => {
     // Validar ambiente de teste
-    if (!process.env.TEST_DATABASE_URL || !String(process.env.TEST_DATABASE_URL).includes('_test')) {
-      throw new Error('TEST_DATABASE_URL não configurado para testes de integração');
+    if (
+      !process.env.TEST_DATABASE_URL ||
+      !String(process.env.TEST_DATABASE_URL).includes('_test')
+    ) {
+      throw new Error(
+        'TEST_DATABASE_URL não configurado para testes de integração'
+      );
     }
 
     // Criar tomador de teste tipo entidade
     const cnpj = `88${Date.now().toString().slice(-12)}`;
-    const res = await query(`
-      INSERT INTO tomadors (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa, pagamento_confirmado)
-      VALUES ('entidade', 'Entidade Integration Test', $1, 'int@test.com', '11900000000', 'Rua Test, 1', 'São Paulo', 'SP', '01000-000', 'Responsavel Test', '52998224725', 'resp@test.com', '11911111111', true, true)
+    const res = await query(
+      `
+      INSERT INTO tomadors (tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, ativa)
+      VALUES ('entidade', 'Entidade Integration Test', $1, 'int@test.com', '11900000000', 'Rua Test, 1', 'São Paulo', 'SP', '01000-000', 'Responsavel Test', '52998224725', 'resp@test.com', '11911111111', true)
       RETURNING id
-    `, [cnpj]);
+    `,
+      [cnpj]
+    );
     tomadorId = res.rows[0].id;
 
     // Limpar funcionário de teste se existir
@@ -37,11 +45,22 @@ describe('Integration: Criar funcionário para entidade', () => {
   });
 
   it('✅ deve criar funcionário vinculado diretamente à entidade (tomador_id)', async () => {
-    const result = await query(`
+    const result = await query(
+      `
       INSERT INTO funcionarios (cpf, nome, data_nascimento, setor, funcao, email, tomador_id, perfil, ativo)
       VALUES ($1, $2, $3, $4, $5, $6, $7, 'funcionario', true)
       RETURNING id, cpf, nome, tomador_id, clinica_id, empresa_id
-    `, [testCpf, 'Funcionario Entidade Test', '1990-01-01', 'RH', 'Assistente', 'func.int@test.com', tomadorId]);
+    `,
+      [
+        testCpf,
+        'Funcionario Entidade Test',
+        '1990-01-01',
+        'RH',
+        'Assistente',
+        'func.int@test.com',
+        tomadorId,
+      ]
+    );
 
     expect(result.rows.length).toBe(1);
     expect(result.rows[0].cpf).toBe(testCpf);
@@ -62,7 +81,9 @@ describe('Integration: Criar funcionário para entidade', () => {
     const definition = constraintCheck.rows[0].definition;
 
     // Deve aceitar clinica_id OR tomador_id OR perfis específicos
-    expect(definition).toMatch(/clinica_id IS NOT NULL.*OR.*tomador_id IS NOT NULL/i);
+    expect(definition).toMatch(
+      /clinica_id IS NOT NULL.*OR.*tomador_id IS NOT NULL/i
+    );
   });
 
   it('✅ deve rejeitar funcionário sem clinica_id, tomador_id e perfil não especial', async () => {

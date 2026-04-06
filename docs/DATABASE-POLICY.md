@@ -1,4 +1,8 @@
-# DATABASE-POLICY.md — Política de Segregação de Bancos de Dados
+# DATABASE-POLICY.md
+
+> **Fonte de verdade**: [policies/DATABASE-POLICY.md](policies/DATABASE-POLICY.md)
+>
+> Este documento complementa a política principal com detalhes específicos do modo emissor.
 
 ## Ambientes e Bancos
 

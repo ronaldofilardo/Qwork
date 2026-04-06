@@ -49,12 +49,13 @@ export const GET = async (
       WHERE la.id = $1 AND la.status != 'cancelado'
       GROUP BY la.id, la.status, e.nome, c.nome
     `,
-      [loteId]
+      [loteId],
+      user
     );
     // Iniciar transação explícita para alinhar com fluxo de testes e garantir atomicidade
-    await query('BEGIN');
+    await query('BEGIN', [], user);
     if (loteCheck.rows.length === 0) {
-      await query('ROLLBACK');
+      await query('ROLLBACK', [], user);
       return NextResponse.json(
         { error: 'Lote não encontrado', success: false },
         { status: 404 }
@@ -78,7 +79,8 @@ export const GET = async (
       FROM laudos
       WHERE lote_id = $1
     `,
-      [loteId]
+      [loteId],
+      user
     );
     const existingLaudo = laudoQuery.rows[0];
 
@@ -101,10 +103,10 @@ export const GET = async (
     }
 
     // Gerar dados da Etapa 1
-    const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);
+    const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId, user);
 
     // Calcular scores da Etapa 2
-    const scoresPorGrupo = await calcularScoresPorGrupo(loteId);
+    const scoresPorGrupo = await calcularScoresPorGrupo(loteId, user);
 
     // Reuse laudo fetched earlier (if any)
     const laudo = existingLaudo || null;
@@ -130,7 +132,7 @@ export const GET = async (
         hashPdf: null,
       };
 
-      await query('COMMIT');
+      await query('COMMIT', [], user);
 
       return NextResponse.json({
         success: true,
@@ -176,7 +178,7 @@ export const GET = async (
       hashPdf: laudo?.hash_pdf || null,
     };
 
-    await query('COMMIT');
+    await query('COMMIT', [], user);
 
     return NextResponse.json({
       success: true,
@@ -202,7 +204,7 @@ export const GET = async (
       error
     );
     try {
-      await query('ROLLBACK');
+      await query('ROLLBACK', [], user);
     } catch (rollbackErr) {
       console.warn('[GET] Falha ao efetuar ROLLBACK após erro:', rollbackErr);
     }
@@ -292,7 +294,8 @@ export const PATCH = async (
        SET status = 'enviado', enviado_em = NOW(), emissor_cpf = $2, atualizado_em = NOW() 
        WHERE lote_id = $1 AND status = 'emitido'
        RETURNING id, status`,
-      [loteId, user.cpf]
+      [loteId, user.cpf],
+      user
     );
 
     if (!laudoResult || laudoResult.rowCount === 0) {
@@ -373,7 +376,8 @@ export const POST = async (
       WHERE la.id = $1 AND la.status != 'cancelado'
       GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, c.nome
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (loteCheck.rows.length === 0) {
@@ -421,7 +425,8 @@ export const POST = async (
     // Verificar se já existe laudo para este lote
     const laudoExistente = await query(
       `SELECT id, status, emitido_em FROM laudos WHERE lote_id = $1`,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (laudoExistente.rows.length > 0) {
@@ -446,7 +451,8 @@ export const POST = async (
     // Verificar se lote está na fila de emissão (v_fila_emissao)
     const filaEntry = await query(
       `SELECT id FROM v_fila_emissao WHERE lote_id = $1 LIMIT 1`,
-      [loteId]
+      [loteId],
+      user
     );
     if (!filaEntry.rows || filaEntry.rows.length === 0) {
       return NextResponse.json(
@@ -465,7 +471,7 @@ export const POST = async (
 
     try {
       const { gerarLaudoCompletoEmitirPDF } = await import('@/lib/laudo-auto');
-      const laudoId = await gerarLaudoCompletoEmitirPDF(loteId, user.cpf);
+      const laudoId = await gerarLaudoCompletoEmitirPDF(loteId, user.cpf, user);
 
       return NextResponse.json(
         {

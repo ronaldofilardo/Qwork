@@ -61,8 +61,8 @@ describe('Integração: Aprovação de Entidade → Login de Gestor (Nova Arquit
       INSERT INTO entidades (
         cnpj, nome, tipo, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        ativa
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
       RETURNING id
     `,
       [
@@ -79,7 +79,6 @@ describe('Integração: Aprovação de Entidade → Login de Gestor (Nova Arquit
         TEST_CPF,
         TEST_EMAIL,
         '11999999999',
-        true,
         true,
       ]
     );

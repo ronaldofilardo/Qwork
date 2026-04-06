@@ -6,6 +6,7 @@
  */
 
 import type { Session } from '../session';
+import { getDynamicPool } from './dynamic-pool';
 import {
   getLocalPool,
   isDevelopment,
@@ -38,6 +39,49 @@ export async function transaction<T>(
   session?: Session
 ): Promise<T> {
   const localPool = getLocalPool();
+
+  // ── Emissor com ambiente dinâmico ───────────────────────────────────────────
+  if (session?.perfil === 'emissor' && session.dbEnvironment) {
+    const dynPool = getDynamicPool(session.dbEnvironment);
+    const client = await dynPool.connect();
+    try {
+      await client.query('BEGIN');
+      const escapeString = (str: string) => str.replace(/'/g, "''");
+      await client.query(
+        `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
+      );
+      await client.query(
+        `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
+      );
+      await client.query(`SET LOCAL app.current_user_clinica_id = ''`);
+      await client.query(`SET LOCAL app.current_user_entidade_id = ''`);
+      const txClient: TransactionClient = {
+        query: async <R = any>(text: string, params?: unknown[]) => {
+          const r = await client.query(text, params);
+          return { rows: r.rows as R[], rowCount: r.rowCount || 0 };
+        },
+      };
+      const result = await callback(txClient);
+      await client.query('COMMIT');
+      if (DEBUG_DB) {
+        console.log(
+          `[db][transaction] dynamic-${session.dbEnvironment}: comitada`
+        );
+      }
+      return result;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      if (DEBUG_DB)
+        console.error(
+          `[db][transaction] dynamic-${session.dbEnvironment}: revertida`,
+          error
+        );
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────
 
   if ((isDevelopment || isTest) && localPool) {
     const client = await localPool.connect();

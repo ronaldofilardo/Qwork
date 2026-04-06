@@ -43,7 +43,8 @@ export const GET = async (_req: Request) => {
         AND (l.id IS NULL)
       ORDER BY la.liberado_em DESC
     `,
-      [user.cpf]
+      [user.cpf],
+      user
     );
 
     const notificacoes = notificacoesQuery.rows.map((notif) => ({

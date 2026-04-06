@@ -29,13 +29,12 @@ describe('POST /api/pagamento/iniciar - fallback quando tabela contratos ausente
       }
 
       // Resposta para fallback de tomador
-      if (/SELECT c.id, c.nome, c.plano_id, c.status/i.test(sql)) {
+      if (/SELECT c.id, c.nome, c.status/i.test(sql)) {
         return Promise.resolve({
           rows: [
             {
               id: 41,
               nome: 'Empresa X',
-              plano_id: 2,
               status: 'aprovado',
               plano_nome: 'Plano Teste',
               plano_tipo: 'fixo',

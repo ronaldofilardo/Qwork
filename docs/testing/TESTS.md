@@ -87,7 +87,7 @@ tests/                   # Testes de API isolados
 ### Políticas
 
 - 📋 [Política de Mocks](docs/testing/MOCKS_POLICY.md)
-- 📋 [Política de Qualidade](docs/testing/QUALITY-POLICY.md)
+- 📋 [Política de Qualidade](../quality/QUALITY_SOLUTION_README.md)
 
 ---
 

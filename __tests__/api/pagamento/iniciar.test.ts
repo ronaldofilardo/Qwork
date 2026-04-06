@@ -38,7 +38,6 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
         {
           id: 1,
           nome: 'Empresa Teste',
-          plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
           plano_nome: 'Plano Fixo',
@@ -88,7 +87,6 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
         {
           id: 1,
           nome: 'Empresa Teste',
-          plano_id: 1,
           status: 'ativo',
           valor_unitario: 50.0,
           plano_nome: 'Plano Fixo',
@@ -117,7 +115,6 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
         {
           id: 1,
           nome: 'Empresa Teste',
-          plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
           plano_nome: 'Plano Fixo',
@@ -159,7 +156,6 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
         {
           id: 1,
           nome: 'Empresa Teste',
-          plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
           plano_nome: 'Plano Fixo',
@@ -238,7 +234,6 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
         {
           id: 1,
           nome: 'Empresa Teste',
-          plano_id: 1,
           status: 'aguardando_pagamento',
           plano_nome: 'Plano Teste',
           numero_funcionarios: 10,
@@ -304,7 +299,6 @@ describe('API /api/pagamento/iniciar - iniciar pagamento', () => {
         {
           id: 1,
           nome: 'Empresa Teste',
-          plano_id: 1,
           status: 'aguardando_pagamento',
           valor_unitario: 50.0,
           plano_nome: 'Plano Fixo',

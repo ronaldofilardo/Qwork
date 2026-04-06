@@ -55,12 +55,12 @@ describe('Integração: Fluxo RH Correto [entidades + clinicas]', () => {
       `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
+        ativa
       ) VALUES (
         'clinica', 'Clínica Teste RH Integração', $1, $2, '11999999999',
         'Rua Teste, 123', 'São Paulo', 'SP', '01234567',
         'Dr. Teste RH', $3, 'dr@clinica.local', '11987654321',
-        true, true
+        true
       ) RETURNING id`,
       [
         cnpjTeste,

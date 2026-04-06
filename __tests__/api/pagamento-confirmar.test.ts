@@ -21,7 +21,7 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
 
   // Cenário de confirmação com token personalizado removido (testes do fluxo personalizado excluídos).
 
-  describe('Cenário 2: Confirmação com tomador_id e plano_id', () => {
+  describe('Cenário 2: Confirmação com tomador_id', () => {
     it('deve confirmar pagamento para plano fixo', async () => {
       mockPOST.mockResolvedValueOnce({
         status: 200,
@@ -37,7 +37,6 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
       const request = {
         json: async () => ({
           tomador_id: 100,
-          plano_id: 1,
           metodo_pagamento: 'transferencia',
           numero_parcelas: 1,
         }),
@@ -90,7 +89,6 @@ describe('API /api/pagamento/confirmar - Confirmação de Pagamento', () => {
       const request = {
         json: async () => ({
           tomador_id: 102,
-          plano_id: 3,
           metodo_pagamento: 'cartao',
           numero_parcelas: 3,
         }),

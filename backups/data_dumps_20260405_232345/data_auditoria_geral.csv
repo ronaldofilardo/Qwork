@@ -1,0 +1,2 @@
+id,tabela_afetada,acao,cpf_responsavel,dados_anteriores,dados_novos,criado_em
+1,notificacoes,migration_025_tipo_laudo,,,"{""descricao"": ""Migra├º├úo de laudo_emitido para laudo_enviado"", ""data_migracao"": ""2026-02-09T20:16:02.833497+00:00"", ""total_atualizadas"": 0}",2026-02-09 20:16:02.833497

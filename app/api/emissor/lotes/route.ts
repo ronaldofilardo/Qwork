@@ -31,7 +31,8 @@ export const GET = async (req: Request) => {
         AND (fe.id IS NOT NULL OR (l.id IS NOT NULL AND l.emitido_em IS NOT NULL))
         AND (la.status_pagamento = 'pago' OR la.status_pagamento IS NULL)
     `,
-      []
+      [],
+      user
     );
 
     const total =
@@ -87,7 +88,8 @@ export const GET = async (req: Request) => {
         la.liberado_em DESC
       LIMIT $1 OFFSET $2
     `,
-      [limit, offset]
+      [limit, offset],
+      user
     );
 
     const lotes = (lotesQuery.rows || []).map((lote) => {
@@ -148,7 +150,8 @@ export const GET = async (req: Request) => {
            FROM laudos l
            JOIN lotes_avaliacao la ON la.id = l.lote_id
            WHERE la.id = ANY($1) AND la.status NOT IN ('concluido','finalizado')`,
-          [loteIds]
+          [loteIds],
+          user
         );
 
         if (invalid.rows.length > 0) {
@@ -178,7 +181,8 @@ export const GET = async (req: Request) => {
       try {
         const validacao = await query(
           `SELECT * FROM validar_lote_pre_laudo($1)`,
-          [lote.id]
+          [lote.id],
+          user
         );
 
         const resultado = validacao.rows[0] || {

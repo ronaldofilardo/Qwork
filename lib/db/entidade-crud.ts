@@ -205,10 +205,10 @@ export async function createEntidade(
         endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
         cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-        status, motivo_rejeicao, observacoes_reanalise, ativa, pagamento_confirmado
+        status, motivo_rejeicao, observacoes_reanalise, ativa
       ) VALUES (
         $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false, false
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false
       ) RETURNING *`,
       [
         data.tipo,
@@ -252,10 +252,10 @@ export async function createEntidade(
           endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_cargo, responsavel_email, responsavel_celular,
           cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
-          status, motivo_rejeicao, observacoes_reanalise, ativa, pagamento_confirmado
+          status, motivo_rejeicao, observacoes_reanalise, ativa
         ) VALUES (
           $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false, false
+          $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, false
         ) RETURNING *`,
         [
           data.tipo,

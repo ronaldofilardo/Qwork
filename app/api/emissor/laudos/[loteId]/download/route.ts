@@ -40,7 +40,8 @@ export const GET = async (
         AND l.emissor_cpf = $2 
         AND l.status IN ('emitido', 'enviado')
     `,
-      [loteId, user.cpf]
+      [loteId, user.cpf],
+      user
     );
 
     let laudo;

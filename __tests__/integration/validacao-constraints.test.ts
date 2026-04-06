@@ -32,10 +32,10 @@ describe('Validação de Constraints e Integridade do Banco', () => {
         `INSERT INTO entidades (
           tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-          ativa, pagamento_confirmado, status
+          ativa, status
         ) VALUES (
           'entidade', $1, $2, $3, '1199999999', 'Rua', 'SP', 'SP', '01234567',
-          'Resp', '11111111111', $4, '11988888888', true, true, 'ativa'
+          'Resp', '11111111111', $4, '11988888888', true, 'ativa'
         ) RETURNING id`,
         [
           `Entidade Constraint ${timestamp}`,
@@ -115,10 +115,10 @@ describe('Validação de Constraints e Integridade do Banco', () => {
         `INSERT INTO entidades (
           tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
           responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-          ativa, pagamento_confirmado, status
+          ativa, status
         ) VALUES (
           'entidade', $1, $2, $3, '1199999999', 'Rua', 'SP', 'SP', '01234567',
-          'Resp', '11111111111', $4, '11988888888', true, true, 'ativa'
+          'Resp', '11111111111', $4, '11988888888', true, 'ativa'
         ) RETURNING id`,
         [
           `Entidade Func ${timestamp}`,

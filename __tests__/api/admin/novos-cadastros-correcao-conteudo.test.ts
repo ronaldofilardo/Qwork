@@ -45,13 +45,13 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        status, plano_id, numero_funcionarios_estimado
+        status, numero_funcionarios_estimado
       ) VALUES (
         'entidade', 'Empresa Correção Conteudo', '33333333000133',
         'correcao@teste.com', '11999999999', 'Rua Correção, 123',
         'São Paulo', 'SP', '01234567',
         'João Silva', '12345678901', 'joao@teste.com', '11988888888',
-        'pendente', 3, 50
+        'pendente', 50
       ) RETURNING id`,
       []
     );
@@ -112,13 +112,13 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        status, plano_id, numero_funcionarios_estimado
+        status, numero_funcionarios_estimado
       ) VALUES (
         'clinica', 'Clínica Valores Teste', '44444444000144',
         'valores2@teste.com', '11888888888', 'Av Valores, 456',
         'Rio de Janeiro', 'RJ', '23456789',
         'Maria Santos', '98765432101', 'maria@teste.com', '11777777777',
-        'pendente', 3, 25
+        'pendente', 25
       ) RETURNING id`,
       []
     );
@@ -148,14 +148,13 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
 
     // Verificar campos calculados
     const contratoResult = await query(
-      'SELECT numero_funcionarios, valor_total, valor_personalizado FROM contratos WHERE id = $1',
+      'SELECT numero_funcionarios, valor_total FROM contratos WHERE id = $1',
       [data.tomador.contrato_id]
     );
 
     const contrato = contratoResult.rows[0];
     expect(contrato.numero_funcionarios).toBe(30); // Usado o valor do body
     expect(parseFloat(contrato.valor_total)).toBe(990.0); // 30 * 33.0
-    expect(parseFloat(contrato.valor_personalizado)).toBe(33.0);
   });
 
   it('deve funcionar com numero_funcionarios fornecido no body', async () => {
@@ -164,13 +163,13 @@ describe('POST /api/admin/novos-cadastros - Correção Conteudo Contrato', () =>
       `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        status, plano_id
+        status
       ) VALUES (
         'entidade', 'Empresa Sem Estimativa', '55555555000155',
         'semestimativa2@teste.com', '11666666666', 'Rua Sem Estimativa, 789',
         'Belo Horizonte', 'MG', '34567890',
         'Pedro Costa', '11111111101', 'pedro@teste.com', '11555555555',
-        'pendente', 3
+        'pendente'
       ) RETURNING id`,
       []
     );

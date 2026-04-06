@@ -131,10 +131,18 @@ export function useEmissorLotes() {
     }
   });
 
-  const counts: Record<'laudo-para-emitir' | 'laudo-emitido' | 'laudos-enviados', number> = {
-    'laudo-para-emitir': lotes.filter((l) => !l.laudo || !l.laudo._emitido).length,
-    'laudo-emitido': lotes.filter((l) => l.laudo?._emitido === true && !l.laudo?.enviado_em).length,
-    'laudos-enviados': lotes.filter((l) => !!(l.laudo?.enviado_em || l.laudo?.status === 'enviado')).length,
+  const counts: Record<
+    'laudo-para-emitir' | 'laudo-emitido' | 'laudos-enviados',
+    number
+  > = {
+    'laudo-para-emitir': lotes.filter((l) => !l.laudo || !l.laudo._emitido)
+      .length,
+    'laudo-emitido': lotes.filter(
+      (l) => l.laudo?._emitido === true && !l.laudo?.enviado_em
+    ).length,
+    'laudos-enviados': lotes.filter(
+      (l) => !!(l.laudo?.enviado_em || l.laudo?.status === 'enviado')
+    ).length,
   };
 
   // ---- Action handlers ----

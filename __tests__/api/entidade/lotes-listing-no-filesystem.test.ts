@@ -42,7 +42,6 @@ describe('GET /api/entidade/lotes - No Filesystem Operations', () => {
           {
             lote_id: 1005,
             entidade_id: 42,
-            contratante_id: 1,
             tipo: 'pcd',
             status: 'aguardando_laudo',
             quantidade_avaliacoes: 10,
@@ -58,7 +57,6 @@ describe('GET /api/entidade/lotes - No Filesystem Operations', () => {
           {
             lote_id: 1006,
             entidade_id: 42,
-            contratante_id: 1,
             tipo: 'aposentadoria',
             status: 'aguardando_laudo',
             quantidade_avaliacoes: 5,

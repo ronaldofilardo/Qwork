@@ -256,7 +256,9 @@ describe('GET /api/entidade/laudos/[laudoId]/download - Backblaze Proxy', () => 
 
       expect(response.status).toBe(200);
       expect(response.headers.get('Content-Type')).toBe('application/pdf');
-      expect(response.headers.get('Content-Disposition')).toContain('laudo-1.pdf');
+      expect(response.headers.get('Content-Disposition')).toContain(
+        'laudo-1.pdf'
+      );
     });
 
     it('deve retornar 500 quando fetch do Backblaze falha', async () => {

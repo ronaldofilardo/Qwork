@@ -37,7 +37,7 @@ export function POST(_request: NextRequest) {
           '   - Usuário RH em usuarios com tipo_usuario="rh"',
           '5. RH faz login em POST /api/auth/login com CPF e senha',
         ],
-        documentacao: '/docs/FLUXO_APROVACAO_E_LIBERACAO_LOGIN.md',
+        documentacao: '/docs/guides/FLUXO_APROVACAO_E_LIBERACAO_LOGIN.md',
       },
       { status: 403 }
     );

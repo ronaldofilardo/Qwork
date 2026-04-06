@@ -11,7 +11,13 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(__dirname, '../..');
-const TABLE_PATH = path.join(ROOT, 'app', 'rh', 'components', 'EmpresasTable.tsx');
+const TABLE_PATH = path.join(
+  ROOT,
+  'app',
+  'rh',
+  'components',
+  'EmpresasTable.tsx'
+);
 
 let src: string;
 
@@ -57,7 +63,8 @@ describe('EmpresasTable — Labels renomeados', () => {
   });
 
   it('"disponível(eis)" deve manter cor verde (status laudo_emitido)', () => {
-    const greenPattern = /disponível\(eis\)[\s\S]{0,200}green|green[\s\S]{0,200}disponível\(eis\)/;
+    const greenPattern =
+      /disponível\(eis\)[\s\S]{0,200}green|green[\s\S]{0,200}disponível\(eis\)/;
     expect(src).toMatch(greenPattern);
   });
 });

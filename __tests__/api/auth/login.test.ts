@@ -159,7 +159,6 @@ describe('/api/auth/login - Nova Arquitetura', () => {
               senha_hash: '$2a$10$ValidHash',
               id: 1,
               ativa: true,
-              pagamento_confirmado: true,
             },
           ],
           rowCount: 1,
@@ -456,7 +455,6 @@ describe('/api/auth/login - Nova Arquitetura', () => {
               senha_hash: '$2a$10$ValidHash',
               id: 1,
               ativa: true,
-              pagamento_confirmado: true,
             },
           ],
           rowCount: 1,
@@ -509,7 +507,6 @@ describe('/api/auth/login - Nova Arquitetura', () => {
               senha_hash: '$2a$10$ValidHash',
               id: 1,
               ativa: false, // Entidade inativa
-              pagamento_confirmado: true,
             },
           ],
           rowCount: 1,

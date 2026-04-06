@@ -140,9 +140,16 @@ export default function DetalhesLotePage() {
     gestorEmail: string | null;
     gestorCelular: string | null;
     tomadorInfo: {
-      nome: string; cnpj: string; email: string; telefone: string;
-      endereco: string; cidade: string; estado: string;
-      responsavel_nome: string; responsavel_cpf: string; responsavel_email: string;
+      nome: string;
+      cnpj: string;
+      email: string;
+      telefone: string;
+      endereco: string;
+      cidade: string;
+      estado: string;
+      responsavel_nome: string;
+      responsavel_cpf: string;
+      responsavel_email: string;
     } | null;
   } | null>(null);
 
@@ -1115,11 +1122,19 @@ export default function DetalhesLotePage() {
                               loteId: lote.id,
                               gestorEmail: contato?.email ?? null,
                               gestorCelular: contato?.celular ?? null,
-                              tomadorInfo: (data.tomador_info as {
-                                nome: string; cnpj: string; email: string; telefone: string;
-                                endereco: string; cidade: string; estado: string;
-                                responsavel_nome: string; responsavel_cpf: string; responsavel_email: string;
-                              } | null) ?? null,
+                              tomadorInfo:
+                                (data.tomador_info as {
+                                  nome: string;
+                                  cnpj: string;
+                                  email: string;
+                                  telefone: string;
+                                  endereco: string;
+                                  cidade: string;
+                                  estado: string;
+                                  responsavel_nome: string;
+                                  responsavel_cpf: string;
+                                  responsavel_email: string;
+                                } | null) ?? null,
                             });
                           } else {
                             setTimeout(() => loadLoteData(), 1500);

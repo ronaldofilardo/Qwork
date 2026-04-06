@@ -12,6 +12,8 @@ export type { Session } from '../session';
 export * from './connection';
 export * from './query';
 export * from './transaction';
+export * from './dynamic-pool';
+export * from './environment-guard';
 
 // Domínio
 export * from './entidade-crud';

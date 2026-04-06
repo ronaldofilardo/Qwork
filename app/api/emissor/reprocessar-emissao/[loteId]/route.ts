@@ -40,7 +40,8 @@ export const POST = async (
       WHERE la.id = $1
       GROUP BY la.id,  la.status
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (loteCheck.rows.length === 0) {
@@ -85,7 +86,8 @@ export const POST = async (
       FROM laudos
       WHERE lote_id = $1 AND status = 'enviado' AND arquivo_pdf IS NOT NULL
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (laudoExistente.rows.length > 0 && laudoExistente.rows[0].enviado_em) {
@@ -109,7 +111,8 @@ export const POST = async (
       ORDER BY criado_em DESC
       LIMIT 1
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (tentativaRecente.rows.length > 0) {
@@ -163,7 +166,8 @@ export const POST = async (
         user.nome,
         ip,
         `Reprocessamento solicitado pelo emissor ${user.nome}`,
-      ]
+      ],
+      user
     );
 
     // Criar notificação para o emissor
@@ -185,7 +189,8 @@ export const POST = async (
         'Reprocessamento solicitado',
         `O lote ${lote.id} foi colocado na fila para reprocessamento. O sistema tentará emitir o laudo novamente em breve.`,
         user.cpf,
-      ]
+      ],
+      user
     );
 
     console.log(

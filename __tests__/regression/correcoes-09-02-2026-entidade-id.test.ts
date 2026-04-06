@@ -23,7 +23,7 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
       expect(result.rows[0].data_type).toBe('integer');
     });
 
-    it('deve ter coluna contratante_id (backward compatibility)', async () => {
+    it('coluna contratante_id não deve existir (migração concluída)', async () => {
       const result = await query(
         `SELECT column_name 
          FROM information_schema.columns 
@@ -31,7 +31,7 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
          AND column_name = 'contratante_id'`
       );
 
-      expect(result.rows).toHaveLength(1);
+      expect(result.rows).toHaveLength(0);
     });
   });
 
@@ -191,7 +191,7 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
       expect(columns).toContain('entidade_id');
     });
 
-    it('campo contratante_id ainda existe (transição)', async () => {
+    it('coluna contratante_id não deve existir (migração concluída)', async () => {
       const result = await query(
         `SELECT column_name 
          FROM information_schema.columns 
@@ -199,7 +199,7 @@ describe('Correções 09/02/2026 - entidade_id Critical Validations', () => {
          AND column_name = 'contratante_id'`
       );
 
-      expect(result.rows).toHaveLength(1);
+      expect(result.rows).toHaveLength(0);
     });
   });
 });

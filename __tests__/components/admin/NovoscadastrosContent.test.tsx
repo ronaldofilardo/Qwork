@@ -65,7 +65,6 @@ describe('NovoscadastrosContent - Design Simplificado', () => {
       estado: 'MG',
       cep: '03345678',
       cnpj: '11.111.111/0001-11',
-      data_liberacao_login: '2025-01-03T10:00:00Z',
       criado_em: '2025-01-03T10:00:00Z',
     },
   ];

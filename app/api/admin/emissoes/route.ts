@@ -47,7 +47,7 @@ export async function GET() {
     // Deduplicar por lote_id: a view pode retornar múltiplas linhas por lote
     // quando há mais de um vínculo de comissão (vinculos_comissao) associado.
     // Mantém a primeira ocorrência, que já é a mais relevante pelo ORDER BY da view.
-    const seenLotes = new Map<number, typeof result.rows[0]>();
+    const seenLotes = new Map<number, (typeof result.rows)[0]>();
     for (const row of result.rows) {
       if (!seenLotes.has(row.lote_id)) {
         seenLotes.set(row.lote_id, row);
@@ -55,7 +55,13 @@ export async function GET() {
     }
     const solicitacoes = Array.from(seenLotes.values());
 
-    console.log('[API /admin/emissoes] Após dedup:', solicitacoes.length, 'lotes únicos de', result.rows.length, 'rows');
+    console.log(
+      '[API /admin/emissoes] Após dedup:',
+      solicitacoes.length,
+      'lotes únicos de',
+      result.rows.length,
+      'rows'
+    );
 
     return NextResponse.json({
       solicitacoes,

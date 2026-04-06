@@ -7,14 +7,25 @@ import LoteCard from './components/LoteCard';
 
 export default function EmissorDashboard() {
   const {
-    loading, loadingMore, error,
-    activeTab, setActiveTab,
-    hasMore, filteredLotes, counts,
-    handleEmitirLaudo, handleDownloadLaudo,
-    handleRefresh, handleLoadMore, handleLogout,
-    reprocessarLaudo, isReprocessando,
-    canInstall, handleInstallClick,
-    currentPage, fetchLotes,
+    loading,
+    loadingMore,
+    error,
+    activeTab,
+    setActiveTab,
+    hasMore,
+    filteredLotes,
+    counts,
+    handleEmitirLaudo,
+    handleDownloadLaudo,
+    handleRefresh,
+    handleLoadMore,
+    handleLogout,
+    reprocessarLaudo,
+    isReprocessando,
+    canInstall,
+    handleInstallClick,
+    currentPage,
+    fetchLotes,
   } = useEmissorLotes();
 
   return (
@@ -54,7 +65,9 @@ export default function EmissorDashboard() {
             </div>
           ) : filteredLotes.length === 0 ? (
             <div className="bg-white rounded-lg shadow p-8 text-center">
-              <p className="text-gray-500">Nenhum ciclo encontrado para esta categoria.</p>
+              <p className="text-gray-500">
+                Nenhum ciclo encontrado para esta categoria.
+              </p>
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow">
@@ -68,7 +81,9 @@ export default function EmissorDashboard() {
                       onDownloadLaudo={handleDownloadLaudo}
                       onReprocessar={reprocessarLaudo}
                       isReprocessando={isReprocessando}
-                      onUploadSuccess={() => { void fetchLotes(currentPage, false); }}
+                      onUploadSuccess={() => {
+                        void fetchLotes(currentPage, false);
+                      }}
                     />
                   ))}
                 </div>

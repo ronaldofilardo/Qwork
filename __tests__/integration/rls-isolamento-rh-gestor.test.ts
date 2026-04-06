@@ -131,8 +131,8 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
 
     // Criar 2 entidades independentes
     const tomador1 = await query(
-      `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
+      `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
       [
         'Entidade Teste 1',
         'entidade',
@@ -148,14 +148,13 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         'SP',
         '01000000',
         true,
-        true,
       ]
     );
     entidadeId1 = tomador1.rows[0].id;
 
     const tomador2 = await query(
-      `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa, pagamento_confirmado) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id`,
+      `INSERT INTO entidades (nome, tipo, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular, cnpj, email, telefone, endereco, cidade, estado, cep, ativa) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`,
       [
         'Entidade Teste 2',
         'entidade',
@@ -170,7 +169,6 @@ describe('Isolamento RLS: RH e Gestores de Entidade', () => {
         'São Paulo',
         'SP',
         '02000000',
-        true,
         true,
       ]
     );

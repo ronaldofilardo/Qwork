@@ -469,10 +469,14 @@ describe('Emissor Dashboard', () => {
 
     // Click na aba 'Laudos Enviados' da sidebar para ver lote com enviado_em preenchido
     await waitFor(() => {
-      const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+      const tabLaudosEnviados = screen.getByRole('button', {
+        name: /laudos enviados/i,
+      });
       expect(tabLaudosEnviados).toBeInTheDocument();
     });
-    const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+    const tabLaudosEnviados = screen.getByRole('button', {
+      name: /laudos enviados/i,
+    });
     await user.click(tabLaudosEnviados);
 
     await waitFor(
@@ -529,10 +533,14 @@ describe('Emissor Dashboard', () => {
 
     // Click na aba 'Laudos Enviados' da sidebar para ver lote com enviado_em preenchido
     await waitFor(() => {
-      const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+      const tabLaudosEnviados = screen.getByRole('button', {
+        name: /laudos enviados/i,
+      });
       expect(tabLaudosEnviados).toBeInTheDocument();
     });
-    const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+    const tabLaudosEnviados = screen.getByRole('button', {
+      name: /laudos enviados/i,
+    });
     await user.click(tabLaudosEnviados);
 
     await waitFor(

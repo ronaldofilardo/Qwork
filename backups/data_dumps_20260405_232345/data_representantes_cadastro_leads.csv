@@ -1,0 +1,1 @@
+id,tipo_pessoa,nome,email,telefone,cpf,cnpj,razao_social,cpf_responsavel,doc_cpf_filename,doc_cpf_key,doc_cpf_url,doc_cnpj_filename,doc_cnpj_key,doc_cnpj_url,doc_cpf_resp_filename,doc_cpf_resp_key,doc_cpf_resp_url,status,motivo_rejeicao,ip_origem,user_agent,criado_em,verificado_em,verificado_por,convertido_em,representante_id

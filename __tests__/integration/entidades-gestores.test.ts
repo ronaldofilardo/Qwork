@@ -27,11 +27,11 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
+        ativa
       ) VALUES (
         'entidade', $1, $2, $3, '1199999999', 'Rua Teste', 'São Paulo', 'SP', '01234567',
         'Responsável Teste', '12345678901', $4, '11988888888',
-        true, true
+        true
       ) RETURNING id`,
       [
         `Entidade Teste ${timestamp}`,
@@ -52,13 +52,7 @@ describe('Entidades (Gestor) - Criação Direta', () => {
       `INSERT INTO usuarios (
         cpf, nome, email, senha_hash, tipo_usuario, entidade_id, ativo
       ) VALUES ($1, $2, $3, $4, 'gestor', $5, true)`,
-      [
-        gestorCpf,
-        'Gestor Teste',
-        gestorEmail,
-        '$2b$10$dummyhash',
-        tomadorId,
-      ]
+      [gestorCpf, 'Gestor Teste', gestorEmail, '$2b$10$dummyhash', tomadorId]
     );
   });
 

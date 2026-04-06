@@ -100,7 +100,7 @@ Integração completa e funcional do Asaas Payment Gateway no sistema QWork, sub
    - ✅ `NEXT_PUBLIC_APP_URL` - URL pública
 
 10. **Documentação Completa**
-    - ✅ [Guia de Setup](docs/ASAAS_SETUP_GUIDE.md) (7000+ palavras)
+    - ✅ [Guia de Setup](ASAAS_SETUP_GUIDE.md) (7000+ palavras)
     - ✅ [README Asaas](lib/asaas/README.md) (2000+ palavras)
     - ✅ Exemplos de código
     - ✅ Troubleshooting
@@ -328,7 +328,7 @@ Nenhum problema conhecido no momento. A implementação foi testada no ambiente 
 
 ### Documentação
 
-- [Guia Completo](docs/ASAAS_SETUP_GUIDE.md)
+- [Guia Completo](ASAAS_SETUP_GUIDE.md)
 - [README Asaas](lib/asaas/README.md)
 - [Docs Asaas](https://docs.asaas.com)
 

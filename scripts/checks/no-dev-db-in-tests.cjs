@@ -65,6 +65,18 @@ for (const file of files) {
   if (file.includes('db-no-hardcoded-credentials.test.ts')) {
     continue;
   }
+  // Skip db-emissor-environment — testa validação de guard de acesso (referencia nr-bps_db como string esperada)
+  if (file.includes('db-emissor-environment.test.ts')) {
+    continue;
+  }
+  // Skip db-environment-guard — igual: referencia strings de URL como valores esperados em testes
+  if (file.includes('db-environment-guard.test.ts')) {
+    continue;
+  }
+  // Skip 1140_fix_seq_vendedor_codigo — referência apenas em comentário de documentação
+  if (file.includes('1140_fix_seq_vendedor_codigo.test.ts')) {
+    continue;
+  }
 
   const content = fs.readFileSync(file, 'utf8');
   // Use regex to match nr-bps_db but NOT nr-bps_db_test

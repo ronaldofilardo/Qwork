@@ -12,7 +12,14 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const ROOT = path.resolve(__dirname, '../../..');
-const ROUTE_PATH = path.join(ROOT, 'app', 'api', 'admin', 'emissoes', 'route.ts');
+const ROUTE_PATH = path.join(
+  ROOT,
+  'app',
+  'api',
+  'admin',
+  'emissoes',
+  'route.ts'
+);
 
 let src: string;
 
