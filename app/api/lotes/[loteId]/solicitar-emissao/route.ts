@@ -430,6 +430,35 @@ export async function POST(
       // Falha ao buscar dados de contato não impede a resposta
     }
 
+    // Buscar dados completos da clínica (tomador) para exibir na modal de confirmação
+    let tomadorInfo: {
+      nome: string;
+      cnpj: string;
+      email: string;
+      telefone: string;
+      endereco: string;
+      cidade: string;
+      estado: string;
+      responsavel_nome: string;
+      responsavel_cpf: string;
+      responsavel_email: string;
+    } | null = null;
+    if (user.perfil === 'rh' && lote.clinica_id) {
+      try {
+        const clinicaResult = await query(
+          `SELECT nome, cnpj, email, telefone, endereco, cidade, estado,
+                  responsavel_nome, responsavel_cpf, responsavel_email
+           FROM clinicas WHERE id = $1 LIMIT 1`,
+          [lote.clinica_id]
+        );
+        if (clinicaResult.rows.length > 0) {
+          tomadorInfo = clinicaResult.rows[0];
+        }
+      } catch {
+        // Falha ao buscar dados do tomador não impede a resposta
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Solicitação enviada com sucesso. Aguarde o link de pagamento.',
@@ -439,6 +468,7 @@ export async function POST(
       },
       auto_inativadas_count: autoInativadasCount,
       gestor_contato: gestorContato,
+      tomador_info: tomadorInfo,
     });
   } catch (error) {
     console.error('[ERROR] Erro no endpoint de solicitação de emissão:', error);

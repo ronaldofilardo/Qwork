@@ -44,6 +44,19 @@ export function marcarExibidaParaLote(loteId: number): void {
   }
 }
 
+interface TomadorInfo {
+  nome: string;
+  cnpj: string;
+  email: string;
+  telefone: string;
+  endereco: string;
+  cidade: string;
+  estado: string;
+  responsavel_nome: string;
+  responsavel_cpf: string;
+  responsavel_email: string;
+}
+
 interface ModalConfirmacaoSolicitarProps {
   isOpen: boolean;
   onClose: () => void;
@@ -52,6 +65,7 @@ interface ModalConfirmacaoSolicitarProps {
   gestorCelular?: string | null;
   /** Contexto de quem solicita a emissão: 'rh' = perfil RH (clínica), 'gestor' = Gestor de Entidade */
   contexto?: 'rh' | 'gestor';
+  tomadorInfo?: TomadorInfo | null;
 }
 
 export function ModalConfirmacaoSolicitar({
@@ -61,6 +75,7 @@ export function ModalConfirmacaoSolicitar({
   gestorEmail,
   gestorCelular,
   contexto = 'gestor',
+  tomadorInfo,
 }: ModalConfirmacaoSolicitarProps) {
   const temDadosContato = Boolean(gestorEmail || gestorCelular);
   const labelPerfil =
@@ -122,6 +137,66 @@ export function ModalConfirmacaoSolicitar({
 
         {/* Corpo */}
         <div className="px-6 py-5 space-y-5">
+          {/* Seção: Dados do Tomador (Clínica) */}
+          {tomadorInfo && (
+            <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 space-y-2">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
+                Dados da Clínica (Tomador)
+              </p>
+              <div>
+                <span className="text-sm font-semibold text-gray-900">{tomadorInfo.nome}</span>
+                {tomadorInfo.cnpj && (
+                  <span className="ml-2 text-xs text-gray-500 font-mono">CNPJ: {tomadorInfo.cnpj}</span>
+                )}
+              </div>
+              {(tomadorInfo.endereco || tomadorInfo.cidade) && (
+                <div className="flex items-start gap-2 text-sm text-gray-700">
+                  <span aria-hidden="true">📍</span>
+                  <span>
+                    {[
+                      tomadorInfo.endereco,
+                      tomadorInfo.cidade && tomadorInfo.estado
+                        ? `${tomadorInfo.cidade}/${tomadorInfo.estado}`
+                        : tomadorInfo.cidade || tomadorInfo.estado,
+                    ]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </span>
+                </div>
+              )}
+              {(tomadorInfo.telefone || tomadorInfo.email) && (
+                <div className="flex flex-col gap-1">
+                  {tomadorInfo.telefone && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <span aria-hidden="true">📞</span>
+                      <span>{tomadorInfo.telefone}</span>
+                    </div>
+                  )}
+                  {tomadorInfo.email && (
+                    <div className="flex items-center gap-2 text-sm text-gray-700">
+                      <span aria-hidden="true">📧</span>
+                      <span className="font-mono break-all">{tomadorInfo.email}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {tomadorInfo.responsavel_nome && (
+                <div className="mt-1 pt-2 border-t border-gray-200">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                    Gestor Responsável
+                  </p>
+                  <p className="text-sm font-medium text-gray-900">{tomadorInfo.responsavel_nome}</p>
+                  {tomadorInfo.responsavel_cpf && (
+                    <p className="text-xs text-gray-600 font-mono">CPF: {tomadorInfo.responsavel_cpf}</p>
+                  )}
+                  {tomadorInfo.responsavel_email && (
+                    <p className="text-xs text-gray-600 font-mono break-all">{tomadorInfo.responsavel_email}</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Seção: Contato do Gestor / RH */}
           <div>
             <p className="text-sm text-gray-700 leading-relaxed">

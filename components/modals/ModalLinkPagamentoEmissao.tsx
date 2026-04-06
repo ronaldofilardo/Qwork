@@ -9,6 +9,7 @@ import {
   Link2,
   QrCode as QrCodeIcon,
   Download,
+  Send,
 } from 'lucide-react';
 import QRCode from 'qrcode';
 
@@ -20,6 +21,8 @@ interface ModalLinkPagamentoEmissaoProps {
   nomeTomador: string;
   valorTotal: number;
   numAvaliacoes: number;
+  onDisponibilizarLink?: (loteId: number) => void;
+  isDisponibilizando?: boolean;
 }
 
 export default function ModalLinkPagamentoEmissao({
@@ -30,6 +33,8 @@ export default function ModalLinkPagamentoEmissao({
   nomeTomador,
   valorTotal,
   numAvaliacoes,
+  onDisponibilizarLink,
+  isDisponibilizando = false,
 }: ModalLinkPagamentoEmissaoProps) {
   const [copied, setCopied] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
@@ -225,6 +230,18 @@ export default function ModalLinkPagamentoEmissao({
               </p>
             )}
           </div>
+
+          {/* Botão Disponibilizar na conta do tomador */}
+          {onDisponibilizarLink && (
+            <button
+              onClick={() => onDisponibilizarLink(loteId)}
+              disabled={isDisponibilizando}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed font-medium transition-colors"
+            >
+              <Send className="w-4 h-4" />
+              {isDisponibilizando ? 'Enviando...' : 'Disponibilizar na conta do tomador'}
+            </button>
+          )}
 
           {/* Instruções */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
