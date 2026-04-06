@@ -55,6 +55,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
   // Salvar arquivos
   const cnpjLimpo = parsed.data.cnpj.replace(/[^\d]/g, '');
+  const tipoTomador = parsed.data.tipo; // 'entidade' | 'clinica'
   let cartaoCnpjPath: string;
   let contratoSocialPath: string;
   let docIdentificacaoPath: string;
@@ -63,17 +64,20 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     cartaoCnpjPath = await salvarArquivo(
       arquivosResult.files!.cartao_cnpj,
       'cartao_cnpj',
-      cnpjLimpo
+      cnpjLimpo,
+      tipoTomador
     );
     contratoSocialPath = await salvarArquivo(
       arquivosResult.files!.contrato_social,
       'contrato_social',
-      cnpjLimpo
+      cnpjLimpo,
+      tipoTomador
     );
     docIdentificacaoPath = await salvarArquivo(
       arquivosResult.files!.doc_identificacao,
       'doc_identificacao',
-      cnpjLimpo
+      cnpjLimpo,
+      tipoTomador
     );
   } catch (fileError) {
     console.error(
