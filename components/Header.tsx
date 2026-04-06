@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { QWORK_LOGO_BASE64 } from '../lib/config/branding';
+import { useOrgInfo } from '@/hooks/useOrgInfo';
 
 interface HeaderProps {
   userName?: string;
@@ -24,6 +25,7 @@ export default function Header({
 }: HeaderProps) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const { orgInfo } = useOrgInfo();
 
   const fetchSession = async () => {
     try {
@@ -124,6 +126,19 @@ export default function Header({
         <span className="font-bold text-xs sm:text-base text-accent px-2 py-1 sm:px-4 sm:py-2 bg-accent/10 rounded-lg ml-2 truncate max-w-[120px] sm:max-w-xs text-right">
           {nome}
         </span>
+      )}
+      {/* Logo da organização - apenas para funcionários */}
+      {perfil === 'funcionario' && orgInfo?.logo_url && (
+        <div className="flex-shrink-0 bg-white rounded-lg p-1 ml-2">
+          <Image
+            src={orgInfo.logo_url}
+            alt={orgInfo.nome}
+            width={40}
+            height={40}
+            className="h-8 w-8 sm:h-10 sm:w-10 object-contain"
+            unoptimized
+          />
+        </div>
       )}
     </header>
   );

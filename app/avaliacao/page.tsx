@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { getQuestoesPorNivel } from '@/lib/questoes';
 import QworkLogo from '@/components/QworkLogo';
 import RadioScale from '@/components/RadioScale';
 import CompletionModal from '@/components/avaliacao/CompletionModal';
+import { useOrgInfo } from '@/hooks/useOrgInfo';
 
 interface Questao {
   grupoId: number;
@@ -33,6 +35,7 @@ export default function NovaAvaliacaoPage() {
   const [completionStatus, setCompletionStatus] = useState<
     'processing' | 'success'
   >('processing');
+  const { orgInfo } = useOrgInfo();
 
   useEffect(() => {
     setIsAnimating(true);
@@ -375,25 +378,39 @@ export default function NovaAvaliacaoPage() {
               </h1>
             </div>
           </div>
-          <button
-            onClick={() => (window.location.href = '/dashboard')}
-            className="p-2 hover:bg-white/20 rounded-full transition flex-shrink-0 touch-target"
-            aria-label="Fechar avaliação"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {orgInfo?.logo_url && (
+              <div className="bg-white rounded-lg p-1">
+                <Image
+                  src={orgInfo.logo_url}
+                  alt={orgInfo.nome}
+                  width={64}
+                  height={32}
+                  className="h-8 w-auto object-contain"
+                  unoptimized
+                />
+              </div>
+            )}
+            <button
+              onClick={() => (window.location.href = '/dashboard')}
+              className="p-2 hover:bg-white/20 rounded-full transition flex-shrink-0 touch-target"
+              aria-label="Fechar avaliação"
             >
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
-          </button>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="bg-white/30 rounded-full h-2.5 overflow-hidden">
