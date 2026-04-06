@@ -5,7 +5,7 @@
 # ====================================================================
 # ESTRATÉGIA: Opção B — DB Novo + Migrar Dados
 #   1. Backup do PROD atual
-#   2. Dump schema do STAGING (já em 1143)
+#   2. Dump schema do STAGING (já em 1145 + 9000/9001)
 #   3. Criar neondb_v2 e aplicar schema
 #   4. Exportar dados do PROD por tabela
 #   5. Transformar e importar dados no neondb_v2
@@ -14,7 +14,7 @@
 #   8. Verificação final
 #
 # PRÉ-REQUISITOS:
-#   - STAGING em migration 1143 (executar apply-migrations-staging-v6.ps1 antes)
+#   - STAGING em migration 1145 + 9000/9001 (executar apply-migrations-staging-v7.ps1 antes)
 #   - psql e pg_dump disponíveis no PATH
 #   - neondb_v2 criado no Neon Dashboard (mesmo projeto)
 #   - Variáveis NEON_PROD_PASSWORD definida
@@ -72,7 +72,7 @@ Write-Host ""
 Write-Host "====================================================================" -ForegroundColor Cyan
 Write-Host "  MIGRAÇÃO PROD → $NEW_DB" -ForegroundColor Cyan
 Write-Host "  Source: $PROD_DB (PROD, migration 1101)" -ForegroundColor Gray
-Write-Host "  Schema: $STAGING_DB (STAGING, migration 1143)" -ForegroundColor Gray
+  Write-Host "  Schema: $STAGING_DB (STAGING, migration 1145 + 9000/9001)" -ForegroundColor Gray
 Write-Host "  Target: $NEW_DB" -ForegroundColor Gray
 Write-Host "  Work dir: $WORK_DIR" -ForegroundColor Gray
 Write-Host "====================================================================" -ForegroundColor Cyan
@@ -133,6 +133,7 @@ if ($SkipSchemaDump) {
 } else {
     Write-Host "  Exportando schema de $STAGING_DB..." -ForegroundColor Cyan
     if (-not $DryRun) {
+        # STAGING deve estar em migration 1145 + 9000/9001 (rodar apply-migrations-staging-v7.ps1 antes)
         pg_dump -h $NEON_POOLER -U $NEON_USER -d $STAGING_DB --schema-only -f $stagingSchemaFile 2>&1
         if ($LASTEXITCODE -ne 0) { throw "Falha ao exportar schema do STAGING" }
         Write-Host "    OK" -ForegroundColor Green
