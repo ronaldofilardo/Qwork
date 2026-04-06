@@ -72,46 +72,56 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const { tipo } = parseResult.data;
 
     /*
-     * Busca entidades com contrato pendente de aceite.
-     * A coluna `entidades.tipo` distingue 'clinica' de 'entidade'.
+     * Busca CLÍNICAS e ENTIDADES com contrato pendente de aceite via UNION ALL.
+     *
+     * As duas tabelas são separadas no banco (`clinicas` e `entidades`), mas
+     * compartilham a mesma sequence (seq_contratantes_id), garantindo IDs
+     * globalmente únicos. O UNION ALL une os resultados de ambas antes de
+     * fazer o JOIN com contratos.
+     *
      * Status relevantes:
      *   - aguardando_aceite_contrato : fluxo parou exatamente no aceite do contrato
      *   - aguardando_aceite          : fluxo parou antes do aceite (link da proposta)
      *   - pendente                   : cadastro chegou mas nenhum avanço
      *
-     * Priorizamos entidades que JÁ POSSUEM um contrato gerado (JOIN INNER).
+     * O filtro de tipo é sempre passado como $1 ('todos' significa sem filtro).
      */
-    const tipoFilter = tipo !== 'todos' ? `AND e.tipo = $1` : '';
-    const params: string[] = tipo !== 'todos' ? [tipo] : [];
-
     const sql = `
       SELECT
-        e.id,
-        e.nome,
-        e.cnpj,
-        e.email,
-        e.telefone,
-        e.status,
-        e.criado_em,
-        e.tipo,
-        e.responsavel_nome,
-        e.responsavel_cargo,
-        e.responsavel_celular,
-        c.id       AS contrato_id,
+        t.id,
+        t.nome,
+        t.cnpj,
+        t.email,
+        t.telefone,
+        t.status,
+        t.criado_em,
+        t.tipo,
+        t.responsavel_nome,
+        t.responsavel_cargo,
+        t.responsavel_celular,
+        c.id        AS contrato_id,
         c.criado_em AS contrato_criado_em
-      FROM entidades e
-      INNER JOIN contratos c ON c.tomador_id = e.id
+      FROM (
+        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo,
+               responsavel_nome, responsavel_cargo, responsavel_celular
+        FROM entidades
+        UNION ALL
+        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo,
+               responsavel_nome, responsavel_cargo, responsavel_celular
+        FROM clinicas
+      ) t
+      INNER JOIN contratos c ON c.tomador_id = t.id AND c.tipo_tomador = t.tipo
       WHERE c.aceito = false
-        AND e.status IN (
+        AND t.status IN (
           'aguardando_aceite_contrato',
           'aguardando_aceite',
           'pendente'
         )
-        ${tipoFilter}
+        AND ($1 = 'todos' OR t.tipo = $1)
       ORDER BY c.criado_em DESC
     `;
 
-    const result = await query<PreCadastroItem>(sql, params);
+    const result = await query<PreCadastroItem>(sql, [tipo]);
 
     return NextResponse.json<PreCadastroResponse>({
       success: true,

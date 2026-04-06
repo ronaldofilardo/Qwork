@@ -144,11 +144,51 @@ describe('GET /api/suporte/pre-cadastro', () => {
       expect(body.total).toBe(1);
       expect(body.pre_cadastros[0].tipo).toBe('clinica');
 
-      // A query deve ter recebido o parâmetro 'clinica'
+      // A query usa UNION ALL e passa sempre o param de tipo
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('AND e.tipo = $1'),
+        expect.stringContaining('UNION ALL'),
         ['clinica']
       );
+    });
+
+    it('deve incluir clínicas da tabela clinicas via UNION ALL', async () => {
+      // Arrange — simula clínica que registrou mas não aceitou o contrato
+      // (bug corrigido: antes só `entidades` era consultada)
+      const clinicaFromClinicasTable = [
+        {
+          id: 10,
+          nome: 'Clínica XPTO',
+          cnpj: '11222333000181',
+          email: 'xpto@clinica.com',
+          telefone: '41999998888',
+          status: 'pendente',
+          criado_em: '2026-04-06T08:00:00.000Z',
+          tipo: 'clinica',
+          contrato_id: 200,
+          contrato_criado_em: '2026-04-06T08:05:00.000Z',
+          responsavel_nome: 'Carlos Lima',
+          responsavel_cargo: 'Diretor',
+          responsavel_celular: '41988887777',
+        },
+      ];
+      mockQuery.mockResolvedValueOnce({
+        rows: clinicaFromClinicasTable,
+        rowCount: 1,
+      } as any);
+
+      // Act
+      const response = await GET(makeRequest());
+      const body = await response.json();
+
+      // Assert
+      expect(response.status).toBe(200);
+      expect(body.total).toBe(1);
+      expect(body.pre_cadastros[0].tipo).toBe('clinica');
+      // Garante que a query consulta AMBAS as tabelas
+      const [sqlArg] = (mockQuery as jest.Mock).mock.calls[0];
+      expect(sqlArg).toContain('FROM entidades');
+      expect(sqlArg).toContain('FROM clinicas');
+      expect(sqlArg).toContain('UNION ALL');
     });
 
     it('deve filtrar por tipo entidade quando especificado', async () => {
@@ -183,10 +223,11 @@ describe('GET /api/suporte/pre-cadastro', () => {
       // Assert
       expect(response.status).toBe(200);
       expect(body.total).toBe(2);
-      // Sem filtro de tipo na query
+      // Com novo UNION ALL, o param 'todos' é sempre passado e o filtro
+      // usa ($1 = 'todos' OR t.tipo = $1) ao invés de omitir o filtro
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.not.stringContaining('e.tipo = $1'),
-        []
+        expect.stringContaining('$1 = \'todos\' OR t.tipo = $1'),
+        ['todos']
       );
     });
   });
