@@ -156,7 +156,8 @@ function determinarClassificacaoSemaforo(
 
 // Função para gerar dados gerais da empresa (Etapa 1)
 export async function gerarDadosGeraisEmpresa(
-  loteId: number
+  loteId: number,
+  session?: any
 ): Promise<DadosGeraisEmpresa> {
   // Buscar informações do lote e empresa/entidade com fallback
   const loteResult = await query(
@@ -183,7 +184,8 @@ export async function gerarDadosGeraisEmpresa(
     WHERE la.id = $1
     GROUP BY la.id, la.descricao, la.liberado_em, e.nome, e.cnpj, e.endereco, e.cidade, e.estado, e.cep, c.nome, c.cnpj, c.endereco, c.cidade, c.estado, c.cep
   `,
-    [loteId]
+    [loteId],
+    session
   );
 
   if (loteResult.rows.length === 0) {
@@ -210,7 +212,8 @@ export async function gerarDadosGeraisEmpresa(
     JOIN avaliacoes a ON f.cpf = a.funcionario_cpf
     WHERE a.lote_id = $1 AND a.status = 'concluida'
   `,
-    [loteId]
+    [loteId],
+    session
   );
 
   const funcs = funcionariosResult.rows[0] || {
@@ -241,7 +244,8 @@ export async function gerarDadosGeraisEmpresa(
 
 // Função principal para calcular scores por grupo
 export async function calcularScoresPorGrupo(
-  loteId: number
+  loteId: number,
+  session?: any
 ): Promise<ScoreGrupo[]> {
   // Buscar todas as respostas concluídas do lote agrupadas por grupo
   const respostasPorGrupo: { [key: number]: number[] } = {};
@@ -257,7 +261,8 @@ export async function calcularScoresPorGrupo(
     WHERE a.lote_id = $1 AND a.status = 'concluida'
     ORDER BY r.grupo, r.avaliacao_id
   `,
-    [loteId]
+    [loteId],
+    session
   );
 
   // Organizar respostas por grupo

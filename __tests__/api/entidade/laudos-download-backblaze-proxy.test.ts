@@ -16,6 +16,13 @@ import { query } from '@/lib/db';
 
 jest.mock('@/lib/session');
 jest.mock('@/lib/db');
+jest.mock('@/lib/storage/backblaze-client', () => ({
+  getPresignedUrl: jest
+    .fn()
+    .mockResolvedValue(
+      'https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/mock-presigned.pdf'
+    ),
+}));
 
 const mockRequireEntity = requireEntity as jest.MockedFunction<
   typeof requireEntity
@@ -207,6 +214,49 @@ describe('GET /api/entidade/laudos/[laudoId]/download - Backblaze Proxy', () => 
         pdfBuffer.byteLength.toString()
       );
       expect(response.headers.get('Cache-Control')).toBe('private, max-age=0');
+    });
+
+    it('deve permitir download quando status é "enviado" (após upload ao bucket)', async () => {
+      // Regressão: status='enviado' ocorre após o emissor fazer upload ao bucket.
+      // A query original aceitava somente 'emitido' — corrigida para IN ('emitido','enviado').
+      mockRequireEntity.mockResolvedValueOnce({
+        entidade_id: 1,
+        cpf: '12345678901',
+        nome: 'Entidade Test',
+      } as any);
+
+      mockQuery.mockResolvedValueOnce({
+        rows: [
+          {
+            id: 1,
+            lote_id: 1,
+            status: 'enviado', // status após upload ao Backblaze
+            arquivo_remoto_key: 'laudos/lote-1/laudo-1775446486456-95c2qv.pdf',
+            arquivo_remoto_provider: 'backblaze',
+            arquivo_remoto_bucket: 'laudos-qwork',
+            arquivo_remoto_url:
+              'https://s3.us-east-005.backblazeb2.com/laudos-qwork/laudos/lote-1/laudo-1775446486456-95c2qv.pdf',
+            entidade_id: 1,
+            clinica_id: null,
+          },
+        ],
+        rowCount: 1,
+      } as any);
+
+      const pdfBuffer = Buffer.from('PDF_CONTENT_ENVIADO');
+      (global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        arrayBuffer: jest.fn().mockResolvedValue(pdfBuffer),
+      });
+
+      const response = await GET(
+        {} as Request,
+        { params: { laudoId: '1' } } as any
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toBe('application/pdf');
+      expect(response.headers.get('Content-Disposition')).toContain('laudo-1.pdf');
     });
 
     it('deve retornar 500 quando fetch do Backblaze falha', async () => {

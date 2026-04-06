@@ -31,7 +31,8 @@ import {
  */
 export async function gerarLaudoCompletoEmitirPDF(
   loteId: number,
-  emissorCpf: string
+  emissorCpf: string,
+  session?: any
 ): Promise<number> {
   const fs = await import('fs');
   const path = await import('path');
@@ -43,7 +44,8 @@ export async function gerarLaudoCompletoEmitirPDF(
   // ETAPA 1: Verificar se laudo já existe
   const laudoExistente = await query(
     `SELECT id, status FROM laudos WHERE lote_id = $1`,
-    [loteId]
+    [loteId],
+    session
   );
 
   const laudoId = loteId; // Por design, laudos.id = lote_id
@@ -67,7 +69,8 @@ export async function gerarLaudoCompletoEmitirPDF(
         `UPDATE laudos 
          SET emissor_cpf = $1, atualizado_em = NOW()
          WHERE id = $2`,
-        [emissorCpf, laudoId]
+        [emissorCpf, laudoId],
+        session
       );
     }
   } else {
@@ -76,7 +79,8 @@ export async function gerarLaudoCompletoEmitirPDF(
     await query(
       `INSERT INTO laudos (id, lote_id, status, criado_em, emissor_cpf)
        VALUES ($1, $1, 'rascunho', NOW(), $2)`,
-      [loteId, emissorCpf]
+      [loteId, emissorCpf],
+      session
     );
   }
 
@@ -85,8 +89,8 @@ export async function gerarLaudoCompletoEmitirPDF(
   try {
     // ETAPA 2: Gerar dados completos do laudo
     console.log(`[EMISSÃO] Gerando dados do laudo ${laudoId}...`);
-    const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId);
-    const scoresPorGrupo = await calcularScoresPorGrupo(loteId);
+    const dadosGeraisEmpresa = await gerarDadosGeraisEmpresa(loteId, session);
+    const scoresPorGrupo = await calcularScoresPorGrupo(loteId, session);
     const interpretacaoRecomendacoes = gerarInterpretacaoRecomendacoes(
       dadosGeraisEmpresa.empresaAvaliada,
       scoresPorGrupo
@@ -95,7 +99,8 @@ export async function gerarLaudoCompletoEmitirPDF(
     // Buscar observações do laudo
     const laudoObsResult = await query(
       `SELECT observacoes FROM laudos WHERE id = $1`,
-      [laudoId]
+      [laudoId],
+      session
     );
     const observacoes = laudoObsResult.rows[0]?.observacoes || '';
     const observacoesConclusao = gerarObservacoesConclusao(observacoes);
@@ -179,7 +184,8 @@ export async function gerarLaudoCompletoEmitirPDF(
            atualizado_em = NOW()
        WHERE id = $2 AND status = 'rascunho'
        RETURNING id`,
-      [hashReal, laudoId]
+      [hashReal, laudoId],
+      session
     );
 
     if (!updateResult || updateResult.rowCount === 0) {
@@ -217,7 +223,8 @@ export async function gerarLaudoCompletoEmitirPDF(
            emitido_em = NULL,
            atualizado_em = NOW()
        WHERE id = $1`,
-      [laudoId]
+      [laudoId],
+      session
     );
     throw error;
   }

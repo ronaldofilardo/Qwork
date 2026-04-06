@@ -25,7 +25,7 @@ export const GET = async (
     }
 
     // Buscar laudo e verificar se pertence à entidade
-    // ✅ NOVO: Apenas permite download se status='emitido' E arquivo está no bucket
+    // Aceita status='emitido' (PDF gerado localmente) OU 'enviado' (PDF no bucket)
     // Validação: lote deve ter avaliações de funcionários da entidade
     const laudoQuery = await query(
       `
@@ -44,7 +44,7 @@ export const GET = async (
       INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
       INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
       WHERE l.id = $1 
-        AND l.status = 'emitido'
+        AND l.status IN ('emitido', 'enviado')
         AND l.arquivo_remoto_url IS NOT NULL
         AND fe.entidade_id = $2
         AND fe.ativo = true

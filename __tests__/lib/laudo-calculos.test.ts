@@ -361,9 +361,7 @@ describe('Funções de Cálculo de Laudos', () => {
 
       // Formato atual: "São Paulo, dd/mm/yyyy"
       // (formatarDataApenasData retorna formato dd/mm/yyyy conforme padrão pt-BR)
-      assert.ok(
-        /São Paulo, \d{2}\/\d{2}\/\d{4}/.test(resultado.dataEmissao)
-      );
+      assert.ok(/São Paulo, \d{2}\/\d{2}\/\d{4}/.test(resultado.dataEmissao));
     });
 
     it('deve incluir assinatura completa', () => {
@@ -383,7 +381,7 @@ describe('Funções de Cálculo de Laudos', () => {
       // TODO: Teste pré-existente com problema de interferência de mocks
       // Versão corrigida: usar jest.clearAllMocks() explícito
       jest.clearAllMocks();
-      
+
       mockQuery.mockResolvedValueOnce({
         rows: [],
         rowCount: 0,
