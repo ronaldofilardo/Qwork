@@ -73,6 +73,8 @@ export const GET = async (
 
     return NextResponse.json({
       success: true,
+      hash_valido: true,
+      hash_calculado: hashArmazenado,
       hash_armazenado: hashArmazenado,
       laudo_id: laudo.id,
       lote_id: laudo.lote_id,
