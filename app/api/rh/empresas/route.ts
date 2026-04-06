@@ -116,6 +116,7 @@ export async function GET() {
 /**
  * Salvar arquivo de documento de empresa
  * Usa função compartilhada que detecta DEV/PROD automaticamente
+ * Empresas criadas pelo RH são sempre vinculadas a uma clínica
  */
 async function salvarArquivoEmpresa(
   file: File,
@@ -128,7 +129,7 @@ async function salvarArquivoEmpresa(
   // Usar função compartilhada de storage que detecta DEV/PROD
   const { uploadArquivoCadastro } =
     await import('@/lib/storage/cadastro-storage');
-  const result = await uploadArquivoCadastro(buffer, tipo, cnpjClean);
+  const result = await uploadArquivoCadastro(buffer, tipo, cnpjClean, 'clinica');
 
   return result.path;
 }
