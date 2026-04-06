@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Building2, User, Upload } from 'lucide-react';
+import { Building2, CreditCard, User, Upload } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 import { PWAMenuItem } from '@/components/PWAMenuItem';
@@ -42,12 +42,14 @@ export default function ClinicaSidebar({
     icon: Icon,
     label,
     count,
+    paymentAlert,
     isActive,
     onClick,
   }: {
     icon: React.ElementType;
     label: string;
     count?: number;
+    paymentAlert?: boolean;
     isActive: boolean;
     onClick: () => void;
   }) => (
@@ -60,9 +62,21 @@ export default function ClinicaSidebar({
       }`}
     >
       <div className="flex items-center gap-3">
-        <Icon size={20} />
+        <div className="relative">
+          <Icon size={20} />
+          {paymentAlert && count !== undefined && count > 0 && isCollapsed && (
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-amber-500 rounded-full" />
+          )}
+        </div>
         {!isCollapsed && <span className="font-medium">{label}</span>}
-        {!isCollapsed && count !== undefined && count > 0 && (
+        {!isCollapsed && paymentAlert && count !== undefined && count > 0 && (
+          <CreditCard
+            size={14}
+            className="text-amber-500 ml-1"
+            aria-label="Pagamento em aberto"
+          />
+        )}
+        {!isCollapsed && !paymentAlert && count !== undefined && count > 0 && (
           <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-primary-500 text-white">
             {count}
           </span>
@@ -102,6 +116,7 @@ export default function ClinicaSidebar({
         icon={User}
         label="Informações da Conta"
         count={counts.pagamentos}
+        paymentAlert
         isActive={pathname === '/rh/conta'}
         onClick={() => router.push('/rh/conta')}
       />

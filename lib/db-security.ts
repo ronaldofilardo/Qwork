@@ -115,10 +115,6 @@ export async function queryWithContext<T = Record<string, unknown>>(
       const cpf = session.cpf.replace(/[^0-9]/g, '');
       const perfil = session.perfil.toLowerCase().replace(/[^a-z_]/g, '');
 
-      console.log(
-        `[queryWithContext] 🔄 TRANSAÇÃO: CPF=${cpf}, Perfil=${perfil}`
-      );
-
       // Validações de segurança OBRIGATÓRIAS
       if (!cpf || cpf.length !== 11) {
         throw new Error('SEGURANÇA: CPF inválido na sessão');
@@ -244,14 +240,8 @@ export async function queryWithContext<T = Record<string, unknown>>(
           ]);
         }
 
-        console.log('[queryWithContext] ✅ RLS configurado (cliente dedicado)');
-
         // FASE 3: Executar query principal (mesma conexão/transação/cliente)
         const result = await txClient.query<T>(text, params);
-
-        console.log(
-          `[queryWithContext] ✅ Query OK: ${result.rows.length} rows`
-        );
 
         return result;
       }, session);

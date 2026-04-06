@@ -30,7 +30,6 @@ describe('ClinicaSidebar', () => {
   const defaultProps = {
     counts: {
       empresas: 5,
-      notificacoes: 3,
       laudos: 2,
     },
     userName: 'João Silva',
@@ -56,39 +55,80 @@ describe('ClinicaSidebar', () => {
 
     // Verifica seções do menu
     expect(screen.getByText('Empresas Clientes')).toBeInTheDocument();
-    expect(screen.getByText('Notificações')).toBeInTheDocument();
+    expect(screen.getByText('Importação em Massa')).toBeInTheDocument();
     expect(screen.getByText('Informações da Conta')).toBeInTheDocument();
   });
 
   it('displays counts correctly', () => {
     render(<ClinicaSidebar {...defaultProps} />);
 
-    // Verifica badges de contagem
-    expect(screen.getByText('5')).toBeInTheDocument(); // empresas
-    expect(screen.getByText('3')).toBeInTheDocument(); // notificacoes
+    // Verifica badge de empresas
+    expect(screen.getByText('5')).toBeInTheDocument();
   });
 
   it('highlights active section based on pathname', () => {
     render(<ClinicaSidebar {...defaultProps} />);
 
-    // O botão é o elemento pai do span com o texto
-    const empresasButton = screen
-      .getByText('Empresas Clientes')
+    // pathname é '/rh/empresas' — nenhum item corresponde exatamente, logo nenhum ativo
+    const contaButton = screen
+      .getByText('Informações da Conta')
       .closest('button');
-    expect(empresasButton).toHaveClass('bg-primary-100');
-    expect(empresasButton).toHaveClass('text-primary-600');
+    expect(contaButton).not.toHaveClass('bg-primary-100');
   });
 
   it('navigates to correct routes when clicking menu items', () => {
     render(<ClinicaSidebar {...defaultProps} />);
 
-    // Clica na seção Notificações
-    fireEvent.click(screen.getByText('Notificações'));
-    expect(mockPush).toHaveBeenCalledWith('/rh/notificacoes');
-
     // Clica na seção Conta
     fireEvent.click(screen.getByText('Informações da Conta'));
     expect(mockPush).toHaveBeenCalledWith('/rh/conta');
+
+    // Clica na seção Empresas
+    fireEvent.click(screen.getByText('Empresas Clientes'));
+    expect(mockPush).toHaveBeenCalledWith('/rh');
+  });
+
+  it('shows CreditCard payment icon when pagamentos > 0', () => {
+    render(
+      <ClinicaSidebar
+        {...defaultProps}
+        counts={{ ...defaultProps.counts, pagamentos: 2 }}
+      />
+    );
+
+    const paymentIcon = screen.getByLabelText('Pagamento em aberto');
+    expect(paymentIcon).toBeInTheDocument();
+  });
+
+  it('does not show CreditCard payment icon when pagamentos is 0', () => {
+    render(
+      <ClinicaSidebar
+        {...defaultProps}
+        counts={{ ...defaultProps.counts, pagamentos: 0 }}
+      />
+    );
+
+    expect(screen.queryByLabelText('Pagamento em aberto')).not.toBeInTheDocument();
+  });
+
+  it('does not show CreditCard payment icon when pagamentos is undefined', () => {
+    render(<ClinicaSidebar {...defaultProps} />);
+
+    expect(screen.queryByLabelText('Pagamento em aberto')).not.toBeInTheDocument();
+  });
+
+  it('does not render numeric badge for pagamentos (uses icon instead)', () => {
+    render(
+      <ClinicaSidebar
+        {...defaultProps}
+        counts={{ ...defaultProps.counts, pagamentos: 7 }}
+      />
+    );
+
+    // Ícone CreditCard presente
+    expect(screen.getByLabelText('Pagamento em aberto')).toBeInTheDocument();
+    // Número 7 NÃO deve aparecer como badge
+    expect(screen.queryByText('7')).not.toBeInTheDocument();
   });
 
   it('handles logout correctly', async () => {
@@ -110,8 +150,8 @@ describe('ClinicaSidebar', () => {
 
     // Não deve mostrar badges quando counts são undefined
     expect(screen.queryByText('5')).not.toBeInTheDocument();
-    expect(screen.queryByText('3')).not.toBeInTheDocument();
     expect(screen.queryByText('2')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Pagamento em aberto')).not.toBeInTheDocument();
   });
 
   it('handles missing userName gracefully', () => {
