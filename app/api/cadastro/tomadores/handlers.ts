@@ -43,7 +43,8 @@ export interface HttpErrorResult {
 export async function salvarArquivo(
   file: File,
   tipo: 'cartao_cnpj' | 'contrato_social' | 'doc_identificacao',
-  cnpj: string
+  cnpj: string,
+  tipoTomador?: 'entidade' | 'clinica'
 ): Promise<string> {
   console.debug('salvarArquivo chamado', {
     name: (file as any).name,
@@ -62,7 +63,7 @@ export async function salvarArquivo(
 
   const { uploadArquivoCadastro } =
     await import('@/lib/storage/cadastro-storage');
-  const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo);
+  const result = await uploadArquivoCadastro(buffer, tipo, cnpjLimpo, tipoTomador);
   return result.path;
 }
 
