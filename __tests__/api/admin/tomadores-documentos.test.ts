@@ -168,6 +168,34 @@ describe('GET /api/admin/tomadores/[id]/documentos', () => {
     expect(mockGetSignedUrl).not.toHaveBeenCalled();
   });
 
+  it('extrai key de URL Backblaze direta e gera presigned URL quando arquivo_remoto_key é nulo', async () => {
+    mockRequireRole.mockResolvedValue(adminSession);
+    mockQuery.mockResolvedValue({
+      rows: [
+        {
+          cartao_cnpj_path:
+            'https://s3.us-east-005.backblazeb2.com/cad-qwork/clinicas/12345678000190/cartao_cnpj-1234-abc.pdf',
+          contrato_social_path: null,
+          doc_identificacao_path: null,
+          cartao_cnpj_arquivo_remoto_key: null,
+          contrato_social_arquivo_remoto_key: null,
+          doc_identificacao_arquivo_remoto_key: null,
+        },
+      ],
+      rowCount: 1,
+    });
+
+    const res = await GET(makeRequest('1', 'clinica'), makeParams('1'));
+    const data = await res.json();
+
+    expect(res.status).toBe(200);
+    // Deve gerar presigned URL ao extrair key da URL Backblaze
+    expect(mockGetSignedUrl).toHaveBeenCalledTimes(1);
+    expect(data.documentos.cartao_cnpj).toBe(
+      'https://presigned.example.com/file.pdf?X-Amz=sig'
+    );
+  });
+
   it('gera presigned URL quando remote key está preenchida', async () => {
     mockRequireRole.mockResolvedValue(adminSession);
     mockQuery.mockResolvedValue({
