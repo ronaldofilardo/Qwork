@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import QworkLogo from '@/components/QworkLogo';
+import { useOrgInfo } from '@/hooks/useOrgInfo';
 
 interface AvaliacaoInfo {
   id: string;
@@ -12,6 +14,7 @@ interface AvaliacaoInfo {
 
 export default function AvaliacaoConcluidaPage() {
   const router = useRouter();
+  const { orgInfo } = useOrgInfo();
   const [avaliacaoInfo, setAvaliacaoInfo] = useState<AvaliacaoInfo | null>(
     null
   );
@@ -95,6 +98,18 @@ export default function AvaliacaoConcluidaPage() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 p-3 sm:p-4" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
       <div className="max-w-2xl mx-auto px-2 sm:px-0">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
+          {orgInfo?.logo_url && (
+            <div className="mb-3 flex justify-center">
+              <Image
+                src={orgInfo.logo_url}
+                alt={orgInfo.nome}
+                width={120}
+                height={56}
+                className="h-14 w-auto object-contain"
+                unoptimized
+              />
+            </div>
+          )}
           <div className="mb-4">
             <QworkLogo size="2xl" showSlogan={true} />
           </div>

@@ -183,7 +183,8 @@ export default function ContaSection() {
       </div>
 
       <div className="space-y-6">
-        {/* Informações da Empresa */}
+        {/* Informações da Empresa + Logo lado a lado */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-200">
           <div className="flex items-center gap-3 mb-4">
             <div className="p-3 bg-primary-100 rounded-lg">
@@ -331,9 +332,6 @@ export default function ContaSection() {
           )}
         </div>
 
-        {/* Pagamentos em Aberto */}
-        <PagamentosEmAberto apiUrl="/api/rh/pagamentos-em-aberto" />
-
         {/* Logo da Organização */}
         {accountInfo?.clinica && (
           <LogoUploader
@@ -344,6 +342,10 @@ export default function ContaSection() {
             isSaving={isSavingLogo}
           />
         )}
+        </div>{/* fim grid dados+logo */}
+
+        {/* Pagamentos em Aberto */}
+        <PagamentosEmAberto apiUrl="/api/rh/pagamentos-em-aberto" />
 
         {/* Mini-Dashboard Financeiro */}
         <MiniDashboardFinanceiro apiUrl="/api/rh/financeiro-resumo" />
