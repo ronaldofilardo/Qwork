@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+
+const rateLimiter = rateLimit(RATE_LIMIT_CONFIGS.api);
 
 // Esta rota usa `request.url` (searchParams) e deve ser sempre dinâmica no runtime.
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = rateLimiter(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const { searchParams } = new URL(request.url);
 

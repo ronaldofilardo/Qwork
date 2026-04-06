@@ -2,6 +2,7 @@ import { requireAuth } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
 import { assertRoles, ROLES } from '@/lib/authorization/policies';
+import { buildSetLocalQueries } from '@/lib/db-safe';
 
 export const dynamic = 'force-dynamic';
 
@@ -56,9 +57,14 @@ export async function POST(
     await query('BEGIN');
 
     try {
-      // Configurar contexto de segurança para auditoria
-      await query(`SET LOCAL app.current_user_cpf = '${user.cpf}'`);
-      await query(`SET LOCAL app.current_user_perfil = '${user.perfil}'`);
+      // Configurar contexto de segurança para auditoria (sanitizado)
+      const setLocalQueries = buildSetLocalQueries({
+        cpf: user.cpf,
+        perfil: user.perfil,
+      });
+      for (const q of setLocalQueries) {
+        await query(q);
+      }
 
       // Check batch belongs to user's entidade and get status
       const loteCheck = await query(
@@ -175,7 +181,7 @@ export async function POST(
 
       const respostasCount = parseInt(countResult.rows[0].count);
 
-      // Autorizar reset (flag para trigger de imutabilidade)
+      // Autorizar reset (flag para trigger de imutabilidade — valor estático, seguro)
       await query(`SET LOCAL app.allow_reset = true`);
 
       // Delete all responses (hard delete as per requirement)

@@ -1,5 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// ─── Rate Limiting (Edge Runtime compatible) ──────────────────────────────
+const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
+
+// Limpar store periodicamente (a cada 1000 requests)
+let requestCounter = 0;
+function cleanupStore(): void {
+  requestCounter++;
+  if (requestCounter % 1000 === 0) {
+    const now = Date.now();
+    for (const [key, record] of rateLimitStore.entries()) {
+      if (now > record.resetTime) rateLimitStore.delete(key);
+    }
+  }
+}
+
+function checkRateLimit(ip: string, pathname: string): NextResponse | null {
+  cleanupStore();
+  const now = Date.now();
+
+  // Configurações por tipo de rota
+  const isWriteMethod = false; // Será checado no caller com method
+  const isAuthRoute = pathname.startsWith('/api/auth/login');
+  const windowMs = isAuthRoute ? 5 * 60 * 1000 : 15 * 60 * 1000;
+  const maxRequests = isAuthRoute ? 10 : 200;
+
+  const key = `rl:${ip}:${isAuthRoute ? 'auth' : 'api'}`;
+  const record = rateLimitStore.get(key);
+
+  if (!record || now > record.resetTime) {
+    rateLimitStore.set(key, { count: 1, resetTime: now + windowMs });
+    return null;
+  }
+
+  if (record.count >= maxRequests) {
+    const retryAfter = Math.ceil((record.resetTime - now) / 1000);
+    return NextResponse.json(
+      {
+        error: 'RATE_LIMIT_EXCEEDED',
+        message: 'Muitas requisições. Tente novamente mais tarde.',
+        retryAfter,
+      },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+    );
+  }
+
+  record.count++;
+  return null;
+}
+
 // Rotas que requerem proteção especial
 const SENSITIVE_ROUTES = [
   '/api/admin',
@@ -133,6 +182,12 @@ export function middleware(request: NextRequest) {
     request.ip ||
     'unknown';
 
+  // ── Rate Limiting Global (todas as rotas /api) ──
+  if (pathname.startsWith('/api/')) {
+    const rateLimitResponse = checkRateLimit(clientIP, pathname);
+    if (rateLimitResponse) return rateLimitResponse;
+  }
+
   // Permitir rotas públicas sem autenticação
   const isPublicRoute = PUBLIC_API_ROUTES.some((route) =>
     pathname.startsWith(route)
@@ -243,7 +298,30 @@ export function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+
+  // ── Security Headers ──
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set(
+    'Permissions-Policy',
+    'geolocation=(), microphone=(), camera=()'
+  );
+
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set(
+      'Strict-Transport-Security',
+      'max-age=31536000; includeSubDomains; preload'
+    );
+    response.headers.set(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
+    );
+  }
+
+  return response;
 }
 
 export const config = {
