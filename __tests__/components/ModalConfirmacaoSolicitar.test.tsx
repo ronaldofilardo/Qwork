@@ -186,7 +186,81 @@ describe('ModalConfirmacaoSolicitar', () => {
   });
 
   // ────────────────────────────────────────────────────────────────
-  // 6. Acessibilidade
+  // 6. Dados do Tomador (tomadorInfo)
+  // ────────────────────────────────────────────────────────────────
+
+  const tomadorInfoFixture = {
+    nome: 'Clínica Teste Ltda',
+    cnpj: '12345678000190',
+    email: 'clinica@teste.com.br',
+    telefone: '(11) 3333-4444',
+    endereco: 'Rua das Flores, 100',
+    cidade: 'São Paulo',
+    estado: 'SP',
+    responsavel_nome: 'Maria Gestora',
+    responsavel_cpf: '98765432100',
+    responsavel_email: 'maria@clinica.com.br',
+  };
+
+  it('não deve renderizar card de tomador quando tomadorInfo não é passado', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} />);
+    expect(screen.queryByText('Dados da Clínica (Tomador)')).not.toBeInTheDocument();
+  });
+
+  it('deve renderizar card de tomador quando tomadorInfo é fornecido', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText('Dados da Clínica (Tomador)')).toBeInTheDocument();
+  });
+
+  it('deve exibir nome da clínica', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText('Clínica Teste Ltda')).toBeInTheDocument();
+  });
+
+  it('deve exibir CNPJ da clínica', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText(/CNPJ: 12345678000190/)).toBeInTheDocument();
+  });
+
+  it('deve exibir endereço e cidade/estado da clínica', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText(/Rua das Flores, 100/)).toBeInTheDocument();
+    expect(screen.getByText(/São Paulo\/SP/)).toBeInTheDocument();
+  });
+
+  it('deve exibir telefone da clínica', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText('(11) 3333-4444')).toBeInTheDocument();
+  });
+
+  it('deve exibir email da clínica', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText('clinica@teste.com.br')).toBeInTheDocument();
+  });
+
+  it('deve exibir nome do gestor responsável', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText('Gestor Responsável')).toBeInTheDocument();
+    expect(screen.getByText('Maria Gestora')).toBeInTheDocument();
+  });
+
+  it('deve exibir CPF do gestor responsável', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText(/CPF: 98765432100/)).toBeInTheDocument();
+  });
+
+  it('deve exibir email do gestor responsável', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={tomadorInfoFixture} />);
+    expect(screen.getByText('maria@clinica.com.br')).toBeInTheDocument();
+  });
+
+  it('não deve renderizar card de tomador quando tomadorInfo é null', () => {
+    render(<ModalConfirmacaoSolicitar {...defaultProps} tomadorInfo={null} />);
+    expect(screen.queryByText('Dados da Clínica (Tomador)')).not.toBeInTheDocument();
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // 7. Acessibilidade
   // ────────────────────────────────────────────────────────────────
 
   it('deve ter role="dialog" e aria-modal="true"', () => {

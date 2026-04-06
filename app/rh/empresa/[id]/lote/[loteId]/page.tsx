@@ -139,6 +139,11 @@ export default function DetalhesLotePage() {
     loteId: number;
     gestorEmail: string | null;
     gestorCelular: string | null;
+    tomadorInfo: {
+      nome: string; cnpj: string; email: string; telefone: string;
+      endereco: string; cidade: string; estado: string;
+      responsavel_nome: string; responsavel_cpf: string; responsavel_email: string;
+    } | null;
   } | null>(null);
 
   const [showSetorModal, setShowSetorModal] = useState(false);
@@ -1110,6 +1115,11 @@ export default function DetalhesLotePage() {
                               loteId: lote.id,
                               gestorEmail: contato?.email ?? null,
                               gestorCelular: contato?.celular ?? null,
+                              tomadorInfo: (data.tomador_info as {
+                                nome: string; cnpj: string; email: string; telefone: string;
+                                endereco: string; cidade: string; estado: string;
+                                responsavel_nome: string; responsavel_cpf: string; responsavel_email: string;
+                              } | null) ?? null,
                             });
                           } else {
                             setTimeout(() => loadLoteData(), 1500);
@@ -1534,6 +1544,7 @@ export default function DetalhesLotePage() {
           loteId={modalEmissao.loteId}
           gestorEmail={modalEmissao.gestorEmail}
           gestorCelular={modalEmissao.gestorCelular}
+          tomadorInfo={modalEmissao.tomadorInfo}
           contexto="rh"
         />
       )}

@@ -44,9 +44,22 @@ export async function GET() {
       console.log('[API /admin/emissoes] Primeira row:', result.rows[0]);
     }
 
+    // Deduplicar por lote_id: a view pode retornar múltiplas linhas por lote
+    // quando há mais de um vínculo de comissão (vinculos_comissao) associado.
+    // Mantém a primeira ocorrência, que já é a mais relevante pelo ORDER BY da view.
+    const seenLotes = new Map<number, typeof result.rows[0]>();
+    for (const row of result.rows) {
+      if (!seenLotes.has(row.lote_id)) {
+        seenLotes.set(row.lote_id, row);
+      }
+    }
+    const solicitacoes = Array.from(seenLotes.values());
+
+    console.log('[API /admin/emissoes] Após dedup:', solicitacoes.length, 'lotes únicos de', result.rows.length, 'rows');
+
     return NextResponse.json({
-      solicitacoes: result.rows,
-      total: result.rows.length,
+      solicitacoes,
+      total: solicitacoes.length,
     });
   } catch (error: any) {
     console.error('[ERRO] API admin/emissoes:', error);

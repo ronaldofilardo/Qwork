@@ -125,6 +125,8 @@ export default function PagamentosContent() {
           nomeTomador={modalLink.nomeTomador}
           valorTotal={modalLink.valorTotal}
           numAvaliacoes={modalLink.numAvaliacoes}
+          onDisponibilizarLink={handleDisponibilizarLink}
+          isDisponibilizando={processando === modalLink.loteId}
         />
       )}
     </div>
