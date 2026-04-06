@@ -33,21 +33,21 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
   });
 
   describe('Validação de Acesso', () => {
-    it('deve retornar 403 quando usuário não tem sessão RH', async () => {
-      mockGetSession.mockResolvedValue(null as any);
+    it('deve retornar 401 quando usuário não tem sessão RH', async () => {
+      mockGetSession.mockReturnValue(null as any);
 
       const response = await GET(
         {} as Request,
         { params: { laudoId: '1005' } } as any
       );
 
-      expect(response.status).toBe(403);
+      expect(response.status).toBe(401);
       const json = await response.json();
-      expect(json.error).toBe('Acesso negado');
+      expect(json.error).toBe('Autenticação requerida');
     });
 
     it('deve retornar 404 quando laudo não existe', async () => {
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         nome: 'RH Test',
         perfil: 'rh',
@@ -67,7 +67,7 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
     });
 
     it('deve retornar 403 quando RH não tem acesso à empresa', async () => {
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         nome: 'RH Test',
         perfil: 'rh',
@@ -106,7 +106,7 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
 
   describe('Download via Backblaze (Proxy Server-Side)', () => {
     it('deve retornar 404 quando laudo não tem arquivo_remoto_key', async () => {
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         nome: 'RH Test',
         perfil: 'rh',
@@ -144,7 +144,7 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
     });
 
     it('deve fazer proxy do PDF do Backblaze e retornar status 200', async () => {
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         nome: 'tani akk',
         perfil: 'rh',
@@ -207,7 +207,7 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
     });
 
     it('deve retornar 500 quando fetch do Backblaze falha', async () => {
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         nome: 'tani akk',
         perfil: 'rh',
@@ -252,7 +252,7 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
   describe('Comportamentos Removidos (Não Deve Mais Acontecer)', () => {
     it('NÃO deve tentar ler arquivo de storage/laudos/ local', async () => {
       // Este comportamento foi removido - testes devem passar sem mock de fs
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         perfil: 'rh',
         clinica_id: 104,
@@ -287,7 +287,7 @@ describe('GET /api/rh/laudos/[laudoId]/download - Backblaze Proxy', () => {
     });
 
     it('NÃO deve retornar redirect 302', async () => {
-      mockGetSession.mockResolvedValue({
+      mockGetSession.mockReturnValue({
         cpf: '04703084945',
         perfil: 'rh',
         clinica_id: 104,
