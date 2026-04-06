@@ -195,7 +195,9 @@ describe('AvaliacaoConcluidaPage - Recibo de Conclusão', () => {
     });
 
     const qworkLogo = screen.getByTestId('qwork-logo');
-    const securityMsg = screen.getByText(/Suas respostas foram salvas com segurança/i);
+    const securityMsg = screen.getByText(
+      /Suas respostas foram salvas com segurança/i
+    );
 
     // Verifica que ambos existem
     expect(qworkLogo).toBeInTheDocument();
