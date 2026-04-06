@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Building2,
   MapPin,
@@ -12,6 +12,9 @@ import {
   UserCheck,
   LayoutGrid,
   List,
+  FileText,
+  Download,
+  Loader2,
 } from 'lucide-react';
 import ModalReativarTomador from './ModalReativarTomador';
 import TomadorDetailModal from './TomadorDetailModal';
@@ -74,6 +77,16 @@ export function TomadoresContent({
   const [codigoRepInput, setCodigoRepInput] = useState('');
   const [valorNegociadoInput, setValorNegociadoInput] = useState('');
   const [vinculando, setVinculando] = useState(false);
+
+  type DocsData = {
+    cartao_cnpj: string | null;
+    contrato_social: string | null;
+    doc_identificacao: string | null;
+  };
+  const [docsMap, setDocsMap] = useState<Record<string, DocsData | 'loading'>>(
+    {}
+  );
+  const [expandedDocsId, setExpandedDocsId] = useState<string | null>(null);
 
   const fetchTomadores = async () => {
     try {
@@ -262,6 +275,39 @@ export function TomadoresContent({
     } finally {
       setVinculando(false);
     }
+  };
+
+  const loadDocs = async (tomador: Tomador) => {
+    const id = tomador.id;
+    if (docsMap[id] !== undefined) return;
+    setDocsMap((prev) => ({ ...prev, [id]: 'loading' }));
+    try {
+      const res = await fetch(
+        `/api/admin/tomadores/${id}/documentos?tipo=${tomador.tipo}`
+      );
+      const data = await res.json();
+      setDocsMap((prev) => ({
+        ...prev,
+        [id]: data.success
+          ? (data.documentos as DocsData)
+          : { cartao_cnpj: null, contrato_social: null, doc_identificacao: null },
+      }));
+    } catch {
+      setDocsMap((prev) => ({
+        ...prev,
+        [id]: { cartao_cnpj: null, contrato_social: null, doc_identificacao: null },
+      }));
+    }
+  };
+
+  const toggleDocs = (e: React.MouseEvent, tomador: Tomador) => {
+    e.stopPropagation();
+    if (expandedDocsId === tomador.id) {
+      setExpandedDocsId(null);
+      return;
+    }
+    setExpandedDocsId(tomador.id);
+    void loadDocs(tomador);
   };
 
   const tomadoresFiltrados = tomadores.filter(
@@ -510,82 +556,180 @@ export function TomadoresContent({
                 <th className="px-4 py-3 text-left">Representante</th>
                 <th className="px-4 py-3 text-left">Cadastrado em</th>
                 <th className="px-4 py-3 text-center">Status</th>
+                <th className="px-4 py-3 text-center">Documentos</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {tomadoresFiltrados.map((tomador) => (
-                <tr
-                  key={tomador.id}
-                  onClick={() => setTomadorSelecionado(tomador)}
-                  className="hover:bg-gray-50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
-                          tomador.tipo === 'clinica'
+                <React.Fragment key={tomador.id}>
+                  <tr
+                    onClick={() => setTomadorSelecionado(tomador)}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                            tomador.tipo === 'clinica'
+                              ? 'bg-blue-100 text-blue-700'
+                              : 'bg-purple-100 text-purple-700'
+                          }`}
+                        >
+                          {tomador.tipo === 'clinica' ? 'CL' : 'EN'}
+                        </span>
+                        <div>
+                          <p className="font-medium text-gray-900 line-clamp-1">
+                            {tomador.nome}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {tomador.cnpj}
+                          </p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {tomador.cidade && tomador.estado
+                        ? `${tomador.cidade}/${tomador.estado}`
+                        : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      {tomador.gestor ? (
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {tomador.gestor.nome}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {tomador.gestor.email}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-amber-600 text-xs">
+                          ⚠️ Sem gestor
+                        </span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {tomador.representante ? (
+                        <div>
+                          <p className="text-sm">
+                            {tomador.representante.nome}
+                          </p>
+                          <p className="text-xs text-purple-600">
+                            {tomador.representante.codigo}
+                          </p>
+                        </div>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {new Date(tomador.created_at).toLocaleDateString('pt-BR')}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <div className="inline-flex flex-col items-center gap-1">
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded ${
+                            tomador.ativo
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+                          {tomador.ativo ? 'Ativo' : 'Inativo'}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            void toggleAtivo(tomador);
+                          }}
+                          disabled={ativando}
+                          className={`text-xs px-2 py-0.5 rounded font-medium transition-colors ${
+                            tomador.ativo
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-green-50 text-green-600 hover:bg-green-100'
+                          } disabled:opacity-50 disabled:cursor-not-allowed`}
+                        >
+                          {tomador.ativo ? 'Desativar' : 'Ativar'}
+                        </button>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={(e) => toggleDocs(e, tomador)}
+                        className={`flex items-center gap-1 text-xs font-medium mx-auto px-2 py-1 rounded transition-colors ${
+                          expandedDocsId === tomador.id
                             ? 'bg-blue-100 text-blue-700'
-                            : 'bg-purple-100 text-purple-700'
+                            : 'text-blue-600 hover:bg-blue-50'
                         }`}
                       >
-                        {tomador.tipo === 'clinica' ? 'CL' : 'EN'}
-                      </span>
-                      <div>
-                        <p className="font-medium text-gray-900 line-clamp-1">
-                          {tomador.nome}
-                        </p>
-                        <p className="text-xs text-gray-500">{tomador.cnpj}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {tomador.cidade && tomador.estado
-                      ? `${tomador.cidade}/${tomador.estado}`
-                      : '—'}
-                  </td>
-                  <td className="px-4 py-3">
-                    {tomador.gestor ? (
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {tomador.gestor.nome}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {tomador.gestor.email}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-amber-600 text-xs">
-                        ⚠️ Sem gestor
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    {tomador.representante ? (
-                      <div>
-                        <p className="text-sm">{tomador.representante.nome}</p>
-                        <p className="text-xs text-purple-600">
-                          {tomador.representante.codigo}
-                        </p>
-                      </div>
-                    ) : (
-                      <span className="text-gray-400">—</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">
-                    {new Date(tomador.created_at).toLocaleDateString('pt-BR')}
-                  </td>
-                  <td className="px-4 py-3 text-center">
-                    <span
-                      className={`text-xs font-medium px-2 py-1 rounded ${
-                        tomador.ativo
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-600'
-                      }`}
+                        <FileText className="h-3.5 w-3.5" />
+                        {expandedDocsId === tomador.id ? 'Fechar' : 'Ver docs'}
+                      </button>
+                    </td>
+                  </tr>
+                  {expandedDocsId === tomador.id && (
+                    <tr
+                      className="bg-blue-50 border-b border-blue-100"
+                      onClick={(e) => e.stopPropagation()}
                     >
-                      {tomador.ativo ? 'Ativo' : 'Inativo'}
-                    </span>
-                  </td>
-                </tr>
+                      <td colSpan={7} className="px-6 py-3">
+                        {docsMap[tomador.id] === 'loading' ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-500">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Carregando documentos...
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap items-center gap-6">
+                            {(
+                              [
+                                { chave: 'cartao_cnpj', label: 'Cartão CNPJ' },
+                                {
+                                  chave: 'contrato_social',
+                                  label: 'Contrato Social',
+                                },
+                                {
+                                  chave: 'doc_identificacao',
+                                  label: 'Doc. Identificação',
+                                },
+                              ] as const
+                            ).map(({ chave, label }) => {
+                              const docs = docsMap[tomador.id];
+                              const url =
+                                docs && docs !== 'loading'
+                                  ? docs[chave]
+                                  : null;
+                              return (
+                                <div
+                                  key={chave}
+                                  className="flex items-center gap-1.5 text-sm"
+                                >
+                                  <span className="text-gray-600 font-medium">
+                                    {label}:
+                                  </span>
+                                  {url ? (
+                                    <a
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      onClick={(e) => e.stopPropagation()}
+                                      className="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                      <Download className="h-3.5 w-3.5" />
+                                      Baixar
+                                    </a>
+                                  ) : (
+                                    <span className="text-gray-400 text-xs">
+                                      Não enviado
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>
