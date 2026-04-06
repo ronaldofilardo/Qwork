@@ -9,14 +9,13 @@ export const dynamic = 'force-dynamic';
 /**
  * GET /api/admin/emissores
  *
- * Lista todos os emissores do sistema
+ * Lista todos os usuários especiais (emissor, suporte, comercial)
  */
 export async function GET() {
   try {
     const session = await requireRole('admin', false);
 
-    // Listar apenas emissores da tabela `usuarios` (usa `tipo_usuario`).
-    // Removemos qualquer referência a `role` para evitar erros em schemas que não possuem essa coluna.
+    // Listar emissores, suporte e comercial da tabela `usuarios` (usa `tipo_usuario`).
     const result = await query(
       `
       SELECT
@@ -26,12 +25,13 @@ export async function GET() {
         u.ativo,
         u.criado_em,
         u.atualizado_em,
+        u.tipo_usuario as perfil,
         COUNT(DISTINCT l.id) as total_laudos_emitidos
       FROM usuarios u
       LEFT JOIN laudos l ON l.emissor_cpf = u.cpf AND l.status = 'emitido'
-      WHERE u.tipo_usuario = 'emissor'
-      GROUP BY u.cpf, u.nome, u.email, u.ativo, u.criado_em, u.atualizado_em
-      ORDER BY u.nome
+      WHERE u.tipo_usuario IN ('emissor', 'suporte', 'comercial')
+      GROUP BY u.cpf, u.nome, u.email, u.ativo, u.criado_em, u.atualizado_em, u.tipo_usuario
+      ORDER BY u.tipo_usuario, u.nome
     `,
       [],
       session
@@ -42,7 +42,7 @@ export async function GET() {
       emissores: result.rows,
     });
   } catch (error) {
-    console.error('Erro ao listar emissores:', error);
+    console.error('Erro ao listar usuários especiais:', error);
 
     if (error instanceof Error && error.message === 'Sem permissão') {
       return NextResponse.json({ error: 'Acesso negado' }, { status: 403 });
