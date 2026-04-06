@@ -58,6 +58,9 @@ export default function EmpresasTable({
                 Empresa
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Lote
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Ciclo Atual
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -107,6 +110,17 @@ export default function EmpresasTable({
                       </p>
                       <p className="text-xs text-gray-400">{empresa.cnpj}</p>
                     </div>
+                  </td>
+
+                  {/* Lote */}
+                  <td className="px-4 py-3">
+                    {lote ? (
+                      <span className="text-xs font-mono text-gray-600 bg-gray-100 px-1.5 py-0.5 rounded">
+                        #{lote.id}
+                      </span>
+                    ) : (
+                      <span className="text-xs text-gray-300">—</span>
+                    )}
                   </td>
 
                   {/* Ciclo Atual */}
@@ -161,8 +175,8 @@ export default function EmpresasTable({
                     <div className="text-xs space-y-0.5">
                       {empresa.laudos_status.aguardando_emissao > 0 && (
                         <p className="text-orange-600">
-                          {empresa.laudos_status.aguardando_emissao} aguard.
-                          emissão
+                          {empresa.laudos_status.aguardando_emissao} aguardando
+                          link pgto
                         </p>
                       )}
                       {empresa.laudos_status.aguardando_pagamento > 0 && (
@@ -178,7 +192,7 @@ export default function EmpresasTable({
                       )}
                       {empresa.laudos_status.laudo_emitido > 0 && (
                         <p className="text-green-600">
-                          {empresa.laudos_status.laudo_emitido} emitido(s)
+                          {empresa.laudos_status.laudo_emitido} disponível(eis)
                         </p>
                       )}
                       {empresa.laudos_status.aguardando_emissao === 0 &&
