@@ -26,7 +26,8 @@ export const GET = async (
 
     // Buscar laudo e verificar se pertence à entidade
     // Aceita status='emitido' (PDF gerado localmente) OU 'enviado' (PDF no bucket)
-    // Validação: lote deve ter avaliações de funcionários da entidade
+    // Validação via lotes_avaliacao.entidade_id — consistente com GET /api/entidade/lotes
+    // ISOLAMENTO: garante que lotes de clínicas nunca sejam acessados por entidades
     const laudoQuery = await query(
       `
       SELECT
@@ -36,18 +37,15 @@ export const GET = async (
         l.arquivo_remoto_provider,
         l.arquivo_remoto_bucket,
         l.arquivo_remoto_key,
-        l.arquivo_remoto_url,
-        la.id as la_id
+        l.arquivo_remoto_url
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
-      INNER JOIN avaliacoes a ON a.lote_id = la.id
-      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
-      WHERE l.id = $1 
+      WHERE l.id = $1
         AND l.status IN ('emitido', 'enviado')
         AND l.arquivo_remoto_url IS NOT NULL
-        AND fe.entidade_id = $2
-        AND fe.ativo = true
+        AND la.entidade_id = $2
+        AND la.clinica_id IS NULL
+        AND la.empresa_id IS NULL
       LIMIT 1
     `,
       [laudoId, entidadeId]
@@ -97,11 +95,17 @@ export const GET = async (
       const pdfResponse = await fetch(presignedUrl);
 
       if (!pdfResponse.ok) {
+        let errorBody = '';
+        try { errorBody = await pdfResponse.text(); } catch { /* ignore */ }
         console.error(
-          `[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText}`
+          `[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText} — ${errorBody.slice(0, 200)}`
         );
         return NextResponse.json(
-          { error: 'Erro ao acessar arquivo no storage', success: false },
+          {
+            error: 'Erro ao acessar arquivo no storage',
+            success: false,
+            detalhes: `${pdfResponse.status} ${pdfResponse.statusText}`,
+          },
           { status: 500 }
         );
       }

@@ -123,11 +123,17 @@ export const GET = async (
       const pdfResponse = await fetch(presignedUrl);
 
       if (!pdfResponse.ok) {
+        let errorBody = '';
+        try { errorBody = await pdfResponse.text(); } catch { /* ignore */ }
         console.error(
-          `[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText}`
+          `[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText} — ${errorBody.slice(0, 200)}`
         );
         return NextResponse.json(
-          { error: 'Erro ao acessar arquivo no storage', success: false },
+          {
+            error: 'Erro ao acessar arquivo no storage',
+            success: false,
+            detalhes: `${pdfResponse.status} ${pdfResponse.statusText}`,
+          },
           { status: 500 }
         );
       }
