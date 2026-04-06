@@ -23,26 +23,7 @@ export default function AdminPage() {
   const [activeSection, setActiveSection] = useState<MainSection>('volume');
   const [activeSubSection, setActiveSubSection] = useState<string>('entidade');
 
-  const [emissoresAtivos, setEmissoresAtivos] = useState(0);
-
   const router = useRouter();
-
-  const fetchCounts = useCallback(async () => {
-    try {
-      const emissoresRes = await fetch('/api/admin/emissores');
-      if (emissoresRes.ok) {
-        const data = await emissoresRes.json();
-        if (data.success) {
-          setEmissoresAtivos(
-            data.emissores?.filter((e: { ativo: boolean }) => e.ativo).length ||
-              0
-          );
-        }
-      }
-    } catch (error) {
-      console.error('Erro ao buscar contadores:', error);
-    }
-  }, []);
 
   const fetchSession = useCallback(async () => {
     try {
@@ -59,14 +40,13 @@ export default function AdminPage() {
       }
 
       setSession(sessionData);
-      await fetchCounts();
     } catch (error) {
       console.error('Erro ao carregar sessão:', error);
       router.push('/login');
     } finally {
       setLoading(false);
     }
-  }, [router, fetchCounts]);
+  }, [router]);
 
   useEffect(() => {
     fetchSession();
@@ -126,9 +106,6 @@ export default function AdminPage() {
           activeSection={activeSection}
           activeSubSection={activeSubSection}
           onSectionChange={handleSectionChange}
-          counts={{
-            emissores: emissoresAtivos,
-          }}
         />
 
         {/* Conteúdo principal */}

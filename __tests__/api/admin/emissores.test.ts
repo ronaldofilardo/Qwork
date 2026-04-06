@@ -1,7 +1,7 @@
 /**
- * @fileoverview Testes da API admin de emissores
- * @description Testa CRUD de emissores: criação, listagem, edição e auditoria
- * @test API admin de gerenciamento de emissores
+ * @fileoverview Testes da API admin de perfis especiais
+ * @description Testa CRUD de perfis especiais: emissor, suporte, comercial
+ * @test API admin de gerenciamento de perfis
  */
 
 import type { QueryResult } from '@/lib/db';
@@ -32,19 +32,20 @@ interface AdminSession {
 }
 
 /**
- * Interface para emissor retornado pela API
+ * Interface para usuário de perfil especial retornado pela API
  */
 interface MockEmissor {
   cpf: string;
   nome: string;
   email: string;
   ativo: boolean;
+  perfil: 'emissor' | 'suporte' | 'comercial';
   criado_em: string;
   atualizado_em: string;
   total_laudos_emitidos?: number;
 }
 
-describe('/api/admin/emissores', () => {
+describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial)', () => {
   const adminSession: AdminSession = {
     cpf: 'admin123',
     nome: 'Admin',
@@ -58,11 +59,11 @@ describe('/api/admin/emissores', () => {
 
   describe('GET', () => {
     /**
-     * @test Verifica listagem de emissores para admin
-     * @expected Admin deve receber lista completa de emissores com estatísticas
+     * @test Verifica listagem de perfis especiais para admin
+     * @expected Admin deve receber lista completa de emissor, suporte e comercial
      */
-    it('deve retornar lista de emissores para admin', async () => {
-      // Arrange: Mock de sessão admin e dados de emissor
+    it('deve retornar lista de perfis especiais (emissor, suporte, comercial) para admin', async () => {
+      // Arrange: Mock de sessão admin e dados de múltiplos perfis
       mockRequireRole.mockResolvedValue(adminSession);
 
       const mockEmissores: MockEmissor[] = [
@@ -71,15 +72,36 @@ describe('/api/admin/emissores', () => {
           nome: 'Emissor Teste',
           email: 'emissor@teste.com',
           ativo: true,
+          perfil: 'emissor',
           criado_em: '2024-01-01T00:00:00.000Z',
           atualizado_em: '2024-01-01T00:00:00.000Z',
           total_laudos_emitidos: 5,
+        },
+        {
+          cpf: '11111111111',
+          nome: 'Suporte Teste',
+          email: 'suporte@teste.com',
+          ativo: true,
+          perfil: 'suporte',
+          criado_em: '2024-01-01T00:00:00.000Z',
+          atualizado_em: '2024-01-01T00:00:00.000Z',
+          total_laudos_emitidos: 0,
+        },
+        {
+          cpf: '22222222222',
+          nome: 'Comercial Teste',
+          email: 'comercial@teste.com',
+          ativo: true,
+          perfil: 'comercial',
+          criado_em: '2024-01-01T00:00:00.000Z',
+          atualizado_em: '2024-01-01T00:00:00.000Z',
+          total_laudos_emitidos: 0,
         },
       ];
 
       mockQuery.mockResolvedValue({
         rows: mockEmissores,
-        rowCount: 1,
+        rowCount: 3,
       } as QueryResult<MockEmissor>);
 
       // Act: Chamar endpoint GET
@@ -89,16 +111,55 @@ describe('/api/admin/emissores', () => {
       // Assert: Verificar resposta bem-sucedida
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
-      expect(data.emissores).toHaveLength(1);
-      expect(data.emissores[0].nome).toBe('Emissor Teste');
-      expect(data.emissores[0]).not.toHaveProperty('clinica_id');
+      expect(data.emissores).toHaveLength(3);
 
-      // Assert: Query deve receber contexto RLS
+      // Assert: Verificar que todos os 3 perfis estão presentes
+      const perfis = data.emissores.map((u: MockEmissor) => u.perfil);
+      expect(perfis).toContain('emissor');
+      expect(perfis).toContain('suporte');
+      expect(perfis).toContain('comercial');
+
+      // Assert: Query deve filtrar os 3 tipos de usuario
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.any(String),
+        expect.stringContaining("'emissor', 'suporte', 'comercial'"),
         [],
         expect.objectContaining({ perfil: 'admin' })
       );
+    });
+
+    /**
+     * @test Verifica que a query incluí o campo perfil na resposta
+     * @expected Cada usuário retornado deve ter campo perfil populado
+     */
+    it('deve retornar campo perfil em cada usuário', async () => {
+      // Arrange
+      mockRequireRole.mockResolvedValue(adminSession);
+
+      const mockEmissores: MockEmissor[] = [
+        {
+          cpf: '12345678909',
+          nome: 'Emissor Teste',
+          email: 'emissor@teste.com',
+          ativo: true,
+          perfil: 'emissor',
+          criado_em: '2024-01-01T00:00:00.000Z',
+          atualizado_em: '2024-01-01T00:00:00.000Z',
+        },
+      ];
+
+      mockQuery.mockResolvedValue({
+        rows: mockEmissores,
+        rowCount: 1,
+      } as QueryResult<MockEmissor>);
+
+      // Act
+      const response = await GET();
+      const data = await response.json();
+
+      // Assert: campo perfil presente
+      expect(response.status).toBe(200);
+      expect(data.emissores[0]).toHaveProperty('perfil', 'emissor');
+      expect(data.emissores[0]).not.toHaveProperty('clinica_id');
     });
 
     /**

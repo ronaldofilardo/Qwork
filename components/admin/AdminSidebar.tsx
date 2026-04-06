@@ -21,16 +21,12 @@ interface AdminSidebarProps {
   activeSection: AdminSection;
   activeSubSection?: string;
   onSectionChange: (section: AdminSection, subSection?: string) => void;
-  counts?: {
-    emissores?: number;
-  };
 }
 
 export default function AdminSidebar({
   activeSection,
   activeSubSection,
   onSectionChange,
-  counts = {},
 }: AdminSidebarProps) {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(
     new Set([activeSection])
@@ -54,7 +50,7 @@ export default function AdminSidebar({
     <>
       <div className="flex items-center gap-2 mb-2">
         <FileCheck size={14} />
-        <span>Perfis: Laudos Técnicos</span>
+        <span>Perfis: Emissor, Suporte, Comercial</span>
       </div>
       <div className="flex items-center gap-2">
         <Shield size={14} />
@@ -182,7 +178,6 @@ export default function AdminSidebar({
       <MenuItem
         icon={Settings}
         label="Perfis"
-        count={counts.emissores}
         isActive={activeSection === 'geral'}
         onClick={() => {
           onSectionChange('geral', 'emissores');
