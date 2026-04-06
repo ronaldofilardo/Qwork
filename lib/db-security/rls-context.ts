@@ -166,21 +166,11 @@ export async function queryWithContext<T = Record<string, unknown>>(
     if (session) {
       const { cpf, perfil } = sanitizeSession(session);
 
-      console.log(
-        `[queryWithContext] 🔄 TRANSAÇÃO: CPF=${cpf}, Perfil=${perfil}`
-      );
-
       return await transaction(async (txClient) => {
         const { clinicaId, entidadeId } = extractContextIds(session);
         await setRLSVariables(txClient, cpf, perfil, clinicaId, entidadeId);
 
-        console.log('[queryWithContext] ✅ RLS configurado (cliente dedicado)');
-
         const result = await txClient.query<T>(text, params);
-
-        console.log(
-          `[queryWithContext] ✅ Query OK: ${result.rows.length} rows`
-        );
 
         return result;
       }, session);

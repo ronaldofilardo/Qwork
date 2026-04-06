@@ -42,9 +42,11 @@ export async function verificarEConcluirAvaliacao(
   const totalRespostas = parseInt(
     (countResult.rows[0]?.total as string) || '0'
   );
-  console.log(
-    `[AUTO-CONCLUSÃO] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
-  );
+  if (totalRespostas === 1 || totalRespostas >= 37) {
+    console.log(
+      `[AUTO-CONCLUSÃO] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
+    );
+  }
 
   // Se não completou 37 respostas, retornar sem fazer nada
   if (totalRespostas < 37) {
