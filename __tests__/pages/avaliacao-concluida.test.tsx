@@ -1,6 +1,6 @@
 /**
  * Testes para página de conclusão de avaliação
- * Verifica rendering correto do logo (tamanho 2xl)
+ * Verifica rendering correto do logo (tamanho 3xl, sem slogan) e logo da org
  */
 
 import { render, screen, waitFor } from '@testing-library/react';
@@ -43,21 +43,41 @@ describe('Página de Conclusão de Avaliação', () => {
     window.print = jest.fn();
   });
 
-  it('deve renderizar logo com tamanho 2xl (dobrado)', async () => {
+  it('deve renderizar logo com tamanho 3xl (triplicado)', async () => {
     render(<AvaliacaoConcluidaPageTest />);
 
     await waitFor(() => {
       const logo = screen.getByTestId('qwork-logo');
-      expect(logo).toHaveAttribute('data-size', '2xl');
+      expect(logo).toHaveAttribute('data-size', '3xl');
     });
   });
 
-  it('deve renderizar logo com slogan ativado', async () => {
+  it('deve renderizar logo SEM slogan', async () => {
     render(<AvaliacaoConcluidaPageTest />);
 
     await waitFor(() => {
       const logo = screen.getByTestId('qwork-logo');
-      expect(logo).toHaveAttribute('data-slogan', 'true');
+      expect(logo).toHaveAttribute('data-slogan', 'false');
+    });
+  });
+
+  it('não deve exibir texto "Avaliação de Saúde e Bem-Estar" como rótulo de seção', async () => {
+    render(<AvaliacaoConcluidaPageTest />);
+
+    await waitFor(() => {
+      expect(screen.getByText('Avaliação Concluída!')).toBeInTheDocument();
+    });
+
+    const textos = screen.queryAllByText(/Avaliação de Saúde e Bem-Estar/i);
+    expect(textos).toHaveLength(0);
+  });
+
+  it('deve exibir logo da organização no topo quando presente', async () => {
+    render(<AvaliacaoConcluidaPageTest orgLogoUrl="https://example.com/org.png" orgNome="Org Teste" />);
+
+    await waitFor(() => {
+      const orgLogo = screen.getByAltText('Org Teste');
+      expect(orgLogo).toBeInTheDocument();
     });
   });
 
@@ -141,15 +161,27 @@ describe('Página de Conclusão de Avaliação', () => {
 });
 
 // Componente teste que encapsula a lógica necessária
-function AvaliacaoConcluidaPageTest() {
+function AvaliacaoConcluidaPageTest({
+  orgLogoUrl,
+  orgNome,
+}: {
+  orgLogoUrl?: string;
+  orgNome?: string;
+} = {}) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 p-2 sm:p-4">
       <div className="max-w-2xl mx-auto px-2 sm:px-0">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
-          <div className="mb-4">
-            {/* QworkLogo mocado com size="2xl" */}
-            <div data-testid="qwork-logo" data-size="2xl" data-slogan="true">
-              QWork Logo - Size: 2xl - Slogan: true
+          {/* Logo da organização */}
+          {orgLogoUrl && (
+            <div className="mb-4 flex justify-center">
+              <img src={orgLogoUrl} alt={orgNome ?? 'Organização'} />
+            </div>
+          )}
+          <div className="mb-6">
+            {/* QworkLogo mocado com size="3xl" e sem slogan */}
+            <div data-testid="qwork-logo" data-size="3xl" data-slogan="false">
+              QWork Logo - Size: 3xl - Slogan: false
             </div>
           </div>
 
@@ -225,8 +257,8 @@ function AvaliacaoConcluidaPageTest() {
             </button>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-600 mt-4">
-            💾 Suas respostas foram salvas com segurança
+          <p className="text-xs sm:text-sm text-blue-600 mt-4">
+            🔒 Suas respostas foram salvas com segurança
           </p>
         </div>
       </div>

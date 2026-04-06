@@ -95,26 +95,36 @@ export default function AvaliacaoConcluidaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 p-3 sm:p-4" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))', paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
+    <div
+      className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 p-3 sm:p-4"
+      style={{
+        paddingTop: 'max(12px, env(safe-area-inset-top))',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+      }}
+    >
       <div className="max-w-2xl mx-auto px-2 sm:px-0">
         <div className="bg-white rounded-lg shadow-xl p-4 sm:p-8 text-center">
+          {/* Logo da organização */}
           {orgInfo?.logo_url && (
-            <div className="mb-3 flex justify-center">
+            <div className="mb-4 flex justify-center">
               <Image
                 src={orgInfo.logo_url}
                 alt={orgInfo.nome}
-                width={120}
-                height={56}
-                className="h-14 w-auto object-contain"
+                width={160}
+                height={80}
+                className="h-16 w-auto object-contain"
                 unoptimized
               />
             </div>
           )}
-          <div className="mb-4">
-            <QworkLogo size="2xl" showSlogan={true} />
+
+          {/* Logo QWork triplicado (sem slogan) */}
+          <div className="mb-6">
+            <QworkLogo size="3xl" showSlogan={false} />
           </div>
 
-          <div className="mb-4 sm:mb-6">
+          {/* Checkmark verde */}
+          <div className="mb-6 sm:mb-8">
             <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-success rounded-full flex items-center justify-center">
               <svg
                 className="w-8 h-8 sm:w-12 sm:h-12 text-white"
@@ -132,10 +142,12 @@ export default function AvaliacaoConcluidaPage() {
             </div>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-4">
+          {/* Título principal */}
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3">
             Avaliação Concluída!
           </h1>
 
+          {/* Texto subsidiário */}
           <p className="text-sm sm:text-base text-gray-600 mb-6 sm:mb-8">
             Obrigado por completar a avaliação psicossocial Qwork.
           </p>
@@ -189,8 +201,8 @@ export default function AvaliacaoConcluidaPage() {
             </button>
           </div>
 
-          <p className="text-xs sm:text-sm text-gray-600 mt-4">
-            💾 Suas respostas foram salvas com segurança
+          <p className="text-xs sm:text-sm text-blue-600 mt-4">
+            🔒 Suas respostas foram salvas com segurança
           </p>
         </div>
       </div>

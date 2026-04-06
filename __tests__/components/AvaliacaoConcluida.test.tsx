@@ -15,6 +15,30 @@ jest.mock('next/navigation', () => ({
   }),
 }))
 
+// Mock next/image
+jest.mock('next/image', () => {
+  return function MockImage({ src, alt, ...props }: { src: string; alt: string; [key: string]: unknown }) {
+    return <img src={src} alt={alt} {...props} />
+  }
+})
+
+// Mock QworkLogo
+jest.mock('@/components/QworkLogo', () => {
+  return function MockQworkLogo({ size, showSlogan }: { size?: string; showSlogan?: boolean }) {
+    return (
+      <div data-testid="qwork-logo" data-size={size} data-slogan={String(showSlogan)}>
+        QWork Logo
+      </div>
+    )
+  }
+})
+
+// Mock useOrgInfo
+const mockOrgInfo = { logo_url: 'https://example.com/logo.png', nome: 'Empresa Teste' }
+jest.mock('@/hooks/useOrgInfo', () => ({
+  useOrgInfo: () => ({ orgInfo: mockOrgInfo }),
+}))
+
 // Mock do fetch global
 global.fetch = jest.fn()
 
@@ -77,8 +101,39 @@ describe('AvaliacaoConcluidaPage - Recibo de Conclusão', () => {
     render(<AvaliacaoConcluidaPage />)
 
     await waitFor(() => {
-      expect(screen.getByText('💾 Suas respostas foram salvas com segurança')).toBeInTheDocument()
+      expect(screen.getByText(/Suas respostas foram salvas com segurança/i)).toBeInTheDocument()
     })
+  })
+
+  it('deve exibir logo da organização no topo quando orgInfo possui logo_url', async () => {
+    render(<AvaliacaoConcluidaPage />)
+
+    await waitFor(() => {
+      const orgLogo = screen.getByAltText('Empresa Teste')
+      expect(orgLogo).toBeInTheDocument()
+      expect(orgLogo).toHaveAttribute('src', 'https://example.com/logo.png')
+    })
+  })
+
+  it('deve renderizar logo QWork com size="3xl" e sem slogan', async () => {
+    render(<AvaliacaoConcluidaPage />)
+
+    await waitFor(() => {
+      const qworkLogo = screen.getByTestId('qwork-logo')
+      expect(qworkLogo).toHaveAttribute('data-size', '3xl')
+      expect(qworkLogo).toHaveAttribute('data-slogan', 'false')
+    })
+  })
+
+  it('não deve exibir texto "Avaliação de Saúde e Bem-Estar" como label de seção', async () => {
+    render(<AvaliacaoConcluidaPage />)
+
+    await waitFor(() => {
+      expect(screen.getByText('📄 Recibo de Conclusão')).toBeInTheDocument()
+    })
+
+    const textos = screen.queryAllByText(/Avaliação de Saúde e Bem-Estar/i)
+    expect(textos).toHaveLength(0)
   })
 
   it('deve mostrar loading state corretamente', () => {
