@@ -113,3 +113,32 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: 'Erro ao salvar logo' }, { status: 500 });
   }
 }
+
+export async function GET(): Promise<NextResponse> {
+  try {
+    const session = getSession();
+    assertAuth(session);
+    assertRoles(session, [ROLES.RH]);
+
+    if (!session.clinica_id) {
+      return NextResponse.json(
+        { error: 'Clínica não identificada' },
+        { status: 403 }
+      );
+    }
+
+    const config = await ClinicaConfiguracaoService.buscarPorClinica(
+      session.clinica_id
+    );
+    return NextResponse.json({ logo_url: config?.logo_url || null });
+  } catch (erro: unknown) {
+    if (isApiError(erro)) {
+      return NextResponse.json(
+        { error: erro.message, code: erro.code },
+        { status: erro.status }
+      );
+    }
+    console.error('[API RH Logo GET] Erro:', erro);
+    return NextResponse.json({ error: 'Erro ao buscar logo' }, { status: 500 });
+  }
+}

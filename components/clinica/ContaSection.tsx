@@ -5,6 +5,7 @@ import { Building2, Download } from 'lucide-react';
 import PagamentosEmAberto from '@/components/shared/PagamentosEmAberto';
 import PagamentosFinanceiros from '@/components/shared/PagamentosFinanceiros';
 import MiniDashboardFinanceiro from '@/components/shared/financeiro/MiniDashboardFinanceiro';
+import LogoUploader from '@/components/shared/LogoUploader';
 
 interface ContaSectionState {
   nome: string;
@@ -41,6 +42,8 @@ export default function ContaSection() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [orgInfo, setOrgInfo] = useState<ContaSectionState | null>(null);
   const [downloadingContrato, setDownloadingContrato] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   const handleBaixarContrato = async () => {
     try {
@@ -69,9 +72,13 @@ export default function ContaSection() {
 
   const loadAccountInfo = useCallback(async () => {
     try {
-      const res = await fetch(`/api/rh/account-info?_=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
+      const [infoRes, logoRes] = await Promise.all([
+        fetch(`/api/rh/account-info?_=${Date.now()}`),
+        fetch('/api/rh/logo'),
+      ]);
+
+      if (infoRes.ok) {
+        const data = await infoRes.json();
         setAccountInfo(data);
         if (data?.clinica) {
           setOrgInfo({ nome: data.clinica.nome, cnpj: data.clinica.cnpj });
@@ -79,7 +86,7 @@ export default function ContaSection() {
         setErrorMessage(null);
       } else {
         try {
-          const err = await res.json();
+          const err = await infoRes.json();
           setErrorMessage(
             err?.error || 'Erro ao carregar informações da conta'
           );
@@ -87,11 +94,56 @@ export default function ContaSection() {
           setErrorMessage('Erro ao carregar informações da conta');
         }
       }
+
+      if (logoRes.ok) {
+        const logoData = await logoRes.json();
+        setLogoUrl(logoData.logo_url ?? null);
+      }
     } catch (error) {
       console.error('Erro ao carregar informações da conta:', error);
       setErrorMessage('Erro ao carregar informações da conta');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const handleSaveLogo = useCallback(
+    async (base64: string, mimeType: string) => {
+      setIsSavingLogo(true);
+      try {
+        const res = await fetch('/api/rh/logo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logo_base64: base64, mime_type: mimeType }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err?.error || 'Erro ao salvar logo');
+        }
+        const data = await res.json();
+        setLogoUrl(data.logo_url ?? null);
+      } finally {
+        setIsSavingLogo(false);
+      }
+    },
+    []
+  );
+
+  const handleRemoveLogo = useCallback(async () => {
+    setIsSavingLogo(true);
+    try {
+      const res = await fetch('/api/rh/logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logo_base64: '' }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err?.error || 'Erro ao remover logo');
+      }
+      setLogoUrl(null);
+    } finally {
+      setIsSavingLogo(false);
     }
   }, []);
 
@@ -281,6 +333,17 @@ export default function ContaSection() {
 
         {/* Pagamentos em Aberto */}
         <PagamentosEmAberto apiUrl="/api/rh/pagamentos-em-aberto" />
+
+        {/* Logo da Organização */}
+        {accountInfo?.clinica && (
+          <LogoUploader
+            currentLogoUrl={logoUrl}
+            orgName={accountInfo.clinica.nome}
+            onSave={handleSaveLogo}
+            onRemove={handleRemoveLogo}
+            isSaving={isSavingLogo}
+          />
+        )}
 
         {/* Mini-Dashboard Financeiro */}
         <MiniDashboardFinanceiro apiUrl="/api/rh/financeiro-resumo" />

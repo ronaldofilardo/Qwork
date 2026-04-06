@@ -100,3 +100,26 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   }
 }
+
+export async function GET(): Promise<NextResponse> {
+  try {
+    const session = await requireEntity();
+
+    const config = await EntidadeConfiguracaoService.buscarPorEntidade(
+      session.entidade_id
+    );
+    return NextResponse.json({ logo_url: config?.logo_url || null });
+  } catch (erro: unknown) {
+    const msg = erro instanceof Error ? erro.message : String(erro);
+    console.error('[API Entidade Logo GET] Erro:', erro);
+    return NextResponse.json(
+      { error: msg || 'Erro ao buscar logo' },
+      {
+        status:
+          msg.includes('Acesso restrito') || msg.includes('não identificada')
+            ? 403
+            : 500,
+      }
+    );
+  }
+}

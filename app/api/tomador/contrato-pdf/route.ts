@@ -303,7 +303,11 @@ export async function GET() {
         'justify'
       );
 
-      writeText('CLÁUSULA 4 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO', 11, true);
+      writeText(
+        'CLÁUSULA 4 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO',
+        11,
+        true
+      );
       writeText(
         'A CONTRATANTE declara ciência de que a geração do relatório organizacional consolidado está condicionada à participação mínima de 70% (setenta por cento) dos colaboradores cadastrados.',
         10,
@@ -349,7 +353,11 @@ export async function GET() {
         'justify'
       );
 
-      writeText('CLÁUSULA 9 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA DAS INFORMAÇÕES', 11, true);
+      writeText(
+        'CLÁUSULA 9 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA DAS INFORMAÇÕES',
+        11,
+        true
+      );
       writeText(
         'A CONTRATANTE declara, para todos os fins, que atua na condição de Controladora dos dados pessoais de seus colaboradores, sendo integralmente responsável pela coleta, base legal, veracidade, legitimidade e segurança das informações inseridas na plataforma.',
         10,

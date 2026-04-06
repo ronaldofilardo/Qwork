@@ -12,16 +12,18 @@ jest.mock('@/lib/session', () => ({
 
 const mockSalvar = jest.fn();
 const mockRemoverLogo = jest.fn();
+const mockBuscarPorEntidade = jest.fn();
 jest.mock('@/lib/entidade-configuracao-service', () => ({
   EntidadeConfiguracaoService: {
     salvar: (...args: unknown[]) => mockSalvar(...args),
     removerLogo: (...args: unknown[]) => mockRemoverLogo(...args),
+    buscarPorEntidade: (...args: unknown[]) => mockBuscarPorEntidade(...args),
   },
 }));
 
 jest.spyOn(console, 'error').mockImplementation(() => {});
 
-import { POST } from '@/app/api/entidade/logo/route';
+import { POST, GET } from '@/app/api/entidade/logo/route';
 
 function makeRequest(body: Record<string, unknown>): Request {
   return new Request('http://localhost/api/entidade/logo', {
@@ -208,6 +210,104 @@ describe('POST /api/entidade/logo', () => {
         })
       );
 
+      expect(res.status).toBe(500);
+    });
+  });
+});
+
+describe('GET /api/entidade/logo', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Autenticação e Autorização', () => {
+    it('deve retornar 403 quando perfil não é gestor', async () => {
+      mockRequireEntity.mockRejectedValueOnce(
+        new Error('Acesso restrito a gestores de entidade')
+      );
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body.error).toMatch(/acesso restrito/i);
+    });
+
+    it('deve retornar 403 quando entidade não identificada', async () => {
+      mockRequireEntity.mockRejectedValueOnce(
+        new Error('Entidade não identificada na sessão')
+      );
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(403);
+      expect(body.error).toMatch(/não identificada/i);
+    });
+  });
+
+  describe('Busca de logo', () => {
+    it('deve retornar logo_url quando configuração existe', async () => {
+      mockRequireEntity.mockResolvedValueOnce({
+        cpf: '222',
+        nome: 'Gestor',
+        perfil: 'gestor',
+        entidade_id: 22,
+      });
+      mockBuscarPorEntidade.mockResolvedValueOnce({
+        logo_url: 'data:image/png;base64,xyz789',
+      });
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.logo_url).toBe('data:image/png;base64,xyz789');
+      expect(mockBuscarPorEntidade).toHaveBeenCalledWith(22);
+    });
+
+    it('deve retornar logo_url null quando não há configuração', async () => {
+      mockRequireEntity.mockResolvedValueOnce({
+        cpf: '222',
+        nome: 'Gestor',
+        perfil: 'gestor',
+        entidade_id: 22,
+      });
+      mockBuscarPorEntidade.mockResolvedValueOnce(null);
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.logo_url).toBeNull();
+    });
+
+    it('deve retornar logo_url null quando logo_url está vazio', async () => {
+      mockRequireEntity.mockResolvedValueOnce({
+        cpf: '222',
+        nome: 'Gestor',
+        perfil: 'gestor',
+        entidade_id: 22,
+      });
+      mockBuscarPorEntidade.mockResolvedValueOnce({ logo_url: '' });
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.logo_url).toBeNull();
+    });
+
+    it('deve retornar 500 quando service lança exceção genérica', async () => {
+      mockRequireEntity.mockResolvedValueOnce({
+        cpf: '222',
+        nome: 'Gestor',
+        perfil: 'gestor',
+        entidade_id: 22,
+      });
+      mockBuscarPorEntidade.mockRejectedValueOnce(new Error('DB timeout'));
+
+      const res = await GET();
       expect(res.status).toBe(500);
     });
   });

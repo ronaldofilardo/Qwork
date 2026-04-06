@@ -11,9 +11,11 @@ jest.mock('@/lib/session', () => ({
 }));
 
 const mockSalvar = jest.fn();
+const mockBuscarPorClinica = jest.fn();
 jest.mock('@/lib/clinica-configuracao-service', () => ({
   ClinicaConfiguracaoService: {
     salvar: (...args: unknown[]) => mockSalvar(...args),
+    buscarPorClinica: (...args: unknown[]) => mockBuscarPorClinica(...args),
   },
 }));
 
@@ -42,7 +44,7 @@ jest.mock('@/lib/authorization/policies', () => ({
 
 jest.spyOn(console, 'error').mockImplementation(() => {});
 
-import { POST } from '@/app/api/rh/logo/route';
+import { POST, GET } from '@/app/api/rh/logo/route';
 
 // Helper para criar Request
 function makeRequest(body: Record<string, unknown>): Request {
@@ -306,6 +308,108 @@ describe('POST /api/rh/logo', () => {
         })
       );
 
+      expect(res.status).toBe(500);
+    });
+  });
+});
+
+describe('GET /api/rh/logo', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('Autenticação e Autorização', () => {
+    it('deve retornar 401 quando não há sessão', async () => {
+      mockGetSession.mockReturnValue(null);
+      const res = await GET();
+      expect(res.status).toBe(401);
+    });
+
+    it('deve retornar 403 quando perfil não é rh', async () => {
+      mockGetSession.mockReturnValue({
+        cpf: '111',
+        nome: 'Test',
+        perfil: 'funcionario',
+      });
+      const res = await GET();
+      expect(res.status).toBe(403);
+    });
+
+    it('deve retornar 403 quando rh sem clinica_id', async () => {
+      mockGetSession.mockReturnValue({
+        cpf: '111',
+        nome: 'RH',
+        perfil: 'rh',
+      });
+      const res = await GET();
+      expect(res.status).toBe(403);
+      const body = await res.json();
+      expect(body.error).toMatch(/clínica não identificada/i);
+    });
+  });
+
+  describe('Busca de logo', () => {
+    it('deve retornar logo_url quando configuração existe', async () => {
+      mockGetSession.mockReturnValue({
+        cpf: '111',
+        nome: 'RH',
+        perfil: 'rh',
+        clinica_id: 6,
+      });
+      mockBuscarPorClinica.mockResolvedValueOnce({
+        logo_url: 'data:image/png;base64,abc123',
+      });
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.logo_url).toBe('data:image/png;base64,abc123');
+      expect(mockBuscarPorClinica).toHaveBeenCalledWith(6);
+    });
+
+    it('deve retornar logo_url null quando não há configuração', async () => {
+      mockGetSession.mockReturnValue({
+        cpf: '111',
+        nome: 'RH',
+        perfil: 'rh',
+        clinica_id: 6,
+      });
+      mockBuscarPorClinica.mockResolvedValueOnce(null);
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.logo_url).toBeNull();
+    });
+
+    it('deve retornar logo_url null quando logo_url está vazio', async () => {
+      mockGetSession.mockReturnValue({
+        cpf: '111',
+        nome: 'RH',
+        perfil: 'rh',
+        clinica_id: 6,
+      });
+      mockBuscarPorClinica.mockResolvedValueOnce({ logo_url: '' });
+
+      const res = await GET();
+      const body = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(body.logo_url).toBeNull();
+    });
+
+    it('deve retornar 500 quando service lança exceção', async () => {
+      mockGetSession.mockReturnValue({
+        cpf: '111',
+        nome: 'RH',
+        perfil: 'rh',
+        clinica_id: 6,
+      });
+      mockBuscarPorClinica.mockRejectedValueOnce(new Error('DB down'));
+
+      const res = await GET();
       expect(res.status).toBe(500);
     });
   });
