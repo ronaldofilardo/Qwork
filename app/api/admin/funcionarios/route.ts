@@ -2,6 +2,7 @@ import _bcrypt from 'bcryptjs';
 import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { buildSetLocalQueries } from '@/lib/db-safe';
 
 /**
  * ⚠️ AVISO: Este arquivo está na pasta ERRADA!
@@ -153,9 +154,14 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Email inválido' }, { status: 400 });
     }
 
-    // Registrar usuário atual no contexto para auditoria
-    await query(`SET LOCAL app.current_user_cpf = '${session.cpf}'`);
-    await query(`SET LOCAL app.current_user_perfil = '${session.perfil}'`);
+    // Registrar usuário atual no contexto para auditoria (sanitizado)
+    const setLocalQueries = buildSetLocalQueries({
+      cpf: session.cpf,
+      perfil: session.perfil,
+    });
+    for (const q of setLocalQueries) {
+      await query(q);
+    }
 
     // Obter clínica do RH logado
     const rhResult = await query(

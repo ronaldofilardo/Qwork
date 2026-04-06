@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
+import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+
+const rateLimiter = rateLimit(RATE_LIMIT_CONFIGS.api);
 
 export const dynamic = 'force-dynamic';
 
@@ -13,6 +16,9 @@ export const dynamic = 'force-dynamic';
  * - contrato_id: ID do contrato (opcional)
  */
 export async function GET(request: NextRequest) {
+  const rateLimitResponse = rateLimiter(request);
+  if (rateLimitResponse) return rateLimitResponse;
+
   try {
     const searchParams = request.nextUrl.searchParams;
     const entidadeId = searchParams.get('entidade_id');

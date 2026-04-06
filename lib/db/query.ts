@@ -6,12 +6,13 @@
  */
 
 import type { Session } from '../session';
+import { getDynamicPool } from './dynamic-pool';
+import { buildSetLocalQueries } from '../db-safe';
 import {
   getLocalPool,
   isDevelopment,
   isTest,
   isProduction,
-  isEmissorLocalProdMode,
   databaseUrl,
   DEBUG_DB,
   getNeonSql,
@@ -118,83 +119,46 @@ export async function query<T = any>(
 
   validateDatabaseIsolation();
 
-  try {
-    // ── Modo especial: emissor local acessando banco de PRODUÇÃO (Neon) ──────────
-    if (isEmissorLocalProdMode) {
-      // Guard de segurança: bloquear qualquer sessão que não seja do emissor autorizado
-      if (session && session.cpf !== process.env.EMISSOR_CPF) {
-        throw new Error(
-          `🚨 ACESSO BLOQUEADO: Modo produção local ativo (ALLOW_PROD_DB_LOCAL=true). ` +
-            `Apenas o emissor autorizado (CPF ${process.env.EMISSOR_CPF}) pode executar queries nesse ambiente.`
+  // ── Modo emissor com ambiente dinâmico ─────────────────────────────────────
+  // Se o emissor selecionou um dbEnvironment explícito no login, usar o pool
+  // correspondente em vez do pool padrão do processo.
+  if (session?.perfil === 'emissor' && session.dbEnvironment) {
+    const dynPool = getDynamicPool(session.dbEnvironment);
+    const client = await dynPool.connect();
+    try {
+      await client.query('BEGIN');
+      const setLocalQueries = buildSetLocalQueries({
+        cpf: session.cpf,
+        perfil: session.perfil,
+      });
+      for (const q of setLocalQueries) {
+        await client.query(q);
+      }
+      await client.query(`SET LOCAL app.current_user_clinica_id = ''`);
+      await client.query(`SET LOCAL app.current_user_entidade_id = ''`);
+      const result = await client.query(text, params);
+      await client.query('COMMIT');
+      const duration = Date.now() - start;
+      if (DEBUG_DB) {
+        console.log(
+          `[db][query] dynamic-${session.dbEnvironment} (${duration}ms): ${text.substring(0, 200)}...`
         );
       }
-
-      const pool = await getNeonPool();
-      if (!pool) {
-        throw new Error(
-          'Neon Pool não disponível no modo emissor local. Verifique DATABASE_URL no .env.local.'
-        );
+      return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
+    } catch (err) {
+      try {
+        await client.query('ROLLBACK');
+      } catch {
+        /* ignore rollback error */
       }
-
-      if (session) {
-        const client = await pool.connect();
-        try {
-          await client.query('BEGIN');
-          const escapeString = (str: string) => str.replace(/'/g, "''");
-          await client.query(
-            `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
-          );
-          if (session.representante_id) {
-            await client.query(
-              `SET LOCAL app.current_representante_id = '${escapeString(String(session.representante_id))}'`
-            );
-          }
-          const result = await client.query(text, params);
-          await client.query('COMMIT');
-          const duration = Date.now() - start;
-          if (DEBUG_DB) {
-            console.log(
-              `[db][query] emissor-neon (${duration}ms): ${text.substring(0, 200)}...`
-            );
-          }
-          return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
-        } catch (err) {
-          try {
-            await pool.query('ROLLBACK');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (_) {}
-          throw err;
-        } finally {
-          client.release();
-        }
-      } else {
-        // Sem sessão (ex: login — validação de credenciais no banco prod)
-        const client = await pool.connect();
-        try {
-          const result = await client.query(text, params);
-          const duration = Date.now() - start;
-          if (DEBUG_DB) {
-            console.log(
-              `[db][query] emissor-neon-no-session (${duration}ms): ${text.substring(0, 200)}...`
-            );
-          }
-          return { rows: result.rows as T[], rowCount: result.rowCount || 0 };
-        } finally {
-          client.release();
-        }
-      }
+      throw err;
+    } finally {
+      client.release();
     }
-    // ─────────────────────────────────────────────────────────────────────────
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
+  try {
     if ((isDevelopment || isTest) && localPool) {
       // PostgreSQL Local (Desenvolvimento e Testes)
       const client = await localPool.connect();
@@ -202,25 +166,15 @@ export async function query<T = any>(
         if (session) {
           await client.query('BEGIN');
           try {
-            const escapeString = (str: string) => str.replace(/'/g, "''");
-
-            await client.query(
-              `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
-            );
-            await client.query(
-              `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
-            );
-            await client.query(
-              `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
-            );
-            await client.query(
-              `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
-            );
-
-            if (session.representante_id) {
-              await client.query(
-                `SET LOCAL app.current_representante_id = '${escapeString(String(session.representante_id))}'`
-              );
+            const setLocalQueries = buildSetLocalQueries({
+              cpf: session.cpf,
+              perfil: session.perfil,
+              clinica_id: session.clinica_id,
+              entidade_id: session.entidade_id,
+              representante_id: session.representante_id,
+            });
+            for (const q of setLocalQueries) {
+              await client.query(q);
             }
 
             // Verificar contexto RLS após SET LOCAL
@@ -297,24 +251,15 @@ export async function query<T = any>(
         try {
           await client.query('BEGIN');
 
-          const escapeString = (str: string) => str.replace(/'/g, "''");
-          await client.query(
-            `SET LOCAL app.current_user_cpf = '${escapeString(session.cpf)}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_perfil = '${escapeString(session.perfil)}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_clinica_id = '${escapeString(String(session.clinica_id || ''))}'`
-          );
-          await client.query(
-            `SET LOCAL app.current_user_entidade_id = '${escapeString(String(session.entidade_id || ''))}'`
-          );
-
-          if (session.representante_id) {
-            await client.query(
-              `SET LOCAL app.current_representante_id = '${escapeString(String(session.representante_id))}'`
-            );
+          const setLocalQueriesNeon = buildSetLocalQueries({
+            cpf: session.cpf,
+            perfil: session.perfil,
+            clinica_id: session.clinica_id,
+            entidade_id: session.entidade_id,
+            representante_id: session.representante_id,
+          });
+          for (const q of setLocalQueriesNeon) {
+            await client.query(q);
           }
 
           // Verificar contexto RLS após SET LOCAL

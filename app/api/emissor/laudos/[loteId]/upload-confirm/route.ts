@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { readFile, unlink, rename, writeFile } from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
+import { buildSetLocalQueries } from '@/lib/db-safe';
 
 export const dynamic = 'force-dynamic';
 
@@ -53,7 +54,8 @@ export const POST = async (
     // Verificar se já existe laudo (garantir imutabilidade)
     const laudoExistente = await query(
       `SELECT id, status, emitido_em FROM laudos WHERE lote_id = $1`,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (laudoExistente.rows.length > 0) {
@@ -153,10 +155,15 @@ export const POST = async (
       try {
         await client.query('BEGIN');
 
-        // Configurar contexto RLS
-        await client.query(`SET LOCAL app.current_user_cpf = '${user.cpf}'`);
-        await client.query(`SET LOCAL app.current_user_perfil = 'emissor'`);
-        await client.query(`SET LOCAL app.system_bypass = 'true'`);
+        // Configurar contexto RLS (sanitizado)
+        const setLocalQueries = buildSetLocalQueries({
+          cpf: user.cpf,
+          perfil: 'emissor',
+          systemBypass: true,
+        });
+        for (const q of setLocalQueries) {
+          await client.query(q);
+        }
 
         // Inserir laudo com status 'emitido'
         const shouldSkipHash =
