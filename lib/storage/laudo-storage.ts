@@ -14,6 +14,7 @@ import {
   checkBackblazeFileExists,
   findLatestLaudoForLote,
   listObjectsByPrefix,
+  type UploadResult,
 } from './backblaze-client';
 
 export interface LaudoMetadata {
@@ -98,7 +99,7 @@ export async function uploadLaudoToBackblaze(
   laudoId: number,
   loteId: number,
   pdfBuffer: Buffer
-): Promise<void> {
+): Promise<UploadResult | null> {
   try {
     // Permite desabilitar uploads remotos temporariamente (teste/local)
     if (
@@ -108,7 +109,7 @@ export async function uploadLaudoToBackblaze(
       console.log(
         '[STORAGE] Upload remoto de laudos desabilitado via DISABLE_LAUDO_REMOTE/DISABLE_REMOTE_STORAGE - pulando upload'
       );
-      return;
+      return null;
     }
 
     // Verificar se Backblaze está configurado
@@ -122,7 +123,7 @@ export async function uploadLaudoToBackblaze(
       console.warn(
         '[STORAGE] Backblaze não configurado (verifique BACKBLAZE_KEY_ID/BACKBLAZE_APPLICATION_KEY ou BACKBLAZE_ACCESS_KEY_ID/BACKBLAZE_SECRET_ACCESS_KEY) - pulando upload remoto'
       );
-      return;
+      return null;
     }
 
     // Chave no formato: laudos/lote-{loteId}/laudo-{timestamp}-{random}.pdf
@@ -132,49 +133,33 @@ export async function uploadLaudoToBackblaze(
 
     const result = await uploadToBackblaze(pdfBuffer, key, 'application/pdf');
 
-    // Atualizar metadados locais com informações do arquivo remoto
-    const fs = await import('fs/promises');
-    const path = await import('path');
-    const metaPath = path.join(
-      process.cwd(),
-      'storage',
-      'laudos',
-      `laudo-${laudoId}.json`
-    );
-
+    // Tentar atualizar metadados locais (funciona em dev; falha silenciosamente em Vercel prod)
     try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      const metaPath = path.join(
+        process.cwd(),
+        'storage',
+        'laudos',
+        `laudo-${laudoId}.json`
+      );
       const metaContent = await fs.readFile(metaPath, 'utf-8');
       const metadata: LaudoMetadata = JSON.parse(metaContent);
-
-      metadata.arquivo_remoto = {
-        ...result,
-        uploadedAt: new Date().toISOString(),
-      };
-
+      metadata.arquivo_remoto = { ...result, uploadedAt: new Date().toISOString() };
       await fs.writeFile(metaPath, JSON.stringify(metadata, null, 2));
-
-      console.log(
-        `[STORAGE] Metadados atualizados com URL remota para laudo ${laudoId}`
-      );
-    } catch (metaError) {
-      console.warn(
-        `[STORAGE] Não foi possível atualizar metadados locais:`,
-        metaError
-      );
-      // Não propagar erro - upload foi bem-sucedido
+      console.log(`[STORAGE] Metadados atualizados com URL remota para laudo ${laudoId}`);
+    } catch {
+      // FS local indisponível (Vercel) — não propagar
     }
 
-    console.log(
-      `[STORAGE] Upload para Backblaze concluído: laudo ${laudoId} → ${result.url}`
-    );
+    console.log(`[STORAGE] Upload para Backblaze concluído: laudo ${laudoId} → ${result.url}`);
+    return result;
   } catch (error) {
-    // Log mas não propaga - upload remoto é opcional/assíncrono
+    // Registrar auditoria do erro e re-throw (upload é obrigatório em prod)
     console.error(
       `[STORAGE] Erro ao fazer upload para Backblaze (laudo ${laudoId}):`,
       error
     );
-
-    // Registrar auditoria do erro
     try {
       const { query } = await import('../db');
       await query(
@@ -194,6 +179,7 @@ export async function uploadLaudoToBackblaze(
         auditError
       );
     }
+    throw error;
   }
 }
 

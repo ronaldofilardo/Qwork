@@ -1,14 +1,14 @@
 import { requireEntity } from '@/lib/session';
 import { query } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { lerLaudo, calcularHash } from '@/lib/storage/laudo-storage';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/entidade/laudos/[laudoId]/verify-hash
- * Recalcula o hash do arquivo PDF e compara com o hash armazenado
- * para verificar a integridade do laudo
+ * Retorna o hash SHA-256 armazenado no banco para o laudo solicitado.
+ * Não lê arquivos locais nem recalcula hash — opera exclusivamente via DB.
+ * O cliente pode comparar com o hash calculado localmente para verificar integridade.
  */
 export const GET = async (
   req: Request,
@@ -26,8 +26,8 @@ export const GET = async (
       );
     }
 
-    // Buscar laudo e verificar se pertence à entidade
-    // Validação: lote deve ter avaliações de funcionários da entidade
+    // Buscar laudo via lotes_avaliacao.entidade_id — consistente com /api/entidade/lotes
+    // ISOLAMENTO: garante que lotes de clínicas nunca sejam acessados por entidades
     const laudoQuery = await query(
       `
       SELECT
@@ -38,14 +38,11 @@ export const GET = async (
         l.emitido_em
       FROM laudos l
       JOIN lotes_avaliacao la ON l.lote_id = la.id
-      INNER JOIN avaliacoes a ON a.lote_id = la.id
-      INNER JOIN funcionarios f ON a.funcionario_cpf = f.cpf
-      INNER JOIN funcionarios_entidades fe ON fe.funcionario_id = f.id
-      WHERE l.id = $1 
-        AND l.status = 'emitido'
-        AND l.arquivo_remoto_url IS NOT NULL
-        AND fe.entidade_id = $2
-        AND fe.ativo = true
+      WHERE l.id = $1
+        AND l.status IN ('emitido', 'enviado')
+        AND la.entidade_id = $2
+        AND la.clinica_id IS NULL
+        AND la.empresa_id IS NULL
       LIMIT 1
     `,
       [laudoId, entidadeId]
@@ -72,57 +69,19 @@ export const GET = async (
       );
     }
 
-    // Ler o arquivo PDF do storage
-    console.log(`[VERIFY] Lendo arquivo PDF do laudo ${laudo.id}...`);
-    let pdfBuffer: Buffer;
-
-    try {
-      pdfBuffer = await lerLaudo(laudo.id);
-    } catch (error: any) {
-      console.error(
-        `[VERIFY] Erro ao ler arquivo PDF do laudo ${laudo.id}:`,
-        error
-      );
-      return NextResponse.json(
-        {
-          error: 'Arquivo do laudo não encontrado no armazenamento',
-          success: false,
-        },
-        { status: 404 }
-      );
-    }
-
-    // Recalcular hash do arquivo
-    const hashCalculado = calcularHash(pdfBuffer);
-    console.log(`[VERIFY] Hash armazenado: ${hashArmazenado}`);
-    console.log(`[VERIFY] Hash calculado:  ${hashCalculado}`);
-
-    // Comparar hashes (case-insensitive)
-    const hashValido =
-      hashArmazenado.toLowerCase() === hashCalculado.toLowerCase();
-
-    if (!hashValido) {
-      console.error(`[VERIFY] ⚠️ HASH INVÁLIDO para laudo ${laudo.id}!`);
-      console.error(`[VERIFY]   Esperado: ${hashArmazenado}`);
-      console.error(`[VERIFY]   Calculado: ${hashCalculado}`);
-    } else {
-      console.log(`[VERIFY] ✅ Hash válido para laudo ${laudo.id}`);
-    }
+    console.log(`[VERIFY] Hash armazenado para laudo ${laudo.id}: ${hashArmazenado}`);
 
     return NextResponse.json({
       success: true,
-      hash_valido: hashValido,
       hash_armazenado: hashArmazenado,
-      hash_calculado: hashCalculado,
       laudo_id: laudo.id,
       lote_id: laudo.lote_id,
       emitido_em: laudo.emitido_em,
       status: laudo.status,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('[VERIFY] Erro ao verificar hash do laudo:', error);
 
-    // Tratar erros de autenticação/autorização como 403
     if (
       error instanceof Error &&
       (error.message.includes('Não autorizado') ||
@@ -130,17 +89,14 @@ export const GET = async (
         error.message.includes('Unauthorized'))
     ) {
       return NextResponse.json(
-        {
-          error: 'Acesso negado',
-          success: false,
-        },
+        { error: 'Acesso negado', success: false },
         { status: 403 }
       );
     }
 
     return NextResponse.json(
       {
-        error: error.message || 'Erro interno do servidor',
+        error: error instanceof Error ? error.message : 'Erro interno do servidor',
         success: false,
       },
       { status: 500 }
