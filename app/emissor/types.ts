@@ -51,7 +51,7 @@ export interface NotificacaoLote {
   visualizada: boolean;
 }
 
-export type ActiveTab = 'laudo-para-emitir' | 'laudo-emitido' | 'cancelados';
+export type ActiveTab = 'laudo-para-emitir' | 'laudo-emitido' | 'laudos-enviados';
 
 // ============================================================================
 // UTILITIES

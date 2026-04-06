@@ -11,7 +11,6 @@ interface EmissorHeaderProps {
   onInstallClick: () => void;
   loading: boolean;
   onRefresh: () => void;
-  onLogout: () => void;
 }
 
 export default function EmissorHeader({
@@ -19,7 +18,6 @@ export default function EmissorHeader({
   onInstallClick,
   loading,
   onRefresh,
-  onLogout,
 }: EmissorHeaderProps) {
   return (
     <div className="mb-8">
@@ -61,12 +59,6 @@ export default function EmissorHeader({
             className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Atualizando...' : 'Atualizar'}
-          </button>
-          <button
-            onClick={onLogout}
-            className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-          >
-            Sair
           </button>
         </div>
       </div>
