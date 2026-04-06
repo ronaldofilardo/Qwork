@@ -80,12 +80,13 @@ describe('Emissor Dashboard UI', () => {
       </QueryClientProvider>
     );
 
-    // Wait for loading to finish, then switch to tab 'Laudo Emitido' where lotes emitidos aparecem
+    // Wait for loading to finish, then switch to sidebar item 'Laudo Emitido'
     await waitFor(() =>
       expect(screen.queryByText('Carregando lotes...')).not.toBeInTheDocument()
     );
 
-    fireEvent.click(screen.getByText('✅ Laudo Emitido'));
+    // O lote tem _emitido: true e enviado_em: null → aparece em 'Laudo Emitido'
+    fireEvent.click(screen.getByRole('button', { name: /laudo emitido/i }));
 
     await waitFor(() => {
       expect(

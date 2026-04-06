@@ -467,13 +467,13 @@ describe('Emissor Dashboard', () => {
 
     renderWithQueryClient(<EmissorDashboard />);
 
-    // Click na aba "Laudo Emitido" para ver lote finalizado
+    // Click na aba 'Laudos Enviados' da sidebar para ver lote com enviado_em preenchido
     await waitFor(() => {
-      const tabLaudoEmitido = screen.getByText('✅ Laudo Emitido');
-      expect(tabLaudoEmitido).toBeInTheDocument();
+      const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+      expect(tabLaudosEnviados).toBeInTheDocument();
     });
-    const tabLaudoEmitido = screen.getByText('✅ Laudo Emitido');
-    await user.click(tabLaudoEmitido);
+    const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+    await user.click(tabLaudosEnviados);
 
     await waitFor(
       () => {
@@ -527,13 +527,13 @@ describe('Emissor Dashboard', () => {
 
     renderWithQueryClient(<EmissorDashboard />);
 
-    // Click na aba "Laudo Emitido" para ver lote finalizado
+    // Click na aba 'Laudos Enviados' da sidebar para ver lote com enviado_em preenchido
     await waitFor(() => {
-      const tabLaudoEmitido = screen.getByText('✅ Laudo Emitido');
-      expect(tabLaudoEmitido).toBeInTheDocument();
+      const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+      expect(tabLaudosEnviados).toBeInTheDocument();
     });
-    const tabLaudoEmitido = screen.getByText('✅ Laudo Emitido');
-    await user.click(tabLaudoEmitido);
+    const tabLaudosEnviados = screen.getByRole('button', { name: /laudos enviados/i });
+    await user.click(tabLaudosEnviados);
 
     await waitFor(
       () => {

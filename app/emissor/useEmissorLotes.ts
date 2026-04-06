@@ -121,20 +121,21 @@ export function useEmissorLotes() {
   const filteredLotes = lotes.filter((lote) => {
     switch (activeTab) {
       case 'laudo-para-emitir':
-        return (
-          lote.status === 'concluido' && (!lote.laudo || !lote.laudo._emitido)
-        );
+        return !lote.laudo || !lote.laudo._emitido;
       case 'laudo-emitido':
-        return (
-          lote.status === 'finalizado' ||
-          (lote.status === 'concluido' && lote.laudo?._emitido)
-        );
-      case 'cancelados':
-        return lote.status === 'cancelado';
+        return lote.laudo?._emitido === true && !lote.laudo?.enviado_em;
+      case 'laudos-enviados':
+        return !!(lote.laudo?.enviado_em || lote.laudo?.status === 'enviado');
       default:
         return true;
     }
   });
+
+  const counts: Record<'laudo-para-emitir' | 'laudo-emitido' | 'laudos-enviados', number> = {
+    'laudo-para-emitir': lotes.filter((l) => !l.laudo || !l.laudo._emitido).length,
+    'laudo-emitido': lotes.filter((l) => l.laudo?._emitido === true && !l.laudo?.enviado_em).length,
+    'laudos-enviados': lotes.filter((l) => !!(l.laudo?.enviado_em || l.laudo?.status === 'enviado')).length,
+  };
 
   // ---- Action handlers ----
   const handleEmitirLaudo = (loteId: number) => {
@@ -324,6 +325,7 @@ export function useEmissorLotes() {
     setActiveTab,
     hasMore,
     filteredLotes,
+    counts,
     // Actions
     handleEmitirLaudo,
     handleDownloadLaudo,
