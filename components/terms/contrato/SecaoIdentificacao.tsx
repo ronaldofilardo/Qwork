@@ -16,14 +16,13 @@ export function SecaoIdentificacao() {
         [●], doravante denominada <strong>CONTRATADA</strong>, e, na qualidade
         de interveniente gestora,{' '}
         <strong>MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA</strong>, pessoa
-        jurídica de direito privado, inscrita no CNPJ sob nº
-        21.020.277/0001-56, com sede na Rua Barão do Serro Azul, nº 198, 5º
-        andar, Centro, Curitiba/PR, doravante denominada{' '}
-        <strong>GESTORA</strong>, e, de outro lado, a{' '}
-        <strong>CONTRATANTE</strong>, pessoa jurídica que realiza cadastro e
-        contratação da plataforma mediante aceite eletrônico, têm entre si
-        justo e acordado o presente contrato, que se regerá pelas cláusulas
-        seguintes:
+        jurídica de direito privado, inscrita no CNPJ sob nº 21.020.277/0001-56,
+        com sede na Rua Barão do Serro Azul, nº 198, 5º andar, Centro,
+        Curitiba/PR, doravante denominada <strong>GESTORA</strong>, e, de outro
+        lado, a <strong>CONTRATANTE</strong>, pessoa jurídica que realiza
+        cadastro e contratação da plataforma mediante aceite eletrônico, têm
+        entre si justo e acordado o presente contrato, que se regerá pelas
+        cláusulas seguintes:
       </p>
 
       <hr />
@@ -38,9 +37,9 @@ export function SecaoIdentificacao() {
       </p>
       <p>
         <strong>Parágrafo único.</strong> A ferramenta possui finalidade
-        exclusivamente organizacional, estatística e preventiva, em
-        conformidade com as diretrizes da Norma Regulamentadora nº 1 (NR-1),
-        não possuindo caráter clínico ou assistencial.
+        exclusivamente organizacional, estatística e preventiva, em conformidade
+        com as diretrizes da Norma Regulamentadora nº 1 (NR-1), não possuindo
+        caráter clínico ou assistencial.
       </p>
 
       <hr />

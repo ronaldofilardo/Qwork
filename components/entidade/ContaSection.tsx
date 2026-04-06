@@ -5,6 +5,7 @@ import { Building2, Download } from 'lucide-react';
 import PagamentosFinanceiros from '@/components/shared/PagamentosFinanceiros';
 import PagamentosEmAberto from '@/components/shared/PagamentosEmAberto';
 import MiniDashboardFinanceiro from '@/components/shared/financeiro/MiniDashboardFinanceiro';
+import LogoUploader from '@/components/shared/LogoUploader';
 
 interface ContaSectionState {
   nome: string;
@@ -37,6 +38,8 @@ export default function EntidadeContaSection() {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [downloadingContrato, setDownloadingContrato] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   const handleBaixarContrato = async () => {
     try {
@@ -65,15 +68,19 @@ export default function EntidadeContaSection() {
 
   const loadAccountInfo = useCallback(async () => {
     try {
-      const res = await fetch(`/api/entidade/account-info?_=${Date.now()}`);
-      if (res.ok) {
-        const data = await res.json();
+      const [infoRes, logoRes] = await Promise.all([
+        fetch(`/api/entidade/account-info?_=${Date.now()}`),
+        fetch('/api/entidade/logo'),
+      ]);
+
+      if (infoRes.ok) {
+        const data = await infoRes.json();
         setAccountInfo(data);
         setOrgInfo({ nome: data.nome, cnpj: data.cnpj });
         setErrorMessage(null);
       } else {
         try {
-          const err = await res.json();
+          const err = await infoRes.json();
           setErrorMessage(
             err?.error || 'Erro ao carregar informações da conta'
           );
@@ -81,11 +88,56 @@ export default function EntidadeContaSection() {
           setErrorMessage('Erro ao carregar informações da conta');
         }
       }
+
+      if (logoRes.ok) {
+        const logoData = await logoRes.json();
+        setLogoUrl(logoData.logo_url ?? null);
+      }
     } catch (error) {
       console.error('Erro ao carregar informações da conta:', error);
       setErrorMessage('Erro ao carregar informações da conta');
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  const handleSaveLogo = useCallback(
+    async (base64: string, mimeType: string) => {
+      setIsSavingLogo(true);
+      try {
+        const res = await fetch('/api/entidade/logo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ logo_base64: base64, mime_type: mimeType }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err?.error || 'Erro ao salvar logo');
+        }
+        const data = await res.json();
+        setLogoUrl(data.logo_url ?? null);
+      } finally {
+        setIsSavingLogo(false);
+      }
+    },
+    []
+  );
+
+  const handleRemoveLogo = useCallback(async () => {
+    setIsSavingLogo(true);
+    try {
+      const res = await fetch('/api/entidade/logo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ logo_base64: '' }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err?.error || 'Erro ao remover logo');
+      }
+      setLogoUrl(null);
+    } finally {
+      setIsSavingLogo(false);
     }
   }, []);
 
@@ -271,6 +323,17 @@ export default function EntidadeContaSection() {
 
         {/* Pagamentos em Aberto */}
         <PagamentosEmAberto apiUrl="/api/entidade/pagamentos-em-aberto" />
+
+        {/* Logo da Organização */}
+        {accountInfo && (
+          <LogoUploader
+            currentLogoUrl={logoUrl}
+            orgName={accountInfo.nome}
+            onSave={handleSaveLogo}
+            onRemove={handleRemoveLogo}
+            isSaving={isSavingLogo}
+          />
+        )}
 
         {/* Mini-Dashboard Financeiro */}
         <MiniDashboardFinanceiro apiUrl="/api/entidade/financeiro-resumo" />

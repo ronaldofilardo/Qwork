@@ -42,11 +42,6 @@ export async function verificarEConcluirAvaliacao(
   const totalRespostas = parseInt(
     (countResult.rows[0]?.total as string) || '0'
   );
-  if (totalRespostas === 1 || totalRespostas >= 37) {
-    console.log(
-      `[AUTO-CONCLUSÃO] Avaliação ${avaliacaoId} tem ${totalRespostas} respostas únicas`
-    );
-  }
 
   // Se não completou 37 respostas, retornar sem fazer nada
   if (totalRespostas < 37) {
@@ -147,12 +142,9 @@ export async function verificarEConcluirAvaliacao(
       }
 
       console.log(`[AUTO-CONCLUSÃO] ✅ Resultados calculados e salvos`);
-    } catch (resultError) {
-      console.error(
-        `[AUTO-CONCLUSÃO] ⚠️ Erro ao calcular resultados, mas continuando conclusão:`,
-        resultError
-      );
-      // Não bloquear a conclusão da avaliação por erro no cálculo
+    } catch {
+      // Erro ao calcular resultados, mas continua a conclusão da avaliação
+      // Log removido para evitar sobrecarga (demanda 2-36)
     }
 
     // Marcar como concluído (SEMPRE executar, mesmo se houver erro nos resultados)
@@ -182,7 +174,7 @@ export async function verificarEConcluirAvaliacao(
     );
 
     if (loteResult.rows.length > 0) {
-      const { lote_id, numero_ordem } = loteResult.rows[0];
+      const { numero_ordem } = loteResult.rows[0];
 
       // Atualizar índice do funcionário
       await queryTx(
@@ -191,15 +183,9 @@ export async function verificarEConcluirAvaliacao(
          WHERE cpf = $2`,
         [numero_ordem, funcionarioCpf]
       );
-
-      console.log(
-        `[AUTO-CONCLUSÃO] ✅ Funcionário atualizado | Lote ${String(lote_id)} será recalculado automaticamente`
-      );
     }
 
-    console.log(
-      `[AUTO-CONCLUSÃO] ✅ Avaliação ${avaliacaoId} marcada como concluída dentro da transação`
-    );
+    // Avaliação marcada como concluída dentro da transação (log removido)
   });
 
   // Chamar recalcularStatusLote APÓS a transação de conclusão
@@ -216,7 +202,6 @@ export async function verificarEConcluirAvaliacao(
   if (loteResult.rows.length > 0) {
     loteId = loteResult.rows[0].lote_id as number;
     await recalcularStatusLote(avaliacaoId);
-    console.log(`[AUTO-CONCLUSÃO] ✅ Lote ${loteId} recalculado`);
   }
 
   console.log(

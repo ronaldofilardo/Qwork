@@ -226,7 +226,7 @@ describe('GET /api/suporte/pre-cadastro', () => {
       // Com novo UNION ALL, o param 'todos' é sempre passado e o filtro
       // usa ($1 = 'todos' OR t.tipo = $1) ao invés de omitir o filtro
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('$1 = \'todos\' OR t.tipo = $1'),
+        expect.stringContaining("$1 = 'todos' OR t.tipo = $1"),
         ['todos']
       );
     });
