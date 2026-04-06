@@ -184,4 +184,26 @@ describe('AvaliacaoConcluidaPage - Recibo de Conclusão', () => {
       );
     });
   });
+
+  it('deve exibir logo QWork no FINAL (após mensagem de segurança)', async () => {
+    render(<AvaliacaoConcluidaPage />);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(/Suas respostas foram salvas com segurança/i)
+      ).toBeInTheDocument();
+    });
+
+    const qworkLogo = screen.getByTestId('qwork-logo');
+    const securityMsg = screen.getByText(/Suas respostas foram salvas com segurança/i);
+
+    // Verifica que ambos existem
+    expect(qworkLogo).toBeInTheDocument();
+    expect(securityMsg).toBeInTheDocument();
+
+    // Verifica que o logo vem após a mensagem na árvore do DOM
+    const logoPosicao = qworkLogo.compareDocumentPosition(securityMsg);
+    // DOCUMENT_POSITION_PRECEDING (2) significa que securityMsg vem antes
+    expect(logoPosicao & 2).toBe(2);
+  });
 });

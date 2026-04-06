@@ -118,11 +118,6 @@ export default function AvaliacaoConcluidaPage() {
             </div>
           )}
 
-          {/* Logo QWork triplicado (sem slogan) */}
-          <div className="mb-6">
-            <QworkLogo size="3xl" showSlogan={false} />
-          </div>
-
           {/* Checkmark verde */}
           <div className="mb-6 sm:mb-8">
             <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-success rounded-full flex items-center justify-center">
@@ -204,6 +199,11 @@ export default function AvaliacaoConcluidaPage() {
           <p className="text-xs sm:text-sm text-blue-600 mt-4">
             🔒 Suas respostas foram salvas com segurança
           </p>
+
+          {/* Logo QWork triplicado (sem slogan) - final */}
+          <div className="mt-8 pt-8 border-t border-gray-200">
+            <QworkLogo size="3xl" showSlogan={false} />
+          </div>
         </div>
       </div>
     </div>
