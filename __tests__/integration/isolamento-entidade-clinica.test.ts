@@ -18,13 +18,13 @@ describe('Isolamento: Funcionários Entidade vs Clínica', () => {
       `INSERT INTO tomadors (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado
+        ativa
       ) VALUES (
         'entidade', 'Entidade Teste Isolamento', '55666777000188',
         'isolamento@entidade.com', '1199998888', 'Rua Ent 123',
         'São Paulo', 'SP', '01000-000',
         'Resp Ent', '88877766655', 'resp@ent.com', '11988887777',
-        true, true
+        true
       ) RETURNING id`,
       []
     );

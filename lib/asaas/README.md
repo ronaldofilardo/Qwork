@@ -227,7 +227,7 @@ interface AsaasWebhookPayload {
 
 - [Documentação Asaas](https://docs.asaas.com)
 - [API Reference](https://asaasv3.docs.apiary.io)
-- [Guia Completo](../docs/ASAAS_SETUP_GUIDE.md)
+- [Guia Completo](../docs/guides/ASAAS_SETUP_GUIDE.md)
 
 ## 🧪 Testes
 

@@ -252,7 +252,12 @@ export async function GET() {
     y += 8;
 
     writeText(
-      'CONTRATADA: MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA., pessoa jurídica de direito privado, inscrita no CNPJ sob nº 21.020.277/0001-56, com sede na Rua Barão do Serro Azul, nº 198, 5º andar, Centro, Curitiba/PR.',
+      'CONTRATADA: QWORK TECNOLOGIA E GESTÃO DE RISCOS LTDA, pessoa jurídica de direito privado, inscrita no CNPJ sob nº [●], com sede em [●], doravante denominada CONTRATADA.',
+      10,
+      true
+    );
+    writeText(
+      'GESTORA (interveniente): MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA, inscrita no CNPJ sob nº 21.020.277/0001-56, com sede na Rua Barão do Serro Azul, nº 198, 5º andar, Centro, Curitiba/PR, doravante denominada GESTORA.',
       10,
       true
     );
@@ -268,91 +273,123 @@ export async function GET() {
       const cleanContent = contrato.conteudo.replace(/<[^>]*>?/gm, '');
       writeText(cleanContent, 10, false, 'justify');
     } else {
-      writeText('CLÁUSULA 1 – OBJETO', 11, true);
+      writeText('CLÁUSULA 1 – DO OBJETO', 11, true);
       writeText(
-        'O presente contrato tem por objeto a disponibilização da plataforma digital QWORK, destinada à aplicação de questionário estruturado de avaliação psicossocial organizacional e geração de relatório analítico consolidado voltado à gestão preventiva de riscos psicossociais no ambiente de trabalho.',
+        'O presente contrato tem por objeto a disponibilização da plataforma digital QWORK, destinada à aplicação de questionário estruturado de avaliação psicossocial organizacional, com posterior geração de relatório analítico consolidado, voltado à gestão preventiva de riscos psicossociais no ambiente de trabalho.',
         10,
         false,
         'justify'
       );
       writeText(
-        'Parágrafo único. A ferramenta possui finalidade exclusivamente organizacional, estatística e preventiva, sendo utilizada como instrumento de apoio à gestão de riscos psicossociais, em conformidade com as diretrizes da Norma Regulamentadora nº 1 (NR-1).',
-        10,
-        false,
-        'justify'
-      );
-
-      writeText('CLÁUSULA 2 – NATUREZA DO SERVIÇO', 11, true);
-      writeText(
-        'A CONTRATANTE declara estar ciente de que: I – a plataforma não realiza diagnóstico psicológico ou psiquiátrico individual; II – não realiza atendimento clínico ou terapêutico; III – não substitui avaliação médica ou psicológica; IV – o relatório gerado possui natureza exclusivamente organizacional e coletiva.',
+        'Parágrafo único. A ferramenta possui finalidade exclusivamente organizacional, estatística e preventiva, em conformidade com as diretrizes da Norma Regulamentadora nº 1 (NR-1), não possuindo caráter clínico ou assistencial.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 3 – FUNCIONAMENTO DA PLATAFORMA', 11, true);
+      writeText('CLÁUSULA 2 – DA NATUREZA DO SERVIÇO', 11, true);
       writeText(
-        'A utilização da plataforma ocorrerá mediante: I – cadastro da empresa tomadora; II – inclusão de colaboradores pela própria empresa; III – acesso individual dos colaboradores mediante autenticação por CPF e data de nascimento; IV – preenchimento do questionário psicossocial; V – geração de relatório organizacional consolidado.',
+        'A CONTRATANTE declara ciência de que: I – a plataforma não realiza diagnóstico psicológico ou psiquiátrico individual; II – não realiza atendimento clínico, terapêutico ou médico; III – não substitui avaliação profissional individualizada; IV – os relatórios gerados possuem natureza exclusivamente organizacional, coletiva e estatística.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 4 – RESPONSABILIDADES DA CONTRATANTE', 11, true);
+      writeText('CLÁUSULA 3 – DO FUNCIONAMENTO DA PLATAFORMA', 11, true);
       writeText(
-        'Compete à CONTRATANTE: I – fornecer dados corretos de seus colaboradores; II – informar os colaboradores sobre a finalidade da avaliação; III – garantir que o acesso seja realizado pelo próprio colaborador; IV – utilizar os relatórios exclusivamente para fins organizacionais e preventivos.',
+        'A utilização da plataforma ocorrerá mediante: I – cadastro da empresa CONTRATANTE; II – inclusão dos colaboradores pela própria CONTRATANTE; III – acesso individual mediante autenticação por CPF e data de nascimento; IV – preenchimento do questionário psicossocial; V – consolidação e tratamento dos dados coletados.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 5 – RESPONSABILIDADES DA QWORK', 11, true);
+      writeText('CLÁUSULA 4 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO', 11, true);
       writeText(
-        'Compete à QWORK: I – manter a plataforma em funcionamento; II – garantir medidas técnicas razoáveis de segurança da informação; III – gerar relatório organizacional consolidado com base nas respostas coletadas; IV – tratar os dados conforme a legislação aplicável.',
+        'A CONTRATANTE declara ciência de que a geração do relatório organizacional consolidado está condicionada à participação mínima de 70% (setenta por cento) dos colaboradores cadastrados.',
+        10,
+        false,
+        'justify'
+      );
+      writeText(
+        'Parágrafo primeiro. O percentual mínimo estabelecido visa garantir consistência estatística e validade técnica dos dados. Parágrafo segundo. O faturamento será realizado com base na totalidade dos colaboradores cadastrados, independentemente do percentual de adesão efetivamente atingido. Parágrafo terceiro. A não obtenção do percentual mínimo de adesão não configura inadimplemento da CONTRATADA. Parágrafo quarto. Compete exclusivamente à CONTRATANTE promover o engajamento dos colaboradores.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 6 – LIMITAÇÃO DE RESPONSABILIDADE', 11, true);
+      writeText('CLÁUSULA 5 – DAS RESPONSABILIDADES DA CONTRATANTE', 11, true);
       writeText(
-        'A QWORK não se responsabiliza por: I – decisões administrativas tomadas pela empresa com base nos relatórios; II – dados incorretos fornecidos pela empresa ou pelos colaboradores; III – utilização inadequada das informações geradas pela plataforma.',
+        'Compete à CONTRATANTE: I – fornecer dados corretos e atualizados; II – comunicar adequadamente seus colaboradores; III – garantir autenticidade das respostas; IV – utilizar os relatórios exclusivamente para fins organizacionais; V – adotar medidas internas decorrentes da análise dos resultados.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 7 – PROTEÇÃO DE DADOS (LGPD)', 11, true);
+      writeText('CLÁUSULA 6 – DAS RESPONSABILIDADES DA QWORK', 11, true);
       writeText(
-        'O tratamento de dados observará a Lei nº 13.709/2018 (LGPD).',
-        10,
-        false,
-        'justify'
-      );
-      writeText(
-        'Parágrafo primeiro. A empresa tomadora atua como Controladora dos dados pessoais de seus colaboradores.',
-        10,
-        false,
-        'justify'
-      );
-      writeText(
-        'Parágrafo segundo. A QWORK atua como Operadora da plataforma tecnológica, realizando o tratamento de dados conforme instruções da empresa tomadora.',
+        'Compete à CONTRATADA: I – disponibilizar a plataforma em funcionamento regular; II – adotar medidas técnicas razoáveis de segurança da informação; III – processar os dados e gerar relatório consolidado; IV – observar a legislação aplicável.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 8 – ACEITE ELETRÔNICO', 11, true);
+      writeText('CLÁUSULA 7 – DA LIMITAÇÃO DE RESPONSABILIDADE', 11, true);
       writeText(
-        'O presente contrato é considerado aceito eletronicamente no momento do primeiro acesso do gestor da empresa tomadora à plataforma, conforme registros de IP e timestamp detalhados na Folha de Rosto deste documento.',
+        'A QWORK não se responsabiliza por: I – decisões administrativas da CONTRATANTE; II – dados incorretos fornecidos; III – uso inadequado das informações; IV – ausência de adesão dos colaboradores; V – resultados interpretativos adotados pela CONTRATANTE.',
         10,
         false,
         'justify'
       );
 
-      writeText('CLÁUSULA 9 – FORO', 11, true);
+      writeText('CLÁUSULA 8 – DA GESTÃO OPERACIONAL E COMERCIAL', 11, true);
       writeText(
-        'Fica eleito o foro da Comarca de Curitiba/PR para dirimir quaisquer dúvidas oriundas deste instrumento.',
+        'A CONTRATANTE declara ciência de que a gestão operacional, comercial e administrativa da plataforma poderá ser realizada pela empresa MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA, integrante do mesmo grupo econômico da CONTRATADA, sem que isso implique transferência de responsabilidade técnica ou jurídica pela prestação do serviço.',
+        10,
+        false,
+        'justify'
+      );
+
+      writeText('CLÁUSULA 9 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA DAS INFORMAÇÕES', 11, true);
+      writeText(
+        'A CONTRATANTE declara, para todos os fins, que atua na condição de Controladora dos dados pessoais de seus colaboradores, sendo integralmente responsável pela coleta, base legal, veracidade, legitimidade e segurança das informações inseridas na plataforma.',
+        10,
+        false,
+        'justify'
+      );
+      writeText(
+        'Parágrafo primeiro. Compete exclusivamente à CONTRATANTE adotar medidas administrativas, técnicas e organizacionais adequadas para garantir a proteção dos dados pessoais sob sua responsabilidade. Parágrafo segundo. A CONTRATADA não será responsável por incidentes de segurança que decorram de falha ou descumprimento das obrigações legais por parte da CONTRATANTE. Parágrafo terceiro. A CONTRATANTE se responsabiliza integralmente por quaisquer danos decorrentes do tratamento indevido dos dados sob sua responsabilidade. Parágrafo quarto. A CONTRATADA compromete-se a adotar medidas técnicas razoáveis de segurança da informação, limitadas à sua atuação como operadora, nos termos da Lei nº 13.709/2018.',
+        10,
+        false,
+        'justify'
+      );
+
+      writeText('CLÁUSULA 10 – DA NATUREZA JURÍDICA', 11, true);
+      writeText(
+        'O presente contrato possui natureza estritamente civil, inexistindo vínculo trabalhista, societário ou de representação entre as partes.',
+        10,
+        false,
+        'justify'
+      );
+
+      writeText('CLÁUSULA 11 – DO ACEITE ELETRÔNICO', 11, true);
+      writeText(
+        'O presente contrato será considerado integralmente aceito no momento do primeiro acesso à plataforma.',
+        10,
+        false,
+        'justify'
+      );
+
+      writeText('CLÁUSULA 12 – DA ASSINATURA DIGITAL', 11, true);
+      writeText(
+        'As partes reconhecem como válida a assinatura eletrônica, nos termos da MP nº 2.200-2/2001 e Lei nº 14.063/2020.',
+        10,
+        false,
+        'justify'
+      );
+
+      writeText('CLÁUSULA 13 – DO FORO', 11, true);
+      writeText(
+        'Fica eleito o foro da comarca de Curitiba/PR, com renúncia expressa de qualquer outro, por mais privilegiado que seja.',
         10,
         false,
         'justify'

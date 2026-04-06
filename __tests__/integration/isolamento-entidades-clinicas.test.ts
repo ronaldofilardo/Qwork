@@ -40,11 +40,11 @@ describe('Isolamento: Entidades vs Clínicas', () => {
       `INSERT INTO entidades (
         tipo, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
         responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular,
-        ativa, pagamento_confirmado, status
+        ativa, status
       ) VALUES (
         'entidade', $1, $2, $3, '1199999999', 'Rua Entidade', 'São Paulo', 'SP', '01234567',
         'Resp Entidade', '11111111111', $4, '11988888888',
-        true, true, 'ativa'
+        true, 'ativa'
       ) RETURNING id`,
       [
         `Entidade Isolamento ${timestamp}`,
@@ -215,9 +215,7 @@ describe('Isolamento: Entidades vs Clínicas', () => {
       await query('DELETE FROM clinicas WHERE id = $1', [clinicaId]);
     }
     if (tomadorClinicaId) {
-      await query('DELETE FROM tomadors WHERE id = $1', [
-        tomadorClinicaId,
-      ]);
+      await query('DELETE FROM tomadors WHERE id = $1', [tomadorClinicaId]);
     }
 
     // Limpeza Entidade

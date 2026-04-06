@@ -51,12 +51,11 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
   test('inserir emissor com CPF de gestor deve falhar', async () => {
     // Criar tomador do tipo entidade e registrar senha (gestor)
     const res = await query(
-      'INSERT INTO tomadors (cnpj, nome, tipo, ativa, pagamento_confirmado, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15) RETURNING id',
+      'INSERT INTO tomadors (cnpj, nome, tipo, ativa, email, telefone, endereco, cidade, estado, cep, responsavel_nome, responsavel_cpf, responsavel_email, responsavel_celular) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id',
       [
         '11111111111111',
         'Entidade Teste',
         'entidade',
-        true,
         true,
         'entidade.test@local',
         '11999999999',
@@ -118,14 +117,13 @@ describe('DB constraints: Gestor Entidade / Emissor conflicts', () => {
     const responsavelCpf = '77766655544';
 
     const res = await query(
-      'INSERT INTO tomadors (cnpj, nome, email, telefone, tipo, ativa, pagamento_confirmado, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id',
+      'INSERT INTO tomadors (cnpj, nome, email, telefone, tipo, ativa, endereco, cidade, estado, cep, responsavel_cpf, responsavel_nome, responsavel_email, responsavel_celular) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING id',
       [
         cnpj,
         'Entidade CriarConta Test',
         'entidade.criarconta@local',
         '11911112222',
         'entidade',
-        true,
         true,
         'Rua Responsavel, 45',
         'Rio de Janeiro',

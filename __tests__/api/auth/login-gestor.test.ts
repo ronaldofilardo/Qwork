@@ -59,7 +59,6 @@ describe('/api/auth/login - gestor entidade', () => {
           nome: 'Gestor Entidade',
           tipo: 'entidade',
           ativa: true,
-          pagamento_confirmado: true,
         },
       ],
     });

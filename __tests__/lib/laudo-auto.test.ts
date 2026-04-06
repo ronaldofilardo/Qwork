@@ -68,7 +68,9 @@ jest.mock('@/lib/laudo-calculos', () => ({
 }));
 
 jest.mock('@/lib/templates/laudo-html', () => ({
-  gerarHTMLLaudoCompleto: jest.fn().mockReturnValue('<html>Mock PDF HTML</html>'),
+  gerarHTMLLaudoCompleto: jest
+    .fn()
+    .mockReturnValue('<html>Mock PDF HTML</html>'),
 }));
 
 jest.mock('@/lib/infrastructure/pdf/generators/pdf-generator', () => ({
@@ -84,7 +86,11 @@ jest.mock('@/lib/infrastructure/pdf/generators/pdf-generator', () => ({
 }));
 
 jest.mock('@/lib/storage/backblaze-client', () => ({
-  getPresignedUrl: jest.fn().mockResolvedValue('https://s3.us-east-005.backblazeb2.com/laudos-qwork/test.pdf'),
+  getPresignedUrl: jest
+    .fn()
+    .mockResolvedValue(
+      'https://s3.us-east-005.backblazeb2.com/laudos-qwork/test.pdf'
+    ),
 }));
 
 const mockQuery = query as jest.MockedFunction<typeof query>;
@@ -213,10 +219,17 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // check
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT
-        .mockResolvedValueOnce({ rows: [{ observacoes: '' }], rowCount: 1 } as any) // SELECT obs
+        .mockResolvedValueOnce({
+          rows: [{ observacoes: '' }],
+          rowCount: 1,
+        } as any) // SELECT obs
         .mockResolvedValueOnce({ rows: [{ id: 42 }], rowCount: 1 } as any); // UPDATE emitido
 
-      const result = await gerarLaudoCompletoEmitirPDF(42, mockEmissorCpf, mockSession);
+      const result = await gerarLaudoCompletoEmitirPDF(
+        42,
+        mockEmissorCpf,
+        mockSession
+      );
 
       expect(result).toBe(42);
     });
@@ -225,7 +238,10 @@ describe('lib/laudo-auto - gerarLaudoCompletoEmitirPDF', () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any) // check
         .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // INSERT
-        .mockResolvedValueOnce({ rows: [{ observacoes: '' }], rowCount: 1 } as any) // SELECT obs
+        .mockResolvedValueOnce({
+          rows: [{ observacoes: '' }],
+          rowCount: 1,
+        } as any) // SELECT obs
         .mockResolvedValueOnce({ rows: [], rowCount: 0 } as any); // UPDATE retorna 0 rows
 
       await expect(

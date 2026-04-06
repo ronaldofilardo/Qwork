@@ -95,40 +95,37 @@ describe('Migration 1008 - API Corrections', () => {
     });
   });
 
-  describe('Notificações - Compatibilidade COALESCE', () => {
-    it('deve usar COALESCE(entidade_id, contratante_id) para DEV e PROD', () => {
-      // CORREÇÃO: Compatibilidade com ambos os campos
+  describe('Notificações - Filtro por entidade_id', () => {
+    it('deve usar entidade_id para filtrar lotes', () => {
       const query = `
         SELECT la.id
         FROM lotes_avaliacao la
-        WHERE COALESCE(la.entidade_id, la.contratante_id) = $1
+        WHERE la.entidade_id = $1
       `;
 
-      expect(query).toContain('COALESCE');
       expect(query).toContain('entidade_id');
-      expect(query).toContain('contratante_id');
     });
 
-    it('deve filtrar lotes concluidos utilizando COALESCE', () => {
+    it('deve filtrar lotes concluidos utilizando entidade_id', () => {
       const query = `
         SELECT * FROM lotes_avaliacao
-        WHERE COALESCE(entidade_id, contratante_id) = $1
+        WHERE entidade_id = $1
           AND status = 'ativo'
       `;
 
-      expect(query).toContain('COALESCE(entidade_id, contratante_id)');
+      expect(query).toContain('entidade_id = $1');
     });
   });
 
   describe('Reset Avaliação - Validação de Lote', () => {
-    it('deve usar COALESCE para buscar entidade_id do lote', () => {
+    it('deve usar entidade_id para buscar entidade do lote', () => {
       const query = `
-        SELECT COALESCE(la.entidade_id, la.contratante_id) as entidade_id
+        SELECT la.entidade_id
         FROM lotes_avaliacao la
         WHERE la.id = $1
       `;
 
-      expect(query).toContain('COALESCE(la.entidade_id, la.contratante_id)');
+      expect(query).toContain('la.entidade_id');
     });
 
     it('deve validar se entidade_sessão match com entidade_lote', () => {
@@ -190,23 +187,12 @@ describe('Migration 1008 - API Corrections', () => {
       expect(invalida).toBe(true); // Será rejeitado pela constraint
     });
 
-    it('deve ter trigger para sincronizar entidade_id <-> contratante_id', () => {
-      // TRIGGER: sync_entidade_contratante_id()
-      // Se entidade_id é preenchido, copia para contratante_id
-      // Se contratante_id é preenchido, copia para entidade_id
-
+    it('deve ter trigger para sincronizar entidade_id', () => {
       const novoLote = {
         entidade_id: 5,
-        contratante_id: null,
       };
 
-      // Após INSERT, trigger sincroniza:
-      const loteAposTrigger = {
-        ...novoLote,
-        contratante_id: 5, // Copiado do entidade_id
-      };
-
-      expect(loteAposTrigger.entidade_id).toBe(loteAposTrigger.contratante_id);
+      expect(novoLote.entidade_id).toBe(5);
     });
   });
 
@@ -227,37 +213,13 @@ describe('Migration 1008 - API Corrections', () => {
     });
   });
 
-  describe('Backward Compatibility - DEV vs PROD', () => {
-    it('deve funcionar quando APENAS entidade_id está preenchido (DEV)', () => {
-      const lote_dev = {
+  describe('Backward Compatibility', () => {
+    it('deve funcionar quando entidade_id está preenchido', () => {
+      const lote = {
         entidade_id: 3,
-        contratante_id: null,
       };
 
-      const coalesceResult = lote_dev.entidade_id || lote_dev.contratante_id;
-      expect(coalesceResult).toBe(3);
-    });
-
-    it('deve funcionar quando APENAS contratante_id está preenchido (PROD antigo)', () => {
-      const lote_prod_antigo = {
-        entidade_id: null,
-        contratante_id: 2,
-      };
-
-      const coalesceResult =
-        lote_prod_antigo.entidade_id || lote_prod_antigo.contratante_id;
-      expect(coalesceResult).toBe(2);
-    });
-
-    it('deve funcionar quando AMBOS estão preenchidos (pós-trigger)', () => {
-      const lote_sincronizado = {
-        entidade_id: 4,
-        contratante_id: 4,
-      };
-
-      const coalesceResult =
-        lote_sincronizado.entidade_id || lote_sincronizado.contratante_id;
-      expect(coalesceResult).toBe(4);
+      expect(lote.entidade_id).toBe(3);
     });
   });
 

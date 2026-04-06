@@ -36,7 +36,6 @@ export interface CreatetomadorOptions {
 
 export interface CreateContratoOptions {
   tomador_id: number;
-  plano_id?: number;
   numero_funcionarios?: number;
   valor_total?: number;
   status?:
@@ -159,7 +158,6 @@ export async function createTestContrato(
   const conteudoDefault =
     options.conteudo_gerado || 'Contrato de teste gerado automaticamente';
   const defaults = {
-    plano_id: options.plano_id || 1,
     numero_funcionarios: options.numero_funcionarios || 10,
     valor_total: options.valor_total || 200.0,
     conteudo: conteudoDefault,
@@ -167,12 +165,11 @@ export async function createTestContrato(
   };
 
   const result = await query(
-    `INSERT INTO contratos (tomador_id, plano_id, numero_funcionarios, valor_total, conteudo, conteudo_gerado)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO contratos (tomador_id, numero_funcionarios, valor_total, conteudo, conteudo_gerado)
+     VALUES ($1, $2, $3, $4, $5)
      RETURNING id`,
     [
       options.tomador_id,
-      defaults.plano_id,
       defaults.numero_funcionarios,
       defaults.valor_total,
       defaults.conteudo,

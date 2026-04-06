@@ -1,0 +1,4 @@
+id,name,resource,action,description,created_at
+1,manage:rh,rh,manage,Gerenciar cadastro de usu├írios RH,2026-02-09 20:16:00.131613
+2,manage:clinicas,clinicas,manage,Gerenciar cadastro de cl├¡nicas,2026-02-09 20:16:00.131613
+3,manage:admins,admins,manage,Gerenciar cadastro de outros administradores,2026-02-09 20:16:00.131613

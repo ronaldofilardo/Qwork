@@ -76,7 +76,6 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
                 senha_hash: 'hashed_password',
                 entidade_id: 1,
                 ativa: true,
-                pagamento_confirmado: true,
               },
             ],
             rowCount: 1,
@@ -189,7 +188,6 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
                 senha_hash: 'hashed_password',
                 entidade_id: 1,
                 ativa: true,
-                pagamento_confirmado: true,
               },
             ],
             rowCount: 1,
@@ -248,7 +246,6 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
                 senha_hash: 'hashed_password',
                 entidade_id: 1,
                 ativa: false, // Entidade inativa
-                pagamento_confirmado: true,
               },
             ],
             rowCount: 1,
@@ -305,7 +302,6 @@ describe('Autenticação de Clínica - Perfil RH (Nova Arquitetura)', () => {
                 senha_hash: 'hashed_password',
                 entidade_id: 1,
                 ativa: true,
-                pagamento_confirmado: false, // Pagamento não confirmado
               },
             ],
             rowCount: 1,

@@ -38,9 +38,7 @@ describe('Correções 05/04/2026 — Remoção de data_liberacao_login do pagame
     });
 
     it('não contém pagamento_confirmado em UPDATE SET', () => {
-      expect(content).not.toContain(
-        "SET pagamento_confirmado"
-      );
+      expect(content).not.toContain('SET pagamento_confirmado');
       // Aceita comentários sobre a remoção, mas não SQL ativo
       const lines = content.split('\n');
       const sqlLines = lines.filter(
@@ -155,7 +153,7 @@ describe('Correções 05/04/2026 — Remoção de data_liberacao_login do pagame
           const activeSqlLines = lines.filter(
             (line) =>
               line.includes('data_liberacao_login') &&
-              !line.trim().startsWith('//')  &&
+              !line.trim().startsWith('//') &&
               !line.trim().startsWith('*')
           );
           if (activeSqlLines.length > 0) {
@@ -183,9 +181,11 @@ describe('Correções 05/04/2026 — Remoção de data_liberacao_login do pagame
     });
 
     it('arquivo v5 existe', () => {
-      expect(fs.existsSync(path.join(ROOT, 'scripts/apply-migrations-staging-v5.ps1'))).toBe(
-        true
-      );
+      expect(
+        fs.existsSync(
+          path.join(ROOT, 'scripts/apply-migrations-staging-v5.ps1')
+        )
+      ).toBe(true);
     });
 
     it('cobre migration 1137_remover_colunas_pagamento_cadastro.sql', () => {

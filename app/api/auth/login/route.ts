@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { query, getDatabaseInfo } from '@/lib/db';
 import { createSession } from '@/lib/session';
+import { validateDbEnvironmentAccess } from '@/lib/db/environment-guard';
 import bcrypt from 'bcryptjs';
 import {
   registrarAuditoria,
@@ -415,6 +416,19 @@ export async function POST(request: Request) {
 
     console.log(`[LOGIN] Sessão criada para ${perfil}`);
 
+    // Pré-verificar disponibilidade de ambientes para emissores
+    const environmentAvailability =
+      perfil === 'emissor'
+        ? {
+            development: validateDbEnvironmentAccess(
+              usuario.cpf,
+              'development'
+            ),
+            staging: validateDbEnvironmentAccess(usuario.cpf, 'staging'),
+            production: validateDbEnvironmentAccess(usuario.cpf, 'production'),
+          }
+        : undefined;
+
     // VERIFICAR ACEITE DE TERMOS (apenas para rh e gestor)
     let termosPendentes = {
       termos_uso: false,
@@ -474,6 +488,7 @@ export async function POST(request: Request) {
       data_nascimento: usuario.data_nascimento || null,
       termosPendentes,
       precisaTrocarSenha,
+      ...(environmentAvailability && { environmentAvailability }),
       redirectTo:
         perfil === 'admin'
           ? '/admin'

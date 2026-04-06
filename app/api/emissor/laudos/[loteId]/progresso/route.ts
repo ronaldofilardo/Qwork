@@ -55,7 +55,8 @@ export async function GET(
         LIMIT 1
       ) al ON true
       WHERE la.id = $1`,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (resultado.rows.length === 0) {

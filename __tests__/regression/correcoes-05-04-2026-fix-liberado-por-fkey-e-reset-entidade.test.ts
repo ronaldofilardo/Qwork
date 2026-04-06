@@ -82,7 +82,9 @@ describe('2. Route reset plural — sem contratante_id', () => {
   });
 
   it('NÃO usa COALESCE com contratante_id', () => {
-    expect(src).not.toMatch(/COALESCE\s*\(\s*la\.entidade_id\s*,\s*la\.contratante_id\s*\)/i);
+    expect(src).not.toMatch(
+      /COALESCE\s*\(\s*la\.entidade_id\s*,\s*la\.contratante_id\s*\)/i
+    );
   });
 
   it('usa la.entidade_id diretamente na query de verificação de posse', () => {
@@ -112,7 +114,9 @@ describe('3. Route reset singular — sem contratante_id', () => {
   });
 
   it('NÃO usa COALESCE com contratante_id', () => {
-    expect(src).not.toMatch(/COALESCE\s*\(\s*la\.entidade_id\s*,\s*la\.contratante_id\s*\)/i);
+    expect(src).not.toMatch(
+      /COALESCE\s*\(\s*la\.entidade_id\s*,\s*la\.contratante_id\s*\)/i
+    );
   });
 
   it('usa la.entidade_id diretamente no SELECT', () => {

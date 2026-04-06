@@ -56,9 +56,27 @@ O sistema agora separa claramente:
 
 ### 📚 Documentação Completa
 
-- [Guia de Contratação](docs/GUIA-CONTRATACAO.md) - Fluxo completo
-- [Separação Contrato/Recibo](docs/SEPARACAO-CONTRATO-RECIBO.md) - Documentação técnica (8000+ linhas)
-- [Resumo Executivo](docs/RESUMO-EXECUTIVO-RECIBOS.md) - Visão geral da implementação
+- [Fluxo de Contratação](guides/FLUXO-CONTRATACAO.md) - Fluxo completo (Contract-First)
+- [Fluxo de Cadastro de Tomadores](guides/FLUXO-CADASTRO-TOMADORES.md) - Plano Fixo e Personalizado
+
+### 📂 Índice de Documentação
+
+| Pasta                          | Conteúdo                                                  |
+| ------------------------------ | --------------------------------------------------------- |
+| [guides/](guides/)             | Guias de configuração, fluxos de negócio, troubleshooting |
+| [policies/](policies/)         | Políticas de banco, ambientes, testes, convenções         |
+| [security/](security/)         | Matriz de permissões, RBAC/RLS, validações                |
+| [architecture/](architecture/) | Decisões arquiteturais, modo emissor local                |
+| [specs/](specs/)               | Especificações de features (UX, componentes, testes)      |
+| [manuais/](manuais/)           | Manuais de usuário por perfil (emissor, RH, entidade)     |
+| [corrections/](corrections/)   | Correções implementadas e relatórios                      |
+| [testing/](testing/)           | Políticas de teste, mocks, guias de QA                    |
+| [reports/](reports/)           | Relatórios de auditoria e permissões                      |
+| [process/](process/)           | Fluxogramas, processos de deploy, otimizações             |
+| [checklists/](checklists/)     | Checklists de deploy e aprovação                          |
+| [issues/](issues/)             | Backlog de issues técnicas                                |
+| [law/](law/)                   | Contratos e termos legais                                 |
+| [archived/](archived/)         | Documentos históricos (PRs, deploys, correções antigas)   |
 
 ## 📋 Pré-requisitos
 

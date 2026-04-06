@@ -37,7 +37,6 @@ describe('API Recibo - POST /api/recibo/gerar', () => {
         {
           contrato_id: 1,
           tomador_id: 1,
-          plano_id: 1,
           contrato_valor_total: 15000.0,
           numero_funcionarios: 50,
           tomador_nome: 'Empresa XYZ',

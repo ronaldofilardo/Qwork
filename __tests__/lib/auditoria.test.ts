@@ -154,7 +154,6 @@ describe('Sistema de Auditoria', () => {
         oldData: { status: 'pago' },
         newData: {
           status: 'aprovado',
-          data_liberacao_login: new Date().toISOString(),
         },
         ipAddress: '10.0.0.1',
         userAgent: 'Chrome/120.0',
@@ -276,7 +275,6 @@ describe('Sistema de Auditoria', () => {
       // A implementação real está nas APIs
       const contratoData = {
         tomador_id: 50,
-        plano_id: 1,
       };
 
       const entry = {

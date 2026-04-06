@@ -9,7 +9,7 @@
  * - Validação de permissões via requireEntity() / requireClinica()
  * - Queries diretas sem queryWithContext()
  *
- * @see docs/ANALISE-CICLO-GESTOR-FUNCIONARIO.md
+ * @see docs/architecture/README.md
  */
 
 import { query } from './db';

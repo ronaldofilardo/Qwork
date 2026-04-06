@@ -38,7 +38,8 @@ export async function POST(
       FROM lotes_avaliacao
       WHERE id = $1
     `,
-      [loteId]
+      [loteId],
+      session ?? undefined
     );
 
     if (!loteResult.rows || loteResult.rows.length === 0) {
@@ -64,7 +65,8 @@ export async function POST(
       SELECT id FROM laudos 
       WHERE lote_id = $1 AND status = 'enviado'
     `,
-      [loteId]
+      [loteId],
+      session ?? undefined
     );
 
     if (laudoExistenteResult.rows && laudoExistenteResult.rows.length > 0) {
@@ -82,7 +84,8 @@ export async function POST(
       ORDER BY criado_em DESC
       LIMIT 1
     `,
-      [loteId]
+      [loteId],
+      session ?? undefined
     );
 
     if (filaResult.rows && filaResult.rows.length > 0) {
@@ -103,7 +106,8 @@ export async function POST(
       VALUES ($1, 'solicitar_emissao', 'reprocessando', 0, $2, 'emissor', NOW())
       RETURNING id
     `,
-      [loteId, session.cpf]
+      [loteId, session.cpf],
+      session ?? undefined
     );
 
     const filaItemId =
@@ -122,7 +126,8 @@ export async function POST(
         session.cpf,
         session.perfil,
         JSON.stringify({ lote_id: lote.id }),
-      ]
+      ],
+      session ?? undefined
     );
 
     console.log(

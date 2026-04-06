@@ -9,7 +9,7 @@
  * - Step 23: Banner visual de staging
  * - Step 24: Seed de dados sintéticos (guard LGPD)
  *
- * Referência: docs/ENVIRONMENTS.md
+ * Referência: docs/policies/ENVIRONMENTS.md
  * Status: CRÍTICO — Proteção LGPD e integridade de ambiente
  */
 

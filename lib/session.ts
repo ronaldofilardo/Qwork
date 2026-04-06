@@ -54,6 +54,9 @@ export interface Session {
   mfaVerified?: boolean; // Indica se MFA foi verificado
   lastRotation?: number; // Timestamp da última rotação
   rotationRequired?: boolean; // Indica que a rotação é necessária (persistir via Route Handler/Server Action)
+  // 'emissor' APENAS: ambiente de banco selecionado no login
+  // development = LOCAL_DATABASE_URL, staging = STAGING_DATABASE_URL, production = DATABASE_URL
+  dbEnvironment?: 'development' | 'staging' | 'production';
 }
 
 // Gerar token único para sessão

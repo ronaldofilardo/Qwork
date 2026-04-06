@@ -43,7 +43,9 @@ describe('ModalLinkPagamentoEmissao', () => {
 
   it('não deve renderizar quando isOpen=false', () => {
     render(<ModalLinkPagamentoEmissao {...defaultProps} isOpen={false} />);
-    expect(screen.queryByText('Link de Pagamento Gerado')).not.toBeInTheDocument();
+    expect(
+      screen.queryByText('Link de Pagamento Gerado')
+    ).not.toBeInTheDocument();
   });
 
   it('não deve exibir botão "Disponibilizar" quando onDisponibilizarLink não é passado', () => {
@@ -62,7 +64,9 @@ describe('ModalLinkPagamentoEmissao', () => {
       />
     );
     expect(
-      screen.getByRole('button', { name: /disponibilizar na conta do tomador/i })
+      screen.getByRole('button', {
+        name: /disponibilizar na conta do tomador/i,
+      })
     ).toBeInTheDocument();
   });
 
@@ -75,7 +79,9 @@ describe('ModalLinkPagamentoEmissao', () => {
       />
     );
     fireEvent.click(
-      screen.getByRole('button', { name: /disponibilizar na conta do tomador/i })
+      screen.getByRole('button', {
+        name: /disponibilizar na conta do tomador/i,
+      })
     );
     expect(onDisponibilizarLink).toHaveBeenCalledWith(42);
   });

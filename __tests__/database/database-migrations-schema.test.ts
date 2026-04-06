@@ -89,17 +89,11 @@ describe('Database Migrations - Validação de Schema', () => {
     });
   });
 
-  describe('Migration 100 - data_liberacao_login', () => {
-    it('deve ter coluna data_liberacao_login em tomadors', async () => {
+  describe('Migration 100/1137 - data_liberacao_login (removed)', () => {
+    it('deve NÃO ter coluna data_liberacao_login em tomadors (removida na migration 1137)', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [
-          {
-            column_name: 'data_liberacao_login',
-            data_type: 'timestamp without time zone',
-            is_nullable: 'YES',
-          },
-        ],
-        rowCount: 1,
+        rows: [],
+        rowCount: 0,
       } as any);
 
       const result = await query(`
@@ -108,14 +102,13 @@ describe('Database Migrations - Validação de Schema', () => {
         WHERE table_name = 'tomadors' AND column_name = 'data_liberacao_login'
       `);
 
-      expect(result.rows).toHaveLength(1);
-      expect(result.rows[0].data_type).toContain('timestamp');
+      expect(result.rows).toHaveLength(0);
     });
 
-    it('deve ter índice em data_liberacao_login', async () => {
+    it('deve NÃO ter índice em data_liberacao_login (removido na migration 1137)', async () => {
       mockQuery.mockResolvedValueOnce({
-        rows: [{ indexname: 'idx_tomadors_data_liberacao_login' }],
-        rowCount: 1,
+        rows: [],
+        rowCount: 0,
       } as any);
 
       const result = await query(`
@@ -125,7 +118,7 @@ describe('Database Migrations - Validação de Schema', () => {
           AND indexname = 'idx_tomadors_data_liberacao_login'
       `);
 
-      expect(result.rows).toHaveLength(1);
+      expect(result.rows).toHaveLength(0);
     });
   });
 

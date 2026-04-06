@@ -50,7 +50,8 @@ export const POST = async (
       WHERE la.id = $1 AND la.status != 'cancelado'
       GROUP BY la.id,  la.status, la.emissor_cpf
     `,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (loteCheck.rows.length === 0) {
@@ -96,7 +97,8 @@ export const POST = async (
     // Verificar se já existe laudo emitido ou enviado
     const laudoExistente = await query(
       `SELECT id, status, emitido_em FROM laudos WHERE lote_id = $1`,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (laudoExistente.rows.length > 0) {

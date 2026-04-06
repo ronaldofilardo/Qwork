@@ -25,7 +25,6 @@ describe('API Pagamento - Fluxo Tomador', () => {
       const payload = {
         tomador_id: 123,
         contrato_id: 1,
-        plano_id: 1,
       };
 
       expect(payload.tomador_id).toBeDefined();
@@ -39,7 +38,6 @@ describe('API Pagamento - Fluxo Tomador', () => {
             id: 123,
             nome: 'Empresa Teste',
             tipo: 'entidade',
-            plano_id: 1,
             status: 'aguardando_pagamento',
             numero_funcionarios_estimado: 50,
             plano_nome: 'Plano Pro',
@@ -151,7 +149,7 @@ describe('API Pagamento - Fluxo Tomador', () => {
         mockQuery.mockResolvedValueOnce({ rowCount: 1 });
 
         const result = await mockQuery(
-          'UPDATE entidades SET ativa = true, pagamento_confirmado = true WHERE id = $1',
+          'UPDATE entidades SET ativa = true WHERE id = $1',
           [tomadorId]
         );
 
@@ -168,7 +166,7 @@ describe('API Pagamento - Fluxo Tomador', () => {
         mockQuery.mockResolvedValueOnce({ rowCount: 1 });
 
         const result = await mockQuery(
-          'UPDATE clinicas SET ativa = true, pagamento_confirmado = true WHERE id = $1',
+          'UPDATE clinicas SET ativa = true WHERE id = $1',
           [tomadorId]
         );
 

@@ -239,7 +239,9 @@ export default function ModalLinkPagamentoEmissao({
               className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-60 disabled:cursor-not-allowed font-medium transition-colors"
             >
               <Send className="w-4 h-4" />
-              {isDisponibilizando ? 'Enviando...' : 'Disponibilizar na conta do tomador'}
+              {isDisponibilizando
+                ? 'Enviando...'
+                : 'Disponibilizar na conta do tomador'}
             </button>
           )}
 

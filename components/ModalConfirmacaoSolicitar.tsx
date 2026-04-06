@@ -144,9 +144,13 @@ export function ModalConfirmacaoSolicitar({
                 Dados da Clínica (Tomador)
               </p>
               <div>
-                <span className="text-sm font-semibold text-gray-900">{tomadorInfo.nome}</span>
+                <span className="text-sm font-semibold text-gray-900">
+                  {tomadorInfo.nome}
+                </span>
                 {tomadorInfo.cnpj && (
-                  <span className="ml-2 text-xs text-gray-500 font-mono">CNPJ: {tomadorInfo.cnpj}</span>
+                  <span className="ml-2 text-xs text-gray-500 font-mono">
+                    CNPJ: {tomadorInfo.cnpj}
+                  </span>
                 )}
               </div>
               {(tomadorInfo.endereco || tomadorInfo.cidade) && (
@@ -175,7 +179,9 @@ export function ModalConfirmacaoSolicitar({
                   {tomadorInfo.email && (
                     <div className="flex items-center gap-2 text-sm text-gray-700">
                       <span aria-hidden="true">📧</span>
-                      <span className="font-mono break-all">{tomadorInfo.email}</span>
+                      <span className="font-mono break-all">
+                        {tomadorInfo.email}
+                      </span>
                     </div>
                   )}
                 </div>
@@ -185,12 +191,18 @@ export function ModalConfirmacaoSolicitar({
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
                     Gestor Responsável
                   </p>
-                  <p className="text-sm font-medium text-gray-900">{tomadorInfo.responsavel_nome}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {tomadorInfo.responsavel_nome}
+                  </p>
                   {tomadorInfo.responsavel_cpf && (
-                    <p className="text-xs text-gray-600 font-mono">CPF: {tomadorInfo.responsavel_cpf}</p>
+                    <p className="text-xs text-gray-600 font-mono">
+                      CPF: {tomadorInfo.responsavel_cpf}
+                    </p>
                   )}
                   {tomadorInfo.responsavel_email && (
-                    <p className="text-xs text-gray-600 font-mono break-all">{tomadorInfo.responsavel_email}</p>
+                    <p className="text-xs text-gray-600 font-mono break-all">
+                      {tomadorInfo.responsavel_email}
+                    </p>
                   )}
                 </div>
               )}

@@ -1,6 +1,6 @@
 /**
  * @file __tests__/integration/entidade-lotes-contratante.integration.test.ts
- * Testes: Integração: Entidade Lotes com contratante_id
+ * Testes: Integração: Entidade Lotes com entidade_id
  */
 
 import { GET } from '@/app/api/entidade/lotes/route';
@@ -12,7 +12,7 @@ jest.mock('@/lib/session', () => ({
 
 const mockRequireEntity = require('@/lib/session').requireEntity;
 
-describe('Integração: Entidade Lotes com contratante_id', () => {
+describe('Integração: Entidade Lotes com entidade_id', () => {
   let entidadeId: number | null = null;
   let gestorCpf: string | null = null;
   let loteId: number | null = null;
@@ -52,14 +52,14 @@ describe('Integração: Entidade Lotes com contratante_id', () => {
       ]
     );
 
-    // Garantir que coluna contratante_id exista (migrations podem ter adicionado)
+    // Garantir que coluna entidade_id exista (migrations podem ter adicionado)
     await query(
-      `ALTER TABLE lotes_avaliacao ADD COLUMN IF NOT EXISTS contratante_id integer`
+      `ALTER TABLE lotes_avaliacao ADD COLUMN IF NOT EXISTS entidade_id integer`
     );
 
-    // Inserir lote apontando para a entidade via contratante_id
+    // Inserir lote apontando para a entidade via entidade_id
     const loteRes = await query(
-      `INSERT INTO lotes_avaliacao (entidade_id, contratante_id, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $1, $2, 'completo', 'ativo', NULL, 1) RETURNING id`,
+      `INSERT INTO lotes_avaliacao (entidade_id, descricao, tipo, status, liberado_por, numero_ordem) VALUES ($1, $2, 'completo', 'ativo', NULL, 1) RETURNING id`,
       [entidadeId, `Lote CI Teste ${ts}`]
     );
     loteId = loteRes.rows[0].id;
@@ -78,7 +78,7 @@ describe('Integração: Entidade Lotes com contratante_id', () => {
     }
   });
 
-  test('rota de entidade retorna lotes para contratante_id', async () => {
+  test('rota de entidade retorna lotes para entidade_id', async () => {
     expect(entidadeId).not.toBeNull();
     expect(loteId).not.toBeNull();
 

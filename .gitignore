@@ -71,3 +71,8 @@ uploads/
 /storage/backups/secure/*
 cookies*.txt
 cookiejar*
+
+# Docs ephemeral outputs (test logs, DB dumps)
+docs/testing/*.txt
+docs/testing/*.json
+docs/analises-dev/*.txt

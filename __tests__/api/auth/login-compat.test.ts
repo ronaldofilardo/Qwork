@@ -121,7 +121,6 @@ describe('Login compatibilidade - gestores (CPF join & schema fallback)', () => 
                 senha_hash: hash,
                 id: 10,
                 ativa: true,
-                pagamento_confirmado: true,
               },
             ],
           };

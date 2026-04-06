@@ -63,7 +63,8 @@ export async function POST(
        FROM laudos
        WHERE lote_id = $1
        LIMIT 1`,
-      [loteId]
+      [loteId],
+      user
     );
 
     if (laudoResult.rows.length === 0) {
@@ -189,7 +190,8 @@ export async function POST(
           }),
           user.perfil,
           user.cpf,
-        ]
+        ],
+        user
       );
 
       return NextResponse.json(
@@ -283,7 +285,8 @@ export async function POST(
         uploadResult.etag || null,
         buffer.length,
         laudoId,
-      ]
+      ],
+      user
     );
 
     // 16. Atualizar status do lote para 'finalizado' (laudo disponível no bucket)
@@ -294,7 +297,8 @@ export async function POST(
     try {
       await query(
         `UPDATE lotes_avaliacao SET status = 'finalizado', laudo_enviado_em = NOW(), atualizado_em = NOW() WHERE id = $1`,
-        [laudo.lote_id]
+        [laudo.lote_id],
+        user
       );
     } catch (loteUpdateError: unknown) {
       console.warn(
@@ -321,7 +325,8 @@ export async function POST(
         }),
         user.perfil,
         user.cpf,
-      ]
+      ],
+      user
     );
 
     console.log(
@@ -350,7 +355,8 @@ export async function POST(
         // Buscar laudoId a partir do loteId para auditoria
         const laudoResult = await query<{ id: number }>(
           'SELECT id FROM laudos WHERE lote_id = $1 LIMIT 1',
-          [loteId]
+          [loteId],
+          user
         );
 
         if (laudoResult.rows.length > 0) {
@@ -367,7 +373,8 @@ export async function POST(
               }),
               user?.perfil || 'emissor',
               user?.cpf || null,
-            ]
+            ],
+            user
           );
         }
       }
