@@ -11,6 +11,7 @@ import ImportResult from '@/components/importacao/ImportResult';
 import NivelCargoModal, {
   type NivelCargo,
 } from '@/components/importacao/NivelCargoModal';
+import ImportProgressModal from '@/components/importacao/ImportProgressModal';
 import {
   TemplatePicker,
   SaveTemplateForm,
@@ -150,6 +151,10 @@ export default function ImportacaoPage() {
   const [showUpdateTemplatePrompt, setShowUpdateTemplatePrompt] =
     useState(false);
 
+  // Modal de progresso de importação
+  const [showProgressModal, setShowProgressModal] = useState(false);
+  const [importConcluido, setImportConcluido] = useState(false);
+
   // Step 1: Upload + Analyze
   const handleFileSelect = useCallback(async (file: File) => {
     fileRef.current = file;
@@ -224,6 +229,8 @@ export default function ImportacaoPage() {
       setShowNivelCargoModal(false);
       setError(null);
       setLoading(true);
+      setShowProgressModal(true);
+      setImportConcluido(false);
       const start = Date.now();
 
       try {
@@ -248,10 +255,12 @@ export default function ImportacaoPage() {
         }
 
         setExecuteData(json.data);
-        setStep('resultado');
+        setImportConcluido(true);
+        // O modal fecha sozinho após animar para 100% e chama onClose que avança o step
       } catch {
         setTempoMs(Date.now() - start);
         setError('Erro de conexão ao executar importação');
+        setShowProgressModal(false);
       } finally {
         setLoading(false);
       }
@@ -316,6 +325,8 @@ export default function ImportacaoPage() {
     setNovasFuncoes([]);
     setPendingNivelMap(null);
     setShowUpdateTemplatePrompt(false);
+    setShowProgressModal(false);
+    setImportConcluido(false);
     setStep('upload');
   }, []);
 
@@ -586,6 +597,19 @@ export default function ImportacaoPage() {
           totalLinhas={executeData.resumo.totalLinhasProcessadas}
           funcoesAlteradas={executeData.resumo.funcoesAlteradas ?? []}
           onNovaImportacao={handleNovaImportacao}
+        />
+      )}
+
+      {/* Modal de progresso — exibido durante execução da importação */}
+      {showProgressModal && (
+        <ImportProgressModal
+          totalLinhas={validateData?.resumo.linhasValidas ?? 0}
+          concluido={importConcluido}
+          onClose={() => {
+            setShowProgressModal(false);
+            setImportConcluido(false);
+            if (executeData) setStep('resultado');
+          }}
         />
       )}
     </div>
