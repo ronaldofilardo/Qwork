@@ -133,7 +133,7 @@ describe('ModalContrato comportamento de aceite por rolagem', () => {
     );
   });
 
-  it('exibe alerta de cobrança R$ 200 para clínicas', async () => {
+  it('exibe alerta de cobrança R$ 250 para clínicas', async () => {
     (global as any).fetch.mockImplementationOnce(() =>
       Promise.resolve({
         ok: true,
@@ -171,7 +171,7 @@ describe('ModalContrato comportamento de aceite por rolagem', () => {
       )
     ).toBeInTheDocument();
     expect(
-      within(alertaVisual as HTMLElement).getByText(/R\$ 200,00/)
+      within(alertaVisual as HTMLElement).getByText(/R\$ 250,00/)
     ).toBeInTheDocument();
   });
 

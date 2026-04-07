@@ -76,7 +76,13 @@ V – consolidação e tratamento dos dados coletados.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 4 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO
+CLÁUSULA 4 – DA EVOLUÇÃO DA PLATAFORMA
+
+A CONTRATADA poderá, a seu critério, promover atualizações, melhorias e modificações na plataforma, sem que isso implique alteração da natureza do serviço contratado.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CLÁUSULA 5 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO
 
 A CONTRATANTE declara ciência de que a geração do relatório organizacional consolidado está condicionada à participação mínima de 70% (setenta por cento) dos colaboradores cadastrados.
 
@@ -84,10 +90,12 @@ Parágrafo primeiro. O percentual mínimo estabelecido visa garantir consistênc
 Parágrafo segundo. O faturamento será realizado com base na totalidade dos colaboradores cadastrados, independentemente do percentual de adesão efetivamente atingido.
 Parágrafo terceiro. A não obtenção do percentual mínimo de adesão não configura inadimplemento da CONTRATADA.
 Parágrafo quarto. Compete exclusivamente à CONTRATANTE promover o engajamento dos colaboradores.
+Decorridos 90 (noventa) dias da ativação da plataforma, caso não haja emissão de relatórios, será devida cobrança mínima no valor de R$ 250,00 (duzentos e cinquenta reais).
+A cobrança independe da efetiva utilização da plataforma, considerando a disponibilização do serviço.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 5 – DAS RESPONSABILIDADES DA CONTRATANTE
+CLÁUSULA 6 – DAS RESPONSABILIDADES DA CONTRATANTE
 
 Compete à CONTRATANTE:
 
@@ -99,7 +107,7 @@ V – adotar medidas internas decorrentes da análise dos resultados.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 6 – DAS RESPONSABILIDADES DA QWORK
+CLÁUSULA 7 – DAS RESPONSABILIDADES DA QWORK
 
 Compete à CONTRATADA:
 
@@ -110,7 +118,7 @@ IV – observar a legislação aplicável.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 7 – DA LIMITAÇÃO DE RESPONSABILIDADE
+CLÁUSULA 8 – DA LIMITAÇÃO DE RESPONSABILIDADE
 
 A QWORK não se responsabiliza por:
 
@@ -122,13 +130,20 @@ V – resultados interpretativos adotados pela CONTRATANTE.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 8 – DA GESTÃO OPERACIONAL E COMERCIAL
+CLÁUSULA 9 – DA GESTÃO OPERACIONAL E COMERCIAL
 
 A CONTRATANTE declara ciência de que a gestão operacional, comercial e administrativa da plataforma poderá ser realizada pela empresa MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA, integrante do mesmo grupo econômico da CONTRATADA, sem que isso implique transferência de responsabilidade técnica ou jurídica pela prestação do serviço.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 9 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA DAS INFORMAÇÕES
+CLÁUSULA 10 – DA SUSPENSÃO DE ACESSO
+
+A CONTRATADA poderá suspender o acesso à plataforma em caso de inadimplemento, uso indevido ou descumprimento contratual.
+A suspensão não afasta a obrigação de pagamento dos valores contratados.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CLÁUSULA 11 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA DAS INFORMAÇÕES
 
 A CONTRATANTE declara, para todos os fins, que atua na condição de Controladora dos dados pessoais de seus colaboradores, sendo integralmente responsável pela coleta, base legal, veracidade, legitimidade e segurança das informações inseridas na plataforma.
 
@@ -139,25 +154,49 @@ Parágrafo quarto. A CONTRATADA compromete-se a adotar medidas técnicas razoáv
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 10 – DA NATUREZA JURÍDICA
+CLÁUSULA 12 – DA NATUREZA JURÍDICA
 
 O presente contrato possui natureza estritamente civil, inexistindo vínculo trabalhista, societário ou de representação entre as partes.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 11 – DO ACEITE ELETRÔNICO
+CLÁUSULA 13 – DA VIGÊNCIA E RESCISÃO
 
-O presente contrato será considerado integralmente aceito no momento do primeiro acesso à plataforma.
+O contrato terá vigência mínima de 90 (noventa) dias.
+A rescisão antecipada por iniciativa da CONTRATANTE antes do prazo mínimo implicará pagamento de multa equivalente ao valor restante do período contratado.
+A utilização da plataforma sem a correspondente emissão de relatórios ou cumprimento da finalidade contratada não afasta a obrigação de pagamento.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 12 – DA ASSINATURA DIGITAL
+CLÁUSULA 14 – DA PROPRIEDADE INTELECTUAL
+
+A plataforma QWORK, incluindo seu código-fonte, estrutura, metodologia, banco de dados, layout, fluxos operacionais e relatórios, constitui propriedade exclusiva da CONTRATADA.
+É expressamente vedado à CONTRATANTE:
+
+I – copiar, reproduzir, modificar ou adaptar a plataforma;
+II – realizar engenharia reversa, descompilação ou qualquer tentativa de acesso à estrutura interna do sistema;
+III – utilizar as informações, metodologia ou lógica da plataforma para desenvolvimento de soluções concorrentes;
+IV – ceder, sublicenciar ou disponibilizar o sistema a terceiros fora das condições contratadas.
+
+O descumprimento desta cláusula sujeitará a CONTRATANTE ao pagamento de multa equivalente a 10 (dez) vezes o valor total contratado, sem prejuízo de perdas e danos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CLÁUSULA 15 – DO ACEITE ELETRÔNICO
+
+A adesão ao presente contrato ocorrerá mediante aceite eletrônico realizado pela CONTRATANTE na plataforma, por meio de ação inequívoca, como seleção de checkbox ou clique em botão de confirmação.
+Tal aceite constitui manifestação válida de vontade, produzindo todos os efeitos legais, nos termos da legislação vigente.
+A CONTRATANTE declara que teve acesso prévio ao contrato e concorda integralmente com seus termos.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CLÁUSULA 16 – DA ASSINATURA DIGITAL
 
 As partes reconhecem como válida a assinatura eletrônica, nos termos da MP nº 2.200-2/2001 e Lei nº 14.063/2020.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-CLÁUSULA 13 – DO FORO
+CLÁUSULA 17 – DO FORO
 
 Fica eleito o foro da comarca de Curitiba/PR, com renúncia expressa de qualquer outro, por mais privilegiado que seja.
 
