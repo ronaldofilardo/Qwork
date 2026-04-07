@@ -124,7 +124,11 @@ export const GET = async (
 
       if (!pdfResponse.ok) {
         let errorBody = '';
-        try { errorBody = await pdfResponse.text(); } catch { /* ignore */ }
+        try {
+          errorBody = await pdfResponse.text();
+        } catch {
+          /* ignore */
+        }
         console.error(
           `[BACKBLAZE] Erro ao baixar do Backblaze: ${pdfResponse.status} ${pdfResponse.statusText} — ${errorBody.slice(0, 200)}`
         );

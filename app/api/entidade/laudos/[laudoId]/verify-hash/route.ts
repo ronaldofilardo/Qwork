@@ -69,7 +69,9 @@ export const GET = async (
       );
     }
 
-    console.log(`[VERIFY] Hash armazenado para laudo ${laudo.id}: ${hashArmazenado}`);
+    console.log(
+      `[VERIFY] Hash armazenado para laudo ${laudo.id}: ${hashArmazenado}`
+    );
 
     return NextResponse.json({
       success: true,
@@ -98,7 +100,8 @@ export const GET = async (
 
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Erro interno do servidor',
+        error:
+          error instanceof Error ? error.message : 'Erro interno do servidor',
         success: false,
       },
       { status: 500 }
