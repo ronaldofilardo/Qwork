@@ -87,7 +87,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
      * O filtro de tipo é sempre passado como $1 ('todos' significa sem filtro).
      */
     const sql = `
-      SELECT DISTINCT
+      SELECT
         t.id,
         t.nome,
         t.cnpj,
