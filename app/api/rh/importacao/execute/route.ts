@@ -170,8 +170,13 @@ export async function POST(request: Request): Promise<NextResponse> {
         mensagem: string;
       }> = [];
 
-      for (const [, { nome, cnpj, rows }] of empresaMap) {
-        // Find or create empresa
+for (const [, { nome: nomeRaw, cnpj, rows }] of empresaMap) {
+      // Find or create empresa
+      // Quando nome não mapeado, usar placeholder baseado no CNPJ
+      const cnpjFmtFallback = cnpj
+        ? cnpj.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5')
+        : '';
+      const nome = nomeRaw.trim() || (cnpjFmtFallback ? `Empresa ${cnpjFmtFallback}` : 'Empresa Desconhecida');
         let empresaId: number | undefined;
 
         if (cnpj) {

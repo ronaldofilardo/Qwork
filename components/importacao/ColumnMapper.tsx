@@ -157,9 +157,10 @@ export default function ColumnMapper({
         <div className="bg-gray-50 px-4 py-3 border-b border-gray-200">
           <div className="grid grid-cols-12 gap-2 text-sm font-medium text-gray-700">
             <div className="col-span-1" />
-            <div className="col-span-4">Coluna da Planilha</div>
+            <div className="col-span-3">Coluna da Planilha</div>
+            <div className="col-span-2">Obrigatório</div>
             <div className="col-span-4">Campo QWork</div>
-            <div className="col-span-3">Exemplos</div>
+            <div className="col-span-2">Exemplos</div>
           </div>
         </div>
 
@@ -170,10 +171,27 @@ export default function ColumnMapper({
                 <div className="col-span-1 flex justify-center">
                   {getConfiancaIcon(s)}
                 </div>
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <span className="text-sm font-medium text-gray-900">
                     {s.nomeOriginal || `Coluna ${s.indice + 1}`}
                   </span>
+                </div>
+                <div className="col-span-2 flex items-center">
+                  {(() => {
+                    const campoMapeado = mapeamento[s.indice];
+                    if (!campoMapeado) return null;
+                    const def = camposQWork.find((c) => c.campo === campoMapeado);
+                    if (!def) return null;
+                    return def.obrigatorio ? (
+                      <span className="px-1.5 py-0.5 rounded text-xs font-semibold bg-red-100 text-red-700">
+                        Obrig.
+                      </span>
+                    ) : (
+                      <span className="px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500">
+                        Opcional
+                      </span>
+                    );
+                  })()}
                 </div>
                 <div className="col-span-4">
                   <select
@@ -202,7 +220,7 @@ export default function ColumnMapper({
                     ))}
                   </select>
                 </div>
-                <div className="col-span-3 flex items-center gap-1">
+                <div className="col-span-2 flex items-center gap-1">
                   <span className="text-xs text-gray-500 truncate">
                     {s.exemploDados[0] ?? '—'}
                   </span>

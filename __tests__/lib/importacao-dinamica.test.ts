@@ -51,11 +51,22 @@ describe('getCamposQWork', () => {
     }
   });
 
-  it('inclui cpf, nome, nome_empresa como obrigatórios', () => {
+  it('inclui cnpj_empresa, nome, data_nascimento, funcao como obrigatórios', () => {
     const obrigatorios = getCamposObrigatorios();
-    expect(obrigatorios).toContain('cpf');
+    expect(obrigatorios).toContain('cnpj_empresa');
     expect(obrigatorios).toContain('nome');
-    expect(obrigatorios).toContain('nome_empresa');
+    expect(obrigatorios).toContain('data_nascimento');
+    expect(obrigatorios).toContain('funcao');
+  });
+
+  it('NÃO inclui nome_empresa como obrigatório (campo auxiliar)', () => {
+    const obrigatorios = getCamposObrigatorios();
+    expect(obrigatorios).not.toContain('nome_empresa');
+  });
+
+  it('NÃO inclui cpf como obrigatório no mapeamento (validado na etapa de dados)', () => {
+    const obrigatorios = getCamposObrigatorios();
+    expect(obrigatorios).not.toContain('cpf');
   });
 });
 
@@ -127,19 +138,33 @@ describe('sugerirMapeamento', () => {
 describe('verificarCamposObrigatorios', () => {
   it('retorna array vazio quando todos obrigatórios presentes', () => {
     const mapeados = [
-      { campoQWork: 'cpf' },
+      { campoQWork: 'cnpj_empresa' },
       { campoQWork: 'nome' },
-      { campoQWork: 'nome_empresa' },
+      { campoQWork: 'data_nascimento' },
+      { campoQWork: 'funcao' },
     ];
     const faltando = verificarCamposObrigatorios(mapeados);
     expect(faltando).toHaveLength(0);
   });
 
   it('retorna campos faltando quando ausentes', () => {
-    const mapeados = [{ campoQWork: 'cpf' }];
+    const mapeados = [{ campoQWork: 'nome' }];
     const faltando = verificarCamposObrigatorios(mapeados);
-    expect(faltando).toContain('nome');
-    expect(faltando).toContain('nome_empresa');
+    expect(faltando).toContain('cnpj_empresa');
+    expect(faltando).toContain('data_nascimento');
+    expect(faltando).toContain('funcao');
+  });
+
+  it('nome_empresa mapeado não é considerado obrigatório', () => {
+    const mapeados = [
+      { campoQWork: 'cnpj_empresa' },
+      { campoQWork: 'nome' },
+      { campoQWork: 'data_nascimento' },
+      { campoQWork: 'funcao' },
+      { campoQWork: 'nome_empresa' }, // extra — não obrigatório
+    ];
+    const faltando = verificarCamposObrigatorios(mapeados);
+    expect(faltando).toHaveLength(0);
   });
 });
 
@@ -147,16 +172,26 @@ describe('verificarCamposObrigatorios', () => {
 // validarDadosImportacao
 // ========================================
 describe('validarDadosImportacao', () => {
+  // validRow agora inclui todos os campos obrigatórios
   const validRow: MappedRow = {
     cpf: '529.982.247-25',
     nome: 'João da Silva',
-    nome_empresa: 'Empresa Teste LTDA',
+    cnpj_empresa: '11222333000181',
+    data_nascimento: '1990-05-15',
+    funcao: 'Analista',
   };
 
   it('valida linhas corretas sem erros', () => {
     const result = validarDadosImportacao([validRow]);
     expect(result.erros).toHaveLength(0);
     expect(result.resumo.linhasValidas).toBe(1);
+  });
+
+  it('nome_empresa opcional — não gera erro quando ausente', () => {
+    const row: MappedRow = { ...validRow };
+    delete (row as Record<string, string>).nome_empresa;
+    const result = validarDadosImportacao([row]);
+    expect(result.erros.filter((e) => e.campo === 'nome_empresa')).toHaveLength(0);
   });
 
   it('gera erro para CPF vazio', () => {
@@ -179,10 +214,28 @@ describe('validarDadosImportacao', () => {
     expect(result.erros.some((e) => e.campo === 'nome')).toBe(true);
   });
 
-  it('gera erro para nome_empresa vazio', () => {
-    const row: MappedRow = { ...validRow, nome_empresa: '' };
+  it('gera erro para cnpj_empresa ausente', () => {
+    const row: MappedRow = { ...validRow, cnpj_empresa: '' };
     const result = validarDadosImportacao([row]);
-    expect(result.erros.some((e) => e.campo === 'nome_empresa')).toBe(true);
+    expect(result.erros.some((e) => e.campo === 'cnpj_empresa')).toBe(true);
+  });
+
+  it('gera erro para cnpj_empresa inválido', () => {
+    const row: MappedRow = { ...validRow, cnpj_empresa: '12345678000100' };
+    const result = validarDadosImportacao([row]);
+    expect(result.erros.some((e) => e.campo === 'cnpj_empresa')).toBe(true);
+  });
+
+  it('gera erro para data_nascimento ausente', () => {
+    const row: MappedRow = { ...validRow, data_nascimento: '' };
+    const result = validarDadosImportacao([row]);
+    expect(result.erros.some((e) => e.campo === 'data_nascimento')).toBe(true);
+  });
+
+  it('gera erro para funcao ausente', () => {
+    const row: MappedRow = { ...validRow, funcao: '' };
+    const result = validarDadosImportacao([row]);
+    expect(result.erros.some((e) => e.campo === 'funcao')).toBe(true);
   });
 
   it('gera aviso para CPFs duplicados no arquivo', () => {
@@ -192,6 +245,17 @@ describe('validarDadosImportacao', () => {
     expect(result.resumo.cpfsDuplicadosNoArquivo).toBeGreaterThan(0);
   });
 
+  it('gera aviso quando CPF original tinha 10 dígitos (corrigido automaticamente)', () => {
+    // Simula o que o parser faz: CPF '2998224725' (10 dígitos) → '02998224725' (11 dígitos)
+    // Para o teste de validador, usamos um CPF válido com a flag __cpf_corrigido setada
+    // 529.982.247-25 = '52998224725' é um CPF válido conhecido
+    const row: MappedRow = { ...validRow, cpf: '52998224725', __cpf_corrigido: '1' };
+    const result = validarDadosImportacao([row]);
+    expect(result.avisos.some((a) => a.campo === 'cpf' && a.mensagem.includes('10 dígitos'))).toBe(true);
+    // Não deve gerar erro — o CPF foi corrigido
+    expect(result.erros.filter((e) => e.campo === 'cpf')).toHaveLength(0);
+  });
+
   it('gera aviso para data_demissao preenchida', () => {
     const row: MappedRow = { ...validRow, data_demissao: '2025-01-15' };
     const result = validarDadosImportacao([row]);
@@ -199,11 +263,11 @@ describe('validarDadosImportacao', () => {
     expect(result.resumo.linhasComDemissao).toBe(1);
   });
 
-  it('conta empresas únicas', () => {
+  it('conta empresas únicas por CNPJ', () => {
     const rows: MappedRow[] = [
-      { cpf: '529.982.247-25', nome: 'A', nome_empresa: 'Empresa A' },
-      { cpf: '861.424.960-60', nome: 'B', nome_empresa: 'Empresa B' },
-      { cpf: '085.178.940-09', nome: 'C', nome_empresa: 'Empresa A' },
+      { cpf: '529.982.247-25', nome: 'A', cnpj_empresa: '11222333000181', data_nascimento: '1990-01-01', funcao: 'Analista' },
+      { cpf: '861.424.960-60', nome: 'B', cnpj_empresa: '11444777000161', data_nascimento: '1985-03-10', funcao: 'Gerente' },
+      { cpf: '085.178.940-09', nome: 'C', cnpj_empresa: '11222333000181', data_nascimento: '1992-07-22', funcao: 'Analista' },
     ];
     const result = validarDadosImportacao(rows);
     expect(result.resumo.empresasUnicas).toBe(2);
@@ -225,7 +289,9 @@ describe('validarDadosImportacao', () => {
     const row: MappedRow = {
       cpf: '529.982.247-25',
       nome: 'João da Silva',
-      nome_empresa: 'Empresa Teste LTDA',
+      cnpj_empresa: '11222333000181',
+      data_nascimento: '1990-05-15',
+      funcao: 'Analista',
     };
     const result = validarDadosImportacao([row]);
     // Não deve gerar erro por usuario_tipo faltante
@@ -239,7 +305,9 @@ describe('validarDadosImportacao', () => {
     const row: MappedRow = {
       cpf: '529.982.247-25',
       nome: 'João da Silva',
-      nome_empresa: 'Empresa Teste LTDA',
+      cnpj_empresa: '11222333000181',
+      data_nascimento: '1990-05-15',
+      funcao: 'Analista',
       usuario_tipo: 'funcionario_clinica',
     };
     const result = validarDadosImportacao([row]);
