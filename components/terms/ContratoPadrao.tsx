@@ -14,17 +14,15 @@ export default function ContratoPadrao() {
 
       <p>
         Pelo presente instrumento particular, de um lado,{' '}
-        <strong>QWORK TECNOLOGIA E GESTÃO DE RISCOS LTDA</strong>, pessoa
-        jurídica de direito privado, inscrita no CNPJ sob nº [●], com sede em
-        [●], doravante denominada <strong>CONTRATADA</strong>, e, na qualidade
-        de interveniente gestora,{' '}
-        <strong>MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA</strong>, pessoa
-        jurídica de direito privado, inscrita no CNPJ sob nº 21.020.277/0001-56,
-        com sede na Rua Barão do Serro Azul, nº 198, 5º andar, Centro,
-        Curitiba/PR, doravante denominada <strong>GESTORA</strong>, e, de outro
-        lado, a <strong>CONTRATANTE</strong>, pessoa jurídica que realiza
-        cadastro e contratação da plataforma mediante aceite eletrônico, têm
-        entre si justo e acordado o presente contrato, que se regerá pelas
+        <strong>QWORK TECNOLOGIA E GESTÃO DE RISCOS LTDA</strong>, doravante
+        denominada <strong>CONTRATADA</strong>, e, na qualidade de interveniente
+        gestora, <strong>MEUCLUBE.ONLINE BENEFÍCIOS E VANTAGENS LTDA</strong>,
+        pessoa jurídica de direito privado, inscrita no CNPJ sob nº
+        21.020.277/0001-56, com sede na Rua Barão do Serro Azul, nº 198, 5º
+        andar, Centro, Curitiba/PR, doravante denominada <strong>GESTORA</strong>
+        , e, de outro lado, a <strong>CONTRATANTE</strong>, pessoa jurídica que
+        realiza cadastro e contratação da plataforma mediante aceite eletrônico,
+        têm entre si justo e acordado o presente contrato, que se regerá pelas
         cláusulas seguintes:
       </p>
 
@@ -79,7 +77,16 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 4 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO</h2>
+      <h2>CLÁUSULA 4 – DA EVOLUÇÃO DA PLATAFORMA</h2>
+      <p>
+        A CONTRATADA poderá, a seu critério, promover atualizações, melhorias e
+        modificações na plataforma, sem que isso implique alteração da natureza
+        do serviço contratado.
+      </p>
+
+      <hr />
+
+      <h2>CLÁUSULA 5 – DA ADESÃO MÍNIMA E EMISSÃO DE RELATÓRIO</h2>
       <p>
         A CONTRATANTE declara ciência de que a geração do relatório
         organizacional consolidado está condicionada à participação mínima de
@@ -102,10 +109,19 @@ export default function ContratoPadrao() {
         <strong>Parágrafo quarto.</strong> Compete exclusivamente à CONTRATANTE
         promover o engajamento dos colaboradores.
       </p>
+      <p>
+        Decorridos 90 (noventa) dias da ativação da plataforma, caso não haja
+        emissão de relatórios, será devida cobrança mínima no valor de{' '}
+        <strong>R$ 250,00 (duzentos e cinquenta reais)</strong>.
+      </p>
+      <p>
+        A cobrança independe da efetiva utilização da plataforma, considerando a
+        disponibilização do serviço.
+      </p>
 
       <hr />
 
-      <h2>CLÁUSULA 5 – DAS RESPONSABILIDADES DA CONTRATANTE</h2>
+      <h2>CLÁUSULA 6 – DAS RESPONSABILIDADES DA CONTRATANTE</h2>
       <p>Compete à CONTRATANTE:</p>
       <ul>
         <li>I – fornecer dados corretos e atualizados;</li>
@@ -121,7 +137,7 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 6 – DAS RESPONSABILIDADES DA QWORK</h2>
+      <h2>CLÁUSULA 7 – DAS RESPONSABILIDADES DA QWORK</h2>
       <p>Compete à CONTRATADA:</p>
       <ul>
         <li>I – disponibilizar a plataforma em funcionamento regular;</li>
@@ -134,7 +150,7 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 7 – DA LIMITAÇÃO DE RESPONSABILIDADE</h2>
+      <h2>CLÁUSULA 8 – DA LIMITAÇÃO DE RESPONSABILIDADE</h2>
       <p>A QWORK não se responsabiliza por:</p>
       <ul>
         <li>I – decisões administrativas da CONTRATANTE;</li>
@@ -146,7 +162,7 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 8 – DA GESTÃO OPERACIONAL E COMERCIAL</h2>
+      <h2>CLÁUSULA 9 – DA GESTÃO OPERACIONAL E COMERCIAL</h2>
       <p>
         A CONTRATANTE declara ciência de que a gestão operacional, comercial e
         administrativa da plataforma poderá ser realizada pela empresa
@@ -157,8 +173,19 @@ export default function ContratoPadrao() {
 
       <hr />
 
+      <h2>CLÁUSULA 10 – DA SUSPENSÃO DE ACESSO</h2>
+      <p>
+        A CONTRATADA poderá suspender o acesso à plataforma em caso de
+        inadimplemento, uso indevido ou descumprimento contratual.
+      </p>
+      <p>
+        A suspensão não afasta a obrigação de pagamento dos valores contratados.
+      </p>
+
+      <hr />
+
       <h2>
-        CLÁUSULA 9 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA
+        CLÁUSULA 11 – DA RESPONSABILIDADE PELO TRATAMENTO DE DADOS E SEGURANÇA
         DAS INFORMAÇÕES
       </h2>
       <p>
@@ -197,7 +224,7 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 10 – DA NATUREZA JURÍDICA</h2>
+      <h2>CLÁUSULA 12 – DA NATUREZA JURÍDICA</h2>
       <p>
         O presente contrato possui natureza estritamente civil, inexistindo
         vínculo trabalhista, societário ou de representação entre as partes.
@@ -205,15 +232,69 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 11 – DO ACEITE ELETRÔNICO</h2>
+      <h2>CLÁUSULA 13 – DA VIGÊNCIA E RESCISÃO</h2>
+      <p>O contrato terá vigência mínima de 90 (noventa) dias.</p>
       <p>
-        O presente contrato será considerado integralmente aceito no momento do
-        primeiro acesso à plataforma.
+        A rescisão antecipada por iniciativa da CONTRATANTE antes do prazo
+        mínimo implicará pagamento de multa equivalente ao valor restante do
+        período contratado.
+      </p>
+      <p>
+        A utilização da plataforma sem a correspondente emissão de relatórios ou
+        cumprimento da finalidade contratada não afasta a obrigação de
+        pagamento.
       </p>
 
       <hr />
 
-      <h2>CLÁUSULA 12 – DA ASSINATURA DIGITAL</h2>
+      <h2>CLÁUSULA 14 – DA PROPRIEDADE INTELECTUAL</h2>
+      <p>
+        A plataforma QWORK, incluindo seu código-fonte, estrutura, metodologia,
+        banco de dados, layout, fluxos operacionais e relatórios, constitui
+        propriedade exclusiva da CONTRATADA.
+      </p>
+      <p>É expressamente vedado à CONTRATANTE:</p>
+      <ul>
+        <li>I – copiar, reproduzir, modificar ou adaptar a plataforma;</li>
+        <li>
+          II – realizar engenharia reversa, descompilação ou qualquer tentativa
+          de acesso à estrutura interna do sistema;
+        </li>
+        <li>
+          III – utilizar as informações, metodologia ou lógica da plataforma
+          para desenvolvimento de soluções concorrentes;
+        </li>
+        <li>
+          IV – ceder, sublicenciar ou disponibilizar o sistema a terceiros fora
+          das condições contratadas.
+        </li>
+      </ul>
+      <p>
+        O descumprimento desta cláusula sujeitará a CONTRATANTE ao pagamento de
+        multa equivalente a 10 (dez) vezes o valor total contratado, sem
+        prejuízo de perdas e danos.
+      </p>
+
+      <hr />
+
+      <h2>CLÁUSULA 15 – DO ACEITE ELETRÔNICO</h2>
+      <p>
+        A adesão ao presente contrato ocorrerá mediante aceite eletrônico
+        realizado pela CONTRATANTE na plataforma, por meio de ação inequívoca,
+        como seleção de checkbox ou clique em botão de confirmação.
+      </p>
+      <p>
+        Tal aceite constitui manifestação válida de vontade, produzindo todos os
+        efeitos legais, nos termos da legislação vigente.
+      </p>
+      <p>
+        A CONTRATANTE declara que teve acesso prévio ao contrato e concorda
+        integralmente com seus termos.
+      </p>
+
+      <hr />
+
+      <h2>CLÁUSULA 16 – DA ASSINATURA DIGITAL</h2>
       <p>
         As partes reconhecem como válida a assinatura eletrônica, nos termos da
         MP nº 2.200-2/2001 e Lei nº 14.063/2020.
@@ -221,7 +302,7 @@ export default function ContratoPadrao() {
 
       <hr />
 
-      <h2>CLÁUSULA 13 – DO FORO</h2>
+      <h2>CLÁUSULA 17 – DO FORO</h2>
       <p>
         Fica eleito o foro da comarca de <strong>Curitiba/PR</strong>, com
         renúncia expressa de qualquer outro, por mais privilegiado que seja.
