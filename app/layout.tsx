@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   title: 'Qwork - Avaliação Psicossocial',
   description: 'Sistema de avaliação psicossocial baseado no COPSOQ III',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/icon-192.png',
+    apple: '/icon-192.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
