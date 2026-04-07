@@ -28,14 +28,13 @@ describe('APIs de Auditoria', () => {
         rows: [
           {
             id: 1,
-            cpf_funcionario: '12345678909',
-            nome_funcionario: 'Maria RH',
-            perfil: 'rh',
+            cpf: '12345678909',
+            nome: 'Maria RH',
             clinica_id: 1,
             clinica_nome: 'Clínica Teste',
             login_timestamp: '2024-01-01T08:00:00.000Z',
             logout_timestamp: '2024-01-01T18:00:00.000Z',
-            duracao_sessao: '10:00:00',
+            session_duration: '10:00:00',
             ip_address: '192.168.1.1',
             user_agent: 'Mozilla/5.0',
           },
@@ -49,9 +48,9 @@ describe('APIs de Auditoria', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.acessos).toHaveLength(1);
-      expect(data.acessos[0].nome_funcionario).toBe('Maria RH');
+      expect(data.acessos[0].nome).toBe('Maria RH');
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining('FROM vw_auditoria_acessos_rh')
+        expect.stringContaining('FROM session_logs sl')
       );
     });
 
