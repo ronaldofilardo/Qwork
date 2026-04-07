@@ -87,7 +87,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
      * O filtro de tipo é sempre passado como $1 ('todos' significa sem filtro).
      */
     const sql = `
-      SELECT
+      SELECT DISTINCT
         t.id,
         t.nome,
         t.cnpj,
@@ -102,23 +102,28 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         c.id        AS contrato_id,
         c.criado_em AS contrato_criado_em
       FROM (
-        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo,
+        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo, ativa,
                responsavel_nome, responsavel_cargo, responsavel_celular
         FROM entidades
         UNION ALL
-        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo,
+        SELECT id, nome, cnpj, email, telefone, status, criado_em, tipo, ativa,
                responsavel_nome, responsavel_cargo, responsavel_celular
         FROM clinicas
       ) t
-      INNER JOIN contratos c ON c.tomador_id = t.id AND c.tipo_tomador = t.tipo
-      WHERE c.aceito = false
+      LEFT JOIN contratos c ON c.tomador_id = t.id AND c.tipo_tomador = t.tipo
+      WHERE (
+        -- Pré-cadastro com contrato não aceito
+        (c.aceito = false)
+        -- OU: contrato aceito mas ainda em fluxo incompleto (status pendente)
+        OR (c.aceito = true AND t.status = 'pendente')
+      )
         AND t.status IN (
           'aguardando_aceite_contrato',
           'aguardando_aceite',
           'pendente'
         )
         AND ($1 = 'todos' OR t.tipo = $1)
-      ORDER BY c.criado_em DESC
+      ORDER BY COALESCE(c.criado_em, t.criado_em) DESC
     `;
 
     const result = await query<PreCadastroItem>(sql, [tipo]);
