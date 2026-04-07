@@ -212,6 +212,7 @@ export default function ImportacaoPage() {
 
       setValidateData(json.data);
       setShowSaveTemplate(true);
+      setNivelCargoMap(null); // Reset classificação para nova validação detectar novas funções
       setStep('validacao');
     } catch {
       setError('Erro de conexão ao validar dados');
