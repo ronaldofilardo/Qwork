@@ -16,7 +16,7 @@ export async function GET(
   { params }: { params: { laudoId: string } }
 ) {
   try {
-    await requireRole('admin');
+    await requireRole('admin', false);
 
     const laudoId = parseInt(params.laudoId, 10);
     if (isNaN(laudoId) || laudoId <= 0) {
