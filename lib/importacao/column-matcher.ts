@@ -29,7 +29,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'nome_empresa',
     label: 'Nome da Empresa',
-    obrigatorio: true,
+    obrigatorio: false,
     sinonimos: [
       'unidade',
       'razao_social',
@@ -49,7 +49,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'cnpj_empresa',
     label: 'CNPJ da Empresa',
-    obrigatorio: false,
+    obrigatorio: true,
     sinonimos: [
       'cnpj',
       'cnpj_unidade',
@@ -64,7 +64,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'cpf',
     label: 'CPF',
-    obrigatorio: true,
+    obrigatorio: false,
     sinonimos: [
       'cpf',
       'cpf_funcionario',
@@ -96,7 +96,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'data_nascimento',
     label: 'Data de Nascimento',
-    obrigatorio: false,
+    obrigatorio: true,
     sinonimos: [
       'nascimento',
       'dt_nascimento',
@@ -157,7 +157,7 @@ const CAMPOS_QWORK: CampoQWork[] = [
   {
     campo: 'funcao',
     label: 'Cargo / Função',
-    obrigatorio: false,
+    obrigatorio: true,
     sinonimos: [
       'cargo',
       'funcao',
