@@ -18,7 +18,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(): Promise<NextResponse> {
   try {
-    await requireRole('admin');
+    await requireRole('admin', false);
 
     const result = await query(`
       WITH rh_gestor AS (

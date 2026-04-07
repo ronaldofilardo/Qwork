@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
   try {
-    await requireRole('admin');
+    await requireRole('admin', false);
 
     const result = await query(`
       SELECT
