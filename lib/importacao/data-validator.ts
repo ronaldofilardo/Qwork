@@ -55,6 +55,7 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
 
     // === CPF (obrigatório) ===
     const cpfRaw = row.cpf ?? '';
+    const cpfCorrigido = row['__cpf_corrigido'] === '1';
     if (!cpfRaw || cpfRaw.trim() === '') {
       errosLinha.push({
         linha,
@@ -82,6 +83,15 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
           severidade: 'erro',
         });
       } else {
+        if (cpfCorrigido) {
+          avisos.push({
+            linha,
+            campo: 'cpf',
+            valor: cpfRaw,
+            mensagem: `CPF com 10 dígitos: zero inserido como primeiro dígito (CPF: ${cpfLimpo}). Verifique se o dado está correto.`,
+            severidade: 'aviso',
+          });
+        }
         // Rastrear duplicados
         const existing = cpfSet.get(cpfLimpo) ?? [];
         existing.push(linha);
@@ -101,37 +111,42 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
       });
     }
 
-    // === Nome da Empresa (obrigatório) ===
-    const nomeEmpresa = row.nome_empresa ?? '';
-    if (!nomeEmpresa || nomeEmpresa.trim() === '') {
+    // === Nome da Empresa (opcional — auxiliar para criação, sem validação bloqueante) ===
+    // Não valida nome_empresa como obrigatório: o CNPJ é o único agregador de empresa.
+
+    // === CNPJ da Empresa (obrigatório — único agregador de funcionários) ===
+    const cnpjEmpresa = row.cnpj_empresa ?? '';
+    if (!cnpjEmpresa || cnpjEmpresa.trim() === '') {
       errosLinha.push({
         linha,
-        campo: 'nome_empresa',
-        valor: nomeEmpresa,
-        mensagem: 'Nome da empresa é obrigatório',
+        campo: 'cnpj_empresa',
+        valor: cnpjEmpresa,
+        mensagem: 'CNPJ da empresa é obrigatório',
+        severidade: 'erro',
+      });
+    } else if (!validarCNPJ(cnpjEmpresa)) {
+      errosLinha.push({
+        linha,
+        campo: 'cnpj_empresa',
+        valor: cnpjEmpresa,
+        mensagem: 'CNPJ da empresa inválido',
         severidade: 'erro',
       });
     } else {
-      empresasSet.add(nomeEmpresa.trim().toUpperCase());
+      empresasSet.add(cnpjEmpresa.trim());
     }
 
-    // === CNPJ da Empresa (opcional mas validável) ===
-    const cnpjEmpresa = row.cnpj_empresa ?? '';
-    if (cnpjEmpresa && cnpjEmpresa.trim() !== '') {
-      if (!validarCNPJ(cnpjEmpresa)) {
-        errosLinha.push({
-          linha,
-          campo: 'cnpj_empresa',
-          valor: cnpjEmpresa,
-          mensagem: 'CNPJ da empresa inválido',
-          severidade: 'erro',
-        });
-      }
-    }
-
-    // === Data de Nascimento (opcional mas validável) ===
+    // === Data de Nascimento (obrigatória) ===
     const dataNasc = row.data_nascimento ?? '';
-    if (dataNasc && dataNasc.trim() !== '') {
+    if (!dataNasc || dataNasc.trim() === '') {
+      errosLinha.push({
+        linha,
+        campo: 'data_nascimento',
+        valor: dataNasc,
+        mensagem: 'Data de nascimento é obrigatória',
+        severidade: 'erro',
+      });
+    } else {
       const iso = parseDateCell(dataNasc);
       if (!iso) {
         errosLinha.push({
@@ -155,6 +170,18 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
           });
         }
       }
+    }
+
+    // === Cargo / Função (obrigatório) ===
+    const funcao = row.funcao ?? '';
+    if (!funcao || funcao.trim() === '') {
+      errosLinha.push({
+        linha,
+        campo: 'funcao',
+        valor: funcao,
+        mensagem: 'Cargo / Função é obrigatório',
+        severidade: 'erro',
+      });
     }
 
     // === Data de Admissão (opcional, recomendada) ===
