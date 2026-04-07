@@ -234,8 +234,8 @@ export default function ModalContrato({
                       Cada empresa cliente que você cadastrar na QWork gerará um
                       ambiente contratual independente. Após 90 dias sem emissão
                       de laudo para determinada empresa, será cobrada taxa de R$
-                      200,00 referente à manutenção do ambiente ativo desta
-                      empresa específica.
+                      250,00 (duzentos e cinquenta reais) referente à manutenção
+                      do ambiente ativo desta empresa específica.
                     </p>
                   </div>
                 </div>

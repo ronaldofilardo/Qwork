@@ -75,7 +75,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
      * Busca CLÍNICAS e ENTIDADES com contrato pendente de aceite via UNION ALL.
      *
      * As duas tabelas são separadas no banco (`clinicas` e `entidades`), mas
-     * compartilham a mesma sequence (seq_contratantes_id), garantindo IDs
+     * compartilham a mesma sequence global de IDs, garantindo IDs
      * globalmente únicos. O UNION ALL une os resultados de ambas antes de
      * fazer o JOIN com contratos.
      *
@@ -111,12 +111,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         FROM clinicas
       ) t
       LEFT JOIN contratos c ON c.tomador_id = t.id AND c.tipo_tomador = t.tipo
-      WHERE (
-        -- Pré-cadastro com contrato não aceito
-        (c.aceito = false)
-        -- OU: contrato aceito mas ainda em fluxo incompleto (status pendente)
-        OR (c.aceito = true AND t.status = 'pendente')
-      )
+      WHERE c.aceito = false
         AND t.status IN (
           'aguardando_aceite_contrato',
           'aguardando_aceite',
