@@ -291,7 +291,11 @@ export default function ImportacaoPage() {
     // Caso 2: funções novas não classificadas no template (sem mudança de role existente)
     const funcoes = validateData?.funcoesUnicas ?? [];
     const novasParaClassificar = funcoes.filter((f) => !templateMap[f]);
-    if (novasParaClassificar.length > 0 && nivelCargoMap === null) {
+    // Abre modal se QUALQUER função nova ainda não tiver classificação na sessão atual
+    const algumaSemClassificacao = novasParaClassificar.some(
+      (f) => !(nivelCargoMap ?? {})[f]
+    );
+    if (novasParaClassificar.length > 0 && algumaSemClassificacao) {
       setNovasFuncoes(novasParaClassificar);
       setIsMudancaRoleModal(false);
       setShowNivelCargoModal(true);
@@ -563,7 +567,9 @@ export default function ImportacaoPage() {
                   {}) as Record<string, NivelCargo>;
                 const finalMap =
                   Object.keys(templateMap).length > 0 ? templateMap : null;
-                setNivelCargoMap(finalMap ?? {});
+                // Mantém null quando não há template para que próxima tentativa
+                // detecte corretamente funções sem classificação
+                setNivelCargoMap(finalMap);
                 void handleExecute(finalMap);
               }}
             />
