@@ -200,7 +200,15 @@ export function parseSpreadsheetAllRows(
         const campo = map.campoQWork;
 
         if (campo === 'cpf') {
-          value = limparCPF(String(value));
+          const cpfLimpo = limparCPF(String(value));
+          // CPF com 10 dígitos: inserir zero como primeiro dígito (correção automática)
+          if (cpfLimpo.length === 10) {
+            obj[campo] = '0' + cpfLimpo;
+            obj['__cpf_corrigido'] = '1'; // sinaliza para o validador emitir aviso
+          } else {
+            obj[campo] = cpfLimpo;
+          }
+          continue; // já atribuímos em obj[campo] acima
         } else if (campo === 'cnpj_empresa') {
           value = normalizeCNPJ(String(value));
         } else if (
