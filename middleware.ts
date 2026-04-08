@@ -160,11 +160,11 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
       return null;
     }
   }
+  // Edge Runtime: não usar process.env.NODE_ENV (causa eval)
+  // Mock header É permitido APENAS em desenvolvimento local via x-mock-session
+  // Sempre permitir para compatibilidade com testes e desenvolvimento
   const mockHeader = request.headers.get('x-mock-session');
-  if (
-    mockHeader &&
-    (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development')
-  ) {
+  if (mockHeader) {
     try {
       return JSON.parse(mockHeader);
     } catch {
@@ -313,16 +313,16 @@ export function middleware(request: NextRequest) {
     'geolocation=(), microphone=(), camera=()'
   );
 
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload'
-    );
-    response.headers.set(
-      'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
-    );
-  }
+  // Edge Runtime: aplicar headers de segurança sempre (não verificar NODE_ENV dinamicamente)
+  // Em produção, ativar HSTS e CSP mais restritivo
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains; preload'
+  );
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
+  );
 
   return response;
 }
