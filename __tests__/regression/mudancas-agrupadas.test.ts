@@ -41,21 +41,18 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
         temNivelNuloExistente: true,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'J. S.',
             nome: 'João Silva',
             funcaoAnterior: 'AUXILIAR',
             nivelAtual: 'operacional',
             empresa: 'Escola Primavera',
           },
           {
-            nomeMascarado: 'M. O.',
             nome: 'Maria Oliveira',
             funcaoAnterior: 'OPERADOR',
             nivelAtual: null,
             empresa: 'Escola Primavera',
           },
           {
-            nomeMascarado: 'R. P.',
             nome: 'Roberto Pereira',
             funcaoAnterior: 'TECH',
             nivelAtual: 'gestao',
@@ -73,14 +70,12 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'A. B.',
             nome: 'André Borges',
             funcaoAnterior: 'ASSISTENTE',
             nivelAtual: 'operacional',
             empresa: 'Escola Primavera',
           },
           {
-            nomeMascarado: 'C. D.',
             nome: 'Carlos Dias',
             funcaoAnterior: 'GERENTE',
             nivelAtual: 'gestao',
@@ -113,14 +108,12 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'X. Y.',
             nome: 'Xavier Yamamoto',
             funcaoAnterior: 'ESTAGIARIO',
             nivelAtual: 'gestao',
             empresa: 'ACME LTDA',
           },
           {
-            nomeMascarado: 'Z. W.',
             nome: 'Zara Wanderley',
             funcaoAnterior: 'JUNIOR',
             nivelAtual: 'gestao',
@@ -156,7 +149,6 @@ describe('groupMudancasByEmpresaAndFuncao — empresa vazia/undefined', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'P. Q.',
             nome: 'Paulo Queiroz',
             funcaoAnterior: 'ASSISTENTE',
             nivelAtual: 'operacional',
@@ -185,7 +177,6 @@ describe('groupMudancasByEmpresaAndFuncao — empresa vazia/undefined', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'Z. A.',
             nome: 'Zumbi Andrade',
             funcaoAnterior: 'OLD',
             nivelAtual: 'operacional',
@@ -203,7 +194,6 @@ describe('groupMudancasByEmpresaAndFuncao — empresa vazia/undefined', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'A. B.',
             nome: 'Amara Brito',
             funcaoAnterior: 'OLD',
             nivelAtual: 'gestao',
@@ -235,7 +225,6 @@ describe('groupMudancasByEmpresaAndFuncao — filtros', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'I. G.',
             nome: 'Igor Gonçalves',
             funcaoAnterior: 'OLD',
             nivelAtual: 'operacional',
@@ -276,7 +265,6 @@ describe('groupMudancasByEmpresaAndFuncao — filtros', () => {
         temNivelNuloExistente: false,
         funcionariosComMudancaNivel: [
           {
-            nomeMascarado: 'F. G.',
             nome: 'Flávia Guimarães',
             nivelAtual: 'gestao',
             nivelProposto: 'operacional',
@@ -313,7 +301,6 @@ describe('groupMudancasByEmpresaAndFuncao — combinacao de tipos', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'A. A.',
             nome: 'Amanda Alves',
             funcaoAnterior: 'OLD',
             nivelAtual: 'gestao',
@@ -322,14 +309,12 @@ describe('groupMudancasByEmpresaAndFuncao — combinacao de tipos', () => {
         ],
         funcionariosComMudancaNivel: [
           {
-            nomeMascarado: 'B. B.',
             nome: 'Bruno Barbosa',
             nivelAtual: 'gestao',
             nivelProposto: 'operacional',
             empresa: 'EMP X',
           },
           {
-            nomeMascarado: 'C. C.',
             nome: 'Carla Castro',
             nivelAtual: 'operacional',
             nivelProposto: 'gestao',

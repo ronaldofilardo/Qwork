@@ -215,7 +215,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Também guarda detalhes por CPF para o modal de confirmação de nível
     type NivelCargoValue = 'gestao' | 'operacional' | null;
     type MudancaRoleDetalhe = {
-      nomeMascarado: string;
       nome: string;
       funcaoAnterior: string;
       nivelAtual: NivelCargoValue;
@@ -251,13 +250,6 @@ export async function POST(request: Request): Promise<NextResponse> {
           : pareceIniciaisMudancaRole
             ? nomeDb || nomePlanilha
             : nomePlanilha;
-        const partes = nomeCompleto.trim().split(/\s+/);
-        const nomeMascarado =
-          partes.length >= 2
-            ? `${partes[0][0] ?? '?'}. ${partes[partes.length - 1][0] ?? '?'}.`
-            : partes[0]
-              ? `${partes[0][0]}.`
-              : 'N/A';
         const nivelRaw = existingNivelCargoMap.get(cpf) ?? null;
         const nivelAtual: NivelCargoValue =
           nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
@@ -272,7 +264,6 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!cpfsRole.has(cpf)) {
           cpfsRole.add(cpf);
           mudancaRoleDetalhesMap.get(novaFuncao)!.push({
-            nomeMascarado,
             nome: nomeCompleto,
             funcaoAnterior: funcaoAtual,
             nivelAtual,
@@ -287,7 +278,6 @@ export async function POST(request: Request): Promise<NextResponse> {
     // Só relevante quando a planilha tem coluna nivel_cargo mapeada
     const funcoesComMudancaNivel = new Set<string>();
     type MudancaNivelDetalhe = {
-      nomeMascarado: string;
       nome: string;
       nivelAtual: NivelCargoValue;
       nivelProposto: NivelCargoValue;
@@ -333,13 +323,6 @@ export async function POST(request: Request): Promise<NextResponse> {
             : pareceIniciaisNivel
               ? nomeDb || nomePlanilha
               : nomePlanilha;
-          const partes = nomeCompleto.trim().split(/\s+/);
-          const nomeMascarado =
-            partes.length >= 2
-              ? `${partes[0][0] ?? '?'}. ${partes[partes.length - 1][0] ?? '?'}.`
-              : partes[0]
-                ? `${partes[0][0]}.`
-                : 'N/A';
           if (!mudancaNivelDetalhesMap.has(funcao)) {
             mudancaNivelDetalhesMap.set(funcao, []);
           }
@@ -351,7 +334,6 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (!cpfsNivel.has(cpf)) {
             cpfsNivel.add(cpf);
             mudancaNivelDetalhesMap.get(funcao)!.push({
-              nomeMascarado,
               nome: nomeCompleto,
               nivelAtual: nivelBanco,
               nivelProposto: nivelPlanilha,
