@@ -49,9 +49,9 @@ const importacaoSteps: GuideStep[] = [
     ],
   },
   {
-    label: '4. Níveis',
+    label: '4. Importação',
     tooltip:
-      'Na fase "nível-cargo" é possível determinar o nível_cargo (operacional ou gestão) de forma rápida e consistente. Funções com mudança de cargo destacam os funcionários afetados para revisão individual.',
+      'Na fase "nível-cargo" é possível determinar o nível_cargo (operacional ou gestão) de forma rápida e consistente. Funções alteradas ou novas abrem um modal automático para classificação individual. Funções com mudança de cargo destacam os funcionários afetados para revisão.',
   },
   {
     label: '5. Resultado',
@@ -137,11 +137,30 @@ export default function ImportacaoFlowGuide() {
         })}
       </div>
 
-      <div className="mt-2 pt-2 border-t border-blue-200">
+      <div className="mt-2 pt-2 border-t border-blue-200 space-y-1">
         <p className="text-sm text-blue-800">
           <strong>💡 Atalho no fluxo completo:</strong> A importação por
           planilha cria empresas <em>e</em> funcionários em um único passo —
           eliminando as duas primeiras etapas do fluxo individual.
+        </p>
+        <p className="text-xs font-semibold text-blue-800">
+          Colunas obrigatórias para importação
+        </p>
+        <p className="text-xs text-blue-700">
+          <strong>Em relação à empresa:</strong> CNPJ [coluna classificadora] e
+          nome em todas as linhas.
+        </p>
+        <p className="text-xs text-blue-700">
+          <strong>Em relação ao funcionário:</strong> Nome, CPF, data de
+          nascimento e função [determinante para o nível do questionário].
+        </p>
+        <p className="text-xs text-blue-700">
+          Na fase{' '}
+          <span className="font-semibold text-blue-900">
+            &apos;nivel-cargo&apos;
+          </span>{' '}
+          é possível determinar o nível_cargo [operacional ou gestão] de forma
+          rápida e consistente.
         </p>
       </div>
     </div>
