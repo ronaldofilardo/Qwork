@@ -238,9 +238,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       if (funcaoAtual !== novaFuncao) {
         funcoesNovasPorMudancaRole.add(novaFuncao);
         // Nome: prioriza o nome mais completo (mais longo) entre planilha e DB
+        // Se nome da planilha parece mascarado (padrão "X. X."), usa DB
         const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
         const nomeDb = existingNomeMap.get(cpf) || '';
+        const parece_mascarado = /^[A-Z]\.\s+[A-Z]\.?$/.test(nomePlanilha);
         const nomeCompleto =
+          parece_mascarado ? (nomeDb || nomePlanilha) :
           nomePlanilha.length > nomeDb.length ? nomePlanilha : nomeDb;
         const partes = nomeCompleto.trim().split(/\s+/);
         const nomeMascarado =
@@ -312,9 +315,12 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (nivelBanco !== nivelPlanilha) {
           funcoesComMudancaNivel.add(funcao);
           // Nome: prioriza o nome mais completo (mais longo) entre planilha e DB
+          // Se nome da planilha parece mascarado (padrão "X. X."), usa DB
           const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
           const nomeDb = existingNomeMap.get(cpf) || '';
+          const parece_mascarado = /^[A-Z]\.\s+[A-Z]\.?$/.test(nomePlanilha);
           const nomeCompleto =
+            parece_mascarado ? (nomeDb || nomePlanilha) :
             nomePlanilha.length > nomeDb.length ? nomePlanilha : nomeDb;
           const partes = nomeCompleto.trim().split(/\s+/);
           const nomeMascarado =
