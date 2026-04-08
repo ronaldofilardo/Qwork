@@ -94,6 +94,9 @@ const PUBLIC_API_ROUTES = [
   '/api/vendedor/criar-senha', // API pública de validação/criação de senha via token
   '/representante/criar-senha', // Página pública de criação de senha (convite por token)
   '/api/representante/criar-senha', // API pública de validação/criação de senha via token
+  '/resetar-senha', // Página pública de reset de senha via link enviado pelo admin
+  '/api/admin/reset-senha/validar', // API pública de validação de token de reset
+  '/api/admin/reset-senha/confirmar', // API pública para confirmar nova senha via token
 ];
 
 // Rotas de contratação com controle granular
