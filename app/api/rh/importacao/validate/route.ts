@@ -88,6 +88,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const existingFuncaoMap = new Map<string, string | null>();
     const existingNivelCargoMap = new Map<string, string | null>();
     const existingNomeMap = new Map<string, string>();
+    // CPF → nome da empresa (vínculo ativo mais recente)
+    const existingEmpresaMap = new Map<string, string>();
 
     if (cpfsUnicos.length > 0) {
       // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças e sugerir classificação)
@@ -123,6 +125,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         for (const vinculo of vinculosResult.rows) {
           const cpfTrim = (vinculo.cpf as string).trim();
+          // Mapear CPF → empresa para uso no modal de confirmação de nível
+          if (!existingEmpresaMap.has(cpfTrim)) {
+            existingEmpresaMap.set(cpfTrim, (vinculo.empresa_nome as string) || '');
+          }
           // Encontrar linhas no arquivo com este CPF
           for (let i = 0; i < parsed.data.length; i++) {
             const row = parsed.data[i];
@@ -209,6 +215,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       nomeMascarado: string;
       funcaoAnterior: string;
       nivelAtual: NivelCargoValue;
+      empresa: string;
     };
     const funcoesNovasPorMudancaRole = new Set<string>();
     // Mapa: funcaoNova -> lista de detalhes dos funcionários que mudaram
@@ -244,10 +251,17 @@ export async function POST(request: Request): Promise<NextResponse> {
         // Evitar duplicatas por CPF (um funcionário pode aparecer em várias linhas)
         const lista = mudancaRoleDetalhesMap.get(novaFuncao)!;
         const jaAdicionado = lista.some(
-          (d) => d.nomeMascarado === nomeMascarado && d.funcaoAnterior === funcaoAtual
+          (d) =>
+            d.nomeMascarado === nomeMascarado &&
+            d.funcaoAnterior === funcaoAtual
         );
         if (!jaAdicionado) {
-          lista.push({ nomeMascarado, funcaoAnterior: funcaoAtual, nivelAtual });
+          lista.push({
+            nomeMascarado,
+            funcaoAnterior: funcaoAtual,
+            nivelAtual,
+            empresa: existingEmpresaMap.get(cpf) ?? '',
+          });
         }
       }
     }
@@ -260,6 +274,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       nomeMascarado: string;
       nivelAtual: NivelCargoValue;
       nivelProposto: NivelCargoValue;
+      empresa: string;
     };
     const mudancaNivelDetalhesMap = new Map<string, MudancaNivelDetalhe[]>();
 
@@ -309,6 +324,7 @@ export async function POST(request: Request): Promise<NextResponse> {
               nomeMascarado,
               nivelAtual: nivelBanco,
               nivelProposto: nivelPlanilha,
+              empresa: existingEmpresaMap.get(cpf) ?? '',
             });
           }
         }
@@ -363,8 +379,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
         funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
-        funcionariosComMudancaNivel:
-          mudancaNivelDetalhesMap.get(funcao) ?? [],
+        funcionariosComMudancaNivel: mudancaNivelDetalhesMap.get(funcao) ?? [],
       }))
       .sort((a, b) => {
         // Prioridade: mudanças de função > novos sem nível > demais
@@ -372,8 +387,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           return a.isMudancaRole ? -1 : 1;
         const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
         const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;
-        if (aRequerAtencao !== bRequerAtencao)
-          return aRequerAtencao ? -1 : 1;
+        if (aRequerAtencao !== bRequerAtencao) return aRequerAtencao ? -1 : 1;
         return a.funcao.localeCompare(b.funcao, 'pt-BR');
       });
 
