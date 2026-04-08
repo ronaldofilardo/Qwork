@@ -172,15 +172,15 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
       }
     }
 
-    // === Cargo / Função (obrigatório) ===
+    // === Cargo / Função (aviso — não bloqueia importação) ===
     const funcao = row.funcao ?? '';
     if (!funcao || funcao.trim() === '') {
       errosLinha.push({
         linha,
         campo: 'funcao',
         valor: funcao,
-        mensagem: 'Cargo / Função é obrigatório',
-        severidade: 'erro',
+        mensagem: 'Cargo / Função não informado — funcionário será importado sem função definida',
+        severidade: 'aviso',
       });
     }
 
