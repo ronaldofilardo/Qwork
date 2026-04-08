@@ -270,6 +270,11 @@ export default function ImportacaoPage() {
     const autoMap: Record<string, NivelCargo> = { ...templateMap };
     for (const info of validateData.funcoesNivelInfo) {
       if (autoMap[info.funcao]) continue; // já classificado pelo template
+      // Mudanças de função NUNCA são auto-preenchidas: o usuário DEVE confirmar
+      // explicitamente o nível do novo cargo. O nível anterior não representa o novo.
+      if (info.isMudancaRole) continue;
+      // Mudanças de nivel_cargo da planilha tb precisam de confirmação explícita
+      if (info.isMudancaNivel) continue;
       const niveisValidos = info.niveisAtuais.filter(
         (n): n is 'gestao' | 'operacional' => n !== null
       );
