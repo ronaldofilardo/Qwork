@@ -127,7 +127,10 @@ export async function POST(request: Request): Promise<NextResponse> {
           const cpfTrim = (vinculo.cpf as string).trim();
           // Mapear CPF → empresa para uso no modal de confirmação de nível
           if (!existingEmpresaMap.has(cpfTrim)) {
-            existingEmpresaMap.set(cpfTrim, (vinculo.empresa_nome as string) || '');
+            existingEmpresaMap.set(
+              cpfTrim,
+              (vinculo.empresa_nome as string) || ''
+            );
           }
           // Encontrar linhas no arquivo com este CPF
           for (let i = 0; i < parsed.data.length; i++) {
@@ -234,11 +237,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
       if (funcaoAtual !== novaFuncao) {
         funcoesNovasPorMudancaRole.add(novaFuncao);
-        // Nome: usa a planilha como fonte primária (mais confiável que o DB)
+        // Nome: prioriza o nome mais completo (mais longo) entre planilha e DB
+        const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
+        const nomeDb = existingNomeMap.get(cpf) || '';
         const nomeCompleto =
-          (row.nome as string | undefined)?.trim() ||
-          existingNomeMap.get(cpf) ||
-          '';
+          nomePlanilha.length > nomeDb.length ? nomePlanilha : nomeDb;
         const partes = nomeCompleto.trim().split(/\s+/);
         const nomeMascarado =
           partes.length >= 2
@@ -308,11 +311,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         if (nivelBanco !== nivelPlanilha) {
           funcoesComMudancaNivel.add(funcao);
-          // Nome: usa a planilha como fonte primária (mais confiável que o DB)
+          // Nome: prioriza o nome mais completo (mais longo) entre planilha e DB
+          const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
+          const nomeDb = existingNomeMap.get(cpf) || '';
           const nomeCompleto =
-            (row.nome as string | undefined)?.trim() ||
-            existingNomeMap.get(cpf) ||
-            '';
+            nomePlanilha.length > nomeDb.length ? nomePlanilha : nomeDb;
           const partes = nomeCompleto.trim().split(/\s+/);
           const nomeMascarado =
             partes.length >= 2
