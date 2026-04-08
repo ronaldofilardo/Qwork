@@ -32,12 +32,14 @@ export interface FuncaoNivelInfo {
     nomeMascarado: string;
     funcaoAnterior: string;
     nivelAtual: 'gestao' | 'operacional' | null;
+    empresa: string;
   }>;
   /** Detalhes dos funcionários com nivel_cargo divergente entre planilha e banco */
   funcionariosComMudancaNivel?: Array<{
     nomeMascarado: string;
     nivelAtual: 'gestao' | 'operacional' | null;
     nivelProposto: 'gestao' | 'operacional' | null;
+    empresa: string;
   }>;
 }
 
@@ -86,11 +88,11 @@ function ClassificarCargoModal({
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-md"
+        className="bg-white rounded-xl shadow-2xl w-full max-w-lg"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
+        <div className={`flex items-center justify-between px-5 py-4 border-b border-gray-200 ${isMudancaRole ? 'border-l-4 border-l-amber-400' : isMudancaNivel ? 'border-l-4 border-l-blue-400' : 'border-l-4 border-l-emerald-400'}`}>
           <div className="flex items-center gap-2">
             {isMudancaRole ? (
               <ArrowRight size={18} className="text-amber-500" />
@@ -119,7 +121,7 @@ function ClassificarCargoModal({
           </button>
         </div>
 
-        <div className="px-5 py-4">
+        <div className="px-5 py-4 max-h-[70vh] overflow-y-auto">
           <p className="text-xs text-gray-500 mb-3">
             {isMudancaRole ? (
               <>
@@ -149,6 +151,7 @@ function ClassificarCargoModal({
                 <thead className="bg-gray-50">
                   <tr className="text-left text-gray-500">
                     <th className="px-3 py-2 font-medium">Nome</th>
+                    <th className="px-3 py-2 font-medium">Empresa</th>
                     <th className="px-3 py-2 font-medium">Era</th>
                     <th className="px-3 py-2 font-medium text-right">
                       Nível atual
@@ -161,20 +164,23 @@ function ClassificarCargoModal({
                       <td className="px-3 py-2 text-gray-800 font-medium">
                         {f.nomeMascarado}
                       </td>
+                      <td className="px-3 py-2 text-gray-500 text-[11px]">
+                        {f.empresa || <span className="italic text-gray-300">—</span>}
+                      </td>
                       <td className="px-3 py-2 text-gray-500">
                         {f.funcaoAnterior}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {f.nivelAtual === 'gestao' ? (
-                          <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full font-medium">
+                          <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full font-medium text-[11px]">
                             G gestão
                           </span>
                         ) : f.nivelAtual === 'operacional' ? (
-                          <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium">
+                          <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium text-[11px]">
                             O operacional
                           </span>
                         ) : (
-                          <span className="text-gray-400 italic">
+                          <span className="text-gray-400 italic text-[11px]">
                             não definido
                           </span>
                         )}
@@ -193,6 +199,7 @@ function ClassificarCargoModal({
                 <thead className="bg-gray-50">
                   <tr className="text-left text-gray-500">
                     <th className="px-3 py-2 font-medium">Nome</th>
+                    <th className="px-3 py-2 font-medium">Empresa</th>
                     <th className="px-3 py-2 font-medium">Banco atual</th>
                     <th className="px-3 py-2 font-medium text-right">
                       Planilha propõe
@@ -205,8 +212,11 @@ function ClassificarCargoModal({
                       <td className="px-3 py-2 text-gray-800 font-medium">
                         {f.nomeMascarado}
                       </td>
-                      <td className="px-3 py-2 text-gray-500">{f.nivelAtual === 'gestao' ? 'G gestão' : f.nivelAtual === 'operacional' ? 'O operacional' : '—'}</td>
-                      <td className="px-3 py-2 text-right font-semibold text-blue-700">{f.nivelProposto === 'gestao' ? 'G gestão' : f.nivelProposto === 'operacional' ? 'O operacional' : '—'}</td>
+                      <td className="px-3 py-2 text-gray-500 text-[11px]">
+                        {f.empresa || <span className="italic text-gray-300">—</span>}
+                      </td>
+                      <td className="px-3 py-2 text-[11px]">{f.nivelAtual === 'gestao' ? <span className="text-purple-700 font-medium">G gestão</span> : f.nivelAtual === 'operacional' ? <span className="text-blue-700 font-medium">O operacional</span> : <span className="text-gray-400 italic">—</span>}</td>
+                      <td className="px-3 py-2 text-right text-[11px] font-semibold">{f.nivelProposto === 'gestao' ? <span className="text-purple-700">G gestão</span> : f.nivelProposto === 'operacional' ? <span className="text-blue-700">O operacional</span> : <span className="text-gray-400 italic">—</span>}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -519,7 +529,13 @@ export default function NivelCargoStep({
                     {info.isMudancaRole && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
                         <ArrowRight size={10} />
-                        mudança
+                        troca função
+                      </span>
+                    )}
+                    {info.isMudancaNivel && !info.isMudancaRole && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                        <ArrowRight size={10} />
+                        nível alterado
                       </span>
                     )}
                     {info.qtdNovos > 0 && (
