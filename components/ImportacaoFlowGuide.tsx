@@ -49,7 +49,12 @@ const importacaoSteps: GuideStep[] = [
     ],
   },
   {
-    label: '4. Importação',
+    label: '4. Níveis',
+    tooltip:
+      'Na fase "nível-cargo" é possível determinar o nível_cargo (operacional ou gestão) de forma rápida e consistente. Funções com mudança de cargo destacam os funcionários afetados para revisão individual.',
+  },
+  {
+    label: '5. Resultado',
     tooltip:
       'Empresas e funcionários são criados ou atualizados automaticamente. Inativações são também aplicadas. Ao final, um resumo detalhado mostra o resultado de cada registro processado.',
   },

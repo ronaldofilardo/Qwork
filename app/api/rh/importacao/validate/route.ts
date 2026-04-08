@@ -86,20 +86,26 @@ export async function POST(request: Request): Promise<NextResponse> {
     let funcionariosAReadmitir = 0;
     const avisosDb: typeof validacao.avisos = [];
     const existingFuncaoMap = new Map<string, string | null>();
+    const existingNivelCargoMap = new Map<string, string | null>();
+    const existingNomeMap = new Map<string, string>();
 
     if (cpfsUnicos.length > 0) {
-      // Buscar funcionários existentes (inclui funcao para detectar mudanças)
+      // Buscar funcionários existentes (inclui funcao, nivel_cargo e nome para detectar mudanças e sugerir classificação)
       const existResult = await query(
-        'SELECT id, cpf, funcao FROM funcionarios WHERE cpf = ANY($1)',
+        'SELECT id, cpf, nome, funcao, nivel_cargo FROM funcionarios WHERE cpf = ANY($1)',
         [cpfsUnicos]
       );
       const existingCpfs = new Set<string>();
       for (const r of existResult.rows as {
         cpf: string;
+        nome: string | null;
         funcao: string | null;
+        nivel_cargo: string | null;
       }[]) {
         existingCpfs.add(r.cpf.trim());
         existingFuncaoMap.set(r.cpf.trim(), r.funcao);
+        existingNivelCargoMap.set(r.cpf.trim(), r.nivel_cargo);
+        if (r.nome) existingNomeMap.set(r.cpf.trim(), r.nome);
       }
       funcionariosExistentes = existingCpfs.size;
 
@@ -197,7 +203,17 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     // Detectar funções novas oriundas de mudança de função de funcionários existentes
     // (sempre calculado, independente de mapeamento direto de nivel_cargo)
+    // Também guarda detalhes por CPF para o modal de confirmação de nível
+    type NivelCargoValue = 'gestao' | 'operacional' | null;
+    type MudancaRoleDetalhe = {
+      nomeMascarado: string;
+      funcaoAnterior: string;
+      nivelAtual: NivelCargoValue;
+    };
     const funcoesNovasPorMudancaRole = new Set<string>();
+    // Mapa: funcaoNova -> lista de detalhes dos funcionários que mudaram
+    const mudancaRoleDetalhesMap = new Map<string, MudancaRoleDetalhe[]>();
+
     for (const row of linhasValidasParaFuncoes) {
       const cpf = limparCPF(row.cpf ?? '');
       const novaFuncao = (row.funcao ?? '').trim();
@@ -210,9 +226,91 @@ export async function POST(request: Request): Promise<NextResponse> {
       const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
       if (funcaoAtual !== novaFuncao) {
         funcoesNovasPorMudancaRole.add(novaFuncao);
+        // Mascara nome: "João Silva" → "J. S."
+        const nomeCompleto = existingNomeMap.get(cpf) ?? '';
+        const partes = nomeCompleto.trim().split(/\s+/);
+        const nomeMascarado =
+          partes.length >= 2
+            ? `${partes[0][0] ?? '?'}. ${partes[partes.length - 1][0] ?? '?'}.`
+            : partes[0]
+              ? `${partes[0][0]}.`
+              : 'N/A';
+        const nivelRaw = existingNivelCargoMap.get(cpf) ?? null;
+        const nivelAtual: NivelCargoValue =
+          nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
+        if (!mudancaRoleDetalhesMap.has(novaFuncao)) {
+          mudancaRoleDetalhesMap.set(novaFuncao, []);
+        }
+        // Evitar duplicatas por CPF (um funcionário pode aparecer em várias linhas)
+        const lista = mudancaRoleDetalhesMap.get(novaFuncao)!;
+        const jaAdicionado = lista.some(
+          (d) => d.nomeMascarado === nomeMascarado && d.funcaoAnterior === funcaoAtual
+        );
+        if (!jaAdicionado) {
+          lista.push({ nomeMascarado, funcaoAnterior: funcaoAtual, nivelAtual });
+        }
       }
     }
     const funcoesComMudancaRole = [...funcoesNovasPorMudancaRole].sort();
+
+    // Construir funcoesNivelInfo: dados ricos por função para a etapa dedicada de classificação de nível
+    interface FuncaoNivelInfoBuild {
+      cpfs: Set<string>;
+      novosCpfs: Set<string>;
+      existentesCpfs: Set<string>;
+      niveisSet: Set<NivelCargoValue>;
+    }
+    const funcaoInfoMap = new Map<string, FuncaoNivelInfoBuild>();
+
+    for (const row of linhasValidasParaFuncoes) {
+      const cpfRow = limparCPF(row.cpf ?? '');
+      const funcaoRow = (row.funcao ?? '').trim();
+      if (!funcaoRow || funcaoRow === 'Não informado') continue;
+
+      if (!funcaoInfoMap.has(funcaoRow)) {
+        funcaoInfoMap.set(funcaoRow, {
+          cpfs: new Set(),
+          novosCpfs: new Set(),
+          existentesCpfs: new Set(),
+          niveisSet: new Set(),
+        });
+      }
+      const info = funcaoInfoMap.get(funcaoRow)!;
+      info.cpfs.add(cpfRow);
+
+      if (existingFuncaoMap.has(cpfRow)) {
+        info.existentesCpfs.add(cpfRow);
+        const nivelRaw = existingNivelCargoMap.get(cpfRow) ?? null;
+        const nivelNorm: NivelCargoValue =
+          nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
+        info.niveisSet.add(nivelNorm);
+      } else {
+        info.novosCpfs.add(cpfRow);
+      }
+    }
+
+    const funcoesNivelInfo = [...funcaoInfoMap.entries()]
+      .map(([funcao, info]) => ({
+        funcao,
+        qtdFuncionarios: info.cpfs.size,
+        qtdNovos: info.novosCpfs.size,
+        qtdExistentes: info.existentesCpfs.size,
+        niveisAtuais: [...info.niveisSet] as NivelCargoValue[],
+        isMudancaRole: funcoesNovasPorMudancaRole.has(funcao),
+        temNivelNuloExistente:
+          info.niveisSet.has(null) && info.existentesCpfs.size > 0,
+        funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
+      }))
+      .sort((a, b) => {
+        // Prioridade: mudanças de função > novos sem nível > demais
+        if (a.isMudancaRole !== b.isMudancaRole)
+          return a.isMudancaRole ? -1 : 1;
+        const aRequerAtencao = a.qtdNovos > 0 || a.temNivelNuloExistente;
+        const bRequerAtencao = b.qtdNovos > 0 || b.temNivelNuloExistente;
+        if (aRequerAtencao !== bRequerAtencao)
+          return aRequerAtencao ? -1 : 1;
+        return a.funcao.localeCompare(b.funcao, 'pt-BR');
+      });
 
     // Contar empresas novas vs existentes
     const nomeEmpresas = new Set<string>();
@@ -255,6 +353,8 @@ export async function POST(request: Request): Promise<NextResponse> {
         },
         funcoesUnicas,
         funcoesComMudancaRole,
+        funcoesNivelInfo,
+        temNivelCargoDirecto,
         erros: validacao.erros,
         // Deduplicar: avisos do DB (com nome de empresa) sobrepõem avisos genéricos de data_demissao
         avisos: (() => {
