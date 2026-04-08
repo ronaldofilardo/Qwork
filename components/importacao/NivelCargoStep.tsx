@@ -23,6 +23,8 @@ export interface FuncaoNivelInfo {
   niveisAtuais: Array<'gestao' | 'operacional' | null>;
   /** Função veio de mudança de função de funcionário já existente */
   isMudancaRole: boolean;
+  /** Planilha propõe nivel_cargo diferente do banco para esta função */
+  isMudancaNivel?: boolean;
   /** Algum funcionário existente nesta função tem nivel_cargo = null no banco */
   temNivelNuloExistente: boolean;
   /** Detalhes dos funcionários que mudaram para esta função (apenas isMudancaRole=true) */
@@ -30,6 +32,12 @@ export interface FuncaoNivelInfo {
     nomeMascarado: string;
     funcaoAnterior: string;
     nivelAtual: 'gestao' | 'operacional' | null;
+  }>;
+  /** Detalhes dos funcionários com nivel_cargo divergente entre planilha e banco */
+  funcionariosComMudancaNivel?: Array<{
+    nomeMascarado: string;
+    nivelAtual: 'gestao' | 'operacional' | null;
+    nivelProposto: 'gestao' | 'operacional' | null;
   }>;
 }
 
@@ -52,7 +60,9 @@ function ClassificarCargoModal({
   currentIndex,
   totalCount,
   isMudancaRole,
+  isMudancaNivel,
   funcionariosComMudanca,
+  funcionariosComMudancaNivel,
   nivelAtual,
   onSelect,
   onClose,
@@ -61,7 +71,9 @@ function ClassificarCargoModal({
   currentIndex: number;
   totalCount: number;
   isMudancaRole: boolean;
+  isMudancaNivel?: boolean;
   funcionariosComMudanca?: NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>;
+  funcionariosComMudancaNivel?: NonNullable<FuncaoNivelInfo['funcionariosComMudancaNivel']>;
   nivelAtual: NivelCargo;
   onSelect: (nivel: 'gestao' | 'operacional') => void;
   onClose: () => void;
@@ -82,12 +94,14 @@ function ClassificarCargoModal({
           <div className="flex items-center gap-2">
             {isMudancaRole ? (
               <ArrowRight size={18} className="text-amber-500" />
+            ) : isMudancaNivel ? (
+              <ArrowRight size={18} className="text-blue-500" />
             ) : (
               <Sparkles size={18} className="text-emerald-500" />
             )}
             <div>
               <h3 className="text-sm font-semibold text-gray-900">
-                {isMudancaRole ? 'Mudança de Função' : 'Nova Função'}
+                {isMudancaRole ? 'Mudança de Função' : isMudancaNivel ? 'Mudança de Nível' : 'Nova Função'}
               </h3>
               {totalCount > 1 && (
                 <p className="text-[11px] text-gray-400 leading-none mt-0.5">
@@ -112,6 +126,12 @@ function ClassificarCargoModal({
                 Funcionários abaixo mudaram de função para{' '}
                 <strong className="text-gray-800">{funcao}</strong>. Defina o
                 nível de cargo.
+              </>
+            ) : isMudancaNivel ? (
+              <>
+                A planilha propõe alteração de nível para{' '}
+                <strong className="text-gray-800">{funcao}</strong>. Confirme ou
+                ajuste o nível que será gravado.
               </>
             ) : (
               <>
@@ -165,8 +185,36 @@ function ClassificarCargoModal({
               </table>
             )}
 
+          {/* Tabela de divergências — apenas em mudança de nivel_cargo */}
+          {isMudancaNivel &&
+            funcionariosComMudancaNivel &&
+            funcionariosComMudancaNivel.length > 0 && (
+              <table className="w-full text-xs mb-4 border border-gray-100 rounded-lg overflow-hidden">
+                <thead className="bg-gray-50">
+                  <tr className="text-left text-gray-500">
+                    <th className="px-3 py-2 font-medium">Nome</th>
+                    <th className="px-3 py-2 font-medium">Banco atual</th>
+                    <th className="px-3 py-2 font-medium text-right">
+                      Planilha propõe
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {funcionariosComMudancaNivel.map((f, i) => (
+                    <tr key={i}>
+                      <td className="px-3 py-2 text-gray-800 font-medium">
+                        {f.nomeMascarado}
+                      </td>
+                      <td className="px-3 py-2 text-gray-500">{f.nivelAtual === 'gestao' ? 'G gestão' : f.nivelAtual === 'operacional' ? 'O operacional' : '—'}</td>
+                      <td className="px-3 py-2 text-right font-semibold text-blue-700">{f.nivelProposto === 'gestao' ? 'G gestão' : f.nivelProposto === 'operacional' ? 'O operacional' : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+
           {/* Escolha do nível */}
-          <div className={isMudancaRole ? 'border-t border-gray-100 pt-3' : ''}>
+          <div className={isMudancaRole || isMudancaNivel ? 'border-t border-gray-100 pt-3' : ''}>
             <p className="text-xs text-gray-700 mb-2 font-semibold">
               Qual nível para &ldquo;{funcao}&rdquo;?
             </p>
@@ -228,7 +276,7 @@ export default function NivelCargoStep({
    */
   const [initialQueue] = useState<string[]>(() =>
     funcoesNivelInfo
-      .filter((f) => f.isMudancaRole || f.qtdNovos > 0)
+      .filter((f) => f.isMudancaRole || f.isMudancaNivel || f.qtdNovos > 0)
       .map((f) => f.funcao)
   );
 
@@ -326,8 +374,8 @@ export default function NivelCargoStep({
     setModalFuncao(funcao);
   }, []);
 
-  // --- Planilha já tem coluna nivel_cargo ---
-  if (temNivelCargoDirecto) {
+  // --- Planilha já tem coluna nivel_cargo e SEM mudanças detectadas ---
+  if (temNivelCargoDirecto && initialQueue.length === 0) {
     return (
       <div className="space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
@@ -486,9 +534,11 @@ export default function NivelCargoStep({
                       {info.qtdFuncionarios} funcionário
                       {info.qtdFuncionarios !== 1 ? 's' : ''}
                     </span>
-                    {info.isMudancaRole &&
-                      info.funcionariosComMudanca &&
-                      info.funcionariosComMudanca.length > 0 && (
+                    {(info.isMudancaRole
+                      ? (info.funcionariosComMudanca?.length ?? 0) > 0
+                      : info.isMudancaNivel
+                        ? (info.funcionariosComMudancaNivel?.length ?? 0) > 0
+                        : false) && (
                         <button
                           onClick={() => handleOpenModalManual(info.funcao)}
                           className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
@@ -584,7 +634,9 @@ export default function NivelCargoStep({
           currentIndex={modalCurrentIndex}
           totalCount={modalTotalCount > 0 ? modalTotalCount : 1}
           isMudancaRole={modalInfo.isMudancaRole}
+          isMudancaNivel={modalInfo.isMudancaNivel}
           funcionariosComMudanca={modalInfo.funcionariosComMudanca}
+          funcionariosComMudancaNivel={modalInfo.funcionariosComMudancaNivel}
           nivelAtual={nivelCargoMap[modalFuncao] ?? ''}
           onSelect={handleModalSelect}
           onClose={handleModalClose}

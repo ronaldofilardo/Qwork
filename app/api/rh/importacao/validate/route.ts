@@ -253,6 +253,68 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     const funcoesComMudancaRole = [...funcoesNovasPorMudancaRole].sort();
 
+    // Detectar mudanças de nivel_cargo (planilha propõe nível diferente do banco)
+    // Só relevante quando a planilha tem coluna nivel_cargo mapeada
+    const funcoesComMudancaNivel = new Set<string>();
+    type MudancaNivelDetalhe = {
+      nomeMascarado: string;
+      nivelAtual: NivelCargoValue;
+      nivelProposto: NivelCargoValue;
+    };
+    const mudancaNivelDetalhesMap = new Map<string, MudancaNivelDetalhe[]>();
+
+    if (temNivelCargoDirecto) {
+      for (const row of linhasValidasParaFuncoes) {
+        const cpf = limparCPF(row.cpf ?? '');
+        const funcao = (row.funcao ?? '').trim();
+        if (!funcao || !existingFuncaoMap.has(cpf)) continue;
+        // Apenas funcionários que NÃO mudaram de função (esses já são cobertos por isMudancaRole)
+        const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
+        if (funcaoAtual !== funcao) continue;
+
+        const nivelBancoRaw = existingNivelCargoMap.get(cpf) ?? null;
+        const nivelBanco: NivelCargoValue =
+          nivelBancoRaw === 'gestao' || nivelBancoRaw === 'operacional'
+            ? nivelBancoRaw
+            : null;
+        const nivelPlanilhaRaw = ((row.nivel_cargo as string | undefined) ?? '')
+          .trim()
+          .toLowerCase();
+        const nivelPlanilha: NivelCargoValue =
+          nivelPlanilhaRaw === 'gestao' || nivelPlanilhaRaw === 'operacional'
+            ? nivelPlanilhaRaw
+            : null;
+
+        if (nivelPlanilha && nivelBanco !== nivelPlanilha) {
+          funcoesComMudancaNivel.add(funcao);
+          const nomeCompleto = existingNomeMap.get(cpf) ?? '';
+          const partes = nomeCompleto.trim().split(/\s+/);
+          const nomeMascarado =
+            partes.length >= 2
+              ? `${partes[0][0] ?? '?'}. ${partes[partes.length - 1][0] ?? '?'}.`
+              : partes[0]
+                ? `${partes[0][0]}.`
+                : 'N/A';
+          if (!mudancaNivelDetalhesMap.has(funcao)) {
+            mudancaNivelDetalhesMap.set(funcao, []);
+          }
+          const lista = mudancaNivelDetalhesMap.get(funcao)!;
+          const jaAdicionado = lista.some(
+            (d) =>
+              d.nomeMascarado === nomeMascarado &&
+              d.nivelProposto === nivelPlanilha
+          );
+          if (!jaAdicionado) {
+            lista.push({
+              nomeMascarado,
+              nivelAtual: nivelBanco,
+              nivelProposto: nivelPlanilha,
+            });
+          }
+        }
+      }
+    }
+
     // Construir funcoesNivelInfo: dados ricos por função para a etapa dedicada de classificação de nível
     interface FuncaoNivelInfoBuild {
       cpfs: Set<string>;
@@ -297,9 +359,12 @@ export async function POST(request: Request): Promise<NextResponse> {
         qtdExistentes: info.existentesCpfs.size,
         niveisAtuais: [...info.niveisSet] as NivelCargoValue[],
         isMudancaRole: funcoesNovasPorMudancaRole.has(funcao),
+        isMudancaNivel: funcoesComMudancaNivel.has(funcao),
         temNivelNuloExistente:
           info.niveisSet.has(null) && info.existentesCpfs.size > 0,
         funcionariosComMudanca: mudancaRoleDetalhesMap.get(funcao) ?? [],
+        funcionariosComMudancaNivel:
+          mudancaNivelDetalhesMap.get(funcao) ?? [],
       }))
       .sort((a, b) => {
         // Prioridade: mudanças de função > novos sem nível > demais
