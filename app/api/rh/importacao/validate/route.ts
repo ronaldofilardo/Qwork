@@ -224,6 +224,8 @@ export async function POST(request: Request): Promise<NextResponse> {
     const funcoesNovasPorMudancaRole = new Set<string>();
     // Mapa: funcaoNova -> lista de detalhes dos funcionários que mudaram
     const mudancaRoleDetalhesMap = new Map<string, MudancaRoleDetalhe[]>();
+    // Rastreador de CPFs por funcao para deduplicação precisa (evita falsos positivos por colisão de iniciais)
+    const mudancaRoleCpfsAdicionados = new Map<string, Set<string>>();
 
     for (const row of linhasValidasParaFuncoes) {
       const cpf = limparCPF(row.cpf ?? '');
@@ -237,16 +239,18 @@ export async function POST(request: Request): Promise<NextResponse> {
       const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
       if (funcaoAtual !== novaFuncao) {
         funcoesNovasPorMudancaRole.add(novaFuncao);
-        // Nome: prioriza o nome mais completo (mais longo) entre planilha e DB
-        // Se nome da planilha parece mascarado (padrão "X. X."), usa DB
+        // Nome: planilha sempre tem prioridade quando não vazia e não parece máscara de iniciais.
+        // Detecta padrões de iniciais: "J. S.", "J.S.", "P. A. C.", etc.
         const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
         const nomeDb = existingNomeMap.get(cpf) || '';
-        const parece_mascarado = /^[A-Z]\.\s+[A-Z]\.?$/.test(nomePlanilha);
-        const nomeCompleto = parece_mascarado
-          ? nomeDb || nomePlanilha
-          : nomePlanilha.length > nomeDb.length
-            ? nomePlanilha
-            : nomeDb;
+        const pareceIniciaisMudancaRole = /^([A-Za-zÀ-ÿ]\.\s*){2,}$/.test(
+          nomePlanilha.trim()
+        );
+        const nomeCompleto = !nomePlanilha
+          ? nomeDb
+          : pareceIniciaisMudancaRole
+            ? nomeDb || nomePlanilha
+            : nomePlanilha;
         const partes = nomeCompleto.trim().split(/\s+/);
         const nomeMascarado =
           partes.length >= 2
@@ -260,15 +264,14 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!mudancaRoleDetalhesMap.has(novaFuncao)) {
           mudancaRoleDetalhesMap.set(novaFuncao, []);
         }
-        // Evitar duplicatas por CPF (um funcionário pode aparecer em várias linhas)
-        const lista = mudancaRoleDetalhesMap.get(novaFuncao)!;
-        const jaAdicionado = lista.some(
-          (d) =>
-            d.nomeMascarado === nomeMascarado &&
-            d.funcaoAnterior === funcaoAtual
-        );
-        if (!jaAdicionado) {
-          lista.push({
+        // Deduplicar por CPF (um funcionário pode aparecer em várias linhas da planilha)
+        if (!mudancaRoleCpfsAdicionados.has(novaFuncao)) {
+          mudancaRoleCpfsAdicionados.set(novaFuncao, new Set());
+        }
+        const cpfsRole = mudancaRoleCpfsAdicionados.get(novaFuncao)!;
+        if (!cpfsRole.has(cpf)) {
+          cpfsRole.add(cpf);
+          mudancaRoleDetalhesMap.get(novaFuncao)!.push({
             nomeMascarado,
             nome: nomeCompleto,
             funcaoAnterior: funcaoAtual,
@@ -291,6 +294,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       empresa: string;
     };
     const mudancaNivelDetalhesMap = new Map<string, MudancaNivelDetalhe[]>();
+    // Rastreador de CPFs por funcao para deduplicação precisa no bloco de nivel
+    const mudancaNivelCpfsAdicionados = new Map<string, Set<string>>();
 
     if (temNivelCargoDirecto) {
       for (const row of linhasValidasParaFuncoes) {
@@ -316,16 +321,18 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         if (nivelBanco !== nivelPlanilha) {
           funcoesComMudancaNivel.add(funcao);
-          // Nome: prioriza o nome mais completo (mais longo) entre planilha e DB
-          // Se nome da planilha parece mascarado (padrão "X. X."), usa DB
+          // Nome: planilha sempre tem prioridade quando não vazia e não parece máscara de iniciais.
+          // Detecta padrões de iniciais: "J. S.", "J.S.", "P. A. C.", etc.
           const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
           const nomeDb = existingNomeMap.get(cpf) || '';
-          const parece_mascarado = /^[A-Z]\.\s+[A-Z]\.?$/.test(nomePlanilha);
-          const nomeCompleto = parece_mascarado
-            ? nomeDb || nomePlanilha
-            : nomePlanilha.length > nomeDb.length
-              ? nomePlanilha
-              : nomeDb;
+          const pareceIniciaisNivel = /^([A-Za-zÀ-ÿ]\.\s*){2,}$/.test(
+            nomePlanilha.trim()
+          );
+          const nomeCompleto = !nomePlanilha
+            ? nomeDb
+            : pareceIniciaisNivel
+              ? nomeDb || nomePlanilha
+              : nomePlanilha;
           const partes = nomeCompleto.trim().split(/\s+/);
           const nomeMascarado =
             partes.length >= 2
@@ -336,14 +343,14 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (!mudancaNivelDetalhesMap.has(funcao)) {
             mudancaNivelDetalhesMap.set(funcao, []);
           }
-          const lista = mudancaNivelDetalhesMap.get(funcao)!;
-          const jaAdicionado = lista.some(
-            (d) =>
-              d.nomeMascarado === nomeMascarado &&
-              d.nivelProposto === nivelPlanilha
-          );
-          if (!jaAdicionado) {
-            lista.push({
+          // Deduplicar por CPF
+          if (!mudancaNivelCpfsAdicionados.has(funcao)) {
+            mudancaNivelCpfsAdicionados.set(funcao, new Set());
+          }
+          const cpfsNivel = mudancaNivelCpfsAdicionados.get(funcao)!;
+          if (!cpfsNivel.has(cpf)) {
+            cpfsNivel.add(cpf);
+            mudancaNivelDetalhesMap.get(funcao)!.push({
               nomeMascarado,
               nome: nomeCompleto,
               nivelAtual: nivelBanco,
