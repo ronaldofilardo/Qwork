@@ -160,13 +160,16 @@ function MudancasAgrupadas({
             {Array.from(funcaosMap.entries()).map(([funcao, grupo]) => {
               const nivelClassificado = nivelCargoMap[funcao] ?? '';
               const { trocas, trocasNivel } = grupo;
+              const semFuncao = funcao === 'N\u00e3o informado';
 
               return (
                 <div key={`${empresa}-${funcao}`} className="p-4">
                   {/* Cabecalho da funcao */}
                   <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
                     <div className="flex-1 flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-semibold text-gray-800">{funcao}</span>
+                      <span className={`text-sm font-semibold ${semFuncao ? 'text-amber-700' : 'text-gray-800'}`}>
+                        {semFuncao ? 'Sem func\u00e3o definida' : funcao}
+                      </span>
                       {trocas.length > 0 && (
                         <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700">
                           <ArrowRight size={9} />
@@ -249,7 +252,9 @@ function MudancasAgrupadas({
                   {/* Botoes de classificacao */}
                   <div className="border-t border-gray-100 pt-3">
                     <p className="text-xs text-gray-700 mb-2 font-semibold">
-                      Qual nivel para &ldquo;{funcao}&rdquo;?
+                      {semFuncao
+                        ? 'Qual n\u00edvel para funcion\u00e1rios sem fun\u00e7\u00e3o?'
+                        : <>Qual nível para &ldquo;{funcao}&rdquo;?</>}
                     </p>
                     <div className="flex gap-2">
                       <button
@@ -297,8 +302,6 @@ export default function NivelCargoStep({
   temNivelCargoDirecto,
   isLoading,
 }: NivelCargoStepProps) {
-  const totalFuncoes = funcoesNivelInfo.length;
-
   const mudancasNaoConfirmadas = useMemo(
     () =>
       funcoesNivelInfo.filter(
@@ -307,16 +310,24 @@ export default function NivelCargoStep({
     [funcoesNivelInfo, nivelCargoMap]
   );
 
+  // 'Nao informado' e OPCIONAL - nao bloqueia a importacao
+  const funcoesBloqueantes = useMemo(
+    () => funcoesNivelInfo.filter((f) => f.funcao !== 'Nao informado'),
+    [funcoesNivelInfo]
+  );
+
+  const totalFuncoes = funcoesBloqueantes.length;
+
   const classificadas = useMemo(
-    () => funcoesNivelInfo.filter((f) => !!nivelCargoMap[f.funcao]).length,
-    [funcoesNivelInfo, nivelCargoMap]
+    () => funcoesBloqueantes.filter((f) => !!nivelCargoMap[f.funcao]).length,
+    [funcoesBloqueantes, nivelCargoMap]
   );
 
   const todasClassificadas = classificadas === totalFuncoes;
 
   const autoClassificadas = useMemo(
     () =>
-      funcoesNivelInfo.filter((f) => {
+      funcoesBloqueantes.filter((f) => {
         const niveisValidos = f.niveisAtuais.filter(
           (n): n is 'gestao' | 'operacional' => n !== null
         );
@@ -573,10 +584,10 @@ export default function NivelCargoStep({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span
-                        className="text-sm text-gray-800 font-medium truncate"
-                        title={info.funcao}
+                        className={`text-sm font-medium truncate ${info.funcao === 'N\u00e3o informado' ? 'text-amber-700 italic' : 'text-gray-800'}`}
+                        title={info.funcao === 'N\u00e3o informado' ? 'Funcion\u00e1rios sem fun\u00e7\u00e3o definida' : info.funcao}
                       >
-                        {info.funcao}
+                        {info.funcao === 'N\u00e3o informado' ? 'Sem fun\u00e7\u00e3o' : info.funcao}
                       </span>
                       {info.qtdNovos > 0 && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 flex-shrink-0">
