@@ -1,16 +1,17 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
-import { FileSpreadsheet, ArrowLeft, BookmarkPlus } from 'lucide-react';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { FileSpreadsheet, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import UploadArea from '@/components/importacao/UploadArea';
 import ImportacaoFlowGuide from '@/components/ImportacaoFlowGuide';
 import ColumnMapper from '@/components/importacao/ColumnMapper';
 import DataPreview from '@/components/importacao/DataPreview';
 import ImportResult from '@/components/importacao/ImportResult';
-import NivelCargoModal, {
+import NivelCargoStep, {
   type NivelCargo,
-} from '@/components/importacao/NivelCargoModal';
+  type FuncaoNivelInfo,
+} from '@/components/importacao/NivelCargoStep';
 import ImportProgressModal from '@/components/importacao/ImportProgressModal';
 import {
   TemplatePicker,
@@ -19,7 +20,7 @@ import {
   updateTemplateNivelCargo,
 } from '@/components/importacao/TemplateManager';
 
-type Step = 'upload' | 'mapeamento' | 'validacao' | 'resultado';
+type Step = 'upload' | 'mapeamento' | 'validacao' | 'nivel-cargo' | 'resultado';
 
 interface AnalyzeData {
   totalLinhas: number;
@@ -53,6 +54,8 @@ interface ValidateData {
   };
   funcoesUnicas: string[];
   funcoesComMudancaRole?: string[];
+  funcoesNivelInfo: FuncaoNivelInfo[];
+  temNivelCargoDirecto: boolean;
   erros: Array<{
     linha: number;
     campo: string;
@@ -104,10 +107,11 @@ const stepLabels: Record<Step, string> = {
   upload: '1. Upload',
   mapeamento: '2. Mapeamento',
   validacao: '3. Validação',
-  resultado: '4. Resultado',
+  'nivel-cargo': '4. Níveis',
+  resultado: '5. Resultado',
 };
 
-const stepOrder: Step[] = ['upload', 'mapeamento', 'validacao', 'resultado'];
+const stepOrder: Step[] = ['upload', 'mapeamento', 'validacao', 'nivel-cargo', 'resultado'];
 
 export default function ImportacaoPage() {
   const [step, setStep] = useState<Step>('upload');
@@ -135,21 +139,8 @@ export default function ImportacaoPage() {
     null
   );
 
-  // NivelCargo modal state
-  const [showNivelCargoModal, setShowNivelCargoModal] = useState(false);
-  const [nivelCargoMap, setNivelCargoMap] = useState<Record<
-    string,
-    NivelCargo
-  > | null>(null);
-  const [isMudancaRoleModal, setIsMudancaRoleModal] = useState(false);
-  // Novas funções não classificadas no template (para exibir no modal filtrado)
-  const [novasFuncoes, setNovasFuncoes] = useState<string[]>([]);
-  const [pendingNivelMap, setPendingNivelMap] = useState<Record<
-    string,
-    NivelCargo
-  > | null>(null);
-  const [showUpdateTemplatePrompt, setShowUpdateTemplatePrompt] =
-    useState(false);
+  // Mapa de nível de cargo: controlado pela etapa dedicada de classificação
+  const [nivelCargoMap, setNivelCargoMap] = useState<Record<string, NivelCargo>>({});
 
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -212,7 +203,7 @@ export default function ImportacaoPage() {
 
       setValidateData(json.data);
       setShowSaveTemplate(true);
-      setNivelCargoMap(null); // Reset classificação para nova validação detectar novas funções
+      setNivelCargoMap({}); // Reset classificação para a etapa de níveis
       setStep('validacao');
     } catch {
       setError('Erro de conexão ao validar dados');
@@ -227,7 +218,6 @@ export default function ImportacaoPage() {
       const file = fileRef.current;
       if (!file || !mapeamento) return;
 
-      setShowNivelCargoModal(false);
       setError(null);
       setLoading(true);
       setShowProgressModal(true);
@@ -269,46 +259,50 @@ export default function ImportacaoPage() {
     [mapeamento]
   );
 
-  // Step 3a: Pré-execute — lógica de classificação de nível antes de executar
-  const handlePreExecute = useCallback(() => {
+  // Step 3.5: Auto-popula nivelCargoMap ao entrar na etapa de classificação
+  // 1. Valores do template aplicado  2. Sugestões: funções onde todos existentes têm o mesmo nível único
+  useEffect(() => {
+    if (step !== 'nivel-cargo' || !validateData?.funcoesNivelInfo) return;
     const templateMap = (appliedTemplate?.nivelCargoMap ?? {}) as Record<
       string,
       NivelCargo
     >;
-
-    // Funções alteradas de funcionários existentes
-    const mudancaRole = validateData?.funcoesComMudancaRole ?? [];
-
-    // Caso 1: há mudanças de função → sempre pede reclassificação de nível
-    // (mesmo que nivel_cargo esteja mapeado diretamente, o nível pode mudar junto com a função)
-    if (mudancaRole.length > 0) {
-      setNovasFuncoes(mudancaRole);
-      setIsMudancaRoleModal(true);
-      setShowNivelCargoModal(true);
-      return;
+    const autoMap: Record<string, NivelCargo> = { ...templateMap };
+    for (const info of validateData.funcoesNivelInfo) {
+      if (autoMap[info.funcao]) continue; // já classificado pelo template
+      const niveisValidos = info.niveisAtuais.filter(
+        (n): n is 'gestao' | 'operacional' => n !== null
+      );
+      // Sugere apenas quando há exatamente 1 nível distinto e nenhum null entre os existentes
+      if (niveisValidos.length === 1 && !info.niveisAtuais.includes(null)) {
+        autoMap[info.funcao] = niveisValidos[0];
+      }
     }
+    setNivelCargoMap(autoMap);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]); // Intencionalmente: executa apenas ao entrar no step de níveis
 
-    // Caso 2: funções novas não classificadas no template (sem mudança de role existente)
-    const funcoes = validateData?.funcoesUnicas ?? [];
-    const novasParaClassificar = funcoes.filter((f) => !templateMap[f]);
-    // Abre modal se QUALQUER função nova ainda não tiver classificação na sessão atual
-    const algumaSemClassificacao = novasParaClassificar.some(
-      (f) => !(nivelCargoMap ?? {})[f]
+  // Step 3.5: Confirmar classificação de nível e executar importação
+  const handleNivelCargoConfirm = useCallback(() => {
+    // Auto-atualiza template com funções recém-classificadas (silenciosamente)
+    const templateId = appliedTemplate?.id ?? lastSavedTemplateId;
+    if (templateId) {
+      const templateMap = (appliedTemplate?.nivelCargoMap ?? {}) as Record<
+        string,
+        NivelCargo
+      >;
+      const novas: Record<string, string> = {};
+      for (const [f, nivel] of Object.entries(nivelCargoMap)) {
+        if (nivel && !templateMap[f]) novas[f] = nivel;
+      }
+      if (Object.keys(novas).length > 0) {
+        updateTemplateNivelCargo(templateId, novas);
+      }
+    }
+    void handleExecute(
+      Object.keys(nivelCargoMap).length > 0 ? nivelCargoMap : null
     );
-    if (novasParaClassificar.length > 0 && algumaSemClassificacao) {
-      setNovasFuncoes(novasParaClassificar);
-      setIsMudancaRoleModal(false);
-      setShowNivelCargoModal(true);
-      return;
-    }
-
-    // Caso 3: tudo já classificado
-    const finalMap: Record<string, NivelCargo> = {
-      ...templateMap,
-      ...(nivelCargoMap ?? {}),
-    };
-    void handleExecute(Object.keys(finalMap).length > 0 ? finalMap : null);
-  }, [validateData, appliedTemplate, nivelCargoMap, handleExecute]);
+  }, [appliedTemplate, lastSavedTemplateId, nivelCargoMap, handleExecute]);
 
   // Reset
   const handleNovaImportacao = useCallback(() => {
@@ -322,14 +316,9 @@ export default function ImportacaoPage() {
     setTemplateMapeamento(null);
 
     setShowSaveTemplate(false);
-    setNivelCargoMap(null);
-    setShowNivelCargoModal(false);
-    setIsMudancaRoleModal(false);
+    setNivelCargoMap({});
     setAppliedTemplate(null);
     setLastSavedTemplateId(null);
-    setNovasFuncoes([]);
-    setPendingNivelMap(null);
-    setShowUpdateTemplatePrompt(false);
     setShowProgressModal(false);
     setImportConcluido(false);
     setStep('upload');
@@ -440,7 +429,11 @@ export default function ImportacaoPage() {
                   nomeOriginal: m.nomeOriginal,
                   campoQWork: m.campoQWork,
                 }))}
-                nivelCargoMap={nivelCargoMap ?? undefined}
+                nivelCargoMap={
+                  Object.keys(nivelCargoMap).length > 0
+                    ? nivelCargoMap
+                    : undefined
+                }
                 onSaved={(id) => {
                   setLastSavedTemplateId(id);
                   setShowSaveTemplate(false);
@@ -452,50 +445,8 @@ export default function ImportacaoPage() {
               />
             </>
           )}
-          {/* Prompt de atualização do template com novos cargos */}
-          {showUpdateTemplatePrompt && pendingNivelMap && appliedTemplate && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3 flex items-center justify-between gap-3 mb-2">
-              <div className="flex items-center gap-2 text-sm text-emerald-800">
-                <BookmarkPlus
-                  size={16}
-                  className="flex-shrink-0 text-emerald-600"
-                />
-                <span>
-                  Salvar{' '}
-                  <strong>
-                    {novasFuncoes.length} novo
-                    {novasFuncoes.length > 1 ? 's cargo' : ' cargo'}
-                  </strong>{' '}
-                  no template{' '}
-                  <strong>&ldquo;{appliedTemplate.nome}&rdquo;</strong>?
-                </span>
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <button
-                  onClick={() => {
-                    updateTemplateNivelCargo(
-                      appliedTemplate.id,
-                      pendingNivelMap
-                    );
-                    setShowUpdateTemplatePrompt(false);
-                    void handleExecute(pendingNivelMap);
-                  }}
-                  className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
-                >
-                  Salvar e importar
-                </button>
-                <button
-                  onClick={() => {
-                    setShowUpdateTemplatePrompt(false);
-                    void handleExecute(pendingNivelMap);
-                  }}
-                  className="px-3 py-1.5 text-xs font-medium text-emerald-700 bg-white border border-emerald-300 rounded hover:bg-emerald-50"
-                >
-                  Só importar
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Prompt de atualização do template removido: as classificações novas são salvas
+               automaticamente em handleNivelCargoConfirm após a etapa dedicada de níveis. */}
           <DataPreview
             validacao={{
               totalLinhas: validateData.resumo.totalLinhas,
@@ -517,64 +468,31 @@ export default function ImportacaoPage() {
                 validateData.resumo.funcionariosAReadmitir ?? 0,
             }}
             funcoesComMudancaRole={validateData.funcoesComMudancaRole}
-            onConfirm={handlePreExecute}
+            onConfirm={() => setStep('nivel-cargo')}
             onBack={() => {
               setStep('mapeamento');
               setError(null);
             }}
             isLoading={loading}
           />
-          {showNivelCargoModal && (
-            <NivelCargoModal
-              funcoes={
-                novasFuncoes.length > 0
-                  ? novasFuncoes
-                  : (validateData.funcoesUnicas ?? [])
-              }
-              initialMap={nivelCargoMap ?? {}}
-              contexto={isMudancaRoleModal ? 'mudanca_funcao' : 'inicial'}
-              onConfirm={(mapa) => {
-                const templateMap = (appliedTemplate?.nivelCargoMap ??
-                  {}) as Record<string, NivelCargo>;
-                const mergedMap: Record<string, NivelCargo> = {
-                  ...templateMap,
-                  ...(nivelCargoMap ?? {}),
-                  ...mapa,
-                };
-                setNivelCargoMap(mergedMap);
-                setShowNivelCargoModal(false);
-
-                if (
-                  !isMudancaRoleModal &&
-                  appliedTemplate &&
-                  novasFuncoes.length > 0
-                ) {
-                  // Template aplicado + cargos novos (apenas classificação inicial)
-                  // → perguntar se atualiza template antes de importar
-                  setPendingNivelMap(mergedMap);
-                  setShowUpdateTemplatePrompt(true);
-                } else {
-                  // Mudança de role OU sem template → executa direto
-                  if (!isMudancaRoleModal && lastSavedTemplateId) {
-                    updateTemplateNivelCargo(lastSavedTemplateId, mapa);
-                  }
-                  void handleExecute(mergedMap);
-                }
-              }}
-              onSkip={() => {
-                setShowNivelCargoModal(false);
-                const templateMap = (appliedTemplate?.nivelCargoMap ??
-                  {}) as Record<string, NivelCargo>;
-                const finalMap =
-                  Object.keys(templateMap).length > 0 ? templateMap : null;
-                // Mantém null quando não há template para que próxima tentativa
-                // detecte corretamente funções sem classificação
-                setNivelCargoMap(finalMap);
-                void handleExecute(finalMap);
-              }}
-            />
-          )}
         </>
+      )}
+
+      {step === 'nivel-cargo' && validateData && (
+        <NivelCargoStep
+          funcoesNivelInfo={validateData.funcoesNivelInfo ?? []}
+          nivelCargoMap={nivelCargoMap}
+          onChange={(funcao, nivel) =>
+            setNivelCargoMap((prev) => ({ ...prev, [funcao]: nivel }))
+          }
+          onConfirm={handleNivelCargoConfirm}
+          onBack={() => {
+            setStep('validacao');
+            setError(null);
+          }}
+          temNivelCargoDirecto={validateData.temNivelCargoDirecto ?? false}
+          isLoading={loading}
+        />
       )}
 
       {step === 'resultado' && executeData && (
