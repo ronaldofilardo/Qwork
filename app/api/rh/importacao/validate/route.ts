@@ -242,9 +242,11 @@ export async function POST(request: Request): Promise<NextResponse> {
         const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
         const nomeDb = existingNomeMap.get(cpf) || '';
         const parece_mascarado = /^[A-Z]\.\s+[A-Z]\.?$/.test(nomePlanilha);
-        const nomeCompleto =
-          parece_mascarado ? (nomeDb || nomePlanilha) :
-          nomePlanilha.length > nomeDb.length ? nomePlanilha : nomeDb;
+        const nomeCompleto = parece_mascarado
+          ? nomeDb || nomePlanilha
+          : nomePlanilha.length > nomeDb.length
+            ? nomePlanilha
+            : nomeDb;
         const partes = nomeCompleto.trim().split(/\s+/);
         const nomeMascarado =
           partes.length >= 2
@@ -319,9 +321,11 @@ export async function POST(request: Request): Promise<NextResponse> {
           const nomePlanilha = (row.nome as string | undefined)?.trim() || '';
           const nomeDb = existingNomeMap.get(cpf) || '';
           const parece_mascarado = /^[A-Z]\.\s+[A-Z]\.?$/.test(nomePlanilha);
-          const nomeCompleto =
-            parece_mascarado ? (nomeDb || nomePlanilha) :
-            nomePlanilha.length > nomeDb.length ? nomePlanilha : nomeDb;
+          const nomeCompleto = parece_mascarado
+            ? nomeDb || nomePlanilha
+            : nomePlanilha.length > nomeDb.length
+              ? nomePlanilha
+              : nomeDb;
           const partes = nomeCompleto.trim().split(/\s+/);
           const nomeMascarado =
             partes.length >= 2
