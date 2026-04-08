@@ -1,12 +1,11 @@
-﻿'use client';
+'use client';
 
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ShieldCheck,
   AlertTriangle,
   CheckCircle,
   Info,
-  X,
   ArrowRight,
   Users,
   Sparkles,
@@ -19,22 +18,16 @@ export interface FuncaoNivelInfo {
   qtdFuncionarios: number;
   qtdNovos: number;
   qtdExistentes: number;
-  /** Valores distintos de nivel_cargo dos funcionários existentes nesta função */
   niveisAtuais: Array<'gestao' | 'operacional' | null>;
-  /** Função veio de mudança de função de funcionário já existente */
   isMudancaRole: boolean;
-  /** Planilha propõe nivel_cargo diferente do banco para esta função */
   isMudancaNivel?: boolean;
-  /** Algum funcionário existente nesta função tem nivel_cargo = null no banco */
   temNivelNuloExistente: boolean;
-  /** Detalhes dos funcionários que mudaram para esta função (apenas isMudancaRole=true) */
   funcionariosComMudanca?: Array<{
     nomeMascarado: string;
     funcaoAnterior: string;
     nivelAtual: 'gestao' | 'operacional' | null;
     empresa: string;
   }>;
-  /** Detalhes dos funcionários com nivel_cargo divergente entre planilha e banco */
   funcionariosComMudancaNivel?: Array<{
     nomeMascarado: string;
     nivelAtual: 'gestao' | 'operacional' | null;
@@ -53,222 +46,213 @@ interface NivelCargoStepProps {
   isLoading: boolean;
 }
 
-/**
- * Modal unificado para classificação obrigatória (funções alteradas/novas)
- * e revisão manual ("ver detalhes").
- */
-function ClassificarCargoModal({
-  funcao,
-  currentIndex,
-  totalCount,
-  isMudancaRole,
-  isMudancaNivel,
-  funcionariosComMudanca,
-  funcionariosComMudancaNivel,
-  nivelAtual,
-  onSelect,
-  onClose,
+// ---------------------------------------------------------------------------
+// Helper: agrupar mudanças por empresa > função
+// ---------------------------------------------------------------------------
+
+type TrocaInfo = NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>[0];
+type TrocaNivelInfo = NonNullable<FuncaoNivelInfo['funcionariosComMudancaNivel']>[0];
+
+interface GrupoFuncao {
+  trocas: TrocaInfo[];
+  trocasNivel: TrocaNivelInfo[];
+}
+
+function groupMudancasByEmpresaAndFuncao(
+  funcoesNivelInfo: FuncaoNivelInfo[]
+): Map<string, Map<string, GrupoFuncao>> {
+  const grouped = new Map<string, Map<string, GrupoFuncao>>();
+
+  for (const funcaoInfo of funcoesNivelInfo) {
+    const hasMudancaRole =
+      funcaoInfo.isMudancaRole &&
+      (funcaoInfo.funcionariosComMudanca?.length ?? 0) > 0;
+    const hasMudancaNivel =
+      funcaoInfo.isMudancaNivel &&
+      (funcaoInfo.funcionariosComMudancaNivel?.length ?? 0) > 0;
+
+    if (!hasMudancaRole && !hasMudancaNivel) continue;
+
+    if (hasMudancaRole) {
+      for (const troca of funcaoInfo.funcionariosComMudanca!) {
+        const empresa = troca.empresa || '(sem empresa)';
+        if (!grouped.has(empresa)) grouped.set(empresa, new Map());
+        const empresaMap = grouped.get(empresa)!;
+        if (!empresaMap.has(funcaoInfo.funcao)) {
+          empresaMap.set(funcaoInfo.funcao, { trocas: [], trocasNivel: [] });
+        }
+        empresaMap.get(funcaoInfo.funcao)!.trocas.push(troca);
+      }
+    }
+
+    if (hasMudancaNivel) {
+      for (const troca of funcaoInfo.funcionariosComMudancaNivel!) {
+        const empresa = troca.empresa || '(sem empresa)';
+        if (!grouped.has(empresa)) grouped.set(empresa, new Map());
+        const empresaMap = grouped.get(empresa)!;
+        if (!empresaMap.has(funcaoInfo.funcao)) {
+          empresaMap.set(funcaoInfo.funcao, { trocas: [], trocasNivel: [] });
+        }
+        empresaMap.get(funcaoInfo.funcao)!.trocasNivel.push(troca);
+      }
+    }
+  }
+
+  return grouped;
+}
+
+// ---------------------------------------------------------------------------
+// Componente inline: mudanças agrupadas por empresa > função
+// ---------------------------------------------------------------------------
+
+function MudancasAgrupadas({
+  funcoesNivelInfo,
+  nivelCargoMap,
+  onChange,
 }: {
-  funcao: string;
-  currentIndex: number;
-  totalCount: number;
-  isMudancaRole: boolean;
-  isMudancaNivel?: boolean;
-  funcionariosComMudanca?: NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>;
-  funcionariosComMudancaNivel?: NonNullable<FuncaoNivelInfo['funcionariosComMudancaNivel']>;
-  nivelAtual: NivelCargo;
-  onSelect: (nivel: 'gestao' | 'operacional') => void;
-  onClose: () => void;
+  funcoesNivelInfo: FuncaoNivelInfo[];
+  nivelCargoMap: Record<string, NivelCargo>;
+  onChange: (funcao: string, nivel: NivelCargo) => void;
 }) {
-  const restantes = totalCount - currentIndex - 1;
+  const grouped = groupMudancasByEmpresaAndFuncao(funcoesNivelInfo);
+  if (grouped.size === 0) return null;
+
+  const nivelBadge = (v: 'gestao' | 'operacional' | null) =>
+    v === 'gestao' ? (
+      <span className="text-purple-700 font-medium">G gestão</span>
+    ) : v === 'operacional' ? (
+      <span className="text-blue-700 font-medium">O operacional</span>
+    ) : (
+      <span className="text-gray-400 italic">—</span>
+    );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-lg"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className={`flex items-center justify-between px-5 py-4 border-b border-gray-200 ${isMudancaRole ? 'border-l-4 border-l-amber-400' : isMudancaNivel ? 'border-l-4 border-l-blue-400' : 'border-l-4 border-l-emerald-400'}`}>
-          <div className="flex items-center gap-2">
-            {isMudancaRole ? (
-              <ArrowRight size={18} className="text-amber-500" />
-            ) : isMudancaNivel ? (
-              <ArrowRight size={18} className="text-blue-500" />
-            ) : (
-              <Sparkles size={18} className="text-emerald-500" />
-            )}
-            <div>
-              <h3 className="text-sm font-semibold text-gray-900">
-                {isMudancaRole ? 'Mudança de Função' : isMudancaNivel ? 'Mudança de Nível' : 'Nova Função'}
-              </h3>
-              {totalCount > 1 && (
-                <p className="text-[11px] text-gray-400 leading-none mt-0.5">
-                  {currentIndex + 1} de {totalCount}
-                </p>
-              )}
-            </div>
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 px-1">
+        <AlertTriangle size={14} className="text-amber-500 flex-shrink-0" />
+        <p className="text-xs font-semibold text-amber-800">
+          Detalhes das mudanças — classifique o nível para cada função abaixo
+        </p>
+      </div>
+
+      {Array.from(grouped.entries()).map(([empresa, funcaoMap]) => (
+        <div key={empresa} className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-4 py-2.5 bg-gray-100 border-b border-gray-200 flex items-center gap-2">
+            <Users size={13} className="text-gray-500 flex-shrink-0" />
+            <span className="text-xs font-semibold text-gray-700">{empresa}</span>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded cursor-pointer"
-            aria-label="Fechar modal"
-          >
-            <X size={16} />
-          </button>
-        </div>
 
-        <div className="px-5 py-4 max-h-[70vh] overflow-y-auto">
-          <p className="text-xs text-gray-500 mb-3">
-            {isMudancaRole ? (
-              <>
-                Funcionários abaixo mudaram de função para{' '}
-                <strong className="text-gray-800">{funcao}</strong>. Defina o
-                nível de cargo.
-              </>
-            ) : isMudancaNivel ? (
-              <>
-                A planilha propõe alteração de nível para{' '}
-                <strong className="text-gray-800">{funcao}</strong>. Confirme ou
-                ajuste o nível que será gravado.
-              </>
-            ) : (
-              <>
-                A função <strong className="text-gray-800">{funcao}</strong> é
-                nova nesta importação. Defina o nível de cargo.
-              </>
-            )}
-          </p>
-
-          {/* Tabela de funcionários — apenas em mudança de função */}
-          {isMudancaRole &&
-            funcionariosComMudanca &&
-            funcionariosComMudanca.length > 0 && (
-              <table className="w-full text-xs mb-4 border border-gray-100 rounded-lg overflow-hidden">
-                <thead className="bg-gray-50">
-                  <tr className="text-left text-gray-500">
-                    <th className="px-3 py-2 font-medium">Nome</th>
-                    <th className="px-3 py-2 font-medium">Empresa</th>
-                    <th className="px-3 py-2 font-medium">Era</th>
-                    <th className="px-3 py-2 font-medium text-right">
-                      Nível atual
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {funcionariosComMudanca.map((f, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2 text-gray-800 font-medium">
-                        {f.nomeMascarado}
-                      </td>
-                      <td className="px-3 py-2 text-gray-500 text-[11px]">
-                        {f.empresa || <span className="italic text-gray-300">—</span>}
-                      </td>
-                      <td className="px-3 py-2 text-gray-500">
-                        {f.funcaoAnterior}
-                      </td>
-                      <td className="px-3 py-2 text-right">
-                        {f.nivelAtual === 'gestao' ? (
-                          <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full font-medium text-[11px]">
-                            G gestão
-                          </span>
-                        ) : f.nivelAtual === 'operacional' ? (
-                          <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium text-[11px]">
-                            O operacional
-                          </span>
-                        ) : (
-                          <span className="text-gray-400 italic text-[11px]">
-                            não definido
+          <div className="divide-y divide-gray-100">
+            {Array.from(funcaoMap.entries()).map(([funcao, grupo]) => {
+              const nivelClassificado = nivelCargoMap[funcao] ?? '';
+              return (
+                <div key={funcao} className="p-4">
+                  <div className="flex items-center justify-between gap-3 mb-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-semibold text-gray-800">{funcao}</span>
+                        {grupo.trocas.length > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                            <ArrowRight size={9} />
+                            troca função
                           </span>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                        {grupo.trocasNivel.length > 0 && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-medium text-blue-700 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                            <ArrowRight size={9} />
+                            nível alterado
+                          </span>
+                        )}
+                      </div>
+                      {nivelClassificado && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <CheckCircle size={12} className={nivelClassificado === 'gestao' ? 'text-purple-600' : 'text-blue-600'} />
+                          <span className={`text-[11px] font-medium ${nivelClassificado === 'gestao' ? 'text-purple-700' : 'text-blue-700'}`}>
+                            {nivelClassificado === 'gestao' ? 'Gestão' : 'Operacional'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-1.5 flex-shrink-0">
+                      <button
+                        onClick={() => onChange(funcao, nivelCargoMap[funcao] === 'gestao' ? '' : 'gestao')}
+                        className={`w-9 h-9 text-xs font-bold rounded-lg border-2 transition-colors cursor-pointer ${
+                          nivelClassificado === 'gestao'
+                            ? 'bg-purple-600 text-white border-purple-600'
+                            : 'bg-white text-purple-600 border-purple-200 hover:border-purple-400'
+                        }`}
+                        title="Gestão"
+                      >
+                        G
+                      </button>
+                      <button
+                        onClick={() => onChange(funcao, nivelCargoMap[funcao] === 'operacional' ? '' : 'operacional')}
+                        className={`w-9 h-9 text-xs font-bold rounded-lg border-2 transition-colors cursor-pointer ${
+                          nivelClassificado === 'operacional'
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'bg-white text-blue-600 border-blue-200 hover:border-blue-400'
+                        }`}
+                        title="Operacional"
+                      >
+                        O
+                      </button>
+                    </div>
+                  </div>
 
-          {/* Tabela de divergências — apenas em mudança de nivel_cargo */}
-          {isMudancaNivel &&
-            funcionariosComMudancaNivel &&
-            funcionariosComMudancaNivel.length > 0 && (
-              <table className="w-full text-xs mb-4 border border-gray-100 rounded-lg overflow-hidden">
-                <thead className="bg-gray-50">
-                  <tr className="text-left text-gray-500">
-                    <th className="px-3 py-2 font-medium">Nome</th>
-                    <th className="px-3 py-2 font-medium">Empresa</th>
-                    <th className="px-3 py-2 font-medium">Banco atual</th>
-                    <th className="px-3 py-2 font-medium text-right">
-                      Planilha propõe
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {funcionariosComMudancaNivel.map((f, i) => (
-                    <tr key={i}>
-                      <td className="px-3 py-2 text-gray-800 font-medium">
-                        {f.nomeMascarado}
-                      </td>
-                      <td className="px-3 py-2 text-gray-500 text-[11px]">
-                        {f.empresa || <span className="italic text-gray-300">—</span>}
-                      </td>
-                      <td className="px-3 py-2 text-[11px]">{f.nivelAtual === 'gestao' ? <span className="text-purple-700 font-medium">G gestão</span> : f.nivelAtual === 'operacional' ? <span className="text-blue-700 font-medium">O operacional</span> : <span className="text-gray-400 italic">—</span>}</td>
-                      <td className="px-3 py-2 text-right text-[11px] font-semibold">{f.nivelProposto === 'gestao' ? <span className="text-purple-700">G gestão</span> : f.nivelProposto === 'operacional' ? <span className="text-blue-700">O operacional</span> : <span className="text-gray-400 italic">—</span>}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+                  {grupo.trocas.length > 0 && (
+                    <table className="w-full text-xs mb-2 border border-gray-100 rounded-lg overflow-hidden">
+                      <thead className="bg-gray-50">
+                        <tr className="text-left text-gray-500">
+                          <th className="px-3 py-2 font-medium">Nome</th>
+                          <th className="px-3 py-2 font-medium">Era (função)</th>
+                          <th className="px-3 py-2 font-medium text-right">Nível atual</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {grupo.trocas.map((t, i) => (
+                          <tr key={i}>
+                            <td className="px-3 py-2 text-gray-800 font-medium">{t.nomeMascarado}</td>
+                            <td className="px-3 py-2 text-gray-500">{t.funcaoAnterior}</td>
+                            <td className="px-3 py-2 text-right">{nivelBadge(t.nivelAtual)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
 
-          {/* Escolha do nível */}
-          <div className={isMudancaRole || isMudancaNivel ? 'border-t border-gray-100 pt-3' : ''}>
-            <p className="text-xs text-gray-700 mb-2 font-semibold">
-              Qual nível para &ldquo;{funcao}&rdquo;?
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => onSelect('gestao')}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors cursor-pointer ${
-                  nivelAtual === 'gestao'
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-                }`}
-              >
-                G — Gestão
-              </button>
-              <button
-                onClick={() => onSelect('operacional')}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors cursor-pointer ${
-                  nivelAtual === 'operacional'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                }`}
-              >
-                O — Operacional
-              </button>
-            </div>
+                  {grupo.trocasNivel.length > 0 && (
+                    <table className="w-full text-xs border border-gray-100 rounded-lg overflow-hidden">
+                      <thead className="bg-gray-50">
+                        <tr className="text-left text-gray-500">
+                          <th className="px-3 py-2 font-medium">Nome</th>
+                          <th className="px-3 py-2 font-medium">Banco atual</th>
+                          <th className="px-3 py-2 font-medium text-right">Planilha propõe</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {grupo.trocasNivel.map((t, i) => (
+                          <tr key={i}>
+                            <td className="px-3 py-2 text-gray-800 font-medium">{t.nomeMascarado}</td>
+                            <td className="px-3 py-2">{nivelBadge(t.nivelAtual)}</td>
+                            <td className="px-3 py-2 text-right font-semibold">{nivelBadge(t.nivelProposto)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+              );
+            })}
           </div>
-
-          {/* Fuga: fechar e classificar manualmente */}
-          {restantes > 0 && (
-            <div className="mt-3 text-center">
-              <button
-                onClick={onClose}
-                className="text-xs text-gray-400 hover:text-gray-600 underline cursor-pointer"
-              >
-                Fechar — classificar manualmente ({restantes} restante
-                {restantes !== 1 ? 's' : ''})
-              </button>
-            </div>
-          )}
         </div>
-      </div>
+      ))}
     </div>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Componente principal
+// ---------------------------------------------------------------------------
 
 export default function NivelCargoStep({
   funcoesNivelInfo,
@@ -279,34 +263,14 @@ export default function NivelCargoStep({
   temNivelCargoDirecto,
   isLoading,
 }: NivelCargoStepProps) {
-  /**
-   * Fila de classificação obrigatória computada sincronamente no primeiro render
-   * via useState lazy initializer — o modal já está aberto no primeiro frame.
-   * Inclui: isMudancaRole=true (troca de função) e novas funções (qtdNovos>0).
-   */
-  const [initialQueue] = useState<string[]>(() =>
-    funcoesNivelInfo
-      .filter((f) => f.isMudancaRole || f.isMudancaNivel || f.qtdNovos > 0)
-      .map((f) => f.funcao)
-  );
-
-  /** Ref com a fila atual (permite navegação sequencial sem re-render). */
-  const queueRef = useRef<string[]>(initialQueue);
-  /** Modal aberto via botão "ver detalhes" (fora da fila). */
-  const isManualModeRef = useRef(false);
-
-  /** Função atual no modal — inicia já no primeiro item da fila se houver. */
-  const [modalFuncao, setModalFuncao] = useState<string | null>(
-    initialQueue.length > 0 ? initialQueue[0] : null
-  );
-  const [modalQueueIndex, setModalQueueIndex] = useState(0);
-
-  const modalInfo = useMemo(
+  const temMudancas = useMemo(
     () =>
-      modalFuncao
-        ? funcoesNivelInfo.find((f) => f.funcao === modalFuncao)
-        : null,
-    [modalFuncao, funcoesNivelInfo]
+      funcoesNivelInfo.some(
+        (f) =>
+          (f.isMudancaRole && (f.funcionariosComMudanca?.length ?? 0) > 0) ||
+          (f.isMudancaNivel && (f.funcionariosComMudancaNivel?.length ?? 0) > 0)
+      ),
+    [funcoesNivelInfo]
   );
 
   const totalFuncoes = funcoesNivelInfo.length;
@@ -349,50 +313,11 @@ export default function NivelCargoStep({
     [funcoesNivelInfo, onChange]
   );
 
-  /** Seleção no modal: classifica e avança na fila (ou fecha em modo manual). */
-  const handleModalSelect = useCallback(
-    (nivel: 'gestao' | 'operacional') => {
-      if (!modalFuncao) return;
-      onChange(modalFuncao, nivel);
-
-      if (isManualModeRef.current) {
-        isManualModeRef.current = false;
-        setModalFuncao(null);
-        return;
-      }
-
-      const nextIndex = modalQueueIndex + 1;
-      if (nextIndex < queueRef.current.length) {
-        setModalQueueIndex(nextIndex);
-        setModalFuncao(queueRef.current[nextIndex]);
-      } else {
-        setModalFuncao(null);
-      }
-    },
-    [modalFuncao, modalQueueIndex, onChange]
-  );
-
-  /** Fecha toda a sequência — usuário classifica manualmente na tabela. */
-  const handleModalClose = useCallback(() => {
-    isManualModeRef.current = false;
-    setModalFuncao(null);
-  }, []);
-
-  /** Abre modal para uma função específica (botão "ver detalhes"). */
-  const handleOpenModalManual = useCallback((funcao: string) => {
-    isManualModeRef.current = true;
-    setModalFuncao(funcao);
-  }, []);
-
-  // --- Planilha já tem coluna nivel_cargo e SEM mudanças detectadas ---
-  if (temNivelCargoDirecto && initialQueue.length === 0) {
+  if (temNivelCargoDirecto && !temMudancas) {
     return (
       <div className="space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-          <CheckCircle
-            size={18}
-            className="text-green-600 flex-shrink-0 mt-0.5"
-          />
+          <CheckCircle size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-green-800">
               Nível de cargo mapeado diretamente da planilha
@@ -404,17 +329,10 @@ export default function NivelCargoStep({
           </div>
         </div>
         <div className="flex gap-3 justify-between pt-2">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-          >
+          <button onClick={onBack} className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
             ← Voltar
           </button>
-          <button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-60"
-          >
+          <button onClick={onConfirm} disabled={isLoading} className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-60">
             {isLoading ? 'Importando...' : 'Confirmar e Importar →'}
           </button>
         </div>
@@ -422,28 +340,18 @@ export default function NivelCargoStep({
     );
   }
 
-  // --- Sem funções a classificar ---
   if (totalFuncoes === 0) {
     return (
       <div className="space-y-4">
         <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-start gap-3">
           <Info size={18} className="text-gray-500 flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-gray-700">
-            Nenhuma função encontrada para classificar.
-          </p>
+          <p className="text-sm text-gray-700">Nenhuma função encontrada para classificar.</p>
         </div>
         <div className="flex gap-3 justify-between pt-2">
-          <button
-            onClick={onBack}
-            className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-          >
+          <button onClick={onBack} className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
             ← Voltar
           </button>
-          <button
-            onClick={onConfirm}
-            disabled={isLoading}
-            className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-60"
-          >
+          <button onClick={onConfirm} disabled={isLoading} className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-60">
             {isLoading ? 'Importando...' : 'Confirmar e Importar →'}
           </button>
         </div>
@@ -451,12 +359,8 @@ export default function NivelCargoStep({
     );
   }
 
-  const modalCurrentIndex = isManualModeRef.current ? 0 : modalQueueIndex;
-  const modalTotalCount = isManualModeRef.current ? 1 : queueRef.current.length;
-
   return (
     <div className="space-y-4">
-      {/* Banner auto-classificação */}
       {autoClassificadas > 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-start gap-3">
           <Sparkles size={16} className="text-blue-500 flex-shrink-0 mt-0.5" />
@@ -471,47 +375,30 @@ export default function NivelCargoStep({
         </div>
       )}
 
-      {/* Tabela de funções */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
         <div className="px-4 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-gray-500" />
-            <span className="text-sm font-medium text-gray-700">
-              Classificação de Nível de Cargo
-            </span>
+            <span className="text-sm font-medium text-gray-700">Classificação de Nível de Cargo</span>
           </div>
-          <span className="text-xs text-gray-500">
-            {classificadas}/{totalFuncoes} classificadas
-          </span>
+          <span className="text-xs text-gray-500">{classificadas}/{totalFuncoes} classificadas</span>
         </div>
 
-        {/* Ações em lote */}
         <div className="px-4 py-2 bg-white border-b border-gray-100 flex items-center gap-2">
           <span className="text-xs text-gray-500 mr-1">Definir todos:</span>
-          <button
-            onClick={() => handleDefinirTodos('gestao')}
-            className="px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors cursor-pointer"
-          >
+          <button onClick={() => handleDefinirTodos('gestao')} className="px-2.5 py-1 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded hover:bg-purple-100 transition-colors cursor-pointer">
             G — Gestão
           </button>
-          <button
-            onClick={() => handleDefinirTodos('operacional')}
-            className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors cursor-pointer"
-          >
+          <button onClick={() => handleDefinirTodos('operacional')} className="px-2.5 py-1 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded hover:bg-blue-100 transition-colors cursor-pointer">
             O — Operacional
           </button>
         </div>
 
-        {/* Linhas das funções */}
         <div className="divide-y divide-gray-100">
           {funcoesNivelInfo.map((info) => {
             const nivel = nivelCargoMap[info.funcao] ?? '';
             return (
-              <div
-                key={info.funcao}
-                className="px-4 py-3 flex items-center gap-3"
-              >
-                {/* Status icon */}
+              <div key={info.funcao} className="px-4 py-3 flex items-center gap-3">
                 <div className="flex-shrink-0">
                   {nivel ? (
                     <CheckCircle size={16} className="text-green-500" />
@@ -519,13 +406,9 @@ export default function NivelCargoStep({
                     <AlertTriangle size={16} className="text-amber-500" />
                   )}
                 </div>
-
-                {/* Função + badges */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-gray-800 truncate">
-                      {info.funcao}
-                    </span>
+                    <span className="text-sm font-medium text-gray-800 truncate">{info.funcao}</span>
                     {info.isMudancaRole && (
                       <span className="inline-flex items-center gap-1 text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
                         <ArrowRight size={10} />
@@ -545,50 +428,21 @@ export default function NivelCargoStep({
                       </span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs text-gray-400">
-                      {info.qtdFuncionarios} funcionário
-                      {info.qtdFuncionarios !== 1 ? 's' : ''}
-                    </span>
-                    {(info.isMudancaRole
-                      ? (info.funcionariosComMudanca?.length ?? 0) > 0
-                      : info.isMudancaNivel
-                        ? (info.funcionariosComMudancaNivel?.length ?? 0) > 0
-                        : false) && (
-                        <button
-                          onClick={() => handleOpenModalManual(info.funcao)}
-                          className="text-xs text-blue-600 hover:text-blue-800 underline cursor-pointer"
-                        >
-                          ver detalhes
-                        </button>
-                      )}
-                  </div>
+                  <span className="text-xs text-gray-400 mt-0.5 block">
+                    {info.qtdFuncionarios} funcionário{info.qtdFuncionarios !== 1 ? 's' : ''}
+                  </span>
                 </div>
-
-                {/* Botões G / O */}
                 <div className="flex gap-1.5 flex-shrink-0">
                   <button
                     onClick={() => handleToggle(info.funcao, 'gestao')}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors cursor-pointer ${
-                      nivel === 'gestao'
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-purple-600 border-purple-200 hover:border-purple-400'
-                    }`}
+                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors cursor-pointer ${nivel === 'gestao' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-600 border-purple-200 hover:border-purple-400'}`}
                     title="Gestão"
-                  >
-                    G
-                  </button>
+                  >G</button>
                   <button
                     onClick={() => handleToggle(info.funcao, 'operacional')}
-                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors cursor-pointer ${
-                      nivel === 'operacional'
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'bg-white text-blue-600 border-blue-200 hover:border-blue-400'
-                    }`}
+                    className={`w-8 h-8 text-xs font-bold rounded-lg border-2 transition-colors cursor-pointer ${nivel === 'operacional' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-600 border-blue-200 hover:border-blue-400'}`}
                     title="Operacional"
-                  >
-                    O
-                  </button>
+                  >O</button>
                 </div>
               </div>
             );
@@ -596,14 +450,21 @@ export default function NivelCargoStep({
         </div>
       </div>
 
-      {/* Legenda */}
+      {temMudancas && (
+        <MudancasAgrupadas
+          funcoesNivelInfo={funcoesNivelInfo}
+          nivelCargoMap={nivelCargoMap}
+          onChange={onChange}
+        />
+      )}
+
       <div className="flex items-center gap-4 text-xs text-gray-500">
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded bg-purple-600"></span>
+          <span className="inline-block w-3 h-3 rounded bg-purple-600" />
           G = Gestão
         </span>
         <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded bg-blue-600"></span>
+          <span className="inline-block w-3 h-3 rounded bg-blue-600" />
           O = Operacional
         </span>
         <span className="flex items-center gap-1">
@@ -612,26 +473,18 @@ export default function NivelCargoStep({
         </span>
       </div>
 
-      {/* Blocker */}
       {!todasClassificadas && (
         <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
           <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
           <span>
             Classifique todas as funções para habilitar a importação.{' '}
-            <strong>
-              {totalFuncoes - classificadas} pendente
-              {totalFuncoes - classificadas > 1 ? 's' : ''}
-            </strong>
+            <strong>{totalFuncoes - classificadas} pendente{totalFuncoes - classificadas > 1 ? 's' : ''}</strong>.
           </span>
         </div>
       )}
 
-      {/* Botões de ação */}
       <div className="flex gap-3 justify-between pt-2">
-        <button
-          onClick={onBack}
-          className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer"
-        >
+        <button onClick={onBack} className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer">
           ← Voltar
         </button>
         <button
@@ -642,22 +495,6 @@ export default function NivelCargoStep({
           {isLoading ? 'Importando...' : 'Confirmar e Importar →'}
         </button>
       </div>
-
-      {/* Modal de classificação — auto-abre para funções alteradas/novas */}
-      {modalInfo && modalFuncao && (
-        <ClassificarCargoModal
-          funcao={modalFuncao}
-          currentIndex={modalCurrentIndex}
-          totalCount={modalTotalCount > 0 ? modalTotalCount : 1}
-          isMudancaRole={modalInfo.isMudancaRole}
-          isMudancaNivel={modalInfo.isMudancaNivel}
-          funcionariosComMudanca={modalInfo.funcionariosComMudanca}
-          funcionariosComMudancaNivel={modalInfo.funcionariosComMudancaNivel}
-          nivelAtual={nivelCargoMap[modalFuncao] ?? ''}
-          onSelect={handleModalSelect}
-          onClose={handleModalClose}
-        />
-      )}
     </div>
   );
 }
