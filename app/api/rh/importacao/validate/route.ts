@@ -234,8 +234,11 @@ export async function POST(request: Request): Promise<NextResponse> {
       const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
       if (funcaoAtual !== novaFuncao) {
         funcoesNovasPorMudancaRole.add(novaFuncao);
-        // Mascara nome: "João Silva" → "J. S."
-        const nomeCompleto = existingNomeMap.get(cpf) ?? '';
+        // Nome: usa a planilha como fonte primária (mais confiável que o DB)
+        const nomeCompleto =
+          (row.nome as string | undefined)?.trim() ||
+          existingNomeMap.get(cpf) ||
+          '';
         const partes = nomeCompleto.trim().split(/\s+/);
         const nomeMascarado =
           partes.length >= 2
@@ -305,7 +308,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
         if (nivelBanco !== nivelPlanilha) {
           funcoesComMudancaNivel.add(funcao);
-          const nomeCompleto = existingNomeMap.get(cpf) ?? '';
+          // Nome: usa a planilha como fonte primária (mais confiável que o DB)
+          const nomeCompleto =
+            (row.nome as string | undefined)?.trim() ||
+            existingNomeMap.get(cpf) ||
+            '';
           const partes = nomeCompleto.trim().split(/\s+/);
           const nomeMascarado =
             partes.length >= 2
@@ -346,8 +353,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     for (const row of linhasValidasParaFuncoes) {
       const cpfRow = limparCPF(row.cpf ?? '');
-      const funcaoRow = (row.funcao ?? '').trim();
-      if (!funcaoRow || funcaoRow === 'Não informado') continue;
+      // Funcionários sem função são agrupados sob 'Não informado' (chave usada no execute route)
+      const funcaoRow = (row.funcao ?? '').trim() || 'Não informado';
 
       if (!funcaoInfoMap.has(funcaoRow)) {
         funcaoInfoMap.set(funcaoRow, {
