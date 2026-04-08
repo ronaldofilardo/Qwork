@@ -30,6 +30,7 @@ function buildMandatoryQueue(
   return funcoesNivelInfo
     .filter((f) => {
       if (f.isMudancaRole) return true;
+      if (f.isMudancaNivel && !nivelCargoMap[f.funcao]) return true;
       if (f.qtdNovos > 0 && !nivelCargoMap[f.funcao]) return true;
       return false;
     })
@@ -61,8 +62,10 @@ function makeFuncao(
     qtdExistentes: 5,
     niveisAtuais: ['operacional'],
     isMudancaRole: false,
+    isMudancaNivel: false,
     temNivelNuloExistente: false,
     funcionariosComMudanca: [],
+    funcionariosComMudancaNivel: [],
     ...overrides,
   };
 }
@@ -355,5 +358,56 @@ describe('cenário integrado — 4 funções alteradas', () => {
       'Gerente Regional',
       'Testador',
     ]);
+  });
+});
+
+// ===========================================================================
+// 9. isMudancaNivel=true → obrigatório quando não classificado
+// ===========================================================================
+
+describe('buildMandatoryQueue — isMudancaNivel', () => {
+  it('inclui função com isMudancaNivel=true não classificada', () => {
+    const funcs = [
+      makeFuncao({
+        funcao: 'PROFESSOR',
+        isMudancaNivel: true,
+        funcionariosComMudancaNivel: [
+          { nomeMascarado: 'J. S.', nivelAtual: 'operacional', nivelProposto: 'gestao', empresa: 'Escola ABC' },
+        ],
+      }),
+    ];
+    const map: Record<string, NivelCargo> = {};
+    expect(buildMandatoryQueue(funcs, map)).toEqual(['PROFESSOR']);
+  });
+
+  it('NÃO inclui função com isMudancaNivel=true quando já classificada', () => {
+    const funcs = [
+      makeFuncao({ funcao: 'PROFESSOR', isMudancaNivel: true }),
+    ];
+    const map: Record<string, NivelCargo> = { PROFESSOR: 'gestao' };
+    expect(buildMandatoryQueue(funcs, map)).toEqual([]);
+  });
+
+  it('inclui isMudancaNivel junto com isMudancaRole em ordem correta', () => {
+    const funcs = [
+      makeFuncao({ funcao: 'PEDAGOGO', isMudancaRole: true }),
+      makeFuncao({ funcao: 'PROFESSOR', isMudancaNivel: true }),
+      makeFuncao({ funcao: 'INSPETOR', isMudancaRole: false, isMudancaNivel: false, qtdNovos: 0 }),
+    ];
+    const map: Record<string, NivelCargo> = {};
+    expect(buildMandatoryQueue(funcs, map)).toEqual(['PEDAGOGO', 'PROFESSOR']);
+  });
+
+  it('empresa em estrutura funcionariosComMudancaNivel não afeta queue logic', () => {
+    const func = makeFuncao({
+      funcao: 'MECANICO',
+      isMudancaNivel: true,
+      funcionariosComMudancaNivel: [
+        { nomeMascarado: 'A. B.', nivelAtual: 'operacional', nivelProposto: 'gestao', empresa: 'Empresa XYZ' },
+        { nomeMascarado: 'C. D.', nivelAtual: null, nivelProposto: 'operacional', empresa: '' },
+      ],
+    });
+    expect(func.funcionariosComMudancaNivel).toHaveLength(2);
+    expect(func.funcionariosComMudancaNivel![0].empresa).toBe('Empresa XYZ');
   });
 });
