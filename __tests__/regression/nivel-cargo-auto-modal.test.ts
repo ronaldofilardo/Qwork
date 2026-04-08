@@ -316,7 +316,6 @@ describe('cenário integrado — 4 funções alteradas', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'J. S.',
             nome: 'João Silva',
             funcaoAnterior: 'Desenvolvedor',
             nivelAtual: 'gestao',
@@ -333,7 +332,6 @@ describe('cenário integrado — 4 funções alteradas', () => {
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
           {
-            nomeMascarado: 'M. O.',
             nome: 'Maria Oliveira',
             funcaoAnterior: 'Assistente',
             nivelAtual: 'operacional',
@@ -401,7 +399,6 @@ describe('buildMandatoryQueue — isMudancaNivel', () => {
         isMudancaNivel: true,
         funcionariosComMudancaNivel: [
           {
-            nomeMascarado: 'J. S.',
             nome: 'João Silva',
             nivelAtual: 'operacional',
             nivelProposto: 'gestao',
@@ -441,14 +438,12 @@ describe('buildMandatoryQueue — isMudancaNivel', () => {
       isMudancaNivel: true,
       funcionariosComMudancaNivel: [
         {
-          nomeMascarado: 'A. B.',
           nome: 'André Borges',
           nivelAtual: 'operacional',
           nivelProposto: 'gestao',
           empresa: 'Empresa XYZ',
         },
         {
-          nomeMascarado: 'C. D.',
           nome: 'Carla Dias',
           nivelAtual: null,
           nivelProposto: 'operacional',

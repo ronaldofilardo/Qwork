@@ -377,29 +377,13 @@ describe('sugerirMapeamento: campo funcao não afetado pela correção', () => {
 });
 
 // ============================================================
-// 6 — Lógica de mascaramento de nome e coleta de funcionariosComMudanca
+// 6 — Coleta de funcionariosComMudanca
 // (extraída e testada isoladamente — mesma lógica do validate/route.ts)
 // ============================================================
 
-/**
- * Replica a lógica de mascaramento de nome do validate/route.ts.
- * "João Silva" → "J. S."
- * "João" → "J."
- * "" → "N/A"
- */
-function mascarNome(nomeCompleto: string): string {
-  const partes = nomeCompleto.trim().split(/\s+/);
-  if (partes.length >= 2) {
-    return `${partes[0][0] ?? '?'}. ${partes[partes.length - 1][0] ?? '?'}.`;
-  } else if (partes[0]) {
-    return `${partes[0][0]}.`;
-  }
-  return 'N/A';
-}
-
 type NivelCargoValue = 'gestao' | 'operacional' | null;
 type MudancaRoleDetalhe = {
-  nomeMascarado: string;
+  nome: string;
   funcaoAnterior: string;
   nivelAtual: NivelCargoValue;
 };
@@ -420,13 +404,16 @@ function coletarFuncionariosComMudanca(
   for (const row of linhasValidas) {
     const cpf = limparCPF(row.cpf ?? '');
     const novaFuncao = (row.funcao ?? '').trim();
-    if (!novaFuncao || novaFuncao === 'Não informado' || !existingFuncaoMap.has(cpf))
+    if (
+      !novaFuncao ||
+      novaFuncao === 'Não informado' ||
+      !existingFuncaoMap.has(cpf)
+    )
       continue;
     const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
     if (funcaoAtual === novaFuncao) continue;
 
     const nomeCompleto = existingNomeMap.get(cpf) ?? '';
-    const nomeMascarado = mascarNome(nomeCompleto);
     const nivelRaw = existingNivelCargoMap.get(cpf) ?? null;
     const nivelAtual: NivelCargoValue =
       nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
@@ -434,51 +421,40 @@ function coletarFuncionariosComMudanca(
     if (!result.has(novaFuncao)) result.set(novaFuncao, []);
     const lista = result.get(novaFuncao)!;
     const jaAdicionado = lista.some(
-      (d) => d.nomeMascarado === nomeMascarado && d.funcaoAnterior === funcaoAtual
+      (d) => d.nome === nomeCompleto && d.funcaoAnterior === funcaoAtual
     );
     if (!jaAdicionado) {
-      lista.push({ nomeMascarado, funcaoAnterior: funcaoAtual, nivelAtual });
+      lista.push({
+        nome: nomeCompleto,
+        funcaoAnterior: funcaoAtual,
+        nivelAtual,
+      });
     }
   }
   return result;
 }
 
-describe('mascarNome', () => {
-  it('mascara nome completo (primeiro + último inicial)', () => {
-    expect(mascarNome('João Silva')).toBe('J. S.');
-  });
-
-  it('mascara nome com múltiplas partes (usa primeiro e último)', () => {
-    expect(mascarNome('Maria Da Conceição Lima')).toBe('M. L.');
-  });
-
-  it('mascara nome com um único token', () => {
-    expect(mascarNome('Eduardo')).toBe('E.');
-  });
-
-  it('retorna N/A para string vazia', () => {
-    expect(mascarNome('')).toBe('N/A');
-  });
-
-  it('retorna N/A para string de espaços', () => {
-    expect(mascarNome('   ')).toBe('N/A');
-  });
-});
-
 describe('coletarFuncionariosComMudanca', () => {
   it('coleta detalhes do funcionário que mudou de função', () => {
     const funcaoMap = new Map([['12345678901', 'AUXILIAR']]);
-    const nivelMap = new Map<string, string | null>([['12345678901', 'operacional']]);
+    const nivelMap = new Map<string, string | null>([
+      ['12345678901', 'operacional'],
+    ]);
     const nomeMap = new Map([['12345678901', 'João Silva']]);
     const linhas = [{ cpf: '123.456.789-01', funcao: 'ANALISTA' }];
 
-    const result = coletarFuncionariosComMudanca(linhas, funcaoMap, nivelMap, nomeMap);
+    const result = coletarFuncionariosComMudanca(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap
+    );
 
     expect(result.has('ANALISTA')).toBe(true);
     const detalhes = result.get('ANALISTA')!;
     expect(detalhes).toHaveLength(1);
     expect(detalhes[0]).toMatchObject({
-      nomeMascarado: 'J. S.',
+      nome: 'João Silva',
       funcaoAnterior: 'AUXILIAR',
       nivelAtual: 'operacional',
     });
@@ -486,14 +462,21 @@ describe('coletarFuncionariosComMudanca', () => {
 
   it('deduplica quando mesmo funcionário aparece em duas linhas', () => {
     const funcaoMap = new Map([['12345678901', 'AUXILIAR']]);
-    const nivelMap = new Map<string, string | null>([['12345678901', 'gestao']]);
+    const nivelMap = new Map<string, string | null>([
+      ['12345678901', 'gestao'],
+    ]);
     const nomeMap = new Map([['12345678901', 'Carlos Melo']]);
     const linhas = [
       { cpf: '123.456.789-01', funcao: 'GESTOR' },
       { cpf: '123.456.789-01', funcao: 'GESTOR' },
     ];
 
-    const result = coletarFuncionariosComMudanca(linhas, funcaoMap, nivelMap, nomeMap);
+    const result = coletarFuncionariosComMudanca(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap
+    );
     expect(result.get('GESTOR')).toHaveLength(1);
   });
 
@@ -503,7 +486,12 @@ describe('coletarFuncionariosComMudanca', () => {
     const nomeMap = new Map([['12345678901', 'Ana Lima']]);
     const linhas = [{ cpf: '123.456.789-01', funcao: 'SUPERVISOR' }];
 
-    const result = coletarFuncionariosComMudanca(linhas, funcaoMap, nivelMap, nomeMap);
+    const result = coletarFuncionariosComMudanca(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap
+    );
     expect(result.get('SUPERVISOR')![0].nivelAtual).toBeNull();
   });
 
@@ -513,17 +501,29 @@ describe('coletarFuncionariosComMudanca', () => {
     const nomeMap = new Map<string, string>();
     const linhas = [{ cpf: '123.456.789-01', funcao: 'ANALISTA' }];
 
-    const result = coletarFuncionariosComMudanca(linhas, funcaoMap, nivelMap, nomeMap);
+    const result = coletarFuncionariosComMudanca(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap
+    );
     expect(result.size).toBe(0);
   });
 
   it('não coleta quando função não muda', () => {
     const funcaoMap = new Map([['12345678901', 'ANALISTA']]);
-    const nivelMap = new Map<string, string | null>([['12345678901', 'operacional']]);
+    const nivelMap = new Map<string, string | null>([
+      ['12345678901', 'operacional'],
+    ]);
     const nomeMap = new Map([['12345678901', 'Pedro Costa']]);
     const linhas = [{ cpf: '123.456.789-01', funcao: 'ANALISTA' }];
 
-    const result = coletarFuncionariosComMudanca(linhas, funcaoMap, nivelMap, nomeMap);
+    const result = coletarFuncionariosComMudanca(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap
+    );
     expect(result.size).toBe(0);
   });
 
@@ -545,7 +545,12 @@ describe('coletarFuncionariosComMudanca', () => {
       { cpf: '222.222.222-22', funcao: 'COORDENADOR' },
     ];
 
-    const result = coletarFuncionariosComMudanca(linhas, funcaoMap, nivelMap, nomeMap);
+    const result = coletarFuncionariosComMudanca(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap
+    );
     const lista = result.get('COORDENADOR')!;
     expect(lista).toHaveLength(2);
     expect(lista.map((d) => d.nivelAtual)).toEqual(

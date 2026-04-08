@@ -156,7 +156,6 @@ describe('selecionarNomeCompleto — planilha tem prioridade sobre DB', () => {
 // ===========================================================================
 
 type MudancaRoleDetalhe = {
-  nomeMascarado: string;
   nome: string;
   funcaoAnterior: string;
   nivelAtual: 'gestao' | 'operacional' | null;
@@ -177,12 +176,6 @@ function coletarComDedupCPF(
   function limparCPF(cpf: string) {
     return cpf.replace(/\D/g, '');
   }
-  function mascarNome(nome: string): string {
-    const partes = nome.trim().split(/\s+/);
-    if (partes.length >= 2) return `${partes[0][0] ?? '?'}. ${partes[partes.length - 1][0] ?? '?'}.`;
-    if (partes[0]) return `${partes[0][0]}.`;
-    return 'N/A';
-  }
 
   const result = new Map<string, MudancaRoleDetalhe[]>();
   const cpfsAdicionados = new Map<string, Set<string>>();
@@ -190,26 +183,31 @@ function coletarComDedupCPF(
   for (const row of linhasValidas) {
     const cpf = limparCPF(row.cpf ?? '');
     const novaFuncao = (row.funcao ?? '').trim();
-    if (!novaFuncao || novaFuncao === 'Não informado' || !existingFuncaoMap.has(cpf)) continue;
+    if (
+      !novaFuncao ||
+      novaFuncao === 'Não informado' ||
+      !existingFuncaoMap.has(cpf)
+    )
+      continue;
     const funcaoAtual = (existingFuncaoMap.get(cpf) ?? '').trim();
     if (funcaoAtual === novaFuncao) continue;
 
     const nomePlanilha = (row.nome ?? '').trim();
     const nomeDb = existingNomeMap.get(cpf) || '';
     const nomeCompleto = selecionarNomeCompleto(nomePlanilha, nomeDb);
-    const nomeMascarado = mascarNome(nomeCompleto);
 
     const nivelRaw = existingNivelCargoMap.get(cpf) ?? null;
-    const nivelAtual = nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
+    const nivelAtual =
+      nivelRaw === 'gestao' || nivelRaw === 'operacional' ? nivelRaw : null;
 
     if (!result.has(novaFuncao)) result.set(novaFuncao, []);
-    if (!cpfsAdicionados.has(novaFuncao)) cpfsAdicionados.set(novaFuncao, new Set());
+    if (!cpfsAdicionados.has(novaFuncao))
+      cpfsAdicionados.set(novaFuncao, new Set());
 
-    const cpfsSet = cpfsAdicionados.get(novaFuncao)!;
+    const cpfsSet = cpfsAdicionados.get(novaFuncao);
     if (!cpfsSet.has(cpf)) {
       cpfsSet.add(cpf);
-      result.get(novaFuncao)!.push({
-        nomeMascarado,
+      result.get(novaFuncao).push({
         nome: nomeCompleto,
         funcaoAnterior: funcaoAtual,
         nivelAtual,
@@ -239,8 +237,14 @@ describe('deduplicação por CPF (nova lógica)', () => {
       { cpf: '222.222.222-22', funcao: 'ANALISTA', nome: 'Paulo Andrade' },
     ];
 
-    const result = coletarComDedupCPF(linhas, funcaoMap, nivelMap, nomeMap, empresaMap);
-    const lista = result.get('ANALISTA')!;
+    const result = coletarComDedupCPF(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap,
+      empresaMap
+    );
+    const lista = result.get('ANALISTA');
 
     // Ambos devem aparecer pois têm CPFs diferentes
     expect(lista).toHaveLength(2);
@@ -251,7 +255,9 @@ describe('deduplicação por CPF (nova lógica)', () => {
 
   it('dedup por CPF corretamente remove o mesmo funcionário em linhas duplicadas', () => {
     const funcaoMap = new Map([['12345678901', 'AUXILIAR']]);
-    const nivelMap = new Map<string, string | null>([['12345678901', 'operacional']]);
+    const nivelMap = new Map<string, string | null>([
+      ['12345678901', 'operacional'],
+    ]);
     const nomeMap = new Map<string, string>();
     const empresaMap = new Map<string, string>();
     const linhas = [
@@ -259,7 +265,13 @@ describe('deduplicação por CPF (nova lógica)', () => {
       { cpf: '123.456.789-01', funcao: 'GERENTE', nome: 'João Silva' }, // linha duplicada
     ];
 
-    const result = coletarComDedupCPF(linhas, funcaoMap, nivelMap, nomeMap, empresaMap);
+    const result = coletarComDedupCPF(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap,
+      empresaMap
+    );
     expect(result.get('GERENTE')).toHaveLength(1);
   });
 
@@ -272,24 +284,36 @@ describe('deduplicação por CPF (nova lógica)', () => {
       { cpf: '123.456.789-01', funcao: 'SUPERVISOR', nome: 'Pedro Alcantara' },
     ];
 
-    const result = coletarComDedupCPF(linhas, funcaoMap, nivelMap, nomeMap, empresaMap);
-    const detalhe = result.get('SUPERVISOR')![0];
+    const result = coletarComDedupCPF(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap,
+      empresaMap
+    );
+    const detalhe = result.get('SUPERVISOR')[0];
     expect(detalhe.nome).toBe('Pedro Alcantara');
-    // nomeMascarado deve ser gerado corretamente
-    expect(detalhe.nomeMascarado).toBe('P. A.');
   });
 
   it('usa planilha "pedro pipoip" e não usa DB abreviado', () => {
     const funcaoMap = new Map([['98765432100', 'CAIXA']]);
-    const nivelMap = new Map<string, string | null>([['98765432100', 'operacional']]);
+    const nivelMap = new Map<string, string | null>([
+      ['98765432100', 'operacional'],
+    ]);
     const nomeMap = new Map([['98765432100', 'P. p.']]); // DB com iniciais erradas
     const empresaMap = new Map<string, string>();
     const linhas = [
       { cpf: '987.654.321-00', funcao: 'LIDER', nome: 'pedro pipoip' },
     ];
 
-    const result = coletarComDedupCPF(linhas, funcaoMap, nivelMap, nomeMap, empresaMap);
-    const detalhe = result.get('LIDER')![0];
+    const result = coletarComDedupCPF(
+      linhas,
+      funcaoMap,
+      nivelMap,
+      nomeMap,
+      empresaMap
+    );
+    const detalhe = result.get('LIDER')[0];
     // Planilha tem "pedro pipoip" → não são iniciais → deve usar planilha
     expect(detalhe.nome).toBe('pedro pipoip');
   });
