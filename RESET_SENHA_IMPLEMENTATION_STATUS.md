@@ -1,4 +1,5 @@
 # Reset de Senha via Link — Admin → Perfis Especiais
+
 ## Plano de Implementação — Status de Execução
 
 **Data de Conclusão**: 08/04/2026  
@@ -13,6 +14,7 @@
 **Arquivo**: `database/migrations/1040_reset_senha_tokens.sql`
 
 **Colunas Adicionadas**:
+
 - `reset_token VARCHAR(64)` — token único gerado
 - `reset_token_expira_em TIMESTAMP` — expires em 7 dias
 - `reset_tentativas_falhas SMALLINT DEFAULT 0` — conta tentativas falhadas
@@ -21,6 +23,7 @@
 **Tabelas Afetadas**: `usuarios`, `representantes`
 
 **Status**:
+
 - ✅ DEV: Aplicada (`nr-bps_db`)
 - ✅ TEST: Aplicada (`nr-bps_db_test`)
 - ⏳ STAGING: Aguardando (`neondb_staging`)
@@ -50,6 +53,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ```
 
 **Perfis Suportados** (const `PERFIS_RESET_USUARIOS`):
+
 - suporte
 - comercial
 - rh
@@ -66,10 +70,12 @@ logEmailResetSenha(nome, email, link, expira_em)
 ### POST /api/admin/reset-senha
 
 **Requisitos**:
+
 - Autenticação: `requireRole('admin', false)`
 - Body: `{ cpf: string }`
 
 **Resposta (sucesso)**:
+
 ```json
 {
   "success": true,
@@ -81,6 +87,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ```
 
 **Efeitos Colaterais**:
+
 - Usuários (`usuarios`): `ativo = false`
 - Representantes (`representantes`): `status = 'suspenso'`
 - Auditoria registrada com `action: 'DEACTIVATE'`
@@ -92,10 +99,12 @@ logEmailResetSenha(nome, email, link, expira_em)
 ### GET /api/admin/reset-senha/validar?token=XXX
 
 **Requisitos**:
+
 - Autenticação: Nenhuma (público)
 - Query Param: `token` (64 chars hex)
 
 **Resposta (válido)**:
+
 ```json
 {
   "valido": true,
@@ -105,6 +114,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ```
 
 **Resposta (inválido)**:
+
 ```json
 {
   "valido": false,
@@ -113,6 +123,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ```
 
 **Validações**:
+
 - ✅ Token encontrado
 - ✅ Não expirado (reset_token_expira_em > NOW())
 - ✅ Não já usado (reset_usado_em IS NULL)
@@ -125,21 +136,25 @@ logEmailResetSenha(nome, email, link, expira_em)
 ### POST /api/admin/reset-senha/confirmar
 
 **Requisitos**:
+
 - Autenticação: Nenhuma (público)
 - Body: `{ token, senha, confirmacao }`
 
 **Validações de Senha**:
+
 - ≥ 8 caracteres
 - ≥ 1 letra maiúscula
 - ≥ 1 número
 
 **Resposta (sucesso)**:
+
 ```json
 { "success": true }
 ```
 
 **Efeitos Colaterais**:
-- Usuários (`usuarios`): 
+
+- Usuários (`usuarios`):
   - `senha_hash` atualizada (bcrypt rounds=12)
   - `ativo = true`
   - `reset_token = NULL`
@@ -163,6 +178,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 **Suspense**: Fallback com spinner
 
 **Meta Tags**:
+
 - `robots: { index: false }` — não indexar
 
 **Status**: ✅ Implementado
@@ -174,6 +190,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 **Tipo**: Client Component (use client)
 
 **Estados**:
+
 - `validando` — validando token
 - `formulario` — input de senha
 - `token_invalido` — token não existe
@@ -184,6 +201,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 - `erro_inesperado` — erro genérico
 
 **Features**:
+
 - ✅ Validação em tempo real (requisito de senha)
 - ✅ Checklist visual de complexidade
 - ✅ Redireciona para /login após sucesso
@@ -201,11 +219,13 @@ logEmailResetSenha(nome, email, link, expira_em)
 **Duas Fases**:
 
 **Fase 1: Input**
+
 - Input de CPF com máscara: 000.000.000-00
 - Validação: 11 dígitos
 - Botões: Cancelar | Gerar Link
 
 **Fase 2: Resultado**
+
 - Card de sucesso (nome, perfil, inativo)
 - Input readonly com link
 - Botão de cópia (clipboard)
@@ -219,6 +239,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ### components/admin/EmissoresContent.tsx
 
 **Mudanças**:
+
 - ❌ Removido: Botão "Novo Usuário" + `ModalCadastroEmissor`
 - ✅ Adicionado: Botão "Resetar Senha" + `ModalResetarSenha`
 - ✅ Perfis suportados adicionados: `rh`, `gestor`
@@ -230,6 +251,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ## ✅ FASE 6: Código Legado Removido
 
 **Deletados**:
+
 - ❌ `components/modals/ModalCadastroEmissor.tsx`
 - ❌ `components/admin/ModalEmissor.tsx`
 - ❌ `app/api/admin/emissores/create/route.ts`
@@ -245,6 +267,7 @@ logEmailResetSenha(nome, email, link, expira_em)
 ### middleware.ts
 
 **Rotas Públicas Adicionadas**:
+
 - `/resetar-senha` — página pública
 - `/api/admin/reset-senha/validar` — GET validação (public)
 - `/api/admin/reset-senha/confirmar` — POST confirmação (public)
@@ -255,9 +278,10 @@ logEmailResetSenha(nome, email, link, expira_em)
 
 ## ✅ FASE 8: Testes
 
-### __tests__/api/admin/reset-senha.test.ts
+### **tests**/api/admin/reset-senha.test.ts
 
 **Suite**: POST /api/admin/reset-senha
+
 - ✅ Validações de entrada (CPF, body)
 - ✅ Autenticação (admin obrigatório)
 - ✅ Usuário da tabela `usuarios` (todos os 5 perfis)
@@ -270,9 +294,10 @@ logEmailResetSenha(nome, email, link, expira_em)
 
 ---
 
-### __tests__/api/admin/reset-senha-validar.test.ts
+### **tests**/api/admin/reset-senha-validar.test.ts
 
 **Suite**: GET /api/admin/reset-senha/validar
+
 - ✅ Validações básicas (token obrigatório, comprimento=64)
 - ✅ Token válido de usuário
 - ✅ Token expirado
@@ -287,9 +312,10 @@ logEmailResetSenha(nome, email, link, expira_em)
 
 ---
 
-### __tests__/api/admin/reset-senha-confirmar.test.ts
+### **tests**/api/admin/reset-senha-confirmar.test.ts
 
 **Suite**: POST /api/admin/reset-senha/confirmar
+
 - ✅ Validações (token, passwordmatch, complexidade)
 - ✅ Token inválido/expirado
 - ✅ Sucesso com usuário (inativa → ativa)
@@ -301,9 +327,10 @@ logEmailResetSenha(nome, email, link, expira_em)
 
 ---
 
-### __tests__/components/ModalResetarSenha.test.tsx
+### **tests**/components/ModalResetarSenha.test.tsx
 
 **Suite**: UI ModalResetarSenha
+
 - ✅ Renderização (aberto/fechado)
 - ✅ Formatação de CPF
 - ✅ Validação de CPF
@@ -320,13 +347,13 @@ logEmailResetSenha(nome, email, link, expira_em)
 
 ## 📊 Resumo de Testes
 
-| Suite | Cases | Status |
-|-------|-------|--------|
-| reset-senha (POST) | 9 | ✅ PASS |
-| reset-senha-validar (GET) | 7 | ✅ PASS |
-| reset-senha-confirmar (POST) | 8 | ✅ PASS |
-| ModalResetarSenha (UI) | 11 | ✅ PASS |
-| **TOTAL** | **35** | **✅ ALL PASS** |
+| Suite                        | Cases  | Status          |
+| ---------------------------- | ------ | --------------- |
+| reset-senha (POST)           | 9      | ✅ PASS         |
+| reset-senha-validar (GET)    | 7      | ✅ PASS         |
+| reset-senha-confirmar (POST) | 8      | ✅ PASS         |
+| ModalResetarSenha (UI)       | 11     | ✅ PASS         |
+| **TOTAL**                    | **35** | **✅ ALL PASS** |
 
 ---
 
@@ -348,6 +375,7 @@ pnpm build
 **Branch**: `feature/v2` → origin/feature/v2
 
 **Files Changed**: 21
+
 - Criados: 13 (migrations, APIs, components, testes)
 - Deletados: 6 (código legado)
 - Modificados: 2 (EmissoresContent, middleware)
@@ -372,10 +400,11 @@ pnpm build
 ### PRÉ-REQUISITOS
 
 1. **Ter acesso às conexões Neon**:
+
    ```powershell
    # Staging
    $env:DATABASE_URL_STAGING="postgresql://usuario:senha@host/neondb_staging"
-   
+
    # Prod
    $env:DATABASE_URL_PROD="postgresql://usuario:senha@host/neondb"
    ```
@@ -406,6 +435,7 @@ $env:DATABASE_URL_PROD="postgresql://..."
 ```
 
 **Esperado**:
+
 ```
 === Aplicando migration 1040 em STAGING ===
 ✅ STAGING: Migration 1040 aplicada com sucesso.
@@ -439,19 +469,20 @@ Se STAGING falhar, PROD é pulado automaticamente.
 
 ```sql
 -- Usuarios
-SELECT column_name FROM information_schema.columns 
-WHERE table_name = 'usuarios' 
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'usuarios'
 AND column_name LIKE 'reset_%'
 ORDER BY ordinal_position;
 
 -- Representantes
-SELECT column_name FROM information_schema.columns 
-WHERE table_name = 'representantes' 
+SELECT column_name FROM information_schema.columns
+WHERE table_name = 'representantes'
 AND column_name LIKE 'reset_%'
 ORDER BY ordinal_position;
 ```
 
 **Esperado**: 4 colunas cada:
+
 - reset_token
 - reset_token_expira_em
 - reset_tentativas_falhas
@@ -461,26 +492,26 @@ ORDER BY ordinal_position;
 
 ## 📋 CHECKLIST FINAL — 100% Implementado
 
-| # | Implementação | Status |
-|---|---|---|
-| 1 | Migration 1040 (schema) | ✅ Criada |
-| 2 | Migration 1040 (DEV/TEST) | ✅ Aplicada |
-| 3 | lib/reset-senha/gerar-token | ✅ Implementado |
-| 4 | POST /api/admin/reset-senha | ✅ Implementado |
-| 5 | GET /api/admin/reset-senha/validar | ✅ Implementado |
-| 6 | POST /api/admin/reset-senha/confirmar | ✅ Implementado |
-| 7 | app/resetar-senha (Server) | ✅ Implementado |
-| 8 | app/resetar-senha/ResetarSenhaForm (Client) | ✅ Implementado |
-| 9 | ModalResetarSenha (UI) | ✅ Implementado |
-| 10 | EmissoresContent (botão Resetar) | ✅ Implementado |
-| 11 | Middleware (rotas públicas) | ✅ Implementado |
-| 12 | Testes API (3 suites) | ✅ 24 cases PASS |
-| 13 | Testes UI (1 suite) | ✅ 11 cases PASS |
-| 14 | Build (pnpm) | ✅ PASS |
-| 15 | Git commit & push | ✅ DONE |
-| 16 | Code legacy removido | ✅ DONE |
-| 17 | Migration 1040 (STAGING) | ⏳ Aguardando |
-| 18 | Migration 1040 (PROD) | ⏳ Aguardando |
+| #   | Implementação                               | Status           |
+| --- | ------------------------------------------- | ---------------- |
+| 1   | Migration 1040 (schema)                     | ✅ Criada        |
+| 2   | Migration 1040 (DEV/TEST)                   | ✅ Aplicada      |
+| 3   | lib/reset-senha/gerar-token                 | ✅ Implementado  |
+| 4   | POST /api/admin/reset-senha                 | ✅ Implementado  |
+| 5   | GET /api/admin/reset-senha/validar          | ✅ Implementado  |
+| 6   | POST /api/admin/reset-senha/confirmar       | ✅ Implementado  |
+| 7   | app/resetar-senha (Server)                  | ✅ Implementado  |
+| 8   | app/resetar-senha/ResetarSenhaForm (Client) | ✅ Implementado  |
+| 9   | ModalResetarSenha (UI)                      | ✅ Implementado  |
+| 10  | EmissoresContent (botão Resetar)            | ✅ Implementado  |
+| 11  | Middleware (rotas públicas)                 | ✅ Implementado  |
+| 12  | Testes API (3 suites)                       | ✅ 24 cases PASS |
+| 13  | Testes UI (1 suite)                         | ✅ 11 cases PASS |
+| 14  | Build (pnpm)                                | ✅ PASS          |
+| 15  | Git commit & push                           | ✅ DONE          |
+| 16  | Code legacy removido                        | ✅ DONE          |
+| 17  | Migration 1040 (STAGING)                    | ⏳ Aguardando    |
+| 18  | Migration 1040 (PROD)                       | ⏳ Aguardando    |
 
 ---
 

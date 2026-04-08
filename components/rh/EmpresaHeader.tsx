@@ -2,6 +2,7 @@ import React from 'react';
 
 interface EmpresaHeaderProps {
   empresaNome: string;
+  empresaCnpj?: string;
   onVoltar: () => void;
   onSair: () => void;
 }
@@ -11,6 +12,7 @@ interface EmpresaHeaderProps {
  */
 export function EmpresaHeader({
   empresaNome,
+  empresaCnpj,
   onVoltar,
   onSair,
 }: EmpresaHeaderProps) {
@@ -24,9 +26,14 @@ export function EmpresaHeader({
           >
             ← Voltar
           </button>
-          <h1 className="text-2xl font-bold text-gray-800">
-            Dashboard {empresaNome || 'Empresa'}
-          </h1>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-2xl font-bold text-gray-800">
+              Dashboard {empresaNome || 'Empresa'}
+            </h1>
+            {empresaCnpj && (
+              <span className="text-sm text-gray-400 font-mono">{empresaCnpj}</span>
+            )}
+          </div>
         </div>
         <p className="text-sm text-gray-600">
           Análise das avaliações psicossociais

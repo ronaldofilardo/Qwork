@@ -72,7 +72,7 @@ VALUES (
   '53051173991',
   'Emissor Dev',
   'emissor'::usuario_tipo_enum,
-  crypt('5978rdF*', gen_salt('bf')),
+  '$2a$10$zTIIh6sOBFHDyBUUxkXdAOctTQsS1xyuUvusaHZKVVhnfCKMU2fP.',
   true,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP

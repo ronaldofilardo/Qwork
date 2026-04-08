@@ -40,9 +40,27 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
         niveisAtuais: [null],
         temNivelNuloExistente: true,
         funcionariosComMudanca: [
-          { nomeMascarado: 'J. S.', funcaoAnterior: 'AUXILIAR', nivelAtual: 'operacional', empresa: 'Escola Primavera' },
-          { nomeMascarado: 'M. O.', funcaoAnterior: 'OPERADOR', nivelAtual: null, empresa: 'Escola Primavera' },
-          { nomeMascarado: 'R. P.', funcaoAnterior: 'TECH', nivelAtual: 'gestao', empresa: 'Escola Primavera' },
+          {
+            nomeMascarado: 'J. S.',
+            nome: 'João Silva',
+            funcaoAnterior: 'AUXILIAR',
+            nivelAtual: 'operacional',
+            empresa: 'Escola Primavera',
+          },
+          {
+            nomeMascarado: 'M. O.',
+            nome: 'Maria Oliveira',
+            funcaoAnterior: 'OPERADOR',
+            nivelAtual: null,
+            empresa: 'Escola Primavera',
+          },
+          {
+            nomeMascarado: 'R. P.',
+            nome: 'Roberto Pereira',
+            funcaoAnterior: 'TECH',
+            nivelAtual: 'gestao',
+            empresa: 'Escola Primavera',
+          },
         ],
       },
       {
@@ -54,8 +72,20 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
         niveisAtuais: ['operacional'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'A. B.', funcaoAnterior: 'ASSISTENTE', nivelAtual: 'operacional', empresa: 'Escola Primavera' },
-          { nomeMascarado: 'C. D.', funcaoAnterior: 'GERENTE', nivelAtual: 'gestao', empresa: 'Escola Primavera' },
+          {
+            nomeMascarado: 'A. B.',
+            nome: 'André Borges',
+            funcaoAnterior: 'ASSISTENTE',
+            nivelAtual: 'operacional',
+            empresa: 'Escola Primavera',
+          },
+          {
+            nomeMascarado: 'C. D.',
+            nome: 'Carlos Dias',
+            funcaoAnterior: 'GERENTE',
+            nivelAtual: 'gestao',
+            empresa: 'Escola Primavera',
+          },
         ],
       },
     ];
@@ -82,8 +112,20 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
         niveisAtuais: ['gestao'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'X. Y.', funcaoAnterior: 'ESTAGIARIO', nivelAtual: 'gestao', empresa: 'ACME LTDA' },
-          { nomeMascarado: 'Z. W.', funcaoAnterior: 'JUNIOR', nivelAtual: 'gestao', empresa: 'HOUSE HOSPITALAR' },
+          {
+            nomeMascarado: 'X. Y.',
+            nome: 'Xavier Yamamoto',
+            funcaoAnterior: 'ESTAGIARIO',
+            nivelAtual: 'gestao',
+            empresa: 'ACME LTDA',
+          },
+          {
+            nomeMascarado: 'Z. W.',
+            nome: 'Zara Wanderley',
+            funcaoAnterior: 'JUNIOR',
+            nivelAtual: 'gestao',
+            empresa: 'HOUSE HOSPITALAR',
+          },
         ],
       },
     ];
@@ -91,7 +133,9 @@ describe('groupMudancasByEmpresaAndFuncao — agrupamento basico', () => {
     const result = groupMudancasByEmpresaAndFuncao(funcs);
     expect(result.size).toBe(2);
     expect(result.get('ACME LTDA')!.get('ANALISTA')!.trocas).toHaveLength(1);
-    expect(result.get('HOUSE HOSPITALAR')!.get('ANALISTA')!.trocas).toHaveLength(1);
+    expect(
+      result.get('HOUSE HOSPITALAR')!.get('ANALISTA')!.trocas
+    ).toHaveLength(1);
   });
 });
 
@@ -111,14 +155,22 @@ describe('groupMudancasByEmpresaAndFuncao — empresa vazia/undefined', () => {
         niveisAtuais: ['operacional'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'P. Q.', funcaoAnterior: 'ASSISTENTE', nivelAtual: 'operacional', empresa: '' },
+          {
+            nomeMascarado: 'P. Q.',
+            nome: 'Paulo Queiroz',
+            funcaoAnterior: 'ASSISTENTE',
+            nivelAtual: 'operacional',
+            empresa: '',
+          },
         ],
       },
     ];
 
     const result = groupMudancasByEmpresaAndFuncao(funcs);
     expect(result.has('(sem empresa)')).toBe(true);
-    expect(result.get('(sem empresa)')!.get('OPERADOR')!.trocas).toHaveLength(1);
+    expect(result.get('(sem empresa)')!.get('OPERADOR')!.trocas).toHaveLength(
+      1
+    );
   });
 
   it('preserva ordem de insercao das empresas', () => {
@@ -132,7 +184,13 @@ describe('groupMudancasByEmpresaAndFuncao — empresa vazia/undefined', () => {
         niveisAtuais: ['operacional'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'Z. A.', funcaoAnterior: 'OLD', nivelAtual: 'operacional', empresa: 'Zebra Ltda' },
+          {
+            nomeMascarado: 'Z. A.',
+            nome: 'Zumbi Andrade',
+            funcaoAnterior: 'OLD',
+            nivelAtual: 'operacional',
+            empresa: 'Zebra Ltda',
+          },
         ],
       },
       {
@@ -144,7 +202,13 @@ describe('groupMudancasByEmpresaAndFuncao — empresa vazia/undefined', () => {
         niveisAtuais: ['gestao'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'A. B.', funcaoAnterior: 'OLD', nivelAtual: 'gestao', empresa: 'Alfa Corp' },
+          {
+            nomeMascarado: 'A. B.',
+            nome: 'Amara Brito',
+            funcaoAnterior: 'OLD',
+            nivelAtual: 'gestao',
+            empresa: 'Alfa Corp',
+          },
         ],
       },
     ];
@@ -170,7 +234,13 @@ describe('groupMudancasByEmpresaAndFuncao — filtros', () => {
         niveisAtuais: ['operacional'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'I. G.', funcaoAnterior: 'OLD', nivelAtual: 'operacional', empresa: 'ABC' },
+          {
+            nomeMascarado: 'I. G.',
+            nome: 'Igor Gonçalves',
+            funcaoAnterior: 'OLD',
+            nivelAtual: 'operacional',
+            empresa: 'ABC',
+          },
         ],
       },
     ];
@@ -205,7 +275,13 @@ describe('groupMudancasByEmpresaAndFuncao — filtros', () => {
         niveisAtuais: ['gestao'],
         temNivelNuloExistente: false,
         funcionariosComMudancaNivel: [
-          { nomeMascarado: 'F. G.', nivelAtual: 'gestao', nivelProposto: 'operacional', empresa: 'MINHA EMP' },
+          {
+            nomeMascarado: 'F. G.',
+            nome: 'Flávia Guimarães',
+            nivelAtual: 'gestao',
+            nivelProposto: 'operacional',
+            empresa: 'MINHA EMP',
+          },
         ],
       },
     ];
@@ -236,11 +312,29 @@ describe('groupMudancasByEmpresaAndFuncao — combinacao de tipos', () => {
         niveisAtuais: ['gestao'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'A. A.', funcaoAnterior: 'OLD', nivelAtual: 'gestao', empresa: 'EMP X' },
+          {
+            nomeMascarado: 'A. A.',
+            nome: 'Amanda Alves',
+            funcaoAnterior: 'OLD',
+            nivelAtual: 'gestao',
+            empresa: 'EMP X',
+          },
         ],
         funcionariosComMudancaNivel: [
-          { nomeMascarado: 'B. B.', nivelAtual: 'gestao', nivelProposto: 'operacional', empresa: 'EMP X' },
-          { nomeMascarado: 'C. C.', nivelAtual: 'operacional', nivelProposto: 'gestao', empresa: 'EMP X' },
+          {
+            nomeMascarado: 'B. B.',
+            nome: 'Bruno Barbosa',
+            nivelAtual: 'gestao',
+            nivelProposto: 'operacional',
+            empresa: 'EMP X',
+          },
+          {
+            nomeMascarado: 'C. C.',
+            nome: 'Carla Castro',
+            nivelAtual: 'operacional',
+            nivelProposto: 'gestao',
+            empresa: 'EMP X',
+          },
         ],
       },
     ];

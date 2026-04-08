@@ -213,6 +213,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     type NivelCargoValue = 'gestao' | 'operacional' | null;
     type MudancaRoleDetalhe = {
       nomeMascarado: string;
+      nome: string;
       funcaoAnterior: string;
       nivelAtual: NivelCargoValue;
       empresa: string;
@@ -258,6 +259,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         if (!jaAdicionado) {
           lista.push({
             nomeMascarado,
+            nome: nomeCompleto,
             funcaoAnterior: funcaoAtual,
             nivelAtual,
             empresa: existingEmpresaMap.get(cpf) ?? '',
@@ -272,6 +274,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     const funcoesComMudancaNivel = new Set<string>();
     type MudancaNivelDetalhe = {
       nomeMascarado: string;
+      nome: string;
       nivelAtual: NivelCargoValue;
       nivelProposto: NivelCargoValue;
       empresa: string;
@@ -300,7 +303,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             ? nivelPlanilhaRaw
             : null;
 
-        if (nivelPlanilha && nivelBanco !== nivelPlanilha) {
+        if (nivelBanco !== nivelPlanilha) {
           funcoesComMudancaNivel.add(funcao);
           const nomeCompleto = existingNomeMap.get(cpf) ?? '';
           const partes = nomeCompleto.trim().split(/\s+/);
@@ -322,6 +325,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           if (!jaAdicionado) {
             lista.push({
               nomeMascarado,
+              nome: nomeCompleto,
               nivelAtual: nivelBanco,
               nivelProposto: nivelPlanilha,
               empresa: existingEmpresaMap.get(cpf) ?? '',
