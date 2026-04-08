@@ -16,7 +16,10 @@
  * o modo manual (isManualMode).
  */
 
-import type { FuncaoNivelInfo, NivelCargo } from '@/components/importacao/NivelCargoStep';
+import type {
+  FuncaoNivelInfo,
+  NivelCargo,
+} from '@/components/importacao/NivelCargoStep';
 
 // ===========================================================================
 // Lógica pura extraída do NivelCargoStep (replica o interior do useEffect).
@@ -76,17 +79,13 @@ function makeFuncao(
 
 describe('buildMandatoryQueue — isMudancaRole', () => {
   it('inclui função com isMudancaRole=true mesmo sem classificação prévia', () => {
-    const funcs = [
-      makeFuncao({ funcao: 'ANALISTA', isMudancaRole: true }),
-    ];
+    const funcs = [makeFuncao({ funcao: 'ANALISTA', isMudancaRole: true })];
     const map: Record<string, NivelCargo> = {};
     expect(buildMandatoryQueue(funcs, map)).toEqual(['ANALISTA']);
   });
 
   it('inclui função com isMudancaRole=true mesmo quando já está no nivelCargoMap (requer confirmação)', () => {
-    const funcs = [
-      makeFuncao({ funcao: 'GERENTE', isMudancaRole: true }),
-    ];
+    const funcs = [makeFuncao({ funcao: 'GERENTE', isMudancaRole: true })];
     const map: Record<string, NivelCargo> = { GERENTE: 'gestao' };
     // Mudanças de função exigem confirmação obrigatória, independente do template
     expect(buildMandatoryQueue(funcs, map)).toEqual(['GERENTE']);
@@ -116,7 +115,12 @@ describe('buildMandatoryQueue — isMudancaRole', () => {
 describe('buildMandatoryQueue — funções novas', () => {
   it('inclui função nova (qtdNovos>0) não classificada', () => {
     const funcs = [
-      makeFuncao({ funcao: 'OPERADOR', qtdNovos: 3, qtdExistentes: 0, niveisAtuais: [] }),
+      makeFuncao({
+        funcao: 'OPERADOR',
+        qtdNovos: 3,
+        qtdExistentes: 0,
+        niveisAtuais: [],
+      }),
     ];
     const map: Record<string, NivelCargo> = {};
     expect(buildMandatoryQueue(funcs, map)).toEqual(['OPERADOR']);
@@ -124,7 +128,12 @@ describe('buildMandatoryQueue — funções novas', () => {
 
   it('NÃO inclui função nova (qtdNovos>0) já pré-classificada pelo template', () => {
     const funcs = [
-      makeFuncao({ funcao: 'OPERADOR', qtdNovos: 3, qtdExistentes: 0, niveisAtuais: [] }),
+      makeFuncao({
+        funcao: 'OPERADOR',
+        qtdNovos: 3,
+        qtdExistentes: 0,
+        niveisAtuais: [],
+      }),
     ];
     const map: Record<string, NivelCargo> = { OPERADOR: 'operacional' };
     expect(buildMandatoryQueue(funcs, map)).toEqual([]);
@@ -210,11 +219,20 @@ describe('buildMandatoryQueue — ordem preservada', () => {
     const funcs = [
       makeFuncao({ funcao: 'ZETINHA', isMudancaRole: true }),
       makeFuncao({ funcao: 'ALFA', isMudancaRole: true }),
-      makeFuncao({ funcao: 'BETA', qtdNovos: 1, qtdExistentes: 0, niveisAtuais: [] }),
+      makeFuncao({
+        funcao: 'BETA',
+        qtdNovos: 1,
+        qtdExistentes: 0,
+        niveisAtuais: [],
+      }),
     ];
     const map: Record<string, NivelCargo> = {};
     // Ordem deve ser a mesma do array de entrada
-    expect(buildMandatoryQueue(funcs, map)).toEqual(['ZETINHA', 'ALFA', 'BETA']);
+    expect(buildMandatoryQueue(funcs, map)).toEqual([
+      'ZETINHA',
+      'ALFA',
+      'BETA',
+    ]);
   });
 });
 
@@ -297,7 +315,12 @@ describe('cenário integrado — 4 funções alteradas', () => {
         niveisAtuais: ['gestao'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'J. S.', funcaoAnterior: 'Desenvolvedor', nivelAtual: 'gestao' },
+          {
+            nomeMascarado: 'J. S.',
+            nome: 'João Silva',
+            funcaoAnterior: 'Desenvolvedor',
+            nivelAtual: 'gestao',
+          },
         ],
       },
       {
@@ -309,7 +332,12 @@ describe('cenário integrado — 4 funções alteradas', () => {
         niveisAtuais: ['operacional'],
         temNivelNuloExistente: false,
         funcionariosComMudanca: [
-          { nomeMascarado: 'M. O.', funcaoAnterior: 'Assistente', nivelAtual: 'operacional' },
+          {
+            nomeMascarado: 'M. O.',
+            nome: 'Maria Oliveira',
+            funcaoAnterior: 'Assistente',
+            nivelAtual: 'operacional',
+          },
         ],
       },
       {
@@ -372,7 +400,13 @@ describe('buildMandatoryQueue — isMudancaNivel', () => {
         funcao: 'PROFESSOR',
         isMudancaNivel: true,
         funcionariosComMudancaNivel: [
-          { nomeMascarado: 'J. S.', nivelAtual: 'operacional', nivelProposto: 'gestao', empresa: 'Escola ABC' },
+          {
+            nomeMascarado: 'J. S.',
+            nome: 'João Silva',
+            nivelAtual: 'operacional',
+            nivelProposto: 'gestao',
+            empresa: 'Escola ABC',
+          },
         ],
       }),
     ];
@@ -381,9 +415,7 @@ describe('buildMandatoryQueue — isMudancaNivel', () => {
   });
 
   it('NÃO inclui função com isMudancaNivel=true quando já classificada', () => {
-    const funcs = [
-      makeFuncao({ funcao: 'PROFESSOR', isMudancaNivel: true }),
-    ];
+    const funcs = [makeFuncao({ funcao: 'PROFESSOR', isMudancaNivel: true })];
     const map: Record<string, NivelCargo> = { PROFESSOR: 'gestao' };
     expect(buildMandatoryQueue(funcs, map)).toEqual([]);
   });
@@ -392,7 +424,12 @@ describe('buildMandatoryQueue — isMudancaNivel', () => {
     const funcs = [
       makeFuncao({ funcao: 'PEDAGOGO', isMudancaRole: true }),
       makeFuncao({ funcao: 'PROFESSOR', isMudancaNivel: true }),
-      makeFuncao({ funcao: 'INSPETOR', isMudancaRole: false, isMudancaNivel: false, qtdNovos: 0 }),
+      makeFuncao({
+        funcao: 'INSPETOR',
+        isMudancaRole: false,
+        isMudancaNivel: false,
+        qtdNovos: 0,
+      }),
     ];
     const map: Record<string, NivelCargo> = {};
     expect(buildMandatoryQueue(funcs, map)).toEqual(['PEDAGOGO', 'PROFESSOR']);
@@ -403,8 +440,20 @@ describe('buildMandatoryQueue — isMudancaNivel', () => {
       funcao: 'MECANICO',
       isMudancaNivel: true,
       funcionariosComMudancaNivel: [
-        { nomeMascarado: 'A. B.', nivelAtual: 'operacional', nivelProposto: 'gestao', empresa: 'Empresa XYZ' },
-        { nomeMascarado: 'C. D.', nivelAtual: null, nivelProposto: 'operacional', empresa: '' },
+        {
+          nomeMascarado: 'A. B.',
+          nome: 'André Borges',
+          nivelAtual: 'operacional',
+          nivelProposto: 'gestao',
+          empresa: 'Empresa XYZ',
+        },
+        {
+          nomeMascarado: 'C. D.',
+          nome: 'Carla Dias',
+          nivelAtual: null,
+          nivelProposto: 'operacional',
+          empresa: '',
+        },
       ],
     });
     expect(func.funcionariosComMudancaNivel).toHaveLength(2);
