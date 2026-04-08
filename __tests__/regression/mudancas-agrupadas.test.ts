@@ -1,61 +1,12 @@
 /**
  * Testes para a logica pura de groupMudancasByEmpresaAndFuncao.
- * Replica a funcao helper do NivelCargoStep para testes isolados.
+ * Usa a funcao exportada diretamente do NivelCargoStep.
  */
 
-import type { FuncaoNivelInfo } from '@/components/importacao/NivelCargoStep';
-
-// replica da nova implementacao (sem nivelAtual, com trocasNivel)
-type TrocaInfo = NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>[0];
-type TrocaNivelInfo = NonNullable<FuncaoNivelInfo['funcionariosComMudancaNivel']>[0];
-
-interface GrupoFuncao {
-  trocas: TrocaInfo[];
-  trocasNivel: TrocaNivelInfo[];
-}
-
-function groupMudancasByEmpresaAndFuncao(
-  funcoesNivelInfo: FuncaoNivelInfo[]
-): Map<string, Map<string, GrupoFuncao>> {
-  const grouped = new Map<string, Map<string, GrupoFuncao>>();
-
-  for (const funcaoInfo of funcoesNivelInfo) {
-    const hasMudancaRole =
-      funcaoInfo.isMudancaRole &&
-      (funcaoInfo.funcionariosComMudanca?.length ?? 0) > 0;
-    const hasMudancaNivel =
-      funcaoInfo.isMudancaNivel &&
-      (funcaoInfo.funcionariosComMudancaNivel?.length ?? 0) > 0;
-
-    if (!hasMudancaRole && !hasMudancaNivel) continue;
-
-    if (hasMudancaRole) {
-      for (const troca of funcaoInfo.funcionariosComMudanca!) {
-        const empresa = troca.empresa || '(sem empresa)';
-        if (!grouped.has(empresa)) grouped.set(empresa, new Map());
-        const empresaMap = grouped.get(empresa)!;
-        if (!empresaMap.has(funcaoInfo.funcao)) {
-          empresaMap.set(funcaoInfo.funcao, { trocas: [], trocasNivel: [] });
-        }
-        empresaMap.get(funcaoInfo.funcao)!.trocas.push(troca);
-      }
-    }
-
-    if (hasMudancaNivel) {
-      for (const troca of funcaoInfo.funcionariosComMudancaNivel!) {
-        const empresa = troca.empresa || '(sem empresa)';
-        if (!grouped.has(empresa)) grouped.set(empresa, new Map());
-        const empresaMap = grouped.get(empresa)!;
-        if (!empresaMap.has(funcaoInfo.funcao)) {
-          empresaMap.set(funcaoInfo.funcao, { trocas: [], trocasNivel: [] });
-        }
-        empresaMap.get(funcaoInfo.funcao)!.trocasNivel.push(troca);
-      }
-    }
-  }
-
-  return grouped;
-}
+import {
+  groupMudancasByEmpresaAndFuncao,
+  type FuncaoNivelInfo,
+} from '@/components/importacao/NivelCargoStep';
 
 // ===========================================================================
 // 1. Agrupamento basico — isMudancaRole

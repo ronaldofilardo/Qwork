@@ -111,7 +111,13 @@ const stepLabels: Record<Step, string> = {
   resultado: '5. Resultado',
 };
 
-const stepOrder: Step[] = ['upload', 'mapeamento', 'validacao', 'nivel-cargo', 'resultado'];
+const stepOrder: Step[] = [
+  'upload',
+  'mapeamento',
+  'validacao',
+  'nivel-cargo',
+  'resultado',
+];
 
 export default function ImportacaoPage() {
   const [step, setStep] = useState<Step>('upload');
@@ -140,7 +146,9 @@ export default function ImportacaoPage() {
   );
 
   // Mapa de nível de cargo: controlado pela etapa dedicada de classificação
-  const [nivelCargoMap, setNivelCargoMap] = useState<Record<string, NivelCargo>>({});
+  const [nivelCargoMap, setNivelCargoMap] = useState<
+    Record<string, NivelCargo>
+  >({});
 
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
