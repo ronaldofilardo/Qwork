@@ -541,7 +541,9 @@ function AceiteCell({
 
 // eslint-disable-next-line max-lines-per-function
 export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
-  const [busca, setBusca] = useState('');
+  const [filtroPerfil, setFiltroPerfil] = useState('');
+  const [filtroCpf, setFiltroCpf] = useState('');
+  const [filtroNome, setFiltroNome] = useState('');
 
   const normalizar = (s: string) =>
     s
@@ -549,41 +551,82 @@ export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
 
+  const perfisDisponiveis = useMemo(() => {
+    const set = new Set(data.map((u) => u.perfil).filter(Boolean));
+    return Array.from(set).sort();
+  }, [data]);
+
   const filtrados = useMemo(() => {
-    const termo = busca.trim();
-    if (!termo) return data;
-    const termoNorm = normalizar(termo);
-    const termoDigits = termo.replace(/\D/g, '');
     return data.filter((u) => {
-      const cpfRaw = (u.cpf ?? '').replace(/\s/g, '');
-      const cpfDigits = cpfRaw.replace(/\D/g, '');
-      const cpfFormatado = formatCpf(cpfRaw);
-      return (
-        normalizar(u.nome ?? '').includes(termoNorm) ||
-        (termoDigits.length > 0 && cpfDigits.includes(termoDigits)) ||
-        cpfFormatado.includes(termo)
-      );
+      if (filtroPerfil && u.perfil !== filtroPerfil) return false;
+
+      if (filtroCpf.trim()) {
+        const digits = filtroCpf.replace(/\D/g, '');
+        const cpfDigits = (u.cpf ?? '').replace(/\D/g, '');
+        if (digits && !cpfDigits.includes(digits)) return false;
+      }
+
+      if (filtroNome.trim()) {
+        const termoNorm = normalizar(filtroNome.trim());
+        if (!normalizar(u.nome ?? '').includes(termoNorm)) return false;
+      }
+
+      return true;
     });
-  }, [busca, data]);
+  }, [filtroPerfil, filtroCpf, filtroNome, data]);
+
+  const temFiltro = filtroPerfil || filtroCpf.trim() || filtroNome.trim();
+
+  function limparFiltros() {
+    setFiltroPerfil('');
+    setFiltroCpf('');
+    setFiltroNome('');
+  }
 
   return (
     <div>
-      <div className="mb-3 flex items-center gap-2">
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {/* Filtro por Perfil */}
+        <select
+          value={filtroPerfil}
+          onChange={(e) => setFiltroPerfil(e.target.value)}
+          className="px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer"
+        >
+          <option value="">Todos os perfis</option>
+          {perfisDisponiveis.map((p) => (
+            <option key={p} value={p}>
+              {PERFIL_LABEL[p] ?? p}
+            </option>
+          ))}
+        </select>
+
+        {/* Filtro por CPF */}
         <input
           type="text"
-          placeholder="Buscar por nome ou CPF..."
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          className="w-72 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          placeholder="Filtrar por CPF..."
+          value={filtroCpf}
+          onChange={(e) => setFiltroCpf(e.target.value)}
+          className="w-44 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
         />
-        {busca && (
+
+        {/* Filtro por Nome */}
+        <input
+          type="text"
+          placeholder="Filtrar por nome..."
+          value={filtroNome}
+          onChange={(e) => setFiltroNome(e.target.value)}
+          className="w-52 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+
+        {temFiltro && (
           <button
-            onClick={() => setBusca('')}
-            className="text-xs text-gray-400 hover:text-gray-600"
+            onClick={limparFiltros}
+            className="px-3 py-2 text-xs text-gray-500 hover:text-gray-800 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors duration-150 cursor-pointer"
           >
-            Limpar
+            Limpar filtros
           </button>
         )}
+
         <span className="ml-auto text-xs text-gray-500">
           {filtrados.length} de {data.length} usuários
         </span>
@@ -612,8 +655,8 @@ export function TabelaAceites({ data }: { data: AceiteUsuario[] }) {
                   colSpan={8}
                   className="px-4 py-8 text-center text-sm text-gray-400"
                 >
-                  {busca
-                    ? 'Nenhum resultado para a busca.'
+                  {temFiltro
+                    ? 'Nenhum resultado para os filtros aplicados.'
                     : 'Nenhum registro encontrado.'}
                 </td>
               </tr>
