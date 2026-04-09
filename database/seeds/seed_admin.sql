@@ -22,7 +22,7 @@ BEGIN
         'Admin',
         'admin@qwork.com',
         'admin',
-        crypt('5978rdf', gen_salt('bf')),
+        '$2a$10$5kaVc9hycS2wmA2EEjKzXOd2nL1B/033BuyxjkDeOyt9B.aPpEC1e',
         true,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
@@ -45,7 +45,7 @@ BEGIN
         'Admin',
         'admin',
         'admin',
-        crypt('5978rdf', gen_salt('bf')),
+        '$2a$10$ATzuzbILnn8dBwtBjQcalOVfkiAZl41QCYA/ipy39vF0Z9aekneSq',
         true,
         CURRENT_TIMESTAMP,
         CURRENT_TIMESTAMP
@@ -68,7 +68,7 @@ BEGIN
       'Admin',
       'admin',
       'admin',
-      crypt('5978rdf', gen_salt('bf')),
+      '$2a$10$ATzuzbILnn8dBwtBjQcalOVfkiAZl41QCYA/ipy39vF0Z9aekneSq',
       true,
       CURRENT_TIMESTAMP,
       CURRENT_TIMESTAMP

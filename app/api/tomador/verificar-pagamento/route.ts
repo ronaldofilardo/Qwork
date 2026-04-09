@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { query } from '@/lib/db';
-import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
-
-const rateLimiter = rateLimit(RATE_LIMIT_CONFIGS.api);
+import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,7 +11,7 @@ export const dynamic = 'force-dynamic';
  * Retorna informações sobre pagamentos pendentes e links de retry
  */
 export async function GET(request: NextRequest) {
-  const rateLimitResponse = rateLimiter(request);
+  const rateLimitResponse = await rateLimitAsync(request, RATE_LIMIT_CONFIGS.api);
   if (rateLimitResponse) return rateLimitResponse;
 
   try {

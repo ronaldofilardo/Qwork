@@ -705,9 +705,9 @@ describe('Interface Melhorada - Dashboard Empresa', () => {
       fireEvent.click(funcionariosTab);
 
       await waitFor(() => {
-        // O botão de adicionar funcionário agora usa o texto 'Adicionar'
+        // O botão de adicionar funcionário agora usa o texto 'Adicionar Funcionário'
         expect(
-          screen.getByText(/Adicionar|Inserir Funcionário|➕/i)
+          screen.getByText(/Adicionar Funcionário|Inserir Funcionário|➕/i)
         ).toBeInTheDocument();
       });
     });
@@ -725,10 +725,11 @@ describe('Interface Melhorada - Dashboard Empresa', () => {
       fireEvent.click(funcionariosTab);
 
       await waitFor(() => {
-        expect(
-          screen.getByText('Importar Múltiplos (XLSX)')
-        ).toBeInTheDocument();
+        // Confirma que o botão Adicionar Funcionário está presente e os botões legados foram removidos
+        expect(screen.getByText('Adicionar Funcionário')).toBeInTheDocument();
       });
+
+      expect(screen.queryByText('Importar Múltiplos (XLSX)')).not.toBeInTheDocument();
     });
 
     it('deve exibir link para modelo XLSX', async () => {
@@ -744,8 +745,8 @@ describe('Interface Melhorada - Dashboard Empresa', () => {
       fireEvent.click(funcionariosTab);
 
       await waitFor(() => {
-        const modelLink = screen.getByText('📋 Baixar Modelo XLSX');
-        expect(modelLink).toBeInTheDocument();
+        // Botão legado 'Baixar Modelo XLSX' foi removido
+        expect(screen.queryByText('📋 Baixar Modelo XLSX')).not.toBeInTheDocument();
       });
     });
   });

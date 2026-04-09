@@ -254,6 +254,34 @@ export function getCamposObrigatorios(): string[] {
 }
 
 /**
+ * Retorna a lista de campos QWork para o fluxo de importação de Entidade.
+ * Remove cnpj_empresa e nome_empresa — entidades não possuem o conceito de empresa-cliente.
+ */
+export function getCamposQWorkEntidade(): Array<{
+  campo: string;
+  label: string;
+  obrigatorio: boolean;
+}> {
+  const CAMPOS_EXCLUIDOS = new Set(['cnpj_empresa', 'nome_empresa']);
+  return CAMPOS_QWORK.filter((c) => !CAMPOS_EXCLUIDOS.has(c.campo)).map((c) => ({
+    campo: c.campo,
+    label: c.label,
+    obrigatorio: c.obrigatorio,
+  }));
+}
+
+/**
+ * Retorna os campos obrigatórios para o fluxo de importação de Entidade.
+ * Não inclui cnpj_empresa.
+ */
+export function getCamposObrigatoriosEntidade(): string[] {
+  const CAMPOS_EXCLUIDOS = new Set(['cnpj_empresa', 'nome_empresa']);
+  return CAMPOS_QWORK.filter(
+    (c) => c.obrigatorio && !CAMPOS_EXCLUIDOS.has(c.campo)
+  ).map((c) => c.campo);
+}
+
+/**
  * Gera sugestões de mapeamento para as colunas detectadas numa planilha.
  */
 export function sugerirMapeamento(

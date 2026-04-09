@@ -172,43 +172,38 @@ describe('👥 Aba Funcionários', () => {
   });
 
   /**
-   * @test Verifica exibição de link para modelo XLSX
-   * @expected Deve exibir "📋 Baixar Modelo XLSX"
+   * @test Verifica que botão legado 'Baixar Modelo XLSX' foi removido
+   * @expected Não deve exibir '📋 Baixar Modelo XLSX'
    */
-  it('deve exibir link de modelo XLSX', async () => {
+  it('não deve exibir botão legado de download de modelo', async () => {
     // Act: Renderizar e navegar
     await renderAndNavigateToFuncionariosTab();
 
-    // Assert: Verificar link de modelo
-    const modelLink = screen.getByText('📋 Baixar Modelo XLSX');
-    expect(modelLink).toBeInTheDocument();
+    // Assert: Botão legado não deve estar presente
+    expect(screen.queryByText('📋 Baixar Modelo XLSX')).not.toBeInTheDocument();
   });
 
   /**
-   * @test Verifica exibição do botão de download de modelo
-   * @expected Deve exibir botão "📋 Baixar Modelo XLSX"
+   * @test Verifica que botão legado 'Importar Múltiplos (XLSX)' foi removido
+   * @expected Não deve exibir 'Importar Múltiplos (XLSX)'
    */
-  it('deve exibir botão "Baixar Modelo XLSX"', async () => {
+  it('não deve exibir botão legado de importação múltipla', async () => {
     // Act: Renderizar e navegar
     await renderAndNavigateToFuncionariosTab();
 
-    // Assert: Verificar botão presente
-    const modelButton = screen.getByText('📋 Baixar Modelo XLSX');
-    expect(modelButton).toBeInTheDocument();
+    // Assert: Botão legado não deve estar presente
+    expect(screen.queryByText('Importar Múltiplos (XLSX)')).not.toBeInTheDocument();
   });
 
   /**
-   * @test Verifica presença de link relacionado a modelo
-   * @expected Deve exibir texto contendo "Modelo"
+   * @test Verifica que o botão Adicionar Funcionário permanece
+   * @expected Deve exibir botão 'Adicionar Funcionário'
    */
-  it('deve exibir link para modelo XLSX', async () => {
+  it('deve exibir botão Adicionar Funcionário na aba de funcionários', async () => {
     // Act: Renderizar e navegar
     await renderAndNavigateToFuncionariosTab();
 
-    // Assert: Verificar qualquer link com "Modelo"
-    const modelLink = screen.queryByText(/Modelo/i);
-    if (modelLink) {
-      expect(modelLink).toBeInTheDocument();
-    }
+    // Assert: Botão principal de ação deve estar presente
+    expect(screen.getByText('Adicionar Funcionário')).toBeInTheDocument();
   });
 });

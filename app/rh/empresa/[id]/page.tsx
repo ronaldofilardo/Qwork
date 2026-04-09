@@ -217,6 +217,7 @@ export default function EmpresaDashboardPage() {
         {/* Header */}
         <EmpresaHeader
           empresaNome={empresa.nome}
+          empresaCnpj={empresa.cnpj}
           onVoltar={handleVoltar}
           onSair={handleSair}
         />

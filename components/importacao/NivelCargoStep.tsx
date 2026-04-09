@@ -1,14 +1,12 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   ShieldCheck,
   AlertTriangle,
   CheckCircle,
   Info,
-  X,
   ArrowRight,
-  Users,
   Sparkles,
 } from 'lucide-react';
 
@@ -23,13 +21,23 @@ export interface FuncaoNivelInfo {
   niveisAtuais: Array<'gestao' | 'operacional' | null>;
   /** Função veio de mudança de função de funcionário já existente */
   isMudancaRole: boolean;
+  /** Planilha propõe nivel_cargo diferente do banco para esta função */
+  isMudancaNivel?: boolean;
   /** Algum funcionário existente nesta função tem nivel_cargo = null no banco */
   temNivelNuloExistente: boolean;
-  /** Detalhes dos funcionários que mudaram para esta função (apenas isMudancaRole=true) */
+  /** Detalhes dos funcionários que mudaram para esta função (isMudancaRole=true) */
   funcionariosComMudanca?: Array<{
-    nomeMascarado: string;
+    nome: string;
     funcaoAnterior: string;
     nivelAtual: 'gestao' | 'operacional' | null;
+    empresa?: string;
+  }>;
+  /** Detalhes dos funcionários cujo nivel_cargo diverge entre planilha e banco */
+  funcionariosComMudancaNivel?: Array<{
+    nome: string;
+    nivelAtual: 'gestao' | 'operacional' | null;
+    nivelProposto: 'gestao' | 'operacional' | null;
+    empresa?: string;
   }>;
 }
 
@@ -43,122 +51,307 @@ interface NivelCargoStepProps {
   isLoading: boolean;
 }
 
-/** Modal contextual para funções com troca de cargo */
-function MudancaRoleModal({
-  funcao,
-  funcionarios,
-  nivelAtual,
-  onChange,
-  onClose,
-}: {
-  funcao: string;
-  funcionarios: NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>;
-  nivelAtual: NivelCargo;
-  onChange: (nivel: NivelCargo) => void;
-  onClose: () => void;
-}) {
-  const handleSelect = (nivel: 'gestao' | 'operacional') => {
-    onChange(nivel);
-    onClose();
+/**
+ * Agrupa mudanças de função por empresa e depois por função.
+ * Retorna Map<empresa, Map<funcao, { trocas, trocasNivel, nivelAtual }>>
+ */
+export function groupMudancasByEmpresaAndFuncao(
+  funcoesNivelInfo: FuncaoNivelInfo[]
+): Map<
+  string,
+  Map<
+    string,
+    {
+      trocas: NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>[number][];
+      trocasNivel: NonNullable<
+        FuncaoNivelInfo['funcionariosComMudancaNivel']
+      >[number][];
+      nivelAtual: string;
+    }
+  >
+> {
+  type EntryValue = {
+    trocas: NonNullable<FuncaoNivelInfo['funcionariosComMudanca']>[number][];
+    trocasNivel: NonNullable<
+      FuncaoNivelInfo['funcionariosComMudancaNivel']
+    >[number][];
+    nivelAtual: string;
+  };
+  const grouped = new Map<string, Map<string, EntryValue>>();
+
+  const ensureEntry = (
+    empresa: string,
+    funcao: string,
+    nivelAtualStr: string
+  ): EntryValue => {
+    if (!grouped.has(empresa)) {
+      grouped.set(empresa, new Map());
+    }
+    const empresaMap = grouped.get(empresa)!;
+    if (!empresaMap.has(funcao)) {
+      empresaMap.set(funcao, {
+        trocas: [],
+        trocasNivel: [],
+        nivelAtual: nivelAtualStr,
+      });
+    }
+    return empresaMap.get(funcao)!;
   };
 
+  for (const funcaoInfo of funcoesNivelInfo) {
+    const nivelAtualStr =
+      (funcaoInfo.niveisAtuais.filter(Boolean) as Array<'operacional' | 'gestao'>)
+        .join(' / ') || 'não definido';
+
+    if (
+      funcaoInfo.isMudancaRole &&
+      funcaoInfo.funcionariosComMudanca &&
+      funcaoInfo.funcionariosComMudanca.length > 0
+    ) {
+      for (const troca of funcaoInfo.funcionariosComMudanca) {
+        const empresa = troca.empresa || '(sem empresa)';
+        ensureEntry(empresa, funcaoInfo.funcao, nivelAtualStr).trocas.push(
+          troca
+        );
+      }
+    }
+
+    if (
+      funcaoInfo.isMudancaNivel &&
+      funcaoInfo.funcionariosComMudancaNivel &&
+      funcaoInfo.funcionariosComMudancaNivel.length > 0
+    ) {
+      for (const troca of funcaoInfo.funcionariosComMudancaNivel) {
+        const empresa = troca.empresa || '(sem empresa)';
+        ensureEntry(empresa, funcaoInfo.funcao, nivelAtualStr).trocasNivel.push(
+          troca
+        );
+      }
+    }
+  }
+
+  return grouped;
+}
+
+/**
+ * Componente inline que exibe mudanças de função agrupadas por empresa e depois por função.
+ * Sem modal sequencial — tudo renderizado em tabelas expansíveis por empresa.
+ */
+function MudancasAgrupadas({
+  funcoesNivelInfo,
+  nivelCargoMap,
+  onChange,
+}: {
+  funcoesNivelInfo: FuncaoNivelInfo[];
+  nivelCargoMap: Record<string, NivelCargo>;
+  onChange: (funcao: string, nivel: NivelCargo) => void;
+}) {
+  const grouped = groupMudancasByEmpresaAndFuncao(funcoesNivelInfo);
+
+  if (grouped.size === 0) {
+    return null;
+  }
+
+  const nivelLabel = (v: 'gestao' | 'operacional' | null) =>
+    v === 'gestao' ? (
+      <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full font-medium text-xs">
+        G gestão
+      </span>
+    ) : v === 'operacional' ? (
+      <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium text-xs">
+        O operacional
+      </span>
+    ) : (
+      <span className="text-gray-400 italic text-xs">não definido</span>
+    );
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white rounded-xl shadow-2xl w-full max-w-md"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200">
-          <div className="flex items-center gap-2">
-            <ArrowRight size={18} className="text-amber-500" />
-            <h3 className="text-sm font-semibold text-gray-900">
-              Mudança de Função
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 text-gray-400 hover:text-gray-600 rounded"
-            aria-label="Fechar modal"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <div className="px-5 py-4">
-          <p className="text-xs text-gray-500 mb-3">
-            Funcionários abaixo mudaram de função para{' '}
-            <strong className="text-gray-800">{funcao}</strong>. Revise e
-            escolha o nível de cargo para este cargo.
+    <div className="space-y-4">
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+        <AlertTriangle
+          size={18}
+          className="text-amber-600 flex-shrink-0 mt-0.5"
+        />
+        <div>
+          <p className="text-sm font-medium text-amber-900">
+            Mudanças de função detectadas
           </p>
-
-          {/* Employee table */}
-          <table className="w-full text-xs mb-4 border border-gray-100 rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
-              <tr className="text-left text-gray-500">
-                <th className="px-3 py-2 font-medium">Nome</th>
-                <th className="px-3 py-2 font-medium">Era</th>
-                <th className="px-3 py-2 font-medium text-right">Nível atual</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {funcionarios.map((f, i) => (
-                <tr key={i}>
-                  <td className="px-3 py-2 text-gray-800 font-medium">
-                    {f.nomeMascarado}
-                  </td>
-                  <td className="px-3 py-2 text-gray-500">{f.funcaoAnterior}</td>
-                  <td className="px-3 py-2 text-right">
-                    {f.nivelAtual === 'gestao' ? (
-                      <span className="inline-flex items-center gap-1 text-purple-700 bg-purple-50 px-1.5 py-0.5 rounded-full font-medium">
-                        G gestão
-                      </span>
-                    ) : f.nivelAtual === 'operacional' ? (
-                      <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded-full font-medium">
-                        O operacional
-                      </span>
-                    ) : (
-                      <span className="text-gray-400 italic">não definido</span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-
-          {/* Choose level */}
-          <div className="border-t border-gray-100 pt-3">
-            <p className="text-xs text-gray-700 mb-2 font-semibold">
-              Qual nível para &ldquo;{funcao}&rdquo;?
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleSelect('gestao')}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
-                  nivelAtual === 'gestao'
-                    ? 'bg-purple-600 text-white border-purple-600'
-                    : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-                }`}
-              >
-                G — Gestão
-              </button>
-              <button
-                onClick={() => handleSelect('operacional')}
-                className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
-                  nivelAtual === 'operacional'
-                    ? 'bg-blue-600 text-white border-blue-600'
-                    : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
-                }`}
-              >
-                O — Operacional
-              </button>
-            </div>
-          </div>
+          <p className="text-xs text-amber-800 mt-0.5">
+            Revise e classifique o nível de cargo para cada mudança abaixo.
+          </p>
         </div>
       </div>
+
+      {Array.from(grouped.entries()).map(([empresa, funcaosMap]) => (
+        <div
+          key={empresa}
+          className="bg-white border border-gray-300 rounded-lg overflow-hidden"
+        >
+          {/* Cabeçalho por Empresa */}
+          <div className="px-4 py-3 bg-gray-100 border-b border-gray-300 font-semibold text-sm text-gray-800">
+            {empresa}
+          </div>
+
+          {/* Tabela de funções e trocas */}
+          <div className="divide-y divide-gray-200">
+            {Array.from(funcaosMap.entries()).map(
+              ([funcao, { trocas, trocasNivel }]) => {
+                const nivelClassificado = nivelCargoMap[funcao] ?? '';
+                const semFuncao = funcao === 'Não informado';
+                return (
+                  <div key={`${empresa}-${funcao}`} className="p-4">
+                    {/* Função + status */}
+                    <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-100">
+                      <div className="flex-1">
+                        {semFuncao ? (
+                          <p className="text-sm font-semibold text-amber-700 flex items-center gap-1">
+                            <AlertTriangle size={13} className="inline" /> Sem
+                            função definida
+                          </p>
+                        ) : (
+                          <p className="text-sm font-semibold text-gray-800">
+                            {funcao}
+                          </p>
+                        )}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {trocas.length + trocasNivel.length} alteração
+                          {trocas.length + trocasNivel.length !== 1
+                            ? 'ões'
+                            : ''}
+                        </p>
+                      </div>
+                      {nivelClassificado && (
+                        <div className="flex-shrink-0 ml-4">
+                          <div className="flex items-center gap-2">
+                            {nivelClassificado === 'gestao' ? (
+                              <>
+                                <CheckCircle
+                                  size={14}
+                                  className="text-purple-600"
+                                />
+                                <span className="text-xs font-medium text-purple-700">
+                                  Gestão
+                                </span>
+                              </>
+                            ) : nivelClassificado === 'operacional' ? (
+                              <>
+                                <CheckCircle
+                                  size={14}
+                                  className="text-blue-600"
+                                />
+                                <span className="text-xs font-medium text-blue-700">
+                                  Operacional
+                                </span>
+                              </>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Tabela de trocas de função */}
+                    {trocas.length > 0 && (
+                      <table className="w-full text-xs mb-3 border border-gray-100 rounded-lg overflow-hidden">
+                        <thead className="bg-gray-50">
+                          <tr className="text-left text-gray-500">
+                            <th className="px-3 py-2 font-medium">Nome</th>
+                            <th className="px-3 py-2 font-medium">
+                              Era (func.)
+                            </th>
+                            <th className="px-3 py-2 font-medium text-right">
+                              Nível atual
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {trocas.map((troca, idx) => (
+                            <tr key={idx}>
+                              <td className="px-3 py-2 text-gray-800 font-medium">
+                                {troca.nome}
+                              </td>
+                              <td className="px-3 py-2 text-gray-600">
+                                {troca.funcaoAnterior}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {nivelLabel(troca.nivelAtual)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {/* Tabela de mudanças de nível */}
+                    {trocasNivel.length > 0 && (
+                      <table className="w-full text-xs mb-3 border border-gray-100 rounded-lg overflow-hidden">
+                        <thead className="bg-gray-50">
+                          <tr className="text-left text-gray-500">
+                            <th className="px-3 py-2 font-medium">Nome</th>
+                            <th className="px-3 py-2 font-medium">
+                              Nível atual
+                            </th>
+                            <th className="px-3 py-2 font-medium text-right">
+                              Proposto
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {trocasNivel.map((troca, idx) => (
+                            <tr key={idx}>
+                              <td className="px-3 py-2 text-gray-800 font-medium">
+                                {troca.nome}
+                              </td>
+                              <td className="px-3 py-2">
+                                {nivelLabel(troca.nivelAtual)}
+                              </td>
+                              <td className="px-3 py-2 text-right">
+                                {nivelLabel(troca.nivelProposto)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+
+                    {/* Botões de classificação */}
+                    <div className="border-t border-gray-100 pt-3">
+                      <p className="text-xs text-gray-700 mb-2 font-semibold">
+                        {semFuncao ? (
+                          'Qual nível para funcionários sem função definida?'
+                        ) : (
+                          <>Qual nível para &ldquo;{funcao}&rdquo;?</>
+                        )}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => onChange(funcao, 'gestao')}
+                          className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
+                            nivelClassificado === 'gestao'
+                              ? 'bg-purple-600 text-white border-purple-600'
+                              : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
+                          }`}
+                        >
+                          G — Gestão
+                        </button>
+                        <button
+                          onClick={() => onChange(funcao, 'operacional')}
+                          className={`flex-1 py-2.5 text-sm font-bold rounded-lg border-2 transition-colors ${
+                            nivelClassificado === 'operacional'
+                              ? 'bg-blue-600 text-white border-blue-600'
+                              : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50'
+                          }`}
+                        >
+                          O — Operacional
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+            )}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -172,25 +365,37 @@ export default function NivelCargoStep({
   temNivelCargoDirecto,
   isLoading,
 }: NivelCargoStepProps) {
-  const [modalFuncao, setModalFuncao] = useState<string | null>(null);
-
-  const modalInfo = useMemo(
-    () => (modalFuncao ? funcoesNivelInfo.find((f) => f.funcao === modalFuncao) : null),
-    [modalFuncao, funcoesNivelInfo]
+  /**
+   * Funções com mudanças não confirmadas: isMudancaRole (troca de função)
+   * OU isMudancaNivel (nivel_cargo alterado/removido na planilha) que ainda
+   * não foram classificadas no nivelCargoMap. Ambas bloqueiam o avanço.
+   */
+  const mudancasNaoConfirmadas = useMemo(
+    () =>
+      funcoesNivelInfo.filter(
+        (f) => (f.isMudancaRole || f.isMudancaNivel) && !nivelCargoMap[f.funcao]
+      ),
+    [funcoesNivelInfo, nivelCargoMap]
   );
 
-  const totalFuncoes = funcoesNivelInfo.length;
+  // 'Não informado' é OPCIONAL — não bloqueia a importação
+  const funcoesBloqueantes = useMemo(
+    () => funcoesNivelInfo.filter((f) => f.funcao !== 'Não informado'),
+    [funcoesNivelInfo]
+  );
+
+  const totalFuncoes = funcoesBloqueantes.length;
 
   const classificadas = useMemo(
-    () => funcoesNivelInfo.filter((f) => !!nivelCargoMap[f.funcao]).length,
-    [funcoesNivelInfo, nivelCargoMap]
+    () => funcoesBloqueantes.filter((f) => !!nivelCargoMap[f.funcao]).length,
+    [funcoesBloqueantes, nivelCargoMap]
   );
 
   const todasClassificadas = classificadas === totalFuncoes;
 
   const autoClassificadas = useMemo(
     () =>
-      funcoesNivelInfo.filter((f) => {
+      funcoesBloqueantes.filter((f) => {
         const niveisValidos = f.niveisAtuais.filter(
           (n): n is 'gestao' | 'operacional' => n !== null
         );
@@ -200,7 +405,7 @@ export default function NivelCargoStep({
           !!nivelCargoMap[f.funcao]
         );
       }).length,
-    [funcoesNivelInfo, nivelCargoMap]
+    [funcoesBloqueantes, nivelCargoMap]
   );
 
   const handleToggle = useCallback(
@@ -219,19 +424,23 @@ export default function NivelCargoStep({
     [funcoesNivelInfo, onChange]
   );
 
-  // --- Planilha já tem coluna nivel_cargo ---
-  if (temNivelCargoDirecto) {
+  // --- Planilha já tem coluna nivel_cargo (SEM mudanças pendentes) ---
+  if (temNivelCargoDirecto && mudancasNaoConfirmadas.length === 0) {
     return (
       <div className="space-y-4">
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-3">
-          <CheckCircle size={18} className="text-green-600 flex-shrink-0 mt-0.5" />
+          <CheckCircle
+            size={18}
+            className="text-green-600 flex-shrink-0 mt-0.5"
+          />
           <div>
             <p className="text-sm font-medium text-green-800">
-              Nível de cargo mapeado diretamente da planilha
+              ✓ Nível de cargo mapeado diretamente da planilha
             </p>
             <p className="text-xs text-green-700 mt-0.5">
-              A coluna <strong>nivel_cargo</strong> foi identificada. Os valores
-              serão importados sem necessidade de classificação manual.
+              A coluna <strong>nivel_cargo</strong> foi identificada. Nenhuma
+              mudança de função detectada. Os valores serão importados sem
+              necessidade de classificação manual.
             </p>
           </div>
         </div>
@@ -246,6 +455,87 @@ export default function NivelCargoStep({
             onClick={onConfirm}
             disabled={isLoading}
             className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-60"
+          >
+            {isLoading ? 'Importando...' : 'Confirmar e Importar →'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // --- Planilha tem coluna nivel_cargo MAS há mudanças de função pendentes ---
+  if (temNivelCargoDirecto && mudancasNaoConfirmadas.length > 0) {
+    return (
+      <div className="space-y-4">
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertTriangle
+            size={18}
+            className="text-amber-600 flex-shrink-0 mt-0.5"
+          />
+          <div>
+            <p className="text-sm font-medium text-amber-900">
+              Nível de cargo mapeado + Alterações detectadas
+            </p>
+            <p className="text-xs text-amber-800 mt-0.5">
+              A coluna <strong>nivel_cargo</strong> existe, mas{' '}
+              <strong>{mudancasNaoConfirmadas.length}</strong> função
+              {mudancasNaoConfirmadas.length > 1 ? 'ões' : ''} com alterações
+              pendentes (troca de função ou nível alterado). Confirme o nível
+              para cada uma antes de continuar.
+            </p>
+          </div>
+        </div>
+
+        {/* Lista rápida das mudanças detectadas */}
+        <div className="bg-white border border-gray-200 rounded-lg p-3">
+          <p className="text-xs font-semibold text-gray-700 mb-2">
+            Mudanças a confirmar ({mudancasNaoConfirmadas.length}):
+          </p>
+          <ul className="space-y-1 text-xs text-gray-600">
+            {mudancasNaoConfirmadas.map((info) => (
+              <li key={info.funcao} className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                <strong>{info.funcao}</strong> ({info.qtdFuncionarios}
+                {info.qtdFuncionarios > 1 ? ' func.' : ' func.'})
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* MudancasAgrupadas inline — mostrar tabela agrupada por empresa */}
+        <MudancasAgrupadas
+          funcoesNivelInfo={funcoesNivelInfo}
+          nivelCargoMap={nivelCargoMap}
+          onChange={onChange}
+        />
+
+        {/* Blocker */}
+        {mudancasNaoConfirmadas.length > 0 &&
+          mudancasNaoConfirmadas.some((f) => !nivelCargoMap[f.funcao]) && (
+            <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+              <span>
+                Confirme o nível para todas as alterações pendentes antes de
+                prosseguir.
+              </span>
+            </div>
+          )}
+
+        {/* Ações finais */}
+        <div className="flex gap-3 justify-between pt-2">
+          <button
+            onClick={onBack}
+            className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+          >
+            ← Voltar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={
+              mudancasNaoConfirmadas.some((f) => !nivelCargoMap[f.funcao]) ||
+              isLoading
+            }
+            className="px-6 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? 'Importando...' : 'Confirmar e Importar →'}
           </button>
@@ -346,9 +636,6 @@ export default function NivelCargoStep({
         <div className="divide-y divide-gray-50">
           {funcoesNivelInfo.map((info) => {
             const nivel = nivelCargoMap[info.funcao] ?? '';
-            const temMudanca =
-              info.isMudancaRole &&
-              (info.funcionariosComMudanca?.length ?? 0) > 0;
 
             return (
               <div
@@ -368,10 +655,16 @@ export default function NivelCargoStep({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span
-                      className="text-sm text-gray-800 font-medium truncate"
-                      title={info.funcao}
+                      className={`text-sm font-medium truncate ${info.funcao === 'Não informado' ? 'text-amber-700 italic' : 'text-gray-800'}`}
+                      title={
+                        info.funcao === 'Não informado'
+                          ? 'Funcionários sem função definida'
+                          : info.funcao
+                      }
                     >
-                      {info.funcao}
+                      {info.funcao === 'Não informado'
+                        ? 'Sem função'
+                        : info.funcao}
                     </span>
                     {info.isMudancaRole && (
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0">
@@ -391,22 +684,35 @@ export default function NivelCargoStep({
                       </span>
                     )}
                   </div>
+                  {/* Campo nome: mostra nomes dos funcionários com mudança */}
+                  {(() => {
+                    const nomes = (
+                      info.funcionariosComMudanca?.length
+                        ? info.funcionariosComMudanca
+                        : (info.funcionariosComMudancaNivel ?? [])
+                    )
+                      .map((f) => f.nome)
+                      .filter(Boolean);
+                    return nomes.length > 0 ? (
+                      <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                        <span className="text-[10px] text-gray-600 truncate">
+                          {nomes.slice(0, 2).join(', ')}
+                          {nomes.length > 2 && (
+                            <span className="text-gray-400">
+                              {' '}
+                              +{nomes.length - 2}
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    ) : null;
+                  })()}
                   <div className="flex items-center gap-2 mt-0.5">
                     <span className="text-[10px] text-gray-400">
                       {info.qtdFuncionarios} func.
                       {info.qtdExistentes > 0 &&
                         ` · ${info.qtdExistentes} existente${info.qtdExistentes > 1 ? 's' : ''}`}
                     </span>
-                    {temMudanca && (
-                      <button
-                        onClick={() => setModalFuncao(info.funcao)}
-                        className="inline-flex items-center gap-1 text-[10px] text-amber-600 hover:text-amber-800 hover:underline font-semibold"
-                      >
-                        <Users size={10} />
-                        {info.funcionariosComMudanca!.length} troca
-                        {info.funcionariosComMudanca!.length > 1 ? 's' : ''} — ver detalhes
-                      </button>
-                    )}
                   </div>
                 </div>
 
@@ -439,6 +745,19 @@ export default function NivelCargoStep({
         </div>
       </div>
 
+      {/* Detalhes de mudanças (troca de função / nível) quando existentes */}
+      {funcoesNivelInfo.some(
+        (f) =>
+          (f.isMudancaRole && (f.funcionariosComMudanca?.length ?? 0) > 0) ||
+          (f.isMudancaNivel && (f.funcionariosComMudancaNivel?.length ?? 0) > 0)
+      ) && (
+        <MudancasAgrupadas
+          funcoesNivelInfo={funcoesNivelInfo}
+          nivelCargoMap={nivelCargoMap}
+          onChange={onChange}
+        />
+      )}
+
       {/* Blocker */}
       {!todasClassificadas && (
         <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
@@ -470,17 +789,6 @@ export default function NivelCargoStep({
           {isLoading ? 'Importando...' : 'Confirmar e Importar →'}
         </button>
       </div>
-
-      {/* Role-change modal */}
-      {modalInfo && modalFuncao && (
-        <MudancaRoleModal
-          funcao={modalFuncao}
-          funcionarios={modalInfo.funcionariosComMudanca ?? []}
-          nivelAtual={nivelCargoMap[modalFuncao] ?? ''}
-          onChange={(nivel) => onChange(modalFuncao, nivel)}
-          onClose={() => setModalFuncao(null)}
-        />
-      )}
     </div>
   );
 }
