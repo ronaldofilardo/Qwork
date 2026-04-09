@@ -90,7 +90,7 @@ const clinicaSteps: AnyStep[] = [
           {
             label: '2. Inserção de Funcionários',
             tooltip:
-              "Após criar a empresa, acesse o card dela abaixo, entre na aba 'Funcionários' e adicione via '+Adicionar' ou 'Importar XLSX'.",
+              "Após criar a empresa, acesse o card dela abaixo, entre na aba 'Funcionários' e adicione via 'Adicionar Funcionário' ou 'Importar XLSX'.",
           },
         ],
       },

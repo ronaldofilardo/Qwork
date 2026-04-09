@@ -240,9 +240,8 @@ export default function FuncionariosSection({
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
             >
               <Plus size={20} />
-              <span className="text-sm font-medium">Adicionar</span>
+              <span className="text-sm font-medium">Adicionar Funcionário</span>
             </button>
-
           </div>
         </div>
 

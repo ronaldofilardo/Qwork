@@ -196,14 +196,14 @@ describe('👥 Aba Funcionários', () => {
   });
 
   /**
-   * @test Verifica que o botão Adicionar permanece
-   * @expected Deve exibir botão 'Adicionar'
+   * @test Verifica que o botão Adicionar Funcionário permanece
+   * @expected Deve exibir botão 'Adicionar Funcionário'
    */
-  it('deve exibir botão Adicionar na aba de funcionários', async () => {
+  it('deve exibir botão Adicionar Funcionário na aba de funcionários', async () => {
     // Act: Renderizar e navegar
     await renderAndNavigateToFuncionariosTab();
 
     // Assert: Botão principal de ação deve estar presente
-    expect(screen.getByText('Adicionar')).toBeInTheDocument();
+    expect(screen.getByText('Adicionar Funcionário')).toBeInTheDocument();
   });
 });

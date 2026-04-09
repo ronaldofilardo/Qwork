@@ -332,7 +332,7 @@ describe('RH Empresa Dashboard', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('Adicionar')
+          screen.getByText('Adicionar Funcionário')
         ).toBeInTheDocument();
       });
 
@@ -487,16 +487,16 @@ describe('RH Empresa Dashboard', () => {
 
       await waitFor(
         () => {
-          // Confirma que o botão Adicionar está presente
+          // Confirma que o botão Adicionar Funcionário está presente
           expect(
-            screen.getByText('Adicionar')
+            screen.getByText('Adicionar Funcionário')
           ).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
 
       // Verifica seções da aba funcionários
-      expect(screen.getByText('Adicionar')).toBeInTheDocument();
+      expect(screen.getByText('Adicionar Funcionário')).toBeInTheDocument();
     });
 
     it('deve ter seção de upload compacta na sidebar', async () => {
@@ -518,7 +518,7 @@ describe('RH Empresa Dashboard', () => {
       await waitFor(
         () => {
           expect(
-            screen.getByText('Adicionar')
+            screen.getByText('Adicionar Funcionário')
           ).toBeInTheDocument();
         },
         { timeout: 3000 }
