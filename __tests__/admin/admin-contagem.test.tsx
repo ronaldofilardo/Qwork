@@ -51,12 +51,23 @@ describe('ContagemContent - Aba Contagem', () => {
           avaliacoes_concluidas: 180,
         },
         lista_entidades: [
-          { id: 1, nome: 'Acme Ltda', ativos: 10, inativos: 2 },
+          {
+            id: 1,
+            nome: 'Acme Ltda',
+            ativa: true,
+            criado_em: '2025-01-01T00:00:00.000Z',
+            data_aceite: '2025-01-10T00:00:00.000Z',
+            ativos: 10,
+            inativos: 2,
+          },
         ],
         lista_clinicas: [
           {
             id: 1,
             nome: 'ClinX',
+            ativa: true,
+            criado_em: '2025-02-01T00:00:00.000Z',
+            data_aceite: null,
             empresas_clientes: 5,
             ativos: 30,
             inativos: 4,
