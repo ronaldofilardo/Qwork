@@ -7,6 +7,7 @@ import {
   ChevronDown,
   CreditCard,
   FileText,
+  Upload,
   Users,
   User,
 } from 'lucide-react';
@@ -99,6 +100,7 @@ export default function EntidadeSidebar({
     pathname?.startsWith('/entidade/lotes') ||
     pathname?.startsWith('/entidade/funcionarios') ||
     pathname?.startsWith('/entidade/pendencias') ||
+    pathname?.startsWith('/entidade/importacao') ||
     pathname === '/entidade/dashboard';
 
   return (
@@ -157,6 +159,12 @@ export default function EntidadeSidebar({
               count={counts.pendencias}
               isActive={pathname?.startsWith('/entidade/pendencias')}
               onClick={() => router.push('/entidade/pendencias')}
+            />
+            <MenuItem
+              icon={Upload}
+              label="Importação em Massa"
+              isActive={pathname?.startsWith('/entidade/importacao')}
+              onClick={() => router.push('/entidade/importacao')}
             />
           </div>
         )}
