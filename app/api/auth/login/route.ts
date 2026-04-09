@@ -7,13 +7,17 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
-import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { NextRequest } from 'next/server';
+import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { handleRepresentanteLogin, validarSenhaFuncionario } from './helpers';
 
 export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
-  // 🔒 SEGURANÇA: Aplicar rate limiting (5 tentativas em 5 minutos)
-  const rateLimitResult = rateLimit(RATE_LIMIT_CONFIGS.auth)(request as any);
+  // 🔒 SEGURANÇA: Rate limiting distribuído (DB-backed) — 5 tentativas / 5 min por IP
+  const rateLimitResult = await rateLimitAsync(
+    request as unknown as NextRequest,
+    RATE_LIMIT_CONFIGS.auth
+  );
   if (rateLimitResult) {
     console.warn(
       '[LOGIN] Rate limit excedido:',

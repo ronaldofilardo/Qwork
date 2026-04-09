@@ -14,7 +14,8 @@
 import { NextResponse } from 'next/server';
 import { getSession, persistSession } from '@/lib/session';
 import { validateDbEnvironmentAccess } from '@/lib/db/environment-guard';
-import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { NextRequest } from 'next/server';
+import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -24,8 +25,11 @@ const SelecionarAmbienteSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  // Rate limit: reutiliza config de auth
-  const rateLimitResult = rateLimit(RATE_LIMIT_CONFIGS.auth)(request as any);
+  // Rate limit distribuído (DB-backed) — reutiliza config de auth
+  const rateLimitResult = await rateLimitAsync(
+    request as unknown as NextRequest,
+    RATE_LIMIT_CONFIGS.auth
+  );
   if (rateLimitResult) return rateLimitResult;
 
   // 1. Verificar autenticação

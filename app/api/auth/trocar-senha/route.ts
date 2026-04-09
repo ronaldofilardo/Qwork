@@ -6,7 +6,8 @@ import {
   registrarAuditoria,
   extrairContextoRequisicao,
 } from '@/lib/auditoria/auditoria';
-import { rateLimit, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
+import { NextRequest } from 'next/server';
+import { rateLimitAsync, RATE_LIMIT_CONFIGS } from '@/lib/rate-limit';
 import { assertRoles, ROLES, isApiError } from '@/lib/authorization/policies';
 
 export const dynamic = 'force-dynamic';
@@ -19,8 +20,11 @@ const SENHA_MIN_LENGTH = 8;
  * Body: { senha_atual: string, nova_senha: string }
  */
 export async function POST(request: Request) {
-  // Rate limiting
-  const rateLimitResult = rateLimit(RATE_LIMIT_CONFIGS.auth)(request as any);
+  // Rate limiting distribuído (DB-backed)
+  const rateLimitResult = await rateLimitAsync(
+    request as unknown as NextRequest,
+    RATE_LIMIT_CONFIGS.auth
+  );
   if (rateLimitResult) {
     return rateLimitResult;
   }
