@@ -519,6 +519,7 @@ export default function ImportacaoEntidadePage() {
           tempoMs={tempoMs}
           totalLinhas={executeData.resumo.totalLinhasProcessadas}
           funcoesAlteradas={executeData.resumo.funcoesAlteradas ?? []}
+          hideEmpresaStats
           onNovaImportacao={handleNovaImportacao}
         />
       )}
