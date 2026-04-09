@@ -44,6 +44,7 @@ interface ImportResultProps {
   tempoMs: number;
   totalLinhas: number;
   funcoesAlteradas?: FuncaoAlterada[];
+  hideEmpresaStats?: boolean;
   onNovaImportacao: () => void;
 }
 
@@ -72,9 +73,10 @@ export default function ImportResult({
   tempoMs,
   totalLinhas,
   funcoesAlteradas,
+  hideEmpresaStats = false,
   onNovaImportacao,
 }: ImportResultProps) {
-  const temBloqueios = stats.empresas_bloqueadas > 0;
+  const temBloqueios = !hideEmpresaStats && stats.empresas_bloqueadas > 0;
   const status = !sucesso ? 'erro' : temBloqueios ? 'parcial' : 'sucesso';
 
   return (
@@ -158,22 +160,26 @@ export default function ImportResult({
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">Resultado</h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <ResultItem
-            icon={<Building2 size={16} className="text-green-500" />}
-            label="Empresas criadas"
-            value={stats.empresas_criadas}
-          />
-          <ResultItem
-            icon={<Building2 size={16} className="text-gray-400" />}
-            label="Empresas existentes"
-            value={stats.empresas_existentes}
-          />
-          {stats.empresas_bloqueadas > 0 && (
-            <ResultItem
-              icon={<AlertTriangle size={16} className="text-amber-500" />}
-              label="Empresas bloqueadas"
-              value={stats.empresas_bloqueadas}
-            />
+          {!hideEmpresaStats && (
+            <>
+              <ResultItem
+                icon={<Building2 size={16} className="text-green-500" />}
+                label="Empresas criadas"
+                value={stats.empresas_criadas}
+              />
+              <ResultItem
+                icon={<Building2 size={16} className="text-gray-400" />}
+                label="Empresas existentes"
+                value={stats.empresas_existentes}
+              />
+              {stats.empresas_bloqueadas > 0 && (
+                <ResultItem
+                  icon={<AlertTriangle size={16} className="text-amber-500" />}
+                  label="Empresas bloqueadas"
+                  value={stats.empresas_bloqueadas}
+                />
+              )}
+            </>
           )}
           <ResultItem
             icon={<Users size={16} className="text-green-500" />}
