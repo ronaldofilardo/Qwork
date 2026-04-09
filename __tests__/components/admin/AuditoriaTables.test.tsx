@@ -6,10 +6,12 @@
  *  1. Tabela renderiza corretamente com dados
  *  2. Filtro por nome funciona
  *  3. Filtro por CPF (dígitos e máscara) funciona
- *  4. Limpar filtro restaura lista completa
- *  5. CPF nulo não causa erro
- *  6. Perfis exibem badges corretos
- *  7. Células N/A exibidas para aceites não aplicáveis
+ *  4. Filtro por perfil (select) funciona
+ *  5. Filtros combinados funcionam
+ *  6. Limpar filtros restaura lista completa
+ *  7. CPF nulo não causa erro
+ *  8. Perfis exibem badges corretos
+ *  9. Células N/A exibidas para aceites não aplicáveis
  */
 
 import React from 'react';
@@ -84,7 +86,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Bruno Carvalho', cpf: '22222222222' }),
     ];
     render(<TabelaAceites data={data} />);
-    const input = screen.getByPlaceholderText('Buscar por nome ou CPF...');
+    const input = screen.getByPlaceholderText('Filtrar por nome...');
 
     // Act
     fireEvent.change(input, { target: { value: 'alice' } });
@@ -102,7 +104,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Ana Lima', cpf: '22222222222' }),
     ];
     render(<TabelaAceites data={data} />);
-    const input = screen.getByPlaceholderText('Buscar por nome ou CPF...');
+    const input = screen.getByPlaceholderText('Filtrar por nome...');
 
     // Act
     fireEvent.change(input, { target: { value: 'jose' } });
@@ -119,10 +121,10 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Bruno', cpf: '22222222222' }),
     ];
     render(<TabelaAceites data={data} />);
-    const input = screen.getByPlaceholderText('Buscar por nome ou CPF...');
+    const inputCpf = screen.getByPlaceholderText('Filtrar por CPF...');
 
     // Act
-    fireEvent.change(input, { target: { value: '111' } });
+    fireEvent.change(inputCpf, { target: { value: '111' } });
 
     // Assert
     expect(screen.getByText('Alice')).toBeInTheDocument();
@@ -136,50 +138,97 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Bruno', cpf: '22222222222' }),
     ];
     render(<TabelaAceites data={data} />);
-    const input = screen.getByPlaceholderText('Buscar por nome ou CPF...');
+    const inputCpf = screen.getByPlaceholderText('Filtrar por CPF...');
 
     // Act
-    fireEvent.change(input, { target: { value: '111.111' } });
+    fireEvent.change(inputCpf, { target: { value: '111.111' } });
 
     // Assert
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(screen.queryByText('Bruno')).not.toBeInTheDocument();
   });
 
-  it('deve exibir mensagem quando busca não retorna resultados', () => {
+  it('deve filtrar por perfil via select', () => {
+    // Arrange
+    const data = [
+      makeAceite({ nome: 'Alice', cpf: '11111111111', perfil: 'representante' }),
+      makeAceite({ nome: 'Bruno', cpf: '22222222222', perfil: 'funcionario' }),
+      makeAceite({ nome: 'Carlos', cpf: '33333333333', perfil: 'rh' }),
+    ];
+    render(<TabelaAceites data={data} />);
+    const select = screen.getByRole('combobox');
+
+    // Act — selecionar apenas 'funcionario'
+    fireEvent.change(select, { target: { value: 'funcionario' } });
+
+    // Assert
+    expect(screen.queryByText('Alice')).not.toBeInTheDocument();
+    expect(screen.getByText('Bruno')).toBeInTheDocument();
+    expect(screen.queryByText('Carlos')).not.toBeInTheDocument();
+    expect(screen.getByText('1 de 3 usuários')).toBeInTheDocument();
+  });
+
+  it('deve combinar filtro de perfil e nome', () => {
+    // Arrange
+    const data = [
+      makeAceite({ nome: 'Alice RH', cpf: '11111111111', perfil: 'rh' }),
+      makeAceite({ nome: 'Alice Rep', cpf: '22222222222', perfil: 'representante' }),
+      makeAceite({ nome: 'Bruno RH', cpf: '33333333333', perfil: 'rh' }),
+    ];
+    render(<TabelaAceites data={data} />);
+
+    // Act — filtrar perfil rh + nome alice
+    fireEvent.change(screen.getByRole('combobox'), { target: { value: 'rh' } });
+    fireEvent.change(screen.getByPlaceholderText('Filtrar por nome...'), { target: { value: 'alice' } });
+
+    // Assert — apenas Alice RH deve aparecer
+    expect(screen.getByText('Alice RH')).toBeInTheDocument();
+    expect(screen.queryByText('Alice Rep')).not.toBeInTheDocument();
+    expect(screen.queryByText('Bruno RH')).not.toBeInTheDocument();
+    expect(screen.getByText('1 de 3 usuários')).toBeInTheDocument();
+  });
+
+  it('deve exibir mensagem quando filtros não retornam resultados', () => {
     // Arrange
     const data = [makeAceite({ nome: 'Alice', cpf: '11111111111' })];
     render(<TabelaAceites data={data} />);
-    const input = screen.getByPlaceholderText('Buscar por nome ou CPF...');
+    const inputNome = screen.getByPlaceholderText('Filtrar por nome...');
 
     // Act
-    fireEvent.change(input, { target: { value: 'inexistente xyz' } });
+    fireEvent.change(inputNome, { target: { value: 'inexistente xyz' } });
 
     // Assert
     expect(
-      screen.getByText('Nenhum resultado para a busca.')
+      screen.getByText('Nenhum resultado para os filtros aplicados.')
     ).toBeInTheDocument();
     expect(screen.getByText('0 de 1 usuários')).toBeInTheDocument();
   });
 
-  it('deve limpar filtro ao clicar no botão Limpar', () => {
+  it('deve limpar todos os filtros ao clicar em Limpar filtros', () => {
     // Arrange
     const data = [
-      makeAceite({ nome: 'Alice', cpf: '11111111111' }),
-      makeAceite({ nome: 'Bruno', cpf: '22222222222' }),
+      makeAceite({ nome: 'Alice', cpf: '11111111111', perfil: 'representante' }),
+      makeAceite({ nome: 'Bruno', cpf: '22222222222', perfil: 'funcionario' }),
     ];
     render(<TabelaAceites data={data} />);
-    const input = screen.getByPlaceholderText('Buscar por nome ou CPF...');
-    fireEvent.change(input, { target: { value: 'alice' } });
+    fireEvent.change(screen.getByPlaceholderText('Filtrar por nome...'), { target: { value: 'alice' } });
     expect(screen.getByText('1 de 2 usuários')).toBeInTheDocument();
 
     // Act
-    fireEvent.click(screen.getByText('Limpar'));
+    fireEvent.click(screen.getByText('Limpar filtros'));
 
     // Assert
     expect(screen.getByText('2 de 2 usuários')).toBeInTheDocument();
     expect(screen.getByText('Alice')).toBeInTheDocument();
     expect(screen.getByText('Bruno')).toBeInTheDocument();
+  });
+
+  it('deve não exibir botão Limpar filtros quando não há filtro ativo', () => {
+    // Arrange & Act
+    render(<TabelaAceites data={[makeAceite()]} />);
+
+    // Assert
+    expect(screen.queryByText('Limpar filtros')).not.toBeInTheDocument();
   });
 
   it('deve tratar CPF nulo sem lançar erro', () => {
@@ -246,7 +295,8 @@ describe('TabelaAceites', () => {
     render(<TabelaAceites data={data} />);
 
     // Assert
-    expect(screen.getByText('Funcionário')).toBeInTheDocument();
-    expect(screen.getByText('Representante')).toBeInTheDocument();
+    // getAllByText porque os perfis aparecem tanto no select option quanto no badge da tabela
+    expect(screen.getAllByText('Funcionário').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Representante').length).toBeGreaterThanOrEqual(1);
   });
 });
