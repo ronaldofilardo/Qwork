@@ -11,6 +11,7 @@ import {
   FileText,
   Clock,
   Filter,
+  Trash2,
 } from 'lucide-react';
 import type { PreCadastroItem } from '@/app/api/suporte/pre-cadastro/route';
 
@@ -123,9 +124,23 @@ function buildAceiteUrl(tomadorId: number, contratoId: number): string {
 
 interface PreCadastroRowProps {
   item: PreCadastroItem;
+  onDelete: (id: number, tipo: 'entidade' | 'clinica') => void;
+  deleting: boolean;
 }
 
-function PreCadastroRow({ item }: PreCadastroRowProps) {
+function PreCadastroRow({ item, onDelete, deleting }: PreCadastroRowProps) {
+  const [confirmando, setConfirmando] = useState(false);
+
+  const handleDeleteClick = () => {
+    if (!confirmando) {
+      setConfirmando(true);
+      setTimeout(() => setConfirmando(false), 3000);
+      return;
+    }
+    onDelete(item.id, item.tipo);
+    setConfirmando(false);
+  };
+
   const url = buildAceiteUrl(item.id, item.contrato_id);
   const isClinique = item.tipo === 'clinica';
 
@@ -181,7 +196,28 @@ function PreCadastroRow({ item }: PreCadastroRowProps) {
 
       {/* Ação */}
       <td className="px-4 py-3 text-right">
-        <CopyButton url={url} />
+        <div className="flex items-center justify-end gap-2">
+          <CopyButton url={url} />
+          <button
+            onClick={handleDeleteClick}
+            disabled={deleting}
+            title={confirmando ? 'Clique novamente para confirmar' : 'Remover pré-cadastro'}
+            aria-label={confirmando ? 'Confirmar remoção' : 'Remover pré-cadastro'}
+            className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer disabled:opacity-50
+              ${
+                confirmando
+                  ? 'bg-red-600 text-white focus:ring-red-400 animate-pulse'
+                  : 'bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-400'
+              }`}
+          >
+            {deleting ? (
+              <RefreshCw size={14} className="animate-spin" />
+            ) : (
+              <Trash2 size={14} />
+            )}
+            {confirmando ? 'Confirmar?' : ''}
+          </button>
+        </div>
       </td>
     </tr>
   );
@@ -192,6 +228,7 @@ export function PreCadastroContent() {
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<TipoFiltro>('todos');
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const fetchPreCadastros = useCallback(async () => {
     setLoading(true);
@@ -214,6 +251,29 @@ export function PreCadastroContent() {
       setLoading(false);
     }
   }, [filtro]);
+
+  const handleDelete = useCallback(
+    async (id: number, tipo: 'entidade' | 'clinica') => {
+      setDeletingId(id);
+      setErro('');
+      try {
+        const res = await fetch(
+          `/api/suporte/pre-cadastro/${id}?tipo=${tipo}`,
+          { method: 'DELETE' }
+        );
+        if (!res.ok) {
+          const body = (await res.json()) as { error?: string };
+          throw new Error(body.error ?? 'Erro ao remover pré-cadastro');
+        }
+        setItems((prev) => prev.filter((item) => item.id !== id));
+      } catch (err: unknown) {
+        setErro(err instanceof Error ? err.message : 'Erro ao remover');
+      } finally {
+        setDeletingId(null);
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     void fetchPreCadastros();
@@ -341,7 +401,12 @@ export function PreCadastroContent() {
                 </thead>
                 <tbody>
                   {items.map((item) => (
-                    <PreCadastroRow key={item.id} item={item} />
+                    <PreCadastroRow
+                      key={item.id}
+                      item={item}
+                      onDelete={(id, tipo) => void handleDelete(id, tipo)}
+                      deleting={deletingId === item.id}
+                    />
                   ))}
                 </tbody>
               </table>
