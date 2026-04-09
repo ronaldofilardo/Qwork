@@ -1,12 +1,11 @@
 /**
  * DELETE /api/suporte/pre-cadastro/[id]
  *
- * Remove permanentemente um pré-cadastro que ainda NÃO aceitou o contrato.
+ * Soft-delete de um pré-cadastro que ainda NÃO aceitou o contrato.
  *
- * Sequência de remoção:
- *   usuarios → senhas (entidades_senhas / clinicas_senhas) → contratos → tabela principal
+ * Operação: UPDATE [entidades|clinicas] SET ativa = false WHERE id = ?
  *
- * Guard de segurança: bloqueia deleção se existir contrato aceito (aceito = true).
+ * Guard de segurança: bloqueia se existir contrato aceito (aceito = true).
  *
  * Exclusivo perfil suporte.
  */
@@ -49,9 +48,6 @@ export async function DELETE(
 
     const { tipo } = parseResult.data;
     const tabela = tipo === 'entidade' ? 'entidades' : 'clinicas';
-    const tabelaSenhas =
-      tipo === 'entidade' ? 'entidades_senhas' : 'clinicas_senhas';
-    const idColunaSenhas = tipo === 'entidade' ? 'entidade_id' : 'clinica_id';
 
     // Safety: verificar existência e que não há contrato aceito
     const checkResult = await query(
@@ -77,26 +73,13 @@ export async function DELETE(
       );
     }
 
-    // Deleção em cascata (ordem FK)
-    if (tipo === 'entidade') {
-      await query(`DELETE FROM usuarios WHERE entidade_id = $1`, [id]);
-    } else {
-      await query(`DELETE FROM usuarios WHERE clinica_id = $1`, [id]);
-    }
+    // Soft-delete: marca o tomador como inativo (preserva histórico)
+    await query(`UPDATE ${tabela} SET ativa = false WHERE id = $1`, [id]);
 
-    await query(
-      `DELETE FROM ${tabelaSenhas} WHERE ${idColunaSenhas} = $1`,
-      [id]
+    return NextResponse.json(
+      { success: true, message: 'Pré-cadastro removido com sucesso' },
+      { status: 200 }
     );
-
-    await query(
-      `DELETE FROM contratos WHERE tomador_id = $1 AND tipo_tomador = $2`,
-      [id, tipo]
-    );
-
-    await query(`DELETE FROM ${tabela} WHERE id = $1`, [id]);
-
-    return new NextResponse(null, { status: 204 });
   } catch (error: unknown) {
     if (isApiError(error)) {
       return NextResponse.json(

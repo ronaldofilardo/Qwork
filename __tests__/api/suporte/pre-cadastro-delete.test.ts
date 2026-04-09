@@ -3,8 +3,8 @@
  * @description Testes unitários para DELETE /api/suporte/pre-cadastro/[id]
  *
  * Cobre:
- *   - 204: hard-delete pré-cadastro entidade
- *   - 204: hard-delete pré-cadastro clínica
+ *   - 200: soft-delete pré-cadastro entidade (UPDATE ativa = false)
+ *   - 200: soft-delete pré-cadastro clínica (UPDATE ativa = false)
  *   - 400: ID inválido
  *   - 400: tipo ausente/inválido
  *   - 401: sem autenticação
@@ -54,24 +54,18 @@ const fakeSuporteSession = {
   perfil: 'suporte' as const,
 };
 
-// Cascade DELETE entidade: check + 4 DELETEs
+// Cascade DELETE entidade: check + 1 UPDATE
 function mockDeleteEntidade() {
   mockQuery
     .mockResolvedValueOnce({ rows: [{ id: 1, aceito: null }] } as any) // check
-    .mockResolvedValueOnce({ rows: [] } as any) // DELETE usuarios
-    .mockResolvedValueOnce({ rows: [] } as any) // DELETE entidades_senhas
-    .mockResolvedValueOnce({ rows: [] } as any) // DELETE contratos
-    .mockResolvedValueOnce({ rows: [] } as any); // DELETE entidades
+    .mockResolvedValueOnce({ rows: [] } as any); // UPDATE ativa = false
 }
 
-// Cascade DELETE clínica: check + 4 DELETEs
+// Cascade DELETE clínica: check + 1 UPDATE
 function mockDeleteClinica() {
   mockQuery
     .mockResolvedValueOnce({ rows: [{ id: 2, aceito: null }] } as any) // check
-    .mockResolvedValueOnce({ rows: [] } as any) // DELETE usuarios
-    .mockResolvedValueOnce({ rows: [] } as any) // DELETE clinicas_senhas
-    .mockResolvedValueOnce({ rows: [] } as any) // DELETE contratos
-    .mockResolvedValueOnce({ rows: [] } as any); // DELETE clinicas
+    .mockResolvedValueOnce({ rows: [] } as any); // UPDATE ativa = false
 }
 
 // ──────────────────────────────────────────────
@@ -91,7 +85,9 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
       throw { message: 'Não autenticado', code: 'UNAUTHORIZED', status: 401 };
     });
 
-    const res = await DELETE(makeRequest('1', 'entidade'), { params: { id: '1' } });
+    const res = await DELETE(makeRequest('1', 'entidade'), {
+      params: { id: '1' },
+    });
     expect(res.status).toBe(401);
   });
 
@@ -100,13 +96,17 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
       throw { message: 'Sem permissão', code: 'FORBIDDEN', status: 403 };
     });
 
-    const res = await DELETE(makeRequest('1', 'entidade'), { params: { id: '1' } });
+    const res = await DELETE(makeRequest('1', 'entidade'), {
+      params: { id: '1' },
+    });
     expect(res.status).toBe(403);
   });
 
   // -------- Validação --------
   it('deve retornar 400 para ID não numérico', async () => {
-    const res = await DELETE(makeRequest('xyz', 'entidade'), { params: { id: 'xyz' } });
+    const res = await DELETE(makeRequest('xyz', 'entidade'), {
+      params: { id: 'xyz' },
+    });
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toMatch(/inválido/i);
@@ -120,7 +120,9 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
   });
 
   it('deve retornar 400 para tipo inválido', async () => {
-    const res = await DELETE(makeRequest('1', 'empresa'), { params: { id: '1' } });
+    const res = await DELETE(makeRequest('1', 'empresa'), {
+      params: { id: '1' },
+    });
     expect(res.status).toBe(400);
   });
 
@@ -128,7 +130,9 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
   it('deve retornar 404 quando pré-cadastro não existe', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as any);
 
-    const res = await DELETE(makeRequest('999', 'entidade'), { params: { id: '999' } });
+    const res = await DELETE(makeRequest('999', 'entidade'), {
+      params: { id: '999' },
+    });
     expect(res.status).toBe(404);
     const data = await res.json();
     expect(data.error).toMatch(/não encontrado/i);
@@ -140,54 +144,61 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
       rows: [{ id: 1, aceito: true }],
     } as any);
 
-    const res = await DELETE(makeRequest('1', 'entidade'), { params: { id: '1' } });
+    const res = await DELETE(makeRequest('1', 'entidade'), {
+      params: { id: '1' },
+    });
     expect(res.status).toBe(409);
     const data = await res.json();
     expect(data.error).toMatch(/contrato aceito/i);
   });
 
   // -------- Success entidade --------
-  it('deve remover pré-cadastro entidade com cascata e retornar 204', async () => {
+  it('deve marcar pré-cadastro entidade como inativo (ativa=false) e retornar 200', async () => {
     mockDeleteEntidade();
 
-    const res = await DELETE(makeRequest('1', 'entidade'), { params: { id: '1' } });
-    expect(res.status).toBe(204);
-    expect(res.body).toBeNull();
+    const res = await DELETE(makeRequest('1', 'entidade'), {
+      params: { id: '1' },
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
+    expect(data.message).toMatch(/removido/i);
 
-    // Verifica sequência de deleção
-    expect(mockQuery).toHaveBeenCalledTimes(5);
-    // 1ª call: SELECT check com entidades
+    // Verifica exatamente 2 queries: check + UPDATE
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // 1ª call: SELECT check em entidades
     expect(mockQuery.mock.calls[0][0]).toMatch(/entidades/);
-    // DELETE usuarios
-    expect(mockQuery.mock.calls[1][0]).toMatch(/DELETE FROM usuarios/i);
-    // DELETE entidades_senhas
-    expect(mockQuery.mock.calls[2][0]).toMatch(/entidades_senhas/);
-    // DELETE contratos
-    expect(mockQuery.mock.calls[3][0]).toMatch(/DELETE FROM contratos/i);
-    // DELETE entidades
-    expect(mockQuery.mock.calls[4][0]).toMatch(/DELETE FROM entidades/i);
+    // 2ª call: UPDATE ativa = false
+    expect(mockQuery.mock.calls[1][0]).toMatch(/UPDATE entidades SET ativa = false/i);
+    expect(mockQuery.mock.calls[1][1]).toEqual([1]);
   });
 
   // -------- Success clínica --------
-  it('deve remover pré-cadastro clínica com cascata e retornar 204', async () => {
+  it('deve marcar pré-cadastro clínica como inativo (ativa=false) e retornar 200', async () => {
     mockDeleteClinica();
 
-    const res = await DELETE(makeRequest('2', 'clinica'), { params: { id: '2' } });
-    expect(res.status).toBe(204);
-    expect(res.body).toBeNull();
+    const res = await DELETE(makeRequest('2', 'clinica'), {
+      params: { id: '2' },
+    });
+    expect(res.status).toBe(200);
+    const data = await res.json();
+    expect(data.success).toBe(true);
 
-    expect(mockQuery).toHaveBeenCalledTimes(5);
-    // DELETE clinicas_senhas
-    expect(mockQuery.mock.calls[2][0]).toMatch(/clinicas_senhas/);
-    // DELETE clinicas
-    expect(mockQuery.mock.calls[4][0]).toMatch(/DELETE FROM clinicas/i);
+    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // 1ª call: SELECT check em clinicas
+    expect(mockQuery.mock.calls[0][0]).toMatch(/clinicas/);
+    // 2ª call: UPDATE ativa = false em clinicas
+    expect(mockQuery.mock.calls[1][0]).toMatch(/UPDATE clinicas SET ativa = false/i);
+    expect(mockQuery.mock.calls[1][1]).toEqual([2]);
   });
 
   // -------- Erro banco --------
   it('deve retornar 500 quando o banco lança exceção', async () => {
     mockQuery.mockRejectedValueOnce(new Error('DB crash'));
 
-    const res = await DELETE(makeRequest('1', 'entidade'), { params: { id: '1' } });
+    const res = await DELETE(makeRequest('1', 'entidade'), {
+      params: { id: '1' },
+    });
     expect(res.status).toBe(500);
     const data = await res.json();
     expect(data.error).toMatch(/erro interno/i);
