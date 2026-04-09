@@ -705,9 +705,9 @@ describe('Interface Melhorada - Dashboard Empresa', () => {
       fireEvent.click(funcionariosTab);
 
       await waitFor(() => {
-        // O botão de adicionar funcionário agora usa o texto 'Adicionar'
+        // O botão de adicionar funcionário agora usa o texto 'Adicionar Funcionário'
         expect(
-          screen.getByText(/Adicionar|Inserir Funcionário|➕/i)
+          screen.getByText(/Adicionar Funcionário|Inserir Funcionário|➕/i)
         ).toBeInTheDocument();
       });
     });
@@ -725,8 +725,8 @@ describe('Interface Melhorada - Dashboard Empresa', () => {
       fireEvent.click(funcionariosTab);
 
       await waitFor(() => {
-        // Confirma que o botão Adicionar está presente e os botões legados foram removidos
-        expect(screen.getByText('Adicionar')).toBeInTheDocument();
+        // Confirma que o botão Adicionar Funcionário está presente e os botões legados foram removidos
+        expect(screen.getByText('Adicionar Funcionário')).toBeInTheDocument();
       });
 
       expect(screen.queryByText('Importar Múltiplos (XLSX)')).not.toBeInTheDocument();
