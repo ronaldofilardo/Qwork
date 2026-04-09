@@ -161,29 +161,6 @@ export function useFuncionarios({
     }
   };
 
-  // Download template
-  const handleDownloadTemplate = async () => {
-    try {
-      const response = await fetch('/api/funcionarios/download-template');
-      if (!response.ok) {
-        throw new Error('Erro ao baixar modelo');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'modelo_funcionarios_qwork.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Erro ao baixar template:', error);
-      alert('Erro ao baixar arquivo modelo. Tente novamente.');
-    }
-  };
-
   // Success callback
   const handleSuccess = () => {
     loadFuncionarios();
@@ -226,7 +203,6 @@ export function useFuncionarios({
 
     // Ações
     handleToggleStatus,
-    handleDownloadTemplate,
     handleSuccess,
     reload: loadFuncionarios,
   };

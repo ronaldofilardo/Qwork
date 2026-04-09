@@ -1,15 +1,15 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState } from 'react';
-import { UserCheck, Plus, Edit, FileText, Shield } from 'lucide-react';
-import { ModalCadastroEmissor } from '@/components/modals/ModalCadastroEmissor';
+import { UserCheck, KeyRound, FileText, Shield } from 'lucide-react';
+import { ModalResetarSenha } from '@/components/admin/ModalResetarSenha';
 
 interface Usuario {
   cpf: string;
   nome: string;
   email: string;
   ativo: boolean;
-  perfil: 'emissor' | 'suporte' | 'comercial';
+  perfil: 'emissor' | 'suporte' | 'comercial' | 'rh' | 'gestor';
   total_laudos_emitidos: number;
 }
 
@@ -17,12 +17,14 @@ const perfilLabels: Record<string, { label: string; color: string }> = {
   emissor: { label: 'Emissor de Laudos', color: 'bg-blue-100 text-blue-800' },
   suporte: { label: 'Suporte', color: 'bg-purple-100 text-purple-800' },
   comercial: { label: 'Comercial', color: 'bg-green-100 text-green-800' },
+  rh: { label: 'RH', color: 'bg-yellow-100 text-yellow-800' },
+  gestor: { label: 'Gestor', color: 'bg-indigo-100 text-indigo-800' },
 };
 
 export function EmissoresContent() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalResetOpen, setModalResetOpen] = useState(false);
 
   const fetchUsuarios = async () => {
     setLoading(true);
@@ -35,7 +37,7 @@ export function EmissoresContent() {
         }
       }
     } catch (error) {
-      console.error('Erro ao buscar usuários:', error);
+      console.error('Erro ao buscar usuarios:', error);
     } finally {
       setLoading(false);
     }
@@ -45,16 +47,12 @@ export function EmissoresContent() {
     fetchUsuarios();
   }, []);
 
-  const handleModalSuccess = () => {
-    fetchUsuarios(); // Recarregar lista de usuários
-  };
-
   // Agrupar por perfil
-  const usuariosPorPerfil = {
-    emissor: usuarios.filter((u) => u.perfil === 'emissor'),
-    suporte: usuarios.filter((u) => u.perfil === 'suporte'),
-    comercial: usuarios.filter((u) => u.perfil === 'comercial'),
-  };
+  const usuariosPorPerfil: Record<string, Usuario[]> = {};
+  for (const u of usuarios) {
+    if (!usuariosPorPerfil[u.perfil]) usuariosPorPerfil[u.perfil] = [];
+    usuariosPorPerfil[u.perfil].push(u);
+  }
 
   if (loading) {
     return (
@@ -71,11 +69,11 @@ export function EmissoresContent() {
           Perfis Especiais
         </h2>
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => setModalResetOpen(true)}
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-md hover:bg-orange-600 transition-colors"
         >
-          <Plus className="w-4 h-4" />
-          Novo Usuário
+          <KeyRound className="w-4 h-4" />
+          Resetar Senha
         </button>
       </div>
 
@@ -83,7 +81,7 @@ export function EmissoresContent() {
         <div className="text-center py-12">
           <UserCheck className="w-16 h-16 text-gray-300 mx-auto mb-4" />
           <p className="text-gray-500">
-            Nenhum usuário com perfil especial cadastrado
+            Nenhum usuario com perfil especial cadastrado
           </p>
         </div>
       ) : (
@@ -91,7 +89,10 @@ export function EmissoresContent() {
           {Object.entries(usuariosPorPerfil).map(([perfil, usuariosGrupo]) => {
             if (usuariosGrupo.length === 0) return null;
 
-            const perfilConfig = perfilLabels[perfil];
+            const perfilConfig = perfilLabels[perfil] ?? {
+              label: perfil,
+              color: 'bg-gray-100 text-gray-800',
+            };
 
             return (
               <div key={perfil}>
@@ -146,9 +147,6 @@ export function EmissoresContent() {
                           >
                             {usuario.ativo ? 'Ativo' : 'Inativo'}
                           </span>
-                          <button className="p-2 text-gray-600 hover:bg-gray-100 rounded-md">
-                            <Edit className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -160,11 +158,9 @@ export function EmissoresContent() {
         </div>
       )}
 
-      {/* Modal de Cadastro de Usuário */}
-      <ModalCadastroEmissor
-        isOpen={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onSuccess={handleModalSuccess}
+      <ModalResetarSenha
+        isOpen={modalResetOpen}
+        onClose={() => setModalResetOpen(false)}
       />
     </div>
   );

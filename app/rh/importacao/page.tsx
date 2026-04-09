@@ -111,7 +111,13 @@ const stepLabels: Record<Step, string> = {
   resultado: '5. Resultado',
 };
 
-const stepOrder: Step[] = ['upload', 'mapeamento', 'validacao', 'nivel-cargo', 'resultado'];
+const stepOrder: Step[] = [
+  'upload',
+  'mapeamento',
+  'validacao',
+  'nivel-cargo',
+  'resultado',
+];
 
 export default function ImportacaoPage() {
   const [step, setStep] = useState<Step>('upload');
@@ -140,7 +146,9 @@ export default function ImportacaoPage() {
   );
 
   // Mapa de nível de cargo: controlado pela etapa dedicada de classificação
-  const [nivelCargoMap, setNivelCargoMap] = useState<Record<string, NivelCargo>>({});
+  const [nivelCargoMap, setNivelCargoMap] = useState<
+    Record<string, NivelCargo>
+  >({});
 
   // Modal de progresso de importação
   const [showProgressModal, setShowProgressModal] = useState(false);
@@ -270,6 +278,11 @@ export default function ImportacaoPage() {
     const autoMap: Record<string, NivelCargo> = { ...templateMap };
     for (const info of validateData.funcoesNivelInfo) {
       if (autoMap[info.funcao]) continue; // já classificado pelo template
+      // Mudanças de função NUNCA são auto-preenchidas: o usuário DEVE confirmar
+      // explicitamente o nível do novo cargo. O nível anterior não representa o novo.
+      if (info.isMudancaRole) continue;
+      // Mudanças de nivel_cargo da planilha tb precisam de confirmação explícita
+      if (info.isMudancaNivel) continue;
       const niveisValidos = info.niveisAtuais.filter(
         (n): n is 'gestao' | 'operacional' => n !== null
       );

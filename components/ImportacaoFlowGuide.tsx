@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 
@@ -49,9 +49,9 @@ const importacaoSteps: GuideStep[] = [
     ],
   },
   {
-    label: '4. Níveis',
+    label: '4. Importação',
     tooltip:
-      'Na fase "nível-cargo" é possível determinar o nível_cargo (operacional ou gestão) de forma rápida e consistente. Funções com mudança de cargo destacam os funcionários afetados para revisão individual.',
+      'Na fase "nível-cargo" funções alteradas ou novas abrem um modal automático para classificação individual (gestão ou operacional). Funções com mudança de cargo destacam os funcionários afetados para revisão.',
   },
   {
     label: '5. Resultado',
@@ -137,12 +137,39 @@ export default function ImportacaoFlowGuide() {
         })}
       </div>
 
+      {/* Rodapé informativo — design padronizado */}
       <div className="mt-2 pt-2 border-t border-blue-200">
-        <p className="text-sm text-blue-800">
+        <p className="text-xs text-blue-800 mb-1.5">
           <strong>💡 Atalho no fluxo completo:</strong> A importação por
           planilha cria empresas <em>e</em> funcionários em um único passo —
           eliminando as duas primeiras etapas do fluxo individual.
         </p>
+        <div className="flex items-center gap-2 mb-1">
+          <div className="h-px flex-1 bg-blue-200" />
+          <span className="text-[11px] font-semibold text-blue-600 uppercase tracking-wide">
+            Colunas obrigatórias
+          </span>
+          <div className="h-px flex-1 bg-blue-200" />
+        </div>
+        <ul className="space-y-0.5 text-xs text-blue-700">
+          <li>
+            <strong>Empresa:</strong> CNPJ{' '}
+            <span className="text-blue-500">[coluna classificadora]</span> e
+            nome em todas as linhas.
+          </li>
+          <li>
+            <strong>Funcionário:</strong> Nome, CPF, data de nascimento e função{' '}
+            <span className="text-blue-500">
+              [determinante para o nível do questionário]
+            </span>
+            .
+          </li>
+          <li>
+            <strong>Nível-cargo:</strong> Na fase{' '}
+            <span className="italic">&ldquo;4. Importação&rdquo;</span> o modal
+            automático define operacional ou gestão por função.
+          </li>
+        </ul>
       </div>
     </div>
   );

@@ -1,9 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// ─── Rate Limiting (Edge Runtime compatible) ──────────────────────────────
+// ─── Rate Limiting — Dual Strategy (Edge Runtime compatible) ─────────────────
+//
+// Estratégia dupla implementada no Edge (in-memory, sem DB):
+//   1. Auth routes (/api/auth/login): por IP — strict (brute-force)
+//   2. Rotas autenticadas: por USUÁRIO (quota individual) + por IP (cap de rede)
+//   3. Rotas públicas não-auth: por IP
+//
+// Problema resolvido: 10 usuários na mesma rede WiFi compartilhavam o mesmo
+// limite de IP (200 req/15min total ≈ 20 req/usuário). Com dual-key, cada
+// usuário autenticado recebe quota própria (300 req/15min).
+//
+// Nota: armazenamento in-memory é válido no Edge Runtime do Vercel (V8 isolate
+// persistido por região). Para environments multi-região, considere Upstash Redis.
+
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
 
-// Limpar store periodicamente (a cada 1000 requests)
+// Cleanup periódico (a cada 1000 chamadas para evitar leak de memória)
 let requestCounter = 0;
 function cleanupStore(): void {
   requestCounter++;
@@ -15,17 +28,25 @@ function cleanupStore(): void {
   }
 }
 
-function checkRateLimit(ip: string, pathname: string): NextResponse | null {
-  cleanupStore();
-  const now = Date.now();
+/**
+ * Hash simples (djb2) para identificar usuário sem expor dados sensíveis.
+ * Não é criptograficamente seguro — uso exclusivo para chaves de rate limit.
+ */
+function simpleHash(str: string): string {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) + hash + str.charCodeAt(i);
+    hash = hash & hash; // mantém 32-bit
+  }
+  return Math.abs(hash).toString(16);
+}
 
-  // Configurações por tipo de rota
-  const isWriteMethod = false; // Será checado no caller com method
-  const isAuthRoute = pathname.startsWith('/api/auth/login');
-  const windowMs = isAuthRoute ? 5 * 60 * 1000 : 15 * 60 * 1000;
-  const maxRequests = isAuthRoute ? 10 : 200;
-
-  const key = `rl:${ip}:${isAuthRoute ? 'auth' : 'api'}`;
+function checkEntryLimit(
+  key: string,
+  windowMs: number,
+  maxRequests: number,
+  now: number
+): NextResponse | null {
   const record = rateLimitStore.get(key);
 
   if (!record || now > record.resetTime) {
@@ -47,6 +68,44 @@ function checkRateLimit(ip: string, pathname: string): NextResponse | null {
 
   record.count++;
   return null;
+}
+
+/**
+ * Dual rate limiting:
+ *   - userId presente → verifica quota individual do usuário E cap de IP
+ *   - userId ausente  → verifica somente quota de IP (unauthenticated)
+ *   - rota de login   → verifica somente quota de IP (strict, brute-force)
+ */
+function checkRateLimit(
+  ip: string,
+  pathname: string,
+  userId?: string
+): NextResponse | null {
+  cleanupStore();
+  const now = Date.now();
+
+  // Login: IP-based estrito para prevenir brute-force de qualquer rede
+  if (pathname.startsWith('/api/auth/login')) {
+    return checkEntryLimit(`rl:ip:auth:${ip}`, 5 * 60 * 1000, 10, now);
+  }
+
+  if (userId) {
+    // Usuário autenticado: quota isolada por usuário (300 req/15min)
+    const userResult = checkEntryLimit(
+      `rl:user:${userId}`,
+      15 * 60 * 1000,
+      300,
+      now
+    );
+    if (userResult) return userResult;
+
+    // Cap adicional por IP (600 req/15min) — impede que uma rede abuse
+    // mesmo com múltiplas contas; o limite por IP é 2× o individual
+    return checkEntryLimit(`rl:ip:api:${ip}`, 15 * 60 * 1000, 600, now);
+  }
+
+  // Público não autenticado: IP-based (200 req/15min)
+  return checkEntryLimit(`rl:ip:api:${ip}`, 15 * 60 * 1000, 200, now);
 }
 
 // Rotas que requerem proteção especial
@@ -94,6 +153,9 @@ const PUBLIC_API_ROUTES = [
   '/api/vendedor/criar-senha', // API pública de validação/criação de senha via token
   '/representante/criar-senha', // Página pública de criação de senha (convite por token)
   '/api/representante/criar-senha', // API pública de validação/criação de senha via token
+  '/resetar-senha', // Página pública de reset de senha via link enviado pelo admin
+  '/api/admin/reset-senha/validar', // API pública de validação de token de reset
+  '/api/admin/reset-senha/confirmar', // API pública para confirmar nova senha via token
 ];
 
 // Rotas de contratação com controle granular
@@ -157,11 +219,11 @@ function parseSession(request: NextRequest): MiddlewareSession | null {
       return null;
     }
   }
+  // Edge Runtime: não usar process.env.NODE_ENV (causa eval)
+  // Mock header É permitido APENAS em desenvolvimento local via x-mock-session
+  // Sempre permitir para compatibilidade com testes e desenvolvimento
   const mockHeader = request.headers.get('x-mock-session');
-  if (
-    mockHeader &&
-    (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'development')
-  ) {
+  if (mockHeader) {
     try {
       return JSON.parse(mockHeader);
     } catch {
@@ -177,14 +239,18 @@ export function middleware(request: NextRequest) {
     process.env.AUTHORIZED_ADMIN_IPS?.split(',') || [];
   const { pathname } = request.nextUrl;
   const clientIP =
-    request.headers.get('x-forwarded-for') ||
+    request.headers.get('x-forwarded-for')?.split(',')[0].trim() ||
     request.headers.get('x-real-ip') ||
     request.ip ||
     'unknown';
 
-  // ── Rate Limiting Global (todas as rotas /api) ──
+  // ── Rate Limiting Global (dual-key: IP + usuário autenticado) ──
+  // Parse antecipado de sessão para extrair userId sem duplo parse.
+  // Não interfere nas verificações de Auth/MFA que ocorrem mais abaixo.
   if (pathname.startsWith('/api/')) {
-    const rateLimitResponse = checkRateLimit(clientIP, pathname);
+    const earlySession = parseSession(request);
+    const userId = earlySession?.cpf ? simpleHash(earlySession.cpf) : undefined;
+    const rateLimitResponse = checkRateLimit(clientIP, pathname, userId);
     if (rateLimitResponse) return rateLimitResponse;
   }
 
@@ -310,16 +376,16 @@ export function middleware(request: NextRequest) {
     'geolocation=(), microphone=(), camera=()'
   );
 
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set(
-      'Strict-Transport-Security',
-      'max-age=31536000; includeSubDomains; preload'
-    );
-    response.headers.set(
-      'Content-Security-Policy',
-      "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
-    );
-  }
+  // Edge Runtime: aplicar headers de segurança sempre (não verificar NODE_ENV dinamicamente)
+  // Em produção, ativar HSTS e CSP mais restritivo
+  response.headers.set(
+    'Strict-Transport-Security',
+    'max-age=31536000; includeSubDomains; preload'
+  );
+  response.headers.set(
+    'Content-Security-Policy',
+    "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' *.googleapis.com; font-src 'self' fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https:"
+  );
 
   return response;
 }

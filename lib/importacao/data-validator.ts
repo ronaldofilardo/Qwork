@@ -38,8 +38,14 @@ export interface ValidationResult {
 /**
  * Valida todas as linhas importadas contra as regras de negócio.
  * Não consulta o banco — validação puramente de formato e consistência.
+ * @param rows Linhas mapeadas da planilha
+ * @param options.ignorarCnpj Quando true, ausência de cnpj_empresa não gera erro bloqueante (fluxo Entidade)
  */
-export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
+export function validarDadosImportacao(
+  rows: MappedRow[],
+  options?: { ignorarCnpj?: boolean }
+): ValidationResult {
+  const ignorarCnpj = options?.ignorarCnpj ?? false;
   const erros: ValidationIssue[] = [];
   const avisos: ValidationIssue[] = [];
   const cpfSet = new Map<string, number[]>();
@@ -114,26 +120,28 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
     // === Nome da Empresa (opcional — auxiliar para criação, sem validação bloqueante) ===
     // Não valida nome_empresa como obrigatório: o CNPJ é o único agregador de empresa.
 
-    // === CNPJ da Empresa (obrigatório — único agregador de funcionários) ===
+    // === CNPJ da Empresa (obrigatório no fluxo clínica; ignorado no fluxo entidade) ===
     const cnpjEmpresa = row.cnpj_empresa ?? '';
-    if (!cnpjEmpresa || cnpjEmpresa.trim() === '') {
-      errosLinha.push({
-        linha,
-        campo: 'cnpj_empresa',
-        valor: cnpjEmpresa,
-        mensagem: 'CNPJ da empresa é obrigatório',
-        severidade: 'erro',
-      });
-    } else if (!validarCNPJ(cnpjEmpresa)) {
-      errosLinha.push({
-        linha,
-        campo: 'cnpj_empresa',
-        valor: cnpjEmpresa,
-        mensagem: 'CNPJ da empresa inválido',
-        severidade: 'erro',
-      });
-    } else {
-      empresasSet.add(cnpjEmpresa.trim());
+    if (!ignorarCnpj) {
+      if (!cnpjEmpresa || cnpjEmpresa.trim() === '') {
+        errosLinha.push({
+          linha,
+          campo: 'cnpj_empresa',
+          valor: cnpjEmpresa,
+          mensagem: 'CNPJ da empresa é obrigatório',
+          severidade: 'erro',
+        });
+      } else if (!validarCNPJ(cnpjEmpresa)) {
+        errosLinha.push({
+          linha,
+          campo: 'cnpj_empresa',
+          valor: cnpjEmpresa,
+          mensagem: 'CNPJ da empresa inválido',
+          severidade: 'erro',
+        });
+      } else {
+        empresasSet.add(cnpjEmpresa.trim());
+      }
     }
 
     // === Data de Nascimento (obrigatória) ===
@@ -172,15 +180,15 @@ export function validarDadosImportacao(rows: MappedRow[]): ValidationResult {
       }
     }
 
-    // === Cargo / Função (obrigatório) ===
+    // === Cargo / Função (aviso — não bloqueia importação) ===
     const funcao = row.funcao ?? '';
     if (!funcao || funcao.trim() === '') {
       errosLinha.push({
         linha,
         campo: 'funcao',
         valor: funcao,
-        mensagem: 'Cargo / Função é obrigatório',
-        severidade: 'erro',
+        mensagem: 'Cargo / Função não informado — funcionário será importado sem função definida',
+        severidade: 'aviso',
       });
     }
 
