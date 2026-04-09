@@ -191,6 +191,19 @@ describe('GET /api/suporte/pre-cadastro', () => {
       expect(sqlArg).toContain('UNION ALL');
     });
 
+    it('deve filtrar registros com ativa = false (soft-deleted)', async () => {
+      // Arrange — a query deve incluir o filtro ativa IS NOT FALSE
+      mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
+
+      // Act
+      const response = await GET(makeRequest());
+
+      // Assert
+      expect(response.status).toBe(200);
+      const [sqlArg] = (mockQuery as jest.Mock).mock.calls[0];
+      expect(sqlArg).toMatch(/ativa IS NOT FALSE/i);
+    });
+
     it('deve filtrar por tipo entidade quando especificado', async () => {
       // Arrange
       const entidadeOnly = [fakePreCadastros[1]];

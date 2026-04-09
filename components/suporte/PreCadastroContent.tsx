@@ -14,6 +14,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { PreCadastroItem } from '@/app/api/suporte/pre-cadastro/route';
+import { DeletePreCadastroModal } from './DeletePreCadastroModal';
 
 type TipoFiltro = 'todos' | 'clinica' | 'entidade';
 
@@ -124,23 +125,11 @@ function buildAceiteUrl(tomadorId: number, contratoId: number): string {
 
 interface PreCadastroRowProps {
   item: PreCadastroItem;
-  onDelete: (id: number, tipo: 'entidade' | 'clinica') => void;
+  onDeleteClick: (id: number, tipo: 'entidade' | 'clinica', nome: string) => void;
   deleting: boolean;
 }
 
-function PreCadastroRow({ item, onDelete, deleting }: PreCadastroRowProps) {
-  const [confirmando, setConfirmando] = useState(false);
-
-  const handleDeleteClick = () => {
-    if (!confirmando) {
-      setConfirmando(true);
-      setTimeout(() => setConfirmando(false), 3000);
-      return;
-    }
-    onDelete(item.id, item.tipo);
-    setConfirmando(false);
-  };
-
+function PreCadastroRow({ item, onDeleteClick, deleting }: PreCadastroRowProps) {
   const url = buildAceiteUrl(item.id, item.contrato_id);
   const isClinique = item.tipo === 'clinica';
 
@@ -194,33 +183,36 @@ function PreCadastroRow({ item, onDelete, deleting }: PreCadastroRowProps) {
         {formatarData(item.criado_em)}
       </td>
 
-      {/* Ação */}
+      {/* Link de Aceite */}
       <td className="px-4 py-3 text-right">
-        <div className="flex items-center justify-end gap-2">
-          <CopyButton url={url} />
-          <button
-            onClick={handleDeleteClick}
-            disabled={deleting}
-            title={confirmando ? 'Clique novamente para confirmar' : 'Remover pré-cadastro'}
-            aria-label={confirmando ? 'Confirmar remoção' : 'Remover pré-cadastro'}
-            className={`inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer disabled:opacity-50
-              ${
-                confirmando
-                  ? 'bg-red-600 text-white focus:ring-red-400 animate-pulse'
-                  : 'bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-400'
-              }`}
-          >
-            {deleting ? (
-              <RefreshCw size={14} className="animate-spin" />
-            ) : (
-              <Trash2 size={14} />
-            )}
-            {confirmando ? 'Confirmar?' : ''}
-          </button>
-        </div>
+        <CopyButton url={url} />
+      </td>
+
+      {/* Ações */}
+      <td className="px-4 py-3 text-right">
+        <button
+          onClick={() => onDeleteClick(item.id, item.tipo, item.nome)}
+          disabled={deleting}
+          title="Remover pré-cadastro"
+          aria-label="Remover pré-cadastro"
+          className="inline-flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 cursor-pointer disabled:opacity-50 bg-red-50 text-red-600 hover:bg-red-100 focus:ring-red-400"
+        >
+          {deleting ? (
+            <RefreshCw size={14} className="animate-spin" />
+          ) : (
+            <Trash2 size={14} />
+          )}
+          Remover
+        </button>
       </td>
     </tr>
   );
+}
+
+interface DeleteModalState {
+  id: number;
+  tipo: 'entidade' | 'clinica';
+  nome: string;
 }
 
 export function PreCadastroContent() {
@@ -229,6 +221,7 @@ export function PreCadastroContent() {
   const [erro, setErro] = useState('');
   const [filtro, setFiltro] = useState<TipoFiltro>('todos');
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteModal, setDeleteModal] = useState<DeleteModalState | null>(null);
 
   const fetchPreCadastros = useCallback(async () => {
     setLoading(true);
@@ -266,11 +259,20 @@ export function PreCadastroContent() {
           throw new Error(body.error ?? 'Erro ao remover pré-cadastro');
         }
         setItems((prev) => prev.filter((item) => item.id !== id));
+        setDeleteModal(null);
       } catch (err: unknown) {
         setErro(err instanceof Error ? err.message : 'Erro ao remover');
+        setDeleteModal(null);
       } finally {
         setDeletingId(null);
       }
+    },
+    []
+  );
+
+  const handleDeleteClick = useCallback(
+    (id: number, tipo: 'entidade' | 'clinica', nome: string) => {
+      setDeleteModal({ id, tipo, nome });
     },
     []
   );
@@ -397,6 +399,9 @@ export function PreCadastroContent() {
                     <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">
                       Link de Aceite
                     </th>
+                    <th className="px-4 py-3 text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -404,7 +409,7 @@ export function PreCadastroContent() {
                     <PreCadastroRow
                       key={item.id}
                       item={item}
-                      onDelete={(id, tipo) => void handleDelete(id, tipo)}
+                      onDeleteClick={handleDeleteClick}
                       deleting={deletingId === item.id}
                     />
                   ))}
@@ -422,6 +427,16 @@ export function PreCadastroContent() {
             </p>
           )}
         </>
+      )}
+      {deleteModal && (
+        <DeletePreCadastroModal
+          isOpen
+          tomadorNome={deleteModal.nome}
+          tomadorTipo={deleteModal.tipo}
+          loading={deletingId === deleteModal.id}
+          onConfirm={() => void handleDelete(deleteModal.id, deleteModal.tipo)}
+          onCancel={() => setDeleteModal(null)}
+        />
       )}
     </div>
   );

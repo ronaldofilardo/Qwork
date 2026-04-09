@@ -117,6 +117,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           'aguardando_aceite',
           'pendente'
         )
+        AND t.ativa IS NOT FALSE
         AND ($1 = 'todos' OR t.tipo = $1)
       ORDER BY COALESCE(c.criado_em, t.criado_em) DESC
     `;
