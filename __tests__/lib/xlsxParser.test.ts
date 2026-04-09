@@ -446,36 +446,4 @@ describe('Endpoints de Importação XLSX', () => {
       );
     });
   });
-
-  describe('GET /api/funcionarios/download-template', () => {
-    it('deve gerar arquivo XLSX com estrutura correta', async () => {
-      // Criar template de teste
-      const headers = [
-        'cpf',
-        'nome',
-        'data_nascimento',
-        'setor',
-        'funcao',
-        'email',
-        'senha',
-        'matricula',
-        'nivel_cargo',
-        'turno',
-        'escala',
-      ];
-
-      const ws = XLSX.utils.aoa_to_sheet([headers]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Funcionários');
-
-      const buffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
-
-      expect(buffer).toBeInstanceOf(Buffer);
-      expect(buffer.length).toBeGreaterThan(0);
-
-      // Verificar se pode ser lido novamente
-      const readWb = XLSX.read(buffer, { type: 'buffer' });
-      expect(readWb.SheetNames).toContain('Funcionários');
-    });
-  });
 });

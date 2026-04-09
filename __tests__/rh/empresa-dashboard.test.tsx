@@ -332,11 +332,12 @@ describe('RH Empresa Dashboard', () => {
 
       await waitFor(() => {
         expect(
-          screen.getByText('Importar Múltiplos (XLSX)')
+          screen.getByText('Adicionar')
         ).toBeInTheDocument();
       });
 
-      expect(screen.getByText('📋 Baixar Modelo XLSX')).toBeInTheDocument();
+      expect(screen.queryByText('Importar Múltiplos (XLSX)')).not.toBeInTheDocument();
+      expect(screen.queryByText('Baixar Modelo XLSX')).not.toBeInTheDocument();
     });
   });
 
@@ -486,16 +487,16 @@ describe('RH Empresa Dashboard', () => {
 
       await waitFor(
         () => {
-          // A aba de funcionários agora exibe 'Importar Múltiplos (XLSX)' como ação principal
+          // Confirma que o botão Adicionar está presente
           expect(
-            screen.getByText('Importar Múltiplos (XLSX)')
+            screen.getByText('Adicionar')
           ).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
 
       // Verifica seções da aba funcionários
-      expect(screen.getByText('Importar Múltiplos (XLSX)')).toBeInTheDocument();
+      expect(screen.getByText('Adicionar')).toBeInTheDocument();
     });
 
     it('deve ter seção de upload compacta na sidebar', async () => {
@@ -517,14 +518,15 @@ describe('RH Empresa Dashboard', () => {
       await waitFor(
         () => {
           expect(
-            screen.getByText('Importar Múltiplos (XLSX)')
+            screen.getByText('Adicionar')
           ).toBeInTheDocument();
         },
         { timeout: 3000 }
       );
 
-      // Verifica elementos da seção de upload
-      expect(screen.getByText('📋 Baixar Modelo XLSX')).toBeInTheDocument();
+      // Verifica que botões legados não existem mais
+      expect(screen.queryByText('Importar Múltiplos (XLSX)')).not.toBeInTheDocument();
+      expect(screen.queryByText('📋 Baixar Modelo XLSX')).not.toBeInTheDocument();
     });
   });
 
