@@ -2,7 +2,7 @@ name: Testes Automatizados - Integridade de Lotes
 
 on:
   push:
-    branches: [main, develop]
+    branches: [feature/v2, staging, production]
     paths:
       - 'app/api/rh/liberar-lote/**'
       - 'app/api/entidade/liberar-lote/**'
@@ -10,7 +10,7 @@ on:
       - '__tests__/integration/**'
       - '__tests__/database/**'
   pull_request:
-    branches: [main, develop]
+    branches: [feature/v2, staging, production]
   schedule:
     # Executar monitoramento a cada 6 horas
     - cron: '0 */6 * * *'
@@ -150,7 +150,7 @@ jobs:
     name: Monitorar Integridade (Produção)
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.ref == 'refs/heads/main' && github.event_name == 'schedule'
+    if: github.ref == 'refs/heads/production' && github.event_name == 'schedule'
 
     steps:
       - name: Checkout código
@@ -182,7 +182,7 @@ jobs:
     name: Smoke Tests Pós-Deploy
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     needs: [test-integration, test-database]
 
     steps:
@@ -191,7 +191,7 @@ jobs:
 
       - name: Verificar API de saúde
         run: |
-          curl -f https://qwork.vercel.app/api/health || exit 1
+          curl -f https://sistema.qwork.app.br/api/health || exit 1
 
       - name: Executar smoke test de lotes órfãos
         env:

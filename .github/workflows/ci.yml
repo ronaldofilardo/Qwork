@@ -2,9 +2,9 @@ name: CI/CD Pipeline - Quality Gates
 
 on:
   push:
-    branches: [main, develop]
+    branches: [feature/v2, staging, production]
   pull_request:
-    branches: [main, develop]
+    branches: [feature/v2, staging, production]
   workflow_dispatch:
 
 env:
