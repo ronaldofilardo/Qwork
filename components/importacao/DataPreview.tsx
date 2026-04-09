@@ -40,6 +40,7 @@ interface DbStats {
 interface DataPreviewProps {
   validacao: ValidationSummary;
   dbStats: DbStats;
+  hideEmpresaStats?: boolean;
   funcoesComMudancaRole?: string[];
   onConfirm: () => void;
   onBack: () => void;
@@ -77,6 +78,7 @@ function StatCard({
 export default function DataPreview({
   validacao,
   dbStats,
+  hideEmpresaStats = false,
   funcoesComMudancaRole = [],
   onConfirm,
   onBack,
@@ -120,16 +122,20 @@ export default function DataPreview({
           Previsão do Impacto
         </h3>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-          <div className="flex items-center gap-2">
-            <Building2 size={16} className="text-blue-500" />
-            <span className="text-gray-600">Empresas novas:</span>
-            <span className="font-semibold">{dbStats.empresasNovas}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Building2 size={16} className="text-gray-400" />
-            <span className="text-gray-600">Empresas existentes:</span>
-            <span className="font-semibold">{dbStats.empresasExistentes}</span>
-          </div>
+          {!hideEmpresaStats && (
+            <div className="flex items-center gap-2">
+              <Building2 size={16} className="text-blue-500" />
+              <span className="text-gray-600">Empresas novas:</span>
+              <span className="font-semibold">{dbStats.empresasNovas}</span>
+            </div>
+          )}
+          {!hideEmpresaStats && (
+            <div className="flex items-center gap-2">
+              <Building2 size={16} className="text-gray-400" />
+              <span className="text-gray-600">Empresas existentes:</span>
+              <span className="font-semibold">{dbStats.empresasExistentes}</span>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Users size={16} className="text-green-500" />
             <span className="text-gray-600">Funcionários novos:</span>
