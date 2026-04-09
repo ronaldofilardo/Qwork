@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Plus, Search, Filter, Download, Upload } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { Users, Plus, Search, Filter } from 'lucide-react';
 import DesligarFuncionarioModal from './DesligarFuncionarioModal';
 import ModalInserirFuncionario from '@/components/ModalInserirFuncionario';
 import ModalAdicionarFuncionarioEntidade from './ModalAdicionarFuncionarioEntidade';
 import EditEmployeeModal from '@/components/EditEmployeeModal';
-import ImportXlsxModal from './ImportXlsxModal';
 import StatsCards from './components/StatsCards';
 import FuncionarioRow from './components/FuncionarioRow';
 import type { Funcionario, FuncionariosSectionProps } from './types';
@@ -20,7 +18,6 @@ export default function FuncionariosSection({
   onRefresh,
   defaultStatusFilter = 'todos',
 }: FuncionariosSectionProps) {
-  const router = useRouter();
   const [funcionarios, setFuncionarios] = useState<Funcionario[]>([]);
   const [filteredFuncionarios, setFilteredFuncionarios] = useState<
     Funcionario[]
@@ -37,7 +34,6 @@ export default function FuncionariosSection({
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDesligarModal, setShowDesligarModal] = useState(false);
-  const [showImportModal, setShowImportModal] = useState(false);
   const [funcionarioSelecionado, setFuncionarioSelecionado] =
     useState<Funcionario | null>(null);
 
@@ -200,33 +196,6 @@ export default function FuncionariosSection({
     if (onRefresh) onRefresh();
   };
 
-  // Baixar modelo Excel
-  const handleDownloadTemplate = async () => {
-    try {
-      const endpoint =
-        contexto === 'entidade'
-          ? '/api/entidade/funcionarios/download-template'
-          : '/api/funcionarios/download-template';
-      const response = await fetch(endpoint);
-      if (!response.ok) {
-        throw new Error('Erro ao baixar modelo');
-      }
-
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'modelo_funcionarios_qwork.xlsx';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Erro ao baixar template:', error);
-      alert('Erro ao baixar arquivo modelo. Tente novamente.');
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -266,44 +235,6 @@ export default function FuncionariosSection({
             </div>
           </div>
           <div className="flex gap-2 w-full sm:w-auto items-center">
-            <div className="hidden sm:block text-sm text-gray-600 self-center mr-2">
-              Importar Múltiplos (XLSX)
-            </div>
-            {/* Upload (Importar XLSX):
-                - Entidade → redireciona para /entidade/importacao (fluxo 5 etapas)
-                - Clínica  → abre modal legado por empresa */}
-            {contexto === 'entidade' ? (
-              <button
-                onClick={() => router.push('/entidade/importacao')}
-                className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-              >
-                <Upload size={20} />
-                <span className="text-sm font-medium">📤 Importação em Massa</span>
-              </button>
-            ) : (
-              <>
-                <button
-                  onClick={() => setShowImportModal(true)}
-                  className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition"
-                >
-                  <Upload size={20} />
-                  <span className="text-sm font-medium">📤 Importar XLSX</span>
-                </button>
-
-                {/* Import modal — apenas para clínica (por empresa) */}
-                <ImportXlsxModal
-                  show={showImportModal}
-                  onClose={() => setShowImportModal(false)}
-                  onSuccess={() => {
-                    setShowImportModal(false);
-                    handleSuccess();
-                  }}
-                  contexto={contexto}
-                  empresaId={empresaId}
-                />
-              </>
-            )}
-
             <button
               onClick={() => setShowAddModal(true)}
               className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
@@ -312,13 +243,6 @@ export default function FuncionariosSection({
               <span className="text-sm font-medium">Adicionar</span>
             </button>
 
-            <button
-              onClick={handleDownloadTemplate}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
-            >
-              <Download size={20} />
-              <span className="text-sm font-medium">📋 Baixar Modelo XLSX</span>
-            </button>
           </div>
         </div>
 
