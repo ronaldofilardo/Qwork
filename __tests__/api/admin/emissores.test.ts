@@ -248,11 +248,8 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
 
       // Assert: Verificar log de auditoria
       expect(mockLogAudit).toHaveBeenCalledWith(
-        'criar_emissor',
-        'admin123',
-        expect.objectContaining({
-          emissor_cpf: '12345678909',
-        })
+        expect.objectContaining({ resource: 'usuarios', action: 'INSERT', resourceId: '12345678909' }),
+        expect.objectContaining({ cpf: 'admin123' })
       );
     });
 
@@ -293,7 +290,7 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
       // Arrange: Mock de sessão
       mockRequireRole.mockResolvedValue(adminSession);
 
-      // Arrange: Mock de UPDATE retornando emissor atualizado
+      // Arrange: Mock de userCheck (SELECT) e UPDATE
       const emissorAtualizado: MockEmissor = {
         cpf: '12345678909',
         nome: 'Emissor Atualizado',
@@ -303,7 +300,14 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
         atualizado_em: '2024-01-02T00:00:00.000Z',
       };
 
-      mockQuery.mockResolvedValue({
+      // Primeira chamada: userCheck precisa ter tipo_usuario='emissor'
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ ...emissorAtualizado, tipo_usuario: 'emissor' }],
+        rowCount: 1,
+      } as QueryResult<Record<string, unknown>>);
+
+      // Segunda chamada: resultado do UPDATE
+      mockQuery.mockResolvedValueOnce({
         rows: [emissorAtualizado],
         rowCount: 1,
       } as QueryResult<MockEmissor>);
@@ -328,11 +332,8 @@ describe('/api/admin/emissores — Perfis Especiais (emissor, suporte, comercial
 
       // Assert: Verificar log de auditoria
       expect(mockLogAudit).toHaveBeenCalledWith(
-        'editar_emissor',
-        'admin123',
-        expect.objectContaining({
-          emissor_cpf: '12345678909',
-        })
+        expect.objectContaining({ resource: 'usuarios', action: 'UPDATE', resourceId: '12345678909' }),
+        expect.objectContaining({ cpf: 'admin123' })
       );
     });
 

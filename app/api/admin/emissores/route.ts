@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     // Verificar se CPF já existe
     const cpfLimpo = cpf.replace(/\D/g, '');
     const cpfExiste = await query(
-      'SELECT cpf FROM funcionarios WHERE cpf = $1',
+      'SELECT cpf FROM usuarios WHERE cpf = $1',
       [cpfLimpo],
       session
     );
@@ -108,39 +108,29 @@ export async function POST(request: NextRequest) {
 
     // Criar emissor
     const result = await query(
-      `INSERT INTO funcionarios (
-        cpf, nome, email, senha_hash, perfil, ativo
+      `INSERT INTO usuarios (
+        cpf, nome, email, senha_hash, tipo_usuario, ativo
       )
       VALUES ($1, $2, $3, $4, 'emissor', true)
-      RETURNING cpf, nome, email, ativo, clinica_id, criado_em`,
+      RETURNING cpf, nome, email, ativo, criado_em`,
       [cpfLimpo, nome, email, senhaHash],
       session
     );
 
     const emissorCriado = result.rows[0] as Record<string, any>;
 
-    // Log de auditoria (compatibilidade com testes e nova assinatura)
-    // Em ambiente de testes alguns mocks esperam a assinatura legada
+    // Registrar auditoria
     try {
-      if (process.env.NODE_ENV === 'test') {
-        // legacy: (actionName, userCpf, details)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        await (logAudit as any)('criar_emissor', session.cpf, {
-          emissor_cpf: cpfLimpo,
-        });
-      }
-
       await logAudit(
         {
-          resource: 'funcionarios',
+          resource: 'usuarios',
           action: 'INSERT',
           resourceId: cpfLimpo,
           newData: {
             cpf: cpfLimpo,
             nome,
             email,
-            perfil: 'emissor',
+            tipo_usuario: 'emissor',
           },
           ...extractRequestInfo(request),
         },
