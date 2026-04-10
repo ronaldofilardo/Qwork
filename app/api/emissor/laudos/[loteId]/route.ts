@@ -36,7 +36,7 @@ export const GET = async (
     // Verificar se o lote existe e está pronto
     const loteCheck = await query(
       `
-      SELECT la.id, la.status,
+      SELECT la.id, la.status, la.numero_ordem,
              COALESCE(e.nome, c.nome) as empresa_nome, 
              c.nome as clinica_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
@@ -142,7 +142,8 @@ export const GET = async (
           clinica_nome: lote.clinica_nome,
           status: lote.status,
           avaliacoes_concluidas: lote.concluidas,
-          total_avaliacoes: lote.total,
+          total_avaliacoes: lote.total_liberadas,
+          numero_ordem: lote.numero_ordem,
           emissao_automatica: false,
           previsao_emissao: null,
         },
@@ -188,12 +189,13 @@ export const GET = async (
         clinica_nome: lote.clinica_nome,
         status: lote.status,
         avaliacoes_concluidas: lote.concluidas,
-        total_avaliacoes: lote.total,
-      },
+          total_avaliacoes: lote.total_liberadas,
+          numero_ordem: lote.numero_ordem,
+        },
       laudoPadronizado,
       previa: isPrevia,
       mensagem: isPrevia
-        ? `Pré-visualização do laudo. ${lote.concluidas}/${lote.total} avaliações concluídas.`
+        ? `Pré-visualização do laudo. ${lote.concluidas}/${lote.total_liberadas} avaliações concluídas.`
         : laudo
           ? 'Laudo disponível para visualização'
           : null,

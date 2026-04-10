@@ -243,8 +243,8 @@ export async function POST(request: Request): Promise<NextResponse> {
           }
         } else {
           const insertEmpresa = await client.query(
-            `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa)
-             VALUES ($1, $2, $3, true)
+            `INSERT INTO empresas_clientes (nome, cnpj, clinica_id, ativa, limite_primeira_cobranca_manutencao)
+             VALUES ($1, $2, $3, true, NOW() + INTERVAL '90 days')
              RETURNING id`,
             [empresa_nome, cnpj, clinicaId]
           );

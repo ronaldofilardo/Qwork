@@ -97,11 +97,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
             {
               id: 1,
               status: 'ativo',
+              numero_ordem: 5,
               empresa_nome: 'Empresa A',
               clinica_nome: 'Clínica A',
-              total_liberadas: '5',
-              concluidas: '3',
-              inativadas: '0',
+              total_liberadas: 5,
+              concluidas: 3,
+              inativadas: 0,
             },
           ],
           rowCount: 1,
@@ -129,11 +130,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
           {
             id: 1,
             status: 'ativo',
+            numero_ordem: 3,
             empresa_nome: 'Empresa A',
             clinica_nome: 'Clínica A',
-            total_liberadas: '4',
-            concluidas: '4',
-            inativadas: '0',
+            total_liberadas: 4,
+            concluidas: 4,
+            inativadas: 0,
           },
         ],
         rowCount: 1,
@@ -169,6 +171,8 @@ describe('/api/emissor/laudos/[loteId]', () => {
 
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
+      expect(data.lote.numero_ordem).toBe(3);
+      expect(data.lote.total_avaliacoes).toBe(4);
       expect(data.laudoPadronizado.observacoesEmissor).toBe(
         'Observações existentes'
       );
@@ -185,11 +189,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
           {
             id: 1,
             status: 'ativo',
+            numero_ordem: 2,
             empresa_nome: 'Empresa A',
             clinica_nome: 'Clínica A',
-            total_liberadas: '4',
-            concluidas: '4',
-            inativadas: '0',
+            total_liberadas: 4,
+            concluidas: 4,
+            inativadas: 0,
           },
         ],
         rowCount: 1,
@@ -213,6 +218,9 @@ describe('/api/emissor/laudos/[loteId]', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.previa).toBe(true);
+      expect(data.lote.numero_ordem).toBe(2);
+      expect(data.lote.total_avaliacoes).toBe(4);
+      expect(data.mensagem).toContain('4/4 avaliações concluídas');
       expect(data.laudoPadronizado).toBeDefined();
     });
   });
@@ -287,12 +295,13 @@ describe('/api/emissor/laudos/[loteId]', () => {
           {
             id: 1,
             status: 'concluido',
+            numero_ordem: 1,
             status_pagamento: 'pago',
             pago_em: '2025-01-01',
             empresa_nome: 'Empresa A',
-            total_liberadas: '4',
-            concluidas: '4',
-            inativadas: '0',
+            total_liberadas: 4,
+            concluidas: 4,
+            inativadas: 0,
           },
         ],
         rowCount: 1,

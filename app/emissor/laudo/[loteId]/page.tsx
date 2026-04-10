@@ -80,6 +80,7 @@ export default function EditarLaudo() {
             enviadoEm={laudoPadronizado.enviadoEm}
             status={laudoPadronizado.status}
             isPrevia={isPrevia}
+            loteNumero={lote?.numero_ordem}
             onDownloadLaudo={handleDownloadLaudo}
           />
         </div>
