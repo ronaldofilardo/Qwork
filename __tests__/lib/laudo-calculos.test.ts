@@ -341,8 +341,8 @@ describe('Funções de Cálculo de Laudos', () => {
       assert.ok(resultado.textoConclusao.includes('diagnóstico clínico'));
       assert.ok(resultado.textoConclusao.includes('LGPD'));
       assert.ok(resultado.textoConclusao.includes('Código de Ética'));
-      assert.ok(resultado.dataEmissao.includes('São Paulo'));
-      assert.equal(resultado.assinatura.nome, 'Dr. Marcelo Oliveira');
+      assert.ok(resultado.dataEmissao.includes('Curitiba'));
+      assert.equal(resultado.assinatura.nome, 'GILSON DANTAS DAMASCENO');
     });
 
     it('deve calcular data de validade corretamente (364 dias)', () => {
@@ -359,19 +359,19 @@ describe('Funções de Cálculo de Laudos', () => {
     it('deve gerar data no formato brasileiro (dd/mm/yyyy)', () => {
       const resultado = gerarObservacoesConclusao();
 
-      // Formato atual: "São Paulo, dd/mm/yyyy"
+      // Formato atual: "Curitiba, dd/mm/yyyy"
       // (formatarDataApenasData retorna formato dd/mm/yyyy conforme padrão pt-BR)
-      assert.ok(/São Paulo, \d{2}\/\d{2}\/\d{4}/.test(resultado.dataEmissao));
+      assert.ok(/Curitiba, \d{2}\/\d{2}\/\d{4}/.test(resultado.dataEmissao));
     });
 
     it('deve incluir assinatura completa', () => {
       const resultado = gerarObservacoesConclusao();
 
       assert.deepEqual(resultado.assinatura, {
-        nome: 'Dr. Marcelo Oliveira',
+        nome: 'GILSON DANTAS DAMASCENO',
         titulo: 'Psicólogo',
-        registro: 'CRP 06/123456',
-        empresa: 'Coordenador Responsável Técnico – Qwork',
+        registro: 'CRP 08/4053',
+        empresa: 'Responsável Técnico',
       });
     });
   });

@@ -369,12 +369,12 @@ Declaro que os dados são estritamente agregados e anônimos, em conformidade co
   return {
     observacoesLaudo,
     textoConclusao,
-    dataEmissao: `São Paulo, ${dataEmissaoFormatada}`,
+    dataEmissao: `Curitiba, ${dataEmissaoFormatada}`,
     assinatura: {
-      nome: 'Dr. Marcelo Oliveira',
+      nome: 'GILSON DANTAS DAMASCENO',
       titulo: 'Psicólogo',
-      registro: 'CRP 06/123456',
-      empresa: 'Coordenador Responsável Técnico – Qwork',
+      registro: 'CRP 08/4053',
+      empresa: 'Responsável Técnico',
     },
   };
 }
