@@ -339,8 +339,8 @@ export default function FlowStepsExplainer({
             </li>
             <li>
               <strong>Função:</strong> importante para determinar a versão do
-              questionário. Caso não tenha, o sistema permite selecionar na etapa{' '}
-              <span className="italic">&ldquo;4. Níveis&rdquo;</span> em{' '}
+              questionário. Caso não tenha, o sistema permite selecionar na
+              etapa <span className="italic">&ldquo;4. Níveis&rdquo;</span> em{' '}
               <strong>nivel_cargo</strong>.
             </li>
           </ul>
@@ -371,9 +371,9 @@ export default function FlowStepsExplainer({
             </li>
             <li>
               <strong>Função:</strong> importante para determinar a versão do
-              questionário. Caso não tenha, o sistema permite selecionar na etapa{' '}
-              <span className="italic">&ldquo;3. Avaliações&rdquo;</span> ou via
-              edição individual do funcionário.
+              questionário. Caso não tenha, o sistema permite selecionar na
+              etapa <span className="italic">&ldquo;3. Avaliações&rdquo;</span>{' '}
+              ou via edição individual do funcionário.
             </li>
           </ul>
         </div>
