@@ -1,5 +1,7 @@
 'use strict';
 
+import { validarEmail } from '@/lib/validators';
+
 export type TipoEntidade = 'clinica' | 'entidade';
 
 export interface DadosTomador {
@@ -117,7 +119,7 @@ export const validarEtapaDados = (
     return { ok: false, error: 'CNPJ inválido' };
   }
 
-  if (!email.includes('@')) {
+  if (!validarEmail(email)) {
     return { ok: false, error: 'Email inválido' };
   }
 
@@ -156,7 +158,7 @@ export const validarEtapaResponsavel = (
     return { ok: false, error: 'CPF inválido' };
   }
 
-  if (!email.includes('@')) {
+  if (!validarEmail(email)) {
     return { ok: false, error: 'Email inválido' };
   }
 

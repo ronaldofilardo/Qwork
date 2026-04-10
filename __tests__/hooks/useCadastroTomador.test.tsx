@@ -173,4 +173,160 @@ describe('useCadastroTomador', () => {
     expect(ref.current.etapaAtual).toBe('dados');
     expect(ref.current.erro).toBeTruthy();
   });
+
+  test('handleDadosBlur define erro para email inválido', async () => {
+    const ref: any = { current: null };
+    const fakeFetcher = makeFetcher({ cadastro: { id: 1 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    act(() => {
+      ref.current.setDadostomador((prev: any) => ({
+        ...prev,
+        email: 'emailsem_arroba',
+      }));
+    });
+    act(() => {
+      ref.current.handleDadosBlur('email');
+    });
+
+    expect(ref.current.dadosFieldErrors.email).toBe('Email inválido');
+  });
+
+  test('handleDadosBlur limpa erro quando email é válido', async () => {
+    const ref: any = { current: null };
+    const fakeFetcher = makeFetcher({ cadastro: { id: 1 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    act(() => {
+      ref.current.setDadostomador((prev: any) => ({
+        ...prev,
+        email: 'valido@empresa.com',
+      }));
+    });
+    act(() => {
+      ref.current.handleDadosBlur('email');
+    });
+
+    expect(ref.current.dadosFieldErrors.email).toBeUndefined();
+  });
+
+  test('handleDadosBlur define erro para telefone com menos de 10 dígitos', async () => {
+    const ref: any = { current: null };
+    const fakeFetcher = makeFetcher({ cadastro: { id: 1 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    act(() => {
+      ref.current.setDadostomador((prev: any) => ({
+        ...prev,
+        telefone: '(11) 123',
+      }));
+    });
+    act(() => {
+      ref.current.handleDadosBlur('telefone');
+    });
+
+    expect(ref.current.dadosFieldErrors.telefone).toBeTruthy();
+  });
+
+  test('handleResponsavelBlur define erro para email inválido do responsável', async () => {
+    const ref: any = { current: null };
+    const fakeFetcher = makeFetcher({ cadastro: { id: 1 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    act(() => {
+      ref.current.setDadosResponsavel((prev: any) => ({
+        ...prev,
+        email: 'nao_tem_arroba',
+      }));
+    });
+    act(() => {
+      ref.current.handleResponsavelBlur('email');
+    });
+
+    expect(ref.current.responsavelFieldErrors.email).toBe('Email inválido');
+  });
+
+  test('handleResponsavelBlur define erro para celular inválido', async () => {
+    const ref: any = { current: null };
+    const fakeFetcher = makeFetcher({ cadastro: { id: 1 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    act(() => {
+      ref.current.setDadosResponsavel((prev: any) => ({
+        ...prev,
+        celular: '999',
+      }));
+    });
+    act(() => {
+      ref.current.handleResponsavelBlur('celular');
+    });
+
+    expect(ref.current.responsavelFieldErrors.celular).toBeTruthy();
+  });
+
+  test('avancarEtapa bloqueia quando email da empresa está inválido', async () => {
+    const ref: any = { current: null };
+    const fakeFetcher = makeFetcher({ cadastro: { id: 1 } });
+
+    render(
+      <Harness
+        apiFetcher={fakeFetcher}
+        resultRef={ref}
+        initialTipo="entidade"
+      />
+    );
+
+    act(() => {
+      ref.current.setDadostomador({
+        nome: 'ACME',
+        cnpj: '11.444.777/0001-61',
+        inscricao_estadual: '',
+        email: 'email_invalido',
+        telefone: '(11) 99999-9999',
+        endereco: 'rua',
+        cidade: 'SP',
+        estado: 'SP',
+        cep: '01234-567',
+      });
+      ref.current.avancarEtapa();
+    });
+
+    expect(ref.current.etapaAtual).toBe('dados');
+    expect(ref.current.erro).toBeTruthy();
+  });
 });
