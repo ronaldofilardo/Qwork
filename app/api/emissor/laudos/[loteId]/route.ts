@@ -37,17 +37,18 @@ export const GET = async (
     const loteCheck = await query(
       `
       SELECT la.id, la.status, la.numero_ordem,
-             COALESCE(e.nome, c.nome) as empresa_nome, 
+             COALESCE(e.nome, ec.nome) as empresa_nome, 
              c.nome as clinica_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
              COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN entidades e ON la.entidade_id = e.id
+      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.status, e.nome, c.nome
+      GROUP BY la.id, la.status, e.nome, ec.nome, c.nome
     `,
       [loteId],
       user
@@ -367,16 +368,17 @@ export const POST = async (
     const loteCheck = await query(
       `
       SELECT la.id, la.status, la.status_pagamento, la.pago_em,
-             COALESCE(e.nome, c.nome) as empresa_nome,
+             COALESCE(e.nome, ec.nome) as empresa_nome,
              COUNT(a.id) FILTER (WHERE a.status != 'rascunho') as total_liberadas,
              COUNT(a.id) FILTER (WHERE a.status = 'concluida' OR a.status = 'concluido') as concluidas,
              COUNT(a.id) FILTER (WHERE a.status = 'inativada') as inativadas
       FROM lotes_avaliacao la
       LEFT JOIN entidades e ON la.entidade_id = e.id
+      LEFT JOIN empresas_clientes ec ON la.empresa_id = ec.id
       LEFT JOIN clinicas c ON la.clinica_id = c.id
       LEFT JOIN avaliacoes a ON la.id = a.lote_id
       WHERE la.id = $1 AND la.status != 'cancelado'
-      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, c.nome
+      GROUP BY la.id, la.status, la.status_pagamento, la.pago_em, e.nome, ec.nome, c.nome
     `,
       [loteId],
       user
