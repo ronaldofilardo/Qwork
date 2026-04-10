@@ -316,27 +316,15 @@ export default function PagamentosFinanceiros({
                   <div className="flex items-start justify-between gap-3">
                     {/* Infos principais */}
                     <div className="flex-1 min-w-0 space-y-2">
-                      {/* Lote e Laudo */}
-                      {(pag.loteNumero || pag.laudoId) && (
+                      {/* Laudo */}
+                      {pag.laudoId && (
                         <div className="flex flex-wrap gap-3 text-xs text-gray-500">
-                          {pag.loteNumero && (
-                            <span>
-                              <span className="font-medium text-gray-700">
-                                Lote:
-                              </span>{' '}
-                              {pag.loteCodigo
-                                ? `${pag.loteNumero} — ${pag.loteCodigo}`
-                                : `Lote ${pag.loteNumero}`}
-                            </span>
-                          )}
-                          {pag.laudoId && (
-                            <span>
-                              <span className="font-medium text-gray-700">
-                                Laudo nº:
-                              </span>{' '}
-                              {String(pag.laudoId).padStart(6, '0')}
-                            </span>
-                          )}
+                          <span>
+                            <span className="font-medium text-gray-700">
+                              Laudo nº:
+                            </span>{' '}
+                            {String(pag.laudoId).padStart(6, '0')}
+                          </span>
                         </div>
                       )}
 

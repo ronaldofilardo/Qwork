@@ -206,4 +206,82 @@ describe('PagamentosFinanceiros', () => {
       expect(screen.getByText(/2 registros/i)).toBeInTheDocument();
     });
   });
+
+  // ── Renderização de Laudo nº (sem Lote) ──────────────────────────────
+
+  it('deve exibir "Laudo nº:" quando laudoId está presente', async () => {
+    const pagamentoComLaudo = {
+      ...fakePagamento,
+      laudoId: 42,
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ pagamentos: [pagamentoComLaudo] }),
+    } as Response);
+
+    render(
+      <PagamentosFinanceiros
+        apiUrl="/api/test"
+        organizacaoNome="Empresa Teste"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Laudo nº:')).toBeInTheDocument();
+      expect(screen.getByText('000042')).toBeInTheDocument();
+    });
+  });
+
+  it('não deve exibir "Lote:" quando loteNumero está presente', async () => {
+    const pagamentoComLote = {
+      ...fakePagamento,
+      loteId: 10,
+      loteCodigo: 'ABC123',
+      loteNumero: 5,
+      laudoId: 42,
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ pagamentos: [pagamentoComLote] }),
+    } as Response);
+
+    render(
+      <PagamentosFinanceiros
+        apiUrl="/api/test"
+        organizacaoNome="Empresa Teste"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText(/^Lote:/)).not.toBeInTheDocument();
+      expect(screen.getByText('Laudo nº:')).toBeInTheDocument();
+    });
+  });
+
+  it('não deve exibir nada quando nem laudoId nem loteId estão presentes', async () => {
+    const pagementoSemReferencia = {
+      ...fakePagamento,
+      laudoId: null,
+      loteId: null,
+    };
+
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ pagamentos: [pagementoSemReferencia] }),
+    } as Response);
+
+    render(
+      <PagamentosFinanceiros
+        apiUrl="/api/test"
+        organizacaoNome="Empresa Teste"
+      />
+    );
+
+    await waitFor(() => {
+      expect(screen.queryByText('Laudo nº:')).not.toBeInTheDocument();
+      expect(screen.queryByText(/^Lote:/)).not.toBeInTheDocument();
+    });
+  });
 });
