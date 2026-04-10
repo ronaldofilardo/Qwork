@@ -65,13 +65,14 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 interface CopyButtonProps {
-  url: string;
+  url: string | null;
 }
 
 function CopyButton({ url }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
+    if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -90,6 +91,18 @@ function CopyButton({ url }: CopyButtonProps) {
       setTimeout(() => setCopied(false), 2500);
     }
   };
+
+  if (!url) {
+    return (
+      <span
+        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-gray-400 cursor-not-allowed"
+        title="Contrato ainda não gerado"
+      >
+        <FileText size={14} />
+        Sem contrato
+      </span>
+    );
+  }
 
   return (
     <button
@@ -118,18 +131,30 @@ function CopyButton({ url }: CopyButtonProps) {
   );
 }
 
-function buildAceiteUrl(tomadorId: number, contratoId: number): string {
+function buildAceiteUrl(
+  tomadorId: number,
+  contratoId: number | null
+): string | null {
+  if (!contratoId) return null;
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `${origin}/sucesso-cadastro?id=${tomadorId}&contrato_id=${contratoId}`;
 }
 
 interface PreCadastroRowProps {
   item: PreCadastroItem;
-  onDeleteClick: (id: number, tipo: 'entidade' | 'clinica', nome: string) => void;
+  onDeleteClick: (
+    id: number,
+    tipo: 'entidade' | 'clinica',
+    nome: string
+  ) => void;
   deleting: boolean;
 }
 
-function PreCadastroRow({ item, onDeleteClick, deleting }: PreCadastroRowProps) {
+function PreCadastroRow({
+  item,
+  onDeleteClick,
+  deleting,
+}: PreCadastroRowProps) {
   const url = buildAceiteUrl(item.id, item.contrato_id);
   const isClinique = item.tipo === 'clinica';
 

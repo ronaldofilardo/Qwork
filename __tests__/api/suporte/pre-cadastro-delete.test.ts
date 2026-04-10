@@ -54,18 +54,20 @@ const fakeSuporteSession = {
   perfil: 'suporte' as const,
 };
 
-// Cascade DELETE entidade: check + 1 UPDATE
+// Cascade DELETE entidade: check + UPDATE ativa + UPDATE contratos
 function mockDeleteEntidade() {
   mockQuery
     .mockResolvedValueOnce({ rows: [{ id: 1, aceito: null }] } as any) // check
-    .mockResolvedValueOnce({ rows: [] } as any); // UPDATE ativa = false
+    .mockResolvedValueOnce({ rows: [] } as any) // UPDATE ativa = false
+    .mockResolvedValueOnce({ rows: [] } as any); // UPDATE contratos status='cancelado'
 }
 
-// Cascade DELETE clínica: check + 1 UPDATE
+// Cascade DELETE clínica: check + UPDATE ativa + UPDATE contratos
 function mockDeleteClinica() {
   mockQuery
     .mockResolvedValueOnce({ rows: [{ id: 2, aceito: null }] } as any) // check
-    .mockResolvedValueOnce({ rows: [] } as any); // UPDATE ativa = false
+    .mockResolvedValueOnce({ rows: [] } as any) // UPDATE ativa = false
+    .mockResolvedValueOnce({ rows: [] } as any); // UPDATE contratos status='cancelado'
 }
 
 // ──────────────────────────────────────────────
@@ -164,13 +166,20 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
     expect(data.success).toBe(true);
     expect(data.message).toMatch(/removido/i);
 
-    // Verifica exatamente 2 queries: check + UPDATE
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    // Verifica exatamente 3 queries: check + UPDATE ativa + UPDATE contratos
+    expect(mockQuery).toHaveBeenCalledTimes(3);
     // 1ª call: SELECT check em entidades
     expect(mockQuery.mock.calls[0][0]).toMatch(/entidades/);
     // 2ª call: UPDATE ativa = false
-    expect(mockQuery.mock.calls[1][0]).toMatch(/UPDATE entidades SET ativa = false/i);
+    expect(mockQuery.mock.calls[1][0]).toMatch(
+      /UPDATE entidades SET ativa = false/i
+    );
     expect(mockQuery.mock.calls[1][1]).toEqual([1]);
+    // 3ª call: UPDATE contratos SET status = 'inativa'
+    expect(mockQuery.mock.calls[2][0]).toMatch(
+      /UPDATE contratos SET status = 'inativa'/i
+    );
+    expect(mockQuery.mock.calls[2][1]).toEqual([1, 'entidade']);
   });
 
   // -------- Success clínica --------
@@ -184,12 +193,19 @@ describe('DELETE /api/suporte/pre-cadastro/[id]', () => {
     const data = await res.json();
     expect(data.success).toBe(true);
 
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    expect(mockQuery).toHaveBeenCalledTimes(3);
     // 1ª call: SELECT check em clinicas
     expect(mockQuery.mock.calls[0][0]).toMatch(/clinicas/);
     // 2ª call: UPDATE ativa = false em clinicas
-    expect(mockQuery.mock.calls[1][0]).toMatch(/UPDATE clinicas SET ativa = false/i);
+    expect(mockQuery.mock.calls[1][0]).toMatch(
+      /UPDATE clinicas SET ativa = false/i
+    );
     expect(mockQuery.mock.calls[1][1]).toEqual([2]);
+    // 3ª call: UPDATE contratos SET status = 'inativa'
+    expect(mockQuery.mock.calls[2][0]).toMatch(
+      /UPDATE contratos SET status = 'inativa'/i
+    );
+    expect(mockQuery.mock.calls[2][1]).toEqual([2, 'clinica']);
   });
 
   // -------- Erro banco --------

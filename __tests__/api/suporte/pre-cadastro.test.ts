@@ -191,8 +191,11 @@ describe('GET /api/suporte/pre-cadastro', () => {
       expect(sqlArg).toContain('UNION ALL');
     });
 
-    it('deve filtrar registros com ativa = false (soft-deleted)', async () => {
-      // Arrange — a query deve incluir o filtro ativa IS NOT FALSE
+    it('deve listar novos cadastros mesmo com ativa = false (sem filtro ativa)', async () => {
+      // Bug corrigido: novos cadastros entram com ativa=false e ficavam ocultos
+      // porque a query tinha AND t.ativa IS NOT FALSE.
+      // Agora o filtro usa c.status != 'cancelado' para distinguir
+      // soft-deleted de novos registros pendentes.
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
       // Act
@@ -201,7 +204,52 @@ describe('GET /api/suporte/pre-cadastro', () => {
       // Assert
       expect(response.status).toBe(200);
       const [sqlArg] = (mockQuery as jest.Mock).mock.calls[0];
-      expect(sqlArg).toMatch(/ativa IS NOT FALSE/i);
+      // NÃO deve filtrar por ativa
+      expect(sqlArg).not.toMatch(/ativa IS NOT FALSE/i);
+      // DEVE usar status='aguardando_aceite' AND aceito IS NOT TRUE (sem 'cancelado')
+      expect(sqlArg).toMatch(/c\.status\s*=\s*'aguardando_aceite'/i);
+      expect(sqlArg).toMatch(/c\.aceito IS NOT TRUE/i);
+    });
+
+    it('deve listar entidades SEM contrato gerado (c.id IS NULL)', async () => {
+      // Bug-fix: antes o filtro WHERE c.aceito = false com LEFT JOIN excluía
+      // registros que ainda não tinham contrato na tabela contratos.
+      // Agora o filtro inclui (c.id IS NULL OR c.aceito IS NOT TRUE).
+      const semContrato = [
+        {
+          id: 5,
+          nome: 'Clínica Sem Contrato',
+          cnpj: '55555555000155',
+          email: 'semcontrato@clinica.com',
+          telefone: null,
+          status: 'aguardando_aceite_contrato',
+          criado_em: '2026-04-10T08:00:00.000Z',
+          tipo: 'clinica',
+          contrato_id: null,
+          contrato_criado_em: null,
+          responsavel_nome: 'Ana Souza',
+          responsavel_cargo: 'Gestora',
+          responsavel_celular: '11933332222',
+        },
+      ];
+      mockQuery.mockResolvedValueOnce({
+        rows: semContrato,
+        rowCount: 1,
+      } as any);
+
+      // Act
+      const response = await GET(makeRequest());
+      const body = await response.json();
+
+      // Assert — registro retornado com contrato_id nulo
+      expect(response.status).toBe(200);
+      expect(body.total).toBe(1);
+      expect(body.pre_cadastros[0].contrato_id).toBeNull();
+
+      // Garante que o SQL usa a nova condição inclusiva (não mais c.aceito = false)
+      const [sqlArg] = (mockQuery as jest.Mock).mock.calls[0];
+      expect(sqlArg).toMatch(/c\.id IS NULL/i);
+      expect(sqlArg).not.toMatch(/c\.aceito\s*=\s*false/i);
     });
 
     it('deve filtrar por tipo entidade quando especificado', async () => {

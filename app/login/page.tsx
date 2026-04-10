@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import QworkLogo from '@/components/QworkLogo';
 import ModalCadastrotomador from '@/components/modals/ModalCadastrotomador';
+import ModalBoasVindasCadastro from '@/components/modals/ModalBoasVindasCadastro';
 import ModalConfirmacaoIdentidade from '@/components/modals/ModalConfirmacaoIdentidade';
 import ModalTermosAceite from '@/components/modals/ModalTermosAceite';
 import { Building2 } from 'lucide-react';
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [isConfirmingIdentity, setIsConfirmingIdentity] = useState(false);
   const [modalAberto, setModalAberto] = useState(false);
+  const [boasVindasAberto, setBoasVindasAberto] = useState(false);
   const [showConfirmacaoModal, setShowConfirmacaoModal] = useState(false);
   const [showTermosModal, setShowTermosModal] = useState(false);
   const [showDbSelector, setShowDbSelector] = useState(false);
@@ -563,7 +565,7 @@ export default function LoginPage() {
           <div className="mt-6">
             <button
               type="button"
-              onClick={() => setModalAberto(true)}
+              onClick={() => setBoasVindasAberto(true)}
               disabled={showConfirmacaoModal}
               className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 border border-orange-300 rounded-md shadow-sm bg-white text-sm font-medium text-orange-700 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -574,6 +576,14 @@ export default function LoginPage() {
         </div>
       </div>
 
+      <ModalBoasVindasCadastro
+        isOpen={boasVindasAberto}
+        onClose={() => setBoasVindasAberto(false)}
+        onContinuar={() => {
+          setBoasVindasAberto(false);
+          setModalAberto(true);
+        }}
+      />
       <ModalCadastrotomador
         isOpen={modalAberto}
         onClose={() => setModalAberto(false)}

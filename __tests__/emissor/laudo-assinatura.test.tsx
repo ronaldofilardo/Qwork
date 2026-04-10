@@ -103,7 +103,7 @@ describe.skip('Página do Laudo do Emissor - Assinatura gov.br', () => {
     expect(screen.getByAltText('gov.br')).toBeInTheDocument();
     expect(screen.getByText('DR. JOÃO SILVA')).toBeInTheDocument();
     expect(
-      screen.getByText('Data: 15/12/2025 11:30:00 -0300')
+      screen.getByText('Data: 15/12/2025 11:30:00')
     ).toBeInTheDocument();
     expect(
       screen.getByText('Verifique em https://verificador.iti.br')
@@ -138,7 +138,7 @@ describe.skip('Página do Laudo do Emissor - Assinatura gov.br', () => {
 
     // Deve mostrar a data de emissão específica, não a data atual
     expect(
-      screen.getByText('Data: 10/12/2025 13:45:00 -0300')
+      screen.getByText('Data: 10/12/2025 13:45:00')
     ).toBeInTheDocument();
   });
 
