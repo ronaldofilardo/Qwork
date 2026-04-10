@@ -514,17 +514,12 @@ function gerarSecaoEtapa4(
           </div>
 
           <div class="assinatura-gov">
-            <div class="assinatura-header">São Paulo, ${formattedHeaderDate}</div>
-            
-            <div class="logo-section">
-              <img src="https://www.gov.br/++theme++padrao_govbr/img/govbr-logo-large.png" alt="gov.br" class="logo-gov">
-              <span class="status-assinatura">Documento assinado digitalmente</span>
-            </div>
+            <div class="assinatura-header">Curitiba, ${formattedHeaderDate}</div>
             
             <div class="nome-assinante">${etapa4.assinatura.nome.toUpperCase()}</div>
             <div class="data-assinatura">Data: ${formattedDataAssinatura}</div>
-            <div class="verificador">Verifique em https://verificador.iti.br</div>
-            <div class="cargo">Coordenador Responsável Técnico – Qwork</div>
+            <div class="cargo">${etapa4.assinatura.titulo} | ${etapa4.assinatura.registro}</div>
+            <div class="cargo">${etapa4.assinatura.empresa}</div>
           </div>
 
           <!-- Logo QWork -->
@@ -563,7 +558,7 @@ export function gerarHTMLLaudoCompleto(
     month: 'long',
     year: 'numeric',
   });
-  const formattedDataAssinatura = `${dateApenasData} ${hora} -0300`;
+  const formattedDataAssinatura = `${dateApenasData} ${hora}`;
   const formattedDataEmissao = `${dateApenasData} ${hora}`;
 
   let html = `
