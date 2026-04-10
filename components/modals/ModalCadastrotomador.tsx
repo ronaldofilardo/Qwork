@@ -62,6 +62,9 @@ export default function ModalCadastroTomador({
     tipo: tipoHook,
     setTipo: setTipoHook,
     cnpjError: cnpjErrorHook,
+    dadosFieldErrors: dadosFieldErrorsHook,
+    responsavelFieldErrors: responsavelFieldErrorsHook,
+    fileErrors: fileErrorsHook,
     numeroFuncionarios: numeroFuncionariosHook,
     setNumeroFuncionarios: setNumeroFuncionariosHook,
     contratoAceito: contratoAceitoHook,
@@ -80,6 +83,8 @@ export default function ModalCadastroTomador({
     arquivos: arquivosHook,
     handleDadosChange,
     handleResponsavelChange,
+    handleDadosBlur,
+    handleResponsavelBlur,
     handleFileChange,
     avancarEtapa: avancarEtapaHook,
     voltarEtapa: voltarEtapaHook,
@@ -96,6 +101,9 @@ export default function ModalCadastroTomador({
   const tipo = tipoHook;
   const setTipo = setTipoHook;
   const cnpjError = cnpjErrorHook;
+  const dadosFieldErrors = dadosFieldErrorsHook;
+  const responsavelFieldErrors = responsavelFieldErrorsHook;
+  const fileErrors = fileErrorsHook;
   const _numeroFuncionarios = numeroFuncionariosHook;
   const _setNumeroFuncionarios = setNumeroFuncionariosHook;
   const _contratoAceito = contratoAceitoHook;
@@ -370,7 +378,11 @@ export default function ModalCadastroTomador({
                   dadostomador={dadosContratante}
                   arquivos={arquivos}
                   cnpjError={cnpjError}
+                  emailError={dadosFieldErrors.email}
+                  telefoneError={dadosFieldErrors.telefone}
+                  fileErrors={fileErrors}
                   onChange={handleDadosChange}
+                  onBlur={handleDadosBlur}
                   onFileChange={handleFileChange}
                 />
               )}
@@ -380,7 +392,11 @@ export default function ModalCadastroTomador({
                 <ResponsavelStep
                   dadosResponsavel={dadosResponsavel}
                   arquivos={arquivos}
+                  emailError={responsavelFieldErrors.email}
+                  celularError={responsavelFieldErrors.celular}
+                  fileErrors={fileErrors}
                   onChange={handleResponsavelChange}
+                  onBlur={handleResponsavelBlur}
                   onFileChange={handleFileChange}
                 />
               )}
