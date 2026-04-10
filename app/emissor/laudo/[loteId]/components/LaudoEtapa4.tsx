@@ -44,7 +44,9 @@ export default function LaudoEtapa4({
         timeZone: 'America/Sao_Paulo',
       }) +
       ' ' +
-      new Date(emitidoEm).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }) +
+      new Date(emitidoEm).toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+      }) +
       ' -0300'
     : new Date().toLocaleDateString('pt-BR', {
         day: '2-digit',
@@ -53,7 +55,9 @@ export default function LaudoEtapa4({
         timeZone: 'America/Sao_Paulo',
       }) +
       ' ' +
-      new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }) +
+      new Date().toLocaleTimeString('pt-BR', {
+        timeZone: 'America/Sao_Paulo',
+      }) +
       ' -0300';
 
   return (

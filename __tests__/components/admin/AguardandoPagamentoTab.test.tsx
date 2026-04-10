@@ -4,17 +4,25 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  act,
+} from '@testing-library/react';
 import { AguardandoPagamentoTab } from '@/components/admin/pagamentos/AguardandoPagamentoTab';
 
 jest.mock('@/components/admin/pagamentos/SolicitacaoCard', () => ({
   SolicitacaoCard: () => <div data-testid="solicitacao-card" />,
 }));
 
-jest.mock('@/components/modals/ModalLinkPagamentoEmissao', () =>
-  function MockModal({ isOpen }: { isOpen: boolean }) {
-    return isOpen ? <div data-testid="modal-link" /> : null;
-  }
+jest.mock(
+  '@/components/modals/ModalLinkPagamentoEmissao',
+  () =>
+    function MockModal({ isOpen }: { isOpen: boolean }) {
+      return isOpen ? <div data-testid="modal-link" /> : null;
+    }
 );
 
 // Mock QRCode evitando dependência de canvas
@@ -65,7 +73,9 @@ const taxaDisponibilizada = {
   link_disponibilizado_em: '2026-04-03T10:00:00Z',
 };
 
-function setupFetch(responses: { url: RegExp | string; response: object; ok?: boolean }[]) {
+function setupFetch(
+  responses: { url: RegExp | string; response: object; ok?: boolean }[]
+) {
   return jest.spyOn(global, 'fetch').mockImplementation(async (url) => {
     const urlStr = String(url);
     const matched = responses.find((r) =>
@@ -95,20 +105,32 @@ describe('AguardandoPagamentoTab — coluna Taxas (TaxaCard)', () => {
   });
 
   it('exibe mensagem "Nenhuma taxa aguardando pagamento" quando lista vazia', async () => {
-    setupFetch([{ url: '/api/admin/manutencao/aguardando-quitacao', response: { pagamentos: [], total: 0 } }]);
+    setupFetch([
+      {
+        url: '/api/admin/manutencao/aguardando-quitacao',
+        response: { pagamentos: [], total: 0 },
+      },
+    ]);
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
-      expect(screen.getByText(/Nenhuma taxa aguardando pagamento/i)).toBeInTheDocument()
+      expect(
+        screen.getByText(/Nenhuma taxa aguardando pagamento/i)
+      ).toBeInTheDocument()
     );
   });
 
   it('renderiza TaxaCard com botão "Gerar Link de Pagamento" para taxa sem token', async () => {
     setupFetch([
-      { url: '/api/admin/manutencao/aguardando-quitacao', response: { pagamentos: [taxaPendente], total: 1 } },
+      {
+        url: '/api/admin/manutencao/aguardando-quitacao',
+        response: { pagamentos: [taxaPendente], total: 1 },
+      },
     ]);
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Gerar Link de Pagamento/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /Gerar Link de Pagamento/i })
+      ).toBeInTheDocument()
     );
     expect(screen.getByText('Entidade Teste')).toBeInTheDocument();
     expect(screen.getByText('Manutenção Anual')).toBeInTheDocument();
@@ -117,19 +139,31 @@ describe('AguardandoPagamentoTab — coluna Taxas (TaxaCard)', () => {
 
   it('renderiza TaxaCard com botões "Ver Link" e "Verificar Pagamento" para taxa com token', async () => {
     setupFetch([
-      { url: '/api/admin/manutencao/aguardando-quitacao', response: { pagamentos: [taxaComToken], total: 1 } },
+      {
+        url: '/api/admin/manutencao/aguardando-quitacao',
+        response: { pagamentos: [taxaComToken], total: 1 },
+      },
     ]);
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Ver Link \/ QR Code/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /Ver Link \/ QR Code/i })
+      ).toBeInTheDocument()
     );
-    expect(screen.getByRole('button', { name: /Verificar Pagamento/i })).toBeInTheDocument();
-    expect(screen.getByText(/Link pronto para disponibilizar/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Verificar Pagamento/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(/Link pronto para disponibilizar/i)
+    ).toBeInTheDocument();
   });
 
   it('exibe "✓ Disponibilizado em" para taxa já disponibilizada', async () => {
     setupFetch([
-      { url: '/api/admin/manutencao/aguardando-quitacao', response: { pagamentos: [taxaDisponibilizada], total: 1 } },
+      {
+        url: '/api/admin/manutencao/aguardando-quitacao',
+        response: { pagamentos: [taxaDisponibilizada], total: 1 },
+      },
     ]);
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
@@ -139,20 +173,37 @@ describe('AguardandoPagamentoTab — coluna Taxas (TaxaCard)', () => {
 
   it('chama POST gerar-link e abre modal ao clicar "Gerar Link de Pagamento"', async () => {
     const fetchSpy = setupFetch([
-      { url: 'aguardando-quitacao', response: { pagamentos: [taxaPendente], total: 1 } },
-      { url: 'gerar-link', response: { success: true, token: 'new-tok', valor: 250, nome: 'Entidade Teste' } },
+      {
+        url: 'aguardando-quitacao',
+        response: { pagamentos: [taxaPendente], total: 1 },
+      },
+      {
+        url: 'gerar-link',
+        response: {
+          success: true,
+          token: 'new-tok',
+          valor: 250,
+          nome: 'Entidade Teste',
+        },
+      },
     ]);
 
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Gerar Link de Pagamento/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /Gerar Link de Pagamento/i })
+      ).toBeInTheDocument()
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /Gerar Link de Pagamento/i }));
+      fireEvent.click(
+        screen.getByRole('button', { name: /Gerar Link de Pagamento/i })
+      );
     });
 
-    await waitFor(() => expect(screen.getByTestId('modal-link')).toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.getByTestId('modal-link')).toBeInTheDocument()
+    );
     expect(fetchSpy).toHaveBeenCalledWith(
       expect.stringContaining('gerar-link'),
       expect.objectContaining({ method: 'POST' })
@@ -161,30 +212,50 @@ describe('AguardandoPagamentoTab — coluna Taxas (TaxaCard)', () => {
 
   it('abre modal ao clicar "Ver Link / QR Code"', async () => {
     setupFetch([
-      { url: 'aguardando-quitacao', response: { pagamentos: [taxaComToken], total: 1 } },
+      {
+        url: 'aguardando-quitacao',
+        response: { pagamentos: [taxaComToken], total: 1 },
+      },
     ]);
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /Ver Link \/ QR Code/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /Ver Link \/ QR Code/i })
+      ).toBeInTheDocument()
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /Ver Link \/ QR Code/i }));
+    fireEvent.click(
+      screen.getByRole('button', { name: /Ver Link \/ QR Code/i })
+    );
     expect(screen.getByTestId('modal-link')).toBeInTheDocument();
   });
 
   it('chama POST disponibilizar ao clicar "Disponibilizar"', async () => {
     const fetchSpy = setupFetch([
-      { url: 'aguardando-quitacao', response: { pagamentos: [taxaComToken], total: 1 } },
-      { url: 'disponibilizar', response: { success: true, link_disponibilizado_em: '2026-04-10T12:00:00Z' } },
+      {
+        url: 'aguardando-quitacao',
+        response: { pagamentos: [taxaComToken], total: 1 },
+      },
+      {
+        url: 'disponibilizar',
+        response: {
+          success: true,
+          link_disponibilizado_em: '2026-04-10T12:00:00Z',
+        },
+      },
     ]);
 
     render(<AguardandoPagamentoTab {...defaultProps} />);
     await waitFor(() =>
-      expect(screen.getByRole('button', { name: /^Disponibilizar$/i })).toBeInTheDocument()
+      expect(
+        screen.getByRole('button', { name: /^Disponibilizar$/i })
+      ).toBeInTheDocument()
     );
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('button', { name: /^Disponibilizar$/i }));
+      fireEvent.click(
+        screen.getByRole('button', { name: /^Disponibilizar$/i })
+      );
     });
 
     await waitFor(() =>
