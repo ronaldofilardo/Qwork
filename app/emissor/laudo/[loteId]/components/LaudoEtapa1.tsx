@@ -27,12 +27,6 @@ export default function LaudoEtapa1({ etapa1 }: LaudoEtapa1Props) {
         </div>
         <div className="flex flex-wrap items-baseline">
           <span className="text-xs font-medium text-gray-500 mr-2">
-            Endereço:
-          </span>
-          <span className="text-sm text-gray-900">{etapa1.endereco}</span>
-        </div>
-        <div className="flex flex-wrap items-baseline">
-          <span className="text-xs font-medium text-gray-500 mr-2">
             Período das Avaliações Consideradas:
           </span>
           <span className="text-sm text-gray-900">
