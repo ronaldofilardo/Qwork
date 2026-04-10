@@ -10,9 +10,19 @@ import ModalUploadLaudo from '@/components/modals/ModalUploadLaudo';
 
 export default function EditarLaudo() {
   const {
-    loteId, lote, laudoPadronizado, loading, mensagem, isPrevia,
-    gerandoLaudo, modalUploadOpen, setModalUploadOpen,
-    handleGerarLaudo, handleDownloadLaudo, handleUploadSuccess, router,
+    loteId,
+    lote,
+    laudoPadronizado,
+    loading,
+    mensagem,
+    isPrevia,
+    gerandoLaudo,
+    modalUploadOpen,
+    setModalUploadOpen,
+    handleGerarLaudo,
+    handleDownloadLaudo,
+    handleUploadSuccess,
+    router,
   } = useLaudo();
 
   if (loading) {
@@ -62,10 +72,15 @@ export default function EditarLaudo() {
         <div className="bg-white rounded-lg shadow-lg p-6">
           <div className="text-center mb-8 pb-4 border-b-2 border-gray-200">
             <h1 className="text-3xl font-bold text-gray-900 mb-1">
-              Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1 / GRO)
+              Laudo de Identificação e Mapeamento de Riscos Psicossociais (NR-1
+              / GRO)
             </h1>
-            <h2 className="text-base text-gray-700 mb-2">Avaliação de Saúde Mental no Trabalho</h2>
-            <p className="text-sm text-gray-600 font-medium">Baseada no instrumento COPSOQ III</p>
+            <h2 className="text-base text-gray-700 mb-2">
+              Avaliação de Saúde Mental no Trabalho
+            </h2>
+            <p className="text-sm text-gray-600 font-medium">
+              Baseada no instrumento COPSOQ III
+            </p>
           </div>
 
           <LaudoEtapa1 etapa1={laudoPadronizado.etapa1} />

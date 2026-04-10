@@ -189,9 +189,9 @@ export const GET = async (
         clinica_nome: lote.clinica_nome,
         status: lote.status,
         avaliacoes_concluidas: lote.concluidas,
-          total_avaliacoes: lote.total_liberadas,
-          numero_ordem: lote.numero_ordem,
-        },
+        total_avaliacoes: lote.total_liberadas,
+        numero_ordem: lote.numero_ordem,
+      },
       laudoPadronizado,
       previa: isPrevia,
       mensagem: isPrevia

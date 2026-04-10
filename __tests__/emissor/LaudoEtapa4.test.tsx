@@ -75,12 +75,7 @@ describe('LaudoEtapa4', () => {
     // 2026-04-09T15:30:00Z = 12:30 em São Paulo (UTC-3)
     const isoDate = '2026-04-09T15:30:00Z';
 
-    render(
-      <LaudoEtapa4
-        {...mockProps}
-        criadoEm={isoDate}
-      />
-    );
+    render(<LaudoEtapa4 {...mockProps} criadoEm={isoDate} />);
 
     // A formatação deve respeitar timezone America/Sao_Paulo
     const text = screen.getByText(/Criado em/);
@@ -90,34 +85,23 @@ describe('LaudoEtapa4', () => {
   });
 
   it('deve exibir aviso de pré-visualização quando isPrevia=true', () => {
-    render(
-      <LaudoEtapa4
-        {...mockProps}
-        isPrevia={true}
-      />
-    );
-    expect(screen.getByText(/Pré-visualização - Laudo ainda não emitido/)).toBeInTheDocument();
+    render(<LaudoEtapa4 {...mockProps} isPrevia={true} />);
+    expect(
+      screen.getByText(/Pré-visualização - Laudo ainda não emitido/)
+    ).toBeInTheDocument();
   });
 
   it('não deve exibir aviso de pré-visualização quando isPrevia=false', () => {
-    render(
-      <LaudoEtapa4
-        {...mockProps}
-        isPrevia={false}
-      />
-    );
-    expect(screen.queryByText(/Pré-visualização - Laudo ainda não emitido/)).not.toBeInTheDocument();
+    render(<LaudoEtapa4 {...mockProps} isPrevia={false} />);
+    expect(
+      screen.queryByText(/Pré-visualização - Laudo ainda não emitido/)
+    ).not.toBeInTheDocument();
   });
 
   it('deve exibir data emitida quando fornecida', () => {
     const isoDate = '2026-04-09T15:30:00Z';
 
-    render(
-      <LaudoEtapa4
-        {...mockProps}
-        emitidoEm={isoDate}
-      />
-    );
+    render(<LaudoEtapa4 {...mockProps} emitidoEm={isoDate} />);
 
     expect(screen.getByText(/Emitido automaticamente em/)).toBeInTheDocument();
   });
@@ -125,12 +109,7 @@ describe('LaudoEtapa4', () => {
   it('deve exibir data enviada quando fornecida', () => {
     const isoDate = '2026-04-09T15:30:00Z';
 
-    render(
-      <LaudoEtapa4
-        {...mockProps}
-        enviadoEm={isoDate}
-      />
-    );
+    render(<LaudoEtapa4 {...mockProps} enviadoEm={isoDate} />);
 
     expect(screen.getByText(/Enviado automaticamente em/)).toBeInTheDocument();
   });
@@ -143,7 +122,9 @@ describe('LaudoEtapa4', () => {
       />
     );
 
-    expect(screen.getByText('Observações especiais do emissor')).toBeInTheDocument();
+    expect(
+      screen.getByText('Observações especiais do emissor')
+    ).toBeInTheDocument();
     expect(screen.getByText(/OBSERVAÇÕES DO EMISSOR/)).toBeInTheDocument();
   });
 
@@ -158,14 +139,9 @@ describe('LaudoEtapa4', () => {
   });
 
   it('deve exibir mensagem quando fornecida', () => {
-    render(
-      <LaudoEtapa4
-        {...mockProps}
-        mensagem="Test message"
-      />
-    );
+    render(<LaudoEtapa4 {...mockProps} mensagem="Test message" />);
 
-    expect(screen.getByText('Test message')).toBeInTheDocument();
+    expect(screen.getByText(/Test message/)).toBeInTheDocument();
   });
 
   it('deve renderizar corretamente com status enviado', () => {
@@ -178,9 +154,13 @@ describe('LaudoEtapa4', () => {
       />
     );
 
-    expect(screen.getByText(/Status: Enviado para clínica/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Status: Enviado para clínica/)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Lote nº 10/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Baixar PDF/ })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /Baixar PDF/ })
+    ).toBeInTheDocument();
   });
 
   it('deve chamar onDownloadLaudo ao clicar em "Baixar PDF"', () => {

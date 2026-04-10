@@ -30,13 +30,21 @@ describe('GET /api/admin/manutencao/aguardando-quitacao', () => {
   });
 
   it('deve retornar 403 para perfil rh', async () => {
-    mockGetSession.mockReturnValue({ cpf: '000', nome: 'RH', perfil: 'rh' } as any);
+    mockGetSession.mockReturnValue({
+      cpf: '000',
+      nome: 'RH',
+      perfil: 'rh',
+    } as any);
     const res = await GET();
     expect(res.status).toBe(403);
   });
 
   it('deve retornar lista vazia para admin sem pagamentos pendentes', async () => {
-    mockGetSession.mockReturnValue({ cpf: '000', nome: 'Admin', perfil: 'admin' } as any);
+    mockGetSession.mockReturnValue({
+      cpf: '000',
+      nome: 'Admin',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
     const res = await GET();
@@ -47,7 +55,11 @@ describe('GET /api/admin/manutencao/aguardando-quitacao', () => {
   });
 
   it('deve retornar pagamentos de entidade com campos corretos', async () => {
-    mockGetSession.mockReturnValue({ cpf: '000', nome: 'Admin', perfil: 'admin' } as any);
+    mockGetSession.mockReturnValue({
+      cpf: '000',
+      nome: 'Admin',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({
       rows: [
         {
@@ -82,7 +94,11 @@ describe('GET /api/admin/manutencao/aguardando-quitacao', () => {
   });
 
   it('deve retornar pagamentos de empresa_clinica com link_pagamento_token preenchido', async () => {
-    mockGetSession.mockReturnValue({ cpf: '000', nome: 'Suporte', perfil: 'suporte' } as any);
+    mockGetSession.mockReturnValue({
+      cpf: '000',
+      nome: 'Suporte',
+      perfil: 'suporte',
+    } as any);
     mockQuery.mockResolvedValueOnce({
       rows: [
         {

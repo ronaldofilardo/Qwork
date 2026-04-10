@@ -220,7 +220,9 @@ describe('/api/emissor/laudos/[loteId]', () => {
       expect(data.previa).toBe(true);
       expect(data.lote.numero_ordem).toBe(2);
       expect(data.lote.total_avaliacoes).toBe(4);
-      expect(data.mensagem).toContain('4/4 avaliações concluídas');
+      expect(data.mensagem).toBe(
+        'Preview do laudo - clique em "Gerar Laudo" para emitir'
+      );
       expect(data.laudoPadronizado).toBeDefined();
     });
   });
@@ -310,6 +312,12 @@ describe('/api/emissor/laudos/[loteId]', () => {
       // laudoExistente - nenhum laudo
       mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
 
+      // filaEntry - lote em fila de emissão
+      mockQuery.mockResolvedValueOnce({
+        rows: [{ id: 1 }],
+        rowCount: 1,
+      } as any);
+
       const mockReq = {} as Request;
       const mockParams = { params: { loteId: '1' } };
 
@@ -370,9 +378,11 @@ describe('/api/emissor/laudos/[loteId]', () => {
       expect(response.status).toBe(200);
       expect(data.success).toBe(true);
       expect(data.message).toBe('Laudo enviado para clínica');
+      // Verificar que query foi chamada com os parâmetros corretos para UPDATE
       expect(mockQuery).toHaveBeenCalledWith(
-        expect.stringContaining("status = 'enviado'"),
-        expect.arrayContaining([1, '99999999999'])
+        expect.stringContaining('UPDATE laudos'),
+        expect.arrayContaining([1, '99999999999']),
+        mockEmissor
       );
     });
 

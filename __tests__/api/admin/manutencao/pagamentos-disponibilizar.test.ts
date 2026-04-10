@@ -46,64 +46,101 @@ describe('POST /api/admin/manutencao/pagamentos/[pagamentoId]/disponibilizar', (
   });
 
   it('deve retornar 401/403 quando requireRole lança erro', async () => {
-    mockRequireRole.mockRejectedValueOnce({ status: 403, message: 'Acesso restrito' });
-    const res = await POST(makeRequest('10'), { params: { pagamentoId: '10' } });
+    mockRequireRole.mockRejectedValueOnce({
+      status: 403,
+      message: 'Acesso restrito',
+    });
+    const res = await POST(makeRequest('10'), {
+      params: { pagamentoId: '10' },
+    });
     expect(res.status).toBe(403);
   });
 
   it('deve retornar 400 para pagamentoId NaN', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: '000', perfil: 'admin' } as any);
-    const res = await POST(makeRequest('xyz'), { params: { pagamentoId: 'xyz' } });
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: '000',
+      perfil: 'admin',
+    } as any);
+    const res = await POST(makeRequest('xyz'), {
+      params: { pagamentoId: 'xyz' },
+    });
     expect(res.status).toBe(400);
   });
 
   it('deve retornar 404 quando pagamento não encontrado', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: '000', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: '000',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 } as any);
-    const res = await POST(makeRequest('99'), { params: { pagamentoId: '99' } });
+    const res = await POST(makeRequest('99'), {
+      params: { pagamentoId: '99' },
+    });
     expect(res.status).toBe(404);
   });
 
   it('deve retornar 400 quando link não gerado ainda', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: '000', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: '000',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({
       rows: [{ ...pagamentoBase, link_pagamento_token: null }],
       rowCount: 1,
     } as any);
-    const res = await POST(makeRequest('10'), { params: { pagamentoId: '10' } });
+    const res = await POST(makeRequest('10'), {
+      params: { pagamentoId: '10' },
+    });
     expect(res.status).toBe(400);
     const body = await res.json();
     expect(body.error).toContain('Gere o link primeiro');
   });
 
   it('deve retornar 400 quando pagamento já pago', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: '000', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: '000',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({
       rows: [{ ...pagamentoBase, status: 'pago' }],
       rowCount: 1,
     } as any);
-    const res = await POST(makeRequest('10'), { params: { pagamentoId: '10' } });
+    const res = await POST(makeRequest('10'), {
+      params: { pagamentoId: '10' },
+    });
     expect(res.status).toBe(400);
   });
 
   it('deve retornar 409 quando link já disponibilizado', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: '000', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: '000',
+      perfil: 'admin',
+    } as any);
     mockQuery.mockResolvedValueOnce({
-      rows: [{ ...pagamentoBase, link_disponibilizado_em: '2026-04-01T10:00:00Z' }],
+      rows: [
+        { ...pagamentoBase, link_disponibilizado_em: '2026-04-01T10:00:00Z' },
+      ],
       rowCount: 1,
     } as any);
-    const res = await POST(makeRequest('10'), { params: { pagamentoId: '10' } });
+    const res = await POST(makeRequest('10'), {
+      params: { pagamentoId: '10' },
+    });
     expect(res.status).toBe(409);
   });
 
   it('deve disponibilizar link e criar notificação com sucesso', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: 'admin-cpf', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: 'admin-cpf',
+      perfil: 'admin',
+    } as any);
     mockQuery
       .mockResolvedValueOnce({ rows: [pagamentoBase], rowCount: 1 } as any) // SELECT
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)              // UPDATE
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any);             // INSERT notificacao
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any); // INSERT notificacao
 
-    const res = await POST(makeRequest('10'), { params: { pagamentoId: '10' } });
+    const res = await POST(makeRequest('10'), {
+      params: { pagamentoId: '10' },
+    });
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
@@ -112,13 +149,18 @@ describe('POST /api/admin/manutencao/pagamentos/[pagamentoId]/disponibilizar', (
   });
 
   it('deve disponibilizar link mesmo quando INSERT de notificação falha', async () => {
-    mockRequireRole.mockResolvedValueOnce({ cpf: 'admin-cpf', perfil: 'admin' } as any);
+    mockRequireRole.mockResolvedValueOnce({
+      cpf: 'admin-cpf',
+      perfil: 'admin',
+    } as any);
     mockQuery
       .mockResolvedValueOnce({ rows: [pagamentoBase], rowCount: 1 } as any) // SELECT
-      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any)              // UPDATE
-      .mockRejectedValueOnce(new Error('DB error notif'));                   // INSERT falha
+      .mockResolvedValueOnce({ rows: [], rowCount: 1 } as any) // UPDATE
+      .mockRejectedValueOnce(new Error('DB error notif')); // INSERT falha
 
-    const res = await POST(makeRequest('10'), { params: { pagamentoId: '10' } });
+    const res = await POST(makeRequest('10'), {
+      params: { pagamentoId: '10' },
+    });
     // Notificação é não-bloqueante, portanto ainda retorna 200
     expect(res.status).toBe(200);
     const body = await res.json();
