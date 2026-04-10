@@ -293,3 +293,155 @@ describe('5. FuncionarioRow — UltimaAvaliacaoCell com lógica de prioridade P1
     expect(src).toContain('Elegível');
   });
 });
+
+// ─────────────────────────────────────────────────────────────
+// 6. Alterações de 10/04/2026 — Formatação de dados
+// ─────────────────────────────────────────────────────────────
+
+describe('6. Formatação de dados — ImportacaoFlowGuide e FlowStepsExplainer (10/04/2026)', () => {
+  describe('ImportacaoFlowGuide', () => {
+    const filePath = path.join(
+      ROOT,
+      'components',
+      'ImportacaoFlowGuide.tsx'
+    );
+    let src: string;
+
+    beforeAll(() => {
+      src = fs.readFileSync(filePath, 'utf-8');
+    });
+
+    it('deve ter propriedade isClinica com default true', () => {
+      expect(src).toContain('isClinica');
+      expect(src).toMatch(/isClinica\s*=\s*true/);
+    });
+
+    it('deve exibir "Colunas obrigatórias e formatação de dados" no divisor', () => {
+      expect(src).toContain('Colunas obrigatórias e formatação de dados');
+    });
+
+    it('deve conter informação de Data de Nascimento com formato dd/mm/aaaa', () => {
+      expect(src).toContain('Data de Nascimento');
+      expect(src).toContain('dd/mm/aaaa');
+      expect(src).toContain('evitar perda por formatação do Excel');
+    });
+
+    it('deve conter informação de CPF com 11 dígitos', () => {
+      expect(src).toContain('deve conter apenas 11 dígitos');
+      expect(src).toContain('sem pontos ou hífen');
+    });
+
+    it('deve conter informação sobre Função para determinar versão do questionário', () => {
+      expect(src).toContain('Função');
+      expect(src).toContain('importante para determinar a versão do questionário');
+      expect(src).toContain('4. Níveis');
+      expect(src).toContain('nivel_cargo');
+    });
+
+    it('deve condicionar exibição de CNPJ com isClinica para clínica apenas', () => {
+      expect(src).toMatch(/\{isClinica\s*&&\s*\(/);
+      expect(src).toContain('<strong>Empresa:</strong>');
+    });
+  });
+
+  describe('FlowStepsExplainer — Seção Formatação para clínicas', () => {
+    const filePath = path.join(
+      ROOT,
+      'components',
+      'FlowStepsExplainer.tsx'
+    );
+    let src: string;
+
+    beforeAll(() => {
+      src = fs.readFileSync(filePath, 'utf-8');
+    });
+
+    it('deve ter seção de formatação para isClinica=true', () => {
+      // Procura pela seção dentro do bloco {isClinica && (
+      const clinicaBlockIdx = src.indexOf('{isClinica && (');
+      const formatacaoIdx = src.indexOf('Formatação dos dados', clinicaBlockIdx);
+      expect(formatacaoIdx).toBeGreaterThan(clinicaBlockIdx);
+    });
+
+    it('deve conter Data de Nascimento com dd/mm/aaaa em clínica', () => {
+      const clinicaBlockIdx = src.indexOf('{isClinica && (');
+      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 3000);
+      expect(ctx).toContain('Data de Nascimento');
+      expect(ctx).toContain('dd/mm/aaaa');
+    });
+
+    it('deve conter CPF com 11 dígitos em clínica', () => {
+      const clinicaBlockIdx = src.indexOf('{isClinica && (');
+      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 3000);
+      expect(ctx).toContain('deve conter apenas 11 dígitos');
+    });
+
+    it('deve conter Função com referência a "4. Níveis" em clínica', () => {
+      const clinicaBlockIdx = src.indexOf('{isClinica && (');
+      const ctx = src.substring(clinicaBlockIdx, clinicaBlockIdx + 3000);
+      expect(ctx).toContain('Função');
+      expect(ctx).toContain('4. Níveis');
+    });
+  });
+
+  describe('FlowStepsExplainer — Seção Formatação para entidades', () => {
+    const filePath = path.join(
+      ROOT,
+      'components',
+      'FlowStepsExplainer.tsx'
+    );
+    let src: string;
+
+    beforeAll(() => {
+      src = fs.readFileSync(filePath, 'utf-8');
+    });
+
+    it('deve ter seção de formatação para isClinica=false', () => {
+      // Procura pela seção dentro do bloco {!isClinica && (
+      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
+      expect(entidadeBlockIdx).toBeGreaterThan(-1);
+      const formatacaoIdx = src.indexOf('Formatação dos dados', entidadeBlockIdx);
+      expect(formatacaoIdx).toBeGreaterThan(entidadeBlockIdx);
+    });
+
+    it('deve conter Data de Nascimento com dd/mm/aaaa em entidade', () => {
+      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
+      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 3000);
+      expect(ctx).toContain('Data de Nascimento');
+      expect(ctx).toContain('dd/mm/aaaa');
+    });
+
+    it('deve conter CPF com 11 dígitos em entidade', () => {
+      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
+      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 3000);
+      expect(ctx).toContain('deve conter apenas 11 dígitos');
+    });
+
+    it('deve conter Função com referência a "3. Avaliações" em entidade', () => {
+      const entidadeBlockIdx = src.indexOf('{!isClinica && (');
+      const ctx = src.substring(entidadeBlockIdx, entidadeBlockIdx + 3000);
+      expect(ctx).toContain('Função');
+      expect(ctx).toContain('3. Avaliações');
+    });
+  });
+
+  describe('Páginas de importação — uso de props', () => {
+    it('app/rh/importacao/page.tsx deve passar isClinica={true}', () => {
+      const filePath = path.join(ROOT, 'app', 'rh', 'importacao', 'page.tsx');
+      const src = fs.readFileSync(filePath, 'utf-8');
+      expect(src).toContain('ImportacaoFlowGuide isClinica={true}');
+    });
+
+    it('app/entidade/importacao/page.tsx deve passar isClinica={false}', () => {
+      const filePath = path.join(
+        ROOT,
+        'app',
+        'entidade',
+        'importacao',
+        'page.tsx'
+      );
+      const src = fs.readFileSync(filePath, 'utf-8');
+      expect(src).toContain('ImportacaoFlowGuide isClinica={false}');
+    });
+  });
+});
