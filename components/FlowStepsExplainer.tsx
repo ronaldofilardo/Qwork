@@ -313,6 +313,20 @@ export default function FlowStepsExplainer({
           </div>
           <ul className="space-y-0.5 text-xs text-blue-700">
             <li>
+              <strong>CNPJ:</strong> responsável por segregar cada empresa e
+              seus respectivos funcionários{' '}
+              <span className="text-blue-500">
+                (coluna classificadora de cada linha)
+              </span>
+            </li>
+            <li>
+              <strong>Nome da Empresa:</strong> para que a empresa, e também o
+              laudo, possa ser nominal{' '}
+              <span className="text-blue-500">
+                (deve estar presente em todas as linhas)
+              </span>
+            </li>
+            <li>
               <strong>Data de Nascimento:</strong> dd/mm/aaaa{' '}
               <span className="text-blue-500">
                 (use texto ou formato dd/mm/aaaa para evitar perda por
