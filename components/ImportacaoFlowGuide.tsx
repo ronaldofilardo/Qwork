@@ -64,7 +64,9 @@ const importacaoSteps: GuideStep[] = [
   },
 ];
 
-export default function ImportacaoFlowGuide({ isClinica = true }: ImportacaoFlowGuideProps) {
+export default function ImportacaoFlowGuide({
+  isClinica = true,
+}: ImportacaoFlowGuideProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [hoveredSubKey, setHoveredSubKey] = useState<string | null>(null);
 
