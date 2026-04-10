@@ -275,4 +275,97 @@ describe('FlowStepsExplainer', () => {
       ).not.toBeInTheDocument();
     });
   });
+
+  describe('Seção Formatação dos Dados', () => {
+    describe('Clínicas (isClinica=true)', () => {
+      it('exibe divisor "Formatação dos dados" para clínicas', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(screen.getByText('Formatação dos dados')).toBeInTheDocument();
+      });
+
+      it('exibe informação de Data de Nascimento com formato dd/mm/aaaa', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(
+          screen.getByText(/Data de Nascimento.*dd\/mm\/aaaa/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe aviso sobre formatação do Excel para data', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(
+          screen.getByText(/evitar perda por formatação do Excel/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe informação de CPF com 11 dígitos', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(
+          screen.getByText(/CPF.*deve conter apenas 11 dígitos/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe aviso sobre CPF sem pontos ou hífen', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(
+          screen.getByText(/sem pontos ou hífen/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe informação sobre Função para determinar versão do questionário', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(
+          screen.getByText(/Função.*importante para determinar a versão do questionário/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe referência à etapa "4. Níveis" para seleção de função faltante', () => {
+        render(<FlowStepsExplainer isClinica={true} />);
+        expect(
+          screen.getByText(/4\. Níveis/)
+        ).toBeInTheDocument();
+      });
+    });
+
+    describe('Entidades (isClinica=false)', () => {
+      it('exibe divisor "Formatação dos dados" para entidades', () => {
+        render(<FlowStepsExplainer isClinica={false} />);
+        expect(screen.getByText('Formatação dos dados')).toBeInTheDocument();
+      });
+
+      it('exibe informação de Data de Nascimento com formato dd/mm/aaaa para entidades', () => {
+        render(<FlowStepsExplainer isClinica={false} />);
+        expect(
+          screen.getByText(/Data de Nascimento.*dd\/mm\/aaaa/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe aviso sobre formatação do Excel para data em entidades', () => {
+        render(<FlowStepsExplainer isClinica={false} />);
+        expect(
+          screen.getByText(/evitar perda por formatação do Excel/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe informação de CPF com 11 dígitos para entidades', () => {
+        render(<FlowStepsExplainer isClinica={false} />);
+        expect(
+          screen.getByText(/CPF.*deve conter apenas 11 dígitos/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe informação sobre Função para entidades', () => {
+        render(<FlowStepsExplainer isClinica={false} />);
+        expect(
+          screen.getByText(/Função.*importante para determinar a versão do questionário/)
+        ).toBeInTheDocument();
+      });
+
+      it('exibe referência à etapa "3. Avaliações" para entidades', () => {
+        render(<FlowStepsExplainer isClinica={false} />);
+        expect(
+          screen.getByText(/3\. Avaliações/)
+        ).toBeInTheDocument();
+      });
+    });
+  });
 });
