@@ -26,11 +26,13 @@ export async function GET() {
         u.criado_em,
         u.atualizado_em,
         u.tipo_usuario as perfil,
+        u.crp,
+        u.titulo_profissional,
         COUNT(DISTINCT l.id) as total_laudos_emitidos
       FROM usuarios u
       LEFT JOIN laudos l ON l.emissor_cpf = u.cpf AND l.status = 'emitido'
       WHERE u.tipo_usuario IN ('emissor', 'suporte', 'comercial')
-      GROUP BY u.cpf, u.nome, u.email, u.ativo, u.criado_em, u.atualizado_em, u.tipo_usuario
+      GROUP BY u.cpf, u.nome, u.email, u.ativo, u.criado_em, u.atualizado_em, u.tipo_usuario, u.crp, u.titulo_profissional
       ORDER BY u.tipo_usuario, u.nome
     `,
       [],

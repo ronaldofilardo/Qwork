@@ -18,11 +18,11 @@ export async function PATCH(
     const session = await requireRole('admin', false);
 
     const data = await request.json();
-    const { ativo, nome, email, senha } = data;
+    const { ativo, nome, email, senha, crp, titulo_profissional } = data;
 
-    // Verificar se o usuário existe e é emissor
+    // Verificar se o usuário existe e é emissor (na tabela usuarios)
     const userCheck = await query(
-      'SELECT cpf, nome, email, ativo, clinica_id, perfil FROM funcionarios WHERE cpf = $1',
+      'SELECT cpf, nome, email, ativo, tipo_usuario FROM usuarios WHERE cpf = $1',
       [params.cpf],
       session
     );
@@ -34,12 +34,7 @@ export async function PATCH(
       );
     }
 
-    // Se a coluna `perfil` existir no resultado, validamos que seja 'emissor'.
-    // Em testes os mocks podem não incluir `perfil`, então pulamos a validação nesses casos.
-    if (
-      Object.prototype.hasOwnProperty.call(userCheck.rows[0], 'perfil') &&
-      userCheck.rows[0].perfil !== 'emissor'
-    ) {
+    if (userCheck.rows[0].tipo_usuario !== 'emissor') {
       return NextResponse.json(
         { error: 'Usuário não é emissor' },
         { status: 400 }
@@ -83,6 +78,18 @@ export async function PATCH(
       paramCounter++;
     }
 
+    if (crp !== undefined) {
+      updates.push(`crp = $${paramCounter}`);
+      values.push(crp);
+      paramCounter++;
+    }
+
+    if (titulo_profissional !== undefined) {
+      updates.push(`titulo_profissional = $${paramCounter}`);
+      values.push(titulo_profissional);
+      paramCounter++;
+    }
+
     if (updates.length === 0) {
       return NextResponse.json(
         { error: 'Nenhum campo para atualizar' },
@@ -97,10 +104,10 @@ export async function PATCH(
 
     const result = await query(
       `
-      UPDATE funcionarios
+      UPDATE usuarios
       SET ${updates.join(', ')}
-      WHERE cpf = $${paramCounter} AND perfil = 'emissor'
-      RETURNING cpf, nome, email, ativo, clinica_id, atualizado_em
+      WHERE cpf = $${paramCounter} AND tipo_usuario = 'emissor'
+      RETURNING cpf, nome, email, ativo, crp, titulo_profissional, atualizado_em
     `,
       values,
       session
@@ -115,20 +122,11 @@ export async function PATCH(
 
     const emissorAtualizado = result.rows[0];
 
-    // Registrar auditoria (compatibilidade com mocks de teste)
+    // Registrar auditoria
     try {
-      if (process.env.NODE_ENV === 'test') {
-        // legacy: (actionName, userCpf, details)
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        await (logAudit as any)('editar_emissor', session.cpf, {
-          emissor_cpf: params.cpf,
-        });
-      }
-
       await logAudit(
         {
-          resource: 'funcionarios',
+          resource: 'usuarios',
           action: 'UPDATE',
           resourceId: params.cpf,
           oldData: estadoAnterior,

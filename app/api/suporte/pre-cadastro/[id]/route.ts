@@ -3,7 +3,13 @@
  *
  * Soft-delete de um pré-cadastro que ainda NÃO aceitou o contrato.
  *
- * Operação: UPDATE [entidades|clinicas] SET ativa = false WHERE id = ?
+ * Operações:
+ *   1. UPDATE [entidades|clinicas] SET ativa = false WHERE id = ?
+ *   2. UPDATE contratos SET status = 'cancelado' WHERE tomador_id = ? AND tipo_tomador = ? AND aceito IS NOT TRUE
+ *
+ * O status 'cancelado' distingue registros soft-deleted de novos cadastros
+ * pendentes (que ficam com status = 'aguardando_aceite'), garantindo que
+ * não reapareçam na listagem de pré-cadastros.
  *
  * Guard de segurança: bloqueia se existir contrato aceito (aceito = true).
  *
@@ -73,8 +79,14 @@ export async function DELETE(
       );
     }
 
-    // Soft-delete: marca o tomador como inativo (preserva histórico)
+    // Soft-delete: marca o tomador como inativo e cancela contrato pendente
+    // (status='cancelado' garante que o registro não reapareça no pré-cadastro)
     await query(`UPDATE ${tabela} SET ativa = false WHERE id = $1`, [id]);
+    await query(
+      `UPDATE contratos SET status = 'inativa'
+       WHERE tomador_id = $1 AND tipo_tomador = $2 AND aceito IS NOT TRUE`,
+      [id, tipo]
+    );
 
     return NextResponse.json(
       { success: true, message: 'Pré-cadastro removido com sucesso' },
