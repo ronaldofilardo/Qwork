@@ -214,9 +214,7 @@ function TabelaDetalhe({
                   <td className="text-center py-2 pl-2">
                     {inativo ? (
                       <button
-                        onClick={() =>
-                          void onAction(row.id, tipo, 'reativar')
-                        }
+                        onClick={() => void onAction(row.id, tipo, 'reativar')}
                         disabled={carregando}
                         title="Reativar tomador"
                         aria-label="Reativar tomador"

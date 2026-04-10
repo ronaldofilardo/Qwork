@@ -9,6 +9,7 @@ interface Lote {
   id: number;
   empresa_nome: string;
   clinica_nome: string;
+  numero_ordem?: number | null;
 }
 
 export function useLaudo() {

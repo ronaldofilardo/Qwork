@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Clock,
   CheckCircle2,
+  Wrench,
 } from 'lucide-react';
 
 type Motivo =
@@ -44,6 +45,8 @@ interface LoteReferencia {
 interface PendenciasSectionProps {
   empresaId?: number; // RH context: empresa_id; Gestor/entidade: omit (API uses session)
   empresaNome?: string;
+  /** Limite para cobrança de taxa de manutenção (ISO date string). Quando passado mostra alerta. */
+  manutencaoLimite?: string | null;
 }
 
 const MOTIVO_CONFIG: Record<
@@ -105,6 +108,7 @@ const COR_CLASSES: Record<
 export default function PendenciasSection({
   empresaId,
   empresaNome,
+  manutencaoLimite,
 }: PendenciasSectionProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -206,6 +210,42 @@ export default function PendenciasSection({
 
   return (
     <div className="space-y-6">
+      {/* Alerta Taxa de Manutenção */}
+      {manutencaoLimite &&
+        (() => {
+          const limite = new Date(manutencaoLimite);
+          const hoje = new Date();
+          const diasRestantes = Math.ceil(
+            (limite.getTime() - hoje.getTime()) / 86_400_000
+          );
+          const vencida = diasRestantes < 0;
+          return (
+            <div
+              className={`rounded-lg border p-4 flex items-start gap-3 ${vencida ? 'bg-red-50 border-red-300' : 'bg-orange-50 border-orange-200'}`}
+            >
+              <Wrench
+                className={`w-5 h-5 mt-0.5 flex-shrink-0 ${vencida ? 'text-red-600' : 'text-orange-600'}`}
+              />
+              <div>
+                <p
+                  className={`font-semibold text-sm ${vencida ? 'text-red-800' : 'text-orange-800'}`}
+                >
+                  {vencida
+                    ? 'Taxa de Manutenção Vencida'
+                    : 'Taxa de Manutenção a Vencer'}
+                </p>
+                <p
+                  className={`text-sm mt-0.5 ${vencida ? 'text-red-700' : 'text-orange-700'}`}
+                >
+                  {vencida
+                    ? `Prazo excedido há ${Math.abs(diasRestantes)} dia(s). Gere o primeiro laudo para evitar cobrança de R$\u00a0250,00.`
+                    : `${diasRestantes} dia(s) restantes para gerar o primeiro laudo (prazo: ${limite.toLocaleDateString('pt-BR')}). Após este prazo, uma taxa de R$\u00a0250,00 será cobrada.`}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
+
       {/* Cabeçalho + lote de referência */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center justify-between mb-4">

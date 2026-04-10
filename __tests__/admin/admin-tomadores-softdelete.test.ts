@@ -52,10 +52,7 @@ const mockRegistrarAuditoria = registrarAuditoria as jest.MockedFunction<
 // ──────────────────────────────────────────────
 // Helpers
 // ──────────────────────────────────────────────
-function makeRequest(
-  id: string,
-  body: Record<string, unknown>
-): NextRequest {
+function makeRequest(id: string, body: Record<string, unknown>): NextRequest {
   return new NextRequest(
     `http://localhost/api/admin/tomadores/${id}/softdelete`,
     {
@@ -131,9 +128,12 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
       throw { message: 'Não autenticado', code: 'UNAUTHORIZED', status: 401 };
     });
 
-    const res = await PATCH(makeRequest('1', { action: 'softdelete', tipo: 'entidade' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'softdelete', tipo: 'entidade' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(401);
   });
 
@@ -142,35 +142,47 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
       throw { message: 'Sem permissão', code: 'FORBIDDEN', status: 403 };
     });
 
-    const res = await PATCH(makeRequest('1', { action: 'softdelete', tipo: 'entidade' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'softdelete', tipo: 'entidade' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(403);
   });
 
   // -------- Validação --------
   it('deve retornar 400 para ID não numérico', async () => {
-    const res = await PATCH(makeRequest('abc', { action: 'softdelete', tipo: 'entidade' }), {
-      params: { id: 'abc' },
-    });
+    const res = await PATCH(
+      makeRequest('abc', { action: 'softdelete', tipo: 'entidade' }),
+      {
+        params: { id: 'abc' },
+      }
+    );
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toMatch(/inválido/i);
   });
 
   it('deve retornar 400 para body com action inválida', async () => {
-    const res = await PATCH(makeRequest('1', { action: 'remover', tipo: 'entidade' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'remover', tipo: 'entidade' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(400);
     const data = await res.json();
     expect(data.error).toMatch(/body inválido/i);
   });
 
   it('deve retornar 400 para body com tipo inválido', async () => {
-    const res = await PATCH(makeRequest('1', { action: 'softdelete', tipo: 'empresa' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'softdelete', tipo: 'empresa' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(400);
   });
 
@@ -178,9 +190,12 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
   it('deve retornar 404 quando tomador não existe', async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] } as any);
 
-    const res = await PATCH(makeRequest('999', { action: 'softdelete', tipo: 'entidade' }), {
-      params: { id: '999' },
-    });
+    const res = await PATCH(
+      makeRequest('999', { action: 'softdelete', tipo: 'entidade' }),
+      {
+        params: { id: '999' },
+      }
+    );
     expect(res.status).toBe(404);
     const data = await res.json();
     expect(data.error).toMatch(/não encontrado/i);
@@ -190,9 +205,12 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
   it('deve soft-delete entidade com cascata', async () => {
     mockSoftDeleteEntidade();
 
-    const res = await PATCH(makeRequest('1', { action: 'softdelete', tipo: 'entidade' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'softdelete', tipo: 'entidade' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
@@ -200,7 +218,10 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
 
     // Deve ter registrado auditoria
     expect(mockRegistrarAuditoria).toHaveBeenCalledWith(
-      expect.objectContaining({ acao: 'desativar', metadados: { tipo: 'entidade' } })
+      expect.objectContaining({
+        acao: 'desativar',
+        metadados: { tipo: 'entidade' },
+      })
     );
   });
 
@@ -208,16 +229,22 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
   it('deve soft-delete clínica com cascata', async () => {
     mockSoftDeleteClinica();
 
-    const res = await PATCH(makeRequest('2', { action: 'softdelete', tipo: 'clinica' }), {
-      params: { id: '2' },
-    });
+    const res = await PATCH(
+      makeRequest('2', { action: 'softdelete', tipo: 'clinica' }),
+      {
+        params: { id: '2' },
+      }
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.action).toBe('softdelete');
 
     expect(mockRegistrarAuditoria).toHaveBeenCalledWith(
-      expect.objectContaining({ acao: 'desativar', metadados: { tipo: 'clinica' } })
+      expect.objectContaining({
+        acao: 'desativar',
+        metadados: { tipo: 'clinica' },
+      })
     );
   });
 
@@ -225,16 +252,22 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
   it('deve reativar entidade com cascata', async () => {
     mockReativarEntidade();
 
-    const res = await PATCH(makeRequest('1', { action: 'reativar', tipo: 'entidade' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'reativar', tipo: 'entidade' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.action).toBe('reativar');
 
     expect(mockRegistrarAuditoria).toHaveBeenCalledWith(
-      expect.objectContaining({ acao: 'ativar', metadados: { tipo: 'entidade' } })
+      expect.objectContaining({
+        acao: 'ativar',
+        metadados: { tipo: 'entidade' },
+      })
     );
   });
 
@@ -242,16 +275,22 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
   it('deve reativar clínica com cascata', async () => {
     mockReativarClinica();
 
-    const res = await PATCH(makeRequest('2', { action: 'reativar', tipo: 'clinica' }), {
-      params: { id: '2' },
-    });
+    const res = await PATCH(
+      makeRequest('2', { action: 'reativar', tipo: 'clinica' }),
+      {
+        params: { id: '2' },
+      }
+    );
     expect(res.status).toBe(200);
     const data = await res.json();
     expect(data.success).toBe(true);
     expect(data.action).toBe('reativar');
 
     expect(mockRegistrarAuditoria).toHaveBeenCalledWith(
-      expect.objectContaining({ acao: 'ativar', metadados: { tipo: 'clinica' } })
+      expect.objectContaining({
+        acao: 'ativar',
+        metadados: { tipo: 'clinica' },
+      })
     );
   });
 
@@ -259,9 +298,12 @@ describe('PATCH /api/admin/tomadores/[id]/softdelete', () => {
   it('deve retornar 500 quando o banco lança exceção', async () => {
     mockQuery.mockRejectedValueOnce(new Error('DB error'));
 
-    const res = await PATCH(makeRequest('1', { action: 'softdelete', tipo: 'entidade' }), {
-      params: { id: '1' },
-    });
+    const res = await PATCH(
+      makeRequest('1', { action: 'softdelete', tipo: 'entidade' }),
+      {
+        params: { id: '1' },
+      }
+    );
     expect(res.status).toBe(500);
     const data = await res.json();
     expect(data.error).toMatch(/erro interno/i);

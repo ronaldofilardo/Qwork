@@ -10,6 +10,8 @@ import {
 import { PagamentosFilterTabs } from './pagamentos/PagamentosFilterTabs';
 import { SolicitacaoCard } from './pagamentos/SolicitacaoCard';
 import { ParcelasAVencer } from './pagamentos/ParcelasAVencer';
+import { ManutencaoTab } from './pagamentos/ManutencaoTab';
+import { AguardandoPagamentoTab } from './pagamentos/AguardandoPagamentoTab';
 
 export default function PagamentosContent() {
   const {
@@ -75,9 +77,29 @@ export default function PagamentosContent() {
         getTabCount={getTabCount}
       />
 
-      {/* Lista de Solicitações ou Parcelas A Vencer */}
-      {filterTab === 'a_vencer' ? (
+      {/* Lista de Solicitações, Parcelas A Vencer ou Manutenção */}
+      {filterTab === 'manutencao' ? (
+        <ManutencaoTab />
+      ) : filterTab === 'a_vencer' ? (
         <ParcelasAVencer />
+      ) : filterTab === 'aguardando_pagamento' ? (
+        <AguardandoPagamentoTab
+          solicitacoes={filtradas}
+          processando={processando}
+          valorInput={valorInput}
+          setValorInput={setValorInput}
+          codigoRepInput={codigoRepInput}
+          setCodigoRepInput={setCodigoRepInput}
+          onDefinirValor={handleDefinirValor}
+          onGerarLink={handleGerarLink}
+          onVerLink={handleVerLink}
+          onVerificarPagamento={handleVerificarPagamento}
+          onDisponibilizarLink={handleDisponibilizarLink}
+          onVincularRepresentante={handleVincularRepresentante}
+          onGerarComissao={handleGerarComissao}
+          formatCurrency={formatCurrency}
+          formatDate={formatDate}
+        />
       ) : filtradas.length === 0 ? (
         <div className="text-center py-12 bg-gray-50 rounded-lg">
           <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />

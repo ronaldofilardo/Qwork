@@ -129,7 +129,12 @@ async function salvarArquivoEmpresa(
   // Usar função compartilhada de storage que detecta DEV/PROD
   const { uploadArquivoCadastro } =
     await import('@/lib/storage/cadastro-storage');
-  const result = await uploadArquivoCadastro(buffer, tipo, cnpjClean, 'clinica');
+  const result = await uploadArquivoCadastro(
+    buffer,
+    tipo,
+    cnpjClean,
+    'clinica'
+  );
 
   return result.path;
 }
@@ -343,17 +348,20 @@ export async function POST(request: Request) {
       }
     }
 
-    // INSERT incluindo caminhos dos documentos
+    // INSERT incluindo caminhos dos documentos e data limite de manutenção (criado_em + 90 dias)
     const result = await withTransaction(async (client) => {
       return await client.query(
         `INSERT INTO empresas_clientes
          (nome, cnpj, email, telefone, endereco, cidade, estado, cep, clinica_id,
           representante_nome, representante_fone, representante_email, ativa,
-          cartao_cnpj_path, contrato_social_path, doc_identificacao_path)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13, $14, $15)
+          cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
+          limite_primeira_cobranca_manutencao)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true, $13, $14, $15,
+                 NOW() + INTERVAL '90 days')
          RETURNING id, nome, cnpj, email, telefone, endereco, cidade, estado, cep,
                    representante_nome, representante_fone, representante_email, ativa, criado_em,
-                   cartao_cnpj_path, contrato_social_path, doc_identificacao_path`,
+                   cartao_cnpj_path, contrato_social_path, doc_identificacao_path,
+                   limite_primeira_cobranca_manutencao`,
         [
           nome.trim(),
           cnpjNormalizado,

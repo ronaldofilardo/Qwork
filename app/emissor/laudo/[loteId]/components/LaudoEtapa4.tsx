@@ -13,12 +13,13 @@ interface LaudoEtapa4Props {
   enviadoEm?: string | null;
   status?: string;
   isPrevia?: boolean;
+  loteNumero?: number | null;
   onDownloadLaudo: () => void;
 }
 
 function fmtDt(iso: string) {
   const d = new Date(iso);
-  return `${d.toLocaleDateString('pt-BR')} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`;
+  return `${d.toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' })} às ${d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' })}`;
 }
 
 export default function LaudoEtapa4({
@@ -30,6 +31,7 @@ export default function LaudoEtapa4({
   enviadoEm,
   status,
   isPrevia,
+  loteNumero,
   onDownloadLaudo,
 }: LaudoEtapa4Props) {
   if (!etapa4) return null;
@@ -39,17 +41,19 @@ export default function LaudoEtapa4({
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        timeZone: 'America/Sao_Paulo',
       }) +
       ' ' +
-      new Date(emitidoEm).toLocaleTimeString('pt-BR') +
+      new Date(emitidoEm).toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }) +
       ' -0300'
     : new Date().toLocaleDateString('pt-BR', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
+        timeZone: 'America/Sao_Paulo',
       }) +
       ' ' +
-      new Date().toLocaleTimeString('pt-BR') +
+      new Date().toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' }) +
       ' -0300';
 
   return (
@@ -142,6 +146,7 @@ export default function LaudoEtapa4({
               ⚠️ Pré-visualização - Laudo ainda não emitido
             </p>
           )}
+          {loteNumero != null && <p>📋 Lote nº {loteNumero}</p>}
           {criadoEm && <p>📅 Criado em {fmtDt(criadoEm)}</p>}
           {emitidoEm && <p>✅ Emitido automaticamente em {fmtDt(emitidoEm)}</p>}
           {enviadoEm && <p>📤 Enviado automaticamente em {fmtDt(enviadoEm)}</p>}
