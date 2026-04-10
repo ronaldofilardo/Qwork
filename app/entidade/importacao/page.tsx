@@ -341,7 +341,7 @@ export default function ImportacaoEntidadePage() {
       </div>
 
       {/* Guia do fluxo de importação */}
-      <ImportacaoFlowGuide />
+      <ImportacaoFlowGuide isClinica={false} />
 
       {/* Stepper */}
       <div className="flex items-center gap-1 mb-6">

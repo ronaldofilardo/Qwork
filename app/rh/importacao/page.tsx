@@ -351,7 +351,7 @@ export default function ImportacaoPage() {
       </div>
 
       {/* Guia do fluxo de importação */}
-      <ImportacaoFlowGuide />
+      <ImportacaoFlowGuide isClinica={true} />
 
       {/* Stepper */}
       <div className="flex items-center gap-1 mb-6">
