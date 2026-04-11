@@ -1079,18 +1079,15 @@ describe('11. solicitar-emissao route — auto-inativação de avaliações ao s
     expect(autoInativacaoBlock[0]).toContain('WHERE lote_id = $1');
   });
 
-  it('auto-inativação deve ocorrer DENTRO da transação BEGIN/COMMIT', () => {
-    // Garantir atomicidade: auto-inativação está entre advisory lock e COMMIT
-    const beginIdx = src.indexOf("await query('BEGIN')");
-    const commitIdx = src.indexOf("await query('COMMIT')");
+  it('auto-inativação deve ocorrer DENTRO da transação (transactionWithContext)', () => {
+    // Garantir atomicidade: auto-inativação está dentro de transactionWithContext
+    const transactionIdx = src.indexOf('transactionWithContext');
     const autoInativacaoIdx = src.indexOf(
       "motivo_inativacao = 'Inativação automática: emissão do laudo solicitada'"
     );
-    expect(beginIdx).toBeGreaterThan(-1);
-    expect(commitIdx).toBeGreaterThan(-1);
+    expect(transactionIdx).toBeGreaterThan(-1);
     expect(autoInativacaoIdx).toBeGreaterThan(-1);
-    expect(autoInativacaoIdx).toBeGreaterThan(beginIdx);
-    expect(autoInativacaoIdx).toBeLessThan(commitIdx);
+    expect(autoInativacaoIdx).toBeGreaterThan(transactionIdx);
   });
 
   it('auto-inativação deve ocorrer APÓS o UPDATE do lotes_avaliacao (step 9)', () => {
@@ -1110,8 +1107,10 @@ describe('11. solicitar-emissao route — auto-inativação de avaliações ao s
   });
 
   it('auto_inativadas_count deve vir do rowCount do UPDATE', () => {
+    // A rota RH usa inativadasNaTx = autoInativadasResult.rowCount dentro da transação
+    // e retorna autoInativadasCount (let externo) que recebe o resultado da transação
     expect(src).toMatch(
-      /autoInativadasCount.*=.*autoInativadasResult\.rowCount/
+      /inativadasNaTx.*=.*autoInativadasResult\.rowCount|autoInativadasCount.*=.*autoInativadasResult\.rowCount/
     );
   });
 });

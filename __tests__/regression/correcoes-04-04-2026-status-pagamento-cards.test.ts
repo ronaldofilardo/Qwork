@@ -241,12 +241,12 @@ describe('EmpresasTable — diferencia "pago — aguard. emissão" de "emitido(s
     expect(src).toMatch(/text-teal-600/);
   });
 
-  it('campo laudo_emitido usa label "emitido(s)" com cor verde', () => {
+  it('campo laudo_emitido usa label "disponível(eis)" com cor verde', () => {
     expect(src).toMatch(/laudo_emitido\s*>/);
-    expect(src).toContain('emitido(s)');
+    expect(src).toContain('disponível(eis)');
     // O text-green-600 deve estar associado ao laudo_emitido, não ao pago
     const emitidoBlock = src.match(
-      /laudos_status\.laudo_emitido[\s\S]{0,200}emitido\(s\)/
+      /laudos_status\.laudo_emitido[\s\S]{0,200}disponível\(eis\)/
     );
     expect(emitidoBlock).not.toBeNull();
   });

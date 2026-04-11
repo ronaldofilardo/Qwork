@@ -111,7 +111,14 @@ describe('Sessão 1 — Correções aplicadas', () => {
     let laudoSrc: string;
 
     beforeAll(() => {
-      laudoSrc = readSrc('app', 'emissor', 'laudo', '[loteId]', 'page.tsx');
+      laudoSrc = readSrc(
+        'app',
+        'emissor',
+        'laudo',
+        '[loteId]',
+        'components',
+        'LaudoEtapa3.tsx'
+      );
     });
 
     it('seção 3 não deve conter subtítulo h4 com "1."', () => {
@@ -136,8 +143,8 @@ describe('Sessão 1 — Correções aplicadas', () => {
       routeSrc = readSrc('app', 'api', 'entidade', 'funcionarios', 'route.ts');
     });
 
-    it('deve conter subquery para numero_ordem', () => {
-      expect(routeSrc).toMatch(/numero_ordem/);
+    it('deve conter subquery retornando l.id como último lote', () => {
+      expect(routeSrc).toMatch(/SELECT l\.id FROM avaliacoes/i);
     });
 
     it('deve referenciar lotes_avaliacao na subquery', () => {

@@ -46,9 +46,9 @@ describe('1. /api/rh/funcionarios — coluna Últimas Avaliações (clinica)', (
     );
   });
 
-  it('deve fazer JOIN com lotes_avaliacao e selecionar numero_ordem', () => {
-    // l.numero_ordem aparece no SELECT, e o JOIN com lotes_avaliacao l vem em seguida
-    expect(src).toMatch(/l\.numero_ordem\s+FROM\s+avaliacoes\s+a3/i);
+  it('deve fazer JOIN com lotes_avaliacao e selecionar l.id como ultimo_lote_numero', () => {
+    // Route usa l.id (não l.numero_ordem) com alias ultimo_lote_numero
+    expect(src).toMatch(/l\.id\s+FROM\s+avaliacoes\s+a3/i);
     expect(src).toMatch(
       /JOIN\s+lotes_avaliacao\s+l\s+ON\s+a3\.lote_id\s*=\s*l\.id/i
     );

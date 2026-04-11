@@ -28,52 +28,46 @@ const ROOT = path.resolve(__dirname, '../..');
 // ============================================================================
 // 1. lib/db.ts — Roteamento DEV emissor para Neon
 // ============================================================================
-describe('1. lib/db.ts — Roteamento emissor para Neon em modo DEV local', () => {
-  const dbPath = path.join(ROOT, 'lib', 'db.ts');
+describe('1. lib/db/connection.ts — Gerenciamento de conexão e ambiente', () => {
+  const dbPath = path.join(ROOT, 'lib', 'db', 'connection.ts');
   let src: string;
 
   beforeAll(() => {
     src = fs.readFileSync(dbPath, 'utf-8');
   });
 
-  it('arquivo lib/db.ts deve existir', () => {
+  it('arquivo lib/db/connection.ts deve existir', () => {
     expect(fs.existsSync(dbPath)).toBe(true);
   });
 
-  it('deve verificar session.cpf === EMISSOR_CPF para rotear ao Neon', () => {
-    expect(src).toMatch(/session\?\.cpf\s*===\s*process\.env\.EMISSOR_CPF/);
+  it('deve exportar variável environment com detecção de ambiente', () => {
+    expect(src).toMatch(/export let environment\s*=/);
   });
 
-  it('deve ter bloco de roteamento emissor antes do localPool', () => {
-    // Bloco DEV EMISSOR MODE presente no query()
-    expect(src).toContain('DEV EMISSOR MODE');
+  it('deve exportar isDevelopment, isTest, isProduction', () => {
+    expect(src).toContain('export const isDevelopment');
+    expect(src).toContain('export const isTest');
+    expect(src).toContain('export const isProduction');
+  });
+
+  it('deve expor função getNeonPool', () => {
     expect(src).toContain('getNeonPool');
   });
 
-  it('getDatabaseUrl com EMISSOR_CPF deve cair no fall-through para LOCAL_DATABASE_URL', () => {
-    // Quando EMISSOR_CPF está definido, não retorna DATABASE_URL (Neon)
-    // e deixa o localPool usar LOCAL_DATABASE_URL (nr-bps_db)
-    expect(src).toMatch(/EMISSOR_CPF[\s\S]{0,200}fall-through/);
-  });
-
-  it('getNeonPool deve ser habilitado em DEV quando ALLOW_PROD_DB_LOCAL=true', () => {
-    // Pool Neon disponível em DEV para o fluxo emissor
-    expect(src).toMatch(
-      /isProduction\s*\|\|\s*\(\s*isDevelopment\s*&&\s*process\.env\.ALLOW_PROD_DB_LOCAL\s*===\s*'true'\s*\)/
-    );
-  });
-
-  it('NÃO deve conter guard ACESSO BLOQUEADO que bloqueava admin', () => {
-    // Guard foi removido — admin CPF pode acessar Neon localmente
+  it('NÃO deve conter guard ACESSO BLOQUEADO (removido)', () => {
     expect(src).not.toContain('ACESSO BLOQUEADO');
   });
 
-  it('deve emitir warning ao usar PROD localmente (transparência)', () => {
-    expect(src).toContain('usando DATABASE_URL (produção) localmente');
+  it('deve proteger banco de produção em testes (neon.tech check)', () => {
+    expect(src).toContain('neon.tech');
   });
 
-  it('deve emitir warning sobre EMISSOR_CPF modo híbrido', () => {
-    expect(src).toMatch(/ALLOW_PROD_DB_LOCAL=true \+ EMISSOR_CPF=/);
+  it('deve definir isEmissorLocalProdMode como false', () => {
+    expect(src).toContain('isEmissorLocalProdMode = false');
+  });
+
+  it('deve detectar ambiente de testes via JEST_WORKER_ID', () => {
+    expect(src).toContain('JEST_WORKER_ID');
   });
 });
 
@@ -179,8 +173,10 @@ describe('3. emissor/laudos/upload/route.ts — Step 16 inclui laudo_enviado_em'
     );
   });
 
-  it('deve ter comentário explicando relação com trigger prevent_update_finalized_lote', () => {
-    expect(src).toMatch(/prevent_update_finalized_lote/);
+  it('deve ter comentário explicando relação com trigger de imutabilidade do lote', () => {
+    expect(src).toMatch(
+      /prevent_modification_lote|trigger pode estar bloqueando/
+    );
   });
 
   it('step 15 deve marcar laudo como enviado antes do step 16', () => {
