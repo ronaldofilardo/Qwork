@@ -16,6 +16,7 @@ import {
   TabelaAceites,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
+import { DelecaoTomadorContent } from './auditorias/DelecaoTomadorContent';
 import type {
   AuditoriaSubTab,
   AcessoGestor,
@@ -41,6 +42,7 @@ const ENDPOINTS: Record<AuditoriaSubTab, string> = {
   'acesso-representante': '/api/admin/auditorias/acesso-representante',
   'acesso-vendedor': '/api/admin/auditorias/acesso-vendedor',
   aceites: '/api/admin/auditorias/aceites',
+  delecao: '',
 };
 
 export function AuditoriasContent() {
@@ -66,6 +68,7 @@ export function AuditoriasContent() {
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
+    if (tab === 'delecao') return; // Deleção gerencia próprio estado
     setLoading(true);
     setTabError(null);
     try {
@@ -182,6 +185,7 @@ export function AuditoriasContent() {
             <TabelaAcessosVendedor data={acessosVendedor} />
           )}
           {activeTab === 'aceites' && <TabelaAceites data={aceites} />}
+          {activeTab === 'delecao' && <DelecaoTomadorContent />}
         </>
       )}
 
