@@ -170,7 +170,34 @@ export type AuditoriaSubTab =
   | 'acesso-comercial'
   | 'acesso-representante'
   | 'acesso-vendedor'
-  | 'aceites';
+  | 'aceites'
+  | 'delecao';
+
+// ── Deleção de Tomador ────────────────────────────────────────────────────
+
+export interface DelecaoHistoricoItem {
+  id: number;
+  cnpj: string;
+  nome: string;
+  tipo: string;
+  tomador_id: number;
+  admin_cpf: string;
+  admin_nome: string;
+  resumo: Record<string, number>;
+  criado_em: string;
+}
+
+export interface DelecaoPreview {
+  tomador: {
+    id: number;
+    nome: string;
+    cnpj: string;
+    tipo: string;
+    responsavel_cpf: string | null;
+    status: string | null;
+  };
+  contagens: Record<string, number>;
+}
 
 // ── Aceites (consolidado por usuário) ─────────────────────────────────────
 
