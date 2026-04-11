@@ -5,6 +5,7 @@ node_modules/
 .next/
 out/
 dist/
+tsconfig.tsbuildinfo
 
 # Environment files (keep examples only in repo)
 # Local env for emissor: .env.emissor.local (do not commit)

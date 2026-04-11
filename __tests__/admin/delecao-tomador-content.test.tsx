@@ -47,12 +47,8 @@ describe('DelecaoTomadorContent', () => {
 
     // Assert
     expect(screen.getByText(/Hard-Delete de Tomador/i)).toBeInTheDocument();
-    expect(
-      screen.getByPlaceholderText(/CNPJ/i)
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /buscar/i })
-    ).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/CNPJ/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /buscar/i })).toBeInTheDocument();
   });
 
   it('deve exibir aviso de ação irreversível', () => {
@@ -65,24 +61,23 @@ describe('DelecaoTomadorContent', () => {
 
   it('deve carregar histórico ao montar', async () => {
     // Arrange — histórico com um item
-    mockFetch
-      .mockResolvedValueOnce(
-        makeResponse({
-          historico: [
-            {
-              id: 1,
-              cnpj: '12345678000190',
-              nome: 'Entidade Alpha',
-              tipo: 'entidade',
-              tomador_id: 42,
-              admin_cpf: '00000000000',
-              admin_nome: 'Admin',
-              resumo: { entidades: 1 },
-              criado_em: '2026-04-10T10:00:00Z',
-            },
-          ],
-        })
-      );
+    mockFetch.mockResolvedValueOnce(
+      makeResponse({
+        historico: [
+          {
+            id: 1,
+            cnpj: '12345678000190',
+            nome: 'Entidade Alpha',
+            tipo: 'entidade',
+            tomador_id: 42,
+            admin_cpf: '00000000000',
+            admin_nome: 'Admin',
+            resumo: { entidades: 1 },
+            criado_em: '2026-04-10T10:00:00Z',
+          },
+        ],
+      })
+    );
 
     // Act
     render(<DelecaoTomadorContent />);
@@ -184,7 +179,9 @@ describe('DelecaoTomadorContent', () => {
       screen.getByRole('button', { name: /Iniciar Processo de Deleção/i })
     ).toBeInTheDocument();
     // Verifica que as 9 fases ESTÃO listadas (títulos)
-    expect(screen.getByText(/Comissões e Vínculos Comerciais/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Comissões e Vínculos Comerciais/i)
+    ).toBeInTheDocument();
     expect(screen.getByText(/Entidade\/Clínica \(Root\)/i)).toBeInTheDocument();
   });
 
@@ -195,7 +192,11 @@ describe('DelecaoTomadorContent', () => {
     mockFetch
       .mockResolvedValueOnce(makeResponse({ historico: [] }))
       .mockResolvedValueOnce(
-        makeResponse({ error: 'Tomador não encontrado com este CNPJ.' }, false, 404)
+        makeResponse(
+          { error: 'Tomador não encontrado com este CNPJ.' },
+          false,
+          404
+        )
       );
 
     render(<DelecaoTomadorContent />);
@@ -208,9 +209,7 @@ describe('DelecaoTomadorContent', () => {
 
     // Assert
     await waitFor(() => {
-      expect(
-        screen.getByText(/Tomador não encontrado/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/Tomador não encontrado/i)).toBeInTheDocument();
     });
   });
 
@@ -231,9 +230,7 @@ describe('DelecaoTomadorContent', () => {
 
     // Assert
     await waitFor(() => {
-      expect(
-        screen.getByText(/nenhuma deleção/i)
-      ).toBeInTheDocument();
+      expect(screen.getByText(/nenhuma deleção/i)).toBeInTheDocument();
     });
   });
 });

@@ -1,9 +1,17 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import type { LaudoPadronizado } from '@/lib/laudo-tipos';
+
+type LaudoStatus =
+  | 'rascunho'
+  | 'pdf_gerado'
+  | 'aguardando_assinatura'
+  | 'emitido'
+  | 'enviado'
+  | null;
 
 interface Lote {
   id: number;
@@ -23,8 +31,11 @@ export function useLaudo() {
   const [loading, setLoading] = useState(true);
   const [mensagem, setMensagem] = useState<string | null>(null);
   const [isPrevia, setIsPrevia] = useState(false);
+  const [laudoStatus, setLaudoStatus] = useState<LaudoStatus>(null);
   const [gerandoLaudo, setGerandoLaudo] = useState(false);
+  const [assinandoLaudo, setAssinandoLaudo] = useState(false);
   const [modalUploadOpen, setModalUploadOpen] = useState(false);
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchLaudo = useCallback(async () => {
     try {
@@ -35,6 +46,7 @@ export function useLaudo() {
         setLaudoPadronizado(data.laudoPadronizado);
         setIsPrevia(Boolean(data.previa));
         setMensagem(data.mensagem || null);
+        setLaudoStatus((data.laudo_status ?? null) as LaudoStatus);
       } else {
         toast.error(data.error || 'Erro ao carregar laudo');
         router.push('/emissor');
@@ -51,6 +63,48 @@ export function useLaudo() {
     fetchLaudo();
   }, [fetchLaudo]);
 
+  // Gerenciar polling com base no laudoStatus
+  useEffect(() => {
+    if (laudoStatus === 'aguardando_assinatura') {
+      if (pollingRef.current) return;
+      pollingRef.current = setInterval(async () => {
+        try {
+          const res = await fetch(`/api/emissor/laudos/${loteId}`);
+          const data = await res.json();
+          if (
+            data.success &&
+            data.laudo_status &&
+            data.laudo_status !== 'aguardando_assinatura'
+          ) {
+            if (pollingRef.current) {
+              clearInterval(pollingRef.current);
+              pollingRef.current = null;
+            }
+            setLaudoStatus(data.laudo_status as LaudoStatus);
+            setIsPrevia(Boolean(data.previa));
+            if (data.laudo_status === 'enviado') {
+              toast.success('Laudo assinado e enviado com sucesso!');
+              fetchLaudo().catch(() => null);
+            }
+          }
+        } catch {
+          // silencioso
+        }
+      }, 10000);
+    } else {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    }
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+        pollingRef.current = null;
+      }
+    };
+  }, [laudoStatus, loteId, fetchLaudo]);
+
   const handleGerarLaudo = async () => {
     if (!lote) return;
     try {
@@ -63,7 +117,13 @@ export function useLaudo() {
       const data = await response.json();
       if (data.success) {
         toast.dismiss('gerar-laudo');
-        toast.success('Laudo gerado com sucesso!');
+        if (data.pdf_gerado) {
+          toast.success(
+            'PDF gerado! Clique em "Assinar Digitalmente" para prosseguir.'
+          );
+        } else {
+          toast.success('Laudo gerado com sucesso!');
+        }
         await fetchLaudo();
       } else {
         toast.dismiss('gerar-laudo');
@@ -74,6 +134,31 @@ export function useLaudo() {
       toast.error('Erro ao conectar com o servidor');
     } finally {
       setGerandoLaudo(false);
+    }
+  };
+
+  const handleAssinarDigitalmente = async () => {
+    if (!lote) return;
+    try {
+      setAssinandoLaudo(true);
+      toast.loading('Enviando para assinatura...', { id: 'assinar-laudo' });
+      const response = await fetch(`/api/emissor/laudos/${loteId}/assinar`, {
+        method: 'POST',
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.dismiss('assinar-laudo');
+        toast.success('Laudo enviado para assinatura digital!');
+        await fetchLaudo();
+      } else {
+        toast.dismiss('assinar-laudo');
+        toast.error(data.error || 'Erro ao enviar para assinatura');
+      }
+    } catch {
+      toast.dismiss('assinar-laudo');
+      toast.error('Erro ao conectar com o servidor');
+    } finally {
+      setAssinandoLaudo(false);
     }
   };
 
@@ -118,10 +203,13 @@ export function useLaudo() {
     loading,
     mensagem,
     isPrevia,
+    laudoStatus,
     gerandoLaudo,
+    assinandoLaudo,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
+    handleAssinarDigitalmente,
     handleDownloadLaudo,
     handleUploadSuccess,
     router,

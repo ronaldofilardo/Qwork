@@ -27,6 +27,8 @@ import {
 } from '@/lib/integrations/zapsign/client';
 import { uploadLaudoToBackblaze } from '@/lib/storage/laudo-storage';
 import crypto from 'crypto';
+import path from 'path';
+import fs from 'fs';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,12 +202,11 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   // ── 8. Sobrescrever arquivo local com o PDF assinado ─────────────────────
   try {
-    const { join } = await import('path');
-    const { writeFileSync, mkdirSync, existsSync } = await import('fs');
-    const storageDir = join(process.cwd(), 'storage', 'laudos');
-    if (!existsSync(storageDir)) mkdirSync(storageDir, { recursive: true });
-    const filePath = join(storageDir, `laudo-${laudo.id}.pdf`);
-    writeFileSync(filePath, pdfAssinadoBuffer);
+    const storageDir = path.join(process.cwd(), 'storage', 'laudos');
+    if (!fs.existsSync(storageDir))
+      fs.mkdirSync(storageDir, { recursive: true });
+    const filePath = path.join(storageDir, `laudo-${laudo.id}.pdf`);
+    fs.writeFileSync(filePath, pdfAssinadoBuffer);
     console.log(
       `[ZapSign Webhook] PDF assinado salvo em ${filePath} (substituiu pré-assinatura)`
     );
@@ -217,13 +218,44 @@ export async function POST(req: Request): Promise<NextResponse> {
     );
   }
 
+  // ── FASE A: Commit hash imediatamente (antes do upload) ──────────────────
+  // Torna o hash disponível para tomador/RH assim que assinado,
+  // independentemente do status do upload para o bucket remoto.
+  const assinadoEm = payload.signer?.signed_at
+    ? new Date(payload.signer.signed_at)
+    : new Date();
+
+  try {
+    await query(
+      `UPDATE laudos
+       SET hash_pdf       = $1,
+           assinado_em    = $2,
+           zapsign_status = 'signed',
+           atualizado_em  = NOW()
+       WHERE id = $3 AND status = 'aguardando_assinatura'`,
+      [hashPdfAssinado, assinadoEm, laudo.id]
+    );
+    console.log(
+      `[ZapSign Webhook] FASE A ✅ hash e assinado_em gravados para laudo ${laudo.id}`
+    );
+  } catch (faseAErr) {
+    console.error(
+      `[ZapSign Webhook] FASE A: Falha ao gravar hash no DB (laudo ${laudo.id}):`,
+      faseAErr
+    );
+    return NextResponse.json(
+      { error: 'Falha ao gravar hash no banco de dados' },
+      { status: 500 }
+    );
+  }
+
   // ── 9. Upload para Backblaze ─────────────────────────────────────────────
   let arquivoRemotoKey: string | null = null;
   let arquivoRemotoUrl: string | null = null;
   let arquivoRemotoProvider: string | null = null;
   let arquivoRemotoBucket: string | null = null;
   let arquivoRemotoEtag: string | null = null;
-  let arquivoRemotoSize: number | null = null;
+  const arquivoRemotoSize: number = pdfAssinadoBuffer.byteLength;
 
   try {
     const uploadResult = await uploadLaudoToBackblaze(
@@ -238,7 +270,6 @@ export async function POST(req: Request): Promise<NextResponse> {
       arquivoRemotoProvider = uploadResult.provider ?? 'backblaze';
       arquivoRemotoBucket = uploadResult.bucket ?? null;
       arquivoRemotoEtag = uploadResult.etag ?? null;
-      arquivoRemotoSize = uploadResult.size ?? pdfAssinadoBuffer.byteLength;
       console.log(
         `[ZapSign Webhook] Upload Backblaze concluído: ${arquivoRemotoKey}`
       );
@@ -252,59 +283,70 @@ export async function POST(req: Request): Promise<NextResponse> {
       `[ZapSign Webhook] Falha no upload para Backblaze (laudo ${laudo.id}):`,
       uploadErr
     );
-    // Não bloquear — continua para atualizar o DB com o hash calculado
+    // Não bloquear — FASE B ainda marca status='enviado' (sem arquivo_remoto)
   }
 
-  // ── 10. Atualizar laudos no banco de dados ────────────────────────────────
-  const assinadoEm = payload.signer?.signed_at
-    ? new Date(payload.signer.signed_at)
-    : new Date();
-
+  // ── FASE B: Finalizar laudo (status='enviado' + arquivo_remoto) ──────────
+  const agora = new Date();
   try {
-    const agora = new Date();
     await query(
       `UPDATE laudos
        SET status                     = 'enviado',
-           hash_pdf                   = $1,
-           emitido_em                 = $2,
-           enviado_em                 = $2,
-           assinado_em                = $3,
-           zapsign_status             = 'signed',
-           arquivo_remoto_provider    = $4,
-           arquivo_remoto_bucket      = $5,
-           arquivo_remoto_key         = $6,
-           arquivo_remoto_url         = $7,
-           arquivo_remoto_uploaded_at = $8,
-           arquivo_remoto_etag        = $9,
-           arquivo_remoto_size        = $10,
+           emitido_em                 = $1,
+           enviado_em                 = $1,
+           arquivo_remoto_provider    = $2,
+           arquivo_remoto_bucket      = $3,
+           arquivo_remoto_key         = $4,
+           arquivo_remoto_url         = $5,
+           arquivo_remoto_uploaded_at = $6,
+           arquivo_remoto_etag        = $7,
+           arquivo_remoto_size        = $8,
            atualizado_em              = NOW()
-       WHERE id = $11 AND status = 'aguardando_assinatura'`,
+       WHERE id = $9`,
       [
-        hashPdfAssinado, // $1 hash do PDF ASSINADO
-        agora, // $2 emitido_em = enviado_em (mesmo instante)
-        assinadoEm, // $3 assinado_em
-        arquivoRemotoProvider, // $4
-        arquivoRemotoBucket, // $5
-        arquivoRemotoKey, // $6
-        arquivoRemotoUrl, // $7
-        agora, // $8 uploaded_at
-        arquivoRemotoEtag, // $9
-        arquivoRemotoSize, // $10
-        laudo.id, // $11
+        agora, // $1 emitido_em = enviado_em
+        arquivoRemotoProvider, // $2
+        arquivoRemotoBucket, // $3
+        arquivoRemotoKey, // $4
+        arquivoRemotoUrl, // $5
+        agora, // $6 uploaded_at
+        arquivoRemotoEtag, // $7
+        arquivoRemotoSize, // $8
+        laudo.id, // $9
       ]
     );
-
     console.log(
-      `[ZapSign Webhook] ✅ Laudo ${laudo.id} finalizado: status=enviado, hash=${hashPdfAssinado}`
+      `[ZapSign Webhook] FASE B ✅ Laudo ${laudo.id} status=enviado, hash=${hashPdfAssinado}`
     );
-  } catch (dbErr) {
+  } catch (faseBErr) {
     console.error(
-      `[ZapSign Webhook] Falha ao atualizar DB para laudo ${laudo.id}:`,
-      dbErr
+      `[ZapSign Webhook] FASE B: Falha ao finalizar laudo ${laudo.id}:`,
+      faseBErr
     );
     return NextResponse.json(
-      { error: 'Falha ao atualizar banco de dados' },
+      { error: 'Falha ao finalizar laudo no banco de dados' },
       { status: 500 }
+    );
+  }
+
+  // ── FASE C: Finalizar lote (lotes_avaliacao) ─────────────────────────────
+  try {
+    await query(
+      `UPDATE lotes_avaliacao
+       SET status           = 'finalizado',
+           laudo_enviado_em = NOW(),
+           atualizado_em    = NOW()
+       WHERE id = $1 AND status NOT IN ('cancelado', 'finalizado')`,
+      [laudo.lote_id]
+    );
+    console.log(
+      `[ZapSign Webhook] FASE C ✅ Lote ${laudo.lote_id} marcado como finalizado`
+    );
+  } catch (faseCErr) {
+    // Não-crítico — laudo já enviado; lote pode ser finalizado manualmente
+    console.warn(
+      `[ZapSign Webhook] FASE C: Falha ao finalizar lote ${laudo.lote_id}:`,
+      faseCErr
     );
   }
 

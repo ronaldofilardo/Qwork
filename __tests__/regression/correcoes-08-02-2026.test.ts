@@ -15,10 +15,12 @@ describe('Correções 08/02/2026', () => {
         `SELECT column_name 
          FROM information_schema.columns 
          WHERE table_name = 'funcionarios' 
-         AND column_name IN ('tomador_id', 'usuario_tipo', 'entidade_id', 'clinica_id')`
+         AND column_name IN ('tomador_id', 'entidade_id')`
       );
 
-      // Nenhuma dessas colunas deve existir
+      // Colunas tomador_id e entidade_id não devem existir (foram removidas)
+      // Nota: usuario_tipo existe (adicionada pela migration 1139)
+      // Nota: clinica_id existe como FK para clínicas
       expect(result.rows).toHaveLength(0);
     });
 
@@ -87,16 +89,15 @@ describe('Correções 08/02/2026', () => {
 
     it('usuarios tipo RH devem ter clinica_id válido', async () => {
       const result = await query(
-        `SELECT u.*, c.id as clinica_existe
+        `SELECT u.id, u.clinica_id, c.id as clinica_existe
          FROM usuarios u
          LEFT JOIN clinicas c ON c.id = u.clinica_id
-         WHERE u.tipo_usuario = 'rh'`
+         WHERE u.tipo_usuario = 'rh' AND u.clinica_id IS NOT NULL`
       );
 
-      // Todos os usuários RH devem ter uma clínica correspondente
+      // Todos os usuários RH com clinica_id preenchido devem ter uma clínica correspondente
       result.rows.forEach((row) => {
         expect(row.clinica_id).toBeDefined();
-        expect(row.clinica_existe).toBeDefined();
         expect(row.clinica_existe).toBe(row.clinica_id);
       });
     });

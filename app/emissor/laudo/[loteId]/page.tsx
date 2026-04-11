@@ -16,10 +16,13 @@ export default function EditarLaudo() {
     loading,
     mensagem,
     isPrevia,
+    laudoStatus,
     gerandoLaudo,
+    assinandoLaudo,
     modalUploadOpen,
     setModalUploadOpen,
     handleGerarLaudo,
+    handleAssinarDigitalmente,
     handleDownloadLaudo,
     handleUploadSuccess,
     router,
@@ -58,9 +61,12 @@ export default function EditarLaudo() {
         <LaudoHeader
           onBack={() => router.push('/emissor')}
           isPrevia={isPrevia}
+          laudoStatus={laudoStatus}
           gerandoLaudo={gerandoLaudo}
+          assinandoLaudo={assinandoLaudo}
           onOpenUploadModal={() => setModalUploadOpen(true)}
           onGerarLaudo={handleGerarLaudo}
+          onAssinarDigitalmente={handleAssinarDigitalmente}
         />
 
         {mensagem && (

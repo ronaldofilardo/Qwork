@@ -12,8 +12,21 @@ interface Usuario {
   criado_em: string;
 }
 
+interface DadosBancarios {
+  banco_codigo: string | null;
+  banco_nome: string | null;
+  agencia: string | null;
+  conta: string | null;
+  tipo_conta: string | null;
+  pix_chave: string | null;
+  pix_tipo: string | null;
+}
+
 export default function VendedorDadosPage() {
   const [usuario, setUsuario] = useState<Usuario | null>(null);
+  const [dadosBancarios, setDadosBancarios] = useState<DadosBancarios | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
   const [telefone, setTelefone] = useState('');
@@ -23,12 +36,19 @@ export default function VendedorDadosPage() {
 
   const load = useCallback(async () => {
     try {
-      const res = await fetch('/api/vendedor/dados');
-      if (res.ok) {
-        const d = await res.json();
+      const [dadosRes, bancariosRes] = await Promise.all([
+        fetch('/api/vendedor/dados'),
+        fetch('/api/vendedor/dados/bancarios'),
+      ]);
+      if (dadosRes.ok) {
+        const d = await dadosRes.json();
         setUsuario(d.usuario);
         setEmail(d.usuario.email ?? '');
         setTelefone(d.usuario.telefone ?? '');
+      }
+      if (bancariosRes.ok) {
+        const b = await bancariosRes.json();
+        setDadosBancarios(b.dados_bancarios ?? null);
       }
     } finally {
       setLoading(false);
@@ -155,6 +175,68 @@ export default function VendedorDadosPage() {
         <p>
           <span className="font-medium">ID:</span> {usuario?.id}
         </p>
+      </div>
+
+      <div className="bg-white rounded-xl border p-6 space-y-4">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">
+            Dados Bancários
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Informações bancárias cadastradas pelo suporte
+          </p>
+        </div>
+        {dadosBancarios ? (
+          <div className="space-y-3">
+            {dadosBancarios.banco_codigo && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Banco
+                </label>
+                <p className="text-sm text-gray-900 bg-gray-50 rounded-lg px-3 py-2">
+                  {dadosBancarios.banco_codigo}
+                  {dadosBancarios.banco_nome
+                    ? ` — ${dadosBancarios.banco_nome}`
+                    : ''}
+                </p>
+              </div>
+            )}
+            {dadosBancarios.agencia && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Agência
+                </label>
+                <p className="text-sm font-mono text-gray-900 bg-gray-50 rounded-lg px-3 py-2">
+                  {dadosBancarios.agencia}
+                </p>
+              </div>
+            )}
+            {dadosBancarios.conta && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Conta ({dadosBancarios.tipo_conta ?? 'corrente'})
+                </label>
+                <p className="text-sm font-mono text-gray-900 bg-gray-50 rounded-lg px-3 py-2">
+                  {dadosBancarios.conta}
+                </p>
+              </div>
+            )}
+            {dadosBancarios.pix_chave && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Chave PIX ({dadosBancarios.pix_tipo ?? 'chave'})
+                </label>
+                <p className="text-sm font-mono text-gray-900 bg-gray-50 rounded-lg px-3 py-2">
+                  {dadosBancarios.pix_chave}
+                </p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <p className="text-sm text-gray-400 italic">
+            Nenhum dado bancário cadastrado
+          </p>
+        )}
       </div>
     </div>
   );

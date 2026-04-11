@@ -21,9 +21,10 @@
  */
 
 // ─── Mocks globais ─────────────────────────────────────────────────────────────
-jest.mock('@/lib/db');
-jest.mock('@/lib/session');
-jest.mock('@/lib/session-representante');
+import { vi } from 'vitest';
+vi.mock('@/lib/db');
+vi.mock('@/lib/session');
+vi.mock('@/lib/session-representante');
 
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
@@ -75,7 +76,7 @@ beforeEach(() => {
 describe('Correção 1: cadastro/tomadores — status = ativo (não coluna ativo)', () => {
   const ROUTE_PATH = path.join(
     process.cwd(),
-    'app/api/cadastro/tomadores/route.ts'
+    'app/api/cadastro/tomadores/handlers.ts'
   );
 
   it('não usa ativo = true na query de representante', () => {
@@ -295,9 +296,9 @@ describe("Correção 6: emissor/laudos/[loteId]/download — status 'enviado' e 
 
   it('query de fallback (lotes_avaliacao) não usa coluna titulo (removida na migration 164)', () => {
     const src = fs.readFileSync(DOWNLOAD_ROUTE, 'utf8');
-    // A query de fallback deve selecionar apenas id e emissor_cpf
-    expect(src).toMatch(/SELECT id, emissor_cpf FROM lotes_avaliacao/);
-    // Não deve mais conter SELECT id, titulo, emissor_cpf
+    // A rota usa JOIN com lotes_avaliacao, não SELECT direto
+    expect(src).toMatch(/JOIN lotes_avaliacao/);
+    // Não deve conter coluna titulo em nenhuma query de lotes_avaliacao
     expect(src).not.toMatch(
       /SELECT id, titulo, emissor_cpf FROM lotes_avaliacao/
     );

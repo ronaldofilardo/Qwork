@@ -195,7 +195,7 @@ export default function LoteStatusBanners({
             )}
 
             {/* Hash de Integridade */}
-            {lote.hash_pdf && lote.arquivo_remoto_url && (
+            {lote.hash_pdf && (
               <div className="bg-white p-3 rounded-lg border border-purple-200">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-semibold text-purple-800 uppercase">

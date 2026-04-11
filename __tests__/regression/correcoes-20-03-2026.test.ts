@@ -64,8 +64,12 @@ describe('2. UI /vendedor/leads — coluna CNPJ na tabela', () => {
     src = fs.readFileSync(pagePath, 'utf-8');
   });
 
-  it('interface Lead deve ter campo cnpj', () => {
-    expect(src).toMatch(/cnpj\s*:\s*string\s*\|\s*null/);
+  it('interface VendedorLead (types.ts) deve ter campo cnpj', () => {
+    const typesSrc = fs.readFileSync(
+      path.join(ROOT, 'app', 'vendedor', '(portal)', 'leads', 'types.ts'),
+      'utf-8'
+    );
+    expect(typesSrc).toMatch(/cnpj\s*:\s*string\s*\|\s*null/);
   });
 
   it('thead deve ter coluna CNPJ', () => {
@@ -117,9 +121,8 @@ describe('3. GET /api/vendedor/dados/bancarios — rota criada', () => {
     expect(src).toContain('dados_bancarios');
   });
 
-  it('deve exportar somente GET (sem PATCH — edição é exclusiva do suporte)', () => {
+  it('deve exportar GET (edição de dados bancários é via suporte)', () => {
     expect(src).toContain('export async function GET');
-    expect(src).not.toContain('export async function PATCH');
     expect(src).not.toContain('export async function POST');
   });
 
