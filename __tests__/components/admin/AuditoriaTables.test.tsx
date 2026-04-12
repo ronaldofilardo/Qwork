@@ -56,7 +56,7 @@ describe('TabelaAceites', () => {
     ];
 
     // Act
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
 
     // Assert
     expect(screen.getByText('João da Silva')).toBeInTheDocument();
@@ -73,7 +73,7 @@ describe('TabelaAceites', () => {
     ];
 
     // Act
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
 
     // Assert
     expect(screen.getByText('3 de 3 usuários')).toBeInTheDocument();
@@ -85,7 +85,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Alice Mendes', cpf: '11111111111' }),
       makeAceite({ nome: 'Bruno Carvalho', cpf: '22222222222' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     const input = screen.getByPlaceholderText('Filtrar por nome...');
 
     // Act
@@ -103,7 +103,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'José Fernández', cpf: '11111111111' }),
       makeAceite({ nome: 'Ana Lima', cpf: '22222222222' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     const input = screen.getByPlaceholderText('Filtrar por nome...');
 
     // Act
@@ -120,7 +120,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Alice', cpf: '11111111111' }),
       makeAceite({ nome: 'Bruno', cpf: '22222222222' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     const inputCpf = screen.getByPlaceholderText('Filtrar por CPF...');
 
     // Act
@@ -137,7 +137,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Alice', cpf: '11111111111' }),
       makeAceite({ nome: 'Bruno', cpf: '22222222222' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     const inputCpf = screen.getByPlaceholderText('Filtrar por CPF...');
 
     // Act
@@ -155,7 +155,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Bruno', cpf: '22222222222', perfil: 'funcionario' }),
       makeAceite({ nome: 'Carlos', cpf: '33333333333', perfil: 'rh' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     const select = screen.getByRole('combobox');
 
     // Act — selecionar apenas 'funcionario'
@@ -175,7 +175,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Alice Rep', cpf: '22222222222', perfil: 'representante' }),
       makeAceite({ nome: 'Bruno RH', cpf: '33333333333', perfil: 'rh' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
 
     // Act — filtrar perfil rh + nome alice
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'rh' } });
@@ -191,7 +191,7 @@ describe('TabelaAceites', () => {
   it('deve exibir mensagem quando filtros não retornam resultados', () => {
     // Arrange
     const data = [makeAceite({ nome: 'Alice', cpf: '11111111111' })];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     const inputNome = screen.getByPlaceholderText('Filtrar por nome...');
 
     // Act
@@ -210,7 +210,7 @@ describe('TabelaAceites', () => {
       makeAceite({ nome: 'Alice', cpf: '11111111111', perfil: 'representante' }),
       makeAceite({ nome: 'Bruno', cpf: '22222222222', perfil: 'funcionario' }),
     ];
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
     fireEvent.change(screen.getByPlaceholderText('Filtrar por nome...'), { target: { value: 'alice' } });
     expect(screen.getByText('1 de 2 usuários')).toBeInTheDocument();
 
@@ -225,7 +225,7 @@ describe('TabelaAceites', () => {
 
   it('deve não exibir botão Limpar filtros quando não há filtro ativo', () => {
     // Arrange & Act
-    render(<TabelaAceites data={[makeAceite()]} />);
+    render(<TabelaAceites data={[makeAceite()]} onAtualizar={() => {}} loading={false} />);
 
     // Assert
     expect(screen.queryByText('Limpar filtros')).not.toBeInTheDocument();
@@ -238,7 +238,7 @@ describe('TabelaAceites', () => {
     ];
 
     // Act & Assert
-    expect(() => render(<TabelaAceites data={data} />)).not.toThrow();
+    expect(() => render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />)).not.toThrow();
     expect(screen.getByText('Sem CPF')).toBeInTheDocument();
   });
 
@@ -257,7 +257,7 @@ describe('TabelaAceites', () => {
     ];
 
     // Act
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
 
     // Assert — deve ter ao menos um elemento "N/A"
     const naCells = screen.getAllByText('N/A');
@@ -266,10 +266,10 @@ describe('TabelaAceites', () => {
 
   it('deve exibir lista vazia com mensagem quando data está vazio', () => {
     // Arrange & Act
-    render(<TabelaAceites data={[]} />);
+    render(<TabelaAceites data={[]} onAtualizar={() => {}} loading={false} />);
 
     // Assert
-    expect(screen.getByText('Nenhum registro encontrado.')).toBeInTheDocument();
+    expect(screen.getByText('Clique em "Atualizar" para carregar os dados.')).toBeInTheDocument();
     expect(screen.getByText('0 de 0 usuários')).toBeInTheDocument();
   });
 
@@ -278,7 +278,7 @@ describe('TabelaAceites', () => {
     const data = [makeAceite({ nome: 'Alice', cpf: '12345678901' })];
 
     // Act
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
 
     // Assert
     expect(screen.getByText('123.456.789-01')).toBeInTheDocument();
@@ -292,7 +292,7 @@ describe('TabelaAceites', () => {
     ];
 
     // Act
-    render(<TabelaAceites data={data} />);
+    render(<TabelaAceites data={data} onAtualizar={() => {}} loading={false} />);
 
     // Assert
     // getAllByText porque os perfis aparecem tanto no select option quanto no badge da tabela

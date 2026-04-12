@@ -1,89 +1,66 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { RefreshCw, Loader2 } from 'lucide-react';
+import { useState, useCallback } from 'react';
 import { AuditoriaSubNav } from './auditorias/AuditoriaSubNav';
 import {
-  TabelaAcessosGestor,
-  TabelaAcessosRH,
+  TabelaGestores,
   TabelaAvaliacoes,
   TabelaLotes,
   TabelaLaudos,
-  TabelaAcessosSuporte,
-  TabelaAcessosComercial,
-  TabelaAcessosRepresentante,
-  TabelaAcessosVendedor,
+  TabelaOperacionais,
   TabelaAceites,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
 import { DelecaoTomadorContent } from './auditorias/DelecaoTomadorContent';
 import type {
   AuditoriaSubTab,
-  AcessoGestor,
-  AcessoRH,
-  AcessoSuporte,
-  AcessoComercial,
-  AcessoRepresentante,
-  AcessoVendedor,
+  AcessoGestorUnificado,
+  AcessoOperacional,
   AuditoriaAvaliacao,
   AuditoriaLote,
   AuditoriaLaudo,
   AceiteUsuario,
 } from './auditorias/types';
 
-const ENDPOINTS: Record<AuditoriaSubTab, string> = {
-  'acesso-gestor': '/api/admin/auditorias/acesso-gestor',
-  'acesso-rh': '/api/admin/auditorias/acessos-rh',
+const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
+  gestores: '/api/admin/auditorias/gestores',
   avaliacoes: '/api/admin/auditorias/avaliacoes',
   lotes: '/api/admin/auditorias/lotes',
   laudos: '/api/admin/auditorias/laudos',
-  'acesso-suporte': '/api/admin/auditorias/acesso-suporte',
-  'acesso-comercial': '/api/admin/auditorias/acesso-comercial',
-  'acesso-representante': '/api/admin/auditorias/acesso-representante',
-  'acesso-vendedor': '/api/admin/auditorias/acesso-vendedor',
+  operacionais: '/api/admin/auditorias/operacionais',
   aceites: '/api/admin/auditorias/aceites',
-  delecao: '',
 };
 
 export function AuditoriasContent() {
-  const [activeTab, setActiveTab] = useState<AuditoriaSubTab>('acesso-gestor');
+  const [activeTab, setActiveTab] = useState<AuditoriaSubTab>('gestores');
   const [loading, setLoading] = useState(false);
   const [laudoDetalheId, setLaudoDetalheId] = useState<number | null>(null);
   const [tabError, setTabError] = useState<string | null>(null);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  const [acessosGestor, setAcessosGestor] = useState<AcessoGestor[]>([]);
-  const [acessosRH, setAcessosRH] = useState<AcessoRH[]>([]);
+  const [gestores, setGestores] = useState<AcessoGestorUnificado[]>([]);
   const [avaliacoes, setAvaliacoes] = useState<AuditoriaAvaliacao[]>([]);
   const [lotes, setLotes] = useState<AuditoriaLote[]>([]);
   const [laudos, setLaudos] = useState<AuditoriaLaudo[]>([]);
-  const [acessosSuporte, setAcessosSuporte] = useState<AcessoSuporte[]>([]);
-  const [acessosComercial, setAcessosComercial] = useState<AcessoComercial[]>(
-    []
-  );
-  const [acessosRepresentante, setAcessosRepresentante] = useState<
-    AcessoRepresentante[]
-  >([]);
-  const [acessosVendedor, setAcessosVendedor] = useState<AcessoVendedor[]>([]);
+  const [operacionais, setOperacionais] = useState<AcessoOperacional[]>([]);
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
-    if (tab === 'delecao') return; // Deleção gerencia próprio estado
+    if (tab === 'delecao') return;
+    const endpoint = ENDPOINTS[tab];
+    if (!endpoint) return;
+
     setLoading(true);
     setTabError(null);
     try {
-      const res = await fetch(ENDPOINTS[tab], { cache: 'no-store' });
+      const res = await fetch(endpoint, { cache: 'no-store' });
       if (!res.ok) {
         const errJson = await res.json().catch(() => ({}));
         throw new Error(errJson.error ?? `Erro ${res.status}`);
       }
       const json = await res.json();
       switch (tab) {
-        case 'acesso-gestor':
-          setAcessosGestor(json.acessos ?? []);
-          break;
-        case 'acesso-rh':
-          setAcessosRH(json.acessos ?? []);
+        case 'gestores':
+          setGestores(json.gestores ?? []);
           break;
         case 'avaliacoes':
           setAvaliacoes(json.avaliacoes ?? []);
@@ -94,23 +71,13 @@ export function AuditoriasContent() {
         case 'laudos':
           setLaudos(json.laudos ?? []);
           break;
-        case 'acesso-suporte':
-          setAcessosSuporte(json.acessos ?? []);
-          break;
-        case 'acesso-comercial':
-          setAcessosComercial(json.acessos ?? []);
-          break;
-        case 'acesso-representante':
-          setAcessosRepresentante(json.acessos ?? []);
-          break;
-        case 'acesso-vendedor':
-          setAcessosVendedor(json.acessos ?? []);
+        case 'operacionais':
+          setOperacionais(json.operacionais ?? []);
           break;
         case 'aceites':
           setAceites(json.aceites ?? []);
           break;
       }
-      setLastUpdated(new Date());
     } catch (err) {
       console.error('[AuditoriasContent] Erro ao buscar aba:', tab, err);
       setTabError(
@@ -121,29 +88,10 @@ export function AuditoriasContent() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchTab(activeTab);
-  }, [activeTab, fetchTab]);
-
   return (
     <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-xl font-bold text-gray-800">Auditorias</h2>
-          {lastUpdated && (
-            <p className="text-xs text-gray-400 mt-0.5">
-              Atualizado às {lastUpdated.toLocaleTimeString('pt-BR')}
-            </p>
-          )}
-        </div>
-        <button
-          onClick={() => fetchTab(activeTab)}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 text-sm bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
-        </button>
+      <div>
+        <h2 className="text-xl font-bold text-gray-800">Auditorias</h2>
       </div>
 
       <AuditoriaSubNav
@@ -157,37 +105,50 @@ export function AuditoriasContent() {
         </div>
       )}
 
-      {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
-        </div>
-      ) : (
-        <>
-          {activeTab === 'acesso-gestor' && (
-            <TabelaAcessosGestor data={acessosGestor} />
-          )}
-          {activeTab === 'acesso-rh' && <TabelaAcessosRH data={acessosRH} />}
-          {activeTab === 'avaliacoes' && <TabelaAvaliacoes data={avaliacoes} />}
-          {activeTab === 'lotes' && <TabelaLotes data={lotes} />}
-          {activeTab === 'laudos' && (
-            <TabelaLaudos data={laudos} onVerDetalhe={setLaudoDetalheId} />
-          )}
-          {activeTab === 'acesso-suporte' && (
-            <TabelaAcessosSuporte data={acessosSuporte} />
-          )}
-          {activeTab === 'acesso-comercial' && (
-            <TabelaAcessosComercial data={acessosComercial} />
-          )}
-          {activeTab === 'acesso-representante' && (
-            <TabelaAcessosRepresentante data={acessosRepresentante} />
-          )}
-          {activeTab === 'acesso-vendedor' && (
-            <TabelaAcessosVendedor data={acessosVendedor} />
-          )}
-          {activeTab === 'aceites' && <TabelaAceites data={aceites} />}
-          {activeTab === 'delecao' && <DelecaoTomadorContent />}
-        </>
+      {activeTab === 'gestores' && (
+        <TabelaGestores
+          data={gestores}
+          onAtualizar={() => fetchTab('gestores')}
+          loading={loading && activeTab === 'gestores'}
+        />
       )}
+      {activeTab === 'avaliacoes' && (
+        <TabelaAvaliacoes
+          data={avaliacoes}
+          onAtualizar={() => fetchTab('avaliacoes')}
+          loading={loading && activeTab === 'avaliacoes'}
+        />
+      )}
+      {activeTab === 'lotes' && (
+        <TabelaLotes
+          data={lotes}
+          onAtualizar={() => fetchTab('lotes')}
+          loading={loading && activeTab === 'lotes'}
+        />
+      )}
+      {activeTab === 'laudos' && (
+        <TabelaLaudos
+          data={laudos}
+          onVerDetalhe={setLaudoDetalheId}
+          onAtualizar={() => fetchTab('laudos')}
+          loading={loading && activeTab === 'laudos'}
+        />
+      )}
+      {activeTab === 'operacionais' && (
+        <TabelaOperacionais
+          data={operacionais}
+          onAtualizar={() => fetchTab('operacionais')}
+          loading={loading && activeTab === 'operacionais'}
+        />
+      )}
+      {activeTab === 'aceites' && (
+        <TabelaAceites
+          data={aceites}
+          onAtualizar={() => fetchTab('aceites')}
+          loading={loading && activeTab === 'aceites'}
+        />
+      )}
+      {activeTab === 'delecao' && <DelecaoTomadorContent />}
 
       <LaudoDetalheDrawer
         laudoId={laudoDetalheId}
