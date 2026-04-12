@@ -9,6 +9,7 @@ type LaudoStatus =
   | 'rascunho'
   | 'pdf_gerado'
   | 'aguardando_assinatura'
+  | 'assinado_processando'
   | 'emitido'
   | 'enviado'
   | null;
@@ -69,20 +70,23 @@ export function useLaudo() {
       if (pollingRef.current) return;
       pollingRef.current = setInterval(async () => {
         try {
-          const res = await fetch(`/api/emissor/laudos/${loteId}`);
+          // Usar endpoint leve /status-assinatura em vez do endpoint completo
+          const res = await fetch(
+            `/api/emissor/laudos/${loteId}/status-assinatura`
+          );
           const data = await res.json();
           if (
             data.success &&
-            data.laudo_status &&
-            data.laudo_status !== 'aguardando_assinatura'
+            data.laudo?.status &&
+            data.laudo.status !== 'aguardando_assinatura' &&
+            data.laudo.status !== 'assinado_processando'
           ) {
             if (pollingRef.current) {
               clearInterval(pollingRef.current);
               pollingRef.current = null;
             }
-            setLaudoStatus(data.laudo_status as LaudoStatus);
-            setIsPrevia(Boolean(data.previa));
-            if (data.laudo_status === 'enviado') {
+            setLaudoStatus(data.laudo.status as LaudoStatus);
+            if (data.laudo.status === 'enviado') {
               toast.success('Laudo assinado e enviado com sucesso!');
               fetchLaudo().catch(() => null);
             }
@@ -148,7 +152,29 @@ export function useLaudo() {
       const data = await response.json();
       if (data.success) {
         toast.dismiss('assinar-laudo');
-        toast.success('Laudo enviado para assinatura digital!');
+        if (data.sign_url) {
+          toast.success(
+            (t) => (
+              <span>
+                Laudo enviado para assinatura!{' '}
+                <a
+                  href={data.sign_url as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline font-bold"
+                  onClick={() => toast.dismiss(t.id)}
+                >
+                  Clique aqui para assinar
+                </a>
+              </span>
+            ),
+            { duration: 30000 }
+          );
+        } else {
+          toast.success(
+            'Laudo enviado para assinatura digital! Verifique seu email.'
+          );
+        }
         await fetchLaudo();
       } else {
         toast.dismiss('assinar-laudo');

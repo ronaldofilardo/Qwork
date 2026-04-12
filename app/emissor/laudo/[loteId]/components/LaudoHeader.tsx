@@ -4,6 +4,7 @@ type LaudoStatus =
   | 'rascunho'
   | 'pdf_gerado'
   | 'aguardando_assinatura'
+  | 'assinado_processando'
   | 'emitido'
   | 'enviado'
   | null;

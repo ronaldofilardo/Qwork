@@ -16,8 +16,10 @@ export const GET = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
@@ -133,7 +135,7 @@ export const GET = async (
         ),
         etapa4: observacoesConclusao,
         observacoesEmissor: null,
-        status: 'emitido',
+        status: 'rascunho',
         criadoEm: new Date().toISOString(),
         emitidoEm: new Date().toISOString(),
         enviadoEm: null,
@@ -235,12 +237,14 @@ export const PUT = async (
   _req: Request,
   _ctx: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user)
+  try {
+    await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
     );
+  }
 
   // Bloquear edição de observações (exceto em emissão de emergência)
   return NextResponse.json(
@@ -262,12 +266,15 @@ export const PATCH = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user)
+  let user;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
     );
+  }
 
   try {
     const loteId = parseInt(params.loteId);
@@ -355,8 +362,10 @@ export const POST = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user: Awaited<ReturnType<typeof requireRole>>;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }

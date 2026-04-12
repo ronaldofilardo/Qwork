@@ -20,6 +20,7 @@ interface StatusAssinaturaRow {
   zapsign_status: string | null;
   zapsign_signer_token: string | null;
   zapsign_doc_token: string | null;
+  zapsign_sign_url: string | null;
   assinado_em: string | null;
   emitido_em: string | null;
   enviado_em: string | null;
@@ -31,8 +32,10 @@ export const GET = async (
   _req: Request,
   { params }: { params: { loteId: string } }
 ): Promise<NextResponse> => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }
@@ -55,6 +58,7 @@ export const GET = async (
        l.zapsign_status,
        l.zapsign_signer_token,
        l.zapsign_doc_token,
+       l.zapsign_sign_url,
        l.assinado_em,
        l.emitido_em,
        l.enviado_em,
@@ -76,12 +80,14 @@ export const GET = async (
 
   const laudo = result.rows[0];
 
-  // Construir sign_url a partir do signer_token quando disponível
+  // Usar sign_url salva no banco; fallback para reconstrução com signer_token
   const zapSignBaseApp =
     process.env.ZAPSIGN_APP_URL ?? 'https://sandbox.app.zapsign.com.br';
-  const signUrl = laudo.zapsign_signer_token
-    ? `${zapSignBaseApp}/verificar/${laudo.zapsign_signer_token}`
-    : null;
+  const signUrl =
+    laudo.zapsign_sign_url ||
+    (laudo.zapsign_signer_token
+      ? `${zapSignBaseApp}/verificar/${laudo.zapsign_signer_token}`
+      : null);
 
   return NextResponse.json({
     success: true,

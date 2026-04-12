@@ -13,5 +13,14 @@
     "__tests__/**/*",
     "cypress/**/*"
   ],
+  "files": [
+    "app/emissor/laudo/[loteId]/page.tsx",
+    "app/emissor/laudo/[loteId]/useLaudo.tsx",
+    "app/emissor/laudo/[loteId]/components/LaudoHeader.tsx",
+    "app/emissor/laudo/[loteId]/components/LaudoEtapa1.tsx",
+    "app/emissor/laudo/[loteId]/components/LaudoEtapa2.tsx",
+    "app/emissor/laudo/[loteId]/components/LaudoEtapa3.tsx",
+    "app/emissor/laudo/[loteId]/components/LaudoEtapa4.tsx"
+  ],
   "exclude": ["node_modules", "dist", "build", ".next"]
 }

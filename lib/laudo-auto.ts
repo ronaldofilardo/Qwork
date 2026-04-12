@@ -364,27 +364,61 @@ export async function enviarParaAssinaturaZapSign(
   const pdfBuffer = fs.readFileSync(pdfPath);
   const base64Pdf = pdfBuffer.toString('base64');
 
-  const emissorResult = await query(
-    `SELECT nome, email FROM funcionarios WHERE cpf = $1 AND perfil = 'emissor' AND ativo = true LIMIT 1`,
+  // Buscar dados do emissor: primeiro em funcionarios, depois em usuarios (conta de sistema)
+  const emissorFuncResult = await query(
+    `SELECT nome, email FROM funcionarios 
+     WHERE cpf = $1 AND ativo = true 
+     AND perfil IN ('admin', 'rh', 'gestor', 'emissor', 'funcionario')
+     LIMIT 1`,
     [emissorCpf],
     session
   );
 
-  if (emissorResult.rows.length === 0) {
-    throw new Error(`Emissor com CPF ${emissorCpf} não encontrado ou inativo`);
+  let emissorNome: string = emissorCpf;
+  let emissorEmail: string | null = null;
+
+  if (emissorFuncResult.rows.length > 0) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const row = emissorFuncResult.rows[0] as any;
+    emissorNome = row.nome;
+    emissorEmail = row.email || null;
+    console.log(
+      `[ASSINATURA] Emissor encontrado em funcionarios: ${emissorNome}`
+    );
+  } else {
+    // Tentar na tabela usuarios (emissores são contas de sistema, não funcionários)
+    const emissorUsuarioResult = await query(
+      `SELECT nome, email FROM usuarios WHERE cpf = $1 AND ativo = true LIMIT 1`,
+      [emissorCpf],
+      session
+    );
+    if (emissorUsuarioResult.rows.length > 0) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const row = emissorUsuarioResult.rows[0] as any;
+      emissorNome = row.nome;
+      emissorEmail = row.email || null;
+      console.log(
+        `[ASSINATURA] Emissor encontrado em usuarios: ${emissorNome}`
+      );
+    }
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const emissor = emissorResult.rows[0] as any as {
-    nome: string;
-    email: string;
-  };
-
-  if (!emissor.email) {
-    throw new Error(
-      `Emissor ${emissorCpf} não possui email cadastrado — necessário para o ZapSign`
+  // Fallback final: email da sessão (ex.: sessão criada com email)
+  if (!emissorEmail && session?.email) {
+    emissorEmail = session.email;
+    if (session.nome) emissorNome = session.nome;
+    console.log(
+      `[ASSINATURA] Usando email da sessão: ${emissorNome} <${emissorEmail}>`
     );
   }
+
+  if (!emissorEmail) {
+    throw new Error(
+      `Emissor ${emissorNome} (CPF ${emissorCpf}) não possui email cadastrado — necessário para ZapSign`
+    );
+  }
+
+  const emissor = { nome: emissorNome, email: emissorEmail };
 
   console.log(
     `[ASSINATURA] Enviando laudo ${laudoId} ao ZapSign para assinatura por ${emissor.nome} <${emissor.email}>`
@@ -407,11 +441,12 @@ export async function enviarParaAssinaturaZapSign(
      SET status               = 'aguardando_assinatura',
          zapsign_doc_token    = $1,
          zapsign_signer_token = $2,
+         zapsign_sign_url     = $3,
          zapsign_status       = 'pending',
          atualizado_em        = NOW()
-     WHERE id = $3 AND status = 'pdf_gerado'
+     WHERE id = $4 AND status = 'pdf_gerado'
      RETURNING id`,
-    [docToken, signerToken, laudoId],
+    [docToken, signerToken, signUrl, laudoId],
     session
   );
 

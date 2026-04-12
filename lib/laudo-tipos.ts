@@ -62,7 +62,12 @@ export interface LaudoPadronizado {
   etapa4?: ObservacoesConclusao;
   // Etapas futuras serão adicionadas aqui
   observacoesEmissor?: string;
-  status: 'emitido' | 'enviado';
+  status:
+    | 'rascunho'
+    | 'pdf_gerado'
+    | 'aguardando_assinatura'
+    | 'emitido'
+    | 'enviado';
   criadoEm: string;
   emitidoEm?: string;
   enviadoEm?: string;

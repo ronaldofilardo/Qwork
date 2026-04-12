@@ -134,7 +134,10 @@ export async function POST(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: true, idempotente: true });
   }
 
-  if (laudo.status !== 'aguardando_assinatura') {
+  if (
+    laudo.status !== 'aguardando_assinatura' &&
+    laudo.status !== 'assinado_processando'
+  ) {
     console.warn(
       `[ZapSign Webhook] Laudo ${laudo.id} está em status inesperado: ${laudo.status}`
     );
@@ -219,25 +222,34 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   // ── FASE A: Commit hash imediatamente (antes do upload) ──────────────────
-  // Torna o hash disponível para tomador/RH assim que assinado,
-  // independentemente do status do upload para o bucket remoto.
+  // Inclui transição de status para 'assinado_processando' — garante que
+  // se FASE B falhar, o laudo não fica co status='aguardando_assinatura' com hash preenchido.
+  // O webhook ZapSign pode retentar; a FASE B é idempotente para 'assinado_processando'.
   const assinadoEm = payload.signer?.signed_at
     ? new Date(payload.signer.signed_at)
     : new Date();
 
   try {
-    await query(
+    const faseAResult = await query(
       `UPDATE laudos
        SET hash_pdf       = $1,
            assinado_em    = $2,
            zapsign_status = 'signed',
+           status         = 'assinado_processando',
            atualizado_em  = NOW()
-       WHERE id = $3 AND status = 'aguardando_assinatura'`,
+       WHERE id = $3 AND status IN ('aguardando_assinatura', 'assinado_processando')
+       RETURNING id`,
       [hashPdfAssinado, assinadoEm, laudo.id]
     );
-    console.log(
-      `[ZapSign Webhook] FASE A ✅ hash e assinado_em gravados para laudo ${laudo.id}`
-    );
+    if (!faseAResult || faseAResult.rowCount === 0) {
+      console.warn(
+        `[ZapSign Webhook] FASE A: Laudo ${laudo.id} não estava em estado esperado — pode já ter sido processado`
+      );
+    } else {
+      console.log(
+        `[ZapSign Webhook] FASE A ✅ hash e assinado_em gravados para laudo ${laudo.id}`
+      );
+    }
   } catch (faseAErr) {
     console.error(
       `[ZapSign Webhook] FASE A: Falha ao gravar hash no DB (laudo ${laudo.id}):`,
@@ -302,7 +314,7 @@ export async function POST(req: Request): Promise<NextResponse> {
            arquivo_remoto_etag        = $7,
            arquivo_remoto_size        = $8,
            atualizado_em              = NOW()
-       WHERE id = $9`,
+       WHERE id = $9 AND status IN ('assinado_processando', 'aguardando_assinatura')`,
       [
         agora, // $1 emitido_em = enviado_em
         arquivoRemotoProvider, // $2

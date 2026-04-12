@@ -65,19 +65,23 @@ function getBaseUrl(): string {
 }
 
 function getApiToken(): string {
-  const token = process.env.ZAPSIGN_API_TOKEN;
+  const token = process.env.ZAPSIGN_API_TOKEN?.trim();
   if (!token) {
     throw new Error(
-      'ZAPSIGN_API_TOKEN não está configurado. Defina no .env.local.'
+      'ZAPSIGN_API_TOKEN não está configurado ou está vazio. Defina no .env.local.'
     );
   }
   return token;
 }
 
-function buildHeaders(): HeadersInit {
+function buildHeaders(): Record<string, string> {
+  const token = getApiToken();
+  const authHeader = `Bearer ${token}`;
   return {
-    Authorization: `Bearer ${getApiToken()}`,
+    Authorization: authHeader,
     'Content-Type': 'application/json',
+    Accept: 'application/json',
+    'User-Agent': 'QWork-ZapSign-Client/1.0',
   };
 }
 
@@ -128,9 +132,11 @@ export async function criarDocumentoZapSign(
     ],
   };
 
+  const headers = buildHeaders();
+
   const response = await fetch(`${baseUrl}/api/v1/docs/`, {
     method: 'POST',
-    headers: buildHeaders(),
+    headers: headers,
     body: JSON.stringify(body),
   });
 

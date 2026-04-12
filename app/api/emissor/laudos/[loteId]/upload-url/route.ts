@@ -17,8 +17,10 @@ export const POST = async (
   req: Request,
   { params }: { params: { loteId: string } }
 ) => {
-  const user = await requireRole('emissor');
-  if (!user) {
+  let user: Awaited<ReturnType<typeof requireRole>>;
+  try {
+    user = await requireRole('emissor');
+  } catch {
     return NextResponse.json(
       { error: 'Acesso negado', success: false },
       { status: 403 }

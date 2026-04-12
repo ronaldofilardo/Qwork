@@ -49,29 +49,41 @@ export async function POST(request: Request) {
 
     // PASSO 1: Buscar usuário — procurar em `usuarios` PRIMEIRO para tipos de sistema (suporte, comercial, vendedor)
     // Depois fallback para `funcionarios` (funcionários normais, gestores RH/Entidade)
-    
+
     let usuario: any = null;
     let foundInFuncionarios = false;
     let foundInUsuarios = false;
 
     // TIPOS DE SISTEMA: procurar em `usuarios` primeiro
-    const SYSTEM_ACCOUNT_TYPES = ['suporte', 'comercial', 'vendedor', 'admin', 'emissor'];
-    
+    const SYSTEM_ACCOUNT_TYPES = [
+      'suporte',
+      'comercial',
+      'vendedor',
+      'admin',
+      'emissor',
+    ];
+
     console.log(`[LOGIN] Buscando usuário CPF ${cpf}...`);
-    
+
     // Tentar buscar em usuarios (contas de sistema + funcionários que migraram)
     const usuarioFirstPass = await query(
-      `SELECT cpf, nome, tipo_usuario, clinica_id, entidade_id, ativo, senha_hash FROM usuarios WHERE cpf = $1 LIMIT 1`,
+      `SELECT cpf, nome, email, tipo_usuario, clinica_id, entidade_id, ativo, senha_hash FROM usuarios WHERE cpf = $1 LIMIT 1`,
       [cpf]
     );
-    
-    const usuarioRows = usuarioFirstPass && usuarioFirstPass.rows ? usuarioFirstPass.rows : [];
-    
+
+    const usuarioRows =
+      usuarioFirstPass && usuarioFirstPass.rows ? usuarioFirstPass.rows : [];
+
     // Se encontrou em usuarios E é um tipo de sistema, usar de lá
-    if (usuarioRows.length > 0 && SYSTEM_ACCOUNT_TYPES.includes(usuarioRows[0].tipo_usuario)) {
+    if (
+      usuarioRows.length > 0 &&
+      SYSTEM_ACCOUNT_TYPES.includes(usuarioRows[0].tipo_usuario)
+    ) {
       foundInUsuarios = true;
       usuario = usuarioRows[0];
-      console.log(`[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`);
+      console.log(
+        `[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
+      );
     } else {
       // Procurar em funcionarios como alternativa
       console.log(`[LOGIN] Buscando usuário CPF ${cpf} em funcionarios...`);
@@ -119,7 +131,9 @@ export async function POST(request: Request) {
         // Encontrou em usuarios mas não é tipo sistema — usar mesmo assim
         foundInUsuarios = true;
         usuario = usuarioRows[0];
-        console.log(`[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`);
+        console.log(
+          `[LOGIN] ✓ Usuário encontrado em usuarios (tipo: ${usuario.tipo_usuario})`
+        );
       } else {
         // Não encontrou em nenhum lugar
         console.log(
@@ -175,7 +189,10 @@ export async function POST(request: Request) {
       senhaHash = usuario.senha_hash;
       tomadorId = usuario.entidade_id || usuario.clinica_id || null;
       tomadorAtivo = usuario.ativo ?? true;
-    } else if (foundInUsuarios && SYSTEM_ACCOUNT_TYPES.includes(usuario.tipo_usuario)) {
+    } else if (
+      foundInUsuarios &&
+      SYSTEM_ACCOUNT_TYPES.includes(usuario.tipo_usuario)
+    ) {
       // Usuário de sistema (suporte, comercial, vendedor, admin, emissor): senha em usuarios
       console.log(
         `[LOGIN] Usuário de sistema (${usuario.tipo_usuario}); usando senha de usuarios`
@@ -375,6 +392,7 @@ export async function POST(request: Request) {
     createSession({
       cpf: usuario.cpf,
       nome: usuario.nome,
+      email: usuario.email,
       perfil: perfil as any,
       tomador_id: tomadorId,
       clinica_id: usuario.clinica_id,
@@ -404,6 +422,7 @@ export async function POST(request: Request) {
         createSession({
           cpf: usuario.cpf,
           nome: usuario.nome,
+          email: usuario.email,
           perfil: perfil as any,
           tomador_id: tomadorId,
           clinica_id: usuario.clinica_id,

@@ -2,6 +2,9 @@
  * Máquina de Estados do Laudo
  *
  * Define os possíveis estados de um laudo e suas transições válidas.
+ *
+ * Fluxo ZapSign:  rascunho → pdf_gerado → aguardando_assinatura → enviado
+ * Fluxo legado:   rascunho → emitido
  */
 
 /**
@@ -9,6 +12,8 @@
  */
 export enum StatusLaudo {
   RASCUNHO = 'rascunho',
+  PDF_GERADO = 'pdf_gerado',
+  AGUARDANDO_ASSINATURA = 'aguardando_assinatura',
   EMITIDO = 'emitido',
   ENVIADO = 'enviado',
   ERRO = 'erro',
@@ -17,7 +22,13 @@ export enum StatusLaudo {
 /**
  * Tipo de status do laudo (string literal)
  */
-export type StatusLaudoType = 'rascunho' | 'emitido' | 'enviado' | 'erro';
+export type StatusLaudoType =
+  | 'rascunho'
+  | 'pdf_gerado'
+  | 'aguardando_assinatura'
+  | 'emitido'
+  | 'enviado'
+  | 'erro';
 
 /**
  * Transições válidas da máquina de estados
@@ -27,8 +38,10 @@ export const TRANSICOES_VALIDAS_LAUDO: Record<
   StatusLaudoType,
   StatusLaudoType[]
 > = {
-  rascunho: ['emitido', 'erro'],
-  emitido: ['enviado', 'erro'],
+  rascunho: ['pdf_gerado', 'emitido', 'erro'], // pdf_gerado = ZapSign; emitido = legado
+  pdf_gerado: ['aguardando_assinatura', 'rascunho', 'erro'], // ZapSign: após gerar PDF
+  aguardando_assinatura: ['enviado', 'erro'], // ZapSign: webhook finaliza
+  emitido: ['enviado', 'erro'], // Legado: PATCH o marca enviado
   enviado: [], // Estado final
   erro: ['rascunho'], // Pode tentar reemitir
 };
@@ -49,7 +62,7 @@ export function validarTransicaoStatusLaudo(
   }
 
   // Verificar se transição é permitida
-  const transicoesPermitidas = TRANSICOES_VALIDAS_LAUDO[statusAtual];
+  const transicoesPermitidas = TRANSICOES_VALIDAS_LAUDO[statusAtual] ?? [];
   if (!transicoesPermitidas.includes(novoStatus)) {
     return {
       valido: false,
@@ -66,19 +79,28 @@ export function validarTransicaoStatusLaudo(
 export function getDescricaoStatusLaudo(status: StatusLaudoType): string {
   const descricoes: Record<StatusLaudoType, string> = {
     rascunho: 'Rascunho',
+    pdf_gerado: 'PDF Gerado',
+    aguardando_assinatura: 'Aguardando Assinatura',
     emitido: 'Emitido',
     enviado: 'Enviado',
     erro: 'Erro na Emissão',
   };
 
-  return descricoes[status] || status;
+  return descricoes[status] ?? status;
 }
 
 /**
  * Validar se status é válido
  */
 export function isStatusLaudoValido(status: string): status is StatusLaudoType {
-  return Object.values(StatusLaudo).includes(status as StatusLaudo);
+  return [
+    'rascunho',
+    'pdf_gerado',
+    'aguardando_assinatura',
+    'emitido',
+    'enviado',
+    'erro',
+  ].includes(status);
 }
 
 /**
@@ -87,12 +109,14 @@ export function isStatusLaudoValido(status: string): status is StatusLaudoType {
 export function getCorStatusLaudo(status: StatusLaudoType): string {
   const cores: Record<StatusLaudoType, string> = {
     rascunho: 'bg-gray-100 text-gray-800 border-gray-300',
+    pdf_gerado: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+    aguardando_assinatura: 'bg-orange-100 text-orange-800 border-orange-300',
     emitido: 'bg-green-100 text-green-800 border-green-300',
     enviado: 'bg-blue-100 text-blue-800 border-blue-300',
     erro: 'bg-red-100 text-red-800 border-red-300',
   };
 
-  return cores[status] || 'bg-gray-100 text-gray-800 border-gray-300';
+  return cores[status] ?? 'bg-gray-100 text-gray-800 border-gray-300';
 }
 
 /**
@@ -103,17 +127,36 @@ export function podeEditarLaudo(status: StatusLaudoType): boolean {
 }
 
 /**
- * Verificar se laudo pode ser enviado
+ * Verificar se laudo pode ser assinado digitalmente (fluxo ZapSign)
+ */
+export function podeAssinarLaudo(status: StatusLaudoType): boolean {
+  return status === 'pdf_gerado';
+}
+
+/**
+ * Verificar se laudo pode ser enviado (fluxo legado)
  */
 export function podeEnviarLaudo(status: StatusLaudoType): boolean {
   return status === 'emitido';
 }
 
 /**
- * Verificar se laudo está finalizado
+ * Verificar se laudo está em processo de assinatura ZapSign
+ */
+export function laudoAguardandoAssinatura(status: StatusLaudoType): boolean {
+  return status === 'aguardando_assinatura';
+}
+
+/**
+ * Verificar se laudo está finalizado (gerado ou assinado)
  */
 export function laudoFinalizado(status: StatusLaudoType): boolean {
-  return status === 'emitido' || status === 'enviado';
+  return (
+    status === 'pdf_gerado' ||
+    status === 'aguardando_assinatura' ||
+    status === 'emitido' ||
+    status === 'enviado'
+  );
 }
 
 /**
@@ -122,3 +165,11 @@ export function laudoFinalizado(status: StatusLaudoType): boolean {
 export function podeReemitirLaudo(status: StatusLaudoType): boolean {
   return status === 'erro';
 }
+
+/** Status imutáveis — não podem ser regredidos */
+export const STATUS_IMUTAVEL: StatusLaudoType[] = [
+  'pdf_gerado',
+  'aguardando_assinatura',
+  'emitido',
+  'enviado',
+];
