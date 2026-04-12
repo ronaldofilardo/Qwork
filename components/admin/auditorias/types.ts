@@ -1,78 +1,41 @@
-export interface AcessoGestor {
+export interface AcessoGestorUnificado {
   id: number;
   cpf: string;
-  clinica_id: number | null;
-  empresa_id: number | null;
+  tipo: 'gestor' | 'rh';
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  ip_address: string;
+  // gestor fields
   empresa_nome: string | null;
   empresa_cnpj: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
+  entidade_id: number | null;
+  // rh fields
+  clinica_id: number | null;
+  clinica_nome: string | null;
 }
 
-export interface AcessoRH {
+export interface AcessoOperacional {
   id: number;
   cpf: string;
-  clinica_id: number;
-  clinica_nome: string;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoSuporte {
-  id: number;
-  cpf: string;
+  perfil: 'suporte' | 'comercial' | 'representante' | 'vendedor';
   nome: string | null;
+  cnpj: string | null;
   login_timestamp: string;
   logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoComercial {
-  id: number;
-  cpf: string;
-  nome: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoRepresentante {
-  id: number;
-  cpf: string;
-  representante_nome: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
-  ip_address: string;
-}
-
-export interface AcessoVendedor {
-  id: number;
-  cpf: string;
-  nome: string | null;
-  login_timestamp: string;
-  logout_timestamp: string | null;
-  session_duration: string | null;
   ip_address: string;
 }
 
 export interface AuditoriaAvaliacao {
   avaliacao_id: number;
-  lote_id: number;
+  cpf: string;
   lote: string;
   liberado_em: string | null;
-  concluida: boolean;
-  inativada: boolean;
-  iniciada_em: string | null;
+  avaliacao_status: string;
   concluida_em: string | null;
   criado_em: string;
   empresa_nome: string | null;
+  entidade_nome: string | null;
+  clinica_nome: string | null;
 }
 
 export interface AuditoriaLote {
@@ -161,15 +124,11 @@ export interface AuditoriaLaudoDetalhe {
 }
 
 export type AuditoriaSubTab =
-  | 'acesso-gestor'
-  | 'acesso-rh'
+  | 'gestores'
   | 'avaliacoes'
   | 'lotes'
   | 'laudos'
-  | 'acesso-suporte'
-  | 'acesso-comercial'
-  | 'acesso-representante'
-  | 'acesso-vendedor'
+  | 'operacionais'
   | 'aceites'
   | 'delecao';
 
@@ -220,8 +179,8 @@ export interface AceiteUsuario {
 export interface AuditoriasContentProps {
   auditoriaSubTab: AuditoriaSubTab;
   setAuditoriaSubTab: (tab: AuditoriaSubTab) => void;
-  acessosGestor: AcessoGestor[];
-  acessosRH: AcessoRH[];
+  gestores: AcessoGestorUnificado[];
+  operacionais: AcessoOperacional[];
   auditoriaAvaliacoes: AuditoriaAvaliacao[];
   auditoriaLotes: AuditoriaLote[];
   auditoriaLaudos: AuditoriaLaudo[];

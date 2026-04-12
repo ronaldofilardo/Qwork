@@ -6,15 +6,11 @@ interface AuditoriaSubNavProps {
 }
 
 const TABS: { key: AuditoriaSubTab; label: string }[] = [
-  { key: 'acesso-gestor', label: 'Acesso Gestor' },
-  { key: 'acesso-rh', label: 'Acesso RH' },
+  { key: 'gestores', label: 'Gestores' },
   { key: 'avaliacoes', label: 'Avaliações' },
   { key: 'lotes', label: 'Lotes' },
   { key: 'laudos', label: 'Laudos' },
-  { key: 'acesso-suporte', label: 'Suporte' },
-  { key: 'acesso-comercial', label: 'Comercial' },
-  { key: 'acesso-representante', label: 'Representantes' },
-  { key: 'acesso-vendedor', label: 'Vendedores' },
+  { key: 'operacionais', label: 'Operacionais' },
   { key: 'aceites', label: 'Aceites' },
   { key: 'delecao', label: 'Deleção' },
 ];
