@@ -1,11 +1,15 @@
 // Types shared across Ciclos sub-components
 
-export type StatusCiclo = 'aberto' | 'fechado' | 'nf_enviada' | 'nf_aprovada' | 'pago';
+export type StatusCiclo =
+  | 'aberto'
+  | 'fechado'
+  | 'nf_enviada'
+  | 'nf_aprovada'
+  | 'pago';
 export type AcaoCiclo = 'fechar' | 'aprovar_nf' | 'rejeitar_nf' | 'pagar';
 
 export interface CicloEnriquecido {
   id: number;
-  tipo_beneficiario: 'representante' | 'vendedor';
   mes_referencia: string;
   valor_total: number;
   qtd_comissoes: number;
@@ -67,15 +71,27 @@ export interface AcaoPendente {
 }
 
 export const COMPROVANTE_MAX_SIZE = 5 * 1024 * 1024;
-export const COMPROVANTE_MIMES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'];
+export const COMPROVANTE_MIMES = [
+  'application/pdf',
+  'image/png',
+  'image/jpeg',
+  'image/webp',
+];
 
-export const STATUS_BADGE: Record<StatusCiclo, { label: string; cor: string }> = {
-  aberto: { label: 'Aberto', cor: 'bg-gray-100 text-gray-600' },
-  fechado: { label: 'Aguardando NF', cor: 'bg-blue-100 text-blue-700' },
-  nf_enviada: { label: 'NF em Análise', cor: 'bg-indigo-100 text-indigo-700' },
-  nf_aprovada: { label: 'Aprovado p/ Pagar', cor: 'bg-purple-100 text-purple-700' },
-  pago: { label: 'Pago', cor: 'bg-green-100 text-green-700' },
-};
+export const STATUS_BADGE: Record<StatusCiclo, { label: string; cor: string }> =
+  {
+    aberto: { label: 'Aberto', cor: 'bg-gray-100 text-gray-600' },
+    fechado: { label: 'Aguardando NF', cor: 'bg-blue-100 text-blue-700' },
+    nf_enviada: {
+      label: 'NF em Análise',
+      cor: 'bg-indigo-100 text-indigo-700',
+    },
+    nf_aprovada: {
+      label: 'Aprovado p/ Pagar',
+      cor: 'bg-purple-100 text-purple-700',
+    },
+    pago: { label: 'Pago', cor: 'bg-green-100 text-green-700' },
+  };
 
 export const ACOES_POR_STATUS: Record<StatusCiclo, AcaoCiclo[]> = {
   aberto: ['fechar'],
@@ -99,7 +115,10 @@ export const ACAO_COR: Record<AcaoCiclo, string> = {
   pagar: 'bg-purple-600 hover:bg-purple-700 text-white',
 };
 
-export const STATUS_FILTER_OPTIONS: Array<{ value: StatusCiclo | ''; label: string }> = [
+export const STATUS_FILTER_OPTIONS: Array<{
+  value: StatusCiclo | '';
+  label: string;
+}> = [
   { value: '', label: 'Todos' },
   { value: 'aberto', label: 'Abertos' },
   { value: 'fechado', label: 'Aguardando NF' },
@@ -109,8 +128,18 @@ export const STATUS_FILTER_OPTIONS: Array<{ value: StatusCiclo | ''; label: stri
 ];
 
 export const MESES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro',
 ];
 
 export function fmt(v: number | string | null | undefined): string {

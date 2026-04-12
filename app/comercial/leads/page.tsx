@@ -26,7 +26,6 @@ interface LeadAprovacao {
   valor_negociado: number | null;
   percentual_comissao: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_vendedor: number | null;
   vendedor_nome: string | null;
   num_vidas_estimado: number | null;
   criado_em: string;
@@ -119,8 +118,7 @@ export default function ComercialLeadsAprovacaoPage() {
     const percRep = Number(
       lead.percentual_comissao_representante ?? lead.percentual_comissao ?? 0
     );
-    const percVend = Number(lead.percentual_comissao_vendedor ?? 0);
-    return calcularValoresComissao(valor, percRep, percVend, lead.tipo_cliente);
+    return calcularValoresComissao(valor, percRep, lead.tipo_cliente);
   };
 
   const totalPages = Math.ceil(total / 30);
@@ -167,9 +165,7 @@ export default function ComercialLeadsAprovacaoPage() {
                     <th className="px-4 py-3 text-center font-medium">Tipo</th>
                     <th className="px-4 py-3 text-right font-medium">Valor</th>
                     <th className="px-4 py-3 text-center font-medium">Vidas</th>
-                    <th className="px-4 py-3 text-center font-medium">
-                      % Rep / % Vend
-                    </th>
+                    <th className="px-4 py-3 text-center font-medium">% Rep</th>
                     <th className="px-4 py-3 text-right font-medium">
                       QWork recebe
                     </th>
@@ -188,9 +184,6 @@ export default function ComercialLeadsAprovacaoPage() {
                       lead.percentual_comissao_representante ??
                         lead.percentual_comissao ??
                         0
-                    );
-                    const percVend = Number(
-                      lead.percentual_comissao_vendedor ?? 0
                     );
                     return (
                       <tr key={lead.id} className="hover:bg-gray-50">
@@ -245,15 +238,6 @@ export default function ComercialLeadsAprovacaoPage() {
                               </span>{' '}
                               ({fmtBRL(bd.valorRep)})
                             </div>
-                            {percVend > 0 && (
-                              <div className="text-purple-600">
-                                Vend:{' '}
-                                <span className="font-semibold">
-                                  {percVend.toFixed(1)}%
-                                </span>{' '}
-                                ({fmtBRL(bd.valorVendedor)})
-                              </div>
-                            )}
                             <div className="text-gray-400">
                               Total: {bd.percentualTotal.toFixed(1)}%
                             </div>
@@ -354,9 +338,6 @@ export default function ComercialLeadsAprovacaoPage() {
                     modal.lead.percentual_comissao ??
                     0
                 );
-                const percVend = Number(
-                  modal.lead.percentual_comissao_vendedor ?? 0
-                );
                 return (
                   <div className="bg-gray-50 rounded-lg px-4 py-3 space-y-1.5 text-xs">
                     <div className="flex justify-between">
@@ -373,16 +354,6 @@ export default function ComercialLeadsAprovacaoPage() {
                         {fmtBRL(bd.valorRep)}
                       </span>
                     </div>
-                    {percVend > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-purple-600">
-                          Comissão vendedor ({percVend.toFixed(1)}%)
-                        </span>
-                        <span className="text-purple-600">
-                          {fmtBRL(bd.valorVendedor)}
-                        </span>
-                      </div>
-                    )}
                     <div className="flex justify-between border-t pt-1.5">
                       <span
                         className={

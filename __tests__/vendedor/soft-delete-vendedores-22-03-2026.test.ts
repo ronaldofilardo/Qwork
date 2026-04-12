@@ -55,9 +55,9 @@ describe('1. POST /api/representante/equipe/vendedores/[id]/inativar', () => {
     expect(src).toContain('representante_id');
   });
 
-  it('deve verificar comissões pendentes antes de inativar', () => {
-    expect(src).toContain('comissoes_laudo');
-    expect(src).toContain('COMISSOES_PENDENTES');
+  it('NÃO deve verificar comissões pendentes (removido)', () => {
+    expect(src).not.toContain('COMISSOES_PENDENTES');
+    expect(src).not.toContain('comissoes_laudo');
   });
 
   it('deve registrar auditoria com schema correto (tabela, registro_id, triggador)', () => {
@@ -252,8 +252,8 @@ describe('5. PATCH /api/comercial/representantes/[id] — soft-delete com audito
     expect(src).toContain('motivo');
   });
 
-  it('deve verificar comissões pendentes antes de desativar', () => {
-    expect(src).toContain('COMISSOES_PENDENTES');
+  it('NÃO deve verificar comissões pendentes antes de desativar (removido)', () => {
+    expect(src).not.toContain('COMISSOES_PENDENTES');
   });
 });
 
@@ -291,8 +291,8 @@ describe('6. PATCH /api/comercial/vendedores/[id] — campo correto e auditoria'
     expect(src).not.toContain('tipo_acao');
   });
 
-  it('deve verificar comissões pendentes', () => {
-    expect(src).toContain('COMISSOES_PENDENTES');
+  it('NÃO deve verificar comissões pendentes (removido)', () => {
+    expect(src).not.toContain('COMISSOES_PENDENTES');
   });
 });
 

@@ -252,9 +252,9 @@ export async function POST(request: NextRequest) {
       `INSERT INTO leads_representante
          (representante_id, vendedor_id, cnpj, razao_social, contato_nome, contato_email,
           contato_telefone, valor_negociado, percentual_comissao,
-          percentual_comissao_representante, percentual_comissao_vendedor,
+          percentual_comissao_representante,
           tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
-       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, 0, $10, $11, $12)
+       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         sess.representante_id,
@@ -266,7 +266,6 @@ export async function POST(request: NextRequest) {
         valorNum,
         comissaoNum,
         comissaoNum, // percentual_comissao_representante
-        // 0 for percentual_comissao_vendedor handled inline above
         tipoCliente,
         requerAprovacao,
         numVidas,

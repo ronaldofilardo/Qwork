@@ -1,8 +1,8 @@
 /**
  * lib/db/comissionamento/commission-factory.ts
  *
- * Helpers compartilhados entre criarComissaoAdmin e criarComissaoVendedor.
- * Centraliza lógica duplicada:
+ * Helpers compartilhados para criarComissaoAdmin.
+ * Centraliza lógica de cálculo de comissões de representante:
  *   - normalização de parcela/entidade
  *   - cálculo de base e valor da comissão
  *   - cálculo de datas (mes_emissao, mes_pagamento)

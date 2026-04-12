@@ -85,41 +85,14 @@ export async function POST(
 
       const { vendedor_nome, vendedor_cpf } = vinculo.rows[0];
 
-      // 2. Verificar comissões pendentes
-      const pendentes = await query<{ total: string }>(
-        `SELECT COUNT(*) AS total
-       FROM comissoes_laudo cl
-       JOIN vinculos_comissao vc ON vc.id = cl.vinculo_id
-       WHERE vc.representante_id = $1
-         AND vc.lead_id IN (
-           SELECT id FROM leads_representante WHERE vendedor_id = $2
-         )
-         AND cl.status NOT IN ('paga', 'cancelada')`,
-        [sess.representante_id, vendedorId],
-        rlsSess
-      );
-
-      const totalPendente = parseInt(pendentes.rows[0]?.total ?? '0', 10);
-      if (totalPendente > 0) {
-        return NextResponse.json(
-          {
-            error: 'Vendedor possui comissões pendentes',
-            detail: `Existem ${totalPendente} comissão(ões) não quitadas. Regularize antes de inativar.`,
-            code: 'COMISSOES_PENDENTES',
-            total_pendente: totalPendente,
-          },
-          { status: 409 }
-        );
-      }
-
-      // 3. Inativar usuário
+      // 2. Inativar usuário
       await query(
         `UPDATE usuarios SET ativo = false, atualizado_em = NOW() WHERE id = $1`,
         [vendedorId],
         rlsSess
       );
 
-      // 4. Inativar vínculo na hierarquia
+      // 3. Inativar vínculo na hierarquia
       await query(
         `UPDATE hierarquia_comercial
        SET ativo = false, data_fim = NOW(), atualizado_em = NOW()
@@ -128,7 +101,7 @@ export async function POST(
         rlsSess
       );
 
-      // 5. Auditoria
+      // 4. Auditoria
       const cpfOperador = (sess.cpf ?? '').replace(/\D/g, '').substring(0, 11);
       await query(
         `INSERT INTO comissionamento_auditoria (

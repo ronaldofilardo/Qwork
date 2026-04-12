@@ -30,7 +30,6 @@ interface LeadRow {
   vendedor_nome: string | null;
   valor_negociado: number | null;
   percentual_comissao_representante: number | null;
-  percentual_comissao_vendedor: number | null;
   num_vidas_estimado: number | null;
   requer_aprovacao_comercial: boolean;
   tipo_cliente: string | null;
@@ -83,7 +82,6 @@ export async function GET(request: NextRequest) {
          lr.data_expiracao,
          lr.valor_negociado,
          lr.percentual_comissao_representante,
-         lr.percentual_comissao_vendedor,
          lr.num_vidas_estimado,
          lr.requer_aprovacao_comercial,
          lr.tipo_cliente,
@@ -125,7 +123,6 @@ export async function GET(request: NextRequest) {
         valor_negociado: row.valor_negociado,
         percentual_comissao_representante:
           row.percentual_comissao_representante,
-        percentual_comissao_vendedor: row.percentual_comissao_vendedor,
         num_vidas_estimado: row.num_vidas_estimado,
         requer_aprovacao_comercial: row.requer_aprovacao_comercial,
         tipo_cliente: row.tipo_cliente,
@@ -167,7 +164,6 @@ export async function GET(request: NextRequest) {
          NULL::text AS vendedor_nome,
          lr.valor_negociado,
          lr.percentual_comissao_representante,
-         lr.percentual_comissao_vendedor,
          lr.num_vidas_estimado,
          lr.requer_aprovacao_comercial,
          lr.tipo_cliente

@@ -15,13 +15,10 @@ export type StatusCiclo =
   | 'nf_enviada'
   | 'nf_aprovada'
   | 'pago';
-export type TipoBeneficiarioCiclo = 'representante' | 'vendedor';
 
 export interface Ciclo {
   id: number;
   representante_id: number;
-  vendedor_id: number | null;
-  tipo_beneficiario: TipoBeneficiarioCiclo;
   mes_referencia: string;
   valor_total: number;
   qtd_comissoes: number;
@@ -40,44 +37,31 @@ export interface Ciclo {
 }
 
 /**
- * Busca ou cria o ciclo para um beneficiário num mês específico.
+ * Busca ou cria o ciclo para um representante num mês específico.
  * @param mesReferencia - formato 'YYYY-MM-01'
  */
 export async function getOrCreateCiclo(params: {
   representante_id: number;
-  vendedor_id?: number | null;
-  tipo_beneficiario: TipoBeneficiarioCiclo;
   mes_referencia: string;
 }): Promise<Ciclo> {
-  const {
-    representante_id,
-    vendedor_id = null,
-    tipo_beneficiario,
-    mes_referencia,
-  } = params;
+  const { representante_id, mes_referencia } = params;
 
-  // Busca ciclo existente (NULL-safe compare para vendedor_id)
   const existing = await query<Ciclo>(
     `SELECT * FROM ciclos_comissao
      WHERE representante_id = $1
-       AND tipo_beneficiario = $3
-       AND mes_referencia = $4::date
-       AND (
-         ($2::int IS NULL AND vendedor_id IS NULL)
-         OR ($2::int IS NOT NULL AND vendedor_id = $2::int)
-       )
+       AND mes_referencia = $2::date
      LIMIT 1`,
-    [representante_id, vendedor_id, tipo_beneficiario, mes_referencia]
+    [representante_id, mes_referencia]
   );
 
   if (existing.rows.length > 0) return existing.rows[0];
 
   const created = await query<Ciclo>(
     `INSERT INTO ciclos_comissao
-       (representante_id, vendedor_id, tipo_beneficiario, mes_referencia, valor_total, qtd_comissoes, status)
-     VALUES ($1, $2, $3, $4::date, 0, 0, 'aberto')
+       (representante_id, mes_referencia, valor_total, qtd_comissoes, status)
+     VALUES ($1, $2::date, 0, 0, 'aberto')
      RETURNING *`,
-    [representante_id, vendedor_id, tipo_beneficiario, mes_referencia]
+    [representante_id, mes_referencia]
   );
   return created.rows[0];
 }
@@ -132,24 +116,15 @@ export async function fecharCiclo(
     return { ciclo: null, erro: `Ciclo já está com status '${ciclo.status}'.` };
   }
 
-  // Vincular comissões do representante/vendedor do mês ao ciclo
-  const whereClause =
-    ciclo.tipo_beneficiario === 'representante'
-      ? `representante_id = $1 AND (vendedor_id IS NULL OR tipo_beneficiario = 'representante') AND mes_emissao = $2::date`
-      : `vendedor_id = $3 AND tipo_beneficiario = 'vendedor' AND mes_emissao = $2::date`;
-
-  const bindParams: unknown[] =
-    ciclo.tipo_beneficiario === 'representante'
-      ? [ciclo.representante_id, ciclo.mes_referencia]
-      : [ciclo.representante_id, ciclo.mes_referencia, ciclo.vendedor_id];
-
+  // Vincular comissões do representante do mês ao ciclo
   await query(
     `UPDATE comissoes_laudo
-     SET ciclo_id = $${bindParams.length + 1}
+     SET ciclo_id = $3
      WHERE ciclo_id IS NULL
        AND status NOT IN ('cancelada', 'retida')
-       AND ${whereClause}`,
-    [...bindParams, cicloId]
+       AND representante_id = $1
+       AND mes_emissao = $2::date`,
+    [ciclo.representante_id, ciclo.mes_referencia, cicloId]
   );
 
   // Recalcular totais
@@ -199,19 +174,13 @@ export async function fecharCiclo(
  */
 export async function registrarNfCiclo(
   cicloId: number,
-  beneficiarioId: number,
-  tipoBeneficiario: TipoBeneficiarioCiclo,
+  representanteId: number,
   nfPath: string,
   nfNomeArquivo: string
 ): Promise<{ ciclo: Ciclo | null; erro?: string }> {
-  const whereClause =
-    tipoBeneficiario === 'representante'
-      ? `id = $1 AND representante_id = $2 AND tipo_beneficiario = 'representante'`
-      : `id = $1 AND vendedor_id = $2 AND tipo_beneficiario = 'vendedor'`;
-
   const cicloCheck = await query<Ciclo>(
-    `SELECT * FROM ciclos_comissao WHERE ${whereClause} LIMIT 1`,
-    [cicloId, beneficiarioId]
+    `SELECT * FROM ciclos_comissao WHERE id = $1 AND representante_id = $2 LIMIT 1`,
+    [cicloId, representanteId]
   );
   if (cicloCheck.rows.length === 0) {
     return { ciclo: null, erro: 'Ciclo não encontrado ou sem permissão.' };
@@ -391,10 +360,7 @@ export async function getCiclosByRepresentante(
   const limit = opts?.limit ?? 20;
   const offset = (page - 1) * limit;
 
-  const wheres = [
-    `c.representante_id = $1`,
-    `c.tipo_beneficiario = 'representante'`,
-  ];
+  const wheres = [`c.representante_id = $1`];
   const params: unknown[] = [representanteId];
   let i = 2;
 
@@ -405,45 +371,6 @@ export async function getCiclosByRepresentante(
   if (opts?.ano) {
     wheres.push(`EXTRACT(YEAR FROM c.mes_referencia) = $${i++}`);
     params.push(opts.ano);
-  }
-
-  const where = `WHERE ${wheres.join(' AND ')}`;
-
-  const countResult = await query<{ total: string }>(
-    `SELECT COUNT(*) as total FROM ciclos_comissao c ${where}`,
-    params
-  );
-  const total = parseInt(countResult.rows[0]?.total ?? '0', 10);
-
-  params.push(limit, offset);
-  const rows = await query<Ciclo>(
-    `SELECT c.* FROM ciclos_comissao c ${where}
-     ORDER BY c.mes_referencia DESC
-     LIMIT $${i} OFFSET $${i + 1}`,
-    params
-  );
-
-  return { ciclos: rows.rows, total, page, limit };
-}
-
-/**
- * Lista ciclos de um vendedor.
- */
-export async function getCiclosByVendedor(
-  vendedorId: number,
-  opts?: { status?: StatusCiclo; ano?: number; page?: number; limit?: number }
-): Promise<{ ciclos: Ciclo[]; total: number; page: number; limit: number }> {
-  const page = opts?.page ?? 1;
-  const limit = opts?.limit ?? 20;
-  const offset = (page - 1) * limit;
-
-  const wheres = [`c.vendedor_id = $1`, `c.tipo_beneficiario = 'vendedor'`];
-  const params: unknown[] = [vendedorId];
-  let i = 2;
-
-  if (opts?.status) {
-    wheres.push(`c.status = $${i++}`);
-    params.push(opts.status);
   }
 
   const where = `WHERE ${wheres.join(' AND ')}`;
@@ -532,27 +459,14 @@ export async function getAllCiclosAdmin(opts?: {
   const rows = await query<CicloEnriquecido>(
     `SELECT
        c.*,
-       CASE
-         WHEN c.tipo_beneficiario = 'representante' THEN r.nome
-         ELSE u_vend.nome
-       END AS beneficiario_nome,
-       CASE
-         WHEN c.tipo_beneficiario = 'representante' THEN UPPER(r.tipo_pessoa::text)
-         ELSE NULL
-       END AS beneficiario_tipo_pessoa,
-       CASE
-         WHEN c.tipo_beneficiario = 'representante' THEN r.codigo
-         ELSE NULL
-       END AS beneficiario_codigo,
-       CASE
-         WHEN c.tipo_beneficiario = 'representante' THEN r.email
-         ELSE u_vend.email
-       END AS beneficiario_email
+       r.nome                     AS beneficiario_nome,
+       UPPER(r.tipo_pessoa::text) AS beneficiario_tipo_pessoa,
+       r.codigo                   AS beneficiario_codigo,
+       r.email                    AS beneficiario_email
      FROM ciclos_comissao c
      LEFT JOIN representantes r ON r.id = c.representante_id
-     LEFT JOIN usuarios u_vend ON u_vend.id = c.vendedor_id
      ${where}
-     ORDER BY c.mes_referencia DESC, c.tipo_beneficiario, beneficiario_nome
+     ORDER BY c.mes_referencia DESC, beneficiario_nome
      LIMIT $${i} OFFSET $${i + 1}`,
     dataParams
   );
@@ -615,21 +529,6 @@ export async function criarCiclosDoMes(mesReferencia: string): Promise<{
     `SELECT DISTINCT cl.representante_id
      FROM comissoes_laudo cl
      WHERE cl.mes_emissao = $1::date
-       AND cl.tipo_beneficiario = 'representante'
-       AND cl.status NOT IN ('cancelada', 'retida')
-       AND cl.ciclo_id IS NULL`,
-    [mesReferencia]
-  );
-
-  const vendedores = await query<{
-    representante_id: number;
-    vendedor_id: number;
-  }>(
-    `SELECT DISTINCT cl.representante_id, cl.vendedor_id
-     FROM comissoes_laudo cl
-     WHERE cl.mes_emissao = $1::date
-       AND cl.tipo_beneficiario = 'vendedor'
-       AND cl.vendedor_id IS NOT NULL
        AND cl.status NOT IN ('cancelada', 'retida')
        AND cl.ciclo_id IS NULL`,
     [mesReferencia]
@@ -641,8 +540,8 @@ export async function criarCiclosDoMes(mesReferencia: string): Promise<{
   for (const row of representantes.rows) {
     const existing = await query(
       `SELECT id FROM ciclos_comissao
-       WHERE representante_id = $1 AND tipo_beneficiario = 'representante'
-         AND mes_referencia = $2::date AND vendedor_id IS NULL
+       WHERE representante_id = $1
+         AND mes_referencia = $2::date
        LIMIT 1`,
       [row.representante_id, mesReferencia]
     );
@@ -650,29 +549,9 @@ export async function criarCiclosDoMes(mesReferencia: string): Promise<{
       existentes++;
     } else {
       await query(
-        `INSERT INTO ciclos_comissao (representante_id, tipo_beneficiario, mes_referencia, valor_total, qtd_comissoes, status)
-         VALUES ($1, 'representante', $2::date, 0, 0, 'aberto')`,
+        `INSERT INTO ciclos_comissao (representante_id, mes_referencia, valor_total, qtd_comissoes, status)
+         VALUES ($1, $2::date, 0, 0, 'aberto')`,
         [row.representante_id, mesReferencia]
-      );
-      criados++;
-    }
-  }
-
-  for (const row of vendedores.rows) {
-    const existing = await query(
-      `SELECT id FROM ciclos_comissao
-       WHERE representante_id = $1 AND vendedor_id = $2 AND tipo_beneficiario = 'vendedor'
-         AND mes_referencia = $3::date
-       LIMIT 1`,
-      [row.representante_id, row.vendedor_id, mesReferencia]
-    );
-    if (existing.rows.length > 0) {
-      existentes++;
-    } else {
-      await query(
-        `INSERT INTO ciclos_comissao (representante_id, vendedor_id, tipo_beneficiario, mes_referencia, valor_total, qtd_comissoes, status)
-         VALUES ($1, $2, 'vendedor', $3::date, 0, 0, 'aberto')`,
-        [row.representante_id, row.vendedor_id, mesReferencia]
       );
       criados++;
     }
