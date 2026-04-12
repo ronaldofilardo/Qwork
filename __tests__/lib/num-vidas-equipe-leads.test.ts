@@ -10,11 +10,10 @@ import {
 
 describe('num_vidas_estimado — field propagation', () => {
   test('calcularValoresComissao with standard values', () => {
-    const bd = calcularValoresComissao(100, 10, 5, 'entidade');
+    const bd = calcularValoresComissao(100, 10, 'entidade');
     expect(bd.valorRep).toBe(10);
-    expect(bd.valorVendedor).toBe(5);
-    expect(bd.valorQWork).toBe(85);
-    expect(bd.percentualTotal).toBe(15);
+    expect(bd.valorQWork).toBe(90);
+    expect(bd.percentualTotal).toBe(10);
     expect(bd.abaixoCusto).toBe(false);
   });
 
@@ -82,18 +81,17 @@ describe('equipe/leads — commission split validation', () => {
   });
 
   test('calcularValoresComissao with split shows correct breakdown', () => {
-    const bd = calcularValoresComissao(200, 15, 10, 'entidade');
+    const bd = calcularValoresComissao(200, 15, 'entidade');
     expect(bd.valorRep).toBe(30); // 200 * 15%
-    expect(bd.valorVendedor).toBe(20); // 200 * 10%
-    expect(bd.valorQWork).toBe(150); // 200 - 30 - 20
-    expect(bd.percentualTotal).toBe(25);
+    expect(bd.valorQWork).toBe(170); // 200 - 30
+    expect(bd.percentualTotal).toBe(15);
     expect(bd.abaixoCusto).toBe(false);
   });
 
   test('below-cost scenario distributes from pool', () => {
-    // valor=16, percRep=20, percVend=10, tipo=entidade (custo=15)
-    // valorQWork = 16*(1-0.30) = 11.2 < 15 → abaixoCusto
-    const bd = calcularValoresComissao(16, 20, 10, 'entidade');
+    // valor=16, percRep=20, tipo=entidade (custo=15)
+    // valorQWork = 16 - 3.2 = 12.8 < 15 → abaixoCusto
+    const bd = calcularValoresComissao(16, 20, 'entidade');
     expect(bd.abaixoCusto).toBe(true);
     // Pool = max(0, 16 - 15) = 1
     expect(bd.poolDisponivel).toBe(1);

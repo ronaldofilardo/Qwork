@@ -224,8 +224,8 @@ export async function POST(request: NextRequest) {
     );
 
     const result = await query(
-      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao, percentual_comissao_representante, percentual_comissao_vendedor, tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 0, $10, $11, $12)
+      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao, percentual_comissao_representante, tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING *`,
       [
         sess.representante_id,

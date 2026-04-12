@@ -162,7 +162,6 @@ export function useLeads() {
   const valoresComissao: ValoresComissao = calcularValoresComissao(
     valorNegociadoNum,
     percentualComissaoNum,
-    0,
     novoForm.tipo_cliente
   );
 

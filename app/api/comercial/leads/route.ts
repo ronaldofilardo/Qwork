@@ -49,7 +49,6 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
          lr.valor_negociado,
          lr.percentual_comissao,
          lr.percentual_comissao_representante,
-         lr.percentual_comissao_vendedor,
          lr.num_vidas_estimado,
          lr.requer_aprovacao_comercial,
          lr.criado_em,
