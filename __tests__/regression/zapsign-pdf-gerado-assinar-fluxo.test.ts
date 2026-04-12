@@ -315,16 +315,16 @@ describe('5. useProgressoEmissao — novos status pdf_gerado e aguardando_assina
   });
 });
 
-// ─── 6. app/emissor/laudo/[loteId]/useLaudo.ts ───────────────────────────────
+// ─── 6. app/emissor/laudo/[loteId]/useLaudo.tsx ──────────────────────────────
 
-describe('6. useLaudo.ts — polling ZapSign e handleAssinarDigitalmente', () => {
+describe('6. useLaudo.tsx — polling ZapSign e handleAssinarDigitalmente', () => {
   const filePath = path.join(
     ROOT,
     'app',
     'emissor',
     'laudo',
     '[loteId]',
-    'useLaudo.ts'
+    'useLaudo.tsx'
   );
   let src: string;
 
@@ -332,7 +332,7 @@ describe('6. useLaudo.ts — polling ZapSign e handleAssinarDigitalmente', () =>
     src = fs.readFileSync(filePath, 'utf-8');
   });
 
-  it('arquivo deve existir', () => {
+  it('arquivo deve existir como .tsx (suporte a JSX)', () => {
     expect(fs.existsSync(filePath)).toBe(true);
   });
 
@@ -521,5 +521,269 @@ describe('10. Legacy cleanup — sem chamadas diretas a gerarLaudoCompletoEmitir
     productionDirs.forEach(scanDir);
 
     expect(violations).toEqual([]);
+  });
+});
+
+// ─── 11. Migration 1143 — zapsign_sign_url + assinado_processando ─────────────
+
+describe('11. Migration 1143 — zapsign_sign_url e status assinado_processando', () => {
+  const filePath = path.join(
+    ROOT,
+    'database',
+    'migrations',
+    '1143_add_zapsign_sign_url.sql'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('arquivo deve existir', () => {
+    expect(fs.existsSync(filePath)).toBe(true);
+  });
+
+  it('deve adicionar coluna zapsign_sign_url', () => {
+    expect(src).toContain('zapsign_sign_url');
+    expect(src).toContain('ADD COLUMN');
+  });
+
+  it('constraint chk_laudos_status_valid deve incluir assinado_processando', () => {
+    expect(src).toContain('assinado_processando');
+    expect(src).toContain('chk_laudos_status_valid');
+  });
+
+  it('constraint deve incluir todos os status esperados', () => {
+    expect(src).toContain("'rascunho'");
+    expect(src).toContain("'pdf_gerado'");
+    expect(src).toContain("'aguardando_assinatura'");
+    expect(src).toContain("'assinado_processando'");
+    expect(src).toContain("'emitido'");
+    expect(src).toContain("'enviado'");
+  });
+});
+
+// ─── 12. Webhook ZapSign — status assinado_processando como estado intermediário ──
+
+describe('12. Webhook ZapSign — status assinado_processando como estado intermediário', () => {
+  const filePath = path.join(
+    ROOT,
+    'app',
+    'api',
+    'webhooks',
+    'zapsign',
+    'route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('FASE A deve definir status assinado_processando', () => {
+    expect(src).toContain('assinado_processando');
+  });
+
+  it('idempotência deve aceitar tanto aguardando_assinatura quanto assinado_processando', () => {
+    expect(src).toMatch(
+      /assinado_processando[\s\S]{0,200}aguardando_assinatura|aguardando_assinatura[\s\S]{0,200}assinado_processando/
+    );
+  });
+
+  it('FASE B WHERE deve incluir assinado_processando', () => {
+    const posB = src.indexOf('FASE B');
+    const srcAfterB = src.substring(posB);
+    expect(srcAfterB).toContain('assinado_processando');
+  });
+});
+
+// ─── 13. status-assinatura/route.ts — zapsign_sign_url salvo no banco ──────────
+
+describe('13. status-assinatura/route.ts — zapsign_sign_url do banco de dados', () => {
+  const filePath = path.join(
+    ROOT,
+    'app',
+    'api',
+    'emissor',
+    'laudos',
+    '[loteId]',
+    'status-assinatura',
+    'route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('arquivo deve existir', () => {
+    expect(fs.existsSync(filePath)).toBe(true);
+  });
+
+  it('deve selecionar zapsign_sign_url no SELECT', () => {
+    expect(src).toContain('zapsign_sign_url');
+  });
+
+  it('deve usar URL salva com fallback para URL reconstruída', () => {
+    expect(src).toMatch(/zapsign_sign_url[\s\S]{0,100}\|\|/);
+  });
+
+  it('deve retornar sign_url no response', () => {
+    expect(src).toContain('sign_url');
+  });
+
+  it('guard de autenticação deve usar try/catch (não if (!user))', () => {
+    expect(src).not.toMatch(/if\s*\(\s*!user\s*\)/);
+  });
+});
+
+// ─── 14. Guards — sem dead code if (!user) nos endpoints de laudo ─────────────
+
+describe('14. Guards — sem dead code if (!user) nos endpoints de laudo', () => {
+  const endpoints = [
+    'app/api/emissor/laudos/[loteId]/route.ts',
+    'app/api/emissor/laudos/[loteId]/assinar/route.ts',
+    'app/api/emissor/laudos/[loteId]/download/route.ts',
+    'app/api/emissor/laudos/[loteId]/pdf/route.ts',
+    'app/api/emissor/laudos/[loteId]/upload/route.ts',
+    'app/api/emissor/laudos/[loteId]/upload-url/route.ts',
+    'app/api/emissor/laudos/[loteId]/upload-local/route.ts',
+    'app/api/emissor/laudos/[loteId]/upload-confirm/route.ts',
+    'app/api/emissor/laudos/[loteId]/status-assinatura/route.ts',
+  ];
+
+  endpoints.forEach((relPath) => {
+    it(`${relPath.split('/').pop()}: não deve ter dead guard if (!user)`, () => {
+      const filePath = path.join(ROOT, relPath);
+      const content = fs.readFileSync(filePath, 'utf-8');
+      expect(content).not.toMatch(/if\s*\(\s*!user\s*\)/);
+    });
+  });
+});
+
+// ─── 15. Preview status — GET deve retornar rascunho (não emitido) ─────────────
+
+describe('15. GET route.ts preview — status deve ser rascunho', () => {
+  const filePath = path.join(
+    ROOT,
+    'app',
+    'api',
+    'emissor',
+    'laudos',
+    '[loteId]',
+    'route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('preview LaudoPadronizado não deve usar status emitido hardcoded', () => {
+    const previewMatch = src.match(/Retornar dados para preview[\s\S]{0,600}/);
+    expect(previewMatch).not.toBeNull();
+    expect(previewMatch![0]).toContain('rascunho');
+    expect(previewMatch![0]).not.toContain("status: 'emitido'");
+  });
+});
+
+// ─── 16. laudo-auto.ts — enviarParaAssinaturaZapSign salva zapsign_sign_url ────
+
+describe('16. laudo-auto.ts — enviarParaAssinaturaZapSign salva sign URL no banco', () => {
+  const filePath = path.join(ROOT, 'lib', 'laudo-auto.ts');
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('enviarParaAssinaturaZapSign deve incluir zapsign_sign_url no UPDATE', () => {
+    const fnStart = src.indexOf(
+      'export async function enviarParaAssinaturaZapSign'
+    );
+    expect(fnStart).toBeGreaterThan(-1);
+    const fnBody = src.substring(fnStart, fnStart + 5000);
+    expect(fnBody).toContain('zapsign_sign_url');
+  });
+
+  it('UPDATE deve salvar signUrl como parâmetro SQL ($N)', () => {
+    const fnStart = src.indexOf(
+      'export async function enviarParaAssinaturaZapSign'
+    );
+    expect(fnStart).toBeGreaterThan(-1);
+    const fnBody = src.substring(fnStart, fnStart + 5000);
+    expect(fnBody).toMatch(/zapsign_sign_url\s*=\s*\$\d/);
+  });
+});
+
+// ─── 17. progresso/route.ts — porcentagens para estados ZapSign ───────────────
+
+describe('17. progresso/route.ts — porcentagens para estados ZapSign', () => {
+  const filePath = path.join(
+    ROOT,
+    'app',
+    'api',
+    'emissor',
+    'laudos',
+    '[loteId]',
+    'progresso',
+    'route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('arquivo deve existir', () => {
+    expect(fs.existsSync(filePath)).toBe(true);
+  });
+
+  it('deve ter porcentagem para pdf_gerado', () => {
+    expect(src).toContain("'pdf_gerado'");
+  });
+
+  it('deve ter porcentagem para aguardando_assinatura', () => {
+    expect(src).toContain("'aguardando_assinatura'");
+  });
+
+  it('deve ter porcentagem para assinado_processando', () => {
+    expect(src).toContain("'assinado_processando'");
+  });
+});
+
+// ─── 18. data/route.ts — sem subquery clinica_id para emissores ───────────────
+
+describe('18. data/route.ts — query sem subquery clinica_id de funcionários', () => {
+  const filePath = path.join(
+    ROOT,
+    'app',
+    'api',
+    'emissor',
+    'laudos',
+    '[loteId]',
+    'data',
+    'route.ts'
+  );
+  let src: string;
+
+  beforeAll(() => {
+    src = fs.readFileSync(filePath, 'utf-8');
+  });
+
+  it('arquivo deve existir', () => {
+    expect(fs.existsSync(filePath)).toBe(true);
+  });
+
+  it('não deve ter subquery de clinica_id via funcionarios', () => {
+    expect(src).not.toMatch(/SELECT clinica_id FROM funcionarios WHERE cpf/);
+  });
+
+  it('deve usar LEFT JOIN clinicas (não INNER JOIN)', () => {
+    expect(src).toContain('LEFT JOIN clinicas');
+  });
+
+  it('query principal não deve passar session.cpf como parâmetro', () => {
+    expect(src).not.toMatch(/\[loteId,\s*session\.cpf\]/);
   });
 });

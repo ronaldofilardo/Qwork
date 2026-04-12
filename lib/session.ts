@@ -11,6 +11,7 @@ export type { PerfilUsuarioType, NivelCargoType } from './types/enums';
 export interface Session {
   cpf: string;
   nome: string;
+  email?: string;
   perfil: PerfilUsuarioType;
   nivelCargo?: NivelCargoType;
   // POLÍTICA DE NEGÓCIO - PAPÉIS E PERMISSÕES:
