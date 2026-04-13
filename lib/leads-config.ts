@@ -96,3 +96,33 @@ export function calcularValoresComissao(
     percentualTotal: percRep + percComercial,
   };
 }
+
+/** Resultado do cálculo de comissão no modelo custo_fixo */
+export interface ValoresComissaoCustoFixo {
+  /** Valor que fica para o representante (R$) */
+  valorRep: number;
+  /** Valor que fica para o QWork = custo fixo negociado (R$) */
+  valorQWork: number;
+  /** true quando valorNegociado < valorCustoFixo (rep ficaria com valor negativo) */
+  abaixoMinimo: boolean;
+}
+
+/**
+ * Calcula comissão no modelo custo_fixo.
+ * O QWork retém `valorCustoFixo` e o representante recebe o restante.
+ * Se valorNegociado < valorCustoFixo, abaixoMinimo=true e valorRep=0.
+ */
+export function calcularComissaoCustoFixo(
+  valorNegociado: number,
+  valorCustoFixo: number
+): ValoresComissaoCustoFixo {
+  if (valorNegociado <= 0 || valorCustoFixo <= 0) {
+    return { valorRep: 0, valorQWork: valorCustoFixo, abaixoMinimo: true };
+  }
+  const valorRep = Math.round((valorNegociado - valorCustoFixo) * 100) / 100;
+  return {
+    valorRep: Math.max(0, valorRep),
+    valorQWork: valorCustoFixo,
+    abaixoMinimo: valorRep < 0,
+  };
+}

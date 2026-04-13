@@ -37,6 +37,8 @@ export async function GET(
          r.percentual_comissao,
          r.percentual_comissao_comercial,
          r.modelo_comissionamento,
+         r.valor_custo_fixo_entidade,
+         r.valor_custo_fixo_clinica,
          r.asaas_wallet_id,
          COUNT(DISTINCT l.id)                                                        AS total_leads,
          COUNT(DISTINCT l.id) FILTER (WHERE l.status = 'pendente')                  AS leads_ativos,
@@ -118,6 +120,9 @@ const PatchSchema = z.object({
     .optional()
     .nullable(),
   asaas_wallet_id: z.string().max(200).optional().nullable(),
+  modelo_comissionamento: z.enum(['percentual', 'custo_fixo']).optional().nullable(),
+  valor_custo_fixo_entidade: z.number().positive().optional().nullable(),
+  valor_custo_fixo_clinica: z.number().positive().optional().nullable(),
 });
 
 export async function PATCH(
@@ -272,6 +277,12 @@ export async function PATCH(
     if (data.pix_tipo !== undefined) addField('pix_tipo', data.pix_tipo);
     if (data.asaas_wallet_id !== undefined)
       addField('asaas_wallet_id', data.asaas_wallet_id);
+    if (data.modelo_comissionamento !== undefined)
+      addField('modelo_comissionamento', data.modelo_comissionamento);
+    if (data.valor_custo_fixo_entidade !== undefined)
+      addField('valor_custo_fixo_entidade', data.valor_custo_fixo_entidade);
+    if (data.valor_custo_fixo_clinica !== undefined)
+      addField('valor_custo_fixo_clinica', data.valor_custo_fixo_clinica);
 
     if (fields.length === 0)
       return NextResponse.json(

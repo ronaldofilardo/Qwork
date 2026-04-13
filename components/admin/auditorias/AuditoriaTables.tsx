@@ -12,6 +12,7 @@ import type {
   AceiteUsuario,
   AcessoSuporte,
   LeadAbaixoMinimo,
+  LeadComissaoGeral,
 } from './types';
 
 /* ─── Refresh Button ─── */
@@ -1199,6 +1200,106 @@ export function TabelaComissoesLeads({
               </tr>
             );
           })}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+export function TabelaLeadsComissoesGeral({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: LeadComissaoGeral[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  const fmtBRL = (v: number | null | undefined) =>
+    v != null ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
+  const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
+
+  return (
+    <TableShell
+      title="Lead / Comissões — Geral"
+      subtitle={`${data.length} registro(s)`}
+      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+    >
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <Th>Representante</Th>
+            <Th>CNPJ / Razão</Th>
+            <Th center>Tipo</Th>
+            <Th center>Modelo</Th>
+            <Th>Valor neg.</Th>
+            <Th center>Comissão rep</Th>
+            <Th center>Status</Th>
+            <Th center>Data</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {data.length === 0 && (
+            <tr>
+              <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">
+                Nenhum lead encontrado.
+              </td>
+            </tr>
+          )}
+          {data.map((row) => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              <Td>
+                <div className="font-medium">{row.representante_nome ?? '—'}</div>
+                {row.representante_codigo && (
+                  <div className="text-xs text-gray-400">#{row.representante_codigo}</div>
+                )}
+              </Td>
+              <Td>
+                <div className="font-mono text-xs">{row.cnpj ?? '—'}</div>
+                {row.razao_social && (
+                  <div className="text-xs text-gray-400 truncate max-w-[180px]">{row.razao_social}</div>
+                )}
+              </Td>
+              <Td center>
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                  row.tipo_cliente === 'entidade' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                }`}>
+                  {row.tipo_cliente === 'entidade' ? 'Entidade' : 'Clínica'}
+                </span>
+              </Td>
+              <Td center>
+                {row.modelo_comissionamento === 'custo_fixo' ? (
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">Custo Fixo</span>
+                ) : row.modelo_comissionamento === 'percentual' ? (
+                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Percentual</span>
+                ) : (
+                  <span className="text-gray-400">—</span>
+                )}
+              </Td>
+              <Td>{fmtBRL(Number(row.valor_negociado))}</Td>
+              <Td center>
+                {row.modelo_comissionamento === 'custo_fixo'
+                  ? row.valor_custo_fixo_snapshot != null
+                    ? `CF: ${fmtBRL(row.valor_custo_fixo_snapshot)}`
+                    : '—'
+                  : row.percentual_comissao_representante != null
+                    ? `${row.percentual_comissao_representante.toFixed(1)}%`
+                    : '—'}
+              </Td>
+              <Td center>
+                <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
+                  row.status === 'aprovado' || row.status === 'convertido'
+                    ? 'bg-green-100 text-green-700'
+                    : row.status === 'rejeitado' || row.status === 'expirado'
+                      ? 'bg-red-100 text-red-700'
+                      : 'bg-yellow-100 text-yellow-700'
+                }`}>
+                  {row.status}
+                </span>
+              </Td>
+              <Td center>{fmtDate(row.criado_em)}</Td>
+            </tr>
+          ))}
         </tbody>
       </table>
     </TableShell>

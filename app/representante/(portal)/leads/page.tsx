@@ -35,6 +35,9 @@ export default function LeadsRepresentante() {
     handleTipoClienteChange,
     percRep,
     percComercial,
+    modeloComissionamento,
+    valorCustoFixoEntidade,
+    valorCustoFixoClinica,
   } = useLeads();
 
   const totalLeads =
@@ -82,6 +85,9 @@ export default function LeadsRepresentante() {
           criarLead={criarLead}
           percRep={percRep}
           percComercial={percComercial}
+          modeloComissionamento={modeloComissionamento}
+          valorCustoFixoEntidade={valorCustoFixoEntidade}
+          valorCustoFixoClinica={valorCustoFixoClinica}
           onClose={() => {
             setShowNovo(false);
             setErrosCampos({

@@ -14,6 +14,7 @@ const TABS: { key: AuditoriaSubTab; label: string }[] = [
   { key: 'aceites', label: 'Aceites' },
   { key: 'acesso-suporte', label: 'Suporte' },
   { key: 'comissoes-leads', label: 'Comissões' },
+  { key: 'leads-comissoes-geral', label: 'Lead/Comissões' },
   { key: 'delecao', label: 'Deleção' },
 ];
 
