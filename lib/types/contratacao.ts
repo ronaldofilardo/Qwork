@@ -2,19 +2,11 @@
 // TIPOS PARA SISTEMA DE CONTRATAÇÃO
 // ==========================================
 
-export type MetodoPagamento =
-  | 'avista'
-  | 'parcelado'
-  | 'boleto'
-  | 'pix'
-  | 'cartao';
+// Import tipos de pagamento
+import type { MetodoPagamento, StatusPagamento } from './pagamento';
 
-export type StatusPagamento =
-  | 'pendente'
-  | 'processando'
-  | 'pago'
-  | 'cancelado'
-  | 'estornado';
+// Re-exportar desde lib/types/pagamento para manter compatibilidade de imports
+export type { MetodoPagamento, StatusPagamento } from './pagamento';
 
 // Estender status de aprovação existente
 export type StatusAprovacaoExtendido =
@@ -36,7 +28,6 @@ export interface Contrato {
   aceito: boolean;
   ip_aceite?: string;
   data_aceite?: string;
-  hash_contrato?: string;
   observacoes?: string;
   criado_em: string;
   atualizado_em: string;

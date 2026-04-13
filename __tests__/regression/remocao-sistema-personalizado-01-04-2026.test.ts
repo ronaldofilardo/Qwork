@@ -82,7 +82,7 @@ describe('Remoção definitiva — sistema personalizado/planos (Migration 1136)
 
   describe('Migration 1136 existe e cobre remoção completa', () => {
     const migration = readFileIfExists(
-      'database/migrations/1136_remocao_definitiva_planos_contratacao.sql'
+      'database/migrations/archived/1136_remocao_definitiva_planos_contratacao.sql'
     );
 
     test('arquivo de migration existe', () => {
@@ -199,12 +199,11 @@ describe('Remoção definitiva — sistema personalizado/planos (Migration 1136)
     );
   });
 
-  describe('API endpoint legado retorna 410 Gone', () => {
-    test('route.ts de proposta/[token] não é async', () => {
+  describe('API endpoint legado de proposta removido', () => {
+    test('rota proposta/[token]/route.ts foi deletada do sistema', () => {
       const route = readFileIfExists('app/api/proposta/[token]/route.ts');
-      expect(route).not.toBeNull();
-      expect(route).toContain('410');
-      expect(route).not.toContain('async function GET');
+      // Rota foi completamente removida (remoção mais forte que 410)
+      expect(route).toBeNull();
     });
   });
 });

@@ -54,28 +54,25 @@ export default function ComercialLeadsAprovacaoPage() {
   const [erroAcao, setErroAcao] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
 
-  const carregar = useCallback(
-    async (p: number, m: 'aprovacao' | 'todos') => {
-      setLoading(true);
-      try {
-        const params = new URLSearchParams({ page: String(p), modo: m });
-        const res = await fetch(`/api/comercial/leads?${params.toString()}`);
-        if (res.ok) {
-          const d = (await res.json()) as {
-            leads?: LeadAprovacao[];
-            total?: number;
-          };
-          setLeads(d.leads ?? []);
-          setTotal(d.total ?? 0);
-        }
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setLoading(false);
+  const carregar = useCallback(async (p: number, m: 'aprovacao' | 'todos') => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(p), modo: m });
+      const res = await fetch(`/api/comercial/leads?${params.toString()}`);
+      if (res.ok) {
+        const d = (await res.json()) as {
+          leads?: LeadAprovacao[];
+          total?: number;
+        };
+        setLeads(d.leads ?? []);
+        setTotal(d.total ?? 0);
       }
-    },
-    []
-  );
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void carregar(page, modo);

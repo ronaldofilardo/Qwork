@@ -38,7 +38,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 
 ### Fluxo Completo
 
-```
+```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ 1. CADASTRO INICIAL                                             │
 ├─────────────────────────────────────────────────────────────────┤
@@ -145,7 +145,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 
 ### Fluxo Alternativo: Pagamento Não Imediato
 
-```
+```text
 [Etapas 1-5 iguais]
                             ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -183,78 +183,7 @@ Este documento descreve os fluxos completos de contratação na plataforma QWork
 
 ---
 
-## 📊 Fluxo 2: Plano Personalizado
-
-### Características
-
-- Disponível para: **Entidades** e **Clínicas**
-- Valor: **Sob consulta** (definido pelo Admin)
-- Requer análise e aprovação do Admin
-- Contrato gerado após Admin definir valores
-
-### Fluxo Completo
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│ 1. CADASTRO INICIAL                                             │
-├─────────────────────────────────────────────────────────────────┤
-│ • tomador preenche dados                                    │
-│ • Seleciona "Plano Personalizado"                              │
-│ • Informa necessidades específicas                              │
-│ • Upload de documentos                                          │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 2. CONFIRMAÇÃO E ENVIO PARA ANÁLISE                            │
-├─────────────────────────────────────────────────────────────────┤
-│ • Sistema salva com status: "aguardando_aprovacao"             │
-│ • Notificação enviada ao Admin                                  │
-│ • Mensagem ao tomador: "Dados enviados para análise"       │
-│ • Prazo estimado: 48 horas                                      │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 3. ADMIN ANALISA E DEFINE VALORES                              │
-├─────────────────────────────────────────────────────────────────┤
-│ • Dashboard Admin: Lista "Aguardando Aprovação"                │
-│ • Admin revisa documentos e necessidades                        │
-│ • Define:                                                       │
-│   - Valor por funcionário                                       │
-│   - Número de funcionários aprovado                             │
-│   - Observações/condições especiais                             │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 4. ADMIN GERA LINK PERSONALIZADO                               │
-├─────────────────────────────────────────────────────────────────┤
-│ • API: POST /api/admin/gerar-link-plano-personalizado         │
-│ • Sistema cria contrato pendente com valores definidos         │
-│ • Gera link único com token de acesso                          │
-│ • Email enviado ao tomador                                  │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 5. tomador ABRE LINK                                       │
-├─────────────────────────────────────────────────────────────────┤
-│ • Link redireciona para página de aceite                        │
-│ • Exibe contrato com valores já definidos                       │
-│ • tomador NÃO pode editar valores                          │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-┌─────────────────────────────────────────────────────────────────┐
-│ 6. ACEITE DO CONTRATO                                          │
-├─────────────────────────────────────────────────────────────────┤
-│ • [Igual ao passo 5 do Fluxo 1]                                │
-│ • Registra aceite com evidências técnicas                       │
-│ • Redireciona para simulador                                    │
-└─────────────────────────────────────────────────────────────────┘
-                            ↓
-[Passos 7-9 iguais ao Fluxo 1: Pagamento → Recibo → Login]
-```
-
----
-
-## 🔒 Validações de Segurança
+## Validações de Segurança
 
 ### Backend (API)
 

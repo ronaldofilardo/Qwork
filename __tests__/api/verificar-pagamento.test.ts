@@ -36,7 +36,6 @@ describe('API Verificar Pagamento', () => {
     });
     contratoComPagamento = await createTestContrato({
       tomador_id: tomadorComPagamento,
-      conteudo_gerado: 'Contrato ativo',
     });
     // Atualizar contrato para status 'aprovado' que o endpoint espera
     await query(`UPDATE contratos SET status = 'aprovado' WHERE id = $1`, [
@@ -55,7 +54,6 @@ describe('API Verificar Pagamento', () => {
     });
     contratoSemPagamento = await createTestContrato({
       tomador_id: tomadorSemPagamento,
-      conteudo_gerado: 'Contrato pendente',
     });
 
     // Criar tomador com status PENDENTE
@@ -65,7 +63,6 @@ describe('API Verificar Pagamento', () => {
     });
     contratoPendente = await createTestContrato({
       tomador_id: tomadorPendente,
-      conteudo_gerado: 'Contrato aguardando pagamento',
     });
   });
 

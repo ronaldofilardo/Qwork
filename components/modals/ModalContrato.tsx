@@ -19,7 +19,6 @@ interface Contrato {
   aceito: boolean;
   ip_aceite?: string;
   data_aceite?: string;
-  hash_contrato?: string;
   observacoes?: string;
   criado_em: string;
   atualizado_em: string;
