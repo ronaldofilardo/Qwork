@@ -21,6 +21,7 @@ import {
   calcularRequerAprovacao,
   calcularComissaoCustoFixo,
   CUSTO_POR_AVALIACAO,
+  MAX_PERCENTUAL_COMISSAO,
   TIPOS_CLIENTE,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
@@ -183,11 +184,12 @@ export async function POST(request: NextRequest) {
       [sess.representante_id]
     );
     const comissaoNum = Number(repResult.rows[0]?.percentual_comissao ?? 0);
-    const percComercial = Number(
-      repResult.rows[0]?.percentual_comissao_comercial ?? 0
-    );
     const modeloComissionamento =
       repResult.rows[0]?.modelo_comissionamento ?? null;
+    const percComercial =
+      modeloComissionamento === 'percentual'
+        ? MAX_PERCENTUAL_COMISSAO - comissaoNum
+        : Number(repResult.rows[0]?.percentual_comissao_comercial ?? 0);
 
     if (
       typeof contato_email === 'string' &&

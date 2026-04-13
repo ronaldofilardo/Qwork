@@ -17,6 +17,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { query } from '@/lib/db';
 import { requireRole } from '@/lib/session';
+import { MAX_PERCENTUAL_COMISSAO } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
 
@@ -90,15 +91,22 @@ export async function POST(
     const walletId = parsed.data.asaas_wallet_id?.trim() || null;
 
     // Atualizar modelo, percentual, walletId e ativar imediatamente
+    // Para modelo percentual: auto-calcula percentual_comissao_comercial = teto - rep
+    const percComercialAuto =
+      modelo === 'percentual' && percentual != null
+        ? MAX_PERCENTUAL_COMISSAO - percentual
+        : null;
+
     await query(
       `UPDATE representantes
-       SET modelo_comissionamento = $1,
-           percentual_comissao    = $2,
-           asaas_wallet_id        = COALESCE($3, asaas_wallet_id),
-           status                 = 'apto',
-           atualizado_em          = NOW()
-       WHERE id = $4`,
-      [modelo, modelo === 'percentual' ? percentual : null, walletId, id]
+       SET modelo_comissionamento        = $1,
+           percentual_comissao           = $2,
+           percentual_comissao_comercial = COALESCE($3, percentual_comissao_comercial),
+           asaas_wallet_id               = COALESCE($4, asaas_wallet_id),
+           status                        = 'apto',
+           atualizado_em                 = NOW()
+       WHERE id = $5`,
+      [modelo, modelo === 'percentual' ? percentual : null, percComercialAuto, walletId, id]
     );
 
     console.info(
@@ -107,6 +115,7 @@ export async function POST(
         representante_id: id,
         modelo,
         percentual: modelo === 'percentual' ? percentual : null,
+        percentual_comissao_comercial: percComercialAuto,
         asaas_wallet_id: walletId ? '***' : null,
         by_cpf: session.cpf,
       })
