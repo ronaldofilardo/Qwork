@@ -12,9 +12,9 @@ export const TIPO_CLIENTE_LABEL: Record<TipoCliente, string> = {
   clinica: 'Clínica',
 };
 
-/** Custo por avaliação por tipo de cliente (R$): entidade=R$15, clínica=R$5 */
+/** Custo por avaliação por tipo de cliente (R$): entidade=R$12, clínica=R$5 */
 export const CUSTO_POR_AVALIACAO: Record<TipoCliente, number> = {
-  entidade: 15,
+  entidade: 12,
   clinica: 5,
 } as const;
 
@@ -27,15 +27,16 @@ export const MAX_PERCENTUAL_COMISSAO = 40;
 /**
  * Calcula se um lead requer aprovação do Comercial.
  * A aprovação é necessária quando o valor que sobra para a QWork
- * (valor × (1 − percentualComissao/100)) é inferior ao custo mínimo do tipo.
+ * (valor × (1 − (percRep + percComercial)/100)) é inferior ao custo mínimo do tipo.
  */
 export function calcularRequerAprovacao(
   valorNegociado: number,
-  percentualComissao: number,
+  percRep: number,
+  percComercial: number,
   tipoCliente: TipoCliente
 ): boolean {
   if (valorNegociado <= 0) return false;
-  const valorQWork = valorNegociado * (1 - percentualComissao / 100);
+  const valorQWork = valorNegociado * (1 - (percRep + percComercial) / 100);
   return valorQWork < CUSTO_POR_AVALIACAO[tipoCliente];
 }
 
@@ -43,47 +44,55 @@ export function calcularRequerAprovacao(
 export interface ValoresComissao {
   /** Valor da comissão do representante (R$) */
   valorRep: number;
+  /** Valor da comissão do comercial (R$) */
+  valorComercial: number;
   /** Valor que fica para o QWork (R$) */
   valorQWork: number;
   /** Se o valor QWork ficou abaixo do custo mínimo (requer aprovação comercial) */
   abaixoCusto: boolean;
   /** Pool disponível para comissão quando abaixo do custo: max(0, valor - custo_min) */
   poolDisponivel: number;
-  /** Percentual aplicado pelo representante */
+  /** Percentual total aplicado (rep + comercial) */
   percentualTotal: number;
 }
 
 /**
- * Calcula os valores de comissão do representante.
+ * Calcula os valores de comissão do representante e do comercial.
  *
- * Percentual aplicado diretamente sobre o valor negociado.
+ * percentualRep e percComercial são aplicados diretamente sobre o valor negociado.
  * Se valorQWork < custo por avaliação → abaixoCusto=true (requer aprovação comercial).
  */
 export function calcularValoresComissao(
   valorNegociado: number,
   percRep: number,
+  percComercial: number,
   tipoCliente: TipoCliente
 ): ValoresComissao {
   const custoMinimo = CUSTO_POR_AVALIACAO[tipoCliente];
 
-  if (valorNegociado <= 0 || percRep <= 0) {
+  if (valorNegociado <= 0) {
     return {
       valorRep: 0,
+      valorComercial: 0,
       valorQWork: valorNegociado,
       abaixoCusto: valorNegociado < custoMinimo,
       poolDisponivel: Math.max(0, valorNegociado - custoMinimo),
-      percentualTotal: percRep,
+      percentualTotal: percRep + percComercial,
     };
   }
 
   const valorRep = Math.round(((valorNegociado * percRep) / 100) * 100) / 100;
-  const valorQWork = Math.round((valorNegociado - valorRep) * 100) / 100;
+  const valorComercial =
+    Math.round(((valorNegociado * percComercial) / 100) * 100) / 100;
+  const valorQWork =
+    Math.round((valorNegociado - valorRep - valorComercial) * 100) / 100;
 
   return {
     valorRep,
+    valorComercial,
     valorQWork,
     abaixoCusto: valorQWork < custoMinimo,
     poolDisponivel: Math.max(0, valorNegociado - custoMinimo),
-    percentualTotal: percRep,
+    percentualTotal: percRep + percComercial,
   };
 }

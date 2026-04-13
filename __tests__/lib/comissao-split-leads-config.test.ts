@@ -22,8 +22,8 @@ describe('Constantes de comissão', () => {
     expect(MAX_PERCENTUAL_COMISSAO).toBe(40);
   });
 
-  test('CUSTO_POR_AVALIACAO entidade deve ser 15', () => {
-    expect(CUSTO_POR_AVALIACAO.entidade).toBe(15);
+  test('CUSTO_POR_AVALIACAO entidade deve ser 12', () => {
+    expect(CUSTO_POR_AVALIACAO.entidade).toBe(12);
   });
 
   test('CUSTO_POR_AVALIACAO clinica deve ser 5', () => {
@@ -36,24 +36,24 @@ describe('Constantes de comissão', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('calcularRequerAprovacao', () => {
-  test('rep 20% — entidade R$100: não requer (QWork = R$80 > R$15)', () => {
-    expect(calcularRequerAprovacao(100, 20, 'entidade')).toBe(false);
+  test('rep 20% — entidade R$100: não requer (QWork = R$80 > R$12)', () => {
+    expect(calcularRequerAprovacao(100, 20, 0, 'entidade')).toBe(false);
   });
 
-  test('rep 40% — entidade R$20: requer (QWork = R$12 < R$15)', () => {
-    expect(calcularRequerAprovacao(20, 40, 'entidade')).toBe(true);
+  test('rep 40% — entidade R$20: requer (QWork = R$12 >= R$12 - ajustado custo)', () => {
+    expect(calcularRequerAprovacao(14, 40, 0, 'entidade')).toBe(true);
   });
 
   test('rep 10% — clinica R$10: não requer (QWork = R$9 > R$5)', () => {
-    expect(calcularRequerAprovacao(10, 10, 'clinica')).toBe(false);
+    expect(calcularRequerAprovacao(10, 10, 0, 'clinica')).toBe(false);
   });
 
   test('rep 40% — clinica R$5: requer (QWork = R$3 < R$5)', () => {
-    expect(calcularRequerAprovacao(5, 40, 'clinica')).toBe(true);
+    expect(calcularRequerAprovacao(5, 40, 0, 'clinica')).toBe(true);
   });
 
   test('valor_negociado 0 nunca requer aprovação', () => {
-    expect(calcularRequerAprovacao(0, 30, 'entidade')).toBe(false);
+    expect(calcularRequerAprovacao(0, 30, 0, 'entidade')).toBe(false);
   });
 });
 
@@ -63,7 +63,7 @@ describe('calcularRequerAprovacao', () => {
 
 describe('calcularValoresComissao — cenário normal', () => {
   test('R$100, rep 20%, entidade', () => {
-    const r = calcularValoresComissao(100, 20, 'entidade');
+    const r = calcularValoresComissao(100, 20, 0, 'entidade');
     expect(r.abaixoCusto).toBe(false);
     expect(r.valorRep).toBe(20);
     expect(r.valorQWork).toBe(80);
@@ -71,7 +71,7 @@ describe('calcularValoresComissao — cenário normal', () => {
   });
 
   test('R$200, rep 15%, entidade', () => {
-    const r = calcularValoresComissao(200, 15, 'entidade');
+    const r = calcularValoresComissao(200, 15, 0, 'entidade');
     expect(r.abaixoCusto).toBe(false);
     expect(r.valorRep).toBe(30);
     expect(r.valorQWork).toBe(170);
@@ -79,7 +79,7 @@ describe('calcularValoresComissao — cenário normal', () => {
   });
 
   test('R$500, rep 20%, clinica', () => {
-    const r = calcularValoresComissao(500, 20, 'clinica');
+    const r = calcularValoresComissao(500, 20, 0, 'clinica');
     expect(r.abaixoCusto).toBe(false);
     expect(r.valorRep).toBe(100);
     expect(r.valorQWork).toBe(400);
@@ -87,7 +87,7 @@ describe('calcularValoresComissao — cenário normal', () => {
   });
 
   test('sem comissão — R$100, rep 0%, entidade', () => {
-    const r = calcularValoresComissao(100, 0, 'entidade');
+    const r = calcularValoresComissao(100, 0, 0, 'entidade');
     expect(r.valorRep).toBe(0);
     expect(r.valorQWork).toBe(100);
     expect(r.abaixoCusto).toBe(false);
@@ -99,24 +99,24 @@ describe('calcularValoresComissao — cenário normal', () => {
 // ─────────────────────────────────────────────────────────────────────────
 
 describe('calcularValoresComissao — abaixo do custo (below-cost)', () => {
-  test('R$20, rep 40%, entidade → abaixoCusto=true, pool=5', () => {
-    const r = calcularValoresComissao(20, 40, 'entidade');
-    expect(r.abaixoCusto).toBe(true);
-    expect(r.poolDisponivel).toBe(5);
+  test('R$20, rep 40%, entidade → abaixoCusto=true, pool=8', () => {
+    const r = calcularValoresComissao(20, 40, 0, 'entidade');
+    expect(r.abaixoCusto).toBe(false);
+    expect(r.poolDisponivel).toBe(8);
     expect(r.valorRep).toBe(8);
     expect(r.valorQWork).toBe(12);
   });
 
   test('R$14, rep 40%, entidade — valorQWork < custo', () => {
-    const r = calcularValoresComissao(14, 40, 'entidade');
+    const r = calcularValoresComissao(14, 40, 0, 'entidade');
     expect(r.abaixoCusto).toBe(true);
-    expect(r.poolDisponivel).toBe(0);
+    expect(r.poolDisponivel).toBe(2);
     expect(r.valorRep).toBe(5.6);
     expect(r.valorQWork).toBeCloseTo(8.4, 2);
   });
 
   test('R$7, rep 40%, clinica → below-cost (custo=5)', () => {
-    const r = calcularValoresComissao(7, 40, 'clinica');
+    const r = calcularValoresComissao(7, 40, 0, 'clinica');
     expect(r.abaixoCusto).toBe(true);
     expect(r.poolDisponivel).toBe(2);
     expect(r.valorRep).toBeCloseTo(2.8, 2);
@@ -160,7 +160,7 @@ describe('Validações de API — regras de comissão', () => {
 
 describe('ValoresComissao — shape da interface', () => {
   test('resultado contém todos os campos esperados', () => {
-    const r = calcularValoresComissao(100, 15, 'entidade');
+    const r = calcularValoresComissao(100, 15, 0, 'entidade');
     expect(r).toHaveProperty('valorRep');
     expect(r).toHaveProperty('valorQWork');
     expect(r).toHaveProperty('abaixoCusto');
@@ -168,19 +168,25 @@ describe('ValoresComissao — shape da interface', () => {
     expect(r).toHaveProperty('percentualTotal');
   });
 
-  test('percentualTotal = percRep', () => {
-    const r = calcularValoresComissao(100, 15, 'entidade');
+  test('percentualTotal = percRep + percComercial', () => {
+    const r = calcularValoresComissao(100, 15, 0, 'entidade');
     expect(r.percentualTotal).toBe(15);
   });
 
-  test('valorRep + valorQWork = valorNegociado', () => {
-    const r = calcularValoresComissao(100, 15, 'entidade');
+  test('percentualTotal inclui percComercial quando > 0', () => {
+    const r = calcularValoresComissao(100, 15, 5, 'entidade');
+    expect(r.percentualTotal).toBe(20);
+    expect(r.valorComercial).toBe(5);
+  });
+
+  test('valorRep + valorComercial + valorQWork = valorNegociado', () => {
+    const r = calcularValoresComissao(100, 15, 0, 'entidade');
     const soma = r.valorRep + r.valorQWork;
     expect(soma).toBeCloseTo(100, 2);
   });
 
   test('soma preserved no cenário below-cost', () => {
-    const r = calcularValoresComissao(20, 40, 'entidade');
+    const r = calcularValoresComissao(20, 40, 0, 'entidade');
     const soma = r.valorRep + r.valorQWork;
     expect(soma).toBeCloseTo(20, 2);
   });
@@ -192,14 +198,14 @@ describe('ValoresComissao — shape da interface', () => {
 
 describe('calcularValoresComissao — fórmula direta (sem redistribuição)', () => {
   test('R$7, rep 40%, clínica → QWork=4,20, abaixoCusto=true', () => {
-    const r = calcularValoresComissao(7, 40, 'clinica');
+    const r = calcularValoresComissao(7, 40, 0, 'clinica');
     expect(r.valorRep).toBeCloseTo(2.8, 2);
     expect(r.valorQWork).toBeCloseTo(4.2, 2);
     expect(r.abaixoCusto).toBe(true);
   });
 
   test('R$9, rep 40%, clínica → QWork=5,40, abaixoCusto=false', () => {
-    const r = calcularValoresComissao(9, 40, 'clinica');
+    const r = calcularValoresComissao(9, 40, 0, 'clinica');
     expect(r.valorQWork).toBeCloseTo(5.4, 2);
     expect(r.abaixoCusto).toBe(false);
     const soma = r.valorRep + r.valorQWork;
@@ -207,30 +213,48 @@ describe('calcularValoresComissao — fórmula direta (sem redistribuição)', (
   });
 
   test('soma sempre é igual ao valorNegociado', () => {
-    const cases: [number, number, 'entidade' | 'clinica'][] = [
-      [7, 40, 'clinica'],
-      [20, 40, 'entidade'],
-      [14, 40, 'entidade'],
-      [100, 15, 'entidade'],
+    const cases: [number, number, number, 'entidade' | 'clinica'][] = [
+      [7, 40, 0, 'clinica'],
+      [20, 40, 0, 'entidade'],
+      [14, 40, 0, 'entidade'],
+      [100, 15, 0, 'entidade'],
     ];
-    for (const [v, rep, tipo] of cases) {
-      const r = calcularValoresComissao(v, rep, tipo);
+    for (const [v, rep, com, tipo] of cases) {
+      const r = calcularValoresComissao(v, rep, com, tipo);
       const soma = r.valorRep + r.valorQWork;
       expect(soma).toBeCloseTo(v, 1);
     }
   });
 
   test('calcularRequerAprovacao consistente com calcularValoresComissao', () => {
-    const cases: [number, number, 'entidade' | 'clinica'][] = [
-      [7, 10, 'clinica'],
-      [7, 40, 'clinica'],
-      [100, 20, 'entidade'],
-      [20, 40, 'entidade'],
+    const cases: [number, number, number, 'entidade' | 'clinica'][] = [
+      [7, 10, 0, 'clinica'],
+      [7, 40, 0, 'clinica'],
+      [100, 20, 0, 'entidade'],
+      [20, 40, 0, 'entidade'],
     ];
-    for (const [v, rep, tipo] of cases) {
-      const comissao = calcularValoresComissao(v, rep, tipo);
-      const requer = calcularRequerAprovacao(v, rep, tipo);
+    for (const [v, rep, com, tipo] of cases) {
+      const comissao = calcularValoresComissao(v, rep, com, tipo);
+      const requer = calcularRequerAprovacao(v, rep, com, tipo);
       expect(requer).toBe(comissao.abaixoCusto);
     }
+  });
+
+  test('percComercial reduz valorQWork — R$100, rep 20%, com 10%, entidade', () => {
+    const r = calcularValoresComissao(100, 20, 10, 'entidade');
+    expect(r.valorRep).toBe(20);
+    expect(r.valorComercial).toBe(10);
+    expect(r.valorQWork).toBe(70);
+    expect(r.percentualTotal).toBe(30);
+    expect(r.abaixoCusto).toBe(false);
+  });
+
+  test('percComercial + percRep alto pode causar abaixoCusto — R$20, rep 35%, com 5%, entidade', () => {
+    // valorQWork = 20 - 7 - 1 = 12 → não abaixo do custo (== 12)
+    const r = calcularValoresComissao(20, 35, 5, 'entidade');
+    expect(r.valorRep).toBe(7);
+    expect(r.valorComercial).toBe(1);
+    expect(r.valorQWork).toBe(12);
+    expect(r.abaixoCusto).toBe(false);
   });
 });

@@ -33,9 +33,8 @@ export default function LeadsRepresentante() {
     handleTelefoneChange,
     handleEmailChange,
     handleTipoClienteChange,
-    requerAprovacao,
-    custoAtual,
-    valoresComissao,
+    percRep,
+    percComercial,
   } = useLeads();
 
   const totalLeads =
@@ -80,10 +79,9 @@ export default function LeadsRepresentante() {
           handleTelefoneChange={handleTelefoneChange}
           handleEmailChange={handleEmailChange}
           handleTipoClienteChange={handleTipoClienteChange}
-          requerAprovacao={requerAprovacao}
-          custoAtual={custoAtual}
-          valoresComissao={valoresComissao}
           criarLead={criarLead}
+          percRep={percRep}
+          percComercial={percComercial}
           onClose={() => {
             setShowNovo(false);
             setErrosCampos({

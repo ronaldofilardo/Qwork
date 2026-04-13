@@ -14,11 +14,7 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import {
-  calcularRequerAprovacao,
-  TIPOS_CLIENTE,
-  MAX_PERCENTUAL_COMISSAO,
-} from '@/lib/leads-config';
+import { calcularRequerAprovacao, TIPOS_CLIENTE } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
@@ -108,7 +104,6 @@ export async function POST(request: NextRequest) {
       contato_email,
       contato_telefone,
       valor_negociado,
-      percentual_comissao,
       tipo_cliente: tipoClienteRaw,
       num_vidas_estimado: numVidasRaw,
     } = body;
@@ -134,15 +129,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const comissaoNum = Number(percentual_comissao);
-    if (
-      isNaN(comissaoNum) ||
-      comissaoNum < 0 ||
-      comissaoNum > MAX_PERCENTUAL_COMISSAO
-    ) {
+    const numVidas =
+      typeof numVidasRaw === 'number' && numVidasRaw > 0
+        ? Math.round(numVidasRaw)
+        : null;
+    if (!numVidas) {
       return NextResponse.json(
         {
-          error: `Percentual de comissão deve estar entre 0 e ${MAX_PERCENTUAL_COMISSAO}%.`,
+          error:
+            'Quantidade de vidas estimada é obrigatória e deve ser maior que zero.',
         },
         { status: 400 }
       );
@@ -163,6 +158,19 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       );
     }
+
+    // Buscar percentuais do representante
+    const repResult = await query<{
+      percentual_comissao: string | null;
+      percentual_comissao_comercial: string | null;
+    }>(
+      `SELECT percentual_comissao, percentual_comissao_comercial FROM representantes WHERE id = $1 LIMIT 1`,
+      [sess.representante_id]
+    );
+    const percRep = Number(repResult.rows[0]?.percentual_comissao ?? 0);
+    const percComercial = Number(
+      repResult.rows[0]?.percentual_comissao_comercial ?? 0
+    );
 
     // Verificar se já existe lead ativo para esse CNPJ
     const existente = await query(
@@ -212,20 +220,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const numVidas =
-      typeof numVidasRaw === 'number' && numVidasRaw > 0
-        ? Math.round(numVidasRaw)
-        : null;
-
     const requerAprovacao = calcularRequerAprovacao(
       valorNum,
-      comissaoNum,
+      percRep,
+      percComercial,
       tipoCliente
     );
 
     const result = await query(
-      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao, percentual_comissao_representante, tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      `INSERT INTO leads_representante (representante_id, cnpj, razao_social, contato_nome, contato_email, contato_telefone, valor_negociado, percentual_comissao, percentual_comissao_representante, percentual_comissao_comercial, tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
        RETURNING *`,
       [
         sess.representante_id,
@@ -235,8 +239,9 @@ export async function POST(request: NextRequest) {
         contato_email ?? null,
         contato_telefone ?? null,
         valorNum,
-        comissaoNum,
-        comissaoNum,
+        percRep,
+        percRep,
+        percComercial,
         tipoCliente,
         requerAprovacao,
         numVidas,

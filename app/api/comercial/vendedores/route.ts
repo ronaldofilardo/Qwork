@@ -67,8 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
              'hierarquia_id', hc.id,
              'representante_id', hc.representante_id,
              'representante_nome', r.nome,
-             'ativo', hc.ativo,
-             'percentual_override', hc.percentual_override
+             'ativo', hc.ativo
            )
          ) FILTER (WHERE hc.id IS NOT NULL) AS vinculos
        FROM usuarios u

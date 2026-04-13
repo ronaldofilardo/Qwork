@@ -8,15 +8,15 @@ import {
   validarTelefone,
   validarEmail,
 } from '@/lib/validators';
-import {
-  CUSTO_POR_AVALIACAO,
-  MAX_PERCENTUAL_COMISSAO,
-  calcularRequerAprovacao,
-  calcularValoresComissao,
-  type TipoCliente,
-  type ValoresComissao,
-} from '@/lib/leads-config';
+import { type TipoCliente } from '@/lib/leads-config';
 import type { Lead, NovoLeadForm, ErrosCampos } from '../types';
+
+interface RepMe {
+  representante?: {
+    percentual_comissao?: number | null;
+    percentual_comissao_comercial?: number | null;
+  };
+}
 
 const FORM_INICIAL: NovoLeadForm = {
   cnpj: '',
@@ -25,7 +25,6 @@ const FORM_INICIAL: NovoLeadForm = {
   contato_email: '',
   contato_telefone: '',
   valor_negociado: '',
-  percentual_comissao: '',
   tipo_cliente: 'entidade',
   num_vidas_estimado: '',
 };
@@ -34,7 +33,6 @@ const ERROS_INICIAL: ErrosCampos = {
   cnpj: '',
   contato_email: '',
   contato_telefone: '',
-  percentual_comissao: '',
 };
 
 function aplicarMascaraCNPJ(valor: string): string {
@@ -78,6 +76,8 @@ export function useLeads() {
   const [ordenacao, setOrdenacao] = useState<
     'recente' | 'antigo' | 'expirando'
   >('recente');
+  const [percRep, setPercRep] = useState(0);
+  const [percComercial, setPercComercial] = useState(0);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -100,6 +100,20 @@ export function useLeads() {
   useEffect(() => {
     carregarLeads();
   }, [carregarLeads]);
+
+  useEffect(() => {
+    void fetch('/api/representante/me')
+      .then((r) => r.json())
+      .then((d: RepMe) => {
+        setPercRep(Number(d.representante?.percentual_comissao ?? 0));
+        setPercComercial(
+          Number(d.representante?.percentual_comissao_comercial ?? 0)
+        );
+      })
+      .catch(() => {
+        /* silencioso */
+      });
+  }, []);
 
   const copiarCodigo = async (lead: Lead) => {
     const codigo = repSession?.codigo ?? '';
@@ -145,25 +159,8 @@ export function useLeads() {
       novoForm.valor_negociado.replace(/[^\d,]/g, '').replace(',', '.')
     ) || 0;
 
-  const percentualComissaoNum =
-    parseFloat(
-      novoForm.percentual_comissao.replace(/[^\d,]/g, '').replace(',', '.')
-    ) || 0;
-
   const numVidasEstimadoNum =
     parseInt(novoForm.num_vidas_estimado.replace(/\D/g, ''), 10) || 0;
-
-  const custoAtual = CUSTO_POR_AVALIACAO[novoForm.tipo_cliente];
-  const requerAprovacao = calcularRequerAprovacao(
-    valorNegociadoNum,
-    percentualComissaoNum,
-    novoForm.tipo_cliente
-  );
-  const valoresComissao: ValoresComissao = calcularValoresComissao(
-    valorNegociadoNum,
-    percentualComissaoNum,
-    novoForm.tipo_cliente
-  );
 
   const handleTipoClienteChange = (tipo: TipoCliente) => {
     setNovoForm((p) => ({ ...p, tipo_cliente: tipo }));
@@ -175,7 +172,7 @@ export function useLeads() {
     !errosCampos.contato_email &&
     !errosCampos.contato_telefone &&
     valorNegociadoNum > 0 &&
-    percentualComissaoNum >= 0;
+    numVidasEstimadoNum > 0;
 
   const criarLead = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -208,7 +205,6 @@ export function useLeads() {
           contato_email: novoForm.contato_email || null,
           contato_telefone: novoForm.contato_telefone || null,
           valor_negociado: valorNegociadoNum,
-          percentual_comissao: percentualComissaoNum,
           tipo_cliente: novoForm.tipo_cliente,
           num_vidas_estimado:
             numVidasEstimadoNum > 0 ? numVidasEstimadoNum : null,
@@ -262,9 +258,7 @@ export function useLeads() {
     handleTelefoneChange,
     handleEmailChange,
     handleTipoClienteChange,
-    requerAprovacao,
-    custoAtual,
-    valoresComissao,
-    MAX_PERCENTUAL_COMISSAO,
+    percRep,
+    percComercial,
   };
 }

@@ -13,13 +13,21 @@ import {
   TriangleAlert,
   Loader2,
   AlertCircle,
+  BadgeCheck,
+  Percent,
+  DollarSign,
 } from 'lucide-react';
 import EditRepresentanteModal from './EditRepresentanteModal';
+import AprovarComissaoModal from './AprovarComissaoModal';
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   apto: { label: 'Ativo', cls: 'bg-green-100 text-green-700' },
   ativo: { label: 'Em Cadastro', cls: 'bg-blue-100 text-blue-700' },
   apto_pendente: {
+    label: 'Aguardando Aprovação',
+    cls: 'bg-amber-100 text-amber-700',
+  },
+  aprovacao_comercial: {
     label: 'Aguardando Aprovação',
     cls: 'bg-amber-100 text-amber-700',
   },
@@ -172,7 +180,11 @@ export default function ComercialRepresentanteDetalhePage() {
     telefone?: string | null;
     cpf?: string | null;
     cnpj?: string | null;
+    cpf_responsavel_pj?: string | null;
     percentual_comissao?: number | null;
+    percentual_comissao_comercial?: number | null;
+    modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+    asaas_wallet_id?: string | null;
     banco_codigo?: string | null;
     agencia?: string | null;
     conta?: string | null;
@@ -186,6 +198,7 @@ export default function ComercialRepresentanteDetalhePage() {
   const [loadingVend, setLoadingVend] = useState(false);
   const [erro, setErro] = useState('');
   const [showEdit, setShowEdit] = useState(false);
+  const [showComissao, setShowComissao] = useState(false);
   const [painel, setPainel] = useState<PainelTipo>(null);
   const [painelLoading, setPainelLoading] = useState(false);
   const [leadsDetalhe, setLeadsDetalhe] = useState<LeadDetalhe[]>([]);
@@ -342,6 +355,8 @@ export default function ComercialRepresentanteDetalhePage() {
             cpf?: string | null;
             cnpj?: string | null;
             percentual_comissao?: number | null;
+            modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+            asaas_wallet_id?: string | null;
             banco_codigo?: string | null;
             agencia?: string | null;
             conta?: string | null;
@@ -490,15 +505,22 @@ export default function ComercialRepresentanteDetalhePage() {
               )}
             </div>
             {repFull && (repFull.cnpj || repFull.cpf) && (
-              <p className="text-gray-500 text-sm font-medium mt-1">
-                {fmtDoc(repFull.cnpj || repFull.cpf)}
-              </p>
+              <div className="mt-1 space-y-1">
+                <p className="text-gray-500 text-sm font-medium">
+                  {fmtDoc(repFull.cnpj || repFull.cpf)}
+                </p>
+                {repFull.cnpj && repFull.cpf_responsavel_pj && (
+                  <p className="text-gray-400 text-xs">
+                    CPF: {fmtCpf(repFull.cpf_responsavel_pj)}
+                  </p>
+                )}
+              </div>
             )}
             {rep.email && (
               <p className="text-gray-400 text-sm mt-1">{rep.email}</p>
             )}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <button
               onClick={() => setShowEdit(true)}
               disabled={!repFull}
@@ -507,6 +529,18 @@ export default function ComercialRepresentanteDetalhePage() {
               <Pencil size={15} />
               Editar Dados
             </button>
+            {(rep.status === 'apto' || rep.status === 'apto_pendente') && (
+              <button
+                onClick={() => setShowComissao(true)}
+                disabled={!repFull}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-700 border border-purple-200 rounded-xl hover:bg-purple-50 disabled:opacity-40 transition-colors"
+              >
+                <BadgeCheck size={15} />
+                {repFull?.modelo_comissionamento
+                  ? 'Alterar Comissão'
+                  : 'Definir Comissão'}
+              </button>
+            )}
             {rep.status !== 'desativado' && (
               <button
                 onClick={() => {
@@ -660,10 +694,100 @@ export default function ComercialRepresentanteDetalhePage() {
           </div>
         </div>
 
+        {/* ── Comissionamento ──────────────────────────────────────────── */}
+        {repFull && (
+          <div className="bg-white rounded-3xl border shadow-sm p-6">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-3">
+                <BadgeCheck size={20} className="text-purple-600" />
+                <h2 className="text-base font-bold text-gray-900">
+                  Comissionamento
+                </h2>
+              </div>
+              {repFull.modelo_comissionamento && !repFull.asaas_wallet_id && (
+                <span className="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight bg-orange-100 text-orange-700 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full inline-block" />
+                  Sem Wallet ID
+                </span>
+              )}
+            </div>
+
+            {repFull.modelo_comissionamento ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 border">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                    Modelo
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {repFull.modelo_comissionamento === 'percentual' ? (
+                      <Percent size={16} className="text-green-600" />
+                    ) : (
+                      <DollarSign size={16} className="text-blue-600" />
+                    )}
+                    <p className="font-bold text-gray-900">
+                      {repFull.modelo_comissionamento === 'percentual'
+                        ? 'Percentual'
+                        : 'Custo Fixo'}
+                    </p>
+                  </div>
+                </div>
+                {repFull.modelo_comissionamento === 'percentual' &&
+                  repFull.percentual_comissao != null && (
+                    <div className="bg-gray-50 rounded-xl p-4 border">
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                        Percentual
+                      </p>
+                      <p className="font-black text-gray-900 text-xl">
+                        {repFull.percentual_comissao}
+                        <span className="text-sm font-bold ml-0.5">%</span>
+                      </p>
+                    </div>
+                  )}
+                {repFull.asaas_wallet_id && (
+                  <div className="bg-gray-50 rounded-xl p-4 border sm:col-span-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">
+                      Wallet ID (Asaas)
+                    </p>
+                    <p className="font-mono text-xs text-gray-600 break-all">
+                      {repFull.asaas_wallet_id}
+                    </p>
+                  </div>
+                )}
+                {!repFull.asaas_wallet_id && (
+                  <div className="sm:col-span-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-800 flex items-center gap-2">
+                    <span className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />
+                    <span>
+                      <strong>Wallet ID Asaas não configurado.</strong> O
+                      pagamento via split não funcionará até ser definido.
+                    </span>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-6 text-gray-400">
+                <Percent size={32} className="mx-auto mb-2 opacity-30" />
+                <p className="text-sm font-medium">
+                  Modelo de comissionamento não definido
+                </p>
+                {(rep.status === 'apto' ||
+                  rep.status === 'apto_pendente' ||
+                  rep.status === 'aprovacao_comercial') && (
+                  <button
+                    onClick={() => setShowComissao(true)}
+                    className="mt-3 px-4 py-2 text-sm bg-green-600 text-white rounded-xl hover:bg-green-700 font-semibold transition-colors"
+                  >
+                    Definir Comissionamento
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="bg-white rounded-3xl border shadow-sm overflow-hidden">
           <div className="px-8 py-5 border-b flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Users size={20} className="text-green-600" />
+              <Users size={20} className="text-green-600" />{' '}
               <h2 className="text-base font-bold text-gray-900">
                 Equipe de Vendedores
               </h2>
@@ -1037,6 +1161,22 @@ export default function ComercialRepresentanteDetalhePage() {
           onClose={() => setShowEdit(false)}
           onSuccess={() => {
             setShowEdit(false);
+            carregarDados();
+            carregarRepFull();
+          }}
+        />
+      )}
+
+      {showComissao && repFull && (
+        <AprovarComissaoModal
+          repId={repFull.id}
+          repNome={repFull.nome}
+          modeloAtual={repFull.modelo_comissionamento ?? null}
+          percentualAtual={repFull.percentual_comissao ?? null}
+          walletIdAtual={repFull.asaas_wallet_id ?? null}
+          onClose={() => setShowComissao(false)}
+          onSuccess={() => {
+            setShowComissao(false);
             carregarDados();
             carregarRepFull();
           }}

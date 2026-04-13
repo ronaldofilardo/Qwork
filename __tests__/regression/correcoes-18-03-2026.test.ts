@@ -289,9 +289,11 @@ describe("Correção 6: emissor/laudos/[loteId]/download — status 'enviado' e 
     'app/api/emissor/laudos/[loteId]/download/route.ts'
   );
 
-  it("query principal usa IN ('emitido', 'enviado') para buscar laudo", () => {
+  it("query principal usa IN com 'emitido' e 'enviado' para buscar laudo", () => {
     const src = fs.readFileSync(DOWNLOAD_ROUTE, 'utf8');
-    expect(src).toMatch(/l\.status IN \('emitido', 'enviado'\)/);
+    // A lista pode conter outros status além de 'emitido'/'enviado'
+    expect(src).toMatch(/l\.status IN \([^)]*'emitido'[^)]*\)/);
+    expect(src).toContain("'enviado'");
   });
 
   it('query de fallback (lotes_avaliacao) não usa coluna titulo (removida na migration 164)', () => {

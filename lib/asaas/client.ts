@@ -14,6 +14,11 @@ import type {
   AsaasPaymentLink,
   AsaasPaymentLinkResponse,
 } from './types';
+import type {
+  DadosSubcontaRepresentante,
+  RespostaSubconta,
+  AsaasSplitItem,
+} from './subconta';
 
 // Configuração da API Asaas via variáveis de ambiente
 const ASAAS_API_URL =
@@ -451,6 +456,85 @@ class AsaasClient {
    */
   async getAccount(): Promise<any> {
     return this.request('/myAccount');
+  }
+
+  // ========================================
+  // SUBCONTAS / SPLIT (Marketplace)
+  // ========================================
+
+  /**
+   * Criar subconta Asaas para representante.
+   * Requer que a conta QWork tenha o produto "Split/Marketplace" habilitado.
+   * Retorna { id, walletId } para uso no split de cobranças.
+   *
+   * AVISO: Em sandbox, pode retornar status diferente de produção.
+   */
+  async criarSubcontaRepresentante(
+    dados: DadosSubcontaRepresentante
+  ): Promise<RespostaSubconta> {
+    console.log('[Asaas] Criando subconta para representante:', dados.email);
+
+    const payload: Record<string, unknown> = {
+      name: dados.nome,
+      email: dados.email,
+      cpfCnpj: dados.cpfCnpj,
+      ...(dados.telefone ? { mobilePhone: dados.telefone } : {}),
+      ...(dados.bankAccount ? { bankAccount: dados.bankAccount } : {}),
+    };
+
+    const response = await this.request<{
+      id: string;
+      walletId: string;
+      status: string;
+    }>('/accounts', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    });
+
+    console.log('[Asaas] Subconta criada:', {
+      id: response.id,
+      walletId: response.walletId,
+    });
+
+    return {
+      id: response.id,
+      walletId: response.walletId,
+      status: response.status,
+    };
+  }
+
+  /**
+   * Consultar dados de uma subconta Asaas.
+   */
+  async consultarSubconta(subcontaId: string): Promise<RespostaSubconta> {
+    const response = await this.request<{
+      id: string;
+      walletId: string;
+      status: string;
+    }>(`/accounts/${subcontaId}`);
+
+    return {
+      id: response.id,
+      walletId: response.walletId,
+      status: response.status,
+    };
+  }
+
+  /**
+   * Adiciona split a uma cobrança existente (antes de confirmar).
+   * Utilizado quando a cobrança é criada sem split e o walletId do
+   * representante é descoberto depois da criação.
+   */
+  async adicionarSplitAoPayment(
+    paymentId: string,
+    splits: AsaasSplitItem[]
+  ): Promise<AsaasPaymentResponse> {
+    console.log('[Asaas] Adicionando split ao pagamento:', paymentId, splits);
+
+    return this.request<AsaasPaymentResponse>(`/payments/${paymentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ split: splits }),
+    });
   }
 }
 

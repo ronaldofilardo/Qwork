@@ -130,7 +130,75 @@ export type AuditoriaSubTab =
   | 'laudos'
   | 'operacionais'
   | 'aceites'
-  | 'delecao';
+  | 'delecao'
+  | 'acesso-suporte'
+  | 'comissoes-leads';
+
+// ── Acesso por Perfil Operacional (Suporte/Comercial/Representante/Vendedor) ──
+
+export interface AcessoSuporte {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  nome: string | null;
+}
+
+export interface AcessoComercial {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  nome: string | null;
+}
+
+export interface AcessoRepresentante {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  representante_nome: string | null;
+}
+
+export interface AcessoVendedor {
+  id: number;
+  cpf: string;
+  login_timestamp: string;
+  logout_timestamp: string | null;
+  session_duration: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  nome: string | null;
+}
+
+// ── Lead Abaixo do Custo Mínimo ─────────────────────────────────────────────
+
+export interface LeadAbaixoMinimo {
+  id: number;
+  cnpj: string;
+  razao_social: string | null;
+  contato_nome: string | null;
+  tipo_cliente: string;
+  valor_negociado: number | null;
+  percentual_comissao: number | null;
+  percentual_comissao_representante: number | null;
+  percentual_comissao_comercial: number | null;
+  num_vidas_estimado: number | null;
+  requer_aprovacao_comercial: boolean;
+  status: string;
+  criado_em: string;
+  representante_nome: string;
+  representante_codigo: string;
+}
 
 // ── Deleção de Tomador ────────────────────────────────────────────────────
 
