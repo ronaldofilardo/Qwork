@@ -112,10 +112,7 @@ export async function gerarRecibo(
     const contratoResult = await query<{
       id: number;
       aceito: boolean;
-      hash_contrato?: string;
-    }>(`SELECT id, aceito, hash_contrato FROM contratos WHERE id = $1`, [
-      data.contrato_id,
-    ]);
+    }>(`SELECT id, aceito FROM contratos WHERE id = $1`, [data.contrato_id]);
     console.log(
       '[RECIBO] Contrato encontrado, rows:',
       contratoResult.rows.length
@@ -132,12 +129,6 @@ export async function gerarRecibo(
     if (!contrato.aceito) {
       throw new Error(
         'Contrato não foi aceito. O tomador deve aceitar o contrato antes do pagamento.'
-      );
-    }
-
-    if (!contrato.hash_contrato) {
-      console.warn(
-        `[RECIBO] Contrato ${contrato.id} não possui hash. Integridade comprometida.`
       );
     }
 

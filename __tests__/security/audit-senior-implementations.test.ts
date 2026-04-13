@@ -45,51 +45,8 @@ describe('Safe Identifiers — SQL Injection Prevention', () => {
   });
 });
 
-// ─── 2. Aceite Token ────────────────────────────────────────────────────
-
-describe('Aceite Token — HMAC-based Contract Acceptance', () => {
-  let gerarTokenAceite: (contratoId: number) => string;
-  let validarTokenAceite: (contratoId: number, token: string) => boolean;
-
-  beforeAll(() => {
-    // Set env for testing
-    process.env.CONTRATO_ACEITE_SECRET = 'test-secret-key-32chars-minimum!!';
-    const mod = require('@/lib/contratos/aceite-token');
-    gerarTokenAceite = mod.gerarTokenAceite;
-    validarTokenAceite = mod.validarTokenAceite;
-  });
-
-  it('deve gerar token determinístico para mesmo contrato', () => {
-    const token1 = gerarTokenAceite(123);
-    const token2 = gerarTokenAceite(123);
-    expect(token1).toBe(token2);
-  });
-
-  it('deve gerar tokens diferentes para contratos diferentes', () => {
-    const token1 = gerarTokenAceite(1);
-    const token2 = gerarTokenAceite(2);
-    expect(token1).not.toBe(token2);
-  });
-
-  it('deve validar token correto', () => {
-    const token = gerarTokenAceite(456);
-    expect(validarTokenAceite(456, token)).toBe(true);
-  });
-
-  it('deve rejeitar token inválido', () => {
-    expect(validarTokenAceite(456, 'token-falso')).toBe(false);
-  });
-
-  it('deve rejeitar token de outro contrato', () => {
-    const token = gerarTokenAceite(1);
-    expect(validarTokenAceite(2, token)).toBe(false);
-  });
-
-  it('deve gerar token com comprimento hex de 64 chars', () => {
-    const token = gerarTokenAceite(999);
-    expect(token).toMatch(/^[a-f0-9]{64}$/);
-  });
-});
+// ─── 2. Aceite Token — removido (lib/contratos/aceite-token.ts foi deletado)
+// A funcionalidade de token de aceite de proposta foi removida do sistema.
 
 // ─── 3. Error Report Endpoint ───────────────────────────────────────────
 

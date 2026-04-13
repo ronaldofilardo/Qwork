@@ -78,7 +78,7 @@ export const GET = async (
     // Buscar laudo (se existir) antes de validar conclusão para permitir visualizar laudos emitidos
     const laudoQuery = await query(
       `
-      SELECT id, observacoes, status, criado_em, emitido_em, enviado_em, hash_pdf, pdf_gerado_em
+      SELECT id, observacoes, status, criado_em, emitido_em, enviado_em, hash_pdf
       FROM laudos
       WHERE lote_id = $1
     `,

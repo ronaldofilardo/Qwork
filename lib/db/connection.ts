@@ -285,6 +285,7 @@ export function getLocalPool(): pg.Pool {
       max: isTest ? 5 : 20,
       idleTimeoutMillis: isTest ? 100 : 30000,
       connectionTimeoutMillis: isTest ? 2000 : 10000,
+      ssl: false, // localhost nunca usa SSL; evita herdar PGSSLMODE=require do ambiente
     });
 
     localPool.on('error', (err) => {

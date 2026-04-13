@@ -244,18 +244,8 @@ describe('Correção 3: GET /api/representante/vinculos — dados do lead de ori
   });
 });
 
-// ─── 4. PDF do contrato — logo QWork na última página ─────────────────────────
-describe('Correção 4: contrato-pdf — logo QWork inserida na última página', () => {
-  it('a rota de PDF tenta ler o arquivo logo-qwork.png', () => {
-    const src = fs.readFileSync(
-      path.join(process.cwd(), 'app/api/tomador/contrato-pdf/route.ts'),
-      'utf8'
-    );
-    expect(src).toMatch(/logo-qwork\.png/);
-    expect(src).toMatch(/addImage/);
-    expect(src).toMatch(/getNumberOfPages/);
-  });
-});
+// ─── 4. PDF do contrato — removido (rota app/api/tomador/contrato-pdf foi deletada)
+// Funcionalidade de geração de PDF de contrato foi removida do sistema.
 
 // ─── 5. Entidade lote [id] — tem_laudo deve incluir status 'enviado' ───────────
 describe("Correção 5: entidade/lote/[id] — tem_laudo inclui status 'enviado'", () => {

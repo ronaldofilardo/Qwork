@@ -1,92 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/session';
-import { getContratosBytomador } from '@/lib/db-contratacao';
 import { query, criarContaResponsavel } from '@/lib/db';
-import { obterContrato } from '@/lib/contratos/contratos';
 import { autoConvertirLeadPorCnpj } from '@/lib/db/comissionamento';
 
 export const dynamic = 'force-dynamic';
 
 /**
- * GET: Buscar contratos
- * Query params:
- * - id: ID do contrato específico
- * - tomador_id: Listar contratos de um tomador
+ * POST /api/contratos
+ * Body: { acao: 'aceitar', contrato_id, ip_aceite? }
  *
- * IMPORTANTE: Buscar contrato por ID não requer autenticação (novos tomadores precisam visualizar)
- * Listar contratos de tomador SIM requer autenticação
- */
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const id = searchParams.get('id');
-    const tomadorId =
-      searchParams.get('tomador_id') || searchParams.get('tomador_id');
-
-    // Buscar contrato específico por ID - NÃO requer autenticação
-    if (id) {
-      // Usar função obterContrato que já faz JOIN com tomadores
-      const contrato = await obterContrato(parseInt(id));
-
-      if (!contrato) {
-        return NextResponse.json(
-          { error: 'Contrato não encontrado' },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json({
-        success: true,
-        contrato,
-      });
-    }
-
-    // Listar contratos de tomador - REQUER autenticação
-    if (tomadorId) {
-      const session = getSession();
-      if (!session) {
-        return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
-      }
-
-      const contratos = await getContratosBytomador(
-        parseInt(tomadorId),
-        session
-      );
-
-      return NextResponse.json({
-        success: true,
-        contratos,
-      });
-    }
-
-    return NextResponse.json(
-      { error: 'Parâmetros inválidos. Forneça id ou tomador_id' },
-      { status: 400 }
-    );
-  } catch (error) {
-    console.error('Erro ao buscar contratos:', error);
-
-    // Retornar erro detalhado para debugging
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json(
-      { error: 'Erro ao buscar contratos' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * POST: Criar ou aceitar contrato
- * Body:
- * - acao: 'criar' | 'aceitar'
- * - Para criar: { tomador_id, ip_aceite? }
- * - Para aceitar: { contrato_id, ip_aceite }
- *
- * IMPORTANTE: Aceite de contrato NÃO requer autenticação (novos tomadors)
- * Criação de contrato SIM requer autenticação (apenas admin)
+ * Registra aceite do contrato de prestação de serviços pelo tomador.
+ * Não requer autenticação — tomadores recém-cadastrados precisam aceitar antes de ter login.
  */
 export async function POST(request: NextRequest) {
   try {
