@@ -81,9 +81,15 @@ export function useLeads() {
   >('recente');
   const [percRep, setPercRep] = useState(0);
   const [percComercial, setPercComercial] = useState(0);
-  const [modeloComissionamento, setModeloComissionamento] = useState<string | null>(null);
-  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<number | null>(null);
-  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<number | null>(null);
+  const [modeloComissionamento, setModeloComissionamento] = useState<
+    string | null
+  >(null);
+  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<
+    number | null
+  >(null);
+  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<
+    number | null
+  >(null);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -115,9 +121,15 @@ export function useLeads() {
         setPercComercial(
           Number(d.representante?.percentual_comissao_comercial ?? 0)
         );
-        setModeloComissionamento(d.representante?.modelo_comissionamento ?? null);
-        setValorCustoFixoEntidade(d.representante?.valor_custo_fixo_entidade ?? null);
-        setValorCustoFixoClinica(d.representante?.valor_custo_fixo_clinica ?? null);
+        setModeloComissionamento(
+          d.representante?.modelo_comissionamento ?? null
+        );
+        setValorCustoFixoEntidade(
+          d.representante?.valor_custo_fixo_entidade ?? null
+        );
+        setValorCustoFixoClinica(
+          d.representante?.valor_custo_fixo_clinica ?? null
+        );
       })
       .catch(() => {
         /* silencioso */

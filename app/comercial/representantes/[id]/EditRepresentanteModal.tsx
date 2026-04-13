@@ -88,10 +88,14 @@ export default function EditRepresentanteModal({
   );
   const [modelo, setModelo] = useState(rep.modelo_comissionamento ?? '');
   const [valorCFEntidade, setValorCFEntidade] = useState(
-    rep.valor_custo_fixo_entidade != null ? String(rep.valor_custo_fixo_entidade) : ''
+    rep.valor_custo_fixo_entidade != null
+      ? String(rep.valor_custo_fixo_entidade)
+      : ''
   );
   const [valorCFClinica, setValorCFClinica] = useState(
-    rep.valor_custo_fixo_clinica != null ? String(rep.valor_custo_fixo_clinica) : ''
+    rep.valor_custo_fixo_clinica != null
+      ? String(rep.valor_custo_fixo_clinica)
+      : ''
   );
 
   // Dados bancários
@@ -174,10 +178,14 @@ export default function EditRepresentanteModal({
       const modeloClean = modelo.trim() || null;
       if (modeloClean !== (rep.modelo_comissionamento ?? null))
         body.modelo_comissionamento = modeloClean;
-      const cfEntidade = valorCFEntidade.trim() ? parseFloat(valorCFEntidade) : null;
+      const cfEntidade = valorCFEntidade.trim()
+        ? parseFloat(valorCFEntidade)
+        : null;
       if (cfEntidade !== (rep.valor_custo_fixo_entidade ?? null))
         body.valor_custo_fixo_entidade = cfEntidade;
-      const cfClinica = valorCFClinica.trim() ? parseFloat(valorCFClinica) : null;
+      const cfClinica = valorCFClinica.trim()
+        ? parseFloat(valorCFClinica)
+        : null;
       if (cfClinica !== (rep.valor_custo_fixo_clinica ?? null))
         body.valor_custo_fixo_clinica = cfClinica;
 
@@ -389,7 +397,9 @@ export default function EditRepresentanteModal({
                 {modelo === 'custo_fixo' && (
                   <>
                     <div>
-                      <label className={labelCls}>Custo Fixo Entidade (R$)</label>
+                      <label className={labelCls}>
+                        Custo Fixo Entidade (R$)
+                      </label>
                       <input
                         type="number"
                         min="0"
@@ -401,7 +411,9 @@ export default function EditRepresentanteModal({
                       />
                     </div>
                     <div>
-                      <label className={labelCls}>Custo Fixo Clínica (R$)</label>
+                      <label className={labelCls}>
+                        Custo Fixo Clínica (R$)
+                      </label>
                       <input
                         type="number"
                         min="0"

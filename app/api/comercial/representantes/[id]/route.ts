@@ -120,7 +120,10 @@ const PatchSchema = z.object({
     .optional()
     .nullable(),
   asaas_wallet_id: z.string().max(200).optional().nullable(),
-  modelo_comissionamento: z.enum(['percentual', 'custo_fixo']).optional().nullable(),
+  modelo_comissionamento: z
+    .enum(['percentual', 'custo_fixo'])
+    .optional()
+    .nullable(),
   valor_custo_fixo_entidade: z.number().positive().optional().nullable(),
   valor_custo_fixo_clinica: z.number().positive().optional().nullable(),
 });

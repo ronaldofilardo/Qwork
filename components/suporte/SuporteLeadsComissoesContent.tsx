@@ -31,7 +31,9 @@ interface ApiResponse {
 }
 
 const fmtBRL = (v: number | null | undefined) =>
-  v != null ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—';
+  v != null
+    ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    : '—';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
 
@@ -53,7 +55,9 @@ export function SuporteLeadsComissoesContent() {
   const carregar = useCallback(async (p: number) => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/suporte/comissionamento/leads?page=${p}&limit=${limit}`);
+      const res = await fetch(
+        `/api/suporte/comissionamento/leads?page=${p}&limit=${limit}`
+      );
       if (res.ok) {
         const d = (await res.json()) as ApiResponse;
         setLeads(d.leads ?? []);
@@ -64,15 +68,21 @@ export function SuporteLeadsComissoesContent() {
     }
   }, []);
 
-  useEffect(() => { void carregar(page); }, [carregar, page]);
+  useEffect(() => {
+    void carregar(page);
+  }, [carregar, page]);
 
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Lead / Comissões</h2>
-        <p className="text-sm text-gray-500 mt-0.5">{total} lead{total !== 1 ? 's' : ''} registrados</p>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Lead / Comissões
+        </h2>
+        <p className="text-sm text-gray-500 mt-0.5">
+          {total} lead{total !== 1 ? 's' : ''} registrados
+        </p>
       </div>
 
       {loading ? (
@@ -90,12 +100,20 @@ export function SuporteLeadsComissoesContent() {
               <table className="w-full text-sm">
                 <thead className="text-xs text-gray-500 uppercase tracking-wide bg-gray-50">
                   <tr>
-                    <th className="px-3 py-3 text-left font-medium">Representante</th>
-                    <th className="px-3 py-3 text-left font-medium">CNPJ / Razão</th>
+                    <th className="px-3 py-3 text-left font-medium">
+                      Representante
+                    </th>
+                    <th className="px-3 py-3 text-left font-medium">
+                      CNPJ / Razão
+                    </th>
                     <th className="px-3 py-3 text-left font-medium">Tipo</th>
                     <th className="px-3 py-3 text-left font-medium">Modelo</th>
-                    <th className="px-3 py-3 text-left font-medium">Valor neg.</th>
-                    <th className="px-3 py-3 text-left font-medium">Comissão rep</th>
+                    <th className="px-3 py-3 text-left font-medium">
+                      Valor neg.
+                    </th>
+                    <th className="px-3 py-3 text-left font-medium">
+                      Comissão rep
+                    </th>
                     <th className="px-3 py-3 text-left font-medium">Status</th>
                     <th className="px-3 py-3 text-left font-medium">Data</th>
                   </tr>
@@ -104,18 +122,26 @@ export function SuporteLeadsComissoesContent() {
                   {leads.map((l) => (
                     <tr key={l.id} className="hover:bg-gray-50">
                       <td className="px-3 py-3">
-                        <div className="font-medium text-gray-900">{l.representante_nome ?? '—'}</div>
+                        <div className="font-medium text-gray-900">
+                          {l.representante_nome ?? '—'}
+                        </div>
                         {l.representante_codigo && (
-                          <div className="text-xs text-gray-400">{l.representante_codigo}</div>
+                          <div className="text-xs text-gray-400">
+                            {l.representante_codigo}
+                          </div>
                         )}
                       </td>
                       <td className="px-3 py-3">
                         <div className="text-gray-700">{l.cnpj ?? '—'}</div>
                         {l.razao_social && (
-                          <div className="text-xs text-gray-400 truncate max-w-[160px]">{l.razao_social}</div>
+                          <div className="text-xs text-gray-400 truncate max-w-[160px]">
+                            {l.razao_social}
+                          </div>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-gray-600 capitalize">{l.tipo_cliente}</td>
+                      <td className="px-3 py-3 text-gray-600 capitalize">
+                        {l.tipo_cliente}
+                      </td>
                       <td className="px-3 py-3">
                         {l.modelo_comissionamento === 'custo_fixo' ? (
                           <span className="text-xs bg-purple-50 text-purple-700 border border-purple-200 px-2 py-0.5 rounded-full">
@@ -129,7 +155,9 @@ export function SuporteLeadsComissoesContent() {
                           <span className="text-xs text-gray-400">—</span>
                         )}
                       </td>
-                      <td className="px-3 py-3 text-gray-700">{fmtBRL(l.valor_negociado)}</td>
+                      <td className="px-3 py-3 text-gray-700">
+                        {fmtBRL(l.valor_negociado)}
+                      </td>
                       <td className="px-3 py-3 text-gray-600">
                         {l.modelo_comissionamento === 'custo_fixo'
                           ? l.valor_custo_fixo_snapshot != null
@@ -140,17 +168,22 @@ export function SuporteLeadsComissoesContent() {
                             : '—'}
                       </td>
                       <td className="px-3 py-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full border ${
-                          l.status === 'aprovado' || l.status === 'convertido'
-                            ? 'bg-green-50 text-green-700 border-green-200'
-                            : l.status === 'rejeitado' || l.status === 'expirado'
-                              ? 'bg-red-50 text-red-700 border-red-200'
-                              : 'bg-amber-50 text-amber-700 border-amber-200'
-                        }`}>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full border ${
+                            l.status === 'aprovado' || l.status === 'convertido'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : l.status === 'rejeitado' ||
+                                  l.status === 'expirado'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : 'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}
+                        >
                           {STATUS_LABEL[l.status] ?? l.status}
                         </span>
                       </td>
-                      <td className="px-3 py-3 text-gray-400 text-xs">{fmtDate(l.criado_em)}</td>
+                      <td className="px-3 py-3 text-gray-400 text-xs">
+                        {fmtDate(l.criado_em)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -167,7 +200,9 @@ export function SuporteLeadsComissoesContent() {
               >
                 <ChevronLeft size={16} />
               </button>
-              <span className="text-sm text-gray-600">Página {page} de {totalPages}</span>
+              <span className="text-sm text-gray-600">
+                Página {page} de {totalPages}
+              </span>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}

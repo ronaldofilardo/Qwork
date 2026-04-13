@@ -14,7 +14,12 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import { calcularRequerAprovacao, calcularComissaoCustoFixo, CUSTO_POR_AVALIACAO, TIPOS_CLIENTE } from '@/lib/leads-config';
+import {
+  calcularRequerAprovacao,
+  calcularComissaoCustoFixo,
+  CUSTO_POR_AVALIACAO,
+  TIPOS_CLIENTE,
+} from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
@@ -176,7 +181,8 @@ export async function POST(request: NextRequest) {
     const percComercial = Number(
       repResult.rows[0]?.percentual_comissao_comercial ?? 0
     );
-    const modeloComissionamento = repResult.rows[0]?.modelo_comissionamento ?? null;
+    const modeloComissionamento =
+      repResult.rows[0]?.modelo_comissionamento ?? null;
 
     // ── Lógica de custo_fixo ──────────────────────────────────────────────
     let requerAprovacao = false;
@@ -187,7 +193,10 @@ export async function POST(request: NextRequest) {
         tipoCliente === 'entidade'
           ? repResult.rows[0]?.valor_custo_fixo_entidade
           : repResult.rows[0]?.valor_custo_fixo_clinica;
-      const valorCustoFixo = custoFixoRaw != null ? Number(custoFixoRaw) : CUSTO_POR_AVALIACAO[tipoCliente];
+      const valorCustoFixo =
+        custoFixoRaw != null
+          ? Number(custoFixoRaw)
+          : CUSTO_POR_AVALIACAO[tipoCliente];
       const calc = calcularComissaoCustoFixo(valorNum, valorCustoFixo);
       if (calc.abaixoMinimo) {
         return NextResponse.json(

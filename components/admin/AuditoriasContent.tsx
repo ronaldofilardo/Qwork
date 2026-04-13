@@ -54,8 +54,12 @@ export function AuditoriasContent() {
   const [operacionais, setOperacionais] = useState<AcessoOperacional[]>([]);
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
   const [acessosSuporte, setAcessosSuporte] = useState<AcessoSuporte[]>([]);
-  const [leadsAbaixoMinimo, setLeadsAbaixoMinimo] = useState<LeadAbaixoMinimo[]>([]);
-  const [leadsComissoesGeral, setLeadsComissoesGeral] = useState<LeadComissaoGeral[]>([]);
+  const [leadsAbaixoMinimo, setLeadsAbaixoMinimo] = useState<
+    LeadAbaixoMinimo[]
+  >([]);
+  const [leadsComissoesGeral, setLeadsComissoesGeral] = useState<
+    LeadComissaoGeral[]
+  >([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
     if (tab === 'delecao') return;
