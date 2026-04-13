@@ -10,6 +10,7 @@ import {
   Search,
   UserX,
   UserPlus,
+  Percent,
 } from 'lucide-react';
 import CadastrarRepresentanteModal from './CadastrarRepresentanteModal';
 
@@ -24,6 +25,9 @@ interface RepMetrica {
   vinculos_ativos: number;
   comissoes_pendentes: number;
   valor_pendente: number;
+  modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
+  percentual_comissao?: number | null;
+  asaas_wallet_id?: string | null;
 }
 
 type Aba = 'ativos' | 'inativos';
@@ -215,6 +219,16 @@ export default function ComercialRepresentantesPage() {
                   </div>
                 </div>
               )}
+              {aba === 'ativos' &&
+                r.modelo_comissionamento &&
+                !r.asaas_wallet_id && (
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm animate-pulse flex items-center gap-1.5 uppercase tracking-wider">
+                      <div className="w-1.5 h-1.5 bg-white rounded-full" />
+                      Wallet Pendente
+                    </div>
+                  </div>
+                )}
               {aba === 'ativos' && r.status === 'apto_pendente' && (
                 <div className="absolute top-0 right-0">
                   <div className="bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl shadow-sm animate-pulse flex items-center gap-1.5 uppercase tracking-wider">
@@ -238,13 +252,43 @@ export default function ComercialRepresentantesPage() {
                             ? 'bg-green-500'
                             : r.status === 'apto_pendente'
                               ? 'bg-amber-500'
-                              : 'bg-gray-300'
+                              : r.status === 'aprovacao_comercial'
+                                ? 'bg-amber-500'
+                                : r.status === 'apto' &&
+                                    !r.modelo_comissionamento
+                                  ? 'bg-orange-400'
+                                  : 'bg-gray-300'
                       }`}
                     />
                   </div>
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-widest">
                     {r.codigo || 'S/ COD'}
                   </p>
+                  {/* Badge do modelo de comissionamento */}
+                  {r.modelo_comissionamento ? (
+                    <div className="mt-1.5 flex items-center gap-1">
+                      {r.modelo_comissionamento === 'percentual' ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-bold">
+                          <Percent size={9} />
+                          {r.percentual_comissao != null
+                            ? `${r.percentual_comissao}%`
+                            : 'Percentual'}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold">
+                          <DollarSign size={9} />
+                          Custo Fixo
+                        </span>
+                      )}
+                    </div>
+                  ) : aba === 'ativos' &&
+                    (r.status === 'apto' || r.status === 'apto_pendente') ? (
+                    <div className="mt-1.5">
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-[10px] font-bold">
+                        Sem modelo
+                      </span>
+                    </div>
+                  ) : null}
                 </div>
               </div>
 
@@ -275,28 +319,65 @@ export default function ComercialRepresentantesPage() {
 
               <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between">
                 <div>
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
-                    Comissão Pendente
-                  </p>
-                  <div className="flex items-center gap-1">
-                    <DollarSign
-                      size={12}
-                      className={
-                        r.valor_pendente > 0
-                          ? 'text-amber-500'
-                          : 'text-gray-200'
-                      }
-                    />
-                    <p
-                      className={`font-black text-sm ${
-                        r.valor_pendente > 0
-                          ? 'text-amber-600'
-                          : 'text-gray-300'
-                      }`}
-                    >
-                      {r.valor_pendente > 0 ? fmtBRL(r.valor_pendente) : '—'}
-                    </p>
-                  </div>
+                  {r.modelo_comissionamento ? (
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                        Modelo Configurado
+                      </p>
+                      <div className="flex items-center gap-1">
+                        {r.modelo_comissionamento === 'percentual' ? (
+                          <span className="inline-flex items-center gap-1 text-sm font-bold text-green-700">
+                            <Percent size={12} />
+                            {r.percentual_comissao != null
+                              ? `${r.percentual_comissao}%`
+                              : 'Percentual'}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-sm font-bold text-blue-700">
+                            <DollarSign size={12} />
+                            Custo Fixo
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ) : aba === 'ativos' &&
+                    (r.status === 'apto' || r.status === 'apto_pendente') ? (
+                    <div>
+                      <p className="text-[10px] font-bold text-orange-400 uppercase tracking-wider mb-0.5">
+                        Sem Comissionamento
+                      </p>
+                      <p className="text-xs font-semibold text-orange-500">
+                        Definir modelo
+                      </p>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">
+                        Comissão Pendente
+                      </p>
+                      <div className="flex items-center gap-1">
+                        <DollarSign
+                          size={12}
+                          className={
+                            r.valor_pendente > 0
+                              ? 'text-amber-500'
+                              : 'text-gray-200'
+                          }
+                        />
+                        <p
+                          className={`font-black text-sm ${
+                            r.valor_pendente > 0
+                              ? 'text-amber-600'
+                              : 'text-gray-300'
+                          }`}
+                        >
+                          {r.valor_pendente > 0
+                            ? fmtBRL(r.valor_pendente)
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div
                   className={`w-8 h-8 rounded-full bg-gray-50 flex items-center justify-center transition-colors ${

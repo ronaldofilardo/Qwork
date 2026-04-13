@@ -26,7 +26,10 @@ export type StatusRepresentante =
   | 'apto_bloqueado'
   | 'suspenso'
   | 'desativado'
-  | 'rejeitado';
+  | 'rejeitado'
+  | 'aguardando_senha'
+  | 'expirado'
+  | 'aprovacao_comercial';
 
 /** Pessoa Física ou Jurídica */
 export type TipoPessoaRepresentante = 'pf' | 'pj';
@@ -127,6 +130,9 @@ export interface Representante {
   comprovante_conta_path?: string | null;
   // Comissão: percentual individual definido pelo admin (NULL = não definido)
   percentual_comissao?: number | null;
+  // Novo modelo de comissionamento
+  modelo_comissionamento?: ModeloComissionamento | null;
+  asaas_wallet_id?: string | null;
   // Status e controle
   status: StatusRepresentante;
   aceite_termos: boolean;
@@ -409,3 +415,62 @@ export const COMISSIONAMENTO_CONSTANTS = {
     '.pdf',
   ] as readonly string[],
 } as const;
+
+// ---------------------------------------------------------------------------
+// Novo modelo de comissionamento (migration 600)
+// ---------------------------------------------------------------------------
+
+/** Modelo de comissionamento do representante */
+export type ModeloComissionamento = 'percentual' | 'custo_fixo';
+
+/** Status do ciclo mensal de comissão */
+export type StatusCicloComissao =
+  | 'aberto'
+  | 'aguardando_nf_rpa'
+  | 'nf_rpa_enviada'
+  | 'validado'
+  | 'vencido';
+
+/** Status do repasse (split Asaas) */
+export type StatusRepasseSplit = 'pendente' | 'confirmado' | 'estornado';
+
+/**
+ * Ciclo mensal de comissão — espelha public.ciclos_comissao_mensal
+ */
+export interface CicloComissaoMensal {
+  id: number;
+  representante_id: number;
+  /** Formato: YYYY-MM (ex: "2025-07") */
+  mes_ano: string;
+  valor_total_recebido: number;
+  status: StatusCicloComissao;
+  nf_rpa_path?: string | null;
+  nf_rpa_nome_arquivo?: string | null;
+  data_envio_nf_rpa?: string | null;
+  data_validacao_suporte?: string | null;
+  validado_por_cpf?: string | null;
+  data_bloqueio?: string | null;
+  criado_em: string;
+  atualizado_em: string;
+}
+
+/**
+ * Repasse split Asaas — espelha public.repasses_split
+ */
+export interface RepasseSplit {
+  id: number;
+  representante_id: number;
+  ciclo_id: number;
+  vinculo_id?: number | null;
+  laudo_id?: number | null;
+  asaas_payment_id?: string | null;
+  valor_total_laudo: number;
+  valor_qwork: number;
+  valor_representante: number;
+  modelo_utilizado: ModeloComissionamento;
+  percentual_aplicado?: number | null;
+  status: StatusRepasseSplit;
+  data_criacao: string;
+  data_confirmacao?: string | null;
+  data_estorno?: string | null;
+}

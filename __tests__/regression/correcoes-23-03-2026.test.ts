@@ -302,9 +302,9 @@ describe('7. Sidebar representante — Minhas Vendas no menu', () => {
 });
 
 // ---------------------------------------------------------------------------
-// 8. PATCH /api/comercial/representantes/[id] — percentual_vendedor_direto
+// 8. PATCH /api/comercial/representantes/[id] — novo modelo comissionamento
 // ---------------------------------------------------------------------------
-describe('8. PATCH /api/comercial/representantes/[id] — percentual_vendedor_direto', () => {
+describe('8. PATCH /api/comercial/representantes/[id] — novo modelo comissionamento', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -324,28 +324,38 @@ describe('8. PATCH /api/comercial/representantes/[id] — percentual_vendedor_di
     expect(fs.existsSync(routePath)).toBe(true);
   });
 
-  it('deve ter percentual_vendedor_direto no PatchSchema', () => {
-    expect(src).toContain('percentual_vendedor_direto');
+  it('NÃO deve ter percentual_vendedor_direto (campo removido no novo modelo)', () => {
+    expect(src).not.toContain('percentual_vendedor_direto');
+  });
+
+  it('deve ter percentual_comissao no PatchSchema', () => {
+    expect(src).toContain('percentual_comissao');
     expect(src).toContain('z.number().min(0).max(100)');
   });
 
-  it('deve processar percentual_vendedor_direto no addField', () => {
-    const idx = src.indexOf('percentual_vendedor_direto');
-    expect(idx).toBeGreaterThan(-1);
-    // Deve ocorrer pelo menos 2 vezes (schema + addField)
-    const count = (src.match(/percentual_vendedor_direto/g) ?? []).length;
-    expect(count).toBeGreaterThanOrEqual(2);
+  it('deve incluir percentual_comissao no SELECT do GET', () => {
+    expect(src).toContain('r.percentual_comissao');
   });
 
-  it('deve incluir percentual_vendedor_direto no SELECT do GET', () => {
-    expect(src).toContain('r.percentual_vendedor_direto');
+  it('deve ter rota aprovar-comissao relacionada', () => {
+    const aprovarPath = path.join(
+      ROOT,
+      'app',
+      'api',
+      'comercial',
+      'representantes',
+      '[id]',
+      'aprovar-comissao',
+      'route.ts'
+    );
+    expect(fs.existsSync(aprovarPath)).toBe(true);
   });
 });
 
 // ---------------------------------------------------------------------------
-// 9. PATCH /api/suporte/representantes/[id] — percentual_vendedor_direto
+// 9. PATCH /api/suporte/representantes/[id] — novo modelo comissionamento
 // ---------------------------------------------------------------------------
-describe('9. PATCH /api/suporte/representantes/[id] — percentual_vendedor_direto', () => {
+describe('9. PATCH /api/suporte/representantes/[id] — novo modelo comissionamento', () => {
   const routePath = path.join(
     ROOT,
     'app',
@@ -365,96 +375,133 @@ describe('9. PATCH /api/suporte/representantes/[id] — percentual_vendedor_dire
     expect(fs.existsSync(routePath)).toBe(true);
   });
 
-  it('deve ter percentual_vendedor_direto no PatchSchema', () => {
-    expect(src).toContain('percentual_vendedor_direto');
+  it('NÃO deve ter percentual_vendedor_direto (campo removido no novo modelo)', () => {
+    expect(src).not.toContain('percentual_vendedor_direto');
   });
 
-  it('deve processar percentual_vendedor_direto no repFields', () => {
-    const count = (src.match(/percentual_vendedor_direto/g) ?? []).length;
-    expect(count).toBeGreaterThanOrEqual(2);
+  it('deve ter modelo_comissionamento no PatchSchema', () => {
+    expect(src).toContain('modelo_comissionamento');
   });
 
-  it('deve retornar percentual_vendedor_direto no RETURNING', () => {
-    expect(src).toContain(
-      'RETURNING id, nome, email, status, codigo, percentual_comissao, percentual_vendedor_direto'
-    );
+  it('deve ter asaas_wallet_id no PatchSchema', () => {
+    expect(src).toContain('asaas_wallet_id');
+  });
+
+  it('deve incluir aprovacao_comercial no enum de status', () => {
+    expect(src).toContain("'aprovacao_comercial'");
+  });
+
+  it('deve retornar modelo_comissionamento e asaas_wallet_id no RETURNING', () => {
+    expect(src).toContain('modelo_comissionamento');
+    expect(src).toContain('asaas_wallet_id');
   });
 });
 
 // ---------------------------------------------------------------------------
-// 10. EditRepresentanteModal — campo Comissão Venda Direta
+// 10. aprovar-comissao route — Fase 3 Etapa 1
 // ---------------------------------------------------------------------------
-describe('10. EditRepresentanteModal — campo percentual_vendedor_direto', () => {
-  const modalPath = path.join(
+describe('10. POST /api/comercial/representantes/[id]/aprovar-comissao — Fase 3', () => {
+  const routePath = path.join(
     ROOT,
     'app',
+    'api',
     'comercial',
     'representantes',
     '[id]',
-    'EditRepresentanteModal.tsx'
+    'aprovar-comissao',
+    'route.ts'
   );
   let src: string;
 
   beforeAll(() => {
-    src = fs.readFileSync(modalPath, 'utf-8');
+    src = fs.readFileSync(routePath, 'utf-8');
   });
 
   it('arquivo deve existir', () => {
-    expect(fs.existsSync(modalPath)).toBe(true);
+    expect(fs.existsSync(routePath)).toBe(true);
   });
 
-  it('deve ter percentual_vendedor_direto na interface RepresentanteData', () => {
-    expect(src).toContain('percentual_vendedor_direto');
+  it('deve aceitar modelo percentual e custo_fixo', () => {
+    expect(src).toContain("'percentual', 'custo_fixo'");
   });
 
-  it('deve ter estado percentualVendedorDireto com useState', () => {
-    expect(src).toContain('percentualVendedorDireto');
-    expect(src).toContain('setPercentualVendedorDireto');
+  it('deve validar que rep está em apto_pendente', () => {
+    expect(src).toContain("'apto_pendente'");
   });
 
-  it('deve ter label Comissão Venda Direta (%)', () => {
-    expect(src).toContain('Comissão Venda Direta (%)');
+  it('deve mover status para aprovacao_comercial', () => {
+    expect(src).toContain("'aprovacao_comercial'");
   });
 
-  it('deve incluir percentual_vendedor_direto no body para PATCH', () => {
-    expect(src).toContain('body.percentual_vendedor_direto');
+  it('deve atualizar modelo_comissionamento e percentual_comissao', () => {
+    expect(src).toContain('modelo_comissionamento');
+    expect(src).toContain('percentual_comissao');
+  });
+
+  it('deve usar requireRole com comercial ou admin', () => {
+    expect(src).toContain("'comercial'");
+    expect(src).toContain("'admin'");
   });
 });
 
 // ---------------------------------------------------------------------------
-// 11. RepresentantesLista (suporte) — campo % Venda Direta
+// 11. suporte/representantes/[id]/ativar — Fase 3 Etapa 2
 // ---------------------------------------------------------------------------
-describe('11. RepresentantesLista suporte — percentual_vendedor_direto', () => {
-  const componentPath = path.join(
+describe('11. POST /api/suporte/representantes/[id]/ativar — Fase 3', () => {
+  const routePath = path.join(
     ROOT,
-    'components',
+    'app',
+    'api',
     'suporte',
-    'RepresentantesLista.tsx'
+    'representantes',
+    '[id]',
+    'ativar',
+    'route.ts'
   );
   let src: string;
 
   beforeAll(() => {
-    src = fs.readFileSync(componentPath, 'utf-8');
+    src = fs.readFileSync(routePath, 'utf-8');
   });
 
   it('arquivo deve existir', () => {
-    expect(fs.existsSync(componentPath)).toBe(true);
+    expect(fs.existsSync(routePath)).toBe(true);
   });
 
-  it('deve ter percentual_vendedor_direto no tipo Representante', () => {
-    expect(src).toContain('percentual_vendedor_direto');
+  it('deve verificar que rep está em aprovacao_comercial', () => {
+    expect(src).toContain("'aprovacao_comercial'");
   });
 
-  it('deve ter % Venda Direta no array de campos de edição', () => {
-    expect(src).toContain('% Venda Direta');
+  it('deve verificar que modelo_comissionamento está definido', () => {
+    expect(src).toContain('modelo_comissionamento');
   });
 
-  it('deve ter percentual_vendedor_direto no form state', () => {
-    expect(src).toContain("percentual_vendedor_direto: ''");
+  it('deve criar subconta Asaas via asaasClient', () => {
+    expect(src).toContain('asaasClient');
+    expect(src).toContain('criarSubcontaRepresentante');
   });
 
-  it('deve incluir parseFloat de percentual_vendedor_direto no body do PATCH', () => {
-    expect(src).toContain('body.percentual_vendedor_direto = parseFloat');
+  it('deve mover status para apto mesmo se Asaas falhar', () => {
+    expect(src).toContain("'apto'");
+    // asaasErro indica catch não-bloqueante
+    expect(src).toContain('asaasErro');
+  });
+
+  it('deve usar requireRole com suporte ou admin', () => {
+    expect(src).toContain("'suporte'");
+    expect(src).toContain("'admin'");
+  });
+
+  it('RepresentantesLista NÃO deve ter percentual_vendedor_direto (removido)', () => {
+    const componentPath = path.join(
+      ROOT,
+      'components',
+      'suporte',
+      'RepresentantesLista.tsx'
+    );
+    const componentSrc = fs.readFileSync(componentPath, 'utf-8');
+    expect(componentSrc).not.toContain('percentual_vendedor_direto');
+    expect(componentSrc).not.toContain('% Venda Direta');
   });
 });
 

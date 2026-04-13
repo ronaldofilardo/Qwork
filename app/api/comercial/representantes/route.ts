@@ -1,10 +1,10 @@
 /**
  * POST /api/comercial/representantes
- * Cria um novo representante (PF ou PJ) diretamente pelo Comercial, com upload de documentos.
+ * Cria um novo representante PJ diretamente pelo Comercial, com upload de documentos.
  * Aceita multipart/form-data com dados cadastrais + arquivos obrigatórios.
  *
- * PF: documento_identificacao obrigatório
- * PJ: documento_identificacao (CPF do responsável) + cartao_cnpj obrigatórios
+ * Campos obrigatórios: documento_identificacao (CPF responsável) + cartao_cnpj
+ * Campos opcionais: asaas_wallet_id
  *
  * Fluxo: cria lead com status='pendente_verificacao' (aparece na fila de Candidatos).
  * O comercial verifica o lead → converte → link de convite gerado no momento da conversão.
@@ -42,23 +42,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     // Extrair campos texto
     const nome = sanitizarString((formData.get('nome') as string) ?? '');
-    const tipoPessoa = (
-      (formData.get('tipo_pessoa') as string) ?? 'pf'
-    ).toLowerCase() as 'pf' | 'pj';
     const email = ((formData.get('email') as string) ?? '')
       .trim()
       .toLowerCase();
     const telefone =
       limparNumeros((formData.get('telefone') as string) ?? '') || null;
-
-    // Campos PF
     const cpfRaw = limparNumeros((formData.get('cpf') as string) ?? '');
-
-    // Campos PJ
     const cnpjRaw =
       limparNumeros((formData.get('cnpj') as string) ?? '') || null;
     const razaoSocial =
       sanitizarString((formData.get('razao_social') as string) ?? '') || null;
+    const asaasWalletId =
+      ((formData.get('asaas_wallet_id') as string) ?? '').trim() || null;
 
     // Validações
     if (!nome || nome.length < 2 || nome.length > 200)
@@ -67,38 +62,25 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
 
-    if (tipoPessoa !== 'pf' && tipoPessoa !== 'pj')
-      return NextResponse.json(
-        { error: 'tipo_pessoa deve ser pf ou pj.' },
-        { status: 400 }
-      );
-
     if (!email || !validarEmail(email))
       return NextResponse.json({ error: 'Email inválido.' }, { status: 400 });
 
-    if (tipoPessoa === 'pf') {
-      if (!cpfRaw || !validarCPF(cpfRaw))
-        return NextResponse.json({ error: 'CPF inválido.' }, { status: 400 });
-    } else {
-      // PJ
-      if (!cnpjRaw || !validarCNPJ(cnpjRaw))
-        return NextResponse.json({ error: 'CNPJ inválido.' }, { status: 400 });
-      if (!razaoSocial || razaoSocial.length < 3)
-        return NextResponse.json(
-          { error: 'Razão social obrigatória para PJ.' },
-          { status: 400 }
-        );
-      if (!cpfRaw || !validarCPF(cpfRaw))
-        return NextResponse.json(
-          { error: 'CPF do representante legal obrigatório.' },
-          { status: 400 }
-        );
-    }
+    if (!cnpjRaw || !validarCNPJ(cnpjRaw))
+      return NextResponse.json({ error: 'CNPJ inválido.' }, { status: 400 });
+    if (!razaoSocial || razaoSocial.length < 3)
+      return NextResponse.json(
+        { error: 'Razão social obrigatória.' },
+        { status: 400 }
+      );
+    if (!cpfRaw || !validarCPF(cpfRaw))
+      return NextResponse.json(
+        { error: 'CPF do responsável legal obrigatório.' },
+        { status: 400 }
+      );
 
-    // Validar arquivo obrigatório (campo unificado 'documento_identificacao')
+    // Validar documento_identificacao (CPF do responsável)
     const docFile =
       (formData.get('documento_identificacao') as File | null) ??
-      (formData.get('documento_cpf') as File | null) ??
       (formData.get('documento_cpf_responsavel') as File | null);
     const valDoc = await validarArquivo(docFile, 'Documento de identificação');
     if (!valDoc.valid)
@@ -107,34 +89,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         { status: 400 }
       );
 
-    // PJ: validar cartao_cnpj obrigatório
-    if (tipoPessoa === 'pj') {
-      const cartaoFile = formData.get('cartao_cnpj') as File | null;
-      const valCartao = await validarArquivo(cartaoFile, 'Cartão CNPJ');
-      if (!valCartao.valid)
-        return NextResponse.json(
-          { error: valCartao.error, field: 'cartao_cnpj' },
-          { status: 400 }
-        );
-    }
-
-    // Verificar duplicata de CPF em representantes e em leads ativos
-    const [cpfRepResult, cpfLeadResult] = await Promise.all([
-      query<{ id: number }>(
-        `SELECT id FROM public.representantes WHERE cpf = $1 LIMIT 1`,
-        [cpfRaw]
-      ),
-      query<{ id: string }>(
-        `SELECT id FROM public.representantes_cadastro_leads WHERE cpf = $1 AND status NOT IN ('rejeitado','convertido') LIMIT 1`,
-        [cpfRaw]
-      ),
-    ]);
-    if (cpfRepResult.rows.length > 0 || cpfLeadResult.rows.length > 0) {
+    // Validar cartao_cnpj obrigatório
+    const cartaoFile = formData.get('cartao_cnpj') as File | null;
+    const valCartao = await validarArquivo(cartaoFile, 'Cartão CNPJ');
+    if (!valCartao.valid)
       return NextResponse.json(
-        { error: 'Já existe um representante cadastrado com este CPF.' },
-        { status: 409 }
+        { error: valCartao.error, field: 'cartao_cnpj' },
+        { status: 400 }
       );
-    }
 
     // Verificar duplicata de email em representantes e em leads ativos
     const [emailRepResult, emailLeadResult] = await Promise.all([
@@ -154,8 +116,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Verificar duplicata de CNPJ (PJ)
-    if (tipoPessoa === 'pj' && cnpjRaw) {
+    // Verificar duplicata de CNPJ
+    if (cnpjRaw) {
       const [cnpjRepResult, cnpjLeadResult] = await Promise.all([
         query<{ id: number }>(
           `SELECT id FROM public.representantes WHERE cnpj = $1 LIMIT 1`,
@@ -174,20 +136,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // Upload de documentos antes de criar o lead
-    const identificador = tipoPessoa === 'pj' && cnpjRaw ? cnpjRaw : cpfRaw;
+    // Upload de documentos antes de criar o lead (sempre PJ)
+    const identificador = cnpjRaw ?? cpfRaw;
 
-    // PF: documento_identificacao → doc_cpf_key
-    // PJ: documento_identificacao → doc_cpf_resp_key  |  cartao_cnpj → doc_cnpj_key
     const arquivoDocId =
       (formData.get('documento_identificacao') as File | null) ??
-      (tipoPessoa === 'pf'
-        ? (formData.get('documento_cpf') as File | null)
-        : (formData.get('documento_cpf_responsavel') as File | null));
-
+      (formData.get('documento_cpf_responsavel') as File | null);
     const arquivoCartaoCnpj = formData.get('cartao_cnpj') as File | null;
 
-    // Upload do documento de identificação
+    // Upload do documento do responsável
     let docIdKey: string | null = null;
     let docIdFilename: string | null = null;
     let docIdUrl: string | null = null;
@@ -197,13 +154,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         arquivoDocId,
         'Documento de identificação'
       );
-      const tipoUpload = tipoPessoa === 'pf' ? 'cpf' : 'cpf_responsavel';
       const resultado = await uploadDocumentoRepresentante(
         val.buffer!,
-        tipoUpload,
+        'cpf_responsavel',
         identificador,
         val.contentType!,
-        tipoPessoa,
+        'pj',
         'CAD'
       );
       docIdKey = resultado.arquivo_remoto?.key ?? resultado.path;
@@ -211,12 +167,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       docIdFilename = arquivoDocId.name;
     }
 
-    // Upload do cartão CNPJ (apenas PJ)
+    // Upload do cartão CNPJ
     let docCnpjKey: string | null = null;
     let docCnpjFilename: string | null = null;
     let docCnpjUrl: string | null = null;
 
-    if (tipoPessoa === 'pj' && arquivoCartaoCnpj) {
+    if (arquivoCartaoCnpj) {
       const val = await validarArquivo(arquivoCartaoCnpj, 'Cartão CNPJ');
       const resultado = await uploadDocumentoRepresentante(
         val.buffer!,
@@ -246,6 +202,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         doc_cpf_key, doc_cpf_filename, doc_cpf_url,
         doc_cnpj_key, doc_cnpj_filename, doc_cnpj_url,
         doc_cpf_resp_key, doc_cpf_resp_filename, doc_cpf_resp_url,
+        asaas_wallet_id,
         status, ip_origem, user_agent
       ) VALUES (
         $1, $2, $3, $4,
@@ -253,26 +210,28 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         $9, $10, $11,
         $12, $13, $14,
         $15, $16, $17,
-        'pendente_verificacao', $18, $19
+        $18,
+        'pendente_verificacao', $19, $20
       ) RETURNING id`,
       [
-        tipoPessoa,
+        'pj',
         nome,
         email,
         telefone,
-        tipoPessoa === 'pf' ? cpfRaw : null,
-        tipoPessoa === 'pj' ? cnpjRaw : null,
-        tipoPessoa === 'pj' ? razaoSocial : null,
-        tipoPessoa === 'pj' ? cpfRaw : null, // cpf_responsavel para PJ
-        tipoPessoa === 'pf' ? docIdKey : null, // doc_cpf_key (PF)
-        tipoPessoa === 'pf' ? docIdFilename : null, // doc_cpf_filename (PF)
-        tipoPessoa === 'pf' ? docIdUrl : null, // doc_cpf_url (PF)
-        tipoPessoa === 'pj' ? docCnpjKey : null, // doc_cnpj_key (PJ)
-        tipoPessoa === 'pj' ? docCnpjFilename : null, // doc_cnpj_filename (PJ)
-        tipoPessoa === 'pj' ? docCnpjUrl : null, // doc_cnpj_url (PJ)
-        tipoPessoa === 'pj' ? docIdKey : null, // doc_cpf_resp_key (PJ)
-        tipoPessoa === 'pj' ? docIdFilename : null, // doc_cpf_resp_filename (PJ)
-        tipoPessoa === 'pj' ? docIdUrl : null, // doc_cpf_resp_url (PJ)
+        null, // cpf (PF) — não usado
+        cnpjRaw,
+        razaoSocial,
+        cpfRaw, // cpf_responsavel
+        null, // doc_cpf_key (PF) — não usado
+        null, // doc_cpf_filename (PF)
+        null, // doc_cpf_url (PF)
+        docCnpjKey,
+        docCnpjFilename,
+        docCnpjUrl,
+        docIdKey, // doc_cpf_resp_key
+        docIdFilename,
+        docIdUrl,
+        asaasWalletId,
         ipOrigem,
         userAgent,
       ]

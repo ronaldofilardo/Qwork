@@ -25,6 +25,7 @@ export async function GET() {
               r.pix_chave, r.pix_tipo,
               r.dados_bancarios_status, r.dados_bancarios_solicitado_em,
               r.dados_bancarios_confirmado_em,
+              r.modelo_comissionamento, r.percentual_comissao, r.percentual_comissao_comercial,
               COALESCE(rs.primeira_senha_alterada, TRUE) = FALSE AS precisa_trocar_senha
        FROM representantes r
        LEFT JOIN representantes_senhas rs ON rs.representante_id = r.id

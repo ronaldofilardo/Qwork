@@ -57,8 +57,8 @@ export default function AceitarContratoPage() {
   }, [router]);
 
   const handleConcluir = () => {
-    // Aceites registrados — redirecionar direto ao portal (sessão já ativa desde criar-senha)
-    router.push('/representante/?primeiro_acesso=1');
+    // Aceites registrados — redirecionar para login (para autenticar novamente)
+    router.push('/login');
   };
 
   if (isLoading) {

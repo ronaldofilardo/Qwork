@@ -594,6 +594,22 @@ export async function handlePaymentWebhook(
 
         await activateSubscription(payment.id, payment, event);
 
+        // Confirmar repasse_split pendente para este payment
+        try {
+          await dbQuery(
+            `UPDATE repasses_split
+             SET status = 'confirmado',
+                 data_confirmacao = NOW()
+             WHERE asaas_payment_id = $1 AND status = 'pendente'`,
+            [payment.id]
+          );
+        } catch (splitErr) {
+          console.error(
+            '[Asaas Webhook] Erro ao confirmar repasse_split:',
+            splitErr
+          );
+        }
+
         console.log(
           '[Asaas Webhook] ✅ PAYMENT_CONFIRMED processado com sucesso'
         );

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Loader2, Building2, CreditCard } from 'lucide-react';
+import { X, Loader2, Building2, CreditCard, Wallet } from 'lucide-react';
 
 const BANCOS = [
   { codigo: '001', nome: 'Banco do Brasil' },
@@ -40,7 +40,7 @@ interface RepresentanteData {
   tipo_pessoa: 'pf' | 'pj';
   status: string;
   percentual_comissao?: number | null;
-  percentual_vendedor_direto?: number | null;
+  percentual_comissao_comercial?: number | null;
   banco_codigo?: string | null;
   agencia?: string | null;
   conta?: string | null;
@@ -48,6 +48,7 @@ interface RepresentanteData {
   titular_conta?: string | null;
   pix_chave?: string | null;
   pix_tipo?: string | null;
+  asaas_wallet_id?: string | null;
 }
 
 interface Props {
@@ -56,7 +57,7 @@ interface Props {
   onSuccess: () => void;
 }
 
-type Tab = 'cadastrais' | 'bancarios';
+type Tab = 'cadastrais' | 'bancarios' | 'wallet';
 
 export default function EditRepresentanteModal({
   representante: rep,
@@ -77,9 +78,9 @@ export default function EditRepresentanteModal({
   const [percentual, setPercentual] = useState(
     rep.percentual_comissao != null ? String(rep.percentual_comissao) : ''
   );
-  const [percentualVendedorDireto, setPercentualVendedorDireto] = useState(
-    rep.percentual_vendedor_direto != null
-      ? String(rep.percentual_vendedor_direto)
+  const [percentualComercial, setPercentualComercial] = useState(
+    rep.percentual_comissao_comercial != null
+      ? String(rep.percentual_comissao_comercial)
       : ''
   );
 
@@ -91,6 +92,9 @@ export default function EditRepresentanteModal({
   const [titular, setTitular] = useState(rep.titular_conta ?? '');
   const [pixChave, setPixChave] = useState(rep.pix_chave ?? '');
   const [pixTipo, setPixTipo] = useState(rep.pix_tipo ?? '');
+
+  // Wallet ID
+  const [walletId, setWalletId] = useState(rep.asaas_wallet_id ?? '');
 
   const handleSave = async () => {
     setSaving(true);
@@ -113,14 +117,23 @@ export default function EditRepresentanteModal({
           : null;
       }
       if (
-        percentualVendedorDireto.trim() !==
-        (rep.percentual_vendedor_direto != null
-          ? String(rep.percentual_vendedor_direto)
+        percentualComercial.trim() !==
+        (rep.percentual_comissao_comercial != null
+          ? String(rep.percentual_comissao_comercial)
           : '')
       ) {
-        body.percentual_vendedor_direto = percentualVendedorDireto.trim()
-          ? parseFloat(percentualVendedorDireto)
+        body.percentual_comissao_comercial = percentualComercial.trim()
+          ? parseFloat(percentualComercial)
           : null;
+      }
+      // Validar soma
+      const totalPerc =
+        parseFloat(percentual || '0') + parseFloat(percentualComercial || '0');
+      if (totalPerc > 40) {
+        setErro(
+          `A soma dos percentuais (rep + comercial) não pode ultrapassar 40%. Atual: ${totalPerc.toFixed(1)}%.`
+        );
+        return;
       }
       if (rep.tipo_pessoa === 'pf' && cpf.trim() !== (rep.cpf ?? ''))
         body.cpf = cpf.trim() || null;
@@ -141,6 +154,11 @@ export default function EditRepresentanteModal({
         body.pix_chave = pixChave.trim() || null;
       if (pixTipo.trim() !== (rep.pix_tipo ?? ''))
         body.pix_tipo = pixTipo.trim() || null;
+
+      // Wallet ID
+      const walletIdClean = walletId.trim() || null;
+      if (walletIdClean !== (rep.asaas_wallet_id ?? null))
+        body.asaas_wallet_id = walletIdClean;
 
       if (Object.keys(body).length === 0) {
         onClose();
@@ -213,6 +231,20 @@ export default function EditRepresentanteModal({
           >
             <CreditCard size={14} />
             Dados Bancários
+          </button>
+          <button
+            onClick={() => setAba('wallet')}
+            className={`flex items-center gap-2 px-2 pb-3 pt-3 text-xs font-semibold uppercase tracking-wide border-b-2 transition-all ml-6 ${
+              aba === 'wallet'
+                ? 'border-green-600 text-green-700'
+                : 'border-transparent text-gray-400 hover:text-gray-600'
+            }`}
+          >
+            <Wallet size={14} />
+            Wallet ID
+            {!rep.asaas_wallet_id && (
+              <span className="ml-0.5 w-1.5 h-1.5 rounded-full bg-orange-400 inline-block" />
+            )}
           </button>
         </div>
 
@@ -293,11 +325,11 @@ export default function EditRepresentanteModal({
                   </select>
                 </div>
                 <div>
-                  <label className={labelCls}>Comissão (%)</label>
+                  <label className={labelCls}>Comissão Rep (%)</label>
                   <input
                     type="number"
                     min="0"
-                    max="100"
+                    max="40"
                     step="0.01"
                     className={inputCls}
                     value={percentual}
@@ -306,19 +338,20 @@ export default function EditRepresentanteModal({
                   />
                 </div>
                 <div>
-                  <label className={labelCls}>Comissão Venda Direta (%)</label>
+                  <label className={labelCls}>Comissão Comercial (%)</label>
                   <input
                     type="number"
                     min="0"
-                    max="100"
+                    max="40"
                     step="0.01"
                     className={inputCls}
-                    value={percentualVendedorDireto}
-                    onChange={(e) =>
-                      setPercentualVendedorDireto(e.target.value)
-                    }
-                    placeholder="Ex: 3.0"
+                    value={percentualComercial}
+                    onChange={(e) => setPercentualComercial(e.target.value)}
+                    placeholder="Ex: 2.0"
                   />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Soma rep + comercial ≤ 40%
+                  </p>
                 </div>
               </div>
             </div>
@@ -406,6 +439,31 @@ export default function EditRepresentanteModal({
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {aba === 'wallet' && (
+            <div className="space-y-5">
+              <div>
+                <label className={labelCls}>Wallet ID Asaas</label>
+                <input
+                  className={`${inputCls} font-mono`}
+                  value={walletId}
+                  onChange={(e) => setWalletId(e.target.value)}
+                  placeholder="Ex: 7e6b5490-a88e-4c36-8f5e-..."
+                />
+                <p className="text-[11px] text-gray-400 mt-1.5">
+                  Necessário para pagamento de comissão via split Asaas.
+                </p>
+              </div>
+              {walletId.trim() === '' && (
+                <div className="bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-700">
+                  <span className="font-bold">
+                    ⚠️ Wallet ID não configurado.
+                  </span>{' '}
+                  O pagamento via split Asaas não funcionará até ser definido.
+                </div>
+              )}
             </div>
           )}
         </div>

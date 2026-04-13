@@ -34,7 +34,6 @@ export async function GET(request: NextRequest) {
       `SELECT
          hc.id            AS vinculo_id,
          hc.ativo,
-         hc.percentual_override,
          hc.criado_em     AS vinculado_em,
          hc.data_fim,
          u.id             AS vendedor_id,
@@ -67,9 +66,8 @@ export async function POST(request: NextRequest) {
   try {
     const sess = requireRepresentante();
     const body = await request.json();
-    const { vendedor_id, percentual_override } = body as {
+    const { vendedor_id } = body as {
       vendedor_id: number;
-      percentual_override?: number;
     };
 
     if (!vendedor_id || typeof vendedor_id !== 'number') {
@@ -106,10 +104,10 @@ export async function POST(request: NextRequest) {
 
     const result = await query(
       `INSERT INTO public.hierarquia_comercial
-         (vendedor_id, representante_id, ativo, percentual_override)
-       VALUES ($1, $2, true, $3)
+         (vendedor_id, representante_id, ativo)
+       VALUES ($1, $2, true)
        RETURNING id`,
-      [vendedor_id, sess.representante_id, percentual_override ?? null]
+      [vendedor_id, sess.representante_id]
     );
 
     return NextResponse.json(
