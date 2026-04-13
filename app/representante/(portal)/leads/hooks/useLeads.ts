@@ -15,6 +15,9 @@ interface RepMe {
   representante?: {
     percentual_comissao?: number | null;
     percentual_comissao_comercial?: number | null;
+    modelo_comissionamento?: string | null;
+    valor_custo_fixo_entidade?: number | null;
+    valor_custo_fixo_clinica?: number | null;
   };
 }
 
@@ -78,6 +81,9 @@ export function useLeads() {
   >('recente');
   const [percRep, setPercRep] = useState(0);
   const [percComercial, setPercComercial] = useState(0);
+  const [modeloComissionamento, setModeloComissionamento] = useState<string | null>(null);
+  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<number | null>(null);
+  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<number | null>(null);
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
 
@@ -109,6 +115,9 @@ export function useLeads() {
         setPercComercial(
           Number(d.representante?.percentual_comissao_comercial ?? 0)
         );
+        setModeloComissionamento(d.representante?.modelo_comissionamento ?? null);
+        setValorCustoFixoEntidade(d.representante?.valor_custo_fixo_entidade ?? null);
+        setValorCustoFixoClinica(d.representante?.valor_custo_fixo_clinica ?? null);
       })
       .catch(() => {
         /* silencioso */
@@ -260,5 +269,8 @@ export function useLeads() {
     handleTipoClienteChange,
     percRep,
     percComercial,
+    modeloComissionamento,
+    valorCustoFixoEntidade,
+    valorCustoFixoClinica,
   };
 }

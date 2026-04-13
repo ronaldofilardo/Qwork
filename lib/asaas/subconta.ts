@@ -15,7 +15,7 @@
 /** Valor mínimo que o QWork retém por avaliação, por tipo de produto */
 export const CUSTO_MINIMO: Record<'clinica' | 'entidade', number> = {
   clinica: 5.0,
-  entidade: 15.0,
+  entidade: 12.0,
 };
 
 /** Percentual máximo de comissão distribuível (representante) */

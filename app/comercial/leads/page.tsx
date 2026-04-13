@@ -37,12 +37,22 @@ interface LeadAprovacao {
   representante_codigo: string;
 }
 
+interface VinculoSemRep {
+  id: number;
+  tipo_cliente: string;
+  nome: string;
+  cnpj: string | null;
+  status: string;
+  total_laudos: number | null;
+  valor_total: number | null;
+}
+
 export default function ComercialLeadsAprovacaoPage() {
   const [leads, setLeads] = useState<LeadAprovacao[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
-  const [modo, setModo] = useState<'aprovacao' | 'todos'>('aprovacao');
+  const [modo, setModo] = useState<'aprovacao' | 'todos' | 'sem-rep'>('aprovacao');
 
   // Modal de ação
   const [modal, setModal] = useState<{
@@ -54,7 +64,15 @@ export default function ComercialLeadsAprovacaoPage() {
   const [erroAcao, setErroAcao] = useState('');
   const [sucessoMsg, setSucessoMsg] = useState('');
 
-  const carregar = useCallback(async (p: number, m: 'aprovacao' | 'todos') => {
+  // Sem representante
+  const [vinculosSemRep, setVinculosSemRep] = useState<VinculoSemRep[]>([]);
+  const [loadingSemRep, setLoadingSemRep] = useState(false);
+  const [modalAtribuir, setModalAtribuir] = useState<VinculoSemRep | null>(null);
+  const [atribuirRepId, setAtribuirRepId] = useState('');
+  const [atribuindoRep, setAtribuindoRep] = useState(false);
+  const [erroAtribuir, setErroAtribuir] = useState('');
+
+  const carregar = useCallback(async (p: number, m: 'aprovacao' | 'todos' | 'sem-rep') => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(p), modo: m });
@@ -75,8 +93,19 @@ export default function ComercialLeadsAprovacaoPage() {
   }, []);
 
   useEffect(() => {
+    if (modo === 'sem-rep') return;
     void carregar(page, modo);
   }, [carregar, page, modo]);
+
+  useEffect(() => {
+    if (modo !== 'sem-rep') return;
+    setLoadingSemRep(true);
+    fetch('/api/comercial/vinculos/sem-rep')
+      .then((r) => r.json())
+      .then((d: { vinculos?: VinculoSemRep[] }) => setVinculosSemRep(d.vinculos ?? []))
+      .catch(() => {})
+      .finally(() => setLoadingSemRep(false));
+  }, [modo]);
 
   const executarAcao = async () => {
     if (!modal) return;
@@ -139,13 +168,12 @@ export default function ComercialLeadsAprovacaoPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
-            {modo === 'aprovacao' ? 'Aprovação de Leads' : 'Todos os Leads'}
+            {modo === 'aprovacao' ? 'Aprovação de Leads' : modo === 'sem-rep' ? 'Vínculos sem Representante' : 'Todos os Leads'}
           </h2>
           <p className="text-sm text-gray-500 mt-0.5">
-            {total} lead{total !== 1 ? 's' : ''}{' '}
-            {modo === 'aprovacao'
-              ? 'aguardando aprovação comercial'
-              : 'cadastrados'}
+            {modo === 'sem-rep'
+              ? `${vinculosSemRep.length} vínculo${vinculosSemRep.length !== 1 ? 's' : ''} sem representante`
+              : `${total} lead${total !== 1 ? 's' : ''} ${modo === 'aprovacao' ? 'aguardando aprovação comercial' : 'cadastrados'}`}
           </p>
         </div>
         <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1 text-sm">
@@ -167,6 +195,15 @@ export default function ComercialLeadsAprovacaoPage() {
           >
             Todos
           </button>
+          <button
+            onClick={() => {
+              setModo('sem-rep');
+              setPage(1);
+            }}
+            className={`px-3 py-1.5 rounded-md font-medium transition-colors cursor-pointer ${modo === 'sem-rep' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+          >
+            Sem representante
+          </button>
         </div>
       </div>
 
@@ -176,7 +213,57 @@ export default function ComercialLeadsAprovacaoPage() {
         </div>
       )}
 
-      {loading ? (
+      {modo === 'sem-rep' ? (
+        loadingSemRep ? (
+          <div className="flex items-center justify-center py-24">
+            <div className="animate-spin h-8 w-8 rounded-full border-4 border-blue-500 border-t-transparent" />
+          </div>
+        ) : vinculosSemRep.length === 0 ? (
+          <div className="bg-white rounded-xl border p-12 text-center">
+            <CheckCircle size={48} className="mx-auto text-green-400 mb-4" />
+            <p className="text-gray-500 text-sm">Nenhum vínculo sem representante.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-xl border overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="text-xs text-gray-500 uppercase tracking-wide bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-medium">Nome / CNPJ</th>
+                    <th className="px-4 py-3 text-left font-medium">Tipo</th>
+                    <th className="px-4 py-3 text-left font-medium">Status</th>
+                    <th className="px-4 py-3 text-left font-medium">Laudos</th>
+                    <th className="px-4 py-3 text-left font-medium">Valor Total</th>
+                    <th className="px-4 py-3 text-left font-medium">Ação</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {vinculosSemRep.map((v) => (
+                    <tr key={v.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="font-medium text-gray-900">{v.nome}</div>
+                        {v.cnpj && <div className="text-xs text-gray-400">{v.cnpj}</div>}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 capitalize">{v.tipo_cliente}</td>
+                      <td className="px-4 py-3 text-gray-600">{v.status}</td>
+                      <td className="px-4 py-3 text-gray-600">{v.total_laudos ?? 0}</td>
+                      <td className="px-4 py-3 text-gray-600">{fmtBRL(v.valor_total)}</td>
+                      <td className="px-4 py-3">
+                        <button
+                          onClick={() => { setModalAtribuir(v); setAtribuirRepId(''); setErroAtribuir(''); }}
+                          className="text-xs bg-blue-50 text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+                        >
+                          Atribuir rep
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )
+      ) : loading ? (
         <div className="flex items-center justify-center py-24">
           <div className="animate-spin h-8 w-8 rounded-full border-4 border-blue-500 border-t-transparent" />
         </div>
@@ -377,6 +464,64 @@ export default function ComercialLeadsAprovacaoPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Modal atribuir representante */}
+      {modalAtribuir && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm">
+            <div className="px-6 py-4 border-b">
+              <h3 className="font-semibold text-gray-900">Atribuir Representante</h3>
+              <p className="text-xs text-gray-500 mt-1">{modalAtribuir.nome}</p>
+            </div>
+            <div className="px-6 py-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">ID do Representante</label>
+                <input
+                  type="number"
+                  value={atribuirRepId}
+                  onChange={(e) => setAtribuirRepId(e.target.value)}
+                  placeholder="Ex: 42"
+                  className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              {erroAtribuir && <p className="text-sm text-red-600">{erroAtribuir}</p>}
+            </div>
+            <div className="px-6 py-4 border-t flex gap-2">
+              <button
+                onClick={() => setModalAtribuir(null)}
+                disabled={atribuindoRep}
+                className="flex-1 border px-4 py-2 rounded-lg text-sm hover:bg-gray-50 transition-colors cursor-pointer"
+              >Cancelar</button>
+              <button
+                onClick={async () => {
+                  if (!atribuirRepId.trim()) { setErroAtribuir('Informe o ID do representante.'); return; }
+                  setAtribuindoRep(true);
+                  setErroAtribuir('');
+                  try {
+                    const res = await fetch(`/api/comercial/vinculos/${modalAtribuir.id}/atribuir-rep`, {
+                      method: 'PATCH',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ representante_id: parseInt(atribuirRepId) }),
+                    });
+                    const d = (await res.json().catch(() => ({}))) as { error?: string };
+                    if (!res.ok) { setErroAtribuir(d.error ?? 'Erro ao atribuir.'); return; }
+                    setModalAtribuir(null);
+                    setSucessoMsg('Representante atribuído com sucesso.');
+                    setTimeout(() => setSucessoMsg(''), 3000);
+                    setVinculosSemRep((prev) => prev.filter((v) => v.id !== modalAtribuir.id));
+                  } catch { setErroAtribuir('Erro de conexão.'); }
+                  finally { setAtribuindoRep(false); }
+                }}
+                disabled={atribuindoRep}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer flex items-center justify-center gap-2"
+              >
+                {atribuindoRep && <Loader2 size={14} className="animate-spin" />}
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Modal de confirmação */}

@@ -41,6 +41,9 @@ interface RepresentanteData {
   status: string;
   percentual_comissao?: number | null;
   percentual_comissao_comercial?: number | null;
+  modelo_comissionamento?: string | null;
+  valor_custo_fixo_entidade?: number | null;
+  valor_custo_fixo_clinica?: number | null;
   banco_codigo?: string | null;
   agencia?: string | null;
   conta?: string | null;
@@ -82,6 +85,13 @@ export default function EditRepresentanteModal({
     rep.percentual_comissao_comercial != null
       ? String(rep.percentual_comissao_comercial)
       : ''
+  );
+  const [modelo, setModelo] = useState(rep.modelo_comissionamento ?? '');
+  const [valorCFEntidade, setValorCFEntidade] = useState(
+    rep.valor_custo_fixo_entidade != null ? String(rep.valor_custo_fixo_entidade) : ''
+  );
+  const [valorCFClinica, setValorCFClinica] = useState(
+    rep.valor_custo_fixo_clinica != null ? String(rep.valor_custo_fixo_clinica) : ''
   );
 
   // Dados bancários
@@ -159,6 +169,17 @@ export default function EditRepresentanteModal({
       const walletIdClean = walletId.trim() || null;
       if (walletIdClean !== (rep.asaas_wallet_id ?? null))
         body.asaas_wallet_id = walletIdClean;
+
+      // Modelo de comissionamento
+      const modeloClean = modelo.trim() || null;
+      if (modeloClean !== (rep.modelo_comissionamento ?? null))
+        body.modelo_comissionamento = modeloClean;
+      const cfEntidade = valorCFEntidade.trim() ? parseFloat(valorCFEntidade) : null;
+      if (cfEntidade !== (rep.valor_custo_fixo_entidade ?? null))
+        body.valor_custo_fixo_entidade = cfEntidade;
+      const cfClinica = valorCFClinica.trim() ? parseFloat(valorCFClinica) : null;
+      if (cfClinica !== (rep.valor_custo_fixo_clinica ?? null))
+        body.valor_custo_fixo_clinica = cfClinica;
 
       if (Object.keys(body).length === 0) {
         onClose();
@@ -353,6 +374,46 @@ export default function EditRepresentanteModal({
                     Soma rep + comercial ≤ 40%
                   </p>
                 </div>
+                <div className="col-span-2">
+                  <label className={labelCls}>Modelo de Comissionamento</label>
+                  <select
+                    className={inputCls}
+                    value={modelo}
+                    onChange={(e) => setModelo(e.target.value)}
+                  >
+                    <option value="">Não configurado</option>
+                    <option value="percentual">Percentual</option>
+                    <option value="custo_fixo">Custo Fixo</option>
+                  </select>
+                </div>
+                {modelo === 'custo_fixo' && (
+                  <>
+                    <div>
+                      <label className={labelCls}>Custo Fixo Entidade (R$)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={inputCls}
+                        value={valorCFEntidade}
+                        onChange={(e) => setValorCFEntidade(e.target.value)}
+                        placeholder="Ex: 12.00"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Custo Fixo Clínica (R$)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        className={inputCls}
+                        value={valorCFClinica}
+                        onChange={(e) => setValorCFClinica(e.target.value)}
+                        placeholder="Ex: 10.00"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
             </div>
           )}

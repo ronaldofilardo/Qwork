@@ -10,6 +10,7 @@ import { RepresentantesContent } from '@/components/suporte/RepresentantesConten
 import { ComissoesIndividuaisContent } from '@/components/suporte/ComissoesIndividuaisContent';
 import CiclosComissaoContent from '@/components/suporte/CiclosComissaoContent';
 import { PreCadastroContent } from '@/components/suporte/PreCadastroContent';
+import { SuporteLeadsComissoesContent } from '@/components/suporte/SuporteLeadsComissoesContent';
 
 interface Session {
   cpf: string;
@@ -118,6 +119,12 @@ export default function SuportePage() {
       return (
         <RepresentantesContent activeSubSection={activeSubSection || 'lista'} />
       );
+    }
+
+    if (activeSection === 'leads') {
+      if (activeSubSection === 'comissoes') {
+        return <SuporteLeadsComissoesContent />;
+      }
     }
 
     return (

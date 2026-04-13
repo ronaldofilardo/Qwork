@@ -132,7 +132,8 @@ export type AuditoriaSubTab =
   | 'aceites'
   | 'delecao'
   | 'acesso-suporte'
-  | 'comissoes-leads';
+  | 'comissoes-leads'
+  | 'leads-comissoes-geral';
 
 // ── Acesso por Perfil Operacional (Suporte/Comercial/Representante/Vendedor) ──
 
@@ -181,6 +182,23 @@ export interface AcessoVendedor {
 }
 
 // ── Lead Abaixo do Custo Mínimo ─────────────────────────────────────────────
+
+export interface LeadComissaoGeral {
+  id: number;
+  cnpj: string | null;
+  razao_social: string | null;
+  tipo_cliente: string;
+  valor_negociado: number | null;
+  percentual_comissao_representante: number | null;
+  percentual_comissao_comercial: number | null;
+  valor_custo_fixo_snapshot: number | null;
+  requer_aprovacao_comercial: boolean;
+  status: string;
+  criado_em: string;
+  representante_nome: string | null;
+  representante_codigo: string | null;
+  modelo_comissionamento: string | null;
+}
 
 export interface LeadAbaixoMinimo {
   id: number;

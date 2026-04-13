@@ -17,7 +17,7 @@ import {
   validarEmail,
   validarTelefone,
 } from '@/lib/validators';
-import { calcularRequerAprovacao, TIPOS_CLIENTE } from '@/lib/leads-config';
+import { calcularRequerAprovacao, calcularComissaoCustoFixo, CUSTO_POR_AVALIACAO, TIPOS_CLIENTE } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 
 export const dynamic = 'force-dynamic';
@@ -168,14 +168,20 @@ export async function POST(request: NextRequest) {
     const repResult = await query<{
       percentual_comissao: string | null;
       percentual_comissao_comercial: string | null;
+      modelo_comissionamento: string | null;
+      valor_custo_fixo_entidade: string | null;
+      valor_custo_fixo_clinica: string | null;
     }>(
-      `SELECT percentual_comissao, percentual_comissao_comercial FROM representantes WHERE id = $1`,
+      `SELECT percentual_comissao, percentual_comissao_comercial,
+              modelo_comissionamento, valor_custo_fixo_entidade, valor_custo_fixo_clinica
+       FROM representantes WHERE id = $1`,
       [sess.representante_id]
     );
     const comissaoNum = Number(repResult.rows[0]?.percentual_comissao ?? 0);
     const percComercial = Number(
       repResult.rows[0]?.percentual_comissao_comercial ?? 0
     );
+    const modeloComissionamento = repResult.rows[0]?.modelo_comissionamento ?? null;
 
     if (
       typeof contato_email === 'string' &&
@@ -244,12 +250,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const requerAprovacao = calcularRequerAprovacao(
-      valorNum,
-      comissaoNum,
-      percComercial,
-      tipoCliente
-    );
+    // ── Lógica de custo_fixo ──────────────────────────────────────────────
+    let requerAprovacao = false;
+    let valorCustoFixoSnapshot: number | null = null;
+
+    if (modeloComissionamento === 'custo_fixo') {
+      const custoFixoRaw =
+        tipoCliente === 'entidade'
+          ? repResult.rows[0]?.valor_custo_fixo_entidade
+          : repResult.rows[0]?.valor_custo_fixo_clinica;
+      const valorCustoFixo = custoFixoRaw != null ? Number(custoFixoRaw) : CUSTO_POR_AVALIACAO[tipoCliente];
+      const calc = calcularComissaoCustoFixo(valorNum, valorCustoFixo);
+      if (calc.abaixoMinimo) {
+        return NextResponse.json(
+          {
+            error: `Valor negociado (R$ ${valorNum.toFixed(2)}) inferior ao custo fixo QWork (R$ ${valorCustoFixo.toFixed(2)}) para ${tipoCliente}.`,
+          },
+          { status: 400 }
+        );
+      }
+      requerAprovacao = false;
+      valorCustoFixoSnapshot = valorCustoFixo;
+    } else {
+      requerAprovacao = calcularRequerAprovacao(
+        valorNum,
+        comissaoNum,
+        percComercial,
+        tipoCliente
+      );
+    }
 
     // Lead direto: vendedor_id = NULL, origem implícita via representante_id
     const result = await query(
@@ -257,8 +286,8 @@ export async function POST(request: NextRequest) {
          (representante_id, vendedor_id, cnpj, razao_social, contato_nome, contato_email,
           contato_telefone, valor_negociado, percentual_comissao,
           percentual_comissao_representante, percentual_comissao_comercial,
-          tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado)
-       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+          tipo_cliente, requer_aprovacao_comercial, num_vidas_estimado, valor_custo_fixo_snapshot)
+       VALUES ($1, NULL, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
        RETURNING *`,
       [
         sess.representante_id,
@@ -274,6 +303,7 @@ export async function POST(request: NextRequest) {
         tipoCliente,
         requerAprovacao,
         numVidas,
+        valorCustoFixoSnapshot,
       ]
     );
 

@@ -6,6 +6,7 @@ import {
   TIPOS_CLIENTE,
   CUSTO_POR_AVALIACAO,
   calcularValoresComissao,
+  calcularComissaoCustoFixo,
 } from '@/lib/leads-config';
 import type { TipoCliente } from '@/lib/leads-config';
 import type { NovoLeadForm, ErrosCampos } from '../types';
@@ -26,6 +27,9 @@ interface NovoLeadModalProps {
   onClose: () => void;
   percRep: number;
   percComercial: number;
+  modeloComissionamento: string | null;
+  valorCustoFixoEntidade: number | null;
+  valorCustoFixoClinica: number | null;
 }
 
 export default function NovoLeadModal({
@@ -43,24 +47,47 @@ export default function NovoLeadModal({
   onClose,
   percRep,
   percComercial,
+  modeloComissionamento,
+  valorCustoFixoEntidade,
+  valorCustoFixoClinica,
 }: NovoLeadModalProps) {
   const valorNegociadoNum =
     parseFloat(
       novoForm.valor_negociado.replace(/[^\d,]/g, '').replace(',', '.')
     ) || 0;
   const numVidasNum = parseInt(novoForm.num_vidas_estimado) || 0;
-  const breakdown =
-    valorNegociadoNum > 0
-      ? calcularValoresComissao(
-          valorNegociadoNum,
-          percRep,
-          percComercial,
-          novoForm.tipo_cliente
-        )
-      : null;
   const custoMinimo = CUSTO_POR_AVALIACAO[novoForm.tipo_cliente];
   const fmtBRL = (v: number) =>
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+  // Custo fixo do representante para o tipo de cliente selecionado
+  const custoFixoRep =
+    modeloComissionamento === 'custo_fixo'
+      ? novoForm.tipo_cliente === 'entidade'
+        ? (valorCustoFixoEntidade ?? null)
+        : (valorCustoFixoClinica ?? null)
+      : null;
+
+  // CASO D: custo_fixo model breakdown
+  const breakdownCustoFixo =
+    modeloComissionamento === 'custo_fixo' && custoFixoRep !== null && valorNegociadoNum > 0
+      ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
+      : null;
+
+  // CASO C base: percentual model breakdown
+  const breakdown =
+    modeloComissionamento !== 'custo_fixo' && valorNegociadoNum > 0
+      ? calcularValoresComissao(valorNegociadoNum, percRep, percComercial, novoForm.tipo_cliente)
+      : null;
+
+  const percentualTotal = percRep + percComercial;
+
+  // Block submit for custo_fixo when value is below custo_fixo
+  const custoFixoInvalido =
+    modeloComissionamento === 'custo_fixo' &&
+    custoFixoRep !== null &&
+    valorNegociadoNum > 0 &&
+    valorNegociadoNum < custoFixoRep;
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -256,8 +283,28 @@ export default function NovoLeadModal({
             />
           </div>
 
-          {/* Breakdown de comissão */}
-          {breakdown && (
+          {/* CASO A: modelo não configurado */}
+          {modeloComissionamento === null && (
+            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle size={12} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-blue-700 text-xs">
+                Modelo de comissionamento ainda não configurado. O lead será registrado sem simulação de comissão.
+              </p>
+            </div>
+          )}
+
+          {/* CASO B: percentual zerado */}
+          {modeloComissionamento === 'percentual' && percRep === 0 && percComercial === 0 && (
+            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+              <AlertTriangle size={12} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-blue-700 text-xs">
+                Percentual de comissão zerado. O lead será registrado sem simulação de valores.
+              </p>
+            </div>
+          )}
+
+          {/* CASO C: percentual model — breakdown padrão */}
+          {breakdown && modeloComissionamento !== 'custo_fixo' && (
             <div
               className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${
                 breakdown.abaixoCusto
@@ -270,45 +317,23 @@ export default function NovoLeadModal({
               </p>
               <div className="flex justify-between">
                 <span className="text-gray-500">Valor por vida</span>
-                <span className="font-semibold">
-                  {fmtBRL(valorNegociadoNum)}
-                </span>
+                <span className="font-semibold">{fmtBRL(valorNegociadoNum)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">
-                  Sua comissão ({percRep.toFixed(1)}%)
-                </span>
-                <span className="text-blue-700 font-medium">
-                  {fmtBRL(breakdown.valorRep)}
-                </span>
+                <span className="text-gray-500">Sua comissão ({percRep.toFixed(1)}%)</span>
+                <span className="text-blue-700 font-medium">{fmtBRL(breakdown.valorRep)}</span>
               </div>
               {percComercial > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">
-                    Comissão comercial ({percComercial.toFixed(1)}%)
-                  </span>
-                  <span className="text-purple-700 font-medium">
-                    {fmtBRL(breakdown.valorComercial)}
-                  </span>
+                  <span className="text-gray-500">Comissão comercial ({percComercial.toFixed(1)}%)</span>
+                  <span className="text-purple-700 font-medium">{fmtBRL(breakdown.valorComercial)}</span>
                 </div>
               )}
               <div className="flex justify-between border-t pt-1.5">
-                <span
-                  className={
-                    breakdown.abaixoCusto
-                      ? 'text-amber-700 font-semibold'
-                      : 'text-gray-600 font-semibold'
-                  }
-                >
+                <span className={breakdown.abaixoCusto ? 'text-amber-700 font-semibold' : 'text-gray-600 font-semibold'}>
                   QWork recebe
                 </span>
-                <span
-                  className={
-                    breakdown.abaixoCusto
-                      ? 'text-amber-700 font-semibold'
-                      : 'text-gray-700 font-semibold'
-                  }
-                >
+                <span className={breakdown.abaixoCusto ? 'text-amber-700 font-semibold' : 'text-gray-700 font-semibold'}>
                   {fmtBRL(breakdown.valorQWork)}
                 </span>
               </div>
@@ -318,13 +343,50 @@ export default function NovoLeadModal({
               </div>
               {breakdown.abaixoCusto && (
                 <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle
-                    size={12}
-                    className="text-amber-600 shrink-0 mt-0.5"
-                  />
+                  <AlertTriangle size={12} className="text-amber-600 shrink-0 mt-0.5" />
                   <p className="text-amber-800 text-xs">
-                    Valor abaixo do custo mínimo — este lead precisará de
-                    aprovação do comercial.
+                    Valor abaixo do custo mínimo — este lead precisará de aprovação do comercial.
+                  </p>
+                </div>
+              )}
+              {!breakdown.abaixoCusto && percentualTotal > 40 && (
+                <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
+                  <AlertTriangle size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                  <p className="text-amber-800 text-xs">
+                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede 40%. Lead precisará de aprovação do comercial.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* CASO D: custo_fixo model */}
+          {modeloComissionamento === 'custo_fixo' && custoFixoRep !== null && valorNegociadoNum > 0 && (
+            <div className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${
+              custoFixoInvalido ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
+            }`}>
+              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                Simulação — Custo Fixo
+              </p>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Valor negociado</span>
+                <span className="font-semibold">{fmtBRL(valorNegociadoNum)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Custo fixo QWork</span>
+                <span className="text-gray-700 font-medium">{fmtBRL(custoFixoRep)}</span>
+              </div>
+              {breakdownCustoFixo && (
+                <div className="flex justify-between border-t pt-1.5">
+                  <span className="text-blue-700 font-semibold">Sua comissão</span>
+                  <span className="text-blue-700 font-semibold">{fmtBRL(breakdownCustoFixo.valorRep)}</span>
+                </div>
+              )}
+              {custoFixoInvalido && (
+                <div className="flex items-start gap-1.5 bg-red-100 border border-red-300 rounded px-2 py-1.5 mt-1">
+                  <AlertTriangle size={12} className="text-red-600 shrink-0 mt-0.5" />
+                  <p className="text-red-800 text-xs">
+                    Valor negociado inferior ao custo fixo ({fmtBRL(custoFixoRep)}). Ajuste o valor para continuar.
                   </p>
                 </div>
               )}
@@ -342,7 +404,7 @@ export default function NovoLeadModal({
             </button>
             <button
               type="submit"
-              disabled={salvando || !formValido}
+              disabled={salvando || !formValido || custoFixoInvalido}
               className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors cursor-pointer"
             >
               {salvando ? 'Salvando...' : 'Registrar Lead'}

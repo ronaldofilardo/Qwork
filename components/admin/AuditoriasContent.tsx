@@ -11,6 +11,7 @@ import {
   TabelaAceites,
   TabelaAcessosSuporte,
   TabelaComissoesLeads,
+  TabelaLeadsComissoesGeral,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
 import { DelecaoTomadorContent } from './auditorias/DelecaoTomadorContent';
@@ -24,6 +25,7 @@ import type {
   AceiteUsuario,
   AcessoSuporte,
   LeadAbaixoMinimo,
+  LeadComissaoGeral,
 } from './auditorias/types';
 
 const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
@@ -35,6 +37,7 @@ const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
   aceites: '/api/admin/auditorias/aceites',
   'acesso-suporte': '/api/admin/auditorias/acesso-suporte',
   'comissoes-leads': '/api/comercial/leads?modo=todos&limit=100',
+  'leads-comissoes-geral': '/api/suporte/comissionamento/leads?limit=100',
 };
 
 export function AuditoriasContent() {
@@ -51,9 +54,8 @@ export function AuditoriasContent() {
   const [operacionais, setOperacionais] = useState<AcessoOperacional[]>([]);
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
   const [acessosSuporte, setAcessosSuporte] = useState<AcessoSuporte[]>([]);
-  const [leadsAbaixoMinimo, setLeadsAbaixoMinimo] = useState<
-    LeadAbaixoMinimo[]
-  >([]);
+  const [leadsAbaixoMinimo, setLeadsAbaixoMinimo] = useState<LeadAbaixoMinimo[]>([]);
+  const [leadsComissoesGeral, setLeadsComissoesGeral] = useState<LeadComissaoGeral[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
     if (tab === 'delecao') return;
@@ -93,6 +95,9 @@ export function AuditoriasContent() {
           break;
         case 'comissoes-leads':
           setLeadsAbaixoMinimo(json.leads ?? []);
+          break;
+        case 'leads-comissoes-geral':
+          setLeadsComissoesGeral(json.leads ?? []);
           break;
       }
       setLastUpdated(new Date());
@@ -183,6 +188,13 @@ export function AuditoriasContent() {
           data={leadsAbaixoMinimo}
           onAtualizar={() => fetchTab('comissoes-leads')}
           loading={loading && activeTab === 'comissoes-leads'}
+        />
+      )}
+      {activeTab === 'leads-comissoes-geral' && (
+        <TabelaLeadsComissoesGeral
+          data={leadsComissoesGeral}
+          onAtualizar={() => fetchTab('leads-comissoes-geral')}
+          loading={loading && activeTab === 'leads-comissoes-geral'}
         />
       )}
       {activeTab === 'delecao' && <DelecaoTomadorContent />}

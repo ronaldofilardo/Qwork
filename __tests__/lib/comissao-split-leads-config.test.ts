@@ -9,6 +9,7 @@
 import {
   calcularValoresComissao,
   calcularRequerAprovacao,
+  calcularComissaoCustoFixo,
   MAX_PERCENTUAL_COMISSAO,
   CUSTO_POR_AVALIACAO,
 } from '@/lib/leads-config';
@@ -256,5 +257,52 @@ describe('calcularValoresComissao — fórmula direta (sem redistribuição)', (
     expect(r.valorComercial).toBe(1);
     expect(r.valorQWork).toBe(12);
     expect(r.abaixoCusto).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────
+// 8. calcularComissaoCustoFixo
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('calcularComissaoCustoFixo', () => {
+  test('caso normal — rep recebe diferença positiva', () => {
+    const r = calcularComissaoCustoFixo(100, 12);
+    expect(r.valorRep).toBe(88);
+    expect(r.valorQWork).toBe(12);
+    expect(r.abaixoMinimo).toBe(false);
+  });
+
+  test('valorNeg === custoFixo — rep recebe zero', () => {
+    const r = calcularComissaoCustoFixo(12, 12);
+    expect(r.valorRep).toBe(0);
+    expect(r.valorQWork).toBe(12);
+    expect(r.abaixoMinimo).toBe(false);
+  });
+
+  test('abaixoMinimo quando valorNeg < custoFixo', () => {
+    const r = calcularComissaoCustoFixo(10, 12);
+    expect(r.abaixoMinimo).toBe(true);
+    expect(r.valorRep).toBe(0);
+    expect(r.valorQWork).toBe(12);
+  });
+
+  test('valorQWork é sempre == custoFixo', () => {
+    const cases: [number, number][] = [
+      [50, 12],
+      [12, 12],
+      [8, 12],
+      [200, 10],
+    ];
+    for (const [valorNeg, custoFixo] of cases) {
+      const r = calcularComissaoCustoFixo(valorNeg, custoFixo);
+      expect(r.valorQWork).toBe(custoFixo);
+    }
+  });
+
+  test('clinica — custo fixo 10, valor 50', () => {
+    const r = calcularComissaoCustoFixo(50, 10);
+    expect(r.valorRep).toBe(40);
+    expect(r.valorQWork).toBe(10);
+    expect(r.abaixoMinimo).toBe(false);
   });
 });
