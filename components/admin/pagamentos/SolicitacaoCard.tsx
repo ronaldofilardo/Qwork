@@ -232,19 +232,49 @@ function StatusActions({
     const temSugestao =
       solicitacao.lead_valor_negociado != null &&
       solicitacao.lead_valor_negociado > 0;
+    const modelo = solicitacao.modelo_comissionamento;
+    const isCustoFixo = modelo === 'custo_fixo';
     return (
       <div className="space-y-2">
         {temSugestao && (
-          <p className="text-xs text-emerald-600">
-            Valor negociado pelo representante:{' '}
-            <strong>
-              R${' '}
-              {Number(solicitacao.lead_valor_negociado).toLocaleString(
-                'pt-BR',
-                { minimumFractionDigits: 2, maximumFractionDigits: 2 }
-              )}
-            </strong>
-          </p>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-xs text-emerald-600">
+              Valor negociado pelo representante:{' '}
+              <strong>
+                R${' '}
+                {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                  'pt-BR',
+                  { minimumFractionDigits: 2, maximumFractionDigits: 2 }
+                )}
+              </strong>
+            </p>
+            {modelo && (
+              <span
+                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                  isCustoFixo
+                    ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                    : 'bg-blue-100 text-blue-700 border border-blue-300'
+                }`}
+              >
+                {isCustoFixo
+                  ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
+                  : '% Percentual'}
+              </span>
+            )}
+          </div>
+        )}
+        {!temSugestao && modelo && (
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+              isCustoFixo
+                ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                : 'bg-blue-100 text-blue-700 border border-blue-300'
+            }`}
+          >
+            {isCustoFixo
+              ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
+              : '% Percentual'}
+          </span>
         )}
         <div className="flex items-center gap-3">
           <input
@@ -455,6 +485,40 @@ function ComissaoSection({
                   </span>
                 )}
               </p>
+              {(() => {
+                const modelo = solicitacao.modelo_comissionamento;
+                if (!modelo) return null;
+                const isCF = modelo === 'custo_fixo';
+                return (
+                  <span
+                    className={`mt-1 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium ${
+                      isCF
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-blue-100 text-blue-700'
+                    }`}
+                  >
+                    {isCF
+                      ? `Custo Fixo${solicitacao.valor_custo_fixo_snapshot != null ? ` · R$ ${Number(solicitacao.valor_custo_fixo_snapshot).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : ''}`
+                      : '% Percentual'}
+                  </span>
+                );
+              })()}
+              {solicitacao.lead_valor_negociado != null &&
+                solicitacao.lead_valor_negociado > 0 && (
+                  <p className="text-xs text-emerald-600 mt-0.5">
+                    Negociado:{' '}
+                    <strong>
+                      R${' '}
+                      {Number(solicitacao.lead_valor_negociado).toLocaleString(
+                        'pt-BR',
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        }
+                      )}
+                    </strong>
+                  </p>
+                )}
             </div>
             {isPago &&
               (() => {

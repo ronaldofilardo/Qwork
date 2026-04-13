@@ -84,22 +84,48 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
   const [erroGeral, setErroGeral] = useState<string | null>(null);
   const [percRep, setPercRep] = useState(0);
   const [percComercial, setPercComercial] = useState(0);
-  const [modeloComissionamento, setModeloComissionamento] = useState<string | null>(null);
-  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<number | null>(null);
-  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<number | null>(null);
+  const [modeloComissionamento, setModeloComissionamento] = useState<
+    string | null
+  >(null);
+  const [valorCustoFixoEntidade, setValorCustoFixoEntidade] = useState<
+    number | null
+  >(null);
+  const [valorCustoFixoClinica, setValorCustoFixoClinica] = useState<
+    number | null
+  >(null);
 
   // Buscar percentuais do representante logado
   useEffect(() => {
     void fetch('/api/representante/me')
       .then((r) => r.json())
-      .then((d: { representante?: { percentual_comissao?: number | null; percentual_comissao_comercial?: number | null; modelo_comissionamento?: string | null; valor_custo_fixo_entidade?: number | null; valor_custo_fixo_clinica?: number | null } }) => {
-        setPercRep(Number(d.representante?.percentual_comissao ?? 0));
-        setPercComercial(Number(d.representante?.percentual_comissao_comercial ?? 0));
-        setModeloComissionamento(d.representante?.modelo_comissionamento ?? null);
-        setValorCustoFixoEntidade(d.representante?.valor_custo_fixo_entidade ?? null);
-        setValorCustoFixoClinica(d.representante?.valor_custo_fixo_clinica ?? null);
-      })
-      .catch(() => {/* silencioso */});
+      .then(
+        (d: {
+          representante?: {
+            percentual_comissao?: number | null;
+            percentual_comissao_comercial?: number | null;
+            modelo_comissionamento?: string | null;
+            valor_custo_fixo_entidade?: number | null;
+            valor_custo_fixo_clinica?: number | null;
+          };
+        }) => {
+          setPercRep(Number(d.representante?.percentual_comissao ?? 0));
+          setPercComercial(
+            Number(d.representante?.percentual_comissao_comercial ?? 0)
+          );
+          setModeloComissionamento(
+            d.representante?.modelo_comissionamento ?? null
+          );
+          setValorCustoFixoEntidade(
+            d.representante?.valor_custo_fixo_entidade ?? null
+          );
+          setValorCustoFixoClinica(
+            d.representante?.valor_custo_fixo_clinica ?? null
+          );
+        }
+      )
+      .catch(() => {
+        /* silencioso */
+      });
   }, []);
 
   const handleCNPJChange = (valor: string) => {
@@ -133,7 +159,10 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
     const limpo = valor.replace(/\D/g, '');
     setForm((p) => ({ ...p, num_vidas_estimado: limpo }));
     if (!limpo || parseInt(limpo) < 1)
-      setErros((p) => ({ ...p, num_vidas_estimado: 'Informe ao menos 1 vida' }));
+      setErros((p) => ({
+        ...p,
+        num_vidas_estimado: 'Informe ao menos 1 vida',
+      }));
     else setErros((p) => ({ ...p, num_vidas_estimado: '' }));
   };
 
@@ -152,13 +181,21 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
       : null;
 
   const breakdownCustoFixo =
-    modeloComissionamento === 'custo_fixo' && custoFixoRep !== null && valorNegociadoNum > 0
+    modeloComissionamento === 'custo_fixo' &&
+    custoFixoRep !== null &&
+    valorNegociadoNum > 0
       ? calcularComissaoCustoFixo(valorNegociadoNum, custoFixoRep)
       : null;
 
-  const breakdown = modeloComissionamento !== 'custo_fixo' && valorNegociadoNum > 0
-    ? calcularValoresComissao(valorNegociadoNum, percRep, percComercial, form.tipo_cliente)
-    : null;
+  const breakdown =
+    modeloComissionamento !== 'custo_fixo' && valorNegociadoNum > 0
+      ? calcularValoresComissao(
+          valorNegociadoNum,
+          percRep,
+          percComercial,
+          form.tipo_cliente
+        )
+      : null;
 
   const percentualTotal = percRep + percComercial;
 
@@ -357,14 +394,17 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
               className={`w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 transition-colors ${erros.num_vidas_estimado ? 'border-red-400 focus:ring-red-400' : numVidasNum >= 1 ? 'border-green-400 focus:ring-green-400' : 'focus:ring-green-500/30 focus:border-green-400'}`}
             />
             {erros.num_vidas_estimado && (
-              <p className="mt-1 text-xs text-red-500">{erros.num_vidas_estimado}</p>
+              <p className="mt-1 text-xs text-red-500">
+                {erros.num_vidas_estimado}
+              </p>
             )}
           </div>
 
           {/* Valor negociado */}
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">
-              Valor negociado por vida (R$) <span className="text-red-500">*</span>
+              Valor negociado por vida (R$){' '}
+              <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -393,46 +433,82 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
           {/* CASO A: modelo ainda não configurado */}
           {modeloComissionamento === null && (
             <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-              <AlertTriangle size={12} className="text-blue-500 shrink-0 mt-0.5" />
+              <AlertTriangle
+                size={12}
+                className="text-blue-500 shrink-0 mt-0.5"
+              />
               <p className="text-blue-700 text-xs">
-                Modelo de comissionamento ainda não configurado. O lead será registrado sem simulação de comissão.
+                Modelo de comissionamento ainda não configurado. O lead será
+                registrado sem simulação de comissão.
               </p>
             </div>
           )}
 
           {/* CASO B: percentual zerado */}
-          {modeloComissionamento === 'percentual' && percRep === 0 && percComercial === 0 && (
-            <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
-              <AlertTriangle size={12} className="text-blue-500 shrink-0 mt-0.5" />
-              <p className="text-blue-700 text-xs">
-                Percentual de comissão zerado. O lead será registrado sem simulação de valores.
-              </p>
-            </div>
-          )}
+          {modeloComissionamento === 'percentual' &&
+            percRep === 0 &&
+            percComercial === 0 && (
+              <div className="flex items-start gap-1.5 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2.5">
+                <AlertTriangle
+                  size={12}
+                  className="text-blue-500 shrink-0 mt-0.5"
+                />
+                <p className="text-blue-700 text-xs">
+                  Percentual de comissão zerado. O lead será registrado sem
+                  simulação de valores.
+                </p>
+              </div>
+            )}
 
           {/* CASO C: percentual model — breakdown padrão */}
           {breakdown && modeloComissionamento !== 'custo_fixo' && (
-            <div className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${breakdown.abaixoCusto ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}>
-              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">Simulação de Comissão</p>
+            <div
+              className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${breakdown.abaixoCusto ? 'bg-amber-50 border-amber-200' : 'bg-gray-50 border-gray-200'}`}
+            >
+              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                Simulação de Comissão
+              </p>
               <div className="flex justify-between">
                 <span className="text-gray-500">Valor por vida</span>
-                <span className="font-semibold">{fmtBRL(valorNegociadoNum)}</span>
+                <span className="font-semibold">
+                  {fmtBRL(valorNegociadoNum)}
+                </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-500">Sua comissão ({percRep.toFixed(1)}%)</span>
-                <span className="text-green-700 font-medium">{fmtBRL(breakdown.valorRep)}</span>
+                <span className="text-gray-500">
+                  Sua comissão ({percRep.toFixed(1)}%)
+                </span>
+                <span className="text-green-700 font-medium">
+                  {fmtBRL(breakdown.valorRep)}
+                </span>
               </div>
               {percComercial > 0 && (
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Comissão comercial ({percComercial.toFixed(1)}%)</span>
-                  <span className="text-blue-700 font-medium">{fmtBRL(breakdown.valorComercial)}</span>
+                  <span className="text-gray-500">
+                    Comissão comercial ({percComercial.toFixed(1)}%)
+                  </span>
+                  <span className="text-blue-700 font-medium">
+                    {fmtBRL(breakdown.valorComercial)}
+                  </span>
                 </div>
               )}
               <div className="flex justify-between border-t pt-1.5">
-                <span className={breakdown.abaixoCusto ? 'text-amber-700 font-semibold' : 'text-gray-600 font-semibold'}>
+                <span
+                  className={
+                    breakdown.abaixoCusto
+                      ? 'text-amber-700 font-semibold'
+                      : 'text-gray-600 font-semibold'
+                  }
+                >
                   QWork recebe
                 </span>
-                <span className={breakdown.abaixoCusto ? 'text-amber-700 font-semibold' : 'text-gray-700 font-semibold'}>
+                <span
+                  className={
+                    breakdown.abaixoCusto
+                      ? 'text-amber-700 font-semibold'
+                      : 'text-gray-700 font-semibold'
+                  }
+                >
                   {fmtBRL(breakdown.valorQWork)}
                 </span>
               </div>
@@ -442,17 +518,25 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
               </div>
               {breakdown.abaixoCusto && (
                 <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                  <AlertTriangle
+                    size={12}
+                    className="text-amber-600 shrink-0 mt-0.5"
+                  />
                   <p className="text-amber-800 text-xs">
-                    Valor abaixo do custo mínimo — este lead precisará de aprovação do comercial.
+                    Valor abaixo do custo mínimo — este lead precisará de
+                    aprovação do comercial.
                   </p>
                 </div>
               )}
               {!breakdown.abaixoCusto && percentualTotal > 40 && (
                 <div className="flex items-start gap-1.5 bg-amber-100 border border-amber-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle size={12} className="text-amber-600 shrink-0 mt-0.5" />
+                  <AlertTriangle
+                    size={12}
+                    className="text-amber-600 shrink-0 mt-0.5"
+                  />
                   <p className="text-amber-800 text-xs">
-                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede 40%. Lead precisará de aprovação do comercial.
+                    Comissão combinada ({percentualTotal.toFixed(1)}%) excede
+                    40%. Lead precisará de aprovação do comercial.
                   </p>
                 </div>
               )}
@@ -460,37 +544,55 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
           )}
 
           {/* CASO D: custo_fixo model */}
-          {modeloComissionamento === 'custo_fixo' && custoFixoRep !== null && valorNegociadoNum > 0 && (
-            <div className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${
-              custoFixoInvalido ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'
-            }`}>
-              <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
-                Simulação — Custo Fixo
-              </p>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Valor negociado</span>
-                <span className="font-semibold">{fmtBRL(valorNegociadoNum)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-500">Custo fixo QWork</span>
-                <span className="text-gray-700 font-medium">{fmtBRL(custoFixoRep)}</span>
-              </div>
-              {breakdownCustoFixo && (
-                <div className="flex justify-between border-t pt-1.5">
-                  <span className="text-green-700 font-semibold">Sua comissão</span>
-                  <span className="text-green-700 font-semibold">{fmtBRL(breakdownCustoFixo.valorRep)}</span>
+          {modeloComissionamento === 'custo_fixo' &&
+            custoFixoRep !== null &&
+            valorNegociadoNum > 0 && (
+              <div
+                className={`rounded-lg px-4 py-3 space-y-1.5 text-xs border ${
+                  custoFixoInvalido
+                    ? 'bg-red-50 border-red-200'
+                    : 'bg-gray-50 border-gray-200'
+                }`}
+              >
+                <p className="font-semibold text-xs text-gray-600 uppercase tracking-wide mb-2">
+                  Simulação — Custo Fixo
+                </p>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Valor negociado</span>
+                  <span className="font-semibold">
+                    {fmtBRL(valorNegociadoNum)}
+                  </span>
                 </div>
-              )}
-              {custoFixoInvalido && (
-                <div className="flex items-start gap-1.5 bg-red-100 border border-red-300 rounded px-2 py-1.5 mt-1">
-                  <AlertTriangle size={12} className="text-red-600 shrink-0 mt-0.5" />
-                  <p className="text-red-800 text-xs">
-                    Valor negociado inferior ao custo fixo ({fmtBRL(custoFixoRep)}). Ajuste o valor para continuar.
-                  </p>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Custo fixo QWork</span>
+                  <span className="text-gray-700 font-medium">
+                    {fmtBRL(custoFixoRep)}
+                  </span>
                 </div>
-              )}
-            </div>
-          )}
+                {breakdownCustoFixo && (
+                  <div className="flex justify-between border-t pt-1.5">
+                    <span className="text-green-700 font-semibold">
+                      Sua comissão
+                    </span>
+                    <span className="text-green-700 font-semibold">
+                      {fmtBRL(breakdownCustoFixo.valorRep)}
+                    </span>
+                  </div>
+                )}
+                {custoFixoInvalido && (
+                  <div className="flex items-start gap-1.5 bg-red-100 border border-red-300 rounded px-2 py-1.5 mt-1">
+                    <AlertTriangle
+                      size={12}
+                      className="text-red-600 shrink-0 mt-0.5"
+                    />
+                    <p className="text-red-800 text-xs">
+                      Valor negociado inferior ao custo fixo (
+                      {fmtBRL(custoFixoRep)}). Ajuste o valor para continuar.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
         </div>
 
         <div className="px-6 py-4 border-t flex items-center justify-end gap-3">

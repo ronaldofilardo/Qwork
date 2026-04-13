@@ -404,18 +404,34 @@ export default function DadosRepresentante() {
             <span className="text-sm text-gray-900">{dados.cpf ?? '—'}</span>
           </div>
         ) : (
-          <div className="flex items-center justify-between py-3 border-b">
-            <span className="text-sm text-gray-500 flex items-center gap-1">
-              CNPJ
-              <span
-                title="Não pode ser alterado"
-                className="text-gray-400 cursor-help"
-              >
-                🔒
+          <>
+            <div className="flex items-center justify-between py-3 border-b">
+              <span className="text-sm text-gray-500 flex items-center gap-1">
+                CNPJ
+                <span
+                  title="Não pode ser alterado"
+                  className="text-gray-400 cursor-help"
+                >
+                  🔒
+                </span>
               </span>
-            </span>
-            <span className="text-sm text-gray-900">{dados.cnpj ?? '—'}</span>
-          </div>
+              <span className="text-sm text-gray-900">{dados.cnpj ?? '—'}</span>
+            </div>
+            {dados.cpf && (
+              <div className="flex items-center justify-between py-3 border-b">
+                <span className="text-sm text-gray-500 flex items-center gap-1">
+                  CPF
+                  <span
+                    title="CPF vinculado ao CNPJ"
+                    className="text-gray-400 cursor-help"
+                  >
+                    🔒
+                  </span>
+                </span>
+                <span className="text-sm text-gray-900">{dados.cpf}</span>
+              </div>
+            )}
+          </>
         )}
 
         {/* Tipo Pessoa: read-only */}

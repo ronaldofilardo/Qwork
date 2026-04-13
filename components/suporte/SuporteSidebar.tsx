@@ -12,7 +12,11 @@ import {
 } from 'lucide-react';
 import SidebarLayout from '@/components/shared/SidebarLayout';
 
-export type SuporteSection = 'tomadores' | 'financeiro' | 'representantes' | 'leads';
+export type SuporteSection =
+  | 'tomadores'
+  | 'financeiro'
+  | 'representantes'
+  | 'leads';
 export type TomadoresSubSection = 'clinicas' | 'entidades' | 'pre-cadastro';
 export type FinanceiroSubSection = 'pagamentos' | 'comissoes' | 'individuais';
 export type RepresentantesSubSection = 'lista' | 'aprovacao';
@@ -278,7 +282,9 @@ export default function SuporteSidebar({
         <div className="border-l-2 border-gray-200 ml-4">
           <SubMenuItem
             label="Lead/Comissões"
-            isActive={activeSection === 'leads' && activeSubSection === 'comissoes'}
+            isActive={
+              activeSection === 'leads' && activeSubSection === 'comissoes'
+            }
             onClick={() => onSectionChange('leads', 'comissoes')}
           />
         </div>

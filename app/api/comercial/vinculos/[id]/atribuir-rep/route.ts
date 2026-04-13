@@ -13,7 +13,12 @@ export const dynamic = 'force-dynamic';
 const AtribuirRepSchema = z.object({
   representante_id: z.number().int().positive(),
   percentual_comissao: z.number().min(0).max(40).optional().nullable(),
-  percentual_comissao_comercial: z.number().min(0).max(40).optional().nullable(),
+  percentual_comissao_comercial: z
+    .number()
+    .min(0)
+    .max(40)
+    .optional()
+    .nullable(),
   obs: z.string().max(500).optional(),
 });
 
@@ -56,7 +61,10 @@ export async function PATCH(
 
     if (vinculo.rows[0].representante_id !== null)
       return NextResponse.json(
-        { error: 'Vínculo já possui representante. Use a rota de edição do representante.' },
+        {
+          error:
+            'Vínculo já possui representante. Use a rota de edição do representante.',
+        },
         { status: 409 }
       );
 
@@ -67,7 +75,11 @@ export async function PATCH(
       );
 
     // Verificar que o representante existe e está ativo
-    const rep = await query<{ id: number; status: string; modelo_comissionamento: string | null }>(
+    const rep = await query<{
+      id: number;
+      status: string;
+      modelo_comissionamento: string | null;
+    }>(
       `SELECT id, status, modelo_comissionamento FROM representantes WHERE id = $1 LIMIT 1`,
       [data.representante_id]
     );
@@ -93,7 +105,10 @@ export async function PATCH(
     );
 
     // Atualizar percentuais, se fornecidos
-    if (data.percentual_comissao !== undefined || data.percentual_comissao_comercial !== undefined) {
+    if (
+      data.percentual_comissao !== undefined ||
+      data.percentual_comissao_comercial !== undefined
+    ) {
       const fields: string[] = [];
       const vals: unknown[] = [];
       let idx = 1;
