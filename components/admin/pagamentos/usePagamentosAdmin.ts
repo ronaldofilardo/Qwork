@@ -309,9 +309,10 @@ export function usePagamentosAdmin() {
       return;
     }
 
-    // Verificar se percentual está definido
+    const isCustoFixo = solicitacao.modelo_comissionamento === 'custo_fixo';
     const percRep = solicitacao.representante_percentual_comissao;
-    if (percRep == null) {
+
+    if (!isCustoFixo && percRep == null) {
       alert(
         'Percentual de comissão não definido para este representante.\n\n' +
           'Defina o percentual na página do representante antes de gerar comissões.'
@@ -324,7 +325,28 @@ export function usePagamentosAdmin() {
     // Number() garante coerção segura: PostgreSQL retorna NUMERIC como string em runtime
     const valorTotal = Number(solicitacao.valor_total_calculado);
     const valorPorParcela = valorTotal / totalParcelas;
-    const valorComissao = valorPorParcela * (percRep / 100);
+
+    let valorComissao: number;
+    let comissaoInfo: string;
+
+    if (isCustoFixo) {
+      // custo_fixo: (valorNegociado - custoFixo) / valorNegociado × parcelaBase
+      const negociado =
+        solicitacao.valor_negociado_vinculo ??
+        solicitacao.lead_valor_negociado ??
+        valorPorParcela;
+      const custo =
+        solicitacao.valor_custo_fixo_snapshot ?? 0;
+      const ratioRep = negociado > 0 ? (negociado - custo) / negociado : 0;
+      valorComissao = Math.round(ratioRep * valorPorParcela * 100) / 100;
+      comissaoInfo =
+        `Modelo: Custo Fixo\n` +
+        `Valor negociado: R$ ${negociado.toFixed(2)} | Custo: R$ ${custo.toFixed(2)}\n` +
+        `Rep recebe: R$ ${(negociado - custo).toFixed(2)}/avaliação → R$ ${valorComissao.toFixed(2)} esta parcela`;
+    } else {
+      valorComissao = valorPorParcela * (percRep! / 100);
+      comissaoInfo = `Comissão (${percRep}%): R$ ${valorComissao.toFixed(2)}`;
+    }
 
     const parcelaInfo =
       totalParcelas > 1
@@ -334,7 +356,7 @@ export function usePagamentosAdmin() {
     const confirmar = confirm(
       `Gerar comissão para o representante ${solicitacao.representante_nome}?\n\n` +
         `${parcelaInfo}\n` +
-        `Comissão (${percRep}%): R$ ${valorComissao.toFixed(2)}\n\n` +
+        `${comissaoInfo}\n\n` +
         `Confirmar?`
     );
     if (!confirmar) return;

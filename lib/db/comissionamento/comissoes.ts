@@ -12,6 +12,7 @@ import type {
 } from '../../types/comissionamento';
 import { registrarAuditoria } from './auditoria';
 import { calcularPrevisaoPagamento } from './utils';
+import { CUSTO_POR_AVALIACAO, calcularComissaoCustoFixo, type TipoCliente } from '../../leads-config';
 
 /** Lista comissões de um representante com resumo */
 export async function getComissoesByRepresentante(
@@ -234,9 +235,11 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  // Verificar representante
+  // Verificar representante — buscar modelo_comissionamento e campos custo_fixo
   const repResult = await query(
-    `SELECT id, status, percentual_comissao FROM representantes WHERE id = $1 LIMIT 1`,
+    `SELECT id, status, percentual_comissao, modelo_comissionamento,
+            valor_custo_fixo_entidade, valor_custo_fixo_clinica
+     FROM representantes WHERE id = $1 LIMIT 1`,
     [representante_id]
   );
   if (repResult.rows.length === 0) {
@@ -250,35 +253,82 @@ export async function criarComissaoAdmin(params: {
     };
   }
 
-  // Buscar percentual do vínculo (novo modelo) com fallback para representante (legado)
+  const modeloRep: string = rep.modelo_comissionamento ?? 'percentual';
+  const isCustoFixo = modeloRep === 'custo_fixo';
+
+  // Buscar valor_negociado do vínculo (para custo_fixo) e percentual (para percentual)
   const vinculoPercResult = await query(
-    `SELECT percentual_comissao_representante FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
+    `SELECT percentual_comissao_representante, valor_negociado
+     FROM vinculos_comissao WHERE id = $1 LIMIT 1`,
     [vinculo_id]
   );
   const percVinculo =
     vinculoPercResult.rows[0]?.percentual_comissao_representante;
-  const percentualRep =
-    percVinculo != null
-      ? parseFloat(percVinculo)
-      : rep.percentual_comissao != null
-        ? parseFloat(rep.percentual_comissao)
-        : null;
-  if (percentualRep == null) {
-    return {
-      comissao: null,
-      erro: 'Percentual de comissão não definido para este vínculo/representante.',
-    };
-  }
+  const valorNegociadoVinculo: number | null =
+    vinculoPercResult.rows[0]?.valor_negociado != null
+      ? parseFloat(vinculoPercResult.rows[0].valor_negociado)
+      : null;
 
-  // Cálculo: base_calculo × percentual / 100
-  // Se valor_parcela informado (ex: netValue Asaas), usar diretamente.
-  // Caso contrário, distribuir: valor_laudo / total_parcelas.
-  const baseCalculo =
-    valor_parcela != null && valor_parcela > 0
-      ? valor_parcela
-      : valor_laudo / totalParc;
-  const valorComissao =
-    Math.round(((baseCalculo * percentualRep) / 100) * 100) / 100;
+  let percentualRep: number | null = null;
+  let valorComissao: number;
+
+  if (isCustoFixo) {
+    // Custo fixo: comissão = (valor_negociado - custo_fixo) × avaliações / parcelas
+    // Determina tipo de cliente para obter o custo mínimo correto
+    const tipoCliente: TipoCliente = entId ? 'entidade' : 'clinica';
+    const custoFixoRep: number =
+      (entId
+        ? rep.valor_custo_fixo_entidade != null
+          ? parseFloat(rep.valor_custo_fixo_entidade)
+          : null
+        : rep.valor_custo_fixo_clinica != null
+          ? parseFloat(rep.valor_custo_fixo_clinica)
+          : null) ?? CUSTO_POR_AVALIACAO[tipoCliente];
+
+    // Usa valor_negociado do vínculo; fallback para valor_laudo/num_avaliacoes estimado
+    const negociado = valorNegociadoVinculo ?? valor_laudo;
+    const { valorRep, abaixoMinimo } = calcularComissaoCustoFixo(
+      negociado,
+      custoFixoRep
+    );
+    if (abaixoMinimo) {
+      return {
+        comissao: null,
+        erro: `Valor negociado (R$ ${negociado.toFixed(2)}) é inferior ao custo fixo por avaliação (R$ ${custoFixoRep.toFixed(2)}).`,
+      };
+    }
+    // valorRep é por avaliação — para o lote inteiro distribui pela parcela
+    const baseCalculo =
+      valor_parcela != null && valor_parcela > 0
+        ? valor_parcela
+        : valor_laudo / totalParc;
+    // Proporcional: rep ganha (valorRep / negociado) × baseCalculo
+    const ratioRep = negociado > 0 ? valorRep / negociado : 0;
+    valorComissao =
+      Math.round(ratioRep * baseCalculo * 100) / 100;
+    percentualRep = null; // custo_fixo não usa percentual
+  } else {
+    // Percentual: lógica original
+    percentualRep =
+      percVinculo != null
+        ? parseFloat(percVinculo)
+        : rep.percentual_comissao != null
+          ? parseFloat(rep.percentual_comissao)
+          : null;
+    if (percentualRep == null) {
+      return {
+        comissao: null,
+        erro: 'Percentual de comissão não definido para este vínculo/representante.',
+      };
+    }
+
+    const baseCalculo =
+      valor_parcela != null && valor_parcela > 0
+        ? valor_parcela
+        : valor_laudo / totalParc;
+    valorComissao =
+      Math.round(((baseCalculo * percentualRep) / 100) * 100) / 100;
+  }
 
   // Status inicial:
   //   forcar_retida=true → sempre retida (provisionamento antecipado de parcelas futuras)
