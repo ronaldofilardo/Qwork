@@ -130,10 +130,10 @@ export type AuditoriaSubTab =
   | 'laudos'
   | 'operacionais'
   | 'aceites'
-  | 'delecao'
-  | 'acesso-suporte'
-  | 'comissoes-leads'
-  | 'leads-comissoes-geral';
+  | 'acesso-comercial'
+  | 'acesso-representante'
+  | 'acesso-vendedor'
+  | 'delecao';
 
 // ── Acesso por Perfil Operacional (Suporte/Comercial/Representante/Vendedor) ──
 

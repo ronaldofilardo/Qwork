@@ -1,0 +1,367 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { RefreshCw } from 'lucide-react';
+
+interface ContratoRow {
+  contratante_nome: string;
+  contratante_cnpj: string;
+  tipo_contratante: string;
+  rep_nome: string;
+  rep_cpf: string;
+  lead_data: string | null;
+  contrato_data: string | null;
+  tempo_dias: string | null;
+  tipo_comissionamento: string | null;
+  percentual_comissao: string | null;
+  valor_custo_fixo: string | null;
+  laudo_id: number;
+  lote_id: number;
+  avaliacoes_concluidas: string;
+  valor_avaliacao: string | null;
+  valor_total: string;
+  perc_comercial: string | null;
+  valor_comercial: string;
+  perc_rep: string;
+  valor_rep: string;
+  valor_qwork?: string;
+}
+
+interface ContratosTableProps {
+  endpoint: string;
+  showQWork?: boolean;
+}
+
+const fmtBRL = (v: string | number | null | undefined) => {
+  if (v === null || v === undefined || v === '') return '—';
+  const n = typeof v === 'string' ? parseFloat(v) : v;
+  if (isNaN(n)) return '—';
+  return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+};
+
+const fmtDate = (d: string | null | undefined) => {
+  if (!d) return '—';
+  try {
+    return new Date(d).toLocaleDateString('pt-BR');
+  } catch {
+    return '—';
+  }
+};
+
+const fmtCpf = (cpf: string | null | undefined) => {
+  if (!cpf) return '—';
+  const c = cpf.replace(/\D/g, '');
+  if (c.length !== 11) return cpf;
+  return c.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+export function ContratosTable({
+  endpoint,
+  showQWork = false,
+}: ContratosTableProps) {
+  const [data, setData] = useState<ContratoRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+
+  const carregar = useCallback(async () => {
+    setLoading(true);
+    setErro(null);
+    try {
+      const res = await fetch(endpoint, { cache: 'no-store' });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.error ?? `Erro ${res.status}`);
+      }
+      const j = await res.json();
+      setData(j.contratos ?? []);
+    } catch (e) {
+      setErro(e instanceof Error ? e.message : 'Erro ao carregar contratos');
+    } finally {
+      setLoading(false);
+    }
+  }, [endpoint]);
+
+  useEffect(() => {
+    void carregar();
+  }, [carregar]);
+
+  return (
+    <div className="space-y-4 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">Contratos</h2>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Vínculos com laudos emitidos e split de comissão
+          </p>
+        </div>
+        <button
+          onClick={() => void carregar()}
+          disabled={loading}
+          className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          Atualizar
+        </button>
+      </div>
+
+      {erro && (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          ⚠️ {erro}
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-20 bg-white rounded-xl border border-dashed border-gray-200">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin h-8 w-8 rounded-full border-2 border-green-500 border-t-transparent" />
+            <p className="text-sm text-gray-400">Carregando contratos...</p>
+          </div>
+        </div>
+      ) : data.length === 0 ? (
+        <div className="py-20 text-center bg-white rounded-xl border border-dashed border-gray-200">
+          <p className="text-sm text-gray-400">Nenhum contrato encontrado.</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+          <div
+            className="overflow-x-auto"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/80">
+                  <th className="text-left px-4 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                    Entidade/Clínica
+                    <br />
+                    <span className="font-normal text-xs text-gray-400">
+                      CNPJ
+                    </span>
+                  </th>
+                  <th className="text-left px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                    Representante
+                    <br />
+                    <span className="font-normal text-xs text-gray-400">
+                      CPF
+                    </span>
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                    Lead
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                    Contrato
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                    Tempo
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                    Tipo
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                    Valor/%
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                    Laudos/Lotes
+                  </th>
+                  <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                    Aval.
+                  </th>
+                  <th className="text-right px-3 py-3 font-semibold text-gray-600">
+                    R$
+                  </th>
+                  <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                    Com. Com.
+                  </th>
+                  <th className="text-right px-3 py-3 font-semibold text-gray-600 whitespace-nowrap">
+                    Com. Rep.
+                  </th>
+                  {showQWork && (
+                    <th className="text-right px-4 py-3 font-semibold text-gray-600">
+                      QWork
+                    </th>
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((row, idx) => {
+                  const percComercial = row.perc_comercial
+                    ? parseFloat(row.perc_comercial).toFixed(1)
+                    : null;
+                  const percRep = parseFloat(row.perc_rep).toFixed(1);
+                  const isClinica = row.tipo_contratante === 'clinica';
+                  const isPercentual =
+                    row.tipo_comissionamento === 'percentual';
+
+                  return (
+                    <tr
+                      key={`${row.laudo_id}-${idx}`}
+                      className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
+                        idx === data.length - 1 ? 'border-b-0' : ''
+                      }`}
+                    >
+                      {/* Entidade/Clínica */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase ${
+                              isClinica
+                                ? 'bg-blue-50 text-blue-600'
+                                : 'bg-purple-50 text-purple-600'
+                            }`}
+                          >
+                            {isClinica ? 'CLÍ' : 'ENT'}
+                          </span>
+                          <div>
+                            <p className="font-semibold text-gray-900 text-xs leading-tight">
+                              {row.contratante_nome || '—'}
+                            </p>
+                            <p className="text-[11px] text-gray-400 font-mono">
+                              {row.contratante_cnpj || '—'}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Representante */}
+                      <td className="px-3 py-3">
+                        <p className="font-medium text-gray-900 text-xs leading-tight">
+                          {row.rep_nome || '—'}
+                        </p>
+                        <p className="text-[11px] text-gray-400 font-mono">
+                          {fmtCpf(row.rep_cpf)}
+                        </p>
+                      </td>
+
+                      {/* Lead date */}
+                      <td className="text-center px-3 py-3 text-xs text-gray-600">
+                        {fmtDate(row.lead_data)}
+                      </td>
+
+                      {/* Contrato date */}
+                      <td className="text-center px-3 py-3 text-xs text-gray-600">
+                        {fmtDate(row.contrato_data)}
+                      </td>
+
+                      {/* Tempo (dias) */}
+                      <td className="text-center px-3 py-3">
+                        {row.tempo_dias ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
+                            {Math.round(parseFloat(row.tempo_dias))}d
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </td>
+
+                      {/* Tipo comissionamento */}
+                      <td className="text-center px-3 py-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            isPercentual
+                              ? 'bg-green-50 text-green-700'
+                              : 'bg-amber-50 text-amber-700'
+                          }`}
+                        >
+                          {isPercentual ? '%' : 'Fixo'}
+                        </span>
+                      </td>
+
+                      {/* Valor/% */}
+                      <td className="text-center px-3 py-3 text-xs">
+                        {isPercentual ? (
+                          <span className="font-semibold text-gray-900">
+                            {row.percentual_comissao
+                              ? `${parseFloat(row.percentual_comissao).toFixed(1)}%`
+                              : '—'}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-gray-900">
+                            {fmtBRL(row.valor_custo_fixo)}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Laudos/Lotes */}
+                      <td className="text-center px-3 py-3">
+                        <div className="space-y-0.5">
+                          <p className="text-xs font-mono text-gray-600">
+                            #{row.laudo_id}
+                          </p>
+                          <p className="text-[10px] text-gray-400 font-mono">
+                            #{row.lote_id}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* Avaliações */}
+                      <td className="text-center px-3 py-3 text-xs">
+                        <div className="space-y-0.5">
+                          <p className="font-bold text-gray-900">
+                            {row.avaliacoes_concluidas || '0'}
+                          </p>
+                          <p className="text-gray-400">
+                            {fmtBRL(row.valor_avaliacao)}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* R$ total */}
+                      <td className="text-right px-3 py-3">
+                        <span className="font-bold text-gray-900 text-xs">
+                          {fmtBRL(row.valor_total)}
+                        </span>
+                      </td>
+
+                      {/* Com. Com. (comercial) */}
+                      <td className="text-right px-3 py-3 text-xs">
+                        <div className="space-y-0.5">
+                          {percComercial ? (
+                            <>
+                              <p className="font-semibold text-blue-700">
+                                {percComercial}%
+                              </p>
+                              <p className="text-blue-500">
+                                {fmtBRL(row.valor_comercial)}
+                              </p>
+                            </>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Com. Rep. */}
+                      <td className="text-right px-3 py-3 text-xs">
+                        <div className="space-y-0.5">
+                          <p className="font-semibold text-green-700">
+                            {percRep}%
+                          </p>
+                          <p className="text-green-500">
+                            {fmtBRL(row.valor_rep)}
+                          </p>
+                        </div>
+                      </td>
+
+                      {/* QWork (admin only) */}
+                      {showQWork && (
+                        <td className="text-right px-4 py-3 text-xs">
+                          <div className="space-y-0.5">
+                            <p className="font-bold text-gray-900">
+                              {fmtBRL(row.valor_qwork)}
+                            </p>
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div className="px-4 py-2 border-t border-gray-50 bg-gray-50/50 text-xs text-gray-400">
+            {data.length} registro{data.length !== 1 ? 's' : ''}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

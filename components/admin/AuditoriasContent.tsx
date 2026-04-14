@@ -9,9 +9,9 @@ import {
   TabelaLaudos,
   TabelaOperacionais,
   TabelaAceites,
-  TabelaAcessosSuporte,
-  TabelaComissoesLeads,
-  TabelaLeadsComissoesGeral,
+  TabelaAcessosComercial,
+  TabelaAcessosRepresentante,
+  TabelaAcessosVendedor,
 } from './auditorias/AuditoriaTables';
 import { LaudoDetalheDrawer } from './auditorias/LaudoDetalheDrawer';
 import { DelecaoTomadorContent } from './auditorias/DelecaoTomadorContent';
@@ -23,9 +23,9 @@ import type {
   AuditoriaLote,
   AuditoriaLaudo,
   AceiteUsuario,
-  AcessoSuporte,
-  LeadAbaixoMinimo,
-  LeadComissaoGeral,
+  AcessoComercial,
+  AcessoRepresentante,
+  AcessoVendedor,
 } from './auditorias/types';
 
 const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
@@ -35,9 +35,9 @@ const ENDPOINTS: Partial<Record<AuditoriaSubTab, string>> = {
   laudos: '/api/admin/auditorias/laudos',
   operacionais: '/api/admin/auditorias/operacionais',
   aceites: '/api/admin/auditorias/aceites',
-  'acesso-suporte': '/api/admin/auditorias/acesso-suporte',
-  'comissoes-leads': '/api/comercial/leads?modo=todos&limit=100',
-  'leads-comissoes-geral': '/api/suporte/comissionamento/leads?limit=100',
+  'acesso-comercial': '/api/admin/auditorias/acesso-comercial',
+  'acesso-representante': '/api/admin/auditorias/acesso-representante',
+  'acesso-vendedor': '/api/admin/auditorias/acesso-vendedor',
 };
 
 export function AuditoriasContent() {
@@ -53,13 +53,9 @@ export function AuditoriasContent() {
   const [laudos, setLaudos] = useState<AuditoriaLaudo[]>([]);
   const [operacionais, setOperacionais] = useState<AcessoOperacional[]>([]);
   const [aceites, setAceites] = useState<AceiteUsuario[]>([]);
-  const [acessosSuporte, setAcessosSuporte] = useState<AcessoSuporte[]>([]);
-  const [leadsAbaixoMinimo, setLeadsAbaixoMinimo] = useState<
-    LeadAbaixoMinimo[]
-  >([]);
-  const [leadsComissoesGeral, setLeadsComissoesGeral] = useState<
-    LeadComissaoGeral[]
-  >([]);
+  const [acessosComercial, setAcessosComercial] = useState<AcessoComercial[]>([]);
+  const [acessosRepresentante, setAcessosRepresentante] = useState<AcessoRepresentante[]>([]);
+  const [acessosVendedor, setAcessosVendedor] = useState<AcessoVendedor[]>([]);
 
   const fetchTab = useCallback(async (tab: AuditoriaSubTab) => {
     if (tab === 'delecao') return;
@@ -94,14 +90,14 @@ export function AuditoriasContent() {
         case 'aceites':
           setAceites(json.aceites ?? []);
           break;
-        case 'acesso-suporte':
-          setAcessosSuporte(json.acessos ?? []);
+        case 'acesso-comercial':
+          setAcessosComercial(json.acessos ?? []);
           break;
-        case 'comissoes-leads':
-          setLeadsAbaixoMinimo(json.leads ?? []);
+        case 'acesso-representante':
+          setAcessosRepresentante(json.acessos ?? []);
           break;
-        case 'leads-comissoes-geral':
-          setLeadsComissoesGeral(json.leads ?? []);
+        case 'acesso-vendedor':
+          setAcessosVendedor(json.acessos ?? []);
           break;
       }
       setLastUpdated(new Date());
@@ -180,25 +176,25 @@ export function AuditoriasContent() {
           loading={loading && activeTab === 'aceites'}
         />
       )}
-      {activeTab === 'acesso-suporte' && (
-        <TabelaAcessosSuporte
-          data={acessosSuporte}
-          onAtualizar={() => fetchTab('acesso-suporte')}
-          loading={loading && activeTab === 'acesso-suporte'}
+      {activeTab === 'acesso-comercial' && (
+        <TabelaAcessosComercial
+          data={acessosComercial}
+          onAtualizar={() => fetchTab('acesso-comercial')}
+          loading={loading && activeTab === 'acesso-comercial'}
         />
       )}
-      {activeTab === 'comissoes-leads' && (
-        <TabelaComissoesLeads
-          data={leadsAbaixoMinimo}
-          onAtualizar={() => fetchTab('comissoes-leads')}
-          loading={loading && activeTab === 'comissoes-leads'}
+      {activeTab === 'acesso-representante' && (
+        <TabelaAcessosRepresentante
+          data={acessosRepresentante}
+          onAtualizar={() => fetchTab('acesso-representante')}
+          loading={loading && activeTab === 'acesso-representante'}
         />
       )}
-      {activeTab === 'leads-comissoes-geral' && (
-        <TabelaLeadsComissoesGeral
-          data={leadsComissoesGeral}
-          onAtualizar={() => fetchTab('leads-comissoes-geral')}
-          loading={loading && activeTab === 'leads-comissoes-geral'}
+      {activeTab === 'acesso-vendedor' && (
+        <TabelaAcessosVendedor
+          data={acessosVendedor}
+          onAtualizar={() => fetchTab('acesso-vendedor')}
+          loading={loading && activeTab === 'acesso-vendedor'}
         />
       )}
       {activeTab === 'delecao' && <DelecaoTomadorContent />}

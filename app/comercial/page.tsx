@@ -4,10 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Users,
-  UserPlus,
   DollarSign,
-  TrendingUp,
-  Users2,
   ChevronRight,
   LayoutGrid,
   LayoutList,
@@ -17,6 +14,7 @@ import ComercialSidebar from '@/components/comercial/ComercialSidebar';
 import type { ComercialSection } from '@/components/comercial/ComercialSidebar';
 import { useComercial } from './comercial-context';
 import { ComissoesContent } from '@/components/admin/ComissoesContent';
+import { ContratosTable } from '@/components/shared/ContratosTable';
 import ComercialLeadsAprovacaoPage from './leads/page';
 import type { Lead } from '@/app/admin/representantes/types';
 import { useLeads } from '@/app/admin/representantes/hooks/useLeads';
@@ -303,6 +301,10 @@ export default function ComercialPage() {
     v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   const renderContent = () => {
+    if (activeSection === 'contratos') {
+      return <ContratosTable endpoint="/api/comercial/contratos" />;
+    }
+
     if (activeSection === 'comissoes') {
       return <ComissoesContent perfil="comercial" />;
     }
@@ -327,114 +329,6 @@ export default function ComercialPage() {
           <p className="text-sm text-gray-500 mt-0.5">
             Métricas consolidadas de toda a operação comercial
           </p>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-green-50">
-                <Users size={20} className="text-green-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Representantes Aptos
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.representantesAtivos}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              <span className="text-amber-600 font-medium">
-                {kpis.representantesPendentes}
-              </span>{' '}
-              aguardando aprovação
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-blue-50">
-                <Users2 size={20} className="text-blue-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Vendedores Ativos
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.vendedoresAtivos}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              Vinculados a representantes
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl border p-5">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-purple-50">
-                <UserPlus size={20} className="text-purple-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Leads / Candidatos
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.leadsTotal}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">
-              <span className="text-orange-600 font-medium">
-                {kpis.leadsPendentes}
-              </span>{' '}
-              pendentes de verificação
-            </p>
-          </div>
-
-          <div
-            className="bg-white rounded-xl border p-5 cursor-pointer hover:shadow-md transition-shadow"
-            onClick={() => setActiveSection('comissoes')}
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-lg bg-emerald-50">
-                <DollarSign size={20} className="text-emerald-600" />
-              </div>
-              <span className="text-sm font-medium text-gray-600">
-                Comissões Abertas
-              </span>
-            </div>
-            <p className="text-3xl font-bold text-gray-900">
-              {kpis.comissoesAbertas}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Total em aberto</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp size={18} className="text-amber-600" />
-              <span className="text-sm font-semibold text-amber-700">
-                A Pagar (em aberto)
-              </span>
-            </div>
-            <p className="text-2xl font-bold text-amber-900">
-              {fmtBRL(kpis.valorAReceber)}
-            </p>
-            <p className="text-xs text-amber-600 mt-1">
-              Comissões NF + liberadas + análise
-            </p>
-          </div>
-          <div className="bg-green-50 border border-green-200 rounded-xl p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <DollarSign size={18} className="text-green-600" />
-              <span className="text-sm font-semibold text-green-700">
-                Total Pago (histórico)
-              </span>
-            </div>
-            <p className="text-2xl font-bold text-green-900">
-              {fmtBRL(kpis.valorPagoMes)}
-            </p>
-            <p className="text-xs text-green-600 mt-1">
-              Comissões pagas acumuladas
-            </p>
-          </div>
         </div>
 
         <div className="bg-white rounded-xl border p-5">
@@ -639,150 +533,168 @@ export default function ComercialPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+              <div
+                className="overflow-x-auto"
+                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+              >
                 <style>{`
                   .kw-scrollbar-hide::-webkit-scrollbar { display: none; }
                 `}</style>
                 <table className="w-full text-sm kw-scrollbar-hide">
-                <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80">
-                    <th className="text-left px-4 py-3 font-semibold text-gray-600">
-                      Representante
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Tipo de Comissionamento
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Negociação
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Leads
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Vínculos
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Vendedores
-                    </th>
-                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
-                      Aceite Contrato
-                    </th>
-                    <th className="text-right px-4 py-3 font-semibold text-gray-600">
-                      Pendente
-                    </th>
-                    <th className="px-3 py-3" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {repsMetrica.map((r, idx) => (
-                    <tr
-                      key={r.id}
-                      onClick={() =>
-                        router.push(`/comercial/representantes/${r.id}`)
-                      }
-                      className={`cursor-pointer hover:bg-green-50/50 transition-colors ${
-                        idx < repsMetrica.length - 1
-                          ? 'border-b border-gray-50'
-                          : ''
-                      }`}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                              r.status === 'apto'
-                                ? 'bg-green-500'
-                                : r.status === 'apto_pendente'
-                                  ? 'bg-amber-500'
-                                  : 'bg-gray-300'
-                            }`}
-                          />
-                          <div>
-                            <p className="font-semibold text-gray-900">
-                              {r.nome}
-                            </p>
-                            <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
-                              {r.codigo || 'S/ COD'}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="text-center px-3 py-3">
-                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
-                          {r.modelo_comissionamento === 'percentual' ? '%' : r.modelo_comissionamento === 'custo_fixo' ? 'Fixo' : '—'}
-                        </span>
-                      </td>
-                      <td className="text-center px-3 py-3 text-xs">
-                        {r.modelo_comissionamento === 'percentual' ? (
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-gray-900">
-                              Rep: {r.percentual_comissao?.toFixed(1) ?? '—'}%
-                            </p>
-                            <p className="text-gray-600">
-                              Com: {r.percentual_comissao_comercial?.toFixed(1) ?? '—'}%
-                            </p>
-                          </div>
-                        ) : r.modelo_comissionamento === 'custo_fixo' ? (
-                          <div className="space-y-0.5">
-                            <p className="font-semibold text-gray-900">
-                              Ent: {r.valor_custo_fixo_entidade?.toFixed(2) ? `R$ ${r.valor_custo_fixo_entidade.toFixed(2)}` : '—'}
-                            </p>
-                            <p className="text-gray-600">
-                              Cli: {r.valor_custo_fixo_clinica?.toFixed(2) ? `R$ ${r.valor_custo_fixo_clinica.toFixed(2)}` : '—'}
-                            </p>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">—</span>
-                        )}
-                      </td>
-                      <td className="text-center px-3 py-3 font-bold text-gray-800">
-                        {r.leads_ativos + r.leads_mes}
-                      </td>
-                      <td className="text-center px-3 py-3 font-bold text-gray-800">
-                        {r.vinculos_ativos}
-                      </td>
-                      <td className="text-center px-3 py-3 font-bold text-gray-800">
-                        {r.vendedores_count > 0 ? (
-                          r.vendedores_count
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="text-center px-3 py-3">
-                        {r.aceite_contrato_em ? (
-                          <span className="inline-flex items-center gap-1 text-green-700 font-medium">
-                            <CalendarCheck
-                              size={13}
-                              className="text-green-500"
-                            />
-                            {new Date(r.aceite_contrato_em).toLocaleDateString(
-                              'pt-BR'
-                            )}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300">—</span>
-                        )}
-                      </td>
-                      <td className="text-right px-4 py-3">
-                        <span
-                          className={`font-bold ${
-                            r.valor_pendente > 0
-                              ? 'text-amber-600'
-                              : 'text-gray-300'
-                          }`}
-                        >
-                          {r.valor_pendente > 0
-                            ? fmtBRL(r.valor_pendente)
-                            : '—'}
-                        </span>
-                      </td>
-                      <td className="px-3 py-3">
-                        <ChevronRight size={16} className="text-gray-300" />
-                      </td>
+                  <thead>
+                    <tr className="border-b border-gray-100 bg-gray-50/80">
+                      <th className="text-left px-4 py-3 font-semibold text-gray-600">
+                        Representante
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Tipo de Comissionamento
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Negociação
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Leads
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Vínculos
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Vendedores
+                      </th>
+                      <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                        Aceite Contrato
+                      </th>
+                      <th className="text-right px-4 py-3 font-semibold text-gray-600">
+                        Pendente
+                      </th>
+                      <th className="px-3 py-3" />
                     </tr>
-                  ))}
-                </tbody>
-              </table>              </div>            </div>
+                  </thead>
+                  <tbody>
+                    {repsMetrica.map((r, idx) => (
+                      <tr
+                        key={r.id}
+                        onClick={() =>
+                          router.push(`/comercial/representantes/${r.id}`)
+                        }
+                        className={`cursor-pointer hover:bg-green-50/50 transition-colors ${
+                          idx < repsMetrica.length - 1
+                            ? 'border-b border-gray-50'
+                            : ''
+                        }`}
+                      >
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                                r.status === 'apto'
+                                  ? 'bg-green-500'
+                                  : r.status === 'apto_pendente'
+                                    ? 'bg-amber-500'
+                                    : 'bg-gray-300'
+                              }`}
+                            />
+                            <div>
+                              <p className="font-semibold text-gray-900">
+                                {r.nome}
+                              </p>
+                              <p className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">
+                                {r.codigo || 'S/ COD'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="text-center px-3 py-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                            {r.modelo_comissionamento === 'percentual'
+                              ? '%'
+                              : r.modelo_comissionamento === 'custo_fixo'
+                                ? 'Fixo'
+                                : '—'}
+                          </span>
+                        </td>
+                        <td className="text-center px-3 py-3 text-xs">
+                          {r.modelo_comissionamento === 'percentual' ? (
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-gray-900">
+                                Rep: {r.percentual_comissao?.toFixed(1) ?? '—'}%
+                              </p>
+                              <p className="text-gray-600">
+                                Com:{' '}
+                                {r.percentual_comissao_comercial?.toFixed(1) ??
+                                  '—'}
+                                %
+                              </p>
+                            </div>
+                          ) : r.modelo_comissionamento === 'custo_fixo' ? (
+                            <div className="space-y-0.5">
+                              <p className="font-semibold text-gray-900">
+                                Ent:{' '}
+                                {r.valor_custo_fixo_entidade?.toFixed(2)
+                                  ? `R$ ${r.valor_custo_fixo_entidade.toFixed(2)}`
+                                  : '—'}
+                              </p>
+                              <p className="text-gray-600">
+                                Cli:{' '}
+                                {r.valor_custo_fixo_clinica?.toFixed(2)
+                                  ? `R$ ${r.valor_custo_fixo_clinica.toFixed(2)}`
+                                  : '—'}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">—</span>
+                          )}
+                        </td>
+                        <td className="text-center px-3 py-3 font-bold text-gray-800">
+                          {r.leads_ativos + r.leads_mes}
+                        </td>
+                        <td className="text-center px-3 py-3 font-bold text-gray-800">
+                          {r.vinculos_ativos}
+                        </td>
+                        <td className="text-center px-3 py-3 font-bold text-gray-800">
+                          {r.vendedores_count > 0 ? (
+                            r.vendedores_count
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="text-center px-3 py-3">
+                          {r.aceite_contrato_em ? (
+                            <span className="inline-flex items-center gap-1 text-green-700 font-medium">
+                              <CalendarCheck
+                                size={13}
+                                className="text-green-500"
+                              />
+                              {new Date(
+                                r.aceite_contrato_em
+                              ).toLocaleDateString('pt-BR')}
+                            </span>
+                          ) : (
+                            <span className="text-gray-300">—</span>
+                          )}
+                        </td>
+                        <td className="text-right px-4 py-3">
+                          <span
+                            className={`font-bold ${
+                              r.valor_pendente > 0
+                                ? 'text-amber-600'
+                                : 'text-gray-300'
+                            }`}
+                          >
+                            {r.valor_pendente > 0
+                              ? fmtBRL(r.valor_pendente)
+                              : '—'}
+                          </span>
+                        </td>
+                        <td className="px-3 py-3">
+                          <ChevronRight size={16} className="text-gray-300" />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           )}
         </div>
       </div>
@@ -816,7 +728,10 @@ export default function ComercialPage() {
         />
       </div>
 
-      <div className="flex-1 overflow-auto">
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
         <div className="p-6">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">

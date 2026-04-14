@@ -14,7 +14,7 @@ import SidebarLayout from '@/components/shared/SidebarLayout';
 
 export type AdminSection = 'volume' | 'financeiro' | 'geral' | 'auditorias';
 export type VolumeSubSection = 'entidade' | 'rh';
-export type FinanceiroSubSection = 'contagem';
+export type FinanceiroSubSection = 'contagem' | 'contratos';
 export type GeralSubSection = 'emissores';
 
 interface AdminSidebarProps {
@@ -170,9 +170,31 @@ export default function AdminSidebar({
         label="Financeiro"
         isActive={activeSection === 'financeiro'}
         onClick={() => {
+          toggleSection('financeiro');
           onSectionChange('financeiro', 'contagem');
         }}
+        hasSubMenu
+        isExpanded={isExpanded('financeiro')}
       />
+
+      {isExpanded('financeiro') && (
+        <div className="border-l-2 border-gray-200 ml-4">
+          <SubMenuItem
+            label="Contagem"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'contagem'
+            }
+            onClick={() => onSectionChange('financeiro', 'contagem')}
+          />
+          <SubMenuItem
+            label="Contratos"
+            isActive={
+              activeSection === 'financeiro' && activeSubSection === 'contratos'
+            }
+            onClick={() => onSectionChange('financeiro', 'contratos')}
+          />
+        </div>
+      )}
 
       {/* Geral */}
       <MenuItem
