@@ -1108,7 +1108,8 @@ SELECT
     NULL::boolean AS comissao_gerada,
     NULL::integer AS comissoes_geradas_count,
     NULL::integer AS comissoes_ativas_count,
-    NULL::numeric(12,2) AS lead_valor_negociado;
+    NULL::numeric(12,2) AS lead_valor_negociado,
+    NULL::numeric(12,2) AS valor_negociado_vinculo;
 
 
 ALTER VIEW public.v_solicitacoes_emissao OWNER TO postgres;
@@ -1850,7 +1851,8 @@ CREATE OR REPLACE VIEW public.v_solicitacoes_emissao AS
     (( SELECT count(*) AS count
            FROM public.comissoes_laudo cl
           WHERE ((cl.lote_pagamento_id = la.id) AND (cl.parcela_confirmada_em IS NOT NULL))))::integer AS comissoes_ativas_count,
-    lr.valor_negociado AS lead_valor_negociado
+    lr.valor_negociado AS lead_valor_negociado,
+    vc.valor_negociado AS valor_negociado_vinculo
    FROM (((((((((public.lotes_avaliacao la
      LEFT JOIN public.empresas_clientes e ON ((e.id = la.empresa_id)))
      LEFT JOIN public.clinicas c ON ((c.id = la.clinica_id)))
@@ -1862,7 +1864,7 @@ CREATE OR REPLACE VIEW public.v_solicitacoes_emissao AS
      LEFT JOIN public.representantes r ON ((r.id = vc.representante_id)))
      LEFT JOIN public.leads_representante lr ON ((lr.id = vc.lead_id)))
   WHERE (la.status_pagamento IS NOT NULL)
-  GROUP BY la.id, e.nome, e.id, c.nome, c.id, c.entidade_id, ent.nome, u.nome, u.cpf, l.id, l.status, l.hash_pdf, l.emitido_em, l.enviado_em, la.entidade_id, vc.id, r.id, r.nome, r.codigo, r.tipo_pessoa, r.percentual_comissao, lr.valor_negociado
+  GROUP BY la.id, e.nome, e.id, c.nome, c.id, c.entidade_id, ent.nome, u.nome, u.cpf, l.id, l.status, l.hash_pdf, l.emitido_em, l.enviado_em, la.entidade_id, vc.id, r.id, r.nome, r.codigo, r.tipo_pessoa, r.percentual_comissao, lr.valor_negociado, vc.valor_negociado
   ORDER BY la.solicitacao_emissao_em DESC NULLS LAST;
 
 

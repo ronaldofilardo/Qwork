@@ -428,6 +428,32 @@ export default function RepNovoLeadDiretoModal({ onClose, onSuccess }: Props) {
               placeholder="R$ 0,00"
               className="w-full px-3 py-2 text-sm border rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-400 transition-colors"
             />
+            {/* Dica de valor mínimo */}
+            {modeloComissionamento === 'custo_fixo' ? (
+              <p className="mt-1 text-xs text-gray-400">
+                Custo fixo:{' '}
+                <span className="font-medium text-gray-600">
+                  R${' '}
+                  {(form.tipo_cliente === 'entidade'
+                    ? (valorCustoFixoEntidade ?? CUSTO_POR_AVALIACAO.entidade)
+                    : (valorCustoFixoClinica ?? CUSTO_POR_AVALIACAO.clinica)
+                  ).toFixed(2)}
+                  /avaliação
+                </span>{' '}
+                — negocie acima deste valor.
+              </p>
+            ) : (
+              <p className="mt-1 text-xs text-gray-400">
+                Mínimo recomendado:{' '}
+                <span className="font-medium text-gray-600">
+                  R${' '}
+                  {form.tipo_cliente === 'entidade'
+                    ? CUSTO_POR_AVALIACAO.entidade.toFixed(2)
+                    : CUSTO_POR_AVALIACAO.clinica.toFixed(2)}
+                  /avaliação
+                </span>
+              </p>
+            )}
           </div>
 
           {/* CASO A: modelo ainda não configurado */}

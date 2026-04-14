@@ -88,8 +88,19 @@ function PaymentInfo({
         <div>
           <p className="text-xs text-gray-600 mb-1">Valor por Funcionário</p>
           <p className="text-lg font-bold text-gray-900">
-            {formatCurrency(solicitacao.valor_por_funcionario)}
+            {formatCurrency(
+              solicitacao.valor_negociado_vinculo ??
+                solicitacao.valor_por_funcionario
+            )}
           </p>
+          {solicitacao.valor_negociado_vinculo &&
+            solicitacao.valor_negociado_vinculo !==
+              solicitacao.valor_por_funcionario && (
+              <p className="text-xs text-gray-500 mt-1">
+                (Negociado:{' '}
+                {formatCurrency(solicitacao.valor_negociado_vinculo)})
+              </p>
+            )}
         </div>
         <div>
           <p className="text-xs text-gray-600 mb-1">Valor Total</p>
@@ -588,7 +599,43 @@ function ComissaoSection({
                     {formatCurrency(solicitacao.valor_total_calculado)}
                   </p>
                 </div>
-                {solicitacao.representante_percentual_comissao != null ? (
+                {solicitacao.modelo_comissionamento === 'custo_fixo' ? (
+                  <div>
+                    <p className="text-gray-500">Comissão (custo fixo)</p>
+                    {(() => {
+                      const negociado =
+                        solicitacao.valor_negociado_vinculo ??
+                        solicitacao.lead_valor_negociado;
+                      const custo = solicitacao.valor_custo_fixo_snapshot;
+                      if (negociado != null && custo != null) {
+                        const totalParcelas =
+                          solicitacao.pagamento_parcelas ?? 1;
+                        const valorTotal = Number(
+                          solicitacao.valor_total_calculado
+                        );
+                        const ratio = negociado > 0 ? (negociado - custo) / negociado : 0;
+                        const valorComissao =
+                          Math.round((ratio * valorTotal) * 100) / 100;
+                        return (
+                          <div>
+                            <p className="font-bold text-purple-600">
+                              {formatCurrency(valorComissao)}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              R$ {negociado.toFixed(2)} − R$ {custo.toFixed(2)}
+                              /avaliação × {totalParcelas}p
+                            </p>
+                          </div>
+                        );
+                      }
+                      return (
+                        <p className="font-medium text-orange-600">
+                          ⚠️ Valor negociado não definido
+                        </p>
+                      );
+                    })()}
+                  </div>
+                ) : solicitacao.representante_percentual_comissao != null ? (
                   <div>
                     <p className="text-gray-500">
                       Comissão ({solicitacao.representante_percentual_comissao}

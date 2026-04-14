@@ -1,35 +1,41 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, UserPlus } from 'lucide-react';
+import { VincularRepDrawer } from '@/components/comercial/contratos/VincularRepDrawer';
 
 interface ContratoRow {
   contratante_nome: string;
   contratante_cnpj: string;
+  contratante_id: number;
   tipo_contratante: string;
-  rep_nome: string;
-  rep_cpf: string;
+  rep_nome: string | null;
+  rep_codigo: string | null;
+  rep_cpf: string | null;
+  vinculo_id: number | null;
   lead_data: string | null;
   contrato_data: string | null;
   tempo_dias: string | null;
   tipo_comissionamento: string | null;
   percentual_comissao: string | null;
   valor_custo_fixo: string | null;
-  laudo_id: number;
-  lote_id: number;
+  valor_negociado: string | null;
+  laudo_id: number | null;
+  lote_id: number | null;
   avaliacoes_concluidas: string;
   valor_avaliacao: string | null;
-  valor_total: string;
+  valor_total: string | null;
   perc_comercial: string | null;
-  valor_comercial: string;
-  perc_rep: string;
-  valor_rep: string;
-  valor_qwork?: string;
+  valor_comercial: string | null;
+  perc_rep: string | null;
+  valor_rep: string | null;
+  valor_qwork?: string | null;
 }
 
 interface ContratosTableProps {
   endpoint: string;
   showQWork?: boolean;
+  allowVincular?: boolean;
 }
 
 const fmtBRL = (v: string | number | null | undefined) => {
@@ -58,10 +64,12 @@ const fmtCpf = (cpf: string | null | undefined) => {
 export function ContratosTable({
   endpoint,
   showQWork = false,
+  allowVincular = false,
 }: ContratosTableProps) {
   const [data, setData] = useState<ContratoRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [drawerRow, setDrawerRow] = useState<ContratoRow | null>(null);
 
   const carregar = useCallback(async () => {
     setLoading(true);
@@ -186,16 +194,25 @@ export function ContratosTable({
                   const percComercial = row.perc_comercial
                     ? parseFloat(row.perc_comercial).toFixed(1)
                     : null;
-                  const percRep = parseFloat(row.perc_rep).toFixed(1);
+                  const percRep = row.perc_rep
+                    ? parseFloat(row.perc_rep).toFixed(1)
+                    : null;
                   const isClinica = row.tipo_contratante === 'clinica';
                   const isPercentual =
                     row.tipo_comissionamento === 'percentual';
+                  const semRep = !row.rep_nome;
+                  const rowClickable = allowVincular && semRep;
 
                   return (
                     <tr
-                      key={`${row.laudo_id}-${idx}`}
-                      className={`border-b border-gray-50 hover:bg-gray-50/50 transition-colors ${
+                      key={`${row.contratante_id}-${row.laudo_id ?? 'nl'}-${idx}`}
+                      onClick={rowClickable ? () => setDrawerRow(row) : undefined}
+                      className={`border-b border-gray-50 transition-colors ${
                         idx === data.length - 1 ? 'border-b-0' : ''
+                      } ${
+                        rowClickable
+                          ? 'hover:bg-green-50/60 cursor-pointer'
+                          : 'hover:bg-gray-50/50'
                       }`}
                     >
                       {/* Entidade/Clínica */}
@@ -223,12 +240,28 @@ export function ContratosTable({
 
                       {/* Representante */}
                       <td className="px-3 py-3">
-                        <p className="font-medium text-gray-900 text-xs leading-tight">
-                          {row.rep_nome || '—'}
-                        </p>
-                        <p className="text-[11px] text-gray-400 font-mono">
-                          {fmtCpf(row.rep_cpf)}
-                        </p>
+                        {row.rep_nome ? (
+                          <div className="flex items-center gap-1.5">
+                            <span className="flex-shrink-0 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500 font-mono">
+                              {row.rep_codigo || '—'}
+                            </span>
+                            <div>
+                              <p className="font-medium text-gray-900 text-xs leading-tight">
+                                {row.rep_nome}
+                              </p>
+                              <p className="text-[11px] text-gray-400 font-mono">
+                                {fmtCpf(row.rep_cpf)}
+                              </p>
+                            </div>
+                          </div>
+                        ) : allowVincular ? (
+                          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700">
+                            <UserPlus size={12} />
+                            Clique para vincular
+                          </span>
+                        ) : (
+                          <span className="text-gray-300 text-xs">—</span>
+                        )}
                       </td>
 
                       {/* Lead date */}
@@ -254,15 +287,19 @@ export function ContratosTable({
 
                       {/* Tipo comissionamento */}
                       <td className="text-center px-3 py-3">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
-                            isPercentual
-                              ? 'bg-green-50 text-green-700'
-                              : 'bg-amber-50 text-amber-700'
-                          }`}
-                        >
-                          {isPercentual ? '%' : 'Fixo'}
-                        </span>
+                        {row.tipo_comissionamento ? (
+                          <span
+                            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                              isPercentual
+                                ? 'bg-green-50 text-green-700'
+                                : 'bg-amber-50 text-amber-700'
+                            }`}
+                          >
+                            {isPercentual ? '%' : 'Fixo'}
+                          </span>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
 
                       {/* Valor/% */}
@@ -273,23 +310,44 @@ export function ContratosTable({
                               ? `${parseFloat(row.percentual_comissao).toFixed(1)}%`
                               : '—'}
                           </span>
+                        ) : row.tipo_comissionamento === 'custo_fixo' ? (
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-gray-900">
+                              {fmtBRL(row.valor_negociado ?? row.valor_custo_fixo)}
+                              <span className="text-gray-400 font-normal">/avaliação</span>
+                            </p>
+                            {row.valor_custo_fixo && row.valor_negociado && (
+                              <p className="text-[10px] text-amber-600">
+                                Custo: {fmtBRL(row.valor_custo_fixo)} → Rep: {fmtBRL(
+                                  String(
+                                    parseFloat(row.valor_negociado) -
+                                      parseFloat(row.valor_custo_fixo)
+                                  )
+                                )}
+                              </p>
+                            )}
+                          </div>
                         ) : (
                           <span className="font-semibold text-gray-900">
-                            {fmtBRL(row.valor_custo_fixo)}
+                            {fmtBRL(row.valor_negociado ?? row.valor_custo_fixo)}
                           </span>
                         )}
                       </td>
 
                       {/* Laudos/Lotes */}
                       <td className="text-center px-3 py-3">
-                        <div className="space-y-0.5">
-                          <p className="text-xs font-mono text-gray-600">
-                            #{row.laudo_id}
-                          </p>
-                          <p className="text-[10px] text-gray-400 font-mono">
-                            #{row.lote_id}
-                          </p>
-                        </div>
+                        {row.laudo_id != null ? (
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-mono text-gray-600">
+                              #{row.laudo_id}
+                            </p>
+                            <p className="text-[10px] text-gray-400 font-mono">
+                              #{row.lote_id}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
 
                       {/* Avaliações */}
@@ -331,14 +389,18 @@ export function ContratosTable({
 
                       {/* Com. Rep. */}
                       <td className="text-right px-3 py-3 text-xs">
-                        <div className="space-y-0.5">
-                          <p className="font-semibold text-green-700">
-                            {percRep}%
-                          </p>
-                          <p className="text-green-500">
-                            {fmtBRL(row.valor_rep)}
-                          </p>
-                        </div>
+                        {percRep !== null ? (
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-green-700">
+                              {percRep}%
+                            </p>
+                            <p className="text-green-500">
+                              {fmtBRL(row.valor_rep)}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
                       </td>
 
                       {/* QWork (admin only) */}
@@ -361,6 +423,19 @@ export function ContratosTable({
             {data.length} registro{data.length !== 1 ? 's' : ''}
           </div>
         </div>
+      )}
+
+      {allowVincular && (
+        <VincularRepDrawer
+          vinculoId={drawerRow?.vinculo_id ?? null}
+          contratanteId={drawerRow?.contratante_id ?? null}
+          contratanteTipo={
+            (drawerRow?.tipo_contratante as 'clinica' | 'entidade' | null) ?? null
+          }
+          contratanteNome={drawerRow?.contratante_nome ?? ''}
+          onClose={() => setDrawerRow(null)}
+          onSaved={() => void carregar()}
+        />
       )}
     </div>
   );

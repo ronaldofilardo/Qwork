@@ -48,6 +48,7 @@ export interface Solicitacao {
   lead_valor_negociado?: number | null;
   modelo_comissionamento?: 'percentual' | 'custo_fixo' | null;
   valor_custo_fixo_snapshot?: number | null;
+  valor_negociado_vinculo?: number | null;
   detalhes_parcelas?: ParcelaDetalhe[] | null;
   tipo_cobranca?: 'laudo' | 'manutencao' | null;
 }
