@@ -306,3 +306,100 @@ describe('calcularComissaoCustoFixo', () => {
     expect(r.abaixoMinimo).toBe(false);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────
+// 9. Auto-calc percentual_comissao_comercial = MAX - percRep
+//    Regra aplicada nas rotas de representantes (modelo='percentual')
+// ─────────────────────────────────────────────────────────────────────────
+
+describe('Auto-calc percentual_comissao_comercial = MAX - percRep', () => {
+  function calcPercComercialAuto(percRep: number): number {
+    return MAX_PERCENTUAL_COMISSAO - percRep;
+  }
+
+  test('rep 10% → percComercial 30%', () => {
+    expect(calcPercComercialAuto(10)).toBe(30);
+  });
+
+  test('rep 20% → percComercial 20%', () => {
+    expect(calcPercComercialAuto(20)).toBe(20);
+  });
+
+  test('rep 40% (máximo) → percComercial 0%', () => {
+    expect(calcPercComercialAuto(40)).toBe(0);
+  });
+
+  test('rep 0% → percComercial é o máximo (40%)', () => {
+    expect(calcPercComercialAuto(0)).toBe(40);
+  });
+
+  test('auto-calc: R$100, rep 10%, percComercial auto=30%, entidade', () => {
+    const percComercial = calcPercComercialAuto(10);
+    const r = calcularValoresComissao(100, 10, percComercial, 'entidade');
+    expect(r.valorRep).toBe(10);
+    expect(r.valorComercial).toBe(30);
+    expect(r.valorQWork).toBe(60);
+    expect(r.percentualTotal).toBe(40);
+    expect(r.abaixoCusto).toBe(false);
+  });
+
+  test('auto-calc: R$100, rep 20%, percComercial auto=20%, entidade', () => {
+    const percComercial = calcPercComercialAuto(20);
+    const r = calcularValoresComissao(100, 20, percComercial, 'entidade');
+    expect(r.valorRep).toBe(20);
+    expect(r.valorComercial).toBe(20);
+    expect(r.valorQWork).toBe(60);
+    expect(r.percentualTotal).toBe(40);
+    expect(r.abaixoCusto).toBe(false);
+  });
+
+  test('auto-calc: R$100, rep 40%, percComercial auto=0%, entidade', () => {
+    const percComercial = calcPercComercialAuto(40);
+    const r = calcularValoresComissao(100, 40, percComercial, 'entidade');
+    expect(r.valorRep).toBe(40);
+    expect(r.valorComercial).toBe(0);
+    expect(r.valorQWork).toBe(60);
+    expect(r.percentualTotal).toBe(40);
+    expect(r.abaixoCusto).toBe(false);
+  });
+
+  test('auto-calc below-cost: R$14, rep 40%, entidade → abaixoCusto=true', () => {
+    const percComercial = calcPercComercialAuto(40); // 0%
+    const r = calcularValoresComissao(14, 40, percComercial, 'entidade');
+    expect(r.abaixoCusto).toBe(true);
+  });
+
+  test('auto-calc below-cost: R$7, rep 40%, clinica → abaixoCusto=true', () => {
+    const percComercial = calcPercComercialAuto(40); // 0%
+    const r = calcularValoresComissao(7, 40, percComercial, 'clinica');
+    expect(r.abaixoCusto).toBe(true);
+  });
+
+  test('auto-calc soma preservada: rep=20%, R$100, entidade', () => {
+    const percComercial = calcPercComercialAuto(20);
+    const r = calcularValoresComissao(100, 20, percComercial, 'entidade');
+    // valorRep + valorComercial + valorQWork = valorNegociado
+    expect(r.valorRep + (r.valorComercial ?? 0) + r.valorQWork).toBeCloseTo(
+      100,
+      2
+    );
+  });
+
+  test('notificacao-trigger: abaixoCusto=true deve acionar aprovação admin', () => {
+    // Simula a condição que dispara INSERT em notificacoes_admin
+    // quando aprovado com abaixo do custo mínimo
+    const percRep = 40;
+    const percComercial = calcPercComercialAuto(percRep);
+    const valorNegociado = 10; // R$10, entidade, custo mínimo = R$12
+
+    const requerAprovacao = calcularRequerAprovacao(
+      valorNegociado,
+      percRep,
+      percComercial,
+      'entidade'
+    );
+
+    // Custo mínimo entidade é R$12, valorNegociado R$10 < R$12 → requer notificação
+    expect(requerAprovacao).toBe(true);
+  });
+});

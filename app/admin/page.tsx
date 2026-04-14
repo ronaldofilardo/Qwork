@@ -7,6 +7,7 @@ import { EmissoresContent } from '@/components/admin/EmissoresContent';
 import { VolumeContent } from '@/components/admin/VolumeContent';
 import { ContagemContent } from '@/components/admin/ContagemContent';
 import { AuditoriasContent } from '@/components/admin/AuditoriasContent';
+import { ContratosTable } from '@/components/shared/ContratosTable';
 
 interface Session {
   cpf: string;
@@ -63,6 +64,8 @@ export default function AdminPage() {
     }
 
     if (activeSection === 'financeiro') {
+      if (activeSubSection === 'contratos')
+        return <ContratosTable endpoint="/api/admin/contratos" showQWork />;
       return <ContagemContent />;
     }
 

@@ -11,8 +11,9 @@ import type {
   AuditoriaLaudo,
   AceiteUsuario,
   AcessoSuporte,
-  LeadAbaixoMinimo,
-  LeadComissaoGeral,
+  AcessoComercial,
+  AcessoRepresentante,
+  AcessoVendedor,
 } from './types';
 
 /* ─── Refresh Button ─── */
@@ -1085,145 +1086,65 @@ export function TabelaAcessosSuporte({
   );
 }
 
-/* ─── TabelaComissoesLeads ─── */
+/* ─── TabelaAcessosComercial ─── */
 
-export function TabelaComissoesLeads({
+export function TabelaAcessosComercial({
   data,
   onAtualizar,
   loading,
 }: {
-  data: LeadAbaixoMinimo[];
+  data: AcessoComercial[];
   onAtualizar: () => void;
   loading: boolean;
 }) {
-  const fmtBRL = (v: number | null | undefined) =>
-    v != null
-      ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      : '—';
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
-
   return (
     <TableShell
-      title="Comissões — Leads"
+      title="Acessos — Comercial"
       subtitle={`${data.length} registro(s)`}
       headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
     >
       <table className="w-full text-sm">
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
-            <Th>Representante</Th>
-            <Th>CNPJ</Th>
-            <Th center>Tipo</Th>
-            <Th center>Vidas</Th>
-            <Th>Valor</Th>
-            <Th center>% Rep</Th>
-            <Th center>% Comercial</Th>
-            <Th center>Status</Th>
-            <Th center>Aprovação</Th>
-            <Th center>Data</Th>
+            <Th>Nome</Th>
+            <Th>CPF</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>IP</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {data.length === 0 && (
-            <tr>
-              <td
-                colSpan={10}
-                className="px-4 py-8 text-center text-sm text-gray-400"
-              >
-                Nenhum lead encontrado.
-              </td>
+          {data.map((row) => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              <Td>{row.nome ?? '—'}</Td>
+              <Td mono>{row.cpf}</Td>
+              <Td>{formatDate(row.login_timestamp)}</Td>
+              <Td>
+                {row.logout_timestamp ? formatDate(row.logout_timestamp) : '—'}
+              </Td>
+              <Td mono>{row.ip_address ?? '—'}</Td>
             </tr>
-          )}
-          {data.map((row) => {
-            const requer = row.requer_aprovacao_comercial;
-            return (
-              <tr
-                key={row.id}
-                className={`hover:bg-gray-50 ${requer ? 'bg-amber-50/40' : ''}`}
-              >
-                <Td>
-                  <div className="font-medium">{row.representante_nome}</div>
-                  <div className="text-xs text-gray-400">
-                    #{row.representante_codigo}
-                  </div>
-                </Td>
-                <Td mono>{row.cnpj}</Td>
-                <Td center>
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.tipo_cliente === 'entidade'
-                        ? 'bg-blue-100 text-blue-700'
-                        : 'bg-purple-100 text-purple-700'
-                    }`}
-                  >
-                    {row.tipo_cliente === 'entidade' ? 'Entidade' : 'Clínica'}
-                  </span>
-                </Td>
-                <Td center>{row.num_vidas_estimado ?? '—'}</Td>
-                <Td>{fmtBRL(Number(row.valor_negociado))}</Td>
-                <Td center>
-                  {row.percentual_comissao_representante?.toFixed(1) ??
-                    row.percentual_comissao?.toFixed(1) ??
-                    '—'}
-                  %
-                </Td>
-                <Td center>
-                  {row.percentual_comissao_comercial?.toFixed(1) ?? '—'}%
-                </Td>
-                <Td center>
-                  <span
-                    className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                      row.status === 'pendente'
-                        ? 'bg-yellow-100 text-yellow-700'
-                        : row.status === 'aprovado'
-                          ? 'bg-green-100 text-green-700'
-                          : row.status === 'rejeitado'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-gray-100 text-gray-600'
-                    }`}
-                  >
-                    {row.status}
-                  </span>
-                </Td>
-                <Td center>
-                  {requer ? (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                      Pendente
-                    </span>
-                  ) : (
-                    <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                      OK
-                    </span>
-                  )}
-                </Td>
-                <Td center>{fmtDate(row.criado_em)}</Td>
-              </tr>
-            );
-          })}
+          ))}
         </tbody>
       </table>
     </TableShell>
   );
 }
 
-export function TabelaLeadsComissoesGeral({
+/* ─── TabelaAcessosRepresentante ─── */
+
+export function TabelaAcessosRepresentante({
   data,
   onAtualizar,
   loading,
 }: {
-  data: LeadComissaoGeral[];
+  data: AcessoRepresentante[];
   onAtualizar: () => void;
   loading: boolean;
 }) {
-  const fmtBRL = (v: number | null | undefined) =>
-    v != null
-      ? v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-      : '—';
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString('pt-BR');
-
   return (
     <TableShell
-      title="Lead / Comissões — Geral"
+      title="Acessos — Representantes"
       subtitle={`${data.length} registro(s)`}
       headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
     >
@@ -1231,94 +1152,67 @@ export function TabelaLeadsComissoesGeral({
         <thead className="bg-gray-50 border-b border-gray-200">
           <tr>
             <Th>Representante</Th>
-            <Th>CNPJ / Razão</Th>
-            <Th center>Tipo</Th>
-            <Th center>Modelo</Th>
-            <Th>Valor neg.</Th>
-            <Th center>Comissão rep</Th>
-            <Th center>Status</Th>
-            <Th center>Data</Th>
+            <Th>CPF</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>IP</Th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {data.length === 0 && (
-            <tr>
-              <td
-                colSpan={8}
-                className="px-4 py-8 text-center text-sm text-gray-400"
-              >
-                Nenhum lead encontrado.
-              </td>
-            </tr>
-          )}
           {data.map((row) => (
             <tr key={row.id} className="hover:bg-gray-50">
+              <Td>{row.representante_nome ?? '—'}</Td>
+              <Td mono>{row.cpf}</Td>
+              <Td>{formatDate(row.login_timestamp)}</Td>
               <Td>
-                <div className="font-medium">
-                  {row.representante_nome ?? '—'}
-                </div>
-                {row.representante_codigo && (
-                  <div className="text-xs text-gray-400">
-                    #{row.representante_codigo}
-                  </div>
-                )}
+                {row.logout_timestamp ? formatDate(row.logout_timestamp) : '—'}
               </Td>
+              <Td mono>{row.ip_address ?? '—'}</Td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableShell>
+  );
+}
+
+/* ─── TabelaAcessosVendedor ─── */
+
+export function TabelaAcessosVendedor({
+  data,
+  onAtualizar,
+  loading,
+}: {
+  data: AcessoVendedor[];
+  onAtualizar: () => void;
+  loading: boolean;
+}) {
+  return (
+    <TableShell
+      title="Acessos — Vendedores"
+      subtitle={`${data.length} registro(s)`}
+      headerRight={<RefreshButton onClick={onAtualizar} loading={loading} />}
+    >
+      <table className="w-full text-sm">
+        <thead className="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <Th>Nome</Th>
+            <Th>CPF</Th>
+            <Th>Login</Th>
+            <Th>Logout</Th>
+            <Th>IP</Th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {data.map((row) => (
+            <tr key={row.id} className="hover:bg-gray-50">
+              <Td>{row.nome ?? '—'}</Td>
+              <Td mono>{row.cpf}</Td>
+              <Td>{formatDate(row.login_timestamp)}</Td>
               <Td>
-                <div className="font-mono text-xs">{row.cnpj ?? '—'}</div>
-                {row.razao_social && (
-                  <div className="text-xs text-gray-400 truncate max-w-[180px]">
-                    {row.razao_social}
-                  </div>
-                )}
+                {row.logout_timestamp ? formatDate(row.logout_timestamp) : '—'}
               </Td>
-              <Td center>
-                <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                    row.tipo_cliente === 'entidade'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-purple-100 text-purple-700'
-                  }`}
-                >
-                  {row.tipo_cliente === 'entidade' ? 'Entidade' : 'Clínica'}
-                </span>
-              </Td>
-              <Td center>
-                {row.modelo_comissionamento === 'custo_fixo' ? (
-                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
-                    Custo Fixo
-                  </span>
-                ) : row.modelo_comissionamento === 'percentual' ? (
-                  <span className="inline-block px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
-                    Percentual
-                  </span>
-                ) : (
-                  <span className="text-gray-400">—</span>
-                )}
-              </Td>
-              <Td>{fmtBRL(Number(row.valor_negociado))}</Td>
-              <Td center>
-                {row.modelo_comissionamento === 'custo_fixo'
-                  ? row.valor_custo_fixo_snapshot != null
-                    ? `CF: ${fmtBRL(row.valor_custo_fixo_snapshot)}`
-                    : '—'
-                  : row.percentual_comissao_representante != null
-                    ? `${row.percentual_comissao_representante.toFixed(1)}%`
-                    : '—'}
-              </Td>
-              <Td center>
-                <span
-                  className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${
-                    row.status === 'aprovado' || row.status === 'convertido'
-                      ? 'bg-green-100 text-green-700'
-                      : row.status === 'rejeitado' || row.status === 'expirado'
-                        ? 'bg-red-100 text-red-700'
-                        : 'bg-yellow-100 text-yellow-700'
-                  }`}
-                >
-                  {row.status}
-                </span>
-              </Td>
-              <Td center>{fmtDate(row.criado_em)}</Td>
+              <Td mono>{row.ip_address ?? '—'}</Td>
             </tr>
           ))}
         </tbody>

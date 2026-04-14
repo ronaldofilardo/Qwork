@@ -94,11 +94,6 @@ describe('2. AuditoriasContent — cache, error state, lastUpdated e novas abas'
     expect(src).toContain('Atualizado às');
   });
 
-  it('deve ter endpoint e case para acesso-suporte', () => {
-    expect(src).toContain("'acesso-suporte'");
-    expect(src).toContain('/api/admin/auditorias/acesso-suporte');
-  });
-
   it('deve ter endpoint e case para acesso-comercial', () => {
     expect(src).toContain("'acesso-comercial'");
     expect(src).toContain('/api/admin/auditorias/acesso-comercial');
@@ -152,10 +147,6 @@ describe('3. auditorias/types.ts — novas interfaces e tipos', () => {
     expect(src).toContain('AcessoVendedor');
   });
 
-  it('AuditoriaSubTab deve incluir acesso-suporte', () => {
-    expect(src).toContain("'acesso-suporte'");
-  });
-
   it('AuditoriaSubTab deve incluir acesso-comercial', () => {
     expect(src).toContain("'acesso-comercial'");
   });
@@ -194,10 +185,6 @@ describe('4. AuditoriaSubNav — tabs Suporte, Comercial, Representantes, Vended
     expect(fs.existsSync(navPath)).toBe(true);
   });
 
-  it("deve ter tab com key 'acesso-suporte'", () => {
-    expect(src).toContain("'acesso-suporte'");
-  });
-
   it("deve ter tab com key 'acesso-comercial'", () => {
     expect(src).toContain("'acesso-comercial'");
   });
@@ -208,10 +195,6 @@ describe('4. AuditoriaSubNav — tabs Suporte, Comercial, Representantes, Vended
 
   it("deve ter tab com key 'acesso-vendedor'", () => {
     expect(src).toContain("'acesso-vendedor'");
-  });
-
-  it("deve ter label 'Suporte'", () => {
-    expect(src).toContain('Suporte');
   });
 
   it("deve ter label 'Comercial'", () => {
@@ -361,46 +344,6 @@ describe('7. GET /api/admin/auditorias/acessos-rh — query direta sem VIEW', ()
 
   it('deve proteger com requireRole admin', () => {
     expect(src).toContain("requireRole('admin'");
-  });
-});
-
-// ---------------------------------------------------------------------------
-// 8a. GET /api/admin/auditorias/acesso-suporte — nova rota
-// ---------------------------------------------------------------------------
-describe('8a. GET /api/admin/auditorias/acesso-suporte — nova rota', () => {
-  const routePath = path.join(
-    ROOT,
-    'app',
-    'api',
-    'admin',
-    'auditorias',
-    'acesso-suporte',
-    'route.ts'
-  );
-  let src: string;
-
-  beforeAll(() => {
-    src = fs.readFileSync(routePath, 'utf-8');
-  });
-
-  it('arquivo deve existir', () => {
-    expect(fs.existsSync(routePath)).toBe(true);
-  });
-
-  it("deve filtrar por perfil = 'suporte'", () => {
-    expect(src).toContain("perfil = 'suporte'");
-  });
-
-  it('deve fazer JOIN com funcionarios', () => {
-    expect(src).toContain('JOIN funcionarios');
-  });
-
-  it('deve proteger com requireRole admin', () => {
-    expect(src).toContain("requireRole('admin'");
-  });
-
-  it('deve retornar chave acessos no JSON', () => {
-    expect(src).toContain('acessos: result.rows');
   });
 });
 
