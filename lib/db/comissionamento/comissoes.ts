@@ -12,7 +12,11 @@ import type {
 } from '../../types/comissionamento';
 import { registrarAuditoria } from './auditoria';
 import { calcularPrevisaoPagamento } from './utils';
-import { CUSTO_POR_AVALIACAO, calcularComissaoCustoFixo, type TipoCliente } from '../../leads-config';
+import {
+  CUSTO_POR_AVALIACAO,
+  calcularComissaoCustoFixo,
+  type TipoCliente,
+} from '../../leads-config';
 
 /** Lista comissões de um representante com resumo */
 export async function getComissoesByRepresentante(
@@ -304,8 +308,7 @@ export async function criarComissaoAdmin(params: {
         : valor_laudo / totalParc;
     // Proporcional: rep ganha (valorRep / negociado) × baseCalculo
     const ratioRep = negociado > 0 ? valorRep / negociado : 0;
-    valorComissao =
-      Math.round(ratioRep * baseCalculo * 100) / 100;
+    valorComissao = Math.round(ratioRep * baseCalculo * 100) / 100;
     percentualRep = null; // custo_fixo não usa percentual
   } else {
     // Percentual: lógica original
