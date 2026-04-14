@@ -106,7 +106,13 @@ export async function POST(
            status                        = 'apto',
            atualizado_em                 = NOW()
        WHERE id = $5`,
-      [modelo, modelo === 'percentual' ? percentual : null, percComercialAuto, walletId, id]
+      [
+        modelo,
+        modelo === 'percentual' ? percentual : null,
+        percComercialAuto,
+        walletId,
+        id,
+      ]
     );
 
     console.info(

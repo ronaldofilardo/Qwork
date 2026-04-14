@@ -169,6 +169,11 @@ interface RepMetrica {
   valor_pendente: number;
   aceite_contrato_em: string | null;
   vendedores_count: number;
+  modelo_comissionamento: 'percentual' | 'custo_fixo' | null;
+  percentual_comissao: number | null;
+  percentual_comissao_comercial: number | null;
+  valor_custo_fixo_entidade: number | null;
+  valor_custo_fixo_clinica: number | null;
 }
 
 export default function ComercialPage() {
@@ -634,11 +639,21 @@ export default function ComercialPage() {
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`
+                  .kw-scrollbar-hide::-webkit-scrollbar { display: none; }
+                `}</style>
+                <table className="w-full text-sm kw-scrollbar-hide">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/80">
                     <th className="text-left px-4 py-3 font-semibold text-gray-600">
                       Representante
+                    </th>
+                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                      Tipo de Comissionamento
+                    </th>
+                    <th className="text-center px-3 py-3 font-semibold text-gray-600">
+                      Negociação
                     </th>
                     <th className="text-center px-3 py-3 font-semibold text-gray-600">
                       Leads
@@ -692,6 +707,34 @@ export default function ComercialPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="text-center px-3 py-3">
+                        <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700">
+                          {r.modelo_comissionamento === 'percentual' ? '%' : r.modelo_comissionamento === 'custo_fixo' ? 'Fixo' : '—'}
+                        </span>
+                      </td>
+                      <td className="text-center px-3 py-3 text-xs">
+                        {r.modelo_comissionamento === 'percentual' ? (
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-gray-900">
+                              Rep: {r.percentual_comissao?.toFixed(1) ?? '—'}%
+                            </p>
+                            <p className="text-gray-600">
+                              Com: {r.percentual_comissao_comercial?.toFixed(1) ?? '—'}%
+                            </p>
+                          </div>
+                        ) : r.modelo_comissionamento === 'custo_fixo' ? (
+                          <div className="space-y-0.5">
+                            <p className="font-semibold text-gray-900">
+                              Ent: {r.valor_custo_fixo_entidade?.toFixed(2) ? `R$ ${r.valor_custo_fixo_entidade.toFixed(2)}` : '—'}
+                            </p>
+                            <p className="text-gray-600">
+                              Cli: {r.valor_custo_fixo_clinica?.toFixed(2) ? `R$ ${r.valor_custo_fixo_clinica.toFixed(2)}` : '—'}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
                       <td className="text-center px-3 py-3 font-bold text-gray-800">
                         {r.leads_ativos + r.leads_mes}
                       </td>
@@ -739,8 +782,7 @@ export default function ComercialPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
-            </div>
+              </table>              </div>            </div>
           )}
         </div>
       </div>
